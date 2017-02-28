@@ -1,0 +1,33 @@
+.p-MenuBar {
+  padding-left: 5px;
+  background: #FAFAFA;
+  color: rgba(0, 0, 0, 0.87);
+  border-bottom: 1px solid #DDDDDD;
+  font: 13px Helvetica, Arial, sans-serif;
+}
+
+
+.p-MenuBar-menu {
+  transform: translateY(-1px);
+}
+
+
+.p-MenuBar-item {
+  padding: 4px 8px;
+  border-left: 1px solid transparent;
+  border-right: 1px solid transparent;
+}
+
+
+.p-MenuBar-item.p-mod-active {
+  background: #E5E5E5;
+}
+
+
+.p-MenuBar.p-mod-active .p-MenuBar-item.p-mod-active {
+  z-index: 10001;
+  background: white;
+  border-left: 1px solid #C0C0C0;
+  border-right: 1px solid #C0C0C0;
+  box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.2);
+}

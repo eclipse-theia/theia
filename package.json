@@ -1,0 +1,19 @@
+{
+  "private": true,
+  "dependencies": {},
+  "devDependencies": {
+    "css-loader": "^0.26.2",
+    "rimraf": "^2.6.1",
+    "style-loader": "^0.13.2",
+    "typescript": "^2.2.1",
+    "webpack": "^2.2.1"
+  },
+  "scripts": {
+    "install": "npm run install:webapp",
+    "build": "npm run build:webapp",
+    "clean": "npm run clean:webapp",
+    "install:webapp": "cd webapp && npm install",
+    "build:webapp": "cd webapp && tsc && webpack --config webpack.conf.js",
+    "clean:webapp": "rimraf webapp/build"
+  }
+}

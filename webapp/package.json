@@ -1,0 +1,18 @@
+{
+  "name": "theia",
+  "version": "0.0.1",
+  "description": "A Javascript framework for native desktop and cloud-based IDEs.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TypeFox/Theia.git"
+  },
+  "dependencies": {
+    "@phosphor/commands": "^0.1.2",
+    "@phosphor/messaging": "^0.1.1",
+    "@phosphor/widgets": "^0.1.4"
+  },
+  "bugs": {
+    "url": "https://github.com/TypeFox/Theia/issues"
+  },
+  "homepage": "https://github.com/TypeFox/Theia"
+}

@@ -1,0 +1,97 @@
+.p-CommandPalette {
+  font-family: sans-serif;
+  background: #F5F5F5;
+}
+
+
+.p-CommandPalette-search {
+  padding: 8px;
+}
+
+
+.p-CommandPalette-wrapper {
+  padding: 4px 6px;
+  background: white;
+  border: 1px solid #E0E0E0;
+}
+
+
+.p-CommandPalette-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 16px;
+}
+
+
+.p-CommandPalette-header {
+  padding: 4px;
+  color: #757575;
+  font-size: 12px;
+  font-weight: 600;
+  background: #E1E1E1;
+  cursor: pointer;
+}
+
+
+.p-CommandPalette-header:hover::before {
+  content: '\2026'; /* ellipsis */
+  float: right;
+  margin-right: 4px;
+}
+
+
+.p-CommandPalette-header > mark {
+  background-color: transparent;
+  font-weight: bold;
+}
+
+
+.p-CommandPalette-item {
+  padding: 4px 8px;
+  color: #757575;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+
+.p-CommandPalette-emptyMessage {
+  padding: 4px;
+  color: #757575;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+
+.p-CommandPalette-item.p-mod-disabled {
+  color: rgba(0, 0, 0, 0.25);
+}
+
+
+.p-CommandPalette-item.p-mod-active {
+  background: #7FDBFF;
+}
+
+
+.p-CommandPalette-item:hover:not(.p-mod-active):not(.p-mod-disabled) {
+  background: #E5E5E5;
+}
+
+
+.p-CommandPalette-itemLabel > mark {
+  background-color: transparent;
+  font-weight: bold;
+}
+
+
+.p-CommandPalette-item.p-mod-disabled mark {
+  color: rgba(0, 0, 0, 0.4);
+}
+
+
+.p-CommandPalette-itemCaption {
+  color: #9E9E9E;
+  font-size: 11px;
+  font-weight: 400;
+}
