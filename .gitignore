@@ -2,5 +2,5 @@
 node_modules
 build
 lib
-npm-debug.log
+*.log
 .idea

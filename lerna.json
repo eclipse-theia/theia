@@ -1,0 +1,7 @@
+{
+  "lerna": "2.0.0-beta.37",
+  "packages": [
+    "@theia/*"
+  ],
+  "version": "0.0.1"
+}

@@ -11,6 +11,6 @@
     "outDir": "./build",
     "lib": ["ES5", "ES2015.Promise", "DOM"],
     "types": [],
-    "baseUrl": ".."
+    "baseUrl": "../.."
   }
 }

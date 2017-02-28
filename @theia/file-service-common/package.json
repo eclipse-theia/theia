@@ -16,6 +16,10 @@
     "lib": "lib/"
   },
   "dependencies": {},
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc",
+    "clean": "../../node_modules/.bin/rimraf lib"
+  },
   "bugs": {
     "url": "https://github.com/TypeFox/Theia/issues"
   },
