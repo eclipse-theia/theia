@@ -1,5 +1,5 @@
-@import '../node_modules/@phosphor/dragdrop/style/index.css';
-@import '../node_modules/@phosphor/widgets/style/index.css';
+@import '~@phosphor/dragdrop/style/index.css';
+@import '~@phosphor/widgets/style/index.css';
 @import 'commandpalette.css';
 @import 'content.css';
 @import 'dockpanel.css';
