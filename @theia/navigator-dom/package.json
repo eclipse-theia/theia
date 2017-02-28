@@ -1,0 +1,25 @@
+{
+  "name": "@theia/navigator-dom",
+  "version": "0.0.1",
+  "description": "Theia - File Navigator",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TypeFox/Theia.git"
+  },
+  "files": [
+    "lib/*.d.ts",
+    "lib/*.js"
+  ],
+  "directories": {
+    "lib": "lib/"
+  },
+  "dependencies": {
+    "@theia/file-service-common": "^0.0.1"
+  },
+  "bugs": {
+    "url": "https://github.com/TypeFox/Theia/issues"
+  },
+  "homepage": "https://github.com/TypeFox/Theia"
+}

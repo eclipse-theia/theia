@@ -10,8 +10,14 @@
   },
   "scripts": {
     "install": "npm run install:webapp",
-    "build": "npm run build:webapp",
-    "clean": "npm run clean:webapp",
+    "build": "npm run build:file-service-common && npm run build:navigator-dom && npm run build:webapp",
+    "clean": "npm run clean:file-service-common && npm run clean:navigator-dom && npm run clean:webapp",
+    "install:file-service-common": "cd @theia/file-service-common && npm install",
+    "build:file-service-common": "cd @theia/file-service-common && tsc",
+    "clean:file-service-common": "rimraf @theia/file-service-common/lib",
+    "install:navigator-dom": "npm run build:file-service-common && cd @theia/navigator-dom && npm install",
+    "build:navigator-dom": "cd @theia/navigator-dom && tsc",
+    "clean:navigator-dom": "rimraf @theia/navigator-dom/lib",
     "install:webapp": "cd webapp && npm install",
     "build:webapp": "cd webapp && tsc && webpack --config webpack.conf.js",
     "clean:webapp": "rimraf webapp/build"

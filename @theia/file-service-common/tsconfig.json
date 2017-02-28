@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "noImplicitAny": true,
+    "noEmitOnError": true,
+    "noUnusedLocals": true,
+    "strictNullChecks": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ES5",
+    "outDir": "./lib",
+    "lib": ["ES5"],
+    "types": [],
+    "baseUrl": "../.."
+  }
+}

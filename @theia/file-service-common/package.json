@@ -1,0 +1,23 @@
+{
+  "name": "@theia/file-service-common",
+  "version": "0.0.1",
+  "description": "Theia - File Service",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TypeFox/Theia.git"
+  },
+  "files": [
+    "lib/*.d.ts",
+    "lib/*.js"
+  ],
+  "directories": {
+    "lib": "lib/"
+  },
+  "dependencies": {},
+  "bugs": {
+    "url": "https://github.com/TypeFox/Theia/issues"
+  },
+  "homepage": "https://github.com/TypeFox/Theia"
+}
