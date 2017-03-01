@@ -10,7 +10,7 @@
     "webpack": "^2.2.1"
   },
   "scripts": {
-    "install": "lerna bootstrap",
+    "install": "lerna bootstrap --hoist",
     "build": "lerna run build",
     "clean": "lerna run clean"
   }

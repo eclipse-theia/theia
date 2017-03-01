@@ -2,10 +2,8 @@
   "private": true,
   "name": "browser-example",
   "dependencies": {
-    "@theia/navigator-dom": "0.0.1",
-    "@phosphor/commands": "^0.1.2",
-    "@phosphor/messaging": "^0.1.1",
-    "@phosphor/widgets": "^0.1.4"
+    "@theia/shell-dom": "0.0.1",
+    "@phosphor/application": "^0.1.3"
   },
   "scripts": {
     "build": "../../node_modules/.bin/tsc && ../../node_modules/.bin/webpack",

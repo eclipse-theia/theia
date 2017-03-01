@@ -1,7 +1,7 @@
 {
-  "name": "@theia/file-service-common",
+  "name": "@theia/shell-dom",
   "version": "0.0.1",
-  "description": "Theia - File Service",
+  "description": "Theia - Shell DOM",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "repository": {
@@ -16,7 +16,7 @@
     "lib": "lib/"
   },
   "dependencies": {
-
+    "@phosphor/widgets": "^0.1.4"
   },
   "scripts": {
     "build": "../../node_modules/.bin/tsc",
