@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "name": "browser-example",
+  "dependencies": {
+    "@theia/navigator-dom": "0.0.1",
+    "@phosphor/commands": "^0.1.2",
+    "@phosphor/messaging": "^0.1.1",
+    "@phosphor/widgets": "^0.1.4"
+  },
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc && ../../node_modules/.bin/webpack",
+    "clean": "../../node_modules/.bin/rimraf build"
+  }
+}
