@@ -9,7 +9,7 @@
     "moduleResolution": "node",
     "target": "ES5",
     "outDir": "./lib",
-    "lib": ["ES5"],
+    "lib": ["ES5", "ES2015.Promise", "DOM"],
     "types": [],
     "baseUrl": "../.."
   }

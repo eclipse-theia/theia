@@ -10,7 +10,9 @@
   },
   "files": [
     "lib/*.d.ts",
-    "lib/*.js"
+    "lib/*.js",
+    "style/*.css",
+    "icons/*.svg"
   ],
   "directories": {
     "lib": "lib/"

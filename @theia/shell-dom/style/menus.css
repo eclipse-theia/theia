@@ -1,0 +1,168 @@
+/*-----------------------------------------------------------------------------
+| Variables
+|----------------------------------------------------------------------------*/
+
+
+:root {
+  --theia-private-menubar-height: 28px;
+  --theia-private-menu-item-height: 24px;
+}
+
+
+/*-----------------------------------------------------------------------------
+| MenuBar
+|----------------------------------------------------------------------------*/
+
+
+.p-MenuBar {
+  padding-left: 5px;
+  background: var(--theia-layout-color1);
+  color: var(--theia-ui-font-color1);
+  font-size: var(--theia-ui-font-size1);
+}
+
+
+.p-MenuBar-menu {
+  transform: translateY(calc(-2*var(--theia-border-width)));
+}
+
+
+.p-MenuBar-item {
+  padding: 0px 8px;
+  border-left: var(--theia-border-width) solid transparent;
+  border-right: var(--theia-border-width) solid transparent;
+  line-height: var(--theia-private-menubar-height);
+}
+
+
+.p-MenuBar-item.p-mod-active {
+  background: var(--theia-layout-color2);
+}
+
+
+.p-MenuBar.p-mod-active .p-MenuBar-item.p-mod-active {
+  z-index: 10001;
+  background: var(--theia-layout-color1);
+  border-left: var(--theia-border-width) solid var(--theia-border-color1);
+  border-right: var(--theia-border-width) solid var(--theia-border-color1);
+  box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.2);
+}
+
+
+.p-MenuBar-item.p-mod-disabled {
+  color: var(--theia-ui-font-color2);
+}
+
+
+.p-MenuBar-item.p-type-separator {
+  margin: 2px;
+  padding: 0;
+  border: none;
+  border-left: var(--theia-border-width) solid var(--theia-border-color2);
+}
+
+
+.p-MenuBar-itemMnemonic {
+  text-decoration: underline;
+}
+
+
+#theia-top-panel {
+  border-bottom: var(--theia-border-width) solid var(--theia-border-color1);
+  background: var(--theia-layout-color1);
+  display: flex;
+  min-height: var(--theia-private-menubar-height);
+}
+
+
+/*-----------------------------------------------------------------------------
+| Menu
+|----------------------------------------------------------------------------*/
+
+
+.p-Menu {
+  z-index: 10000;
+  padding: 4px 0px;
+  background: var(--theia-layout-color1);
+  color: var(--theia-ui-font-color1);
+  border: var(--theia-border-width) solid var(--theia-border-color1);
+  font-size: var(--theia-ui-font-size1);
+  box-shadow: 0px 1px 6px rgba(0, 0, 0, 0.2);
+}
+
+
+.p-Menu-item {
+  min-height: var(--theia-private-menu-item-height);
+  max-height: var(--theia-private-menu-item-height);
+  padding: 0px;
+  line-height: var(--theia-private-menu-item-height);
+}
+
+
+.p-Menu-item.p-mod-active {
+  background: var(--theia-layout-color2);
+}
+
+
+.p-Menu-item.p-mod-disabled {
+  color: var(--theia-ui-font-color2);
+}
+
+
+.p-Menu-itemIcon {
+  width: 21px;
+  padding: 0px 2px 0px 4px;
+  margin-top: -2px;
+}
+
+
+.p-Menu-itemLabel {
+  padding: 0px 32px 0px 2px;
+}
+
+
+.p-Menu-itemMnemonic {
+  text-decoration: underline;
+}
+
+
+.p-Menu-itemShortcut {
+  padding: 0px;
+}
+
+
+.p-Menu-itemSubmenuIcon {
+  width: 16px;
+  padding: 0px 4px 0px 0px;
+}
+
+
+.p-Menu-item[data-type='separator'] > div {
+  padding: 0;
+  height: 9px;
+}
+
+
+.p-Menu-item[data-type='separator'] > div::after {
+  content: '';
+  display: block;
+  position: relative;
+  top: 4px;
+  border-top: var(--theia-border-width) solid var(--theia-layout-color2);
+}
+
+.p-Menu-itemIcon::before,
+.p-Menu-itemSubmenuIcon::before {
+  font-family: FontAwesome;
+}
+
+
+.p-Menu-item.p-mod-toggled > .p-Menu-itemIcon::before {
+  content: '\f00c';
+}
+
+
+.p-Menu-item[data-type='submenu'] > .p-Menu-itemSubmenuIcon::before {
+  content: '\f0da';
+
+}

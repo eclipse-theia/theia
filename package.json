@@ -3,13 +3,16 @@
   "dependencies": {},
   "devDependencies": {
     "css-loader": "^0.26.2",
+    "file-loader": "^0.10.1",
     "lerna": "2.0.0-beta.38",
     "rimraf": "^2.6.1",
     "style-loader": "^0.13.2",
     "typescript": "^2.2.1",
+    "url-loader": "^0.5.8",
     "webpack": "^2.2.1"
   },
   "scripts": {
+    "refresh": "lerna clean && npm run install",
     "install": "lerna bootstrap --hoist",
     "build": "lerna run build",
     "clean": "lerna run clean"

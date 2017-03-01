@@ -1,0 +1,39 @@
+/*-----------------------------------------------------------------------------
+| Variables
+|----------------------------------------------------------------------------*/
+
+
+/*-----------------------------------------------------------------------------
+| DockPanel
+|----------------------------------------------------------------------------*/
+
+
+.p-DockPanel-widget {
+  background:var(--theia-layout-color1);
+  border-left: var(--theia-border-width) solid var(--theia-border-color1);
+  border-right: var(--theia-border-width) solid var(--theia-border-color1);
+  border-bottom: var(--theia-border-width) solid var(--theia-border-color1);
+}
+
+
+.p-DockPanel-overlay {
+  background: rgba(33, 150, 243, 0.1);
+  border: var(--theia-border-width) dashed var(--theia-brand-color1);
+  transition-property: top, left, right, bottom;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+
+.p-DockPanel-overlay.p-mod-root-top,
+.p-DockPanel-overlay.p-mod-root-left,
+.p-DockPanel-overlay.p-mod-root-right,
+.p-DockPanel-overlay.p-mod-root-bottom,
+.p-DockPanel-overlay.p-mod-root-center {
+  border-width: 2px;
+}
+
+
+#theia-main-dock-panel {
+  padding: 5px;
+}

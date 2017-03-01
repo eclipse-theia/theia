@@ -1,0 +1,141 @@
+/*
+The following CSS variables define the main, public API for styling JupyterLab.
+These variables should be used by all plugins wherever possible. In other
+words, plugins should not define custom colors, sizes, etc unless absolutely
+necessary. This enables users to change the visual theme of JupyterLab
+by changing these variables.
+
+Many variables appear in an ordered sequence (0,1,2,3). These sequences
+are designed to work well together, so for example, `--theia-border-color1` should
+be used with `--theia-layout-color1`. The numbers have the following meanings:
+
+* 0: super-primary, reserved for special emphasis
+* 1: primary, most important under normal situations
+* 2: secondary, next most important under normal situations
+* 3: tertiary, next most important under normal situations
+
+Throughout JupyterLab, we are mostly following principles from Google's
+Material Design when selecting colors. We are not, however, following
+all of MD as it is not optimized for dense, information rich UIs.
+*/
+
+
+:root {
+
+  /* Borders
+
+  The following variables, specify the visual styling of borders in JupyterLab.
+   */
+
+  --theia-border-width: 1px;
+  --theia-border-color0: var(--md-grey-700);
+  --theia-border-color1: var(--md-grey-500);
+  --theia-border-color2: var(--md-grey-300);
+  --theia-border-color3: var(--md-grey-100);
+
+  /* UI Fonts
+
+  The UI font CSS variables are used for the typography all of the JupyterLab
+  user interface elements that are not directly user generated content.
+  */
+
+  --theia-ui-font-scale-factor: 1.2;
+  --theia-ui-font-size0: calc(var(--theia-ui-font-size1)/var(--theia-ui-font-scale-factor));
+  --theia-ui-font-size1: 13px; /* Base font size */
+  --theia-ui-font-size2: calc(var(--theia-ui-font-size1)*var(--theia-ui-font-scale-factor));
+  --theia-ui-font-size3: calc(var(--theia-ui-font-size2)*var(--theia-ui-font-scale-factor));
+  --theia-ui-icon-font-size: 14px; /* Ensures px perfect FontAwesome icons */
+  --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+  /* Use these font colors against the corresponding main layout colors.
+     In a light theme, these go from dark to light.
+  */
+
+  --theia-ui-font-color0: rgba(0,0,0,1.0);
+  --theia-ui-font-color1: rgba(0,0,0,0.87);
+  --theia-ui-font-color2: rgba(0,0,0,0.54);
+  --theia-ui-font-color3: rgba(0,0,0,0.38);
+
+  /* Use these against the brand/accent/warn/error colors.
+     These will typically go from light to darker, in both a dark and light theme
+   */
+
+  --theia-inverse-ui-font-color0: rgba(255,255,255,1);
+  --theia-inverse-ui-font-color1: rgba(255,255,255,1.0);
+  --theia-inverse-ui-font-color2: rgba(255,255,255,0.7);
+  --theia-inverse-ui-font-color3: rgba(255,255,255,0.5);
+
+  /* Content Fonts
+
+  Content font variables are used for typography of user generated content.
+  */
+
+  --theia-content-font-size: 13px;
+  --theia-content-line-height: 1.5;
+  --theia-content-font-color0: black;
+  --theia-content-font-color1: black;
+  --theia-content-font-color2: var(--md-grey-700);
+  --theia-content-font-color3: var(--md-grey-500);
+
+  --theia-ui-font-scale-factor: 1.2;
+  --theia-ui-font-size0: calc(var(--theia-ui-font-size1)/var(--theia-ui-font-scale-factor));
+  --theia-ui-font-size1: 13px; /* Base font size */
+  --theia-ui-font-size2: calc(var(--theia-ui-font-size1)*var(--theia-ui-font-scale-factor));
+  --theia-ui-font-size3: calc(var(--theia-ui-font-size2)*var(--theia-ui-font-scale-factor));
+
+  --theia-code-font-size: 13px;
+  --theia-code-line-height: 17px;
+  --theia-code-padding: 5px;
+  --theia-code-font-family: monospace;
+
+
+  /* Layout
+
+  The following are the main layout colors use in JupyterLab. In a light
+  theme these would go from light to dark.
+  */
+
+  --theia-layout-color0: white;
+  --theia-layout-color1: white;
+  --theia-layout-color2: var(--md-grey-200);
+  --theia-layout-color3: var(--md-grey-400);
+
+  /* Brand/accent */
+
+  --theia-brand-color0: var(--md-blue-700);
+  --theia-brand-color1: var(--md-blue-500);
+  --theia-brand-color2: var(--md-blue-300);
+  --theia-brand-color3: var(--md-blue-100);
+
+  --theia-accent-color0: var(--md-green-700);
+  --theia-accent-color1: var(--md-green-500);
+  --theia-accent-color2: var(--md-green-300);
+  --theia-accent-color3: var(--md-green-100);
+
+  /* State colors (warn, error, success, info) */
+
+  --theia-warn-color0: var(--md-orange-700);
+  --theia-warn-color1: var(--md-orange-500);
+  --theia-warn-color2: var(--md-orange-300);
+  --theia-warn-color3: var(--md-orange-100);
+
+  --theia-error-color0: var(--md-red-700);
+  --theia-error-color1: var(--md-red-500);
+  --theia-error-color2: var(--md-red-300);
+  --theia-error-color3: var(--md-red-100);
+
+  --theia-success-color0: var(--md-green-700);
+  --theia-success-color1: var(--md-green-500);
+  --theia-success-color2: var(--md-green-300);
+  --theia-success-color3: var(--md-green-100);
+
+  --theia-info-color0: var(--md-cyan-700);
+  --theia-info-color1: var(--md-cyan-500);
+  --theia-info-color2: var(--md-cyan-300);
+  --theia-info-color3: var(--md-cyan-100);
+
+  /* Notebook specific styles */
+
+  --theia-notebook-scroll-padding: 100px;
+
+}
