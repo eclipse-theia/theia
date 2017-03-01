@@ -1,0 +1,30 @@
+{
+  "name": "@theia/platform-common",
+  "version": "0.0.1",
+  "description": "Theia - Platform Common",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TypeFox/Theia.git"
+  },
+  "files": [
+    "lib/*.d.ts",
+    "lib/*.js"
+  ],
+  "directories": {
+    "lib": "lib/"
+  },
+  "dependencies": {
+    "inversify": "^3.1.0",
+    "reflect-metadata": "^0.1.10"
+  },
+  "scripts": {
+    "build": "../../node_modules/.bin/tsc",
+    "clean": "../../node_modules/.bin/rimraf lib"
+  },
+  "bugs": {
+    "url": "https://github.com/TypeFox/Theia/issues"
+  },
+  "homepage": "https://github.com/TypeFox/Theia"
+}
