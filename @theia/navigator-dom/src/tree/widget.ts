@@ -2,7 +2,7 @@ import {Widget} from "@phosphor/widgets";
 import {Message} from "@phosphor/messaging";
 import {DisposableCollection} from "@theia/platform-common";
 import {h, VirtualNode, VirtualText, VirtualDOM} from "@phosphor/virtualdom";
-import {ITreeModel, ITreeNode, ICompositeTreeNode} from "./model";
+import {ITreeModel, ITreeNode, ICompositeTreeNode, IExpandableTreeNode} from "./model";
 
 export class TreeWidget<Model extends ITreeModel> extends Widget {
 
@@ -55,8 +55,17 @@ export class TreeWidget<Model extends ITreeModel> extends Widget {
     }
 
     protected renderCompositeNode(node: ICompositeTreeNode): h.Child {
-        const children = this.renderChildNodes(node.children);
-        return VirtualWidget.merge(node.name, children);
+        const children = IExpandableTreeNode.getChildren(node);
+        const nodes = this.renderChildNodes(children);
+        return h.div({
+                onclick: () => {
+                    if (IExpandableTreeNode.is(node) && this.model && this.model.expansion) {
+                        this.model.expansion.toggleNodeExpansion(node);
+                    }
+                }
+            },
+            VirtualWidget.merge(node.name, nodes)
+        );
     }
 
     protected renderChildNodes(nodes: ReadonlyArray<ITreeNode>): h.Child {

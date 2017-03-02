@@ -11,4 +11,8 @@ export class FileNavigator extends TreeWidget<FileNavigatorModel> {
         this.title.label = 'Files';
     }
 
+    getModel(): FileNavigatorModel {
+        return super.getModel()!;
+    }
+
 }

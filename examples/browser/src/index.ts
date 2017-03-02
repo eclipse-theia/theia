@@ -9,9 +9,11 @@ const shell = new ApplicationShell();
 const application = new Application<ApplicationShell>({shell});
 
 const fileSystem = new InMemoryFileSystem();
-fileSystem.mkdir(Path.fromString("foo"));
-fileSystem.mkdir(Path.fromString("bar"));
+fileSystem.writeFile(Path.fromString("foo/Foo.txt"), 'Hello World');
+fileSystem.writeFile(Path.fromString("bar/Bar.txt"), 'Hello World');
+fileSystem.writeFile(Path.fromString("bar/Baz.txt"), 'Hello World');
 const fileNavigator = new FileNavigator(new FileNavigatorModel(fileSystem));
+fileNavigator.getModel().refresh();
 shell.addToLeftArea(fileNavigator);
 application.started.then(() => {
     shell.activateLeft(fileNavigator.id);
