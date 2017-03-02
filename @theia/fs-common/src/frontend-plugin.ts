@@ -11,6 +11,6 @@ export const frontendPlugin: Plugin = {
                                     isBound: interfaces.IsBound,
                                     rebind: interfaces.Rebind) => {
             bind<FileSystem>(FileSystem).toConstantValue(new InMemoryFileSystem());
-        })
+        });
     }
 };
