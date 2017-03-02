@@ -1,5 +1,7 @@
 import {Plugin, ContainerModule, interfaces} from "@theia/platform-common";
-import {FileSystem, InMemoryFileSystem} from "./file-system";
+import {FileSystem} from "./file-system";
+import {InMemoryFileSystem} from "./inmemory";
+
 
 export const frontendPlugin: Plugin = {
 
