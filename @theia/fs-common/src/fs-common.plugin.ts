@@ -13,5 +13,4 @@ export const frontendPlugin: Plugin = {
             bind<FileSystem>(FileSystem).toConstantValue(new InMemoryFileSystem());
         })
     }
-
-}
+};

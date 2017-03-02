@@ -12,7 +12,6 @@
     "target": "es5",
     "lib": ["es6"],
     "types": [],
-    "outDir": "./lib",
-    "baseUrl": "../.."
+    "outDir": "./lib"
   }
 }

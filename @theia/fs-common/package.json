@@ -16,6 +16,7 @@
     "lib": "lib/"
   },
   "dependencies": {
+    "@theia/platform-common": "0.0.1"
   },
   "scripts": {
     "build": "../../node_modules/.bin/tsc",
