@@ -1,7 +1,7 @@
 {
-  "name": "@theia/navigator-dom",
+  "name": "@theia/comm-common",
   "version": "0.0.1",
-  "description": "Theia - File Navigator",
+  "description": "Theia - Communication Common",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "repository": {
@@ -16,8 +16,7 @@
     "lib": "lib/"
   },
   "dependencies": {
-    "@theia/fs-common": "^0.0.1",
-    "ag-grid": "^8.1.1"
+    "@theia/platform-common": "0.0.1"
   },
   "scripts": {
     "build": "../../node_modules/.bin/tsc",

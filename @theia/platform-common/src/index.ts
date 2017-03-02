@@ -1,3 +1,2 @@
-/**
- * Created by efftinge on 01/03/17.
- */
+export {Plugin, PluginRegistry} from "./plugin";
+export {ContainerModule, interfaces} from "inversify";

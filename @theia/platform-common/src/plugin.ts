@@ -8,7 +8,7 @@ export interface Plugin {
     /**
      * The container module for this plugin
      */
-    readonly containerModule : ContainerModule;
+    getContainerModule() : ContainerModule;
 
 }
 
@@ -23,7 +23,7 @@ export class PluginRegistry {
     createContainer() : Container {
         const container = new Container();
         for (let plugin of this.plugins) {
-            container.load(plugin.containerModule);
+            container.load(plugin.getContainerModule());
         }
         return container;
     }
