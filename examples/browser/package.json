@@ -2,6 +2,7 @@
   "private": true,
   "name": "browser-example",
   "dependencies": {
+    "@theia/fs-common": "0.0.1",
     "@theia/shell-dom": "0.0.1",
     "@theia/navigator-dom": "^0.0.1",
     "@phosphor/application": "^0.1.3"

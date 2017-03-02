@@ -7,7 +7,7 @@ import {ITreeModel, ITreeNode, ICompositeTreeNode} from "./model";
 export class TreeWidget<Model extends ITreeModel> extends Widget {
 
     /**
-     * FIXME introduce VirtualWidget
+     * FIXME extract to VirtualWidget
      */
     protected model: Model | undefined;
     protected modelListeners = new DisposableCollection();
@@ -35,11 +35,68 @@ export class TreeWidget<Model extends ITreeModel> extends Widget {
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         const children = this.render();
-        const content = this.toContent(children);
+        const content = VirtualWidget.toContent(children);
         VirtualDOM.render(content, this.node);
     }
 
-    protected toContent(children: h.Child): VirtualNode | VirtualNode[] | null {
+    protected render(): h.Child {
+        if (this.model) {
+            return this.renderTree(this.model);
+        }
+        return null;
+    }
+
+    protected renderTree(model: Model): h.Child {
+        return this.renderChildNodes(model.roots);
+    }
+
+    protected renderNode(node: ITreeNode): h.Child {
+        return h.div(node.name);
+    }
+
+    protected renderCompositeNode(node: ICompositeTreeNode): h.Child {
+        const children = this.renderChildNodes(node.children);
+        return VirtualWidget.merge(node.name, children);
+    }
+
+    protected renderChildNodes(nodes: ReadonlyArray<ITreeNode>): h.Child {
+        return VirtualWidget.flatten(nodes.map(node => this.doRenderNode(node)));
+    }
+
+    protected doRenderNode(node: ITreeNode | undefined): h.Child {
+        if (!node) {
+            return null;
+        }
+        if (ICompositeTreeNode.is(node)) {
+            return this.renderCompositeNode(node);
+        }
+        return this.renderNode(node);
+    }
+
+}
+
+export namespace VirtualWidget {
+    export function flatten(children: h.Child[]): h.Child {
+        return children.reduce((prev, current) => this.merge(prev, current), null);
+    }
+
+    export function merge(left: h.Child, right: h.Child): h.Child {
+        if (!left) {
+            return right;
+        }
+        if (!right) {
+            return left;
+        }
+        const result = left instanceof Array ? left : [left];
+        if (right instanceof Array) {
+            result.push(...right);
+        } else {
+            result.push(right);
+        }
+        return result;
+    }
+
+    export function toContent(children: h.Child): VirtualNode | VirtualNode[] | null {
         if (!children) {
             return null;
         }
@@ -58,31 +115,4 @@ export class TreeWidget<Model extends ITreeModel> extends Widget {
         }
         return children;
     }
-
-    protected render(): h.Child {
-        if (this.model) {
-            return this.doRenderNode(this.model.root);
-        }
-        return null;
-    }
-
-    protected doRenderNode(node: ITreeNode | undefined): h.Child {
-        if (!node) {
-            return null;
-        }
-        if (ICompositeTreeNode.is(node)) {
-            return this.renderCompositeNode(node);
-        }
-        return this.renderNode(node);
-    }
-
-    protected renderNode(node: ITreeNode): h.Child {
-        return h.div(node.name);
-    }
-
-    protected renderCompositeNode(node: ICompositeTreeNode): h.Child {
-        const children = node.children.map(child => this.doRenderNode(child));
-        return h.div(node.name, h.div(children));
-    }
-
 }

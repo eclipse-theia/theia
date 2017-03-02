@@ -28,7 +28,7 @@ export class InMemoryFileSystem implements FileSystem {
     }
 
     private internalFindNode(node: InMemoryFileNode, path: Path): InMemoryFileNode|undefined {
-        if (node.path === path) {
+        if (node.path.equals(path)) {
             return node;
         }
         if (!node.children)
@@ -71,7 +71,7 @@ export class InMemoryFileSystem implements FileSystem {
                 let result: InMemoryFileNode = {
                     path,
                     children: []
-                }
+                };
                 parent.children.push(result);
                 return result;
             }
@@ -131,7 +131,7 @@ export class InMemoryFileSystem implements FileSystem {
             parent.children.push({
                 path,
                 contents: data
-            })
+            });
             this.notify(new FileChange(path, FileChangeType.UPDATED));
         }
         return Promise.resolve(true);

@@ -4,10 +4,9 @@ import {Event} from "@theia/platform-common";
  */
 export interface ITreeModel {
     /**
-     * The root node.
-     * Undefined if the root is missing.
+     * Root nodes.
      */
-    readonly root: ITreeNode | undefined;
+    readonly roots: ReadonlyArray<ITreeNode>;
 
     /**
      * Emit when the tree is changed.

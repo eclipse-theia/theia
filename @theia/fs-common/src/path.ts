@@ -8,8 +8,8 @@ export class Path {
     constructor(public readonly segments: string[]) {
     }
 
-    get simpleName() : string {
-        return this.segments[this.segments.length];
+    get simpleName() : string | undefined {
+        return this.segments[this.segments.length - 1];
     }
 
     toString() : string {

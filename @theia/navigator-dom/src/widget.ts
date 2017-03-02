@@ -5,8 +5,8 @@ export class FileNavigator extends TreeWidget<FileNavigatorModel> {
 
     static readonly ID = 'file-navigator';
 
-    constructor(model?: FileNavigatorModel) {
-        super(model || new FileNavigatorModel());
+    constructor(model: FileNavigatorModel) {
+        super(model);
         this.id = FileNavigator.ID;
         this.title.label = 'Files';
     }
