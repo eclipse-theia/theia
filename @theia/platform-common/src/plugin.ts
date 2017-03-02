@@ -10,6 +10,13 @@ export interface Plugin {
      */
     getContainerModule() : ContainerModule;
 
+    /**
+     * optional life cycle hook, called after the container is ready
+     *
+     * @param container
+     */
+    start? : (container:Container)=>void;
+
 }
 
 /**
@@ -20,12 +27,22 @@ export class PluginRegistry {
     constructor(readonly plugins : Plugin[]) {
     }
 
-    createContainer() : Container {
+    protected createContainer() : Container {
         const container = new Container();
         for (let plugin of this.plugins) {
             container.load(plugin.getContainerModule());
         }
         return container;
+    }
+
+    public start<T>(identifier: symbol) : T {
+        const container = this.createContainer();
+        for (let plugin of this.plugins) {
+            if (plugin.start) {
+                plugin.start(container);
+            }
+        }
+        return container.get<T>(identifier) as T;
     }
 
 }
