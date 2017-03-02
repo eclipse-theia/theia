@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "../../node_modules/.bin/tsc && ../../node_modules/.bin/webpack",
-    "clean": "../../node_modules/.bin/rimraf build"
+    "clean": "../../node_modules/.bin/rimraf build",
+    "watch:build": "../../node_modules/.bin/webpack --watch"
   }
 }

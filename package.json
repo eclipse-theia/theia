@@ -15,6 +15,7 @@
     "refresh": "lerna clean && npm run install",
     "install": "lerna bootstrap --hoist",
     "build": "lerna run build",
-    "clean": "lerna run clean"
+    "clean": "lerna run clean",
+    "watch:build": "lerna run watch:build --stream"
   }
 }

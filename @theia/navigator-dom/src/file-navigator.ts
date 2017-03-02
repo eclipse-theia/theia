@@ -7,6 +7,7 @@ export class FileNavigator extends Widget {
     constructor() {
         super();
         this.id = FileNavigator.ID;
+        this.title.label = 'Files';
     }
 
 }
