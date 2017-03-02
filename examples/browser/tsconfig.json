@@ -7,10 +7,9 @@
     "strictNullChecks": true,
     "module": "commonjs",
     "moduleResolution": "node",
-    "target": "ES5",
+    "target": "es5",
     "outDir": "./build",
-    "lib": ["ES5", "ES2015.Promise", "DOM"],
-    "types": [],
-    "baseUrl": "../.."
+    "lib": ["es6", "dom"],
+    "sourceMap": true
   }
 }

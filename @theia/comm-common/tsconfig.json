@@ -13,6 +13,6 @@
     "lib": ["es6"],
     "types": ["reflect-metadata"],
     "outDir": "./lib",
-    "baseUrl": "../.."
+    "sourceMap": true
   }
 }

@@ -1,4 +1,5 @@
 import {Path} from "./path";
+import {Disposable} from "@theia/platform-common";
 
 export const FileSystem = Symbol("FileSystem");
 
@@ -43,9 +44,6 @@ export interface FileSystem {
 }
 
 export type FileSystemWatcher =  (event:FileChangeEvent) => void;
-export interface Disposable {
-    dispose():void
-}
 
 export class FileChangeEvent {
     constructor(public readonly changes: FileChange[]) {}

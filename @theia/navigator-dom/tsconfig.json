@@ -11,6 +11,6 @@
     "lib": ["es6", "dom"],
     "types": [],
     "outDir": "./lib",
-    "baseUrl": "../.."
+    "sourceMap": true
   }
 }

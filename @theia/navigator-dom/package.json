@@ -16,8 +16,9 @@
     "lib": "lib/"
   },
   "dependencies": {
-    "@theia/fs-common": "^0.0.1",
-    "ag-grid": "^8.1.1"
+    "@phosphor/virtualdom": "^0.1.0",
+    "@theia/platform-common": "^0.0.1",
+    "@theia/fs-common": "^0.0.1"
   },
   "scripts": {
     "build": "../../node_modules/.bin/tsc",

@@ -1,2 +1,2 @@
-export {FileSystem, FileChange, FileChangeEvent, FileChangeType, FileSystemWatcher, Disposable} from "./file-system";
+export {FileSystem, FileChange, FileChangeEvent, FileChangeType, FileSystemWatcher} from "./file-system";
 export {Path} from "./path";

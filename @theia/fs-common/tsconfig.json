@@ -12,6 +12,7 @@
     "target": "es5",
     "lib": ["es6"],
     "types": [],
-    "outDir": "./lib"
+    "outDir": "./lib",
+    "sourceMap": true
   }
 }
