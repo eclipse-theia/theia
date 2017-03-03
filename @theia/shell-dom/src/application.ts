@@ -1,4 +1,4 @@
-
+import "reflect-metadata";
 import { Application } from "@phosphor/application";
 import { ApplicationShell } from "./shell";
 import { injectable, multiInject } from "inversify";
