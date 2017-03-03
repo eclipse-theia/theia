@@ -22,7 +22,9 @@ module.exports = function (dirname, config) {
 
         resolve: {
             extensions: ['.ts', '.js']
-        }
+        },
+
+        devtool: 'source-map'
 
     };
     const argv = minimist(process.argv.slice(2));
