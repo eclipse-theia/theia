@@ -1,0 +1,6 @@
+.theia-FileNavigator {
+    overflow: auto;
+    color: var(--theia-ui-font-color1);
+    background:var(--theia-layout-color1);
+    font-size: var(--theia-ui-font-size1);
+}

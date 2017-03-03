@@ -73,6 +73,7 @@ export class InMemoryFileSystem implements FileSystem {
                     children: []
                 };
                 parent.children.push(result);
+                this.notify(new FileChange(path, FileChangeType.ADDED));
                 return result;
             }
         }
@@ -81,7 +82,6 @@ export class InMemoryFileSystem implements FileSystem {
 
     mkdir(path: Path, mode?: number): Promise<boolean> {
         this.mkdirSync(path);
-        this.notify(new FileChange(path, FileChangeType.ADDED));
         return Promise.resolve(true);
     }
 
@@ -126,13 +126,13 @@ export class InMemoryFileSystem implements FileSystem {
         let existing = parent.children.find(n => n.path.equals(path));
         if (existing) {
             existing.contents = data;
-            this.notify(new FileChange(path, FileChangeType.ADDED));
+            this.notify(new FileChange(path, FileChangeType.UPDATED));
         } else {
             parent.children.push({
                 path,
                 contents: data
             });
-            this.notify(new FileChange(path, FileChangeType.UPDATED));
+            this.notify(new FileChange(path, FileChangeType.ADDED));
         }
         return Promise.resolve(true);
     }

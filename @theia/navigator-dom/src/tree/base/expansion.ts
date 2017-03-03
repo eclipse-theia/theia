@@ -10,8 +10,7 @@ export class BaseTreeExpansionService implements ITreeExpansionService {
 
     constructor(protected readonly model: ITreeModel) {
         model.onNodeRefreshed(node => {
-            const children = !node ? model.roots : node.children;
-            for (const child of children) {
+            for (const child of node.children) {
                 if (IExpandableTreeNode.is(child) && child.expanded) {
                     this.model.refresh(child);
                 }

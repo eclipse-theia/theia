@@ -47,48 +47,14 @@ export class TreeWidget<Model extends ITreeModel> extends Widget {
     }
 
     protected renderTree(model: Model): h.Child {
-        return this.renderChildNodes(model.roots, {
-            level: 0,
-            visible: true
-        });
-    }
-
-    protected renderNode(node: ITreeNode, context: TreeRenderContext): h.Child {
-        return h.div(
-            TreeRenderContext.toAttributes(context),
-            VirtualWidget.merge(node.name, context.children)
-        );
-    }
-
-    protected renderCompositeNode(node: ICompositeTreeNode, context: TreeRenderContext): h.Child {
-        const children = context.children === undefined ? this.renderChildNodes(node.children, context) : context.children;
-        return this.renderNode(node, {
-            ...context, children
-        });
-    }
-
-    protected renderExpandableNode(node: IExpandableTreeNode, context: TreeRenderContext): h.Child {
-        return this.renderCompositeNode(node, {
-            ...context,
-            attributes: {
-                onclick: () => {
-                    if (this.model && this.model.expansion) {
-                        this.model.expansion.toggleNodeExpansion(node);
-                    }
-                }
-            },
-            children: this.renderChildNodes(node.children, {
-                ...context,
-                visible: node.expanded
-            })
-        });
-    }
-
-    protected renderChildNodes(nodes: ReadonlyArray<ITreeNode>, context: TreeRenderContext): h.Child {
-        return VirtualWidget.flatten(nodes.map(node => this.doRenderNode(node, {
-            ...context,
-            level: context.level + 1
-        })));
+        if (model.root) {
+            return this.doRenderNode(model.root, {
+                level: 0,
+                indentSize: 6,
+                visible: true
+            });
+        }
+        return null;
     }
 
     protected doRenderNode(node: ITreeNode | undefined, context: TreeRenderContext): h.Child {
@@ -104,27 +70,71 @@ export class TreeWidget<Model extends ITreeModel> extends Widget {
         return this.renderNode(node, context);
     }
 
+    protected renderNode(node: ITreeNode, context: TreeRenderContext): h.Child {
+        if (node.visible !== undefined && !node.visible) {
+            return context.children || null;
+        }
+        const caption = context.caption || node.name;
+        return h.div(
+            TreeRenderContext.toAttributes(node, context),
+            VirtualWidget.merge(caption, context.children)
+        );
+    }
+
+    protected renderCompositeNode(node: ICompositeTreeNode, context: TreeRenderContext): h.Child {
+        const children = context.children === undefined ? this.renderChildNodes(node.children, context) : context.children;
+        return this.renderNode(node, {
+            ...context, children
+        });
+    }
+
+    protected renderExpandableNode(node: IExpandableTreeNode, context: TreeRenderContext): h.Child {
+        return this.renderCompositeNode(node, {
+            ...context,
+            caption: h.div({
+                onclick: () => {
+                    if (this.model && this.model.expansion) {
+                        this.model.expansion.toggleNodeExpansion(node);
+                    }
+                }
+            }, node.name),
+            children: this.renderChildNodes(node.children, {
+                ...context,
+                visible: node.expanded
+            })
+        });
+    }
+
+    protected renderChildNodes(nodes: ReadonlyArray<ITreeNode>, context: TreeRenderContext): h.Child {
+        return VirtualWidget.flatten(nodes.map(node => this.doRenderNode(node, {
+            ...context,
+            level: context.level + 1
+        })));
+    }
+
 }
 
 export interface TreeRenderContext {
     readonly level: number
+    readonly indentSize: number
     readonly visible: boolean
+    readonly caption?: h.Child
     readonly attributes?: ElementAttrs
     readonly children?: h.Child
 }
 
 export namespace TreeRenderContext {
-    export function toAttributes(context: TreeRenderContext): ElementAttrs {
+    export function toAttributes(node: ITreeNode, context: TreeRenderContext): ElementAttrs {
         return {
             ...context.attributes,
-            style: toStyle(context)
+            style: toStyle(node, context)
         };
     }
 
-    export function toStyle(context: TreeRenderContext): ElementInlineStyle {
+    export function toStyle(node: ITreeNode, context: TreeRenderContext): ElementInlineStyle {
         const style = !!context.attributes ? context.attributes.style : undefined;
         return {
-            paddingLeft: `${12 * context.level}px`,
+            paddingLeft: `${context.indentSize * context.level}px`,
             display: context.visible ? 'block' : 'none',
             ...style
         };

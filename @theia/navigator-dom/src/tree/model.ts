@@ -5,27 +5,35 @@ import {Event, Disposable} from "@theia/platform-common";
  */
 export interface ITreeModel extends Disposable {
     /**
-     * Root nodes.
+     * A root node of this tree.
+     * Undefined if there is no root node.
+     * Setting a root node refreshes the tree.
      */
-    readonly roots: ReadonlyArray<ITreeNode>;
+    root: ITreeNode | undefined;
     /**
      * Emit when the tree is changed.
      */
     readonly onChanged: Event<void>;
     /**
+     * Return a node for the given identifier or undefined if such does not exist.
+     */
+    getNode(id: string | undefined): ITreeNode | undefined;
+    /**
      * Return a valid node in this tree matching to the given; otherwise undefined.
      */
     validateNode(node: ITreeNode | undefined): ITreeNode | undefined;
     /**
-     * Refresh children of the given node.
-     * If the given node is undefined then root nodes are refreshed.
+     * Refresh children of the root node.
      */
-    refresh(parent?: Readonly<ICompositeTreeNode>): void;
+    refresh(): void;
+    /**
+     * Refresh children of the given node if it is valid.
+     */
+    refresh(parent: Readonly<ICompositeTreeNode>): void;
     /**
      * Emit when the children of the give node are refreshed.
-     * If the given node is undefined then root nodes are refreshed.
      */
-    readonly onNodeRefreshed: Event<Readonly<ICompositeTreeNode> | undefined>;
+    readonly onNodeRefreshed: Event<Readonly<ICompositeTreeNode>>;
     /**
      * The tree selection service.
      * Undefined if this tree does not support selection of nodes.
@@ -43,14 +51,18 @@ export interface ITreeModel extends Disposable {
  */
 export interface ITreeNode {
     /**
-     * An id of this node.
-     * If undefined then name should be used as an id.
+     * An unique id of this node.
      */
-    readonly id?: string;
+    readonly id: string;
     /**
      * A human-readable name of this tree node.
      */
     readonly name: string;
+    /**
+     * Test whether this node is visible.
+     * If undefined then visible.
+     */
+    readonly visible?: boolean;
     /**
      * A parent node of this tree node.
      * Undefined if this node is root.
@@ -59,12 +71,8 @@ export interface ITreeNode {
 }
 
 export namespace ITreeNode {
-    export function getId(node: ITreeNode | undefined): string | undefined {
-        return !!node ? node.id || node.name : undefined;
-    }
-
     export function equals(left: ITreeNode | undefined, right: ITreeNode | undefined): boolean {
-        return left === right || getId(left) === getId(right);
+        return left === right || (!!left && !!right && left.id === right.id);
     }
 }
 
@@ -160,15 +168,5 @@ export interface IExpandableTreeNode extends ICompositeTreeNode {
 export namespace IExpandableTreeNode {
     export function is(node: ITreeNode | undefined): node is IExpandableTreeNode {
         return !!node && ICompositeTreeNode.is(node) && 'expanded' in node;
-    }
-
-    export function getChildren(node: ICompositeTreeNode | undefined): ReadonlyArray<ITreeNode> {
-        if (!node) {
-            return [];
-        }
-        if (IExpandableTreeNode.is(node)) {
-            return node.expanded ? node.children : [];
-        }
-        return node.children;
     }
 }

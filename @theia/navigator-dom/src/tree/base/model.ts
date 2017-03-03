@@ -3,25 +3,45 @@ import {Emitter, Event, DisposableCollection} from "@theia/platform-common";
 
 export class BaseTreeModel implements ITreeModel {
 
-    protected _roots: ITreeNode[] = [];
+    protected _root: ITreeNode | undefined;
     protected readonly onChangedEmitter = new Emitter<void>();
-    protected readonly onNodeRefreshedEmitter = new Emitter<ICompositeTreeNode | undefined>();
+    protected readonly onNodeRefreshedEmitter = new Emitter<ICompositeTreeNode>();
 
     protected selectionService: ITreeSelectionService | undefined;
-    protected selectionListeners = new DisposableCollection();
+    protected readonly selectionListeners = new DisposableCollection();
 
     protected expansionService: ITreeExpansionService | undefined;
-    protected expansionListeners = new DisposableCollection();
+    protected readonly expansionListeners = new DisposableCollection();
+
+    protected readonly toDispose = new DisposableCollection();
+
+    protected nodes: {
+        [id: string]: ITreeNode | undefined
+    } = {};
+
+    constructor() {
+        this.toDispose.push(this.onChangedEmitter);
+        this.toDispose.push(this.onNodeRefreshedEmitter);
+    }
 
     dispose(): void {
-        this.onChangedEmitter.dispose();
-        this.onNodeRefreshedEmitter.dispose();
+        this.nodes = {};
+        this.toDispose.dispose();
         this.selection = undefined;
         this.expansion = undefined;
     }
 
-    get roots(): ReadonlyArray<ITreeNode> {
-        return this._roots;
+    get root(): ITreeNode | undefined {
+        return this._root;
+    }
+
+    set root(root: ITreeNode | undefined) {
+        if (!ITreeNode.equals(this._root, root)) {
+            this.nodes = {};
+            this._root = root;
+            this.addNode(root);
+            this.refresh();
+        }
     }
 
     get onChanged(): Event<void> {
@@ -32,42 +52,52 @@ export class BaseTreeModel implements ITreeModel {
         this.onChangedEmitter.fire(undefined);
     }
 
-    get onNodeRefreshed(): Event<ICompositeTreeNode | undefined> {
+    get onNodeRefreshed(): Event<ICompositeTreeNode> {
         return this.onNodeRefreshedEmitter.event;
     }
 
-    protected fireNodeRefreshed(parent?: ICompositeTreeNode): void {
+    protected fireNodeRefreshed(parent: ICompositeTreeNode): void {
         this.onNodeRefreshedEmitter.fire(parent);
         this.fireChanged();
     }
 
+    getNode(id: string|undefined): ITreeNode|undefined {
+        return !!id ? this.nodes[id] : undefined;
+    }
+
     validateNode(node: ITreeNode | undefined): ITreeNode | undefined {
-        if (!node) {
-            return undefined;
-        }
-        if (node.parent) {
-            const parent = this.validateNode(node.parent);
-            if (ICompositeTreeNode.is(parent)) {
-                return parent.children.filter(child => ITreeNode.equals(node, child))[0];
-            }
-            return undefined;
-        }
-        return this._roots.filter(child => ITreeNode.equals(node, child))[0];
+        const id = !!node ? node.id : undefined;
+        return this.getNode(id);
     }
 
-    refresh(parent?: ICompositeTreeNode): void {
-        this.resolveChildren(parent).then(children => {
-            if (parent) {
-                parent.children = children;
-            } else {
-                this._roots = children;
-            }
-            this.fireNodeRefreshed(parent);
-        });
+    refresh(raw?: ICompositeTreeNode): void {
+        const parent = !raw ? this._root : this.validateNode(raw);
+        if (ICompositeTreeNode.is(parent)) {
+            this.resolveChildren(parent).then(children => this.setChildren(parent, children));
+        }
     }
 
-    protected resolveChildren(parent?: ICompositeTreeNode): Promise<ITreeNode[]> {
+    protected resolveChildren(parent: ICompositeTreeNode): Promise<ITreeNode[]> {
         return Promise.resolve([]);
+    }
+
+    protected setChildren(parent: ICompositeTreeNode, children: ITreeNode[]): void {
+        parent.children.forEach(child => this.removeNode(child));
+        parent.children = children;
+        parent.children.forEach(child => this.addNode(child));
+        this.fireNodeRefreshed(parent);
+    }
+
+    protected removeNode(node: ITreeNode | undefined): void {
+        if (node) {
+            delete this.nodes[node.id];
+        }
+    }
+
+    protected addNode(node: ITreeNode | undefined): void {
+        if (node) {
+            this.nodes[node.id] = node;
+        }
     }
 
     get selection() {
