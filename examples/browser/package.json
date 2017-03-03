@@ -9,12 +9,13 @@
   },
   "scripts": {
     "build": "webpack",
-    "clean": "rimraf build",
-    "watch:build": "webpack --watch"
+    "clean": "rimraf lib",
+    "start:example": "webpack-dev-server --open"
   },
   "bin": {
     "tsc": "../../node_modules/.bin/tsc",
     "rimraf": "../../node_modules/.bin/rimraf",
-    "webpack": "../../node_modules/.bin/webpack"
+    "webpack": "../../node_modules/.bin/webpack",
+    "webpack-dev-server": "../../node_modules/.bin/webpack-dev-server"
   }
 }
