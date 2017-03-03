@@ -11,7 +11,8 @@
   "files": [
     "lib/*.d.ts",
     "lib/*.js",
-    "style/*.css"
+    "style/*.css",
+    "icons/*.svg"
   ],
   "directories": {
     "lib": "lib/"

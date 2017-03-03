@@ -1,0 +1,13 @@
+.theia-ExpandableTreeNode-caption {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.theia-ExpandableTreeNode-caption > .theia-expansionToggle.theia-mod-collapsed {
+    background: url('../icons/collapse.svg') center center no-repeat;
+}
+
+.theia-ExpandableTreeNode-caption > .theia-expansionToggle:not(.theia-mod-collapsed) {
+    background: url('../icons/expand.svg') center center no-repeat;
+}

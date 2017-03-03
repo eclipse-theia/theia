@@ -74,6 +74,10 @@ export namespace ITreeNode {
     export function equals(left: ITreeNode | undefined, right: ITreeNode | undefined): boolean {
         return left === right || (!!left && !!right && left.id === right.id);
     }
+
+    export function isVisible(node: ITreeNode | undefined): boolean {
+        return !!node && (node.visible === undefined || node.visible);
+    }
 }
 
 /**

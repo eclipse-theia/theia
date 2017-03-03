@@ -4,6 +4,10 @@ import {DisposableCollection} from "@theia/platform-common";
 import {h, VirtualNode, VirtualText, VirtualDOM, ElementAttrs, ElementInlineStyle} from "@phosphor/virtualdom";
 import {ITreeModel, ITreeNode, ICompositeTreeNode, IExpandableTreeNode} from "./model";
 
+export const EXPANDABLE_NODE_CAPTION_CLASS = 'theia-ExpandableTreeNode-caption';
+export const EXPANSION_TOGGLE_CLASS = 'theia-expansionToggle';
+export const COLLAPSED_CLASS = 'theia-mod-collapsed';
+
 export class TreeWidget<Model extends ITreeModel> extends Widget {
 
     /**
@@ -48,13 +52,18 @@ export class TreeWidget<Model extends ITreeModel> extends Widget {
 
     protected renderTree(model: Model): h.Child {
         if (model.root) {
-            return this.doRenderNode(model.root, {
-                level: 0,
-                indentSize: 6,
-                visible: true
-            });
+            const context = this.createRootContext();
+            return this.doRenderNode(model.root, context);
         }
         return null;
+    }
+
+    protected createRootContext(): TreeRenderContext {
+        return {
+            level: 0,
+            indentSize: 0,
+            visible: true
+        };
     }
 
     protected doRenderNode(node: ITreeNode | undefined, context: TreeRenderContext): h.Child {
@@ -71,37 +80,57 @@ export class TreeWidget<Model extends ITreeModel> extends Widget {
     }
 
     protected renderNode(node: ITreeNode, context: TreeRenderContext): h.Child {
-        if (node.visible !== undefined && !node.visible) {
-            return context.children || null;
+        const children = context.children && context.children();
+        if (!ITreeNode.isVisible(node)) {
+            return children || null;
         }
-        const caption = context.caption || node.name;
+        const caption = context.caption && context.caption() || node.name;
         return h.div(
             TreeRenderContext.toAttributes(node, context),
-            VirtualWidget.merge(caption, context.children)
+            VirtualWidget.merge(caption, children)
         );
     }
 
     protected renderCompositeNode(node: ICompositeTreeNode, context: TreeRenderContext): h.Child {
-        const children = context.children === undefined ? this.renderChildNodes(node.children, context) : context.children;
+        const children = context.children || (() => this.renderChildNodes(node.children, context));
         return this.renderNode(node, {
             ...context, children
         });
     }
 
     protected renderExpandableNode(node: IExpandableTreeNode, context: TreeRenderContext): h.Child {
+        const expansionToggleSize: Size = {
+            width: 16,
+            height: 16,
+            ...context.expansionToggleSize
+        };
         return this.renderCompositeNode(node, {
             ...context,
-            caption: h.div({
-                onclick: () => {
-                    if (this.model && this.model.expansion) {
-                        this.model.expansion.toggleNodeExpansion(node);
+            caption: () => {
+                const expansionToggle = h.span({
+                    className: `${EXPANSION_TOGGLE_CLASS}${node.expanded ? '' : ' ' + COLLAPSED_CLASS}`,
+                    style: {
+                        width: `${expansionToggleSize.width}px`,
+                        height: `${expansionToggleSize.height}px`
+                    },
+                    onclick: () => {
+                        if (this.model && this.model.expansion) {
+                            this.model.expansion.toggleNodeExpansion(node);
+                        }
                     }
-                }
-            }, node.name),
-            children: this.renderChildNodes(node.children, {
-                ...context,
-                visible: node.expanded
-            })
+                });
+                return h.div({
+                    className: EXPANDABLE_NODE_CAPTION_CLASS
+                }, expansionToggle, node.name)
+            },
+            children: () => {
+                const indentSize = ITreeNode.isVisible(node) ? expansionToggleSize.width : context.indentSize;
+                return this.renderChildNodes(node.children, {
+                    ...context,
+                    indentSize,
+                    visible: node.expanded
+                })
+            }
         });
     }
 
@@ -114,13 +143,20 @@ export class TreeWidget<Model extends ITreeModel> extends Widget {
 
 }
 
+export interface Size {
+    width: number
+    height: number
+}
+
 export interface TreeRenderContext {
     readonly level: number
     readonly indentSize: number
     readonly visible: boolean
-    readonly caption?: h.Child
+    readonly caption?: () => h.Child
     readonly attributes?: ElementAttrs
-    readonly children?: h.Child
+    readonly children?: () => h.Child
+    readonly [key: string]: any;
+    readonly expansionToggleSize?: Readonly<Partial<Size>>
 }
 
 export namespace TreeRenderContext {
@@ -134,7 +170,7 @@ export namespace TreeRenderContext {
     export function toStyle(node: ITreeNode, context: TreeRenderContext): ElementInlineStyle {
         const style = !!context.attributes ? context.attributes.style : undefined;
         return {
-            paddingLeft: `${context.indentSize * context.level}px`,
+            paddingLeft: `${context.indentSize}px`,
             display: context.visible ? 'block' : 'none',
             ...style
         };
