@@ -4,3 +4,5 @@
     background:var(--theia-layout-color1);
     font-size: var(--theia-ui-font-size1);
 }
+
+@import './tree.css';
