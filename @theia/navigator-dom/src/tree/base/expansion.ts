@@ -36,8 +36,8 @@ export class BaseTreeExpansionService implements ITreeExpansionService {
 
     protected doExpandNode(node: IExpandableTreeNode): void {
         node.expanded = true;
-        this.model.refresh(node);
         this.fireExpansionChanged(node);
+        this.model.refresh(node);
     }
 
     collapseNode(raw: IExpandableTreeNode): void {
