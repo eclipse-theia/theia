@@ -5,12 +5,16 @@
     "css-loader": "^0.26.2",
     "file-loader": "^0.10.1",
     "lerna": "2.0.0-beta.38",
+    "minimist": "^1.2.0",
     "rimraf": "^2.6.1",
     "source-map-loader": "^0.1.6",
     "style-loader": "^0.13.2",
+    "ts-loader": "^2.0.1",
     "typescript": "^2.2.1",
     "url-loader": "^0.5.8",
-    "webpack": "^2.2.1"
+    "webpack": "^2.2.1",
+    "webpack-dev-server": "^2.4.1",
+    "webpack-merge": "^3.0.0"
   },
   "scripts": {
     "refresh": "lerna clean && npm run install",
