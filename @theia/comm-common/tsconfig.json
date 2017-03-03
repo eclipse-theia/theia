@@ -12,7 +12,7 @@
     "target": "es5",
     "lib": ["es6"],
     "types": ["reflect-metadata"],
-    "outDir": "./lib",
+    "outDir": "lib",
     "sourceMap": true
   }
 }

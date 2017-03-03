@@ -1,10 +1,12 @@
 
 
 export class Path {
+
     static fromString(path:string) : Path {
         let segments = path.split("/");
         return new Path(segments);
     }
+
     constructor(public readonly segments: string[]) {
     }
 

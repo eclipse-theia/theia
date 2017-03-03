@@ -2,19 +2,17 @@
   "name": "@theia/platform-common",
   "version": "0.0.1",
   "description": "Theia - Platform Common",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/TypeFox/Theia.git"
   },
+  "main": "./lib/index.js",
+  "types": "./src/index.ts",
   "files": [
     "lib/*.d.ts",
-    "lib/*.js"
+    "lib/*.js",
+    "src/*.ts"
   ],
-  "directories": {
-    "lib": "lib/"
-  },
   "dependencies": {
     "inversify": "^3.1.0",
     "reflect-metadata": "^0.1.10"

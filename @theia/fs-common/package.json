@@ -2,15 +2,16 @@
   "name": "@theia/fs-common",
   "version": "0.0.1",
   "description": "Theia - File System Common",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/TypeFox/Theia.git"
   },
+  "main": "./lib/index.js",
+  "types": "./src/index.ts",
   "files": [
-    "lib/*.d.ts",
-    "lib/*.js"
+    "./lib/*.d.ts",
+    "./lib/*.js",
+    "./src/*.ts"
   ],
   "directories": {
     "lib": "lib/"

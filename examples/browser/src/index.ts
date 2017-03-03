@@ -1,3 +1,4 @@
+/*<<<<<<< HEAD
 import {ApplicationShell} from "@theia/shell-dom";
 import {Application} from "@phosphor/application";
 import {FileNavigator, FileNavigatorModel} from "@theia/navigator-dom";
@@ -38,5 +39,22 @@ window.setInterval(() => {
         fileSystem.rmdir(Path.fromString(dirPath));
     }
 }, 500);
+
+=======*/
+
+import {TheiaApplication, shellModule} from "@theia/shell-dom";
+import {navigatorModule} from "@theia/navigator-dom";
+import {inmemoryModule} from "@theia/fs-common";
+import {Container} from "inversify";
+import "@theia/shell-dom/style/index.css";
+
+// create container
+let container = new Container();
+container.load(shellModule);
+container.load(navigatorModule);
+container.load(inmemoryModule);
+
+// obtain application and start
+const application = container.get(TheiaApplication);
 
 window.onload = () => application.start();

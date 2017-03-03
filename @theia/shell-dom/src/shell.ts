@@ -1,5 +1,6 @@
 import {ArrayExt, each, find, toArray} from "@phosphor/algorithm";
 import {ISignal, Signal} from "@phosphor/signaling";
+
 import {
     BoxLayout,
     BoxPanel,
@@ -34,7 +35,6 @@ const CURRENT_CLASS = 'theia-mod-current';
  */
 const ACTIVE_CLASS = 'theia-mod-active';
 
-
 /**
  * The application shell.
  */
@@ -42,8 +42,8 @@ export class ApplicationShell extends Widget {
     /**
      * Construct a new application shell.
      */
-    constructor() {
-        super();
+    constructor(options?: Widget.IOptions) {
+        super(options);
         this.addClass(APPLICATION_SHELL_CLASS);
         this.id = 'main';
 

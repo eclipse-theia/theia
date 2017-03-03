@@ -5,10 +5,12 @@
     "noEmitOnError": true,
     "noUnusedLocals": true,
     "strictNullChecks": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "es5",
-    "outDir": "./lib",
+    "outDir": "lib",
     "lib": ["es6", "dom"],
     "sourceMap": true
   }

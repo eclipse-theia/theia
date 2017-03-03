@@ -11,7 +11,7 @@ class InMemoryFileNode {
 export class InMemoryFileSystem implements FileSystem {
 
     private root: InMemoryFileNode;
-
+    
     constructor() {
         this.root = {
             path: Path.fromString(""),

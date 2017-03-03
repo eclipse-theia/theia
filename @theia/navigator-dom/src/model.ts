@@ -1,12 +1,16 @@
+
 import {FileSystem, Path, FileChangeEvent, FileChangeType} from "@theia/fs-common";
 import {ITreeNode, ICompositeTreeNode, IExpandableTreeNode} from "./tree";
 import {BaseTreeModel, BaseTreeExpansionService} from "./tree/base";
+import { injectable, inject , decorate} from "inversify";
 
+decorate(injectable(), BaseTreeModel);
+@injectable()
 export class FileNavigatorModel extends BaseTreeModel {
 
     static ROOT = Path.fromString("");
 
-    constructor(protected readonly fileSystem: FileSystem) {
+    constructor( @inject(FileSystem) protected readonly fileSystem: FileSystem) {
         super();
         this.expansion = new BaseTreeExpansionService(this);
         this.toDispose.push(fileSystem.watch(event => this.onFileChanged(event)));

@@ -2,20 +2,21 @@
   "name": "@theia/shell-dom",
   "version": "0.0.1",
   "description": "Theia - Shell DOM",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/TypeFox/Theia.git"
   },
+  "main": "lib/index.js",
+  "types": "src/index.ts",
   "files": [
-    "lib/*.d.ts",
+    "src/*.ts",
     "lib/*.js",
+    "lib/*.d.ts",
     "style/*.css",
     "icons/*.svg"
   ],
   "directories": {
-    "lib": "lib/"
+    "lib": "lib"
   },
   "dependencies": {
     "@phosphor/widgets": "^0.1.4"

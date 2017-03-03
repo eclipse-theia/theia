@@ -5,8 +5,16 @@
     "@theia/fs-common": "^0.0.1",
     "@theia/shell-dom": "^0.0.1",
     "@theia/navigator-dom": "^0.0.1",
-    "@phosphor/application": "^0.1.3"
+    "@theia/platform-common": "^0.0.1",
+    "reflect-metadata": "^0.1.10"
   },
+  "main": "lib/index.js",
+  "types": "src/index.ts",
+  "files": [
+    "lib/*.d.ts",
+    "lib/*.js",
+    "src/*.ts"
+  ],
   "scripts": {
     "build": "webpack",
     "clean": "rimraf lib",
