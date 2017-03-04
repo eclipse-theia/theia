@@ -1,8 +1,8 @@
 /*
-The following CSS variables define the main, public API for styling JupyterLab.
+The following CSS variables define the main, public API for styling Theia.
 These variables should be used by all plugins wherever possible. In other
 words, plugins should not define custom colors, sizes, etc unless absolutely
-necessary. This enables users to change the visual theme of JupyterLab
+necessary. This enables users to change the visual theme of Theia
 by changing these variables.
 
 Many variables appear in an ordered sequence (0,1,2,3). These sequences
@@ -14,7 +14,7 @@ be used with `--theia-layout-color1`. The numbers have the following meanings:
 * 2: secondary, next most important under normal situations
 * 3: tertiary, next most important under normal situations
 
-Throughout JupyterLab, we are mostly following principles from Google's
+Throughout Theia, we are mostly following principles from Google's
 Material Design when selecting colors. We are not, however, following
 all of MD as it is not optimized for dense, information rich UIs.
 */
@@ -24,7 +24,7 @@ all of MD as it is not optimized for dense, information rich UIs.
 
   /* Borders
 
-  The following variables, specify the visual styling of borders in JupyterLab.
+  The following variables, specify the visual styling of borders in Theia.
    */
 
   --theia-border-width: 1px;
@@ -35,7 +35,7 @@ all of MD as it is not optimized for dense, information rich UIs.
 
   /* UI Fonts
 
-  The UI font CSS variables are used for the typography all of the JupyterLab
+  The UI font CSS variables are used for the typography all of the Theia
   user interface elements that are not directly user generated content.
   */
 
@@ -91,7 +91,7 @@ all of MD as it is not optimized for dense, information rich UIs.
 
   /* Layout
 
-  The following are the main layout colors use in JupyterLab. In a light
+  The following are the main layout colors use in Theia. In a light
   theme these would go from light to dark.
   */
 
@@ -133,9 +133,5 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-info-color1: var(--md-cyan-500);
   --theia-info-color2: var(--md-cyan-300);
   --theia-info-color3: var(--md-cyan-100);
-
-  /* Notebook specific styles */
-
-  --theia-notebook-scroll-padding: 100px;
 
 }

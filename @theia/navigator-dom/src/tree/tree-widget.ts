@@ -1,20 +1,26 @@
 import {Widget} from "@phosphor/widgets";
 import {Message} from "@phosphor/messaging";
+import {ElementExt} from "@phosphor/domutils";
 import {h, VirtualNode, VirtualText, VirtualDOM, ElementAttrs, ElementInlineStyle} from "@phosphor/virtualdom";
 import {DisposableCollection} from "@theia/platform-common";
-import {ITreeModel, ITreeNode, ICompositeTreeNode, IExpandableTreeNode} from "./tree-model";
+import {ITreeNode, ICompositeTreeNode} from "./tree";
+import {ITreeModel} from "./tree-model";
+import {IExpandableTreeNode} from "./tree-expansion";
+import {ISelectableTreeNode} from "./tree-selection";
 
+export const TREE_CLASS = 'theia-Tree';
 export const TREE_NODE_CLASS = 'theia-TreeNode';
 export const EXPANDABLE_TREE_NODE_CLASS = 'theia-ExpandableTreeNode';
 export const COMPOSITE_TREE_NODE_CLASS = 'theia-CompositeTreeNode';
 export const TREE_NODE_CAPTION_CLASS = 'theia-TreeNodeCaption';
 export const EXPANSION_TOGGLE_CLASS = 'theia-ExpansionToggle';
 export const COLLAPSED_CLASS = 'theia-mod-collapsed';
+export const SELECTED_CLASS = 'theia-mod-selected';
 
 export abstract class AbstractTreeWidget<
     Model extends ITreeModel,
     TreeProps extends TreeWidget.TreeProps,
-    NodeProps extends TreeWidget.NodeProps> extends Widget {
+    NodeProps extends TreeWidget.NodeProps> extends Widget implements EventListenerObject {
 
     /**
      * FIXME extract to VirtualWidget
@@ -24,6 +30,8 @@ export abstract class AbstractTreeWidget<
 
     constructor(protected readonly props: TreeProps) {
         super();
+        this.addClass(TREE_CLASS);
+        this.node.tabIndex = 0;
     }
 
     getModel() {
@@ -46,6 +54,11 @@ export abstract class AbstractTreeWidget<
         const children = this.render();
         const content = VirtualWidget.toContent(children);
         VirtualDOM.render(content, this.node);
+
+        const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
+        if (selected) {
+            ElementExt.scrollIntoViewIfNeeded(this.node, selected)
+        }
     }
 
     protected render(): h.Child {
@@ -58,30 +71,40 @@ export abstract class AbstractTreeWidget<
     protected renderTree(model: Model): h.Child {
         if (model.root) {
             const props = this.createRootProps(model.root);
-            return this.renderNode(model.root, props);
+            return this.renderNodes(model.root, props);
         }
         return null;
     }
 
     protected abstract createRootProps(node: ITreeNode): NodeProps;
 
-    protected renderNode(node: ITreeNode, props: NodeProps): h.Child {
+    protected renderNodes(node: ITreeNode, props: NodeProps): h.Child {
         const children = this.renderNodeChildren(node, props);
         if (!ITreeNode.isVisible(node)) {
             return children;
         }
+        const parent = this.renderNode(node, props);
+        return VirtualWidget.merge(parent, children);
+    }
+
+    protected renderNode(node: ITreeNode, props: NodeProps): h.Child {
         const attributes = this.createNodeAttributes(node, props);
         const caption = this.renderNodeCaption(node, props);
-        return h.div(
-            attributes,
-            VirtualWidget.merge(caption, children)
-        );
+        return h.div(attributes, caption);
     }
 
     protected createNodeAttributes(node: ITreeNode, props: NodeProps): ElementAttrs {
         const className = this.createNodeClassNames(node, props).join(' ');
         const style = this.createNodeStyle(node, props);
-        return {className, style};
+        return {
+            className, style,
+            onclick: (event) => {
+                if (this.model && ISelectableTreeNode.is(node)) {
+                    this.model.selectNode(node);
+                    event.stopPropagation();
+                }
+            }
+        };
     }
 
     protected createNodeClassNames(node: ITreeNode, props: NodeProps): string[] {
@@ -92,13 +115,16 @@ export abstract class AbstractTreeWidget<
         if (IExpandableTreeNode.is(node)) {
             classNames.push(EXPANDABLE_TREE_NODE_CLASS);
         }
+        if (ISelectableTreeNode.isSelected(node)) {
+            classNames.push(SELECTED_CLASS);
+        }
         return classNames;
     }
 
     protected createNodeStyle(node: ITreeNode, props: NodeProps): ElementInlineStyle | undefined {
         return {
             paddingLeft: `${props.indentSize}px`,
-            display: props.visible ? 'block' : 'none'
+            display: props.visible ? 'block' : 'none',
         }
     }
 
@@ -128,9 +154,10 @@ export abstract class AbstractTreeWidget<
                 width: `${width}px`,
                 height: `${height}px`
             },
-            onclick: () => {
-                if (this.model && this.model.expansion) {
-                    this.model.expansion.toggleNodeExpansion(node);
+            onclick: (event) => {
+                if (this.model) {
+                    this.model.toggleNodeExpansion(node);
+                    event.stopPropagation();
                 }
             }
         });
@@ -150,7 +177,7 @@ export abstract class AbstractTreeWidget<
 
     protected renderChild(child: ITreeNode, parent: ICompositeTreeNode, props: NodeProps): h.Child {
         const childProps = this.createChildProps(child, parent, props);
-        return this.renderNode(child, childProps)
+        return this.renderNodes(child, childProps)
     }
 
     protected createChildProps(child: ITreeNode, parent: ICompositeTreeNode, props: NodeProps): NodeProps {
@@ -161,13 +188,56 @@ export abstract class AbstractTreeWidget<
     }
 
     protected createExpandableChildProps(child: ITreeNode, parent: IExpandableTreeNode, props: NodeProps): NodeProps {
+        if (!props.visible) {
+            return props;
+        }
         const visible = parent.expanded;
         if (!ITreeNode.isVisible(parent)) {
-            return Object.assign({}, props, {visible})
+            return Object.assign({}, props, {visible});
         }
         const {width} = this.props.expansionToggleSize;
-        const indentSize = IExpandableTreeNode.is(child) ? width : width * 2;
+        const relativeIndentSize = IExpandableTreeNode.is(child) ? width : width * 2;
+        const indentSize = props.indentSize + relativeIndentSize;
         return Object.assign({}, props, {visible, indentSize});
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        this.node.addEventListener('keydown', this);
+    }
+
+    protected onBeforeDetach(msg: Message): void {
+        this.node.removeEventListener('keydown', this);
+        super.onBeforeDetach(msg);
+    }
+
+    handleEvent(event: Event): void {
+        if (event.type === 'keydown' && this.handleKeyDown(event as KeyboardEvent)) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }
+
+    protected handleKeyDown(event: KeyboardEvent): boolean {
+        if (this.model) {
+            if (event.keyCode === 37) { // Left Arrow
+                this.model.collapseNode();
+                return true;
+            }
+            if (event.keyCode === 38) { // Up Arrow
+                this.model.selectPrevNode();
+                return true;
+            }
+            if (event.keyCode === 39) { // Right Arrow
+                this.model.expandNode();
+                return true;
+            }
+            if (event.keyCode === 40) { // Down Arrow
+                this.model.selectNextNode();
+                return true;
+            }
+        }
+        return false;
     }
 
 }
@@ -197,7 +267,7 @@ export namespace TreeWidget {
     }
     export interface NodeProps {
         /**
-         * An indentation size relatively to the parent.
+         * An indentation size relatively to the root node.
          */
         readonly indentSize: number;
         /**

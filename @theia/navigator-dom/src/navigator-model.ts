@@ -1,32 +1,26 @@
+import {injectable, inject} from "inversify";
 import {FileSystem, Path, FileChangeEvent, FileChangeType} from "@theia/fs-common";
-import {ITreeNode, ICompositeTreeNode, IExpandableTreeNode} from "./tree";
-import {BaseTreeModel, BaseTreeExpansionService} from "./tree/base";
-import {injectable, inject, decorate} from "inversify";
+import {
+    ITree,
+    ITreeSelectionService,
+    ITreeExpansionService,
+    ITreeNode,
+    ICompositeTreeNode,
+    IExpandableTreeNode,
+    TreeModel,
+    Tree
+} from "./tree";
+import {ISelectableTreeNode} from "./tree/tree-selection";
 
-decorate(injectable(), BaseTreeModel);
 @injectable()
-export class FileNavigatorModel extends BaseTreeModel {
+export class FileNavigatorModel extends TreeModel {
 
-    static ROOT = Path.fromString("");
-
-    constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem) {
-        super();
-        this.expansion = new BaseTreeExpansionService(this);
+    constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem,
+                @inject(ITree) tree: ITree,
+                @inject(ITreeSelectionService) selection: ITreeSelectionService,
+                @inject(ITreeExpansionService) expansion: ITreeExpansionService) {
+        super(tree, selection, expansion);
         this.toDispose.push(fileSystem.watch(event => this.onFileChanged(event)));
-        this.root = this.createRootNode();
-    }
-
-    protected createRootNode(): IDirNode {
-        const path = FileNavigatorModel.ROOT;
-        const id = path.toString();
-        return {
-            id, path,
-            name: '/',
-            visible: false,
-            parent: undefined,
-            children: [],
-            expanded: true
-        }
     }
 
     protected onFileChanged(event: FileChangeEvent): void {
@@ -48,6 +42,32 @@ export class FileNavigatorModel extends BaseTreeModel {
             }
         }
         return nodes;
+    }
+
+}
+
+@injectable()
+export class FileNavigatorTree extends Tree {
+
+    static ROOT = Path.fromString("");
+
+    constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem) {
+        super();
+        this.root = this.createRootNode();
+    }
+
+    protected createRootNode(): IDirNode {
+        const path = FileNavigatorTree.ROOT;
+        const id = path.toString();
+        return {
+            id, path,
+            name: '/',
+            visible: false,
+            parent: undefined,
+            children: [],
+            expanded: true,
+            selected: false
+        }
     }
 
     resolveChildren(parent: ICompositeTreeNode): Promise<ITreeNode[]> {
@@ -79,6 +99,7 @@ export class FileNavigatorModel extends BaseTreeModel {
                 return <IDirNode>{
                     id, path, name, parent,
                     expanded: false,
+                    selected: false,
                     children: []
                 }
             }
@@ -86,14 +107,15 @@ export class FileNavigatorModel extends BaseTreeModel {
                 return node;
             }
             return <IFileNode>{
-                id, path, name, parent
+                id, path, name, parent,
+                selected: false
             }
         });
     }
 
 }
 
-export interface IPathNode extends ITreeNode {
+export interface IPathNode extends ISelectableTreeNode {
     readonly path: Path;
 }
 

@@ -1,10 +1,14 @@
-import {TheiaPlugin} from '@theia/shell-dom';
-import {FileNavigatorContribution, FileNavigator} from './navigator-widget';
-import {FileNavigatorModel} from './navigator-model';
-import {ContainerModule} from "inversify"
+import {TheiaPlugin} from "@theia/shell-dom";
+import {FileNavigatorContribution, FileNavigator} from "./navigator-widget";
+import {FileNavigatorModel, FileNavigatorTree} from "./navigator-model";
+import {ContainerModule} from "inversify";
+import {ITree, ITreeSelectionService, TreeSelectionService, ITreeExpansionService, TreeExpansionService} from "./tree";
 
 export const navigatorModule = new ContainerModule(bind => {
     bind(TheiaPlugin).to(FileNavigatorContribution);
     bind(FileNavigator).toSelf().inSingletonScope();
     bind(FileNavigatorModel).toSelf().inSingletonScope();
+    bind(ITree).to(FileNavigatorTree).inSingletonScope();
+    bind(ITreeSelectionService).to(TreeSelectionService).inSingletonScope();
+    bind(ITreeExpansionService).to(TreeExpansionService).inSingletonScope();
 });

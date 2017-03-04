@@ -1,176 +1,172 @@
-import {Event, Disposable} from "@theia/platform-common";
+import {inject, injectable} from "inversify";
+import {DisposableCollection, Event, Emitter} from "@theia/platform-common";
+import {ITree, ITreeNode, ICompositeTreeNode} from "./tree";
+import {ITreeSelectionService, ISelectableTreeNode} from "./tree-selection";
+import {ITreeExpansionService, IExpandableTreeNode} from "./tree-expansion";
+import {ITreeNodeIterator, TreeNodeIterator, BackwardTreeNodeIterator} from "./tree-iterator";
 
 /**
  * The tree model.
  */
-export interface ITreeModel extends Disposable {
+export interface ITreeModel extends ITree, ITreeSelectionService, ITreeExpansionService {
     /**
-     * A root node of this tree.
-     * Undefined if there is no root node.
-     * Setting a root node refreshes the tree.
+     * Expand a node taking into the account node selection if a given node is undefined.
      */
-    root: ITreeNode | undefined;
+    expandNode(node?: Readonly<IExpandableTreeNode>): void;
     /**
-     * Emit when the tree is changed.
+     * Collapse a node taking into the account node selection if a given node is undefined.
      */
-    readonly onChanged: Event<void>;
+    collapseNode(node?: Readonly<IExpandableTreeNode>): void;
     /**
-     * Return a node for the given identifier or undefined if such does not exist.
+     * Toggle node expansion taking into the account node selection if a given node is undefined.
      */
-    getNode(id: string | undefined): ITreeNode | undefined;
+    toggleNodeExpansion(node?: Readonly<IExpandableTreeNode>): void;
     /**
-     * Return a valid node in this tree matching to the given; otherwise undefined.
+     * Select prev node relatively to the selected taking into account node expansion.
      */
-    validateNode(node: ITreeNode | undefined): ITreeNode | undefined;
+    selectPrevNode(): void;
     /**
-     * Refresh children of the root node.
+     * Select next node relatively to the selected taking into account node expansion.
      */
-    refresh(): void;
-    /**
-     * Refresh children of the given node if it is valid.
-     */
-    refresh(parent: Readonly<ICompositeTreeNode>): void;
-    /**
-     * Emit when the children of the give node are refreshed.
-     */
-    readonly onNodeRefreshed: Event<Readonly<ICompositeTreeNode>>;
-    /**
-     * The tree selection service.
-     * Undefined if this tree does not support selection of nodes.
-     */
-    readonly selection?: ITreeSelectionService;
-    /**
-     * The tree expansion service.
-     * Undefined if this tree does not support expansion of nodes.
-     */
-    readonly expansion?: ITreeExpansionService;
+    selectNextNode(): void;
 }
 
-/**
- * The tree node.
- */
-export interface ITreeNode {
-    /**
-     * An unique id of this node.
-     */
-    readonly id: string;
-    /**
-     * A human-readable name of this tree node.
-     */
-    readonly name: string;
-    /**
-     * Test whether this node is visible.
-     * If undefined then visible.
-     */
-    readonly visible?: boolean;
-    /**
-     * A parent node of this tree node.
-     * Undefined if this node is root.
-     */
-    readonly parent: Readonly<ICompositeTreeNode> | undefined;
-}
+@injectable()
+export class TreeModel implements ITreeModel {
 
-export namespace ITreeNode {
-    export function equals(left: ITreeNode | undefined, right: ITreeNode | undefined): boolean {
-        return left === right || (!!left && !!right && left.id === right.id);
+    protected readonly onChangedEmitter = new Emitter<void>();
+    protected readonly toDispose = new DisposableCollection();
+
+    constructor(@inject(ITree) protected readonly tree: ITree,
+                @inject(ITreeSelectionService) protected readonly selection: ITreeSelectionService,
+                @inject(ITreeExpansionService) protected readonly expansion: ITreeExpansionService) {
+        this.toDispose.push(tree);
+        this.toDispose.push(tree.onChanged(() => this.fireChanged()));
+
+        this.toDispose.push(selection);
+        this.toDispose.push(selection.onSelectionChanged(() => this.fireChanged()));
+
+        this.toDispose.push(expansion);
+        this.toDispose.push(expansion.onExpansionChanged((node) => {
+            this.fireChanged();
+            if (!node.expanded && ICompositeTreeNode.isAncestor(node, this.selectedNode)) {
+                this.selectNode(ISelectableTreeNode.isVisible(node) ? node : undefined);
+            }
+        }));
+
+        this.toDispose.push(this.onChangedEmitter);
     }
 
-    export function isVisible(node: ITreeNode | undefined): boolean {
-        return !!node && (node.visible === undefined || node.visible);
+    dispose() {
+        this.toDispose.dispose();
     }
-}
 
-/**
- * The composite tree node.
- */
-export interface ICompositeTreeNode extends ITreeNode {
-    /**
-     * Child nodes of this tree node.
-     */
-    children: ReadonlyArray<ITreeNode>;
-}
-
-export namespace ICompositeTreeNode {
-    export function is(node: ITreeNode | undefined): node is ICompositeTreeNode {
-        return !!node && 'children' in node;
+    get root() {
+        return this.tree.root;
     }
-}
 
-/**
- * Selection API for the tree model.
- */
-export interface ITreeSelectionService {
-    /**
-     * The node selected in the tree. If defined then valid.
-     * Undefined if there is no node selection.
-     */
-    readonly selectedNode: Readonly<ISelectableTreeNode> | undefined;
-    /**
-     * Emit when the node selection is changed.
-     */
-    readonly onSelectionChanged: Event<Readonly<ISelectableTreeNode> | undefined>;
-    /**
-     * Select a given node.
-     * If a given node is undefined or invalid then remove the node selection.
-     */
-    selectNode(node: Readonly<ISelectableTreeNode> | undefined): void;
-}
-
-/**
- * The selectable tree node.
- */
-export interface ISelectableTreeNode extends ITreeNode {
-    /**
-     * Test whether this node is selected.
-     */
-    selected: boolean;
-}
-
-export namespace ISelectableTreeNode {
-    export function is(node: ITreeNode | undefined): node is ISelectableTreeNode {
-        return !!node && 'selected' in node;
+    set root(root: ITreeNode | undefined) {
+        this.tree.root = root;
     }
-}
 
-/**
- * Expansion API for the tree model.
- */
-export interface ITreeExpansionService {
-    /**
-     * Emit when the node is expanded or collapsed.
-     */
-    readonly onExpansionChanged: Event<Readonly<IExpandableTreeNode>>;
-    /**
-     * If the given node is valid and collapsed then expand it.
-     * Expanding a node refreshes all its children.
-     */
-    expandNode(node: Readonly<IExpandableTreeNode>): void;
-    /**
-     * If the given node is valid and expanded then collapse it.
-     *
-     * If the selected node belongs to the given
-     * then the given is selected on collapsing.
-     */
-    collapseNode(node: Readonly<IExpandableTreeNode>): void;
-    /**
-     * If the given node is invalid then does nothing.
-     * If the given node is collapsed then expand it; otherwise collapse it.
-     */
-    toggleNodeExpansion(node: Readonly<IExpandableTreeNode>): void;
-}
-
-/**
- * The expandable tree node.
- */
-export interface IExpandableTreeNode extends ICompositeTreeNode {
-    /**
-     * Test whether this tree node is expanded.
-     */
-    expanded: boolean;
-}
-
-export namespace IExpandableTreeNode {
-    export function is(node: ITreeNode | undefined): node is IExpandableTreeNode {
-        return !!node && ICompositeTreeNode.is(node) && 'expanded' in node;
+    get onChanged(): Event<void> {
+        return this.onChangedEmitter.event;
     }
+
+    protected fireChanged(): void {
+        this.onChangedEmitter.fire(undefined);
+    }
+
+    get onNodeRefreshed() {
+        return this.tree.onNodeRefreshed;
+    }
+
+    getNode(id: string|undefined) {
+        return this.tree.getNode(id);
+    }
+
+    validateNode(node: ITreeNode|undefined) {
+        return this.tree.validateNode(node);
+    }
+
+    refresh(parent?: Readonly<ICompositeTreeNode>): void {
+        if (parent) {
+            this.tree.refresh(parent);
+        } else {
+            this.tree.refresh();
+        }
+    }
+
+    get selectedNode() {
+        return this.selection.selectedNode;
+    }
+
+    get onSelectionChanged() {
+        return this.selection.onSelectionChanged;
+    }
+
+    selectNode(node: ISelectableTreeNode|undefined): void {
+        this.selection.selectNode(node);
+    }
+
+    get onExpansionChanged() {
+        return this.expansion.onExpansionChanged;
+    }
+
+    expandNode(raw?: Readonly<IExpandableTreeNode>): void {
+        const node = raw || this.selectedNode;
+        if (IExpandableTreeNode.is(node)) {
+            this.expansion.expandNode(node);
+        }
+    }
+
+    collapseNode(raw?: Readonly<IExpandableTreeNode>): void {
+        const node = raw || this.selectedNode;
+        if (IExpandableTreeNode.is(node)) {
+            this.expansion.collapseNode(node);
+        }
+    }
+
+    toggleNodeExpansion(raw?: Readonly<IExpandableTreeNode>): void {
+        const node = raw || this.selectedNode;
+        if (IExpandableTreeNode.is(node)) {
+            this.expansion.toggleNodeExpansion(node);
+        }
+    }
+
+    selectPrevNode(): void {
+        const node = this.selectedNode;
+        const iterator = this.createBackwardIterator(node);
+        this.selectNextVisibleNode(iterator);
+    }
+
+    selectNextNode(): void {
+        const node = this.selectedNode;
+        const iterator = this.createIterator(node);
+        this.selectNextVisibleNode(iterator);
+    }
+
+    protected selectNextVisibleNode(iterator: ITreeNodeIterator): void {
+        let result = iterator.next();
+        while (!result.done && !ISelectableTreeNode.isVisible(result.value)) {
+            result = iterator.next();
+        }
+        const node = result.value;
+        if (ISelectableTreeNode.isVisible(node)) {
+            this.selectNode(node);
+        }
+    }
+
+    protected createBackwardIterator(node: ITreeNode | undefined): ITreeNodeIterator {
+        return new BackwardTreeNodeIterator(node, {
+            pruneCollapsed: true
+        });
+    }
+
+    protected createIterator(node: ITreeNode | undefined): ITreeNodeIterator {
+        return new TreeNodeIterator(node, {
+            pruneCollapsed: true
+        });
+    }
+
 }
