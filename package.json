@@ -21,7 +21,6 @@
     "install": "lerna bootstrap --hoist",
     "build": "lerna run build",
     "clean": "lerna run clean",
-    "watch:build": "lerna run watch:build --stream",
     "start:example": "lerna run start:example"
   }
 }

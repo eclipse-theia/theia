@@ -1,2 +1,2 @@
-export * from './model';
-export * from './widget';
+export * from './tree-model';
+export * from './tree-widget';

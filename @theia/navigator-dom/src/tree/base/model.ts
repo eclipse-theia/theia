@@ -1,5 +1,5 @@
-import {ITreeModel, ITreeNode, ICompositeTreeNode, ITreeExpansionService, ITreeSelectionService} from "../model";
 import {Emitter, Event, DisposableCollection} from "@theia/platform-common";
+import {ITreeModel, ITreeNode, ICompositeTreeNode, ITreeExpansionService, ITreeSelectionService} from "../tree-model";
 
 export class BaseTreeModel implements ITreeModel {
 

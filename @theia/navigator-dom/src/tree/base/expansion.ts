@@ -1,4 +1,4 @@
-import {ITreeExpansionService, IExpandableTreeNode, ITreeModel} from "../model";
+import {ITreeExpansionService, IExpandableTreeNode, ITreeModel} from "../tree-model";
 import {Emitter, Event} from "@theia/platform-common";
 
 /**

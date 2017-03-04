@@ -100,12 +100,6 @@ export interface IPathNode extends ITreeNode {
 export type IDirNode = IPathNode & IExpandableTreeNode;
 export type IFileNode = IPathNode;
 
-export namespace IFileNode {
-    export function is(node: ITreeNode | undefined): node is IDirNode {
-        return IPathNode.is(node) && !IExpandableTreeNode.is(node);
-    }
-}
-
 export namespace IDirNode {
     export function is(node: ITreeNode | undefined): node is IDirNode {
         return IPathNode.is(node) && IExpandableTreeNode.is(node);

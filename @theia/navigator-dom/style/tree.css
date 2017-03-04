@@ -1,13 +1,14 @@
-.theia-ExpandableTreeNode-caption {
+.theia-TreeNodeCaption {
     display: flex;
     flex-direction: row;
     align-items: center;
+    padding: 2px;
 }
 
-.theia-ExpandableTreeNode-caption > .theia-expansionToggle.theia-mod-collapsed {
+.theia-ExpansionToggle.theia-mod-collapsed {
     background: url('../icons/collapse.svg') center center no-repeat;
 }
 
-.theia-ExpandableTreeNode-caption > .theia-expansionToggle:not(.theia-mod-collapsed) {
+.theia-ExpansionToggle:not(.theia-mod-collapsed) {
     background: url('../icons/expand.svg') center center no-repeat;
 }

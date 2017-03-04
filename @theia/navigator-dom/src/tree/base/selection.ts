@@ -1,4 +1,4 @@
-import {ITreeSelectionService, ISelectableTreeNode, ITreeModel} from "../model";
+import {ITreeSelectionService, ISelectableTreeNode, ITreeModel} from "../tree-model";
 import {Emitter, Event} from "@theia/platform-common";
 
 /**

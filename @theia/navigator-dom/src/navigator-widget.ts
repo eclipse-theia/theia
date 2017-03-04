@@ -1,11 +1,14 @@
-import {TreeWidget, TreeRenderContext} from "./tree/widget";
-import {FileNavigatorModel, IFileNode, IDirNode} from "./navigator-model";
-import {TheiaPlugin, TheiaApplication} from "@theia/shell-dom";
 import {injectable, inject, decorate} from "inversify";
-import {ITreeNode} from "./tree/model";
+import {TheiaPlugin, TheiaApplication} from "@theia/shell-dom";
 import {h} from "@phosphor/virtualdom";
+import {TreeWidget, VirtualWidget, ITreeNode} from "./tree";
+import {FileNavigatorModel, IDirNode, IPathNode} from "./navigator-model";
+import NodeProps = TreeWidget.NodeProps;
 
 export const FILE_NAVIGATOR_CLASS = 'theia-FileNavigator';
+export const PATH_NODE_CLASS = 'theia-PathNode';
+export const DIR_NODE_CLASS = 'theia-DirNode';
+export const PATH_ICON_CLASS = 'theia-PathIcon';
 
 decorate(injectable(), TreeWidget);
 
@@ -15,34 +18,39 @@ export class FileNavigator extends TreeWidget<FileNavigatorModel> {
     static readonly ID = 'file-navigator';
 
     constructor(@inject(FileNavigatorModel) model: FileNavigatorModel) {
-        super(model);
+        super();
         this.addClass(FILE_NAVIGATOR_CLASS);
         this.id = FileNavigator.ID;
         this.title.label = 'Files';
+        this.setModel(model);
     }
 
     getModel(): FileNavigatorModel {
         return super.getModel()!;
     }
 
-    protected doRenderNode(node: ITreeNode|undefined, context: TreeRenderContext): h.Child {
-        if (IFileNode.is(node)) {
-            return this.renderFileNode(node, context);
+    protected createNodeClassNames(node: ITreeNode, props: NodeProps): string[] {
+        const classNames = super.createNodeClassNames(node, props);
+        if (IPathNode.is(node)) {
+            classNames.push(PATH_NODE_CLASS);
         }
         if (IDirNode.is(node)) {
-            return this.renderDirNode(node, context);
+            classNames.push(DIR_NODE_CLASS);
         }
-        return super.doRenderNode(node, context);
+        return classNames;
     }
 
-    protected renderFileNode(node: IFileNode, context: TreeRenderContext): h.Child {
-        return this.renderNode(node, context);
+    protected decorateCaption(node: ITreeNode, caption: h.Child, props: NodeProps): h.Child {
+        if (IPathNode.is(node)) {
+            return this.decoratePathCaption(node, caption, props);
+        }
+        return super.decorateCaption(node, caption, props);
     }
 
-    protected renderDirNode(node: IDirNode, context: TreeRenderContext): h.Child {
-        return this.renderExpandableNode(node, context);
+    protected decoratePathCaption(node: IPathNode, caption: h.Child, props: NodeProps): h.Child {
+        const pathIcon = h.span({className: PATH_ICON_CLASS});
+        return super.decorateCaption(node, VirtualWidget.merge(pathIcon, caption), props);
     }
-
 }
 
 @injectable()
@@ -55,4 +63,5 @@ export class FileNavigatorContribution implements TheiaPlugin {
         this.fileNavigator.getModel().refresh();
         app.shell.addToLeftArea(this.fileNavigator);
     }
+
 }

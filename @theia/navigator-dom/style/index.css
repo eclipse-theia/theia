@@ -5,4 +5,17 @@
     font-size: var(--theia-ui-font-size1);
 }
 
+.theia-PathIcon {
+    width: 16px;
+    height: 16px;
+}
+
+.theia-PathNode:not(.theia-DirNode) > .theia-TreeNodeCaption > .theia-PathIcon {
+    background: url('../icons/path.svg') center center no-repeat;
+}
+
+.theia-PathNode.theia-DirNode > .theia-TreeNodeCaption > .theia-PathIcon {
+    background: url('../icons/dir.svg') center center no-repeat;
+}
+
 @import './tree.css';
