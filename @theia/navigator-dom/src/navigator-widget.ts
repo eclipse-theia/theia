@@ -1,5 +1,5 @@
 import {TreeWidget} from "./tree/widget";
-import {FileNavigatorModel} from "./model";
+import {FileNavigatorModel} from "./navigator-model";
 import {TheiaPlugin, TheiaApplication} from "@theia/shell-dom";
 import {injectable, inject, decorate} from "inversify";
 

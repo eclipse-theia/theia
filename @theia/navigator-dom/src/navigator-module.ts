@@ -1,8 +1,6 @@
-
-
 import {TheiaPlugin} from '@theia/shell-dom';
-import {FileNavigatorContribution, FileNavigator} from './widget';
-import {FileNavigatorModel} from './model';
+import {FileNavigatorContribution, FileNavigator} from './navigator-widget';
+import {FileNavigatorModel} from './navigator-model';
 import {ContainerModule} from "inversify"
 
 export const navigatorModule = new ContainerModule(bind => {

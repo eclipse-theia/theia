@@ -8,7 +8,6 @@ export const EXPANDABLE_NODE_CAPTION_CLASS = 'theia-ExpandableTreeNode-caption';
 export const EXPANSION_TOGGLE_CLASS = 'theia-expansionToggle';
 export const COLLAPSED_CLASS = 'theia-mod-collapsed';
 
-
 export class TreeWidget<Model extends ITreeModel> extends Widget {
 
     /**

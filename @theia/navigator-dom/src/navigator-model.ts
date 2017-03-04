@@ -1,8 +1,7 @@
-
 import {FileSystem, Path, FileChangeEvent, FileChangeType} from "@theia/fs-common";
 import {ITreeNode, ICompositeTreeNode, IExpandableTreeNode} from "./tree";
 import {BaseTreeModel, BaseTreeExpansionService} from "./tree/base";
-import { injectable, inject , decorate} from "inversify";
+import {injectable, inject, decorate} from "inversify";
 
 decorate(injectable(), BaseTreeModel);
 @injectable()
@@ -10,7 +9,7 @@ export class FileNavigatorModel extends BaseTreeModel {
 
     static ROOT = Path.fromString("");
 
-    constructor( @inject(FileSystem) protected readonly fileSystem: FileSystem) {
+    constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem) {
         super();
         this.expansion = new BaseTreeExpansionService(this);
         this.toDispose.push(fileSystem.watch(event => this.onFileChanged(event)));
@@ -60,15 +59,9 @@ export class FileNavigatorModel extends BaseTreeModel {
     }
 
     protected toNodes(paths: Path[], parent: ICompositeTreeNode): Promise<ITreeNode[]> {
-        return Promise.all(paths.map(path => this.toNode(path, parent))).then(nodes => {
-            const result: ITreeNode[] = [];
-            for (const node of nodes) {
-                if (node) {
-                    result.push(node);
-                }
-            }
-            return result;
-        });
+        return Promise.all(paths.map(path => this.toNode(path, parent))).then(nodes =>
+            (nodes.filter(node => !!node) as ITreeNode[]).sort(IDirNode.compare)
+        );
     }
 
     protected toNode(path: Path, parent: ICompositeTreeNode): Promise<IFileNode | IDirNode | undefined> {
@@ -110,6 +103,16 @@ export type IFileNode = IPathNode;
 export namespace IDirNode {
     export function is(node: ITreeNode | undefined): node is IDirNode {
         return IPathNode.is(node) && IExpandableTreeNode.is(node);
+    }
+
+    export function compare(node: ITreeNode, node2: ITreeNode): number {
+        return IDirNode.dirCompare(node, node2) || node.name.localeCompare(node2.name);
+    }
+
+    export function dirCompare(node: ITreeNode, node2: ITreeNode): number {
+        const a = IDirNode.is(node) ? 1 : 0;
+        const b = IDirNode.is(node2) ? 1 : 0;
+        return b - a;
     }
 }
 
