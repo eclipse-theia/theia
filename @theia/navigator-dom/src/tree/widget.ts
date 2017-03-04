@@ -60,9 +60,12 @@ export class TreeWidget<Model extends ITreeModel> extends Widget {
 
     protected createRootContext(): TreeRenderContext {
         return {
-            level: 0,
-            indentSize: 0,
-            visible: true
+            indentSize: () => 0,
+            visible: true,
+            expansionToggleSize: {
+                width: 16,
+                height: 16
+            }
         };
     }
 
@@ -99,19 +102,14 @@ export class TreeWidget<Model extends ITreeModel> extends Widget {
     }
 
     protected renderExpandableNode(node: IExpandableTreeNode, context: TreeRenderContext): h.Child {
-        const expansionToggleSize: Size = {
-            width: 16,
-            height: 16,
-            ...context.expansionToggleSize
-        };
         return this.renderCompositeNode(node, {
             ...context,
             caption: () => {
                 const expansionToggle = h.span({
                     className: `${EXPANSION_TOGGLE_CLASS}${node.expanded ? '' : ' ' + COLLAPSED_CLASS}`,
                     style: {
-                        width: `${expansionToggleSize.width}px`,
-                        height: `${expansionToggleSize.height}px`
+                        width: `${context.expansionToggleSize.width}px`,
+                        height: `${context.expansionToggleSize.height}px`
                     },
                     onclick: () => {
                         if (this.model && this.model.expansion) {
@@ -124,21 +122,23 @@ export class TreeWidget<Model extends ITreeModel> extends Widget {
                 }, expansionToggle, node.name)
             },
             children: () => {
-                const indentSize = ITreeNode.isVisible(node) ? expansionToggleSize.width : context.indentSize;
+                const indentSize = ITreeNode.isVisible(node) ? (node: ITreeNode) => {
+                        if (IExpandableTreeNode.is(node)) {
+                            return context.expansionToggleSize.width;
+                        }
+                        return context.expansionToggleSize.width * 2;
+                    } : context.indentSize;
                 return this.renderChildNodes(node.children, {
                     ...context,
                     indentSize,
                     visible: node.expanded
-                })
+                });
             }
         });
     }
 
     protected renderChildNodes(nodes: ReadonlyArray<ITreeNode>, context: TreeRenderContext): h.Child {
-        return VirtualWidget.flatten(nodes.map(node => this.doRenderNode(node, {
-            ...context,
-            level: context.level + 1
-        })));
+        return VirtualWidget.flatten(nodes.map(node => this.doRenderNode(node, context)));
     }
 
 }
@@ -149,14 +149,12 @@ export interface Size {
 }
 
 export interface TreeRenderContext {
-    readonly level: number
-    readonly indentSize: number
+    readonly indentSize: (node: ITreeNode) => number;
     readonly visible: boolean
+    readonly expansionToggleSize: Readonly<Size>
     readonly caption?: () => h.Child
     readonly attributes?: ElementAttrs
     readonly children?: () => h.Child
-    readonly [key: string]: any;
-    readonly expansionToggleSize?: Readonly<Partial<Size>>
 }
 
 export namespace TreeRenderContext {
@@ -170,7 +168,7 @@ export namespace TreeRenderContext {
     export function toStyle(node: ITreeNode, context: TreeRenderContext): ElementInlineStyle {
         const style = !!context.attributes ? context.attributes.style : undefined;
         return {
-            paddingLeft: `${context.indentSize}px`,
+            paddingLeft: `${context.indentSize(node)}px`,
             display: context.visible ? 'block' : 'none',
             ...style
         };
