@@ -103,6 +103,12 @@ export abstract class AbstractTreeWidget<
                     this.model.selectNode(node);
                     event.stopPropagation();
                 }
+            },
+            ondblclick: (event) => {
+                if (this.model) {
+                    this.model.openNode(node);
+                    event.stopPropagation();
+                }
             }
         };
     }
@@ -235,6 +241,9 @@ export abstract class AbstractTreeWidget<
             if (event.keyCode === 40) { // Down Arrow
                 this.model.selectNextNode();
                 return true;
+            }
+            if (event.keyCode === 13) { // Enter
+                this.model.openNode();
             }
         }
         return false;

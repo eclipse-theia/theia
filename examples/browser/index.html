@@ -3,6 +3,14 @@
 <head>
   <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
   <script type="text/javascript" src="https://www.promisejs.org/polyfills/promise-6.1.0.js"></script>
+  <script src="lib/web/vs/loader.js" type="text/javascript" charset="utf-8"></script>
+  <script type="text/javascript" charset="utf-8">
+      window.require.config({
+          paths: {
+              'vs': "lib/web/vs"
+          }
+      });
+  </script>
   <script type="text/javascript" src="lib/web/bundle.js"></script>
 </head>
 <body>

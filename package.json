@@ -2,6 +2,7 @@
   "private": true,
   "dependencies": {},
   "devDependencies": {
+    "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.26.2",
     "file-loader": "^0.10.1",
     "lerna": "2.0.0-beta.38",

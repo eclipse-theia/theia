@@ -1,5 +1,6 @@
 import {injectable, inject} from "inversify";
 import {FileSystem, Path, FileChangeEvent, FileChangeType} from "@theia/fs-common";
+import {OpenerService} from "@theia/shell-dom";
 import {
     ITree,
     ITreeSelectionService,
@@ -16,6 +17,7 @@ import {ISelectableTreeNode} from "./tree/tree-selection";
 export class FileNavigatorModel extends TreeModel {
 
     constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem,
+                @inject(OpenerService) protected readonly openerService: OpenerService,
                 @inject(ITree) tree: ITree,
                 @inject(ITreeSelectionService) selection: ITreeSelectionService,
                 @inject(ITreeExpansionService) expansion: ITreeExpansionService) {
@@ -44,6 +46,13 @@ export class FileNavigatorModel extends TreeModel {
         return nodes;
     }
 
+    protected doOpenNode(node: ITreeNode): void {
+        if (IFileNode.is(node)) {
+            this.openerService.open(node.path);
+        } else {
+            super.doOpenNode(node);
+        }
+    }
 }
 
 @injectable()
@@ -121,6 +130,12 @@ export interface IPathNode extends ISelectableTreeNode {
 
 export type IDirNode = IPathNode & IExpandableTreeNode;
 export type IFileNode = IPathNode;
+
+export namespace IFileNode {
+    export function is(node: ITreeNode | undefined): node is IFileNode {
+        return IPathNode.is(node) && !IExpandableTreeNode.is(node);
+    }
+}
 
 export namespace IDirNode {
     export function is(node: ITreeNode | undefined): node is IDirNode {

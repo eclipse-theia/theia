@@ -1,7 +1,7 @@
 {
-  "name": "@theia/navigator-dom",
+  "name": "@theia/editor-browser",
   "version": "0.0.1",
-  "description": "Theia - File Navigator",
+  "description": "Theia - Editor",
   "repository": {
     "type": "git",
     "url": "https://github.com/TypeFox/Theia.git"
@@ -16,10 +16,10 @@
     "src/*.ts"
   ],
   "dependencies": {
-    "@phosphor/virtualdom": "^0.1.0",
     "@theia/fs-common": "^0.0.1",
     "@theia/platform-common": "^0.0.1",
-    "@theia/shell-dom": "^0.0.1"
+    "@theia/shell-dom": "^0.0.1",
+    "monaco-editor-core": "^0.8.2"
   },
   "scripts": {
     "build": "../../node_modules/.bin/tsc",

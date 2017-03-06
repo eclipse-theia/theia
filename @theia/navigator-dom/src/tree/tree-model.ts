@@ -29,6 +29,10 @@ export interface ITreeModel extends ITree, ITreeSelectionService, ITreeExpansion
      * Select next node relatively to the selected taking into account node expansion.
      */
     selectNextNode(): void;
+    /**
+     * Open a given node or a selected if the given is undefined.
+     */
+    openNode(node?: ITreeNode | undefined): void;
 }
 
 @injectable()
@@ -167,6 +171,19 @@ export class TreeModel implements ITreeModel {
         return new TreeNodeIterator(node, {
             pruneCollapsed: true
         });
+    }
+
+    openNode(raw?: ITreeNode|undefined): void {
+        const node = raw || this.selectedNode;
+        if (node) {
+            this.doOpenNode(node);
+        }
+    }
+
+    protected doOpenNode(node: ITreeNode): void {
+        if (IExpandableTreeNode.is(node)) {
+            this.toggleNodeExpansion(node);
+        }
     }
 
 }
