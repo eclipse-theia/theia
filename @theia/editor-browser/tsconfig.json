@@ -1,17 +1,6 @@
 {
+  "extends": "../../config/ts/tsconfig-base.json",
   "compilerOptions": {
-    "declaration": true,
-    "noImplicitAny": true,
-    "noEmitOnError": true,
-    "noUnusedLocals": true,
-    "strictNullChecks": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "target": "es5",
-    "lib": ["es6", "dom"],
-    "outDir": "lib",
-    "sourceMap": true
+    "lib": ["es6", "dom"]
   }
 }
