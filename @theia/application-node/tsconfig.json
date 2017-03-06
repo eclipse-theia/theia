@@ -11,7 +11,7 @@
     "moduleResolution": "node",
     "target": "es5",
     "lib": ["es6"],
-    "types": ["reflect-metadata"],
+    "types": [],
     "outDir": "lib",
     "sourceMap": true
   }

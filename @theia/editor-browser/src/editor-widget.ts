@@ -93,7 +93,7 @@ export class EditorWidget extends Widget implements EventListenerObject {
         if (msg.width < 0 || msg.height < 0) {
             if (this._resizing === -1) {
                 this.resize(null);
-                this._resizing = setTimeout(() => {
+                this._resizing = window.setTimeout(() => {
                     if (this._needsResize) {
                         this.resize(null);
                         this._needsResize = false;
