@@ -1,6 +1,8 @@
 .theia-PathIcon {
     width: 16px;
     height: 16px;
+    margin-top: 1px;
+    margin-right: 3px;
 }
 
 .theia-PathNode:not(.theia-DirNode) > .theia-TreeNodeCaption > .theia-PathIcon {
