@@ -1,8 +1,13 @@
-module.exports = function (config, dirname) {
+module.exports = function (config, dirname, argv) {
 
     const webpack = require('webpack');
     const paths = require('../webpack/paths')(dirname);
     const webpackConfig = require('../webpack/webpack.config')(dirname);
+    if (!argv) {
+        argv = {
+            grep: '*'
+        }
+    }
 
     config.set({
         basePath: dirname,
@@ -25,7 +30,9 @@ module.exports = function (config, dirname) {
             plugins: [
                 new webpack.SourceMapDevToolPlugin({
                     filename: null,
-                    test: /\.(ts|js)($|\?)/i
+                    test: /\.(ts|js)($|\?)/i,
+                    moduleFilenameTemplate: "[absolute-resource-path]",
+                    fallbackModuleFilenameTemplate: "[absolute-resource-path]?[hash]"
                 })
             ],
             node: {
@@ -38,6 +45,11 @@ module.exports = function (config, dirname) {
         },
         webpackServer: {
             noInfo: true
+        },
+        client: {
+            mocha: {
+                grep: argv.grep
+            }
         },
         reporters: ['mocha'],
         port: 9876,
