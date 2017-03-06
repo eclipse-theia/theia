@@ -19,6 +19,7 @@
     "lib": "lib"
   },
   "dependencies": {
+    "@phosphor/application": "^0.1.5",
     "@phosphor/widgets": "^0.1.4"
   },
   "scripts": {
