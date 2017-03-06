@@ -19,9 +19,28 @@
   "dependencies": {
     "@theia/application-common": "0.0.1"
   },
+  "devDependencies": {
+    "@types/chai": "^3.4.35",
+    "@types/karma": "^0.13.33",
+    "@types/mocha": "^2.2.39",
+    "chai": "^3.5.0",
+    "karma": "^1.5.0",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-mocha": "^1.3.0",
+    "karma-mocha-reporter": "^2.2.2",
+    "karma-sourcemap-loader": "^0.3.7",
+    "karma-webpack": "^2.0.2",
+    "mocha": "^3.2.0"
+  },
   "scripts": {
-    "build": "../../node_modules/.bin/tsc",
-    "clean": "../../node_modules/.bin/rimraf lib"
+    "build": "tsc",
+    "clean": "rimraf lib",
+    "test": "karma start webpack-karma.config.js"
+  },
+  "bin": {
+    "tsc": "../../node_modules/.bin/tsc",
+    "rimraf": "../../node_modules/.bin/rimraf",
+    "karma": "../../node_modules/.bin/karma"
   },
   "bugs": {
     "url": "https://github.com/TypeFox/Theia/issues"

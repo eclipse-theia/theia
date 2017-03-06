@@ -9,7 +9,8 @@ module.exports = function (dirname) {
         target: 'web',
 
         node: {
-            fs: 'empty'
+            fs: 'empty',
+            child_process: 'empty'
         },
 
         devServer: {
