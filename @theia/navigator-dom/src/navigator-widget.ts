@@ -1,6 +1,6 @@
 import {injectable, inject, decorate} from "inversify";
 import {TheiaPlugin, TheiaApplication} from "@theia/shell-dom";
-import {h} from "@phosphor/virtualdom";
+import {h, ElementAttrs} from "@phosphor/virtualdom";
 import {TreeWidget, VirtualWidget, ITreeNode} from "./tree";
 import {FileNavigatorModel, IDirNode, IPathNode} from "./navigator-model";
 import NodeProps = TreeWidget.NodeProps;
@@ -27,6 +27,23 @@ export class FileNavigator extends TreeWidget<FileNavigatorModel> {
 
     getModel(): FileNavigatorModel {
         return super.getModel()!;
+    }
+
+    protected createNodeAttributes(node: ITreeNode, props: TreeWidget.NodeProps): ElementAttrs {
+        if (IPathNode.is(node)) {
+            return {
+                ...super.createNodeAttributes(node, props),
+                ondblclick: (event) => {
+                    if (IDirNode.is(node)) {
+                        this.getModel().toggleNodeExpansion(node);
+                    } else {
+                        // TODO open file
+                    }
+                    event.stopPropagation();
+                }
+            }
+        }
+        return super.createNodeAttributes(node, props);
     }
 
     protected createNodeClassNames(node: ITreeNode, props: NodeProps): string[] {

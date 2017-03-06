@@ -55,6 +55,7 @@ export class TreeSelectionService implements ITreeSelectionService {
     protected readonly onSelectionChangedEmitter = new Emitter<ISelectableTreeNode | undefined>();
 
     constructor(@inject(ITree) protected readonly tree: ITree) {
+        tree.onChanged(() => this.selectNode(this._selectedNode));
     }
 
     dispose() {
@@ -75,8 +76,10 @@ export class TreeSelectionService implements ITreeSelectionService {
 
     selectNode(raw: ISelectableTreeNode | undefined): void {
         const node = this.tree.validateNode(raw);
-        if (ISelectableTreeNode.is(node) && !node.selected) {
-            this.doSelectNode(node);
+        if (ISelectableTreeNode.is(node)) {
+            if (!node.selected) {
+                this.doSelectNode(node);
+            }
         } else {
             this.doSelectNode(undefined);
         }
