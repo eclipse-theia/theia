@@ -17,7 +17,7 @@
     "lib": "lib/"
   },
   "dependencies": {
-    "@theia/platform-common": "0.0.1",
+    "inversify": "^3.1.0",
     "express": "^4.15.1"
   },
   "scripts": {

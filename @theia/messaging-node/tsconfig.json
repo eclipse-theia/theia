@@ -11,7 +11,7 @@
     "moduleResolution": "node",
     "target": "es5",
     "lib": ["es6"],
-    "types": ["reflect-metadata", "typings/express-ws.d.ts"],
+    "types": ["reflect-metadata"],
     "outDir": "lib",
     "sourceMap": true
   }

@@ -1,3 +1,2 @@
-
 declare module "express-ws" {
 }

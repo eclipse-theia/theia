@@ -1,7 +1,7 @@
 {
-  "name": "@theia/shell-dom",
+  "name": "@theia/navigator-browser",
   "version": "0.0.1",
-  "description": "Theia - Shell DOM",
+  "description": "Theia - File Navigator",
   "repository": {
     "type": "git",
     "url": "https://github.com/TypeFox/Theia.git"
@@ -9,18 +9,17 @@
   "main": "lib/index.js",
   "types": "src/index.ts",
   "files": [
-    "src/*.ts",
-    "lib/*.js",
     "lib/*.d.ts",
+    "lib/*.js",
     "style/*.css",
-    "icons/*.svg"
+    "icons/*.svg",
+    "src/*.ts"
   ],
-  "directories": {
-    "lib": "lib"
-  },
   "dependencies": {
-    "@phosphor/application": "^0.1.5",
-    "@phosphor/widgets": "^0.1.4"
+    "@phosphor/virtualdom": "^0.1.0",
+    "@theia/filesystem-common": "^0.0.1",
+    "@theia/application-common": "^0.0.1",
+    "@theia/application-browser": "^0.0.1"
   },
   "scripts": {
     "build": "../../node_modules/.bin/tsc",

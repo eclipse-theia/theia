@@ -1,7 +1,7 @@
 {
-  "name": "@theia/fs-common",
+  "name": "@theia/filesystem-node",
   "version": "0.0.1",
-  "description": "Theia - File System Common",
+  "description": "Theia - File System Node.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/TypeFox/Theia.git"
@@ -17,7 +17,7 @@
     "lib": "lib/"
   },
   "dependencies": {
-    "@theia/platform-common": "0.0.1"
+    "@theia/application-common": "0.0.1"
   },
   "scripts": {
     "build": "../../node_modules/.bin/tsc",

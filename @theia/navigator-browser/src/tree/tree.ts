@@ -1,5 +1,5 @@
 import {injectable} from "inversify";
-import {Event, Emitter, Disposable, DisposableCollection} from "@theia/platform-common";
+import {Event, Emitter, Disposable, DisposableCollection} from "@theia/application-common";
 
 export const ITree = Symbol("ITree");
 

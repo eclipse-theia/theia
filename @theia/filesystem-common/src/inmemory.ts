@@ -1,6 +1,6 @@
 import {Path} from "./path";
 import {FileSystem, FileChangeType, FileChange, FileChangeEvent, FileSystemWatcher} from "./file-system";
-import {Disposable} from "@theia/platform-common";
+import {Disposable} from "@theia/application-common";
 
 class InMemoryFileNode {
     path: Path;

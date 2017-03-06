@@ -2,7 +2,7 @@ import {Widget} from "@phosphor/widgets";
 import {Message} from "@phosphor/messaging";
 import {ElementExt} from "@phosphor/domutils";
 import {h, VirtualNode, VirtualText, VirtualDOM, ElementAttrs, ElementInlineStyle} from "@phosphor/virtualdom";
-import {DisposableCollection} from "@theia/platform-common";
+import {DisposableCollection} from "@theia/application-common";
 import {ITreeNode, ICompositeTreeNode} from "./tree";
 import {ITreeModel} from "./tree-model";
 import {IExpandableTreeNode} from "./tree-expansion";

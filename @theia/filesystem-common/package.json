@@ -1,25 +1,23 @@
 {
-  "name": "@theia/navigator-dom",
+  "name": "@theia/filesystem-common",
   "version": "0.0.1",
-  "description": "Theia - File Navigator",
+  "description": "Theia - File System Common",
   "repository": {
     "type": "git",
     "url": "https://github.com/TypeFox/Theia.git"
   },
-  "main": "lib/index.js",
-  "types": "src/index.ts",
+  "main": "./lib/index.js",
+  "types": "./src/index.ts",
   "files": [
-    "lib/*.d.ts",
-    "lib/*.js",
-    "style/*.css",
-    "icons/*.svg",
-    "src/*.ts"
+    "./lib/*.d.ts",
+    "./lib/*.js",
+    "./src/*.ts"
   ],
+  "directories": {
+    "lib": "lib/"
+  },
   "dependencies": {
-    "@phosphor/virtualdom": "^0.1.0",
-    "@theia/fs-common": "^0.0.1",
-    "@theia/platform-common": "^0.0.1",
-    "@theia/shell-dom": "^0.0.1"
+    "@theia/application-common": "0.0.1"
   },
   "scripts": {
     "build": "../../node_modules/.bin/tsc",

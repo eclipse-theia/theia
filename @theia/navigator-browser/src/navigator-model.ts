@@ -1,6 +1,6 @@
 import {injectable, inject} from "inversify";
-import {FileSystem, Path, FileChangeEvent, FileChangeType} from "@theia/fs-common";
-import {OpenerService} from "@theia/shell-dom";
+import {FileSystem, Path, FileChangeEvent, FileChangeType} from "@theia/filesystem-common";
+import {OpenerService} from "@theia/application-browser";
 import {
     ITree,
     ITreeSelectionService,

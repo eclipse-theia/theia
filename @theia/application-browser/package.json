@@ -1,7 +1,7 @@
 {
-  "name": "@theia/comm-common",
+  "name": "@theia/application-browser",
   "version": "0.0.1",
-  "description": "Theia - Communication Common",
+  "description": "Theia - Main Browser Application",
   "repository": {
     "type": "git",
     "url": "https://github.com/TypeFox/Theia.git"
@@ -9,17 +9,18 @@
   "main": "lib/index.js",
   "types": "src/index.ts",
   "files": [
-    "lib/*.d.ts",
+    "src/*.ts",
     "lib/*.js",
-    "src/*.ts"
+    "lib/*.d.ts",
+    "style/*.css",
+    "icons/*.svg"
   ],
   "directories": {
-    "lib": "lib/"
+    "lib": "lib"
   },
   "dependencies": {
-    "@theia/platform-common": "0.0.1",
-    "express": "^4.15.1",
-    "express-ws": "^3.0.0"
+    "@phosphor/application": "^0.1.5",
+    "@phosphor/widgets": "^0.1.4"
   },
   "scripts": {
     "build": "../../node_modules/.bin/tsc",

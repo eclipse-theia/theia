@@ -3,10 +3,10 @@
   "name": "browser-example",
   "dependencies": {
     "@theia/editor-browser": "^0.0.1",
-    "@theia/fs-common": "^0.0.1",
-    "@theia/shell-dom": "^0.0.1",
-    "@theia/navigator-dom": "^0.0.1",
-    "@theia/platform-common": "^0.0.1",
+    "@theia/filesystem-common": "^0.0.1",
+    "@theia/application-browser": "^0.0.1",
+    "@theia/navigator-browser": "^0.0.1",
+    "@theia/application-common": "^0.0.1",
     "reflect-metadata": "^0.1.10"
   },
   "main": "lib/index.js",

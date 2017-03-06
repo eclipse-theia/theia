@@ -1,5 +1,5 @@
 import {injectable, inject} from "inversify";
-import {Emitter, Event, Disposable} from "@theia/platform-common";
+import {Emitter, Event, Disposable} from "@theia/application-common";
 import {ICompositeTreeNode, ITreeNode, ITree} from "./tree";
 
 export const ITreeExpansionService = Symbol("ITreeExpansionService");

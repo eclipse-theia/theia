@@ -1,6 +1,6 @@
 import {ContainerModule} from "inversify";
 import {EditorOpenerService} from "./editor-opener";
-import {TheiaPlugin, IOpenerService} from "@theia/shell-dom/lib";
+import {TheiaPlugin, IOpenerService} from "@theia/application-browser";
 
 export const editorModule = new ContainerModule(bind => {
     bind(EditorOpenerService).toSelf().inSingletonScope();

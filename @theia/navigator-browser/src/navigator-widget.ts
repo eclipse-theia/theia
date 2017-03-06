@@ -1,5 +1,5 @@
 import {injectable, inject, decorate} from "inversify";
-import {TheiaPlugin, TheiaApplication} from "@theia/shell-dom";
+import {TheiaPlugin, TheiaApplication} from "@theia/application-browser";
 import {h} from "@phosphor/virtualdom";
 import {TreeWidget, VirtualWidget, ITreeNode} from "./tree";
 import {FileNavigatorModel, IDirNode, IPathNode} from "./navigator-model";

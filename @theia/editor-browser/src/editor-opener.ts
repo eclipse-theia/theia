@@ -1,6 +1,6 @@
 import {injectable, inject} from "inversify";
-import {FileSystem, Path} from "@theia/fs-common";
-import {TheiaApplication, TheiaPlugin, IOpenerService} from "@theia/shell-dom";
+import {FileSystem, Path} from "@theia/filesystem-common";
+import {TheiaApplication, TheiaPlugin, IOpenerService} from "@theia/application-browser";
 import {EditorWidget} from "./editor-widget";
 import Uri = monaco.Uri;
 

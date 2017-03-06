@@ -1,11 +1,11 @@
 import {Container} from "inversify";
-import {TheiaApplication, shellModule} from "@theia/shell-dom";
-import {navigatorModule} from "@theia/navigator-dom";
-import {FileSystem, Path, inmemoryModule} from "@theia/fs-common";
+import {TheiaApplication, shellModule} from "@theia/application-browser";
+import {navigatorModule} from "@theia/navigator-browser";
+import {FileSystem, Path, inmemoryModule} from "@theia/filesystem-common";
 import {editorModule} from "@theia/editor-browser";
-import "@theia/shell-dom/style/index.css";
+import "@theia/application-browser/style/index.css";
 import "@theia/editor-browser/style/index.css";
-import "@theia/navigator-dom/style/index.css";
+import "@theia/navigator-browser/style/index.css";
 
 // create container
 let container = new Container();

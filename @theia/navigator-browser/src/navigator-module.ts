@@ -1,4 +1,4 @@
-import {TheiaPlugin} from "@theia/shell-dom";
+import {TheiaPlugin} from "@theia/application-browser";
 import {FileNavigatorContribution, FileNavigatorWidget} from "./navigator-widget";
 import {FileNavigatorModel, FileNavigatorTree} from "./navigator-model";
 import {ContainerModule} from "inversify";

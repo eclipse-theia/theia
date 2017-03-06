@@ -1,7 +1,7 @@
 {
-  "name": "@theia/fs-node",
+  "name": "@theia/application-common",
   "version": "0.0.1",
-  "description": "Theia - File System Node.js",
+  "description": "Theia - Common Application Library",
   "repository": {
     "type": "git",
     "url": "https://github.com/TypeFox/Theia.git"
@@ -9,15 +9,13 @@
   "main": "./lib/index.js",
   "types": "./src/index.ts",
   "files": [
-    "./lib/*.d.ts",
-    "./lib/*.js",
-    "./src/*.ts"
+    "lib/*.d.ts",
+    "lib/*.js",
+    "src/*.ts"
   ],
-  "directories": {
-    "lib": "lib/"
-  },
   "dependencies": {
-    "@theia/platform-common": "0.0.1"
+    "inversify": "^3.1.0",
+    "reflect-metadata": "^0.1.10"
   },
   "scripts": {
     "build": "../../node_modules/.bin/tsc",

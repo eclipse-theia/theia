@@ -1,5 +1,5 @@
 import {Path} from "./path";
-import {Disposable} from "@theia/platform-common";
+import {Disposable} from "@theia/application-common";
 
 export const FileSystem = Symbol("FileSystem");
 
