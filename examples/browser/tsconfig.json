@@ -10,7 +10,7 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "es5",
-    "outDir": "build",
+    "outDir": "lib",
     "lib": ["es6", "dom"],
     "sourceMap": true
   }

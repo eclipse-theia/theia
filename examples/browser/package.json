@@ -4,20 +4,14 @@
   "dependencies": {
     "@theia/editor-browser": "^0.0.1",
     "@theia/filesystem-common": "^0.0.1",
-    "@theia/application-browser": "^0.0.1",
     "@theia/navigator-browser": "^0.0.1",
+    "@theia/application-browser": "^0.0.1",
     "@theia/application-common": "^0.0.1",
+    "@theia/application-node": "^0.0.1",
     "reflect-metadata": "^0.1.10"
   },
-  "main": "lib/index.js",
-  "types": "src/index.ts",
-  "files": [
-    "lib/*.d.ts",
-    "lib/*.js",
-    "src/*.ts"
-  ],
   "scripts": {
-    "build": "webpack",
+    "build": "tsc && webpack",
     "clean": "rimraf lib",
     "start:example": "webpack-dev-server --open"
   },

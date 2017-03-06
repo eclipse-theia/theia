@@ -1,6 +1,12 @@
 import * as express from "express";
 import { multiInject, injectable } from "inversify";
 
+export const ExpressContribution = Symbol("ExpressContribution");
+
+export interface ExpressContribution {
+    configure(app: express.Application): void;
+}
+
 /**
  * The main entry point for Theia applications.
  */
@@ -8,9 +14,11 @@ import { multiInject, injectable } from "inversify";
 export class BackendApplication {
 
     private app: express.Application;
+    private contributions: ExpressContribution[];
 
     constructor(
-        @multiInject(ExpressContribution) protected contributions: ExpressContribution[]) {
+        @multiInject(ExpressContribution) contributions: ExpressContribution[]) {
+        this.contributions = contributions;
     }
 
     start(port: number = 3000): Promise<void> {
@@ -25,10 +33,4 @@ export class BackendApplication {
             })
         }));
     }
-}
-
-export const ExpressContribution = Symbol("ExpressContribution");
-
-export interface ExpressContribution {
-    configure(app: express.Application): void;
 }
