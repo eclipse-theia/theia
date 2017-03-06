@@ -10,7 +10,6 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "es5",
-    "outDir": "lib",
     "lib": ["es6"],
     "types": ["reflect-metadata"],
     "sourceMap": true

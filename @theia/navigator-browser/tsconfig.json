@@ -1,6 +1,7 @@
 {
   "extends": "../../config/ts/tsconfig-base.json",
   "compilerOptions": {
+    "outDir": "lib",
     "lib": ["es6", "dom"]
   }
 }
