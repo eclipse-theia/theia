@@ -39,7 +39,11 @@ module.exports = function (dirname, config) {
                     to: 'vs'
                 }
             ])
-        ]
+        ],
+
+        stats: {
+            warnings: false
+        }
 
     };
     const argv = minimist(process.argv.slice(2));

@@ -31,6 +31,9 @@ module.exports = function (config, dirname) {
             node: {
                 fs: 'empty',
                 child_process: 'empty'
+            },
+            stats: {
+                warnings: false
             }
         },
         webpackServer: {
