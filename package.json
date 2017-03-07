@@ -56,7 +56,8 @@
   },
   "scripts": {
     "build": "./node_modules/.bin/tsc",
-    "clean": "./node_modules/.bin/rimraf lib && ./node_modules/.bin/rimraf node_modules"
+    "clean": "./node_modules/.bin/rimraf lib",
+    "clean:node_modules": "./node_modules/.bin/rimraf node_modules"
   },
   "bugs": {
     "url": "https://github.com/TypeFox/Theia/issues"

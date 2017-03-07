@@ -13,5 +13,11 @@
     "outDir": "lib",
     "lib": ["es6", "dom"],
     "sourceMap": true
-  }
+  },
+  "include": [
+    "src"
+  ],
+  "files" : [
+    "node_modules/monaco-editor-core/monaco.d.ts"
+  ]
 }

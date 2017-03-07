@@ -1,6 +1,6 @@
 require("reflect-metadata");
 
-import {BackendApplication, ExpressContribution, applicationModule} from "@theia/application-node";
+import {BackendApplication, ExpressContribution, applicationModule} from "theia/lib/application/node";
 import {Container, injectable} from "inversify";
 import * as express from "express";
 import path = require("path");

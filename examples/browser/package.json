@@ -2,17 +2,18 @@
   "private": true,
   "name": "browser-example",
   "dependencies": {
-    "@theia/editor-browser": "^0.0.1",
-    "@theia/filesystem-common": "^0.0.1",
-    "@theia/navigator-browser": "^0.0.1",
-    "@theia/application-browser": "^0.0.1",
-    "@theia/application-common": "^0.0.1",
-    "@theia/application-node": "^0.0.1",
-    "reflect-metadata": "^0.1.10"
+    "monaco-editor-core": "^0.8.2",
+    "reflect-metadata": "^0.1.10",
+    "theia": "^0.0.1"
   },
   "scripts": {
-    "build": "../../node_modules/.bin/tsc && ../../node_modules/.bin/webpack",
-    "clean": "../../node_modules/.bin/rimraf lib",
-    "start:example": "../../node_modules/.bin/webpack-dev-server --open"
+    "install:theia": "cd ../../ && npm link && cd examples/browser && npm link theia",
+    "build": "cp src/web/index.html lib/web && ./node_modules/.bin/tsc && ./node_modules/.bin/webpack",
+    "clean": "./node_modules/.bin/rimraf lib",
+    "start:example": "./node_modules/.bin/webpack-dev-server --open"
+  },
+  "devDependencies": {
+    "typescript": "^2.2.1",
+    "webpack": "^2.2.1"
   }
 }
