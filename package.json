@@ -29,9 +29,11 @@
   },
   "devDependencies": {
     "@types/chai": "^3.4.35",
+    "@types/chai-as-promised": "0.0.29",
     "@types/karma": "^0.13.33",
     "@types/mocha": "^2.2.39",
     "chai": "^3.5.0",
+    "chai-as-promised": "^6.0.0",
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.26.2",
     "file-loader": "^0.10.1",
