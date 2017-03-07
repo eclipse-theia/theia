@@ -1,0 +1,4 @@
+--require ts-node/register
+--reporter spec
+--watch-extensions ts
+src/**/*.spec.ts
