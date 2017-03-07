@@ -33,14 +33,9 @@
     "mocha": "^3.2.0"
   },
   "scripts": {
-    "build": "tsc",
-    "clean": "rimraf lib",
-    "test": "karma start webpack-karma.config.js"
-  },
-  "bin": {
-    "tsc": "../../node_modules/.bin/tsc",
-    "rimraf": "../../node_modules/.bin/rimraf",
-    "karma": "../../node_modules/.bin/karma"
+    "build": "../../node_modules/.bin/tsc",
+    "clean": "../../node_modules/.bin/rimraf lib",
+    "test": "../../node_modules/.bin/karma start webpack-karma.config.js"
   },
   "bugs": {
     "url": "https://github.com/TypeFox/Theia/issues"

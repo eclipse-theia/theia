@@ -7,7 +7,7 @@ import Uri = monaco.Uri;
 @injectable()
 export class EditorOpenerService implements IOpenerService, TheiaPlugin {
 
-    protected editors = new Map<string, EditorWidget | EditorWidget | undefined>();
+    protected editors = new Map<string, Promise<EditorWidget> | EditorWidget | undefined>();
 
     protected app: TheiaApplication | undefined;
 

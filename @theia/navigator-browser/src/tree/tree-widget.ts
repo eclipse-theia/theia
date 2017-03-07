@@ -244,6 +244,7 @@ export abstract class AbstractTreeWidget<
             }
             if (event.keyCode === 13) { // Enter
                 this.model.openNode();
+                return true;
             }
         }
         return false;
