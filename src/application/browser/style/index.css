@@ -23,6 +23,12 @@ body {
   bottom: 0;
 }
 
+.theia-icon {
+    width: 18px;
+    height: 18px;
+    margin: 5px;
+    margin-left: 8px;
+}
 
 .p-Widget.p-mod-hidden {
   display: none !important;

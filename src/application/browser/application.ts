@@ -1,7 +1,8 @@
 import "reflect-metadata";
 import { Application } from "@phosphor/application";
 import { ApplicationShell } from "./shell";
-import { injectable, multiInject } from "inversify";
+import {injectable, multiInject, inject} from "inversify";
+import {CommandRegistry} from "../common/command";
 
 export const TheiaPlugin = Symbol("TheiaPlugin");
 /**
@@ -22,6 +23,7 @@ export class TheiaApplication {
     private application: Application<ApplicationShell>;
 
     constructor(
+        @inject(CommandRegistry) commandRegistry: CommandRegistry,
         @multiInject(TheiaPlugin) contributions: TheiaPlugin[]) {
 
         this.shell = new ApplicationShell();
