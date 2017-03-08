@@ -1,6 +1,6 @@
-import {WritableStream} from "../common";
 import {Message} from "vscode-jsonrpc/lib/messages";
 import {MessageWriter, AbstractMessageWriter, StreamMessageWriter} from "vscode-jsonrpc/lib/messageWriter";
+import {WritableStream} from "./stream";
 
 export abstract class AbstractStreamMessageWriter extends AbstractMessageWriter implements MessageWriter {
 

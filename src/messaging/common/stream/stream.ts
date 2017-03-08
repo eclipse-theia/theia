@@ -4,8 +4,8 @@ export class ReadableStream extends Readable {
 
     constructor(data: any) {
         super();
-        this.push(data)
-        this.push(null)
+        this.push(data);
+        this.push(null);
     }
 
     _read(size: number): void {
@@ -16,12 +16,12 @@ export class ReadableStream extends Readable {
 
 export class WritableStream extends Writable {
 
-    data = new Buffer('')
+    data = new Buffer('');
 
     _write(data: any, encoding: string, callback: Function): void {
         const buffer = this.toBuffer(data, encoding);
-        this.data = Buffer.concat([this.data, buffer])
-        callback()
+        this.data = Buffer.concat([this.data, buffer]);
+        callback();
     }
 
     protected toBuffer(data: any, encoding: string): Buffer {

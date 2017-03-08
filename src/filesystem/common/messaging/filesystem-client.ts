@@ -1,19 +1,39 @@
 import {MessageConnection} from "vscode-jsonrpc";
-import {FileSystem, FileSystemWatcher} from "../file-system";
+import {FileSystem, FileSystemWatcher, FileChangeEvent} from "../file-system";
 import {Path} from "../path";
-import {Disposable} from "../../../application/common/disposable";
+import {Disposable, DisposableCollection} from "../../../application/common/disposable";
 import {LsRequest, DirExistsRequest, DidChangeFilesNotification} from "./filesystem-protocol";
 
 export class FileSystemClient implements FileSystem {
 
     protected readonly watchers: FileSystemWatcher[] = [];
+    protected _connection: MessageConnection | undefined;
+    protected readonly connectionListeners = new DisposableCollection();
 
-    constructor(protected readonly connection: MessageConnection) {
-        this.connection.onNotification(DidChangeFilesNotification.type, event => {
-            for (const watcher of this.watchers) {
-                watcher(event);
+    get connection(): MessageConnection {
+        if (!this._connection) {
+            throw Error('Connection has not been initialized');
+        }
+        return this._connection;
+    }
+
+    set connection(connection: MessageConnection) {
+        this.connectionListeners.dispose();
+        this._connection = connection;
+        let disposed = false;
+        const handler = (event: FileChangeEvent) => {
+            if (!disposed) {
+                for (const watcher of this.watchers) {
+                    watcher(event);
+                }
+            }
+        };
+        this.connectionListeners.push({
+            dispose() {
+                disposed = true;
             }
         });
+        this._connection.onNotification(DidChangeFilesNotification.type, handler);
     }
 
     isRoot(path: Path): boolean {

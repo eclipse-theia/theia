@@ -1,23 +1,23 @@
+import {MessageConnection} from "vscode-jsonrpc";
 const WebSocket = require('reconnecting-websocket');
+import {createSocketConnection} from "../common";
 
-import {createMessageConnection, MessageConnection} from "vscode-jsonrpc";
-import {ConsoleLogger} from "../common";
-import {WebSocketMessageReader} from "./reader";
-import {WebSocketMessageWriter} from "./writer";
-
-export function createWebSocketConnection(url: string, onConnect: (connection: MessageConnection) => void): void {
-    const socket = createWebSocket(url);
-    socket.onopen = () => {
-        const logger = new ConsoleLogger();
-        const messageReader = new WebSocketMessageReader(socket);
-        const messageWriter = new WebSocketMessageWriter(socket);
-        const connection = createMessageConnection(messageReader, messageWriter, logger);
-        connection.onClose(() => connection.dispose());
-        onConnect(connection);
-    }
+export function createClientWebSocketConnection(url: string, onConnect: (connection: MessageConnection) => void): void {
+    const webSocket = createWebSocket(url);
+    createSocketConnection({
+        send: content => webSocket.send(content),
+        onOpen: cb => webSocket.onopen = cb,
+        onMessage: cb => webSocket.onmessage = event => cb(event.data),
+        onError: cb => webSocket.onerror = event => {
+            if (event instanceof ErrorEvent) {
+                cb(event.message)
+            }
+        },
+        onClose: (cb) => webSocket.onclose = event => cb(event.code, event.reason)
+    }, onConnect);
 }
 
-function createWebSocket(url: string): WebSocket {
+export function createWebSocket(url: string): WebSocket {
     const options = {
         maxReconnectionDelay: 10000,
         minReconnectionDelay: 1000,
@@ -28,4 +28,3 @@ function createWebSocket(url: string): WebSocket {
     };
     return new WebSocket(url, undefined, options);
 }
-

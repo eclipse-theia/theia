@@ -1,5 +1,5 @@
-import {ReadableStream} from "./stream";
 import {AbstractMessageReader, DataCallback, StreamMessageReader} from "vscode-jsonrpc/lib/messageReader";
+import {ReadableStream} from "./stream";
 
 export abstract class AbstractStreamMessageReader extends AbstractMessageReader {
 

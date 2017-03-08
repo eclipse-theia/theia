@@ -27,13 +27,15 @@
     "monaco-editor-core": "^0.8.2",
     "reconnecting-websocket": "^3.0.3",
     "reflect-metadata": "^0.1.10",
-    "vscode-jsonrpc": "^3.1.0"
+    "vscode-jsonrpc": "^3.1.0",
+    "ws": "^2.2.0"
   },
   "devDependencies": {
     "@types/chai": "^3.4.35",
     "@types/chai-as-promised": "0.0.29",
     "@types/karma": "^0.13.33",
     "@types/mocha": "^2.2.39",
+    "@types/ws": "0.0.38",
     "chai": "^3.5.0",
     "chai-as-promised": "^6.0.0",
     "copy-webpack-plugin": "^4.0.1",

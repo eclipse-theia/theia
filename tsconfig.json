@@ -10,13 +10,19 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "es5",
-    "lib": ["es6","dom"],
+    "lib": [
+      "es6",
+      "dom"
+    ],
     "outDir": "lib",
-    "sourceMap": true
+    "sourceMap": true,
+    "typeRoots": [
+      "node_modules/@types",
+      "@types"
+    ]
   },
   "files": [
-        "typings/express-ws.d.ts",
-        "node_modules/monaco-editor-core/monaco.d.ts"
+    "node_modules/monaco-editor-core/monaco.d.ts"
   ],
   "include": [
     "src"

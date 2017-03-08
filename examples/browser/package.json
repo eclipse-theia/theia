@@ -8,12 +8,14 @@
   },
   "scripts": {
     "install:theia": "cd ../../ && npm link && cd examples/browser && npm link theia",
-    "build": "cp src/web/index.html lib/web && ./node_modules/.bin/tsc && ./node_modules/.bin/webpack",
+    "build": "./node_modules/.bin/webpack && cp src/web/index.html lib/web",
     "clean": "./node_modules/.bin/rimraf lib",
     "start:example": "./node_modules/.bin/webpack-dev-server --open"
   },
   "devDependencies": {
+    "rimraf": "^2.6.1",
     "typescript": "^2.2.1",
-    "webpack": "^2.2.1"
+    "webpack": "^2.2.1",
+    "webpack-dev-server": "^2.4.1"
   }
 }
