@@ -66,7 +66,7 @@ describe('NodeFileSystem', () => {
                 expect(events).to.have.length(1);
                 expect(events[0].changes).to.have.length(1);
                 expect(events[0].changes[0].type).to.be.equal(FileChangeType.ADDED);
-                expect(events[0].changes[0].path).to.be.equal(path);
+                expect(events[0].changes[0].path).to.be.deep.equal(path);
             });
         });
     });
@@ -174,11 +174,116 @@ describe('NodeFileSystem', () => {
         });
     });
 
+    describe('#rename(Path, Path)', () => {
+        it('Should return false when old path is undefined.', () => {
+            expect(createFileSystem().rename(undefinedPath, rootPath.append('foo'))).to.eventually.be.false;
+        });
+    });
+
+    describe('#rename(Path, Path)', () => {
+        it('Should return false when new path is undefined.', () => {
+            expect(createFileSystem().rename(rootPath.append('foo'), undefinedPath)).to.eventually.be.false;
+        });
+    });
+
+    describe('#rename(Path, Path)', () => {
+        it('Should return false when both arguments are undefined.', () => {
+            expect(createFileSystem().rename(undefinedPath, undefinedPath)).to.eventually.be.false;
+        });
+    });
+
+    describe('#rename(Path, Path)', () => {
+        it('Should return true when renaming a directory succeeded.', () => {
+            const path = rootPath.append('foo');
+            fs.mkdirSync(path.toString());
+            expect(fs.statSync(path.toString()).isDirectory()).to.be.true;
+
+            const fileSystem = createFileSystem();
+            fileSystem.rename(path, rootPath.append('bar')).then(result => {
+                expect(result).to.be.true;
+                expect(fileSystem.exists(rootPath.append('bar'))).to.eventually.be.true;
+                expect(fileSystem.dirExists(rootPath.append('bar'))).to.eventually.be.true;
+                expect(fileSystem.exists(path)).to.eventually.be.false;
+                expect(fileSystem.dirExists(path)).to.eventually.be.false;
+            });
+        });
+    });
+
+    describe('#rename(Path, Path)', () => {
+        it('Should return true when renaming a file succeeded.', () => {
+            const path = rootPath.append('foo');
+            fs.mkdirSync(path.toString());
+            expect(fs.statSync(path.toString()).isDirectory()).to.be.true;
+            fs.writeFileSync(path.append('bar.txt').toString(), 'Some data');
+            expect(fs.statSync(path.append('bar.txt').toString()).isFile()).to.be.true;
+
+            const fileSystem = createFileSystem();
+            fileSystem.rename(path.append('bar.txt'), path.append('baz.txt')).then(result => {
+                expect(result).to.be.true;
+                expect(fileSystem.exists(path.append('baz.txt'))).to.eventually.be.true;
+                expect(fileSystem.fileExists(path.append('baz.txt'))).to.eventually.be.true;
+                expect(fileSystem.exists(path.append('bar.txt'))).to.eventually.be.false;
+                expect(fileSystem.fileExists(path.append('bar.txt'))).to.eventually.be.false;
+            });
+        });
+    });
+
+    describe('#rename(Path, Path)', () => {
+        it('Should fire a \'DELETED\' and an \'ADDED\' event when the rename was successful.', () => {
+            const path = rootPath.append('foo');
+            fs.mkdirSync(path.toString());
+            expect(fs.statSync(path.toString()).isDirectory()).to.be.true;
+            fs.writeFileSync(path.append('bar.txt').toString(), 'Some data');
+            expect(fs.statSync(path.append('bar.txt').toString()).isFile()).to.be.true;
+
+            const fileSystem = createFileSystem();
+            const events = attachWatcher(fileSystem);
+            fileSystem.rename(path.append('bar.txt'), path.append('baz.txt')).then(result => {
+                expect(result).to.be.true;
+                expect(events).to.have.length(1);
+                expect(events[0].changes).to.have.length(2);
+                expect(events[0].changes[0].type).to.be.equal(FileChangeType.DELETED);
+                expect(events[0].changes[0].path).to.be.deep.equal(path.append('bar.txt'));
+                expect(events[0].changes[1].type).to.be.equal(FileChangeType.ADDED);
+                expect(events[0].changes[1].path).to.be.deep.equal(path.append('baz.txt'));
+            });
+        });
+    });
+
+    describe('#rename(Path, Path)', () => {
+        it('Should rejected when the resource to rename does not exist.', () => {
+            const path = rootPath.append('foo');
+            fs.mkdirSync(path.toString());
+            expect(fs.statSync(path.toString()).isDirectory()).to.be.true;
+            expect(fs.existsSync(path.append('bar.txt').toString())).to.be.false;
+
+            expect(createFileSystem().rename(path.append('bar.txt'), path.append('baz.txt'))).to.eventually.be.rejected;
+        });
+    });
+
+    describe('#rename(Path, Path)', () => {
+        it('Should be rejected when a resource already exists under the \'newPath\'.', () => {
+            const path = rootPath.append('foo');
+            fs.mkdirSync(path.toString());
+            expect(fs.statSync(path.toString()).isDirectory()).to.be.true;
+            fs.writeFileSync(path.append('bar.txt').toString(), 'Some data');
+            expect(fs.statSync(path.append('bar.txt').toString()).isFile()).to.be.true;
+            fs.writeFileSync(path.append('baz.txt').toString(), 'Some other data');
+            expect(fs.statSync(path.append('baz.txt').toString()).isFile()).to.be.true;
+
+            const fileSystem = createFileSystem();
+            expect(fileSystem.rename(path.append('bar.txt'), path.append('baz.txt'))).to.eventually.be.rejected;
+            expect(fileSystem.fileExists(path.append('bar.txt'))).to.eventually.be.true;
+            expect(fileSystem.fileExists(path.append('baz.txt'))).to.eventually.be.true;
+        });
+    });
 
 });
 
 process.on('unhandledRejection', (reason: any) => {
-    console.error(new Error(reason));
+    const error = new Error(reason);
+    console.error(error);
+    throw error;
 });
 
 function attachWatcher(fileSystem: FileSystem): FileChangeEvent[] {

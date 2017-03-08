@@ -83,11 +83,19 @@ export class NodeFileSystem implements FileSystem {
                         if (err) {
                             reject(false);
                         } else {
-                            this.notify(oldPath, FileChangeType.DELETED);
-                            this.notify(newPath, FileChangeType.ADDED);
+                            this.fireEvent(new FileChangeEvent([
+                                new FileChange(oldPath, FileChangeType.DELETED),
+                                new FileChange(newPath, FileChangeType.ADDED)
+                            ]));
                             resolve(true);
                         }
                     });
+                    // this.exists(newPath).then(exist => {
+                    //     if (!exist) {
+                    //     } else {
+                    //         reject(false);
+                    //     }
+                    // });
                 });
             }
         }
@@ -185,7 +193,7 @@ export class NodeFileSystem implements FileSystem {
 
     public dirExists(path: Path): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
-            this.exists(path).then(exist => {
+            this.exists(path).then(() => {
                 fs.stat(path.toString(), (err, stat) => {
                     if (err) {
                         if (err.errno === -2 && err.code === 'ENOENT') {
@@ -203,7 +211,7 @@ export class NodeFileSystem implements FileSystem {
 
     public fileExists(path: Path): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
-            this.exists(path).then(exist => {
+            this.exists(path).then(() => {
                 fs.stat(path.toString(), (err, stat) => {
                     if (err) {
                         if (err.errno === -2 && err.code === 'ENOENT') {
@@ -233,7 +241,10 @@ export class NodeFileSystem implements FileSystem {
 
     private notify(path: Path, changeType: FileChangeType): void {
         const change = new FileChange(path, changeType);
-        const event = new FileChangeEvent([change]);
+        this.fireEvent(new FileChangeEvent([change]))
+    }
+
+    private fireEvent(event: FileChangeEvent) {
         this.watchers.forEach(watcher => watcher(event));
     }
 
