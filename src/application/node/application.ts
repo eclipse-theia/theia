@@ -1,10 +1,12 @@
+import * as http from "http";
 import * as express from "express";
-import { multiInject, injectable } from "inversify";
+import {multiInject, injectable} from "inversify";
 
 export const ExpressContribution = Symbol("ExpressContribution");
 
 export interface ExpressContribution {
-    configure(app: express.Application): void;
+    configure?(app: express.Application): void;
+    onStart?(server: http.Server): void;
 }
 
 /**
@@ -14,23 +16,28 @@ export interface ExpressContribution {
 export class BackendApplication {
 
     private app: express.Application;
-    private contributions: ExpressContribution[];
 
-    constructor(
-        @multiInject(ExpressContribution) contributions: ExpressContribution[]) {
-        this.contributions = contributions;
+    constructor(@multiInject(ExpressContribution) private contributions: ExpressContribution[]) {
     }
 
     start(port: number = 3000): Promise<void> {
         this.app = express();
         for (let contrib of this.contributions) {
-            contrib.configure(this.app);
+            if (contrib.configure) {
+                contrib.configure(this.app);
+            }
         }
-        return new Promise<void>((resolve => {
-            this.app.listen(port, () => {
+        return new Promise<void>(resolve => {
+            const server = this.app.listen(port, () => {
                 console.log(`Theia app listening on port ${port}.`)
                 resolve();
-            })
-        }));
+            });
+            for (let contrib of this.contributions) {
+                if (contrib.onStart) {
+                    contrib.onStart(server);
+                }
+            }
+        });
     }
+
 }

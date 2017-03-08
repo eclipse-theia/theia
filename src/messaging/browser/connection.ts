@@ -1,20 +1,23 @@
 import {MessageConnection} from "vscode-jsonrpc";
-const WebSocket = require('reconnecting-websocket');
 import {createSocketConnection} from "../common";
+import {ConsoleLogger} from "./logger";
+const WebSocket = require('reconnecting-websocket');
 
 export function createClientWebSocketConnection(url: string, onConnect: (connection: MessageConnection) => void): void {
     const webSocket = createWebSocket(url);
-    createSocketConnection({
-        send: content => webSocket.send(content),
-        onOpen: cb => webSocket.onopen = cb,
-        onMessage: cb => webSocket.onmessage = event => cb(event.data),
-        onError: cb => webSocket.onerror = event => {
-            if (event instanceof ErrorEvent) {
-                cb(event.message)
-            }
-        },
-        onClose: (cb) => webSocket.onclose = event => cb(event.code, event.reason)
-    }, onConnect);
+    webSocket.onopen = () => {
+        const connection = createSocketConnection({
+            send: content => webSocket.send(content),
+            onMessage: cb => webSocket.onmessage = event => cb(event.data),
+            onError: cb => webSocket.onerror = event => {
+                if (event instanceof ErrorEvent) {
+                    cb(event.message)
+                }
+            },
+            onClose: (cb) => webSocket.onclose = event => cb(event.code, event.reason)
+        }, new ConsoleLogger());
+        onConnect(connection);
+    };
 }
 
 export function createWebSocket(url: string): WebSocket {

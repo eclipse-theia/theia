@@ -62,6 +62,7 @@
   },
   "scripts": {
     "build": "./node_modules/.bin/tsc",
+    "watch": "./node_modules/.bin/tsc --watch",
     "clean": "./node_modules/.bin/rimraf lib",
     "clean:node_modules": "./node_modules/.bin/rimraf node_modules",
     "test": "mocha --opts ./mocha.opts",

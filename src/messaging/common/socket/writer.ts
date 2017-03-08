@@ -8,7 +8,11 @@ export class SocketMessageWriter extends AbstractStreamMessageWriter {
     }
 
     protected send(content: string): void {
-        this.socket.send(content);
+        try {
+            this.socket.send(content);
+        } catch (e) {
+            this.fireError(e.toString());
+        }
     }
 
 }

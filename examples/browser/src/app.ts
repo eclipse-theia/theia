@@ -4,6 +4,7 @@ import {BackendApplication, ExpressContribution, applicationModule} from "theia/
 import {Container, injectable} from "inversify";
 import * as express from "express";
 import {fileSystemServerModule} from "theia/lib/filesystem/node";
+import {wsModule} from "theia/lib/messaging/node";
 import {FileSystem, Path, inmemoryModule} from "theia/lib/filesystem/common";
 import path = require("path");
 
@@ -18,6 +19,7 @@ const container = new Container();
 container.load(applicationModule);
 container.load(inmemoryModule);
 container.load(fileSystemServerModule);
+container.load(wsModule);
 container.bind(ExpressContribution).to(StaticServer);
 const application = container.get(BackendApplication);
 application.start();

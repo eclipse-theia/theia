@@ -27,9 +27,17 @@ export class FileNavigatorModel extends TreeModel {
 
     protected onFileChanged(event: FileChangeEvent): void {
         const affectedNodes = this.getAffectedNodes(event);
-        if (affectedNodes) {
+        if (affectedNodes.length !== 0) {
             affectedNodes.forEach(node => this.refresh(node));
+        } else if (this.isRootAffected(event)) {
+            this.refresh();
         }
+    }
+
+    protected isRootAffected(event: FileChangeEvent): boolean {
+        return event.changes.some(change =>
+            change.type < FileChangeType.DELETED && FileNavigatorTree.ROOT.equals(change.path)
+        );
     }
 
     protected getAffectedNodes(event: FileChangeEvent): ICompositeTreeNode[] {
@@ -58,7 +66,7 @@ export class FileNavigatorModel extends TreeModel {
 @injectable()
 export class FileNavigatorTree extends Tree {
 
-    static ROOT = Path.fromString("");
+    public static ROOT = Path.fromString("");
 
     constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem) {
         super();

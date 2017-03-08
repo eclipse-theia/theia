@@ -1,16 +1,37 @@
 import {RequestType, NotificationType} from "vscode-jsonrpc";
-import {FileChangeEvent} from "../file-system";
+import {FileChangeType} from "../file-system";
 
 export type Path = string;
 
-export declare namespace LsRequest {
-    const type: RequestType<Path, Path[], void, void>;
+export interface FileChange {
+    path: string;
+    type: FileChangeType;
 }
 
-export declare namespace DirExistsRequest {
-    const type: RequestType<Path, boolean, void, void>;
+export interface PathParam {
+    path: Path
 }
 
-export declare namespace DidChangeFilesNotification {
-    const type: NotificationType<FileChangeEvent, void>;
+export interface LsResult {
+    paths: Path[]
+}
+
+export namespace LsRequest {
+    export const type = new RequestType<PathParam, LsResult, void, void>('fileSystem/ls');
+}
+
+export interface ExistsResult {
+    exists: boolean
+}
+
+export namespace DirExistsRequest {
+    export const type = new RequestType<PathParam, ExistsResult, void, void>('fileSystem/dirExists');
+}
+
+export interface DidChangeFilesParam {
+    changes: FileChange[];
+}
+
+export namespace DidChangeFilesNotification {
+    export const type = new NotificationType<DidChangeFilesParam, void>('fileSystem/didChangeFiles');
 }

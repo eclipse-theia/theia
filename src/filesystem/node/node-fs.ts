@@ -1,7 +1,6 @@
 import * as fs from "fs";
-import {Disposable} from "../../application/common/disposable";
-import {FileSystem, FileSystemWatcher, FileChange, FileChangeType, FileChangeEvent} from "../common/file-system";
-import {Path} from "../common/path";
+import {Disposable} from "../../application/common";
+import {FileSystem, FileSystemWatcher, FileChangeType, FileChange, FileChangeEvent, Path} from "../common";
 
 export class NodeFileSystem implements FileSystem {
 

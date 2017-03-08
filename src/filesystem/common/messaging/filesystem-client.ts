@@ -1,8 +1,8 @@
 import {MessageConnection} from "vscode-jsonrpc";
-import {FileSystem, FileSystemWatcher, FileChangeEvent} from "../file-system";
+import {FileSystem, FileSystemWatcher, FileChangeEvent, FileChangeType, FileChange} from "../file-system";
 import {Path} from "../path";
-import {Disposable, DisposableCollection} from "../../../application/common/disposable";
-import {LsRequest, DirExistsRequest, DidChangeFilesNotification} from "./filesystem-protocol";
+import {Disposable, DisposableCollection} from "../../../application/common";
+import {LsRequest, DirExistsRequest, DidChangeFilesNotification, DidChangeFilesParam} from "./filesystem-protocol";
 
 export class FileSystemClient implements FileSystem {
 
@@ -10,40 +10,60 @@ export class FileSystemClient implements FileSystem {
     protected _connection: MessageConnection | undefined;
     protected readonly connectionListeners = new DisposableCollection();
 
-    get connection(): MessageConnection {
-        if (!this._connection) {
-            throw Error('Connection has not been initialized');
-        }
+    get connection(): MessageConnection | undefined {
         return this._connection;
     }
 
-    set connection(connection: MessageConnection) {
+    set connection(connection: MessageConnection | undefined) {
         this.connectionListeners.dispose();
         this._connection = connection;
-        let disposed = false;
-        const handler = (event: FileChangeEvent) => {
-            if (!disposed) {
-                for (const watcher of this.watchers) {
-                    watcher(event);
+        if (this._connection) {
+            let disposed = false;
+            const handler = (params: DidChangeFilesParam) => {
+                if (!disposed) {
+                    this.notifyWatchers(new FileChangeEvent(
+                        params.changes.map(change => new FileChange(
+                            Path.fromString(change.path),
+                            change.type
+                            )
+                        )));
                 }
-            }
-        };
-        this.connectionListeners.push({
-            dispose() {
-                disposed = true;
-            }
-        });
-        this._connection.onNotification(DidChangeFilesNotification.type, handler);
+            };
+            this.connectionListeners.push({
+                dispose() {
+                    disposed = true;
+                }
+            });
+            this._connection.onNotification(DidChangeFilesNotification.type, handler);
+            // FIXME we should have the initialize request
+            this.notifyWatchers({
+                changes: [{
+                    path: Path.fromString(""),
+                    type: FileChangeType.UPDATED
+                }]
+            });
+            this._connection.listen();
+        }
+    }
+
+    protected notifyWatchers(event: FileChangeEvent): void {
+        for (const watcher of this.watchers) {
+            watcher(event);
+        }
     }
 
     isRoot(path: Path): boolean {
-        throw Error('chmod is no implemented yet');
+        throw Error('isRoot is no implemented yet');
     }
 
     ls(path: Path): Promise<Path[]> {
-        return Promise.resolve(this.connection.sendRequest(LsRequest.type, path.toString()).then(paths =>
-            paths.map(p => Path.fromString(p))
-        ));
+        const connection = this.connection;
+        if (connection) {
+            return Promise.resolve(connection.sendRequest(LsRequest.type, {path: path.toString()}).then(result =>
+                result.paths.map(p => Path.fromString(p))
+            ));
+        }
+        return Promise.resolve([]);
     }
 
     chmod(path: Path, mode: number): Promise<boolean> {
@@ -79,7 +99,13 @@ export class FileSystemClient implements FileSystem {
     }
 
     dirExists(path: Path): Promise<boolean> {
-        return Promise.resolve(this.connection.sendRequest(DirExistsRequest.type, path.toString()));
+        const connection = this.connection;
+        if (connection) {
+            return Promise.resolve(connection.sendRequest(DirExistsRequest.type, {path: path.toString()}).then(
+                result => result.exists
+            ));
+        }
+        return Promise.resolve(false);
     }
 
     fileExists(path: Path): Promise<boolean> {

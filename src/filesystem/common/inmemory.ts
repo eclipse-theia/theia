@@ -11,7 +11,7 @@ class InMemoryFileNode {
 export class InMemoryFileSystem implements FileSystem {
 
     private root: InMemoryFileNode;
-    
+
     constructor() {
         this.root = {
             path: Path.fromString(""),
@@ -164,9 +164,13 @@ export class InMemoryFileSystem implements FileSystem {
 
     watch(watcher: FileSystemWatcher): Disposable {
         this.watchers.push(watcher);
-        let dispose = () => this.watchers.filter(value => value !== watcher);
         return {
-            dispose
+            dispose() {
+                const index = this.watchers.indexOf(watcher);
+                if (index !== -1) {
+                    this.watchers.splice(index, 1);
+                }
+            }
         }
     }
 }

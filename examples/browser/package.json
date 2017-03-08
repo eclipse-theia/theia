@@ -8,9 +8,14 @@
   },
   "scripts": {
     "install:theia": "cd ../../ && npm link && cd examples/browser && npm link theia",
-    "build": "./node_modules/.bin/webpack && cp src/web/index.html lib/web",
+    "build": "npm run build:app && npm run build:web",
+    "build:app": "./node_modules/.bin/tsc",
+    "build:web": "./node_modules/.bin/webpack && cp src/web/index.html lib/web",
+    "watch:app": "./node_modules/.bin/tsc --watch",
+    "watch:web": "npm run build:web && ./node_modules/.bin/webpack --watch",
     "clean": "./node_modules/.bin/rimraf lib",
-    "start:example": "./node_modules/.bin/webpack-dev-server --open"
+    "start:example": "./node_modules/.bin/webpack-dev-server --open",
+    "start:app": "./node_modules/.bin/node ./lib/app.js"
   },
   "devDependencies": {
     "rimraf": "^2.6.1",

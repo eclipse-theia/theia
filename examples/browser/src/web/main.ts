@@ -12,7 +12,7 @@ import "theia/src/navigator/browser/style/index.css";
 let container = new Container();
 container.load(shellModule);
 container.load(navigatorModule);
-container.load(fileSystemClientModule('ws://localhost:3001/fileSystem'));
+container.load(fileSystemClientModule(`ws://${location.host}/fileSystem`));
 container.load(editorModule);
 
 // obtain application and start
