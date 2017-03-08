@@ -1,8 +1,7 @@
 import * as fs from "fs";
-import {FileSystem, FileSystemWatcher, FileChangeType, FileChangeEvent} from "../../../lib/filesystem/common/file-system";
-import {Path} from "../../../lib/filesystem/common/path";
-import {Disposable} from "../../../lib/application/common/disposable";
-import {FileChange} from "../common/file-system";
+import {Disposable} from "../../application/common/disposable";
+import {FileSystem, FileSystemWatcher, FileChange, FileChangeType, FileChangeEvent} from "../common/file-system";
+import {Path} from "../common/path";
 
 export class NodeFileSystem implements FileSystem {
 
@@ -24,9 +23,10 @@ export class NodeFileSystem implements FileSystem {
                 return new Promise<Path[]>((resolve, reject) => {
                     fs.readdir(pathString, (err: any, files: string[]) => {
                         if (err) {
-                            return reject([]);
+                            reject([]);
+                        } else {
+                            resolve(files.map(file => Path.fromString(file)));
                         }
-                        return resolve(files.map(file => Path.fromString(file)));
                     });
                 });
             }
@@ -41,9 +41,10 @@ export class NodeFileSystem implements FileSystem {
                 return new Promise<boolean>((resolve, reject) => {
                     fs.chmod(pathString, mode, (err: any) => {
                         if (err) {
-                            return reject(false);
+                            reject(false);
+                        } else {
+                            resolve(true);
                         }
-                        return resolve(true);
                     });
                 });
             }
@@ -59,8 +60,7 @@ export class NodeFileSystem implements FileSystem {
                     fs.mkdir(pathString, mode, (err: any) => {
                         if (err) {
                             reject(err);
-                        }
-                        else {
+                        } else {
                             this.notify(path, FileChangeType.ADDED);
                             resolve(true);
                         }
@@ -79,11 +79,12 @@ export class NodeFileSystem implements FileSystem {
                 return new Promise<boolean>((resolve, reject) => {
                     fs.rename(oldPathString, newPathString, (err: any) => {
                         if (err) {
-                            return reject(false);
+                            reject(false);
+                        } else {
+                            this.notify(oldPath, FileChangeType.DELETED);
+                            this.notify(newPath, FileChangeType.ADDED);
+                            resolve(true);
                         }
-                        this.notify(oldPath, FileChangeType.DELETED);
-                        this.notify(newPath, FileChangeType.ADDED);
-                        return resolve(true);
                     });
                 });
             }
@@ -98,10 +99,11 @@ export class NodeFileSystem implements FileSystem {
                 return new Promise<boolean>((resolve, reject) => {
                     fs.rmdir(pathString, (err: any) => {
                         if (err) {
-                            return reject(false);
+                            reject(false);
+                        } else {
+                            this.notify(path, FileChangeType.DELETED);
+                            resolve(true);
                         }
-                        this.notify(path, FileChangeType.DELETED);
-                        return resolve(true);
                     });
                 });
             }
@@ -116,10 +118,11 @@ export class NodeFileSystem implements FileSystem {
                 return new Promise<boolean>((resolve, reject) => {
                     fs.unlink(pathString, (err: any) => {
                         if (err) {
-                            return reject(err);
+                            reject(err);
+                        } else {
+                            this.notify(path, FileChangeType.DELETED);
+                            resolve(true);
                         }
-                        this.notify(path, FileChangeType.DELETED);
-                        return resolve(true);
                     });
                 });
             }
@@ -134,9 +137,10 @@ export class NodeFileSystem implements FileSystem {
                 return new Promise<string>((resolve, reject) => {
                     fs.readFile(pathString, encoding, (err: any, data: string) => {
                         if (err) {
-                            return reject(err);
+                            reject(err);
+                        } else {
+                            resolve(data);
                         }
-                        return resolve(data);
                     });
                 });
             }
@@ -151,10 +155,11 @@ export class NodeFileSystem implements FileSystem {
                 return new Promise<boolean>((resolve, reject) => {
                     fs.writeFile(pathString, data, (err: any) => {
                         if (err) {
-                            return reject(err);
+                            reject(err);
+                        } else {
+                            this.notify(path, FileChangeType.UPDATED);
+                            resolve(true);
                         }
-                        this.notify(path, FileChangeType.UPDATED);
-                        return resolve(true);
                     });
                 });
             }
@@ -182,8 +187,9 @@ export class NodeFileSystem implements FileSystem {
                 fs.stat(path.toString(), (err, stat) => {
                     if (err) {
                         reject(err);
+                    } else {
+                        resolve(stat.isDirectory());
                     }
-                    return resolve(stat.isDirectory());
                 })
             })
         });
@@ -195,8 +201,9 @@ export class NodeFileSystem implements FileSystem {
                 fs.stat(path.toString(), (err, stat) => {
                     if (err) {
                         reject(err);
+                    } else {
+                        resolve(stat.isFile());
                     }
-                    return resolve(stat.isFile());
                 })
             })
         });
