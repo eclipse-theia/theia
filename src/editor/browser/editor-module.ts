@@ -1,8 +1,8 @@
-import {ContainerModule} from "inversify";
-import {EditorOpenerService} from "./editor-opener";
-import { TheiaPlugin, IOpenerService } from "../../application/browser";
-import { CommandContribution, SimpleCommand } from "../../application/common/command";
-import { MenuBarContribution } from "../../application/common/menu";
+import { IOpenerService, TheiaPlugin } from '../../application/browser';
+import { CommandContribution, SimpleCommand } from '../../application/common/command';
+import { MenuBarContribution } from '../../application/common/menu';
+import { EditorOpenerService } from './editor-opener';
+import { ContainerModule } from 'inversify';
 
 export const editorModule = new ContainerModule(bind => {
     bind(EditorOpenerService).toSelf().inSingletonScope();
