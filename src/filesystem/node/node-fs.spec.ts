@@ -1,8 +1,9 @@
-import * as chai from 'chai';
-import * as os from 'os';
-import * as fs from 'fs';
-import * as process from 'process';
-import 'mocha';
+import * as chai from "chai";
+import * as os from "os";
+import * as fs from "fs";
+import * as process from "process";
+import * as chaiAsPromised from "chai-as-promised";
+import "mocha";
 import {Path} from "../common/path";
 import {NodeFileSystem} from "./node-fs";
 
@@ -11,7 +12,7 @@ const expect = chai.expect;
 
 
 before(() => {
-
+    chai.use(chaiAsPromised);
 });
 
 beforeEach(() => {
@@ -33,9 +34,10 @@ describe('NodeFileSystem', () => {
         it('Should return with true on successful folder creation.', () => {
             const fileSystem = createFileSystem();
             const path = Path.fromString(rootPath + '/foo');
-            fileSystem.mkdir(path).then(result => expect(result).to.be.true);
-            fileSystem.exists(path).then(result => expect(result).to.be.true);
-            fileSystem.dirExists(path).then(result => expect(result).to.be.true);
+            expect(fileSystem.mkdir(path)).to.eventually.be.true;
+            expect(fileSystem.exists(path)).to.eventually.be.true;
+            expect(fileSystem.dirExists(path)).to.eventually.be.true;
+            expect(fileSystem.fileExists(path)).to.eventually.be.false;
         });
     });
 
