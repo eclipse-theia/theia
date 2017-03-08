@@ -12,16 +12,15 @@ export class NodeFileSystem implements FileSystem {
     }
 
     public isRoot(path: Path): boolean {
-        return this.root.equals(path);
+        return path ? this.root.equals(path) : false;
     }
 
     public ls(path: Path): Promise<Path[]> {
-
         if (path) {
             const pathString = path.toString();
             if (pathString) {
                 return new Promise<Path[]>((resolve, reject) => {
-                    fs.readdir(pathString, (err: any, files: string[]) => {
+                    fs.readdir(pathString, (err, files) => {
                         if (err) {
                             reject([]);
                         } else {
@@ -31,7 +30,7 @@ export class NodeFileSystem implements FileSystem {
                 });
             }
         }
-        return Promise.reject([]);
+        return Promise.resolve([]);
     }
 
     public chmod(path: Path, mode: number): Promise<boolean> {
@@ -39,7 +38,7 @@ export class NodeFileSystem implements FileSystem {
             const pathString = path.toString();
             if (pathString) {
                 return new Promise<boolean>((resolve, reject) => {
-                    fs.chmod(pathString, mode, (err: any) => {
+                    fs.chmod(pathString, mode, (err) => {
                         if (err) {
                             reject(false);
                         } else {
@@ -49,7 +48,7 @@ export class NodeFileSystem implements FileSystem {
                 });
             }
         }
-        return Promise.reject(false);
+        return Promise.resolve(false);
     }
 
     public mkdir(path: Path, mode: number = parseInt('0777', 8)): Promise<boolean> {
@@ -57,7 +56,7 @@ export class NodeFileSystem implements FileSystem {
             const pathString = path.toString();
             if (pathString) {
                 return new Promise<boolean>((resolve, reject) => {
-                    fs.mkdir(pathString, mode, (err: any) => {
+                    fs.mkdir(pathString, mode, (err) => {
                         if (err) {
                             reject(err);
                         } else {
@@ -68,7 +67,7 @@ export class NodeFileSystem implements FileSystem {
                 });
             }
         }
-        return Promise.reject(false);
+        return Promise.resolve(false);
     }
 
     public rename(oldPath: Path, newPath: Path): Promise<boolean> {
@@ -77,7 +76,7 @@ export class NodeFileSystem implements FileSystem {
             const newPathString = newPath.toString();
             if (oldPathString && newPathString) {
                 return new Promise<boolean>((resolve, reject) => {
-                    fs.rename(oldPathString, newPathString, (err: any) => {
+                    fs.rename(oldPathString, newPathString, (err) => {
                         if (err) {
                             reject(false);
                         } else {
@@ -89,7 +88,7 @@ export class NodeFileSystem implements FileSystem {
                 });
             }
         }
-        return Promise.reject(false);
+        return Promise.resolve(false);
     }
 
     public rmdir(path: Path): Promise<boolean> {
@@ -97,7 +96,7 @@ export class NodeFileSystem implements FileSystem {
             const pathString = path.toString();
             if (pathString) {
                 return new Promise<boolean>((resolve, reject) => {
-                    fs.rmdir(pathString, (err: any) => {
+                    fs.rmdir(pathString, (err) => {
                         if (err) {
                             reject(false);
                         } else {
@@ -108,7 +107,7 @@ export class NodeFileSystem implements FileSystem {
                 });
             }
         }
-        return Promise.reject(false);
+        return Promise.resolve(false);
     }
 
     public rm(path: Path): Promise<boolean> {
@@ -116,7 +115,7 @@ export class NodeFileSystem implements FileSystem {
             const pathString = path.toString();
             if (pathString) {
                 return new Promise<boolean>((resolve, reject) => {
-                    fs.unlink(pathString, (err: any) => {
+                    fs.unlink(pathString, (err) => {
                         if (err) {
                             reject(err);
                         } else {
@@ -127,7 +126,7 @@ export class NodeFileSystem implements FileSystem {
                 });
             }
         }
-        return Promise.reject(false);
+        return Promise.resolve(false);
     }
 
     public readFile(path: Path, encoding: string): Promise<string> {
@@ -135,7 +134,7 @@ export class NodeFileSystem implements FileSystem {
             const pathString = path.toString();
             if (pathString) {
                 return new Promise<string>((resolve, reject) => {
-                    fs.readFile(pathString, encoding, (err: any, data: string) => {
+                    fs.readFile(pathString, encoding, (err, data) => {
                         if (err) {
                             reject(err);
                         } else {
@@ -153,7 +152,7 @@ export class NodeFileSystem implements FileSystem {
             const pathString = path.toString();
             if (pathString) {
                 return new Promise<boolean>((resolve, reject) => {
-                    fs.writeFile(pathString, data, (err: any) => {
+                    fs.writeFile(pathString, data, (err) => {
                         if (err) {
                             reject(err);
                         } else {
@@ -164,7 +163,7 @@ export class NodeFileSystem implements FileSystem {
                 });
             }
         }
-        return Promise.reject(false);
+        return Promise.resolve(false);
     }
 
     public exists(path: Path): Promise<boolean> {
@@ -172,13 +171,13 @@ export class NodeFileSystem implements FileSystem {
             const pathString = path.toString();
             if (pathString) {
                 return new Promise<boolean>((resolve) => {
-                    fs.exists(pathString, (exist: boolean) => {
+                    fs.exists(pathString, (exist) => {
                         resolve(exist);
                     });
                 });
             }
         }
-        return Promise.reject(false);
+        return Promise.resolve(false);
     }
 
     public dirExists(path: Path): Promise<boolean> {
@@ -186,7 +185,11 @@ export class NodeFileSystem implements FileSystem {
             this.exists(path).then(exist => {
                 fs.stat(path.toString(), (err, stat) => {
                     if (err) {
-                        reject(err);
+                        if (err.errno === -2 && err.code === 'ENOENT') {
+                            resolve(false);
+                        } else {
+                            reject(err);
+                        }
                     } else {
                         resolve(stat.isDirectory());
                     }
