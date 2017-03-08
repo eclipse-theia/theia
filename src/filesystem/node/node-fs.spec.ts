@@ -95,9 +95,85 @@ describe('NodeFileSystem', () => {
             const fileSystem = createFileSystem();
             expect(fileSystem.mkdir(path)).to.eventually.be.rejected;
             expect(fileSystem.dirExists(path)).to.eventually.be.false;
-            //expect(fileSystem.fileExists(path)).to.eventually.be.false;
+            expect(fileSystem.fileExists(path)).to.eventually.be.false;
         });
     });
+
+    describe('#ls(Path)', () => {
+        it('Should return with an empty array with undefined path argument.', () => {
+            expect(createFileSystem().ls(undefinedPath)).to.eventually.be.empty;
+        });
+    });
+
+    describe('#ls(Path)', () => {
+        it('Should return with an empty array if the path argument points to a file instead of a folder.', () => {
+            const path = rootPath.append('foo.txt');
+            fs.writeFileSync(path.toString(), 'Some data');
+            expect(fs.statSync(path.toString()).isFile()).to.be.true;
+
+            expect(createFileSystem().ls(path)).to.eventually.be.empty;
+        });
+    });
+
+    describe('#ls(Path)', () => {
+        it('Should return with an empty array if the directory is empty.', () => {
+            const path = rootPath.append('foo');
+            fs.mkdirSync(path.toString());
+            expect(fs.statSync(path.toString()).isDirectory()).to.be.true;
+
+            expect(createFileSystem().ls(path)).to.eventually.be.empty;
+        });
+    });
+
+    describe('#ls(Path)', () => {
+        it('Should return with an array of directory paths in the folder.', () => {
+            const path = rootPath.append('foo');
+            fs.mkdirSync(path.toString());
+            expect(fs.statSync(path.toString()).isDirectory()).to.be.true;
+            fs.mkdirSync(path.append('bar').toString());
+
+            createFileSystem().ls(path).then(result => {
+                expect(result).to.have.length(1);
+                expect(result[0]).to.be.deep.equal(path.append('bar'));
+            });
+        });
+    });
+
+    describe('#ls(Path)', () => {
+        it('Should return with an array of file paths in the folder.', () => {
+            const path = rootPath.append('foo');
+            fs.mkdirSync(path.toString());
+            expect(fs.statSync(path.toString()).isDirectory()).to.be.true;
+            fs.writeFileSync(path.append('bar.txt').toString(), 'Some data');
+            expect(fs.statSync(path.append('bar.txt').toString()).isFile()).to.be.true;
+
+            createFileSystem().ls(path).then(result => {
+                expect(result).to.have.length(1);
+                expect(result[0]).to.be.deep.equal(path.append('bar.txt'));
+            });
+        });
+    });
+
+    describe('#ls(Path)', () => {
+        it('Should not list resources recursively.', () => {
+            const path = rootPath.append('foo');
+            fs.mkdirSync(path.toString());
+            expect(fs.statSync(path.toString()).isDirectory()).to.be.true;
+            fs.writeFileSync(path.append('bar.txt').toString(), 'Some data');
+            expect(fs.statSync(path.append('bar.txt').toString()).isFile()).to.be.true;
+            fs.mkdirSync(path.append('baz').toString());
+            expect(fs.statSync(path.append('baz').toString()).isDirectory()).to.be.true;
+            fs.writeFileSync(path.append('baz', 'bar.txt').toString(), 'Some data');
+            expect(fs.statSync(path.append('baz', 'bar.txt').toString()).isFile()).to.be.true;
+
+            createFileSystem().ls(path).then(result => {
+                expect(result).to.have.length(2);
+                expect(result[0]).to.be.deep.equal(path.append('bar.txt'));
+                expect(result[1]).to.be.deep.equal(path.append('baz'));
+            });
+        });
+    });
+
 
 });
 

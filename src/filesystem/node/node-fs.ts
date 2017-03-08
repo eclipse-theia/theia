@@ -21,9 +21,13 @@ export class NodeFileSystem implements FileSystem {
                 return new Promise<Path[]>((resolve, reject) => {
                     fs.readdir(pathString, (err, files) => {
                         if (err) {
-                            reject([]);
+                            if (err.errno === -20 && err.code === 'ENOTDIR') {
+                                resolve([]);
+                            } else {
+                                reject(err);
+                            }
                         } else {
-                            resolve(files.map(file => Path.fromString(file)));
+                            resolve(files.map(file => path.append(file)));
                         }
                     });
                 });
@@ -202,7 +206,11 @@ export class NodeFileSystem implements FileSystem {
             this.exists(path).then(exist => {
                 fs.stat(path.toString(), (err, stat) => {
                     if (err) {
-                        reject(err);
+                        if (err.errno === -2 && err.code === 'ENOENT') {
+                            resolve(false);
+                        } else {
+                            reject(err);
+                        }
                     } else {
                         resolve(stat.isFile());
                     }
