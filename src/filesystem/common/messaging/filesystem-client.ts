@@ -2,7 +2,13 @@ import {MessageConnection} from "vscode-jsonrpc";
 import {FileSystem, FileSystemWatcher, FileChangeEvent, FileChangeType, FileChange} from "../file-system";
 import {Path} from "../path";
 import {Disposable, DisposableCollection} from "../../../application/common";
-import {LsRequest, DirExistsRequest, DidChangeFilesNotification, DidChangeFilesParam} from "./filesystem-protocol";
+import {
+    LsRequest,
+    DirExistsRequest,
+    DidChangeFilesNotification,
+    DidChangeFilesParam,
+    ReadFileRequest
+} from "./filesystem-protocol";
 
 export class FileSystemClient implements FileSystem {
 
@@ -87,7 +93,15 @@ export class FileSystemClient implements FileSystem {
     }
 
     readFile(path: Path, encoding: string): Promise<string> {
-        throw Error('readFile is no implemented yet');
+        const connection = this.connection;
+        if (connection) {
+            const param = {
+                path: path.toString(),
+                encoding
+            };
+            return Promise.resolve(connection.sendRequest(ReadFileRequest.type, param).then(result => result.content));
+        }
+        return Promise.resolve('');
     }
 
     writeFile(path: Path, data: string, encoding?: string): Promise<boolean> {

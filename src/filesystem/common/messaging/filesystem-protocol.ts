@@ -28,6 +28,18 @@ export namespace DirExistsRequest {
     export const type = new RequestType<PathParam, ExistsResult, void, void>('fileSystem/dirExists');
 }
 
+export interface ReadFileParam extends PathParam {
+    encoding: string
+}
+
+export interface ReadFileResult {
+    content: string
+}
+
+export namespace ReadFileRequest {
+    export const type = new RequestType<ReadFileParam, ReadFileResult, void, void>('fileSystem/readFile');
+}
+
 export interface DidChangeFilesParam {
     changes: FileChange[];
 }

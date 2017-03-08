@@ -6,7 +6,9 @@ import {
     DidChangeFilesNotification,
     FileChange,
     LsResult,
-    ExistsResult
+    ExistsResult,
+    ReadFileRequest,
+    ReadFileResult
 } from "./filesystem-protocol";
 import {Path} from "../path";
 import {DisposableCollection} from "../../../application/common/disposable";
@@ -23,6 +25,9 @@ export namespace FileSystemServer {
         );
         connection.onRequest(DirExistsRequest.type, (param, token) =>
             fileSystem.dirExists(Path.fromString(param.path)).then(exists => <ExistsResult>{exists})
+        );
+        connection.onRequest(ReadFileRequest.type, (param, token) =>
+            fileSystem.readFile(Path.fromString(param.path), param.encoding).then(content => <ReadFileResult>{content})
         );
         const toDispose = new DisposableCollection();
         toDispose.push(fileSystem.watch(event => {
