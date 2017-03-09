@@ -7,9 +7,10 @@ import {
     DidChangeFilesNotification,
     FileChange,
     LsResult,
-    ExistsResult,
+    BooleanResult,
     ReadFileRequest,
-    ReadFileResult
+    ReadFileResult,
+    WriteFileRequest
 } from "./filesystem-protocol";
 import {Path} from "../path";
 import {DisposableCollection} from "../../../application/common/disposable";
@@ -31,10 +32,13 @@ export class FileSystemServer extends AbstractFileSystemConnectionHandler {
             )
         );
         connection.onRequest(DirExistsRequest.type, (param, token) =>
-            this.fileSystem.dirExists(Path.fromString(param.path)).then(exists => <ExistsResult>{exists})
+            this.fileSystem.dirExists(Path.fromString(param.path)).then(value => <BooleanResult>{value})
         );
         connection.onRequest(ReadFileRequest.type, (param, token) =>
             this.fileSystem.readFile(Path.fromString(param.path), param.encoding).then(content => <ReadFileResult>{content})
+        );
+        connection.onRequest(WriteFileRequest.type, (param, token) =>
+            this.fileSystem.writeFile(Path.fromString(param.path), param.content, param.encoding).then(value => <BooleanResult>{value})
         );
         const toDispose = new DisposableCollection();
         toDispose.push(this.fileSystem.watch(event => {

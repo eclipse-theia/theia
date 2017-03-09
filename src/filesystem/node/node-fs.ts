@@ -156,8 +156,9 @@ export class NodeFileSystem implements FileSystem {
         return Promise.reject(`Cannot read file content. File path: ${raw}. Encoding: ${encoding}.`);
     }
 
-    public writeFile(path: Path, data: string, encoding?: string): Promise<boolean> {
-        if (path && data) {
+    public writeFile(raw: Path, data: string, encoding?: string): Promise<boolean> {
+        if (raw && data) {
+            const path = this.root.resolve(raw);
             const pathString = path.toString();
             if (pathString) {
                 return new Promise<boolean>((resolve, reject) => {
@@ -165,7 +166,7 @@ export class NodeFileSystem implements FileSystem {
                         if (err) {
                             reject(err);
                         } else {
-                            this.notify(path, FileChangeType.UPDATED);
+                            this.notify(raw, FileChangeType.UPDATED);
                             resolve(true);
                         }
                     });

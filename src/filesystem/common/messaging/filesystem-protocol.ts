@@ -20,12 +20,12 @@ export namespace LsRequest {
     export const type = new RequestType<PathParam, LsResult, void, void>('fileSystem/ls');
 }
 
-export interface ExistsResult {
-    exists: boolean
+export interface BooleanResult {
+    value: boolean
 }
 
 export namespace DirExistsRequest {
-    export const type = new RequestType<PathParam, ExistsResult, void, void>('fileSystem/dirExists');
+    export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/dirExists');
 }
 
 export interface ReadFileParam extends PathParam {
@@ -38,6 +38,15 @@ export interface ReadFileResult {
 
 export namespace ReadFileRequest {
     export const type = new RequestType<ReadFileParam, ReadFileResult, void, void>('fileSystem/readFile');
+}
+
+export interface WriteFileParam extends PathParam {
+    content: string;
+    encoding?: string;
+}
+
+export namespace WriteFileRequest {
+    export const type = new RequestType<WriteFileParam, BooleanResult, void, void>('fileSystem/writeFile');
 }
 
 export interface DidChangeFilesParam {

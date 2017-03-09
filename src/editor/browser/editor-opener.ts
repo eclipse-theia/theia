@@ -1,8 +1,10 @@
-import { IOpenerService, TheiaApplication, TheiaPlugin } from '../../application/browser';
-import { FileSystem, Path } from '../../filesystem/common';
-import { EditorWidget } from './editor-widget';
-import { inject, injectable } from 'inversify';
+import {IOpenerService, TheiaApplication, TheiaPlugin} from "../../application/browser";
+import {FileSystem, Path} from "../../filesystem/common";
+import {EditorWidget} from "./editor-widget";
+import {inject, injectable} from "inversify";
+import {DisposableCollection, Disposable} from "../../application/common";
 import Uri = monaco.Uri;
+import IModel = monaco.editor.IModel;
 
 @injectable()
 export class EditorOpenerService implements IOpenerService, TheiaPlugin {
@@ -31,9 +33,11 @@ export class EditorOpenerService implements IOpenerService, TheiaPlugin {
                 return editor;
             });
         }
-        return this.fileSystem.readFile(path, 'UTF-8').then(value => {
+        const encoding = document.characterSet;
+        return this.fileSystem.readFile(path, encoding).then(value => {
             const uri = Uri.file(key);
             const model = monaco.editor.createModel(value, undefined, uri);
+            model.onDidChangeContent(() => this.save(model, encoding));
             const editor = new EditorWidget({
                 model,
                 wordWrap: true,
@@ -55,6 +59,17 @@ export class EditorOpenerService implements IOpenerService, TheiaPlugin {
             this.editors.delete(key);
             throw reason;
         });
+    }
+
+    protected readonly toDisposeOnSave = new DisposableCollection();
+
+    protected save(model: IModel, encoding: string): void {
+        this.toDisposeOnSave.dispose();
+        const handle = window.setTimeout(() => {
+            const path = Path.fromString(model.uri.path);
+            this.fileSystem.writeFile(path, model.getValue(), encoding);
+        }, 500);
+        this.toDisposeOnSave.push(Disposable.create(() => window.clearTimeout(handle)));
     }
 
 }

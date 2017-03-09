@@ -1,4 +1,4 @@
-import {MessageConnection} from "vscode-jsonrpc";
+import {MessageConnection, RequestType} from "vscode-jsonrpc";
 import {FileSystem, FileSystemWatcher, FileChangeEvent, FileChangeType, FileChange} from "../file-system";
 import {Path} from "../path";
 import {Disposable, DisposableCollection} from "../../../application/common";
@@ -7,7 +7,9 @@ import {
     DirExistsRequest,
     DidChangeFilesNotification,
     DidChangeFilesParam,
-    ReadFileRequest
+    ReadFileRequest,
+    BooleanResult,
+    WriteFileRequest
 } from "./filesystem-protocol";
 import {AbstractFileSystemConnectionHandler} from "./filesystem-handler";
 
@@ -62,13 +64,10 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
     }
 
     ls(path: Path): Promise<Path[]> {
-        const connection = this.connection;
-        if (connection) {
-            return Promise.resolve(connection.sendRequest(LsRequest.type, {path: path.toString()}).then(result =>
-                result.paths.map(p => Path.fromString(p))
-            ));
-        }
-        return Promise.resolve([]);
+        const param = {path: path.toString()};
+        return this.sendRequest(LsRequest.type, param, {paths: []}).then(result =>
+            result.paths.map(p => Path.fromString(p))
+        );
     }
 
     chmod(path: Path, mode: number): Promise<boolean> {
@@ -92,19 +91,20 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
     }
 
     readFile(path: Path, encoding: string): Promise<string> {
-        const connection = this.connection;
-        if (connection) {
-            const param = {
-                path: path.toString(),
-                encoding
-            };
-            return Promise.resolve(connection.sendRequest(ReadFileRequest.type, param).then(result => result.content));
-        }
-        return Promise.resolve('');
+        const param = {
+            path: path.toString(),
+            encoding
+        };
+        return this.sendRequest(ReadFileRequest.type, param, {content: ''}).then(result => result.content);
     }
 
     writeFile(path: Path, data: string, encoding?: string): Promise<boolean> {
-        throw Error('writeFile is no implemented yet');
+        const param = {
+            path: path.toString(),
+            content: data,
+            encoding
+        };
+        return this.sendBooleanRequest(WriteFileRequest.type, param);
     }
 
     exists(path: Path): Promise<boolean> {
@@ -112,13 +112,8 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
     }
 
     dirExists(path: Path): Promise<boolean> {
-        const connection = this.connection;
-        if (connection) {
-            return Promise.resolve(connection.sendRequest(DirExistsRequest.type, {path: path.toString()}).then(
-                result => result.exists
-            ));
-        }
-        return Promise.resolve(false);
+        const param = {path: path.toString()};
+        return this.sendBooleanRequest(DirExistsRequest.type, param);
     }
 
     fileExists(path: Path): Promise<boolean> {
@@ -135,6 +130,18 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
                 }
             }
         }
+    }
+
+    protected sendBooleanRequest<P>(type: RequestType<P, BooleanResult, void, void>, params: P): Promise<boolean> {
+        return this.sendRequest(type, params, {value: false}).then(result => result.value);
+    }
+
+    protected sendRequest<P, R>(type: RequestType<P, R, void, void>, params: P, defaultResult: R): Promise<R> {
+        const connection = this.connection;
+        if (connection) {
+            return Promise.resolve(connection.sendRequest(type, params));
+        }
+        return Promise.resolve(defaultResult);
     }
 
 }
