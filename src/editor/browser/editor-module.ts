@@ -1,45 +1,44 @@
 import { IOpenerService, TheiaPlugin } from '../../application/browser';
-import { CommandContribution, SimpleCommand } from '../../application/common/command';
+import { CommandContribution } from '../../application/common/command';
 import { MenuBarContribution } from '../../application/common/menu';
 import { EditorService, IEditorService } from './editor-service';
+import { EditorCommand } from './editor-command';
 import { ContainerModule } from 'inversify';
 
 export const editorModule = new ContainerModule(bind => {
     bind(IEditorService).to(EditorService).inSingletonScope();
     bind(TheiaPlugin).toDynamicValue(context => context.container.get(IEditorService));
     bind(IOpenerService).toDynamicValue(context => context.container.get(IEditorService));
-
+ 
     bind<CommandContribution>(CommandContribution).toDynamicValue(context => {
         const editorService = context.container.get<IEditorService>(IEditorService);
         return {
             getCommands() {
                 return [
-                    new SimpleCommand({
+                    new EditorCommand(editorService, {
                         id: 'edit:cut',
                         label: 'Cut',
-                        isEnabled: () => !!editorService.currentEditor,
-                        execute: () => {
-                            const currentEditor = editorService.currentEditor;
-                            if (currentEditor) {
-                                console.log('Execture cut for the editor:' + currentEditor.id);
-                            }
-                        }
+                        actionId: 'editor.action.clipboardCutAction'
                     }),
-                    new SimpleCommand({
+                    new EditorCommand(editorService, {
                         id: 'edit:copy',
-                        label: 'Copy'
+                        label: 'Copy',
+                        actionId: 'editor.action.clipboardCopyAction'
                     }),
-                    new SimpleCommand({
+                    new EditorCommand(editorService, {
                         id: 'edit:paste',
-                        label: 'Paste'
+                        label: 'Paste',
+                        actionId: 'editor.action.clipboardPasteAction'
                     }),
-                    new SimpleCommand({
+                    new EditorCommand(editorService, {
                         id: 'edit:undo',
-                        label: 'Undo'
+                        label: 'Undo',
+                        actionId: 'undo'
                     }),
-                    new SimpleCommand({
+                    new EditorCommand(editorService, {
                         id: 'edit:redo',
-                        label: 'Redo'
+                        label: 'Redo',
+                        actionId: 'redo'
                     })
                 ]
             }

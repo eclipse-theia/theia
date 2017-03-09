@@ -172,4 +172,17 @@ export class EditorWidget extends Widget implements EventListenerObject {
         return Math.max(defaultHeight, editorHeight);
     }
 
+    isActionSupported(id: string): boolean {
+        const action = this.editor.getAction(id);
+        return !!action && action.isSupported();
+    }
+
+    runAction(id: string): monaco.Promise<void> {
+        const action = this.editor.getAction(id);
+        if (action && action.isSupported()) {
+            return action.run();
+        }
+        return monaco.Promise.as(undefined);
+    }
+
 }
