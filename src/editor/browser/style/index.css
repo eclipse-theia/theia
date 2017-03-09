@@ -11,3 +11,10 @@
     font-family: monospace !important;
     font-size: inherit !important;
 }
+
+/* 
+ * set z-index to 0, so tabs are not above overlay widgets 
+ */
+.p-DockPanel-tabBar {
+    z-index: 0;
+}
