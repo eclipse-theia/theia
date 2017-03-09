@@ -35,10 +35,16 @@ export abstract class AbstractTreeNodeIterator implements ITreeNodeIterator {
     protected abstract doNext(node: ITreeNode): ITreeNode | undefined;
 
     protected hasChildren(node: ITreeNode | undefined): node is ICompositeTreeNode {
+        if (!ICompositeTreeNode.is(node)) {
+            return false;
+        }
+        if (node.children.length === 0) {
+            return false;
+        }
         if (this.options.pruneCollapsed) {
             return IExpandableTreeNode.isExpanded(node);
         }
-        return ICompositeTreeNode.is(node);
+        return true;
     }
 }
 
