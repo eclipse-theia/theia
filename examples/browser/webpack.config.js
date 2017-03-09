@@ -2,6 +2,13 @@ const webpack = require("webpack");
 
 module.exports = require("../../config/webpack/webpack.config")(__dirname, {
     devServer: {
+        proxy: {
+            '/fileSystem/*': {
+                target: 'ws://localhost:3000',
+                ws: true
+            },
+            '*': 'http://localhost:3000'
+        },
         historyApiFallback: true,
         hot: true,
         inline: true,

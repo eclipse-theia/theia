@@ -1,11 +1,10 @@
-require("reflect-metadata");
-
+import "reflect-metadata";
 import {BackendApplication, ExpressContribution, applicationModule} from "theia/lib/application/node";
 import {Container, injectable} from "inversify";
 import * as express from "express";
 import {fileSystemServerModule} from "theia/lib/filesystem/node";
 import {messagingModule} from "theia/lib/messaging/node";
-import path = require("path");
+import * as path from "path";
 
 @injectable()
 class StaticServer implements ExpressContribution {
