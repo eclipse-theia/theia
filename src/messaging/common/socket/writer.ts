@@ -11,7 +11,7 @@ export class SocketMessageWriter extends AbstractStreamMessageWriter {
         try {
             this.socket.send(content);
         } catch (e) {
-            this.fireError(e.toString());
+            this.fireError(e);
         }
     }
 

@@ -9,57 +9,56 @@ import {
     DidChangeFilesParam,
     ReadFileRequest
 } from "./filesystem-protocol";
+import {AbstractFileSystemConnectionHandler} from "./filesystem-handler";
 
-export class FileSystemClient implements FileSystem {
+export class FileSystemClient extends AbstractFileSystemConnectionHandler implements FileSystem {
 
     protected readonly watchers: FileSystemWatcher[] = [];
-    protected _connection: MessageConnection | undefined;
+    protected connection: MessageConnection | undefined;
     protected readonly connectionListeners = new DisposableCollection();
 
-    get connection(): MessageConnection | undefined {
-        return this._connection;
+    onConnection(connection: MessageConnection) {
+        this.connectionListeners.dispose();
+        this.connection = connection;
+        let disposed = false;
+        const handler = (params: DidChangeFilesParam) => {
+            if (!disposed) {
+                this.notifyWatchers(new FileChangeEvent(
+                    params.changes.map(change => new FileChange(
+                        Path.fromString(change.path),
+                        change.type
+                        )
+                    )));
+            }
+        };
+        this.connectionListeners.push({
+            dispose() {
+                disposed = true;
+            }
+        });
+        this.connection.onNotification(DidChangeFilesNotification.type, handler);
+        this.connection.onDispose(() => {
+            this.connectionListeners.dispose();
+            this.connection = undefined;
+        });
+        this.connection.listen();
+        this.initialize();
     }
 
-    set connection(connection: MessageConnection | undefined) {
-        this.connectionListeners.dispose();
-        this._connection = connection;
-        if (this._connection) {
-            let disposed = false;
-            const handler = (params: DidChangeFilesParam) => {
-                if (!disposed) {
-                    this.notifyWatchers(new FileChangeEvent(
-                        params.changes.map(change => new FileChange(
-                            Path.fromString(change.path),
-                            change.type
-                            )
-                        )));
-                }
-            };
-            this.connectionListeners.push({
-                dispose() {
-                    disposed = true;
-                }
-            });
-            this._connection.onNotification(DidChangeFilesNotification.type, handler);
-            // FIXME we should have the initialize request
-            this.notifyWatchers({
-                changes: [{
-                    path: Path.fromString(""),
-                    type: FileChangeType.UPDATED
-                }]
-            });
-            this._connection.listen();
-        }
+    // FIXME we should have the initialize request
+    protected initialize(): void {
+        this.notifyWatchers({
+            changes: [{
+                path: Path.fromString(""),
+                type: FileChangeType.UPDATED
+            }]
+        });
     }
 
     protected notifyWatchers(event: FileChangeEvent): void {
         for (const watcher of this.watchers) {
             watcher(event);
         }
-    }
-
-    isRoot(path: Path): boolean {
-        throw Error('isRoot is no implemented yet');
     }
 
     ls(path: Path): Promise<Path[]> {

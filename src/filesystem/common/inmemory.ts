@@ -19,10 +19,6 @@ export class InMemoryFileSystem implements FileSystem {
         }
     }
 
-    isRoot(path: Path): boolean {
-        return path.equals(this.root.path);
-    }
-
     private find(path: Path): InMemoryFileNode|undefined {
         return this.internalFindNode(this.root, path);
     }

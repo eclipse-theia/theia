@@ -1,2 +1,2 @@
 export * from './connection';
-export * from './ws-module';
+export * from './messaging-module';

@@ -5,6 +5,8 @@ export class Path {
         return new Path(segments);
     }
 
+    static ROOT = Path.fromString("");
+
     constructor(public readonly segments: string[]) {
     }
 
@@ -25,6 +27,10 @@ export class Path {
             return this;
         }
         return new Path(this.segments.slice(0, this.segments.length - 1));
+    }
+
+    resolve(path: Path): Path {
+        return this.append(...path.segments);
     }
 
     append(...segments: string[]): Path {

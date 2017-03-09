@@ -36,7 +36,7 @@ export class FileNavigatorModel extends TreeModel {
 
     protected isRootAffected(event: FileChangeEvent): boolean {
         return event.changes.some(change =>
-            change.type < FileChangeType.DELETED && FileNavigatorTree.ROOT.equals(change.path)
+            change.type < FileChangeType.DELETED && Path.ROOT.equals(change.path)
         );
     }
 
@@ -66,15 +66,13 @@ export class FileNavigatorModel extends TreeModel {
 @injectable()
 export class FileNavigatorTree extends Tree {
 
-    public static ROOT = Path.fromString("");
-
     constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem) {
         super();
         this.root = this.createRootNode();
     }
 
     protected createRootNode(): IDirNode {
-        const path = FileNavigatorTree.ROOT;
+        const path = Path.ROOT;
         const id = path.toString();
         return {
             id, path,

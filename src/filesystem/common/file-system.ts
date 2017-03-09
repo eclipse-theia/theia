@@ -5,8 +5,6 @@ export const FileSystem = Symbol("FileSystem");
 
 export interface FileSystem {
 
-    isRoot(path: Path): boolean ;
-
     ls(path: Path): Promise<Path[]> ;
 
     chmod(path: Path, mode: number): Promise<boolean> ;

@@ -26,24 +26,6 @@ beforeEach(() => {
 
 describe('NodeFileSystem', () => {
 
-    describe('#isRoot(Path)', () => {
-        it('Should be true when path equals to the root.', () => {
-            expect(createFileSystem().isRoot(rootPath)).to.be.true;
-        });
-    });
-
-    describe('#isRoot(Path)', () => {
-        it('Should be false when path does not equal to the root.', () => {
-            expect(createFileSystem().isRoot(rootPath.append('foo'))).to.be.false;
-        });
-    });
-
-    describe('#isRoot(Path)', () => {
-        it('Should be false when path is undefined.', () => {
-            expect(createFileSystem().isRoot(undefinedPath)).to.be.false;
-        });
-    });
-
     describe('#mkdir(Path)', () => {
         it('Should return with true on successful folder creation.', () => {
             expect(createFileSystem().mkdir(rootPath.append('foo'))).to.eventually.be.true;

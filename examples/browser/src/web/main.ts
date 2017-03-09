@@ -13,7 +13,7 @@ import {browserMenuModule} from "theia/lib/application/browser/menu/menu-module"
 let container = new Container();
 container.load(browserApplicationModule);
 container.load(navigatorModule);
-container.load(fileSystemClientModule(`ws://${location.host}/fileSystem`));
+container.load(fileSystemClientModule);
 container.load(editorModule);
 container.load(browserMenuModule);
 

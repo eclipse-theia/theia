@@ -1,7 +1,14 @@
 import {MessageConnection} from "vscode-jsonrpc";
 import {createSocketConnection} from "../common";
 import {ConsoleLogger} from "./logger";
+import {ConnectionHandler} from "../common/handler";
 const WebSocket = require('reconnecting-websocket');
+
+export function listen(handler: ConnectionHandler): void {
+    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+    const url = `${protocol}://${location.host}${handler.path}`;
+    createClientWebSocketConnection(url, connection => handler.onConnection(connection));
+}
 
 export function createClientWebSocketConnection(url: string, onConnect: (connection: MessageConnection) => void): void {
     const webSocket = createWebSocket(url);

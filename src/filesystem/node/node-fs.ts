@@ -10,12 +10,9 @@ export class NodeFileSystem implements FileSystem {
         this.watchers = [];
     }
 
-    public isRoot(path: Path): boolean {
-        return path ? this.root.equals(path) : false;
-    }
-
-    public ls(path: Path): Promise<Path[]> {
-        if (path) {
+    public ls(raw: Path): Promise<Path[]> {
+        if (raw) {
+            const path = this.root.resolve(raw);
             const pathString = path.toString();
             if (pathString) {
                 return new Promise<Path[]>((resolve, reject) => {
@@ -27,7 +24,7 @@ export class NodeFileSystem implements FileSystem {
                                 reject(err);
                             }
                         } else {
-                            resolve(files.map(file => path.append(file)));
+                            resolve(files.map(file => raw.append(file)));
                         }
                     });
                 });
@@ -140,8 +137,9 @@ export class NodeFileSystem implements FileSystem {
         return Promise.resolve(false);
     }
 
-    public readFile(path: Path, encoding: string): Promise<string> {
-        if (path && encoding) {
+    public readFile(raw: Path, encoding: string): Promise<string> {
+        if (raw && encoding) {
+            const path = this.root.resolve(raw);
             const pathString = path.toString();
             if (pathString) {
                 return new Promise<string>((resolve, reject) => {
@@ -155,7 +153,7 @@ export class NodeFileSystem implements FileSystem {
                 });
             }
         }
-        return Promise.reject(`Cannot read file content. File path: ${path}. Encoding: ${encoding}.`);
+        return Promise.reject(`Cannot read file content. File path: ${raw}. Encoding: ${encoding}.`);
     }
 
     public writeFile(path: Path, data: string, encoding?: string): Promise<boolean> {
@@ -177,8 +175,9 @@ export class NodeFileSystem implements FileSystem {
         return Promise.resolve(false);
     }
 
-    public exists(path: Path): Promise<boolean> {
-        if (path) {
+    public exists(raw: Path): Promise<boolean> {
+        if (raw) {
+            const path = this.root.resolve(raw);
             const pathString = path.toString();
             if (pathString) {
                 return new Promise<boolean>((resolve) => {
@@ -191,9 +190,10 @@ export class NodeFileSystem implements FileSystem {
         return Promise.resolve(false);
     }
 
-    public dirExists(path: Path): Promise<boolean> {
+    public dirExists(raw: Path): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
-            this.exists(path).then(() => {
+            this.exists(raw).then(() => {
+                const path = this.root.resolve(raw);
                 fs.stat(path.toString(), (err, stat) => {
                     if (err) {
                         if (err.errno === -2 && err.code === 'ENOENT') {

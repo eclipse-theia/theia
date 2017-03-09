@@ -1,24 +1,24 @@
-import {ContainerModule, inject, injectable} from "inversify";
+import {ContainerModule} from "inversify";
 import {ExpressContribution} from "../../application/node";
-import {MessageConnectionHandler} from "../../messaging/node";
-import {FileSystem} from "../common";
+import {FileSystem, Path} from "../common";
 import {FileSystemServer} from "../common/messaging";
-import {MessageConnection} from "vscode-jsonrpc";
+import {NodeFileSystem} from "./node-fs";
+import {ConnectionHandler} from "../../messaging/common";
+
+export const ROOT_DIR_OPTION = '--root-dir=';
 
 export const fileSystemServerModule = new ContainerModule(bind => {
-    bind<ExpressContribution>(MessageConnectionHandler).to(FileSystemMessageConnectionHandler);
+    const rootDir = getRootDir();
+    if (rootDir) {
+        const fileSystem = new NodeFileSystem(Path.fromString(rootDir));
+        bind<FileSystem>(FileSystem).toConstantValue(fileSystem);
+        bind<ExpressContribution>(ConnectionHandler).to(FileSystemServer);
+    } else {
+        throw new Error(`The directory is not unknown, please use '${ROOT_DIR_OPTION}' option`);
+    }
 });
 
-@injectable()
-export class FileSystemMessageConnectionHandler implements MessageConnectionHandler {
-
-    readonly path = '/fileSystem';
-
-    constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem) {
-    }
-
-    handle(connection: MessageConnection): void {
-        FileSystemServer.connect(this.fileSystem, connection)
-    }
-
+export function getRootDir(): string | undefined {
+    const arg = process.argv.filter(arg => arg.startsWith(ROOT_DIR_OPTION))[0];
+    return arg ? arg.substring(ROOT_DIR_OPTION.length) : undefined;
 }

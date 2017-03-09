@@ -1,29 +1,29 @@
 import {ContainerModule} from "inversify";
 import {FileSystem} from "../common";
 import {FileSystemClient} from "../common/messaging/filesystem-client";
-import { createClientWebSocketConnection } from "../../messaging/browser/connection";
-import { CommandContribution, SimpleCommand } from "../../application/common/command";
-import { MenuBarContribution } from "../../application/common/menu";
+import {listen} from "../../messaging/browser/connection";
+import {CommandContribution, SimpleCommand} from "../../application/common/command";
+import {MenuBarContribution} from "../../application/common/menu";
 
-export const fileSystemClientModule = (url: string) => new ContainerModule(bind => {
+export const fileSystemClientModule = new ContainerModule(bind => {
     const fileSystemClient = new FileSystemClient();
-    createClientWebSocketConnection(url, connection => fileSystemClient.connection = connection);
+    listen(fileSystemClient);
     bind<FileSystem>(FileSystem).toConstantValue(fileSystemClient);
 
-    bind<CommandContribution>(CommandContribution).toConstantValue( {
+    bind<CommandContribution>(CommandContribution).toConstantValue({
         getCommands() {
             return [
-                new SimpleCommand ({  
-                    id : 'file:newFile',
-                    label : 'New File'
+                new SimpleCommand({
+                    id: 'file:newFile',
+                    label: 'New File'
                 }),
-                new SimpleCommand ({  
-                    id : 'file:newFolder',
-                    label : 'New Folder'
+                new SimpleCommand({
+                    id: 'file:newFolder',
+                    label: 'New Folder'
                 }),
-                new SimpleCommand ({  
-                    id : 'file:open',
-                    label : 'Open ...'
+                new SimpleCommand({
+                    id: 'file:open',
+                    label: 'Open ...'
                 })
             ]
         }
@@ -31,21 +31,21 @@ export const fileSystemClientModule = (url: string) => new ContainerModule(bind 
     bind<MenuBarContribution>(MenuBarContribution).toConstantValue({
         contribute(menuBar) {
             return {
-                menus : [
+                menus: [
                     {
-                        label : 'File',
-                        items : [
+                        label: 'File',
+                        items: [
                             {
-                                command : 'file:newFile'
+                                command: 'file:newFile'
                             },
                             {
-                                command : 'file:newFolder'
+                                command: 'file:newFolder'
                             },
                             {
                                 separator: true
                             },
                             {
-                                command : 'file:open'
+                                command: 'file:open'
                             }
                         ]
                     },

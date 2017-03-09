@@ -1,3 +1,4 @@
+import {inject, injectable} from "inversify";
 import {MessageConnection} from "vscode-jsonrpc";
 import {FileSystem} from "../file-system";
 import {
@@ -12,25 +13,31 @@ import {
 } from "./filesystem-protocol";
 import {Path} from "../path";
 import {DisposableCollection} from "../../../application/common/disposable";
+import {AbstractFileSystemConnectionHandler} from "./filesystem-handler";
 
-export namespace FileSystemServer {
+@injectable()
+export class FileSystemServer extends AbstractFileSystemConnectionHandler {
 
-    export function connect(fileSystem: FileSystem, connection: MessageConnection): void {
+    constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem) {
+        super();
+    }
+
+    onConnection(connection: MessageConnection): void {
         connection.onRequest(LsRequest.type, (param, token) =>
-            fileSystem.ls(Path.fromString(param.path)).then(paths =>
+            this.fileSystem.ls(Path.fromString(param.path)).then(paths =>
                 <LsResult>{
                     paths: paths.map(p => p.toString())
                 }
             )
         );
         connection.onRequest(DirExistsRequest.type, (param, token) =>
-            fileSystem.dirExists(Path.fromString(param.path)).then(exists => <ExistsResult>{exists})
+            this.fileSystem.dirExists(Path.fromString(param.path)).then(exists => <ExistsResult>{exists})
         );
         connection.onRequest(ReadFileRequest.type, (param, token) =>
-            fileSystem.readFile(Path.fromString(param.path), param.encoding).then(content => <ReadFileResult>{content})
+            this.fileSystem.readFile(Path.fromString(param.path), param.encoding).then(content => <ReadFileResult>{content})
         );
         const toDispose = new DisposableCollection();
-        toDispose.push(fileSystem.watch(event => {
+        toDispose.push(this.fileSystem.watch(event => {
             const changes = event.changes.map(change => <FileChange>{
                 path: change.path.toString(),
                 type: change.type
