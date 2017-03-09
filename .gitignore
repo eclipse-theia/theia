@@ -4,3 +4,4 @@ build
 lib
 *.log
 .idea
+.vscode

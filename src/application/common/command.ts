@@ -70,6 +70,9 @@ export class SimpleCommand implements Command {
         return true;
     }
     isEnabled(arg?: any): boolean {
+        if (this.opts.isEnabled) {
+            return this.opts.isEnabled();
+        }
         return true;
     }
 
@@ -80,5 +83,6 @@ export namespace SimpleCommand {
         label:string
         iconClass?:string
         execute?: ()=>void
+        isEnabled?: ()=>boolean
     }
 }

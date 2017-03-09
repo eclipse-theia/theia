@@ -1,3 +1,3 @@
 export * from './editor-widget';
-export * from './editor-opener';
+export {IEditorService} from './editor-service';
 export * from './editor-module';
