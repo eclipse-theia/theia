@@ -22,7 +22,7 @@ export class BackendApplication {
 
     start(port: number = 3000): Promise<void> {
         this.app = express();
-        for (let contrib of this.contributions) {
+        for (const contrib of this.contributions) {
             if (contrib.configure) {
                 contrib.configure(this.app);
             }
@@ -32,7 +32,7 @@ export class BackendApplication {
                 console.log(`Theia app listening on port ${port}.`)
                 resolve();
             });
-            for (let contrib of this.contributions) {
+            for (const contrib of this.contributions) {
                 if (contrib.onStart) {
                     contrib.onStart(server);
                 }

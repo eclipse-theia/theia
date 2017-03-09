@@ -49,7 +49,7 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
     protected initialize(): void {
         this.notifyWatchers({
             changes: [{
-                path: Path.fromString(""),
+                path: Path.ROOT,
                 type: FileChangeType.UPDATED
             }]
         });

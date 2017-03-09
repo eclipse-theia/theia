@@ -14,7 +14,7 @@ export const fileSystemServerModule = new ContainerModule(bind => {
         bind<FileSystem>(FileSystem).toConstantValue(fileSystem);
         bind<ExpressContribution>(ConnectionHandler).to(FileSystemServer);
     } else {
-        throw new Error(`The directory is not unknown, please use '${ROOT_DIR_OPTION}' option`);
+        throw new Error(`The directory is unknown, please use '${ROOT_DIR_OPTION}' option`);
     }
 });
 
