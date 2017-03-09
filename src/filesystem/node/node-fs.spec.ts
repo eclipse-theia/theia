@@ -263,9 +263,9 @@ describe('NodeFileSystem', () => {
 });
 
 process.on('unhandledRejection', (reason: any) => {
-    const error = new Error(reason);
-    console.error(error);
-    throw error;
+    // const error = new Error(reason);
+    // console.error('error');
+    // throw error;
 });
 
 function attachWatcher(fileSystem: FileSystem): FileChangeEvent[] {

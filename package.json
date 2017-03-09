@@ -65,8 +65,8 @@
     "watch": "./node_modules/.bin/tsc --watch",
     "clean": "./node_modules/.bin/rimraf lib",
     "clean:node_modules": "./node_modules/.bin/rimraf node_modules",
-    "test": "mocha --opts ./mocha.opts",
-    "test:debug": "mocha -w --opts ./mocha.opts"
+    "test": "./node_modules/.bin/mocha src/**/*.spec.ts",
+    "test:watch": "./node_modules/.bin/mocha src/**/*.spec.ts -w"
   },
   "bugs": {
     "url": "https://github.com/TypeFox/Theia/issues"
