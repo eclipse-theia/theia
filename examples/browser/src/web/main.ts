@@ -3,11 +3,10 @@ import {TheiaApplication, browserApplicationModule} from "theia/lib/application/
 import {navigatorModule} from "theia/lib/navigator/browser";
 import {fileSystemClientModule} from "theia/lib/filesystem/browser";
 import {editorModule} from "theia/lib/editor/browser";
+import {browserMenuModule} from "theia/lib/application/browser/menu/menu-module";
 import "theia/src/application/browser/style/index.css";
 import "theia/src/editor/browser/style/index.css";
 import "theia/src/navigator/browser/style/index.css";
-import {browserMenuModule} from "theia/lib/application/browser/menu/menu-module";
-
 
 // create container
 let container = new Container();

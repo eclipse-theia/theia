@@ -2,7 +2,12 @@
   "private": true,
   "name": "browser-example",
   "dependencies": {
+    "monaco-css": "^1.3.1",
     "monaco-editor-core": "^0.8.2",
+    "monaco-html": "^1.2.1",
+    "monaco-json": "^1.2.2",
+    "monaco-languages": "^0.7.0",
+    "monaco-typescript": "^2.1.2",
     "reflect-metadata": "^0.1.10",
     "theia": "^0.0.1"
   },
