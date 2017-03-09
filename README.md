@@ -7,3 +7,16 @@ A Javascript framework for native desktop and cloud-based IDEs.
  - Support equally the paradigm of Cloud IDE and Desktop IDE
  - Provide extenders with a platform on which to build their own products
  - Provide support for multiple languages via the language and debug server protocols
+ 
+ ### Running the example
+ ```
+ git clone https://github.com/TypeFox/Theia.git \
+&& cd Theia \
+&& npm install \
+&& npm run build \
+&& cd examples/browser \
+&& npm run install:theia \
+&& npm install \
+&& npm run build \
+&& npm run start
+```
