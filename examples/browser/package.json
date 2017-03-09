@@ -20,9 +20,11 @@
     "watch:web": "npm run build:web && ./node_modules/.bin/webpack --watch",
     "clean": "./node_modules/.bin/rimraf lib",
     "start:example": "./node_modules/.bin/webpack-dev-server --open",
-    "start:app": "./node_modules/.bin/node ./lib/app.js"
+    "start:app": "./node_modules/.bin/node ./lib/app.js",
+    "start": "./node_modules/.bin/concurrently \"npm run start:app -- --root-dir=`pwd`\" \"npm run start:example\""
   },
   "devDependencies": {
+    "concurrently": "^3.4.0",
     "rimraf": "^2.6.1",
     "typescript": "^2.2.1",
     "webpack": "^2.2.1",
