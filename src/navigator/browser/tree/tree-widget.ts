@@ -198,11 +198,11 @@ export abstract class AbstractTreeWidget<
             return props;
         }
         const visible = parent.expanded;
-        if (!ITreeNode.isVisible(parent)) {
-            return Object.assign({}, props, {visible});
-        }
         const {width} = this.props.expansionToggleSize;
-        const relativeIndentSize = IExpandableTreeNode.is(child) ? width : width * 2;
+        const parentVisibility = ITreeNode.isVisible(parent) ? 1 : 0;
+        const childExpansion = IExpandableTreeNode.is(child) ? 0 : 1;
+        const indentMultiplier = parentVisibility + childExpansion;
+        const relativeIndentSize = width * indentMultiplier;
         const indentSize = props.indentSize + relativeIndentSize;
         return Object.assign({}, props, {visible, indentSize});
     }
@@ -227,7 +227,9 @@ export abstract class AbstractTreeWidget<
     protected handleKeyDown(event: KeyboardEvent): boolean {
         if (this.model) {
             if (event.keyCode === 37) { // Left Arrow
-                this.model.collapseNode();
+                if (!this.model.collapseNode()) {
+                    this.model.selectParent();
+                }
                 return true;
             }
             if (event.keyCode === 38) { // Up Arrow
@@ -235,7 +237,9 @@ export abstract class AbstractTreeWidget<
                 return true;
             }
             if (event.keyCode === 39) { // Right Arrow
-                this.model.expandNode();
+                if (!this.model.expandNode()) {
+                    this.model.selectNextNode();
+                }
                 return true;
             }
             if (event.keyCode === 40) { // Down Arrow

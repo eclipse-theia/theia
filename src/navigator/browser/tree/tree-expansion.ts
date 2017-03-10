@@ -15,12 +15,16 @@ export interface ITreeExpansionService extends Disposable {
     /**
      * If the given node is valid and collapsed then expand it.
      * Expanding a node refreshes all its children.
+     *
+     * Return true if a node has been expanded; otherwise false.
      */
-    expandNode(node: Readonly<IExpandableTreeNode>): void;
+    expandNode(node: Readonly<IExpandableTreeNode>): boolean;
     /**
      * If the given node is valid and expanded then collapse it.
+     *
+     * Return true if a node has been collapsed; otherwise false.
      */
-    collapseNode(node: Readonly<IExpandableTreeNode>): void;
+    collapseNode(node: Readonly<IExpandableTreeNode>): boolean;
     /**
      * If the given node is invalid then does nothing.
      * If the given node is collapsed then expand it; otherwise collapse it.
@@ -79,29 +83,33 @@ export class TreeExpansionService implements ITreeExpansionService {
         this.onExpansionChangedEmitter.fire(node);
     }
 
-    expandNode(raw: IExpandableTreeNode): void {
+    expandNode(raw: IExpandableTreeNode): boolean {
         const node = this.state.validateNode(raw);
         if (IExpandableTreeNode.isCollapsed(node)) {
-            this.doExpandNode(node);
+            return this.doExpandNode(node);
         }
+        return false;
     }
 
-    protected doExpandNode(node: IExpandableTreeNode): void {
+    protected doExpandNode(node: IExpandableTreeNode): boolean {
         node.expanded = true;
         this.fireExpansionChanged(node);
         this.state.refresh(node);
+        return true;
     }
 
-    collapseNode(raw: IExpandableTreeNode): void {
+    collapseNode(raw: IExpandableTreeNode): boolean {
         const node = this.state.validateNode(raw);
         if (IExpandableTreeNode.isExpanded(node)) {
-            this.doCollapseNode(node);
+            return this.doCollapseNode(node);
         }
+        return false;
     }
 
-    protected doCollapseNode(node: IExpandableTreeNode): void {
+    protected doCollapseNode(node: IExpandableTreeNode): boolean {
         node.expanded = false;
         this.fireExpansionChanged(node);
+        return true;
     }
 
     toggleNodeExpansion(node: IExpandableTreeNode): void {

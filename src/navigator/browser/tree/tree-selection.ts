@@ -46,6 +46,15 @@ export namespace ISelectableTreeNode {
     export function isVisible(node: ITreeNode | undefined): node is ISelectableTreeNode {
         return is(node) && ITreeNode.isVisible(node);
     }
+
+    export function getVisibleParent(node: ITreeNode | undefined): ISelectableTreeNode | undefined {
+        if (node) {
+            if (isVisible(node.parent)) {
+                return node.parent;
+            }
+            return getVisibleParent(node.parent)
+        }
+    }
 }
 
 @injectable()

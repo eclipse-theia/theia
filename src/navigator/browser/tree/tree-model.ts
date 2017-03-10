@@ -12,11 +12,11 @@ export interface ITreeModel extends ITree, ITreeSelectionService, ITreeExpansion
     /**
      * Expand a node taking into the account node selection if a given node is undefined.
      */
-    expandNode(node?: Readonly<IExpandableTreeNode>): void;
+    expandNode(node?: Readonly<IExpandableTreeNode>): boolean;
     /**
      * Collapse a node taking into the account node selection if a given node is undefined.
      */
-    collapseNode(node?: Readonly<IExpandableTreeNode>): void;
+    collapseNode(node?: Readonly<IExpandableTreeNode>): boolean;
     /**
      * Toggle node expansion taking into the account node selection if a given node is undefined.
      */
@@ -33,6 +33,15 @@ export interface ITreeModel extends ITree, ITreeSelectionService, ITreeExpansion
      * Open a given node or a selected if the given is undefined.
      */
     openNode(node?: ITreeNode | undefined): void;
+    /**
+     * Select a parent node relatively to the selected taking into account node expansion.
+     */
+    selectParent(options?: {
+        /**
+         *
+         */
+        collapse: boolean
+    }): void;
 }
 
 @injectable()
@@ -117,18 +126,20 @@ export class TreeModel implements ITreeModel {
         return this.expansion.onExpansionChanged;
     }
 
-    expandNode(raw?: Readonly<IExpandableTreeNode>): void {
+    expandNode(raw?: Readonly<IExpandableTreeNode>): boolean {
         const node = raw || this.selectedNode;
         if (IExpandableTreeNode.is(node)) {
-            this.expansion.expandNode(node);
+            return this.expansion.expandNode(node);
         }
+        return false;
     }
 
-    collapseNode(raw?: Readonly<IExpandableTreeNode>): void {
+    collapseNode(raw?: Readonly<IExpandableTreeNode>): boolean {
         const node = raw || this.selectedNode;
         if (IExpandableTreeNode.is(node)) {
-            this.expansion.collapseNode(node);
+            return this.expansion.collapseNode(node);
         }
+        return false;
     }
 
     toggleNodeExpansion(raw?: Readonly<IExpandableTreeNode>): void {
@@ -183,6 +194,14 @@ export class TreeModel implements ITreeModel {
     protected doOpenNode(node: ITreeNode): void {
         if (IExpandableTreeNode.is(node)) {
             this.toggleNodeExpansion(node);
+        }
+    }
+
+    selectParent(): void {
+        const node = this.selectedNode;
+        const parent = ISelectableTreeNode.getVisibleParent(node);
+        if (parent) {
+            this.selectNode(parent);
         }
     }
 
