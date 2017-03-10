@@ -18,6 +18,6 @@
     "src"
   ],
   "files" : [
-    "../../typings/monaco/index.d.ts"
+    "node_modules/theia/typings/monaco/index.d.ts"
   ]
 }

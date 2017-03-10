@@ -8,7 +8,9 @@
   },
   "files": [
     "./lib/*.d.ts",
-    "./lib/*.js"
+    "./lib/*.js",
+    "./typings/**/*.d.ts",
+    "./src/**/*.css"
   ],
   "directories": {
     "lib": "lib/"
