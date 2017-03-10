@@ -36,12 +36,7 @@ export interface ITreeModel extends ITree, ITreeSelectionService, ITreeExpansion
     /**
      * Select a parent node relatively to the selected taking into account node expansion.
      */
-    selectParent(options?: {
-        /**
-         *
-         */
-        collapse: boolean
-    }): void;
+    selectParent(): void;
 }
 
 @injectable()
