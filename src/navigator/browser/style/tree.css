@@ -1,8 +1,13 @@
 .theia-Tree {
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     color: var(--theia-ui-font-color1);
     background:var(--theia-layout-color1);
     font-size: var(--theia-ui-font-size1);
+}
+
+.theia-TreeNode {
+    width: 500px;
 }
 
 .theia-TreeNodeCaption {
