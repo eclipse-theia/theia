@@ -15,14 +15,10 @@
       "dom"
     ],
     "outDir": "lib",
-    "sourceMap": true,
-    "typeRoots": [
-      "node_modules/@types",
-      "@types"
-    ]
+    "sourceMap": true
   },
   "files": [
-    "node_modules/monaco-editor-core/monaco.d.ts"
+    "typings/monaco/index.d.ts"
   ],
   "include": [
     "src"

@@ -1,19 +1,17 @@
 import {RequestType, NotificationType} from "vscode-jsonrpc";
 import {FileChangeType} from "../file-system";
 
-export type Path = string;
-
 export interface FileChange {
     path: string;
     type: FileChangeType;
 }
 
 export interface PathParam {
-    path: Path
+    path: string
 }
 
 export interface LsResult {
-    paths: Path[]
+    paths: string[]
 }
 
 export namespace LsRequest {

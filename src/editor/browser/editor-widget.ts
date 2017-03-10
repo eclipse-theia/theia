@@ -1,12 +1,13 @@
-import { ElementExt } from "@phosphor/domutils"
-import { Widget } from "@phosphor/widgets"
-import { Message } from "@phosphor/messaging"
-import { DisposableCollection } from "../../application/common"
+import {ElementExt} from "@phosphor/domutils";
+import {Widget} from "@phosphor/widgets";
+import {Message} from "@phosphor/messaging";
+import {DisposableCollection} from "../../application/common";
 import IEditorConstructionOptions = monaco.editor.IEditorConstructionOptions
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices
 import IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor
 import IDimension = monaco.editor.IDimension
 import IBoxSizing = ElementExt.IBoxSizing
+import IEditorReference = monaco.editor.IEditorReference
 
 export namespace EditorWidget {
     export interface IOptions extends IEditorConstructionOptions {
@@ -27,7 +28,8 @@ export namespace EditorWidget {
     }
 }
 
-export class EditorWidget extends Widget implements EventListenerObject {
+export class EditorWidget extends Widget implements EventListenerObject, IEditorReference {
+
 
     protected readonly autoSizing: boolean
     protected readonly minHeight: number
@@ -49,10 +51,10 @@ export class EditorWidget extends Widget implements EventListenerObject {
         this.toDispose.push(this.editor.onDidChangeConfiguration(e => this.refresh()))
         this.toDispose.push(this.editor.onDidChangeModel(e => this.refresh()))
         this.toDispose.push(this.editor.onDidChangeModelContent(() => this.refresh()))
-        
+
         // increase the z-index for the focussed element hierarchy within the dockpanel
         this.editor.onDidFocusEditor(
-            ()=> {
+            () => {
                 const z = '1'
                 // already increased? -> do nothing
                 if (this.editor.getDomNode().style.zIndex === z) {
@@ -67,13 +69,15 @@ export class EditorWidget extends Widget implements EventListenerObject {
         )
     }
 
-    protected increaseZIndex(element : HTMLElement, z:string, disposables: DisposableCollection) {
+    protected increaseZIndex(element: HTMLElement, z: string, disposables: DisposableCollection) {
         let parent = element.parentElement
         if (parent && !element.classList.contains('p-DockPanel')) {
             const oldIndex = element.style.zIndex;
-            disposables.push( { dispose() {
-                element.style.zIndex = oldIndex;
-            }})
+            disposables.push({
+                dispose() {
+                    element.style.zIndex = oldIndex;
+                }
+            })
             element.style.zIndex = z;
             this.increaseZIndex(parent, z, disposables)
         }
@@ -86,6 +90,10 @@ export class EditorWidget extends Widget implements EventListenerObject {
         clearTimeout(this._resizing)
         super.dispose()
         this.editor.dispose()
+    }
+
+    getControl() {
+        return this.editor;
     }
 
     protected onActivateRequest(msg: Message): void {
@@ -177,7 +185,7 @@ export class EditorWidget extends Widget implements EventListenerObject {
             this.getHeight(hostNode, boxSizing) :
             dimension.height
 
-        return { width, height }
+        return {width, height}
     }
 
     protected getWidth(hostNode: HTMLElement, boxSizing: IBoxSizing): number {

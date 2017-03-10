@@ -1,8 +1,8 @@
 import { Command } from '../../application/common/command';
-import { IEditorService } from './editor-service';
+import { IEditorManager } from './editor-manager';
 
 export class EditorCommand implements Command {
-    constructor(protected readonly editorService: IEditorService, 
+    constructor(protected readonly editorManager: IEditorManager,
                 protected readonly options: EditorCommand.Options) {
     }
 
@@ -11,7 +11,7 @@ export class EditorCommand implements Command {
     }
 
     execute(arg?: any): Promise<any> {
-        const currentEditor = this.editorService.currentEditor;
+        const currentEditor = this.editorManager.currentEditor;
         if (currentEditor) {
             currentEditor.runAction(this.options.actionId);
         }
@@ -31,7 +31,7 @@ export class EditorCommand implements Command {
     }
 
     isEnabled(arg?: any): boolean {
-        const currentEditor = this.editorService.currentEditor;
+        const currentEditor = this.editorManager.currentEditor;
         return !!currentEditor && currentEditor.isActionSupported(this.options.actionId);
     }
 

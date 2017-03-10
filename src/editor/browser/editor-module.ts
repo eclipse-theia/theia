@@ -1,17 +1,23 @@
-import { IOpenerService, TheiaPlugin } from '../../application/browser';
-import { CommandContribution } from '../../application/common/command';
-import { MenuBarContribution } from '../../application/common/menu';
-import { EditorService, IEditorService } from './editor-service';
-import { EditorCommand } from './editor-command';
-import { ContainerModule } from 'inversify';
+import {IOpenerService, TheiaPlugin} from "../../application/browser";
+import {CommandContribution} from "../../application/common/command";
+import {MenuBarContribution} from "../../application/common/menu";
+import {EditorManager, IEditorManager} from "./editor-manager";
+import {EditorCommand} from "./editor-command";
+import {ContainerModule} from "inversify";
+import {EditorRegistry} from "./editor-registry";
+import {EditorService} from "./editor-service";
+import {TextModelResolverService} from "./model-resolver-service";
 
 export const editorModule = new ContainerModule(bind => {
-    bind(IEditorService).to(EditorService).inSingletonScope();
-    bind(TheiaPlugin).toDynamicValue(context => context.container.get(IEditorService));
-    bind(IOpenerService).toDynamicValue(context => context.container.get(IEditorService));
- 
+    bind(EditorRegistry).toSelf().inSingletonScope();
+    bind(EditorService).toSelf().inSingletonScope();
+    bind(TextModelResolverService).toSelf().inSingletonScope();
+    bind(IEditorManager).to(EditorManager).inSingletonScope();
+    bind(TheiaPlugin).toDynamicValue(context => context.container.get(IEditorManager));
+    bind(IOpenerService).toDynamicValue(context => context.container.get(IEditorManager));
+
     bind<CommandContribution>(CommandContribution).toDynamicValue(context => {
-        const editorService = context.container.get<IEditorService>(IEditorService);
+        const editorService = context.container.get<IEditorManager>(IEditorManager);
         return {
             getCommands() {
                 return [
