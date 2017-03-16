@@ -19,11 +19,8 @@ const monacoHtmlLanguagePath = './node_modules/monaco-html/release/min';
 module.exports = function (dirname, config) {
     const commonConfiguration = {
 
-        entry: paths(dirname).ENTRY,
-
         output: {
-            filename: 'bundle.js',
-            libraryTarget: 'umd'
+            filename: 'bundle.js'
         },
 
         module: {
