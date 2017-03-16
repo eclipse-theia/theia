@@ -2,7 +2,9 @@
   "private": true,
   "name": "browser-example",
   "dependencies": {
+    "electron": "^1.4.8",
     "monaco-css": "^1.3.1",
+    "monaco-editor": "^0.8.3",
     "monaco-editor-core": "^0.8.2",
     "monaco-html": "^1.2.1",
     "monaco-json": "^1.2.2",
@@ -13,18 +15,20 @@
   },
   "scripts": {
     "install:theia": "cd ../../ && npm link && cd examples/browser && npm link theia",
+    "clean": "./node_modules/.bin/rimraf lib",
     "build": "npm run build:app && npm run build:web",
     "build:app": "./node_modules/.bin/tsc",
     "build:web": "./node_modules/.bin/webpack && cp src/web/index.html lib/web",
-    "watch:app": "./node_modules/.bin/tsc --watch",
-    "watch:web": "npm run build:web && ./node_modules/.bin/webpack --watch",
-    "clean": "./node_modules/.bin/rimraf lib",
-    "start:example": "./node_modules/.bin/webpack-dev-server --open",
+    "build:electron": "npm run build:app && ./node_modules/.bin/webpack --target electron && cp src/electron/index.html lib/electron",
     "start:app": "./node_modules/.bin/node ./lib/app.js",
-    "start": "./node_modules/.bin/concurrently \"npm run start:app -- --root-dir=`pwd`\" \"npm run start:example\""
+    "start:web": "./node_modules/.bin/concurrently \"npm run start:app\" \"./node_modules/.bin/webpack-dev-server --open\"",
+    "start:electron": "./node_modules/.bin/electron ./lib/electron/electron-main.js",
+    "watch:app": "./node_modules/.bin/tsc --watch",
+    "watch:web": "npm run build:web && ./node_modules/.bin/webpack --watch"
   },
   "devDependencies": {
     "concurrently": "^3.4.0",
+    "@types/electron": "^1.4.32",
     "rimraf": "^2.6.1",
     "typescript": "^2.2.1",
     "webpack": "^2.2.1",

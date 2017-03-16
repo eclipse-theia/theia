@@ -20,5 +20,11 @@ export const fileSystemServerModule = new ContainerModule(bind => {
 
 export function getRootDir(): string | undefined {
     const arg = process.argv.filter(arg => arg.startsWith(ROOT_DIR_OPTION))[0];
-    return arg ? arg.substring(ROOT_DIR_OPTION.length) : undefined;
+    if (arg) {
+        return arg.substring(ROOT_DIR_OPTION.length);
+    } else {
+        const cwd = process.cwd();
+        console.info(`--root-dir= was not present. Falling back to current working directory: '${cwd}.'`)
+        return cwd;
+    }
 }

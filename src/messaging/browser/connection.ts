@@ -6,7 +6,7 @@ const WebSocket = require('reconnecting-websocket');
 
 export function listen(handler: ConnectionHandler): void {
     const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${protocol}://${location.host}${handler.path}`;
+    const url = `${protocol}://${location.host || "127.0.0.1:3000"}${handler.path}`;
     createClientWebSocketConnection(url, connection => handler.onConnection(connection));
 }
 
