@@ -22,7 +22,8 @@ module.exports = function (dirname, config) {
         entry: paths(dirname).ENTRY,
 
         output: {
-            filename: 'bundle.js'
+            filename: 'bundle.js',
+            libraryTarget: 'umd'
         },
 
         module: {
