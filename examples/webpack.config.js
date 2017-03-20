@@ -1,6 +1,6 @@
 const webpack = require("webpack");
 
-module.exports = require("../../config/webpack/webpack.config")(__dirname, {
+module.exports = require("../config/webpack/webpack.config")(__dirname, {
     devServer: {
         proxy: {
             '/fileSystem/*': {

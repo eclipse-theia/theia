@@ -14,7 +14,7 @@
     "theia": "^0.0.1"
   },
   "scripts": {
-    "install:theia": "cd ../../ && npm link && cd examples/browser && npm link theia",
+    "install:theia": "cd ../ && npm link && cd examples && npm link theia",
     "clean": "./node_modules/.bin/rimraf lib",
     "build": "npm run build:app && npm run build:web",
     "build:app": "./node_modules/.bin/tsc",
@@ -23,7 +23,7 @@
     "start:app": "./node_modules/.bin/node ./lib/app.js",
     "start:web": "./node_modules/.bin/concurrently \"npm run start:app\" \"./node_modules/.bin/webpack-dev-server --open\"",
     "start:electron": "./node_modules/.bin/electron ./lib/electron/electron-main.js",
-    "cold:start:electron": "cd ../.. && npm run clean && npm run build && cd examples/browser && npm run clean && npm run build:app && npm run build:electron && npm run start:electron",
+    "cold:start:electron": "cd ../ && npm run clean && npm run build && cd examples && npm run clean && npm run build:app && npm run build:electron && npm run start:electron",
     "watch:app": "./node_modules/.bin/tsc --watch",
     "watch:web": "npm run build:web && ./node_modules/.bin/webpack --watch"
   },
