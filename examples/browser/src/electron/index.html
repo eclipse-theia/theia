@@ -4,20 +4,17 @@
   <meta charset="UTF-8">
   <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
   <script type="text/javascript" src="https://www.promisejs.org/polyfills/promise-6.1.0.js" charset="utf-8"></script>
-
-
   <script>
       // Monaco uses a custom amd loader that over-rides node's require.
       // Keep a reference to node's require so we can restore it after executing the amd loader file.
       var nodeRequire = global.require;
   </script>
-  <script type="text/javascript" src="vs/loader.js"></script>
+  <script type="text/javascript" src="vs/loader.js" charset="utf-8"></script>
   <script>
       // Save Monaco's amd require and restore Node's require
       var amdRequire = global.require;
       global.require = nodeRequire;
   </script>
-
   <script>
       // require node modules before loader.js comes in
       var path = require('path');
@@ -36,7 +33,7 @@
       // workaround monaco-typescript not understanding the environment
       self.process.browser = true;
       amdRequire(['vs/editor/editor.main'], function() {
-          require("./bundle.js")
+          require("./bundle.js");
       });
   </script>
 </head>

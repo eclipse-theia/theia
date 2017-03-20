@@ -1,6 +1,6 @@
-import {ContainerModule} from "inversify"
-import {TheiaApplication} from './application';
-import {OpenerService} from "./opener-service";
+import { ContainerModule } from "inversify";
+import { TheiaApplication } from './application';
+import { OpenerService } from "./opener-service";
 import { CommandRegistry } from "../common/command";
 import { MenuBarModelProvider } from "../common/menu";
 
