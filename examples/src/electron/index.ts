@@ -1,1 +1,1 @@
-require('../main');
+require('./main');

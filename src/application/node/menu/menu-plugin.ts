@@ -116,6 +116,8 @@ export class MenuContribution implements TheiaPlugin {
     const itr = app.shell.children();
     let child = itr.next();
     while (child) {
+      // Top panel for the menu contribution is not required for Electron.
+      // TODO: Make sure this is the case on Windows too.
       if (child.id === 'theia-top-panel') {
         child.setHidden(true);
         child = undefined;

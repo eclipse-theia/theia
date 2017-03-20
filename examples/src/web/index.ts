@@ -8,7 +8,7 @@ window.onload = () => {
             'vs/language/html/monaco.contribution',
             'vs/language/json/monaco.contribution'
         ], () => {
-            require('../main');
+            require('./main');
         });
     });
 };

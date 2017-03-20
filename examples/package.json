@@ -23,6 +23,7 @@
     "start:app": "./node_modules/.bin/node ./lib/app.js",
     "start:web": "./node_modules/.bin/concurrently \"npm run start:app\" \"./node_modules/.bin/webpack-dev-server --open\"",
     "start:electron": "./node_modules/.bin/electron ./lib/electron/electron-main.js",
+    "cold:start:web": "cd ../ && npm run clean && npm run build && cd examples && npm run clean && npm run build:app && npm run build:web && npm run start:web",
     "cold:start:electron": "cd ../ && npm run clean && npm run build && cd examples && npm run clean && npm run build:app && npm run build:electron && npm run start:electron",
     "watch:app": "./node_modules/.bin/tsc --watch",
     "watch:web": "npm run build:web && ./node_modules/.bin/webpack --watch"
