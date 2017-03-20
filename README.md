@@ -11,27 +11,21 @@ A Javascript framework for native desktop and cloud-based IDEs.
  ### Running the browser example
  ```
  git clone https://github.com/TypeFox/Theia.git \
-&& cd Theia \
-&& npm install \
-&& npm run build \
-&& cd examples/browser \
-&& npm run install:theia \
-&& npm install \
-&& npm run build:app \
-&& npm run build:web \
-&& npm run start:web
-```
+ && cd Theia \
+ && npm install \
+ && cd examples \
+ && npm run install:theia \
+ && npm install \
+ && npm run cold:start:web
+ ```
 
  ### Running the electron example
  ```
  git clone https://github.com/TypeFox/Theia.git \
-&& cd Theia \
-&& npm install \
-&& npm run build \
-&& cd examples/browser \
-&& npm run install:theia \
-&& npm install \
-&& npm run build:app \
-&& npm run build:electron \
-&& npm run start:electron
-```
+ && cd Theia \
+ && npm install \
+ && cd examples \
+ && npm run install:theia \
+ && npm install \
+ && npm run cold:start:electron
+ ```
