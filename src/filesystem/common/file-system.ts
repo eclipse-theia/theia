@@ -17,7 +17,7 @@ export interface FileSystem {
 
     rm(path: Path): Promise<boolean> ;
 
-    readFile(path: Path, encoding: string): Promise<string>;
+    readFile(path: Path, encoding?: string): Promise<string>;
 
     writeFile(path: Path, data: string, encoding?: string): Promise<boolean>;
 
