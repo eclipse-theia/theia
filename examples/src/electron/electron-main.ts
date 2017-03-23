@@ -12,6 +12,7 @@ electron.app.on('window-all-closed', () => {
 electron.app.on('ready', () => {
     require("../app"); // start the express server
     mainWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
+    mainWindow.webContents.openDevTools();
     mainWindow.loadURL(`file://${path.join(__dirname, 'index.html')}`);
     mainWindow.on('closed', () => {
         mainWindow = undefined;
