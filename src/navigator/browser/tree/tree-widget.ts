@@ -1,3 +1,4 @@
+import { decorate, injectable } from "inversify";
 import {Widget} from "@phosphor/widgets";
 import {Message} from "@phosphor/messaging";
 import {ElementExt} from "@phosphor/domutils";
@@ -17,6 +18,9 @@ export const EXPANSION_TOGGLE_CLASS = 'theia-ExpansionToggle';
 export const COLLAPSED_CLASS = 'theia-mod-collapsed';
 export const SELECTED_CLASS = 'theia-mod-selected';
 
+decorate(injectable(), Widget)
+
+@injectable()
 export abstract class AbstractTreeWidget<
     Model extends ITreeModel,
     TreeProps extends TreeWidget.TreeProps,
