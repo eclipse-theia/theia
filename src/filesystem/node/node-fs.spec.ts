@@ -3,7 +3,7 @@ import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as fs from "fs";
 import * as os from "os";
-import { FileChangeEvent, FileSystem, FileChangeType, FileSystemWatcher } from "../common/file-system";
+import { FileChangeEvent, FileSystem, FileChangeType } from "../common/file-system";
 import { NodeFileSystem } from "./node-fs";
 import { Path } from "../common/path";
 
