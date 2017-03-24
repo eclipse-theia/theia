@@ -16,7 +16,7 @@ const monacoJsonLanguagePath = './node_modules/monaco-json/release/min';
 const monacoHtmlLanguagePath = './node_modules/monaco-html/release/min';
 
 
-module.exports = function (dirname, config) {
+module.exports = function (dirname, config = {}) {
     const commonConfiguration = {
 
         output: {

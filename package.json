@@ -66,9 +66,9 @@
     "webpack-merge": "^3.0.0"
   },
   "scripts": {
-    "lint": "./node_modules/.bin/tslint -c ./tslint.json --project ./tsconfig.json",
+    "lint": "./node_modules/.bin/tslint -c ./config/tslint/tslint.json --project ./tsconfig.json",
     "build": "./node_modules/.bin/tsc && npm run lint",
-    "watch": "./node_modules/.bin/tsc --watch && npm run lint",
+    "watch": "./node_modules/.bin/tsc --watch",
     "clean": "./node_modules/.bin/rimraf lib",
     "clean:node_modules": "./node_modules/.bin/rimraf node_modules",
     "test": "./node_modules/.bin/mocha",
