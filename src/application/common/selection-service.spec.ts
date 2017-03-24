@@ -21,7 +21,7 @@ describe('selection-service', () => {
         it('Should be rejected when path argument is undefined.', () => {
             let service = createSelectionService();
             let events: any[] = [];
-            let disposable = service.addSelectionListener(
+            let disposable = service.onSelectionChanged(
                 e => events.push(e)
             );
             service.setSelection("foo");
