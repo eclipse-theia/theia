@@ -262,6 +262,7 @@ export abstract class AbstractTreeWidget<
 
 export class TreeWidget<Model extends ITreeModel> extends AbstractTreeWidget<Model, TreeWidget.TreeProps, TreeWidget.NodeProps> {
 
+    // tslint:disable-next-line:no-use-before-declare https://github.com/palantir/tslint/issues/884
     constructor(props: TreeWidget.TreeProps = TreeWidget.DEFAULT_PROPS) {
         super(props);
     }

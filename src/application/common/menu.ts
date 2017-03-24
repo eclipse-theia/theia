@@ -3,13 +3,13 @@ import { multiInject, injectable } from "inversify";
 
 export const MenuBarContribution = Symbol("MenuBarContribution");
 export interface MenuBarContribution {
-    contribute(menuBar: MenuBar) : MenuBar;
+    contribute(menuBar: MenuBar): MenuBar;
 }
 
 @injectable()
 export class MenuBarModelProvider {
     public menuBar: MenuBar = {
-        menus : []
+        menus: []
     };
 
     constructor(@multiInject(MenuBarContribution) contribs: MenuBarContribution[]) {
@@ -33,6 +33,6 @@ export function isMenu(item: any): item is Menu {
 }
 
 export interface MenuItem {
-    command?:string;
-    separator?:boolean;
+    command?: string;
+    separator?: boolean;
 }

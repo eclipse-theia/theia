@@ -180,7 +180,7 @@ export class TreeModel implements ITreeModel {
     }
 
     openNode(raw?: ITreeNode|undefined): void {
-        const node = raw || this.selectedNode;
+        const node = raw || this.selectedNode;
         if (node) {
             this.doOpenNode(node);
         }

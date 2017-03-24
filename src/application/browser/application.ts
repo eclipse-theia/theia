@@ -35,8 +35,7 @@ export class TheiaApplication {
         })
     }
 
-    start() : Promise<void> {
+    start(): Promise<void> {
         return this.application.start();
     }
 }
-

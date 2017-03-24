@@ -43,8 +43,8 @@ class CallbackList {
             return;
         }
 
-        var foundCallbackWithDifferentContext = false;
-        for (var i = 0, len = this._callbacks.length; i < len; i++) {
+        let foundCallbackWithDifferentContext = false;
+        for (let i = 0, len = this._callbacks.length; i < len; i++) {
             if (this._callbacks[i] === callback) {
                 if (this._contexts![i] === context) {
                     // callback & context match => remove it
@@ -67,11 +67,11 @@ class CallbackList {
             return [];
         }
 
-        var ret: any[] = [],
-            callbacks = this._callbacks.slice(0),
-            contexts = this._contexts!.slice(0);
+        const ret: any[] = [];
+        const callbacks = this._callbacks.slice(0);
+        const contexts = this._contexts!.slice(0);
 
-        for (var i = 0, len = callbacks.length; i < len; i++) {
+        for (let i = 0, len = callbacks.length; i < len; i++) {
             try {
                 ret.push(callbacks[i].apply(contexts[i], args));
             } catch (e) {

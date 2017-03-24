@@ -58,6 +58,7 @@
     "style-loader": "^0.13.2",
     "ts-loader": "^2.0.1",
     "ts-node": "^2.1.0",
+    "tslint": "^4.5.1",
     "typescript": "^2.2.1",
     "url-loader": "^0.5.8",
     "webpack": "^2.2.1",
@@ -65,8 +66,9 @@
     "webpack-merge": "^3.0.0"
   },
   "scripts": {
-    "build": "./node_modules/.bin/tsc",
-    "watch": "./node_modules/.bin/tsc --watch",
+    "lint": "./node_modules/.bin/tslint -c ./tslint.json --project ./tsconfig.json",
+    "build": "./node_modules/.bin/tsc && npm run lint",
+    "watch": "./node_modules/.bin/tsc --watch && npm run lint",
     "clean": "./node_modules/.bin/rimraf lib",
     "clean:node_modules": "./node_modules/.bin/rimraf node_modules",
     "test": "./node_modules/.bin/mocha",

@@ -11,23 +11,23 @@ import { MenuBarModelProvider, Menu, MenuItem, isMenu } from "../../common/menu"
 export class MainMenuFactory {
     private commands: PhosphorCommandRegistry;
 
-    constructor( 
+    constructor(
         @inject(CommandRegistry) protected commandRegistry: CommandRegistry,
         @inject(MenuBarModelProvider) protected menuProvider: MenuBarModelProvider
-    ) { 
+    ) {
         this.commands = new PhosphorCommandRegistry();
         for (let command of commandRegistry.getCommands()) {
             this.commands.addCommand(command.id, {
-                execute : (e)=>command.execute(e),
-                label : (e)=>command.label(e),
-                icon : (e)=>command.iconClass(e),
-                isEnabled : (e)=>command.isEnabled(e),
-                isVisible : (e)=>command.isVisible(e)
+                execute: (e) => command.execute(e),
+                label: (e) => command.label(e),
+                icon: (e) => command.iconClass(e),
+                isEnabled: (e) => command.isEnabled(e),
+                isVisible: (e) => command.isVisible(e)
             })
         }
     }
 
-    createMenuBar() : MenuBarWidget {
+    createMenuBar(): MenuBarWidget {
         const menuBar = new MenuBarWidget();
         menuBar.id = 'theia:menubar';
         for (let menu of this.menuProvider.menuBar.menus) {
@@ -83,8 +83,8 @@ export class MenuContribution implements TheiaPlugin {
         const menu = this.factory.createMenuBar();
         app.shell.addToTopArea(menu);
     }
-    
-    private getLogo() : Widget {
+
+    private getLogo(): Widget {
         const logo = new Widget();
         logo.id = 'theia:icon';
         logo.addClass('theia-icon');

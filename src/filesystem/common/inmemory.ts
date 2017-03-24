@@ -27,12 +27,14 @@ export class InMemoryFileSystem implements FileSystem {
         if (node.path.equals(path)) {
             return node;
         }
-        if (!node.children)
+        if (!node.children) {
             return;
+        }
         for (let child of node.children) {
             let nestedChild = this.internalFindNode(child, path);
-            if (nestedChild)
+            if (nestedChild) {
                 return nestedChild;
+            }
         }
         return undefined;
     }

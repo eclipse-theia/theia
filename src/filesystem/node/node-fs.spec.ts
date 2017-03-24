@@ -721,7 +721,8 @@ describe('NodeFileSystem', () => {
 
     describe('03 #writeFile(Path, string, string)', () => {
         it('Should be rejected when encoding cannot be interpreted.', () => {
-            return createFileSystem().writeFile(Path.fromString('foo.txt'), 'Some content', 'My-Fake-Encoding').should.eventually.be.rejectedWith(Error);
+            return createFileSystem().writeFile(Path.fromString('foo.txt'), 'Some content', 'My-Fake-Encoding')
+                .should.eventually.be.rejectedWith(Error);
         });
     });
 

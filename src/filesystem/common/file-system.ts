@@ -5,43 +5,43 @@ export const FileSystem = Symbol("FileSystem");
 
 export interface FileSystem {
 
-    ls(path: Path): Promise<Path[]> ;
+    ls(path: Path): Promise<Path[]>;
 
-    chmod(path: Path, mode: number): Promise<boolean> ;
+    chmod(path: Path, mode: number): Promise<boolean>;
 
-    mkdir(path: Path, mode?: number): Promise<boolean> ;
+    mkdir(path: Path, mode?: number): Promise<boolean>;
 
-    rename(oldPath: Path, newPath: Path): Promise<boolean> ;
+    rename(oldPath: Path, newPath: Path): Promise<boolean>;
 
-    rmdir(path: Path): Promise<boolean> ;
+    rmdir(path: Path): Promise<boolean>;
 
-    rm(path: Path): Promise<boolean> ;
+    rm(path: Path): Promise<boolean>;
 
     readFile(path: Path, encoding?: string): Promise<string>;
 
     writeFile(path: Path, data: string, encoding?: string): Promise<boolean>;
 
-    exists(path: Path): Promise<boolean> ;
+    exists(path: Path): Promise<boolean>;
 
     /**
      * `path` exists and is a directory
      */
-    dirExists(path: Path): Promise<boolean> ;
+    dirExists(path: Path): Promise<boolean>;
 
     /**
      * `path` exists and is a file.
      */
-    fileExists(path: Path): Promise<boolean> ;
+    fileExists(path: Path): Promise<boolean>;
 
     /**
      * watch for file changes
      * @param watcher
      * @returns a disposable to remove the listener again.
      */
-    watch(watcher:FileSystemWatcher) : Disposable;
+    watch(watcher: FileSystemWatcher): Disposable;
 }
 
-export type FileSystemWatcher =  (event:FileChangeEvent) => void;
+export type FileSystemWatcher =  (event: FileChangeEvent) => void;
 
 export class FileChangeEvent {
     constructor(public readonly changes: FileChange[]) {}

@@ -19,7 +19,7 @@ export interface CommandContribution {
 @injectable()
 export class CommandRegistry {
 
-    private commands:Command[];
+    private commands: Command[];
 
     constructor( @multiInject(CommandContribution) commandContributions: CommandContribution[]) {
         this.commands = [];
@@ -34,12 +34,12 @@ export class CommandRegistry {
         this.commands.push(command);
         return {
             dispose() {
-                this.commands = this.commands.filter((e:Command) => e !== command);
+                this.commands = this.commands.filter((e: Command) => e !== command);
             }
         }
     }
 
-    getCommands() : Command[] {
+    getCommands(): Command[] {
         return this.commands;
     }
 }
@@ -52,7 +52,7 @@ export class SimpleCommand implements Command {
         return this.opts.id;
     }
 
-    execute(arg?: any) : Promise<any> {
+    execute(arg?: any): Promise<any> {
         if (this.opts.execute) {
             return Promise.resolve(this.opts.execute());
         }
@@ -80,9 +80,9 @@ export class SimpleCommand implements Command {
 export namespace SimpleCommand {
     export class Options {
         id: string
-        label:string
-        iconClass?:string
-        execute?: ()=>void
-        isEnabled?: ()=>boolean
+        label: string
+        iconClass?: string
+        execute?: () => void
+        isEnabled?: () => boolean
     }
 }
