@@ -162,12 +162,15 @@ export class InMemoryFileSystem implements FileSystem {
 
     watch(watcher: FileSystemWatcher): Disposable {
         this.watchers.push(watcher);
+        const onDispose = (): void => {
+            const index = this.watchers.indexOf(watcher);
+            if (index !== -1) {
+                this.watchers.splice(index, 1);
+            }
+        };
         return {
             dispose() {
-                const index = this.watchers.indexOf(watcher);
-                if (index !== -1) {
-                    this.watchers.splice(index, 1);
-                }
+                onDispose();
             }
         }
     }

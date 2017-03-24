@@ -122,12 +122,15 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
 
     watch(watcher: FileSystemWatcher): Disposable {
         this.watchers.push(watcher);
+        const onDispose = (): void => {
+            const index = this.watchers.indexOf(watcher);
+            if (index !== -1) {
+                this.watchers.splice(index, 1);
+            }
+        };
         return {
             dispose() {
-                const index = this.watchers.indexOf(watcher);
-                if (index !== -1) {
-                    this.watchers.splice(index, 1);
-                }
+                onDispose();
             }
         }
     }

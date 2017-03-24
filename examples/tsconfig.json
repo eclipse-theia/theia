@@ -3,6 +3,7 @@
     "declaration": false,
     "noImplicitAny": true,
     "noEmitOnError": true,
+    "noImplicitThis": true,
     "noUnusedLocals": true,
     "strictNullChecks": true,
     "experimentalDecorators": true,
@@ -11,13 +12,16 @@
     "moduleResolution": "node",
     "target": "es5",
     "outDir": "lib",
-    "lib": ["es6", "dom"],
+    "lib": [
+      "es6",
+      "dom"
+    ],
     "sourceMap": true
   },
   "include": [
     "src"
   ],
-  "files" : [
+  "files": [
     "node_modules/theia/typings/monaco/index.d.ts"
   ]
 }

@@ -306,7 +306,7 @@ export namespace TreeWidget {
 
 export namespace VirtualWidget {
     export function flatten(children: h.Child[]): h.Child {
-        return children.reduce((prev, current) => this.merge(prev, current), null);
+        return children.reduce((prev, current) => merge(prev, current), null);
     }
 
     export function merge(left: h.Child | undefined, right: h.Child | undefined): h.Child {

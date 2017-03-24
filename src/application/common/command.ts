@@ -32,9 +32,10 @@ export class CommandRegistry {
 
     registerCommand(command: Command): Disposable {
         this.commands.push(command);
+        const onDispose = (): void => { this.commands = this.commands.filter((e: Command) => e !== command); };
         return {
             dispose() {
-                this.commands = this.commands.filter((e: Command) => e !== command);
+                onDispose();
             }
         }
     }

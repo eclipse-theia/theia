@@ -3,6 +3,7 @@
     "declaration": true,
     "noImplicitAny": true,
     "noEmitOnError": true,
+    "noImplicitThis": true,
     "noUnusedLocals": true,
     "strictNullChecks": true,
     "experimentalDecorators": true,
@@ -10,17 +11,17 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "es5",
+    "outDir": "lib",
     "lib": [
       "es6",
       "dom"
     ],
-    "outDir": "lib",
     "sourceMap": true
   },
-  "files": [
-    "typings/monaco/index.d.ts"
-  ],
   "include": [
     "src"
+  ],
+  "files": [
+    "typings/monaco/index.d.ts"
   ]
 }
