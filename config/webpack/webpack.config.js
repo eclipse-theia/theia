@@ -2,6 +2,7 @@ const webpack = require('webpack');
 const merge = require('webpack-merge');
 const minimist = require('minimist');
 const path = require('path');
+const CircularDependencyPlugin = require('circular-dependency-plugin');
 const paths = require('./paths');
 const rules = require('./rules');
 const electronConfiguration = require('./webpack.config.electron');
@@ -62,7 +63,11 @@ module.exports = function (dirname, config = {}) {
                     from: monacoHtmlLanguagePath,
                     to: 'vs/language/html'
                 }
-            ])
+            ]),
+            new CircularDependencyPlugin({
+                exclude: /(node_modules|examples)\/./,
+                failOnError: true
+            })
         ],
 
         stats: {

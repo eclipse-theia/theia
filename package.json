@@ -42,6 +42,7 @@
     "@types/ws": "0.0.38",
     "chai": "^3.5.0",
     "chai-as-promised": "^6.0.0",
+    "circular-dependency-plugin": "^2.0.0",
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.26.2",
     "file-loader": "^0.10.1",
