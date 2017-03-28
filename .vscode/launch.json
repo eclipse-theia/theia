@@ -11,14 +11,13 @@
             ],
             "request": "launch",
             "protocol": "inspector",
-            "name": "In-Memory Mocha Tests with TS-Node",
+            "name": "Run Mocha Test",
             "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
             "args": [
-                "--opts",
-                "${workspaceRoot}/test/mocha.opts",
                 "--timeout",
                 "999999",
-                "--colors"
+                "--colors",
+                "${file}"
             ],
             "sourceMaps": true,
             "internalConsoleOptions": "openOnSessionStart",
