@@ -1,8 +1,9 @@
-import {injectable} from "inversify";
-import {EditorWidget} from "./editor-widget";
-import {TextModelResolverService} from "./model-resolver-service";
-import {TheiaApplication} from "../../application/browser";
-import {EditorRegistry} from "./editor-registry";
+import { TheiaApplication } from '../../application/browser';
+import { SelectionService } from '../../application/common';
+import { EditorRegistry } from './editor-registry';
+import { EditorWidget } from './editor-widget';
+import { TextModelResolverService } from './model-resolver-service';
+import { injectable, inject } from 'inversify';
 import IEditorService = monaco.editor.IEditorService;
 import IResourceInput = monaco.editor.IResourceInput;
 import Uri = monaco.Uri;
@@ -13,7 +14,8 @@ export class EditorService implements IEditorService {
     protected app: TheiaApplication | undefined;
 
     constructor(protected readonly editorRegistry: EditorRegistry,
-                protected readonly textModelResolverService: TextModelResolverService) {
+                protected readonly textModelResolverService: TextModelResolverService,
+                @inject(SelectionService) protected readonly selectionService: SelectionService) {
     }
 
     onStart(app: TheiaApplication): void {
@@ -47,7 +49,7 @@ export class EditorService implements IEditorService {
             }, {
                 editorService: this,
                 textModelResolverService: this.textModelResolverService
-            });
+            }, this.selectionService);
             editor.disposed.connect(() => reference.dispose());
             editor.title.closable = true;
             return editor

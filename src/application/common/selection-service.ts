@@ -1,17 +1,25 @@
-import { Emitter, Event } from '../common';
+import { Emitter, Event } from '../common/event';
 import { injectable } from "inversify";
 
 export type SelectionListener = (newSelection: any) => void;
 
+export interface SelectionProvider<T> {
+    onSelectionChanged: Event<T | undefined>;
+}
+
 @injectable()
-export class SelectionService {
+export class SelectionService implements SelectionProvider<any> {
 
     constructor() { }
 
     private currentSelection: any;
     private selectionListeners: Emitter<any> = new Emitter();
 
-    public setSelection(selection: any) {
+    get selection(): any {
+        return this.currentSelection;
+    }
+
+    set selection(selection: any) {
         this.currentSelection = selection;
         this.selectionListeners.fire(this.currentSelection);
     }

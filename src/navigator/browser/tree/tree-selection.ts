@@ -1,3 +1,4 @@
+import { SelectionProvider } from '../../../application/common/selection-service';
 import {injectable, inject} from "inversify";
 import {Event, Emitter, Disposable} from "../../../application/common";
 import {ITree, ITreeNode} from "./tree";
@@ -7,7 +8,7 @@ export const ITreeSelectionService = Symbol("ITreeSelectionService");
 /**
  * The tree selection service.
  */
-export interface ITreeSelectionService extends Disposable {
+export interface ITreeSelectionService extends Disposable, SelectionProvider<Readonly<ISelectableTreeNode> | undefined> {
     /**
      * The node selected in the tree. If defined then valid.
      * Undefined if there is no node selection.

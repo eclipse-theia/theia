@@ -1,3 +1,4 @@
+import { SelectionService } from '../common/selection-service';
 import { ContainerModule } from "inversify";
 import { TheiaApplication } from './application';
 import { OpenerService } from "./opener-service";
@@ -9,4 +10,5 @@ export const browserApplicationModule = new ContainerModule(bind => {
     bind(OpenerService).toSelf().inSingletonScope();
     bind(CommandRegistry).toSelf().inSingletonScope();
     bind(MenuModelRegistry).toSelf().inSingletonScope();
+    bind(SelectionService).toSelf().inSingletonScope();
 });

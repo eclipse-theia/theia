@@ -1,7 +1,9 @@
+import { SelectionService } from '../../application/common/selection-service';
 import {ElementExt} from "@phosphor/domutils";
 import {Widget} from "@phosphor/widgets";
 import {Message} from "@phosphor/messaging";
 import {DisposableCollection} from "../../application/common";
+
 import IEditorConstructionOptions = monaco.editor.IEditorConstructionOptions
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices
 import IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor
@@ -40,7 +42,7 @@ export class EditorWidget extends Widget implements EventListenerObject, IEditor
     protected _needsResize = false
     protected _resizing = -1
 
-    constructor(options?: EditorWidget.IOptions, override?: IEditorOverrideServices) {
+    constructor(options?: EditorWidget.IOptions, override?: IEditorOverrideServices, selectionService?: SelectionService) {
         super()
         this.autoSizing = options && options.autoSizing !== undefined ? options.autoSizing : false
         this.minHeight = options && options.minHeight !== undefined ? options.minHeight : -1
@@ -51,6 +53,11 @@ export class EditorWidget extends Widget implements EventListenerObject, IEditor
         this.toDispose.push(this.editor.onDidChangeConfiguration(e => this.refresh()))
         this.toDispose.push(this.editor.onDidChangeModel(e => this.refresh()))
         this.toDispose.push(this.editor.onDidChangeModelContent(() => this.refresh()))
+        if (selectionService) {
+            this.toDispose.push(this.editor.onDidChangeCursorSelection((event) => {
+                selectionService.selection = event
+            }));
+        }
 
         // increase the z-index for the focussed element hierarchy within the dockpanel
         this.editor.onDidFocusEditor(

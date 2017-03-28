@@ -1,8 +1,12 @@
 import { Command } from '../../application/common/command';
+import { SelectionService } from '../../application/common';
 import { IEditorManager } from './editor-manager';
+export import ICursorSelectionChangedEvent = monaco.editor.ICursorSelectionChangedEvent;
+
 
 export class EditorCommand implements Command {
     constructor(protected readonly editorManager: IEditorManager,
+                protected readonly selectionService: SelectionService,
                 protected readonly options: EditorCommand.Options) {
     }
 
@@ -27,7 +31,7 @@ export class EditorCommand implements Command {
     }
 
     isVisible(arg?: any): boolean {
-        return true;
+        return isEditorSelection(this.selectionService.selection);
     }
 
     isEnabled(arg?: any): boolean {
@@ -37,11 +41,15 @@ export class EditorCommand implements Command {
 
 }
 
+export function isEditorSelection(e: any): e is ICursorSelectionChangedEvent {
+    return e && e["selection"] instanceof monaco.Selection && typeof e["source"] === 'string'
+}
+
 export namespace EditorCommand {
     export interface Options {
         id: string;
         label: string;
         iconClass?: string;
-        actionId: string;
+        actionId: string
     }
 }

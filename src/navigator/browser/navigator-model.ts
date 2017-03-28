@@ -1,3 +1,4 @@
+import {SelectionService } from '../../application/common/selection-service';
 import {injectable, inject} from "inversify";
 import {FileSystem, Path, FileChangeEvent, FileChangeType} from "../../filesystem/common";
 import {OpenerService} from "../../application/browser";
@@ -20,9 +21,11 @@ export class FileNavigatorModel extends TreeModel {
                 @inject(OpenerService) protected readonly openerService: OpenerService,
                 @inject(ITree) tree: ITree,
                 @inject(ITreeSelectionService) selection: ITreeSelectionService,
-                @inject(ITreeExpansionService) expansion: ITreeExpansionService) {
+                @inject(ITreeExpansionService) expansion: ITreeExpansionService,
+                @inject(SelectionService) selectionService: SelectionService) {
         super(tree, selection, expansion);
         this.toDispose.push(fileSystem.watch(event => this.onFileChanged(event)));
+        this.toDispose.push(selection.onSelectionChanged(( selection ) => selectionService.selection = selection));
     }
 
     protected onFileChanged(event: FileChangeEvent): void {

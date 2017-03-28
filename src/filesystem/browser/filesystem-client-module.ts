@@ -1,4 +1,4 @@
-import {ContainerModule} from "inversify";
+import {ContainerModule, injectable } from "inversify";
 import {FileSystem} from "../common";
 import {FileSystemClient} from "../common/messaging/filesystem-client";
 import {listen} from "../../messaging/browser/connection";
@@ -10,8 +10,30 @@ export const fileSystemClientModule = new ContainerModule(bind => {
     listen(fileSystemClient);
     bind<FileSystem>(FileSystem).toConstantValue(fileSystemClient);
 
-    bind<CommandContribution>(CommandContribution).toConstantValue({
-        getCommands() {
+    bind<CommandContribution>(CommandContribution).to(FileCommands);
+
+    bind<MenuContribution>(MenuContribution).toConstantValue({
+        contribute(registry) {
+            // Explicitly register the Edit Submenu
+            registry.registerSubmenu([MAIN_MENU_BAR], "File", "File", "1_file");
+
+            registry.registerMenuAction([MAIN_MENU_BAR, "File", "1_new"], {
+                commandId: 'file:newFile'
+            });
+            registry.registerMenuAction([MAIN_MENU_BAR, "File", "1_new"], {
+                commandId: 'file:newFolder'
+            });
+            registry.registerMenuAction([MAIN_MENU_BAR, "File", "2_open"], {
+                commandId: 'file:open'
+            });
+        }
+    });
+});
+
+@injectable()
+class FileCommands implements CommandContribution {
+
+    getCommands() {
             return [
                 {
                     id: 'file:newFile',
@@ -30,21 +52,4 @@ export const fileSystemClientModule = new ContainerModule(bind => {
                 }
             ]
         }
-    });
-    bind<MenuContribution>(MenuContribution).toConstantValue({
-        contribute(registry) {
-            // Explicitly register the Edit Submenu
-            registry.registerSubmenu([MAIN_MENU_BAR], "File", "File", "1_file");
-
-            registry.registerMenuAction([MAIN_MENU_BAR, "File", "1_new"], {
-                commandId: 'file:newFile'
-            });
-            registry.registerMenuAction([MAIN_MENU_BAR, "File", "1_new"], {
-                commandId: 'file:newFolder'
-            });
-            registry.registerMenuAction([MAIN_MENU_BAR, "File", "2_open"], {
-                commandId: 'file:open'
-            });
-        }
-    });
-});
+}

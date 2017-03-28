@@ -24,9 +24,9 @@ describe('selection-service', () => {
             let disposable = service.onSelectionChanged(
                 e => events.push(e)
             );
-            service.setSelection("foo");
+            service.selection = "foo";
             disposable.dispose();
-            service.setSelection("bar");
+            service.selection = "bar";
             expect(events.length).equals(1);
             expect(events[0]).equals("foo");
         });

@@ -1,12 +1,49 @@
-import {IOpenerService, TheiaPlugin} from "../../application/browser";
-import {CommandContribution} from "../../application/common/command";
+import { IOpenerService, TheiaPlugin } from '../../application/browser';
+import { SelectionService } from '../../application/common/selection-service';
+import { CommandContribution } from '../../application/common/command';
 import { MAIN_MENU_BAR, MenuContribution } from '../../application/common/menu';
-import {EditorManager, IEditorManager} from "./editor-manager";
-import {EditorCommand} from "./editor-command";
-import {ContainerModule} from "inversify";
-import {EditorRegistry} from "./editor-registry";
-import {EditorService} from "./editor-service";
-import {TextModelResolverService} from "./model-resolver-service";
+import { EditorCommand } from './editor-command';
+import { EditorManager, IEditorManager } from './editor-manager';
+import { EditorRegistry } from './editor-registry';
+import { EditorService } from './editor-service';
+import { TextModelResolverService } from './model-resolver-service';
+import { ContainerModule, inject, injectable } from 'inversify';
+
+@injectable()
+class EditorCommands implements CommandContribution {
+    constructor(@inject(IEditorManager) private editorService: IEditorManager,
+                @inject(SelectionService) private selectionService: SelectionService) {}
+
+    getCommands() {
+        return [
+            new EditorCommand(this.editorService, this.selectionService, {
+                id: 'edit:cut',
+                label: 'Cut',
+                actionId: 'editor.action.clipboardCutAction'
+            }),
+            new EditorCommand(this.editorService, this.selectionService, {
+                id: 'edit:copy',
+                label: 'Copy',
+                actionId: 'editor.action.clipboardCopyAction'
+            }),
+            new EditorCommand(this.editorService, this.selectionService, {
+                id: 'edit:paste',
+                label: 'Paste',
+                actionId: 'editor.action.clipboardPasteAction'
+            }),
+            new EditorCommand(this.editorService, this.selectionService, {
+                id: 'edit:undo',
+                label: 'Undo',
+                actionId: 'undo'
+            }),
+            new EditorCommand(this.editorService, this.selectionService, {
+                id: 'edit:redo',
+                label: 'Redo',
+                actionId: 'redo'
+            })
+        ]
+    }
+}
 
 export const editorModule = new ContainerModule(bind => {
     bind(EditorRegistry).toSelf().inSingletonScope();
@@ -15,41 +52,7 @@ export const editorModule = new ContainerModule(bind => {
     bind(IEditorManager).to(EditorManager).inSingletonScope();
     bind(TheiaPlugin).toDynamicValue(context => context.container.get(IEditorManager));
     bind(IOpenerService).toDynamicValue(context => context.container.get(IEditorManager));
-
-    bind<CommandContribution>(CommandContribution).toDynamicValue(context => {
-        const editorService = context.container.get<IEditorManager>(IEditorManager);
-        return {
-            getCommands() {
-                return [
-                    new EditorCommand(editorService, {
-                        id: 'edit:cut',
-                        label: 'Cut',
-                        actionId: 'editor.action.clipboardCutAction'
-                    }),
-                    new EditorCommand(editorService, {
-                        id: 'edit:copy',
-                        label: 'Copy',
-                        actionId: 'editor.action.clipboardCopyAction'
-                    }),
-                    new EditorCommand(editorService, {
-                        id: 'edit:paste',
-                        label: 'Paste',
-                        actionId: 'editor.action.clipboardPasteAction'
-                    }),
-                    new EditorCommand(editorService, {
-                        id: 'edit:undo',
-                        label: 'Undo',
-                        actionId: 'undo'
-                    }),
-                    new EditorCommand(editorService, {
-                        id: 'edit:redo',
-                        label: 'Redo',
-                        actionId: 'redo'
-                    })
-                ]
-            }
-        }
-    });
+    bind<CommandContribution>(CommandContribution).to(EditorCommands);
     bind<MenuContribution>(MenuContribution).toConstantValue({
         contribute(registry) {
             // Explicitly register the Edit Submenu

@@ -1,5 +1,5 @@
 import {inject, injectable} from "inversify";
-import {DisposableCollection, Event, Emitter} from "../../../application/common";
+import {DisposableCollection, Event, Emitter, SelectionProvider} from "../../../application/common";
 import {ITree, ITreeNode, ICompositeTreeNode} from "./tree";
 import {ITreeSelectionService, ISelectableTreeNode} from "./tree-selection";
 import {ITreeExpansionService, IExpandableTreeNode} from "./tree-expansion";
@@ -40,7 +40,7 @@ export interface ITreeModel extends ITree, ITreeSelectionService, ITreeExpansion
 }
 
 @injectable()
-export class TreeModel implements ITreeModel {
+export class TreeModel implements ITreeModel, SelectionProvider<Readonly<ISelectableTreeNode>> {
 
     protected readonly onChangedEmitter = new Emitter<void>();
     protected readonly toDispose = new DisposableCollection();
