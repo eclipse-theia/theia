@@ -2,4 +2,3 @@
 --require reflect-metadata/Reflect
 --reporter spec
 --watch-extensions ts
-src/**/*.spec.ts
