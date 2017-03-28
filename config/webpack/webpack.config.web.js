@@ -14,7 +14,8 @@ module.exports = function (dirname) {
         node: {
             fs: 'empty',
             child_process: 'empty',
-            net: 'empty'
+            net: 'empty',
+            crypto: 'empty'
         },
 
         devServer: {
