@@ -18,11 +18,11 @@ export class EditorCommand implements Command {
         return Promise.resolve();
     }
 
-    label(arg?: any): string {
+    get label(): string {
         return this.options.label;
     }
 
-    iconClass(arg?: any): string {
+    get iconClass(): string {
         return this.options.iconClass ? this.options.iconClass : '';
     }
 

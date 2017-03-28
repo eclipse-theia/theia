@@ -1,10 +1,8 @@
-import { injectable, inject } from "inversify";
-import { CommandRegistry } from "../../common/command";
-import { CommandRegistry as PhosphorCommandRegistry } from "@phosphor/commands";
+import { TheiaApplication, TheiaPlugin } from '../../browser/application';
+import { CommandRegistry } from '../../common/command';
+import { ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry } from '../../common/menu';
 import * as electron from 'electron';
-import { Command } from "../../common/command";
-import { TheiaPlugin, TheiaApplication } from "../../browser/application";
-import { MenuBarModelProvider, isMenu, MenuItem } from "../../common/menu";
+import { inject, injectable } from 'inversify';
 
 export function isOSX() {
   return typeof process !== 'undefined' && typeof process.platform !== 'undefined' && process.platform === 'darwin';
@@ -13,49 +11,61 @@ export function isOSX() {
 @injectable()
 export class MainMenuFactory {
 
-  private commands: PhosphorCommandRegistry;
-
   constructor(
     @inject(CommandRegistry) private commandRegistry: CommandRegistry,
-    @inject(MenuBarModelProvider) private menuProvider: MenuBarModelProvider) {
-
-    this.commands = new PhosphorCommandRegistry();
+    @inject(MenuModelRegistry) private menuProvider: MenuModelRegistry) {
   }
 
   createMenuBar(): Electron.Menu {
-    this.commandRegistry.getCommands().forEach(command => this.register(command));
-    const template = this.createMenuTemplate();
+    const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
+    const template = this.fillMenuTemplate([], menuModel);
     if (isOSX()) {
       template.unshift(this.createOSXMenu());
     }
     return electron.remote.Menu.buildFromTemplate(template);
   }
 
-  private createMenuTemplate(): Electron.MenuItemOptions[] {
-    return this.menuProvider.menuBar.menus.map(menu => this.transform(menu));
-  }
-
-  private transform(menu: MenuItem): Electron.MenuItemOptions {
-    if (menu.separator) {
-      return {
-        type: 'separator'
-      };
-    } else if (menu.command && this.commands.hasCommand(menu.command)) {
-      const command = menu.command;
-      const label = this.commands.label(command);
-      return {
-        label,
-        click: () => this.commands.execute(command)
-      };
-    } else if (isMenu(menu)) {
-      const submenu = menu.items.map(menu => this.transform(menu));
-      return {
-        label: menu.label,
-        submenu
-      };
-    } else {
-      throw new Error(`Unexpecte item: ${JSON.stringify(menu)}.`);
+  private fillMenuTemplate(items: Electron.MenuItemOptions[], menuModel: CompositeMenuNode): Electron.MenuItemOptions[] {
+    for (let menu of menuModel.subMenus) {
+      if (menu instanceof CompositeMenuNode) {
+        if (menu.label) {
+          // should we create a submenu?
+          items.push({
+            submenu: this.fillMenuTemplate([], menu)
+          });
+        } else {
+          // or just a separator?
+          items.push({
+            type: 'separator'
+          })
+          // followed by the elements
+          this.fillMenuTemplate(items, menu);
+        }
+      } else if (menu instanceof ActionMenuNode) {
+        const command = this.commandRegistry.getCommand(menu.action.commandId);
+        if (!command) {
+          throw new Error(`Unknown command id: ${menu.action.commandId}.`);
+        }
+        let enabled = true;
+        if (command.isEnabled) {
+          enabled = command.isEnabled();
+        }
+        let visible = true;
+        if (command.isVisible) {
+          enabled = command.isVisible();
+        }
+        if (command) {
+          items.push({
+            label: menu.label,
+            icon: menu.icon,
+            enabled: enabled,
+            visible: visible,
+            click: () => command.execute(command)
+          });
+        }
+      }
     }
+    return items;
   }
 
   private createOSXMenu(): Electron.MenuItemOptions {
@@ -92,16 +102,6 @@ export class MainMenuFactory {
         }
       ]
     };
-  }
-
-  private register(command: Command): void {
-    this.commands.addCommand(command.id, {
-      execute: e => command.execute(e),
-      label: e => command.label(e),
-      icon: e => command.iconClass(e),
-      isEnabled: e => command.isEnabled(e),
-      isVisible: e => command.isVisible(e)
-    });
   }
 
 }

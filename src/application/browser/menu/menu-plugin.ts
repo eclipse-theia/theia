@@ -1,73 +1,106 @@
 
 import { TheiaPlugin, TheiaApplication } from "../application";
 import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget } from "@phosphor/widgets";
-import { CommandRegistry as PhosphorCommandRegistry} from "@phosphor/commands";
+import { CommandRegistry as PhosphorCommandRegistry } from "@phosphor/commands";
 import { CommandRegistry } from "../../common/command";
 import { injectable, inject } from "inversify";
-import { MenuBarModelProvider, Menu, MenuItem, isMenu } from "../../common/menu";
-
+import { ActionMenuNode, CompositeMenuNode, MenuModelRegistry, MAIN_MENU_BAR } from '../../common/menu';
 
 @injectable()
 export class MainMenuFactory {
-    private commands: PhosphorCommandRegistry;
 
     constructor(
         @inject(CommandRegistry) protected commandRegistry: CommandRegistry,
-        @inject(MenuBarModelProvider) protected menuProvider: MenuBarModelProvider
+        @inject(MenuModelRegistry) protected menuProvider: MenuModelRegistry
     ) {
-        this.commands = new PhosphorCommandRegistry();
-        for (let command of commandRegistry.getCommands()) {
-            this.commands.addCommand(command.id, {
-                execute: (e) => command.execute(e),
-                label: (e) => command.label(e),
-                icon: (e) => command.iconClass(e),
-                isEnabled: (e) => command.isEnabled(e),
-                isVisible: (e) => command.isVisible(e)
-            })
-        }
     }
 
     createMenuBar(): MenuBarWidget {
         const menuBar = new MenuBarWidget();
         menuBar.id = 'theia:menubar';
-        for (let menu of this.menuProvider.menuBar.menus) {
-            const menuWidget = this.createMenuWidget(menu);
-            menuBar.addMenu(menuWidget);
+        const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
+        const phosphorCommands = this.createPhosporCommands(menuModel);
+        for (let menu of menuModel.subMenus) {
+            if (menu instanceof CompositeMenuNode) {
+                const menuWidget = this.createMenuWidget(menu, phosphorCommands);
+                menuBar.addMenu(menuWidget);
+            }
         }
         return menuBar;
     }
 
-    private createMenuWidget(menu: Menu): MenuWidget {
-        const result = new MenuWidget({
-            commands: this.commands
-        });
-        result.title.label = menu.label;
-        for (let item of menu.items) {
-            result.addItem(
-                this.createItem(item)
-            );
+    private createPhosporCommands(menu: CompositeMenuNode): PhosphorCommandRegistry {
+        const commands = new PhosphorCommandRegistry();
+        const commandRegistry = this.commandRegistry;
+        function initCommands(current: CompositeMenuNode): void {
+            for (let menu of current.subMenus) {
+                if (menu instanceof ActionMenuNode) {
+                    const command = commandRegistry.getCommand(menu.action.commandId);
+                    if (command) {
+                        commands.addCommand(command.id, {
+                            execute: (e: any) => command.execute(e),
+                            label: menu.label,
+                            icon: command.iconClass,
+                            isEnabled: (e: any) => {
+                                if (command.isEnabled) {
+                                    return command.isEnabled(e);
+                                } else {
+                                    return true;
+                                }
+                            },
+                            isVisible: (e: any) => {
+                                if (command.isVisible) {
+                                    return command.isVisible(e);
+                                } else {
+                                    return true;
+                                }
+                            }
+                        })
+                    }
+                } else if (menu instanceof CompositeMenuNode) {
+                    initCommands(menu);
+                }
+            }
         }
+        initCommands(menu);
+        return commands;
+    }
+
+    private createMenuWidget(menu: CompositeMenuNode, commands: PhosphorCommandRegistry): MenuWidget {
+        const result = new MenuWidget({
+            commands
+        });
+        if (menu.label) {
+            result.title.label = menu.label;
+        }
+        this.fillSubMenus(result, menu, commands);
         return result;
     }
 
-    private createItem(item: MenuItem): MenuWidget.IItemOptions {
-        if (item.command) {
-            return {
-                command: item.command,
-                type : 'command'
+    private fillSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: PhosphorCommandRegistry): void {
+        for (let item of menu.subMenus) {
+            if (item instanceof CompositeMenuNode) {
+                if (item.label) {
+                    parent.addItem({
+                        submenu: this.createMenuWidget(item, commands)
+                    });
+                } else {
+                    if (item.subMenus.length > 0) {
+                        if (parent.items.length > 0) {
+                            parent.addItem({
+                                type: 'separator'
+                            });
+                        }
+                        this.fillSubMenus(parent, item, commands);
+                    }
+                }
+            } else if (item instanceof ActionMenuNode) {
+                parent.addItem({
+                    command: item.action.commandId,
+                    type: 'command'
+                });
             }
         }
-        if (item.separator) {
-            return {
-                type : 'separator'
-            }
-        }
-        if (isMenu(item)) {
-            return {
-                submenu : this.createMenuWidget(item)
-            }
-        }
-        throw new Error(`Unexpected item ${JSON.stringify(item)}`);
     }
 
 }
@@ -75,7 +108,7 @@ export class MainMenuFactory {
 @injectable()
 export class MenuContribution implements TheiaPlugin {
 
-    constructor(@inject(MainMenuFactory) private factory: MainMenuFactory) {
+    constructor( @inject(MainMenuFactory) private factory: MainMenuFactory) {
     }
 
     onStart(app: TheiaApplication): void {

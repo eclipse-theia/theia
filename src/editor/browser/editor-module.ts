@@ -1,6 +1,6 @@
 import {IOpenerService, TheiaPlugin} from "../../application/browser";
 import {CommandContribution} from "../../application/common/command";
-import {MenuBarContribution} from "../../application/common/menu";
+import { MAIN_MENU_BAR, MenuContribution } from '../../application/common/menu';
 import {EditorManager, IEditorManager} from "./editor-manager";
 import {EditorCommand} from "./editor-command";
 import {ContainerModule} from "inversify";
@@ -50,36 +50,25 @@ export const editorModule = new ContainerModule(bind => {
             }
         }
     });
-    bind<MenuBarContribution>(MenuBarContribution).toConstantValue({
-        contribute(menuBar) {
-            return {
-                menus: [
-                    ...menuBar.menus,
-                    {
-                        label: 'Edit',
-                        items: [
-                            {
-                                command: 'edit:undo'
-                            },
-                            {
-                                command: 'edit:redo'
-                            },
-                            {
-                                separator: true
-                            },
-                            {
-                                command: 'edit:cut'
-                            },
-                            {
-                                command: 'edit:copy'
-                            },
-                            {
-                                command: 'edit:paste'
-                            }
-                        ]
-                    }
-                ]
-            };
+    bind<MenuContribution>(MenuContribution).toConstantValue({
+        contribute(registry) {
+            // Explicitly register the Edit Submenu
+            registry.registerSubmenu([MAIN_MENU_BAR], "Edit", "Edit", "2_edit");
+            registry.registerMenuAction([MAIN_MENU_BAR, "Edit", "1_undo/redo"], {
+                commandId: 'edit:undo'
+            });
+            registry.registerMenuAction([MAIN_MENU_BAR, "Edit", "1_undo/redo"], {
+                commandId: 'edit:redo'
+            });
+            registry.registerMenuAction([MAIN_MENU_BAR, "Edit", "2_copy"], {
+                commandId: 'edit:cut'
+            });
+            registry.registerMenuAction([MAIN_MENU_BAR, "Edit", "2_copy"], {
+                commandId: 'edit:copy'
+            });
+            registry.registerMenuAction([MAIN_MENU_BAR, "Edit", "2_copy"], {
+                commandId: 'edit:paste'
+            });
         }
     });
 });

@@ -3,11 +3,11 @@ import { injectable, multiInject } from "inversify";
 
 export interface Command {
     id: string;
+    label: string;
+    iconClass?: string;
     execute(arg?: any): any;
-    label(arg?: any): string;
-    iconClass(arg?: any): string;
-    isVisible(arg?: any): boolean;
-    isEnabled(arg?: any): boolean;
+    isVisible?(arg?: any): boolean;
+    isEnabled?(arg?: any): boolean;
 }
 
 export const CommandContribution = Symbol("CommandContribution");
@@ -19,10 +19,10 @@ export interface CommandContribution {
 @injectable()
 export class CommandRegistry {
 
-    private commands: Command[];
+    private _commands: {[id: string]: Command};
 
     constructor( @multiInject(CommandContribution) commandContributions: CommandContribution[]) {
-        this.commands = [];
+        this._commands = {};
         for (let contrib of commandContributions) {
             for (let command of contrib.getCommands()) {
                 this.registerCommand(command);
@@ -31,59 +31,33 @@ export class CommandRegistry {
     }
 
     registerCommand(command: Command): Disposable {
-        this.commands.push(command);
-        const onDispose = (): void => { this.commands = this.commands.filter((e: Command) => e !== command); };
+        if (this._commands[command.id]) {
+            throw Error(`A command ${command.id} is already registered.`);
+        }
+        this._commands[command.id] = command;
         return {
-            dispose() {
-                onDispose();
+            dispose: () => {
+                delete this._commands[command.id];
             }
         }
     }
 
-    getCommands(): Command[] {
-        return this.commands;
-    }
-}
-
-export class SimpleCommand implements Command {
-    constructor(private opts: SimpleCommand.Options) {
-    }
-
-    get id(): string {
-        return this.opts.id;
-    }
-
-    execute(arg?: any): Promise<any> {
-        if (this.opts.execute) {
-            return Promise.resolve(this.opts.execute());
+    get commands(): Command[] {
+        let commands: Command[] = []
+        for (let id of this.commandIds) {
+            let cmd = this.getCommand(id);
+            if (cmd) {
+                commands.push();
+            }
         }
-        return Promise.resolve();
+        return commands;
     }
 
-    label(arg?: any): string {
-        return this.opts.label;
+    getCommand(id: string): Command|undefined {
+        return this._commands[id];
     }
 
-    iconClass(arg?: any): string {
-        return this.opts.iconClass ? this.opts.iconClass : '';
-    }
-    isVisible(arg?: any): boolean {
-        return true;
-    }
-    isEnabled(arg?: any): boolean {
-        if (this.opts.isEnabled) {
-            return this.opts.isEnabled();
-        }
-        return true;
-    }
-
-}
-export namespace SimpleCommand {
-    export class Options {
-        id: string
-        label: string
-        iconClass?: string
-        execute?: () => void
-        isEnabled?: () => boolean
+    get commandIds(): string[] {
+        return Object.keys(this._commands);
     }
 }
