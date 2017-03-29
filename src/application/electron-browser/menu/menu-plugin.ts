@@ -31,6 +31,7 @@ export class MainMenuFactory {
         if (menu.label) {
           // should we create a submenu?
           items.push({
+            label: menu.label,
             submenu: this.fillMenuTemplate([], menu)
           });
         } else {
