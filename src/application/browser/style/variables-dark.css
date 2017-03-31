@@ -96,9 +96,9 @@ all of MD as it is not optimized for dense, information rich UIs.
   */
 
   --theia-layout-color0: #1E1E1E;
-  --theia-layout-color1: black;
-  --theia-layout-color2: black;
-  --theia-layout-color3: black;
+  --theia-layout-color1: #1E1E1E;
+  --theia-layout-color2: #111111;
+  --theia-layout-color3: #111111;
 
   /* Brand/accent */
 
@@ -107,10 +107,10 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-brand-color2: var(--md-blue-300);
   --theia-brand-color3: var(--md-blue-100);
 
-  --theia-accent-color0: var(--md-grey-300);
-  --theia-accent-color1: var(--md-grey-300);
-  --theia-accent-color2: var(--md-grey-700);
-  --theia-accent-color3: var(--md-grey-900);
+  --theia-accent-color0: var(--md-light-blue-300);
+  --theia-accent-color1: var(--md-light-blue-500);
+  --theia-accent-color2: var(--md-light-blue-700);
+  --theia-accent-color3: var(--md-light-blue-900);
 
   /* State colors (warn, error, success, info) */
 
