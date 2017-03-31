@@ -134,4 +134,6 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-info-color2: var(--md-cyan-300);
   --theia-info-color3: var(--md-cyan-100);
 
+  /* icons */
+  --theia-icon-close: url(../icons/close-bright.svg)
 }

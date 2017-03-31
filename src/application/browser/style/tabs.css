@@ -152,7 +152,7 @@
   background-size: 16px;
   height: 16px;
   width: 16px;
-  background-image: url(../icons/close.svg);
+  background-image: var(--theia-icon-close);
   background-position: center;
   background-repeat: no-repeat;
 }
