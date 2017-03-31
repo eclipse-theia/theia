@@ -30,7 +30,7 @@ export class CommandRegistry {
         for (let contrib of commandContributions) {
             contrib.contribute(this);
         }
-        //TODO sanity check
+        // TODO sanity check
     }
 
     registerCommand(command: Command): Disposable {

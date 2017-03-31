@@ -8,7 +8,7 @@ export namespace Commands {
     export const NEW_FILE = 'file:newFile';
     export const NEW_FOLDER = 'file:newFolder';
     export const FILE_OPEN = 'file:open';
-} 
+}
 
 @injectable()
 export class FileMenuContribution implements MenuContribution {
@@ -30,7 +30,7 @@ export class FileMenuContribution implements MenuContribution {
 
 @injectable()
 export class FileCommandContribution implements CommandContribution {
-    
+
     contribute(registry: CommandRegistry): void {
         registry.registerCommand({
                     id: Commands.NEW_FILE,

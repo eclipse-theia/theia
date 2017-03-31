@@ -38,11 +38,11 @@ export class MainMenuFactory {
                     const command = commandRegistry.getCommand(menu.action.commandId);
                     if (command) {
                         let handler = commandRegistry.getActiveHandler(command.id) || {
-                            execute: (e)=>{},
+                            execute: (e) => { },
                             isEnabled: (e) => { return false; },
                             isVisible: (e) => { return true; }
                         };
-                        
+
                         handler = handler!;
                         commands.addCommand(command.id, {
                             execute: (e: any) => handler.execute(e),

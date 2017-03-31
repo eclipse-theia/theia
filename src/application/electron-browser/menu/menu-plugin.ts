@@ -48,9 +48,9 @@ export class MainMenuFactory {
           throw new Error(`Unknown command id: ${menu.action.commandId}.`);
         }
         const handler = this.commandRegistry.getActiveHandler(command.id) || {
-          execute: ()=>{},
-          isEnabled: ()=>{ return false;},
-          isVisible: ()=>{return true;}
+          execute: () => { },
+          isEnabled: () => { return false; },
+          isVisible: () => { return true; }
         };
         let enabled = true;
         if (handler.isEnabled) {
