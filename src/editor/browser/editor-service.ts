@@ -45,7 +45,8 @@ export class EditorService implements IEditorService {
             const editor = new EditorWidget({
                 model: reference.object.textEditorModel,
                 wordWrap: true,
-                folding: true
+                folding: true,
+                theme: 'vs-dark'
             }, {
                 editorService: this,
                 textModelResolverService: this.textModelResolverService
