@@ -31,16 +31,15 @@ describe('menu-model-registry', () => {
                     });
                 }
             }, {
-                getCommands() {
-                    return [{
+                contribute(reg: CommandRegistry) {
+                    reg.registerCommand({
                         id : 'open',
-                        execute : () => {},
                         label : "A"
-                    }, {
+                    });
+                    reg.registerCommand({
                         id : 'open.with',
-                        execute : () => {},
                         label : "B"
-                    }]
+                    });
                 }
             });
             let all = service.getMenu();

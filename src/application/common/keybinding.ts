@@ -17,8 +17,8 @@ export class KeybindingRegistry {
 
     keybindings: { [index: number]: Keybinding[] }
 
-    constructor(@multiInject(KeybindingContribution) protected contributions: KeybindingContribution[],
-                @inject(CommandRegistry) protected commandRegistry: CommandRegistry) {
+    constructor( @multiInject(KeybindingContribution) protected contributions: KeybindingContribution[],
+        @inject(CommandRegistry) protected commandRegistry: CommandRegistry) {
         for (let contribution of contributions) {
             for (let keyb of contribution.getKeybindings()) {
                 this.registerKeyBinding(keyb);
@@ -57,10 +57,12 @@ export class KeybindingRegistry {
 
     private isValid(binding: Keybinding): boolean {
         let cmd = this.commandRegistry.getCommand(binding.commandId);
-        if (cmd && (!cmd.isEnabled || cmd.isEnabled()) && (!cmd.isVisible || cmd.isVisible())) {
-            return true;
-        } else {
-            return false;
+        if (cmd) {
+            let handler = this.commandRegistry.getActiveHandler(cmd.id);
+            if (handler && (!handler.isVisible || handler.isVisible())) {
+                return true;
+            }
         }
+        return false;
     }
 }

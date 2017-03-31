@@ -34,9 +34,9 @@ export class MenuModelRegistry {
         return parent.addNode(actionNode);
     }
 
-    registerSubmenu(menuPath: string[], id: string, label: string, sortString?: string): Disposable {
+    registerSubmenu(menuPath: string[], id: string, label: string): Disposable {
         const parent = this.findGroup(menuPath);
-        const groupNode = new CompositeMenuNode(id, label, sortString);
+        const groupNode = new CompositeMenuNode(id, label);
         return parent.addNode(groupNode);
     }
 
@@ -75,8 +75,7 @@ export interface MenuNode {
 export class CompositeMenuNode implements MenuNode {
     public subMenus: MenuNode[] = []
     constructor(public id: string,
-                public label?: string,
-                private _sortString?: string) {}
+                public label?: string) {}
 
     public addNode(node: MenuNode): Disposable {
         this.subMenus.push(node);
@@ -100,7 +99,7 @@ export class CompositeMenuNode implements MenuNode {
     }
 
     get sortString() {
-        return this._sortString || this.id;
+        return this.id;
     }
 
     get isSubmenu(): boolean {

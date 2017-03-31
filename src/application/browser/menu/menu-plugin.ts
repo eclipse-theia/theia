@@ -37,20 +37,27 @@ export class MainMenuFactory {
                 if (menu instanceof ActionMenuNode) {
                     const command = commandRegistry.getCommand(menu.action.commandId);
                     if (command) {
+                        let handler = commandRegistry.getActiveHandler(command.id) || {
+                            execute: (e)=>{},
+                            isEnabled: (e) => { return false; },
+                            isVisible: (e) => { return true; }
+                        };
+                        
+                        handler = handler!;
                         commands.addCommand(command.id, {
-                            execute: (e: any) => command.execute(e),
+                            execute: (e: any) => handler.execute(e),
                             label: menu.label,
                             icon: command.iconClass,
                             isEnabled: (e: any) => {
-                                if (command.isEnabled) {
-                                    return command.isEnabled(e);
+                                if (handler.isEnabled) {
+                                    return handler.isEnabled(e);
                                 } else {
                                     return true;
                                 }
                             },
                             isVisible: (e: any) => {
-                                if (command.isVisible) {
-                                    return command.isVisible(e);
+                                if (handler.isVisible) {
+                                    return handler.isVisible(e);
                                 } else {
                                     return true;
                                 }
@@ -106,7 +113,7 @@ export class MainMenuFactory {
 }
 
 @injectable()
-export class MenuContribution implements TheiaPlugin {
+export class BrowserMenuBarContribution implements TheiaPlugin {
 
     constructor( @inject(MainMenuFactory) private factory: MainMenuFactory) {
     }

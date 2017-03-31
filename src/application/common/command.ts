@@ -5,29 +5,32 @@ export interface Command {
     id: string;
     label: string;
     iconClass?: string;
+}
+export interface CommandHandler {
     execute(arg?: any): any;
+    isEnabled(arg?: any): boolean;
     isVisible?(arg?: any): boolean;
-    isEnabled?(arg?: any): boolean;
 }
 
 export const CommandContribution = Symbol("CommandContribution");
 
 export interface CommandContribution {
-    getCommands(): Command[];
+    contribute(registry: CommandRegistry): void;
 }
 
 @injectable()
 export class CommandRegistry {
 
-    private _commands: {[id: string]: Command};
+    private _commands: { [id: string]: Command };
+    private _handlers: { [id: string]: CommandHandler[] };
 
     constructor( @multiInject(CommandContribution) commandContributions: CommandContribution[]) {
         this._commands = {};
+        this._handlers = {};
         for (let contrib of commandContributions) {
-            for (let command of contrib.getCommands()) {
-                this.registerCommand(command);
-            }
+            contrib.contribute(this);
         }
+        //TODO sanity check
     }
 
     registerCommand(command: Command): Disposable {
@@ -42,6 +45,34 @@ export class CommandRegistry {
         }
     }
 
+    registerHandler(commandId: string, handler: CommandHandler): Disposable {
+        let handlers = this._handlers[commandId];
+        if (!handlers) {
+            this._handlers[commandId] = handlers = [];
+        }
+        handlers.push(handler);
+        return {
+            dispose: () => {
+                let idx = handlers.indexOf(handler);
+                if (idx >= 0) {
+                    handlers.splice(idx, 1);
+                }
+            }
+        }
+    }
+
+    getActiveHandler(commandId: string): CommandHandler | undefined {
+        const handlers = this._handlers[commandId];
+        if (handlers) {
+            for (let handler of handlers) {
+                if (handler.isEnabled()) {
+                    return handler;
+                }
+            }
+        }
+        return undefined;
+    }
+
     get commands(): Command[] {
         let commands: Command[] = []
         for (let id of this.commandIds) {
@@ -53,7 +84,7 @@ export class CommandRegistry {
         return commands;
     }
 
-    getCommand(id: string): Command|undefined {
+    getCommand(id: string): Command | undefined {
         return this._commands[id];
     }
 

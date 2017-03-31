@@ -1,47 +1,75 @@
 import { IOpenerService, TheiaPlugin } from '../../application/browser';
 import { SelectionService } from '../../application/common/selection-service';
-import { CommandContribution } from '../../application/common/command';
-import { MAIN_MENU_BAR, MenuContribution } from '../../application/common/menu';
-import { EditorCommand } from './editor-command';
+import { CommandContribution, CommandRegistry } from '../../application/common/command';
+import { CommonCommands } from '../../application/common/commands-common';
+import { MenuContribution, MenuModelRegistry } from '../../application/common/menu';
+import { EditorCommandHandler } from './editor-command';
 import { EditorManager, IEditorManager } from './editor-manager';
 import { EditorRegistry } from './editor-registry';
 import { EditorService } from './editor-service';
 import { TextModelResolverService } from './model-resolver-service';
 import { ContainerModule, inject, injectable } from 'inversify';
 
+export const EDITOR_CONTEXT = 'editor_context_menu';
+
 @injectable()
-class EditorCommands implements CommandContribution {
+export class EditorCommandHandlers implements CommandContribution {
     constructor(@inject(IEditorManager) private editorService: IEditorManager,
                 @inject(SelectionService) private selectionService: SelectionService) {}
 
-    getCommands() {
-        return [
-            new EditorCommand(this.editorService, this.selectionService, {
-                id: 'edit:cut',
-                label: 'Cut',
+    contribute(registry: CommandRegistry) {
+        registry.registerHandler(
+            CommonCommands.EDIT_CUT,
+            new EditorCommandHandler(this.editorService, this.selectionService, {
+                id: CommonCommands.EDIT_CUT,
                 actionId: 'editor.action.clipboardCutAction'
-            }),
-            new EditorCommand(this.editorService, this.selectionService, {
-                id: 'edit:copy',
-                label: 'Copy',
+            }));
+        registry.registerHandler(
+            CommonCommands.EDIT_COPY,
+            new EditorCommandHandler(this.editorService, this.selectionService, {
+                id: CommonCommands.EDIT_COPY,
                 actionId: 'editor.action.clipboardCopyAction'
-            }),
-            new EditorCommand(this.editorService, this.selectionService, {
-                id: 'edit:paste',
-                label: 'Paste',
+            }));
+        registry.registerHandler(
+            CommonCommands.EDIT_PASTE,
+            new EditorCommandHandler(this.editorService, this.selectionService, {
+                id: CommonCommands.EDIT_PASTE,
                 actionId: 'editor.action.clipboardPasteAction'
-            }),
-            new EditorCommand(this.editorService, this.selectionService, {
-                id: 'edit:undo',
-                label: 'Undo',
+            }));
+        registry.registerHandler(
+            CommonCommands.EDIT_UNDO,
+            new EditorCommandHandler(this.editorService, this.selectionService, {
+                id: CommonCommands.EDIT_UNDO,
                 actionId: 'undo'
-            }),
-            new EditorCommand(this.editorService, this.selectionService, {
-                id: 'edit:redo',
-                label: 'Redo',
+            }));
+        registry.registerHandler(
+            CommonCommands.EDIT_REDO,
+            new EditorCommandHandler(this.editorService, this.selectionService, {
+                id: CommonCommands.EDIT_REDO,
                 actionId: 'redo'
-            })
-        ]
+            }));
+    }
+}
+
+@injectable()
+export class EditorMenuContribution implements MenuContribution {
+    contribute(registry: MenuModelRegistry) {
+        // Explicitly register the Edit Submenu
+        registry.registerMenuAction([EDITOR_CONTEXT, "1_undo/redo"], {
+            commandId: CommonCommands.EDIT_UNDO
+        });
+        registry.registerMenuAction([EDITOR_CONTEXT, "1_undo/redo"], {
+            commandId: CommonCommands.EDIT_REDO
+        });
+        registry.registerMenuAction([EDITOR_CONTEXT, "2_copy"], {
+            commandId: CommonCommands.EDIT_CUT
+        });
+        registry.registerMenuAction([EDITOR_CONTEXT, "2_copy"], {
+            commandId: CommonCommands.EDIT_COPY
+        });
+        registry.registerMenuAction([EDITOR_CONTEXT, "2_copy"], {
+            commandId: CommonCommands.EDIT_PASTE
+        });
     }
 }
 
@@ -52,26 +80,6 @@ export const editorModule = new ContainerModule(bind => {
     bind(IEditorManager).to(EditorManager).inSingletonScope();
     bind(TheiaPlugin).toDynamicValue(context => context.container.get(IEditorManager));
     bind(IOpenerService).toDynamicValue(context => context.container.get(IEditorManager));
-    bind<CommandContribution>(CommandContribution).to(EditorCommands);
-    bind<MenuContribution>(MenuContribution).toConstantValue({
-        contribute(registry) {
-            // Explicitly register the Edit Submenu
-            registry.registerSubmenu([MAIN_MENU_BAR], "Edit", "Edit", "2_edit");
-            registry.registerMenuAction([MAIN_MENU_BAR, "Edit", "1_undo/redo"], {
-                commandId: 'edit:undo'
-            });
-            registry.registerMenuAction([MAIN_MENU_BAR, "Edit", "1_undo/redo"], {
-                commandId: 'edit:redo'
-            });
-            registry.registerMenuAction([MAIN_MENU_BAR, "Edit", "2_copy"], {
-                commandId: 'edit:cut'
-            });
-            registry.registerMenuAction([MAIN_MENU_BAR, "Edit", "2_copy"], {
-                commandId: 'edit:copy'
-            });
-            registry.registerMenuAction([MAIN_MENU_BAR, "Edit", "2_copy"], {
-                commandId: 'edit:paste'
-            });
-        }
-    });
+    bind<CommandContribution>(CommandContribution).to(EditorCommandHandlers);
+    bind<MenuContribution>(MenuContribution).to(EditorMenuContribution);
 });

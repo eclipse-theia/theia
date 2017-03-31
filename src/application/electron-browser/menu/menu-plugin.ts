@@ -47,13 +47,18 @@ export class MainMenuFactory {
         if (!command) {
           throw new Error(`Unknown command id: ${menu.action.commandId}.`);
         }
+        const handler = this.commandRegistry.getActiveHandler(command.id) || {
+          execute: ()=>{},
+          isEnabled: ()=>{ return false;},
+          isVisible: ()=>{return true;}
+        };
         let enabled = true;
-        if (command.isEnabled) {
-          enabled = command.isEnabled();
+        if (handler.isEnabled) {
+          enabled = handler.isEnabled();
         }
         let visible = true;
-        if (command.isVisible) {
-          enabled = command.isVisible();
+        if (handler.isVisible) {
+          enabled = handler.isVisible();
         }
         if (command) {
           items.push({
@@ -61,7 +66,7 @@ export class MainMenuFactory {
             icon: menu.icon,
             enabled: enabled,
             visible: visible,
-            click: () => command.execute(command)
+            click: () => handler.execute()
           });
         }
       }
