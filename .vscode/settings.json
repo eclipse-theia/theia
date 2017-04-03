@@ -1,0 +1,4 @@
+{
+    "tslint.enable": true,
+    "tslint.configFile": "./config/tslint/tslint.json"
+}
