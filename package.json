@@ -31,7 +31,8 @@
     "reconnecting-websocket": "^3.0.3",
     "reflect-metadata": "^0.1.10",
     "vscode-jsonrpc": "^3.1.0",
-    "ws": "^2.2.0"
+    "ws": "^2.2.0",
+    "vscode-languageclient": "file:../vscode-languageserver-node/client"
   },
   "devDependencies": {
     "@types/chai": "^3.4.35",
