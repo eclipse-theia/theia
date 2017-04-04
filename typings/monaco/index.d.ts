@@ -5,6 +5,7 @@ declare module monaco.editor {
     export interface IEditorOverrideServices {
         editorService?: IEditorService;
         textModelResolverService?: ITextModelResolverService;
+        contextMenuService?: IContextMenuService;
     }
 
     export interface IResourceInput {
@@ -88,6 +89,13 @@ declare module monaco.editor {
          * Provides access to the underlying IModel.
          */
         textEditorModel: monaco.editor.IModel;
+    }
+
+    export interface IContextMenuService {
+        /**
+         * Shows the native Monaco context menu in the editor.
+         */
+	    showContextMenu(delegate: any): void;
     }
 
 }

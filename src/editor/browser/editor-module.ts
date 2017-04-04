@@ -9,6 +9,7 @@ import { EditorRegistry } from './editor-registry';
 import { EditorService } from './editor-service';
 import { TextModelResolverService } from './model-resolver-service';
 import { ContainerModule, inject, injectable } from 'inversify';
+import { NoopContextMenuService } from './editor-contextmenu';
 
 export const EDITOR_CONTEXT = 'editor_context_menu';
 
@@ -75,6 +76,7 @@ export class EditorMenuContribution implements MenuContribution {
 
 export const editorModule = new ContainerModule(bind => {
     bind(EditorRegistry).toSelf().inSingletonScope();
+    bind(NoopContextMenuService).toSelf().inSingletonScope();
     bind(EditorService).toSelf().inSingletonScope();
     bind(TextModelResolverService).toSelf().inSingletonScope();
     bind(IEditorManager).to(EditorManager).inSingletonScope();

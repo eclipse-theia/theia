@@ -4,8 +4,10 @@ import { EditorRegistry } from './editor-registry';
 import { EditorWidget } from './editor-widget';
 import { TextModelResolverService } from './model-resolver-service';
 import { injectable, inject } from 'inversify';
+import { NoopContextMenuService } from './editor-contextmenu';
 import IEditorService = monaco.editor.IEditorService;
 import IResourceInput = monaco.editor.IResourceInput;
+import IContextMenuService = monaco.editor.IContextMenuService;
 import Uri = monaco.Uri;
 
 @injectable()
@@ -15,6 +17,7 @@ export class EditorService implements IEditorService {
 
     constructor(protected readonly editorRegistry: EditorRegistry,
                 protected readonly textModelResolverService: TextModelResolverService,
+                @inject(NoopContextMenuService) protected readonly contextMenuService: IContextMenuService,
                 @inject(SelectionService) protected readonly selectionService: SelectionService) {
     }
 
@@ -49,7 +52,8 @@ export class EditorService implements IEditorService {
                 theme: 'vs-dark'
             }, {
                 editorService: this,
-                textModelResolverService: this.textModelResolverService
+                textModelResolverService: this.textModelResolverService,
+                contextMenuService: this.contextMenuService
             }, this.selectionService);
             editor.disposed.connect(() => reference.dispose());
             editor.title.closable = true;
