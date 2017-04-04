@@ -3,7 +3,7 @@ import {TheiaPlugin, TheiaApplication} from "../../application/browser";
 import {h} from "@phosphor/virtualdom";
 import {TreeWidget, VirtualWidget, ITreeNode} from "./tree";
 import { FileNavigatorModel, IDirNode, IPathNode } from "./navigator-model";
-import { ContextMenuRenderer } from "../../application/browser/context-menu-renderer";
+import { ContextMenuRenderer } from "../../application/browser/menu/context-menu-renderer";
 import NodeProps = TreeWidget.NodeProps;
 
 export const FILE_NAVIGATOR_CLASS = 'theia-FileNavigator';

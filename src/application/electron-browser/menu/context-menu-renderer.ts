@@ -1,9 +1,9 @@
 import { inject, injectable } from "inversify";
-import { ContextMenuRenderer } from "../../application/browser/context-menu-renderer";
-import { MainMenuFactory } from "./menu/menu-plugin";
+import { MainMenuFactory } from "./menu-plugin";
+import { ContextMenuRenderer } from "../../browser/menu/context-menu-renderer";
 
 @injectable()
-export class ContextMenuService implements ContextMenuRenderer {
+export class ElectronContextMenuRenderer implements ContextMenuRenderer {
 
     constructor(
         @inject(MainMenuFactory) private menuFactory: MainMenuFactory) {}

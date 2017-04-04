@@ -1,13 +1,14 @@
-export const ContextMenuRenderer = Symbol("ContextMenuRenderer");
 import { inject, injectable } from "inversify";
-import { MainMenuFactory } from "./menu/menu-plugin";
+import { MainMenuFactory } from "./menu-plugin";
+
+export const ContextMenuRenderer = Symbol("ContextMenuRenderer");
 
 export interface ContextMenuRenderer {
     render(path: string, event: MouseEvent): void;
 }
 
 @injectable()
-export class ContextMenuService implements ContextMenuRenderer {
+export class BrowserContextMenuRenderer implements ContextMenuRenderer {
 
     constructor(
         @inject(MainMenuFactory) private menuFactory: MainMenuFactory) {}

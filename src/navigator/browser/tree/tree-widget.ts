@@ -8,7 +8,7 @@ import {ITreeNode, ICompositeTreeNode} from "./tree";
 import {ITreeModel} from "./tree-model";
 import {IExpandableTreeNode} from "./tree-expansion";
 import { ISelectableTreeNode } from "./tree-selection";
-import { ContextMenuRenderer } from "../../../application/browser/context-menu-renderer";
+import { ContextMenuRenderer } from "../../../application/browser/menu/context-menu-renderer";
 
 export const TREE_CLASS = 'theia-Tree';
 export const TREE_NODE_CLASS = 'theia-TreeNode';
