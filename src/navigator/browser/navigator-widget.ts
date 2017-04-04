@@ -2,7 +2,8 @@ import {injectable, inject, decorate} from "inversify";
 import {TheiaPlugin, TheiaApplication} from "../../application/browser";
 import {h} from "@phosphor/virtualdom";
 import {TreeWidget, VirtualWidget, ITreeNode} from "./tree";
-import {FileNavigatorModel, IDirNode, IPathNode} from "./navigator-model";
+import { FileNavigatorModel, IDirNode, IPathNode } from "./navigator-model";
+import { ContextMenuRenderer } from "../../application/browser/context-menu-renderer";
 import NodeProps = TreeWidget.NodeProps;
 
 export const FILE_NAVIGATOR_CLASS = 'theia-FileNavigator';
@@ -17,8 +18,10 @@ export class FileNavigatorWidget extends TreeWidget<FileNavigatorModel> {
 
     static readonly ID = 'file-navigator';
 
-    constructor(@inject(FileNavigatorModel) model: FileNavigatorModel) {
-        super();
+    constructor(
+        @inject(FileNavigatorModel) model: FileNavigatorModel,
+        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer) {
+        super(TreeWidget.DEFAULT_PROPS, contextMenuRenderer);
         this.addClass(FILE_NAVIGATOR_CLASS);
         this.id = FileNavigatorWidget.ID;
         this.title.label = 'Files';

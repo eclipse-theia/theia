@@ -25,6 +25,14 @@ export class MainMenuFactory {
     return electron.remote.Menu.buildFromTemplate(template);
   }
 
+  createContextMenu(path: string): Electron.Menu {
+    const menuModel = this.menuProvider.getMenu(path);
+    const template = this.fillMenuTemplate([], menuModel);
+    const menu = electron.remote.Menu.buildFromTemplate(template);
+
+    return menu;
+  }
+
   private fillMenuTemplate(items: Electron.MenuItemOptions[], menuModel: CompositeMenuNode): Electron.MenuItemOptions[] {
     for (let menu of menuModel.subMenus) {
       if (menu instanceof CompositeMenuNode) {
