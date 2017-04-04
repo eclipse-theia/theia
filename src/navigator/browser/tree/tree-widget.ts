@@ -306,7 +306,7 @@ export namespace TreeWidget {
         readonly height: number
     }
     export interface TreeProps {
-        contextMenuPath?: string;
+        readonly contextMenuPath?: string;
         readonly expansionToggleSize: Size;
     }
     export interface NodeProps {

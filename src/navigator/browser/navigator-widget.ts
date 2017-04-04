@@ -12,6 +12,11 @@ export const PATH_NODE_CLASS = 'theia-PathNode';
 export const DIR_NODE_CLASS = 'theia-DirNode';
 export const PATH_ICON_CLASS = 'theia-PathIcon';
 
+const FILE_NAVIGATOR_PARAMS: TreeWidget.TreeProps = {
+    ...TreeWidget.DEFAULT_PROPS,
+    contextMenuPath: CONTEXT_MENU_PATH
+}
+
 decorate(injectable(), TreeWidget);
 
 @injectable()
@@ -22,9 +27,8 @@ export class FileNavigatorWidget extends TreeWidget<FileNavigatorModel> {
     constructor(
         @inject(FileNavigatorModel) model: FileNavigatorModel,
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer) {
-        super(TreeWidget.DEFAULT_PROPS, contextMenuRenderer);
+        super(FILE_NAVIGATOR_PARAMS, contextMenuRenderer);
         this.addClass(FILE_NAVIGATOR_CLASS);
-        this.props.contextMenuPath = CONTEXT_MENU_PATH;
         this.id = FileNavigatorWidget.ID;
         this.title.label = 'Files';
         this.setModel(model);
