@@ -16,6 +16,6 @@ export class BrowserContextMenuRenderer implements ContextMenuRenderer {
     render(path: string, event: MouseEvent): void {
         const contextMenu = this.menuFactory.createContextMenu(path);
 
-        contextMenu.open(event);
+        contextMenu.open(event.clientX, event.clientY);
     }
 }

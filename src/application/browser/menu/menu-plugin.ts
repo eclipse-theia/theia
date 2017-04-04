@@ -1,6 +1,6 @@
 
 import { TheiaPlugin, TheiaApplication } from "../application";
-import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget, ContextMenu } from "@phosphor/widgets";
+import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget } from "@phosphor/widgets";
 import { CommandRegistry as PhosphorCommandRegistry } from "@phosphor/commands";
 import { CommandRegistry } from "../../common/command";
 import { injectable, inject } from "inversify";
@@ -29,13 +29,27 @@ export class MainMenuFactory {
         return menuBar;
     }
 
-    createContextMenu(path: string): ContextMenu {
+    createContextMenu(path: string): MenuWidget {
         const menuModel = this.menuProvider.getMenu(path);
         const phosphorCommands = this.createPhosporCommands(menuModel);
 
-        const contextMenu = new ContextMenu({
+        const contextMenu = new MenuWidget({
             commands: phosphorCommands
         });
+
+        for (let menu of menuModel.subMenus) {
+            if (menu instanceof CompositeMenuNode) {
+                contextMenu.addItem({
+                    type: 'submenu',
+                    submenu: this.createMenuWidget(menu, phosphorCommands)
+                });
+            } else if (menu instanceof ActionMenuNode) {
+                contextMenu.addItem({
+                    command: menu.action.commandId,
+                    type: 'command'
+                });
+            }
+        }
         return contextMenu;
     }
 

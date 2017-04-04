@@ -3,7 +3,7 @@ import {Widget} from "@phosphor/widgets";
 import {Message} from "@phosphor/messaging";
 import {ElementExt} from "@phosphor/domutils";
 import {h, VirtualNode, VirtualText, VirtualDOM, ElementAttrs, ElementInlineStyle} from "@phosphor/virtualdom";
-import {DisposableCollection} from "../../../application/common";
+import {DisposableCollection, Disposable} from "../../../application/common";
 import {ITreeNode, ICompositeTreeNode} from "./tree";
 import {ITreeModel} from "./tree-model";
 import {IExpandableTreeNode} from "./tree-expansion";
@@ -32,6 +32,7 @@ export abstract class AbstractTreeWidget<
      */
     protected model: Model | undefined;
     protected modelListeners = new DisposableCollection();
+    protected readonly onRender = new DisposableCollection();
 
     constructor(
         protected readonly props: TreeProps,
@@ -66,6 +67,7 @@ export abstract class AbstractTreeWidget<
         if (selected) {
             ElementExt.scrollIntoViewIfNeeded(this.node, selected)
         }
+        this.onRender.dispose();
     }
 
     protected render(): h.Child {
@@ -121,12 +123,17 @@ export abstract class AbstractTreeWidget<
                 if (this.model && ISelectableTreeNode.is(node)) {
                     this.model.selectNode(node);
                     if (this.props.contextMenuPath) {
-                        this.contextMenuRenderer.render(
-                            this.props.contextMenuPath,
-                            event
-                        );
+                        this.onRender.push(Disposable.create(() =>
+                            requestAnimationFrame(() => {
+                                this.contextMenuRenderer.render(
+                                    this.props.contextMenuPath!,
+                                    event
+                                );
+                            })
+                        ));
                     }
                     event.stopPropagation();
+                    return false;
                 }
             },
         };
@@ -299,7 +306,7 @@ export namespace TreeWidget {
         readonly height: number
     }
     export interface TreeProps {
-        readonly contextMenuPath?: string;
+        contextMenuPath?: string;
         readonly expansionToggleSize: Size;
     }
     export interface NodeProps {

@@ -7,6 +7,8 @@ import { ContextMenuRenderer } from "../../application/browser/menu/context-menu
 import NodeProps = TreeWidget.NodeProps;
 
 export const FILE_NAVIGATOR_CLASS = 'theia-FileNavigator';
+// export const CONTEXT_MENU_PATH = 'navigator-context-menu';
+export const CONTEXT_MENU_PATH = 'menubar';
 export const PATH_NODE_CLASS = 'theia-PathNode';
 export const DIR_NODE_CLASS = 'theia-DirNode';
 export const PATH_ICON_CLASS = 'theia-PathIcon';
@@ -23,6 +25,7 @@ export class FileNavigatorWidget extends TreeWidget<FileNavigatorModel> {
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer) {
         super(TreeWidget.DEFAULT_PROPS, contextMenuRenderer);
         this.addClass(FILE_NAVIGATOR_CLASS);
+        this.props.contextMenuPath = CONTEXT_MENU_PATH;
         this.id = FileNavigatorWidget.ID;
         this.title.label = 'Files';
         this.setModel(model);
