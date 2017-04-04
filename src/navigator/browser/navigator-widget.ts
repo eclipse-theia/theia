@@ -7,8 +7,7 @@ import { ContextMenuRenderer } from "../../application/browser/menu/context-menu
 import NodeProps = TreeWidget.NodeProps;
 
 export const FILE_NAVIGATOR_CLASS = 'theia-FileNavigator';
-// export const CONTEXT_MENU_PATH = 'navigator-context-menu';
-export const CONTEXT_MENU_PATH = 'menubar';
+export const CONTEXT_MENU_PATH = 'navigator-context-menu';
 export const PATH_NODE_CLASS = 'theia-PathNode';
 export const DIR_NODE_CLASS = 'theia-DirNode';
 export const PATH_ICON_CLASS = 'theia-PathIcon';
