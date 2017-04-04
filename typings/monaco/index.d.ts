@@ -95,7 +95,31 @@ declare module monaco.editor {
         /**
          * Shows the native Monaco context menu in the editor.
          */
-	    showContextMenu(delegate: any): void;
+        showContextMenu(delegate: any): void;
     }
+
+    export interface ICommandsMap {
+        /**
+         * A read only mapping from command IDs to the commands. 
+         */
+        readonly [id: string]: ICommand;
+    }
+
+    export interface ICommandRegistry {
+        /**
+         * Returns with the command for the given command ID argument.
+         */
+        getCommand(id: string): ICommand;
+
+        /**
+         * Returns with a mapping of all registered command IDs to the commands.
+         */
+        getCommands(): ICommandsMap;
+    }
+
+    /**
+     * The shared command registry instance.
+     */
+    export const CommandsRegistry: ICommandRegistry;
 
 }
