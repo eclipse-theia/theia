@@ -39,10 +39,19 @@ export class MainMenuFactory {
 
         for (let menu of menuModel.childrens) {
             if (menu instanceof CompositeMenuNode) {
-                contextMenu.addItem({
-                    type: 'submenu',
-                    submenu: this.createMenuWidget(menu, phosphorCommands)
-                });
+                if (menu.label) {
+                    contextMenu.addItem({
+                        type: 'submenu',
+                        submenu: this.createMenuWidget(menu, phosphorCommands)
+                    });
+                } else if (menu.childrens.length > 0) {
+                    if (contextMenu.items.length > 0) {
+                        contextMenu.addItem({
+                            type: 'separator'
+                        });
+                    }
+                    this.fillSubMenus(contextMenu, menu, phosphorCommands);
+                }
             } else if (menu instanceof ActionMenuNode) {
                 contextMenu.addItem({
                     command: menu.action.commandId,

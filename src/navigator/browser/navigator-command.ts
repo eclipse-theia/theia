@@ -6,9 +6,12 @@ import { MenuContribution, MenuModelRegistry } from "../../application/common/me
 
 export namespace Commands {
     export const FILE_MENU = "1_file";
+    export const FILE_CUT = 'navigator:fileCut';
+    export const FILE_COPY = 'navigator:fileCopy';
+    export const FILE_PASTE = 'navigator:filePaste';
+    export const FILE_RENAME = 'navigator:fileRename';
     export const NEW_FILE = 'navigator:newFile';
     export const NEW_FOLDER = 'navigator:newFolder';
-    export const FILE_OPEN = 'navigator:open';
 }
 
 @injectable()
@@ -16,17 +19,29 @@ export class NavigatorCommandHandlers implements CommandContribution {
     constructor() {}
     contribute(registry: CommandRegistry): void {
         registry.registerCommand({
-                    id: Commands.NEW_FILE,
-                    label: 'New File'
-                });
+            id: Commands.FILE_CUT,
+            label: 'Cut'
+        });
         registry.registerCommand({
-                    id: Commands.NEW_FOLDER,
-                    label: 'New Folder'
-                });
+            id: Commands.FILE_COPY,
+            label: 'Copy'
+        });
         registry.registerCommand({
-                    id: Commands.FILE_OPEN,
-                    label: 'Open ...'
-                });
+            id: Commands.FILE_PASTE,
+            label: 'Paste'
+        });
+        registry.registerCommand({
+            id: Commands.FILE_RENAME,
+            label: 'Rename'
+        });
+        registry.registerCommand({
+            id: Commands.NEW_FILE,
+            label: 'New File'
+        });
+        registry.registerCommand({
+            id: Commands.NEW_FOLDER,
+            label: 'New Folder'
+        });
     }
 }
 
@@ -34,16 +49,25 @@ export class NavigatorCommandHandlers implements CommandContribution {
 export class NavigatorMenuContribution implements MenuContribution {
     contribute(registry: MenuModelRegistry) {
 
-        registry.registerSubmenu([CONTEXT_MENU_PATH], Commands.FILE_MENU, "File");
+        //registry.registerSubmenu([CONTEXT_MENU_PATH], Commands.FILE_MENU, "File");
 
-        registry.registerMenuAction([CONTEXT_MENU_PATH, Commands.FILE_MENU, "1_new"], {
+        registry.registerMenuAction([CONTEXT_MENU_PATH, "1_cut/copy/paste"], {
+            commandId: Commands.FILE_CUT
+        });
+        registry.registerMenuAction([CONTEXT_MENU_PATH, "1_cut/copy/paste"], {
+            commandId: Commands.FILE_COPY
+        });
+        registry.registerMenuAction([CONTEXT_MENU_PATH, "1_cut/copy/paste"], {
+            commandId: Commands.FILE_PASTE
+        });
+        registry.registerMenuAction([CONTEXT_MENU_PATH, "2_rename"], {
+            commandId: Commands.FILE_RENAME
+        });
+        registry.registerMenuAction([CONTEXT_MENU_PATH, "3_new"], {
             commandId: Commands.NEW_FILE
         });
-        registry.registerMenuAction([CONTEXT_MENU_PATH, Commands.FILE_MENU, "1_new"], {
+        registry.registerMenuAction([CONTEXT_MENU_PATH, "3_new"], {
             commandId: Commands.NEW_FOLDER
-        });
-        registry.registerMenuAction([CONTEXT_MENU_PATH, Commands.FILE_MENU, "2_open"], {
-            commandId: Commands.FILE_OPEN
         });
     }
 }
