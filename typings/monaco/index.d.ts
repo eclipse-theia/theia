@@ -154,3 +154,39 @@ declare module monaco.commands {
     export const CommandsRegistry: ICommandRegistry;
 
 }
+
+declare module monaco.actions {
+
+    export class MenuId {
+
+        public static readonly EditorContext: MenuId;
+    }
+
+    export interface ILocalizedString {
+        value: string;
+        original: string;
+    }
+
+    export interface ICommandAction {
+        id: string;
+        title: string | ILocalizedString;
+        category?: string | ILocalizedString;
+        iconClass?: string;
+    }
+
+    export interface IMenuItem {
+        command: ICommandAction;
+        alt?: ICommandAction;
+        when?: any;
+        group?: 'navigation' | string;
+        order?: number;
+    }
+
+    export interface IMenuRegistry {
+        getCommand(id: string): ICommandAction;
+        getMenuItems(loc: MenuId): IMenuItem[];
+    }
+
+    export const MenuRegistry: IMenuRegistry;
+
+}

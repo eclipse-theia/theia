@@ -40,10 +40,12 @@
                 'vs/language/typescript/src/monaco.contribution',
                 'vs/language/html/monaco.contribution',
                 'vs/language/json/monaco.contribution',
-                'vs/platform/commands/common/commands'
-            ], (basic, css, ts, html, json, commands) => {
+                'vs/platform/commands/common/commands',
+                'vs/platform/actions/common/actions'
+            ], (basic, css, ts, html, json, commands, actions) => {
                 const global = self;
-                global.monaco.commands.CommandsRegistry = commands.CommandsRegistry;
+                global.monaco.commands = commands;
+                global.monaco.actions = actions;
                 require("./bundle.js");
             });
         });
