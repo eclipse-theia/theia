@@ -12,20 +12,13 @@ export interface ContextMenuRenderer {
 @injectable()
 export class BrowserContextMenuRenderer implements ContextMenuRenderer {
 
-    constructor(
-        @inject(MainMenuFactory) private menuFactory: MainMenuFactory) { }
+    constructor( @inject(MainMenuFactory) private menuFactory: MainMenuFactory) {
+    }
 
     render(path: string, anchor: Anchor): void {
         const contextMenu = this.menuFactory.createContextMenu(path);
-        const {x, y} = this.getAnchor(anchor);
+        const { x, y } = anchor instanceof MouseEvent ? { x: anchor.clientX, y: anchor.clientY } : anchor;
         contextMenu.open(x, y);
-    }
-
-    private getAnchor(event: MouseEvent | { x: number, y: number }): { x: number, y: number } {
-        if (event instanceof MouseEvent) {
-            return { x: event.clientX, y: event.clientY };
-        }
-        return event;
     }
 
 }
