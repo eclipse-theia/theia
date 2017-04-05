@@ -38,6 +38,10 @@ export namespace ReadFileRequest {
     export const type = new RequestType<ReadFileParam, ReadFileResult, void, void>('fileSystem/readFile');
 }
 
+export namespace RmRequest {
+    export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/rm');
+}
+
 export interface WriteFileParam extends PathParam {
     content: string;
     encoding?: string;

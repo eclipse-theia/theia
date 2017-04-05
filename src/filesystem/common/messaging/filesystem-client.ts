@@ -8,6 +8,7 @@ import {
     DidChangeFilesNotification,
     DidChangeFilesParam,
     ReadFileRequest,
+    RmRequest,
     BooleanResult,
     WriteFileRequest
 } from "./filesystem-protocol";
@@ -87,7 +88,8 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
     }
 
     rm(path: Path): Promise<boolean> {
-        throw Error('rm is no implemented yet');
+        const param = {path: path.toString()};
+        return this.sendBooleanRequest(RmRequest.type, param);
     }
 
     readFile(path: Path, encoding: string): Promise<string> {

@@ -8,6 +8,11 @@ export namespace Commands {
     export const NEW_FILE = 'file:newFile';
     export const NEW_FOLDER = 'file:newFolder';
     export const FILE_OPEN = 'file:open';
+    export const FILE_CUT = 'file:fileCut';
+    export const FILE_COPY = 'file:fileCopy';
+    export const FILE_PASTE = 'file:filePaste';
+    export const FILE_RENAME = 'file:fileRename';
+    export const FILE_DELETE = 'file:fileDelete';
 }
 
 @injectable()
@@ -33,16 +38,36 @@ export class FileCommandContribution implements CommandContribution {
 
     contribute(registry: CommandRegistry): void {
         registry.registerCommand({
-                    id: Commands.NEW_FILE,
-                    label: 'New File'
-                });
+            id: Commands.NEW_FILE,
+            label: 'New File'
+        });
         registry.registerCommand({
-                    id: Commands.NEW_FOLDER,
-                    label: 'New Folder'
-                });
+            id: Commands.NEW_FOLDER,
+            label: 'New Folder'
+        });
         registry.registerCommand({
-                    id: Commands.FILE_OPEN,
-                    label: 'Open ...'
-                });
+            id: Commands.FILE_OPEN,
+            label: 'Open ...'
+        });
+        registry.registerCommand({
+            id: Commands.FILE_CUT,
+            label: 'Cut'
+        });
+        registry.registerCommand({
+            id: Commands.FILE_COPY,
+            label: 'Copy'
+        });
+        registry.registerCommand({
+            id: Commands.FILE_PASTE,
+            label: 'Paste'
+        });
+        registry.registerCommand({
+            id: Commands.FILE_RENAME,
+            label: 'Rename'
+        });
+        registry.registerCommand({
+            id: Commands.FILE_DELETE,
+            label: 'Delete'
+        });
     }
 }

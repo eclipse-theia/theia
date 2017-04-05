@@ -28,6 +28,14 @@ export class FileNavigatorModel extends TreeModel {
         this.toDispose.push(selection.onSelectionChanged(( selection ) => selectionService.selection = selection));
     }
 
+    get selectedPathNode(): IPathNode | undefined {
+        const selectedNode = this.selectedNode;
+        if (IPathNode.is(selectedNode)) {
+            return selectedNode;
+        }
+        return undefined;
+    }
+
     protected onFileChanged(event: FileChangeEvent): void {
         const affectedNodes = this.getAffectedNodes(event);
         if (affectedNodes.length !== 0) {
