@@ -10,7 +10,7 @@ window.onload = () => {
             'vs/platform/commands/common/commands'
         ], (basic: any, css: any, ts: any, html: any, json: any, commands: any) => {
             const global: any = self;
-            global.monaco.editor.CommandsRegistry = commands.CommandsRegistry;
+            global.monaco.commands.CommandsRegistry = commands.CommandsRegistry;
             require('./main');
         });
     });

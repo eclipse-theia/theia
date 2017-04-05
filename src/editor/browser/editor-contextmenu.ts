@@ -1,6 +1,6 @@
 import { injectable } from "inversify";
 import IContextMenuService = monaco.editor.IContextMenuService;
-import CommandsRegistry = monaco.editor.CommandsRegistry;
+import CommandsRegistry = monaco.commands.CommandsRegistry;
 
 export const EditorContextMenuService = Symbol("EditorContextMenuService");
 
@@ -12,8 +12,14 @@ export interface EditorContextMenuService extends IContextMenuService {
 export class BrowserContextMenuService implements EditorContextMenuService {
 
     showContextMenu(delegate: any): void {
-        console.log(JSON.stringify(CommandsRegistry.getCommands()));
-        console.log(JSON.stringify(monaco.editor.CommandsRegistry.getCommands()));
+        const ids = Object.keys(CommandsRegistry.getCommands());
+        console.log(ids.length);
+        // for (let id of ids) {
+        //     const command = CommandsRegistry.getCommand(id);
+        //     console.log();
+        //     console.log(id);
+        //     console.log(command);
+        // }
     }
 
 }

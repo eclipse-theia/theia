@@ -98,6 +98,37 @@ declare module monaco.editor {
         showContextMenu(delegate: any): void;
     }
 
+}
+
+declare module monaco.commands {
+
+    /**
+     * Identifies a service of type T
+     */
+    export interface ServiceIdentifier<T> {
+        (...args: any[]): void;
+        type: T;
+    }
+
+    export interface ServicesAccessor {
+        get<T>(id: ServiceIdentifier<T>, isOptional?: any): T;
+    }
+
+    export interface ICommandHandler {
+        (accessor: ServicesAccessor, ...args: any[]): void;
+    }
+
+    export interface ICommand {
+        handler: ICommandHandler;
+        description?: ICommandHandlerDescription;
+    }
+
+    export interface ICommandHandlerDescription {
+        description: string;
+        args: { name: string; description?: string; constraint?: string | Function; }[];
+        returns?: string;
+    }
+
     export interface ICommandsMap {
         /**
          * A read only mapping from command IDs to the commands. 

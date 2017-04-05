@@ -43,7 +43,7 @@
                 'vs/platform/commands/common/commands'
             ], (basic, css, ts, html, json, commands) => {
                 const global = self;
-                global.monaco.editor.CommandsRegistry = commands.CommandsRegistry;
+                global.monaco.commands.CommandsRegistry = commands.CommandsRegistry;
                 require("./bundle.js");
             });
         });
