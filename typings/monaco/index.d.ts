@@ -91,11 +91,18 @@ declare module monaco.editor {
         textEditorModel: monaco.editor.IModel;
     }
 
+    export interface IContextMenuDelegate {
+        /**
+         * Returns with an HTML element or the client coordinates as the anchor of the context menu to open.
+         */
+        getAnchor(): HTMLElement | { x: number; y: number; };
+    }
+
     export interface IContextMenuService {
         /**
          * Shows the native Monaco context menu in the editor.
          */
-        showContextMenu(delegate: any): void;
+        showContextMenu(delegate: IContextMenuDelegate): void;
     }
 
 }

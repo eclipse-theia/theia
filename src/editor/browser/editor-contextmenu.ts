@@ -1,5 +1,7 @@
 import { injectable } from "inversify";
+// import { ContextMenuRenderer } from "../../application/browser/menu/context-menu-renderer";
 import IContextMenuService = monaco.editor.IContextMenuService;
+import IContextMenuDelegate = monaco.editor.IContextMenuDelegate;
 import CommandsRegistry = monaco.commands.CommandsRegistry;
 import MenuRegistry = monaco.actions.MenuRegistry;
 import MenuId = monaco.actions.MenuId;
@@ -13,7 +15,12 @@ export interface EditorContextMenuService extends IContextMenuService {
 @injectable()
 export class BrowserContextMenuService implements EditorContextMenuService {
 
-    showContextMenu(delegate: any): void {
+    // constructor(@inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer) {
+    // }
+
+    showContextMenu(delegate: IContextMenuDelegate): void {
+        console.log(delegate.getAnchor());
+        // console.log(this.contextMenuRenderer);
         const ids = Object.keys(CommandsRegistry.getCommands());
         console.log(ids.length);
 
