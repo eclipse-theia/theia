@@ -1,6 +1,6 @@
 import { IOpenerService, TheiaPlugin } from '../../application/browser';
 import { SelectionService } from '../../application/common/selection-service';
-import { CommandContribution, CommandRegistry } from '../../application/common/command';
+import { CommandContribution, CommandRegistry, CommandHandler } from '../../application/common/command';
 import { CommonCommands } from '../../application/common/commands-common';
 import { MenuContribution, MenuModelRegistry } from '../../application/common/menu';
 import { EditorCommandHandler } from './editor-command';
@@ -10,46 +10,79 @@ import { EditorService } from './editor-service';
 import { TextModelResolverService } from './model-resolver-service';
 import { ContainerModule, inject, injectable } from 'inversify';
 import { BrowserContextMenuService, EditorContextMenuService } from './editor-contextmenu';
+import CommandsRegistry = monaco.commands.CommandsRegistry;
+import MenuRegistry = monaco.actions.MenuRegistry;
+import MenuId = monaco.actions.MenuId;
+import ICommand = monaco.commands.ICommand;
+import IMenuItem = monaco.actions.IMenuItem;
 
 export const EDITOR_CONTEXT = 'editor_context_menu';
 
 @injectable()
 export class EditorCommandHandlers implements CommandContribution {
-    constructor(@inject(IEditorManager) private editorService: IEditorManager,
-                @inject(SelectionService) private selectionService: SelectionService) {}
+
+    constructor( @inject(IEditorManager) private editorService: IEditorManager,
+        @inject(SelectionService) private selectionService: SelectionService) { }
 
     contribute(registry: CommandRegistry) {
         registry.registerHandler(
             CommonCommands.EDIT_CUT,
-            new EditorCommandHandler(this.editorService, this.selectionService, {
+            this.newHandler({
                 id: CommonCommands.EDIT_CUT,
                 actionId: 'editor.action.clipboardCutAction'
             }));
         registry.registerHandler(
             CommonCommands.EDIT_COPY,
-            new EditorCommandHandler(this.editorService, this.selectionService, {
+            this.newHandler({
                 id: CommonCommands.EDIT_COPY,
                 actionId: 'editor.action.clipboardCopyAction'
             }));
         registry.registerHandler(
             CommonCommands.EDIT_PASTE,
-            new EditorCommandHandler(this.editorService, this.selectionService, {
+            this.newHandler({
                 id: CommonCommands.EDIT_PASTE,
                 actionId: 'editor.action.clipboardPasteAction'
             }));
         registry.registerHandler(
             CommonCommands.EDIT_UNDO,
-            new EditorCommandHandler(this.editorService, this.selectionService, {
+            this.newHandler({
                 id: CommonCommands.EDIT_UNDO,
                 actionId: 'undo'
             }));
         registry.registerHandler(
             CommonCommands.EDIT_REDO,
-            new EditorCommandHandler(this.editorService, this.selectionService, {
+            this.newHandler({
                 id: CommonCommands.EDIT_REDO,
                 actionId: 'redo'
             }));
+
+        MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command).forEach(command => {
+            registry.registerCommand({
+                id: command.id,
+                label: command.title,
+                iconClass: command.iconClass
+            });
+        });
+
+        const findCommand: (item: IMenuItem) => ICommand = (item) => CommandsRegistry.getCommand(item.command.id);
+        const wrap: (item: IMenuItem, command: ICommand) => { item: IMenuItem, command: ICommand } = (item, command) => {
+            return { item, command }
+        }
+
+        MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => wrap(item, findCommand(item))).forEach(props => {
+            const id = props.item.command.id;
+            this.newHandler({
+                id,
+                actionId: id
+            })
+        });
+
     }
+
+    private newHandler(options: EditorCommandHandler.Options): CommandHandler {
+        return new EditorCommandHandler(this.editorService, this.selectionService, options);
+    }
+
 }
 
 @injectable()
@@ -71,6 +104,11 @@ export class EditorMenuContribution implements MenuContribution {
         registry.registerMenuAction([EDITOR_CONTEXT, "2_copy"], {
             commandId: CommonCommands.EDIT_PASTE
         });
+
+        MenuRegistry.getMenuItems(MenuId.EditorContext)
+            .map(item => [(item.group || ""), item.command.id])
+            .forEach(props => registry.registerMenuAction([EDITOR_CONTEXT, props[0]], { commandId: props[1] }));
+
     }
 }
 

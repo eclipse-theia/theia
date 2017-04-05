@@ -120,9 +120,11 @@ declare module monaco.commands {
 
     export interface ICommand {
         handler: ICommandHandler;
+        // TODO as described below, it is undefined in our case.
         description?: ICommandHandlerDescription;
     }
 
+    // TODO shalll we get rid of this. Currently non of the commands have a handler.
     export interface ICommandHandlerDescription {
         description: string;
         args: { name: string; description?: string; constraint?: string | Function; }[];
@@ -158,35 +160,35 @@ declare module monaco.commands {
 declare module monaco.actions {
 
     export class MenuId {
-
+        /**
+         * The unique ID of the editor's context menu.
+         */
         public static readonly EditorContext: MenuId;
-    }
-
-    export interface ILocalizedString {
-        value: string;
-        original: string;
     }
 
     export interface ICommandAction {
         id: string;
-        title: string | ILocalizedString;
-        category?: string | ILocalizedString;
+        title: string
+        category?: string;
         iconClass?: string;
     }
 
     export interface IMenuItem {
         command: ICommandAction;
-        alt?: ICommandAction;
         when?: any;
         group?: 'navigation' | string;
-        order?: number;
     }
 
     export interface IMenuRegistry {
-        getCommand(id: string): ICommandAction;
-        getMenuItems(loc: MenuId): IMenuItem[];
+        /**
+         * Retrieves all the registered menu items for the given menu.
+         */
+        getMenuItems(menuId: MenuId | { id: string }): IMenuItem[];
     }
 
+    /**
+     * The shared menu registry singleton.
+     */
     export const MenuRegistry: IMenuRegistry;
 
 }
