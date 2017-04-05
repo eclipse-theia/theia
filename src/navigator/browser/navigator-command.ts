@@ -81,7 +81,7 @@ export class NavigatorCommandHandler implements CommandHandler {
     }
 
     execute(arg?: any): Promise<any> {
-        
+
         return Promise.resolve();
     }
 
