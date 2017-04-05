@@ -49,7 +49,7 @@ export class NavigatorCommandHandlers implements CommandContribution {
 export class NavigatorMenuContribution implements MenuContribution {
     contribute(registry: MenuModelRegistry) {
 
-        //registry.registerSubmenu([CONTEXT_MENU_PATH], Commands.FILE_MENU, "File");
+        // registry.registerSubmenu([CONTEXT_MENU_PATH], Commands.FILE_MENU, "File");
 
         registry.registerMenuAction([CONTEXT_MENU_PATH, "1_cut/copy/paste"], {
             commandId: Commands.FILE_CUT
