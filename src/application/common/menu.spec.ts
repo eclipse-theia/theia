@@ -43,15 +43,15 @@ describe('menu-model-registry', () => {
                 }
             });
             let all = service.getMenu();
-            let main = all.subMenus[0] as CompositeMenuNode;
-            expect(main.subMenus.length).equals(1);
+            let main = all.childrens[0] as CompositeMenuNode;
+            expect(main.childrens.length).equals(1);
             expect(main.id, "main");
-            expect(all.subMenus.length).equals(1);
-            let file = main.subMenus[0] as CompositeMenuNode;
-            expect(file.subMenus.length).equals(1);
+            expect(all.childrens.length).equals(1);
+            let file = main.childrens[0] as CompositeMenuNode;
+            expect(file.childrens.length).equals(1);
             expect(file.label, "File");
-            let openGroup = file.subMenus[0] as CompositeMenuNode;
-            expect(openGroup.subMenus.length).equals(2);
+            let openGroup = file.childrens[0] as CompositeMenuNode;
+            expect(openGroup.childrens.length).equals(2);
             expect(openGroup.label).undefined;
         });
     });

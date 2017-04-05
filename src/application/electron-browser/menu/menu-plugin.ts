@@ -25,8 +25,15 @@ export class MainMenuFactory {
     return electron.remote.Menu.buildFromTemplate(template);
   }
 
+  createContextMenu(path: string): Electron.Menu {
+    const menuModel = this.menuProvider.getMenu(path);
+    const template = this.fillMenuTemplate([], menuModel);
+
+    return electron.remote.Menu.buildFromTemplate(template);
+  }
+
   private fillMenuTemplate(items: Electron.MenuItemOptions[], menuModel: CompositeMenuNode): Electron.MenuItemOptions[] {
-    for (let menu of menuModel.subMenus) {
+    for (let menu of menuModel.childrens) {
       if (menu instanceof CompositeMenuNode) {
         if (menu.label) {
           // should we create a submenu?

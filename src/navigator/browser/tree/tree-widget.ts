@@ -1,13 +1,14 @@
-import { decorate, injectable } from "inversify";
+import { decorate, injectable, inject } from "inversify";
 import {Widget} from "@phosphor/widgets";
 import {Message} from "@phosphor/messaging";
 import {ElementExt} from "@phosphor/domutils";
 import {h, VirtualNode, VirtualText, VirtualDOM, ElementAttrs, ElementInlineStyle} from "@phosphor/virtualdom";
-import {DisposableCollection} from "../../../application/common";
+import {DisposableCollection, Disposable} from "../../../application/common";
 import {ITreeNode, ICompositeTreeNode} from "./tree";
 import {ITreeModel} from "./tree-model";
 import {IExpandableTreeNode} from "./tree-expansion";
-import {ISelectableTreeNode} from "./tree-selection";
+import { ISelectableTreeNode } from "./tree-selection";
+import { ContextMenuRenderer } from "../../../application/browser/menu/context-menu-renderer";
 
 export const TREE_CLASS = 'theia-Tree';
 export const TREE_NODE_CLASS = 'theia-TreeNode';
@@ -31,8 +32,11 @@ export abstract class AbstractTreeWidget<
      */
     protected model: Model | undefined;
     protected modelListeners = new DisposableCollection();
+    protected readonly onRender = new DisposableCollection();
 
-    constructor(protected readonly props: TreeProps) {
+    constructor(
+        protected readonly props: TreeProps,
+        protected readonly contextMenuRenderer: ContextMenuRenderer) {
         super();
         this.addClass(TREE_CLASS);
         this.node.tabIndex = 0;
@@ -63,6 +67,7 @@ export abstract class AbstractTreeWidget<
         if (selected) {
             ElementExt.scrollIntoViewIfNeeded(this.node, selected)
         }
+        this.onRender.dispose();
     }
 
     protected render(): h.Child {
@@ -113,7 +118,24 @@ export abstract class AbstractTreeWidget<
                     this.model.openNode(node);
                     event.stopPropagation();
                 }
-            }
+            },
+            oncontextmenu: (event) => {
+                if (this.model && ISelectableTreeNode.is(node)) {
+                    this.model.selectNode(node);
+                    if (this.props.contextMenuPath) {
+                        this.onRender.push(Disposable.create(() =>
+                            requestAnimationFrame(() => {
+                                this.contextMenuRenderer.render(
+                                    this.props.contextMenuPath!,
+                                    event
+                                );
+                            })
+                        ));
+                    }
+                    event.stopPropagation();
+                    return false;
+                }
+            },
         };
     }
 
@@ -263,8 +285,10 @@ export abstract class AbstractTreeWidget<
 export class TreeWidget<Model extends ITreeModel> extends AbstractTreeWidget<Model, TreeWidget.TreeProps, TreeWidget.NodeProps> {
 
     // tslint:disable-next-line:no-use-before-declare https://github.com/palantir/tslint/issues/884
-    constructor(props: TreeWidget.TreeProps = TreeWidget.DEFAULT_PROPS) {
-        super(props);
+    constructor(
+        props: TreeWidget.TreeProps,
+        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer) {
+        super(props, contextMenuRenderer);
     }
 
     protected createRootProps(node: ITreeNode): TreeWidget.NodeProps {
@@ -282,6 +306,7 @@ export namespace TreeWidget {
         readonly height: number
     }
     export interface TreeProps {
+        readonly contextMenuPath?: string;
         readonly expansionToggleSize: Size;
     }
     export interface NodeProps {

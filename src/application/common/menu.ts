@@ -43,7 +43,7 @@ export class MenuModelRegistry {
     private findGroup(menuPath: string[]): CompositeMenuNode {
         let currentMenu = this.menus;
         for (let segment of menuPath) {
-            let sub = currentMenu.subMenus.find(e => e.id === segment);
+            let sub = currentMenu.childrens.find(e => e.id === segment);
             if (sub instanceof CompositeMenuNode) {
                 currentMenu = sub;
             } else if (!sub) {
@@ -73,13 +73,13 @@ export interface MenuNode {
 }
 
 export class CompositeMenuNode implements MenuNode {
-    public subMenus: MenuNode[] = []
+    public childrens: MenuNode[] = []
     constructor(public id: string,
                 public label?: string) {}
 
     public addNode(node: MenuNode): Disposable {
-        this.subMenus.push(node);
-        this.subMenus.sort((m1, m2) => {
+        this.childrens.push(node);
+        this.childrens.sort((m1, m2) => {
             if (m1.sortString < m2.sortString) {
                 return -1
             } else if (m1.sortString > m2.sortString) {
@@ -90,9 +90,9 @@ export class CompositeMenuNode implements MenuNode {
         });
         return {
             dispose: () => {
-                const idx = this.subMenus.indexOf(node);
+                const idx = this.childrens.indexOf(node);
                 if (idx >= 0) {
-                    this.subMenus.splice(idx, 1);
+                    this.childrens.splice(idx, 1);
                 }
             }
         }

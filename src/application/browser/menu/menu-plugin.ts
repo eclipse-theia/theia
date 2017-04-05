@@ -20,7 +20,7 @@ export class MainMenuFactory {
         menuBar.id = 'theia:menubar';
         const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
         const phosphorCommands = this.createPhosporCommands(menuModel);
-        for (let menu of menuModel.subMenus) {
+        for (let menu of menuModel.childrens) {
             if (menu instanceof CompositeMenuNode) {
                 const menuWidget = this.createMenuWidget(menu, phosphorCommands);
                 menuBar.addMenu(menuWidget);
@@ -29,11 +29,44 @@ export class MainMenuFactory {
         return menuBar;
     }
 
+    createContextMenu(path: string): MenuWidget {
+        const menuModel = this.menuProvider.getMenu(path);
+        const phosphorCommands = this.createPhosporCommands(menuModel);
+
+        const contextMenu = new MenuWidget({
+            commands: phosphorCommands
+        });
+
+        for (let menu of menuModel.childrens) {
+            if (menu instanceof CompositeMenuNode) {
+                if (menu.label) {
+                    contextMenu.addItem({
+                        type: 'submenu',
+                        submenu: this.createMenuWidget(menu, phosphorCommands)
+                    });
+                } else if (menu.childrens.length > 0) {
+                    if (contextMenu.items.length > 0) {
+                        contextMenu.addItem({
+                            type: 'separator'
+                        });
+                    }
+                    this.fillSubMenus(contextMenu, menu, phosphorCommands);
+                }
+            } else if (menu instanceof ActionMenuNode) {
+                contextMenu.addItem({
+                    command: menu.action.commandId,
+                    type: 'command'
+                });
+            }
+        }
+        return contextMenu;
+    }
+
     private createPhosporCommands(menu: CompositeMenuNode): PhosphorCommandRegistry {
         const commands = new PhosphorCommandRegistry();
         const commandRegistry = this.commandRegistry;
         function initCommands(current: CompositeMenuNode): void {
-            for (let menu of current.subMenus) {
+            for (let menu of current.childrens) {
                 if (menu instanceof ActionMenuNode) {
                     const command = commandRegistry.getCommand(menu.action.commandId);
                     if (command) {
@@ -85,14 +118,14 @@ export class MainMenuFactory {
     }
 
     private fillSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: PhosphorCommandRegistry): void {
-        for (let item of menu.subMenus) {
+        for (let item of menu.childrens) {
             if (item instanceof CompositeMenuNode) {
                 if (item.label) {
                     parent.addItem({
                         submenu: this.createMenuWidget(item, commands)
                     });
                 } else {
-                    if (item.subMenus.length > 0) {
+                    if (item.childrens.length > 0) {
                         if (parent.items.length > 0) {
                             parent.addItem({
                                 type: 'separator'
