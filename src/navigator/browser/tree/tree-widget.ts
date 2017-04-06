@@ -133,6 +133,7 @@ export abstract class AbstractTreeWidget<
                         ));
                     }
                     event.stopPropagation();
+                    this.update();
                     return false;
                 }
             },
