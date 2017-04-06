@@ -4,9 +4,12 @@ import {FileSystem} from "../file-system";
 import {
     LsRequest,
     DirExistsRequest,
+    FileExistsRequest,
+    CreateNameRequest,
     DidChangeFilesNotification,
     FileChange,
     LsResult,
+    PathResult,
     BooleanResult,
     ReadFileRequest,
     RmRequest,
@@ -35,6 +38,12 @@ export class FileSystemServer extends AbstractFileSystemConnectionHandler {
         );
         connection.onRequest(DirExistsRequest.type, (param, token) =>
             this.fileSystem.dirExists(Path.fromString(param.path)).then(value => <BooleanResult>{value})
+        );
+        connection.onRequest(FileExistsRequest.type, (param, token) =>
+            this.fileSystem.fileExists(Path.fromString(param.path)).then(value => <BooleanResult>{value})
+        );
+        connection.onRequest(CreateNameRequest.type, (param, token) =>
+            this.fileSystem.createName(Path.fromString(param.path)).then(value => <PathResult>{path: value.toString()})
         );
         connection.onRequest(ReadFileRequest.type, (param, token) =>
             this.fileSystem.readFile(Path.fromString(param.path), param.encoding).then(content => <ReadFileResult>{content})

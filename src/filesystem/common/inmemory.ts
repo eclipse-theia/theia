@@ -150,6 +150,9 @@ export class InMemoryFileSystem implements FileSystem {
         let n = this.find(path);
         return Promise.resolve(n !== undefined && n.contents !== undefined);
     }
+    createName(path: Path): Promise<string> {
+         throw Error("not supported")
+    }
 
     private notify(...change: FileChange[]): void {
         let event = new FileChangeEvent(change);

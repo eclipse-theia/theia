@@ -79,6 +79,21 @@ export class FileCommandContribution implements CommandContribution {
         });
 
         registry.registerHandler(
+            Commands.NEW_FILE,
+            new FileSystemCommandHandler({
+                id: Commands.NEW_FILE,
+                actionId: 'newfile',
+                selectionService: this.selectionService
+            }, (path: Path) => {
+                return this.fileSystem.createName(path)
+                .then((newPathData: string) => {
+                    const newPath = new Path(newPathData.split('/'));
+                    return this.fileSystem.writeFile(newPath, "")
+                })
+            })
+        );
+
+        registry.registerHandler(
             Commands.FILE_DELETE,
             new FileSystemCommandHandler({
                 id: Commands.FILE_DELETE,

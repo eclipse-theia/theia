@@ -188,7 +188,7 @@ export class Tree implements ITree {
     }
 
     getNode(id: string|undefined): ITreeNode|undefined {
-        return !!id ? this.nodes[id] : undefined;
+        return id !== undefined ? this.nodes[id] : undefined;
     }
 
     validateNode(node: ITreeNode | undefined): ITreeNode | undefined {

@@ -3,6 +3,8 @@ import * as nodePath from "path";
 import { Disposable } from "../../application/common";
 import { FileSystem, FileSystemWatcher, FileChangeType, FileChange, FileChangeEvent, Path } from "../common";
 
+const BLANK_NAME_TEMPLATE = 'Untitled ';
+
 export class NodeFileSystem implements FileSystem {
 
     private readonly watchers: FileSystemWatcher[];
@@ -166,6 +168,35 @@ export class NodeFileSystem implements FileSystem {
 
     fileExists(raw: Path): Promise<boolean> {
         return this.resourceExists(raw, (stat: fs.Stats) => stat.isFile());
+    }
+
+    createName(raw: Path): Promise<string> {
+        return this.fileExists(raw)
+        .then((exists: boolean) => {
+            if (exists) {
+                return this.createName(raw.parent)
+            }
+            return this.dirExists(raw)
+            .then((exists: boolean) => {
+                if (!exists) {
+                    return Promise.reject<string>(new Error('The directory does not exist.'));
+                }
+                let num = 1;
+                let tryNum = (): Promise<string> => {
+                    let curName: string = `${BLANK_NAME_TEMPLATE} ${num}`;
+                    let newPath: Path = raw.append(curName)
+                    return this.exists(newPath)
+                    .then((exists: boolean) => {
+                        if (exists) {
+                            num++
+                            return tryNum()
+                        }
+                        return Promise.resolve(newPath.toString())
+                    })
+                }
+                return tryNum()
+            })
+        })
     }
 
     watch(watcher: FileSystemWatcher): Disposable {

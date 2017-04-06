@@ -34,6 +34,11 @@ export interface FileSystem {
     fileExists(path: Path): Promise<boolean>;
 
     /**
+     * Creates non-existing name in given path.
+     */
+    createName(path: Path): Promise<string>;
+
+    /**
      * watch for file changes
      * @param watcher
      * @returns a disposable to remove the listener again.

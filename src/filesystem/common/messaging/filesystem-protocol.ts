@@ -1,5 +1,5 @@
-import {RequestType, NotificationType} from "vscode-jsonrpc";
-import {FileChangeType} from "../file-system";
+import { RequestType, NotificationType } from "vscode-jsonrpc";
+import { FileChangeType } from "../file-system";
 
 export interface FileChange {
     path: string;
@@ -22,8 +22,20 @@ export interface BooleanResult {
     value: boolean
 }
 
+export interface PathResult {
+    path: string
+}
+
 export namespace DirExistsRequest {
     export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/dirExists');
+}
+
+export namespace FileExistsRequest {
+    export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/fileExists');
+}
+
+export namespace CreateNameRequest {
+    export const type = new RequestType<PathParam, PathResult, void, void>('fileSystem/createName');
 }
 
 export interface ReadFileParam extends PathParam {

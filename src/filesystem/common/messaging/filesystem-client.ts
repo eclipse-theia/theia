@@ -5,11 +5,14 @@ import {Disposable, DisposableCollection} from "../../../application/common";
 import {
     LsRequest,
     DirExistsRequest,
+    FileExistsRequest,
+    CreateNameRequest,
     DidChangeFilesNotification,
     DidChangeFilesParam,
     ReadFileRequest,
     RmRequest,
     RmdirRequest,
+    PathResult,
     BooleanResult,
     WriteFileRequest
 } from "./filesystem-protocol";
@@ -121,7 +124,13 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
     }
 
     fileExists(path: Path): Promise<boolean> {
-        throw Error('fileExists is no implemented yet');
+        const param = {path: path.toString()};
+        return this.sendBooleanRequest(FileExistsRequest.type, param);
+    }
+
+    createName(path: Path): Promise<string> {
+        const param = {path: path.toString()};
+        return this.sendPathRequest(CreateNameRequest.type, param);
     }
 
     watch(watcher: FileSystemWatcher): Disposable {
@@ -141,6 +150,10 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
 
     protected sendBooleanRequest<P>(type: RequestType<P, BooleanResult, void, void>, params: P): Promise<boolean> {
         return this.sendRequest(type, params, {value: false}).then(result => result.value);
+    }
+
+    protected sendPathRequest<P>(type: RequestType<P, PathResult, void, void>, params: P): Promise<string> {
+        return this.sendRequest(type, params, {path: ''}).then(result => result.path);
     }
 
     protected sendRequest<P, R>(type: RequestType<P, R, void, void>, params: P, defaultResult: R): Promise<R> {
