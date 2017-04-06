@@ -42,6 +42,10 @@ export namespace RmRequest {
     export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/rm');
 }
 
+export namespace RmdirRequest {
+    export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/rmdir');
+}
+
 export interface WriteFileParam extends PathParam {
     content: string;
     encoding?: string;

@@ -10,6 +10,7 @@ import {
     BooleanResult,
     ReadFileRequest,
     RmRequest,
+    RmdirRequest,
     ReadFileResult,
     WriteFileRequest
 } from "./filesystem-protocol";
@@ -40,6 +41,9 @@ export class FileSystemServer extends AbstractFileSystemConnectionHandler {
         );
         connection.onRequest(RmRequest.type, (param, token) =>
             this.fileSystem.rm(Path.fromString(param.path)).then(value => <BooleanResult>{value})
+        );
+        connection.onRequest(RmdirRequest.type, (param, token) =>
+            this.fileSystem.rmdir(Path.fromString(param.path)).then(value => <BooleanResult>{value})
         );
         connection.onRequest(WriteFileRequest.type, (param, token) =>
             this.fileSystem.writeFile(Path.fromString(param.path), param.content, param.encoding).then(value => <BooleanResult>{value})

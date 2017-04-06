@@ -85,7 +85,13 @@ export class FileCommandContribution implements CommandContribution {
                 actionId: 'delete',
                 selectionService: this.selectionService
             }, (path: Path) => {
-                return this.fileSystem.rm(path)
+                return this.fileSystem.dirExists(path)
+                .then((isDir) => {
+                    if (isDir) {
+                        return this.fileSystem.rmdir(path)
+                    }
+                    return this.fileSystem.rm(path)
+                })
             })
         );
     }

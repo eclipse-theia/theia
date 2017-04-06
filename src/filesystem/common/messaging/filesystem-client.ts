@@ -9,6 +9,7 @@ import {
     DidChangeFilesParam,
     ReadFileRequest,
     RmRequest,
+    RmdirRequest,
     BooleanResult,
     WriteFileRequest
 } from "./filesystem-protocol";
@@ -84,7 +85,8 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
     }
 
     rmdir(path: Path): Promise<boolean> {
-        throw Error('rmdir is no implemented yet');
+        const param = {path: path.toString()};
+        return this.sendBooleanRequest(RmdirRequest.type, param);
     }
 
     rm(path: Path): Promise<boolean> {
