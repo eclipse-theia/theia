@@ -13,17 +13,17 @@ export class NavigatorCommandHandlers implements CommandContribution {
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileNavigatorModel) protected readonly model: FileNavigatorModel) {}
     contribute(registry: CommandRegistry): void {
-        registry.registerHandler(
-            Commands.FILE_DELETE,
-            new NavigatorCommandHandler({
-                id: Commands.FILE_DELETE,
-                actionId: 'delete',
-                fileSystem: this.fileSystem,
-                model: this.model
-            }, (path: Path) => {
-                this.fileSystem.rm(path)
-            })
-        );
+        // registry.registerHandler(
+        //     Commands.FILE_DELETE,
+        //     new NavigatorCommandHandler({
+        //         id: Commands.FILE_DELETE,
+        //         actionId: 'delete',
+        //         fileSystem: this.fileSystem,
+        //         model: this.model
+        //     }, (path: Path) => {
+        //         this.fileSystem.rm(path)
+        //     })
+        // );
     }
 }
 

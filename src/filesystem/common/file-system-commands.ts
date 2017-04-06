@@ -1,6 +1,10 @@
-import {injectable } from "inversify";
-import {CommandContribution, CommandRegistry} from "../../application/common/command";
+import { SelectionService } from '../../application/common';
+import { injectable, inject } from "inversify";
+import { CommandContribution, CommandRegistry, CommandHandler } from "../../application/common/command";
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../../application/common/menu';
+import { FileSystem } from "./file-system";
+import { Path } from "./path";
+import { PathSelection } from "./fs-selection";
 
 
 export namespace Commands {
@@ -69,5 +73,62 @@ export class FileCommandContribution implements CommandContribution {
             id: Commands.FILE_DELETE,
             label: 'Delete'
         });
+    }
+}
+
+@injectable()
+export class FileSystemCommandHandlers implements CommandContribution {
+    constructor(
+        @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(SelectionService) protected readonly selectionService: SelectionService,
+        ) {}
+
+    contribute(registry: CommandRegistry): void {
+        registry.registerHandler(
+            Commands.FILE_DELETE,
+            new FileSystemCommandHandler({
+                id: Commands.FILE_DELETE,
+                actionId: 'delete',
+                selectionService: this.selectionService
+            }, (path: Path) => {
+                this.fileSystem.rm(path)
+            })
+        );
+    }
+}
+
+
+export class FileSystemCommandHandler implements CommandHandler {
+    constructor(
+        protected readonly options: FileSystemCommandHandler.Options,
+        protected readonly doExecute: any) {
+    }
+
+    execute(arg?: any): Promise<any> {
+        const selection = this.options.selectionService.selection;
+        if (PathSelection.is(selection)) {
+            return this.doExecute(selection.path)
+        }
+        return Promise.resolve()
+    }
+
+    isVisible(arg?: any): boolean {
+        if (PathSelection.is(this.options.selectionService.selection)) {
+            return true;
+        }
+        return false;
+    }
+
+    isEnabled(arg?: any): boolean {
+        return true;
+    }
+
+}
+
+export namespace FileSystemCommandHandler {
+    export interface Options {
+        id: string;
+        actionId: string,
+        selectionService: SelectionService
     }
 }
