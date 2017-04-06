@@ -12,6 +12,7 @@ import {
     PathResult,
     BooleanResult,
     ReadFileRequest,
+    MkdirRequest,
     RmRequest,
     RmdirRequest,
     ReadFileResult,
@@ -50,6 +51,9 @@ export class FileSystemServer extends AbstractFileSystemConnectionHandler {
         );
         connection.onRequest(RmRequest.type, (param, token) =>
             this.fileSystem.rm(Path.fromString(param.path)).then(value => <BooleanResult>{value})
+        );
+        connection.onRequest(MkdirRequest.type, (param, token) =>
+            this.fileSystem.mkdir(Path.fromString(param.path)).then(value => <BooleanResult>{value})
         );
         connection.onRequest(RmdirRequest.type, (param, token) =>
             this.fileSystem.rmdir(Path.fromString(param.path)).then(value => <BooleanResult>{value})

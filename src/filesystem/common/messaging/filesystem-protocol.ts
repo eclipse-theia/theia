@@ -54,6 +54,10 @@ export namespace RmRequest {
     export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/rm');
 }
 
+export namespace MkdirRequest {
+    export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/mkdir');
+}
+
 export namespace RmdirRequest {
     export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/rmdir');
 }

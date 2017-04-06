@@ -10,6 +10,7 @@ import {
     DidChangeFilesNotification,
     DidChangeFilesParam,
     ReadFileRequest,
+    MkdirRequest,
     RmRequest,
     RmdirRequest,
     PathResult,
@@ -80,7 +81,8 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
     }
 
     mkdir(path: Path, mode?: number): Promise<boolean> {
-        throw Error('mkdir is no implemented yet');
+        const param = {path: path.toString()};
+        return this.sendBooleanRequest(MkdirRequest.type, param);
     }
 
     rename(oldPath: Path, newPath: Path): Promise<boolean> {
