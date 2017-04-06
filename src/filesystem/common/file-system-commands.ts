@@ -39,6 +39,10 @@ export class FileMenuContribution implements MenuContribution {
 
 @injectable()
 export class FileCommandContribution implements CommandContribution {
+    constructor(
+        @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(SelectionService) protected readonly selectionService: SelectionService,
+        ) {}
 
     contribute(registry: CommandRegistry): void {
         registry.registerCommand({
@@ -73,17 +77,7 @@ export class FileCommandContribution implements CommandContribution {
             id: Commands.FILE_DELETE,
             label: 'Delete'
         });
-    }
-}
 
-@injectable()
-export class FileSystemCommandHandlers implements CommandContribution {
-    constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(SelectionService) protected readonly selectionService: SelectionService,
-        ) {}
-
-    contribute(registry: CommandRegistry): void {
         registry.registerHandler(
             Commands.FILE_DELETE,
             new FileSystemCommandHandler({
@@ -91,17 +85,16 @@ export class FileSystemCommandHandlers implements CommandContribution {
                 actionId: 'delete',
                 selectionService: this.selectionService
             }, (path: Path) => {
-                this.fileSystem.rm(path)
+                return this.fileSystem.rm(path)
             })
         );
     }
 }
 
-
 export class FileSystemCommandHandler implements CommandHandler {
     constructor(
         protected readonly options: FileSystemCommandHandler.Options,
-        protected readonly doExecute: any) {
+        protected readonly doExecute: (path: Path) => Promise<any>) {
     }
 
     execute(arg?: any): Promise<any> {
