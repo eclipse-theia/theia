@@ -1,8 +1,10 @@
 import { Container } from "inversify";
-import { TheiaApplication, browserApplicationModule } from "theia/src/application/browser";
-import { navigatorModule } from "theia/src/navigator/browser";
-import { fileSystemClientModule } from "theia/src/filesystem/browser";
-import { editorModule } from "theia/src/editor/browser";
+import { TheiaApplication, browserApplicationModule } from "theia/lib/application/browser";
+import { navigatorModule } from "theia/lib/navigator/browser";
+import { fileSystemClientModule } from "theia/lib/filesystem/browser";
+import { editorModule } from "theia/lib/editor/browser";
+import { browserLanguagesModule } from 'theia/lib/languages/browser';
+import { monacoModule } from 'theia/lib/monaco/browser';
 import "theia/src/application/browser/style/index.css";
 import "theia/src/editor/browser/style/index.css";
 import "theia/src/navigator/browser/style/index.css";
@@ -15,6 +17,8 @@ export function start(clientContainer?: Container) {
     container.load(navigatorModule);
     container.load(fileSystemClientModule);
     container.load(editorModule);
+    container.load(browserLanguagesModule);
+    container.load(monacoModule);
 
     // Merge the common conatiner with the client specific one. If any.
     const mainContainer = clientContainer ? Container.merge(container, clientContainer) : container;
@@ -22,5 +26,4 @@ export function start(clientContainer?: Container) {
     // Obtain application and start.
     const application = mainContainer.get(TheiaApplication);
     application.start(mainContainer);
-
 }

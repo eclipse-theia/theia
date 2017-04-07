@@ -18,7 +18,8 @@ import {
     RmdirRequest,
     PathResult,
     BooleanResult,
-    WriteFileRequest
+    WriteFileRequest,
+    ToUriRequest
 } from "./filesystem-protocol";
 import {AbstractFileSystemConnectionHandler} from "./filesystem-handler";
 
@@ -158,6 +159,11 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
                 onDispose();
             }
         }
+    }
+
+    toUri(path: Path): Promise<string | null> {
+        const param = {path: path.toString()};
+        return this.sendRequest(ToUriRequest.type, param, {uri: null}).then(result => result.uri);
     }
 
     protected sendBooleanRequest<P>(type: RequestType<P, BooleanResult, void, void>, params: P): Promise<boolean> {

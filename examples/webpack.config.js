@@ -7,6 +7,10 @@ module.exports = require("../config/webpack/webpack.config")(__dirname, {
                 target: 'ws://localhost:3000',
                 ws: true
             },
+            '/languages/*': {
+                target: 'ws://localhost:3000',
+                ws: true
+            },
             '*': 'http://localhost:3000'
         },
         historyApiFallback: true,

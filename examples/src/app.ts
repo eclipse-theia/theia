@@ -1,10 +1,20 @@
-import "reflect-metadata";
-import {BackendApplication, ExpressContribution, applicationModule} from "theia/lib/application/node";
-import {Container, injectable} from "inversify";
-import * as express from "express";
-import {fileSystemServerModule} from "theia/lib/filesystem/node";
-import {messagingModule} from "theia/lib/messaging/node";
-import * as path from "path";
+import 'reflect-metadata';
+import * as path from 'path';
+import { Container, injectable } from "inversify";
+import * as express from 'express';
+import { BackendApplication, ExpressContribution, applicationModule } from "theia/lib/application/node";
+import { fileSystemServerModule } from "theia/lib/filesystem/node";
+import { messagingModule } from "theia/lib/messaging/node";
+import { nodeLanguagesModule } from 'theia/lib/languages/node';
+import { nodeJavaModule } from 'theia/lib/java/node';
+
+// FIXME introduce default error handler contribution
+process.on('uncaughtException', function (err: any) {
+    console.error('Uncaught Exception: ', err.toString());
+    if (err.stack) {
+        console.error(err.stack);
+    }
+});
 
 @injectable()
 class StaticServer implements ExpressContribution {
@@ -17,7 +27,8 @@ const container = new Container();
 container.load(applicationModule);
 container.load(messagingModule);
 container.load(fileSystemServerModule);
+container.load(nodeLanguagesModule);
+container.load(nodeJavaModule);
 container.bind(ExpressContribution).to(StaticServer);
 const application = container.get(BackendApplication);
 application.start();
-

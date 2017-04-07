@@ -46,6 +46,11 @@ export interface FileSystem {
      * @returns a disposable to remove the listener again.
      */
     watch(watcher: FileSystemWatcher): Disposable;
+
+    /**
+     * Return a URI represening this path.
+     */
+    toUri(path: Path): Promise<string | null>;
 }
 
 export type FileSystemWatcher =  (event: FileChangeEvent) => void;

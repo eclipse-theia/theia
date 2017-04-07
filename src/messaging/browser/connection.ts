@@ -1,16 +1,10 @@
-import {MessageConnection} from "vscode-jsonrpc";
-import {createSocketConnection} from "../common";
-import {ConsoleLogger} from "./logger";
-import {ConnectionHandler} from "../common/handler";
-const WebSocket = require('reconnecting-websocket');
+import { createSocketConnection } from "../common";
+import { ConsoleLogger } from "./logger";
+import { ConnectionHandler } from "../common/handler";
+const ReconnectingWebSocket = require('reconnecting-websocket');
 
 export function listen(handler: ConnectionHandler): void {
-    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${protocol}://${location.host || "127.0.0.1:3000"}${handler.path}`;
-    createClientWebSocketConnection(url, connection => handler.onConnection(connection));
-}
-
-export function createClientWebSocketConnection(url: string, onConnect: (connection: MessageConnection) => void): void {
+    const url = createUrl(handler);
     const webSocket = createWebSocket(url);
     webSocket.onopen = () => {
         const connection = createSocketConnection({
@@ -23,18 +17,24 @@ export function createClientWebSocketConnection(url: string, onConnect: (connect
             },
             onClose: (cb) => webSocket.onclose = event => cb(event.code, event.reason)
         }, new ConsoleLogger());
-        onConnect(connection);
+        handler.onConnection(connection);
     };
 }
 
+export function createUrl(handler: ConnectionHandler): string {
+    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+    return `${protocol}://${location.host || "127.0.0.1:3000"}${handler.path}`;
+}
+
 export function createWebSocket(url: string): WebSocket {
-    const options = {
+    const socketOptions = {
         maxReconnectionDelay: 10000,
         minReconnectionDelay: 1000,
         reconnectionDelayGrowFactor: 1.3,
-        connectionTimeout: 4000,
+        connectionTimeout: 10000,
         maxRetries: Infinity,
-        debug: false,
+        debug: false
     };
-    return new WebSocket(url, undefined, options);
+    return new ReconnectingWebSocket(url, undefined, socketOptions);
 }
+

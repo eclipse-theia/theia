@@ -32,7 +32,6 @@ export namespace EditorWidget {
 
 export class EditorWidget extends Widget implements EventListenerObject, IEditorReference {
 
-
     protected readonly autoSizing: boolean
     protected readonly minHeight: number
     protected readonly editor: IStandaloneCodeEditor
