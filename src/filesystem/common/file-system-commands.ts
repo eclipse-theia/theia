@@ -5,6 +5,7 @@ import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../../applic
 import { FileSystem } from "./file-system";
 import { Path } from "./path";
 import { PathSelection } from "./fs-selection";
+import { PopupService } from "../../application/common";
 
 
 export namespace Commands {
@@ -42,6 +43,7 @@ export class FileCommandContribution implements CommandContribution {
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(ClipboardSerivce) protected readonly clipboardService: ClipboardSerivce,
+        @inject(PopupService) protected readonly popupService: PopupService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         ) {}
 
@@ -78,6 +80,22 @@ export class FileCommandContribution implements CommandContribution {
             id: Commands.FILE_DELETE,
             label: 'Delete'
         });
+
+        registry.registerHandler(
+            Commands.FILE_RENAME,
+            new FileSystemCommandHandler({
+                id: Commands.FILE_RENAME,
+                actionId: 'renamefile',
+                selectionService: this.selectionService,
+                popupService: this.popupService
+            }, (path: Path) => {
+                this.popupService.createPopup({
+                    id: 'rename',
+                    content: "<input type=text value='Enter the name' />"
+                })
+                return Promise.resolve()
+            })
+        );
 
         registry.registerHandler(
             Commands.FILE_COPY,
@@ -219,5 +237,6 @@ export namespace FileSystemCommandHandler {
         actionId: string,
         selectionService: SelectionService,
         clipboardService?: ClipboardSerivce
+        popupService?: PopupService
     }
 }
