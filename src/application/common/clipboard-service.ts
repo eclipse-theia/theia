@@ -2,15 +2,16 @@ import { injectable } from "inversify";
 
 @injectable()
 export class ClipboardSerivce {
-    private data: string
-    private hasData: boolean = false
+    private data: string | undefined
 
     get getData(): any {
-        if (this.hasData) {
+        if (typeof this.data !== "undefined") {
             let parsed;
             try {
                 parsed = JSON.parse(this.data)
-            } catch (e) {}
+            } catch (e) {
+                throw Error(e)
+            }
             return parsed
         } else {
             return ""
@@ -18,13 +19,14 @@ export class ClipboardSerivce {
     }
 
     get isEmpty(): boolean {
-        return !this.hasData
+        return (typeof this.data === "undefined")
     }
 
     setData(data: any) {
         try {
             this.data = JSON.stringify(data)
-        } catch (e) {}
-        this.hasData = true
+        } catch (e) {
+            throw Error(e)
+        }
     }
 }
