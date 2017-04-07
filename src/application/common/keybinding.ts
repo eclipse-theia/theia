@@ -8,7 +8,7 @@ export class Keybinding {
 
 export const KeybindingContribution = Symbol("KeybindingContribution");
 export interface KeybindingContribution {
-    getKeybindings(): Keybinding[];
+    contribute(registry: KeybindingRegistry): void;
 }
 
 
@@ -20,9 +20,7 @@ export class KeybindingRegistry {
     constructor( @multiInject(KeybindingContribution) protected contributions: KeybindingContribution[],
         @inject(CommandRegistry) protected commandRegistry: CommandRegistry) {
         for (let contribution of contributions) {
-            for (let keyb of contribution.getKeybindings()) {
-                this.registerKeyBinding(keyb);
-            }
+            contribution.contribute(this);
         }
     }
 
