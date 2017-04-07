@@ -54,7 +54,7 @@ export namespace RmRequest {
     export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/rm');
 }
 
-export interface СpParam extends PathParam {
+export interface СpParam {
     from: string;
     to: string;
 }

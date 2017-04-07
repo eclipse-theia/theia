@@ -99,7 +99,8 @@ export class FileCommandContribution implements CommandContribution {
             new FileSystemCommandHandler({
                 id: Commands.FILE_PASTE,
                 actionId: 'pastefile',
-                selectionService: this.selectionService
+                selectionService: this.selectionService,
+                clipboardService: this.clipboardService
             }, (pastePath: Path) => {
                 let isFolder = true;
                 let copyPath: Path
@@ -116,14 +117,8 @@ export class FileCommandContribution implements CommandContribution {
                     if (!targetFolderExists) {
                         return Promise.reject("paste path dont exist")
                     }
-                    if (this.clipboardService.isEmpty) {
-                        return Promise.reject("clipboard is empty")
-                    }
                     let data: any = this.clipboardService.getData
-                    if (data.type !== "path") {
-                        return Promise.reject("no copy path provided")
-                    }
-                    copyPath = new Path(data.path.split("/"))
+                    copyPath = Path.fromString(data.path)
                     pastePath = pastePath.append(copyPath.segments[copyPath.segments.length - 1])
                     return this.fileSystem.cp(copyPath, pastePath)
                 })
@@ -139,7 +134,7 @@ export class FileCommandContribution implements CommandContribution {
             }, (path: Path) => {
                 return this.fileSystem.createName(path)
                 .then((newPathData: string) => {
-                    const newPath = new Path(newPathData.split("/"));
+                    const newPath = Path.fromString(newPathData)
                     return this.fileSystem.writeFile(newPath, "")
                 })
             })
@@ -154,7 +149,7 @@ export class FileCommandContribution implements CommandContribution {
             }, (path: Path) => {
                 return this.fileSystem.createName(path)
                 .then((newPathData: string) => {
-                    const newPath = new Path(newPathData.split('/'));
+                    const newPath = Path.fromString(newPathData)
                     return this.fileSystem.mkdir(newPath)
                 })
             })
@@ -201,6 +196,18 @@ export class FileSystemCommandHandler implements CommandHandler {
     }
 
     isEnabled(arg?: any): boolean {
+        if (this.options.actionId === 'pastefile') {
+            if (!this.options.clipboardService) {
+                return false
+            }
+            if (this.options.clipboardService.isEmpty) {
+                return false
+            }
+            let data: any = this.options.clipboardService.getData
+            if (data.type !== "path") {
+                return false
+            }
+        }
         return true;
     }
 
@@ -210,6 +217,7 @@ export namespace FileSystemCommandHandler {
     export interface Options {
         id: string;
         actionId: string,
-        selectionService: SelectionService
+        selectionService: SelectionService,
+        clipboardService?: ClipboardSerivce
     }
 }

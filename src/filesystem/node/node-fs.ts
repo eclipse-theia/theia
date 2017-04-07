@@ -72,8 +72,7 @@ export class NodeFileSystem implements FileSystem {
             return Promise.resolve<string>(this.toPath(toPath))
         })
         .then((stringedTo: string) => {
-
-            toPath = new Path(stringedTo.split("/"))
+            toPath = Path.fromString(stringedTo)
             return this.dirExists(fromPath)
         })
         .then((dirExists: boolean) => {
