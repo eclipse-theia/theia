@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as nodePath from "path";
+import Uri from "vscode-uri";
 import { Disposable } from "../../application/common";
 import { FileSystem, FileSystemWatcher, FileChangeType, FileChange, FileChangeEvent, Path } from "../common";
 
@@ -281,6 +282,12 @@ export class NodeFileSystem implements FileSystem {
                 }
             }
         };
+    }
+
+    toUri(raw: Path): Promise<string | null> {
+        const path = this.toPath(raw);
+        const uri = Uri.file(path).toString();
+        return Promise.resolve(uri);
     }
 
     private clearDir(path: string, deletedPaths: string[] = []): Promise<string[]> {

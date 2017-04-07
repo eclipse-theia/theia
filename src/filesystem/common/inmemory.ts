@@ -9,7 +9,6 @@ class InMemoryFileNode {
 }
 
 export class InMemoryFileSystem implements FileSystem {
-
     private root: InMemoryFileNode;
 
     constructor() {
@@ -180,5 +179,9 @@ export class InMemoryFileSystem implements FileSystem {
                 onDispose();
             }
         }
+    }
+
+    toUri(path: Path): Promise<string> {
+        throw `file://${path}`;
     }
 }

@@ -95,3 +95,11 @@ export interface DidChangeFilesParam {
 export namespace DidChangeFilesNotification {
     export const type = new NotificationType<DidChangeFilesParam, void>('fileSystem/didChangeFiles');
 }
+
+export interface ToUriResult {
+    uri: string | null
+}
+
+export namespace ToUriRequest {
+    export const type = new RequestType<PathParam, ToUriResult, void, void>('fileSystem/toUri');
+}

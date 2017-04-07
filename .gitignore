@@ -4,3 +4,5 @@ build
 lib
 *.log
 .idea
+.metadata
+jdt.ls-java-project

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "declaration": true,
     "noImplicitAny": true,
-    "noEmitOnError": true,
+    "noEmitOnError": false,
     "noImplicitThis": true,
     "noUnusedLocals": true,
     "strictNullChecks": true,

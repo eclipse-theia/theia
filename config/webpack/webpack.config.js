@@ -25,7 +25,8 @@ module.exports = function (dirname, config = {}) {
         },
 
         module: {
-            rules: rules(dirname)
+            rules: rules(dirname),
+            noParse: /vscode-languageserver-types/
         },
 
         resolve: {
@@ -71,7 +72,7 @@ module.exports = function (dirname, config = {}) {
         ],
 
         stats: {
-            warnings: false
+            warnings: true
         }
 
     };

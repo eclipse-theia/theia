@@ -5,7 +5,7 @@
     "curly": true,
     "forin": true,
     "indent": [true, "spaces"],
-    "max-line-length": [true, 140],
+    "max-line-length": [true, 180],
     "no-trailing-whitespace": true,
     "no-unused-expression": true,
     "no-use-before-declare": true,
