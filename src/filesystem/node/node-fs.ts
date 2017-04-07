@@ -43,6 +43,65 @@ export class NodeFileSystem implements FileSystem {
         });
     }
 
+    cp(fromPath: Path, toPath: Path): Promise<boolean> {
+        if (!fromPath || !toPath) {
+            return Promise.reject(new Error('One of path arguments is not specified.'));
+        }
+        function doCopy(from: string, to: string): Promise<boolean> {
+            let readingStream = fs.createReadStream(from)
+            let writingStream = fs.createWriteStream(to)
+            readingStream.pipe(writingStream)
+
+            return new Promise<boolean>((resolve, reject) => {
+                writingStream.on('error', (e: any) => {
+                    reject("writing with error ${e}")
+                })
+                writingStream.on('finish', () => {
+                    resolve(true)
+                })
+            })
+        }
+
+        return this.exists(toPath)
+        .then((targetExists: boolean) => {
+            if (targetExists) {
+                // 'target name exists'
+                return this.createName(toPath, true)
+            }
+            // 'target name does not exist, can do copy'
+            return Promise.resolve<string>(this.toPath(toPath))
+        })
+        .then((stringedTo: string) => {
+
+            toPath = new Path(stringedTo.split("/"))
+            return this.dirExists(fromPath)
+        })
+        .then((dirExists: boolean) => {
+            if (dirExists) {
+                return this.mkdir(toPath)
+                .then((folderCreated: boolean) => {
+                    if (!folderCreated) {
+                        return Promise.reject("cannot create target")
+                    }
+                    return this.ls(fromPath)
+                    .then((paths: Path[]) => {
+                        return Promise.all(paths.map((path: Path) => {
+                            let to = toPath.append(path.segments[path.segments.length - 1])
+                            return doCopy(this.toPath(path), this.toPath(to))
+                        }))
+                    })
+                })
+            }
+            return this.fileExists(fromPath)
+            .then((canCopy: boolean) => {
+                if (canCopy) {
+                    return doCopy(this.toPath(fromPath), this.toPath(toPath))
+                }
+                return Promise.reject("cannot copy from path")
+            })
+        })
+    }
+
     mkdir(raw: Path, mode: number = parseInt('0777', 8)): Promise<boolean> {
         if (!raw) {
             return Promise.reject(new Error('The path argument \'raw\' should be specified.'));
@@ -170,9 +229,27 @@ export class NodeFileSystem implements FileSystem {
         return this.resourceExists(raw, (stat: fs.Stats) => stat.isFile());
     }
 
-    createName(raw: Path): Promise<string> {
+    createName(raw: Path, nameBased: boolean = false): Promise<string> {
+        let baseName = BLANK_NAME_TEMPLATE;
+        let tryNum = (raw: Path, num: number): Promise<string> => {
+            let curName: string = `${baseName} ${num}`;
+            let newPath: Path = raw.append(curName)
+            return this.exists(newPath)
+            .then((exists: boolean) => {
+                if (exists) {
+                    num++
+                    return tryNum(raw, num)
+                }
+                return Promise.resolve(newPath.toString())
+            })
+        }
+
         return this.fileExists(raw)
         .then((exists: boolean) => {
+            if (nameBased) {
+                baseName = raw.segments[raw.segments.length - 1]
+                return tryNum(raw.parent, 1)
+            }
             if (exists) {
                 return this.createName(raw.parent)
             }
@@ -181,20 +258,7 @@ export class NodeFileSystem implements FileSystem {
                 if (!exists) {
                     return Promise.reject<string>(new Error('The directory does not exist.'));
                 }
-                let num = 1;
-                let tryNum = (): Promise<string> => {
-                    let curName: string = `${BLANK_NAME_TEMPLATE} ${num}`;
-                    let newPath: Path = raw.append(curName)
-                    return this.exists(newPath)
-                    .then((exists: boolean) => {
-                        if (exists) {
-                            num++
-                            return tryNum()
-                        }
-                        return Promise.resolve(newPath.toString())
-                    })
-                }
-                return tryNum()
+                return tryNum(raw, 1)
             })
         })
     }

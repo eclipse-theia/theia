@@ -54,6 +54,15 @@ export namespace RmRequest {
     export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/rm');
 }
 
+export interface СpParam extends PathParam {
+    from: string;
+    to: string;
+}
+
+export namespace СpRequest {
+    export const type = new RequestType<СpParam, BooleanResult, void, void>('fileSystem/cp');
+}
+
 export namespace MkdirRequest {
     export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/mkdir');
 }

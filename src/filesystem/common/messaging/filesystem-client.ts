@@ -12,6 +12,7 @@ import {
     ReadFileRequest,
     MkdirRequest,
     RmRequest,
+    СpRequest,
     RmdirRequest,
     PathResult,
     BooleanResult,
@@ -97,6 +98,11 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
     rm(path: Path): Promise<boolean> {
         const param = {path: path.toString()};
         return this.sendBooleanRequest(RmRequest.type, param);
+    }
+
+    cp(from: Path, to: Path): Promise<boolean> {
+        const param = {from: from.toString(), to: to.toString()};
+        return this.sendBooleanRequest(СpRequest.type, param);
     }
 
     readFile(path: Path, encoding: string): Promise<string> {

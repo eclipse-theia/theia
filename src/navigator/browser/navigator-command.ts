@@ -30,9 +30,9 @@ export class NavigatorCommandHandlers implements CommandContribution {
 @injectable()
 export class NavigatorMenuContribution implements MenuContribution {
     contribute(registry: MenuModelRegistry) {
-        registry.registerMenuAction([CONTEXT_MENU_PATH, "1_cut/copy/paste"], {
-            commandId: Commands.FILE_CUT
-        });
+        // registry.registerMenuAction([CONTEXT_MENU_PATH, "1_cut/copy/paste"], {
+        //     commandId: Commands.FILE_CUT
+        // });
         registry.registerMenuAction([CONTEXT_MENU_PATH, "1_cut/copy/paste"], {
             commandId: Commands.FILE_COPY
         });

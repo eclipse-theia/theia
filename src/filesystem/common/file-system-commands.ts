@@ -1,4 +1,4 @@
-import { SelectionService } from '../../application/common';
+import { SelectionService, ClipboardSerivce } from '../../application/common';
 import { injectable, inject } from "inversify";
 import { CommandContribution, CommandRegistry, CommandHandler } from "../../application/common/command";
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../../application/common/menu';
@@ -41,6 +41,7 @@ export class FileMenuContribution implements MenuContribution {
 export class FileCommandContribution implements CommandContribution {
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(ClipboardSerivce) protected readonly clipboardService: ClipboardSerivce,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         ) {}
 
@@ -79,6 +80,57 @@ export class FileCommandContribution implements CommandContribution {
         });
 
         registry.registerHandler(
+            Commands.FILE_COPY,
+            new FileSystemCommandHandler({
+                id: Commands.FILE_COPY,
+                actionId: 'copyfile',
+                selectionService: this.selectionService
+            }, (path: Path) => {
+                this.clipboardService.setData({
+                    type: 'path',
+                    path: path.toString()
+                })
+                return Promise.resolve()
+            })
+        );
+
+        registry.registerHandler(
+            Commands.FILE_PASTE,
+            new FileSystemCommandHandler({
+                id: Commands.FILE_PASTE,
+                actionId: 'pastefile',
+                selectionService: this.selectionService
+            }, (pastePath: Path) => {
+                let isFolder = true;
+                let copyPath: Path
+                return this.fileSystem.dirExists(pastePath)
+                .then((targetFolderExists: boolean) => {
+                    if (!targetFolderExists) {
+                        // 'paste path is not folder'
+                        isFolder = false;
+                        pastePath = pastePath.parent
+                    }
+                    return this.fileSystem.dirExists(pastePath)
+                })
+                .then((targetFolderExists: boolean) => {
+                    if (!targetFolderExists) {
+                        return Promise.reject("paste path dont exist")
+                    }
+                    if (this.clipboardService.isEmpty) {
+                        return Promise.reject("clipboard is empty")
+                    }
+                    let data: any = this.clipboardService.getData
+                    if (data.type !== "path") {
+                        return Promise.reject("no copy path provided")
+                    }
+                    copyPath = new Path(data.path.split("/"))
+                    pastePath = pastePath.append(copyPath.segments[copyPath.segments.length - 1])
+                    return this.fileSystem.cp(copyPath, pastePath)
+                })
+            })
+        );
+
+        registry.registerHandler(
             Commands.NEW_FILE,
             new FileSystemCommandHandler({
                 id: Commands.NEW_FILE,
@@ -87,7 +139,7 @@ export class FileCommandContribution implements CommandContribution {
             }, (path: Path) => {
                 return this.fileSystem.createName(path)
                 .then((newPathData: string) => {
-                    const newPath = new Path(newPathData.split('/'));
+                    const newPath = new Path(newPathData.split("/"));
                     return this.fileSystem.writeFile(newPath, "")
                 })
             })

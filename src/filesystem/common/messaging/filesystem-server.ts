@@ -14,6 +14,7 @@ import {
     ReadFileRequest,
     MkdirRequest,
     RmRequest,
+    СpRequest,
     RmdirRequest,
     ReadFileResult,
     WriteFileRequest
@@ -51,6 +52,9 @@ export class FileSystemServer extends AbstractFileSystemConnectionHandler {
         );
         connection.onRequest(RmRequest.type, (param, token) =>
             this.fileSystem.rm(Path.fromString(param.path)).then(value => <BooleanResult>{value})
+        );
+        connection.onRequest(СpRequest.type, (param, token) =>
+            this.fileSystem.cp(Path.fromString(param.from), Path.fromString(param.to)).then(value => <BooleanResult>{value})
         );
         connection.onRequest(MkdirRequest.type, (param, token) =>
             this.fileSystem.mkdir(Path.fromString(param.path)).then(value => <BooleanResult>{value})

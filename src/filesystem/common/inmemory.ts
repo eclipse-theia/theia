@@ -108,6 +108,10 @@ export class InMemoryFileSystem implements FileSystem {
         return Promise.resolve(false);
     }
 
+    cp(from: Path, to: Path): Promise<boolean> {
+        throw Error("not supported")
+    }
+
     readFile(path: Path, encoding: string): Promise<string> {
         let n = this.find(path);
         if (!n) {
