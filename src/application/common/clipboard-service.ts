@@ -2,31 +2,17 @@ import { injectable } from "inversify";
 
 @injectable()
 export class ClipboardSerivce {
-    private data: string | undefined
+    private _data: any
 
-    get getData(): any {
-        if (typeof this.data !== "undefined") {
-            let parsed;
-            try {
-                parsed = JSON.parse(this.data)
-            } catch (e) {
-                throw Error(e)
-            }
-            return parsed
-        } else {
-            return ""
-        }
+    getData(): any {
+        return this._data;
     }
 
     get isEmpty(): boolean {
-        return (typeof this.data === "undefined")
+        return (typeof this._data === "undefined")
     }
 
     setData(data: any) {
-        try {
-            this.data = JSON.stringify(data)
-        } catch (e) {
-            throw Error(e)
-        }
+        this._data = data
     }
 }
