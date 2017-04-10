@@ -1,0 +1,86 @@
+.p-Widget.popupBlock{
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    pointer-events: none;
+    position: fixed;
+    color: white;
+}
+.p-Widget.popupBlock .popupWrapper{
+    background-color: grey;
+    position: relative;
+    padding: 20px;
+}
+.p-Widget.popupBlock .popupTitle{
+    text-align: center;
+    font-size: var(--theia-content-font-size);
+}
+.p-Widget.popupBlock .popupClose{
+    pointer-events: auto;
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    cursor: pointer;
+}
+.p-Widget.popupBlock .popupContent{
+    pointer-events: auto;
+}
+
+.p-Widget.popupBlock.hidden {
+    display: none;
+}
+
+
+.changeNameInputContainer{
+    width: 260px;
+    padding-top: 30px;
+    padding-bottom: 20px;
+    text-align: center;
+}
+.changeNameInputContainer #popupChangeErrorMessage{
+    display: none;
+}
+.changeNameInputContainer .popupChangeNameInput{
+    outline: none;
+    border:1px solid white;
+    box-shadow: none;
+}
+.changeNameInputContainer .popupChangeNameSubmit{
+    outline: none;
+    border: none;
+    cursor: pointer;
+    box-shadow: none;
+}
+ 
+
+.changeNameInputContainer.error{
+    color: red;
+}
+.changeNameInputContainer.error #popupChangeNameInput{
+    color: red;
+    border-color: red;
+}
+.changeNameInputContainer.error #popupChangeNameSubmit{
+    background-color: red;
+    color: white;
+}
+.changeNameInputContainer.error #popupChangeErrorMessage{
+    display: block;
+}
+
+
+.changeNameInputContainer.valid {
+    color: white;
+}
+.changeNameInputContainer.valid #popupChangeNameInput{
+    border-color: green;
+}
+.changeNameInputContainer.valid #popupChangeNameSubmit{
+    background-color: green;
+    color: white;
+}

@@ -91,8 +91,113 @@ export class FileCommandContribution implements CommandContribution {
             }, (path: Path) => {
                 this.popupService.createPopup({
                     id: 'rename',
-                    content: "<input type=text value='Enter the name' />"
+                    title: 'Enter new name',
+                    content: `
+                        <form class='changeNameInputContainer'>
+                            <input id='popupChangeNameInput' type=text value='' />
+                            <input id='popupChangeNameSubmit' type=submit value='Submit' />
+                            <div id='popupChangeErrorMessage'></div>
+                        </form>`,
+                    initCallback: () => {
+                        let submitButton = <HTMLInputElement>document.getElementById('popupChangeNameSubmit')
+                        let inputText = <HTMLInputElement>document.getElementById('popupChangeNameInput')
+                        let errorMessage = <HTMLElement>document.getElementById('popupChangeErrorMessage')
+                        if (!submitButton || !inputText || !errorMessage) {
+                            return false
+                        }
+                        let parent = <HTMLElement>inputText.parentElement
+
+                        if (!parent) {
+                            return false
+                        }
+
+                        let isFree = false
+                        let isValid = false
+                        let resultName: Path | undefined
+                        let cancelHandler = (e: KeyboardEvent) => {
+                            let isEscape = false
+                            if ("key" in e) {
+                                isEscape = (e.key === "Escape" || e.key === "Esc")
+                            } else {
+                                isEscape = (e.keyCode === 27)
+                            }
+                            if (isEscape) {
+                                inputText.value = path.segments[path.segments.length - 1]
+                                this.popupService.hidePopup('rename')
+                                document.removeEventListener('keydown', cancelHandler)
+                            }
+                        }
+                        let validationHandler = (el: HTMLInputElement, parent: HTMLElement) => {
+                            if (!el.value.match(/^[\w\-. ]+$/)) {
+                                parent.classList.add('error')
+                                errorMessage.innerHTML = "Invalid name, try other"
+                                isValid = false
+                            } else {
+                                parent.classList.remove('error')
+                                isValid = true
+                                let fsNameTest: Path = path.parent.append(el.value)
+                                // 'trying to check name existance'
+                                this.fileSystem.exists(fsNameTest).then((doExist: boolean) => {
+                                    if (doExist) {
+                                        // 'name does exist'
+                                        parent.classList.add('error')
+                                        parent.classList.remove('valid')
+                                        errorMessage.innerHTML = "This name is already exist"
+                                        submitButton.disabled = true
+                                    } else {
+                                        // 'can create new name'
+                                        parent.classList.remove('error')
+                                        parent.classList.add('valid')
+                                        submitButton.disabled = false
+                                        resultName = fsNameTest
+                                    }
+                                    isFree = !doExist
+                                })
+                            }
+                        }
+                        let submitHandler = () => {
+                            if (isValid && isFree && resultName) {
+                                this.fileSystem.rename(path, resultName).then((success) => {
+                                    if (success) {
+                                        parent.classList.remove('error')
+                                        if (resultName) {
+                                            inputText.value = resultName.segments[resultName.segments.length - 1]
+                                        }
+                                        this.popupService.hidePopup('rename')
+                                    } else {
+                                        parent.classList.add('error')
+                                        errorMessage.innerHTML = "Rename didn't work"
+                                    }
+                                    parent.classList.remove('valid')
+                                }).catch((error) => {
+                                    if (error) {
+                                        parent.classList.add('error')
+                                        errorMessage.innerHTML = `Rename failed with message: ${error}`
+                                    }
+                                })
+                            }
+                        }
+
+                        inputText.addEventListener('input', (e: Event) => {
+                            if (inputText instanceof HTMLInputElement && parent instanceof HTMLElement) {
+                                validationHandler(inputText, parent)
+                            }
+                        })
+
+                        parent.addEventListener('submit', (e: Event) => {
+                            submitHandler()
+                            e.preventDefault()
+                            return false
+                        })
+
+                        inputText.focus()
+                        inputText.value = path.segments[path.segments.length - 1]
+                    },
+                    cancelCallback: () => {
+                        
+                    }
                 })
+                this.popupService.showPopup('rename')
                 return Promise.resolve()
             })
         );
