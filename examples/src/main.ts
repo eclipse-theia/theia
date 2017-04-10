@@ -21,6 +21,6 @@ export function start(clientContainer?: Container) {
 
     // Obtain application and start.
     const application = mainContainer.get(TheiaApplication);
-    application.start();
+    application.start(mainContainer);
 
 }

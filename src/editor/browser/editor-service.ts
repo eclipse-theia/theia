@@ -13,15 +13,16 @@ import Uri = monaco.Uri;
 export class EditorService implements IEditorService {
 
     protected app: TheiaApplication | undefined;
+    protected contextMenuService: any | undefined;
 
     constructor(protected readonly editorRegistry: EditorRegistry,
                 protected readonly textModelResolverService: TextModelResolverService,
-                @inject(EditorContextMenuService) protected readonly contextMenuService: EditorContextMenuService,
                 @inject(SelectionService) protected readonly selectionService: SelectionService) {
     }
 
     onStart(app: TheiaApplication): void {
         this.app = app;
+        this.contextMenuService = this.app.getService(EditorContextMenuService);
     }
 
     openEditor(input: IResourceInput, sideBySide?: boolean | undefined): monaco.Promise<EditorWidget | undefined> {

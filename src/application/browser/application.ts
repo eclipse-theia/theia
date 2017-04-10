@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { Application } from "@phosphor/application";
 import { ApplicationShell } from "./shell";
-import {injectable, multiInject, inject} from "inversify";
+import {injectable, multiInject, inject, interfaces} from "inversify";
 import {CommandRegistry} from "../common/command";
 
 export const TheiaPlugin = Symbol("TheiaPlugin");
@@ -21,6 +21,7 @@ export class TheiaApplication {
 
     readonly shell: ApplicationShell;
     private application: Application<ApplicationShell>;
+    private container: interfaces.Container | undefined;
 
     constructor(
         @inject(CommandRegistry) commandRegistry: CommandRegistry,
@@ -35,7 +36,16 @@ export class TheiaApplication {
         })
     }
 
-    start(): Promise<void> {
+    start(container?: interfaces.Container): Promise<void> {
+        this.container = container;
         return this.application.start();
     }
+
+    getService<T>(serviceIdentifier: interfaces.ServiceIdentifier<T>): T | undefined {
+        if (this.container) {
+            return this.container.get(serviceIdentifier);
+        }
+        return undefined;
+    }
+
 }
