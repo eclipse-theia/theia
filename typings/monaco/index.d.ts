@@ -173,6 +173,10 @@ declare module monaco.actions {
         public static readonly EditorContext: MenuId;
     }
 
+    export class ContextKeyExpr {
+
+    }
+
     export interface ICommandAction {
         id: string;
         title: string
@@ -182,7 +186,7 @@ declare module monaco.actions {
 
     export interface IMenuItem {
         command: ICommandAction;
-        when?: any;
+        when?: ContextKeyExpr;
         group?: 'navigation' | string;
     }
 
@@ -197,5 +201,12 @@ declare module monaco.actions {
      * The shared menu registry singleton.
      */
     export const MenuRegistry: IMenuRegistry;
+
+    export interface IContextKeyService {
+        /**
+         * Checks whether the argument matches with the current key context.
+         */
+        contextMatchesRules(rules: ContextKeyExpr): boolean;
+    }
 
 }

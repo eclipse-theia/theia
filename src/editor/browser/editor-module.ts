@@ -69,10 +69,13 @@ export class EditorCommandHandlers implements CommandContribution {
 
         MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => wrap(item, findCommand(item))).forEach(props => {
             const id = props.item.command.id;
-            this.newHandler({
+            registry.registerHandler(
                 id,
-                actionId: id
-            })
+                this.newHandler({
+                    id,
+                    actionId: id
+                })
+            );
         });
 
     }
@@ -103,9 +106,13 @@ export class EditorMenuContribution implements MenuContribution {
             commandId: CommonCommands.EDIT_PASTE
         });
 
+        const wrap: (item: IMenuItem) => { path: string[], commandId: string } = (item) => {
+            return { path: [EDITOR_CONTEXT_MENU_ID, (item.group || "")], commandId: item.command.id }
+        };
+
         MenuRegistry.getMenuItems(MenuId.EditorContext)
-            .map(item => [(item.group || ""), item.command.id])
-            .forEach(props => registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, props[0]], { commandId: props[1] }));
+            .map(item => wrap(item))
+            .forEach(props => registry.registerMenuAction(props.path, { commandId: props.commandId }));
 
     }
 }

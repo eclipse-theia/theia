@@ -5,6 +5,7 @@ export import ICursorSelectionChangedEvent = monaco.editor.ICursorSelectionChang
 
 
 export class EditorCommandHandler implements CommandHandler {
+
     constructor(protected readonly editorManager: IEditorManager,
                 protected readonly selectionService: SelectionService,
                 protected readonly options: EditorCommandHandler.Options) {
@@ -23,12 +24,20 @@ export class EditorCommandHandler implements CommandHandler {
     }
 
     isVisible(arg?: any): boolean {
-        return isEditorSelection(this.selectionService.selection);
+        const visible = isEditorSelection(this.selectionService.selection);
+        if (visible && this.options.visibilityRestrictions) {
+            return this.options.visibilityRestrictions.every(restriction => restriction.apply(arg));
+        }
+        return visible;
     }
 
     isEnabled(arg?: any): boolean {
         const currentEditor = this.editorManager.currentEditor;
-        return !!currentEditor && currentEditor.isActionSupported(this.options.actionId);
+        const enabled = !!currentEditor && currentEditor.isActionSupported(this.options.actionId);
+        if (enabled && this.options.enablementRestrictions) {
+            return this.options.enablementRestrictions.every(restriction => restriction.apply(arg));
+        }
+        return enabled;
     }
 
 }
@@ -41,5 +50,7 @@ export namespace EditorCommandHandler {
     export interface Options {
         id: string;
         actionId: string
+        visibilityRestrictions?: ((arg?: any) => boolean)[],
+        enablementRestrictions?: ((arg?: any) => boolean)[]
     }
 }
