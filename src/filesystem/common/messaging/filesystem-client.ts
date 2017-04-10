@@ -103,9 +103,9 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
         return this.sendBooleanRequest(RmRequest.type, param);
     }
 
-    cp(from: Path, to: Path): Promise<boolean> {
+    cp(from: Path, to: Path): Promise<string> {
         const param = {from: from.toString(), to: to.toString()};
-        return this.sendBooleanRequest(СpRequest.type, param);
+        return this.sendPathRequest(СpRequest.type, param);
     }
 
     readFile(path: Path, encoding: string): Promise<string> {

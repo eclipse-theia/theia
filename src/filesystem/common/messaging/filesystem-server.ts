@@ -59,7 +59,7 @@ export class FileSystemServer extends AbstractFileSystemConnectionHandler {
             this.fileSystem.rm(Path.fromString(param.path)).then(value => <BooleanResult>{value})
         );
         connection.onRequest(СpRequest.type, (param, token) =>
-            this.fileSystem.cp(Path.fromString(param.from), Path.fromString(param.to)).then(value => <BooleanResult>{value})
+            this.fileSystem.cp(Path.fromString(param.from), Path.fromString(param.to)).then(value => <PathResult>{path: value.toString()})
         );
         connection.onRequest(RenameRequest.type, (param, token) =>
             this.fileSystem.rename(Path.fromString(param.from), Path.fromString(param.to)).then(value => <BooleanResult>{value})

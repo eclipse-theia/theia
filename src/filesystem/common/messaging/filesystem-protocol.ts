@@ -64,7 +64,7 @@ export interface MoveParam {
 }
 
 export namespace СpRequest {
-    export const type = new RequestType<MoveParam, BooleanResult, void, void>('fileSystem/cp');
+    export const type = new RequestType<MoveParam, PathResult, void, void>('fileSystem/cp');
 }
 
 export namespace RenameRequest {

@@ -108,7 +108,7 @@ export class InMemoryFileSystem implements FileSystem {
         return Promise.resolve(false);
     }
 
-    cp(from: Path, to: Path): Promise<boolean> {
+    cp(from: Path, to: Path): Promise<string> {
         throw Error("not supported")
     }
 

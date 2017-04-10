@@ -6,6 +6,7 @@ import { FileSystem } from "./file-system";
 import { Path } from "./path";
 import { PathSelection } from "./fs-selection";
 import { PopupService } from "../../application/common";
+import { promtNamePopup } from "../browser/filesystem-popup-handlers";
 
 
 export namespace Commands {
@@ -89,115 +90,7 @@ export class FileCommandContribution implements CommandContribution {
                 selectionService: this.selectionService,
                 popupService: this.popupService
             }, (path: Path) => {
-                let submitButton: HTMLInputElement
-                let inputText: HTMLInputElement
-                let errorMessage: HTMLElement
-                let parent: HTMLElement
-
-                let isFree = false
-                let isValid = false
-                let resultName: Path | undefined
-
-                this.popupService.createPopup({
-                    id: 'rename',
-                    title: 'Enter new name',
-                    content: `
-                        <form class='changeNameInputContainer'>
-                            <input id='popupChangeNameInput' type=text value='' />
-                            <input id='popupChangeNameSubmit' type=submit value='Submit' />
-                            <div id='popupChangeErrorMessage'></div>
-                        </form>`,
-                    initCallback: () => {
-                        submitButton = <HTMLInputElement>document.getElementById('popupChangeNameSubmit')
-                        inputText = <HTMLInputElement>document.getElementById('popupChangeNameInput')
-                        errorMessage = <HTMLElement>document.getElementById('popupChangeErrorMessage')
-                        if (!submitButton || !inputText || !errorMessage) {
-                            return false
-                        }
-                        parent = <HTMLElement>inputText.parentElement
-
-                        if (!parent) {
-                            return false
-                        }
-                        let validationHandler = () => {
-                            if (!inputText.value.match(/^[\w\-. ]+$/)) {
-                                parent.classList.add('error')
-                                errorMessage.innerHTML = "Invalid name, try other"
-                                isValid = false
-                            } else {
-                                parent.classList.remove('error')
-                                isValid = true
-                                let fsNameTest: Path = path.parent.append(inputText.value)
-                                // 'trying to check name existance'
-                                this.fileSystem.exists(fsNameTest).then((doExist: boolean) => {
-                                    if (doExist) {
-                                        // 'name does exist'
-                                        parent.classList.add('error')
-                                        parent.classList.remove('valid')
-                                        errorMessage.innerHTML = "This name is already exist"
-                                        submitButton.disabled = true
-                                    } else {
-                                        // 'can create new name'
-                                        parent.classList.remove('error')
-                                        parent.classList.add('valid')
-                                        submitButton.disabled = false
-                                        resultName = fsNameTest
-                                    }
-                                    isFree = !doExist
-                                })
-                            }
-                        }
-                        let submitHandler = () => {
-                            if (isValid && isFree && resultName) {
-                                this.fileSystem.rename(path, resultName).then((success) => {
-                                    if (success) {
-                                        parent.classList.remove('error')
-                                        if (resultName) {
-                                            inputText.value = resultName.segments[resultName.segments.length - 1]
-                                        }
-                                        this.popupService.hidePopup('rename')
-                                    } else {
-                                        parent.classList.add('error')
-                                        errorMessage.innerHTML = "Rename didn't work"
-                                    }
-                                    parent.classList.remove('valid')
-                                }).catch((error) => {
-                                    if (error) {
-                                        parent.classList.add('error')
-                                        errorMessage.innerHTML = `Rename failed with message: ${error}`
-                                    }
-                                })
-                            }
-                        }
-
-                        inputText.addEventListener('input', (e: Event) => {
-                            if (inputText instanceof HTMLInputElement && parent instanceof HTMLElement) {
-                                validationHandler()
-                            }
-                        })
-
-                        parent.addEventListener('submit', (e: Event) => {
-                            submitHandler()
-                            e.preventDefault()
-                            return false
-                        })
-
-                        inputText.focus()
-                        inputText.value = path.segments[path.segments.length - 1]
-                    },
-                    cancelCallback: () => {
-                        isFree = false
-                        isValid = false
-                        parent.classList.remove('error')
-                        parent.classList.remove('valid')
-                        if (resultName) {
-                            inputText.value = resultName.segments[resultName.segments.length - 1]
-                        } else {
-                            inputText.value = path.segments[path.segments.length - 1]
-                        }
-                    }
-                })
-                this.popupService.showPopup('rename')
+                promtNamePopup('rename', path, this.popupService, this.fileSystem)
                 return Promise.resolve()
             })
         );
@@ -242,8 +135,15 @@ export class FileCommandContribution implements CommandContribution {
                     }
                     let data: any = this.clipboardService.getData
                     copyPath = Path.fromString(data.path)
-                    pastePath = pastePath.append(copyPath.segments[copyPath.segments.length - 1])
-                    return this.fileSystem.cp(copyPath, pastePath)
+                    if (copyPath.simpleName) {
+                        pastePath = pastePath.append(copyPath.simpleName)
+                    }
+                    return this.fileSystem.cp(copyPath, pastePath).then((newPath) => {
+                        if (newPath !== pastePath.segments.join('/')) {
+                            // need to rename to something new
+                            promtNamePopup('paste', Path.fromString(newPath), this.popupService, this.fileSystem)
+                        }
+                    })
                 })
             })
         );
