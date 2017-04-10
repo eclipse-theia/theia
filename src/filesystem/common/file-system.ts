@@ -17,6 +17,8 @@ export interface FileSystem {
 
     rm(path: Path): Promise<boolean>;
 
+    cp(from: Path, to: Path): Promise<boolean>;
+
     readFile(path: Path, encoding?: string): Promise<string>;
 
     writeFile(path: Path, data: string, encoding?: string): Promise<boolean>;
@@ -32,6 +34,11 @@ export interface FileSystem {
      * `path` exists and is a file.
      */
     fileExists(path: Path): Promise<boolean>;
+
+    /**
+     * Creates non-existing name in given path.
+     */
+    createName(path: Path): Promise<string>;
 
     /**
      * watch for file changes

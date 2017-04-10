@@ -124,7 +124,7 @@ export abstract class AbstractTreeWidget<
                     this.model.selectNode(node);
                     if (this.props.contextMenuPath) {
                         this.onRender.push(Disposable.create(() =>
-                            requestAnimationFrame(() => {
+                            setTimeout(() => {
                                 this.contextMenuRenderer.render(
                                     this.props.contextMenuPath!,
                                     event
@@ -133,6 +133,7 @@ export abstract class AbstractTreeWidget<
                         ));
                     }
                     event.stopPropagation();
+                    this.update();
                     return false;
                 }
             },

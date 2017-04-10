@@ -1,67 +1,49 @@
-import { injectable } from "inversify";
+import { injectable, inject } from "inversify";
 
 import { CommandHandler, CommandContribution, CommandRegistry } from '../../application/common/command';
 import { CONTEXT_MENU_PATH } from "./navigator-widget";
+import { Commands } from '../../filesystem/common/file-system-commands';
 import { MenuContribution, MenuModelRegistry } from "../../application/common/menu";
-
-export namespace Commands {
-    export const FILE_MENU = "1_file";
-    export const FILE_CUT = 'navigator:fileCut';
-    export const FILE_COPY = 'navigator:fileCopy';
-    export const FILE_PASTE = 'navigator:filePaste';
-    export const FILE_RENAME = 'navigator:fileRename';
-    export const NEW_FILE = 'navigator:newFile';
-    export const NEW_FOLDER = 'navigator:newFolder';
-}
+import { FileSystem, Path } from "../../filesystem/common";
+import { FileNavigatorModel } from "./navigator-model";
 
 @injectable()
 export class NavigatorCommandHandlers implements CommandContribution {
-    constructor() {}
+    constructor(
+        @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(FileNavigatorModel) protected readonly model: FileNavigatorModel) {}
     contribute(registry: CommandRegistry): void {
-        registry.registerCommand({
-            id: Commands.FILE_CUT,
-            label: 'Cut'
-        });
-        registry.registerCommand({
-            id: Commands.FILE_COPY,
-            label: 'Copy'
-        });
-        registry.registerCommand({
-            id: Commands.FILE_PASTE,
-            label: 'Paste'
-        });
-        registry.registerCommand({
-            id: Commands.FILE_RENAME,
-            label: 'Rename'
-        });
-        registry.registerCommand({
-            id: Commands.NEW_FILE,
-            label: 'New File'
-        });
-        registry.registerCommand({
-            id: Commands.NEW_FOLDER,
-            label: 'New Folder'
-        });
+        // registry.registerHandler(
+        //     Commands.FILE_DELETE,
+        //     new NavigatorCommandHandler({
+        //         id: Commands.FILE_DELETE,
+        //         actionId: 'delete',
+        //         fileSystem: this.fileSystem,
+        //         model: this.model
+        //     }, (path: Path) => {
+        //         this.fileSystem.rm(path)
+        //     })
+        // );
     }
 }
 
 @injectable()
 export class NavigatorMenuContribution implements MenuContribution {
     contribute(registry: MenuModelRegistry) {
-
-        // registry.registerSubmenu([CONTEXT_MENU_PATH], Commands.FILE_MENU, "File");
-
-        registry.registerMenuAction([CONTEXT_MENU_PATH, "1_cut/copy/paste"], {
-            commandId: Commands.FILE_CUT
-        });
+        // registry.registerMenuAction([CONTEXT_MENU_PATH, "1_cut/copy/paste"], {
+        //     commandId: Commands.FILE_CUT
+        // });
         registry.registerMenuAction([CONTEXT_MENU_PATH, "1_cut/copy/paste"], {
             commandId: Commands.FILE_COPY
         });
         registry.registerMenuAction([CONTEXT_MENU_PATH, "1_cut/copy/paste"], {
             commandId: Commands.FILE_PASTE
         });
-        registry.registerMenuAction([CONTEXT_MENU_PATH, "2_rename"], {
+        registry.registerMenuAction([CONTEXT_MENU_PATH, "2_move"], {
             commandId: Commands.FILE_RENAME
+        });
+        registry.registerMenuAction([CONTEXT_MENU_PATH, "2_move"], {
+            commandId: Commands.FILE_DELETE
         });
         registry.registerMenuAction([CONTEXT_MENU_PATH, "3_new"], {
             commandId: Commands.NEW_FILE
@@ -73,20 +55,26 @@ export class NavigatorMenuContribution implements MenuContribution {
 }
 
 export class NavigatorCommandHandler implements CommandHandler {
-    constructor(protected readonly options: NavigatorCommandHandler.Options) {
+    constructor(
+        protected readonly options: NavigatorCommandHandler.Options,
+        protected readonly doExecute: any) {
     }
 
-    get id(): string {
-        return this.options.id;
-    }
+    path: Path
 
     execute(arg?: any): Promise<any> {
-
-        return Promise.resolve();
+        const node = this.options.model.selectedPathNode;
+        if (node) {
+            return this.doExecute(node.path)
+        }
+        return Promise.resolve()
     }
 
     isVisible(arg?: any): boolean {
-        return true;
+        if (this.options.model.selectedNode) {
+            return true;
+        }
+        return false;
     }
 
     isEnabled(arg?: any): boolean {
@@ -98,6 +86,8 @@ export class NavigatorCommandHandler implements CommandHandler {
 export namespace NavigatorCommandHandler {
     export interface Options {
         id: string;
-        actionId: string
+        actionId: string,
+        fileSystem: FileSystem,
+        model: FileNavigatorModel
     }
 }

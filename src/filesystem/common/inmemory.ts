@@ -108,6 +108,10 @@ export class InMemoryFileSystem implements FileSystem {
         return Promise.resolve(false);
     }
 
+    cp(from: Path, to: Path): Promise<boolean> {
+        throw Error("not supported")
+    }
+
     readFile(path: Path, encoding: string): Promise<string> {
         let n = this.find(path);
         if (!n) {
@@ -149,6 +153,9 @@ export class InMemoryFileSystem implements FileSystem {
     fileExists(path: Path): Promise<boolean> {
         let n = this.find(path);
         return Promise.resolve(n !== undefined && n.contents !== undefined);
+    }
+    createName(path: Path): Promise<string> {
+         throw Error("not supported")
     }
 
     private notify(...change: FileChange[]): void {

@@ -5,9 +5,16 @@ import {Disposable, DisposableCollection} from "../../../application/common";
 import {
     LsRequest,
     DirExistsRequest,
+    FileExistsRequest,
+    CreateNameRequest,
     DidChangeFilesNotification,
     DidChangeFilesParam,
     ReadFileRequest,
+    MkdirRequest,
+    RmRequest,
+    СpRequest,
+    RmdirRequest,
+    PathResult,
     BooleanResult,
     WriteFileRequest
 } from "./filesystem-protocol";
@@ -75,7 +82,8 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
     }
 
     mkdir(path: Path, mode?: number): Promise<boolean> {
-        throw Error('mkdir is no implemented yet');
+        const param = {path: path.toString()};
+        return this.sendBooleanRequest(MkdirRequest.type, param);
     }
 
     rename(oldPath: Path, newPath: Path): Promise<boolean> {
@@ -83,11 +91,18 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
     }
 
     rmdir(path: Path): Promise<boolean> {
-        throw Error('rmdir is no implemented yet');
+        const param = {path: path.toString()};
+        return this.sendBooleanRequest(RmdirRequest.type, param);
     }
 
     rm(path: Path): Promise<boolean> {
-        throw Error('rm is no implemented yet');
+        const param = {path: path.toString()};
+        return this.sendBooleanRequest(RmRequest.type, param);
+    }
+
+    cp(from: Path, to: Path): Promise<boolean> {
+        const param = {from: from.toString(), to: to.toString()};
+        return this.sendBooleanRequest(СpRequest.type, param);
     }
 
     readFile(path: Path, encoding: string): Promise<string> {
@@ -117,7 +132,13 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
     }
 
     fileExists(path: Path): Promise<boolean> {
-        throw Error('fileExists is no implemented yet');
+        const param = {path: path.toString()};
+        return this.sendBooleanRequest(FileExistsRequest.type, param);
+    }
+
+    createName(path: Path): Promise<string> {
+        const param = {path: path.toString()};
+        return this.sendPathRequest(CreateNameRequest.type, param);
     }
 
     watch(watcher: FileSystemWatcher): Disposable {
@@ -137,6 +158,10 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
 
     protected sendBooleanRequest<P>(type: RequestType<P, BooleanResult, void, void>, params: P): Promise<boolean> {
         return this.sendRequest(type, params, {value: false}).then(result => result.value);
+    }
+
+    protected sendPathRequest<P>(type: RequestType<P, PathResult, void, void>, params: P): Promise<string> {
+        return this.sendRequest(type, params, {path: ''}).then(result => result.path);
     }
 
     protected sendRequest<P, R>(type: RequestType<P, R, void, void>, params: P, defaultResult: R): Promise<R> {

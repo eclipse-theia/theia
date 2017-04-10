@@ -4,11 +4,18 @@ import {FileSystem} from "../file-system";
 import {
     LsRequest,
     DirExistsRequest,
+    FileExistsRequest,
+    CreateNameRequest,
     DidChangeFilesNotification,
     FileChange,
     LsResult,
+    PathResult,
     BooleanResult,
     ReadFileRequest,
+    MkdirRequest,
+    RmRequest,
+    СpRequest,
+    RmdirRequest,
     ReadFileResult,
     WriteFileRequest
 } from "./filesystem-protocol";
@@ -34,8 +41,26 @@ export class FileSystemServer extends AbstractFileSystemConnectionHandler {
         connection.onRequest(DirExistsRequest.type, (param, token) =>
             this.fileSystem.dirExists(Path.fromString(param.path)).then(value => <BooleanResult>{value})
         );
+        connection.onRequest(FileExistsRequest.type, (param, token) =>
+            this.fileSystem.fileExists(Path.fromString(param.path)).then(value => <BooleanResult>{value})
+        );
+        connection.onRequest(CreateNameRequest.type, (param, token) =>
+            this.fileSystem.createName(Path.fromString(param.path)).then(value => <PathResult>{path: value.toString()})
+        );
         connection.onRequest(ReadFileRequest.type, (param, token) =>
             this.fileSystem.readFile(Path.fromString(param.path), param.encoding).then(content => <ReadFileResult>{content})
+        );
+        connection.onRequest(RmRequest.type, (param, token) =>
+            this.fileSystem.rm(Path.fromString(param.path)).then(value => <BooleanResult>{value})
+        );
+        connection.onRequest(СpRequest.type, (param, token) =>
+            this.fileSystem.cp(Path.fromString(param.from), Path.fromString(param.to)).then(value => <BooleanResult>{value})
+        );
+        connection.onRequest(MkdirRequest.type, (param, token) =>
+            this.fileSystem.mkdir(Path.fromString(param.path)).then(value => <BooleanResult>{value})
+        );
+        connection.onRequest(RmdirRequest.type, (param, token) =>
+            this.fileSystem.rmdir(Path.fromString(param.path)).then(value => <BooleanResult>{value})
         );
         connection.onRequest(WriteFileRequest.type, (param, token) =>
             this.fileSystem.writeFile(Path.fromString(param.path), param.content, param.encoding).then(value => <BooleanResult>{value})

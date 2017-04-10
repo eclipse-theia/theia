@@ -6,6 +6,17 @@
     "configurations": [
         {
             "type": "node",
+            "request": "launch",
+            "name": "Launch App",
+            "program": "${workspaceRoot}/examples/lib/app.js",
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/examples/lib/**/*.js",
+                "${workspaceRoot}/lib/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
             "runtimeArgs": [
                 "--inspect"
             ],

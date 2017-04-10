@@ -53,7 +53,7 @@ all of MD as it is not optimized for dense, information rich UIs.
 
   --theia-ui-font-color0: #D4D4D4;
   --theia-ui-font-color1: #D4D4D4;
-  --theia-ui-font-color2: #D4D4D4;
+  --theia-ui-font-color2: rgba(212, 212, 212, 0.4);
   --theia-ui-font-color3: #D4D4D4;
 
   /* Use these against the brand/accent/warn/error colors.
