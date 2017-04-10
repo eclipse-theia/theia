@@ -40,7 +40,7 @@ export class BrowserPopupService implements PopupService {
                 <i class="popupClose fa fa-times" aria-hidden="true"></i>
             </div>
             `)
-        
+
         this.popups[popup.id] = popup
         this.popupContainer.addWidget(popup.widget)
         popup.initCallback()

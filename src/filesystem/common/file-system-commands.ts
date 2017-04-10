@@ -89,6 +89,15 @@ export class FileCommandContribution implements CommandContribution {
                 selectionService: this.selectionService,
                 popupService: this.popupService
             }, (path: Path) => {
+                let submitButton: HTMLInputElement
+                let inputText: HTMLInputElement
+                let errorMessage: HTMLElement
+                let parent: HTMLElement
+
+                let isFree = false
+                let isValid = false
+                let resultName: Path | undefined
+
                 this.popupService.createPopup({
                     id: 'rename',
                     title: 'Enter new name',
@@ -99,43 +108,26 @@ export class FileCommandContribution implements CommandContribution {
                             <div id='popupChangeErrorMessage'></div>
                         </form>`,
                     initCallback: () => {
-                        let submitButton = <HTMLInputElement>document.getElementById('popupChangeNameSubmit')
-                        let inputText = <HTMLInputElement>document.getElementById('popupChangeNameInput')
-                        let errorMessage = <HTMLElement>document.getElementById('popupChangeErrorMessage')
+                        submitButton = <HTMLInputElement>document.getElementById('popupChangeNameSubmit')
+                        inputText = <HTMLInputElement>document.getElementById('popupChangeNameInput')
+                        errorMessage = <HTMLElement>document.getElementById('popupChangeErrorMessage')
                         if (!submitButton || !inputText || !errorMessage) {
                             return false
                         }
-                        let parent = <HTMLElement>inputText.parentElement
+                        parent = <HTMLElement>inputText.parentElement
 
                         if (!parent) {
                             return false
                         }
-
-                        let isFree = false
-                        let isValid = false
-                        let resultName: Path | undefined
-                        let cancelHandler = (e: KeyboardEvent) => {
-                            let isEscape = false
-                            if ("key" in e) {
-                                isEscape = (e.key === "Escape" || e.key === "Esc")
-                            } else {
-                                isEscape = (e.keyCode === 27)
-                            }
-                            if (isEscape) {
-                                inputText.value = path.segments[path.segments.length - 1]
-                                this.popupService.hidePopup('rename')
-                                document.removeEventListener('keydown', cancelHandler)
-                            }
-                        }
-                        let validationHandler = (el: HTMLInputElement, parent: HTMLElement) => {
-                            if (!el.value.match(/^[\w\-. ]+$/)) {
+                        let validationHandler = () => {
+                            if (!inputText.value.match(/^[\w\-. ]+$/)) {
                                 parent.classList.add('error')
                                 errorMessage.innerHTML = "Invalid name, try other"
                                 isValid = false
                             } else {
                                 parent.classList.remove('error')
                                 isValid = true
-                                let fsNameTest: Path = path.parent.append(el.value)
+                                let fsNameTest: Path = path.parent.append(inputText.value)
                                 // 'trying to check name existance'
                                 this.fileSystem.exists(fsNameTest).then((doExist: boolean) => {
                                     if (doExist) {
@@ -180,7 +172,7 @@ export class FileCommandContribution implements CommandContribution {
 
                         inputText.addEventListener('input', (e: Event) => {
                             if (inputText instanceof HTMLInputElement && parent instanceof HTMLElement) {
-                                validationHandler(inputText, parent)
+                                validationHandler()
                             }
                         })
 
@@ -194,7 +186,15 @@ export class FileCommandContribution implements CommandContribution {
                         inputText.value = path.segments[path.segments.length - 1]
                     },
                     cancelCallback: () => {
-                        
+                        isFree = false
+                        isValid = false
+                        parent.classList.remove('error')
+                        parent.classList.remove('valid')
+                        if (resultName) {
+                            inputText.value = resultName.segments[resultName.segments.length - 1]
+                        } else {
+                            inputText.value = path.segments[path.segments.length - 1]
+                        }
                     }
                 })
                 this.popupService.showPopup('rename')
