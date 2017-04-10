@@ -90,7 +90,7 @@ export class FileCommandContribution implements CommandContribution {
                 selectionService: this.selectionService,
                 popupService: this.popupService
             }, (path: Path) => {
-                promtNamePopup('rename', path, this.popupService, this.fileSystem)
+                promtNamePopup('renamefile', path, this.popupService, this.fileSystem)
                 return Promise.resolve()
             })
         );
@@ -141,7 +141,7 @@ export class FileCommandContribution implements CommandContribution {
                     return this.fileSystem.cp(copyPath, pastePath).then((newPath) => {
                         if (newPath !== pastePath.segments.join('/')) {
                             // need to rename to something new
-                            promtNamePopup('paste', Path.fromString(newPath), this.popupService, this.fileSystem)
+                            promtNamePopup('pastefile', Path.fromString(newPath), this.popupService, this.fileSystem)
                         }
                     })
                 })
@@ -155,10 +155,14 @@ export class FileCommandContribution implements CommandContribution {
                 actionId: 'newfile',
                 selectionService: this.selectionService
             }, (path: Path) => {
+                let newPath: Path
                 return this.fileSystem.createName(path)
                 .then((newPathData: string) => {
-                    const newPath = Path.fromString(newPathData)
+                    newPath = Path.fromString(newPathData)
                     return this.fileSystem.writeFile(newPath, "")
+                })
+                .then(() => {
+                    promtNamePopup('newfile', newPath, this.popupService, this.fileSystem)
                 })
             })
         );
@@ -170,9 +174,10 @@ export class FileCommandContribution implements CommandContribution {
                 actionId: 'newfolder',
                 selectionService: this.selectionService
             }, (path: Path) => {
+                let newPath: Path
                 return this.fileSystem.createName(path)
                 .then((newPathData: string) => {
-                    const newPath = Path.fromString(newPathData)
+                    newPath = Path.fromString(newPathData)
                     return this.fileSystem.mkdir(newPath)
                 })
             })
