@@ -9,14 +9,12 @@ import { EditorRegistry } from './editor-registry';
 import { EditorService } from './editor-service';
 import { TextModelResolverService } from './model-resolver-service';
 import { ContainerModule, inject, injectable } from 'inversify';
-import { BrowserContextMenuService, EditorContextMenuService } from './editor-contextmenu';
+import { BrowserContextMenuService, EditorContextMenuService, EDITOR_CONTEXT_MENU_ID } from './editor-contextmenu';
 import CommandsRegistry = monaco.commands.CommandsRegistry;
 import MenuRegistry = monaco.actions.MenuRegistry;
 import MenuId = monaco.actions.MenuId;
 import ICommand = monaco.commands.ICommand;
 import IMenuItem = monaco.actions.IMenuItem;
-
-export const EDITOR_CONTEXT = 'editor_context_menu';
 
 @injectable()
 export class EditorCommandHandlers implements CommandContribution {
@@ -89,25 +87,25 @@ export class EditorCommandHandlers implements CommandContribution {
 export class EditorMenuContribution implements MenuContribution {
     contribute(registry: MenuModelRegistry) {
         // Explicitly register the Edit Submenu
-        registry.registerMenuAction([EDITOR_CONTEXT, "1_undo/redo"], {
+        registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "1_undo/redo"], {
             commandId: CommonCommands.EDIT_UNDO
         });
-        registry.registerMenuAction([EDITOR_CONTEXT, "1_undo/redo"], {
+        registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "1_undo/redo"], {
             commandId: CommonCommands.EDIT_REDO
         });
-        registry.registerMenuAction([EDITOR_CONTEXT, "2_copy"], {
+        registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "2_copy"], {
             commandId: CommonCommands.EDIT_CUT
         });
-        registry.registerMenuAction([EDITOR_CONTEXT, "2_copy"], {
+        registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "2_copy"], {
             commandId: CommonCommands.EDIT_COPY
         });
-        registry.registerMenuAction([EDITOR_CONTEXT, "2_copy"], {
+        registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "2_copy"], {
             commandId: CommonCommands.EDIT_PASTE
         });
 
         MenuRegistry.getMenuItems(MenuId.EditorContext)
             .map(item => [(item.group || ""), item.command.id])
-            .forEach(props => registry.registerMenuAction([EDITOR_CONTEXT, props[0]], { commandId: props[1] }));
+            .forEach(props => registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, props[0]], { commandId: props[1] }));
 
     }
 }
