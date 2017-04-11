@@ -19,8 +19,11 @@ import IMenuItem = monaco.actions.IMenuItem;
 @injectable()
 export class EditorCommandHandlers implements CommandContribution {
 
-    constructor( @inject(IEditorManager) private editorService: IEditorManager,
-        @inject(SelectionService) private selectionService: SelectionService) { }
+    constructor(
+        @inject(IEditorManager) private editorService: IEditorManager,
+        @inject(SelectionService) private selectionService: SelectionService) {
+
+    }
 
     contribute(registry: CommandRegistry) {
         registry.registerHandler(

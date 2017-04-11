@@ -105,6 +105,41 @@ declare module monaco.editor {
         showContextMenu(delegate: IContextMenuDelegate): void;
     }
 
+    export interface IStandaloneCodeEditor extends ICodeEditor {
+        /**
+         * Returns with the underlying view of the editor.
+         */
+        getView(): IView;
+    }
+
+    export interface IView extends IDisposable {
+        readonly keyboardHandler: KeyboardHandler;
+    }
+
+    export class KeyboardHandler {
+        readonly textAreaHandler: ITextAreaWrapper;
+    }
+
+    /**
+     * To an event a function with one or zero parameters
+     * can be subscribed. The event is the subscriber function itself.
+     */
+    interface Event<T> {
+        (listener: (e: T) => any, thisArgs?: any, disposables?: IDisposable[]): IDisposable;
+    }
+
+    export interface IClipboardEvent {
+        canUseTextData(): boolean;
+        setTextData(text: string, richText: string): void;
+        getTextData(): string;
+    }
+
+    export interface ITextAreaWrapper {
+        onCut: Event<IClipboardEvent>;
+        onCopy: Event<IClipboardEvent>;
+        onPaste: Event<IClipboardEvent>;
+    }
+
 }
 
 declare module monaco.commands {
