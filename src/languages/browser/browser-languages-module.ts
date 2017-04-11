@@ -1,5 +1,8 @@
-import { MessageConnection } from 'vscode-jsonrpc';
+import { LanguageIdentifier } from '../common/languages-protocol';
 import { ContainerModule, injectable, inject, optional } from "inversify";
+import { MessageConnection } from 'vscode-jsonrpc';
+import { ErrorAction, CloseAction } from "vscode-languageclient/lib/base";
+import { TheiaPlugin, TheiaApplication } from "../../application/browser";
 import { listen } from "../../messaging/browser";
 import {
     BaseLanguageClient,
@@ -13,10 +16,10 @@ import {
     OutputChannel,
     Window,
     Workspace,
-    ConsoleWindow
+    ConsoleWindow,
+    GetLanguagesRequest,
+    LanguageDescription
 } from '../common';
-import { TheiaPlugin, TheiaApplication } from "../../application/browser";
-import { ErrorAction, CloseAction } from "vscode-languageclient/lib/base";
 
 export const browserLanguagesModule = new ContainerModule(bind => {
     bind(Window).to(ConsoleWindow).inSingletonScope();
@@ -34,32 +37,56 @@ export class LanguagesPlugin implements TheiaPlugin {
     }
 
     onStart(app: TheiaApplication): void {
-        this.workspace.ready.then(() => {
-            listen({
-                path: LANGUAGES_WS_PATH + '/java',
-                onConnection: connection => {
-                    const languageClient = this.createLanguageClient(connection);
-                    const disposable = languageClient.start();
-                    connection.onClose(() => disposable.dispose());
-                }
-            });
-        });
+        Promise.all([this.workspace.ready, this.getLanguages()]).then(result => {
+            const languages = result[1];
+            for (const language of languages) {
+                listen({
+                    path: language.path,
+                    onConnection: connection => {
+                        const languageClient = this.createLanguageClient(language.description, connection);
+                        const disposable = languageClient.start();
+                        connection.onClose(() => disposable.dispose());
+                    }
+                });
+            }
+        })
     }
 
-    protected createLanguageClient(connection: MessageConnection): ILanguageClient {
+    protected getLanguages(): Promise<LanguageIdentifier[]> {
+        return new Promise<MessageConnection>(resolve =>
+            listen({
+                path: LANGUAGES_WS_PATH,
+                onConnection: connection => resolve(connection)
+            }))
+            .then(connection => {
+                connection.listen();
+                return connection.sendRequest(GetLanguagesRequest.type, {}).then(result => result.languages)
+            })
+    }
+
+    protected createLanguageClient(language: LanguageDescription, connection: MessageConnection): ILanguageClient {
         const { workspace, languages, commands, window } = this;
         const fileEvents = [];
-        if (workspace.createFileSystemWatcher) {
-            fileEvents.push(workspace.createFileSystemWatcher("**/*.java"));
-            fileEvents.push(workspace.createFileSystemWatcher("**/pom.xml"));
-            fileEvents.push(workspace.createFileSystemWatcher("**/*.gradle"));
+        if (workspace.createFileSystemWatcher && language.fileEvents) {
+            for (const fileEvent of language.fileEvents) {
+                if (typeof fileEvent === 'string') {
+                    fileEvents.push(workspace.createFileSystemWatcher(fileEvent));
+                } else {
+                    fileEvents.push(workspace.createFileSystemWatcher(
+                        fileEvent.globPattern,
+                        fileEvent.ignoreCreateEvents,
+                        fileEvent.ignoreChangeEvents,
+                        fileEvent.ignoreDeleteEvents
+                    ));
+                }
+            }
         }
         return new BaseLanguageClient({
-            name: 'Java Language Client',
+            name: `${language.name || language.id} Language Client`,
             clientOptions: {
-                documentSelector: ['java'],
+                documentSelector: language.documentSelector,
                 synchronize: {
-                    configurationSection: 'java',
+                    fileEvents
                 },
                 errorHandler: {
                     error: () => ErrorAction.Continue,
