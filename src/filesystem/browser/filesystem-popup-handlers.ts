@@ -79,12 +79,12 @@ export function promtNamePopup(commandId: string, pathFrom: Path, popupService: 
                             if (resultName && resultName.simpleName) {
                                 inputText.value = resultName.simpleName
                             }
-                            popupService.hidePopup(commandId)
+                            popupService.removePopup(commandId)
                         } else {
+                            parent.classList.remove('valid')
                             parent.classList.add('error')
                             errorMessage.innerHTML = "Rename didn't work"
                         }
-                        parent.classList.remove('valid')
                     }).catch((error) => {
                         if (error) {
                             parent.classList.add('error')

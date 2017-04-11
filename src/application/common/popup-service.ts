@@ -5,6 +5,7 @@ export interface PopupService {
     createPopup(options: PopupOptions): void
     hidePopup(id: string): void
     showPopup(id: string): void
+    removePopup(id: string): void
     closeHandler(id: string): void
 }
 

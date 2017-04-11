@@ -47,6 +47,15 @@ export class BrowserPopupService implements PopupService {
         this.closeHandler(popup.id)
     }
 
+    removePopup(id: string) {
+        let item = this.popups[id];
+        if (item) {
+            this.hidePopup(id)
+            item.widget.close()
+            delete this.popups[id]
+        }
+    }
+
     hidePopup (id: string) {
         let popup = this.popups[id]
 

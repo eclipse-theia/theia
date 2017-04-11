@@ -180,6 +180,9 @@ export class FileCommandContribution implements CommandContribution {
                     newPath = Path.fromString(newPathData)
                     return this.fileSystem.mkdir(newPath)
                 })
+                .then(() => {
+                    promtNamePopup('newfolder', newPath, this.popupService, this.fileSystem)
+                })
             })
         );
 
