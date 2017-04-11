@@ -6,7 +6,6 @@ import { TheiaApplication, TheiaPlugin } from './application';
 import { OpenerService } from "./opener-service";
 import { CommandRegistry, CommandContribution } from "../common/command";
 import { MenuModelRegistry, MenuContribution } from "../common/menu";
-import { ClipboardSerivce } from "../common/clipboard-service";
 import { BrowserPopupContribution, BrowserPopupService } from "./browser-popup-service";
 import { PopupService } from "../common/index";
 
@@ -19,7 +18,6 @@ export const browserApplicationModule = new ContainerModule(bind => {
     bind(MenuContribution).to(CommonMenuContribution);
     bind(MenuModelRegistry).toSelf().inSingletonScope();
     bind(SelectionService).toSelf().inSingletonScope();
-    bind(ClipboardSerivce).toSelf().inSingletonScope();
     bind(BrowserPopupService).toSelf().inSingletonScope();
     bind(PopupService).toDynamicValue(context => context.container.get(BrowserPopupService));
 });

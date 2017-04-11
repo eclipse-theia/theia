@@ -1,4 +1,4 @@
-import { SelectionService, ClipboardSerivce } from '../../application/common';
+import { SelectionService, ClipboardService } from '../../application/common';
 import { injectable, inject } from "inversify";
 import { CommandContribution, CommandRegistry, CommandHandler } from "../../application/common/command";
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../../application/common/menu';
@@ -43,7 +43,7 @@ export class FileMenuContribution implements MenuContribution {
 export class FileCommandContribution implements CommandContribution {
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(ClipboardSerivce) protected readonly clipboardService: ClipboardSerivce,
+        @inject(ClipboardService) protected readonly clipboardService: ClipboardService,
         @inject(PopupService) protected readonly popupService: PopupService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         ) {}
@@ -103,8 +103,7 @@ export class FileCommandContribution implements CommandContribution {
                 selectionService: this.selectionService
             }, (path: Path) => {
                 this.clipboardService.setData({
-                    type: 'path',
-                    path: path.toString()
+                    text: path.toString()
                 })
                 return Promise.resolve()
             })
@@ -118,13 +117,11 @@ export class FileCommandContribution implements CommandContribution {
                 selectionService: this.selectionService,
                 clipboardService: this.clipboardService
             }, (pastePath: Path) => {
-                let isFolder = true;
                 let copyPath: Path
                 return this.fileSystem.dirExists(pastePath)
                 .then((targetFolderExists: boolean) => {
                     if (!targetFolderExists) {
                         // 'paste path is not folder'
-                        isFolder = false;
                         pastePath = pastePath.parent
                     }
                     return this.fileSystem.dirExists(pastePath)
@@ -133,8 +130,8 @@ export class FileCommandContribution implements CommandContribution {
                     if (!targetFolderExists) {
                         return Promise.reject("paste path dont exist")
                     }
-                    let data: any = this.clipboardService.getData
-                    copyPath = Path.fromString(data.path)
+                    let data: string = this.clipboardService.getData('text')
+                    copyPath = Path.fromString(data)
                     if (copyPath.simpleName) {
                         pastePath = pastePath.append(copyPath.simpleName)
                     }
@@ -241,8 +238,8 @@ export class FileSystemCommandHandler implements CommandHandler {
             if (this.options.clipboardService.isEmpty) {
                 return false
             }
-            let data: any = this.options.clipboardService.getData
-            if (data.type !== "path") {
+            let data: any = this.options.clipboardService.getData("text")
+            if (!data) {
                 return false
             }
         }
@@ -256,7 +253,7 @@ export namespace FileSystemCommandHandler {
         id: string;
         actionId: string,
         selectionService: SelectionService,
-        clipboardService?: ClipboardSerivce
+        clipboardService?: ClipboardService
         popupService?: PopupService
     }
 }
