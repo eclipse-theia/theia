@@ -7,12 +7,12 @@ export namespace CommonCommands {
     export const EDIT_MENU_UNDO_GROUP = "1_undo/redo"
     export const EDIT_MENU_COPYPASTE_GROUP = "2_copy"
 
-    export const EDIT_CUT = 'edit_cut';
-    export const EDIT_COPY = 'edit_copy';
-    export const EDIT_PASTE = 'edit_paste';
+    export const EDIT_CUT = monaco.editor.Handler.Cut;
+    export const EDIT_COPY = 'copy';
+    export const EDIT_PASTE = monaco.editor.Handler.Paste;
 
-    export const EDIT_UNDO = 'edit_undo';
-    export const EDIT_REDO = 'edit_redo';
+    export const EDIT_UNDO = monaco.editor.Handler.Undo;
+    export const EDIT_REDO = monaco.editor.Handler.Redo;
 }
 
 @injectable()

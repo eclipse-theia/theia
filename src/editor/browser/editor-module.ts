@@ -3,11 +3,12 @@ import { SelectionService } from '../../application/common/selection-service';
 import { CommandContribution, CommandRegistry, CommandHandler } from '../../application/common/command';
 import { CommonCommands } from '../../application/common/commands-common';
 import { MenuContribution, MenuModelRegistry } from '../../application/common/menu';
-import { EditorCommandHandler } from './editor-command';
+import { EditorCommandHandler, ClipboardEditorCommandHandler } from './editor-command';
 import { EditorManager, IEditorManager } from './editor-manager';
 import { EditorRegistry } from './editor-registry';
 import { EditorService } from './editor-service';
 import { TextModelResolverService } from './model-resolver-service';
+import { EditorWidget } from './editor-widget';
 import { ContainerModule, inject, injectable } from 'inversify';
 import { BrowserContextMenuService, EditorContextMenuService, EDITOR_CONTEXT_MENU_ID } from './editor-contextmenu';
 import CommandsRegistry = monaco.commands.CommandsRegistry;
@@ -26,36 +27,21 @@ export class EditorCommandHandlers implements CommandContribution {
     }
 
     contribute(registry: CommandRegistry) {
-        registry.registerHandler(
-            CommonCommands.EDIT_CUT,
-            this.newHandler({
-                id: CommonCommands.EDIT_CUT,
-                actionId: 'editor.action.clipboardCutAction'
-            }));
-        registry.registerHandler(
-            CommonCommands.EDIT_COPY,
-            this.newHandler({
-                id: CommonCommands.EDIT_COPY,
-                actionId: 'editor.action.clipboardCopyAction'
-            }));
-        registry.registerHandler(
-            CommonCommands.EDIT_PASTE,
-            this.newHandler({
-                id: CommonCommands.EDIT_PASTE,
-                actionId: 'editor.action.clipboardPasteAction'
-            }));
-        registry.registerHandler(
-            CommonCommands.EDIT_UNDO,
-            this.newHandler({
-                id: CommonCommands.EDIT_UNDO,
-                actionId: 'undo'
-            }));
-        registry.registerHandler(
-            CommonCommands.EDIT_REDO,
-            this.newHandler({
-                id: CommonCommands.EDIT_REDO,
-                actionId: 'redo'
-            }));
+
+        [CommonCommands.EDIT_CUT, CommonCommands.EDIT_COPY, CommonCommands.EDIT_PASTE].forEach(id => {
+            registry.registerHandler(
+                id,
+                this.newClipboardHandler(id, id, (EditorWidget) => [{}])
+            );
+        });
+
+        [CommonCommands.EDIT_UNDO, CommonCommands.EDIT_REDO].forEach(id => {
+            registry.registerHandler(
+                id,
+                this.newClipboardHandler(id, id, (EditorWidget) => [{}])
+            );
+        });
+
 
         MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command).forEach(command => {
             registry.registerCommand({
@@ -74,17 +60,18 @@ export class EditorCommandHandlers implements CommandContribution {
             const id = props.item.command.id;
             registry.registerHandler(
                 id,
-                this.newHandler({
-                    id,
-                    actionId: id
-                })
+                this.newHandler(id)
             );
         });
 
     }
 
-    private newHandler(options: EditorCommandHandler.Options): CommandHandler {
-        return new EditorCommandHandler(this.editorService, this.selectionService, options);
+    private newHandler(id: string): CommandHandler {
+        return new EditorCommandHandler(this.editorService, this.selectionService, id);
+    }
+
+    private newClipboardHandler(id: string, handlerId: string, commandArgs: (editorWidget: EditorWidget) => any[]) {
+        return new ClipboardEditorCommandHandler(this.editorService, this.selectionService, id, handlerId, commandArgs);
     }
 
 }
