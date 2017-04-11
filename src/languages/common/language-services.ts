@@ -9,7 +9,9 @@ export const Languages = Symbol('Languages');
 export interface Languages extends services.Languages {}
 
 export const Workspace = Symbol('Workspace');
-export interface Workspace extends services.Workspace {}
+export interface Workspace extends services.Workspace {
+    readonly ready: Promise<void>;
+}
 
 export const Commands = Symbol('Commands');
 export interface Commands extends services.Commands {}

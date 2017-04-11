@@ -33,7 +33,8 @@ export function openSocket(options: IServerOptions, onOpen: (socket: Socket) => 
                     }),
                     onMessage: cb => webSocket.on('message', cb),
                     onError: cb => webSocket.on('error', cb),
-                    onClose: cb => webSocket.on('close', cb)
+                    onClose: cb => webSocket.on('close', cb),
+                    dispose: () => webSocket.close()
                 };
                 if (webSocket.readyState === webSocket.OPEN) {
                     onOpen(socket);

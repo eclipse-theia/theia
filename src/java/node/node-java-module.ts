@@ -1,7 +1,7 @@
-import { JavaContributor } from './java-contributor';
 import { ContainerModule } from "inversify";
-import { LanguageContributor } from "../../languages/node";
+import { LanguageContribution } from "../../languages/node";
+import { JavaContribution } from './java-contribution';
 
 export const nodeJavaModule = new ContainerModule(bind => {
-    bind<LanguageContributor>(LanguageContributor).to(JavaContributor);
+    bind<LanguageContribution>(LanguageContribution).to(JavaContribution);
 });

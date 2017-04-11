@@ -1,13 +1,12 @@
-import * as http from "http";
-import { ContainerModule, injectable, inject, multiInject } from "inversify";
-import { createConnection } from "vscode-languageserver";
-import { FileSystem, Path } from '../../filesystem/common';
+import { createConnection } from '../../messaging/common/connection';
+import * as http from 'http';
+import { MessageConnection, RequestType } from 'vscode-jsonrpc';
+import { ContainerModule, injectable, multiInject } from "inversify";
 import { ExpressContribution } from '../../application/node';
 import { openSocket } from '../../messaging/node';
-import { SocketMessageReader, SocketMessageWriter } from "../../messaging/common";
-import { DisposableCollection } from '../../application/common';
-import { LanguageContributor } from "./language-contributor";
-import { LanguageConnectionHandler } from "./language-connection-handler";
+import { SocketMessageReader, SocketMessageWriter, ConnectionHandler } from "../../messaging/common";
+import { LanguageContribution } from "./language-contribution";
+import { LANGUAGES_WS_PATH } from "../common";
 
 export const nodeLanguagesModule = new ContainerModule(bind => {
     bind<ExpressContribution>(ExpressContribution).to(LanguagesExpressContribution);
@@ -17,25 +16,61 @@ export const nodeLanguagesModule = new ContainerModule(bind => {
 export class LanguagesExpressContribution implements ExpressContribution {
 
     constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @multiInject(LanguageContributor) protected readonly contributors: LanguageContributor[]
+        @multiInject(LanguageContribution) protected readonly contributors: LanguageContribution[]
     ) {
     }
 
     onStart(server: http.Server): void {
-        this.fileSystem.toUri(Path.ROOT).then(rootUri => {
-            const handler = new LanguageConnectionHandler(server, rootUri, this.contributors);
-            openSocket(handler, socket => {
-                const messageReader = new SocketMessageReader(socket);
-                const messageWriter = new SocketMessageWriter(socket);
-                const connection = createConnection(messageReader, messageWriter);
-
-                const toDisposeOnClose = new DisposableCollection();
-                toDisposeOnClose.push(connection);
-                socket.onClose(() => toDisposeOnClose.dispose());
-                toDisposeOnClose.push(handler.onConnection(connection));
+        // FIXME separater language registry from language contribution
+        for (const contribution of this.contributors) {
+            const path = `${LANGUAGES_WS_PATH}/${contribution.id}`;
+            openSocket({
+                server,
+                path
+            }, socket => {
+                const reader = new SocketMessageReader(socket);
+                const writer = new SocketMessageWriter(socket);
+                const connection = createConnection(reader, writer, () => socket.dispose());
+                contribution.listen(connection);
             });
-        })
+        }
+    }
+
+}
+
+export interface LanguageDescription {
+    path: string
+    // TODO: metadata
+}
+
+export interface LanguagesResult {
+    languages: LanguageDescription[]
+}
+
+export namespace GetLanguagesRequest {
+    export const type = new RequestType<void, LanguagesResult, void, void>('languages/getLanguages');
+}
+
+@injectable()
+export class LanguagesConnectionHandler implements ConnectionHandler {
+
+    readonly path = LANGUAGES_WS_PATH;
+
+    constructor(
+        @multiInject(LanguageContribution) protected readonly contributors: LanguageContribution[]
+    ) {
+    }
+
+    onConnection(connection: MessageConnection): void {
+        connection.onRequest(GetLanguagesRequest.type, () => {
+            return {
+                languages: this.contributors.map(contribution => {
+                    return {
+                        path: this.path + '/' + contribution.id
+                    }
+                })
+            }
+        });
     }
 
 }

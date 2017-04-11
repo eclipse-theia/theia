@@ -20,8 +20,8 @@ export class MonacoLanguages implements Languages {
         languageId: string;
     }): boolean {
         return this.matchModel(selector, {
-            ...document,
             uri: Uri.parse(document.uri),
+            languageId: document.languageId
         });
     }
 
@@ -51,9 +51,6 @@ export class MonacoLanguages implements Languages {
         languageId: string;
     }): boolean {
         if (Array.isArray(selector)) {
-            if (selector.length === 0) {
-                return true;
-            }
             return selector.findIndex(filter => this.matchModel(filter, model)) !== -1;
         }
         if (DocumentFilter.is(selector)) {

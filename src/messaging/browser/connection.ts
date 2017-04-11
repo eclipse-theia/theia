@@ -15,7 +15,8 @@ export function listen(handler: ConnectionHandler): void {
                     cb(event.message)
                 }
             },
-            onClose: (cb) => webSocket.onclose = event => cb(event.code, event.reason)
+            onClose: (cb) => webSocket.onclose = event => cb(event.code, event.reason),
+            dispose: () => webSocket.close()
         }, new ConsoleLogger());
         handler.onConnection(connection);
     };
