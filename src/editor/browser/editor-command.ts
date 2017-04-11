@@ -36,8 +36,8 @@ export class ClipboardEditorCommandHandler extends EditorCommandHandler {
     constructor(editorManager: IEditorManager,
         selectionService: SelectionService,
         id: string,
-        private handlerId: string,
-        private commandArgs: (editorWidget: EditorWidget | undefined) => any[]) {
+        private commandArgs: (editorWidget: EditorWidget | undefined) => any[],
+        private doExecute: (editorWidget: EditorWidget | undefined, ...args: any[]) => any) {
             super(editorManager, selectionService, id);
         }
 
@@ -50,7 +50,7 @@ export class ClipboardEditorCommandHandler extends EditorCommandHandler {
         if (currentEditor) {
             return new Promise<any>((resolve, reject) => {
                 currentEditor.getControl().focus();
-                resolve(currentEditor.getControl()._commandService.executeCommand(this.handlerId, this.commandArgs(currentEditor)));
+                resolve(this.doExecute(currentEditor, this.commandArgs(currentEditor)));
             });
         }
         return Promise.resolve();

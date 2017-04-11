@@ -29,19 +29,26 @@ export class EditorCommandHandlers implements CommandContribution {
     contribute(registry: CommandRegistry) {
 
         [CommonCommands.EDIT_CUT, CommonCommands.EDIT_COPY, CommonCommands.EDIT_PASTE].forEach(id => {
-            registry.registerHandler(
-                id,
-                this.newClipboardHandler(id, id, (EditorWidget) => [{}])
-            );
+            const commandArgs = (editorWidget: EditorWidget): any[] => { 
+                return [{}];
+            };
+            const doExecute = (editorWidget: EditorWidget, ...args: any[]): any => {
+                return editorWidget.getControl()._commandService.executeCommand(id, args);
+            };
+            const handler = this.newClipboardHandler(id, commandArgs, doExecute);
+            registry.registerHandler(id, handler);
         });
 
         [CommonCommands.EDIT_UNDO, CommonCommands.EDIT_REDO].forEach(id => {
-            registry.registerHandler(
-                id,
-                this.newClipboardHandler(id, id, (EditorWidget) => [{}])
-            );
+            const commandArgs = (editorWidget: EditorWidget): any[] => { 
+                return [{}];
+            };
+            const doExecute = (editorWidget: EditorWidget, ...args: any[]): any => {
+                return editorWidget.getControl().trigger('keyboard', id, args);
+            };
+            const handler = this.newClipboardHandler(id, commandArgs, doExecute);
+            registry.registerHandler(id, handler);
         });
-
 
         MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command).forEach(command => {
             registry.registerCommand({
@@ -70,8 +77,11 @@ export class EditorCommandHandlers implements CommandContribution {
         return new EditorCommandHandler(this.editorService, this.selectionService, id);
     }
 
-    private newClipboardHandler(id: string, handlerId: string, commandArgs: (editorWidget: EditorWidget) => any[]) {
-        return new ClipboardEditorCommandHandler(this.editorService, this.selectionService, id, handlerId, commandArgs);
+    private newClipboardHandler(id: string,
+        commandArgs: (editorWidget: EditorWidget) => any[],
+        doExecute: (editorWidget: EditorWidget, ...args: any[]) => any) {
+
+        return new ClipboardEditorCommandHandler(this.editorService, this.selectionService, id, commandArgs, doExecute);
     }
 
 }
