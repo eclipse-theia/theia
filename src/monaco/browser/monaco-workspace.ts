@@ -1,23 +1,37 @@
-import { injectable } from "inversify";
+import { injectable, inject } from "inversify";
 import { TextDocument } from 'vscode-languageserver-types';
 import { m2p } from './monaco-converter';
 import { Event, Emitter } from "../../application/common";
 import { Workspace, TextDocumentDidChangeEvent } from "../../languages/common";
+import { FileSystem, Path } from "../../filesystem/common";
 import IModel = monaco.editor.IModel;
 
 @injectable()
 export class MonacoWorkspace implements Workspace {
-    readonly rootUri = null;
+    protected resolveReady: () => void;
+    readonly ready = new Promise<void>(resolve => {
+        this.resolveReady = resolve;
+    });
+    protected _rootUri: string | null = null;
     protected readonly documents = new Map<string, TextDocument>();
     protected readonly onDidOpenTextDocumentEmitter = new Emitter<TextDocument>();
     protected readonly onDidCloseTextDocumentEmitter = new Emitter<TextDocument>();
     protected readonly onDidChangeTextDocumentEmitter = new Emitter<TextDocumentDidChangeEvent>();
-    constructor() {
-        for (const model of monaco.editor.getModels())  {
+    constructor(
+        @inject(FileSystem) protected readonly fileSystem: FileSystem
+    ) {
+        fileSystem.toUri(Path.ROOT).then(rootUri => {
+            this._rootUri = rootUri;
+            this.resolveReady();
+        });
+        for (const model of monaco.editor.getModels()) {
             this.addModel(model);
         }
         monaco.editor.onDidCreateModel(model => this.addModel(model));
         monaco.editor.onWillDisposeModel(model => this.removeModel(model));
+    }
+    get rootUri() {
+        return this._rootUri;
     }
     protected removeModel(model: IModel): void {
         const uri = model.uri.toString();
@@ -37,7 +51,7 @@ export class MonacoWorkspace implements Workspace {
             const text = event.text;
             this.onDidChangeTextDocumentEmitter.fire({
                 textDocument,
-                contentChanges: [{range, rangeLength, text}]
+                contentChanges: [{ range, rangeLength, text }]
             });
         });
     }

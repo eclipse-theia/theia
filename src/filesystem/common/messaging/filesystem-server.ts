@@ -19,7 +19,8 @@ import {
     RenameRequest,
     RmdirRequest,
     ReadFileResult,
-    WriteFileRequest
+    WriteFileRequest,
+    ToUriRequest, ToUriResult
 } from "./filesystem-protocol";
 import {Path} from "../path";
 import {DisposableCollection} from "../../../application/common/disposable";
@@ -72,6 +73,9 @@ export class FileSystemServer extends AbstractFileSystemConnectionHandler {
         );
         connection.onRequest(WriteFileRequest.type, (param, token) =>
             this.fileSystem.writeFile(Path.fromString(param.path), param.content, param.encoding).then(value => <BooleanResult>{value})
+        );
+        connection.onRequest(ToUriRequest.type, (param, token) =>
+            this.fileSystem.toUri(Path.fromString(param.path)).then(uri => <ToUriResult>{uri})
         );
         const toDispose = new DisposableCollection();
         toDispose.push(this.fileSystem.watch(event => {

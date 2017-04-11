@@ -34,21 +34,33 @@ export class LanguagesPlugin implements TheiaPlugin {
     }
 
     onStart(app: TheiaApplication): void {
-        listen({
-            path: LANGUAGES_WS_PATH,
-            onConnection: connection => {
-                const languageClient = this.createLanguageClient(connection);
-                const disposable = languageClient.start();
-                connection.onClose(() => disposable.dispose());
-            }
+        this.workspace.ready.then(() => {
+            listen({
+                path: LANGUAGES_WS_PATH + '/java',
+                onConnection: connection => {
+                    const languageClient = this.createLanguageClient(connection);
+                    const disposable = languageClient.start();
+                    connection.onClose(() => disposable.dispose());
+                }
+            });
         });
     }
 
     protected createLanguageClient(connection: MessageConnection): ILanguageClient {
         const { workspace, languages, commands, window } = this;
+        const fileEvents = [];
+        if (workspace.createFileSystemWatcher) {
+            fileEvents.push(workspace.createFileSystemWatcher("**/*.java"));
+            fileEvents.push(workspace.createFileSystemWatcher("**/pom.xml"));
+            fileEvents.push(workspace.createFileSystemWatcher("**/*.gradle"));
+        }
         return new BaseLanguageClient({
-            name: 'Browser Language Client',
+            name: 'Java Language Client',
             clientOptions: {
+                documentSelector: ['java'],
+                synchronize: {
+                    configurationSection: 'java',
+                },
                 errorHandler: {
                     error: () => ErrorAction.Continue,
                     closed: () => CloseAction.DoNotRestart
