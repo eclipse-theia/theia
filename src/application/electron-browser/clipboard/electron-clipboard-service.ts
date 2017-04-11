@@ -27,8 +27,7 @@ export class ElectronClipboardService implements ClipboardService {
 
     }
     setData(data: any, type?: "" | "selection" | undefined) {
-        console.log('setting copied data', data)
         this._set = true
-        console.log(electron.clipboard.write(data, type))
+        electron.clipboard.write(data, type)
     }
 }

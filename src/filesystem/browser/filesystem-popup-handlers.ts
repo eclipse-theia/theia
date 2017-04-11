@@ -68,17 +68,12 @@ export function promptNamePopup(commandId: string, pathFrom: Path, popupService:
             }
             let submitHandler = () => {
                 if (inputText.value === pathFrom.simpleName && !resultName) {
-                    parent.classList.remove('error')
-                    popupService.hidePopup(commandId)
+                    popupService.removePopup(commandId)
                     return
                 }
                 if (isValid && isFree && resultName) {
                     fileSystem.rename(pathFrom, resultName).then((success) => {
                         if (success) {
-                            parent.classList.remove('error')
-                            if (resultName && resultName.simpleName) {
-                                inputText.value = resultName.simpleName
-                            }
                             popupService.removePopup(commandId)
                         } else {
                             parent.classList.remove('valid')
