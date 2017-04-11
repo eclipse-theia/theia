@@ -1,15 +1,17 @@
-import { createConnection } from '../../messaging/common/connection';
 import * as http from 'http';
-import { MessageConnection, RequestType } from 'vscode-jsonrpc';
+import { MessageConnection, } from 'vscode-jsonrpc';
 import { ContainerModule, injectable, multiInject } from "inversify";
+import { LanguageIdentifier } from '../common/languages-protocol';
+import { createConnection } from '../../messaging/common/connection';
 import { ExpressContribution } from '../../application/node';
 import { openSocket } from '../../messaging/node';
 import { SocketMessageReader, SocketMessageWriter, ConnectionHandler } from "../../messaging/common";
 import { LanguageContribution } from "./language-contribution";
-import { LANGUAGES_WS_PATH } from "../common";
+import { LANGUAGES_WS_PATH, GetLanguagesRequest } from "../common";
 
 export const nodeLanguagesModule = new ContainerModule(bind => {
-    bind<ExpressContribution>(ExpressContribution).to(LanguagesExpressContribution);
+    bind(ConnectionHandler).to(LanguagesConnectionHandler);
+    bind(ExpressContribution).to(LanguagesExpressContribution);
 });
 
 @injectable()
@@ -21,9 +23,8 @@ export class LanguagesExpressContribution implements ExpressContribution {
     }
 
     onStart(server: http.Server): void {
-        // FIXME separater language registry from language contribution
         for (const contribution of this.contributors) {
-            const path = `${LANGUAGES_WS_PATH}/${contribution.id}`;
+            const path = LanguageIdentifier.create(contribution.description).path;
             openSocket({
                 server,
                 path
@@ -38,19 +39,6 @@ export class LanguagesExpressContribution implements ExpressContribution {
 
 }
 
-export interface LanguageDescription {
-    path: string
-    // TODO: metadata
-}
-
-export interface LanguagesResult {
-    languages: LanguageDescription[]
-}
-
-export namespace GetLanguagesRequest {
-    export const type = new RequestType<void, LanguagesResult, void, void>('languages/getLanguages');
-}
-
 @injectable()
 export class LanguagesConnectionHandler implements ConnectionHandler {
 
@@ -62,15 +50,15 @@ export class LanguagesConnectionHandler implements ConnectionHandler {
     }
 
     onConnection(connection: MessageConnection): void {
-        connection.onRequest(GetLanguagesRequest.type, () => {
+        connection.onRequest(GetLanguagesRequest.type, (params, token) => {
+            const languages = this.contributors.map(contribution =>
+                LanguageIdentifier.create(contribution.description)
+            )
             return {
-                languages: this.contributors.map(contribution => {
-                    return {
-                        path: this.path + '/' + contribution.id
-                    }
-                })
+                languages
             }
         });
+        connection.listen();
     }
 
 }

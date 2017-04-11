@@ -1,12 +1,6 @@
-import { InitializeParams } from 'vscode-languageserver/lib/protocol';
-import { InitializeRequest } from 'vscode-languageclient/lib/protocol';
-import { isRequestMessage } from 'vscode-jsonrpc/lib/messages';
 import * as path from 'path';
-import * as cp from 'child_process';
 import { injectable } from "inversify";
-import { StreamMessageReader, StreamMessageWriter } from 'vscode-jsonrpc';
-import { LanguageContribution } from "../../languages/node";
-import { IConnection, createConnection } from "../../messaging/common";
+import { LanguageContribution, IConnection, createServerProcess, bindConnection } from "../../languages/node";
 
 export type ConfigurationType = 'config_win' | 'config_mac' | 'config_linux';
 export const configurations = new Map<typeof process.platform, ConfigurationType>();
@@ -17,7 +11,14 @@ configurations.set('linux', 'config_linux');
 @injectable()
 export class JavaContribution implements LanguageContribution {
 
-    readonly id = 'java';
+    readonly description = {
+        id: 'java',
+        name: 'Java',
+        documentSelector: ['java'],
+        fileEvents: [
+            '**/*.java', '**/pom.xml', '**/*.gradle'
+        ]
+    }
 
     listen(clientConnection: IConnection): void {
         const projectPath = path.resolve(__dirname, '../../..');
@@ -39,28 +40,8 @@ export class JavaContribution implements LanguageContribution {
             '-configuration', configurationPath,
             '-data', workspacePath
         ];
-        const serverProcess = cp.spawn(command, args);
-        serverProcess.on('error', error => {
-            console.error('Launching Java Server failed: ' + error);
-        });
-        serverProcess.stderr.on('data', data => {
-            console.error('Java Server: ' + data)
-        });
-        const reader = new StreamMessageReader(serverProcess.stdout);
-        const writer = new StreamMessageWriter(serverProcess.stdin);
-        const serverConnection = createConnection(reader, writer, () => serverProcess.kill());
-        clientConnection.forward(serverConnection, message => {
-            if (isRequestMessage(message)) {
-                if (message.method === InitializeRequest.type.method) {
-                    const initializeParams = message.params as InitializeParams;
-                    initializeParams.processId = process.pid;
-                }
-            }
-            return message;
-        });
-        serverConnection.forward(clientConnection);
-        clientConnection.onClose(() => serverConnection.dispose());
-        serverConnection.onClose(() => clientConnection.dispose())
+        const serverConnection = createServerProcess(this.description.name, command, args);
+        bindConnection(clientConnection, serverConnection);
     }
 
 }
