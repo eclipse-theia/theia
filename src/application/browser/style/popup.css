@@ -35,6 +35,16 @@
     display: none;
 }
 
+.confirmInputContainer{
+    width: 260px;
+    padding-top: 30px;
+    padding-bottom: 20px;
+    text-align: center;
+}
+
+.confirmInputContainer #popupConfirmSubmit{
+    margin-left: 60px;
+}
 
 .changeNameInputContainer{
     width: 260px;

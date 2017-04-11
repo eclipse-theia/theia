@@ -6,7 +6,7 @@ import { FileSystem } from "./file-system";
 import { Path } from "./path";
 import { PathSelection } from "./fs-selection";
 import { PopupService } from "../../application/common";
-import { promtNamePopup } from "../browser/filesystem-popup-handlers";
+import { promptNamePopup, promptConfirmPopup } from "../browser/filesystem-popup-handlers";
 
 
 export namespace Commands {
@@ -90,7 +90,7 @@ export class FileCommandContribution implements CommandContribution {
                 selectionService: this.selectionService,
                 popupService: this.popupService
             }, (path: Path) => {
-                promtNamePopup('renamefile', path, this.popupService, this.fileSystem)
+                promptNamePopup('renamefile', path, this.popupService, this.fileSystem)
                 return Promise.resolve()
             })
         );
@@ -141,7 +141,7 @@ export class FileCommandContribution implements CommandContribution {
                     return this.fileSystem.cp(copyPath, pastePath).then((newPath) => {
                         if (newPath !== pastePath.segments.join('/')) {
                             // need to rename to something new
-                            promtNamePopup('pastefile', Path.fromString(newPath), this.popupService, this.fileSystem)
+                            promptNamePopup('pastefile', Path.fromString(newPath), this.popupService, this.fileSystem)
                         }
                     })
                 })
@@ -162,7 +162,7 @@ export class FileCommandContribution implements CommandContribution {
                     return this.fileSystem.writeFile(newPath, "")
                 })
                 .then(() => {
-                    promtNamePopup('newfile', newPath, this.popupService, this.fileSystem)
+                    promptNamePopup('newfile', newPath, this.popupService, this.fileSystem)
                 })
             })
         );
@@ -181,7 +181,7 @@ export class FileCommandContribution implements CommandContribution {
                     return this.fileSystem.mkdir(newPath)
                 })
                 .then(() => {
-                    promtNamePopup('newfolder', newPath, this.popupService, this.fileSystem)
+                    promptNamePopup('newfolder', newPath, this.popupService, this.fileSystem)
                 })
             })
         );
@@ -195,10 +195,17 @@ export class FileCommandContribution implements CommandContribution {
             }, (path: Path) => {
                 return this.fileSystem.dirExists(path)
                 .then((isDir) => {
-                    if (isDir) {
-                        return this.fileSystem.rmdir(path)
-                    }
-                    return this.fileSystem.rm(path)
+                    promptConfirmPopup(
+                        'delete',
+                        () => {
+                            if (isDir) {
+                                return this.fileSystem.rmdir(path)
+                            }
+                            return this.fileSystem.rm(path)
+                        },
+                        this.popupService,
+                        this.fileSystem
+                    )
                 })
             })
         );

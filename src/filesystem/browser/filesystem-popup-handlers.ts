@@ -2,7 +2,7 @@ import { Path } from "../common/path";
 import { FileSystem } from "../common/file-system";
 import { PopupService } from "../../application/common/popup-service";
 
-export function promtNamePopup(commandId: string, pathFrom: Path, popupService: PopupService, fileSystem: FileSystem): void {
+export function promptNamePopup(commandId: string, pathFrom: Path, popupService: PopupService, fileSystem: FileSystem): void {
     let submitButton: HTMLInputElement
     let inputText: HTMLInputElement
     let errorMessage: HTMLElement
@@ -122,6 +122,39 @@ export function promtNamePopup(commandId: string, pathFrom: Path, popupService: 
                 inputText.value = pathFrom.simpleName
             }
         }
+    })
+    popupService.showPopup(commandId)
+}
+
+export function promptConfirmPopup(commandId: string, actionCallback: any, popupService: PopupService, fileSystem: FileSystem): void {
+    let submitButton: HTMLInputElement
+    let cancelButton: HTMLInputElement
+    popupService.createPopup({
+        id: commandId,
+        title: 'Confirm the action',
+        content: `
+            <form class='confirmInputContainer'>
+                <input id='popupConfirmCancel' type=submit value='Cancel' />
+                <input id='popupConfirmSubmit' type=submit value='Confirm' />
+            </form>`,
+        initCallback: () => {
+            submitButton = <HTMLInputElement>document.getElementById('popupConfirmSubmit')
+            cancelButton = <HTMLInputElement>document.getElementById('popupConfirmCancel')
+
+            if (!submitButton || !cancelButton) {
+                return false
+            }
+
+            submitButton.addEventListener('click', (e: Event) => {
+                actionCallback()
+                popupService.removePopup(commandId)
+            })
+
+            cancelButton.addEventListener('click', (e: Event) => {
+                popupService.removePopup(commandId)
+            })
+        },
+        cancelCallback: () => {}
     })
     popupService.showPopup(commandId)
 }
