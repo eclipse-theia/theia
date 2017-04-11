@@ -9,26 +9,47 @@
     background: transparent;
     pointer-events: none;
     position: fixed;
-    color: white;
+    color: var(--theia-ui-font-color1);
 }
 .p-Widget.popupBlock .popupWrapper{
-    background-color: grey;
+    background-color: var(--theia-layout-color1);
+    border: 1px solid var(--theia-border-color1);
     position: relative;
-    padding: 20px;
+    padding: calc(var(--theia-ui-padding)*4);
 }
 .p-Widget.popupBlock .popupTitle{
     text-align: center;
-    font-size: var(--theia-content-font-size);
+    font-size: var(--theia-ui-font-size1);
 }
 .p-Widget.popupBlock .popupClose{
     pointer-events: auto;
     position: absolute;
-    right: 10px;
-    top: 10px;
+    right: calc(var(--theia-ui-padding)*2);
+    top: calc(var(--theia-ui-padding)*2);
     cursor: pointer;
 }
 .p-Widget.popupBlock .popupContent{
     pointer-events: auto;
+}
+
+.p-Widget.popupBlock .popupButton{
+    border: 1px solid var(--theia-border-color1);
+    color: var(--theia-ui-font-color1);
+    font-size: var(--theia-ui-font-size1);
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding)*2);
+    border-radius: 0;
+    background: transparent;
+    outline: none;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+.p-Widget.popupBlock .popupButton.main{
+    background-color: var(--theia-accent-color3);
+}
+.p-Widget.popupBlock .popupButton[disabled]{
+    background-color: var(--theia-disabled-color1) !important;
+    cursor: default !important;
 }
 
 .p-Widget.popupBlock.hidden {
@@ -37,60 +58,50 @@
 
 .confirmInputContainer{
     width: 260px;
-    padding-top: 30px;
-    padding-bottom: 20px;
+    padding-top: calc(var(--theia-ui-padding)*5);
+    padding-bottom: calc(var(--theia-ui-padding)*3);
     text-align: center;
 }
 
 .confirmInputContainer #popupConfirmSubmit{
-    margin-left: 60px;
+    margin-left: calc(var(--theia-ui-padding)*10);
 }
 
 .changeNameInputContainer{
     width: 260px;
-    padding-top: 30px;
-    padding-bottom: 20px;
+    padding-top: calc(var(--theia-ui-padding)*5);
+    padding-bottom: calc(var(--theia-ui-padding)*3);
     text-align: center;
 }
 .changeNameInputContainer #popupChangeErrorMessage{
     display: none;
 }
-.changeNameInputContainer .popupChangeNameInput{
-    outline: none;
-    border:1px solid white;
-    box-shadow: none;
-}
-.changeNameInputContainer .popupChangeNameSubmit{
-    outline: none;
-    border: none;
-    cursor: pointer;
-    box-shadow: none;
-}
- 
 
 .changeNameInputContainer.error{
-    color: red;
+    color: var(--theia-error-color1);
 }
 .changeNameInputContainer.error #popupChangeNameInput{
-    color: red;
-    border-color: red;
+    color: var(--theia-error-color1);
+    border-color: var(--theia-error-color1);
 }
 .changeNameInputContainer.error #popupChangeNameSubmit{
-    background-color: red;
-    color: white;
+    background-color: var(--theia-error-color1);
+    color: var(--theia-ui-font-color1);
 }
 .changeNameInputContainer.error #popupChangeErrorMessage{
+    margin-top: calc(var(--theia-ui-padding)*3);
+    font-size: var(--theia-ui-font-size1);
     display: block;
 }
 
 
 .changeNameInputContainer.valid {
-    color: white;
+    color: var(--theia-ui-font-color1);
 }
 .changeNameInputContainer.valid #popupChangeNameInput{
-    border-color: green;
+    border-color: var(--theia-success-color1);
 }
 .changeNameInputContainer.valid #popupChangeNameSubmit{
-    background-color: green;
-    color: white;
+    background-color: var(--theia-success-color1);
+    color: var(--theia-ui-font-color1);
 }

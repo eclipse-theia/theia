@@ -17,8 +17,8 @@ export function promptNamePopup(commandId: string, pathFrom: Path, popupService:
         title: 'Enter new name',
         content: `
             <form class='changeNameInputContainer'>
-                <input id='popupChangeNameInput' type=text value='' />
-                <input id='popupChangeNameSubmit' type=submit value='Submit' />
+                <input class='popupButton' id='popupChangeNameInput' type=text value='' />
+                <input class='popupButton main' id='popupChangeNameSubmit' type=submit value='Submit' />
                 <div id='popupChangeErrorMessage'></div>
             </form>`,
         initCallback: () => {
@@ -134,8 +134,8 @@ export function promptConfirmPopup(commandId: string, actionCallback: any, popup
         title: 'Confirm the action',
         content: `
             <form class='confirmInputContainer'>
-                <input id='popupConfirmCancel' type=submit value='Cancel' />
-                <input id='popupConfirmSubmit' type=submit value='Confirm' />
+                <input class='popupButton' id='popupConfirmCancel' type=submit value='Cancel' />
+                <input class='popupButton main' id='popupConfirmSubmit' type=submit value='Confirm' />
             </form>`,
         initCallback: () => {
             submitButton = <HTMLInputElement>document.getElementById('popupConfirmSubmit')
@@ -154,7 +154,9 @@ export function promptConfirmPopup(commandId: string, actionCallback: any, popup
                 popupService.removePopup(commandId)
             })
         },
-        cancelCallback: () => {}
+        cancelCallback: () => {
+            popupService.removePopup(commandId)
+        }
     })
     popupService.showPopup(commandId)
 }
