@@ -43,6 +43,7 @@ export class TheiaApplication {
 
     // FIXME kittaakos: This is a huge hack. Do not use this, please. Once we introduce some
     // sort of a lazy handler resolution for the commands, we will get rid of this method.
+    // https://github.com/TypeFox/Theia/issues/34
     getService<T>(serviceIdentifier: interfaces.ServiceIdentifier<T>): T | undefined {
         if (this.container) {
             return this.container.get(serviceIdentifier);
