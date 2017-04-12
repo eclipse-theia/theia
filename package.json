@@ -31,6 +31,7 @@
     "reconnecting-websocket": "^3.0.3",
     "reflect-metadata": "^0.1.10",
     "vscode-jsonrpc": "^3.1.0",
+    "monaco-languageclient": "file:../monaco-languageclient",
     "vscode-languageclient": "file:../vscode-languageserver-node/client",
     "vscode-languageserver": "^3.2.0",
     "ws": "^2.2.0"
@@ -77,8 +78,12 @@
     "clean:node_modules": "./node_modules/.bin/rimraf node_modules",
     "test": "./node_modules/.bin/mocha src/**/*.spec.ts",
     "test:watch": "./node_modules/.bin/mocha --watch src/**/*.spec.ts",
-    "clean:languageclient": "./node_modules/.bin/rimraf node_modules/vscode-languageclient",
-    "update:languageclient": "npm run clean:languageclient && npm install"
+    "clean:vscode-client": "./node_modules/.bin/rimraf node_modules/vscode-languageclient",
+    "update:vscode-client": "npm run clean:vscode-client && npm install",
+    "clean:monaco-client": "./node_modules/.bin/rimraf node_modules/monaco-languageclient",
+    "update:monaco-client": "npm run clean:monaco-client && npm install",
+    "clean:file-deps": "npm run clean:vscode-client && npm run clean:monaco-client",
+    "update:file-deps": "npm run update:vscode-client && npm run update:monaco-client"
   },
   "bugs": {
     "url": "https://github.com/TypeFox/Theia/issues"
