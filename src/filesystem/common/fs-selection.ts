@@ -5,7 +5,7 @@ export interface PathSelection {
 }
 
 export namespace PathSelection {
-    export function is (selection: any | undefined): selection is PathSelection {
+    export function is (selection: any): selection is PathSelection {
         return !!selection && 'path' in selection
     }
 }
