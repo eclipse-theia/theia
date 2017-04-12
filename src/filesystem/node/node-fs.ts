@@ -69,7 +69,7 @@ export class NodeFileSystem implements FileSystem {
                 return this.createName(toPath, true)
             }
             // 'target name does not exist, can do copy'
-            return Promise.resolve<string>(toPath.segments.join('/'))
+            return Promise.resolve<string>(toPath.toString())
         })
         .then((stringedTo: string) => {
             toPath = Path.fromString(stringedTo)

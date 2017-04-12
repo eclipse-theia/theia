@@ -127,7 +127,7 @@ export class FileCommandContribution implements CommandContribution {
                         pastePath = pastePath.append(copyPath.simpleName)
                     }
                     return this.fileSystem.cp(copyPath, pastePath).then((newPath) => {
-                        if (newPath !== pastePath.segments.join('/')) {
+                        if (newPath !== pastePath.toString()) {
                             // need to rename to something new
                             promptNamePopup('pastefile', Path.fromString(newPath), this.popupService, this.fileSystem)
                         }
