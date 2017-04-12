@@ -148,6 +148,7 @@ export function promptConfirmPopup(commandId: string, actionCallback: any, popup
             cancelButton.addEventListener('click', (e: Event) => {
                 popupService.removePopup(commandId)
             })
+            submitButton.focus()
         },
         cancelCallback: () => {
             popupService.removePopup(commandId)

@@ -1,8 +1,10 @@
-import { SelectionService, ClipboardService } from '../../application/common';
 import { injectable, inject } from "inversify";
+
+import { SelectionService, ClipboardService } from '../../application/common';
 import { CommandContribution, CommandRegistry, CommandHandler } from "../../application/common/command";
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../../application/common/menu';
 import { FileSystem } from "./file-system";
+import { CommonCommands } from "../../application/common/commands-common";
 import { Path } from "./path";
 import { PathSelection } from "./fs-selection";
 import { PopupService } from "../../application/common";
@@ -14,9 +16,9 @@ export namespace Commands {
     export const NEW_FILE = 'file:newFile';
     export const NEW_FOLDER = 'file:newFolder';
     export const FILE_OPEN = 'file:open';
-    export const FILE_CUT = 'file:fileCut';
-    export const FILE_COPY = 'file:fileCopy';
-    export const FILE_PASTE = 'file:filePaste';
+    export const FILE_CUT = CommonCommands.EDIT_CUT
+    export const FILE_COPY = CommonCommands.EDIT_COPY
+    export const FILE_PASTE = CommonCommands.EDIT_PASTE
     export const FILE_RENAME = 'file:fileRename';
     export const FILE_DELETE = 'file:fileDelete';
 }
@@ -61,18 +63,18 @@ export class FileCommandContribution implements CommandContribution {
             id: Commands.FILE_OPEN,
             label: 'Open ...'
         });
-        registry.registerCommand({
-            id: Commands.FILE_CUT,
-            label: 'Cut'
-        });
-        registry.registerCommand({
-            id: Commands.FILE_COPY,
-            label: 'Copy'
-        });
-        registry.registerCommand({
-            id: Commands.FILE_PASTE,
-            label: 'Paste'
-        });
+        // registry.registerCommand({
+        //     id: Commands.FILE_CUT,
+        //     label: 'Cut'
+        // });
+        // registry.registerCommand({
+        //     id: Commands.FILE_COPY,
+        //     label: 'Copy'
+        // });
+        // registry.registerCommand({
+        //     id: Commands.FILE_PASTE,
+        //     label: 'Paste'
+        // });
         registry.registerCommand({
             id: Commands.FILE_RENAME,
             label: 'Rename'
@@ -102,6 +104,7 @@ export class FileCommandContribution implements CommandContribution {
                 actionId: 'copyfile',
                 selectionService: this.selectionService
             }, (path: Path) => {
+                console.log('setting data', path.toString())
                 this.clipboardService.setData({
                     text: path.toString()
                 })
