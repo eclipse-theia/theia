@@ -1,12 +1,15 @@
 import {injectable, inject, decorate} from "inversify";
-import {TheiaPlugin, TheiaApplication} from "../../application/browser";
 import {h} from "@phosphor/virtualdom";
+import {Message} from "@phosphor/messaging";
+
 import {TreeWidget, VirtualWidget, ITreeNode} from "./tree";
+import {TheiaPlugin, TheiaApplication} from "../../application/browser";
 import { FileNavigatorModel, IDirNode, IPathNode } from "./navigator-model";
 import { ContextMenuRenderer } from "../../application/browser/menu/context-menu-renderer";
 import NodeProps = TreeWidget.NodeProps;
 
 export const FILE_NAVIGATOR_CLASS = 'theia-FileNavigator';
+export const ROOT_ACTIVE_CLASS = 'theia-mod-selected';
 export const CONTEXT_MENU_PATH = 'navigator-context-menu';
 export const PATH_NODE_CLASS = 'theia-PathNode';
 export const DIR_NODE_CLASS = 'theia-DirNode';
@@ -32,10 +35,33 @@ export class FileNavigatorWidget extends TreeWidget<FileNavigatorModel> {
         this.id = FileNavigatorWidget.ID;
         this.title.label = 'Files';
         this.setModel(model);
+        this.node.addEventListener(
+            'contextmenu',
+            (event) => {
+                this.showContextMenu(event, this.getModel().root)
+            }, false)
+        this.node.addEventListener(
+            'click',
+            (event) => {
+                this.selectNode(event, this.getModel().root)
+            })
     }
 
     getModel(): FileNavigatorModel {
         return super.getModel()!;
+    }
+
+    protected onUpdateRequest(msg: Message): void {
+        const model = this.getModel();
+        if (model.selectedNode && model.selectedNode.id === "") {
+            this.node.classList.add(ROOT_ACTIVE_CLASS)
+        } else {
+            const root = document.getElementsByClassName(ROOT_ACTIVE_CLASS)[0];
+            if (root) {
+                root.classList.remove(ROOT_ACTIVE_CLASS)
+            }
+        }
+        super.onUpdateRequest(msg);
     }
 
     protected createNodeClassNames(node: ITreeNode, props: NodeProps): string[] {

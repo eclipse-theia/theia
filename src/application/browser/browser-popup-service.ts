@@ -1,6 +1,6 @@
-import { TheiaPlugin, TheiaApplication } from '../../application/browser';
+
 import { Widget, Panel } from '@phosphor/widgets';
-import { injectable, inject } from "inversify";
+import { injectable } from "inversify";
 import { PopupOptions, PopupService } from "../common/popup-service";
 
 @injectable()
@@ -110,15 +110,4 @@ export interface Popup {
     title?: string
     widget: Widget
     visible: boolean
-}
-
-@injectable()
-export class BrowserPopupContribution implements TheiaPlugin {
-
-    constructor(@inject(BrowserPopupService) private popupService: BrowserPopupService) {}
-
-    onStart(app: TheiaApplication): void {
-        app.shell.addToMainArea(this.popupService.createPopupContainer());
-    }
-
 }
