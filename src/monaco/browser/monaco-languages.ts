@@ -1,71 +1,17 @@
-import { injectable } from "inversify";
-import { MonacoDiagnosticCollection } from './monaco-diagnostic-collection';
-import { CompletionClientCapabilities, DocumentFilter, DocumentSelector } from 'vscode-languageclient/lib/protocol';
-import { Disposable, DisposableCollection } from '../../application/common';
-import { Languages, CompletionItemProvider, DiagnosticCollection } from "../../languages/common";
-import { p2m, m2p } from './monaco-converter';
-import Uri = monaco.Uri;
+import { injectable, inject, decorate } from "inversify";
+import { Languages } from "../../languages/common";
+import { MonacoLanguages as BaseMonacoLanguages, ProtocolToMonacoConverter, MonacoToProtocolConverter } from "monaco-languageclient";
+
+decorate(injectable(), BaseMonacoLanguages);
+decorate(inject(ProtocolToMonacoConverter), BaseMonacoLanguages, 0);
+decorate(inject(MonacoToProtocolConverter), BaseMonacoLanguages, 1);
 
 @injectable()
-export class MonacoLanguages implements Languages {
+export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
 
-    readonly completion: CompletionClientCapabilities = {
-        completionItem: {
-            snippetSupport: true
-        }
+    constructor(
+        @inject(ProtocolToMonacoConverter) p2m: ProtocolToMonacoConverter,
+        @inject(MonacoToProtocolConverter) m2p: MonacoToProtocolConverter) {
+        super(p2m, m2p);
     }
-
-    match(selector: DocumentSelector, document: {
-        uri: string;
-        languageId: string;
-    }): boolean {
-        return this.matchModel(selector, {
-            uri: Uri.parse(document.uri),
-            languageId: document.languageId
-        });
-    }
-
-    createDiagnosticCollection?(name?: string): DiagnosticCollection  {
-        return new MonacoDiagnosticCollection(name || 'default');
-    }
-
-    registerCompletionItemProvider(selector: DocumentSelector, provider: CompletionItemProvider, ...triggerCharacters: string[]): Disposable {
-        const providers = new DisposableCollection();
-        for (const language of monaco.languages.getLanguages()) {
-            providers.push(monaco.languages.registerCompletionItemProvider(language.id, {
-                triggerCharacters,
-                provideCompletionItems: (model, position, token) => {
-                    if (!this.matchModel(selector, { uri: model.uri, languageId: model.getModeId() })) {
-                        return [];
-                    }
-                    const params = m2p.asTextDocumentPositionParams(model, position)
-                    return provider.provideCompletionItems(params, token).then(p2m.asCompletionResult);
-                }
-            }));
-        }
-        return providers;
-    }
-
-    protected matchModel(selector: string | DocumentFilter | DocumentSelector, model: {
-        uri: Uri;
-        languageId: string;
-    }): boolean {
-        if (Array.isArray(selector)) {
-            return selector.findIndex(filter => this.matchModel(filter, model)) !== -1;
-        }
-        if (DocumentFilter.is(selector)) {
-            if (!!selector.language && selector.language !== model.languageId) {
-                return false;
-            }
-            if (!!selector.scheme && selector.scheme !== model.uri.scheme) {
-                return false;
-            }
-            if (!!selector.pattern) {
-                console.warn(`TODO: pattern is ignored: ${selector.pattern}`);
-            }
-            return true;
-        }
-        return selector === model.languageId;
-    }
-
 }
