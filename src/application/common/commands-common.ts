@@ -7,10 +7,6 @@ export namespace CommonCommands {
     export const EDIT_MENU_UNDO_GROUP = "1_undo/redo"
     export const EDIT_MENU_COPYPASTE_GROUP = "2_copy"
 
-    export const EDIT_CUT = monaco.editor.Handler.Cut;
-    export const EDIT_COPY = 'copy';
-    export const EDIT_PASTE = monaco.editor.Handler.Paste;
-
     export const EDIT_UNDO = monaco.editor.Handler.Undo;
     export const EDIT_REDO = monaco.editor.Handler.Redo;
 }
@@ -30,24 +26,6 @@ export class CommonMenuContribution implements MenuContribution {
             CommonCommands.EDIT_MENU_UNDO_GROUP], {
                 commandId: CommonCommands.EDIT_REDO
             });
-        registry.registerMenuAction([
-            MAIN_MENU_BAR,
-            CommonCommands.EDIT_MENU,
-            CommonCommands.EDIT_MENU_COPYPASTE_GROUP], {
-                commandId: CommonCommands.EDIT_CUT
-            });
-        registry.registerMenuAction([
-            MAIN_MENU_BAR,
-            CommonCommands.EDIT_MENU,
-            CommonCommands.EDIT_MENU_COPYPASTE_GROUP], {
-                commandId: CommonCommands.EDIT_COPY
-            });
-        registry.registerMenuAction([
-            MAIN_MENU_BAR,
-            CommonCommands.EDIT_MENU,
-            CommonCommands.EDIT_MENU_COPYPASTE_GROUP], {
-                commandId: CommonCommands.EDIT_PASTE
-            });
     }
 
 }
@@ -56,18 +34,6 @@ export class CommonMenuContribution implements MenuContribution {
 export class CommonCommandContribution implements CommandContribution {
 
     contribute(commandRegistry: CommandRegistry): void {
-        commandRegistry.registerCommand({
-            id: CommonCommands.EDIT_CUT,
-            label: 'Cut'
-        })
-        commandRegistry.registerCommand({
-            id: CommonCommands.EDIT_COPY,
-            label: 'Copy',
-        })
-        commandRegistry.registerCommand({
-            id: CommonCommands.EDIT_PASTE,
-            label: 'Paste'
-        })
         commandRegistry.registerCommand({
             id: CommonCommands.EDIT_UNDO,
             label: 'Undo'

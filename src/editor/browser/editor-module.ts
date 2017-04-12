@@ -3,7 +3,7 @@ import { SelectionService } from '../../application/common/selection-service';
 import { CommandContribution, CommandRegistry, CommandHandler } from '../../application/common/command';
 import { CommonCommands } from '../../application/common/commands-common';
 import { MenuContribution, MenuModelRegistry } from '../../application/common/menu';
-import { EditorCommandHandler, ClipboardEditorCommandHandler } from './editor-command';
+import { EditorCommandHandler, TextModificationEditorCommandHandler } from './editor-command';
 import { EditorManager, IEditorManager } from './editor-manager';
 import { EditorRegistry } from './editor-registry';
 import { EditorService } from './editor-service';
@@ -28,25 +28,11 @@ export class EditorCommandHandlers implements CommandContribution {
 
     contribute(registry: CommandRegistry) {
 
-        [CommonCommands.EDIT_CUT, CommonCommands.EDIT_COPY, CommonCommands.EDIT_PASTE].forEach(id => {
-            const commandArgs = (editorWidget: EditorWidget): any[] => { 
-                return [{}];
-            };
-            const doExecute = (editorWidget: EditorWidget, ...args: any[]): any => {
-                return editorWidget.getControl()._commandService.executeCommand(id, args);
-            };
-            const handler = this.newClipboardHandler(id, commandArgs, doExecute);
-            registry.registerHandler(id, handler);
-        });
-
         [CommonCommands.EDIT_UNDO, CommonCommands.EDIT_REDO].forEach(id => {
-            const commandArgs = (editorWidget: EditorWidget): any[] => { 
-                return [{}];
-            };
             const doExecute = (editorWidget: EditorWidget, ...args: any[]): any => {
                 return editorWidget.getControl().trigger('keyboard', id, args);
             };
-            const handler = this.newClipboardHandler(id, commandArgs, doExecute);
+            const handler = this.newClipboardHandler(id, doExecute);
             registry.registerHandler(id, handler);
         });
 
@@ -77,11 +63,9 @@ export class EditorCommandHandlers implements CommandContribution {
         return new EditorCommandHandler(this.editorService, this.selectionService, id);
     }
 
-    private newClipboardHandler(id: string,
-        commandArgs: (editorWidget: EditorWidget) => any[],
-        doExecute: (editorWidget: EditorWidget, ...args: any[]) => any) {
-
-        return new ClipboardEditorCommandHandler(this.editorService, this.selectionService, id, commandArgs, doExecute);
+    private newClipboardHandler(id: string, doExecute: (editorWidget: EditorWidget, ...args: any[]) => any) {
+        const commandArgs = (widget: EditorWidget) => [{}];
+        return new TextModificationEditorCommandHandler(this.editorService, this.selectionService, id, commandArgs, doExecute);
     }
 
 }
@@ -96,18 +80,9 @@ export class EditorMenuContribution implements MenuContribution {
         registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "1_undo/redo"], {
             commandId: CommonCommands.EDIT_REDO
         });
-        registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "2_copy"], {
-            commandId: CommonCommands.EDIT_CUT
-        });
-        registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "2_copy"], {
-            commandId: CommonCommands.EDIT_COPY
-        });
-        registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "2_copy"], {
-            commandId: CommonCommands.EDIT_PASTE
-        });
 
         const wrap: (item: IMenuItem) => { path: string[], commandId: string } = (item) => {
-            return { path: [EDITOR_CONTEXT_MENU_ID, (item.group || "")], commandId: item.command.id }
+            return { path: [EDITOR_CONTEXT_MENU_ID, (item.group || "")], commandId: item.command.id };
         };
 
         MenuRegistry.getMenuItems(MenuId.EditorContext)

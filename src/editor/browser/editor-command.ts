@@ -31,13 +31,13 @@ export class EditorCommandHandler implements CommandHandler {
 
 }
 
-export class ClipboardEditorCommandHandler extends EditorCommandHandler {
+export class TextModificationEditorCommandHandler extends EditorCommandHandler {
 
     constructor(editorManager: IEditorManager,
         selectionService: SelectionService,
         id: string,
-        private commandArgs: (editorWidget: EditorWidget | undefined) => any[],
-        private doExecute: (editorWidget: EditorWidget | undefined, ...args: any[]) => any) {
+        private commandArgs: (widget: EditorWidget | undefined) => any[],
+        private doExecute: (widget: EditorWidget | undefined, ...args: any[]) => any) {
             super(editorManager, selectionService, id);
         }
 

@@ -105,25 +105,6 @@ declare module monaco.editor {
         showContextMenu(delegate: IContextMenuDelegate): void;
     }
 
-    export interface ICommandService {
-        /**
-         * Executes the command with the given argument.
-         */
-        executeCommand(commandId: string, ...args: any[]): Promise<any>;
-
-        /**
-         * Sugar for executing the command in type-safe way.
-         */
-        executeCommand<T>(commandId: string, ...args: any[]): Promise<T>;
-    }
-
-    export interface IStandaloneCodeEditor extends ICodeEditor {
-        /**
-         * The read-only command service for the code editor.
-         */
-        readonly _commandService: ICommandService;
-    }
-
 }
 
 declare module monaco.commands {
