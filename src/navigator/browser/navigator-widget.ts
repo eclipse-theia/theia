@@ -2,7 +2,7 @@ import {injectable, inject, decorate} from "inversify";
 import {h} from "@phosphor/virtualdom";
 import {Message} from "@phosphor/messaging";
 
-import {TreeWidget, VirtualWidget, ITreeNode} from "./tree";
+import { TreeWidget, VirtualWidget, ITreeNode, ISelectableTreeNode } from "./tree";
 import {TheiaPlugin, TheiaApplication} from "../../application/browser";
 import { FileNavigatorModel, IDirNode, IPathNode } from "./navigator-model";
 import { ContextMenuRenderer } from "../../application/browser/menu/context-menu-renderer";
@@ -52,14 +52,10 @@ export class FileNavigatorWidget extends TreeWidget<FileNavigatorModel> {
     }
 
     protected onUpdateRequest(msg: Message): void {
-        const model = this.getModel();
-        if (model.selectedNode && model.selectedNode.id === "") {
-            this.node.classList.add(ROOT_ACTIVE_CLASS)
+        if (ISelectableTreeNode.isSelected(this.getModel().root)) {
+            this.addClass(ROOT_ACTIVE_CLASS)
         } else {
-            const root = document.getElementsByClassName(ROOT_ACTIVE_CLASS)[0];
-            if (root) {
-                root.classList.remove(ROOT_ACTIVE_CLASS)
-            }
+            this.removeClass(ROOT_ACTIVE_CLASS)
         }
         super.onUpdateRequest(msg);
     }
