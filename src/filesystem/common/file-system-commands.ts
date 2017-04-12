@@ -63,18 +63,6 @@ export class FileCommandContribution implements CommandContribution {
             id: Commands.FILE_OPEN,
             label: 'Open ...'
         });
-        // registry.registerCommand({
-        //     id: Commands.FILE_CUT,
-        //     label: 'Cut'
-        // });
-        // registry.registerCommand({
-        //     id: Commands.FILE_COPY,
-        //     label: 'Copy'
-        // });
-        // registry.registerCommand({
-        //     id: Commands.FILE_PASTE,
-        //     label: 'Paste'
-        // });
         registry.registerCommand({
             id: Commands.FILE_RENAME,
             label: 'Rename'
