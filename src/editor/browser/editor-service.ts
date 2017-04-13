@@ -4,6 +4,7 @@ import { EditorRegistry } from './editor-registry';
 import { EditorWidget } from './editor-widget';
 import { TextModelResolverService } from './model-resolver-service';
 import { injectable, inject } from 'inversify';
+import { EditorContextMenuService } from './editor-contextmenu';
 import IEditorService = monaco.editor.IEditorService;
 import IResourceInput = monaco.editor.IResourceInput;
 import Uri = monaco.Uri;
@@ -12,6 +13,7 @@ import Uri = monaco.Uri;
 export class EditorService implements IEditorService {
 
     protected app: TheiaApplication | undefined;
+    protected contextMenuService: any | undefined;
 
     constructor(protected readonly editorRegistry: EditorRegistry,
                 protected readonly textModelResolverService: TextModelResolverService,
@@ -20,6 +22,7 @@ export class EditorService implements IEditorService {
 
     onStart(app: TheiaApplication): void {
         this.app = app;
+        this.contextMenuService = this.app.getService(EditorContextMenuService);
     }
 
     openEditor(input: IResourceInput, sideBySide?: boolean | undefined): monaco.Promise<EditorWidget | undefined> {
@@ -49,7 +52,8 @@ export class EditorService implements IEditorService {
                 theme: 'vs-dark'
             }, {
                 editorService: this,
-                textModelResolverService: this.textModelResolverService
+                textModelResolverService: this.textModelResolverService,
+                contextMenuService: this.contextMenuService
             }, this.selectionService);
             editor.disposed.connect(() => reference.dispose());
             editor.title.closable = true;
