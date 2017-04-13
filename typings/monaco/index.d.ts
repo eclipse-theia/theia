@@ -202,6 +202,7 @@ declare module monaco.actions {
 
 declare module monaco.keybindings {
 
+
     export interface IKeybindingItem {
         keybinding: number;
         command: string;
@@ -216,8 +217,8 @@ declare module monaco.keybindings {
 
     export const KeybindingsRegistry: IKeybindingsRegistry;
 
-    export class KeybindingResolver {
-        constructor(defaultKeybindings: IKeybindingItem[], overrides: IKeybindingItem[], shouldWarnOnConflict: boolean);
-        lookupKeybindings(commandId: string): IKeybindingItem[]
+    export namespace KeyCodeUtils {
+        export function toString(key: any): string;
     }
+
 }

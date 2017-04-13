@@ -67,7 +67,7 @@ export class MainMenuFactory {
     private createPhosporCommands(menu: CompositeMenuNode): PhosphorCommandRegistry {
         const commands = new PhosphorCommandRegistry();
         const commandRegistry = this.commandRegistry;
-        // const keybindingRegistry = this.keybindingRegistry;
+        const keybindingRegistry = this.keybindingRegistry;
         function initCommands(current: CompositeMenuNode): void {
             for (let menu of current.childrens) {
                 if (menu instanceof ActionMenuNode) {
@@ -86,12 +86,18 @@ export class MainMenuFactory {
                             icon: command.iconClass,
                             isEnabled: (e: any) => !handler.isEnabled || handler.isEnabled(e),
                             isVisible: (e: any) => !handler.isVisible || handler.isVisible(e)
-                        })
-                        commands.addKeyBinding({
-                            command: command.id,
-                            keys: ['Shift Accel S'],
-                            selector: '.p-Widget'
-                        })
+                        });
+
+                        const binding = keybindingRegistry.getKeybinding(command.id);
+                        if (binding) {
+                            const accelerator = binding.accelerator;
+                            const keys = accelerator ? accelerator(binding) : [];
+                            commands.addKeyBinding({
+                                command: command.id,
+                                keys,
+                                selector: '.p-Widget' // We have the Phosphor.JS dependency anyway.
+                            });
+                        }
                     }
                 } else if (menu instanceof CompositeMenuNode) {
                     initCommands(menu);

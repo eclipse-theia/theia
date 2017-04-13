@@ -1,9 +1,20 @@
-import { CommandRegistry } from './command';
+import { CommandRegistry, Enabled } from './command';
 import { injectable, inject, multiInject } from 'inversify';
 
-export class Keybinding {
-    commandId: string
-    keyCode: number
+export declare type Accelerator = (keybinding: Keybinding) => string[];
+
+export namespace Accelerator {
+    export const NOOP: Accelerator = (keybinding) => [];
+}
+
+export interface Keybinding {
+    commandId: string;
+    keyCode: number;
+    isEnabled?: Enabled;
+    /**
+     * Sugar for showing the keybindings in the menus.
+     */
+    accelerator?: Accelerator;
 };
 
 export const KeybindingContribution = Symbol("KeybindingContribution");
@@ -16,11 +27,13 @@ export interface KeybindingContribution {
 export class KeybindingRegistry {
 
     keybindings: { [index: number]: Keybinding[] }
+    commands: { [commandId: string]: Keybinding[] }
 
     constructor( @multiInject(KeybindingContribution) protected contributions: KeybindingContribution[],
         @inject(CommandRegistry) protected commandRegistry: CommandRegistry) {
 
         this.keybindings = {};
+        this.commands = {};
         for (let contribution of contributions) {
             for (let keyb of contribution.getKeybindings()) {
                 this.registerKeyBinding(keyb);
@@ -34,21 +47,22 @@ export class KeybindingRegistry {
      * @param binding
      */
     registerKeyBinding(binding: Keybinding) {
-        let bindings = this.keybindings[binding.keyCode];
-        if (!bindings) {
-            bindings = [];
-        }
+        const {keyCode, commandId} = binding;
+        const bindings = this.keybindings[keyCode] || [];
         bindings.push(binding);
-        this.keybindings[binding.keyCode] = bindings;
+        this.keybindings[keyCode] = bindings;
+        const commands = this.commands[commandId] || [];
+        commands.push(binding);
+        this.commands[commandId] = bindings;
     }
 
     /**
      * @param keyCode the keycode for which to look up a Keybinding
      */
-    getKeybinding(keyCode: number): Keybinding | undefined {
-        let bindings = this.keybindings[keyCode];
+    getKeybinding(keyCodeOrCommandId: number | string): Keybinding | undefined {
+        const bindings = this.getBindings(keyCodeOrCommandId);
         if (bindings) {
-            for (let binding of bindings) {
+            for (const binding of bindings) {
                 if (this.isValid(binding)) {
                     return binding;
                 }
@@ -69,5 +83,13 @@ export class KeybindingRegistry {
             }
         }
         return false;
+    }
+
+    private getBindings(keyCodeOrCommandId: number | string): Keybinding[] {
+        if (typeof keyCodeOrCommandId === 'string') {
+            return this.commands[keyCodeOrCommandId];
+        } else {
+            return this.commands[keyCodeOrCommandId];
+        }
     }
 }
