@@ -106,19 +106,19 @@ class EditorKeybindingContribution implements KeybindingContribution {
             const keyCode = kb.keybinding;
             let keys: string[] = [];
             if (keyCode & KeyMod.WinCtrl) {
-                keys.push('Ctrl');
+                keys.push('Accel');
             }
             if (keyCode & KeyMod.Alt) {
                 keys.push('Alt');
             }
             if (keyCode & KeyMod.CtrlCmd) {
-                keys.push('Ctrl');
+                keys.push('Accel');
             }
             if (keyCode & KeyMod.Shift) {
                 keys.push('Shift');
             }
             keys.push(KeyCodeUtils.toString(keyCode & 255));
-            return (any: Keybinding) => keys;
+            return (any: Keybinding) => [keys.join(' ')];
         }
 
         return KeybindingsRegistry.getDefaultKeybindings()

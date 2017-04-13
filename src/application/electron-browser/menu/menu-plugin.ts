@@ -3,10 +3,7 @@ import { CommandRegistry } from '../../common/command';
 import { ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry } from '../../common/menu';
 import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
-
-export function isOSX() {
-  return typeof process !== 'undefined' && typeof process.platform !== 'undefined' && process.platform === 'darwin';
-}
+import { isOSX } from "../../common";
 
 @injectable()
 export class MainMenuFactory {
@@ -19,7 +16,7 @@ export class MainMenuFactory {
   createMenuBar(): Electron.Menu {
     const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
     const template = this.fillMenuTemplate([], menuModel);
-    if (isOSX()) {
+    if (isOSX) {
       template.unshift(this.createOSXMenu());
     }
     return electron.remote.Menu.buildFromTemplate(template);
