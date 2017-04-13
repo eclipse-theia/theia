@@ -5,6 +5,7 @@ declare module monaco.editor {
     export interface IEditorOverrideServices {
         editorService?: IEditorService;
         textModelResolverService?: ITextModelResolverService;
+        contextMenuService?: IContextMenuService;
     }
 
     export interface IResourceInput {
@@ -88,6 +89,124 @@ declare module monaco.editor {
          * Provides access to the underlying IModel.
          */
         textEditorModel: monaco.editor.IModel;
+    }
+
+    export interface IContextMenuDelegate {
+        /**
+         * Returns with an HTML element or the client coordinates as the anchor of the context menu to open.
+         */
+        getAnchor(): HTMLElement | { x: number; y: number; };
+    }
+
+    export interface IContextMenuService {
+        /**
+         * Shows the native Monaco context menu in the editor.
+         */
+        showContextMenu(delegate: IContextMenuDelegate): void;
+    }
+
+}
+
+declare module monaco.commands {
+
+    /**
+     * Identifies a service of type T
+     */
+    export interface ServiceIdentifier<T> {
+        (...args: any[]): void;
+        type: T;
+    }
+
+    export interface ServicesAccessor {
+        get<T>(id: ServiceIdentifier<T>, isOptional?: any): T;
+    }
+
+    export interface ICommandHandler {
+        (accessor: ServicesAccessor, ...args: any[]): void;
+    }
+
+    export interface ICommand {
+        handler: ICommandHandler;
+        // TODO as described below, it is undefined in our case.
+        description?: ICommandHandlerDescription;
+    }
+
+    // TODO shalll we get rid of this. Currently non of the commands have a handler.
+    export interface ICommandHandlerDescription {
+        description: string;
+        args: { name: string; description?: string; constraint?: string | Function; }[];
+        returns?: string;
+    }
+
+    export interface ICommandsMap {
+        /**
+         * A read only mapping from command IDs to the commands. 
+         */
+        readonly [id: string]: ICommand;
+    }
+
+    export interface ICommandRegistry {
+        /**
+         * Returns with the command for the given command ID argument.
+         */
+        getCommand(id: string): ICommand;
+
+        /**
+         * Returns with a mapping of all registered command IDs to the commands.
+         */
+        getCommands(): ICommandsMap;
+    }
+
+    /**
+     * The shared command registry instance.
+     */
+    export const CommandsRegistry: ICommandRegistry;
+
+}
+
+declare module monaco.actions {
+
+    export class MenuId {
+        /**
+         * The unique ID of the editor's context menu.
+         */
+        public static readonly EditorContext: MenuId;
+    }
+
+    export class ContextKeyExpr {
+
+    }
+
+    export interface ICommandAction {
+        id: string;
+        title: string
+        category?: string;
+        iconClass?: string;
+    }
+
+    export interface IMenuItem {
+        command: ICommandAction;
+        when?: ContextKeyExpr;
+        group?: 'navigation' | string;
+    }
+
+    export interface IMenuRegistry {
+        /**
+         * Retrieves all the registered menu items for the given menu.
+         */
+        getMenuItems(menuId: MenuId | { id: string }): IMenuItem[];
+    }
+
+    /**
+     * The shared menu registry singleton.
+     */
+    export const MenuRegistry: IMenuRegistry;
+
+    export interface IContextKeyService {
+        /**
+         * Checks whether the argument matches with the current key context.
+         */
+        contextMatchesRules(rules: ContextKeyExpr): boolean;
     }
 
 }

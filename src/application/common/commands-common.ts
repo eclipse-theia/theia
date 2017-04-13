@@ -30,24 +30,6 @@ export class CommonMenuContribution implements MenuContribution {
             CommonCommands.EDIT_MENU_UNDO_GROUP], {
                 commandId: CommonCommands.EDIT_REDO
             });
-        registry.registerMenuAction([
-            MAIN_MENU_BAR,
-            CommonCommands.EDIT_MENU,
-            CommonCommands.EDIT_MENU_COPYPASTE_GROUP], {
-                commandId: CommonCommands.EDIT_CUT
-            });
-        registry.registerMenuAction([
-            MAIN_MENU_BAR,
-            CommonCommands.EDIT_MENU,
-            CommonCommands.EDIT_MENU_COPYPASTE_GROUP], {
-                commandId: CommonCommands.EDIT_COPY
-            });
-        registry.registerMenuAction([
-            MAIN_MENU_BAR,
-            CommonCommands.EDIT_MENU,
-            CommonCommands.EDIT_MENU_COPYPASTE_GROUP], {
-                commandId: CommonCommands.EDIT_PASTE
-            });
     }
 
 }

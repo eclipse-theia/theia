@@ -122,7 +122,6 @@ export class EditorWidget extends Widget implements EventListenerObject, IEditor
         }
         this.refresh()
         this._needsRefresh = false
-        console.log("onAfterAttach")
     }
 
     protected onBeforeDetach(msg: Message): void {
