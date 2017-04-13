@@ -114,7 +114,7 @@ export class NodeFileSystem implements FileSystem {
         return new Promise<boolean>((resolve, reject) => {
             fs.mkdir(path, mode, (err) => {
                 if (err) {
-                    console.log('error on creating directory', err, path)
+                    // console.log('error on creating directory', err, path)
                     reject(err);
                 } else {
                     this.notify(raw, FileChangeType.ADDED);

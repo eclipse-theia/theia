@@ -92,7 +92,6 @@ export class FileCommandContribution implements CommandContribution {
                 actionId: 'copyfile',
                 selectionService: this.selectionService
             }, (path: Path) => {
-                console.log('setting data', path.toString())
                 this.clipboardService.setData({
                     text: path.toString()
                 })

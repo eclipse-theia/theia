@@ -19,7 +19,6 @@ export class BrowserClipboardService implements ClipboardService {
 
     setData(data: any) {
         let format = Object.getOwnPropertyNames(data)[0]
-        console.log('called set data with', format, this, this._data)
         if (typeof this._data === 'undefined') {
             this._data = {}
         }
