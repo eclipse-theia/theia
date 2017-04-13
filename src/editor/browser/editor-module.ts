@@ -10,15 +10,17 @@ import { EditorService } from './editor-service';
 import { TextModelResolverService } from './model-resolver-service';
 import { EditorWidget } from './editor-widget';
 import { ContainerModule, inject, injectable } from 'inversify';
+import { Keybinding, KeybindingContribution } from '../../application/common/keybinding';
 import { BrowserContextMenuService, EditorContextMenuService, EDITOR_CONTEXT_MENU_ID } from './editor-contextmenu';
 import CommandsRegistry = monaco.commands.CommandsRegistry;
 import MenuRegistry = monaco.actions.MenuRegistry;
 import MenuId = monaco.actions.MenuId;
 import ICommand = monaco.commands.ICommand;
 import IMenuItem = monaco.actions.IMenuItem;
+import KeybindingsRegistry = monaco.keybindings.KeybindingsRegistry;
 
 @injectable()
-export class EditorCommandHandlers implements CommandContribution {
+class EditorCommandHandlers implements CommandContribution {
 
     constructor(
         @inject(IEditorManager) private editorService: IEditorManager,
@@ -71,7 +73,7 @@ export class EditorCommandHandlers implements CommandContribution {
 }
 
 @injectable()
-export class EditorMenuContribution implements MenuContribution {
+class EditorMenuContribution implements MenuContribution {
     contribute(registry: MenuModelRegistry) {
         // Explicitly register the Edit Submenu
         registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "1_undo/redo"], {
@@ -88,7 +90,19 @@ export class EditorMenuContribution implements MenuContribution {
         MenuRegistry.getMenuItems(MenuId.EditorContext)
             .map(item => wrap(item))
             .forEach(props => registry.registerMenuAction(props.path, { commandId: props.commandId }));
+    }
+}
 
+@injectable()
+class EditorKeybindingContribution implements KeybindingContribution {
+    getKeybindings(): Keybinding[] {
+        const ids = MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command.id);
+        return KeybindingsRegistry.getDefaultKeybindings().filter(kb => ids.indexOf(kb.command) >= 0).map(kb => {
+            return {
+                commandId: kb.command,
+                keyCode: kb.keybinding
+            }
+        });
     }
 }
 
@@ -102,4 +116,5 @@ export const editorModule = new ContainerModule(bind => {
     bind(IOpenerService).toDynamicValue(context => context.container.get(IEditorManager));
     bind<CommandContribution>(CommandContribution).to(EditorCommandHandlers);
     bind<MenuContribution>(MenuContribution).to(EditorMenuContribution);
+    bind<KeybindingContribution>(KeybindingContribution).to(EditorKeybindingContribution);
 });

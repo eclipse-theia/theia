@@ -3,6 +3,7 @@ import { TheiaPlugin, TheiaApplication } from "../application";
 import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget } from "@phosphor/widgets";
 import { CommandRegistry as PhosphorCommandRegistry } from "@phosphor/commands";
 import { CommandRegistry } from "../../common/command";
+import { KeybindingRegistry } from "../../common/keybinding";
 import { injectable, inject } from "inversify";
 import { ActionMenuNode, CompositeMenuNode, MenuModelRegistry, MAIN_MENU_BAR } from '../../common/menu';
 
@@ -11,6 +12,7 @@ export class MainMenuFactory {
 
     constructor(
         @inject(CommandRegistry) protected commandRegistry: CommandRegistry,
+        @inject(KeybindingRegistry) protected keybindingRegistry: KeybindingRegistry,
         @inject(MenuModelRegistry) protected menuProvider: MenuModelRegistry
     ) {
     }
@@ -65,6 +67,7 @@ export class MainMenuFactory {
     private createPhosporCommands(menu: CompositeMenuNode): PhosphorCommandRegistry {
         const commands = new PhosphorCommandRegistry();
         const commandRegistry = this.commandRegistry;
+        // const keybindingRegistry = this.keybindingRegistry;
         function initCommands(current: CompositeMenuNode): void {
             for (let menu of current.childrens) {
                 if (menu instanceof ActionMenuNode) {
@@ -81,20 +84,13 @@ export class MainMenuFactory {
                             execute: (e: any) => handler.execute(e),
                             label: menu.label,
                             icon: command.iconClass,
-                            isEnabled: (e: any) => {
-                                if (handler.isEnabled) {
-                                    return handler.isEnabled(e);
-                                } else {
-                                    return true;
-                                }
-                            },
-                            isVisible: (e: any) => {
-                                if (handler.isVisible) {
-                                    return handler.isVisible(e);
-                                } else {
-                                    return true;
-                                }
-                            }
+                            isEnabled: (e: any) => !handler.isEnabled || handler.isEnabled(e),
+                            isVisible: (e: any) => !handler.isVisible || handler.isVisible(e)
+                        })
+                        commands.addKeyBinding({
+                            command: command.id,
+                            keys: ['Shift Accel S'],
+                            selector: '.p-Widget'
                         })
                     }
                 } else if (menu instanceof CompositeMenuNode) {

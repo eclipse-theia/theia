@@ -41,11 +41,14 @@
                 'vs/language/html/monaco.contribution',
                 'vs/language/json/monaco.contribution',
                 'vs/platform/commands/common/commands',
-                'vs/platform/actions/common/actions'
-            ], (basic, css, ts, html, json, commands, actions) => {
+                'vs/platform/actions/common/actions',
+                'vs/platform/keybinding/common/keybindingsRegistry',
+                'vs/platform/keybinding/common/keybindingResolver'
+            ], (basic, css, ts, html, json, commands, actions, registry, resolver) => {
                 const global = self;
                 global.monaco.commands = commands;
                 global.monaco.actions = actions;
+                global.monaco.keybindings = Object.assign(registry, resolver);
                 require("./bundle.js");
             });
         });
