@@ -62,6 +62,21 @@ class EditorCommandHandlers implements CommandContribution {
             );
         });
 
+        registry.registerCommand({
+            id: 'editor.close',
+            label: 'Close Editor'
+        });
+        registry.registerHandler('editor.close', {
+            execute: (arg?: any): any => {
+                const editor = this.editorService.activeEditor;
+                if (editor) {
+                    editor.close();
+                }
+                return null;
+            },
+            isEnabled: Enabled =>  { return true; }
+        })
+
     }
 
     private newHandler(id: string): CommandHandler {
@@ -99,14 +114,14 @@ class EditorMenuContribution implements MenuContribution {
 @injectable()
 class EditorKeybindingContext implements KeybindingContext {
 
-    readonly id = 'editor.keybinding.context';
-    readonly parentId = KeybindingContext.DEFAULT_CONTEXT.id;
+    static ID = 'editor.keybinding.context';
+
+    readonly id = EditorKeybindingContext.ID;
     readonly enabled = (binding: Keybinding): boolean => {
         return this.editorService && !!this.editorService.activeEditor;
     }
 
     constructor( @inject(IEditorManager) private editorService: IEditorManager) {
-
     }
 
 }
@@ -136,7 +151,7 @@ class EditorKeybindingContribution implements KeybindingContribution {
             return (any: Keybinding) => [keys.join(' ')];
         }
 
-        return KeybindingsRegistry.getDefaultKeybindings()
+        const bindings: Keybinding[] = KeybindingsRegistry.getDefaultKeybindings()
             .filter(kb => ids.indexOf(kb.command) >= 0)
             .map(kb => {
                 return {
@@ -145,6 +160,18 @@ class EditorKeybindingContribution implements KeybindingContribution {
                     accelerator: accelerator(kb),
                 }
             });
+
+        bindings.push({
+            accelerator: accelerator({
+                command: 'editor.close',
+                keybinding: monaco.KeyMod.Alt | 87 // W
+            }),
+            commandId: 'editor.close',
+            contextId: EditorKeybindingContext.ID,
+            keyCode: monaco.KeyMod.Alt | 87 // W
+        });
+
+        return bindings;
 
     }
 

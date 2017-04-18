@@ -1,3 +1,4 @@
+import { Disposable } from './';
 import { CommandRegistry, Enabled } from './command';
 import { injectable, inject, multiInject } from 'inversify';
 
@@ -8,19 +9,19 @@ export namespace Accelerator {
 }
 
 export interface Keybinding {
-    commandId: string;
-    keyCode: number;
+    readonly commandId: string;
+    readonly keyCode: number;
     /**
      * The optional keybinding context ID of the context this binding belongs to.
      * If not specified, then this keybinding context belongs to the default
      * keybinding context.
      */
-    contextId?: string,
-    isEnabled?: Enabled;
+    readonly contextId?: string;
+    readonly isEnabled?: Enabled;
     /**
      * Sugar for showing the keybindings in the menus.
      */
-    accelerator?: Accelerator;
+    readonly accelerator?: Accelerator;
 };
 
 export const KeybindingContribution = Symbol("KeybindingContribution");
@@ -36,8 +37,6 @@ export interface KeybindingContext {
     readonly id: string,
     /**
      * Returns with the unique identifier of the parent context (if any).
-     *
-     * <br>If not specified, then the default is value is `KeybindingContext.DEFAULT_CONTEXT`.
      */
     readonly parentId?: string,
     /**
@@ -77,6 +76,8 @@ export class KeybindingContextRegistry {
     }
 
     /**
+     * Registers the keybinding context arguments into the application. Fails when an already registered
+     * context is being registered.
      *
      * @param context the keybinding contexts to register into the application.
      */
@@ -93,10 +94,14 @@ export class KeybindingContextRegistry {
         }
     }
 
+    getContext(contextId: string): KeybindingContext | undefined {
+        return this.contexts[contextId];
+    }
+
     private alignContextHierarchies() {
         this.contextHierarchy = {};
         Object.keys(this.contexts).forEach(id => {
-            const parentId = this.contexts[id].parentId;
+            const { parentId } = this.contexts[id];
             if (parentId) {
                 const parent = this.contexts[parentId];
                 if (parent) {
@@ -115,8 +120,10 @@ export class KeybindingRegistry {
     keybindings: { [index: number]: Keybinding[] }
     commands: { [commandId: string]: Keybinding[] }
 
-    constructor( @multiInject(KeybindingContribution) protected contributions: KeybindingContribution[],
-        @inject(CommandRegistry) protected commandRegistry: CommandRegistry) {
+    constructor(
+        @inject(CommandRegistry) protected commandRegistry: CommandRegistry,
+        @inject(KeybindingContextRegistry) protected contextRegistry: KeybindingContextRegistry,
+        @multiInject(KeybindingContribution) protected contributions: KeybindingContribution[]) {
 
         this.keybindings = {};
         this.commands = {};
@@ -125,6 +132,7 @@ export class KeybindingRegistry {
                 this.registerKeyBinding(keyb);
             }
         }
+        new KeyEventEmitter(commandRegistry, this, contextRegistry);
     }
 
     /**
@@ -175,7 +183,63 @@ export class KeybindingRegistry {
         if (typeof keyCodeOrCommandId === 'string') {
             return this.commands[keyCodeOrCommandId];
         } else {
-            return this.commands[keyCodeOrCommandId];
+            return this.keybindings[keyCodeOrCommandId];
         }
     }
+}
+
+class KeyEventEmitter implements Disposable {
+
+    private listener: EventListenerOrEventListenerObject;
+
+    constructor(
+        private commandRegistry: CommandRegistry,
+        private keybindingRegistry: KeybindingRegistry,
+        private keybindingContextRegistry: KeybindingContextRegistry) {
+
+        ((): void => {
+            this.listener = (e: KeyboardEvent) => this.handleEvent(e);
+            window.addEventListener('keyup', this.listener);
+        })();
+    }
+
+    dispose() {
+        if (this.listener) {
+            window.removeEventListener('keyup', this.listener);
+        }
+    }
+
+    private handleEvent(e: KeyboardEvent): void {
+        let { keyCode } = e;
+        if (e.altKey) {
+            keyCode = keyCode | monaco.KeyMod.Alt;
+        }
+        if (e.shiftKey) {
+            keyCode = keyCode | monaco.KeyMod.Shift;
+        }
+        if (e.ctrlKey) {
+            keyCode = keyCode | monaco.KeyMod.CtrlCmd;
+        }
+        const binding = this.keybindingRegistry.getKeybinding(keyCode);
+        if (binding) {
+            const contextId = binding.contextId || KeybindingContext.DEFAULT_CONTEXT.id;
+            let context = this.keybindingContextRegistry.getContext(contextId);
+            while (context) {
+                if (context.enabled(binding)) {
+                    const handler = this.commandRegistry.getActiveHandler(binding.commandId);
+                    if (handler) {
+                        e.preventDefault();
+                        handler.execute();
+                        return;
+                    }
+                }
+                if (context.parentId) {
+                    context = this.keybindingContextRegistry.getContext(context.parentId);
+                } else {
+                    context = undefined;
+                }
+            }
+        }
+    }
+
 }
