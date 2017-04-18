@@ -1,18 +1,8 @@
-import { injectable } from "inversify";
+export const ClipboardService = Symbol("ClipboardService")
 
-@injectable()
-export class ClipboardSerivce {
-    private _data: any
+export interface ClipboardService {
 
-    getData(): any {
-        return this._data;
-    }
-
-    get isEmpty(): boolean {
-        return (typeof this._data === "undefined")
-    }
-
-    setData(data: any) {
-        this._data = data
-    }
+    getData(format: string, type?: "" | "selection" | undefined): any
+    isEmpty: boolean
+    setData(data: any, type?: "" | "selection" | undefined): void
 }

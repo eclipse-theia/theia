@@ -4,6 +4,7 @@ import {Path} from "../path";
 import {Disposable, DisposableCollection} from "../../../application/common";
 import {
     LsRequest,
+    ExistsRequest,
     DirExistsRequest,
     FileExistsRequest,
     CreateNameRequest,
@@ -13,6 +14,7 @@ import {
     MkdirRequest,
     RmRequest,
     СpRequest,
+    RenameRequest,
     RmdirRequest,
     PathResult,
     BooleanResult,
@@ -87,7 +89,8 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
     }
 
     rename(oldPath: Path, newPath: Path): Promise<boolean> {
-        throw Error('rename is no implemented yet');
+        const param = {from: oldPath.toString(), to: newPath.toString()};
+        return this.sendBooleanRequest(RenameRequest.type, param);
     }
 
     rmdir(path: Path): Promise<boolean> {
@@ -100,9 +103,9 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
         return this.sendBooleanRequest(RmRequest.type, param);
     }
 
-    cp(from: Path, to: Path): Promise<boolean> {
+    cp(from: Path, to: Path): Promise<string> {
         const param = {from: from.toString(), to: to.toString()};
-        return this.sendBooleanRequest(СpRequest.type, param);
+        return this.sendPathRequest(СpRequest.type, param);
     }
 
     readFile(path: Path, encoding: string): Promise<string> {
@@ -123,7 +126,8 @@ export class FileSystemClient extends AbstractFileSystemConnectionHandler implem
     }
 
     exists(path: Path): Promise<boolean> {
-        throw Error('exists is no implemented yet');
+        const param = {path: path.toString()};
+        return this.sendBooleanRequest(ExistsRequest.type, param);
     }
 
     dirExists(path: Path): Promise<boolean> {

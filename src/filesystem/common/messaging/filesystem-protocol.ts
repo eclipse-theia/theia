@@ -26,6 +26,10 @@ export interface PathResult {
     path: string
 }
 
+export namespace ExistsRequest {
+    export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/exists');
+}
+
 export namespace DirExistsRequest {
     export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/dirExists');
 }
@@ -54,13 +58,17 @@ export namespace RmRequest {
     export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/rm');
 }
 
-export interface СpParam {
+export interface MoveParam {
     from: string;
     to: string;
 }
 
 export namespace СpRequest {
-    export const type = new RequestType<СpParam, BooleanResult, void, void>('fileSystem/cp');
+    export const type = new RequestType<MoveParam, PathResult, void, void>('fileSystem/cp');
+}
+
+export namespace RenameRequest {
+    export const type = new RequestType<MoveParam, BooleanResult, void, void>('fileSystem/rename');
 }
 
 export namespace MkdirRequest {

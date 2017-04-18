@@ -3,6 +3,7 @@ import {MessageConnection} from "vscode-jsonrpc";
 import {FileSystem} from "../file-system";
 import {
     LsRequest,
+    ExistsRequest,
     DirExistsRequest,
     FileExistsRequest,
     CreateNameRequest,
@@ -15,6 +16,7 @@ import {
     MkdirRequest,
     RmRequest,
     СpRequest,
+    RenameRequest,
     RmdirRequest,
     ReadFileResult,
     WriteFileRequest
@@ -38,6 +40,9 @@ export class FileSystemServer extends AbstractFileSystemConnectionHandler {
                 }
             )
         );
+        connection.onRequest(ExistsRequest.type, (param, token) =>
+            this.fileSystem.exists(Path.fromString(param.path)).then(value => <BooleanResult>{value})
+        );
         connection.onRequest(DirExistsRequest.type, (param, token) =>
             this.fileSystem.dirExists(Path.fromString(param.path)).then(value => <BooleanResult>{value})
         );
@@ -54,7 +59,10 @@ export class FileSystemServer extends AbstractFileSystemConnectionHandler {
             this.fileSystem.rm(Path.fromString(param.path)).then(value => <BooleanResult>{value})
         );
         connection.onRequest(СpRequest.type, (param, token) =>
-            this.fileSystem.cp(Path.fromString(param.from), Path.fromString(param.to)).then(value => <BooleanResult>{value})
+            this.fileSystem.cp(Path.fromString(param.from), Path.fromString(param.to)).then(value => <PathResult>{path: value.toString()})
+        );
+        connection.onRequest(RenameRequest.type, (param, token) =>
+            this.fileSystem.rename(Path.fromString(param.from), Path.fromString(param.to)).then(value => <BooleanResult>{value})
         );
         connection.onRequest(MkdirRequest.type, (param, token) =>
             this.fileSystem.mkdir(Path.fromString(param.path)).then(value => <BooleanResult>{value})
