@@ -6,7 +6,7 @@ import { OpenerService } from "./opener-service";
 import { CommandRegistry, CommandContribution } from "../common/command";
 import { MenuModelRegistry, MenuContribution } from "../common/menu";
 import { ClipboardSerivce } from "../common/clipboard-service";
-import { KeybindingRegistry } from "../common/keybinding";
+import { KeybindingContextRegistry, KeybindingRegistry } from '../common/keybinding';
 
 export const browserApplicationModule = new ContainerModule(bind => {
     bind(TheiaApplication).toSelf().inSingletonScope();
@@ -18,4 +18,5 @@ export const browserApplicationModule = new ContainerModule(bind => {
     bind(SelectionService).toSelf().inSingletonScope();
     bind(ClipboardSerivce).toSelf().inSingletonScope();
     bind(KeybindingRegistry).toSelf().inSingletonScope();
+    bind(KeybindingContextRegistry).toSelf().inSingletonScope();
 });

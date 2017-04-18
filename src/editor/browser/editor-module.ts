@@ -10,7 +10,7 @@ import { EditorService } from './editor-service';
 import { TextModelResolverService } from './model-resolver-service';
 import { EditorWidget } from './editor-widget';
 import { ContainerModule, inject, injectable } from 'inversify';
-import { Accelerator, Keybinding, KeybindingContribution } from '../../application/common/keybinding';
+import { Accelerator, Keybinding, KeybindingContext, KeybindingContribution } from '../../application/common/keybinding';
 import { BrowserContextMenuService, EditorContextMenuService, EDITOR_CONTEXT_MENU_ID } from './editor-contextmenu';
 import CommandsRegistry = monaco.commands.CommandsRegistry;
 import MenuRegistry = monaco.actions.MenuRegistry;
@@ -97,6 +97,21 @@ class EditorMenuContribution implements MenuContribution {
 }
 
 @injectable()
+class EditorKeybindingContext implements KeybindingContext {
+
+    readonly id = 'editor.keybinding.context';
+    readonly parentId = KeybindingContext.DEFAULT_CONTEXT.id;
+    readonly enabled = (binding: Keybinding): boolean => {
+        return this.editorService && !!this.editorService.activeEditor;
+    }
+
+    constructor( @inject(IEditorManager) private editorService: IEditorManager) {
+
+    }
+
+}
+
+@injectable()
 class EditorKeybindingContribution implements KeybindingContribution {
 
     getKeybindings(): Keybinding[] {
@@ -129,7 +144,7 @@ class EditorKeybindingContribution implements KeybindingContribution {
                     keyCode: kb.keybinding,
                     accelerator: accelerator(kb),
                 }
-        });
+            });
 
     }
 
@@ -146,4 +161,5 @@ export const editorModule = new ContainerModule(bind => {
     bind<CommandContribution>(CommandContribution).to(EditorCommandHandlers);
     bind<MenuContribution>(MenuContribution).to(EditorMenuContribution);
     bind<KeybindingContribution>(KeybindingContribution).to(EditorKeybindingContribution);
+    bind<KeybindingContext>(KeybindingContext.KeybindingContext).to(EditorKeybindingContext);
 });
