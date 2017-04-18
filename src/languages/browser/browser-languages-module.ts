@@ -1,7 +1,7 @@
 import { LanguageIdentifier } from '../common/languages-protocol';
 import { ContainerModule, injectable, inject, optional } from "inversify";
 import { MessageConnection } from 'vscode-jsonrpc';
-import { ErrorAction, CloseAction } from "vscode-languageclient/lib/base";
+import { ErrorAction, CloseAction } from "vscode-base-languageclient/lib/base";
 import { TheiaPlugin, TheiaApplication } from "../../application/browser";
 import { listen } from "../../messaging/browser";
 import {
@@ -97,7 +97,7 @@ export class LanguagesPlugin implements TheiaPlugin {
             connectionProvider: {
                 // FIXME get rid of outputChannel
                 get: (errorHandler: ConnectionErrorHandler, closeHandler: ConnectionCloseHandler, outputChannel: OutputChannel | undefined) => {
-                    return Promise.resolve(createConnection(connection, closeHandler, closeHandler));
+                    return Promise.resolve(createConnection(connection, errorHandler, closeHandler));
                 }
             }
         });
