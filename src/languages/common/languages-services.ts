@@ -1,9 +1,9 @@
-import * as base from 'vscode-languageclient/lib/base';
-import * as services from 'vscode-languageclient/lib/services';
-import * as connection from 'vscode-languageclient/lib/connection';
-export * from 'vscode-languageclient/lib/services';
-export * from 'vscode-languageclient/lib/connection';
-export { BaseLanguageClient } from 'vscode-languageclient/lib/base';
+import * as base from 'vscode-base-languageclient/lib/base';
+import * as services from 'vscode-base-languageclient/lib/services';
+import * as connection from 'vscode-base-languageclient/lib/connection';
+export * from 'vscode-base-languageclient/lib/services';
+export * from 'vscode-base-languageclient/lib/connection';
+export { BaseLanguageClient } from 'vscode-base-languageclient/lib/base';
 
 export const Languages = Symbol('Languages');
 export interface Languages extends services.Languages {}

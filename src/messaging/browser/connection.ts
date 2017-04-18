@@ -1,25 +1,14 @@
-import { createSocketConnection } from "../common";
-import { ConsoleLogger } from "./logger";
+import { listen as doListen } from "vscode-ws-jsonrpc";
 import { ConnectionHandler } from "../common/handler";
 const ReconnectingWebSocket = require('reconnecting-websocket');
 
 export function listen(handler: ConnectionHandler): void {
     const url = createUrl(handler);
     const webSocket = createWebSocket(url);
-    webSocket.onopen = () => {
-        const connection = createSocketConnection({
-            send: content => webSocket.send(content),
-            onMessage: cb => webSocket.onmessage = event => cb(event.data),
-            onError: cb => webSocket.onerror = event => {
-                if (event instanceof ErrorEvent) {
-                    cb(event.message)
-                }
-            },
-            onClose: (cb) => webSocket.onclose = event => cb(event.code, event.reason),
-            dispose: () => webSocket.close()
-        }, new ConsoleLogger());
-        handler.onConnection(connection);
-    };
+    doListen({
+        webSocket,
+        onConnection: handler.onConnection.bind(handler)
+    });
 }
 
 export function createUrl(handler: ConnectionHandler): string {

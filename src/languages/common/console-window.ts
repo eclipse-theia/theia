@@ -1,5 +1,5 @@
 import { injectable } from "inversify";
-import { MessageActionItem, MessageType } from 'vscode-languageclient/lib/protocol';
+import { MessageActionItem, MessageType } from 'vscode-base-languageclient/lib/protocol';
 import { Window, OutputChannel } from '../common';
 
 @injectable()

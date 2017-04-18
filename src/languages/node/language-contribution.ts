@@ -2,7 +2,7 @@ import { LanguageDescription } from '../common/languages-protocol';
 import * as cp from 'child_process';
 import { StreamMessageReader, StreamMessageWriter } from 'vscode-jsonrpc';
 import { InitializeParams } from 'vscode-languageserver/lib/protocol';
-import { InitializeRequest } from 'vscode-languageclient/lib/protocol';
+import { InitializeRequest } from 'vscode-base-languageclient/lib/protocol';
 import { isRequestMessage } from 'vscode-jsonrpc/lib/messages';
 import { createConnection } from "../../messaging/common";
 import { IConnection } from "../../messaging/common";
