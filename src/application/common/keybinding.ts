@@ -1,10 +1,9 @@
 import { PredicateFunc, PredicateImpl } from './predicates';
 import { Context } from './context';
 import { Disposable } from './disposable';
-import { isOSX } from './os';
 import { CommandRegistry } from './command';
 import { injectable, inject, multiInject, unmanaged } from 'inversify';
-import { Key, Modifier } from './keys';
+import { KeyCode, Accelerator } from './keys';
 
 
 export interface Keybinding {
@@ -150,104 +149,6 @@ export class KeybindingRegistry {
     }
 }
 
-export declare type Accelerator = string[];
-
-export const AcceleratorProvider = Symbol("AcceleratorProvider");
-export interface AcceleratorProvider {
-
-    getAccelerator(keyCode: KeyCode): Accelerator
-
-}
-
-/**
- * The key sequence for this binding. This key sequence should consist of one or more key strokes. Key strokes
- * consist of one or more keys held down at the same time. This should be zero or more modifier keys, and one other key.
- * Since `M2+M3+<Key>` (Alt+Shift+<Key>) is reserved on MacOS X for writing special characters, such bindings are commonly
- * undefined for platform MacOS X and redefined as `M1+M3+<Key>`. The rule applies on the `M3+M2+<Key>` sequence.
- */
-export declare type KeySequence = { first: Key, firstModifier?: Modifier, secondModifier?: Modifier, thirdModifier?: Modifier };
-
-/**
- * Representation of a platform independent key code.
- */
-export class KeyCode {
-
-    private static GET_MODIFIERS = (sequence: KeySequence): Modifier[] => {
-        const modifiers: Modifier[] = [];
-        for (const modifier of [sequence.firstModifier, sequence.secondModifier, sequence.thirdModifier]) {
-            if (modifier) {
-                if (modifiers.indexOf(modifier) >= 0) {
-                    throw new Error(`Key sequence ${JSON.stringify(sequence)} contains duplicate modifiers.`);
-                }
-                modifiers.push(modifier);
-            }
-        }
-        return modifiers.sort();
-    }
-
-    // TODO: support chrods properly. Currently, second sequence is ignored.
-    private constructor(public readonly sequence: string) {
-        // const chord = ((secondSequence & 0x0000ffff) << 16) >>> 0;
-        // (firstSequence | chord) >>> 0;
-    }
-
-    public static createKeyCode(event: KeyboardEvent | KeySequence): KeyCode {
-        if (event instanceof KeyboardEvent) {
-            const e: any = event;
-
-            const sequence: string[] = [];
-            if (e.keyCode) {
-                sequence.push(String.fromCharCode(e.keyCode));
-            } else if (e.which) {
-                sequence.push(String.fromCharCode(e.keyCode));
-            } else if (e.code) {
-                sequence.push(e.code);
-            } else if (e.key) {
-                sequence.push(e.key);
-            } else if (e.keyIdentifier) {
-                sequence.push(e.keyIdentifier);
-            } else {
-                throw new Error(`Cannot get key code from the keyborard event: ${event}.`);
-            }
-
-            // CTRL + COMMAND (M1)
-            if ((isOSX && event.metaKey) || event.ctrlKey) {
-                sequence.push(Modifier.label(Modifier.M1));
-            }
-
-            // SHIFT (M2)
-            if (event.shiftKey) {
-                sequence.push(Modifier.label(Modifier.M2));
-            }
-
-            // ALT (M3)
-            if (event.altKey) {
-                sequence.push(Modifier.label(Modifier.M3));
-            }
-
-            // CTRL on MacOS X (M4)
-            if (isOSX && !event.metaKey && event.ctrlKey) {
-                sequence.push(Modifier.label(Modifier.M4));
-            }
-
-            return new KeyCode(sequence.join('+'));
-        } else {
-            const a = [String.fromCharCode(event.first)]
-                .concat(KeyCode.GET_MODIFIERS(event).map(modifier => Modifier.label(modifier)))
-                .join('+');
-            console.log(a);
-            return new KeyCode([String.fromCharCode(event.first)]
-                .concat(KeyCode.GET_MODIFIERS(event).map(modifier => Modifier.label(modifier)))
-                .join('+'));
-        }
-    }
-
-    equals(event: KeyboardEvent | KeyCode): boolean {
-        return (event instanceof KeyCode ? event : KeyCode.createKeyCode(event)).sequence === this.sequence;
-    }
-
-}
-
 export class KeyEventEmitter implements Disposable {
 
     private listener: EventListenerOrEventListenerObject;
@@ -271,7 +172,6 @@ export class KeyEventEmitter implements Disposable {
     }
 
     private handleKey(keyCode: KeyCode): boolean {
-        console.log('KEYCODE', keyCode);
         const binding = this.keybindingRegistry.getKeybinding(keyCode);
         if (binding) {
             const context = binding.context || KeybindingContext.NOOP_CONTEXT;

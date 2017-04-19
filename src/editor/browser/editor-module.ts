@@ -1,5 +1,4 @@
 import { isOSX } from '../../application/common';
-import { KeySequence } from '../../application/common/keybinding';
 import { IOpenerService, TheiaPlugin } from '../../application/browser';
 import { SelectionService } from '../../application/common/selection-service';
 import { CommandContribution, CommandRegistry, CommandHandler } from '../../application/common/command';
@@ -12,8 +11,8 @@ import { EditorService } from './editor-service';
 import { TextModelResolverService } from './model-resolver-service';
 import { EditorWidget } from './editor-widget';
 import { ContainerModule, inject, injectable } from 'inversify';
-import { Accelerator, Keybinding, KeybindingContext, KeybindingContribution, KeyCode } from '../../application/common/keybinding';
-import { Modifier, Key } from '../../application/common/keys';
+import { Keybinding, KeybindingContext, KeybindingContribution,  } from '../../application/common/keybinding';
+import { Accelerator, Key, KeyCode, KeySequence, Modifier } from '../../application/common/keys';
 import { BrowserContextMenuService, EditorContextMenuService, EDITOR_CONTEXT_MENU_ID } from './editor-contextmenu';
 import CommandsRegistry = monaco.commands.CommandsRegistry;
 import MenuRegistry = monaco.actions.MenuRegistry;
@@ -241,4 +240,5 @@ export const editorModule = new ContainerModule(bind => {
     bind<MenuContribution>(MenuContribution).to(EditorMenuContribution);
     bind<KeybindingContribution>(KeybindingContribution).to(EditorKeybindingContribution);
     bind<KeybindingContext>(EditorKeybindingContext).toSelf();
+    bind<KeybindingContext>(KeybindingContext).to(EditorKeybindingContext);
 });
