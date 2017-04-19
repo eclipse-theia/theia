@@ -1,3 +1,5 @@
+import { isOSX } from '../../application/common';
+import { KeySequence } from '../../application/common/keybinding';
 import { IOpenerService, TheiaPlugin } from '../../application/browser';
 import { SelectionService } from '../../application/common/selection-service';
 import { CommandContribution, CommandRegistry, CommandHandler } from '../../application/common/command';
@@ -10,17 +12,18 @@ import { EditorService } from './editor-service';
 import { TextModelResolverService } from './model-resolver-service';
 import { EditorWidget } from './editor-widget';
 import { ContainerModule, inject, injectable } from 'inversify';
-import { Key, Keybinding, KeybindingContext, KeybindingContribution, KeyCode, Modifier } from '../../application/common/keybinding';
+import { Accelerator, Key, Keybinding, KeybindingContext, KeybindingContribution, KeyCode, Modifier
+} from '../../application/common/keybinding';
 import { BrowserContextMenuService, EditorContextMenuService, EDITOR_CONTEXT_MENU_ID } from './editor-contextmenu';
 import CommandsRegistry = monaco.commands.CommandsRegistry;
 import MenuRegistry = monaco.actions.MenuRegistry;
 import MenuId = monaco.actions.MenuId;
 import ICommand = monaco.commands.ICommand;
 import IMenuItem = monaco.actions.IMenuItem;
-// import KeybindingsRegistry = monaco.keybindings.KeybindingsRegistry;
-// import KeyCodeUtils = monaco.keybindings.KeyCodeUtils;
-// import IKeybindingItem = monaco.keybindings.IKeybindingItem;
-// import KeyMod = monaco.KeyMod;
+import KeybindingsRegistry = monaco.keybindings.KeybindingsRegistry;
+import KeyCodeUtils = monaco.keybindings.KeyCodeUtils;
+import IKeybindingItem = monaco.keybindings.IKeybindingItem;
+import KeyMod = monaco.KeyMod;
 
 @injectable()
 class EditorCommandHandlers implements CommandContribution {
@@ -131,42 +134,68 @@ class EditorKeybindingContribution implements KeybindingContribution {
 
     getKeybindings(): Keybinding[] {
 
-        // const ids = MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command.id);
-        // const accelerator = (kb: IKeybindingItem): Accelerator => {
-        //     const keyCode = kb.keybinding;
-        //     let keys: string[] = [];
-        //     if (keyCode & KeyMod.WinCtrl) {
-        //         keys.push('Accel');
-        //     }
-        //     if (keyCode & KeyMod.Alt) {
-        //         keys.push('Alt');
-        //     }
-        //     if (keyCode & KeyMod.CtrlCmd) {
-        //         keys.push('Accel');
-        //     }
-        //     if (keyCode & KeyMod.Shift) {
-        //         keys.push('Shift');
-        //     }
-        //     keys.push(KeyCodeUtils.toString(keyCode & 255));
-        //     return [keys.join(' ')];
-        // }
+        const ids = MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command.id);
+        const accelerator = (kb: IKeybindingItem): Accelerator => {
+            const keyCode = kb.keybinding;
+            let keys: string[] = [];
+            if (keyCode & KeyMod.WinCtrl) {
+                keys.push('Accel');
+            }
+            if (keyCode & KeyMod.Alt) {
+                keys.push('Alt');
+            }
+            if (keyCode & KeyMod.CtrlCmd) {
+                keys.push('Accel');
+            }
+            if (keyCode & KeyMod.Shift) {
+                keys.push('Shift');
+            }
+            keys.push(KeyCodeUtils.toString(keyCode & 255));
+            return [keys.join(' ')];
+        }
 
-        const bindings: Keybinding[] = [];
-        // KeybindingsRegistry.getDefaultKeybindings()
-        //     .filter(kb => ids.indexOf(kb.command) >= 0)
-        //     .map(kb => {
-        //         return {
-        //             commandId: kb.command,
-        //             keyCode: Key.A,
-        //             accelerator: accelerator(kb),
-        //         }
-        //     });
+        const keyCode = (kb: IKeybindingItem): KeyCode => {
+            const keyCode = kb.keybinding;
+            const sequence: KeySequence = {
+                first: kb.keybinding & 255
+            }
+            const modifiers: Modifier[] = [];
+            // CTRL + COMMAND
+            if ((isOSX && keyCode & KeyMod.CtrlCmd) || keyCode & KeyMod.WinCtrl) {
+                modifiers.push(Modifier.M1);
+            }
+            // SHIFT
+            if (keyCode & KeyMod.Shift) {
+                modifiers.push(Modifier.M2);
+            }
+            // ALT
+            if (keyCode & KeyMod.Alt) {
+                modifiers.push(Modifier.M3);
+            }
+            // MacOS X CTRL
+            if (isOSX && keyCode & KeyMod.WinCtrl) {
+                modifiers.push(Modifier.M4);
+            }
+
+            const props = ['firstModifier', 'secondModifier', 'thirdModifier'].slice(0, modifiers.length);
+            for (let i = 0; i < props.length; i++) {
+                Reflect.set(sequence, props[i], modifiers[i]);
+            }
+
+            return KeyCode.createKeyCode(sequence);
+        }
+
+        const bindings: Keybinding[] = KeybindingsRegistry.getDefaultKeybindings()
+            .filter(kb => ids.indexOf(kb.command) >= 0)
+            .map(kb => {
+                return {
+                    commandId: kb.command,
+                    keyCode: keyCode(kb),
+                    accelerator: accelerator(kb),
+                }
+            });
 
         bindings.push({
-            // accelerator: accelerator({
-            //     command: 'editor.close',
-            //     keybinding: Key.Ctrl | Key.L
-            // }),
             commandId: 'editor.close',
             contextId: EditorKeybindingContext.ID,
             keyCode: KeyCode.createKeyCode({first: Key.W, firstModifier: Modifier.M3})
