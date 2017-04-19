@@ -1,18 +1,21 @@
+import { PredicateFunc, PredicateImpl } from './predicates';
+import { Context } from './context';
 import { Disposable } from './disposable';
 import { isOSX } from './os';
-import { CommandRegistry, Enabled } from './command';
-import { injectable, inject, multiInject } from 'inversify';
+import { CommandRegistry } from './command';
+import { injectable, inject, multiInject, unmanaged } from 'inversify';
+import { Key, Modifier } from './keys';
+
 
 export interface Keybinding {
     readonly commandId: string;
     readonly keyCode: KeyCode;
     /**
-     * The optional keybinding context ID of the context this binding belongs to.
+     * The optional keybinding context where this binding belongs to.
      * If not specified, then this keybinding context belongs to the NOOP
      * keybinding context.
      */
-    readonly contextId?: string;
-    readonly isEnabled?: Enabled;
+    readonly context?: KeybindingContext;
     /**
      * Sugar for showing the keybindings in the menus.
      */
@@ -24,43 +27,16 @@ export interface KeybindingContribution {
     getKeybindings(): Keybinding[];
 }
 
-export interface KeybindingContext {
+@injectable()
+export class KeybindingContext extends PredicateImpl<Keybinding> implements Context<Keybinding> {
 
-    /**
-     * The unique ID of the keybinding context.
-     */
-    readonly id: string,
-    /**
-     * Returns with the unique identifier of the parent context (if any).
-     */
-    readonly parentId?: string,
-    /**
-     * Returns with true if the keybinding argument is valid in this context.
-     * Otherwise returns with false.
-     */
-    readonly active: (binding: Keybinding) => boolean;
+    static DEFAULT_CONTEXT = new KeybindingContext('default.keybinding.context', (binding: Keybinding): boolean => true);
+    static NOOP_CONTEXT = new KeybindingContext('noop.keybinding.context', (binding: Keybinding): boolean => false);
 
-}
+    constructor( @unmanaged() public readonly id: string, @unmanaged() public readonly active: PredicateFunc<Keybinding>) {
+        super(active);
+    }
 
-export namespace KeybindingContext {
-
-    /**
-     * The keybinding context symbol for DI.
-     */
-    export const KeybindingContext = Symbol("KeybindingContext");
-
-    /**
-     * The default keybinding context.
-     */
-    export const DEFAULT_CONTEXT: KeybindingContext = {
-        id: 'default.keybinding.context',
-        active: (binding: Keybinding): boolean => true
-    };
-
-    export const NOOP_CONTEXT: KeybindingContext = {
-        id: 'no.keybinding.context',
-        active: (binding: Keybinding): boolean => false
-    };
 }
 
 @injectable()
@@ -69,7 +45,7 @@ export class KeybindingContextRegistry {
     contexts: { [id: string]: KeybindingContext };
     contextHierarchy: { [id: string]: KeybindingContext };
 
-    constructor( @multiInject(KeybindingContext.KeybindingContext) contexts: KeybindingContext[]) {
+    constructor( @multiInject(KeybindingContext) contexts: KeybindingContext[]) {
         this.contexts = {};
         this.contexts[KeybindingContext.NOOP_CONTEXT.id] = KeybindingContext.NOOP_CONTEXT;
         this.contexts[KeybindingContext.DEFAULT_CONTEXT.id] = KeybindingContext.DEFAULT_CONTEXT;
@@ -91,25 +67,11 @@ export class KeybindingContextRegistry {
                 }
                 this.contexts[id] = context;
             })
-            this.alignContextHierarchies();
         }
     }
 
     getContext(contextId: string): KeybindingContext | undefined {
         return this.contexts[contextId];
-    }
-
-    private alignContextHierarchies() {
-        this.contextHierarchy = {};
-        Object.keys(this.contexts).forEach(id => {
-            const { parentId } = this.contexts[id];
-            if (parentId) {
-                const parent = this.contexts[parentId];
-                if (parent) {
-                    this.contextHierarchy[id] = parent;
-                }
-            }
-        })
     }
 
 }
@@ -132,7 +94,7 @@ export class KeybindingRegistry {
                 this.registerKeyBinding(keyb);
             }
         }
-        new KeyEventEmitter(commandRegistry, this, contextRegistry);
+        new KeyEventEmitter(commandRegistry, this);
     }
 
     /**
@@ -273,7 +235,7 @@ export class KeyCode {
             const a = [String.fromCharCode(event.first)]
                 .concat(KeyCode.GET_MODIFIERS(event).map(modifier => Modifier.label(modifier)))
                 .join('+');
-                console.log(a);
+            console.log(a);
             return new KeyCode([String.fromCharCode(event.first)]
                 .concat(KeyCode.GET_MODIFIERS(event).map(modifier => Modifier.label(modifier)))
                 .join('+'));
@@ -292,8 +254,7 @@ export class KeyEventEmitter implements Disposable {
 
     constructor(
         private commandRegistry: CommandRegistry,
-        private keybindingRegistry: KeybindingRegistry,
-        private keybindingContextRegistry: KeybindingContextRegistry) {
+        private keybindingRegistry: KeybindingRegistry) {
 
         this.listener = (event: any) => this.handleEvent(event);
         window.addEventListener('keydown', this.listener, true);
@@ -313,167 +274,16 @@ export class KeyEventEmitter implements Disposable {
         console.log('KEYCODE', keyCode);
         const binding = this.keybindingRegistry.getKeybinding(keyCode);
         if (binding) {
-            const contextId = binding.contextId || KeybindingContext.NOOP_CONTEXT.id;
-            let context = this.keybindingContextRegistry.getContext(contextId);
-            while (context) {
-                if (context.active(binding)) {
-                    const handler = this.commandRegistry.getActiveHandler(binding.commandId);
-                    if (handler) {
-                        handler.execute();
-                        return true;
-                    }
-                }
-                if (context.parentId) {
-                    context = this.keybindingContextRegistry.getContext(context.parentId);
-                } else {
-                    context = undefined;
+            const context = binding.context || KeybindingContext.NOOP_CONTEXT;
+            if (context && context.active(binding)) {
+                const handler = this.commandRegistry.getActiveHandler(binding.commandId);
+                if (handler) {
+                    handler.execute();
+                    return true;
                 }
             }
         }
         return false;
     }
 
-}
-
-export enum Modifier {
-    /**
-     * M1 is the COMMAND key on MacOS X, and the CTRL key on most other platforms.
-     */
-    M1 = 1,
-    /**
-     * M2 is the SHIFT key.
-     */
-    M2 = 2,
-    /**
-     * M3 is the Option key on MacOS X, and the ALT key on most other platforms.
-     */
-    M3 = 3,
-    /**
-     * M4 is the CTRL key on MacOS X, and is undefined on other platforms.
-     */
-    M4 = 4
-}
-
-export namespace Modifier {
-    export function label(modifier: Modifier): string {
-        switch (modifier) {
-            case 1: return "M1";
-            case 2: return "M2";
-            case 3: return "M3";
-            case 4: return "M4";
-            default: throw new Error(`Unexpected modifier type: ${modifier}.`);
-        }
-    }
-}
-
-export enum Key {
-    Backspace = 8,
-    Tab = 9,
-    Enter = 13,
-    PauseBreak = 19,
-    CapsLock = 20,
-    Escape = 27,
-    Space = 32,
-    PageUp = 33,
-    PageDown = 34,
-    End = 35,
-    Home = 36,
-    LeftArrow = 37,
-    UpArrow = 38,
-    RightArrow = 39,
-    DownArrow = 40,
-    Insert = 45,
-    Delete = 46,
-    Zero = 48,
-    ClosedParen = 48,
-    One = 49,
-    ExclamationMark = 49,
-    Two = 50,
-    AtSign = 50,
-    Three = 51,
-    PoundSign = 51,
-    Hash = 51,
-    Four = 52,
-    DollarSign = 52,
-    Five = 53,
-    PercentSign = 53,
-    Six = 54,
-    Caret = 54,
-    Hat = 54,
-    Seven = 55,
-    Ampersand = 55,
-    Eight = 56,
-    Star = 56,
-    Asterik = 56,
-    Nine = 57,
-    OpenParen = 57,
-    A = 65,
-    B = 66,
-    C = 67,
-    D = 68,
-    E = 69,
-    F = 70,
-    G = 71,
-    H = 72,
-    I = 73,
-    J = 74,
-    K = 75,
-    L = 76,
-    M = 77,
-    N = 78,
-    O = 79,
-    P = 80,
-    Q = 81,
-    R = 82,
-    S = 83,
-    T = 84,
-    U = 85,
-    V = 86,
-    W = 87,
-    X = 88,
-    Y = 89,
-    Z = 90,
-    SelectKey = 93,
-    Numpad0 = 96,
-    Numpad1 = 97,
-    Numpad2 = 98,
-    Numpad3 = 99,
-    Numpad4 = 100,
-    Numpad5 = 101,
-    Numpad6 = 102,
-    Numpad7 = 103,
-    Numpad8 = 104,
-    Numpad9 = 105,
-    Multiply = 106,
-    Add = 107,
-    Subtract = 109,
-    DecimalPoint = 110,
-    Divide = 111,
-    F1 = 112,
-    F2 = 113,
-    F3 = 114,
-    F4 = 115,
-    F5 = 116,
-    F6 = 117,
-    F7 = 118,
-    F8 = 119,
-    F9 = 120,
-    F10 = 121,
-    F11 = 122,
-    F12 = 123,
-    NumLock = 144,
-    ScrollLock = 145,
-    SemiColon = 186,
-    Equals = 187,
-    Comma = 188,
-    Dash = 189,
-    Period = 190,
-    UnderScore = 189,
-    PlusSign = 187,
-    ForwardSlash = 191,
-    Tilde = 192,
-    GraveAccent = 192,
-    OpenBracket = 219,
-    ClosedBracket = 221,
-    Quote = 222,
 }

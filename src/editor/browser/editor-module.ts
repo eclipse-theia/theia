@@ -12,9 +12,8 @@ import { EditorService } from './editor-service';
 import { TextModelResolverService } from './model-resolver-service';
 import { EditorWidget } from './editor-widget';
 import { ContainerModule, inject, injectable } from 'inversify';
-import {
-    Accelerator, Key, Keybinding, KeybindingContext, KeybindingContribution, KeyCode, Modifier
-} from '../../application/common/keybinding';
+import { Accelerator, Keybinding, KeybindingContext, KeybindingContribution, KeyCode } from '../../application/common/keybinding';
+import { Modifier, Key } from '../../application/common/keys';
 import { BrowserContextMenuService, EditorContextMenuService, EDITOR_CONTEXT_MENU_ID } from './editor-contextmenu';
 import CommandsRegistry = monaco.commands.CommandsRegistry;
 import MenuRegistry = monaco.actions.MenuRegistry;
@@ -130,22 +129,24 @@ class EditorMenuContribution implements MenuContribution {
 }
 
 @injectable()
-class EditorKeybindingContext implements KeybindingContext {
+class EditorKeybindingContext extends KeybindingContext {
 
     static ID = 'editor.keybinding.context';
 
-    readonly id = EditorKeybindingContext.ID;
-    readonly active = (binding: Keybinding): boolean => {
-        return this.editorService && !!this.editorService.activeEditor;
-    }
-
     constructor( @inject(IEditorManager) private editorService: IEditorManager) {
+        super(EditorKeybindingContext.ID, () => {
+            return this.editorService && !!this.editorService.activeEditor;
+        })
     }
 
 }
 
 @injectable()
 class EditorKeybindingContribution implements KeybindingContribution {
+
+    constructor(@inject(EditorKeybindingContext) private editorKeybindingContext: EditorKeybindingContext) {
+
+    }
 
     getKeybindings(): Keybinding[] {
 
@@ -212,13 +213,13 @@ class EditorKeybindingContribution implements KeybindingContribution {
 
         bindings.push({
             commandId: 'editor.close',
-            contextId: EditorKeybindingContext.ID,
+            context: this.editorKeybindingContext,
             keyCode: KeyCode.createKeyCode({ first: Key.W, firstModifier: Modifier.M3 })
         });
 
         bindings.push({
             commandId: 'editor.close.all',
-            contextId: EditorKeybindingContext.ID,
+            context: this.editorKeybindingContext,
             keyCode: KeyCode.createKeyCode({ first: Key.W, firstModifier: Modifier.M2, secondModifier: Modifier.M3 })
         });
 
@@ -239,5 +240,5 @@ export const editorModule = new ContainerModule(bind => {
     bind<CommandContribution>(CommandContribution).to(EditorCommandHandlers);
     bind<MenuContribution>(MenuContribution).to(EditorMenuContribution);
     bind<KeybindingContribution>(KeybindingContribution).to(EditorKeybindingContribution);
-    bind<KeybindingContext>(KeybindingContext.KeybindingContext).to(EditorKeybindingContext);
+    bind<KeybindingContext>(EditorKeybindingContext).toSelf();
 });
