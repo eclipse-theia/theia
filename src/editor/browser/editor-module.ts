@@ -10,17 +10,17 @@ import { EditorService } from './editor-service';
 import { TextModelResolverService } from './model-resolver-service';
 import { EditorWidget } from './editor-widget';
 import { ContainerModule, inject, injectable } from 'inversify';
-import { Accelerator, Keybinding, KeybindingContext, KeybindingContribution } from '../../application/common/keybinding';
+import { Key, Keybinding, KeybindingContext, KeybindingContribution, KeyCode, Modifier } from '../../application/common/keybinding';
 import { BrowserContextMenuService, EditorContextMenuService, EDITOR_CONTEXT_MENU_ID } from './editor-contextmenu';
 import CommandsRegistry = monaco.commands.CommandsRegistry;
 import MenuRegistry = monaco.actions.MenuRegistry;
 import MenuId = monaco.actions.MenuId;
 import ICommand = monaco.commands.ICommand;
 import IMenuItem = monaco.actions.IMenuItem;
-import KeybindingsRegistry = monaco.keybindings.KeybindingsRegistry;
-import KeyCodeUtils = monaco.keybindings.KeyCodeUtils;
-import IKeybindingItem = monaco.keybindings.IKeybindingItem;
-import KeyMod = monaco.KeyMod;
+// import KeybindingsRegistry = monaco.keybindings.KeybindingsRegistry;
+// import KeyCodeUtils = monaco.keybindings.KeyCodeUtils;
+// import IKeybindingItem = monaco.keybindings.IKeybindingItem;
+// import KeyMod = monaco.KeyMod;
 
 @injectable()
 class EditorCommandHandlers implements CommandContribution {
@@ -117,7 +117,7 @@ class EditorKeybindingContext implements KeybindingContext {
     static ID = 'editor.keybinding.context';
 
     readonly id = EditorKeybindingContext.ID;
-    readonly enabled = (binding: Keybinding): boolean => {
+    readonly active = (binding: Keybinding): boolean => {
         return this.editorService && !!this.editorService.activeEditor;
     }
 
@@ -131,44 +131,45 @@ class EditorKeybindingContribution implements KeybindingContribution {
 
     getKeybindings(): Keybinding[] {
 
-        const ids = MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command.id);
-        const accelerator = (kb: IKeybindingItem): Accelerator => {
-            const keyCode = kb.keybinding;
-            let keys: string[] = [];
-            if (keyCode & KeyMod.WinCtrl) {
-                keys.push('Accel');
-            }
-            if (keyCode & KeyMod.Alt) {
-                keys.push('Alt');
-            }
-            if (keyCode & KeyMod.CtrlCmd) {
-                keys.push('Accel');
-            }
-            if (keyCode & KeyMod.Shift) {
-                keys.push('Shift');
-            }
-            keys.push(KeyCodeUtils.toString(keyCode & 255));
-            return (any: Keybinding) => [keys.join(' ')];
-        }
+        // const ids = MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command.id);
+        // const accelerator = (kb: IKeybindingItem): Accelerator => {
+        //     const keyCode = kb.keybinding;
+        //     let keys: string[] = [];
+        //     if (keyCode & KeyMod.WinCtrl) {
+        //         keys.push('Accel');
+        //     }
+        //     if (keyCode & KeyMod.Alt) {
+        //         keys.push('Alt');
+        //     }
+        //     if (keyCode & KeyMod.CtrlCmd) {
+        //         keys.push('Accel');
+        //     }
+        //     if (keyCode & KeyMod.Shift) {
+        //         keys.push('Shift');
+        //     }
+        //     keys.push(KeyCodeUtils.toString(keyCode & 255));
+        //     return [keys.join(' ')];
+        // }
 
-        const bindings: Keybinding[] = KeybindingsRegistry.getDefaultKeybindings()
-            .filter(kb => ids.indexOf(kb.command) >= 0)
-            .map(kb => {
-                return {
-                    commandId: kb.command,
-                    keyCode: kb.keybinding,
-                    accelerator: accelerator(kb),
-                }
-            });
+        const bindings: Keybinding[] = [];
+        // KeybindingsRegistry.getDefaultKeybindings()
+        //     .filter(kb => ids.indexOf(kb.command) >= 0)
+        //     .map(kb => {
+        //         return {
+        //             commandId: kb.command,
+        //             keyCode: Key.A,
+        //             accelerator: accelerator(kb),
+        //         }
+        //     });
 
         bindings.push({
-            accelerator: accelerator({
-                command: 'editor.close',
-                keybinding: monaco.KeyMod.Alt | 87 // W
-            }),
+            // accelerator: accelerator({
+            //     command: 'editor.close',
+            //     keybinding: Key.Ctrl | Key.L
+            // }),
             commandId: 'editor.close',
             contextId: EditorKeybindingContext.ID,
-            keyCode: monaco.KeyMod.Alt | 87 // W
+            keyCode: KeyCode.createKeyCode({first: Key.W, firstModifier: Modifier.M3})
         });
 
         return bindings;

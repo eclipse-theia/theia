@@ -90,8 +90,7 @@ export class MainMenuFactory {
 
                         const binding = keybindingRegistry.getKeybinding(command.id);
                         if (binding) {
-                            const accelerator = binding.accelerator;
-                            const keys = accelerator ? accelerator(binding) : [];
+                            const keys = binding.accelerator || [];
                             commands.addKeyBinding({
                                 command: command.id,
                                 keys,
