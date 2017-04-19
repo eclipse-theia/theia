@@ -3,7 +3,7 @@ import * as http from "http";
 import * as url from "url";
 import * as net from "net";
 import { MessageConnection } from "vscode-jsonrpc";
-import { createSocketConnection, Socket } from "../common";
+import { createWebSocketConnection, IWebSocket } from "../common";
 import { ConsoleLogger } from "./logger";
 
 export interface IServerOptions {
@@ -12,10 +12,10 @@ export interface IServerOptions {
 }
 
 export function createServerWebSocketConnection(options: IServerOptions, onConnect: (connection: MessageConnection) => void): void {
-    openSocket(options, socket => onConnect(createSocketConnection(socket, new ConsoleLogger())));
+    openSocket(options, socket => onConnect(createWebSocketConnection(socket, new ConsoleLogger())));
 }
 
-export function openSocket(options: IServerOptions, onOpen: (socket: Socket) => void): void {
+export function openSocket(options: IServerOptions, onOpen: (socket: IWebSocket) => void): void {
     // FIXME consider to have one web socket connection per a client and do dispatching on upgrade
     const wss = new ws.Server({
         noServer: true,
@@ -25,7 +25,7 @@ export function openSocket(options: IServerOptions, onOpen: (socket: Socket) => 
         const pathname = request.url ? url.parse(request.url).pathname : undefined;
         if (pathname === options.path) {
             wss.handleUpgrade(request, socket, head, webSocket => {
-                const socket: Socket = {
+                const socket: IWebSocket = {
                     send: content => webSocket.send(content, error => {
                         if (error) {
                             throw error;
