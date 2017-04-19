@@ -12,7 +12,8 @@ import { EditorService } from './editor-service';
 import { TextModelResolverService } from './model-resolver-service';
 import { EditorWidget } from './editor-widget';
 import { ContainerModule, inject, injectable } from 'inversify';
-import { Accelerator, Key, Keybinding, KeybindingContext, KeybindingContribution, KeyCode, Modifier
+import {
+    Accelerator, Key, Keybinding, KeybindingContext, KeybindingContribution, KeyCode, Modifier
 } from '../../application/common/keybinding';
 import { BrowserContextMenuService, EditorContextMenuService, EDITOR_CONTEXT_MENU_ID } from './editor-contextmenu';
 import CommandsRegistry = monaco.commands.CommandsRegistry;
@@ -67,7 +68,7 @@ class EditorCommandHandlers implements CommandContribution {
 
         registry.registerCommand({
             id: 'editor.close',
-            label: 'Close Editor'
+            label: 'Close Active Editor'
         });
         registry.registerHandler('editor.close', {
             execute: (arg?: any): any => {
@@ -77,8 +78,22 @@ class EditorCommandHandlers implements CommandContribution {
                 }
                 return null;
             },
-            isEnabled: Enabled =>  { return true; }
-        })
+            isEnabled: Enabled => { return true; }
+        });
+
+        registry.registerCommand({
+            id: 'editor.close.all',
+            label: 'Close All Editors'
+        });
+        registry.registerHandler('editor.close.all', {
+            execute: (arg?: any): any => {
+                this.editorService.editors.forEach(editor => {
+                    editor.close();
+                });
+                return null;
+            },
+            isEnabled: Enabled => { return true; }
+        });
 
     }
 
@@ -198,7 +213,13 @@ class EditorKeybindingContribution implements KeybindingContribution {
         bindings.push({
             commandId: 'editor.close',
             contextId: EditorKeybindingContext.ID,
-            keyCode: KeyCode.createKeyCode({first: Key.W, firstModifier: Modifier.M3})
+            keyCode: KeyCode.createKeyCode({ first: Key.W, firstModifier: Modifier.M3 })
+        });
+
+        bindings.push({
+            commandId: 'editor.close.all',
+            contextId: EditorKeybindingContext.ID,
+            keyCode: KeyCode.createKeyCode({ first: Key.W, firstModifier: Modifier.M2, secondModifier: Modifier.M3 })
         });
 
         return bindings;
