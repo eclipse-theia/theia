@@ -1,6 +1,6 @@
 import * as path from 'path';
 import { injectable } from "inversify";
-import { LanguageContribution, IConnection, createServerProcess, bindConnection } from "../../languages/node";
+import { LanguageContribution, IConnection, createServerProcess, forward } from "../../languages/node";
 
 export type ConfigurationType = 'config_win' | 'config_mac' | 'config_linux';
 export const configurations = new Map<typeof process.platform, ConfigurationType>();
@@ -41,7 +41,7 @@ export class JavaContribution implements LanguageContribution {
             '-data', workspacePath
         ];
         const serverConnection = createServerProcess(this.description.name, command, args);
-        bindConnection(clientConnection, serverConnection);
+        forward(clientConnection, serverConnection);
     }
 
 }

@@ -1,15 +1,12 @@
 import { LanguageDescription } from '../common/languages-protocol';
-import * as cp from 'child_process';
-import { StreamMessageReader, StreamMessageWriter } from 'vscode-jsonrpc';
-import { InitializeParams } from 'vscode-languageserver/lib/protocol';
-import { InitializeRequest } from 'vscode-base-languageclient/lib/protocol';
-import { isRequestMessage } from 'vscode-jsonrpc/lib/messages';
-import { createConnection } from "../../messaging/common";
-import { IConnection } from "../../messaging/common";
+import { InitializeParams, InitializeRequest } from 'vscode-languageserver/lib/protocol';
+import { Message, isRequestMessage } from 'vscode-ws-jsonrpc';
+import * as server from 'vscode-ws-jsonrpc/lib/server';
+import IConnection = server.IConnection;
 
-export {
-    IConnection
-}
+export * from 'vscode-ws-jsonrpc/lib/server';
+
+
 
 export const LanguageContribution = Symbol('LanguageContribution');
 
@@ -18,21 +15,8 @@ export interface LanguageContribution {
     listen(clientConnection: IConnection): void;
 }
 
-export function createServerProcess(serverName: string, command: string, args?: string[]): IConnection {
-    const serverProcess = cp.spawn(command, args);
-    serverProcess.on('error', error =>
-        console.error(`Launching ${serverName} Server failed: ${error}`)
-    );
-    serverProcess.stderr.on('data', data =>
-        console.error(`${serverName} Server: ${data}`)
-    );
-    const reader = new StreamMessageReader(serverProcess.stdout);
-    const writer = new StreamMessageWriter(serverProcess.stdin);
-    return createConnection(reader, writer, () => serverProcess.kill());
-}
-
-export function bindConnection(clientConnection: IConnection, serverConnection: IConnection): void {
-    clientConnection.forward(serverConnection, message => {
+export function forward(clientConnection: IConnection, serverConnection: IConnection, map?: (message: Message) => Message): void {
+    function _map(message: Message): Message {
         if (isRequestMessage(message)) {
             if (message.method === InitializeRequest.type.method) {
                 const initializeParams = message.params as InitializeParams;
@@ -40,8 +24,9 @@ export function bindConnection(clientConnection: IConnection, serverConnection: 
             }
         }
         return message;
+    }
+    server.forward(clientConnection, serverConnection, message => {
+        const mappedMessage = map ? map(message) : message;
+        return _map(mappedMessage);
     });
-    serverConnection.forward(clientConnection);
-    clientConnection.onClose(() => serverConnection.dispose());
-    serverConnection.onClose(() => clientConnection.dispose());
 }
