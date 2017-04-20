@@ -6,8 +6,6 @@ import IConnection = server.IConnection;
 
 export * from 'vscode-ws-jsonrpc/lib/server';
 
-
-
 export const LanguageContribution = Symbol('LanguageContribution');
 
 export interface LanguageContribution {

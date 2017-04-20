@@ -1,9 +1,10 @@
-import { LanguageIdentifier } from '../common/languages-protocol';
 import { ContainerModule, injectable, inject, optional } from "inversify";
 import { MessageConnection } from 'vscode-jsonrpc';
 import { ErrorAction, CloseAction } from "vscode-base-languageclient/lib/base";
+import { DisposableCollection } from '../../application/common';
 import { TheiaPlugin, TheiaApplication } from "../../application/browser";
 import { listen } from "../../messaging/browser";
+import { LanguageIdentifier } from '../common/languages-protocol';
 import {
     BaseLanguageClient,
     Commands,
@@ -18,7 +19,8 @@ import {
     Workspace,
     ConsoleWindow,
     GetLanguagesRequest,
-    LanguageDescription
+    LanguageDescription,
+    FileSystemWatcher
 } from '../common';
 
 export const browserLanguagesModule = new ContainerModule(bind => {
@@ -43,9 +45,13 @@ export class LanguagesPlugin implements TheiaPlugin {
                 listen({
                     path: language.path,
                     onConnection: connection => {
-                        const languageClient = this.createLanguageClient(language.description, connection);
-                        const disposable = languageClient.start();
-                        connection.onClose(() => disposable.dispose());
+                        const watchers = this.createFileSystemWatchers(language.description);
+                        const languageClient = this.createLanguageClient(language.description, watchers, connection);
+
+                        const disposeOnClose = new DisposableCollection();
+                        disposeOnClose.pushAll(watchers);
+                        disposeOnClose.push(languageClient.start());
+                        connection.onClose(() => disposeOnClose.dispose());
                     }
                 });
             }
@@ -64,23 +70,8 @@ export class LanguagesPlugin implements TheiaPlugin {
             })
     }
 
-    protected createLanguageClient(language: LanguageDescription, connection: MessageConnection): ILanguageClient {
+    protected createLanguageClient(language: LanguageDescription, fileEvents: FileSystemWatcher[], connection: MessageConnection): ILanguageClient {
         const { workspace, languages, commands, window } = this;
-        const fileEvents = [];
-        if (workspace.createFileSystemWatcher && language.fileEvents) {
-            for (const fileEvent of language.fileEvents) {
-                if (typeof fileEvent === 'string') {
-                    fileEvents.push(workspace.createFileSystemWatcher(fileEvent));
-                } else {
-                    fileEvents.push(workspace.createFileSystemWatcher(
-                        fileEvent.globPattern,
-                        fileEvent.ignoreCreateEvents,
-                        fileEvent.ignoreChangeEvents,
-                        fileEvent.ignoreDeleteEvents
-                    ));
-                }
-            }
-        }
         return new BaseLanguageClient({
             name: `${language.name || language.id} Language Client`,
             clientOptions: {
@@ -101,6 +92,25 @@ export class LanguagesPlugin implements TheiaPlugin {
                 }
             }
         });
+    }
+
+    protected createFileSystemWatchers(language: LanguageDescription): FileSystemWatcher[] {
+        const watchers = [];
+        if (this.workspace.createFileSystemWatcher && language.fileEvents) {
+            for (const fileEvent of language.fileEvents) {
+                if (typeof fileEvent === 'string') {
+                    watchers.push(this.workspace.createFileSystemWatcher(fileEvent));
+                } else {
+                    watchers.push(this.workspace.createFileSystemWatcher(
+                        fileEvent.globPattern,
+                        fileEvent.ignoreCreateEvents,
+                        fileEvent.ignoreChangeEvents,
+                        fileEvent.ignoreDeleteEvents
+                    ));
+                }
+            }
+        }
+        return watchers;
     }
 
 }
