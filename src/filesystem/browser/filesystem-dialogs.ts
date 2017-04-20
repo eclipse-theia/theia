@@ -1,8 +1,8 @@
 import { Path } from "../common/path";
 import { FileSystem } from "../common/filesystem";
-import { PopupService } from "../../application/common/popup-service";
+import { DialogService } from "../../application/common/dialog-service";
 
-export function promptNamePopup(commandId: string, pathFrom: Path, popupService: PopupService, fileSystem: FileSystem): void {
+export function promptNameDialog(commandId: string, pathFrom: Path, dialogService: DialogService, fileSystem: FileSystem): void {
     let submitButton: HTMLInputElement
     let inputText: HTMLInputElement
     let errorMessage: HTMLElement
@@ -12,19 +12,19 @@ export function promptNamePopup(commandId: string, pathFrom: Path, popupService:
     let isValid = true
     let resultName: Path | undefined
 
-    popupService.createPopup({
+    dialogService.createDialog({
         id: commandId,
         title: 'Enter new name',
         content: `
             <form class='changeNameInputContainer'>
-                <input class='popupButton' id='popupChangeNameInput' type=text value='' />
-                <input class='popupButton main' id='popupChangeNameSubmit' type=submit value='Submit' />
-                <div id='popupChangeErrorMessage'></div>
+                <input class='dialogButton' id='dialogChangeNameInput' type=text value='' />
+                <input class='dialogButton main' id='dialogChangeNameSubmit' type=submit value='Submit' />
+                <div id='dialogChangeErrorMessage'></div>
             </form>`,
         initCallback: () => {
-            submitButton = <HTMLInputElement>document.getElementById('popupChangeNameSubmit')
-            inputText = <HTMLInputElement>document.getElementById('popupChangeNameInput')
-            errorMessage = <HTMLElement>document.getElementById('popupChangeErrorMessage')
+            submitButton = <HTMLInputElement>document.getElementById('dialogChangeNameSubmit')
+            inputText = <HTMLInputElement>document.getElementById('dialogChangeNameInput')
+            errorMessage = <HTMLElement>document.getElementById('dialogChangeErrorMessage')
             if (!submitButton || !inputText || !errorMessage) {
                 return false
             }
@@ -68,13 +68,13 @@ export function promptNamePopup(commandId: string, pathFrom: Path, popupService:
             }
             let submitHandler = () => {
                 if (inputText.value === pathFrom.simpleName && !resultName) {
-                    popupService.removePopup(commandId)
+                    dialogService.removeDialog(commandId)
                     return
                 }
                 if (isValid && isFree && resultName) {
                     fileSystem.rename(pathFrom, resultName).then((success) => {
                         if (success) {
-                            popupService.removePopup(commandId)
+                            dialogService.removeDialog(commandId)
                         } else {
                             parent.classList.remove('valid')
                             parent.classList.add('error')
@@ -118,21 +118,21 @@ export function promptNamePopup(commandId: string, pathFrom: Path, popupService:
             }
         }
     })
-    popupService.showPopup(commandId)
+    dialogService.showDialog(commandId)
 }
 
-export function promptConfirmPopup(commandId: string, actionCallback: any, popupService: PopupService, fileSystem: FileSystem): void {
-    popupService.createPopup({
+export function promptConfirmDialog(commandId: string, actionCallback: any, dialogService: DialogService, fileSystem: FileSystem): void {
+    dialogService.createDialog({
         id: commandId,
         title: 'Confirm the action',
         content: `
             <form class='confirmInputContainer'>
-                <input class='popupButton' id='popupConfirmCancel' type=submit value='Cancel' />
-                <input class='popupButton main' id='popupConfirmSubmit' type=submit value='Confirm' />
+                <input class='dialogButton' id='dialogConfirmCancel' type=submit value='Cancel' />
+                <input class='dialogButton main' id='dialogConfirmSubmit' type=submit value='Confirm' />
             </form>`,
         initCallback: () => {
-            const submitButton = <HTMLInputElement>document.getElementById('popupConfirmSubmit')
-            const cancelButton = <HTMLInputElement>document.getElementById('popupConfirmCancel')
+            const submitButton = <HTMLInputElement>document.getElementById('dialogConfirmSubmit')
+            const cancelButton = <HTMLInputElement>document.getElementById('dialogConfirmCancel')
 
             if (!submitButton || !cancelButton) {
                 return false
@@ -140,17 +140,17 @@ export function promptConfirmPopup(commandId: string, actionCallback: any, popup
 
             submitButton.addEventListener('click', (e: Event) => {
                 actionCallback()
-                popupService.removePopup(commandId)
+                dialogService.removeDialog(commandId)
             })
 
             cancelButton.addEventListener('click', (e: Event) => {
-                popupService.removePopup(commandId)
+                dialogService.removeDialog(commandId)
             })
             submitButton.focus()
         },
         cancelCallback: () => {
-            popupService.removePopup(commandId)
+            dialogService.removeDialog(commandId)
         }
     })
-    popupService.showPopup(commandId)
+    dialogService.showDialog(commandId)
 }

@@ -1,8 +1,8 @@
 import { ClipboardService, SelectionService } from '../../application/common';
-import { PopupService } from '../../application/common';
+import { DialogService } from '../../application/common';
 import { CommandContribution, CommandHandler, CommandRegistry } from '../../application/common/command';
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../../application/common/menu';
-import { promptConfirmPopup, promptNamePopup } from '../browser/filesystem-popup-handlers';
+import { promptConfirmDialog, promptNameDialog } from '../browser/filesystem-dialogs';
 import { FileSystem } from '../common/filesystem';
 import { PathSelection } from '../common/filesystem-selection';
 import { Path } from '../common/path';
@@ -46,7 +46,7 @@ export class FileCommandContribution implements CommandContribution {
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(ClipboardService) protected readonly clipboardService: ClipboardService,
-        @inject(PopupService) protected readonly popupService: PopupService,
+        @inject(DialogService) protected readonly dialogService: DialogService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         ) {}
 
@@ -78,9 +78,9 @@ export class FileCommandContribution implements CommandContribution {
                 id: Commands.FILE_RENAME,
                 actionId: 'renamefile',
                 selectionService: this.selectionService,
-                popupService: this.popupService
+                dialogService: this.dialogService
             }, (path: Path) => {
-                promptNamePopup('renamefile', path, this.popupService, this.fileSystem)
+                promptNameDialog('renamefile', path, this.dialogService, this.fileSystem)
                 return Promise.resolve()
             })
         );
@@ -128,7 +128,7 @@ export class FileCommandContribution implements CommandContribution {
                     return this.fileSystem.cp(copyPath, pastePath).then((newPath) => {
                         if (newPath !== pastePath.toString()) {
                             // need to rename to something new
-                            promptNamePopup('pastefile', Path.fromString(newPath), this.popupService, this.fileSystem)
+                            promptNameDialog('pastefile', Path.fromString(newPath), this.dialogService, this.fileSystem)
                         }
                     })
                 })
@@ -149,7 +149,7 @@ export class FileCommandContribution implements CommandContribution {
                     return this.fileSystem.writeFile(newPath, "")
                 })
                 .then(() => {
-                    promptNamePopup('newfile', newPath, this.popupService, this.fileSystem)
+                    promptNameDialog('newfile', newPath, this.dialogService, this.fileSystem)
                 })
             })
         );
@@ -168,7 +168,7 @@ export class FileCommandContribution implements CommandContribution {
                     return this.fileSystem.mkdir(newPath)
                 })
                 .then(() => {
-                    promptNamePopup('newfolder', newPath, this.popupService, this.fileSystem)
+                    promptNameDialog('newfolder', newPath, this.dialogService, this.fileSystem)
                 })
             })
         );
@@ -182,7 +182,7 @@ export class FileCommandContribution implements CommandContribution {
             }, (path: Path) => {
                 return this.fileSystem.dirExists(path)
                 .then((isDir) => {
-                    promptConfirmPopup(
+                    promptConfirmDialog(
                         'delete',
                         () => {
                             if (isDir) {
@@ -190,7 +190,7 @@ export class FileCommandContribution implements CommandContribution {
                             }
                             return this.fileSystem.rm(path)
                         },
-                        this.popupService,
+                        this.dialogService,
                         this.fileSystem
                     )
                 })
@@ -244,6 +244,6 @@ export namespace FileSystemCommandHandler {
         actionId: string,
         selectionService: SelectionService,
         clipboardService?: ClipboardService
-        popupService?: PopupService
+        dialogService?: DialogService
     }
 }
