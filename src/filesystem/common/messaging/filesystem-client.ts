@@ -1,5 +1,5 @@
 import { MessageConnection, RequestType } from "vscode-jsonrpc";
-import { FileSystem, FileSystemWatcher, FileChangeEvent, FileChangeType, FileChange } from "../file-system";
+import { FileSystem, FileSystemWatcher, FileChangeEvent, FileChangeType, FileChange } from "../filesystem";
 import { Path } from "../path";
 import { Disposable, DisposableCollection } from "../../../application/common";
 import {

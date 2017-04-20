@@ -1,6 +1,6 @@
 import {inject, injectable} from "inversify";
 import {MessageConnection} from "vscode-jsonrpc";
-import {FileSystem} from "../file-system";
+import {FileSystem} from "../filesystem";
 import {
     LsRequest,
     ExistsRequest,

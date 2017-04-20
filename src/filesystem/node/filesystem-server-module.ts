@@ -2,7 +2,7 @@ import {ContainerModule} from "inversify";
 import {ExpressContribution} from "../../application/node";
 import {FileSystem, Path} from "../common";
 import {FileSystemServer} from "../common/messaging";
-import {NodeFileSystem} from "./node-fs";
+import {NodeFileSystem} from "./node-filesystem";
 import {ConnectionHandler} from "../../messaging/common";
 
 export const ROOT_DIR_OPTION = '--root-dir=';
