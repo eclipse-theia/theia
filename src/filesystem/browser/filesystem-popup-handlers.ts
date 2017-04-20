@@ -1,5 +1,5 @@
 import { Path } from "../common/path";
-import { FileSystem } from "../common/file-system";
+import { FileSystem } from "../common/filesystem";
 import { PopupService } from "../../application/common/popup-service";
 
 export function promptNamePopup(commandId: string, pathFrom: Path, popupService: PopupService, fileSystem: FileSystem): void {
@@ -122,8 +122,6 @@ export function promptNamePopup(commandId: string, pathFrom: Path, popupService:
 }
 
 export function promptConfirmPopup(commandId: string, actionCallback: any, popupService: PopupService, fileSystem: FileSystem): void {
-    let submitButton: HTMLInputElement
-    let cancelButton: HTMLInputElement
     popupService.createPopup({
         id: commandId,
         title: 'Confirm the action',
@@ -133,8 +131,8 @@ export function promptConfirmPopup(commandId: string, actionCallback: any, popup
                 <input class='popupButton main' id='popupConfirmSubmit' type=submit value='Confirm' />
             </form>`,
         initCallback: () => {
-            submitButton = <HTMLInputElement>document.getElementById('popupConfirmSubmit')
-            cancelButton = <HTMLInputElement>document.getElementById('popupConfirmCancel')
+            const submitButton = <HTMLInputElement>document.getElementById('popupConfirmSubmit')
+            const cancelButton = <HTMLInputElement>document.getElementById('popupConfirmCancel')
 
             if (!submitButton || !cancelButton) {
                 return false

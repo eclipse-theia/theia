@@ -1,5 +1,5 @@
 import { RequestType, NotificationType } from "vscode-jsonrpc";
-import { FileChangeType } from "../file-system";
+import { FileChangeType } from "../filesystem";
 
 export interface FileChange {
     path: string;

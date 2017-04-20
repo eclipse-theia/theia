@@ -2,7 +2,7 @@ import { injectable, inject } from "inversify";
 
 import { CommandHandler, CommandContribution, CommandRegistry } from '../../application/common/command';
 import { CONTEXT_MENU_PATH } from "./navigator-widget";
-import { Commands } from '../../filesystem/common/file-system-commands';
+import { Commands } from '../../filesystem/browser/filesystem-commands';
 import { MenuContribution, MenuModelRegistry } from "../../application/common/menu";
 import { FileSystem, Path } from "../../filesystem/common";
 import { FileNavigatorModel } from "./navigator-model";

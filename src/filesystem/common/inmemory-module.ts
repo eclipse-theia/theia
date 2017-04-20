@@ -1,5 +1,5 @@
 import { ContainerModule } from "inversify";
-import { FileSystem } from "./file-system";
+import { FileSystem } from "./filesystem";
 import { InMemoryFileSystem } from "./inmemory";
 import { Path } from "./path";
 

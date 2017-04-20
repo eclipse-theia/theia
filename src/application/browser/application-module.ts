@@ -1,6 +1,6 @@
 import { ContainerModule, injectable, inject } from "inversify";
 
-import { BrowserPopupService } from '../../../lib/application/browser/browser-popup-service';
+import { BrowserPopupService } from '../browser/browser-popup-service';
 import { SelectionService } from '../common/selection-service';
 import { CommonCommandContribution, CommonMenuContribution } from '../common/commands-common';
 import { TheiaApplication, TheiaPlugin } from './application';

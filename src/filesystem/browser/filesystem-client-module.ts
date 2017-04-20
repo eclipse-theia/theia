@@ -1,4 +1,4 @@
-import { FileCommandContribution, FileMenuContribution } from '../common/file-system-commands';
+import { FileCommandContribution, FileMenuContribution } from '../browser/filesystem-commands';
 import {ContainerModule } from "inversify";
 import {FileSystem} from "../common";
 import {FileSystemClient} from "../common/messaging/filesystem-client";

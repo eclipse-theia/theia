@@ -1,14 +1,14 @@
-import { injectable, inject } from "inversify";
-
-import { SelectionService, ClipboardService } from '../../application/common';
-import { CommandContribution, CommandRegistry, CommandHandler } from "../../application/common/command";
+import { ClipboardService, SelectionService } from '../../application/common';
+import { PopupService } from '../../application/common';
+import { CommandContribution, CommandHandler, CommandRegistry } from '../../application/common/command';
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../../application/common/menu';
-import { FileSystem } from "./file-system";
+import { promptConfirmPopup, promptNamePopup } from '../browser/filesystem-popup-handlers';
+import { FileSystem } from '../common/filesystem';
+import { PathSelection } from '../common/filesystem-selection';
+import { Path } from '../common/path';
+import { inject, injectable } from 'inversify';
 import { CommonCommands } from "../../application/common/commands-common";
-import { Path } from "./path";
-import { PathSelection } from "./fs-selection";
-import { PopupService } from "../../application/common";
-import { promptNamePopup, promptConfirmPopup } from "../browser/filesystem-popup-handlers";
+
 
 
 export namespace Commands {

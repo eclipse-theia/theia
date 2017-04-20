@@ -1,5 +1,5 @@
 import {Path} from "./path";
-import {FileSystem, FileChangeType, FileChange, FileChangeEvent, FileSystemWatcher} from "./file-system";
+import {FileSystem, FileChangeType, FileChange, FileChangeEvent, FileSystemWatcher} from "./filesystem";
 import {Disposable} from "../../application/common";
 
 class InMemoryFileNode {
