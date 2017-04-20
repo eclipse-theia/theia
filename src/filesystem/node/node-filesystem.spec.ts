@@ -3,8 +3,8 @@ import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as fs from "fs";
 import * as os from "os";
-import { FileChangeEvent, FileSystem, FileChangeType } from "../common/file-system";
-import { NodeFileSystem } from "./node-fs";
+import { FileChangeEvent, FileSystem, FileChangeType } from "../common/filesystem";
+import { NodeFileSystem } from "./node-filesystem";
 import { Path } from "../common/path";
 
 const root = `${os.tmpdir()}/node-fs-root`;
