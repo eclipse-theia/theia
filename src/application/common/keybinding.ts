@@ -23,7 +23,7 @@ export interface Keybinding {
 
 export const KeybindingContribution = Symbol("KeybindingContribution");
 export interface KeybindingContribution {
-    getKeybindings(): Keybinding[];
+    contribute(registry: KeybindingRegistry): void;
 }
 
 @injectable()
@@ -89,9 +89,7 @@ export class KeybindingRegistry {
         this.keybindings = {};
         this.commands = {};
         for (let contribution of contributions) {
-            for (let keyb of contribution.getKeybindings()) {
-                this.registerKeyBinding(keyb);
-            }
+            contribution.contribute(this);
         }
         new KeyEventEmitter(commandRegistry, this);
     }

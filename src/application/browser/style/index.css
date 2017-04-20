@@ -41,6 +41,7 @@ body {
 
 
 @import './dockpanel.css';
+@import './dialog.css';
 @import './menus.css';
 @import './sidepanel.css';
 @import './tabs.css';

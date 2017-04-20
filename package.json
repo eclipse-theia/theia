@@ -30,7 +30,9 @@
     "monaco-editor-core": "^0.8.2",
     "reconnecting-websocket": "^3.0.3",
     "reflect-metadata": "^0.1.10",
-    "vscode-jsonrpc": "^3.1.0",
+    "monaco-languageclient": "^0.0.1-alpha.2",
+    "vscode-ws-jsonrpc": "^0.0.1-alpha.1",
+    "vscode-languageserver": "^3.2.0",
     "ws": "^2.2.0"
   },
   "devDependencies": {
@@ -74,7 +76,13 @@
     "clean": "./node_modules/.bin/rimraf lib",
     "clean:node_modules": "./node_modules/.bin/rimraf node_modules",
     "test": "./node_modules/.bin/mocha src/**/*.spec.ts",
-    "test:watch": "./node_modules/.bin/mocha --watch src/**/*.spec.ts"
+    "test:watch": "./node_modules/.bin/mocha --watch src/**/*.spec.ts",
+    "clean:vscode-ws-jsonrpc": "./node_modules/.bin/rimraf node_modules/vscode-ws-jsonrpc",
+    "update:vscode-ws-jsonrpc": "npm run clean:vscode-ws-jsonrpc && npm install",
+    "clean:monaco-languageclient": "./node_modules/.bin/rimraf node_modules/monaco-languageclient && ./node_modules/.bin/rimraf node_modules/vscode-base-languageclient",
+    "update:monaco-languageclient": "npm run clean:monaco-languageclient && npm install",
+    "clean:file-deps": "npm run clean:monaco-languageclient && npm run clean:vscode-ws-jsonrpc",
+    "update:file-deps": "npm run clean:file-deps && npm install"
   },
   "bugs": {
     "url": "https://github.com/TypeFox/Theia/issues"

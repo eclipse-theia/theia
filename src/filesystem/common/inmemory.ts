@@ -1,5 +1,5 @@
 import {Path} from "./path";
-import {FileSystem, FileChangeType, FileChange, FileChangeEvent, FileSystemWatcher} from "./file-system";
+import {FileSystem, FileChangeType, FileChange, FileChangeEvent, FileSystemWatcher} from "./filesystem";
 import {Disposable} from "../../application/common";
 
 class InMemoryFileNode {
@@ -9,7 +9,6 @@ class InMemoryFileNode {
 }
 
 export class InMemoryFileSystem implements FileSystem {
-
     private root: InMemoryFileNode;
 
     constructor() {
@@ -108,7 +107,7 @@ export class InMemoryFileSystem implements FileSystem {
         return Promise.resolve(false);
     }
 
-    cp(from: Path, to: Path): Promise<boolean> {
+    cp(from: Path, to: Path): Promise<string> {
         throw Error("not supported")
     }
 
@@ -180,5 +179,9 @@ export class InMemoryFileSystem implements FileSystem {
                 onDispose();
             }
         }
+    }
+
+    toUri(path: Path): Promise<string> {
+        throw `file://${path}`;
     }
 }

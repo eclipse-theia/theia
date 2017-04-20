@@ -1,5 +1,4 @@
 import * as http from "http";
-import * as ws from "ws";
 import {ContainerModule, injectable, multiInject} from "inversify";
 import {ExpressContribution} from "../../application/node";
 import {createServerWebSocketConnection} from "../../messaging/node";
@@ -18,11 +17,9 @@ export class MessagingContribution implements ExpressContribution {
     onStart(server: http.Server): void {
         for (const handler of this.handlers) {
             const path = handler.path;
-            const wss = new ws.Server({
-                server, path,
-                perMessageDeflate: false
-            });
-            createServerWebSocketConnection(wss, connection => handler.onConnection(connection));
+            createServerWebSocketConnection({
+                server, path
+            }, connection => handler.onConnection(connection));
         }
     }
 

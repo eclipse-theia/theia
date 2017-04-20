@@ -1,0 +1,107 @@
+.p-Widget.dialogBlock{
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    pointer-events: none;
+    position: fixed;
+    color: var(--theia-ui-font-color1);
+}
+.p-Widget.dialogBlock .dialogWrapper{
+    background-color: var(--theia-layout-color1);
+    border: 1px solid var(--theia-border-color1);
+    position: relative;
+    padding: calc(var(--theia-ui-padding)*4);
+}
+.p-Widget.dialogBlock .dialogTitle{
+    text-align: center;
+    font-size: var(--theia-ui-font-size1);
+}
+.p-Widget.dialogBlock .dialogClose{
+    pointer-events: auto;
+    position: absolute;
+    right: calc(var(--theia-ui-padding)*2);
+    top: calc(var(--theia-ui-padding)*2);
+    cursor: pointer;
+}
+.p-Widget.dialogBlock .dialogContent{
+    pointer-events: auto;
+}
+
+.p-Widget.dialogBlock .dialogButton{
+    border: 1px solid var(--theia-border-color1);
+    color: var(--theia-ui-font-color1);
+    font-size: var(--theia-ui-font-size1);
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding)*2);
+    border-radius: 0;
+    background: transparent;
+    outline: none;
+    box-shadow: none;
+    cursor: pointer;
+}
+
+.p-Widget.dialogBlock .dialogButton.main{
+    background-color: var(--theia-accent-color3);
+}
+.p-Widget.dialogBlock .dialogButton[disabled]{
+    background-color: var(--theia-disabled-color1) !important;
+    cursor: default !important;
+}
+
+.p-Widget.dialogBlock.hidden {
+    display: none;
+}
+
+.confirmInputContainer{
+    width: 260px;
+    padding-top: calc(var(--theia-ui-padding)*5);
+    padding-bottom: calc(var(--theia-ui-padding)*3);
+    text-align: center;
+}
+
+.confirmInputContainer #dialogConfirmSubmit{
+    margin-left: calc(var(--theia-ui-padding)*10);
+}
+
+.changeNameInputContainer{
+    width: 260px;
+    padding-top: calc(var(--theia-ui-padding)*5);
+    padding-bottom: calc(var(--theia-ui-padding)*3);
+    text-align: center;
+}
+.changeNameInputContainer #dialogChangeErrorMessage{
+    display: none;
+}
+
+.changeNameInputContainer.error{
+    color: var(--theia-error-color1);
+}
+.changeNameInputContainer.error #dialogChangeNameInput{
+    color: var(--theia-error-color1);
+    border-color: var(--theia-error-color1);
+}
+.changeNameInputContainer.error #dialogChangeNameSubmit{
+    background-color: var(--theia-error-color1);
+    color: var(--theia-ui-font-color1);
+}
+.changeNameInputContainer.error #dialogChangeErrorMessage{
+    margin-top: calc(var(--theia-ui-padding)*3);
+    font-size: var(--theia-ui-font-size1);
+    display: block;
+}
+
+
+.changeNameInputContainer.valid {
+    color: var(--theia-ui-font-color1);
+}
+.changeNameInputContainer.valid #dialogChangeNameInput{
+    border-color: var(--theia-success-color1);
+}
+.changeNameInputContainer.valid #dialogChangeNameSubmit{
+    background-color: var(--theia-success-color1);
+    color: var(--theia-ui-font-color1);
+}

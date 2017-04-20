@@ -1,4 +1,4 @@
-export * from './file-system';
+export * from './filesystem';
 export * from './path';
-export * from './fs-selection';
+export * from './filesystem-selection';
 export * from './inmemory-module';

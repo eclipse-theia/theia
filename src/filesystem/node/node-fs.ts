@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as nodePath from "path";
+import Uri from "vscode-uri";
 import { Disposable } from "../../application/common";
 import { FileSystem, FileSystemWatcher, FileChangeType, FileChange, FileChangeEvent, Path } from "../common";
 
@@ -43,21 +44,21 @@ export class NodeFileSystem implements FileSystem {
         });
     }
 
-    cp(fromPath: Path, toPath: Path): Promise<boolean> {
+    cp(fromPath: Path, toPath: Path): Promise<string> {
         if (!fromPath || !toPath) {
             return Promise.reject(new Error('One of path arguments is not specified.'));
         }
-        function doCopy(from: string, to: string): Promise<boolean> {
+        function doCopy(from: string, to: string): Promise<string> {
             let readingStream = fs.createReadStream(from)
             let writingStream = fs.createWriteStream(to)
             readingStream.pipe(writingStream)
 
-            return new Promise<boolean>((resolve, reject) => {
+            return new Promise<string>((resolve, reject) => {
                 writingStream.on('error', (e: any) => {
-                    reject("writing with error ${e}")
+                    reject(`writing with error ${e}`)
                 })
                 writingStream.on('finish', () => {
-                    resolve(true)
+                    resolve(toPath.toString())
                 })
             })
         }
@@ -69,7 +70,7 @@ export class NodeFileSystem implements FileSystem {
                 return this.createName(toPath, true)
             }
             // 'target name does not exist, can do copy'
-            return Promise.resolve<string>(this.toPath(toPath))
+            return Promise.resolve<string>(toPath.toString())
         })
         .then((stringedTo: string) => {
             toPath = Path.fromString(stringedTo)
@@ -85,9 +86,14 @@ export class NodeFileSystem implements FileSystem {
                     return this.ls(fromPath)
                     .then((paths: Path[]) => {
                         return Promise.all(paths.map((path: Path) => {
-                            let to = toPath.append(path.segments[path.segments.length - 1])
-                            return doCopy(this.toPath(path), this.toPath(to))
+                            if (path.simpleName) {
+                                return doCopy(this.toPath(path), this.toPath(toPath.append(path.simpleName)))
+                            }
+                            return Promise.reject('no path to copy')
                         }))
+                    })
+                    .then((createdPaths) => {
+                        return Promise.resolve(toPath.toString())
                     })
                 })
             }
@@ -109,6 +115,7 @@ export class NodeFileSystem implements FileSystem {
         return new Promise<boolean>((resolve, reject) => {
             fs.mkdir(path, mode, (err) => {
                 if (err) {
+                    // console.log('error on creating directory', err, path)
                     reject(err);
                 } else {
                     this.notify(raw, FileChangeType.ADDED);
@@ -245,8 +252,8 @@ export class NodeFileSystem implements FileSystem {
 
         return this.fileExists(raw)
         .then((exists: boolean) => {
-            if (nameBased) {
-                baseName = raw.segments[raw.segments.length - 1]
+            if (nameBased && raw.simpleName) {
+                baseName = raw.simpleName
                 return tryNum(raw.parent, 1)
             }
             if (exists) {
@@ -275,6 +282,12 @@ export class NodeFileSystem implements FileSystem {
                 }
             }
         };
+    }
+
+    toUri(raw: Path): Promise<string | null> {
+        const path = this.toPath(raw);
+        const uri = Uri.file(path).toString();
+        return Promise.resolve(uri);
     }
 
     private clearDir(path: string, deletedPaths: string[] = []): Promise<string[]> {

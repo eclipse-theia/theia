@@ -17,7 +17,7 @@ export interface FileSystem {
 
     rm(path: Path): Promise<boolean>;
 
-    cp(from: Path, to: Path): Promise<boolean>;
+    cp(from: Path, to: Path): Promise<string>;
 
     readFile(path: Path, encoding?: string): Promise<string>;
 
@@ -46,6 +46,11 @@ export interface FileSystem {
      * @returns a disposable to remove the listener again.
      */
     watch(watcher: FileSystemWatcher): Disposable;
+
+    /**
+     * Return a URI represening this path.
+     */
+    toUri(path: Path): Promise<string | null>;
 }
 
 export type FileSystemWatcher =  (event: FileChangeEvent) => void;

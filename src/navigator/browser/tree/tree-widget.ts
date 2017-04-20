@@ -102,16 +102,39 @@ export abstract class AbstractTreeWidget<
         return h.div(attributes, caption);
     }
 
+    protected showContextMenu(event: MouseEvent, node: ITreeNode | undefined): boolean {
+        if (this.model && ISelectableTreeNode.is(node)) {
+            this.model.selectNode(node);
+            if (this.props.contextMenuPath) {
+                this.onRender.push(Disposable.create(() =>
+                    setTimeout(() => {
+                        this.contextMenuRenderer.render(
+                            this.props.contextMenuPath!,
+                            event
+                        );
+                    })
+                ));
+            }
+            this.update();
+        }
+        event.stopPropagation()
+        event.preventDefault()
+        return false
+    }
+    protected selectNode(event: MouseEvent, node: ITreeNode | undefined): void {
+        if (this.model && ISelectableTreeNode.is(node)) {
+            this.model.selectNode(node);
+            event.stopPropagation();
+        }
+    }
+
     protected createNodeAttributes(node: ITreeNode, props: NodeProps): ElementAttrs {
         const className = this.createNodeClassNames(node, props).join(' ');
         const style = this.createNodeStyle(node, props);
         return {
             className, style,
             onclick: (event) => {
-                if (this.model && ISelectableTreeNode.is(node)) {
-                    this.model.selectNode(node);
-                    event.stopPropagation();
-                }
+                this.selectNode(event, node)
             },
             ondblclick: (event) => {
                 if (this.model) {
@@ -120,22 +143,7 @@ export abstract class AbstractTreeWidget<
                 }
             },
             oncontextmenu: (event) => {
-                if (this.model && ISelectableTreeNode.is(node)) {
-                    this.model.selectNode(node);
-                    if (this.props.contextMenuPath) {
-                        this.onRender.push(Disposable.create(() =>
-                            setTimeout(() => {
-                                this.contextMenuRenderer.render(
-                                    this.props.contextMenuPath!,
-                                    event
-                                );
-                            })
-                        ));
-                    }
-                    event.stopPropagation();
-                    this.update();
-                    return false;
-                }
+                this.showContextMenu(event, node)
             },
         };
     }

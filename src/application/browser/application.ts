@@ -50,5 +50,4 @@ export class TheiaApplication {
         }
         return undefined;
     }
-
 }

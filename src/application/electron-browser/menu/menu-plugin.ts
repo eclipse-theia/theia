@@ -62,7 +62,7 @@ export class MainMenuFactory {
         }
         let visible = true;
         if (handler.isVisible) {
-          enabled = handler.isVisible();
+          visible = handler.isVisible();
         }
         if (command) {
           items.push({

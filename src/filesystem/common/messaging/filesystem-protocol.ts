@@ -1,5 +1,5 @@
 import { RequestType, NotificationType } from "vscode-jsonrpc";
-import { FileChangeType } from "../file-system";
+import { FileChangeType } from "../filesystem";
 
 export interface FileChange {
     path: string;
@@ -24,6 +24,10 @@ export interface BooleanResult {
 
 export interface PathResult {
     path: string
+}
+
+export namespace ExistsRequest {
+    export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/exists');
 }
 
 export namespace DirExistsRequest {
@@ -54,13 +58,17 @@ export namespace RmRequest {
     export const type = new RequestType<PathParam, BooleanResult, void, void>('fileSystem/rm');
 }
 
-export interface СpParam {
+export interface MoveParam {
     from: string;
     to: string;
 }
 
 export namespace СpRequest {
-    export const type = new RequestType<СpParam, BooleanResult, void, void>('fileSystem/cp');
+    export const type = new RequestType<MoveParam, PathResult, void, void>('fileSystem/cp');
+}
+
+export namespace RenameRequest {
+    export const type = new RequestType<MoveParam, BooleanResult, void, void>('fileSystem/rename');
 }
 
 export namespace MkdirRequest {
@@ -86,4 +94,12 @@ export interface DidChangeFilesParam {
 
 export namespace DidChangeFilesNotification {
     export const type = new NotificationType<DidChangeFilesParam, void>('fileSystem/didChangeFiles');
+}
+
+export interface ToUriResult {
+    uri: string | null
+}
+
+export namespace ToUriRequest {
+    export const type = new RequestType<PathParam, ToUriResult, void, void>('fileSystem/toUri');
 }

@@ -1,11 +1,12 @@
-import { ContainerModule } from "inversify";
+import { ContainerModule, injectable, inject } from "inversify";
+import { DialogServiceImpl } from '../browser/dialog-service';
 import { SelectionService } from '../common/selection-service';
 import { CommonCommandContribution, CommonMenuContribution } from '../common/commands-common';
-import { TheiaApplication } from './application';
+import { TheiaApplication, TheiaPlugin } from './application';
 import { OpenerService } from "./opener-service";
 import { CommandRegistry, CommandContribution } from "../common/command";
 import { MenuModelRegistry, MenuContribution } from "../common/menu";
-import { ClipboardSerivce } from "../common/clipboard-service";
+import { DialogService } from "../common/dialog-service";
 import { KeybindingContextRegistry, KeybindingRegistry } from '../common/keybinding';
 
 export const browserApplicationModule = new ContainerModule(bind => {
@@ -16,7 +17,20 @@ export const browserApplicationModule = new ContainerModule(bind => {
     bind(MenuContribution).to(CommonMenuContribution);
     bind(MenuModelRegistry).toSelf().inSingletonScope();
     bind(SelectionService).toSelf().inSingletonScope();
-    bind(ClipboardSerivce).toSelf().inSingletonScope();
+    bind(TheiaPlugin).to(BrowserDialogContribution).inSingletonScope();
+    bind(DialogServiceImpl).toSelf().inSingletonScope();
+    bind(DialogService).toDynamicValue(context => context.container.get(DialogServiceImpl));
     bind(KeybindingRegistry).toSelf().inSingletonScope();
     bind(KeybindingContextRegistry).toSelf().inSingletonScope();
 });
+
+@injectable()
+export class BrowserDialogContribution implements TheiaPlugin {
+
+    constructor(@inject(DialogServiceImpl) private dialogService: DialogServiceImpl) {}
+
+    onStart(app: TheiaApplication): void {
+        app.shell.addToMainArea(this.dialogService.createDialogContainer());
+    }
+
+}

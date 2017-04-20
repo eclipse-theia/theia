@@ -1,3 +1,2 @@
-export * from './stream';
-export * from './socket';
+export * from 'vscode-ws-jsonrpc';
 export * from './handler';

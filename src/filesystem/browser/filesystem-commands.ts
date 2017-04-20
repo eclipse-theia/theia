@@ -1,10 +1,14 @@
-import { SelectionService, ClipboardSerivce } from '../../application/common';
-import { injectable, inject } from "inversify";
-import { CommandContribution, CommandRegistry, CommandHandler } from "../../application/common/command";
+import { ClipboardService, SelectionService } from '../../application/common';
+import { DialogService } from '../../application/common';
+import { CommandContribution, CommandHandler, CommandRegistry } from '../../application/common/command';
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../../application/common/menu';
-import { FileSystem } from "./file-system";
-import { Path } from "./path";
-import { PathSelection } from "./fs-selection";
+import { promptConfirmDialog, promptNameDialog } from '../browser/filesystem-dialogs';
+import { FileSystem } from '../common/filesystem';
+import { PathSelection } from '../common/filesystem-selection';
+import { Path } from '../common/path';
+import { inject, injectable } from 'inversify';
+import { CommonCommands } from "../../application/common/commands-common";
+
 
 
 export namespace Commands {
@@ -12,9 +16,9 @@ export namespace Commands {
     export const NEW_FILE = 'file:newFile';
     export const NEW_FOLDER = 'file:newFolder';
     export const FILE_OPEN = 'file:open';
-    export const FILE_CUT = 'file:fileCut';
-    export const FILE_COPY = 'file:fileCopy';
-    export const FILE_PASTE = 'file:filePaste';
+    export const FILE_CUT = CommonCommands.EDIT_CUT
+    export const FILE_COPY = CommonCommands.EDIT_COPY
+    export const FILE_PASTE = CommonCommands.EDIT_PASTE
     export const FILE_RENAME = 'file:fileRename';
     export const FILE_DELETE = 'file:fileDelete';
 }
@@ -41,7 +45,8 @@ export class FileMenuContribution implements MenuContribution {
 export class FileCommandContribution implements CommandContribution {
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(ClipboardSerivce) protected readonly clipboardService: ClipboardSerivce,
+        @inject(ClipboardService) protected readonly clipboardService: ClipboardService,
+        @inject(DialogService) protected readonly dialogService: DialogService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         ) {}
 
@@ -59,18 +64,6 @@ export class FileCommandContribution implements CommandContribution {
             label: 'Open ...'
         });
         registry.registerCommand({
-            id: Commands.FILE_CUT,
-            label: 'Cut'
-        });
-        registry.registerCommand({
-            id: Commands.FILE_COPY,
-            label: 'Copy'
-        });
-        registry.registerCommand({
-            id: Commands.FILE_PASTE,
-            label: 'Paste'
-        });
-        registry.registerCommand({
             id: Commands.FILE_RENAME,
             label: 'Rename'
         });
@@ -80,6 +73,19 @@ export class FileCommandContribution implements CommandContribution {
         });
 
         registry.registerHandler(
+            Commands.FILE_RENAME,
+            new FileSystemCommandHandler({
+                id: Commands.FILE_RENAME,
+                actionId: 'renamefile',
+                selectionService: this.selectionService,
+                dialogService: this.dialogService
+            }, (path: Path) => {
+                promptNameDialog('renamefile', path, this.dialogService, this.fileSystem)
+                return Promise.resolve()
+            })
+        );
+
+        registry.registerHandler(
             Commands.FILE_COPY,
             new FileSystemCommandHandler({
                 id: Commands.FILE_COPY,
@@ -87,8 +93,7 @@ export class FileCommandContribution implements CommandContribution {
                 selectionService: this.selectionService
             }, (path: Path) => {
                 this.clipboardService.setData({
-                    type: 'path',
-                    path: path.toString()
+                    text: path.toString()
                 })
                 return Promise.resolve()
             })
@@ -102,13 +107,11 @@ export class FileCommandContribution implements CommandContribution {
                 selectionService: this.selectionService,
                 clipboardService: this.clipboardService
             }, (pastePath: Path) => {
-                let isFolder = true;
                 let copyPath: Path
                 return this.fileSystem.dirExists(pastePath)
                 .then((targetFolderExists: boolean) => {
                     if (!targetFolderExists) {
                         // 'paste path is not folder'
-                        isFolder = false;
                         pastePath = pastePath.parent
                     }
                     return this.fileSystem.dirExists(pastePath)
@@ -117,10 +120,17 @@ export class FileCommandContribution implements CommandContribution {
                     if (!targetFolderExists) {
                         return Promise.reject("paste path dont exist")
                     }
-                    let data: any = this.clipboardService.getData
-                    copyPath = Path.fromString(data.path)
-                    pastePath = pastePath.append(copyPath.segments[copyPath.segments.length - 1])
-                    return this.fileSystem.cp(copyPath, pastePath)
+                    let data: string = this.clipboardService.getData('text')
+                    copyPath = Path.fromString(data)
+                    if (copyPath.simpleName) {
+                        pastePath = pastePath.append(copyPath.simpleName)
+                    }
+                    return this.fileSystem.cp(copyPath, pastePath).then((newPath) => {
+                        if (newPath !== pastePath.toString()) {
+                            // need to rename to something new
+                            promptNameDialog('pastefile', Path.fromString(newPath), this.dialogService, this.fileSystem)
+                        }
+                    })
                 })
             })
         );
@@ -132,10 +142,14 @@ export class FileCommandContribution implements CommandContribution {
                 actionId: 'newfile',
                 selectionService: this.selectionService
             }, (path: Path) => {
+                let newPath: Path
                 return this.fileSystem.createName(path)
                 .then((newPathData: string) => {
-                    const newPath = Path.fromString(newPathData)
+                    newPath = Path.fromString(newPathData)
                     return this.fileSystem.writeFile(newPath, "")
+                })
+                .then(() => {
+                    promptNameDialog('newfile', newPath, this.dialogService, this.fileSystem)
                 })
             })
         );
@@ -147,10 +161,14 @@ export class FileCommandContribution implements CommandContribution {
                 actionId: 'newfolder',
                 selectionService: this.selectionService
             }, (path: Path) => {
+                let newPath: Path
                 return this.fileSystem.createName(path)
                 .then((newPathData: string) => {
-                    const newPath = Path.fromString(newPathData)
+                    newPath = Path.fromString(newPathData)
                     return this.fileSystem.mkdir(newPath)
+                })
+                .then(() => {
+                    promptNameDialog('newfolder', newPath, this.dialogService, this.fileSystem)
                 })
             })
         );
@@ -164,10 +182,17 @@ export class FileCommandContribution implements CommandContribution {
             }, (path: Path) => {
                 return this.fileSystem.dirExists(path)
                 .then((isDir) => {
-                    if (isDir) {
-                        return this.fileSystem.rmdir(path)
-                    }
-                    return this.fileSystem.rm(path)
+                    promptConfirmDialog(
+                        'delete',
+                        () => {
+                            if (isDir) {
+                                return this.fileSystem.rmdir(path)
+                            }
+                            return this.fileSystem.rm(path)
+                        },
+                        this.dialogService,
+                        this.fileSystem
+                    )
                 })
             })
         );
@@ -203,8 +228,8 @@ export class FileSystemCommandHandler implements CommandHandler {
             if (this.options.clipboardService.isEmpty) {
                 return false
             }
-            let data: any = this.options.clipboardService.getData
-            if (data.type !== "path") {
+            let data: any = this.options.clipboardService.getData("text")
+            if (!data) {
                 return false
             }
         }
@@ -218,6 +243,7 @@ export namespace FileSystemCommandHandler {
         id: string;
         actionId: string,
         selectionService: SelectionService,
-        clipboardService?: ClipboardSerivce
+        clipboardService?: ClipboardService
+        dialogService?: DialogService
     }
 }
