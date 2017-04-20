@@ -70,6 +70,7 @@
     "webpack-merge": "^3.0.0"
   },
   "scripts": {
+    "prepublish": "npm run clean && npm run build && npm run test",
     "lint": "./node_modules/.bin/tslint -c ./config/tslint/tslint.json --project ./tsconfig.json",
     "build": "./node_modules/.bin/tsc && npm run lint",
     "watch": "./node_modules/.bin/tsc-watch --onSuccess \"npm run lint\"",
