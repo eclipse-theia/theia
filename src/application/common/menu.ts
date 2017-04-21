@@ -1,7 +1,7 @@
 import { CommandRegistry } from './command';
 import { Disposable } from './';
 
-import { multiInject, injectable, inject } from "inversify";
+import { injectable, inject } from "inversify";
 
 export interface MenuAction {
     commandId: string
@@ -16,14 +16,18 @@ export const MenuContribution = Symbol("MenuContribution");
 export interface MenuContribution {
     contribute(menuRegistry: MenuModelRegistry): void;
 }
+export const MenuContributionProvider = Symbol("MenuContributionProvider");
 
 @injectable()
 export class MenuModelRegistry {
     public menus: CompositeMenuNode = new CompositeMenuNode("");
 
-    constructor(@multiInject(MenuContribution) contribs: MenuContribution[],
+    constructor(@inject(MenuContributionProvider) private contributions: () => MenuContribution[],
                 @inject(CommandRegistry) private commands: CommandRegistry) {
-        for (let contrib of contribs) {
+    }
+
+    initialize() {
+        for (let contrib of this.contributions()) {
             contrib.contribute(this);
         }
     }

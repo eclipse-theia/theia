@@ -1,5 +1,5 @@
 import { Disposable } from "./disposable";
-import { injectable, multiInject } from "inversify";
+import { injectable, inject } from "inversify";
 
 export interface Command {
     id: string;
@@ -18,19 +18,24 @@ export interface CommandContribution {
     contribute(registry: CommandRegistry): void;
 }
 
+export const CommandContributionProvider = Symbol("CommandContributionProvider");
+
 @injectable()
 export class CommandRegistry {
 
     private _commands: { [id: string]: Command };
     private _handlers: { [id: string]: CommandHandler[] };
 
-    constructor( @multiInject(CommandContribution) commandContributions: CommandContribution[]) {
+    constructor(@inject(CommandContributionProvider) private contributionProvider: () => CommandContribution[]) {
+    }
+
+    initialize(): void {
         this._commands = {};
         this._handlers = {};
-        for (let contrib of commandContributions) {
+        const contributions = this.contributionProvider();
+        for (let contrib of contributions) {
             contrib.contribute(this);
         }
-        // TODO sanity check
     }
 
     registerCommand(command: Command): Disposable {

@@ -1,5 +1,5 @@
 import { CommandRegistry } from './command';
-import { injectable, inject, multiInject } from 'inversify';
+import { injectable, inject } from 'inversify';
 
 export class Keybinding {
     commandId: string
@@ -10,16 +10,19 @@ export const KeybindingContribution = Symbol("KeybindingContribution");
 export interface KeybindingContribution {
     contribute(registry: KeybindingRegistry): void;
 }
-
+export const KeybindingContributionProvider = Symbol("KeybindingContributionProvider");
 
 @injectable()
 export class KeybindingRegistry {
 
     keybindings: { [index: number]: Keybinding[] }
 
-    constructor( @multiInject(KeybindingContribution) protected contributions: KeybindingContribution[],
+    constructor( @inject(KeybindingContributionProvider) protected contributions: () => KeybindingContribution[],
         @inject(CommandRegistry) protected commandRegistry: CommandRegistry) {
-        for (let contribution of contributions) {
+    }
+
+    initialize() {
+        for (let contribution of this.contributions()) {
             contribution.contribute(this);
         }
     }
