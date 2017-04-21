@@ -14,25 +14,12 @@ export interface AcceleratorProvider {
  * Since `M2+M3+<Key>` (Alt+Shift+<Key>) is reserved on MacOS X for writing special characters, such bindings are commonly
  * undefined for platform MacOS X and redefined as `M1+M3+<Key>`. The rule applies on the `M3+M2+<Key>` sequence.
  */
-export declare type KeySequence = { first: Key, firstModifier?: Modifier, secondModifier?: Modifier, thirdModifier?: Modifier };
+export declare type KeySequence = { first: Key, modifiers?: Modifier[] };
 
 /**
  * Representation of a platform independent key code.
  */
 export class KeyCode {
-
-    private static GET_MODIFIERS = (sequence: KeySequence): Modifier[] => {
-        const modifiers: Modifier[] = [];
-        for (const modifier of [sequence.firstModifier, sequence.secondModifier, sequence.thirdModifier]) {
-            if (modifier) {
-                if (modifiers.indexOf(modifier) >= 0) {
-                    throw new Error(`Key sequence ${JSON.stringify(sequence)} contains duplicate modifiers.`);
-                }
-                modifiers.push(modifier);
-            }
-        }
-        return modifiers.sort();
-    }
 
     // TODO: support chrods properly. Currently, second sequence is ignored.
     private constructor(public readonly sequence: string) {
@@ -80,7 +67,7 @@ export class KeyCode {
             return new KeyCode(sequence.join('+'));
         } else {
             return new KeyCode([event.first.code]
-                .concat(KeyCode.GET_MODIFIERS(event).map(modifier => `${modifier}`))
+                .concat((event.modifiers || []).sort().map(modifier => `${modifier}`))
                 .join('+'));
         }
     }

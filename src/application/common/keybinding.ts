@@ -124,13 +124,11 @@ export class KeybindingRegistry {
         return undefined;
     }
 
-    // TODO get the command for a keybinding.
-
     private isValid(binding: Keybinding): boolean {
         let cmd = this.commandRegistry.getCommand(binding.commandId);
         if (cmd) {
             let handler = this.commandRegistry.getActiveHandler(cmd.id);
-            // TODO isActive()
+            // TODO? isActive()
             if (handler && (!handler.isVisible || handler.isVisible())) {
                 return true;
             }

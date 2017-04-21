@@ -12,7 +12,7 @@ import { EditorService } from './editor-service';
 import { TextModelResolverService } from './model-resolver-service';
 import { EditorWidget } from './editor-widget';
 import { ContainerModule, inject, injectable } from 'inversify';
-import { Keybinding, KeybindingContext, KeybindingContribution, } from '../../application/common/keybinding';
+import { Keybinding, KeybindingContext, KeybindingContribution, KeybindingRegistry} from '../../application/common/keybinding';
 import { Accelerator, Key, KeyCode, KeySequence, Modifier } from '../../application/common/keys';
 import { BrowserContextMenuService, EditorContextMenuService, EDITOR_CONTEXT_MENU_ID } from './editor-contextmenu';
 import CommandsRegistry = monaco.commands.CommandsRegistry;
@@ -287,7 +287,7 @@ class EditorKeybindingContribution implements KeybindingContribution {
 
     }
 
-    getKeybindings(): Keybinding[] {
+    contribute(registry: KeybindingRegistry): void {
 
         const ids = MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command.id);
         const accelerator = (kb: IKeybindingItem): Accelerator => {
@@ -312,31 +312,25 @@ class EditorKeybindingContribution implements KeybindingContribution {
         const keyCode = (kb: IKeybindingItem): KeyCode => {
             const keyCode = kb.keybinding;
             const sequence: KeySequence = {
-                first: Key.getKey(MONACO_KEY_CODE_MAP[kb.keybinding & 255])
+                first: Key.getKey(MONACO_KEY_CODE_MAP[kb.keybinding & 255]),
+                modifiers: []
             }
-            const modifiers: Modifier[] = [];
             // CTRL + COMMAND
             if ((isOSX && keyCode & KeyMod.CtrlCmd) || keyCode & KeyMod.WinCtrl) {
-                modifiers.push(Modifier.M1);
+                sequence.modifiers!.push(Modifier.M1);
             }
             // SHIFT
             if (keyCode & KeyMod.Shift) {
-                modifiers.push(Modifier.M2);
+                sequence.modifiers!.push(Modifier.M2);
             }
             // ALT
             if (keyCode & KeyMod.Alt) {
-                modifiers.push(Modifier.M3);
+                sequence.modifiers!.push(Modifier.M3);
             }
             // MacOS X CTRL
             if (isOSX && keyCode & KeyMod.WinCtrl) {
-                modifiers.push(Modifier.M4);
+                sequence.modifiers!.push(Modifier.M4);
             }
-
-            const props = ['firstModifier', 'secondModifier', 'thirdModifier'].slice(0, modifiers.length);
-            for (let i = 0; i < props.length; i++) {
-                Reflect.set(sequence, props[i], modifiers[i]);
-            }
-
             return KeyCode.createKeyCode(sequence);
         }
 
@@ -353,16 +347,18 @@ class EditorKeybindingContribution implements KeybindingContribution {
         bindings.push({
             commandId: 'editor.close',
             context: this.editorKeybindingContext,
-            keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, firstModifier: Modifier.M3 })
+            keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M3] })
         });
 
         bindings.push({
             commandId: 'editor.close.all',
             context: this.editorKeybindingContext,
-            keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, firstModifier: Modifier.M2, secondModifier: Modifier.M3 })
+            keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M2, Modifier.M3] })
         });
 
-        return bindings;
+        bindings.forEach(binding => {
+            registry.registerKeyBinding(binding);
+        })
 
     }
 
