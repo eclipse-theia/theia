@@ -1,10 +1,8 @@
-import { PredicateFunc, PredicateImpl } from './predicates';
 import { Context } from './context';
 import { Disposable } from './disposable';
 import { CommandRegistry } from './command';
 import { injectable, inject, multiInject, unmanaged } from 'inversify';
 import { KeyCode, Accelerator } from './keys';
-
 
 export interface Keybinding {
     readonly commandId: string;
@@ -27,14 +25,26 @@ export interface KeybindingContribution {
 }
 
 @injectable()
-export class KeybindingContext extends PredicateImpl<Keybinding> implements Context<Keybinding> {
+export abstract class KeybindingContext implements Context<Keybinding> {
 
-    static DEFAULT_CONTEXT = new KeybindingContext('default.keybinding.context', (binding: Keybinding): boolean => true);
-    static NOOP_CONTEXT = new KeybindingContext('noop.keybinding.context', (binding: Keybinding): boolean => false);
-
-    constructor( @unmanaged() public readonly id: string, @unmanaged() public readonly active: PredicateFunc<Keybinding>) {
-        super(active);
+    static NOOP_CONTEXT: Context<Keybinding> = {
+        id: 'noop.keybinding.context',
+        isEnabled(arg?: Keybinding): boolean {
+            return true;
+        }
     }
+
+    static DEFAULT_CONTEXT: Context<Keybinding> = {
+        id: 'default.keybinding.context',
+        isEnabled(arg?: Keybinding): boolean {
+            return false;
+        }
+    }
+
+    constructor( @unmanaged() public readonly id: string) {
+    }
+
+    abstract isEnabled(arg?: Keybinding): boolean;
 
 }
 
@@ -101,27 +111,26 @@ export class KeybindingRegistry {
      */
     registerKeyBinding(binding: Keybinding) {
         const { keyCode, commandId } = binding;
-        const bindings = this.keybindings[keyCode.sequence] || [];
+        const bindings = this.keybindings[keyCode.keystoke] || [];
         bindings.push(binding);
-        this.keybindings[keyCode.sequence] = bindings;
+        this.keybindings[keyCode.keystoke] = bindings;
         const commands = this.commands[commandId] || [];
         commands.push(binding);
         this.commands[commandId] = bindings;
     }
 
     /**
-     * @param keyCode the keycode for which to look up a Keybinding
+     * @param commandId the unique ID of the command for we the associated ke binding are looking for.
      */
-    getKeybinding(keyCodeOrCommandId: KeyCode | string): Keybinding | undefined {
-        const bindings = this.getBindings(keyCodeOrCommandId);
-        if (bindings) {
-            for (const binding of bindings) {
-                if (this.isValid(binding)) {
-                    return binding;
-                }
-            }
-        }
-        return undefined;
+    getKeybindingForCommand(commandId: string): Keybinding | undefined {
+        return (this.commands[commandId] || []).find(binding => this.isValid(binding));
+    }
+
+    /**
+     * @param keyCode the key code of the binding we are searching.
+     */
+    getKeybindingForKeyCode(keyCode: KeyCode): Keybinding | undefined {
+        return (this.keybindings[keyCode.keystoke] || []).find(binding => this.isValid(binding));
     }
 
     private isValid(binding: Keybinding): boolean {
@@ -136,13 +145,6 @@ export class KeybindingRegistry {
         return false;
     }
 
-    private getBindings(keyCodeOrCommandId: KeyCode | string): Keybinding[] {
-        if (typeof keyCodeOrCommandId === 'string') {
-            return this.commands[keyCodeOrCommandId];
-        } else {
-            return this.keybindings[keyCodeOrCommandId.sequence];
-        }
-    }
 }
 
 export class KeyEventEmitter implements Disposable {
@@ -168,10 +170,10 @@ export class KeyEventEmitter implements Disposable {
     }
 
     private handleKey(keyCode: KeyCode): boolean {
-        const binding = this.keybindingRegistry.getKeybinding(keyCode);
+        const binding = this.keybindingRegistry.getKeybindingForKeyCode(keyCode);
         if (binding) {
             const context = binding.context || KeybindingContext.NOOP_CONTEXT;
-            if (context && context.active(binding)) {
+            if (context && context.isEnabled(binding)) {
                 const handler = this.commandRegistry.getActiveHandler(binding.commandId);
                 if (handler) {
                     handler.execute();

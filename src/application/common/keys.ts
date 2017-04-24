@@ -14,7 +14,7 @@ export interface AcceleratorProvider {
  * Since `M2+M3+<Key>` (Alt+Shift+<Key>) is reserved on MacOS X for writing special characters, such bindings are commonly
  * undefined for platform MacOS X and redefined as `M1+M3+<Key>`. The rule applies on the `M3+M2+<Key>` sequence.
  */
-export declare type KeySequence = { first: Key, modifiers?: Modifier[] };
+export declare type Keystroke = { first: Key, modifiers?: Modifier[] };
 
 /**
  * Representation of a platform independent key code.
@@ -22,12 +22,12 @@ export declare type KeySequence = { first: Key, modifiers?: Modifier[] };
 export class KeyCode {
 
     // TODO: support chrods properly. Currently, second sequence is ignored.
-    private constructor(public readonly sequence: string) {
+    private constructor(public readonly keystoke: string) {
         // const chord = ((secondSequence & 0x0000ffff) << 16) >>> 0;
         // (firstSequence | chord) >>> 0;
     }
 
-    public static createKeyCode(event: KeyboardEvent | KeySequence): KeyCode {
+    public static createKeyCode(event: KeyboardEvent | Keystroke): KeyCode {
         if (event instanceof KeyboardEvent) {
             const e: any = event;
 
@@ -73,7 +73,7 @@ export class KeyCode {
     }
 
     equals(event: KeyboardEvent | KeyCode): boolean {
-        return (event instanceof KeyCode ? event : KeyCode.createKeyCode(event)).sequence === this.sequence;
+        return (event instanceof KeyCode ? event : KeyCode.createKeyCode(event)).keystoke === this.keystoke;
     }
 
 }

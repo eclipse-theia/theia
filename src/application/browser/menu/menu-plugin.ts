@@ -88,7 +88,7 @@ export class MainMenuFactory {
                             isVisible: (e: any) => !handler.isVisible || handler.isVisible(e)
                         });
 
-                        const binding = keybindingRegistry.getKeybinding(command.id);
+                        const binding = keybindingRegistry.getKeybindingForCommand(command.id);
                         if (binding) {
                             const keys = binding.accelerator || [];
                             commands.addKeyBinding({

@@ -1,12 +1,6 @@
 import { Disposable } from "./disposable";
 import { injectable, multiInject } from "inversify";
 
-export declare type Enabled = (arg?: any) => boolean;
-
-export namespace Enabled {
-    export const ALWAYS_ENABLED: Enabled = (arg) => true;
-}
-
 export interface Command {
     id: string;
     label: string;
@@ -14,7 +8,7 @@ export interface Command {
 }
 export interface CommandHandler {
     execute(arg?: any): any;
-    isEnabled: Enabled;
+    isEnabled(arg?: any): boolean;
     isVisible?(arg?: any): boolean;
 }
 
