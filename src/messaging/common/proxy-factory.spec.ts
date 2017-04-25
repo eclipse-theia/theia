@@ -19,7 +19,7 @@ beforeEach(() => {
 });
 
 class NoTransform extends stream.Transform {
-    protected _transform(chunk: any, encoding: string, callback: Function): void {
+    public _transform(chunk: any, encoding: string, callback: Function): void {
         callback(undefined, chunk)
     }
 }

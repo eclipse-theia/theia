@@ -26,25 +26,38 @@ beforeEach(() => {
 
 describe('NodeFileSystem', () => {
 
-    describe('01 #getFileStat(uri)', () => {
+    describe('01 #getFileStat', () => {
+
+        it('Should be rejected if not file exists under the given URI.', () => {
+            const uri = root.clone().segment("/myfile.txt");
+            expect(fs.existsSync(uri.path())).to.be.false;
+
+            return createFileSystem().getFileStat(uri.toString()).should.eventually.be.rejectedWith(Error);
+        });
 
         it('Should return a proper result for a file.', () => {
-            let uri = root.clone().segment("/myfile.txt")
-            fs.writeFile(uri.path(), "hello")
+            const uri = root.clone().segment("/myfile.txt");
+            fs.writeFileSync(uri.path(), "hello");
+            expect(fs.statSync(uri.path()).isFile()).to.be.true;
+
             return createFileSystem().getFileStat(uri.toString()).then(stat => {
-                expect(stat.isDirectory).to.be.false
-                expect(stat.uri).to.eq(uri.toString())
-            })
+                expect(stat.isDirectory).to.be.false;
+                expect(stat.uri).to.eq(uri.toString());
+            });
         });
 
         it('Should return a proper result for a directory.', () => {
-            let uri = root.clone().segment("/myfile.txt")
-            fs.writeFile(uri.path(), "hello")
-            fs.writeFile(root.clone().segment("/myfile2.txt").path(), "hello")
+            const uri_1 = root.clone().segment("/myfile.txt");
+            const uri_2 = root.clone().segment("/myfile2.txt");
+            fs.writeFileSync(uri_1.path(), "hello");
+            fs.writeFileSync(uri_2.path(), "hello");
+            expect(fs.statSync(uri_1.path()).isFile()).to.be.true;
+            expect(fs.statSync(uri_2.path()).isFile()).to.be.true;
+
             return createFileSystem().getFileStat(root.toString()).then(stat => {
-                expect(stat.hasChildren).to.be.true
-                expect(stat.children!.length).to.eq(2)
-            })
+                expect(stat.hasChildren).to.be.true;
+                expect(stat.children!.length).to.equal(2);
+            });
         });
 
     });
@@ -178,7 +191,7 @@ describe('NodeFileSystem', () => {
             return fileSystem.getFileStat(uri.toString()).then(stat => {
                 fileSystem.setContent(stat, "baz").then(stat => {
                     expect(fs.readFileSync(uri.path(), { encoding: "utf8" })).to.be.equal("baz");
-                })
+                });
             });
         });
 

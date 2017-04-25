@@ -10,50 +10,26 @@ export class FileSystemNode implements FileSystem {
     getFileStat(uriAsString: string): Promise<FileStat> {
         const uri = toURI(uriAsString);
         return new Promise<FileStat>((resolve, reject) => {
-            resolve(this.internalGetStat(uri, 1));
+            try {
+                resolve(this.doGetStat(uri, 1));
+            } catch (error) {
+                reject(error);
+            }
         });
     }
 
-    protected internalGetStat(uri: uri.URI, depth: number): FileStat {
-        const stat = fs.statSync(toNodePath(uri));
-        if (stat.isDirectory()) {
-            const files = fs.readdirSync(toNodePath(uri));
-            let children = undefined;
-            if (depth > 0) {
-                children = files.map(file => {
-                    const newURI = uri.clone().segment(file)
-                    return this.internalGetStat(newURI, depth - 1)
-                });
-            }
-            return {
-                uri: uri.toString(),
-                lastModification: stat.mtime.getTime(),
-                isDirectory: true,
-                hasChildren: files.length > 0,
-                children
-            };
-        } else {
-            return {
-                uri: uri.toString(),
-                lastModification: stat.mtime.getTime(),
-                isDirectory: false,
-                size: stat.size
-            };
-        }
-    }
-
     exists(uri: string): Promise<boolean> {
-        return Promise.resolve(this.internalGetStat(toURI(uri), 0) !== undefined);
+        return Promise.resolve(this.doGetStat(toURI(uri), 0) !== undefined);
     }
 
     resolveContent(uri: string, options?: { encoding?: string }): Promise<{ stat: FileStat, content: string }> {
         return new Promise<{ stat: FileStat, content: string }>((resolve, reject) => {
             const _uri = toURI(uri);
-            const stat = this.internalGetStat(_uri, 0);
+            const stat = this.doGetStat(_uri, 0);
             if (stat.isDirectory) {
                 return reject(new Error(`Cannot resolve the content of a directory. URI: ${uri}.`));
             }
-            const encoding = this.internalGetEncoding(options);
+            const encoding = this.doGetEncoding(options);
             fs.readFile(_uri.path(), encoding, (error, content) => {
                 if (error) {
                     return reject(error);
@@ -66,7 +42,7 @@ export class FileSystemNode implements FileSystem {
     setContent(file: FileStat, content: string, options?: { encoding?: string }): Promise<FileStat> {
         return new Promise<FileStat>((resolve, reject) => {
             const _uri = toURI(file.uri);
-            const stat = this.internalGetStat(_uri, 0);
+            const stat = this.doGetStat(_uri, 0);
             if (stat.isDirectory) {
                 return reject(new Error(`Cannot set the content of a directory. URI: ${file.uri}.`));
             }
@@ -76,18 +52,22 @@ export class FileSystemNode implements FileSystem {
             if (stat.size !== file.size) {
                 return reject(new Error(`File is out of sync. URI: ${file.uri}. Expected size: ${stat.size}. Actual size: ${file.size}.`));
             }
-            const encoding = this.internalGetEncoding(options);
+            const encoding = this.doGetEncoding(options);
             fs.writeFile(_uri.path(), content, encoding, error => {
                 if (error) {
                     return reject(error);
                 }
-                resolve(this.internalGetStat(_uri, 0));
+                resolve(this.doGetStat(_uri, 0));
             });
         });
     }
 
     move(sourceUri: string, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat> {
-        throw new Error('Method not implemented.');
+        return new Promise<FileStat>((resolve, reject) => {
+            const _sourceUri = toURI(sourceUri);
+            const stat = this.doGetStat(_sourceUri, 0);
+            console.log(stat);
+        });
     }
 
     copy(sourceUri: string, targetUri: string, options?: { overwrite?: boolean, recursive?: boolean }): Promise<FileStat> {
@@ -126,7 +106,35 @@ export class FileSystemNode implements FileSystem {
         throw new Error('Method not implemented.');
     }
 
-    protected internalGetEncoding(option?: { encoding?: string }): string {
+    protected doGetStat(uri: uri.URI, depth: number): FileStat {
+        const stat = fs.statSync(toNodePath(uri));
+        if (stat.isDirectory()) {
+            const files = fs.readdirSync(toNodePath(uri));
+            let children = undefined;
+            if (depth > 0) {
+                children = files.map(file => {
+                    const newURI = uri.clone().segment(file)
+                    return this.doGetStat(newURI, depth - 1)
+                });
+            }
+            return {
+                uri: uri.toString(),
+                lastModification: stat.mtime.getTime(),
+                isDirectory: true,
+                hasChildren: files.length > 0,
+                children
+            };
+        } else {
+            return {
+                uri: uri.toString(),
+                lastModification: stat.mtime.getTime(),
+                isDirectory: false,
+                size: stat.size
+            };
+        }
+    }
+
+    protected doGetEncoding(option?: { encoding?: string }): string {
         // TODO: this should fall back to the workspace default if it cannot be retrieved from the argument.
         return (option && option.encoding) || "utf8";
     }
