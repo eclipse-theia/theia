@@ -10,6 +10,8 @@ import { EditorService } from './editor-service';
 import { TextModelResolverService } from './model-resolver-service';
 import { EditorWidget } from './editor-widget';
 import { ContainerModule, inject, injectable } from 'inversify';
+import { Keybinding, KeybindingContext, KeybindingContribution, KeybindingRegistry } from '../../application/common/keybinding';
+import { Key, KeyCode, Modifier } from '../../application/common/keys';
 import { BrowserContextMenuService, EditorContextMenuService, EDITOR_CONTEXT_MENU_ID } from './editor-contextmenu';
 import CommandsRegistry = monaco.commands.CommandsRegistry;
 import MenuRegistry = monaco.actions.MenuRegistry;
@@ -18,7 +20,7 @@ import ICommand = monaco.commands.ICommand;
 import IMenuItem = monaco.actions.IMenuItem;
 
 @injectable()
-export class EditorCommandHandlers implements CommandContribution {
+class EditorCommandHandlers implements CommandContribution {
 
     constructor(
         @inject(IEditorManager) private editorService: IEditorManager,
@@ -57,6 +59,35 @@ export class EditorCommandHandlers implements CommandContribution {
             );
         });
 
+        registry.registerCommand({
+            id: 'editor.close',
+            label: 'Close Active Editor'
+        });
+        registry.registerHandler('editor.close', {
+            execute: (arg?: any): any => {
+                const editor = this.editorService.activeEditor;
+                if (editor) {
+                    editor.close();
+                }
+                return null;
+            },
+            isEnabled: Enabled => { return true; }
+        });
+
+        registry.registerCommand({
+            id: 'editor.close.all',
+            label: 'Close All Editors'
+        });
+        registry.registerHandler('editor.close.all', {
+            execute: (arg?: any): any => {
+                this.editorService.editors.forEach(editor => {
+                    editor.close();
+                });
+                return null;
+            },
+            isEnabled: Enabled => { return true; }
+        });
+
     }
 
     private newHandler(id: string): CommandHandler {
@@ -71,7 +102,7 @@ export class EditorCommandHandlers implements CommandContribution {
 }
 
 @injectable()
-export class EditorMenuContribution implements MenuContribution {
+class EditorMenuContribution implements MenuContribution {
     contribute(registry: MenuModelRegistry) {
         // Explicitly register the Edit Submenu
         registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "1_undo/redo"], {
@@ -88,8 +119,50 @@ export class EditorMenuContribution implements MenuContribution {
         MenuRegistry.getMenuItems(MenuId.EditorContext)
             .map(item => wrap(item))
             .forEach(props => registry.registerMenuAction(props.path, { commandId: props.commandId }));
+    }
+}
+
+@injectable()
+export class EditorKeybindingContext extends KeybindingContext {
+
+    static ID = 'editor.keybinding.context';
+
+    constructor( @inject(IEditorManager) private editorService: IEditorManager) {
+        super(EditorKeybindingContext.ID);
+    }
+
+    isEnabled(arg?: Keybinding) {
+        return this.editorService && !!this.editorService.activeEditor;
+    }
+
+}
+
+@injectable()
+class EditorKeybindingContribution implements KeybindingContribution {
+
+    constructor( @inject(EditorKeybindingContext) private editorKeybindingContext: EditorKeybindingContext) {
 
     }
+
+    contribute(registry: KeybindingRegistry): void {
+
+        [
+            {
+                commandId: 'editor.close',
+                context: this.editorKeybindingContext,
+                keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M3] })
+            },
+            {
+                commandId: 'editor.close.all',
+                context: this.editorKeybindingContext,
+                keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M2, Modifier.M3] })
+            }
+        ].forEach(binding => {
+            registry.registerKeyBinding(binding);
+        });
+
+    }
+
 }
 
 export const editorModule = new ContainerModule(bind => {
@@ -102,4 +175,7 @@ export const editorModule = new ContainerModule(bind => {
     bind(IOpenerService).toDynamicValue(context => context.container.get(IEditorManager));
     bind<CommandContribution>(CommandContribution).to(EditorCommandHandlers);
     bind<MenuContribution>(MenuContribution).to(EditorMenuContribution);
+    bind<KeybindingContribution>(KeybindingContribution).to(EditorKeybindingContribution);
+    bind<KeybindingContext>(EditorKeybindingContext).toSelf();
+    bind<KeybindingContext>(KeybindingContext).to(EditorKeybindingContext);
 });

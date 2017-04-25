@@ -173,10 +173,6 @@ declare module monaco.actions {
         public static readonly EditorContext: MenuId;
     }
 
-    export class ContextKeyExpr {
-
-    }
-
     export interface ICommandAction {
         id: string;
         title: string
@@ -186,7 +182,7 @@ declare module monaco.actions {
 
     export interface IMenuItem {
         command: ICommandAction;
-        when?: ContextKeyExpr;
+        when?: any;
         group?: 'navigation' | string;
     }
 
@@ -202,11 +198,27 @@ declare module monaco.actions {
      */
     export const MenuRegistry: IMenuRegistry;
 
-    export interface IContextKeyService {
+}
+
+declare module monaco.keybindings {
+
+
+    export interface IKeybindingItem {
+        keybinding: number;
+        command: string;
+    }
+
+    export interface IKeybindingsRegistry {
         /**
-         * Checks whether the argument matches with the current key context.
+         * Returns with all the default, static keybindings.
          */
-        contextMatchesRules(rules: ContextKeyExpr): boolean;
+        getDefaultKeybindings(): IKeybindingItem[];
+    }
+
+    export const KeybindingsRegistry: IKeybindingsRegistry;
+
+    export namespace KeyCodeUtils {
+        export function toString(key: any): string;
     }
 
 }
