@@ -1,5 +1,4 @@
 import { ContainerModule, injectable, inject } from "inversify";
-
 import { DialogServiceImpl } from '../browser/dialog-service';
 import { SelectionService } from '../common/selection-service';
 import { CommonCommandContribution, CommonMenuContribution } from '../common/commands-common';
@@ -8,6 +7,7 @@ import { OpenerService } from "./opener-service";
 import { CommandRegistry, CommandContribution } from "../common/command";
 import { MenuModelRegistry, MenuContribution } from "../common/menu";
 import { DialogService } from "../common/dialog-service";
+import { KeybindingContextRegistry, KeybindingRegistry } from '../common/keybinding';
 
 export const browserApplicationModule = new ContainerModule(bind => {
     bind(TheiaApplication).toSelf().inSingletonScope();
@@ -20,6 +20,8 @@ export const browserApplicationModule = new ContainerModule(bind => {
     bind(TheiaPlugin).to(BrowserDialogContribution).inSingletonScope();
     bind(DialogServiceImpl).toSelf().inSingletonScope();
     bind(DialogService).toDynamicValue(context => context.container.get(DialogServiceImpl));
+    bind(KeybindingRegistry).toSelf().inSingletonScope();
+    bind(KeybindingContextRegistry).toSelf().inSingletonScope();
 });
 
 @injectable()
