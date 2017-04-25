@@ -1,3 +1,4 @@
+import *  as keybindings from '../../application/common/keybinding';
 import { IOpenerService, TheiaPlugin } from '../../application/browser';
 import { SelectionService } from '../../application/common/selection-service';
 import { CommandContribution, CommandRegistry, CommandHandler } from '../../application/common/command';
@@ -10,7 +11,6 @@ import { EditorService } from './editor-service';
 import { TextModelResolverService } from './model-resolver-service';
 import { EditorWidget } from './editor-widget';
 import { ContainerModule, inject, injectable } from 'inversify';
-import { Keybinding, KeybindingContext, KeybindingContribution, KeybindingRegistry } from '../../application/common/keybinding';
 import { Key, KeyCode, Modifier } from '../../application/common/keys';
 import { BrowserContextMenuService, EditorContextMenuService, EDITOR_CONTEXT_MENU_ID } from './editor-contextmenu';
 import CommandsRegistry = monaco.commands.CommandsRegistry;
@@ -123,7 +123,7 @@ class EditorMenuContribution implements MenuContribution {
 }
 
 @injectable()
-export class EditorKeybindingContext extends KeybindingContext {
+export class EditorKeybindingContext extends keybindings.KeybindingContext {
 
     static ID = 'editor.keybinding.context';
 
@@ -131,20 +131,20 @@ export class EditorKeybindingContext extends KeybindingContext {
         super(EditorKeybindingContext.ID);
     }
 
-    isEnabled(arg?: Keybinding) {
+    isEnabled(arg?: keybindings.Keybinding) {
         return this.editorService && !!this.editorService.activeEditor;
     }
 
 }
 
 @injectable()
-class EditorKeybindingContribution implements KeybindingContribution {
+class EditorKeybindingContribution implements keybindings.KeybindingContribution {
 
     constructor( @inject(EditorKeybindingContext) private editorKeybindingContext: EditorKeybindingContext) {
 
     }
 
-    contribute(registry: KeybindingRegistry): void {
+    contribute(registry: keybindings.KeybindingRegistry): void {
 
         [
             {
@@ -175,7 +175,14 @@ export const editorModule = new ContainerModule(bind => {
     bind(IOpenerService).toDynamicValue(context => context.container.get(IEditorManager));
     bind<CommandContribution>(CommandContribution).to(EditorCommandHandlers);
     bind<MenuContribution>(MenuContribution).to(EditorMenuContribution);
-    bind<KeybindingContribution>(KeybindingContribution).to(EditorKeybindingContribution);
-    bind<KeybindingContext>(EditorKeybindingContext).toSelf();
-    bind<KeybindingContext>(KeybindingContext).to(EditorKeybindingContext);
+    bind<keybindings.KeybindingContribution>(keybindings.KeybindingContribution).to(EditorKeybindingContribution);
+    bind<keybindings.KeybindingContext>(EditorKeybindingContext).toSelf();
+    bind<keybindings.KeybindingContext>(keybindings.KeybindingContext).to(EditorKeybindingContext);
+    bind(keybindings.KeybindingContextProvider).toFactory<keybindings.KeybindingContext[]>(ctx => {
+        return () => ctx.container.getAll<keybindings.KeybindingContext>(keybindings.KeybindingContext);
+    });
+    bind(keybindings.KeybindingContribution).to(EditorKeybindingContribution);
+    bind(keybindings.KeybindingContributionProvider).toFactory<keybindings.KeybindingContribution[]>(ctx => {
+        return () => ctx.container.getAll<keybindings.KeybindingContribution>(keybindings.KeybindingContribution);
+    });
 });

@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { CommandRegistry } from '../common/command';
-// import { KeybindingRegistry } from '../common/keybinding';
+import { KeybindingRegistry } from '../common/keybinding';
 import { MenuModelRegistry } from '../common/menu';
 import { ApplicationShell } from './shell';
 import { Application } from '@phosphor/application';
@@ -27,7 +27,7 @@ export class TheiaApplication {
     constructor(
         @inject(CommandRegistry) commandRegistry: CommandRegistry,
         @inject(MenuModelRegistry) menuRegistry: MenuModelRegistry,
-//        @inject(KeybindingRegistry) keybindingRegistry: KeybindingRegistry,
+        @inject(KeybindingRegistry) keybindingRegistry: KeybindingRegistry,
         @multiInject(TheiaPlugin) contributions: TheiaPlugin[]) {
 
         this.shell = new ApplicationShell();
@@ -36,7 +36,7 @@ export class TheiaApplication {
         });
         this.application.started.then(() => {
             commandRegistry.initialize();
-//            keybindingRegistry.initialize();
+            keybindingRegistry.initialize();
             menuRegistry.initialize();
             contributions.forEach(c => c.onStart(this));
         })
