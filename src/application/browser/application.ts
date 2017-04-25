@@ -1,15 +1,16 @@
-import "reflect-metadata";
-import { Application } from "@phosphor/application";
-import { ApplicationShell } from "./shell";
-import {injectable, multiInject, inject, interfaces} from "inversify";
-import {CommandRegistry} from "../common/command";
+import 'reflect-metadata';
+import { CommandRegistry } from '../common/command';
+import { KeybindingRegistry } from '../common/keybinding';
+import { MenuModelRegistry } from '../common/menu';
+import { ApplicationShell } from './shell';
+import { Application } from '@phosphor/application';
+import { inject, injectable, interfaces, multiInject } from 'inversify';
 
 export const TheiaPlugin = Symbol("TheiaPlugin");
 /**
  * Clients can subclass to get a callback for contributing widgets to a shell on start.
  */
 export interface TheiaPlugin {
-
     /**
      * Callback
      */
@@ -25,6 +26,8 @@ export class TheiaApplication {
 
     constructor(
         @inject(CommandRegistry) commandRegistry: CommandRegistry,
+        @inject(MenuModelRegistry) menuRegistry: MenuModelRegistry,
+        @inject(KeybindingRegistry) keybindingRegistry: KeybindingRegistry,
         @multiInject(TheiaPlugin) contributions: TheiaPlugin[]) {
 
         this.shell = new ApplicationShell();
@@ -32,6 +35,9 @@ export class TheiaApplication {
             shell: this.shell
         });
         this.application.started.then(() => {
+            commandRegistry.initialize();
+            keybindingRegistry.initialize();
+            menuRegistry.initialize();
             contributions.forEach(c => c.onStart(this));
         })
     }
@@ -41,13 +47,4 @@ export class TheiaApplication {
         return this.application.start();
     }
 
-    // FIXME kittaakos: This is a huge hack. Do not use this, please. Once we introduce some
-    // sort of a lazy handler resolution for the commands, we will get rid of this method.
-    // https://github.com/TypeFox/Theia/issues/34
-    getService<T>(serviceIdentifier: interfaces.ServiceIdentifier<T>): T | undefined {
-        if (this.container) {
-            return this.container.get(serviceIdentifier);
-        }
-        return undefined;
-    }
 }

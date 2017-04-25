@@ -1,7 +1,7 @@
 import { Context } from './context';
 import { Disposable } from './disposable';
 import { CommandRegistry } from './command';
-import { injectable, inject, multiInject, unmanaged } from 'inversify';
+import { injectable, inject, unmanaged } from 'inversify';
 import { KeyCode, Accelerator } from './keys';
 
 export interface Keybinding {
@@ -48,17 +48,22 @@ export abstract class KeybindingContext implements Context<Keybinding> {
 
 }
 
+export const KeybindingContextProvider = Symbol("KeybindingContextProvider");
+
 @injectable()
 export class KeybindingContextRegistry {
 
     contexts: { [id: string]: KeybindingContext };
     contextHierarchy: { [id: string]: KeybindingContext };
 
-    constructor( @multiInject(KeybindingContext) contexts: KeybindingContext[]) {
+    constructor( @inject(KeybindingContextProvider) private contributedContexts: () => KeybindingContext[]) {
         this.contexts = {};
         this.contexts[KeybindingContext.NOOP_CONTEXT.id] = KeybindingContext.NOOP_CONTEXT;
         this.contexts[KeybindingContext.DEFAULT_CONTEXT.id] = KeybindingContext.DEFAULT_CONTEXT;
-        contexts.forEach(context => this.registerContext(context));
+    }
+
+    initialize() {
+        this.contributedContexts().forEach(context => this.registerContext(context));
     }
 
     /**
@@ -85,6 +90,8 @@ export class KeybindingContextRegistry {
 
 }
 
+export const KeybindingContributionProvider = Symbol("KeybindingContributionProvider");
+
 @injectable()
 export class KeybindingRegistry {
 
@@ -94,14 +101,17 @@ export class KeybindingRegistry {
     constructor(
         @inject(CommandRegistry) protected commandRegistry: CommandRegistry,
         @inject(KeybindingContextRegistry) protected contextRegistry: KeybindingContextRegistry,
-        @multiInject(KeybindingContribution) protected contributions: KeybindingContribution[]) {
+        @inject(KeybindingContributionProvider) protected contributions: () => KeybindingContribution[], ) {
 
         this.keybindings = {};
         this.commands = {};
-        for (let contribution of contributions) {
+        new KeyEventEmitter(commandRegistry, this);
+    }
+
+    initialize() {
+        for (let contribution of this.contributions()) {
             contribution.contribute(this);
         }
-        new KeyEventEmitter(commandRegistry, this);
     }
 
     /**
