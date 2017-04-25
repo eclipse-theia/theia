@@ -28,11 +28,12 @@
     "inversify": "^3.1.0",
     "monaco-editor": "^0.8.3",
     "monaco-editor-core": "^0.8.2",
+    "monaco-languageclient": "^0.0.1-alpha.2",
     "reconnecting-websocket": "^3.0.3",
     "reflect-metadata": "^0.1.10",
-    "monaco-languageclient": "^0.0.1-alpha.2",
-    "vscode-ws-jsonrpc": "^0.0.1-alpha.1",
+    "urijs": "^1.18.10",
     "vscode-languageserver": "^3.2.0",
+    "vscode-ws-jsonrpc": "^0.0.1-alpha.1",
     "ws": "^2.2.0"
   },
   "devDependencies": {
@@ -41,6 +42,7 @@
     "@types/electron": "^1.4.33",
     "@types/karma": "^0.13.33",
     "@types/mocha": "^2.2.39",
+    "@types/urijs": "^1.15.32",
     "@types/ws": "0.0.38",
     "chai": "^3.5.0",
     "chai-as-promised": "^6.0.0",

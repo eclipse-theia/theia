@@ -6,7 +6,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as URI from "urijs";
 
-import { FileSystem } from "../common/filesystem";
+import { FileSystem } from "../common/filesystem2";
 
 const root: uri.URI = new URI(`file://${os.tmpdir()}/node-fs-root`);
 const expect = chai.expect;
