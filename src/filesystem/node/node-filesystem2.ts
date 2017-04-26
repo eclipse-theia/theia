@@ -131,14 +131,28 @@ export class FileSystemNode implements FileSystem2 {
             if (stat) {
                 return reject(new Error(`Error occurred while creating the file. File already exists at ${uri}.`));
             }
-            const content = this.doGetContent(options);
-            const encoding = this.doGetEncoding(options);
-            fs.writeFile(toNodePath(_uri), content, { encoding }, error => {
-                if (error) {
-                    return reject(error);
-                }
-                resolve(this.doGetStat(_uri, 1));
-            });
+            const parentUri = _uri.parent();
+            const doCreateFile = () => {
+                const content = this.doGetContent(options);
+                const encoding = this.doGetEncoding(options);
+                fs.writeFile(toNodePath(_uri), content, { encoding }, error => {
+                    if (error) {
+                        return reject(error);
+                    }
+                    resolve(this.doGetStat(_uri, 1));
+                });
+            }
+            if (!this.doGetStat(parentUri, 0)) {
+                fs.mkdirs(toNodePath(parentUri), error => {
+                    if (error) {
+                        return reject(error);
+                    }
+                    doCreateFile();
+                });
+            } else {
+                doCreateFile();
+            }
+
         });
     }
 

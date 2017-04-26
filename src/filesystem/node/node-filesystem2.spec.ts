@@ -573,6 +573,19 @@ describe("NodeFileSystem", () => {
             });
         });
 
+        it("Should create a file with the desired content into a non-existing, nested location.", () => {
+            const uri = root.append("foo/bar/baz.txt");
+            expect(fs.existsSync(uri.path())).to.be.false;
+
+            return createFileSystem().createFile(uri.toString(), { content: "foo" }).then(stat => {
+                expect(stat).is.an("object");
+                expect(stat).has.property("uri").that.is.equal(uri.toString());
+                expect(stat).not.has.property("children");
+                expect(stat).not.has.property("hasChildren");
+                expect(fs.readFileSync(uri.path(), "utf8")).to.be.equal("foo");
+            });
+        });
+
         it("Should create a file with the desired content and encoding.", () => {
             const uri = root.append("foo.txt");
             expect(fs.existsSync(uri.path())).to.be.false;
@@ -585,8 +598,6 @@ describe("NodeFileSystem", () => {
                 expect(fs.readFileSync(uri.path(), "utf8")).to.be.equal("foo");
             });
         });
-
-        // TODO nested file creation
 
     });
 
