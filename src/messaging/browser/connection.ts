@@ -5,6 +5,10 @@ const ReconnectingWebSocket = require('reconnecting-websocket');
 export function listen(handler: ConnectionHandler): void {
     const url = createUrl(handler);
     const webSocket = createWebSocket(url);
+    webSocket.onerror = function(error: Event) {
+        console.error(error)
+        return;
+    }
     doListen({
         webSocket,
         onConnection: handler.onConnection.bind(handler)

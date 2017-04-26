@@ -17,9 +17,14 @@ export class MessagingContribution implements ExpressContribution {
     onStart(server: http.Server): void {
         for (const handler of this.handlers) {
             const path = handler.path;
-            createServerWebSocketConnection({
-                server, path
-            }, connection => handler.onConnection(connection));
+            try {
+                createServerWebSocketConnection({
+                    server,
+                    path
+                }, connection => handler.onConnection(connection));
+            } catch (error) {
+                console.error(error)
+            }
         }
     }
 

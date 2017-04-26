@@ -1,6 +1,6 @@
-export const FileSystem = Symbol("FileSystem");
+export const FileSystem2 = Symbol("FileSystem2");
 
-export interface FileSystem {
+export interface FileSystem2 {
 
     /**
      * Returns the filestat for the given uri.

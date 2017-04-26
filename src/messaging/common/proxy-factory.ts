@@ -7,15 +7,13 @@ import { MessageConnection } from "vscode-jsonrpc";
 
 export class JsonRpcProxyFactory<T> implements ConnectionHandler, ProxyHandler<T> {
 
-    protected connection: MessageConnection | undefined;
     protected readonly connectionListeners = new DisposableCollection();
 
     constructor(private target: any, public readonly path: string) {}
 
     onConnection(connection: MessageConnection) {
         this.connectionListeners.dispose();
-        this.connection = connection;
-        this.connection.onError( error => {
+        connection.onError( error => {
             console.error(error)
         })
         let disposed = false;
@@ -26,16 +24,20 @@ export class JsonRpcProxyFactory<T> implements ConnectionHandler, ProxyHandler<T
         });
         for (let prop in this.target) {
             if (typeof this.target[prop] === 'function') {
-                this.connection.onRequest(prop, param => this.onRequest(prop, param));
-                this.connection.onNotification(prop, param => this.onNotification(prop, param));
+                connection.onRequest(prop, param => this.onRequest(prop, param));
+                connection.onNotification(prop, param => this.onNotification(prop, param));
             }
         }
-        this.connection.onDispose(() => {
+        connection.onDispose(() => {
             this.connectionListeners.dispose();
-            this.connection = undefined;
+            this.connectionPromise = new Promise(resolve => {this.connectionPromiseResolve = resolve});
         });
-        this.connection.listen();
+        connection.listen();
+        this.connectionPromiseResolve(connection);
     }
+
+    private connectionPromiseResolve: (connection: MessageConnection) => void;
+    private connectionPromise: Promise<MessageConnection> = new Promise(resolve => {this.connectionPromiseResolve = resolve})
 
     protected onRequest(method: string, ...args: any[]): Promise<any> {
         let result = this.target[method](...args)
@@ -57,18 +59,17 @@ export class JsonRpcProxyFactory<T> implements ConnectionHandler, ProxyHandler<T
     get(target: T, p: PropertyKey, receiver: any): any {
         const isNotify = this.isNotification(p)
         return (...args: any[]) => {
-            if (!this.connection) {
-                throw new Error(`Cannot invoke ${p} with ${JSON.stringify(args)}. No connection.`)
-            }
-            if (isNotify) {
-                this.connection.sendNotification(p.toString(), ...args)
-                return undefined
-            } else {
-                const resultPromise = this.connection.sendRequest(p.toString(), ...args)
-                return new Promise(resolve => {
-                    resultPromise.then( result => resolve(result))
-                })
-            }
+            return this.connectionPromise.then( connection => {
+                if (isNotify) {
+                    connection.sendNotification(p.toString(), ...args)
+                    return Promise.resolve(undefined);
+                } else {
+                    const resultPromise = connection.sendRequest(p.toString(), ...args)
+                    return new Promise(resolve => {
+                        resultPromise.then( result => resolve(result))
+                    })
+                }
+            })
         }
     }
 

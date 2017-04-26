@@ -1,10 +1,16 @@
 import * as fs from "fs";
 import * as URI from "urijs";
-import { FileSystem, FileStat } from "../common/filesystem2";
+import { FileStat, FileSystem2, FileSystemClient } from '../common/filesystem2';
 
-export class FileSystemNode implements FileSystem {
+export class FileSystemNode implements FileSystem2 {
+
+    protected client: FileSystemClient|undefined
 
     constructor(protected rootURI: string) {
+    }
+
+    setClient(client: FileSystemClient) {
+        this.client = client
     }
 
     getFileStat(uriAsString: string): Promise<FileStat> {

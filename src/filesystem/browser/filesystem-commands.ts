@@ -1,3 +1,4 @@
+import { FileSystem2 } from '../common/filesystem2';
 import { ClipboardService, SelectionService } from '../../application/common';
 import { DialogService } from '../../application/common';
 import { CommandContribution, CommandHandler, CommandRegistry } from '../../application/common/command';
@@ -25,6 +26,13 @@ export namespace Commands {
 
 @injectable()
 export class FileMenuContribution implements MenuContribution {
+
+    constructor(@inject(FileSystem2) fs2: FileSystem2) {
+        fs2.getWorkspaceRoot()
+            .then(root => fs2.resolveContent(root.uri))
+            .then(resolved => console.log(JSON.stringify(resolved)))
+    }
+
     contribute(registry: MenuModelRegistry) {
             // Explicitly register the Edit Submenu
             registry.registerSubmenu([MAIN_MENU_BAR], Commands.FILE_MENU, "File");
