@@ -455,7 +455,7 @@ describe("NodeFileSystem", () => {
             return new FileSystemNode("some/missing/path").getWorkspaceRoot().should.eventually.be.rejectedWith(Error);
         });
 
-        it("Should be return with the stat of the root. The root stat has information of its direct descendants and their children.", () => {
+        it("Should be return with the stat of the root. The root stat has information of its direct descendants but not the children of the descendants.", () => {
             const uri_1 = root.clone().segment("/foo");
             const uri_2 = root.clone().segment("/bar");
             const uri_1_01 = uri_1.clone().segment("/foo_01.txt");
@@ -486,8 +486,8 @@ describe("NodeFileSystem", () => {
                 expect(stat.children!.map(childStat => childStat.uri)).to.contain(uri_1.toString()).and.contain(uri_2.toString());
                 expect(stat.children!.find(childStat => childStat.uri === uri_1.toString())).to.be.not.undefined;
                 expect(stat.children!.find(childStat => childStat.uri === uri_2.toString())).to.be.not.undefined;
-                expect(stat.children!.find(childStat => childStat.uri === uri_1.toString())!.children).has.length(2);
-                expect(stat.children!.find(childStat => childStat.uri === uri_2.toString())!.children).has.length(2);
+                expect(stat.children!.find(childStat => childStat.uri === uri_1.toString())!.children).to.be.undefined;
+                expect(stat.children!.find(childStat => childStat.uri === uri_2.toString())!.children).to.be.undefined;
             });
         });
 

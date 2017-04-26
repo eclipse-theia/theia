@@ -154,7 +154,7 @@ export class FileSystemNode implements FileSystem2 {
 
     getWorkspaceRoot(): Promise<FileStat> {
         return new Promise<FileStat>((resolve, reject) => {
-            const stat = this.doGetStat(toURI(this.rootURI), 2);
+            const stat = this.doGetStat(toURI(this.rootURI), 1);
             if (!stat) {
                 return reject(new Error(`Cannot locate workspace root under ${this.rootURI}.`));
             }
