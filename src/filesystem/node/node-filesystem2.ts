@@ -72,7 +72,7 @@ export class FileSystemNode implements FileSystem2 {
                     return reject(error);
                 }
                 try {
-                    resolve(this.doGetStat(_uri, 0));
+                    resolve(this.doGetStat(_uri, 1));
                 } catch (error) {
                     reject(error);
                 }
@@ -129,7 +129,7 @@ export class FileSystemNode implements FileSystem2 {
             const _uri = toURI(uri);
             const stat = this.doGetStat(_uri, 0);
             if (stat) {
-                return reject(new Error(`Error when creating file. File already exists at ${uri}.`));
+                return reject(new Error(`Error occurred while creating the file. File already exists at ${uri}.`));
             }
             const content = this.doGetContent(options);
             const encoding = this.doGetEncoding(options);
@@ -143,7 +143,19 @@ export class FileSystemNode implements FileSystem2 {
     }
 
     createFolder(uri: string): Promise<FileStat> {
-        throw new Error('Method not implemented.');
+        return new Promise<FileStat>((resolve, reject) => {
+            const _uri = toURI(uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (stat) {
+                return reject(new Error(`Error occurred while creating the directory. File already exists at ${uri}.`));
+            }
+            fs.mkdirs(toNodePath(_uri), error => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve(this.doGetStat(_uri, 1));
+            });
+        });
     }
 
     touchFile(uri: string): Promise<FileStat> {

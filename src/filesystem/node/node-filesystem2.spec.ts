@@ -587,6 +587,44 @@ describe("NodeFileSystem", () => {
             });
         });
 
+        // TODO nested file creation
+
+    });
+
+    describe("08 #createFolder", () => {
+
+        it("Should be rejected with an error if a directory already exist under the desired URI.", () => {
+            const uri = root.clone().segment("foo");
+            fs.mkdirSync(uri.path());
+            expect(fs.statSync(uri.path()).isDirectory()).to.be.true;
+
+            return createFileSystem().createFolder(uri.toString()).should.eventually.be.rejectedWith(Error);
+        });
+
+        it("Should create a directory and return with the stat object on successful directory creation.", () => {
+            const uri = root.clone().segment("foo");
+            expect(fs.existsSync(uri.path())).to.be.false;
+
+            return createFileSystem().createFolder(uri.toString()).then(stat => {
+                expect(stat).to.be.an("object");
+                expect(stat).to.have.property("uri").that.equals(uri.toString());
+                expect(stat).to.have.property("hasChildren").that.is.false;
+                expect(stat).to.have.property("children").that.is.empty;
+            });
+        });
+
+        it("Should create a directory and return with the stat object on successful directory creation.", () => {
+            const uri = root.clone().segment("foo/bar");
+            expect(fs.existsSync(uri.path())).to.be.false;
+
+            return createFileSystem().createFolder(uri.toString()).then(stat => {
+                expect(stat).to.be.an("object");
+                expect(stat).to.have.property("uri").that.equals(uri.toString());
+                expect(stat).to.have.property("hasChildren").that.is.false;
+                expect(stat).to.have.property("children").that.is.empty;
+            });
+        });
+
     });
 
 });
