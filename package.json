@@ -33,7 +33,6 @@
     "reconnecting-websocket": "^3.0.3",
     "reflect-metadata": "^0.1.10",
     "touch": "^1.0.0",
-    "urijs": "^1.18.10",
     "vscode-languageserver": "^3.2.0",
     "vscode-ws-jsonrpc": "^0.0.1-alpha.1",
     "ws": "^2.2.0"
