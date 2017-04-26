@@ -44,7 +44,7 @@ export interface FileSystem2 {
      *
      * The optional parameter content can be used as value to fill into the new file.
      */
-    createFile(uri: string, options?: { content?: string }): Promise<FileStat>;
+    createFile(uri: string, options?: { content?: string, encoding?: string }): Promise<FileStat>;
 
     /**
      * Creates a new folder with the given path. The returned promise

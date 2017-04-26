@@ -4,7 +4,7 @@ import { FileStat, FileSystem2, FileSystemClient } from '../common/filesystem2';
 
 export class FileSystemNode implements FileSystem2 {
 
-    protected client: FileSystemClient|undefined
+    protected client: FileSystemClient | undefined
 
     constructor(protected rootURI: string) {
     }
@@ -124,8 +124,22 @@ export class FileSystemNode implements FileSystem2 {
         });
     }
 
-    createFile(uri: string, options?: { content?: string }): Promise<FileStat> {
-        throw new Error('Method not implemented.');
+    createFile(uri: string, options?: { content?: string, encoding?: string }): Promise<FileStat> {
+        return new Promise<FileStat>((resolve, reject) => {
+            const _uri = toURI(uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (stat) {
+                return reject(new Error(`Error when creating file. File already exists at ${uri}.`));
+            }
+            const content = this.doGetContent(options);
+            const encoding = this.doGetEncoding(options);
+            fs.writeFile(toNodePath(_uri), content, { encoding }, error => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve(this.doGetStat(_uri, 1));
+            });
+        });
     }
 
     createFolder(uri: string): Promise<FileStat> {
@@ -214,6 +228,10 @@ export class FileSystemNode implements FileSystem2 {
     protected doGetRecursive(option?: { recursive?: boolean }): boolean {
         // TODO: this should fall back to the workspace default configuration. By default recursive configuration is true.
         return (option && option.recursive) || true;
+    }
+
+    protected doGetContent(option?: { content?: string }): string {
+        return (option && option.content) || "";
     }
 
 }
