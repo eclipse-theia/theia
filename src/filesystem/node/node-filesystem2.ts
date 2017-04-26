@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import * as fs from "fs-extra";
 import * as URI from "urijs";
 import { FileStat, FileSystem2, FileSystemClient } from '../common/filesystem2';
 
@@ -103,7 +103,25 @@ export class FileSystemNode implements FileSystem2 {
     }
 
     copy(sourceUri: string, targetUri: string, options?: { overwrite?: boolean, recursive?: boolean }): Promise<FileStat> {
-        throw new Error('Method not implemented.');
+        return new Promise<FileStat>((resolve, reject) => {
+            const _sourceUri = toURI(sourceUri);
+            const sourceStat = this.doGetStat(_sourceUri, 0);
+            if (!sourceStat) {
+                return reject(new Error(`File does not exist under ${sourceUri}.`));
+            }
+            const overwrite = this.doGetOverwrite(options);
+            const _targetUri = toURI(targetUri);
+            const targetStat = this.doGetStat(_targetUri, 0);
+            if (targetStat && !overwrite) {
+                return reject(new Error(`File already exist under the \'${targetUri}\' target location. Did you set \'overwrite\' to true?`));
+            }
+            fs.copy(toNodePath(_sourceUri), toNodePath(_targetUri), error => {
+                if (error) {
+                    return reject(error);
+                }
+                return resolve(this.doGetStat(_targetUri, 1));
+            });
+        });
     }
 
     createFile(uri: string, options?: { content?: string }): Promise<FileStat> {
@@ -135,7 +153,13 @@ export class FileSystemNode implements FileSystem2 {
     }
 
     getWorkspaceRoot(): Promise<FileStat> {
-        throw new Error('Method not implemented.');
+        return new Promise<FileStat>((resolve, reject) => {
+            const stat = this.doGetStat(toURI(this.rootURI), 2);
+            if (!stat) {
+                return reject(new Error(`Cannot locate workspace root under ${this.rootURI}.`));
+            }
+            resolve(stat);
+        });
     }
 
     protected doGetStat(uri: uri.URI, depth: number): FileStat | undefined {
@@ -185,6 +209,11 @@ export class FileSystemNode implements FileSystem2 {
     protected doGetOverwrite(option?: { overwrite?: boolean }): boolean {
         // TODO: this should fall back to the workspace default configuration.
         return (option && option.overwrite) || false;
+    }
+
+    protected doGetRecursive(option?: { recursive?: boolean }): boolean {
+        // TODO: this should fall back to the workspace default configuration. By default recursive configuration is true.
+        return (option && option.recursive) || true;
     }
 
 }

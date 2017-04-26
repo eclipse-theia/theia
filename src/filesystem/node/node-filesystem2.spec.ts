@@ -219,29 +219,7 @@ describe("NodeFileSystem", () => {
             return createFileSystem().move(sourceUri.toString(), targetUri.toString()).should.eventually.be.rejectedWith(Error);
         });
 
-        it("Should be rejected with an error if the source is a file but the target is a directory.", () => {
-            const sourceUri = root.clone().segment("/foo.txt");
-            const targetUri = root.clone().segment("/bar");
-            fs.writeFileSync(sourceUri.path(), "foo");
-            fs.mkdirSync(targetUri.path());
-            expect(fs.statSync(sourceUri.path()).isFile()).to.be.true;
-            expect(fs.statSync(targetUri.path()).isDirectory()).to.be.true;
-
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
-        });
-
-        it("Should be rejected with an error if the source is a directory but the target is a file.", () => {
-            const sourceUri = root.clone().segment("/foo");
-            const targetUri = root.clone().segment("/bar.txt");
-            fs.mkdirSync(sourceUri.path());
-            fs.writeFileSync(targetUri.path(), "foo");
-            expect(fs.statSync(sourceUri.path()).isDirectory()).to.be.true;
-            expect(fs.statSync(targetUri.path()).isFile()).to.be.true;
-
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
-        });
-
-        it("Moving a file to an empty directory. Should be rejected with an error because files cannot be moved to an existing directory location.", () => {
+        it("Moving a file to an empty directory. Should be rejected with an error because files cannot be moved to an existing directory locations.", () => {
             const sourceUri = root.clone().segment("/foo.txt");
             const targetUri = root.clone().segment("/bar");
             fs.writeFileSync(sourceUri.path(), "foo");
@@ -254,7 +232,7 @@ describe("NodeFileSystem", () => {
             return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
         });
 
-        it("Moving a file to a non-empty directory. Should be rejected with and error because files cannot be moved to an existing directory location.", () => {
+        it("Moving a file to a non-empty directory. Should be rejected with and error because files cannot be moved to an existing directory locations.", () => {
             const sourceUri = root.clone().segment("/foo.txt");
             const targetUri = root.clone().segment("/bar");
             const targetFileUri_01 = targetUri.clone().segment("/bar_01.txt");
@@ -355,7 +333,7 @@ describe("NodeFileSystem", () => {
             return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
         });
 
-        it("Moving a non-empty directory to an empty directory. Source folder and its content should be moved to target location.", () => {
+        it("Moving a non-empty directory to an empty directory. Source folder and its content should be moved to the target location.", () => {
             const sourceUri = root.clone().segment("/foo");
             const targetUri = root.clone().segment("/bar");
             const sourceFileUri_01 = sourceUri.clone().segment("/foo_01.txt");
@@ -406,7 +384,114 @@ describe("NodeFileSystem", () => {
             return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
         });
 
-    })
+    });
+
+    describe("05 #copy", () => {
+
+        it("", () => {
+
+        });
+
+        it("Copy a file from non existing location. Should be rejected with an error. Nothing to copy.", () => {
+            const sourceUri = root.clone().segment("/foo");
+            const targetUri = root.clone().segment("/bar");
+            fs.mkdirSync(targetUri.path());
+            expect(fs.existsSync(sourceUri.path())).to.be.false;
+            expect(fs.statSync(targetUri.path()).isDirectory()).to.be.true;
+
+            return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).should.eventually.be.rejectedWith(Error);
+        });
+
+        it("Copy a file to existing location without overwrite enabled. Should be rejected with an error.", () => {
+            const sourceUri = root.clone().segment("/foo");
+            const targetUri = root.clone().segment("/bar");
+            fs.mkdirSync(targetUri.path());
+            fs.mkdirSync(sourceUri.path());
+            expect(fs.statSync(sourceUri.path()).isDirectory()).to.be.true;
+            expect(fs.statSync(targetUri.path()).isDirectory()).to.be.true;
+
+            return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).should.eventually.be.rejectedWith(Error);
+        });
+
+        it("Copy a file to a non-existing location. Should return with the file stat representing the new file at the target location.", () => {
+            const sourceUri = root.clone().segment("/foo");
+            const targetUri = root.clone().segment("/bar");
+            fs.mkdirSync(sourceUri.path());
+            expect(fs.statSync(sourceUri.path()).isDirectory()).to.be.true;
+            expect(fs.existsSync(targetUri.path())).to.be.false;
+
+            return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).then(stat => {
+                expect(stat).to.be.an("object");
+                expect(stat).to.have.property("uri").that.is.equal(targetUri.toString());
+            });
+        });
+
+        // it("Copy a file to a non-existing, nested location. Should return with the file stat representing the new file at the target location.", () => {
+        //     const sourceUri = root.clone().segment("/foo");
+        //     const targetUri = root.clone().segment(["/path", "/to", "/bar"]);
+        //     fs.mkdirSync(sourceUri.path());
+        //     expect(fs.statSync(sourceUri.path()).isDirectory()).to.be.true;
+        //     expect(fs.existsSync(targetUri.path())).to.be.false;
+
+        //     return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).then(stat => {
+        //         expect(stat).to.be.an("object");
+        //         expect(stat).to.have.property("uri").that.is.equal(targetUri.toString());
+        //     });
+        // });
+
+        // it("TODO Copy folder with all false flags to a non existing location.", () => {
+
+        // });
+
+        // it("TODO Copy folder with recursively to a non existing location.", () => {
+
+        // });
+
+    });
+
+    describe("06 #getWorkspaceRoot", () => {
+
+        it("Should be rejected when the workspace root does not exist.", () => {
+            return new FileSystemNode("some/missing/path").getWorkspaceRoot().should.eventually.be.rejectedWith(Error);
+        });
+
+        it("Should be return with the stat of the root. The root stat has information of its direct descendants and their children.", () => {
+            const uri_1 = root.clone().segment("/foo");
+            const uri_2 = root.clone().segment("/bar");
+            const uri_1_01 = uri_1.clone().segment("/foo_01.txt");
+            const uri_1_02 = uri_1.clone().segment("/foo_02.txt");
+            const uri_2_01 = uri_2.clone().segment("/bar_01.txt");
+            const uri_2_02 = uri_2.clone().segment("/bar_02.txt");
+            fs.mkdirSync(uri_1.path());
+            fs.mkdirSync(uri_2.path());
+            fs.writeFileSync(uri_1_01.path(), "foo_01");
+            fs.writeFileSync(uri_1_02.path(), "foo_02");
+            fs.writeFileSync(uri_2_01.path(), "bar_01");
+            fs.writeFileSync(uri_2_02.path(), "bar_02");
+            expect(fs.statSync(uri_1.path()).isDirectory()).to.be.true;
+            expect(fs.statSync(uri_2.path()).isDirectory()).to.be.true;
+            expect(fs.readFileSync(uri_1_01.path(), "utf8")).to.be.equal("foo_01");
+            expect(fs.readFileSync(uri_1_02.path(), "utf8")).to.be.equal("foo_02");
+            expect(fs.readFileSync(uri_2_01.path(), "utf8")).to.be.equal("bar_01");
+            expect(fs.readFileSync(uri_2_02.path(), "utf8")).to.be.equal("bar_02");
+            expect(fs.readdirSync(uri_1.path())).to.include("foo_01.txt").and.to.include("foo_02.txt");
+            expect(fs.readdirSync(uri_2.path())).to.include("bar_01.txt").and.to.include("bar_02.txt");
+
+            return createFileSystem().getWorkspaceRoot().then(stat => {
+                expect(stat).to.be.an("object");
+                expect(stat).to.have.property("uri").that.equals(root.toString());
+                expect(stat).to.have.property("hasChildren").that.be.true;
+                expect(stat).to.have.property("children").that.is.not.undefined;
+                expect(stat).to.have.property("children").that.has.lengthOf(2);
+                expect(stat.children!.map(childStat => childStat.uri)).to.contain(uri_1.toString()).and.contain(uri_2.toString());
+                expect(stat.children!.find(childStat => childStat.uri === uri_1.toString())).to.be.not.undefined;
+                expect(stat.children!.find(childStat => childStat.uri === uri_2.toString())).to.be.not.undefined;
+                expect(stat.children!.find(childStat => childStat.uri === uri_1.toString())!.children).has.length(2);
+                expect(stat.children!.find(childStat => childStat.uri === uri_2.toString())!.children).has.length(2);
+            });
+        });
+
+    });
 
 });
 
