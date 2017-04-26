@@ -71,7 +71,7 @@ export class EditorManager implements IEditorManager {
 
     open(uri: string): Promise<EditorWidget> | undefined {
         const simpleName = new URI(uri).lastSegment() || 'Unknown'
-        const resource = Uri.file(uri);
+        const resource = Uri.parse(uri);
         return Promise.resolve(this.editorService.openEditor({resource}).then(editor => {
             if (editor) {
                 editor.title.label = simpleName
