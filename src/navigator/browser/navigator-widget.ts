@@ -1,19 +1,19 @@
-import {injectable, inject, decorate} from "inversify";
-import {h} from "@phosphor/virtualdom";
-import {Message} from "@phosphor/messaging";
+import { injectable, inject, decorate } from "inversify";
+import { h } from "@phosphor/virtualdom";
+import { Message } from "@phosphor/messaging";
 
 import { TreeWidget, VirtualWidget, ITreeNode, ISelectableTreeNode } from "./tree";
-import {TheiaPlugin, TheiaApplication} from "../../application/browser";
-import { FileNavigatorModel, IDirNode, IPathNode } from "./navigator-model";
+import { TheiaPlugin, TheiaApplication } from "../../application/browser";
+import { FileNavigatorModel, DirNode, FileStatNode } from "./navigator-model";
 import { ContextMenuRenderer } from "../../application/browser/menu/context-menu-renderer";
 import NodeProps = TreeWidget.NodeProps;
 
 export const FILE_NAVIGATOR_CLASS = 'theia-FileNavigator';
 export const ROOT_ACTIVE_CLASS = 'theia-mod-selected';
 export const CONTEXT_MENU_PATH = 'navigator-context-menu';
-export const PATH_NODE_CLASS = 'theia-PathNode';
+export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
 export const DIR_NODE_CLASS = 'theia-DirNode';
-export const PATH_ICON_CLASS = 'theia-PathIcon';
+export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 
 const FILE_NAVIGATOR_PARAMS: TreeWidget.TreeProps = {
     ...TreeWidget.DEFAULT_PROPS,
@@ -62,32 +62,32 @@ export class FileNavigatorWidget extends TreeWidget<FileNavigatorModel> {
 
     protected createNodeClassNames(node: ITreeNode, props: NodeProps): string[] {
         const classNames = super.createNodeClassNames(node, props);
-        if (IPathNode.is(node)) {
-            classNames.push(PATH_NODE_CLASS);
+        if (FileStatNode.is(node)) {
+            classNames.push(FILE_STAT_NODE_CLASS);
         }
-        if (IDirNode.is(node)) {
+        if (DirNode.is(node)) {
             classNames.push(DIR_NODE_CLASS);
         }
         return classNames;
     }
 
     protected decorateCaption(node: ITreeNode, caption: h.Child, props: NodeProps): h.Child {
-        if (IPathNode.is(node)) {
-            return this.decoratePathCaption(node, caption, props);
+        if (FileStatNode.is(node)) {
+            return this.decorateFileStatCaption(node, caption, props);
         }
         return super.decorateCaption(node, caption, props);
     }
 
-    protected decoratePathCaption(node: IPathNode, caption: h.Child, props: NodeProps): h.Child {
-        const pathIcon = h.span({className: PATH_ICON_CLASS});
-        return super.decorateCaption(node, VirtualWidget.merge(pathIcon, caption), props);
+    protected decorateFileStatCaption(node: FileStatNode, caption: h.Child, props: NodeProps): h.Child {
+        const icon = h.span({ className: FILE_STAT_ICON_CLASS });
+        return super.decorateCaption(node, VirtualWidget.merge(icon, caption), props);
     }
 }
 
 @injectable()
 export class FileNavigatorContribution implements TheiaPlugin {
 
-    constructor(@inject(FileNavigatorWidget) private fileNavigator: FileNavigatorWidget) {
+    constructor( @inject(FileNavigatorWidget) private fileNavigator: FileNavigatorWidget) {
     }
 
     onStart(app: TheiaApplication): void {
