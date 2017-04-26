@@ -16,22 +16,27 @@ export class FileSystemNode implements FileSystem2 {
     getFileStat(uriAsString: string): Promise<FileStat> {
         const uri = toURI(uriAsString);
         return new Promise<FileStat>((resolve, reject) => {
-            try {
-                resolve(this.doGetStat(uri, 1));
-            } catch (error) {
-                reject(error);
+            const stat = this.doGetStat(uri, 1);
+            if (!stat) {
+                return reject(new Error(`Cannot find file under the given URI. URI: ${uri}.`));
             }
+            resolve(stat);
         });
     }
 
     exists(uri: string): Promise<boolean> {
-        return Promise.resolve(this.doGetStat(toURI(uri), 0) !== undefined);
+        return new Promise<boolean>((resolve, reject) => {
+            return this.doGetStat(toURI(uri), 0) !== undefined;
+        });
     }
 
     resolveContent(uri: string, options?: { encoding?: string }): Promise<{ stat: FileStat, content: string }> {
         return new Promise<{ stat: FileStat, content: string }>((resolve, reject) => {
             const _uri = toURI(uri);
             const stat = this.doGetStat(_uri, 0);
+            if (!stat) {
+                return reject(new Error(`Cannot find file under the given URI. URI: ${uri}.`));
+            }
             if (stat.isDirectory) {
                 return reject(new Error(`Cannot resolve the content of a directory. URI: ${uri}.`));
             }
@@ -49,6 +54,9 @@ export class FileSystemNode implements FileSystem2 {
         return new Promise<FileStat>((resolve, reject) => {
             const _uri = toURI(file.uri);
             const stat = this.doGetStat(_uri, 0);
+            if (!stat) {
+                return reject(new Error(`Cannot find file under the given URI. URI: ${file.uri}.`));
+            }
             if (stat.isDirectory) {
                 return reject(new Error(`Cannot set the content of a directory. URI: ${file.uri}.`));
             }
@@ -63,7 +71,11 @@ export class FileSystemNode implements FileSystem2 {
                 if (error) {
                     return reject(error);
                 }
-                resolve(this.doGetStat(_uri, 0));
+                try {
+                    resolve(this.doGetStat(_uri, 0));
+                } catch (error) {
+                    reject(error);
+                }
             });
         });
     }
@@ -71,8 +83,22 @@ export class FileSystemNode implements FileSystem2 {
     move(sourceUri: string, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat> {
         return new Promise<FileStat>((resolve, reject) => {
             const _sourceUri = toURI(sourceUri);
-            const stat = this.doGetStat(_sourceUri, 0);
-            console.log(stat);
+            const sourceStat = this.doGetStat(_sourceUri, 0);
+            if (!sourceStat) {
+                return reject(new Error(`File does not exist under ${sourceUri}.`));
+            }
+            const _targetUri = toURI(targetUri);
+            const overwrite = this.doGetOverwrite(options);
+            const targetStat = this.doGetStat(_targetUri, 0);
+            if (targetStat && !overwrite) {
+                return reject(new Error(`File already exist under the \'${targetUri}\' target location. Did you set \'overwrite\' to true?`));
+            }
+            fs.rename(toNodePath(_sourceUri), toNodePath(_targetUri), (error) => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve(this.doGetStat(_targetUri, 1));
+            });
         });
     }
 
@@ -112,31 +138,42 @@ export class FileSystemNode implements FileSystem2 {
         throw new Error('Method not implemented.');
     }
 
-    protected doGetStat(uri: uri.URI, depth: number): FileStat {
-        const stat = fs.statSync(toNodePath(uri));
-        if (stat.isDirectory()) {
-            const files = fs.readdirSync(toNodePath(uri));
-            let children = undefined;
-            if (depth > 0) {
-                children = files.map(file => {
-                    const newURI = uri.clone().segment(file)
-                    return this.doGetStat(newURI, depth - 1)
-                });
+    protected doGetStat(uri: uri.URI, depth: number): FileStat | undefined {
+        const _uri = toNodePath(uri);
+        try {
+            const stat = fs.statSync(_uri);
+            if (stat.isDirectory()) {
+                const files = fs.readdirSync(_uri);
+                let children: FileStat[] | undefined = undefined;
+                if (depth > 0) {
+                    children = [];
+                    files.map(file => uri.clone().segment(file)).forEach(childURI => {
+                        const child = this.doGetStat(childURI, depth - 1);
+                        if (child) {
+                            children!.push(child);
+                        }
+                    });
+                }
+                return {
+                    uri: uri.toString(),
+                    lastModification: stat.mtime.getTime(),
+                    isDirectory: true,
+                    hasChildren: files.length > 0,
+                    children
+                };
+            } else {
+                return {
+                    uri: uri.toString(),
+                    lastModification: stat.mtime.getTime(),
+                    isDirectory: false,
+                    size: stat.size
+                };
             }
-            return {
-                uri: uri.toString(),
-                lastModification: stat.mtime.getTime(),
-                isDirectory: true,
-                hasChildren: files.length > 0,
-                children
-            };
-        } else {
-            return {
-                uri: uri.toString(),
-                lastModification: stat.mtime.getTime(),
-                isDirectory: false,
-                size: stat.size
-            };
+        } catch (error) {
+            if (isErrnoException(error) && error.errno === -2 && error.code === 'ENOENT') {
+                return undefined;
+            }
+            throw error;
         }
     }
 
@@ -145,6 +182,15 @@ export class FileSystemNode implements FileSystem2 {
         return (option && option.encoding) || "utf8";
     }
 
+    protected doGetOverwrite(option?: { overwrite?: boolean }): boolean {
+        // TODO: this should fall back to the workspace default configuration.
+        return (option && option.overwrite) || false;
+    }
+
+}
+
+function isErrnoException(error: any | NodeJS.ErrnoException): error is NodeJS.ErrnoException {
+    return (<NodeJS.ErrnoException>error).code !== undefined && (<NodeJS.ErrnoException>error).errno !== undefined;
 }
 
 function toURI(uri: string): uri.URI {

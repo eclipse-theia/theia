@@ -48,7 +48,7 @@ export interface FileSystem {
     watch(watcher: FileSystemWatcher): Disposable;
 
     /**
-     * Return a URI represening this path.
+     * Return a URI representing this path.
      */
     toUri(path: Path): Promise<string | null>;
 }
