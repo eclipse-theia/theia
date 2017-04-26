@@ -1,6 +1,6 @@
-import {injectable, inject} from "inversify";
-import {FileSystem, Path} from "../../filesystem/common";
-import {DisposableCollection, Disposable} from "../../application/common";
+import { Disposable, DisposableCollection } from '../../application/common';
+import { FileSystem2, FileStat } from '../../filesystem/common/filesystem2';
+import { inject, injectable } from 'inversify';
 import ITextModelResolverService = monaco.editor.ITextModelResolverService;
 import ITextModelContentProvider = monaco.editor.ITextModelContentProvider;
 import ITextEditorModel = monaco.editor.ITextEditorModel;
@@ -14,7 +14,7 @@ export class TextModelResolverService implements ITextModelResolverService {
 
     protected readonly models = new Map<string, monaco.Promise<ReferenceAwareModel> | undefined>();
 
-    constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem) {
+    constructor(@inject(FileSystem2) protected readonly fileSystem: FileSystem2) {
     }
 
     createModelReference(uri: Uri): monaco.Promise<IReference<ITextEditorModel>> {
@@ -35,21 +35,19 @@ export class TextModelResolverService implements ITextModelResolverService {
 
     protected createModel(uri: Uri): monaco.Promise<ReferenceAwareModel> {
         const encoding = document.characterSet;
-        const path = Path.fromString(uri.path);
-        return monaco.Promise.wrap(this.fileSystem.readFile(path, encoding).then(value => {
-            const model = monaco.editor.createModel(value, undefined, uri);
-            model.onDidChangeContent(() => this.save(model, encoding));
+        return monaco.Promise.wrap(this.fileSystem.resolveContent(uri.toString(), encoding).then(result => {
+            const model = monaco.editor.createModel(result.content, undefined, uri);
+            model.onDidChangeContent(() => this.save(result.stat, model, encoding));
             return new ReferenceAwareModel(model);
         }));
     }
 
     protected readonly toDisposeOnSave = new DisposableCollection();
 
-    protected save(model: IModel, encoding: string): void {
+    protected save(stat: FileStat, model: IModel, encoding: string): void {
         this.toDisposeOnSave.dispose();
         const handle = window.setTimeout(() => {
-            const path = Path.fromString(model.uri.path);
-            this.fileSystem.writeFile(path, model.getValue(), encoding);
+            this.fileSystem.setContent(stat, model.getValue(), encoding);
         }, 500);
         this.toDisposeOnSave.push(Disposable.create(() => window.clearTimeout(handle)));
     }

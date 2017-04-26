@@ -3,10 +3,8 @@ import { ClipboardService, SelectionService } from '../../application/common';
 import { DialogService } from '../../application/common';
 import { CommandContribution, CommandHandler, CommandRegistry } from '../../application/common/command';
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../../application/common/menu';
-import { promptConfirmDialog, promptNameDialog } from '../browser/filesystem-dialogs';
-import { FileSystem } from '../common/filesystem';
-import { PathSelection } from '../common/filesystem-selection';
-import { Path } from '../common/path';
+// import { promptConfirmDialog, promptNameDialog } from '../browser/filesystem-dialogs';
+import { UriSelection } from '../common/filesystem-selection';
 import { inject, injectable } from 'inversify';
 import { CommonCommands } from "../../application/common/commands-common";
 
@@ -52,7 +50,7 @@ export class FileMenuContribution implements MenuContribution {
 @injectable()
 export class FileCommandContribution implements CommandContribution {
     constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(FileSystem2) protected readonly fileSystem: FileSystem2,
         @inject(ClipboardService) protected readonly clipboardService: ClipboardService,
         @inject(DialogService) protected readonly dialogService: DialogService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
@@ -87,8 +85,8 @@ export class FileCommandContribution implements CommandContribution {
                 actionId: 'renamefile',
                 selectionService: this.selectionService,
                 dialogService: this.dialogService
-            }, (path: Path) => {
-                promptNameDialog('renamefile', path, this.dialogService, this.fileSystem)
+            }, (uri: string) => {
+                // promptNameDialog('renamefile', uri, this.dialogService, this.fileSystem)
                 return Promise.resolve()
             })
         );
@@ -99,9 +97,9 @@ export class FileCommandContribution implements CommandContribution {
                 id: Commands.FILE_COPY,
                 actionId: 'copyfile',
                 selectionService: this.selectionService
-            }, (path: Path) => {
+            }, (uri: string) => {
                 this.clipboardService.setData({
-                    text: path.toString()
+                    text: uri
                 })
                 return Promise.resolve()
             })
@@ -114,32 +112,33 @@ export class FileCommandContribution implements CommandContribution {
                 actionId: 'pastefile',
                 selectionService: this.selectionService,
                 clipboardService: this.clipboardService
-            }, (pastePath: Path) => {
-                let copyPath: Path
-                return this.fileSystem.dirExists(pastePath)
-                .then((targetFolderExists: boolean) => {
-                    if (!targetFolderExists) {
-                        // 'paste path is not folder'
-                        pastePath = pastePath.parent
-                    }
-                    return this.fileSystem.dirExists(pastePath)
-                })
-                .then((targetFolderExists: boolean) => {
-                    if (!targetFolderExists) {
-                        return Promise.reject("paste path dont exist")
-                    }
-                    let data: string = this.clipboardService.getData('text')
-                    copyPath = Path.fromString(data)
-                    if (copyPath.simpleName) {
-                        pastePath = pastePath.append(copyPath.simpleName)
-                    }
-                    return this.fileSystem.cp(copyPath, pastePath).then((newPath) => {
-                        if (newPath !== pastePath.toString()) {
-                            // need to rename to something new
-                            promptNameDialog('pastefile', Path.fromString(newPath), this.dialogService, this.fileSystem)
-                        }
-                    })
-                })
+            }, uri => {
+                return Promise.resolve()
+                // let copyPath: Path
+                // return this.fileSystem.dirExists(pastePath)
+                // .then((targetFolderExists: boolean) => {
+                //     if (!targetFolderExists) {
+                //         // 'paste path is not folder'
+                //         pastePath = pastePath.parent
+                //     }
+                //     return this.fileSystem.dirExists(pastePath)
+                // })
+                // .then((targetFolderExists: boolean) => {
+                //     if (!targetFolderExists) {
+                //         return Promise.reject("paste path dont exist")
+                //     }
+                //     let data: string = this.clipboardService.getData('text')
+                //     copyPath = Path.fromString(data)
+                //     if (copyPath.simpleName) {
+                //         pastePath = pastePath.append(copyPath.simpleName)
+                //     }
+                //     return this.fileSystem.cp(copyPath, pastePath).then((newPath) => {
+                //         if (newPath !== pastePath.toString()) {
+                //             // need to rename to something new
+                //             promptNameDialog('pastefile', Path.fromString(newPath), this.dialogService, this.fileSystem)
+                //         }
+                //     })
+                // })
             })
         );
 
@@ -149,16 +148,17 @@ export class FileCommandContribution implements CommandContribution {
                 id: Commands.NEW_FILE,
                 actionId: 'newfile',
                 selectionService: this.selectionService
-            }, (path: Path) => {
-                let newPath: Path
-                return this.fileSystem.createName(path)
-                .then((newPathData: string) => {
-                    newPath = Path.fromString(newPathData)
-                    return this.fileSystem.writeFile(newPath, "")
-                })
-                .then(() => {
-                    promptNameDialog('newfile', newPath, this.dialogService, this.fileSystem)
-                })
+            }, (uri: string) => {
+                // let newPath: Path
+                // return this.fileSystem.createName(path)
+                // .then((newPathData: string) => {
+                //     newPath = Path.fromString(newPathData)
+                //     return this.fileSystem.writeFile(newPath, "")
+                // })
+                // .then(() => {
+                //     promptNameDialog('newfile', newPath, this.dialogService, this.fileSystem)
+                // })
+                return Promise.resolve()
             })
         );
 
@@ -168,16 +168,17 @@ export class FileCommandContribution implements CommandContribution {
                 id: Commands.NEW_FOLDER,
                 actionId: 'newfolder',
                 selectionService: this.selectionService
-            }, (path: Path) => {
-                let newPath: Path
-                return this.fileSystem.createName(path)
-                .then((newPathData: string) => {
-                    newPath = Path.fromString(newPathData)
-                    return this.fileSystem.mkdir(newPath)
-                })
-                .then(() => {
-                    promptNameDialog('newfolder', newPath, this.dialogService, this.fileSystem)
-                })
+            }, (uri: string) => {
+                return Promise.resolve()
+                // let newPath: Path
+                // return this.fileSystem.createName(path)
+                // .then((newPathData: string) => {
+                //     newPath = Path.fromString(newPathData)
+                //     return this.fileSystem.mkdir(newPath)
+                // })
+                // .then(() => {
+                //     promptNameDialog('newfolder', newPath, this.dialogService, this.fileSystem)
+                // })
             })
         );
 
@@ -187,21 +188,22 @@ export class FileCommandContribution implements CommandContribution {
                 id: Commands.FILE_DELETE,
                 actionId: 'delete',
                 selectionService: this.selectionService
-            }, (path: Path) => {
-                return this.fileSystem.dirExists(path)
-                .then((isDir) => {
-                    promptConfirmDialog(
-                        'delete',
-                        () => {
-                            if (isDir) {
-                                return this.fileSystem.rmdir(path)
-                            }
-                            return this.fileSystem.rm(path)
-                        },
-                        this.dialogService,
-                        this.fileSystem
-                    )
-                })
+            }, (uri: string) => {
+                return Promise.resolve()
+                // return this.fileSystem.dirExists(path)
+                // .then((isDir) => {
+                //     promptConfirmDialog(
+                //         'delete',
+                //         () => {
+                //             if (isDir) {
+                //                 return this.fileSystem.rmdir(path)
+                //             }
+                //             return this.fileSystem.rm(path)
+                //         },
+                //         this.dialogService,
+                //         this.fileSystem
+                //     )
+                // })
             })
         );
     }
@@ -210,19 +212,19 @@ export class FileCommandContribution implements CommandContribution {
 export class FileSystemCommandHandler implements CommandHandler {
     constructor(
         protected readonly options: FileSystemCommandHandler.Options,
-        protected readonly doExecute: (path: Path) => Promise<any>) {
+        protected readonly doExecute: (uri: string) => Promise<any>) {
     }
 
     execute(arg?: any): Promise<any> {
         const selection = this.options.selectionService.selection;
-        if (PathSelection.is(selection)) {
-            return this.doExecute(selection.path)
+        if (UriSelection.is(selection)) {
+            return this.doExecute(selection.uri)
         }
         return Promise.resolve()
     }
 
     isVisible(arg?: any): boolean {
-        if (PathSelection.is(this.options.selectionService.selection)) {
+        if (UriSelection.is(this.options.selectionService.selection)) {
             return true;
         }
         return false;

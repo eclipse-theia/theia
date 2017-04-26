@@ -1,36 +1,37 @@
 import { injectable, inject, decorate } from "inversify";
 import { MonacoWorkspace as BaseMonacoWorkspace, MonacoToProtocolConverter, testGlob } from "monaco-languageclient";
 import { DisposableCollection } from "../../application/common";
-import { FileChangeType, FileSystem, Path } from '../../filesystem/common';
+import { FileChangeType, FileSystem2, FileSystemWatcher } from '../../filesystem/common';
 import * as lang from "../../languages/common";
-import { Workspace, FileSystemWatcher, Emitter, FileEvent } from "../../languages/common";
+import * as protocol from "../../languages/common";
 
 decorate(injectable(), BaseMonacoWorkspace);
 decorate(inject(MonacoToProtocolConverter), BaseMonacoWorkspace, 0);
 
 @injectable()
-export class MonacoWorkspace extends BaseMonacoWorkspace implements Workspace {
+export class MonacoWorkspace extends BaseMonacoWorkspace implements protocol.Workspace {
     protected resolveReady: () => void;
     readonly ready = new Promise<void>(resolve => {
         this.resolveReady = resolve;
     });
 
     constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(FileSystem2) protected readonly fileSystem: FileSystem2,
+        @inject(FileSystemWatcher) protected readonly fileSystemWatcher: FileSystemWatcher,
         @inject(MonacoToProtocolConverter) m2p: MonacoToProtocolConverter
     ) {
         super(m2p);
-        fileSystem.toUri(Path.ROOT).then(rootUri => {
-            this._rootUri = rootUri;
+        fileSystem.getWorkspaceRoot().then(rootStat => {
+            this._rootUri = rootStat.uri;
             this.resolveReady();
         });
     }
 
-    createFileSystemWatcher(globPattern: string, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): FileSystemWatcher {
+    createFileSystemWatcher(globPattern: string, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): protocol.FileSystemWatcher {
         const disposables = new DisposableCollection()
-        const onFileEventEmitter = new Emitter<FileEvent>()
+        const onFileEventEmitter = new protocol.Emitter<protocol.FileEvent>()
         disposables.push(onFileEventEmitter);
-        disposables.push(this.fileSystem.watch(event => {
+        disposables.push(this.fileSystemWatcher.onFileChanges(event => {
             for (const change of event.changes) {
                 const result: [lang.FileChangeType, boolean | undefined] =
                     change.type === FileChangeType.ADDED ? [lang.FileChangeType.Created, ignoreCreateEvents] :
@@ -39,13 +40,9 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements Workspace {
 
                 const type = result[0];
                 const ignoreEvents = result[1];
-                const path = change.path;
-                if (ignoreEvents === undefined && ignoreEvents === false && testGlob(globPattern, path.toString())) {
-                    this.fileSystem.toUri(path).then(uri => {
-                        if (uri) {
-                            onFileEventEmitter.fire({ uri, type });
-                        }
-                    });
+                const uri = change.uri;
+                if (ignoreEvents === undefined && ignoreEvents === false && testGlob(globPattern, uri)) {
+                    onFileEventEmitter.fire({ uri, type });
                 }
             }
         }));

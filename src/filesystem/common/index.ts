@@ -1,4 +1,3 @@
-export * from './filesystem';
-export * from './path';
-export * from './filesystem-selection';
-export * from './inmemory-module';
+export * from './filesystem2'
+export * from './filesystem-selection'
+export * from './filesystem-watcher'

@@ -4,16 +4,10 @@ import { MenuContribution } from '../../application/common/menu';
 import { listen } from '../../messaging/browser/connection';
 import { JsonRpcProxyFactory } from '../../messaging/common/proxy-factory';
 import { FileCommandContribution, FileMenuContribution } from '../browser/filesystem-commands';
-import { FileSystem } from '../common/filesystem';
 import { FileSystem2 } from '../common/filesystem2';
-import { FileSystemClient } from '../common/messaging/filesystem-client';
 import { ContainerModule } from 'inversify';
 
 export const fileSystemClientModule = new ContainerModule(bind => {
-    const fileSystemClient = new FileSystemClient();
-    listen(fileSystemClient);
-    bind<FileSystem>(FileSystem).toConstantValue(fileSystemClient);
-
     const fileSystemWatcher = new FileSystemWatcher()
     bind(FileSystemWatcher).toConstantValue(fileSystemWatcher)
 

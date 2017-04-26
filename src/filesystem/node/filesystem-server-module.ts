@@ -1,22 +1,14 @@
 import { ContainerModule } from "inversify";
-import { FileSystem } from "../common";
-import { FileSystemServer } from '../common/messaging';
-import { NodeFileSystem } from "./node-filesystem";
 import { ConnectionHandler } from "../../messaging/common";
 import { FileSystemNode } from "./node-filesystem2";
 import { FileSystem2, FileSystemClient } from "../common/filesystem2";
 import { JsonRpcProxyFactory } from "../../messaging/common/proxy-factory";
-import { Path } from "../common/path";
 
 export const ROOT_DIR_OPTION = '--root-dir=';
 
 export const fileSystemServerModule = new ContainerModule(bind => {
     const rootDir = getRootDir();
     if (rootDir) {
-        const fileSystem = new NodeFileSystem(Path.fromString(rootDir));
-        bind<FileSystem>(FileSystem).toConstantValue(fileSystem);
-        bind<ConnectionHandler>(ConnectionHandler).to(FileSystemServer);
-
         const fileSystem2 = new FileSystemNode(`file://${rootDir}`)
         const proxyFactory = new JsonRpcProxyFactory<FileSystemClient>(fileSystem2, "/filesystem2")
         bind<ConnectionHandler>(ConnectionHandler).toConstantValue(proxyFactory)
