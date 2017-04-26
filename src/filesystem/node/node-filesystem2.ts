@@ -1,6 +1,6 @@
 import * as fs from "fs-extra";
-import * as URI from "urijs";
 import { FileStat, FileSystem2, FileSystemClient } from '../common/filesystem2';
+import URI from "../../application/common/uri";
 
 export class FileSystemNode implements FileSystem2 {
 
@@ -188,7 +188,7 @@ export class FileSystemNode implements FileSystem2 {
         });
     }
 
-    protected doGetStat(uri: uri.URI, depth: number): FileStat | undefined {
+    protected doGetStat(uri: URI, depth: number): FileStat | undefined {
         const _uri = toNodePath(uri);
         try {
             const stat = fs.statSync(_uri);
@@ -197,7 +197,7 @@ export class FileSystemNode implements FileSystem2 {
                 let children: FileStat[] | undefined = undefined;
                 if (depth > 0) {
                     children = [];
-                    files.map(file => uri.clone().segment(file)).forEach(childURI => {
+                    files.map(file => uri.append(file)).forEach(childURI => {
                         const child = this.doGetStat(childURI, depth - 1);
                         if (child) {
                             children!.push(child);
@@ -252,13 +252,13 @@ function isErrnoException(error: any | NodeJS.ErrnoException): error is NodeJS.E
     return (<NodeJS.ErrnoException>error).code !== undefined && (<NodeJS.ErrnoException>error).errno !== undefined;
 }
 
-function toURI(uri: string): uri.URI {
+function toURI(uri: string): URI {
     if (!uri) {
         throw new Error('The argument \'uri\' should be specified.');
     }
     return new URI(uri);
 }
 
-function toNodePath(uri: uri.URI): string {
+function toNodePath(uri: URI): string {
     return uri.path();
 }

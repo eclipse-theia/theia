@@ -1,6 +1,11 @@
+import Uri from 'vscode-uri';
+
 export default class URI {
 
-    constructor(private uri: string) {
+    private uri: string;
+
+    constructor(uri: string) {
+        this.uri = Uri.parse(uri).toString();
     }
 
     parent(): URI {
@@ -19,6 +24,10 @@ export default class URI {
         const copy = segments.slice(0);
         copy.unshift(this.uri);
         return new URI(copy.join('/'));
+    }
+
+    path(): string {
+        return Uri.parse(this.uri).path;
     }
 
     toString() {

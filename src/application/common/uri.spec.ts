@@ -15,29 +15,45 @@ beforeEach(() => {
 describe("uri", () => {
 
     describe("01 #getParent", () => {
-        it("should return the parent.", () => {
+
+        it("Should return the parent.", () => {
             expect(new URI("file:///foo/bar.txt").parent().toString()).equals("file:///foo");
         });
+
     });
 
     describe("02 #lastSegment", () => {
-        it("should return the last segment.", () => {
+
+        it("Should return the last segment.", () => {
             expect(new URI("file:///foo").lastSegment()).equals("foo");
             expect(new URI("file:///foo/bar.txt").lastSegment()).equals("bar.txt");
         });
+
     });
 
     describe("03 #append", () => {
-        it("should return with this when the the segments array is empty.", () => {
+
+        it("Should return with this when the the segments array is empty.", () => {
             const uri = new URI("file:///foo");
             expect(uri.append()).to.be.equal(uri);
         });
-        it("should append a single segment.", () => {
+
+        it("Should append a single segment.", () => {
             expect(new URI("file:///foo").append("bar")).to.be.deep.equal(new URI("file:///foo/bar"));
-        })
-        it("should append multiple segments.", () => {
+        });
+
+        it("Should append multiple segments.", () => {
             expect(new URI("file:///foo").append("bar", "baz")).to.be.deep.equal(new URI("file:///foo/bar/baz"));
-        })
+        });
+
+    });
+
+    describe("04 #path", () => {
+
+        it("Should return with the FS path from the URI.", () => {
+            expect(new URI("file:///foo/bar/baz.txt").path()).equals("/foo/bar/baz.txt");
+        });
+
     });
 
 });
