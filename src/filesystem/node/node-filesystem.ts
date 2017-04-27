@@ -1,16 +1,26 @@
 import * as fs from "fs-extra";
+import * as path from "path";
 import * as touch from "touch";
 import { FSWatcher } from "chokidar";
-import { FileStat, FileSystem, FileSystemClient } from '../common/filesystem';
+import { FileStat, FileSystem, FileSystemClient, FileChange, FileChangeType, FileChangesEvent } from "../common/filesystem";
 import URI from "../../application/common/uri";
 
 const trash: (paths: Iterable<string>) => Promise<void> = require("trash");
-const detectCharacterEncoding: (buffer: Buffer) => { encoding: string, confidence: number } = require('detect-character-encoding');
+const detectCharacterEncoding: (buffer: Buffer) => { encoding: string, confidence: number } = require("detect-character-encoding");
+
+type EventType =
+    "all" |
+    "add" |
+    "addDir" |
+    "unlink" |
+    "unlinkDir" |
+    "change" |
+    "error";
 
 export class FileSystemNode implements FileSystem {
 
-    protected client: FileSystemClient | undefined
-    private watcher: FSWatcher
+    protected client: FileSystemClient | undefined;
+    private watcher: FSWatcher;
 
     constructor(protected rootURI: string, protected defaults: FileSystem.Configuration = {
         encoding: "utf8",
@@ -27,11 +37,18 @@ export class FileSystemNode implements FileSystem {
         if (!stat.isDirectory) {
             throw new Error(`File system root should point to a directory location. URI: ${this.rootURI}.`);
         }
+        const rootPath = _rootUri.path();
         this.watcher = new FSWatcher();
-        this.watcher.add(_rootUri.append("*").path());
-        this.watcher.on("all", (event: string, stats: FileStat | undefined) => {
-            // console.log("event", event, "stat", stat);
-            // TODO delegate into file system client.
+        this.watcher.add(rootPath);
+        this.watcher.on("all", (eventType: EventType, filename: string | Buffer) => {
+            if (this.client) {
+                const changeType = this.getFileChangeType(eventType);
+                if (changeType && typeof filename === "string") {
+                    const change = new FileChange(_rootUri.append(path.relative(rootPath, filename)).toString(), changeType);
+                    const event = new FileChangesEvent([change]);
+                    this.client.onFileChanges(event);
+                }
+            }
         });
     }
 
@@ -117,7 +134,7 @@ export class FileSystemNode implements FileSystem {
             const overwrite = this.doGetOverwrite(options);
             const targetStat = this.doGetStat(_targetUri, 0);
             if (targetStat && !overwrite) {
-                return reject(new Error(`File already exist under the \'${targetUri}\' target location. Did you set \'overwrite\' to true?`));
+                return reject(new Error(`File already exist under the \'${targetUri}\' target location. Did you set the \'overwrite\' flag to true?`));
             }
             fs.rename(_sourceUri.path(), _targetUri.path(), (error) => {
                 if (error) {
@@ -139,7 +156,7 @@ export class FileSystemNode implements FileSystem {
             const _targetUri = new URI(targetUri);
             const targetStat = this.doGetStat(_targetUri, 0);
             if (targetStat && !overwrite) {
-                return reject(new Error(`File already exist under the \'${targetUri}\' target location. Did you set \'overwrite\' to true?`));
+                return reject(new Error(`File already exist under the \'${targetUri}\' target location. Did you set the \'overwrite\' flag to true?`));
             }
             fs.copy(_sourceUri.path(), _targetUri.path(), error => {
                 if (error) {
@@ -276,7 +293,7 @@ export class FileSystemNode implements FileSystem {
                 if (encoding && encoding.encoding) {
                     resolve(encoding.encoding);
                 } else {
-                    resolve(options && typeof (options.preferredEncoding) !== 'undefined' ? options.preferredEncoding : this.defaults.encoding);
+                    resolve(options && typeof (options.preferredEncoding) !== "undefined" ? options.preferredEncoding : this.defaults.encoding);
                 }
             });
         });
@@ -328,7 +345,7 @@ export class FileSystemNode implements FileSystem {
                 };
             }
         } catch (error) {
-            if (isErrnoException(error) && error.errno === -2 && error.code === 'ENOENT') {
+            if (isErrnoException(error) && error.errno === -2 && error.code === "ENOENT") {
                 return undefined;
             }
             throw error;
@@ -336,31 +353,48 @@ export class FileSystemNode implements FileSystem {
     }
 
     protected doGetEncoding(option?: { encoding?: string }): string {
-        return option && typeof (option.encoding) !== 'undefined'
+        return option && typeof (option.encoding) !== "undefined"
             ? option.encoding
             : this.defaults.encoding;
     }
 
     protected doGetOverwrite(option?: { overwrite?: boolean }): boolean {
-        return option && typeof (option.overwrite) !== 'undefined'
+        return option && typeof (option.overwrite) !== "undefined"
             ? option.overwrite
             : this.defaults.overwrite;
     }
 
     protected doGetRecursive(option?: { recursive?: boolean }): boolean {
-        return option && typeof (option.recursive) !== 'undefined'
+        return option && typeof (option.recursive) !== "undefined"
             ? option.recursive
             : this.defaults.recursive;
     }
 
     protected doGetMoveToTrash(option?: { moveToTrash?: boolean }): boolean {
-        return option && typeof (option.moveToTrash) !== 'undefined'
+        return option && typeof (option.moveToTrash) !== "undefined"
             ? option.moveToTrash
             : this.defaults.moveToTrash;
     }
 
     protected doGetContent(option?: { content?: string }): string {
         return (option && option.content) || "";
+    }
+
+    private getFileChangeType(eventType: EventType): FileChangeType | undefined {
+        switch (eventType) {
+            case "add":
+            case "addDir":
+                return FileChangeType.ADDED;
+            case "unlink":
+            case "unlinkDir":
+                return FileChangeType.DELETED;
+            case "change":
+                return FileChangeType.UPDATED;
+            case "error":
+                return undefined;
+            default:
+                throw new Error(`Unexpected file change event type: ${event}.`);
+        }
     }
 
 }

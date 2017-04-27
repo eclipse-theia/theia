@@ -24,7 +24,7 @@ export default class URI {
         return this.uri.substr(this.uri.lastIndexOf('/') + 1);
     }
 
-    append(...segments: string[]) {
+    append(...segments: string[]): URI {
         if (!segments || segments.length === 0) {
             return this;
         }
