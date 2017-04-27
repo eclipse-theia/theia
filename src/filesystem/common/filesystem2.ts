@@ -86,6 +86,14 @@ export interface FileSystem2 {
 
 }
 
+export namespace FileSystem2 {
+    export declare type Configuration = {
+        encoding: string,
+        recursive: boolean,
+        overwrite: boolean
+    };
+}
+
 export interface FileSystemClient {
     /**
      * Notifies about file changes

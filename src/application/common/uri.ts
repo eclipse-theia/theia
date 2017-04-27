@@ -5,6 +5,9 @@ export default class URI {
     private uri: string;
 
     constructor(uri: string) {
+        if (!uri) {
+            throw new Error(`The \'path\' argument should be specified.`);
+        }
         this.uri = Uri.parse(uri).toString();
     }
 
