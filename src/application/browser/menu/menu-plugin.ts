@@ -74,18 +74,18 @@ export class MainMenuFactory {
                     const command = commandRegistry.getCommand(menu.action.commandId);
                     if (command) {
                         let handler = commandRegistry.getActiveHandler(command.id) || {
-                            execute: (e) => { },
-                            isEnabled: (e) => { return false; },
-                            isVisible: (e) => { return true; }
+                            execute: () => { },
+                            isEnabled: () => { return false; },
+                            isVisible: () => { return true; }
                         };
 
                         handler = handler!;
                         commands.addCommand(command.id, {
-                            execute: (e: any) => handler.execute(e),
+                            execute: (e: any) => handler.execute(),
                             label: menu.label,
                             icon: command.iconClass,
-                            isEnabled: (e: any) => !handler.isEnabled || handler.isEnabled(e),
-                            isVisible: (e: any) => !handler.isVisible || handler.isVisible(e)
+                            isEnabled: (e: any) => !handler.isEnabled || handler.isEnabled(),
+                            isVisible: (e: any) => !handler.isVisible || handler.isVisible()
                         });
 
                         const binding = keybindingRegistry.getKeybindingForCommand(command.id);
