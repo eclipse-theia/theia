@@ -1,5 +1,5 @@
 import { Emitter, Event } from '../../application/common';
-import { FileSystemClient, FileChangesEvent } from './filesystem2';
+import { FileSystemClient, FileChangesEvent } from './filesystem';
 
 
 export class FileSystemWatcher {

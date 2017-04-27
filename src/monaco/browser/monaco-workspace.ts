@@ -1,7 +1,7 @@
 import { injectable, inject, decorate } from "inversify";
 import { MonacoWorkspace as BaseMonacoWorkspace, MonacoToProtocolConverter, testGlob } from "monaco-languageclient";
 import { DisposableCollection } from "../../application/common";
-import { FileChangeType, FileSystem2, FileSystemWatcher } from '../../filesystem/common';
+import { FileChangeType, FileSystem, FileSystemWatcher } from '../../filesystem/common';
 import * as lang from "../../languages/common";
 import * as protocol from "../../languages/common";
 
@@ -16,7 +16,7 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements protocol.Wor
     });
 
     constructor(
-        @inject(FileSystem2) protected readonly fileSystem: FileSystem2,
+        @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcher) protected readonly fileSystemWatcher: FileSystemWatcher,
         @inject(MonacoToProtocolConverter) m2p: MonacoToProtocolConverter
     ) {

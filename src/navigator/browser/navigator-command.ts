@@ -3,7 +3,7 @@ import { CommandHandler, CommandContribution, CommandRegistry } from '../../appl
 import { CONTEXT_MENU_PATH } from "./navigator-widget";
 import { Commands } from '../../filesystem/browser/filesystem-commands';
 import { MenuContribution, MenuModelRegistry } from "../../application/common/menu";
-import { FileSystem2 as FileSystem, FileStat } from "../../filesystem/common/filesystem2";
+import { FileSystem, FileStat } from "../../filesystem/common/filesystem";
 import { FileNavigatorModel } from "./navigator-model";
 
 @injectable()

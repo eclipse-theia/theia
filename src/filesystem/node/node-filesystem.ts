@@ -1,15 +1,15 @@
 import * as fs from "fs-extra";
 import * as touch from "touch";
-import { FileStat, FileSystem2, FileSystemClient } from '../common/filesystem2';
+import { FileStat, FileSystem, FileSystemClient } from '../common/filesystem';
 import URI from "../../application/common/uri";
 
 const trash: (paths: Iterable<string>) => Promise<void> = require("trash");
 
-export class FileSystemNode implements FileSystem2 {
+export class FileSystemNode implements FileSystem {
 
     protected client: FileSystemClient | undefined
 
-    constructor(protected rootURI: string, protected defaults: FileSystem2.Configuration = {
+    constructor(protected rootURI: string, protected defaults: FileSystem.Configuration = {
         encoding: "utf8",
         overwrite: false,
         recursive: true,

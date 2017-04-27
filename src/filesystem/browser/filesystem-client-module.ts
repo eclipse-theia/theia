@@ -4,16 +4,16 @@ import { MenuContribution } from '../../application/common/menu';
 import { listen } from '../../messaging/browser/connection';
 import { JsonRpcProxyFactory } from '../../messaging/common/proxy-factory';
 import { FileCommandContribution, FileMenuContribution } from '../browser/filesystem-commands';
-import { FileSystem2 } from '../common/filesystem2';
+import { FileSystem } from '../common/filesystem';
 import { ContainerModule } from 'inversify';
 
 export const fileSystemClientModule = new ContainerModule(bind => {
     const fileSystemWatcher = new FileSystemWatcher()
     bind(FileSystemWatcher).toConstantValue(fileSystemWatcher)
 
-    const proxyFactory = new JsonRpcProxyFactory<FileSystem2>(fileSystemWatcher.getFileSystemClient(), "/filesystem2");
+    const proxyFactory = new JsonRpcProxyFactory<FileSystem>(fileSystemWatcher.getFileSystemClient(), "/filesystem");
     listen(proxyFactory)
-    bind<FileSystem2>(FileSystem2).toDynamicValue(ctx => {
+    bind<FileSystem>(FileSystem).toDynamicValue(ctx => {
         let result = proxyFactory.createProxy()
         return result
     })

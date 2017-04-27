@@ -1,4 +1,4 @@
-import { FileSystem2 } from '../common/filesystem2';
+import { FileSystem } from '../common/filesystem';
 import { ClipboardService, SelectionService } from '../../application/common';
 import { DialogService } from '../../application/common';
 import { CommandContribution, CommandHandler, CommandRegistry } from '../../application/common/command';
@@ -44,7 +44,7 @@ export class FileMenuContribution implements MenuContribution {
 @injectable()
 export class FileCommandContribution implements CommandContribution {
     constructor(
-        @inject(FileSystem2) protected readonly fileSystem: FileSystem2,
+        @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(ClipboardService) protected readonly clipboardService: ClipboardService,
         @inject(DialogService) protected readonly dialogService: DialogService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,

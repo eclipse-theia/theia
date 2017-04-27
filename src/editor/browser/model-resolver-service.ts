@@ -1,5 +1,5 @@
 import { Disposable, DisposableCollection } from '../../application/common';
-import { FileSystem2, FileStat } from '../../filesystem/common/filesystem2';
+import { FileSystem, FileStat } from '../../filesystem/common/filesystem';
 import { inject, injectable } from 'inversify';
 import ITextModelResolverService = monaco.editor.ITextModelResolverService;
 import ITextModelContentProvider = monaco.editor.ITextModelContentProvider;
@@ -13,7 +13,7 @@ export class TextModelResolverService implements ITextModelResolverService {
 
     protected readonly models = new Map<string, monaco.Promise<ReferenceAwareModel> | undefined>();
 
-    constructor(@inject(FileSystem2) protected readonly fileSystem: FileSystem2) {
+    constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem) {
     }
 
     createModelReference(uri: Uri): monaco.Promise<IReference<ITextEditorModel>> {

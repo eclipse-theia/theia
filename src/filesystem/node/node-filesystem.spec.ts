@@ -4,8 +4,8 @@ import * as fs from "fs";
 import * as os from "os";
 import URI from "../../application/common/uri";
 
-import { FileSystem2 } from "../common/filesystem2";
-import { FileSystemNode } from "./node-filesystem2";
+import { FileSystem } from "../common/filesystem";
+import { FileSystemNode } from "./node-filesystem";
 
 const root: URI = new URI(`file://${os.tmpdir()}/node-fs-root`);
 const expect = chai.expect;
@@ -729,7 +729,7 @@ process.on("unhandledRejection", (reason: any) => {
     console.error("Unhandled promise rejection: " + reason);
 });
 
-function createFileSystem(): FileSystem2 {
+function createFileSystem(): FileSystem {
     return new FileSystemNode(root.toString());
 }
 

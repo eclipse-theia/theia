@@ -1,5 +1,5 @@
 import { injectable, inject } from "inversify";
-import { FileSystem2 as FileSystem, FileStat,  FileChangesEvent, FileChangeType } from "../../filesystem/common/filesystem2";
+import { FileSystem, FileStat, FileChangesEvent, FileChangeType } from "../../filesystem/common/filesystem";
 import { FileSystemWatcher } from "../../filesystem/common/filesystem-watcher";
 import { UriSelection } from "../../filesystem/common/filesystem-selection";
 import { SelectionService } from '../../application/common';

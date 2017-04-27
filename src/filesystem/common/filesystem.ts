@@ -1,6 +1,6 @@
-export const FileSystem2 = Symbol("FileSystem2");
+export const FileSystem = Symbol("FileSystem");
 
-export interface FileSystem2 {
+export interface FileSystem {
 
     /**
      * Returns the filestat for the given uri.
@@ -86,7 +86,7 @@ export interface FileSystem2 {
 
 }
 
-export namespace FileSystem2 {
+export namespace FileSystem {
     export declare type Configuration = {
         encoding: string,
         recursive: boolean,
