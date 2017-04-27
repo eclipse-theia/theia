@@ -24,8 +24,8 @@ export class JsonRpcProxyFactory<T> implements ConnectionHandler, ProxyHandler<T
         });
         for (let prop in this.target) {
             if (typeof this.target[prop] === 'function') {
-                connection.onRequest(prop, param => this.onRequest(prop, param));
-                connection.onNotification(prop, param => this.onNotification(prop, param));
+                connection.onRequest(prop, (...args) => this.onRequest(prop, ...args));
+                connection.onNotification(prop, (...args) => this.onNotification(prop, ...args));
             }
         }
         connection.onDispose(() => {

@@ -7,7 +7,6 @@ import ITextEditorModel = monaco.editor.ITextEditorModel;
 import IReference = monaco.editor.IReference;
 import IDisposable = monaco.IDisposable;
 import Uri = monaco.Uri;
-import IModel = monaco.editor.IModel;
 
 @injectable()
 export class TextModelResolverService implements ITextModelResolverService {
@@ -36,20 +35,10 @@ export class TextModelResolverService implements ITextModelResolverService {
     protected createModel(uri: Uri): monaco.Promise<ReferenceAwareModel> {
         const encoding = document.characterSet;
         return monaco.Promise.wrap(this.fileSystem.resolveContent(uri.toString(), encoding).then(result => {
-            const model = monaco.editor.createModel(result.content, undefined, uri);
-            model.onDidChangeContent(() => this.save(result.stat, model, encoding));
-            return new ReferenceAwareModel(model);
+            return new ReferenceAwareModel(result.stat, result.content, (stat, content) => {
+                return this.fileSystem.setContent(stat, content, encoding)
+            });
         }));
-    }
-
-    protected readonly toDisposeOnSave = new DisposableCollection();
-
-    protected save(stat: FileStat, model: IModel, encoding: string): void {
-        this.toDisposeOnSave.dispose();
-        const handle = window.setTimeout(() => {
-            this.fileSystem.setContent(stat, model.getValue(), encoding);
-        }, 500);
-        this.toDisposeOnSave.push(Disposable.create(() => window.clearTimeout(handle)));
     }
 
     registerTextModelContentProvider(scheme: string, provider: ITextModelContentProvider): IDisposable {
@@ -66,9 +55,25 @@ export class ReferenceAwareModel implements ITextEditorModel {
     protected model: monaco.editor.IModel;
     protected _onDispose: monaco.Emitter<void>;
 
-    constructor(model: monaco.editor.IModel) {
-        this.model = model;
+    constructor(protected stat: FileStat, content: string, protected saveHandler: (stat: FileStat, content: string) => Promise<FileStat>) {
+        this.model = monaco.editor.createModel(content, undefined, monaco.Uri.parse(stat.uri));
         this._onDispose = new monaco.Emitter<void>();
+        this.registerSaveHandler()
+    }
+
+    protected registerSaveHandler(): void {
+        let toDisposeOnSave = new DisposableCollection();
+        this.model.onDidChangeContent( event => {
+            toDisposeOnSave.dispose();
+            const handle = window.setTimeout(() => {
+                this.saveHandler(this.stat, this.model.getValue()).then(
+                    newStat => {
+                        this.stat = newStat
+                    }
+                )
+            }, 500);
+            toDisposeOnSave.push(Disposable.create(() => window.clearTimeout(handle)));
+        })
     }
 
     newReference(): IReference<ITextEditorModel> {
