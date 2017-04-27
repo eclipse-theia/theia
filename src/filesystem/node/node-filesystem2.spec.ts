@@ -637,6 +637,46 @@ describe("NodeFileSystem", () => {
 
     });
 
+    describe("09 #touch", () => {
+
+        it("Should create a new file if it does not exist yet.", () => {
+            const uri = root.append("foo.txt");
+            expect(fs.existsSync(uri.path())).to.be.false;
+
+            return createFileSystem().touchFile(uri.toString()).then(stat => {
+                expect(stat).is.an("object");
+                expect(stat).has.property("uri").that.equals(uri.toString());
+                expect(fs.statSync(uri.path()).isFile()).to.be.true;
+            })
+        });
+
+        it("Should update the modification timestamp on an existing file.", done => {
+            const uri = root.append("foo.txt");
+            fs.writeFileSync(uri.path(), "foo");
+            expect(fs.statSync(uri.path()).isFile()).to.be.true;
+
+            const fileSystem = createFileSystem();
+            fileSystem.getFileStat(uri.toString()).then(initialStat => {
+                expect(initialStat).is.an("object");
+                expect(initialStat).has.property("uri").that.equals(uri.toString());
+                expect(fs.statSync(uri.path()).isFile()).to.be.true;
+                return initialStat;
+            }).then(initialStat => {
+                // https://nodejs.org/en/docs/guides/working-with-different-filesystems/#timestamp-resolution
+                sleep(1000).then(() => {
+                    fileSystem.touchFile(uri.toString()).then(updatedStat => {
+                        expect(updatedStat).is.an("object");
+                        expect(updatedStat).has.property("uri").that.equals(uri.toString());
+                        expect(fs.statSync(uri.path()).isFile()).to.be.true;
+                        expect(updatedStat.lastModification).to.be.greaterThan(initialStat.lastModification);
+                        done();
+                    });
+                });
+            });
+        });
+
+    });
+
 });
 
 process.on("unhandledRejection", (reason: any) => {
@@ -661,4 +701,8 @@ function deleteFolderRecursive(path: string) {
         fs.chmodSync(path, parseInt("0777", 8));
         fs.rmdirSync(path);
     }
+}
+
+function sleep(time: number) {
+    return new Promise((resolve) => setTimeout(resolve, time));
 }

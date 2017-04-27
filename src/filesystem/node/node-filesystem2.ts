@@ -1,4 +1,5 @@
 import * as fs from "fs-extra";
+import * as touch from "touch";
 import { FileStat, FileSystem2, FileSystemClient } from '../common/filesystem2';
 import URI from "../../application/common/uri";
 
@@ -152,7 +153,6 @@ export class FileSystemNode implements FileSystem2 {
             } else {
                 doCreateFile();
             }
-
         });
     }
 
@@ -173,7 +173,22 @@ export class FileSystemNode implements FileSystem2 {
     }
 
     touchFile(uri: string): Promise<FileStat> {
-        throw new Error('Method not implemented.');
+        return new Promise<FileStat>((resolve, reject) => {
+            const _uri = toURI(uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (!stat) {
+                this.createFile(uri).then(stat => {
+                    resolve(stat);
+                });
+            } else {
+                touch(toNodePath(_uri), (error: any) => {
+                    if (error) {
+                        return reject(error);
+                    }
+                    resolve(this.doGetStat(_uri, 1));
+                });
+            }
+        });
     }
 
     delete(uri: string, options?: { useTrash?: boolean }): Promise<void> {
