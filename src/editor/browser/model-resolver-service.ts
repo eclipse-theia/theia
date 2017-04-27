@@ -1,6 +1,7 @@
+import { inject, injectable } from 'inversify';
+import { TextDocumentSaveReason } from "vscode-languageserver-types";
 import { Disposable, DisposableCollection, Emitter, Event } from '../../application/common';
 import { FileSystem, FileStat } from '../../filesystem/common';
-import { inject, injectable } from 'inversify';
 import ITextModelResolverService = monaco.editor.ITextModelResolverService;
 import ITextModelContentProvider = monaco.editor.ITextModelContentProvider;
 import ITextEditorModel = monaco.editor.ITextEditorModel;
@@ -8,13 +9,37 @@ import IReference = monaco.editor.IReference;
 import IDisposable = monaco.IDisposable;
 import Uri = monaco.Uri;
 
+export interface WillSaveModelEvent {
+    readonly model: monaco.editor.IModel;
+    readonly reason: TextDocumentSaveReason;
+    waitUntil(thenable: Thenable<monaco.editor.IIdentifiedSingleEditOperation[]>): void;
+}
+
 @injectable()
 export class TextModelResolverService implements ITextModelResolverService {
 
     protected readonly models = new Map<string, monaco.Promise<ReferenceAwareModel> | undefined>();
     protected readonly onDidSaveModelEmitter = new Emitter<monaco.editor.IModel>();
+    protected readonly onWillSaveModelEmitter = new Emitter<WillSaveModelEvent>();
 
     constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem) {
+    }
+
+    get onWillSaveModel(): Event<WillSaveModelEvent> {
+        return this.onWillSaveModelEmitter.event;
+    }
+
+    protected fireWillSaveModel(model: monaco.editor.IModel, reason: TextDocumentSaveReason): Promise<void> {
+        let doSave: () => void;
+        const promise = new Promise<void>(resolve => doSave = resolve);
+        this.onWillSaveModelEmitter.fire({
+            model, reason,
+            waitUntil: thenable =>
+                thenable.then(operations =>
+                    model.applyEdits(operations)
+                ).then(doSave)
+        });
+        return promise;
     }
 
     get onDidSaveModel(): Event<monaco.editor.IModel> {
@@ -44,14 +69,17 @@ export class TextModelResolverService implements ITextModelResolverService {
     protected createModel(uri: Uri): monaco.Promise<ReferenceAwareModel> {
         const encoding = document.characterSet;
         return monaco.Promise.wrap(this.fileSystem.resolveContent(uri.toString(), encoding).then(result => {
-            const model = new ReferenceAwareModel(result.stat, result.content, (stat, content) => {
-                const result = this.fileSystem.setContent(stat, content, encoding)
-                result.then(() =>
-                    this.fireDidSaveModel(model.textEditorModel)
-                )
-                return result
+            const modelReference: ReferenceAwareModel = new ReferenceAwareModel(result.stat, result.content, (stat, content) => {
+                const model = modelReference.textEditorModel;
+                return this.fireWillSaveModel(model, TextDocumentSaveReason.AfterDelay).then(() => {
+                    const result = this.fileSystem.setContent(stat, content, encoding)
+                    result.then(() =>
+                        this.fireDidSaveModel(model)
+                    );
+                    return result;
+                });
             });
-            return model
+            return modelReference
         }));
     }
 
