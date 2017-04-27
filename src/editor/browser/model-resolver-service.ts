@@ -1,5 +1,5 @@
-import { Disposable, DisposableCollection } from '../../application/common';
-import { FileSystem, FileStat } from '../../filesystem/common/filesystem';
+import { Disposable, DisposableCollection, Emitter, Event } from '../../application/common';
+import { FileSystem, FileStat } from '../../filesystem/common';
 import { inject, injectable } from 'inversify';
 import ITextModelResolverService = monaco.editor.ITextModelResolverService;
 import ITextModelContentProvider = monaco.editor.ITextModelContentProvider;
@@ -12,8 +12,17 @@ import Uri = monaco.Uri;
 export class TextModelResolverService implements ITextModelResolverService {
 
     protected readonly models = new Map<string, monaco.Promise<ReferenceAwareModel> | undefined>();
+    protected readonly onDidSaveModelEmitter = new Emitter<monaco.editor.IModel>();
 
     constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem) {
+    }
+
+    get onDidSaveModel(): Event<monaco.editor.IModel> {
+        return this.onDidSaveModelEmitter.event;
+    }
+
+    protected fireDidSaveModel(model: monaco.editor.IModel): void {
+        this.onDidSaveModelEmitter.fire(model);
     }
 
     createModelReference(uri: Uri): monaco.Promise<IReference<ITextEditorModel>> {
@@ -35,9 +44,14 @@ export class TextModelResolverService implements ITextModelResolverService {
     protected createModel(uri: Uri): monaco.Promise<ReferenceAwareModel> {
         const encoding = document.characterSet;
         return monaco.Promise.wrap(this.fileSystem.resolveContent(uri.toString(), encoding).then(result => {
-            return new ReferenceAwareModel(result.stat, result.content, (stat, content) => {
-                return this.fileSystem.setContent(stat, content, encoding)
+            const model = new ReferenceAwareModel(result.stat, result.content, (stat, content) => {
+                const result = this.fileSystem.setContent(stat, content, encoding)
+                result.then(() =>
+                    this.fireDidSaveModel(model.textEditorModel)
+                )
+                return result
             });
+            return model
         }));
     }
 
@@ -63,7 +77,7 @@ export class ReferenceAwareModel implements ITextEditorModel {
 
     protected registerSaveHandler(): void {
         let toDisposeOnSave = new DisposableCollection();
-        this.model.onDidChangeContent( event => {
+        this.model.onDidChangeContent(event => {
             toDisposeOnSave.dispose();
             const handle = window.setTimeout(() => {
                 this.saveHandler(this.stat, this.model.getValue()).then(

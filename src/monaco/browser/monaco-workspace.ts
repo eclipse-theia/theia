@@ -4,6 +4,8 @@ import { DisposableCollection } from "../../application/common";
 import { FileChangeType, FileSystem, FileSystemWatcher } from '../../filesystem/common';
 import * as lang from "../../languages/common";
 import * as protocol from "../../languages/common";
+import { TextModelResolverService } from "../../editor/browser/model-resolver-service";
+import { Emitter, Event, TextDocument } from "../../languages/common";
 
 decorate(injectable(), BaseMonacoWorkspace);
 decorate(inject(MonacoToProtocolConverter), BaseMonacoWorkspace, 0);
@@ -15,9 +17,12 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements protocol.Wor
         this.resolveReady = resolve;
     });
 
+    protected readonly onDidSaveTextDocumentEmitter = new Emitter<TextDocument>();
+
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcher) protected readonly fileSystemWatcher: FileSystemWatcher,
+        @inject(TextModelResolverService) textModelResolverService: TextModelResolverService,
         @inject(MonacoToProtocolConverter) m2p: MonacoToProtocolConverter
     ) {
         super(m2p);
@@ -25,6 +30,16 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements protocol.Wor
             this._rootUri = rootStat.uri;
             this.resolveReady();
         });
+        textModelResolverService.onDidSaveModel(model => {
+            const document = this.documents.get(model.uri.toString());
+            if (document) {
+                this.onDidSaveTextDocumentEmitter.fire(document);
+            }
+        });
+    }
+
+    get onDidSaveTextDocument(): Event<TextDocument> {
+        return this.onDidSaveTextDocumentEmitter.event;
     }
 
     createFileSystemWatcher(globPattern: string, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): protocol.FileSystemWatcher {
