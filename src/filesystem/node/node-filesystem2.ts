@@ -3,6 +3,8 @@ import * as touch from "touch";
 import { FileStat, FileSystem2, FileSystemClient } from '../common/filesystem2';
 import URI from "../../application/common/uri";
 
+const trash: (paths: Iterable<string>) => Promise<void> = require("trash");
+
 export class FileSystemNode implements FileSystem2 {
 
     protected client: FileSystemClient | undefined
@@ -10,7 +12,8 @@ export class FileSystemNode implements FileSystem2 {
     constructor(protected rootURI: string, protected defaults: FileSystem2.Configuration = {
         encoding: "utf8",
         overwrite: false,
-        recursive: true
+        recursive: true,
+        moveToTrash: true,
     }) {
 
     }
@@ -196,8 +199,24 @@ export class FileSystemNode implements FileSystem2 {
         });
     }
 
-    delete(uri: string, options?: { useTrash?: boolean }): Promise<void> {
-        throw new Error('Method not implemented.');
+    delete(uri: string, options?: { moveToTrash?: boolean }): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const _uri = new URI(uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (!stat) {
+                return reject(new Error(`File does not exist under ${uri}.`));
+            }
+            const moveToTrash = this.doGetMoveToTrash(options);
+            if (moveToTrash) {
+                resolve(trash([_uri.path()]));
+            } else {
+                fs.remove(_uri.path(), error => {
+                    if (error) {
+                        return reject(error);
+                    }
+                });
+            }
+        });
     }
 
     watchFileChanges(uri: string): void {
@@ -262,15 +281,27 @@ export class FileSystemNode implements FileSystem2 {
     }
 
     protected doGetEncoding(option?: { encoding?: string }): string {
-        return (option && option.encoding) || this.defaults.encoding;
+        return option && typeof (option.encoding) !== 'undefined'
+            ? option.encoding
+            : this.defaults.encoding;
     }
 
     protected doGetOverwrite(option?: { overwrite?: boolean }): boolean {
-        return (option && option.overwrite) || this.defaults.overwrite;
+        return option && typeof (option.overwrite) !== 'undefined'
+            ? option.overwrite
+            : this.defaults.overwrite;
     }
 
     protected doGetRecursive(option?: { recursive?: boolean }): boolean {
-        return (option && option.recursive) || this.defaults.recursive;
+        return option && typeof (option.recursive) !== 'undefined'
+            ? option.recursive
+            : this.defaults.recursive;
+    }
+
+    protected doGetMoveToTrash(option?: { moveToTrash?: boolean }): boolean {
+        return option && typeof (option.moveToTrash) !== 'undefined'
+            ? option.moveToTrash
+            : this.defaults.moveToTrash;
     }
 
     protected doGetContent(option?: { content?: string }): string {

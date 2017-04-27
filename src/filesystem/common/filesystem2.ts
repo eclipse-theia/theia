@@ -59,10 +59,10 @@ export interface FileSystem2 {
     touchFile(uri: string): Promise<FileStat>;
 
     /**
-     * Deletes the provided file. The optional useTrash parameter allows to
+     * Deletes the provided file. The optional moveToTrash parameter allows to
      * move the file to trash.
      */
-    delete(uri: string, options?: { useTrash?: boolean }): Promise<void>;
+    delete(uri: string, options?: { moveToTrash?: boolean }): Promise<void>;
 
     /**
      * Allows to start a watcher that reports file change events on the provided resource.
@@ -90,7 +90,8 @@ export namespace FileSystem2 {
     export declare type Configuration = {
         encoding: string,
         recursive: boolean,
-        overwrite: boolean
+        overwrite: boolean,
+        moveToTrash: true,
     };
 }
 

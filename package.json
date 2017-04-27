@@ -33,6 +33,7 @@
     "reconnecting-websocket": "^3.0.3",
     "reflect-metadata": "^0.1.10",
     "touch": "^1.0.0",
+    "trash": "^4.0.1",
     "vscode-languageserver": "^3.2.0",
     "vscode-uri": "^1.0.0",
     "vscode-ws-jsonrpc": "^0.0.1-alpha.1",

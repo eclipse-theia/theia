@@ -677,6 +677,52 @@ describe("NodeFileSystem", () => {
 
     });
 
+    describe("#10 delete", () => {
+
+        it("Should be rejected when the file to delete does not exist.",  () => {
+            const uri = root.append("foo.txt");
+            expect(fs.existsSync(uri.path())).to.be.false;
+
+            return createFileSystem().delete(uri.toString()).should.be.eventually.rejectedWith(Error);
+        });
+
+        it("Should delete the file.", () => {
+            const uri = root.append("foo.txt");
+            fs.writeFileSync(uri.path(), "foo");
+            expect(fs.readFileSync(uri.path(), "utf8")).to.be.equal("foo");
+
+            return createFileSystem().delete(uri.toString()).then(() => {
+                expect(fs.existsSync(uri.path())).to.be.false;
+            });
+        });
+
+        it("Should delete a directory without content.", () => {
+            const uri = root.append("foo");
+            fs.mkdirSync(uri.path());
+            expect(fs.statSync(uri.path()).isDirectory()).to.be.true;
+
+            return createFileSystem().delete(uri.toString()).then(() => {
+                expect(fs.existsSync(uri.path())).to.be.false;
+            });
+        });
+
+        it("Should delete a directory with all its content.", () => {
+            const uri = root.append("foo");
+            const subUri = uri.append("bar.txt");
+            fs.mkdirSync(uri.path());
+            fs.writeFileSync(subUri.path(), "bar");
+            expect(fs.statSync(uri.path()).isDirectory()).to.be.true;
+            expect(fs.readFileSync(subUri.path(), "utf8")).to.be.equal("bar");
+
+            return createFileSystem().delete(uri.toString()).then(() => {
+                expect(fs.existsSync(uri.path())).to.be.false;
+                expect(fs.existsSync(subUri.path())).to.be.false;
+            });
+        });
+
+
+    });
+
 });
 
 process.on("unhandledRejection", (reason: any) => {
