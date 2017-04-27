@@ -4,11 +4,15 @@ export default class URI {
 
     private uri: string;
 
-    constructor(uri: string) {
+    constructor(uri: string | Uri | undefined) {
         if (!uri) {
             throw new Error(`The \'path\' argument should be specified.`);
         }
-        this.uri = Uri.parse(uri).toString();
+        if (typeof uri === 'string') {
+            this.uri = Uri.parse(uri).toString();
+        } else {
+            this.uri = uri.toString();
+        }
     }
 
     parent(): URI {

@@ -61,20 +61,21 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements protocol.Wor
         const { model, reason } = event;
         const textDocument = this.documents.get(model.uri.toString());
         if (textDocument) {
-            this.onWillSaveTextDocumentEmitter.fire({
-                textDocument,
-                reason,
-                waitUntil: thenable => {
-                    const timeout = new Promise<TextEdit[]>(resolve =>
-                        setTimeout(() => resolve([]), 2000)
-                    );
-                    event.waitUntil(
-                        Promise.race([thenable, timeout]).then(edits =>
-                            this.p2m.asTextEdits(edits)
-                        )
-                    )
-                }
-            });
+            const timeout = new Promise<TextEdit[]>(resolve =>
+                setTimeout(() => resolve([]), 1000)
+            );
+            const resolveEdits = new Promise<TextEdit[]>(resolve =>
+                this.onWillSaveTextDocumentEmitter.fire({
+                    textDocument,
+                    reason,
+                    waitUntil: thenable => thenable.then(resolve)
+                })
+            );
+            event.waitUntil(
+                Promise.race([resolveEdits, timeout]).then(edits =>
+                    this.p2m.asTextEdits(edits)
+                )
+            );
         }
     }
 

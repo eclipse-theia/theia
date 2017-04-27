@@ -4,7 +4,6 @@ import {EditorWidget} from "./editor-widget";
 import {Event, Emitter} from "../../application/common";
 import {EditorService} from "./editor-service";
 import { EditorRegistry } from "./editor-registry";
-import URI from "../../application/common/uri";
 import Uri = monaco.Uri;
 
 export const IEditorManager = Symbol("IEditorManager");
@@ -70,17 +69,8 @@ export class EditorManager implements IEditorManager {
     }
 
     open(uri: string): Promise<EditorWidget> | undefined {
-        const simpleName = new URI(uri).lastSegment() || 'Unknown'
         const resource = Uri.parse(uri);
-        return Promise.resolve(this.editorService.openEditor({resource}).then(editor => {
-            if (editor) {
-                editor.title.label = simpleName
-                if (this.app) {
-                    this.app.shell.activateMain(editor.id);
-                }
-            }
-            return editor;
-        }));
+        return Promise.resolve(this.editorService.openEditor({resource}));
     }
 
     get currentEditor() {
