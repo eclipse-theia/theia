@@ -13,6 +13,13 @@ decorate(inject(MonacoToProtocolConverter), BaseMonacoWorkspace, 0);
 
 @injectable()
 export class MonacoWorkspace extends BaseMonacoWorkspace implements protocol.Workspace {
+    readonly capabilities = {
+        applyEdit: true,
+        workspaceEdit: {
+            documentChanges: true
+        }
+    };
+
     readonly synchronization = {
         didSave: true,
         willSave: true,
@@ -106,6 +113,25 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements protocol.Wor
             onFileEvent,
             dispose: () => disposables.dispose()
         };
+    }
+
+    applyEdit(changes: protocol.WorkspaceEdit): Promise<boolean> {
+        const workspaceEdit = this.p2m.asWorkspaceEdit(changes);
+        const promises = [];
+        for (const edit of workspaceEdit.edits) {
+            promises.push(this.textModelResolverService.createModelReference(edit.resource).then(modelReference => {
+                const model = modelReference.object.textEditorModel;
+                const range = edit.range;
+                model.applyEdits([{
+                    identifier: undefined!,
+                    forceMoveMarkers: false,
+                    range: new monaco.Range(range.startColumn, range.startLineNumber, range.endColumn, range.endLineNumber),
+                    text: edit.newText
+                }]);
+                modelReference.dispose();
+            }));
+        }
+        return Promise.all(promises).then(() => true);
     }
 
 }
