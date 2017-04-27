@@ -1,3 +1,4 @@
+import { Disposable } from '../../application/common';
 import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as fs from "fs";
@@ -9,6 +10,7 @@ import { FileSystemNode } from "./node-filesystem";
 
 const root: URI = new URI(`file://${os.tmpdir()}/node-fs-root`);
 const expect = chai.expect;
+const disposables: Disposable[] = [];
 
 before(() => {
     chai.config.showDiff = true;
@@ -18,6 +20,11 @@ before(() => {
 });
 
 beforeEach(() => {
+    let disposable = disposables.pop();
+    while (disposable) {
+        disposable.dispose();
+        disposable = disposables.pop();
+    }
     deleteFolderRecursive(root.path());
     fs.mkdirSync(root.path());
     expect(fs.existsSync(root.path())).to.be.true;
@@ -488,10 +495,6 @@ describe("NodeFileSystem", () => {
 
     describe("06 #getWorkspaceRoot", () => {
 
-        it("Should be rejected when the workspace root does not exist.", () => {
-            return new FileSystemNode("some/missing/path").getWorkspaceRoot().should.eventually.be.rejectedWith(Error);
-        });
-
         it("Should be return with the stat of the root. The root stat has information of its direct descendants but not the children of the descendants.", () => {
             const uri_1 = root.append("foo");
             const uri_2 = root.append("bar");
@@ -679,7 +682,7 @@ describe("NodeFileSystem", () => {
 
     describe("#10 delete", () => {
 
-        it("Should be rejected when the file to delete does not exist.",  () => {
+        it("Should be rejected when the file to delete does not exist.", () => {
             const uri = root.append("foo.txt");
             expect(fs.existsSync(uri.path())).to.be.false;
 
@@ -720,8 +723,42 @@ describe("NodeFileSystem", () => {
             });
         });
 
+    });
+
+    describe("#11 getEncoding", () => {
+
+        it("Should be rejected with an error if no file exists under the given URI.", () => {
+            const uri = root.append("foo.txt");
+            expect(fs.existsSync(uri.path())).to.be.false;
+
+            return createFileSystem().getEncoding(uri.toString()).should.be.eventually.rejectedWith(Error);
+        });
+
+        it("Should be rejected with an error if the URI points to a directory instead of a file.", () => {
+            const uri = root.append("foo");
+            fs.mkdirSync(uri.path());
+            expect(fs.statSync(uri.path()).isDirectory()).to.be.true;
+
+            return createFileSystem().getEncoding(uri.toString()).should.be.eventually.rejectedWith(Error);
+        });
+
+        it("Should return with the encoding of the file.", () => {
+            const uri = root.append("foo.txt");
+            fs.writeFileSync(uri.path(), "foo");
+            expect(fs.statSync(uri.path()).isFile()).to.be.true;
+
+            return createFileSystem().getEncoding(uri.toString()).should.be.eventually.be.equal("UTF-8");
+        });
 
     });
+
+    describe("#12 constructor", () => {
+
+        it("Should throw an exception if the workspace root does not exist.", () => {
+            return expect(() => new FileSystemNode("some/missing/path")).to.throw(Error);
+        });
+
+    })
 
 });
 
@@ -729,8 +766,10 @@ process.on("unhandledRejection", (reason: any) => {
     console.error("Unhandled promise rejection: " + reason);
 });
 
-function createFileSystem(): FileSystem {
-    return new FileSystemNode(root.toString());
+function createFileSystem(uri: string = root.toString()): FileSystem {
+    const fileSystem = new FileSystemNode(root.toString());
+    disposables.push(fileSystem);
+    return fileSystem;
 }
 
 function deleteFolderRecursive(path: string) {

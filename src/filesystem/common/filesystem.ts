@@ -1,6 +1,8 @@
+import { Disposable } from '../../application/common';
+
 export const FileSystem = Symbol("FileSystem");
 
-export interface FileSystem {
+export interface FileSystem extends Disposable {
 
     /**
      * Returns the filestat for the given uri.
@@ -67,17 +69,17 @@ export interface FileSystem {
     /**
      * Allows to start a watcher that reports file change events on the provided resource.
      */
-    watchFileChanges(uri: string): void;
+    watchFileChanges(uri: string): Promise<void>;
 
     /**
      * Allows to stop a watcher on the provided resource or absolute fs path.
      */
-    unwatchFileChanges(uri: string): void;
+    unwatchFileChanges(uri: string): Promise<void>;
 
     /**
-     * Returns the preferred encoding to use for a given resource.
+     * Returns the encoding of the given file resource.
      */
-    getEncoding(uri: string, options?: { preferredEncoding?: string }): Promise<string>;
+    getEncoding(uri: string): Promise<string>;
 
     /**
      * Returns the workspace root

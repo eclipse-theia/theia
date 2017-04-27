@@ -23,6 +23,8 @@
     "@phosphor/signaling": "^0.1.2",
     "@phosphor/virtualdom": "^0.1.1",
     "@phosphor/widgets": "^0.1.7",
+    "chokidar": "^1.6.1",
+    "detect-character-encoding": "^0.3.1",
     "electron": "^1.6.2",
     "express": "^4.15.2",
     "fs-extra": "^2.1.2",
@@ -42,6 +44,7 @@
   "devDependencies": {
     "@types/chai": "^3.4.35",
     "@types/chai-as-promised": "0.0.29",
+    "@types/chokidar": "^1.6.0",
     "@types/electron": "^1.4.33",
     "@types/fs-extra": "^2.1.0",
     "@types/karma": "^0.13.33",

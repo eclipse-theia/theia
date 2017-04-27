@@ -1,13 +1,16 @@
 import * as fs from "fs-extra";
 import * as touch from "touch";
+import { FSWatcher } from "chokidar";
 import { FileStat, FileSystem, FileSystemClient } from '../common/filesystem';
 import URI from "../../application/common/uri";
 
 const trash: (paths: Iterable<string>) => Promise<void> = require("trash");
+const detectCharacterEncoding: (buffer: Buffer) => { encoding: string, confidence: number } = require('detect-character-encoding');
 
 export class FileSystemNode implements FileSystem {
 
     protected client: FileSystemClient | undefined
+    private watcher: FSWatcher
 
     constructor(protected rootURI: string, protected defaults: FileSystem.Configuration = {
         encoding: "utf8",
@@ -16,6 +19,20 @@ export class FileSystemNode implements FileSystem {
         moveToTrash: true,
     }) {
 
+        const _rootUri = new URI(rootURI);
+        const stat = this.doGetStat(_rootUri, 0);
+        if (!stat) {
+            throw new Error(`File system root cannot be located under ${this.rootURI}.`);
+        }
+        if (!stat.isDirectory) {
+            throw new Error(`File system root should point to a directory location. URI: ${this.rootURI}.`);
+        }
+        this.watcher = new FSWatcher();
+        this.watcher.add(_rootUri.append("*").path());
+        this.watcher.on("all", (event: string, stats: FileStat | undefined) => {
+            // console.log("event", event, "stat", stat);
+            // TODO delegate into file system client.
+        });
     }
 
     setClient(client: FileSystemClient) {
@@ -219,16 +236,50 @@ export class FileSystemNode implements FileSystem {
         });
     }
 
-    watchFileChanges(uri: string): void {
-        throw new Error('Method not implemented.');
+    watchFileChanges(uri: string): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const _uri = new URI(uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (!stat) {
+                return reject(new Error(`File does not exist under ${uri}.`));
+            }
+            this.watcher.add(_uri.path());
+        });
     }
 
-    unwatchFileChanges(uri: string): void {
-        throw new Error('Method not implemented.');
+    unwatchFileChanges(uri: string): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const _uri = new URI(uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (!stat) {
+                return reject(new Error(`File does not exist under ${uri}.`));
+            }
+            this.watcher.unwatch(_uri.path());
+        });
     }
 
     getEncoding(uri: string, options?: { preferredEncoding?: string }): Promise<string> {
-        throw new Error('Method not implemented.');
+        return new Promise<string>((resolve, reject) => {
+            const _uri = new URI(uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (!stat) {
+                return reject(new Error(`File does not exist under ${uri}.`));
+            }
+            if (stat.isDirectory) {
+                return reject(new Error(`Cannot get the encoding of a director. URI: ${uri}.`));
+            }
+            fs.readFile(_uri.path(), {}, (error, buffer) => {
+                if (error) {
+                    return reject(error);
+                }
+                const encoding = detectCharacterEncoding(buffer);
+                if (encoding && encoding.encoding) {
+                    resolve(encoding.encoding);
+                } else {
+                    resolve(options && typeof (options.preferredEncoding) !== 'undefined' ? options.preferredEncoding : this.defaults.encoding);
+                }
+            });
+        });
     }
 
     getWorkspaceRoot(): Promise<FileStat> {
@@ -239,6 +290,10 @@ export class FileSystemNode implements FileSystem {
             }
             resolve(stat);
         });
+    }
+
+    dispose(): void {
+        this.watcher.close();
     }
 
     protected doGetStat(uri: URI, depth: number): FileStat | undefined {
