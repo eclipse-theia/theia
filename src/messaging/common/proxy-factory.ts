@@ -39,11 +39,16 @@ export class JsonRpcProxyFactory<T> implements ConnectionHandler, ProxyHandler<T
     private connectionPromise: Promise<MessageConnection> = new Promise(resolve => {this.connectionPromiseResolve = resolve})
 
     protected onRequest(method: string, ...args: any[]): Promise<any> {
-        let result = this.target[method](...args)
-        if (result['then'] !== undefined) {
-            return result
-        }
-        return Promise.resolve(result)
+        return new Promise<any>((resolve, reject) => {
+            try {
+                let promise = this.target[method](...args) as Promise<any>
+                promise
+                    .catch( err => reject(err))
+                    .then( result => resolve(result))
+            } catch (err) {
+                reject(err)
+            }
+        })
     }
 
     protected onNotification(method: string, ...args: any[]): void {
@@ -59,15 +64,21 @@ export class JsonRpcProxyFactory<T> implements ConnectionHandler, ProxyHandler<T
         const isNotify = this.isNotification(p)
         return (...args: any[]) => {
             return this.connectionPromise.then( connection => {
-                if (isNotify) {
-                    connection.sendNotification(p.toString(), ...args)
-                    return Promise.resolve(undefined);
-                } else {
-                    const resultPromise = connection.sendRequest(p.toString(), ...args)
-                    return new Promise(resolve => {
-                        resultPromise.then( result => resolve(result))
-                    })
-                }
+                return new Promise((resolve, reject) => {
+                    try {
+                        if (isNotify) {
+                            connection.sendNotification(p.toString(), ...args)
+                            resolve();
+                        } else {
+                            const resultPromise = connection.sendRequest(p.toString(), ...args) as Promise<any>
+                            resultPromise
+                                .catch((err: any) => reject(err))
+                                .then((result: any) => resolve(result))
+                        }
+                    } catch (err) {
+                        reject(err)
+                    }
+                })
             })
         }
     }

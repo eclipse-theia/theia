@@ -15,11 +15,10 @@ before(() => {
     chai.use(chaiAsPromised);
 });
 
-beforeEach(() => {
-});
-
 class NoTransform extends stream.Transform {
+
     public _transform(chunk: any, encoding: string, callback: Function): void {
+        // console.log((chunk as Buffer).toString())
         callback(undefined, chunk)
     }
 }
@@ -30,6 +29,14 @@ class TestServer {
         this.requests.push(arg)
         return Promise.resolve(`done: ${arg}`)
     }
+
+    fails(arg: string, otherArg: string): Promise<string> {
+        throw new Error("fails failed")
+    }
+
+    fails2(arg: string, otherArg: string): Promise<string> {
+        return Promise.reject("fails2 failed")
+    }
 }
 
 class TestClient {
@@ -39,36 +46,65 @@ class TestClient {
     }
 }
 
+beforeEach(() => {
+});
+
 describe('Proxy-Factory', () => {
     it('Should correctly send notifications and requests.', done => {
-        let client = new TestClient()
-        let server = new TestServer()
-
-        let serverProxyFactory = new JsonRpcProxyFactory<TestServer>("/test", client)
-        let client2server = new NoTransform()
-        let server2client = new NoTransform()
-        let serverConnection = createMessageConnection(server2client, client2server, new ConsoleLogger())
-        serverProxyFactory.onConnection(serverConnection)
-        let serverProxy = serverProxyFactory.createProxy()
-
-        let clientProxyFactory = new JsonRpcProxyFactory<TestClient>("/test", server)
-        let clientConnection = createMessageConnection(client2server, server2client, new ConsoleLogger())
-        clientProxyFactory.onConnection(clientConnection)
-        let clientProxy = clientProxyFactory.createProxy()
-        clientProxy.notifyThat("hello")
+        let it = getSetup()
+        it.clientProxy.notifyThat("hello")
         function check() {
-            if (client.notifications.length === 0) {
+            if (it.client.notifications.length === 0) {
                 console.log("waiting another 50 ms")
                 setTimeout(check, 50)
             } else {
-                expect(client.notifications[0]).eq("hello")
-                serverProxy.doStuff("foo").then( result => {
+                expect(it.client.notifications[0]).eq("hello")
+                it.serverProxy.doStuff("foo").then( result => {
                     expect(result).to.be.eq("done: foo")
                     done()
                 })
             }
         }
         check()
-
     });
+    it('Rejected Promise should result in rejected Promise.', done => {
+        let it = getSetup();
+        it.serverProxy.fails('a', 'b').catch( err => {
+            expect(<Error>err.message).to.contain("fails failed")
+            done()
+        })
+        setTimeout(() => done("timeout"), 500)
+    })
+    it('Remote Exceptions should result in rejected Promise.', done => {
+        let it = getSetup();
+        it.serverProxy.fails2('a', 'b').catch( err => {
+            expect(<Error>err.message).to.contain("fails2 failed")
+            done()
+        })
+        setTimeout(() => done("timeout"), 500)
+    })
 });
+
+
+function getSetup() {
+    let client = new TestClient()
+    let server = new TestServer()
+
+    let serverProxyFactory = new JsonRpcProxyFactory<TestServer>("/test", client)
+    let client2server = new NoTransform()
+    let server2client = new NoTransform()
+    let serverConnection = createMessageConnection(server2client, client2server, new ConsoleLogger())
+    serverProxyFactory.onConnection(serverConnection)
+    let serverProxy = serverProxyFactory.createProxy()
+
+    let clientProxyFactory = new JsonRpcProxyFactory<TestClient>("/test", server)
+    let clientConnection = createMessageConnection(client2server, server2client, new ConsoleLogger())
+    clientProxyFactory.onConnection(clientConnection)
+    let clientProxy = clientProxyFactory.createProxy()
+    return {
+        client,
+        clientProxy,
+        server,
+        serverProxy
+    }
+}
