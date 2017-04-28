@@ -44,14 +44,14 @@ describe('Proxy-Factory', () => {
         let client = new TestClient()
         let server = new TestServer()
 
-        let serverProxyFactory = new JsonRpcProxyFactory<TestServer>(client, "/test")
+        let serverProxyFactory = new JsonRpcProxyFactory<TestServer>("/test", client)
         let client2server = new NoTransform()
         let server2client = new NoTransform()
         let serverConnection = createMessageConnection(server2client, client2server, new ConsoleLogger())
         serverProxyFactory.onConnection(serverConnection)
         let serverProxy = serverProxyFactory.createProxy()
 
-        let clientProxyFactory = new JsonRpcProxyFactory<TestClient>(server, "/test")
+        let clientProxyFactory = new JsonRpcProxyFactory<TestClient>("/test", server)
         let clientConnection = createMessageConnection(client2server, server2client, new ConsoleLogger())
         clientProxyFactory.onConnection(clientConnection)
         let clientProxy = clientProxyFactory.createProxy()

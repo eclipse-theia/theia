@@ -10,7 +10,7 @@ export const fileSystemServerModule = new ContainerModule(bind => {
     const rootDir = getRootDir();
     if (rootDir) {
         const fileSystem = new FileSystemNode(`file://${rootDir}`)
-        const proxyFactory = new JsonRpcProxyFactory<FileSystemClient>(fileSystem, "/filesystem")
+        const proxyFactory = new JsonRpcProxyFactory<FileSystemClient>("/filesystem", fileSystem);
         bind<ConnectionHandler>(ConnectionHandler).toConstantValue(proxyFactory)
         bind<FileSystem>(FileSystem).toDynamicValue(ctx => {
             fileSystem.setClient(proxyFactory.createProxy())

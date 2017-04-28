@@ -1,3 +1,3 @@
-export * from './languages-services';
-export * from './languages-protocol';
+export * from './languageclient-services';
+export * from './languages-service';
 export * from './console-window';

@@ -2,14 +2,11 @@ import { DisposableCollection } from '../../application/common';
 import { ConnectionHandler } from './handler';
 import { MessageConnection } from "vscode-jsonrpc";
 
-
-
-
 export class JsonRpcProxyFactory<T> implements ConnectionHandler, ProxyHandler<T> {
 
     protected readonly connectionListeners = new DisposableCollection();
 
-    constructor(private target: any, public readonly path: string) {}
+    constructor(readonly path: string, private readonly target?: any) {}
 
     onConnection(connection: MessageConnection) {
         this.connectionListeners.dispose();
@@ -22,10 +19,12 @@ export class JsonRpcProxyFactory<T> implements ConnectionHandler, ProxyHandler<T
                 disposed = true;
             }
         });
-        for (let prop in this.target) {
-            if (typeof this.target[prop] === 'function') {
-                connection.onRequest(prop, (...args) => this.onRequest(prop, ...args));
-                connection.onNotification(prop, (...args) => this.onNotification(prop, ...args));
+        if (this.target) {
+            for (let prop in this.target) {
+                if (typeof this.target[prop] === 'function') {
+                    connection.onRequest(prop, (...args) => this.onRequest(prop, ...args));
+                    connection.onNotification(prop, (...args) => this.onNotification(prop, ...args));
+                }
             }
         }
         connection.onDispose(() => {

@@ -1,7 +1,8 @@
+import { injectable } from "inversify";
 import { Emitter, Event } from '../../application/common';
 import { FileSystemClient, FileChangesEvent } from './filesystem';
 
-
+@injectable()
 export class FileSystemWatcher {
 
     getFileSystemClient(): FileSystemClient {
