@@ -1,16 +1,15 @@
-import { Disposable } from '../../application/common';
+import { FileChangesEvent, FileChange, FileChangeType } from '../../../src/filesystem/common';
+import { FileSystemClient } from '../common';
 import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
-import * as fs from "fs";
+import * as fs from "fs-extra";
 import * as os from "os";
 import URI from "../../application/common/uri";
-
 import { FileSystem } from "../common/filesystem";
 import { FileSystemNode } from "./node-filesystem";
 
 const root: URI = new URI(`file://${os.tmpdir()}/node-fs-root`);
 const expect = chai.expect;
-const disposables: Disposable[] = [];
 
 before(() => {
     chai.config.showDiff = true;
@@ -20,11 +19,6 @@ before(() => {
 });
 
 beforeEach(() => {
-    let disposable = disposables.pop();
-    while (disposable) {
-        disposable.dispose();
-        disposable = disposables.pop();
-    }
     deleteFolderRecursive(root.path());
     fs.mkdirSync(root.path());
     expect(fs.existsSync(root.path())).to.be.true;
@@ -758,7 +752,47 @@ describe("NodeFileSystem", () => {
             return expect(() => new FileSystemNode("some/missing/path")).to.throw(Error);
         });
 
-    })
+    });
+
+    describe("#13 watchFileChanges", () => {
+
+        it("Should receive file changes events from in the workspace by default.", function (done) {
+            this.timeout(4000);
+            let expectedEvents = [
+                new FileChange(root.toString(), FileChangeType.ADDED),
+                new FileChange(root.append("foo").toString(), FileChangeType.ADDED),
+                new FileChange(root.append("foo", "bar").toString(), FileChangeType.ADDED),
+                new FileChange(root.append("foo", "bar", "baz.txt").toString(), FileChangeType.ADDED)
+            ];
+            const fileSystem = createFileSystem();
+            const client: FileSystemClient = {
+                onFileChanges(event: FileChangesEvent) {
+                    const index = expectedEvents.findIndex((value, index, obj) => {
+                        return event.changes.length === 1 && event.changes[0].equals(value);
+                    });
+                    if (index >= 0) {
+                        expectedEvents.splice(index, 1);
+                    }
+                    if (expectedEvents.length === 0) {
+                        (<FileSystemNode>fileSystem).setClient(undefined);
+                        fileSystem.dispose();
+                        done();
+                    }
+                }
+            };
+            (<FileSystemNode>fileSystem).setClient(client);
+            fs.mkdirSync(root.append("foo").path());
+            expect(fs.statSync(root.append("foo").path()).isDirectory()).to.be.true;
+            fs.mkdirSync(root.append("foo", "bar").path());
+            expect(fs.statSync(root.append("foo", "bar").path()).isDirectory()).to.be.true;
+            fs.writeFileSync(root.append("foo", "bar", "baz.txt").path(), "baz");
+            expect(fs.readFileSync(root.append("foo", "bar", "baz.txt").path(), "utf8")).to.be.equal("baz");
+            sleep(3000).then(() => {
+                expect(expectedEvents).to.be.empty;
+            });
+        });
+
+    });
 
 });
 
@@ -767,9 +801,7 @@ process.on("unhandledRejection", (reason: any) => {
 });
 
 function createFileSystem(uri: string = root.toString()): FileSystem {
-    const fileSystem = new FileSystemNode(root.toString());
-    disposables.push(fileSystem);
-    return fileSystem;
+    return new FileSystemNode(root.toString());
 }
 
 function deleteFolderRecursive(path: string) {

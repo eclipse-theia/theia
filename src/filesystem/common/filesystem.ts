@@ -109,9 +109,15 @@ export class FileChangesEvent {
 }
 
 export class FileChange {
+
     constructor(
         public readonly uri: string,
         public readonly type: FileChangeType) { }
+
+    equals(other: any): boolean {
+        return other instanceof FileChange && other.type === this.type && other.uri === this.uri;
+    }
+
 }
 
 export enum FileChangeType {

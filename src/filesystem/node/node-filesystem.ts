@@ -1,11 +1,12 @@
 import * as fs from "fs-extra";
-import * as path from "path";
 import * as touch from "touch";
-import { FSWatcher } from "chokidar";
-import { FileStat, FileSystem, FileSystemClient, FileChange, FileChangeType, FileChangesEvent } from "../common/filesystem";
+import * as path from "path";
 import URI from "../../application/common/uri";
+import { WatchOptions, FSWatcher } from "chokidar";
+import { FileStat, FileSystem, FileSystemClient, FileChange, FileChangeType, FileChangesEvent } from "../common/filesystem";
 
 const trash: (paths: Iterable<string>) => Promise<void> = require("trash");
+const chokidar: { watch(paths: string | string[], options?: WatchOptions): FSWatcher } = require("chokidar");
 const detectCharacterEncoding: (buffer: Buffer) => { encoding: string, confidence: number } = require("detect-character-encoding");
 
 type EventType =
@@ -22,29 +23,29 @@ export class FileSystemNode implements FileSystem {
     protected client: FileSystemClient | undefined;
     private watcher: FSWatcher;
 
-    constructor(protected rootURI: string, protected defaults: FileSystem.Configuration = {
+    constructor(protected rootUri: string, protected defaults: FileSystem.Configuration = {
         encoding: "utf8",
         overwrite: false,
         recursive: true,
         moveToTrash: true,
     }) {
 
-        const _rootUri = new URI(rootURI);
+        const _rootUri = new URI(this.rootUri);
         const stat = this.doGetStat(_rootUri, 0);
         if (!stat) {
-            throw new Error(`File system root cannot be located under ${this.rootURI}.`);
+            throw new Error(`File system root cannot be located under ${this.rootUri}.`);
         }
         if (!stat.isDirectory) {
-            throw new Error(`File system root should point to a directory location. URI: ${this.rootURI}.`);
+            throw new Error(`File system root should point to a directory location. URI: ${this.rootUri}.`);
         }
         const rootPath = _rootUri.path();
-        this.watcher = new FSWatcher();
-        this.watcher.add(rootPath);
-        this.watcher.on("all", (eventType: EventType, filename: string | Buffer) => {
+        this.watcher = chokidar.watch(rootPath).on("all", (eventType: EventType, filename: string) => {
             if (this.client) {
                 const changeType = this.getFileChangeType(eventType);
                 if (changeType && typeof filename === "string") {
-                    const change = new FileChange(_rootUri.append(path.relative(rootPath, filename)).toString(), changeType);
+                    const segments = path.normalize(path.relative(_rootUri.path(), filename));
+                    const changedUri = segments === "." ? rootUri : _rootUri.append(segments);
+                    const change = new FileChange(changedUri.toString(), changeType);
                     const event = new FileChangesEvent([change]);
                     this.client.onFileChanges(event);
                 }
@@ -52,7 +53,7 @@ export class FileSystemNode implements FileSystem {
         });
     }
 
-    setClient(client: FileSystemClient) {
+    setClient(client: FileSystemClient | undefined) {
         this.client = client
     }
 
@@ -301,9 +302,9 @@ export class FileSystemNode implements FileSystem {
 
     getWorkspaceRoot(): Promise<FileStat> {
         return new Promise<FileStat>((resolve, reject) => {
-            const stat = this.doGetStat(new URI(this.rootURI), 1);
+            const stat = this.doGetStat(new URI(this.rootUri), 1);
             if (!stat) {
-                return reject(new Error(`Cannot locate workspace root under ${this.rootURI}.`));
+                return reject(new Error(`Cannot locate workspace root under ${this.rootUri}.`));
             }
             resolve(stat);
         });
