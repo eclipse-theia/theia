@@ -1,5 +1,5 @@
 
-import { Widget, Panel } from '@phosphor/widgets';
+import { Widget } from '@phosphor/widgets';
 import { injectable } from "inversify";
 import { DialogOptions, DialogService } from "../common/dialog-service";
 
@@ -9,14 +9,6 @@ export class DialogServiceImpl implements DialogService {
     private dialogs: {
         [id: string]: Dialog
     } = {}
-    private dialogContainer: Panel
-
-    createDialogContainer(): Panel {
-        this.dialogContainer = new Panel()
-        this.dialogContainer.id = 'theia:dialogcontainer'
-        this.dialogs = {}
-        return this.dialogContainer
-    }
 
     createDialog(options: DialogOptions): void {
         if (this.dialogs[options.id]) {
@@ -42,7 +34,7 @@ export class DialogServiceImpl implements DialogService {
             `)
 
         this.dialogs[dialog.id] = dialog
-        this.dialogContainer.addWidget(dialog.widget)
+        Widget.attach(dialog.widget, document.body)
         dialog.initCallback()
         this.closeHandler(dialog.id)
     }

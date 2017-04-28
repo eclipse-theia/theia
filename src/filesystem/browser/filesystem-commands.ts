@@ -1,12 +1,13 @@
-import { FileSystem } from '../common/filesystem';
+import { FileSystem, FileStat } from '../common/filesystem';
 import { ClipboardService, SelectionService } from '../../application/common';
 import { DialogService } from '../../application/common';
 import { CommandContribution, CommandHandler, CommandRegistry } from '../../application/common/command';
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../../application/common/menu';
-// import { promptConfirmDialog, promptNameDialog } from '../browser/filesystem-dialogs';
+import { promptConfirmDialog, promptNameDialog } from '../browser/filesystem-dialogs';
 import { UriSelection } from '../common/filesystem-selection';
 import { inject, injectable } from 'inversify';
 import { CommonCommands } from "../../application/common/commands-common";
+import URI from "../../application/common/uri";
 
 
 
@@ -79,8 +80,8 @@ export class FileCommandContribution implements CommandContribution {
                 actionId: 'renamefile',
                 selectionService: this.selectionService,
                 dialogService: this.dialogService
-            }, (uri: string) => {
-                // promptNameDialog('renamefile', uri, this.dialogService, this.fileSystem)
+            }, (uri) => {
+                promptNameDialog('renamefile', uri.toString(), this.dialogService, this.fileSystem)
                 return Promise.resolve()
             })
         );
@@ -91,9 +92,9 @@ export class FileCommandContribution implements CommandContribution {
                 id: Commands.FILE_COPY,
                 actionId: 'copyfile',
                 selectionService: this.selectionService
-            }, (uri: string) => {
+            }, (uri) => {
                 this.clipboardService.setData({
-                    text: uri
+                    text: uri.toString()
                 })
                 return Promise.resolve()
             })
@@ -107,32 +108,14 @@ export class FileCommandContribution implements CommandContribution {
                 selectionService: this.selectionService,
                 clipboardService: this.clipboardService
             }, uri => {
-                return Promise.resolve()
-                // let copyPath: Path
-                // return this.fileSystem.dirExists(pastePath)
-                // .then((targetFolderExists: boolean) => {
-                //     if (!targetFolderExists) {
-                //         // 'paste path is not folder'
-                //         pastePath = pastePath.parent
-                //     }
-                //     return this.fileSystem.dirExists(pastePath)
-                // })
-                // .then((targetFolderExists: boolean) => {
-                //     if (!targetFolderExists) {
-                //         return Promise.reject("paste path dont exist")
-                //     }
-                //     let data: string = this.clipboardService.getData('text')
-                //     copyPath = Path.fromString(data)
-                //     if (copyPath.simpleName) {
-                //         pastePath = pastePath.append(copyPath.simpleName)
-                //     }
-                //     return this.fileSystem.cp(copyPath, pastePath).then((newPath) => {
-                //         if (newPath !== pastePath.toString()) {
-                //             // need to rename to something new
-                //             promptNameDialog('pastefile', Path.fromString(newPath), this.dialogService, this.fileSystem)
-                //         }
-                //     })
-                // })
+                let copyPath: URI
+                return getDirectory(uri, this.fileSystem)
+                .then(stat => {
+                    let data: string = this.clipboardService.getData('text')
+                    copyPath = new URI(data)
+                    let targetUri = uri.append(copyPath.lastSegment())
+                    return this.fileSystem.copy(copyPath.toString(), targetUri.toString())
+                })
             })
         );
 
@@ -142,17 +125,12 @@ export class FileCommandContribution implements CommandContribution {
                 id: Commands.NEW_FILE,
                 actionId: 'newfile',
                 selectionService: this.selectionService
-            }, (uri: string) => {
-                // let newPath: Path
-                // return this.fileSystem.createName(path)
-                // .then((newPathData: string) => {
-                //     newPath = Path.fromString(newPathData)
-                //     return this.fileSystem.writeFile(newPath, "")
-                // })
-                // .then(() => {
-                //     promptNameDialog('newfile', newPath, this.dialogService, this.fileSystem)
-                // })
-                return Promise.resolve()
+            }, uri => {
+                return getDirectory(uri, this.fileSystem)
+                    .then( stat => {
+                        let freeUri = getFreeChild('Untitled', '.txt', stat)
+                        promptNameDialog('newfile', freeUri.toString(), this.dialogService, this.fileSystem)
+                    })
             })
         );
 
@@ -162,19 +140,14 @@ export class FileCommandContribution implements CommandContribution {
                 id: Commands.NEW_FOLDER,
                 actionId: 'newfolder',
                 selectionService: this.selectionService
-            }, (uri: string) => {
-                return Promise.resolve()
-                // let newPath: Path
-                // return this.fileSystem.createName(path)
-                // .then((newPathData: string) => {
-                //     newPath = Path.fromString(newPathData)
-                //     return this.fileSystem.mkdir(newPath)
-                // })
-                // .then(() => {
-                //     promptNameDialog('newfolder', newPath, this.dialogService, this.fileSystem)
-                // })
+            }, uri => {
+                return getDirectory(uri, this.fileSystem)
+                    .then( stat => {
+                        let freeUri = getFreeChild('Untitled', '', stat)
+                        promptNameDialog('newfolder', freeUri.toString() , this.dialogService, this.fileSystem)
+                    })
             })
-        );
+        )
 
         registry.registerHandler(
             Commands.FILE_DELETE,
@@ -182,37 +155,56 @@ export class FileCommandContribution implements CommandContribution {
                 id: Commands.FILE_DELETE,
                 actionId: 'delete',
                 selectionService: this.selectionService
-            }, (uri: string) => {
+            }, uri => {
+                promptConfirmDialog(
+                    'delete',
+                    () => {
+                        return this.fileSystem.delete(uri.toString())
+                    },
+                    this.dialogService,
+                    this.fileSystem
+                )
                 return Promise.resolve()
-                // return this.fileSystem.dirExists(path)
-                // .then((isDir) => {
-                //     promptConfirmDialog(
-                //         'delete',
-                //         () => {
-                //             if (isDir) {
-                //                 return this.fileSystem.rmdir(path)
-                //             }
-                //             return this.fileSystem.rm(path)
-                //         },
-                //         this.dialogService,
-                //         this.fileSystem
-                //     )
-                // })
             })
-        );
+        )
     }
+}
+
+function getDirectory(candidate: URI, fileSystem: FileSystem): Promise<FileStat> {
+    return fileSystem.getFileStat(candidate.toString())
+        .then( stat => {
+            if (!stat || !stat.isDirectory) {
+                // not folder? get parent
+                return fileSystem.getFileStat(new URI(stat.uri).parent().toString())
+            } else {
+                return Promise.resolve(stat)
+            }
+        })
+}
+
+function getFreeChild(prefix: string, suffix: string, fileStat: FileStat): URI {
+    let infixes = ['', ' 1', ' 2', ' 3', ' 4', ' 5']
+    let parentUri = new URI(fileStat.uri)
+    for (let infix of infixes) {
+        let candidate = prefix + infix + suffix
+        let children: FileStat[] = fileStat.children!
+        if (!children.some( stat => new URI(stat.uri).lastSegment() === candidate)) {
+            return parentUri.append(candidate)
+        }
+    }
+    return parentUri.append(prefix + suffix)
 }
 
 export class FileSystemCommandHandler implements CommandHandler {
     constructor(
         protected readonly options: FileSystemCommandHandler.Options,
-        protected readonly doExecute: (uri: string) => Promise<any>) {
+        protected readonly doExecute: (uri: URI) => Promise<any>) {
     }
 
     execute(arg?: any): Promise<any> {
         const selection = this.options.selectionService.selection;
         if (UriSelection.is(selection)) {
-            return this.doExecute(selection.uri)
+            return this.doExecute(new URI(selection.uri))
         }
         return Promise.resolve()
     }
