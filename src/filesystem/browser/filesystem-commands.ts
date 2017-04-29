@@ -1,13 +1,12 @@
 import { FileSystem, FileStat } from '../common/filesystem';
 import { ClipboardService, SelectionService } from '../../application/common';
-import { DialogService } from '../../application/common';
 import { CommandContribution, CommandHandler, CommandRegistry } from '../../application/common/command';
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../../application/common/menu';
-import { promptConfirmDialog, promptNameDialog } from '../browser/filesystem-dialogs';
 import { UriSelection } from '../common/filesystem-selection';
 import { inject, injectable } from 'inversify';
 import { CommonCommands } from "../../application/common/commands-common";
 import URI from "../../application/common/uri";
+import { SingleTextInputDialog, ConfirmDialog } from "../../application/browser/dialogs";
 
 
 
@@ -47,7 +46,6 @@ export class FileCommandContribution implements CommandContribution {
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(ClipboardService) protected readonly clipboardService: ClipboardService,
-        @inject(DialogService) protected readonly dialogService: DialogService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         ) {}
 
@@ -78,11 +76,19 @@ export class FileCommandContribution implements CommandContribution {
             new FileSystemCommandHandler({
                 id: Commands.FILE_RENAME,
                 actionId: 'renamefile',
-                selectionService: this.selectionService,
-                dialogService: this.dialogService
+                selectionService: this.selectionService
             }, (uri) => {
-                promptNameDialog('renamefile', uri.toString(), this.dialogService, this.fileSystem)
-                return Promise.resolve()
+                return this.fileSystem.getFileStat(uri.toString())
+                    .then( stat => {
+                        let dialog = new SingleTextInputDialog('Rename File', {
+                            initialValue: uri.lastSegment(),
+                            validate(name) {
+                                return validateFileName(name, stat)
+                            }
+                        })
+                        dialog.acceptancePromise.then( name =>
+                            this.fileSystem.move(uri.toString(), uri.parent().append(name).toString()))
+                    })
             })
         );
 
@@ -129,7 +135,14 @@ export class FileCommandContribution implements CommandContribution {
                 return getDirectory(uri, this.fileSystem)
                     .then( stat => {
                         let freeUri = getFreeChild('Untitled', '.txt', stat)
-                        promptNameDialog('newfile', freeUri.toString(), this.dialogService, this.fileSystem)
+                        let dialog = new SingleTextInputDialog('New File', {
+                            initialValue: freeUri.lastSegment(),
+                            validate(name) {
+                                return validateFileName(name, stat)
+                            }
+                        })
+                        dialog.acceptancePromise.then( name =>
+                            this.fileSystem.createFile(new URI(stat.uri).append(name).toString()))
                     })
             })
         );
@@ -144,7 +157,14 @@ export class FileCommandContribution implements CommandContribution {
                 return getDirectory(uri, this.fileSystem)
                     .then( stat => {
                         let freeUri = getFreeChild('Untitled', '', stat)
-                        promptNameDialog('newfolder', freeUri.toString() , this.dialogService, this.fileSystem)
+                        let dialog = new SingleTextInputDialog('New Folder', {
+                            initialValue: freeUri.lastSegment(),
+                            validate(name) {
+                                return validateFileName(name, stat)
+                            }
+                        })
+                        dialog.acceptancePromise.then( name =>
+                            this.fileSystem.createFolder(new URI(stat.uri).append(name).toString()))
                     })
             })
         )
@@ -156,18 +176,33 @@ export class FileCommandContribution implements CommandContribution {
                 actionId: 'delete',
                 selectionService: this.selectionService
             }, uri => {
-                promptConfirmDialog(
-                    'delete',
-                    () => {
-                        return this.fileSystem.delete(uri.toString())
-                    },
-                    this.dialogService,
-                    this.fileSystem
-                )
-                return Promise.resolve()
+                let dialog = new ConfirmDialog('Delete File', `Do you really want to delete '${uri.lastSegment()}`)
+                return dialog.acceptancePromise.then(() => {
+                    return this.fileSystem.delete(uri.toString())
+                })
             })
         )
     }
+}
+
+/**
+ * returns an error message or an empty string if the file name is valid
+ * @param name the simple file name to validate
+ * @param parent the parent directory's file stat
+ */
+function validateFileName(name: string, parent: FileStat): string {
+    if (!name || !name.match(/^[\w\-. ]+$/)) {
+        return "Invalid name, try other"
+    } else {
+        if (parent.children) {
+            for (let child of parent.children) {
+                if (new URI(child.uri).lastSegment() === name) {
+                    return 'A file with this name already exists.'
+                }
+            }
+        }
+    }
+    return ''
 }
 
 function getDirectory(candidate: URI, fileSystem: FileSystem): Promise<FileStat> {
@@ -240,6 +275,5 @@ export namespace FileSystemCommandHandler {
         actionId: string,
         selectionService: SelectionService,
         clipboardService?: ClipboardService
-        dialogService?: DialogService
     }
 }

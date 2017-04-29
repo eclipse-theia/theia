@@ -1,14 +1,12 @@
 
 import { ContainerModule } from "inversify"
 
-import { DialogServiceImpl } from '../browser/dialog-service'
 import { SelectionService } from '../common/selection-service'
 import { CommonCommandContribution, CommonMenuContribution } from '../common/commands-common'
 import { TheiaApplication } from './application'
 import { OpenerService } from "./opener-service"
 import { CommandContribution, CommandContributionProvider, CommandRegistry } from "../common/command"
 import { MenuModelRegistry, MenuContribution, MenuContributionProvider } from "../common/menu"
-import { DialogService } from "../common/dialog-service"
 import { KeybindingContextRegistry, KeybindingRegistry } from "../common/keybinding"
 
 export const browserApplicationModule = new ContainerModule(bind => {
@@ -23,11 +21,8 @@ export const browserApplicationModule = new ContainerModule(bind => {
     bind(MenuContributionProvider).toFactory<MenuContribution[]>(ctx => {
         return () => ctx.container.getAll<MenuContribution>(MenuContribution)
     })
-    bind(MenuModelRegistry).toSelf().inSingletonScope()
-    bind(SelectionService).toSelf().inSingletonScope()
-    bind(DialogServiceImpl).toSelf().inSingletonScope()
-    bind(DialogService).toDynamicValue(context => context.container.get(DialogServiceImpl))
+    bind(MenuModelRegistry).toSelf().inSingletonScope();
     bind(KeybindingRegistry).toSelf().inSingletonScope()
     bind(KeybindingContextRegistry).toSelf().inSingletonScope()
-})
-
+    bind(SelectionService).toSelf().inSingletonScope();
+});
