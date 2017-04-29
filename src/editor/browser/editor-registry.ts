@@ -4,14 +4,13 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-
-import {injectable} from "inversify";
-import {EditorWidget} from "./editor-widget";
-import {Emitter, Event} from "../../application/common";
+import { injectable } from "inversify";
+import { Emitter, Event } from "../../application/common";
+import { EditorWidget } from "./editor-widget";
 
 @injectable()
 export class EditorRegistry {
-    protected readonly editors = new Map<string, monaco.Promise<EditorWidget> | EditorWidget | undefined>();
+    protected readonly editors = new Map<string, Promise<EditorWidget> | EditorWidget | undefined>();
     protected readonly onEditorsChangedEmitter = new Emitter<void>();
 
     onEditorsChanged(): Event<void> {
@@ -26,11 +25,12 @@ export class EditorRegistry {
         return Array.from(this.editors.values()).filter(editor => editor instanceof EditorWidget) as EditorWidget[];
     }
 
-    getEditor(key: string): monaco.Promise<EditorWidget> | undefined {
+    getEditor(key: string): Promise<EditorWidget> | undefined {
         const editor = this.editors.get(key);
         if (editor) {
-            return monaco.Promise.wrap(editor);
+            return Promise.resolve(editor);
         }
+        return undefined;
     }
 
     addEditor(key: string, editor: EditorWidget): void {

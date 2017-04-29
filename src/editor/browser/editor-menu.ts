@@ -1,0 +1,1 @@
+export const EDITOR_CONTEXT_MENU_ID = 'editor_context_menu';

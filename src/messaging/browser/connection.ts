@@ -20,7 +20,7 @@ export class WebSocketConnection {
      * An optional target can be provided to handle
      * notifications and requests from a remote side.
      */
-    createProxy<T>(path: string, target?: object): T {
+    createProxy<T extends object>(path: string, target?: object): T {
         const factory = new JsonRpcProxyFactory<T>(path, target);
         this.listen(factory);
         return factory.createProxy();

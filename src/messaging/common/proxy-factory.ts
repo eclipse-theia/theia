@@ -9,7 +9,7 @@ import { DisposableCollection } from '../../application/common';
 import { ConnectionHandler } from './handler';
 import { MessageConnection } from "vscode-jsonrpc";
 
-export class JsonRpcProxyFactory<T> implements ConnectionHandler, ProxyHandler<T> {
+export class JsonRpcProxyFactory<T extends object> implements ConnectionHandler, ProxyHandler<T> {
 
     protected readonly connectionListeners = new DisposableCollection();
 

@@ -10,7 +10,7 @@ import { FileSystem, FileStat, FileChangesEvent, FileChangeType } from "../../fi
 import { FileSystemWatcher } from "../../filesystem/common/filesystem-watcher";
 import { UriSelection } from "../../filesystem/common/filesystem-selection";
 import { SelectionService } from '../../application/common';
-import { OpenerService } from "../../application/browser";
+import { TheiaOpenerService } from "../../application/browser";
 import {
     ITree,
     ITreeSelectionService,
@@ -29,7 +29,7 @@ export class FileNavigatorModel extends TreeModel {
 
     constructor( @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcher) watcher: FileSystemWatcher,
-        @inject(OpenerService) protected readonly openerService: OpenerService,
+        @inject(TheiaOpenerService) protected readonly openerService: TheiaOpenerService,
         @inject(ITree) tree: ITree,
         @inject(ITreeSelectionService) selection: ITreeSelectionService,
         @inject(ITreeExpansionService) expansion: ITreeExpansionService,
