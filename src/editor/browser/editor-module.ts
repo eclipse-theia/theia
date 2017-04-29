@@ -64,14 +64,14 @@ class EditorCommandHandlers implements CommandContribution {
             label: 'Close Active Editor'
         });
         registry.registerHandler('editor.close', {
-            execute: (arg?: any): any => {
+            execute: () => {
                 const editor = this.editorService.activeEditor;
                 if (editor) {
                     editor.close();
                 }
                 return null;
             },
-            isEnabled: Enabled => { return true; }
+            isEnabled() { return true; }
         });
 
         registry.registerCommand({
@@ -79,13 +79,13 @@ class EditorCommandHandlers implements CommandContribution {
             label: 'Close All Editors'
         });
         registry.registerHandler('editor.close.all', {
-            execute: (arg?: any): any => {
+            execute: () => {
                 this.editorService.editors.forEach(editor => {
                     editor.close();
                 });
                 return null;
             },
-            isEnabled: Enabled => { return true; }
+            isEnabled() { return true; }
         });
 
     }
