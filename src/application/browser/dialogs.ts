@@ -1,3 +1,4 @@
+import { DisposableCollection } from 'vscode-ws-jsonrpc/lib/disposable';
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -16,10 +17,12 @@ export class Dialog<T> {
     readonly acceptancePromise = new Promise<T>((resolve, reject) => {
         this.accept = (value) => {
             Widget.detach(this.widget)
+            this.disposables.dispose()
             resolve(value)
         }
         this.reject = () => {
             Widget.detach(this.widget)
+            this.disposables.dispose()
             reject()
         }
     })
@@ -29,6 +32,8 @@ export class Dialog<T> {
     closeCrossNode: HTMLElement;
 
     protected widget: Widget
+
+    protected disposables = new DisposableCollection()
 
     constructor(title: string) {
         this.widget = new Widget(document.createElement("div"))
@@ -64,7 +69,7 @@ export class Dialog<T> {
             e.preventDefault()
             return false
         })
-        this.widget.node.addEventListener('keydown', (e: KeyboardEvent) => {
+        let keyEventHandler = (e: KeyboardEvent) => {
             let isEscape = false
             let isEnter = false
             if ("key" in e) {
@@ -79,6 +84,10 @@ export class Dialog<T> {
             } else if (isEnter) {
                 this.accept()
             }
+        }
+        document.body.addEventListener('keydown', keyEventHandler)
+        this.disposables.push({
+            dispose: () => document.body.removeEventListener('keydown', keyEventHandler)
         })
     }
 

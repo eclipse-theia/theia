@@ -6,8 +6,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background: transparent;
-    pointer-events: none;
+    background: rgba(1,1,1,0.5);
     position: fixed;
     color: var(--theia-ui-font-color1);
 }
