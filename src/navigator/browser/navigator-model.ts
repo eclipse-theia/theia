@@ -1,7 +1,9 @@
-import {SelectionService } from '../../application/common/selection-service';
-import {injectable, inject} from "inversify";
-import {FileSystem, Path, FileChangeEvent, FileChangeType} from "../../filesystem/common";
-import {OpenerService} from "../../application/browser";
+import { injectable, inject } from "inversify";
+import { FileSystem, FileStat, FileChangesEvent, FileChangeType } from "../../filesystem/common/filesystem";
+import { FileSystemWatcher } from "../../filesystem/common/filesystem-watcher";
+import { UriSelection } from "../../filesystem/common/filesystem-selection";
+import { SelectionService } from '../../application/common';
+import { OpenerService } from "../../application/browser";
 import {
     ITree,
     ITreeSelectionService,
@@ -12,31 +14,33 @@ import {
     TreeModel,
     Tree
 } from "./tree";
-import {ISelectableTreeNode} from "./tree/tree-selection";
+import { ISelectableTreeNode } from "./tree/tree-selection";
+import URI from '../../application/common/uri';
 
 @injectable()
 export class FileNavigatorModel extends TreeModel {
 
-    constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem,
-                @inject(OpenerService) protected readonly openerService: OpenerService,
-                @inject(ITree) tree: ITree,
-                @inject(ITreeSelectionService) selection: ITreeSelectionService,
-                @inject(ITreeExpansionService) expansion: ITreeExpansionService,
-                @inject(SelectionService) selectionService: SelectionService) {
+    constructor( @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(FileSystemWatcher) watcher: FileSystemWatcher,
+        @inject(OpenerService) protected readonly openerService: OpenerService,
+        @inject(ITree) tree: ITree,
+        @inject(ITreeSelectionService) selection: ITreeSelectionService,
+        @inject(ITreeExpansionService) expansion: ITreeExpansionService,
+        @inject(SelectionService) selectionService: SelectionService) {
         super(tree, selection, expansion);
-        this.toDispose.push(fileSystem.watch(event => this.onFileChanged(event)));
-        this.toDispose.push(selection.onSelectionChanged(( selection ) => selectionService.selection = selection));
+        this.toDispose.push(watcher.onFileChanges(event => this.onFileChanges(event)));
+        this.toDispose.push(selection.onSelectionChanged(selection => selectionService.selection = selection));
     }
 
-    get selectedPathNode(): IPathNode | undefined {
+    get selectedFileStatNode(): Readonly<FileStatNode> | undefined {
         const selectedNode = this.selectedNode;
-        if (IPathNode.is(selectedNode)) {
+        if (FileStatNode.is(selectedNode)) {
             return selectedNode;
         }
         return undefined;
     }
 
-    protected onFileChanged(event: FileChangeEvent): void {
+    protected onFileChanges(event: FileChangesEvent): void {
         const affectedNodes = this.getAffectedNodes(event);
         if (affectedNodes.length !== 0) {
             affectedNodes.forEach(node => this.refresh(node));
@@ -45,20 +49,23 @@ export class FileNavigatorModel extends TreeModel {
         }
     }
 
-    protected isRootAffected(event: FileChangeEvent): boolean {
-        return event.changes.some(change =>
-            change.type < FileChangeType.DELETED && Path.ROOT.equals(change.path)
-        );
+    protected isRootAffected(event: FileChangesEvent): boolean {
+        const root = this.root;
+        if (FileStatNode.is(root)) {
+            return event.changes.some(change =>
+                change.type < FileChangeType.DELETED && change.uri === root.fileStat.uri
+            );
+        }
+        return false;
     }
 
-    protected getAffectedNodes(event: FileChangeEvent): ICompositeTreeNode[] {
-        const nodes: IDirNode[] = [];
+    protected getAffectedNodes(event: FileChangesEvent): ICompositeTreeNode[] {
+        const nodes: DirNode[] = [];
         for (const change of event.changes) {
-            const path = change.path;
-            const affectedPath = change.type > FileChangeType.UPDATED ? path.parent : path;
-            const id = affectedPath.toString();
+            const uri = change.uri;
+            const id = change.type > FileChangeType.UPDATED ? new URI(uri).parent.toString() : uri;
             const node = this.getNode(id);
-            if (IDirNode.is(node) && node.expanded) {
+            if (DirNode.is(node) && node.expanded) {
                 nodes.push(node);
             }
         }
@@ -66,8 +73,8 @@ export class FileNavigatorModel extends TreeModel {
     }
 
     protected doOpenNode(node: ITreeNode): void {
-        if (IFileNode.is(node)) {
-            this.openerService.open(node.path);
+        if (FileNode.is(node)) {
+            this.openerService.open(node.fileStat.uri);
         } else {
             super.doOpenNode(node);
         }
@@ -77,16 +84,18 @@ export class FileNavigatorModel extends TreeModel {
 @injectable()
 export class FileNavigatorTree extends Tree {
 
-    constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem) {
+    constructor( @inject(FileSystem) protected readonly fileSystem: FileSystem) {
         super();
-        this.root = this.createRootNode();
+        this.fileSystem.getWorkspaceRoot().then(fileStat => {
+            this.root = this.createRootNode(fileStat);
+        });
     }
 
-    protected createRootNode(): IDirNode {
-        const path = Path.ROOT;
-        const id = path.toString();
+    protected createRootNode(fileStat: FileStat): DirNode {
+        const uri = fileStat.uri
+        const id = uri;
         return {
-            id, path,
+            id, uri, fileStat,
             name: '/',
             visible: false,
             parent: undefined,
@@ -97,81 +106,92 @@ export class FileNavigatorTree extends Tree {
     }
 
     resolveChildren(parent: ICompositeTreeNode): Promise<ITreeNode[]> {
-        const path = IPathNode.is(parent) ? parent.path : undefined;
-        if (path) {
-            return this.fileSystem.ls(path).then(paths => this.toNodes(paths, parent));
+        if (FileStatNode.is(parent)) {
+            return this.resolveFileStat(parent).then(fileStat =>
+                this.toNodes(fileStat, parent)
+            )
         }
         return super.resolveChildren(parent);
     }
 
-    protected toNodes(paths: Path[], parent: ICompositeTreeNode): Promise<ITreeNode[]> {
-        return Promise.all(paths.map(path => this.toNode(path, parent))).then(nodes =>
-            (nodes.filter(node => !!node) as ITreeNode[]).sort(IDirNode.compare)
-        );
+    protected resolveFileStat(node: FileStatNode): Promise<FileStat> {
+        if (!node.fileStat.children && node.fileStat.isDirectory) {
+            return this.fileSystem.getFileStat(node.fileStat.uri).then(fileStat => {
+                node.fileStat = fileStat;
+                return fileStat;
+            });
+        }
+        return Promise.resolve(node.fileStat);
     }
 
-    protected toNode(path: Path, parent: ICompositeTreeNode): Promise<IFileNode | IDirNode | undefined> {
-        const name = path.simpleName;
-        if (!name) {
-            return Promise.resolve(undefined);
+    protected toNodes(fileStat: FileStat, parent: ICompositeTreeNode): ITreeNode[] {
+        if (!fileStat.children) {
+            return [];
         }
-        const id = path.toString();
+        return fileStat.children.map(child =>
+            this.toNode(child, parent)
+        ).sort(DirNode.compare);
+    }
+
+    protected toNode(fileStat: FileStat, parent: ICompositeTreeNode): FileNode | DirNode {
+        const uri = fileStat.uri
+        const id = uri;
         const node = this.getNode(id);
-        return this.fileSystem.dirExists(path).then(exists => {
-            if (exists) {
-                if (IDirNode.is(node)) {
-                    return node;
-                }
-                return <IDirNode>{
-                    id, path, name, parent,
-                    expanded: false,
-                    selected: false,
-                    children: []
-                }
-            }
-            if (IPathNode.is(node)) {
+        if (fileStat.isDirectory) {
+            if (DirNode.is(node)) {
+                node.fileStat = fileStat;
                 return node;
             }
-            return <IFileNode>{
-                id, path, name, parent,
-                selected: false
+            const name = new URI(fileStat.uri).lastSegment();
+            return <DirNode>{
+                id, uri, fileStat, name, parent,
+                expanded: false,
+                selected: false,
+                children: []
             }
-        });
+        }
+        if (FileNode.is(node)) {
+            node.fileStat = fileStat;
+            return node;
+        }
+        const name = new URI(fileStat.uri).lastSegment();
+        return <FileNode>{
+            id, uri, fileStat, name, parent,
+            selected: false
+        }
     }
 
 }
 
-export interface IPathNode extends ISelectableTreeNode {
-    readonly path: Path;
+export interface FileStatNode extends ISelectableTreeNode, UriSelection {
+    fileStat: FileStat;
 }
-
-export type IDirNode = IPathNode & IExpandableTreeNode;
-export type IFileNode = IPathNode;
-
-export namespace IFileNode {
-    export function is(node: ITreeNode | undefined): node is IFileNode {
-        return IPathNode.is(node) && !IExpandableTreeNode.is(node);
+export namespace FileStatNode {
+    export function is(node: ITreeNode | undefined): node is FileStatNode {
+        return !!node && 'fileStat' in node;
     }
 }
 
-export namespace IDirNode {
-    export function is(node: ITreeNode | undefined): node is IDirNode {
-        return IPathNode.is(node) && IExpandableTreeNode.is(node);
+export type FileNode = FileStatNode;
+export namespace FileNode {
+    export function is(node: ITreeNode | undefined): node is FileNode {
+        return FileStatNode.is(node) && !IExpandableTreeNode.is(node);
+    }
+}
+
+export type DirNode = FileStatNode & IExpandableTreeNode;
+export namespace DirNode {
+    export function is(node: ITreeNode | undefined): node is DirNode {
+        return FileStatNode.is(node) && IExpandableTreeNode.is(node);
     }
 
     export function compare(node: ITreeNode, node2: ITreeNode): number {
-        return IDirNode.dirCompare(node, node2) || node.name.localeCompare(node2.name);
+        return DirNode.dirCompare(node, node2) || node.name.localeCompare(node2.name);
     }
 
     export function dirCompare(node: ITreeNode, node2: ITreeNode): number {
-        const a = IDirNode.is(node) ? 1 : 0;
-        const b = IDirNode.is(node2) ? 1 : 0;
+        const a = DirNode.is(node) ? 1 : 0;
+        const b = DirNode.is(node2) ? 1 : 0;
         return b - a;
-    }
-}
-
-export namespace IPathNode {
-    export function is(node: ITreeNode | undefined): node is IPathNode {
-        return !!node && 'path' in node;
     }
 }

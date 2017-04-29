@@ -26,7 +26,7 @@ module.exports = function (dirname, config = {}) {
 
         module: {
             rules: rules(dirname),
-            noParse: /vscode-languageserver-types/
+            noParse: /vscode-languageserver-types|vscode-uri/
         },
 
         resolve: {

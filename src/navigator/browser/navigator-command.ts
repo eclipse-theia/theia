@@ -1,17 +1,16 @@
 import { injectable, inject } from "inversify";
-
 import { CommandHandler, CommandContribution, CommandRegistry } from '../../application/common/command';
 import { CONTEXT_MENU_PATH } from "./navigator-widget";
 import { Commands } from '../../filesystem/browser/filesystem-commands';
 import { MenuContribution, MenuModelRegistry } from "../../application/common/menu";
-import { FileSystem, Path } from "../../filesystem/common";
+import { FileSystem, FileStat } from "../../filesystem/common/filesystem";
 import { FileNavigatorModel } from "./navigator-model";
 
 @injectable()
 export class NavigatorCommandHandlers implements CommandContribution {
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(FileNavigatorModel) protected readonly model: FileNavigatorModel) {}
+        @inject(FileNavigatorModel) protected readonly model: FileNavigatorModel) { }
     contribute(registry: CommandRegistry): void {
         // registry.registerHandler(
         //     Commands.FILE_DELETE,
@@ -57,15 +56,13 @@ export class NavigatorMenuContribution implements MenuContribution {
 export class NavigatorCommandHandler implements CommandHandler {
     constructor(
         protected readonly options: NavigatorCommandHandler.Options,
-        protected readonly doExecute: any) {
+        protected readonly doExecute: (fileStat: FileStat) => Promise<any>) {
     }
 
-    path: Path
-
     execute(arg?: any): Promise<any> {
-        const node = this.options.model.selectedPathNode;
+        const node = this.options.model.selectedFileStatNode;
         if (node) {
-            return this.doExecute(node.path)
+            return this.doExecute(node.fileStat)
         }
         return Promise.resolve()
     }

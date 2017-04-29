@@ -1,20 +1,53 @@
-import {injectable, inject} from "inversify";
-import {FileSystem, Path} from "../../filesystem/common";
-import {DisposableCollection, Disposable} from "../../application/common";
+import { inject, injectable } from 'inversify';
+import { TextDocumentSaveReason } from "vscode-languageserver-types";
+import { Disposable, DisposableCollection, Emitter, Event } from '../../application/common';
+import { FileSystem, FileStat } from '../../filesystem/common';
 import ITextModelResolverService = monaco.editor.ITextModelResolverService;
 import ITextModelContentProvider = monaco.editor.ITextModelContentProvider;
 import ITextEditorModel = monaco.editor.ITextEditorModel;
 import IReference = monaco.editor.IReference;
 import IDisposable = monaco.IDisposable;
 import Uri = monaco.Uri;
-import IModel = monaco.editor.IModel;
+
+export interface WillSaveModelEvent {
+    readonly model: monaco.editor.IModel;
+    readonly reason: TextDocumentSaveReason;
+    waitUntil(thenable: Thenable<monaco.editor.IIdentifiedSingleEditOperation[]>): void;
+}
 
 @injectable()
 export class TextModelResolverService implements ITextModelResolverService {
 
     protected readonly models = new Map<string, monaco.Promise<ReferenceAwareModel> | undefined>();
+    protected readonly onDidSaveModelEmitter = new Emitter<monaco.editor.IModel>();
+    protected readonly onWillSaveModelEmitter = new Emitter<WillSaveModelEvent>();
 
     constructor(@inject(FileSystem) protected readonly fileSystem: FileSystem) {
+    }
+
+    get onWillSaveModel(): Event<WillSaveModelEvent> {
+        return this.onWillSaveModelEmitter.event;
+    }
+
+    protected fireWillSaveModel(model: monaco.editor.IModel, reason: TextDocumentSaveReason): Promise<void> {
+        let doSave: () => void;
+        const promise = new Promise<void>(resolve => doSave = resolve);
+        this.onWillSaveModelEmitter.fire({
+            model, reason,
+            waitUntil: thenable =>
+                thenable.then(operations =>
+                    model.applyEdits(operations)
+                ).then(doSave)
+        });
+        return promise;
+    }
+
+    get onDidSaveModel(): Event<monaco.editor.IModel> {
+        return this.onDidSaveModelEmitter.event;
+    }
+
+    protected fireDidSaveModel(model: monaco.editor.IModel): void {
+        this.onDidSaveModelEmitter.fire(model);
     }
 
     createModelReference(uri: Uri): monaco.Promise<IReference<ITextEditorModel>> {
@@ -35,23 +68,19 @@ export class TextModelResolverService implements ITextModelResolverService {
 
     protected createModel(uri: Uri): monaco.Promise<ReferenceAwareModel> {
         const encoding = document.characterSet;
-        const path = Path.fromString(uri.path);
-        return monaco.Promise.wrap(this.fileSystem.readFile(path, encoding).then(value => {
-            const model = monaco.editor.createModel(value, undefined, uri);
-            model.onDidChangeContent(() => this.save(model, encoding));
-            return new ReferenceAwareModel(model);
+        return monaco.Promise.wrap(this.fileSystem.resolveContent(uri.toString(), encoding).then(result => {
+            const modelReference: ReferenceAwareModel = new ReferenceAwareModel(result.stat, result.content, (stat, content) => {
+                const model = modelReference.textEditorModel;
+                return this.fireWillSaveModel(model, TextDocumentSaveReason.AfterDelay).then(() => {
+                    const result = this.fileSystem.setContent(stat, content, encoding)
+                    result.then(() =>
+                        this.fireDidSaveModel(model)
+                    );
+                    return result;
+                });
+            });
+            return modelReference
         }));
-    }
-
-    protected readonly toDisposeOnSave = new DisposableCollection();
-
-    protected save(model: IModel, encoding: string): void {
-        this.toDisposeOnSave.dispose();
-        const handle = window.setTimeout(() => {
-            const path = Path.fromString(model.uri.path);
-            this.fileSystem.writeFile(path, model.getValue(), encoding);
-        }, 500);
-        this.toDisposeOnSave.push(Disposable.create(() => window.clearTimeout(handle)));
     }
 
     registerTextModelContentProvider(scheme: string, provider: ITextModelContentProvider): IDisposable {
@@ -68,9 +97,25 @@ export class ReferenceAwareModel implements ITextEditorModel {
     protected model: monaco.editor.IModel;
     protected _onDispose: monaco.Emitter<void>;
 
-    constructor(model: monaco.editor.IModel) {
-        this.model = model;
+    constructor(protected stat: FileStat, content: string, protected saveHandler: (stat: FileStat, content: string) => Promise<FileStat>) {
+        this.model = monaco.editor.createModel(content, undefined, monaco.Uri.parse(stat.uri));
         this._onDispose = new monaco.Emitter<void>();
+        this.registerSaveHandler()
+    }
+
+    protected registerSaveHandler(): void {
+        let toDisposeOnSave = new DisposableCollection();
+        this.model.onDidChangeContent(event => {
+            toDisposeOnSave.dispose();
+            const handle = window.setTimeout(() => {
+                this.saveHandler(this.stat, this.model.getValue()).then(
+                    newStat => {
+                        this.stat = newStat
+                    }
+                )
+            }, 500);
+            toDisposeOnSave.push(Disposable.create(() => window.clearTimeout(handle)));
+        })
     }
 
     newReference(): IReference<ITextEditorModel> {

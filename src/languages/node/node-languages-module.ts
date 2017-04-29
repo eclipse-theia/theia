@@ -1,17 +1,19 @@
 import * as http from 'http';
-import { MessageConnection, } from 'vscode-jsonrpc';
 import { ContainerModule, injectable, multiInject } from "inversify";
-import { LanguageIdentifier } from '../common/languages-protocol';
 import { ExpressContribution } from '../../application/node';
 import { openSocket } from '../../messaging/node';
-import { WebSocketMessageReader, WebSocketMessageWriter, ConnectionHandler } from "../../messaging/common";
+import { WebSocketMessageReader, WebSocketMessageWriter, ConnectionHandler, JsonRpcProxyFactory } from "../../messaging/common";
 import { createConnection } from "vscode-ws-jsonrpc/lib/server";
 import { LanguageContribution } from "./language-contribution";
-import { LANGUAGES_WS_PATH, GetLanguagesRequest } from "../common";
+import { LANGUAGES_PATH, LanguagesService, LanguageIdentifier } from "../common";
 
 export const nodeLanguagesModule = new ContainerModule(bind => {
-    bind(ConnectionHandler).to(LanguagesConnectionHandler);
     bind(ExpressContribution).to(LanguagesExpressContribution);
+    bind(LanguagesService).to(LanguagesServiceImpl).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx => {
+        const languagesService = ctx.container.get(LanguagesService);
+        return new JsonRpcProxyFactory<LanguagesService>(LANGUAGES_PATH, languagesService);
+    });
 });
 
 @injectable()
@@ -40,25 +42,18 @@ export class LanguagesExpressContribution implements ExpressContribution {
 }
 
 @injectable()
-export class LanguagesConnectionHandler implements ConnectionHandler {
-
-    readonly path = LANGUAGES_WS_PATH;
+export class LanguagesServiceImpl implements LanguagesService {
 
     constructor(
         @multiInject(LanguageContribution) protected readonly contributors: LanguageContribution[]
-    ) {
-    }
+    ) { }
 
-    onConnection(connection: MessageConnection): void {
-        connection.onRequest(GetLanguagesRequest.type, (params, token) => {
-            const languages = this.contributors.map(contribution =>
+    getLanguages(): Promise<LanguageIdentifier[]> {
+        return Promise.resolve(
+            this.contributors.map(contribution =>
                 LanguageIdentifier.create(contribution.description)
             )
-            return {
-                languages
-            }
-        });
-        connection.listen();
+        )
     }
 
 }

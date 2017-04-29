@@ -1,10 +1,9 @@
 import {injectable} from "inversify";
 import {IOpenerService, TheiaApplication, TheiaPlugin} from "../../application/browser";
-import {Path} from "../../filesystem/common";
 import {EditorWidget} from "./editor-widget";
 import {Event, Emitter} from "../../application/common";
 import {EditorService} from "./editor-service";
-import {EditorRegistry} from "./editor-registry";
+import { EditorRegistry } from "./editor-registry";
 import Uri = monaco.Uri;
 
 export const IEditorManager = Symbol("IEditorManager");
@@ -19,11 +18,11 @@ export interface IEditorManager extends IOpenerService, TheiaPlugin {
      */
     readonly onEditorsChanged: Event<void>;
     /**
-     * Open an editor for the given path.
-     * Undefined if the given path is not of Path type.
+     * Open an editor for the given uri.
+     * Undefined if the given uri is not of Path type.
      * Resolve to undefined if an editor cannot be opened.
      */
-    open(path: Path | any): Promise<EditorWidget | undefined> | undefined;
+    open(uri: string): Promise<EditorWidget | undefined> | undefined;
     /**
      * The most recently focused editor.
      */
@@ -69,20 +68,9 @@ export class EditorManager implements IEditorManager {
         return this.editorRegistry.onEditorsChanged();
     }
 
-    open(path: Path | any): Promise<EditorWidget> | undefined {
-        if (!(path instanceof Path)) {
-            return undefined;
-        }
-        const resource = Uri.file(path.toString());
-        return Promise.resolve(this.editorService.openEditor({resource}).then(editor => {
-            if (editor) {
-                editor.title.label = path.simpleName || 'Unknown';
-                if (this.app) {
-                    this.app.shell.activateMain(editor.id);
-                }
-            }
-            return editor;
-        }));
+    open(uri: string): Promise<EditorWidget> | undefined {
+        const resource = Uri.parse(uri);
+        return Promise.resolve(this.editorService.openEditor({resource}));
     }
 
     get currentEditor() {

@@ -3,8 +3,7 @@ import { MessageConnection } from 'vscode-jsonrpc';
 import { ErrorAction, CloseAction } from "vscode-base-languageclient/lib/base";
 import { DisposableCollection } from '../../application/common';
 import { TheiaPlugin, TheiaApplication } from "../../application/browser";
-import { listen } from "../../messaging/browser";
-import { LanguageIdentifier } from '../common/languages-protocol';
+import { WebSocketConnection } from "../../messaging/browser";
 import {
     BaseLanguageClient,
     Commands,
@@ -13,19 +12,24 @@ import {
     createConnection,
     ILanguageClient,
     Languages,
-    LANGUAGES_WS_PATH,
     OutputChannel,
     Window,
     Workspace,
     ConsoleWindow,
-    GetLanguagesRequest,
     LanguageDescription,
-    FileSystemWatcher
+    FileSystemWatcher,
+    LanguagesService,
+    LANGUAGES_PATH
 } from '../common';
 
 export const browserLanguagesModule = new ContainerModule(bind => {
     bind(Window).to(ConsoleWindow).inSingletonScope();
     bind(TheiaPlugin).to(LanguagesPlugin).inSingletonScope();
+
+    bind<LanguagesService>(LanguagesService).toDynamicValue(ctx => {
+        const connection = ctx.container.get(WebSocketConnection);
+        return connection.createProxy<LanguagesService>(LANGUAGES_PATH);
+    })
 });
 
 @injectable()
@@ -35,14 +39,16 @@ export class LanguagesPlugin implements TheiaPlugin {
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(Languages) protected readonly languages: Languages,
         @inject(Commands) @optional() protected readonly commands: Commands | undefined = undefined,
-        @inject(Window) @optional() protected readonly window: Window | undefined = undefined) {
+        @inject(Window) @optional() protected readonly window: Window | undefined = undefined,
+        @inject(LanguagesService) protected readonly languagesService: LanguagesService,
+        @inject(WebSocketConnection) protected readonly connection: WebSocketConnection) {
     }
 
     onStart(app: TheiaApplication): void {
-        Promise.all([this.workspace.ready, this.getLanguages()]).then(result => {
+        Promise.all([this.workspace.ready, this.languagesService.getLanguages()]).then(result => {
             const languages = result[1];
             for (const language of languages) {
-                listen({
+                this.connection.listen({
                     path: language.path,
                     onConnection: connection => {
                         const watchers = this.createFileSystemWatchers(language.description);
@@ -56,18 +62,6 @@ export class LanguagesPlugin implements TheiaPlugin {
                 });
             }
         })
-    }
-
-    protected getLanguages(): Promise<LanguageIdentifier[]> {
-        return new Promise<MessageConnection>(resolve =>
-            listen({
-                path: LANGUAGES_WS_PATH,
-                onConnection: connection => resolve(connection)
-            }))
-            .then(connection => {
-                connection.listen();
-                return connection.sendRequest(GetLanguagesRequest.type, {}).then(result => result.languages)
-            })
     }
 
     protected createLanguageClient(language: LanguageDescription, fileEvents: FileSystemWatcher[], connection: MessageConnection): ILanguageClient {

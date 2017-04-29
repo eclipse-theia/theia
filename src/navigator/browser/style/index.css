@@ -1,15 +1,15 @@
-.theia-PathIcon {
+.theia-FileStatIcon {
     width: 16px;
     height: 16px;
     margin-top: 1px;
     margin-right: 3px;
 }
 
-.theia-PathNode:not(.theia-DirNode) > .theia-TreeNodeCaption > .theia-PathIcon {
+.theia-FileStatNode:not(.theia-DirNode) > .theia-TreeNodeCaption > .theia-FileStatIcon {
     background: url('../icons/path.svg') center center no-repeat;
 }
 
-.theia-PathNode.theia-DirNode > .theia-TreeNodeCaption > .theia-PathIcon {
+.theia-FileStatNode.theia-DirNode > .theia-TreeNodeCaption > .theia-FileStatIcon {
     background: url('../icons/dir.svg') center center no-repeat;
 }
 

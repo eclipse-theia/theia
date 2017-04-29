@@ -11,15 +11,18 @@
     position: fixed;
     color: var(--theia-ui-font-color1);
 }
-.p-Widget.dialogBlock .dialogWrapper{
+.p-Widget.dialogBlock .dialogWrapper {
     background-color: var(--theia-layout-color1);
     border: 1px solid var(--theia-border-color1);
     position: relative;
-    padding: calc(var(--theia-ui-padding)*4);
+    width: 260px;
+    padding: calc(var(--theia-ui-padding)*3);
+    text-align: center;
 }
 .p-Widget.dialogBlock .dialogTitle{
     text-align: center;
     font-size: var(--theia-ui-font-size1);
+    padding-bottom: 20px;
 }
 .p-Widget.dialogBlock .dialogClose{
     pointer-events: auto;
@@ -30,6 +33,13 @@
 }
 .p-Widget.dialogBlock .dialogContent{
     pointer-events: auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.p-Widget.dialogBlock.dialogContent > div {
+    margin: auto;
 }
 
 .p-Widget.dialogBlock .dialogButton{
@@ -48,60 +58,29 @@
     background-color: var(--theia-accent-color3);
 }
 .p-Widget.dialogBlock .dialogButton[disabled]{
-    background-color: var(--theia-disabled-color1) !important;
-    cursor: default !important;
+    background-color: var(--theia-disabled-color1);
+    cursor: default;
 }
 
 .p-Widget.dialogBlock.hidden {
     display: none;
 }
-
-.confirmInputContainer{
-    width: 260px;
-    padding-top: calc(var(--theia-ui-padding)*5);
-    padding-bottom: calc(var(--theia-ui-padding)*3);
-    text-align: center;
-}
-
-.confirmInputContainer #dialogConfirmSubmit{
-    margin-left: calc(var(--theia-ui-padding)*10);
-}
-
-.changeNameInputContainer{
-    width: 260px;
-    padding-top: calc(var(--theia-ui-padding)*5);
-    padding-bottom: calc(var(--theia-ui-padding)*3);
-    text-align: center;
-}
-.changeNameInputContainer #dialogChangeErrorMessage{
+.p-Widget.dialogBlock.dialogErrorMessage{
     display: none;
 }
-
-.changeNameInputContainer.error{
+.p-Widget.dialogBlock.error{
     color: var(--theia-error-color1);
 }
-.changeNameInputContainer.error #dialogChangeNameInput{
+.p-Widget.dialogBlock.error.main {
     color: var(--theia-error-color1);
     border-color: var(--theia-error-color1);
 }
-.changeNameInputContainer.error #dialogChangeNameSubmit{
+.p-Widget.dialogBlock.error > .dialogButton.main{
     background-color: var(--theia-error-color1);
     color: var(--theia-ui-font-color1);
 }
-.changeNameInputContainer.error #dialogChangeErrorMessage{
+.p-Widget.dialogBlock.error > .dialogErrorMessage{
     margin-top: calc(var(--theia-ui-padding)*3);
     font-size: var(--theia-ui-font-size1);
     display: block;
-}
-
-
-.changeNameInputContainer.valid {
-    color: var(--theia-ui-font-color1);
-}
-.changeNameInputContainer.valid #dialogChangeNameInput{
-    border-color: var(--theia-success-color1);
-}
-.changeNameInputContainer.valid #dialogChangeNameSubmit{
-    background-color: var(--theia-success-color1);
-    color: var(--theia-ui-font-color1);
 }

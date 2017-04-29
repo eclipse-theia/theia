@@ -1,395 +1,405 @@
-import * as fs from "fs";
-import * as nodePath from "path";
-import Uri from "vscode-uri";
-import { Disposable } from "../../application/common";
-import { FileSystem, FileSystemWatcher, FileChangeType, FileChange, FileChangeEvent, Path } from "../common";
+import * as fs from "fs-extra";
+import * as touch from "touch";
+import * as path from "path";
+import URI from "../../application/common/uri";
+import { WatchOptions, FSWatcher } from "chokidar";
+import { FileStat, FileSystem, FileSystemClient, FileChange, FileChangeType, FileChangesEvent } from "../common/filesystem";
 
-const BLANK_NAME_TEMPLATE = 'Untitled ';
+const trash: (paths: Iterable<string>) => Promise<void> = require("trash");
+const chokidar: { watch(paths: string | string[], options?: WatchOptions): FSWatcher } = require("chokidar");
+const detectCharacterEncoding: (buffer: Buffer) => { encoding: string, confidence: number } = require("detect-character-encoding");
 
-export class NodeFileSystem implements FileSystem {
+type EventType =
+    "all" |
+    "add" |
+    "addDir" |
+    "unlink" |
+    "unlinkDir" |
+    "change" |
+    "error";
 
-    private readonly watchers: FileSystemWatcher[];
+export class FileSystemNode implements FileSystem {
 
-    constructor(private root: Path) {
-        this.watchers = [];
-    }
+    protected client: FileSystemClient | undefined;
+    private watcher: FSWatcher;
 
-    ls(raw: Path): Promise<Path[]> {
-        if (!raw) {
-            return Promise.reject(new Error('The path argument \'raw\' should be specified.'));
+    constructor(protected rootUri: string, protected defaults: FileSystem.Configuration = {
+        encoding: "utf8",
+        overwrite: false,
+        recursive: true,
+        moveToTrash: true,
+    }) {
+
+        const _rootUri = new URI(this.rootUri);
+        const stat = this.doGetStat(_rootUri, 0);
+        if (!stat) {
+            throw new Error(`File system root cannot be located under ${this.rootUri}.`);
         }
-        const path = this.toPath(raw);
-        return new Promise<Path[]>((resolve, reject) => {
-            fs.readdir(path, (err, files) => {
-                if (err) {
-                    return reject(err);
+        if (!stat.isDirectory) {
+            throw new Error(`File system root should point to a directory location. URI: ${this.rootUri}.`);
+        }
+        const rootPath = _rootUri.path();
+        this.watcher = chokidar.watch(rootPath).on("all", (eventType: EventType, filename: string) => {
+            if (this.client) {
+                const changeType = this.getFileChangeType(eventType);
+                if (changeType && typeof filename === "string") {
+                    const segments = path.normalize(path.relative(_rootUri.path(), filename));
+                    const changedUri = segments === "." ? rootUri : _rootUri.append(segments);
+                    const change = new FileChange(changedUri.toString(), changeType);
+                    const event = new FileChangesEvent([change]);
+                    this.client.onFileChanges(event);
                 }
-                resolve(files.map(file => raw.append(file)));
-            });
-        });
-    }
-
-    chmod(raw: Path, mode: number): Promise<boolean> {
-        if (!raw || !mode) {
-            return Promise.reject(new Error('The path arguments \'raw\' and \'mode\' should specified.'));
-        }
-        const path = this.toPath(raw);
-        return new Promise<boolean>((resolve, reject) => {
-            fs.chmod(path, mode, (err) => {
-                if (err) {
-                    return reject(err);
-                }
-                resolve(true);
-            });
-        });
-    }
-
-    cp(fromPath: Path, toPath: Path): Promise<string> {
-        if (!fromPath || !toPath) {
-            return Promise.reject(new Error('One of path arguments is not specified.'));
-        }
-        function doCopy(from: string, to: string): Promise<string> {
-            let readingStream = fs.createReadStream(from)
-            let writingStream = fs.createWriteStream(to)
-            readingStream.pipe(writingStream)
-
-            return new Promise<string>((resolve, reject) => {
-                writingStream.on('error', (e: any) => {
-                    reject(`writing with error ${e}`)
-                })
-                writingStream.on('finish', () => {
-                    resolve(toPath.toString())
-                })
-            })
-        }
-
-        return this.exists(toPath)
-        .then((targetExists: boolean) => {
-            if (targetExists) {
-                // 'target name exists'
-                return this.createName(toPath, true)
             }
-            // 'target name does not exist, can do copy'
-            return Promise.resolve<string>(toPath.toString())
-        })
-        .then((stringedTo: string) => {
-            toPath = Path.fromString(stringedTo)
-            return this.dirExists(fromPath)
-        })
-        .then((dirExists: boolean) => {
-            if (dirExists) {
-                return this.mkdir(toPath)
-                .then((folderCreated: boolean) => {
-                    if (!folderCreated) {
-                        return Promise.reject("cannot create target")
-                    }
-                    return this.ls(fromPath)
-                    .then((paths: Path[]) => {
-                        return Promise.all(paths.map((path: Path) => {
-                            if (path.simpleName) {
-                                return doCopy(this.toPath(path), this.toPath(toPath.append(path.simpleName)))
-                            }
-                            return Promise.reject('no path to copy')
-                        }))
-                    })
-                    .then((createdPaths) => {
-                        return Promise.resolve(toPath.toString())
-                    })
-                })
+        });
+    }
+
+    setClient(client: FileSystemClient | undefined) {
+        this.client = client
+    }
+
+    getFileStat(uriAsString: string): Promise<FileStat> {
+        const uri = new URI(uriAsString);
+        return new Promise<FileStat>((resolve, reject) => {
+            const stat = this.doGetStat(uri, 1);
+            if (!stat) {
+                return reject(new Error(`Cannot find file under the given URI. URI: ${uri}.`));
             }
-            return this.fileExists(fromPath)
-            .then((canCopy: boolean) => {
-                if (canCopy) {
-                    return doCopy(this.toPath(fromPath), this.toPath(toPath))
-                }
-                return Promise.reject("cannot copy from path")
-            })
-        })
+            resolve(stat);
+        });
     }
 
-    mkdir(raw: Path, mode: number = parseInt('0777', 8)): Promise<boolean> {
-        if (!raw) {
-            return Promise.reject(new Error('The path argument \'raw\' should be specified.'));
-        }
-        const path = this.toPath(raw);
+    exists(uri: string): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
-            fs.mkdir(path, mode, (err) => {
-                if (err) {
-                    // console.log('error on creating directory', err, path)
-                    reject(err);
-                } else {
-                    this.notify(raw, FileChangeType.ADDED);
-                    resolve(true);
+            return this.doGetStat(new URI(uri), 0) !== undefined;
+        });
+    }
+
+    resolveContent(uri: string, options?: { encoding?: string }): Promise<{ stat: FileStat, content: string }> {
+        return new Promise<{ stat: FileStat, content: string }>((resolve, reject) => {
+            const _uri = new URI(uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (!stat) {
+                return reject(new Error(`Cannot find file under the given URI. URI: ${uri}.`));
+            }
+            if (stat.isDirectory) {
+                return reject(new Error(`Cannot resolve the content of a directory. URI: ${uri}.`));
+            }
+            const encoding = this.doGetEncoding(options);
+            fs.readFile(_uri.path(), encoding, (error, content) => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve({ stat, content });
+            });
+        });
+    }
+
+    setContent(file: FileStat, content: string, options?: { encoding?: string }): Promise<FileStat> {
+        return new Promise<FileStat>((resolve, reject) => {
+            const _uri = new URI(file.uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (!stat) {
+                return reject(new Error(`Cannot find file under the given URI. URI: ${file.uri}.`));
+            }
+            if (stat.isDirectory) {
+                return reject(new Error(`Cannot set the content of a directory. URI: ${file.uri}.`));
+            }
+            if (stat.lastModification !== file.lastModification) {
+                return reject(new Error(`File is out of sync. URI: ${file.uri}. Expected timestamp: ${stat.lastModification}. Actual timestamp: ${file.lastModification}.`));
+            }
+            if (stat.size !== file.size) {
+                return reject(new Error(`File is out of sync. URI: ${file.uri}. Expected size: ${stat.size}. Actual size: ${file.size}.`));
+            }
+            const encoding = this.doGetEncoding(options);
+            fs.writeFile(_uri.path(), content, encoding, error => {
+                if (error) {
+                    return reject(error);
+                }
+                try {
+                    resolve(this.doGetStat(_uri, 1));
+                } catch (error) {
+                    reject(error);
                 }
             });
         });
     }
 
-    rename(oldRaw: Path, newRaw: Path): Promise<boolean> {
-        if (!oldRaw || !newRaw) {
-            return Promise.reject(new Error('The path arguments \'oldRaw\' and \'newRaw\' paths should specified.'));
-        }
-        const oldPath = this.toPath(oldRaw);
-        const newPath = this.toPath(newRaw);
-        return new Promise<boolean>((resolve, reject) => {
-            fs.rename(oldPath, newPath, (err) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    this.fireEvent(new FileChangeEvent([
-                        this.createFileChange(oldRaw, FileChangeType.DELETED),
-                        this.createFileChange(newRaw, FileChangeType.ADDED)
-                    ]));
-                    resolve(true);
+    move(sourceUri: string, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat> {
+        return new Promise<FileStat>((resolve, reject) => {
+            const _sourceUri = new URI(sourceUri);
+            const sourceStat = this.doGetStat(_sourceUri, 0);
+            if (!sourceStat) {
+                return reject(new Error(`File does not exist under ${sourceUri}.`));
+            }
+            const _targetUri = new URI(targetUri);
+            const overwrite = this.doGetOverwrite(options);
+            const targetStat = this.doGetStat(_targetUri, 0);
+            if (targetStat && !overwrite) {
+                return reject(new Error(`File already exist under the \'${targetUri}\' target location. Did you set the \'overwrite\' flag to true?`));
+            }
+            fs.rename(_sourceUri.path(), _targetUri.path(), (error) => {
+                if (error) {
+                    return reject(error);
                 }
+                resolve(this.doGetStat(_targetUri, 1));
             });
         });
     }
 
-    rmdir(raw: Path): Promise<boolean> {
-        if (!raw) {
-            return Promise.reject(new Error('The path argument \'raw\' should be specified.'));
-        }
-        const path = this.toPath(raw);
-        return new Promise<boolean>((resolve, reject) => {
-            this.clearDir(path).then((result) => {
-                fs.rmdir(path, (err) => {
-                    if (err) {
-                        return reject(err);
+    copy(sourceUri: string, targetUri: string, options?: { overwrite?: boolean, recursive?: boolean }): Promise<FileStat> {
+        return new Promise<FileStat>((resolve, reject) => {
+            const _sourceUri = new URI(sourceUri);
+            const sourceStat = this.doGetStat(_sourceUri, 0);
+            if (!sourceStat) {
+                return reject(new Error(`File does not exist under ${sourceUri}.`));
+            }
+            const overwrite = this.doGetOverwrite(options);
+            const _targetUri = new URI(targetUri);
+            const targetStat = this.doGetStat(_targetUri, 0);
+            if (targetStat && !overwrite) {
+                return reject(new Error(`File already exist under the \'${targetUri}\' target location. Did you set the \'overwrite\' flag to true?`));
+            }
+            fs.copy(_sourceUri.path(), _targetUri.path(), error => {
+                if (error) {
+                    return reject(error);
+                }
+                return resolve(this.doGetStat(_targetUri, 1));
+            });
+        });
+    }
+
+    createFile(uri: string, options?: { content?: string, encoding?: string }): Promise<FileStat> {
+        return new Promise<FileStat>((resolve, reject) => {
+            const _uri = new URI(uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (stat) {
+                return reject(new Error(`Error occurred while creating the file. File already exists at ${uri}.`));
+            }
+            const parentUri = _uri.parent();
+            const doCreateFile = () => {
+                const content = this.doGetContent(options);
+                const encoding = this.doGetEncoding(options);
+                fs.writeFile(_uri.path(), content, { encoding }, error => {
+                    if (error) {
+                        return reject(error);
                     }
-                    result.push(path);
-                    const changes = result.map(filePath => this.createFileChange(this.deresolve(filePath), FileChangeType.DELETED));
-                    this.fireEvent(new FileChangeEvent(changes));
-                    resolve(true);
+                    resolve(this.doGetStat(_uri, 1));
                 });
-            }, (err) => {
-                reject(err);
-            });
-        });
-    }
-
-    rm(raw: Path): Promise<boolean> {
-        if (!raw) {
-            return Promise.reject(new Error('The path argument \'raw\' should be specified.'));
-        }
-        const path = this.toPath(raw);
-        return new Promise<boolean>((resolve, reject) => {
-            fs.unlink(path, (err) => {
-                if (err) {
-                    return reject(err);
-                }
-                this.notify(raw, FileChangeType.DELETED);
-                resolve(true);
-            });
-        });
-    }
-
-    readFile(raw: Path, encoding: string = 'utf8'): Promise<string> {
-        if (!raw) {
-            return Promise.reject(new Error('The path argument \'raw\' should be specified.'));
-        }
-        const path = this.toPath(raw);
-        return new Promise<string>((resolve, reject) => {
-            fs.readFile(path, encoding, (err, data) => {
-                if (err) {
-                    return reject(err);
-                }
-                resolve(data);
-            });
-        });
-    }
-
-    writeFile(raw: Path, data: string, encoding: string = 'utf8'): Promise<boolean> {
-        if (!raw || data == null) {
-            return Promise.reject(new Error(`Cannot write file content. File path: ${raw}. Content: ${data}. Encoding: ${encoding}.`));
-        }
-        const path = this.toPath(raw);
-        return new Promise<boolean>((resolve, reject) => {
-            fs.writeFile(path, data, encoding, (err) => {
-                if (err) {
-                    return reject(err);
-                }
-                this.notify(path, FileChangeType.UPDATED);
-                resolve(true);
-            });
-        });
-    }
-
-    exists(raw: Path): Promise<boolean> {
-        if (!raw) {
-            return Promise.reject(new Error('The path argument \'raw\' should be specified.'));
-        }
-        const path = this.toPath(raw);
-        return new Promise<boolean>((resolve) => {
-            fs.exists(path, (exist) => {
-                resolve(exist);
-            });
-        });
-    }
-
-    dirExists(raw: Path): Promise<boolean> {
-        return this.resourceExists(raw, (stat: fs.Stats) => stat.isDirectory());
-    }
-
-    fileExists(raw: Path): Promise<boolean> {
-        return this.resourceExists(raw, (stat: fs.Stats) => stat.isFile());
-    }
-
-    createName(raw: Path, nameBased: boolean = false): Promise<string> {
-        let baseName = BLANK_NAME_TEMPLATE;
-        let tryNum = (raw: Path, num: number): Promise<string> => {
-            let curName: string = `${baseName} ${num}`;
-            let newPath: Path = raw.append(curName)
-            return this.exists(newPath)
-            .then((exists: boolean) => {
-                if (exists) {
-                    num++
-                    return tryNum(raw, num)
-                }
-                return Promise.resolve(newPath.toString())
-            })
-        }
-
-        return this.fileExists(raw)
-        .then((exists: boolean) => {
-            if (nameBased && raw.simpleName) {
-                baseName = raw.simpleName
-                return tryNum(raw.parent, 1)
             }
-            if (exists) {
-                return this.createName(raw.parent)
-            }
-            return this.dirExists(raw)
-            .then((exists: boolean) => {
-                if (!exists) {
-                    return Promise.reject<string>(new Error('The directory does not exist.'));
-                }
-                return tryNum(raw, 1)
-            })
-        })
-    }
-
-    watch(watcher: FileSystemWatcher): Disposable {
-        if (!watcher) {
-            throw new Error('File watcher should be specified.');
-        }
-        this.watchers.push(watcher);
-        return {
-            dispose: () => {
-                const index = this.watchers.indexOf(watcher);
-                if (index >= 0) {
-                    this.watchers.splice(index, 1);
-                }
-            }
-        };
-    }
-
-    toUri(raw: Path): Promise<string | null> {
-        const path = this.toPath(raw);
-        const uri = Uri.file(path).toString();
-        return Promise.resolve(uri);
-    }
-
-    private clearDir(path: string, deletedPaths: string[] = []): Promise<string[]> {
-        return new Promise<string[]>((resolve, reject) => {
-            fs.readdir(path, (err, filePaths) => {
-                if (err) {
-                    return reject(err);
-                }
-                Promise.all(filePaths.map(filePath => this.clearResource(this.join(path, filePath), deletedPaths))).then(() => {
-                    resolve(deletedPaths);
-                });
-            });
-        });
-    }
-
-    private clearResource(path: string, deletedPaths: string[]): Promise<string> {
-        return new Promise<string>((resolve, reject) => {
-            fs.stat(path, (err, stats) => {
-                if (err) {
-                    return reject(err);
-                }
-                if (stats.isFile()) {
-                    fs.unlink(path, (err) => {
-                        if (err) {
-                            return reject(err);
-                        }
-                        deletedPaths.push(path);
-                        resolve(path);
-                    })
-                } else if (stats.isDirectory()) {
-                    this.clearDir(path, deletedPaths).then(() => {
-                        fs.rmdir(path, (err) => {
-                            if (err) {
-                                return reject(err);
-                            }
-                            deletedPaths.push(path);
-                            resolve(path);
-                        })
-                    })
-                } else {
-                    reject(new Error(`Unexpected file stats: ${stats} for path: ${path}.`));
-                }
-            })
-        });
-    }
-
-    private resourceExists(raw: Path, cb: (stats: fs.Stats) => boolean): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            this.exists(raw).then(exist => {
-                if (!exist) {
-                    return resolve(false);
-                }
-                const path = this.toPath(raw);
-                fs.stat(path, (err, stat) => {
-                    if (err) {
-                        if (err.errno === -2 && err.code === 'ENOENT') {
-                            resolve(false);
-                        } else {
-                            reject(err);
-                        }
-                    } else {
-                        resolve(cb(stat));
+            if (!this.doGetStat(parentUri, 0)) {
+                fs.mkdirs(parentUri.path(), error => {
+                    if (error) {
+                        return reject(error);
                     }
-                })
-            }, err => {
-                reject(err);
+                    doCreateFile();
+                });
+            } else {
+                doCreateFile();
+            }
+        });
+    }
+
+    createFolder(uri: string): Promise<FileStat> {
+        return new Promise<FileStat>((resolve, reject) => {
+            const _uri = new URI(uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (stat) {
+                return reject(new Error(`Error occurred while creating the directory. File already exists at ${uri}.`));
+            }
+            fs.mkdirs(_uri.path(), error => {
+                if (error) {
+                    return reject(error);
+                }
+                resolve(this.doGetStat(_uri, 1));
             });
         });
     }
 
-    private toPath(raw: Path): string {
-        return this.resolve(raw).toString();
+    touchFile(uri: string): Promise<FileStat> {
+        return new Promise<FileStat>((resolve, reject) => {
+            const _uri = new URI(uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (!stat) {
+                this.createFile(uri).then(stat => {
+                    resolve(stat);
+                });
+            } else {
+                touch(_uri.path(), (error: any) => {
+                    if (error) {
+                        return reject(error);
+                    }
+                    resolve(this.doGetStat(_uri, 1));
+                });
+            }
+        });
     }
 
-    private resolve(raw: Path): Path {
-        return this.root.resolve(raw);
+    delete(uri: string, options?: { moveToTrash?: boolean }): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const _uri = new URI(uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (!stat) {
+                return reject(new Error(`File does not exist under ${uri}.`));
+            }
+            const moveToTrash = this.doGetMoveToTrash(options);
+            if (moveToTrash) {
+                resolve(trash([_uri.path()]));
+            } else {
+                fs.remove(_uri.path(), error => {
+                    if (error) {
+                        return reject(error);
+                    }
+                });
+            }
+        });
     }
 
-    private deresolve(path: string): Path {
-        return Path.fromString(nodePath.relative(this.root.toString(), path));
+    watchFileChanges(uri: string): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const _uri = new URI(uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (!stat) {
+                return reject(new Error(`File does not exist under ${uri}.`));
+            }
+            this.watcher.add(_uri.path());
+        });
     }
 
-    private join(first: string, second: string, ...rest: string[]) {
-        if (!first || !second) {
-            throw new Error('Segments should be specified.');
+    unwatchFileChanges(uri: string): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            const _uri = new URI(uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (!stat) {
+                return reject(new Error(`File does not exist under ${uri}.`));
+            }
+            this.watcher.unwatch(_uri.path());
+        });
+    }
+
+    getEncoding(uri: string, options?: { preferredEncoding?: string }): Promise<string> {
+        return new Promise<string>((resolve, reject) => {
+            const _uri = new URI(uri);
+            const stat = this.doGetStat(_uri, 0);
+            if (!stat) {
+                return reject(new Error(`File does not exist under ${uri}.`));
+            }
+            if (stat.isDirectory) {
+                return reject(new Error(`Cannot get the encoding of a director. URI: ${uri}.`));
+            }
+            fs.readFile(_uri.path(), {}, (error, buffer) => {
+                if (error) {
+                    return reject(error);
+                }
+                const encoding = detectCharacterEncoding(buffer);
+                if (encoding && encoding.encoding) {
+                    resolve(encoding.encoding);
+                } else {
+                    resolve(options && typeof (options.preferredEncoding) !== "undefined" ? options.preferredEncoding : this.defaults.encoding);
+                }
+            });
+        });
+    }
+
+    getWorkspaceRoot(): Promise<FileStat> {
+        return new Promise<FileStat>((resolve, reject) => {
+            const stat = this.doGetStat(new URI(this.rootUri), 1);
+            if (!stat) {
+                return reject(new Error(`Cannot locate workspace root under ${this.rootUri}.`));
+            }
+            resolve(stat);
+        });
+    }
+
+    dispose(): void {
+        this.watcher.close();
+    }
+
+    protected doGetStat(uri: URI, depth: number): FileStat | undefined {
+        const path = uri.path();
+        try {
+            const stat = fs.statSync(path);
+            if (stat.isDirectory()) {
+                const files = fs.readdirSync(path);
+                let children: FileStat[] | undefined = undefined;
+                if (depth > 0) {
+                    children = [];
+                    files.map(file => uri.append(file)).forEach(childURI => {
+                        const child = this.doGetStat(childURI, depth - 1);
+                        if (child) {
+                            children!.push(child);
+                        }
+                    });
+                }
+                return {
+                    uri: uri.toString(),
+                    lastModification: stat.mtime.getTime(),
+                    isDirectory: true,
+                    hasChildren: files.length > 0,
+                    children
+                };
+            } else {
+                return {
+                    uri: uri.toString(),
+                    lastModification: stat.mtime.getTime(),
+                    isDirectory: false,
+                    size: stat.size
+                };
+            }
+        } catch (error) {
+            if (isErrnoException(error) && error.errno === -2 && error.code === "ENOENT") {
+                return undefined;
+            }
+            throw error;
         }
-        const segments = rest || [];
-        segments.unshift(second);
-        segments.unshift(first);
-        return segments.join('/');
     }
 
-    private createFileChange(raw: string | Path, changeType: FileChangeType): FileChange {
-        return new FileChange(raw instanceof Path ? raw : Path.fromString(raw), changeType);
+    protected doGetEncoding(option?: { encoding?: string }): string {
+        return option && typeof (option.encoding) !== "undefined"
+            ? option.encoding
+            : this.defaults.encoding;
     }
 
-    private notify(raw: string | Path, changeType: FileChangeType): void {
-        this.fireEvent(new FileChangeEvent([this.createFileChange(raw, changeType)]))
+    protected doGetOverwrite(option?: { overwrite?: boolean }): boolean {
+        return option && typeof (option.overwrite) !== "undefined"
+            ? option.overwrite
+            : this.defaults.overwrite;
     }
 
-    private fireEvent(event: FileChangeEvent) {
-        this.watchers.forEach(watcher => watcher(event));
+    protected doGetRecursive(option?: { recursive?: boolean }): boolean {
+        return option && typeof (option.recursive) !== "undefined"
+            ? option.recursive
+            : this.defaults.recursive;
     }
 
+    protected doGetMoveToTrash(option?: { moveToTrash?: boolean }): boolean {
+        return option && typeof (option.moveToTrash) !== "undefined"
+            ? option.moveToTrash
+            : this.defaults.moveToTrash;
+    }
+
+    protected doGetContent(option?: { content?: string }): string {
+        return (option && option.content) || "";
+    }
+
+    private getFileChangeType(eventType: EventType): FileChangeType | undefined {
+        switch (eventType) {
+            case "add":
+            case "addDir":
+                return FileChangeType.ADDED;
+            case "unlink":
+            case "unlinkDir":
+                return FileChangeType.DELETED;
+            case "change":
+                return FileChangeType.UPDATED;
+            case "error":
+                return undefined;
+            default:
+                throw new Error(`Unexpected file change event type: ${event}.`);
+        }
+    }
+
+}
+
+function isErrnoException(error: any | NodeJS.ErrnoException): error is NodeJS.ErrnoException {
+    return (<NodeJS.ErrnoException>error).code !== undefined && (<NodeJS.ErrnoException>error).errno !== undefined;
 }

@@ -1,5 +1,6 @@
 import { Container } from "inversify";
 import { TheiaApplication, browserApplicationModule } from "theia/src/application/browser";
+import { messagingModule } from "theia/src/messaging/browser";
 import { navigatorModule } from "theia/src/navigator/browser";
 import { fileSystemClientModule } from "theia/src/filesystem/browser";
 import { editorModule } from "theia/src/editor/browser";
@@ -14,6 +15,7 @@ export function start(clientContainer?: Container) {
     // Create the common client container.
     const container = new Container();
     container.load(browserApplicationModule);
+    container.load(messagingModule);
     container.load(navigatorModule);
     container.load(fileSystemClientModule);
     container.load(editorModule);

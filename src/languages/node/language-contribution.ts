@@ -1,7 +1,7 @@
-import { LanguageDescription } from '../common/languages-protocol';
-import { InitializeParams, InitializeRequest } from 'vscode-languageserver/lib/protocol';
 import { Message, isRequestMessage } from 'vscode-ws-jsonrpc';
+import { InitializeParams, InitializeRequest } from 'vscode-languageserver/lib/protocol';
 import * as server from 'vscode-ws-jsonrpc/lib/server';
+import { LanguageDescription } from '../common';
 import IConnection = server.IConnection;
 
 export * from 'vscode-ws-jsonrpc/lib/server';

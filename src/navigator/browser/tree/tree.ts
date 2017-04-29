@@ -1,5 +1,5 @@
-import {injectable} from "inversify";
-import {Event, Emitter, Disposable, DisposableCollection} from "../../../application/common";
+import { injectable } from "inversify";
+import { Event, Emitter, Disposable, DisposableCollection } from "../../../application/common";
 
 export const ITree = Symbol("ITree");
 
@@ -187,7 +187,7 @@ export class Tree implements ITree {
         this.fireChanged();
     }
 
-    getNode(id: string|undefined): ITreeNode|undefined {
+    getNode(id: string | undefined): ITreeNode | undefined {
         return id !== undefined ? this.nodes[id] : undefined;
     }
 
