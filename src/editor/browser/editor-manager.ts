@@ -4,18 +4,17 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-
-import {injectable} from "inversify";
-import {IOpenerService, TheiaApplication, TheiaPlugin} from "../../application/browser";
-import {EditorWidget} from "./editor-widget";
-import {Event, Emitter} from "../../application/common";
-import {EditorService} from "./editor-service";
+import { injectable, inject } from "inversify";
+import { Event, Emitter, RecursivePartial } from "../../application/common";
+import URI from "../../application/common/uri";
+import { OpenerService, TheiaApplication, TheiaPlugin } from "../../application/browser";
+import { EditorWidget } from "./editor-widget";
 import { EditorRegistry } from "./editor-registry";
-import Uri = monaco.Uri;
+import { TextEditorProvider, Range, Position } from "./editor";
 
-export const IEditorManager = Symbol("IEditorManager");
+export const EditorManager = Symbol("EditorManager");
 
-export interface IEditorManager extends IOpenerService, TheiaPlugin {
+export interface EditorManager extends OpenerService, TheiaPlugin {
     /**
      * All opened editors.
      */
@@ -26,10 +25,10 @@ export interface IEditorManager extends IOpenerService, TheiaPlugin {
     readonly onEditorsChanged: Event<void>;
     /**
      * Open an editor for the given uri.
-     * Undefined if the given uri is not of Path type.
+     * Undefined if the given input is not an editor input.
      * Resolve to undefined if an editor cannot be opened.
      */
-    open(uri: string): Promise<EditorWidget | undefined> | undefined;
+    open(input: EditorInput | any): Promise<EditorWidget | undefined> | undefined;
     /**
      * The most recently focused editor.
      */
@@ -48,23 +47,43 @@ export interface IEditorManager extends IOpenerService, TheiaPlugin {
     readonly onActiveEditorChanged: Event<EditorWidget | undefined>;
 }
 
-@injectable()
-export class EditorManager implements IEditorManager {
+export interface EditorInput {
+    uri: string,
+    revealIfVisible?: boolean,
+    selection?: RecursivePartial<Range>
+}
 
-    protected readonly currentObserver = new EditorManager.Observer('current');
-    protected readonly activeObserver = new EditorManager.Observer('active');
+export namespace EditorInput {
+    export function is(input: any | undefined): input is EditorInput {
+        return !!input && ('uri' in input);
+    }
+    export function validate(input: any): EditorInput | undefined {
+        if (typeof input === 'string') {
+            return {
+                uri: input
+            }
+        }
+        return is(input) ? input : undefined;
+    }
+}
+
+@injectable()
+export class EditorManagerImpl implements EditorManager {
+
+    protected readonly currentObserver = new EditorManagerImpl.Observer('current');
+    protected readonly activeObserver = new EditorManagerImpl.Observer('active');
 
     protected app: TheiaApplication | undefined;
 
-    constructor(protected readonly editorRegistry: EditorRegistry,
-                protected readonly editorService: EditorService) {
+    constructor(
+        protected readonly editorRegistry: EditorRegistry,
+        @inject(TextEditorProvider) protected readonly editorProvider: TextEditorProvider) {
     }
 
     onStart(app: TheiaApplication): void {
         this.app = app;
         this.currentObserver.onStart(app);
         this.activeObserver.onStart(app);
-        this.editorService.onStart(app);
     }
 
     get editors() {
@@ -73,11 +92,6 @@ export class EditorManager implements IEditorManager {
 
     get onEditorsChanged() {
         return this.editorRegistry.onEditorsChanged();
-    }
-
-    open(uri: string): Promise<EditorWidget> | undefined {
-        const resource = Uri.parse(uri);
-        return Promise.resolve(this.editorService.openEditor({resource}));
     }
 
     get currentEditor() {
@@ -96,9 +110,73 @@ export class EditorManager implements IEditorManager {
         return this.activeObserver.onEditorChanged();
     }
 
+    open(raw: any): Promise<EditorWidget> | undefined {
+        if (!this.app) {
+            return undefined;
+        }
+        const input = EditorInput.validate(raw);
+        if (!input) {
+            return undefined;
+        }
+        return this.getOrCreateEditor(input.uri).then(editor => {
+            this.revealIfVisible(editor, input);
+            this.revealSelection(editor, input);
+            return editor;
+        });
+    }
+
+    protected getOrCreateEditor(uri: string): Promise<EditorWidget> {
+        const editor = this.editorRegistry.getEditor(uri);
+        if (editor) {
+            return editor;
+        }
+        return this.editorProvider.get(uri).then(textEditor => {
+            const editor = new EditorWidget(textEditor);
+            editor.title.closable = true;
+            editor.title.label = new URI(uri).lastSegment();
+            this.editorRegistry.addEditor(uri, editor);
+            editor.disposed.connect(() =>
+                this.editorRegistry.removeEditor(uri)
+            );
+            this.app!.shell.addToMainArea(editor);
+            return editor;
+        });
+    }
+
+    protected revealIfVisible(editor: EditorWidget, input: EditorInput): void {
+        if (input.revealIfVisible === undefined || input.revealIfVisible) {
+            this.app!.shell.activateMain(editor.id);
+        }
+    }
+
+    protected revealSelection(widget: EditorWidget, input: EditorInput): void {
+        if (input.selection) {
+            const editor = widget.editor;
+            const selection = this.getSelection(input.selection);
+            if (Position.is(selection)) {
+                editor.cursor = selection;
+                editor.revealPosition(selection);
+            } else if (Range.is(selection)) {
+                editor.selection = selection;
+                editor.revealRange(selection);
+            }
+        }
+    }
+
+    protected getSelection(selection: RecursivePartial<Range>): Range | Position | undefined {
+        const { start, end } = selection;
+        if (start && start.line && start.character) {
+            if (end && end.line && end.character) {
+                return selection as Range;
+            }
+            return start as Position;
+        }
+        return undefined;
+    }
+
 }
 
-export namespace EditorManager {
+export namespace EditorManagerImpl {
     export class Observer {
         protected app: TheiaApplication | undefined;
         protected readonly onEditorChangedEmitter = new Emitter<EditorWidget | undefined>();

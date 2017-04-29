@@ -7,9 +7,9 @@
 
 import {multiInject, injectable} from "inversify";
 
-export const IOpenerService = Symbol("IOpenerService");
+export const OpenerService = Symbol("OpenerService");
 
-export interface IOpenerService {
+export interface OpenerService {
     /**
      * Open a resource for the given input.
      * Return undefined if this service cannot handle the given input.
@@ -18,9 +18,9 @@ export interface IOpenerService {
 }
 
 @injectable()
-export class OpenerService implements IOpenerService {
+export class TheiaOpenerService implements OpenerService {
 
-    constructor(@multiInject(IOpenerService) protected readonly services: IOpenerService[]) {
+    constructor(@multiInject(OpenerService) protected readonly services: OpenerService[]) {
     }
 
     open<ResourceInput, Resource>(input: ResourceInput): Promise<Resource> | undefined {

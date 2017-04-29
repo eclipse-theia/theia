@@ -6,8 +6,8 @@
  */
 
 import { injectable, inject, decorate } from "inversify";
-import { Languages } from "../../languages/common";
 import { MonacoLanguages as BaseMonacoLanguages, ProtocolToMonacoConverter, MonacoToProtocolConverter } from "monaco-languageclient";
+import { Languages } from "../../../languages/common";
 
 decorate(injectable(), BaseMonacoLanguages);
 decorate(inject(ProtocolToMonacoConverter), BaseMonacoLanguages, 0);
