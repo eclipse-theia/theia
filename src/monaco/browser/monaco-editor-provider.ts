@@ -1,29 +1,38 @@
-import { injectable, inject } from 'inversify';
+import { interfaces } from 'inversify';
+import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
+import URI from "../../application/common/uri";
 import { SelectionService } from "../../application/common";
-import { TextEditorProvider } from "../../editor/browser";
-import { MonacoEditorService, MonacoModelResolver, MonacoContextMenuService } from './services';
-import { MonacoToProtocolConverter, ProtocolToMonacoConverter, MonacoWorkspace } from './languages';
 import { MonacoEditor } from "./monaco-editor";
+import { MonacoEditorService } from "./monaco-editor-service";
+import { MonacoModelResolver } from "./monaco-model-resolver";
+import { MonacoContextMenuService } from "./monaco-context-menu";
+import { MonacoWorkspace } from "./monaco-workspace";
 
-@injectable()
-export class MonacoEditorProvider implements TextEditorProvider {
+export class MonacoEditorProvider {
 
-    constructor(
-        @inject(MonacoEditorService) protected readonly editorService: MonacoEditorService,
-        @inject(MonacoModelResolver) protected readonly monacoModelResolver: MonacoModelResolver,
-        @inject(MonacoContextMenuService) protected readonly contextMenuService: MonacoContextMenuService,
-        @inject(MonacoToProtocolConverter) protected readonly m2p: MonacoToProtocolConverter,
-        @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter,
-        @inject(MonacoWorkspace) protected readonly workspace: MonacoWorkspace,
-        @inject(SelectionService) protected readonly selectionService: SelectionService
-    ) { }
+    protected readonly editorService: MonacoEditorService;
+    protected readonly monacoModelResolver: MonacoModelResolver;
+    protected readonly contextMenuService: MonacoContextMenuService;
+    protected readonly m2p: MonacoToProtocolConverter;
+    protected readonly p2m: ProtocolToMonacoConverter;
+    protected readonly workspace: MonacoWorkspace;
+    protected readonly selectionService: SelectionService;
 
-    get(raw: string): Promise<MonacoEditor> {
-        const uri = monaco.Uri.parse(raw);
-        return Promise.resolve(this.monacoModelResolver.createModelReference(uri).then(reference => {
+    constructor(context: interfaces.Context) {
+        this.editorService = context.container.get(MonacoEditorService);
+        this.monacoModelResolver = context.container.get(MonacoModelResolver);
+        this.contextMenuService = context.container.get(MonacoContextMenuService);
+        this.m2p = context.container.get(MonacoToProtocolConverter);
+        this.p2m = context.container.get(ProtocolToMonacoConverter);
+        this.workspace = context.container.get(MonacoWorkspace);
+        this.selectionService = context.container.get(SelectionService);
+    }
+
+    get(uri: URI): Promise<MonacoEditor> {
+        return Promise.resolve(this.monacoModelResolver.createModelReference(uri.codeUri).then(reference => {
             const node = document.createElement('div');
             const editor = new MonacoEditor(
-                node, this.m2p, this.p2m, this.workspace, this.selectionService, {
+                uri, node, this.m2p, this.p2m, this.workspace, this.selectionService, {
                     model: reference.object.textEditorModel,
                     wordWrap: true,
                     folding: true,

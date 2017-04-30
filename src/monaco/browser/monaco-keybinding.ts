@@ -4,13 +4,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-
-import { inject, injectable } from 'inversify';
+import { injectable } from 'inversify';
 import { isOSX } from '../../application/common/os';
 import { isFirefox, isIE, isWebKit } from '../../application/browser';
 import { Keybinding, KeybindingContribution, KeybindingRegistry} from '../../application/common/keybinding';
 import { Accelerator, Key, KeyCode, Keystroke, Modifier } from '../../application/common/keys';
-import { EditorKeybindingContext } from '../../editor/browser';
 import MenuRegistry = monaco.actions.MenuRegistry;
 import MenuId = monaco.actions.MenuId;
 import KeybindingsRegistry = monaco.keybindings.KeybindingsRegistry;
@@ -160,10 +158,6 @@ const MONACO_KEY_CODE_MAP: { [keyCode: number]: number } = {};
 @injectable()
 export class MonacoKeybindingContribution implements KeybindingContribution {
 
-    constructor( @inject(EditorKeybindingContext) private editorKeybindingContext: EditorKeybindingContext) {
-
-    }
-
     contribute(registry: KeybindingRegistry): void {
 
         const ids = MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command.id);
@@ -220,18 +214,6 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
                     accelerator: accelerator(kb),
                 }
             });
-
-        bindings.push({
-            commandId: 'editor.close',
-            context: this.editorKeybindingContext,
-            keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M3] })
-        });
-
-        bindings.push({
-            commandId: 'editor.close.all',
-            context: this.editorKeybindingContext,
-            keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M2, Modifier.M3] })
-        });
 
         bindings.forEach(binding => {
             registry.registerKeyBinding(binding);

@@ -1,5 +1,5 @@
 import { TextDocumentSaveReason } from "vscode-languageserver-types";
-import { DisposableCollection, Disposable, Emitter, Event } from '../../../application/common';
+import { DisposableCollection, Disposable, Emitter, Event } from '../../application/common';
 import Uri = monaco.Uri;
 import ITextEditorModel = monaco.editor.ITextEditorModel;
 
@@ -77,8 +77,8 @@ export class MonacoEditorModel implements ITextEditorModel {
 
     protected doAutoSave(): void {
         if (this.autoSave) {
+            this.toDisposeOnAutoSave.dispose();
             const handle = window.setTimeout(() => {
-                this.toDisposeOnAutoSave.dispose();
                 this.doSave(TextDocumentSaveReason.AfterDelay);
             }, this.autoSaveDelay);
             this.toDisposeOnAutoSave.push(Disposable.create(() =>

@@ -5,16 +5,16 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 import { injectable, inject } from "inversify";
-import { Event, Emitter, RecursivePartial } from "../../application/common";
 import URI from "../../application/common/uri";
-import { OpenerService, TheiaApplication, TheiaPlugin } from "../../application/browser";
+import { Event, Emitter, RecursivePartial } from "../../application/common";
+import { ResourceOpener, TheiaApplication, TheiaPlugin, UriInput } from "../../application/browser";
 import { EditorWidget } from "./editor-widget";
 import { EditorRegistry } from "./editor-registry";
 import { TextEditorProvider, Range, Position } from "./editor";
 
 export const EditorManager = Symbol("EditorManager");
 
-export interface EditorManager extends OpenerService, TheiaPlugin {
+export interface EditorManager extends ResourceOpener, TheiaPlugin {
     /**
      * All opened editors.
      */
@@ -28,7 +28,7 @@ export interface EditorManager extends OpenerService, TheiaPlugin {
      * Undefined if the given input is not an editor input.
      * Resolve to undefined if an editor cannot be opened.
      */
-    open(input: EditorInput | any): Promise<EditorWidget | undefined> | undefined;
+    open(input: EditorInput | any): Promise<EditorWidget | undefined>;
     /**
      * The most recently focused editor.
      */
@@ -48,20 +48,19 @@ export interface EditorManager extends OpenerService, TheiaPlugin {
 }
 
 export interface EditorInput {
-    uri: string,
-    revealIfVisible?: boolean,
-    selection?: RecursivePartial<Range>
+    uri: URI;
+    revealIfVisible?: boolean;
+    selection?: RecursivePartial<Range>;
 }
 
 export namespace EditorInput {
-    export function is(input: any | undefined): input is EditorInput {
-        return !!input && ('uri' in input);
+    export function is(input: EditorInput | any): input is EditorInput {
+        return !!input && input.uri instanceof URI;
     }
-    export function validate(input: any): EditorInput | undefined {
-        if (typeof input === 'string') {
-            return {
-                uri: input
-            }
+    export function validate(input: UriInput | EditorInput | any): EditorInput | undefined {
+        if (UriInput.is(input)) {
+            const uri = UriInput.asURI(input);
+            return { uri };
         }
         return is(input) ? input : undefined;
     }
@@ -70,20 +69,21 @@ export namespace EditorInput {
 @injectable()
 export class EditorManagerImpl implements EditorManager {
 
-    protected readonly currentObserver = new EditorManagerImpl.Observer('current');
-    protected readonly activeObserver = new EditorManagerImpl.Observer('active');
+    private _resolveApp: (app: TheiaApplication) => void;
+    protected readonly resolveApp = new Promise<TheiaApplication>(resolve =>
+        this._resolveApp = resolve
+    );
 
-    protected app: TheiaApplication | undefined;
+    protected readonly currentObserver = new EditorManagerImpl.Observer('current', this.resolveApp);
+    protected readonly activeObserver = new EditorManagerImpl.Observer('active', this.resolveApp);
 
     constructor(
-        protected readonly editorRegistry: EditorRegistry,
-        @inject(TextEditorProvider) protected readonly editorProvider: TextEditorProvider) {
-    }
+        @inject(EditorRegistry) protected readonly editorRegistry: EditorRegistry,
+        @inject(TextEditorProvider) protected readonly editorProvider: TextEditorProvider
+    ) { }
 
     onStart(app: TheiaApplication): void {
-        this.app = app;
-        this.currentObserver.onStart(app);
-        this.activeObserver.onStart(app);
+        this._resolveApp(app);
     }
 
     get editors() {
@@ -110,13 +110,10 @@ export class EditorManagerImpl implements EditorManager {
         return this.activeObserver.onEditorChanged();
     }
 
-    open(raw: any): Promise<EditorWidget> | undefined {
-        if (!this.app) {
-            return undefined;
-        }
+    open(raw: UriInput | EditorInput | any): Promise<EditorWidget | undefined> {
         const input = EditorInput.validate(raw);
         if (!input) {
-            return undefined;
+            return Promise.reject(undefined);
         }
         return this.getOrCreateEditor(input.uri).then(editor => {
             this.revealIfVisible(editor, input);
@@ -125,27 +122,31 @@ export class EditorManagerImpl implements EditorManager {
         });
     }
 
-    protected getOrCreateEditor(uri: string): Promise<EditorWidget> {
-        const editor = this.editorRegistry.getEditor(uri);
-        if (editor) {
-            return editor;
-        }
-        return this.editorProvider.get(uri).then(textEditor => {
-            const editor = new EditorWidget(textEditor);
-            editor.title.closable = true;
-            editor.title.label = new URI(uri).lastSegment();
-            this.editorRegistry.addEditor(uri, editor);
-            editor.disposed.connect(() =>
-                this.editorRegistry.removeEditor(uri)
-            );
-            this.app!.shell.addToMainArea(editor);
-            return editor;
-        });
+    protected getOrCreateEditor(uri: URI): Promise<EditorWidget> {
+        return this.resolveApp.then(app => {
+            const editor = this.editorRegistry.getEditor(uri);
+            if (editor) {
+                return editor;
+            }
+            return this.editorProvider(uri).then(textEditor => {
+                const editor = new EditorWidget(textEditor);
+                editor.title.closable = true;
+                editor.title.label = uri.lastSegment();
+                this.editorRegistry.addEditor(uri, editor);
+                editor.disposed.connect(() =>
+                    this.editorRegistry.removeEditor(uri)
+                );
+                app.shell.addToMainArea(editor);
+                return editor;
+            });
+        })
     }
 
     protected revealIfVisible(editor: EditorWidget, input: EditorInput): void {
         if (input.revealIfVisible === undefined || input.revealIfVisible) {
-            this.app!.shell.activateMain(editor.id);
+            this.resolveApp.then(app =>
+                app.shell.activateMain(editor.id)
+            );
         }
     }
 
@@ -181,11 +182,17 @@ export namespace EditorManagerImpl {
         protected app: TheiaApplication | undefined;
         protected readonly onEditorChangedEmitter = new Emitter<EditorWidget | undefined>();
 
-        constructor(protected readonly kind: 'current' | 'active') {
+        constructor(
+            protected readonly kind: 'current' | 'active',
+            protected readonly ready: Promise<TheiaApplication>
+        ) {
+            this.ready.then(app =>
+                this.initialize(app)
+            );
         }
 
-        onStart(app: TheiaApplication) {
-            this.app = app;
+        protected initialize(app: TheiaApplication) {
+            this.app = app
             const key = this.kind === 'current' ? 'currentChanged' : 'activeChanged';
             app.shell[key].connect((shell, arg) => {
                 if (arg.newValue instanceof EditorWidget || arg.oldValue instanceof EditorWidget) {
@@ -202,6 +209,7 @@ export namespace EditorManagerImpl {
                     return widget;
                 }
             }
+            return undefined;
         }
 
         onEditorChanged() {

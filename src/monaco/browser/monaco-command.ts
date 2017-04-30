@@ -15,10 +15,9 @@ import ICursorSelectionChangedEvent = monaco.editor.ICursorSelectionChangedEvent
 export class MonacoEditorCommandHandlers implements CommandContribution {
 
     constructor(
-        @inject(EditorManager) private editorService: EditorManager,
-        @inject(SelectionService) private selectionService: SelectionService) {
-
-    }
+        @inject(EditorManager) protected readonly editorService: EditorManager,
+        @inject(SelectionService) protected readonly selectionService: SelectionService
+    ) { }
 
     contribute(registry: CommandRegistry) {
         [CommonCommands.EDIT_UNDO, CommonCommands.EDIT_REDO].forEach(id => {
@@ -55,7 +54,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     }
 
     private newHandler(id: string): CommandHandler {
-        return new EditorCommandHandler(this.editorService, this.selectionService, id);
+        return new EditorCommandHandler(id, this.editorService, this.selectionService);
     }
 
     private newClipboardHandler(id: string, doExecute: (editorWidget: EditorWidget, ...args: any[]) => any) {
@@ -68,24 +67,24 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
 export class EditorCommandHandler implements CommandHandler {
 
     constructor(
+        protected readonly id: string,
         protected readonly editorManager: EditorManager,
-        protected readonly selectionService: SelectionService,
-        protected readonly id: string
+        protected readonly selectionService: SelectionService
     ) { }
 
-    execute(arg?: any): Promise<any> {
+    execute(): Promise<any> {
         const currentEditor = this.editorManager.currentEditor;
         if (currentEditor && currentEditor.editor instanceof MonacoEditor) {
-            currentEditor.editor.runAction(this.id);
+            return Promise.resolve(currentEditor.editor.runAction(this.id));
         }
         return Promise.resolve();
     }
 
-    isVisible(arg?: any): boolean {
+    isVisible(): boolean {
         return isEditorSelection(this.selectionService.selection);
     }
 
-    isEnabled(arg?: any): boolean {
+    isEnabled(): boolean {
         const currentEditor = this.editorManager.currentEditor;
         return !!currentEditor &&
             currentEditor.editor instanceof MonacoEditor &&
@@ -100,15 +99,16 @@ export class TextModificationEditorCommandHandler extends EditorCommandHandler {
         selectionService: SelectionService,
         id: string,
         private commandArgs: (widget: EditorWidget | undefined) => any[],
-        private doExecute: (widget: EditorWidget | undefined, ...args: any[]) => any) {
-        super(editorManager, selectionService, id);
+        private doExecute: (widget: EditorWidget | undefined, ...args: any[]) => any
+    ) {
+        super(id, editorManager, selectionService);
     }
 
-    isEnabled(arg?: any): boolean {
+    isEnabled(): boolean {
         return !!this.editorManager.currentEditor;
     }
 
-    execute(arg?: any): Promise<any> {
+    execute(): Promise<any> {
         const currentEditor = this.editorManager.currentEditor;
         if (currentEditor) {
             return new Promise<any>((resolve, reject) => {

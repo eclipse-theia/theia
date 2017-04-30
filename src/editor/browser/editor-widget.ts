@@ -6,29 +6,24 @@
  */
 import { Widget } from "@phosphor/widgets";
 import { Message } from "@phosphor/messaging";
-import { DisposableCollection, SelectionService } from "../../application/common";
+import { DisposableCollection } from "../../application/common";
 import { TextEditor } from "./editor";
 
 export class EditorWidget extends Widget {
 
-    readonly editor: TextEditor;
-
-    protected readonly toDispose = new DisposableCollection();
+    readonly toDispose = new DisposableCollection();
 
     constructor(
-        editor: TextEditor,
-        selectionService?: SelectionService
+        readonly editor: TextEditor
     ) {
         super(editor);
         this.toDispose.push(this.editor);
-        if (selectionService) {
-            this.toDispose.push(this.editor.onSelectionChanged(selection =>
-                selectionService.selection = selection
-            ));
-        }
     }
 
     dispose() {
+        if (this.isDisposed) {
+            return;
+        }
         super.dispose();
         this.toDispose.dispose();
     }
