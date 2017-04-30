@@ -10,7 +10,7 @@ import { FileSystem, FileStat, FileChangesEvent, FileChangeType } from "../../fi
 import { FileSystemWatcher } from "../../filesystem/common/filesystem-watcher";
 import { UriSelection } from "../../filesystem/common/filesystem-selection";
 import { SelectionService } from '../../application/common';
-import { TheiaOpenerService } from "../../application/browser";
+import { OpenerService, UriInput } from "../../application/browser";
 import {
     ITree,
     ITreeSelectionService,
@@ -27,13 +27,15 @@ import URI from '../../application/common/uri';
 @injectable()
 export class FileNavigatorModel extends TreeModel {
 
-    constructor( @inject(FileSystem) protected readonly fileSystem: FileSystem,
+    constructor(
+        @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcher) watcher: FileSystemWatcher,
-        @inject(TheiaOpenerService) protected readonly openerService: TheiaOpenerService,
+        @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(ITree) tree: ITree,
         @inject(ITreeSelectionService) selection: ITreeSelectionService,
         @inject(ITreeExpansionService) expansion: ITreeExpansionService,
-        @inject(SelectionService) selectionService: SelectionService) {
+        @inject(SelectionService) selectionService: SelectionService
+    ) {
         super(tree, selection, expansion);
         this.toDispose.push(watcher.onFileChanges(event => this.onFileChanges(event)));
         this.toDispose.push(selection.onSelectionChanged(selection => selectionService.selection = selection));
@@ -81,7 +83,7 @@ export class FileNavigatorModel extends TreeModel {
 
     protected doOpenNode(node: ITreeNode): void {
         if (FileNode.is(node)) {
-            this.openerService.open(node.fileStat.uri);
+            this.openerService.open<UriInput>(node.fileStat.uri);
         } else {
             super.doOpenNode(node);
         }

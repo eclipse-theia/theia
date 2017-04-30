@@ -8,11 +8,12 @@ import { injectable, inject, decorate } from "inversify";
 import {
     MonacoWorkspace as BaseMonacoWorkspace, ProtocolToMonacoConverter, MonacoToProtocolConverter, testGlob
 } from "monaco-languageclient";
-import { DisposableCollection } from "../../../application/common";
-import { FileChangeType, FileSystem, FileSystemWatcher } from '../../../filesystem/common';
-import * as lang from "../../../languages/common";
-import { Emitter, Event, TextDocument, TextDocumentWillSaveEvent, TextEdit } from "../../../languages/common";
-import { MonacoModelResolver, WillSaveModelEvent } from '../services';
+import { DisposableCollection } from "../../application/common";
+import { FileChangeType, FileSystem, FileSystemWatcher } from '../../filesystem/common';
+import * as lang from "../../languages/common";
+import { Emitter, Event, TextDocument, TextDocumentWillSaveEvent, TextEdit } from "../../languages/common";
+import { MonacoModelResolver } from "./monaco-model-resolver";
+import { WillSaveModelEvent } from "./monaco-editor-model";
 
 decorate(injectable(), BaseMonacoWorkspace);
 decorate(inject(MonacoToProtocolConverter), BaseMonacoWorkspace, 0);

@@ -1,7 +1,9 @@
 import { injectable, inject } from 'inversify';
-import { OpenerService } from '../../../application/browser';
-import { EditorInput, EditorWidget } from '../../../editor/browser';
-import { MonacoToProtocolConverter } from '../languages';
+import { MonacoToProtocolConverter } from "monaco-languageclient";
+import URI from "../../application/common/uri";
+import { OpenerService } from '../../application/browser';
+import { EditorInput, EditorWidget } from '../../editor/browser';
+import { MonacoEditor } from './monaco-editor';
 
 import IEditorService = monaco.editor.IEditorService;
 import IResourceInput = monaco.editor.IResourceInput;
@@ -16,28 +18,24 @@ export class MonacoEditorService implements IEditorService {
     ) { }
 
     openEditor(input: IResourceInput, sideBySide?: boolean | undefined): monaco.Promise<IEditorReference | undefined> {
-        const uri = input.resource.toString();
+        const editorInput = this.createEditorInput(input);
+        return monaco.Promise.wrap(this.openerService.open<EditorInput, EditorWidget>(editorInput).then(widget => {
+            if (widget && widget.editor instanceof MonacoEditor) {
+                return widget.editor;
+            }
+            return undefined;
+        }));
+    }
+
+    protected createEditorInput(input: IResourceInput, sideBySide?: boolean | undefined): EditorInput {
+        const uri = new URI(input.resource.toString());
         const revealIfVisible = !input.options || input.options.revealIfVisible === undefined || input.options.revealIfVisible;
         const selection = !input.options ? undefined : this.m2p.asRange(input.options.selection);
-        const open = this.openerService.open<EditorInput, EditorWidget>({
+        return {
             uri,
             revealIfVisible,
             selection
-        });
-        if (open) {
-            return monaco.Promise.wrap(open.then(widget => {
-                const editor = widget.editor;
-                if (this.isEditorReference(editor)) {
-                    return editor;
-                }
-                return undefined;
-            }));
-        }
-        return monaco.Promise.wrap(undefined);
-    }
-
-    protected isEditorReference(editor: any): editor is IEditorReference {
-        return 'getControl' in editor;
+        };
     }
 
 }

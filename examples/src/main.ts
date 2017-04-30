@@ -6,13 +6,13 @@
  */
 
 import { Container } from "inversify";
-import { TheiaApplication, browserApplicationModule } from "theia/src/application/browser";
-import { messagingModule } from "theia/src/messaging/browser";
-import { navigatorModule } from "theia/src/navigator/browser";
-import { fileSystemClientModule } from "theia/src/filesystem/browser";
-import { editorModule } from "theia/src/editor/browser";
-import { browserLanguagesModule } from 'theia/src/languages/browser';
-import { monacoModule } from 'theia/src/monaco/browser';
+import { TheiaApplication, browserApplicationModule } from "theia/lib/application/browser";
+import { messagingModule } from "theia/lib/messaging/browser";
+import { navigatorModule } from "theia/lib/navigator/browser";
+import { fileSystemClientModule } from "theia/lib/filesystem/browser";
+import { editorModule } from "theia/lib/editor/browser";
+import { browserLanguagesModule } from 'theia/lib/languages/browser';
+import { monacoModule } from 'theia/lib/monaco/browser';
 import "theia/src/application/browser/style/index.css";
 import "theia/src/monaco/browser/style/index.css";
 import "theia/src/navigator/browser/style/index.css";

@@ -1,4 +1,5 @@
 import { Position, Range, TextDocument } from 'vscode-languageserver-types';
+import URI from "../../application/common/uri";
 import { Event, Disposable } from '../../application/common';
 
 export {
@@ -6,13 +7,12 @@ export {
 }
 
 export const TextEditorProvider = Symbol('TextEditorProvider');
-
-export interface TextEditorProvider {
-    get(uri: string): Promise<TextEditor>;
-}
+export type TextEditorProvider = (uri: URI) => Promise<TextEditor>;
 
 export interface TextEditor extends Disposable {
     readonly node: HTMLElement;
+
+    readonly uri: URI;
     readonly document: TextDocument;
 
     cursor: Position;

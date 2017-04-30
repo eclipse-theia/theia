@@ -9,17 +9,15 @@ import Uri from 'vscode-uri';
 
 export default class URI {
 
-    private uri: string;
+    readonly codeUri: Uri;
+    private readonly uri: string;
 
     constructor(uri: string | Uri | undefined) {
         if (!uri) {
             throw new Error(`The \'path\' argument should be specified.`);
         }
-        if (typeof uri === 'string') {
-            this.uri = Uri.parse(uri).toString();
-        } else {
-            this.uri = uri.toString();
-        }
+        this.codeUri = typeof uri === 'string' ? Uri.parse(uri) : uri;
+        this.uri = this.codeUri.toString();
     }
 
     parent(): URI {
@@ -41,7 +39,7 @@ export default class URI {
     }
 
     path(): string {
-        return Uri.parse(this.uri).path;
+        return this.codeUri.path;
     }
 
     toString() {

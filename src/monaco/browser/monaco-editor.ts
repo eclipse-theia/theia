@@ -1,7 +1,9 @@
 import { ElementExt } from "@phosphor/domutils";
-import { DisposableCollection, Emitter, Event, SelectionService } from "../../application/common";
+import URI from "../../application/common/uri";
+import { DisposableCollection, Disposable, Emitter, Event, SelectionService } from "../../application/common";
 import { TextEditor, TextDocument, Position, Range, Dimension } from "../../editor/browser";
-import { MonacoWorkspace, ProtocolToMonacoConverter, MonacoToProtocolConverter } from "./languages";
+import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
+import { MonacoWorkspace } from "./monaco-workspace";
 
 import IEditorConstructionOptions = monaco.editor.IEditorConstructionOptions
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices
@@ -41,6 +43,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
     protected readonly onFocusChangedEmitter = new Emitter<boolean>();
 
     constructor(
+        readonly uri: URI,
         readonly node: HTMLElement,
         protected readonly m2p: MonacoToProtocolConverter,
         protected readonly p2m: ProtocolToMonacoConverter,
@@ -73,25 +76,22 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         ));
 
         // increase the z-index for the focussed element hierarchy within the dockpanel
-        this.editor.onDidFocusEditor(
-            () => {
-                const z = '1'
-                // already increased? -> do nothing
-                if (this.editor.getDomNode().style.zIndex === z) {
-                    return;
-                }
-                const disposables = new DisposableCollection()
-                this.increaseZIndex(this.editor.getDomNode(), z, disposables)
-                disposables.push(this.editor.onDidBlurEditor(() => {
-                    disposables.dispose()
-                }))
+        this.toDispose.push(this.editor.onDidFocusEditor(() => {
+            const z = '1'
+            // already increased? -> do nothing
+            if (this.editor.getDomNode().style.zIndex === z) {
+                return;
             }
-        )
+            const toDisposeOnBlur = new DisposableCollection()
+            this.increaseZIndex(this.editor.getDomNode(), z, toDisposeOnBlur)
+            toDisposeOnBlur.push(this.editor.onDidBlurEditor(() =>
+                toDisposeOnBlur.dispose()
+            ))
+        }));
     }
 
     get document(): TextDocument {
-        const uri = this.editor.getModel().uri.toString();
-        return this.workspace.getTextDocument(uri)!;
+        return this.workspace.getTextDocument(this.uri.toString())!;
     }
 
     get cursor(): Position {
@@ -149,17 +149,15 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         return this.onFocusChangedEmitter.event;
     }
 
-    protected increaseZIndex(element: HTMLElement, z: string, disposables: DisposableCollection) {
+    protected increaseZIndex(element: HTMLElement, z: string, toDisposeOnBlur: DisposableCollection) {
         let parent = element.parentElement
         if (parent && !element.classList.contains('p-DockPanel')) {
             const oldIndex = element.style.zIndex;
-            disposables.push({
-                dispose() {
-                    element.style.zIndex = oldIndex;
-                }
-            })
+            toDisposeOnBlur.push(Disposable.create(() =>
+                element.style.zIndex = oldIndex
+            ))
             element.style.zIndex = z;
-            this.increaseZIndex(parent, z, disposables)
+            this.increaseZIndex(parent, z, toDisposeOnBlur)
         }
     }
 

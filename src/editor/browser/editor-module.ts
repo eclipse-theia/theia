@@ -7,10 +7,9 @@
 import { ContainerModule } from 'inversify';
 import {
     CommandContribution,
-    KeybindingContribution, KeybindingContext,
-    KeybindingContextProvider, KeybindingContributionProvider
+    KeybindingContribution, KeybindingContext
 } from "../../application/common";
-import { OpenerService, TheiaPlugin } from '../../application/browser';
+import { TheiaPlugin, ResourceOpener } from '../../application/browser';
 import { EditorManagerImpl, EditorManager } from './editor-manager';
 import { EditorRegistry } from './editor-registry';
 import { EditorCommandHandlers } from "./editor-command";
@@ -20,17 +19,10 @@ export const editorModule = new ContainerModule(bind => {
     bind(EditorRegistry).toSelf().inSingletonScope();
     bind(EditorManager).to(EditorManagerImpl).inSingletonScope();
     bind(TheiaPlugin).toDynamicValue(context => context.container.get(EditorManager));
-    bind(OpenerService).toDynamicValue(context => context.container.get(EditorManager));
+    bind(ResourceOpener).toDynamicValue(context => context.container.get(EditorManager));
 
     bind(CommandContribution).to(EditorCommandHandlers);
+    bind(EditorKeybindingContext).toSelf().inSingletonScope();
+    bind(KeybindingContext).toDynamicValue(context => context.container.get(EditorKeybindingContext));
     bind(KeybindingContribution).to(EditorKeybindingContribution);
-    bind(EditorKeybindingContext).toSelf();
-    bind(KeybindingContext).to(EditorKeybindingContext);
-    bind(KeybindingContextProvider).toFactory<KeybindingContext[]>(ctx => {
-        return () => ctx.container.getAll<KeybindingContext>(KeybindingContext);
-    });
-    bind(KeybindingContribution).to(EditorKeybindingContribution);
-    bind(KeybindingContributionProvider).toFactory<KeybindingContribution[]>(ctx => {
-        return () => ctx.container.getAll<KeybindingContribution>(KeybindingContribution);
-    });
 });

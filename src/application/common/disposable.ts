@@ -29,6 +29,12 @@ export class DisposableCollection implements Disposable {
         return this.onDisposeEmitter.event;
     }
 
+    protected checkDisposed(): void {
+        if (this.disposed) {
+            this.onDisposeEmitter.fire(undefined);
+        }
+    }
+
     get disposed(): boolean {
         return this.disposables.length === 0;
     }
@@ -40,20 +46,19 @@ export class DisposableCollection implements Disposable {
         while (!this.disposed) {
             this.disposables.pop()!.dispose();
         }
-        this.onDisposeEmitter.fire(undefined);
+        this.checkDisposed();
     }
 
     push(disposable: Disposable): Disposable {
         const disposables = this.disposables;
         disposables.push(disposable);
-        return {
-            dispose(): void {
-                const index = disposables.indexOf(disposable);
-                if (index !== -1) {
-                    disposables.splice(index, 1);
-                }
+        return Disposable.create(() => {
+            const index = disposables.indexOf(disposable);
+            if (index !== -1) {
+                disposables.splice(index, 1);
             }
-        }
+            this.checkDisposed();
+        });
     }
 
     pushAll(disposables: Disposable[]): Disposable[] {

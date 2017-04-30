@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 import { injectable } from "inversify";
+import URI from "../../application/common/uri";
 import { Emitter, Event } from "../../application/common";
 import { EditorWidget } from "./editor-widget";
 
@@ -25,22 +26,22 @@ export class EditorRegistry {
         return Array.from(this.editors.values()).filter(editor => editor instanceof EditorWidget) as EditorWidget[];
     }
 
-    getEditor(key: string): Promise<EditorWidget> | undefined {
-        const editor = this.editors.get(key);
+    getEditor(uri: URI): Promise<EditorWidget> | undefined {
+        const editor = this.editors.get(uri.toString());
         if (editor) {
             return Promise.resolve(editor);
         }
         return undefined;
     }
 
-    addEditor(key: string, editor: EditorWidget): void {
+    addEditor(uri: URI, editor: EditorWidget): void {
         editor.id = `editor-${this.getEditorCount()}`;
-        this.editors.set(key, editor);
+        this.editors.set(uri.toString(), editor);
         this.onEditorsChangedEmitter.fire(undefined);
     }
 
-    removeEditor(key: string): void {
-        if (this.editors.delete(key)) {
+    removeEditor(uri: URI): void {
+        if (this.editors.delete(uri.toString())) {
             this.onEditorsChangedEmitter.fire(undefined);
         }
     }

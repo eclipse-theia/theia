@@ -8,14 +8,19 @@ import { ContainerModule } from "inversify"
 import { SelectionService } from '../common/selection-service'
 import { CommonCommandContribution, CommonMenuContribution } from '../common/commands-common'
 import { TheiaApplication } from './application'
-import { TheiaOpenerService } from "./opener-service"
+import { OpenerService } from "./opener-service"
 import { CommandContribution, CommandContributionProvider, CommandRegistry } from "../common/command"
 import { MenuModelRegistry, MenuContribution, MenuContributionProvider } from "../common/menu"
-import { KeybindingContextRegistry, KeybindingRegistry } from "../common/keybinding"
+import {
+    KeybindingContextRegistry, KeybindingRegistry,
+    KeybindingContextProvider, KeybindingContext,
+    KeybindingContributionProvider, KeybindingContribution
+} from "../common/keybinding"
 
 export const browserApplicationModule = new ContainerModule(bind => {
     bind(TheiaApplication).toSelf().inSingletonScope()
-    bind(TheiaOpenerService).toSelf().inSingletonScope()
+    bind(OpenerService).toSelf().inSingletonScope()
+    bind(SelectionService).toSelf().inSingletonScope();
     bind(CommandRegistry).toSelf().inSingletonScope()
     bind(CommandContribution).to(CommonCommandContribution)
     bind(CommandContributionProvider).toFactory<CommandContribution[]>(ctx => {
@@ -28,5 +33,10 @@ export const browserApplicationModule = new ContainerModule(bind => {
     bind(MenuModelRegistry).toSelf().inSingletonScope();
     bind(KeybindingRegistry).toSelf().inSingletonScope()
     bind(KeybindingContextRegistry).toSelf().inSingletonScope()
-    bind(SelectionService).toSelf().inSingletonScope();
+    bind(KeybindingContextProvider).toFactory<KeybindingContext[]>(ctx => {
+        return () => ctx.container.getAll<KeybindingContext>(KeybindingContext);
+    });
+    bind(KeybindingContributionProvider).toFactory<KeybindingContribution[]>(ctx => {
+        return () => ctx.container.getAll<KeybindingContribution>(KeybindingContribution);
+    });
 });

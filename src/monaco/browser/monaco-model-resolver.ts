@@ -1,6 +1,6 @@
 import { inject, injectable } from 'inversify';
-import { DisposableCollection, Disposable } from "../../../application/common";
-import { FileSystem, FileStat } from '../../../filesystem/common';
+import { DisposableCollection, Disposable } from "../../application/common";
+import { FileSystem, FileStat } from '../../filesystem/common';
 import { MonacoEditorModel, TextDocumentSaveReason } from "./monaco-editor-model";
 import ITextModelResolverService = monaco.editor.ITextModelResolverService;
 import ITextModelContentProvider = monaco.editor.ITextModelContentProvider;
@@ -39,7 +39,8 @@ export class MonacoModelResolver implements ITextModelResolverService {
         let removeReference: Disposable;
         const reference: IReference<MonacoEditorModel> = {
             object: model,
-            dispose: () => removeReference.dispose()
+            dispose: () =>
+                removeReference.dispose()
         }
         removeReference = references.push(reference);
         return reference;

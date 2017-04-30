@@ -4,32 +4,40 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-import { ContainerModule } from "inversify";
+import { ContainerModule, decorate, injectable } from "inversify";
 import { MenuContribution, CommandContribution, KeybindingContribution } from "../../application/common";
+import { Languages, Workspace } from "../../languages/common";
 import { TextEditorProvider } from "../../editor/browser";
-import {
-    Languages, Workspace,
-    MonacoLanguages, MonacoWorkspace,
-    MonacoToProtocolConverter, ProtocolToMonacoConverter
-} from './languages';
-import {
-    MonacoModelResolver, MonacoContextMenuService, MonacoEditorService
-} from './services';
+import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
 import { MonacoEditorProvider } from './monaco-editor-provider';
 import { MonacoEditorMenuContribution } from './monaco-menu';
 import { MonacoEditorCommandHandlers } from "./monaco-command";
-import { MonacoKeybindingContribution} from "./monaco-keybinding";
+import { MonacoKeybindingContribution } from "./monaco-keybinding";
+import { MonacoLanguages } from "./monaco-languages";
+import { MonacoWorkspace } from "./monaco-workspace";
+import { MonacoEditorService } from "./monaco-editor-service";
+import { MonacoModelResolver } from "./monaco-model-resolver";
+import { MonacoContextMenuService } from "./monaco-context-menu";
+
+decorate(injectable(), MonacoToProtocolConverter);
+decorate(injectable(), ProtocolToMonacoConverter);
 
 export const monacoModule = new ContainerModule(bind => {
     bind(MonacoToProtocolConverter).toSelf().inSingletonScope();
     bind(ProtocolToMonacoConverter).toSelf().inSingletonScope();
-    bind(Languages).to(MonacoLanguages).inSingletonScope();
-    bind(Workspace).to(MonacoWorkspace).inSingletonScope();
+
+    bind(MonacoLanguages).toSelf().inSingletonScope();
+    bind(Languages).toDynamicValue(ctx => ctx.container.get(MonacoLanguages));
+
+    bind(MonacoWorkspace).toSelf().inSingletonScope();
+    bind(Workspace).toDynamicValue(ctx => ctx.container.get(MonacoWorkspace));
 
     bind(MonacoEditorService).toSelf().inSingletonScope();
     bind(MonacoModelResolver).toSelf().inSingletonScope();
     bind(MonacoContextMenuService).toSelf().inSingletonScope();
-    bind(TextEditorProvider).to(MonacoEditorProvider).inSingletonScope();
+    bind(TextEditorProvider).toProvider(context => {
+        return uri => new MonacoEditorProvider(context).get(uri);
+    });
 
     bind(CommandContribution).to(MonacoEditorCommandHandlers);
     bind(MenuContribution).to(MonacoEditorMenuContribution);

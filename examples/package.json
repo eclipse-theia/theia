@@ -40,7 +40,7 @@
     "ts-node": "^3.0.2",
     "tslint": "^4.5.1",
     "tslint-loader": "^3.4.3",
-    "typescript": "^2.2.1",
+    "typescript": "^2.3.2",
     "wdio-mocha-framework": "^0.5.9",
     "wdio-phantomjs-service": "^0.2.2",
     "wdio-selenium-standalone-service": "0.0.8",
