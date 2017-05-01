@@ -29,7 +29,7 @@ export interface EditorManager extends ResourceOpener, TheiaPlugin {
      * Undefined if the given input is not an editor input.
      * Resolve to undefined if an editor cannot be opened.
      */
-    open(input: EditorInput | any): Promise<EditorWidget | undefined>;
+    open(input: UriInput | EditorInput | any): Promise<EditorWidget | undefined>;
     /**
      * The most recently focused editor.
      */

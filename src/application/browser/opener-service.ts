@@ -4,6 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
+
 import { multiInject, injectable } from "inversify";
 import Uri from 'vscode-uri';
 import URI from "../common/uri";
@@ -27,16 +28,13 @@ export class OpenerService {
     ) { }
 
     open<ResourceInput = any, Resource = any>(input: ResourceInput): Promise<Resource | undefined> {
-        return this.openWith(0, input);
-    }
-
-    protected openWith<ResourceInput, Resource>(index: number, input: ResourceInput): Promise<Resource | undefined> {
-        const opener = this.openers[index];
-        if (!opener) {
+        if (this.openers.length === 0) {
             return Promise.resolve(undefined);
         }
-        return opener.open(input).catch(() =>
-            this.openWith(index + 1, input)
+        const initial = this.openers[0].open(input);
+        return this.openers.slice(1).reduce((current, opener) =>
+            current.catch(() => opener.open(input)),
+            initial
         );
     }
 
@@ -48,6 +46,6 @@ export namespace UriInput {
         return !!input && (input instanceof URI || input instanceof Uri || typeof input === 'string');
     }
     export function asURI(input: UriInput): URI {
-        return input instanceof URI ? input : new URI(input);
+        return URI.toURI(input);
     }
 }

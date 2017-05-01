@@ -6,9 +6,8 @@
  */
 
 import { inject, injectable } from 'inversify';
-import { DisposableCollection, Disposable } from "../../application/common";
-import { FileSystem, FileStat } from '../../filesystem/common';
-import { MonacoEditorModel, TextDocumentSaveReason } from "./monaco-editor-model";
+import { DisposableCollection, Disposable, UriHandlerRegistry } from "../../application/common";
+import { MonacoEditorModel } from "./monaco-editor-model";
 import ITextModelResolverService = monaco.editor.ITextModelResolverService;
 import ITextModelContentProvider = monaco.editor.ITextModelContentProvider;
 import ITextEditorModel = monaco.editor.ITextEditorModel;
@@ -22,7 +21,7 @@ export class MonacoModelResolver implements ITextModelResolverService {
     protected readonly models = new Map<string, monaco.Promise<MonacoEditorModel>>();
     protected readonly references = new Map<ITextEditorModel, DisposableCollection>();
 
-    constructor( @inject(FileSystem) protected readonly fileSystem: FileSystem) {
+    constructor( @inject(UriHandlerRegistry) protected readonly uriHandlerRegistry: UriHandlerRegistry) {
     }
 
     createModelReference(uri: Uri): monaco.Promise<IReference<MonacoEditorModel>> {
@@ -66,9 +65,14 @@ export class MonacoModelResolver implements ITextModelResolverService {
     }
 
     protected createModel(uri: Uri): monaco.Promise<MonacoEditorModel> {
-        const encoding = document.characterSet;
-        const source = new FileStatSource(uri, encoding, this.fileSystem);
-        return new MonacoEditorModel(source).load();
+        return new monaco.Promise(resolve =>
+            this.uriHandlerRegistry.get(uri.toString()).then(uriHandler => {
+                if (uriHandler) {
+                    const model = new MonacoEditorModel(uriHandler);
+                    resolve(model.load());
+                }
+            })
+        );
     }
 
     registerTextModelContentProvider(scheme: string, provider: ITextModelContentProvider): IDisposable {
@@ -78,29 +82,4 @@ export class MonacoModelResolver implements ITextModelResolverService {
             }
         }
     }
-}
-
-export class FileStatSource implements MonacoEditorModel.Source {
-
-    protected stat: FileStat;
-
-    constructor(
-        readonly uri: Uri,
-        protected readonly encoding: string,
-        protected readonly fileSystem: FileSystem
-    ) { }
-
-    resolve(): Promise<string> {
-        return this.fileSystem.resolveContent(this.uri.toString(), this.encoding).then(result => {
-            this.stat = result.stat;
-            return result.content;
-        });
-    }
-
-    save(content: string, reason: TextDocumentSaveReason): Promise<void> {
-        return this.fileSystem.setContent(this.stat, content, this.encoding).then(newStat => {
-            this.stat = newStat;
-        });
-    }
-
 }

@@ -9,6 +9,7 @@ import { SelectionService } from '../common/selection-service'
 import { CommonCommandContribution, CommonMenuContribution } from '../common/commands-common'
 import { TheiaApplication } from './application'
 import { OpenerService } from "./opener-service"
+import { UriHandlerRegistry } from "../common";
 import { CommandContribution, CommandContributionProvider, CommandRegistry } from "../common/command"
 import { MenuModelRegistry, MenuContribution, MenuContributionProvider } from "../common/menu"
 import {
@@ -20,6 +21,7 @@ import {
 export const browserApplicationModule = new ContainerModule(bind => {
     bind(TheiaApplication).toSelf().inSingletonScope()
     bind(OpenerService).toSelf().inSingletonScope()
+    bind(UriHandlerRegistry).toSelf().inSingletonScope();
     bind(SelectionService).toSelf().inSingletonScope();
     bind(CommandRegistry).toSelf().inSingletonScope()
     bind(CommandContribution).to(CommonCommandContribution)
