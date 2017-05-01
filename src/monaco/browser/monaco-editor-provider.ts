@@ -38,12 +38,14 @@ export class MonacoEditorProvider {
     get(uri: URI): Promise<MonacoEditor> {
         return Promise.resolve(this.monacoModelResolver.createModelReference(uri.codeUri).then(reference => {
             const node = document.createElement('div');
+            const model = reference.object;
             const editor = new MonacoEditor(
                 uri, node, this.m2p, this.p2m, this.workspace, this.selectionService, {
-                    model: reference.object.textEditorModel,
+                    model: model.textEditorModel,
                     wordWrap: true,
                     folding: true,
-                    theme: 'vs-dark'
+                    theme: 'vs-dark',
+                    readOnly: model.readOnly
                 }, {
                     editorService: this.editorService,
                     textModelResolverService: this.monacoModelResolver,

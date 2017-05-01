@@ -15,3 +15,4 @@ export * from './keybinding';
 export * from './clipboard-service';
 export * from './selection-service';
 export * from './os';
+export * from './uri-handler';

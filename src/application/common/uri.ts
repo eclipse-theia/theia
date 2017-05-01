@@ -46,4 +46,8 @@ export default class URI {
         return this.uri;
     }
 
+    static toURI(input: string | Uri | URI): URI {
+        return input instanceof URI ? input : new URI(input);
+    }
+
 }

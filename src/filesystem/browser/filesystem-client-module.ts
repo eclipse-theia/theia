@@ -1,3 +1,4 @@
+import { UriHandlerProvider } from '../../application/common/uri-handler';
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -5,13 +6,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { FileSystemWatcher } from '../../filesystem/common/filesystem-watcher';
-import { CommandContribution } from '../../application/common/command';
-import { MenuContribution } from '../../application/common/menu';
-import { WebSocketConnection } from '../../messaging/browser/connection';
-import { FileCommandContribution, FileMenuContribution } from '../browser/filesystem-commands';
-import { FileSystem } from '../common/filesystem';
 import { ContainerModule } from 'inversify';
+import { CommandContribution, MenuContribution } from '../../application/common';
+import { WebSocketConnection } from '../../messaging/browser/connection';
+import { FileSystem, FileSystemWatcher, FileUriHandlerProvider } from "../common";
+import { FileCommandContribution, FileMenuContribution } from './filesystem-commands';
 
 export const fileSystemClientModule = new ContainerModule(bind => {
     bind(FileSystemWatcher).toSelf().inSingletonScope();
@@ -20,6 +19,10 @@ export const fileSystemClientModule = new ContainerModule(bind => {
         const fileSystemClient = ctx.container.get(FileSystemWatcher).getFileSystemClient();
         return connnection.createProxy<FileSystem>("/filesystem", fileSystemClient);
     })
+
+    bind(FileUriHandlerProvider).toSelf().inSingletonScope();
+    bind(UriHandlerProvider).toDynamicValue(ctx => ctx.container.get(FileUriHandlerProvider));
+
     bind<CommandContribution>(CommandContribution).to(FileCommandContribution);
     bind<MenuContribution>(MenuContribution).to(FileMenuContribution);
 });

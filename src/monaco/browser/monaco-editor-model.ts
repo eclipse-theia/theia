@@ -6,8 +6,7 @@
  */
 
 import { TextDocumentSaveReason } from "vscode-languageserver-types";
-import { DisposableCollection, Disposable, Emitter, Event } from '../../application/common';
-import Uri = monaco.Uri;
+import { DisposableCollection, Disposable, Emitter, Event, UriHandler } from '../../application/common';
 import ITextEditorModel = monaco.editor.ITextEditorModel;
 
 export {
@@ -34,11 +33,11 @@ export class MonacoEditorModel implements ITextEditorModel {
     protected readonly onDidSaveModelEmitter = new Emitter<monaco.editor.IModel>();
     protected readonly onWillSaveModelEmitter = new Emitter<WillSaveModelEvent>();
 
-    constructor(protected readonly source: MonacoEditorModel.Source) {
+    constructor(protected readonly uriHandler: UriHandler) {
         this.toDispose.push(this.toDisposeOnAutoSave);
         this.toDispose.push(this.onDidSaveModelEmitter);
         this.toDispose.push(this.onWillSaveModelEmitter);
-        this.resolveModel = source.resolve().then(content => this.initialize(content));
+        this.resolveModel = uriHandler.resolve().then(content => this.initialize(content));
     }
 
     /**
@@ -48,7 +47,7 @@ export class MonacoEditorModel implements ITextEditorModel {
      */
     protected initialize(content: string) {
         if (!this.toDispose.disposed) {
-            this.model = monaco.editor.createModel(content, this.source.languageId, this.source.uri);
+            this.model = monaco.editor.createModel(content, undefined, this.uriHandler.uri.codeUri);
             this.toDispose.push(this.model);
             this.toDispose.push(this.model.onDidChangeContent(event => this.doAutoSave()));
         }
@@ -56,6 +55,10 @@ export class MonacoEditorModel implements ITextEditorModel {
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    get readOnly(): boolean {
+        return this.uriHandler.save === undefined;
     }
 
     get onDispose(): monaco.IEvent<void> {
@@ -95,11 +98,16 @@ export class MonacoEditorModel implements ITextEditorModel {
     }
 
     protected doSave(reason: TextDocumentSaveReason): Promise<void> {
-        return this.fireWillSaveModel(reason).then(() => {
-            const content = this.model.getValue();
-            return this.source.save(content, reason).then(() =>
-                this.onDidSaveModelEmitter.fire(this.model)
-            );
+        return new Promise<void>(resolve => {
+            if (this.uriHandler.save) {
+                const save = this.uriHandler.save.bind(this.uriHandler);
+                this.fireWillSaveModel(reason).then(() => {
+                    const content = this.model.getValue();
+                    resolve(save(content).then(() =>
+                        this.onDidSaveModelEmitter.fire(this.model)
+                    ));
+                });
+            }
         });
     }
 
@@ -119,14 +127,5 @@ export class MonacoEditorModel implements ITextEditorModel {
 
     protected fireDidSaveModel(): void {
         this.onDidSaveModelEmitter.fire(this.model);
-    }
-}
-
-export namespace MonacoEditorModel {
-    export interface Source {
-        readonly uri: Uri;
-        readonly languageId?: string;
-        resolve(): Promise<string>;
-        save(content: string, reason: TextDocumentSaveReason): Promise<void>;
     }
 }
