@@ -17,7 +17,10 @@ export interface UriHandler {
 
 export const UriHandlerProvider = Symbol('UriHandlerProvider');
 export interface UriHandlerProvider {
-    get(uri: URI): Promise<UriHandler | undefined>;
+    /**
+     * Reject if a handler cannot be provided.
+     */
+    get(uri: URI): Promise<UriHandler>;
 }
 
 @injectable()
@@ -27,16 +30,23 @@ export class UriHandlerRegistry {
         @multiInject(UriHandlerProvider) protected readonly providers: UriHandlerProvider[]
     ) { }
 
-    get(raw: string | Uri | URI): Promise<UriHandler | undefined> {
-        if (this.providers.length === 0) {
-            return Promise.resolve(undefined);
-        }
+    /**
+     * Reject if a handler cannot be provided.
+     */
+    get(raw: string | Uri | URI): Promise<UriHandler> {
         const uri = URI.toURI(raw);
+        if (this.providers.length === 0) {
+            return Promise.reject(this.createHandlerNotRegisteredError(uri));
+        }
         const initial = this.providers[0].get(uri);
         return this.providers.slice(1).reduce((current, provider) =>
             current.catch(() => provider.get(uri)),
             initial
-        );
+        ).catch(reason => !!reason ? reason : this.createHandlerNotRegisteredError(uri));
+    }
+
+    protected createHandlerNotRegisteredError(uri: URI): any {
+        return `An uri handler for '${uri.toString()}' is not registered.`;
     }
 
 }

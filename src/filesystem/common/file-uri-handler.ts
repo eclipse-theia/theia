@@ -41,11 +41,11 @@ export class FileUriHandlerProvider implements UriHandlerProvider {
         @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) { }
 
-    get(uri: URI): Promise<UriHandler | undefined> {
+    get(uri: URI): Promise<UriHandler> {
         if (uri.codeUri.scheme === 'file') {
             return Promise.resolve(new FileUriHandler(uri, this.fileSystem))
         }
-        return Promise.resolve(undefined);
+        return Promise.reject(undefined);
     }
 
 }
