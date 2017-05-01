@@ -65,13 +65,10 @@ export class MonacoModelResolver implements ITextModelResolverService {
     }
 
     protected createModel(uri: Uri): monaco.Promise<MonacoEditorModel> {
-        return new monaco.Promise(resolve =>
-            this.uriHandlerRegistry.get(uri.toString()).then(uriHandler => {
-                if (uriHandler) {
-                    const model = new MonacoEditorModel(uriHandler);
-                    resolve(model.load());
-                }
-            })
+        return monaco.Promise.wrap(
+            this.uriHandlerRegistry.get(uri.toString()).then(uriHandler =>
+                new MonacoEditorModel(uriHandler).load()
+            )
         );
     }
 
