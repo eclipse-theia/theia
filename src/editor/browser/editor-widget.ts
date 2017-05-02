@@ -12,7 +12,7 @@ import { TextEditor } from "./editor";
 
 export class EditorWidget extends Widget {
 
-    readonly toDispose = new DisposableCollection();
+    protected readonly toDispose = new DisposableCollection();
 
     constructor(
         readonly editor: TextEditor
