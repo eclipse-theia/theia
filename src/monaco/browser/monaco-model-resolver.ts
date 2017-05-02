@@ -26,7 +26,7 @@ export class MonacoModelResolver implements ITextModelResolverService {
     }
 
     createModelReference(raw: Uri | URI): monaco.Promise<IReference<MonacoEditorModel>> {
-        const uri = raw instanceof Uri ? new URI(raw.toString()) : raw;
+        const uri = raw instanceof URI ? raw : new URI(raw.toString());
         return this.getOrCreateModel(uri).then(model =>
             this.newReference(model)
         );
@@ -55,14 +55,14 @@ export class MonacoModelResolver implements ITextModelResolverService {
     }
 
     protected getOrCreateModel(uri: URI): monaco.Promise<MonacoEditorModel> {
-        const key = uri.path;
-        const model = this.models.get(key.toString());
+        const key = uri.toString();
+        const model = this.models.get(key);
         if (model) {
             return model;
         }
         const newModel = this.createModel(uri);
-        this.models.set(key.toString(), newModel);
-        newModel.then(m => m.onDispose(() => this.models.delete(key.toString())));
+        this.models.set(key, newModel);
+        newModel.then(m => m.onDispose(() => this.models.delete(key)));
         return newModel;
     }
 
