@@ -6,11 +6,11 @@
  */
 
 import { injectable, inject } from "inversify";
-import { UriHandler, UriHandlerProvider } from "../../application/common";
+import { Resource, ResourceProvider } from "../../application/common";
 import URI from "../../application/common/uri";
 import { FileSystem, FileStat } from "./filesystem";
 
-export class FileUriHandler implements UriHandler {
+export class FileResource implements Resource {
 
     protected stat: FileStat;
 
@@ -19,15 +19,15 @@ export class FileUriHandler implements UriHandler {
         protected readonly fileSystem: FileSystem
     ) { }
 
-    resolve(): Promise<string> {
-        return this.fileSystem.resolveContent(this.uri.toString()).then(result => {
+    readContents(options?: { encodings?: string }): Promise<string> {
+        return this.fileSystem.resolveContent(this.uri.toString(), options).then(result => {
             this.stat = result.stat;
             return result.content;
         });
     }
 
-    save(content: string): Promise<void> {
-        return this.fileSystem.setContent(this.stat, content).then(newStat => {
+    saveContents(content: string, options?: { encoding?: string }): Promise<void> {
+        return this.fileSystem.setContent(this.stat, content, options).then(newStat => {
             this.stat = newStat;
         });
     }
@@ -35,15 +35,15 @@ export class FileUriHandler implements UriHandler {
 }
 
 @injectable()
-export class FileUriHandlerProvider implements UriHandlerProvider {
+export class FileResourceProvider implements ResourceProvider {
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) { }
 
-    get(uri: URI): Promise<UriHandler> {
+    get(uri: URI): Promise<Resource> {
         if (uri.codeUri.scheme === 'file') {
-            return Promise.resolve(new FileUriHandler(uri, this.fileSystem))
+            return Promise.resolve(new FileResource(uri, this.fileSystem))
         }
         return Promise.reject(undefined);
     }

@@ -1,4 +1,3 @@
-import { UriHandlerProvider } from '../../application/common/uri-handler';
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -7,9 +6,9 @@ import { UriHandlerProvider } from '../../application/common/uri-handler';
  */
 
 import { ContainerModule } from 'inversify';
-import { CommandContribution, MenuContribution } from '../../application/common';
+import { CommandContribution, MenuContribution, ResourceProvider } from '../../application/common';
 import { WebSocketConnection } from '../../messaging/browser/connection';
-import { FileSystem, FileSystemWatcher, FileUriHandlerProvider } from "../common";
+import { FileSystem, FileSystemWatcher, FileResourceProvider } from "../common";
 import { FileCommandContribution, FileMenuContribution } from './filesystem-commands';
 
 export const fileSystemClientModule = new ContainerModule(bind => {
@@ -20,8 +19,8 @@ export const fileSystemClientModule = new ContainerModule(bind => {
         return connnection.createProxy<FileSystem>("/filesystem", fileSystemClient);
     })
 
-    bind(FileUriHandlerProvider).toSelf().inSingletonScope();
-    bind(UriHandlerProvider).toDynamicValue(ctx => ctx.container.get(FileUriHandlerProvider));
+    bind(FileResourceProvider).toSelf().inSingletonScope();
+    bind(ResourceProvider).toDynamicValue(ctx => ctx.container.get(FileResourceProvider));
 
     bind<CommandContribution>(CommandContribution).to(FileCommandContribution);
     bind<MenuContribution>(MenuContribution).to(FileMenuContribution);

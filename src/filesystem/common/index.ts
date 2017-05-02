@@ -8,4 +8,4 @@
 export * from './filesystem'
 export * from './filesystem-selection'
 export * from './filesystem-watcher'
-export * from './file-uri-handler';
+export * from './file-resource';
