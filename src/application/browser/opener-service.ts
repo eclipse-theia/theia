@@ -6,44 +6,43 @@
  */
 
 import { multiInject, injectable } from "inversify";
-import { Widget } from "@phosphor/widgets";
 import URI from "../common/uri";
 
-export const WidgetOpener = Symbol("WidgetOpener");
+export const OpenHandler = Symbol("OpenHandler");
 
-export interface WidgetInput {
+export interface OpenerOptions {
 }
 
-export interface WidgetOpener {
+export interface OpenHandler {
     /**
      * Open a widget for the given input.
      *
      * Resolve to an opened widget or undefined, e.g. if a browser page is opened.
-     * Reject if the given input is not a resource input.
+     * Reject if the given input cannot be opened.
      */
-    open<I extends WidgetInput = WidgetInput, O extends Widget = Widget>(uri: URI, input?: I): Promise<O | undefined>;
+    open(uri: URI, input?: OpenerOptions): Promise<any>;
 }
 
 @injectable()
 export class OpenerService {
 
     constructor(
-        @multiInject(WidgetOpener) protected readonly openers: WidgetOpener[]
+        @multiInject(OpenHandler) protected readonly openHandlers: OpenHandler[]
     ) { }
 
     /**
      * Open a widget for the given input.
      *
      * Resolve to an opened widget or undefined, e.g. if a browser page is opened.
-     * Reject if the given input is not a resource input.
+     * Reject if the given input cannot be opened.
      */
-    open<I extends WidgetInput = WidgetInput, O extends Widget = Widget>(uri: URI, input?: I): Promise<O | undefined> {
-        if (this.openers.length === 0) {
+    open(uri: URI, input?: OpenerOptions): Promise<any> {
+        if (this.openHandlers.length === 0) {
             return Promise.resolve(undefined);
         }
-        const initial = this.openers[0].open(uri, input);
-        return this.openers.slice(1).reduce((current, opener) =>
-            current.catch(() => opener.open(uri, input)),
+        const initial = this.openHandlers[0].open(uri, input);
+        return this.openHandlers.slice(1).reduce(
+            (current, opener) => current.catch(() => opener.open(uri, input)),
             initial
         );
     }

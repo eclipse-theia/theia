@@ -8,14 +8,14 @@
 import { injectable, inject } from "inversify";
 import URI from "../../application/common/uri";
 import { Event, Emitter, RecursivePartial } from "../../application/common";
-import { WidgetOpener, TheiaApplication, TheiaPlugin } from "../../application/browser";
+import { OpenHandler, TheiaApplication, TheiaPlugin } from "../../application/browser";
 import { EditorWidget } from "./editor-widget";
 import { EditorRegistry } from "./editor-registry";
 import { TextEditorProvider, Range, Position } from "./editor";
 
 export const EditorManager = Symbol("EditorManager");
 
-export interface EditorManager extends WidgetOpener, TheiaPlugin {
+export interface EditorManager extends OpenHandler, TheiaPlugin {
     /**
      * All opened editors.
      */
