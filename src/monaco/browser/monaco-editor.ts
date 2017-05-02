@@ -39,7 +39,7 @@ export namespace MonacoEditor {
 
 export class MonacoEditor implements TextEditor, IEditorReference {
 
-    readonly toDispose = new DisposableCollection();
+    protected readonly toDispose = new DisposableCollection();
 
     protected readonly autoSizing: boolean
     protected readonly minHeight: number
@@ -95,6 +95,10 @@ export class MonacoEditor implements TextEditor, IEditorReference {
                 toDisposeOnBlur.dispose()
             ))
         }));
+    }
+
+    get onDispose() {
+        return this.toDispose.onDispose;
     }
 
     get document(): TextDocument {

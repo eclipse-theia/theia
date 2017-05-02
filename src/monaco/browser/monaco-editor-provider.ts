@@ -52,7 +52,7 @@ export class MonacoEditorProvider {
                     contextMenuService: this.contextMenuService
                 }
             );
-            editor.toDispose.push(reference);
+            editor.onDispose(() => reference.dispose());
             return editor;
         }));
     }
