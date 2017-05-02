@@ -10,7 +10,7 @@ import {
     CommandContribution,
     KeybindingContribution, KeybindingContext
 } from "../../application/common";
-import { TheiaPlugin, ResourceOpener } from '../../application/browser';
+import { TheiaPlugin, WidgetOpener } from '../../application/browser';
 import { EditorManagerImpl, EditorManager } from './editor-manager';
 import { EditorRegistry } from './editor-registry';
 import { EditorCommandHandlers } from "./editor-command";
@@ -20,7 +20,7 @@ export const editorModule = new ContainerModule(bind => {
     bind(EditorRegistry).toSelf().inSingletonScope();
     bind(EditorManager).to(EditorManagerImpl).inSingletonScope();
     bind(TheiaPlugin).toDynamicValue(context => context.container.get(EditorManager));
-    bind(ResourceOpener).toDynamicValue(context => context.container.get(EditorManager));
+    bind(WidgetOpener).toDynamicValue(context => context.container.get(EditorManager));
 
     bind(CommandContribution).to(EditorCommandHandlers);
     bind(EditorKeybindingContext).toSelf().inSingletonScope();

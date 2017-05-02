@@ -6,32 +6,44 @@
  */
 
 import { multiInject, injectable } from "inversify";
+import { Widget } from "@phosphor/widgets";
+import URI from "../common/uri";
 
-export const ResourceOpener = Symbol("ResourceOpener");
+export const WidgetOpener = Symbol("WidgetOpener");
 
-export interface ResourceOpener {
+export interface WidgetInput {
+}
+
+export interface WidgetOpener {
     /**
-     * Open a resource for the given input.
+     * Open a widget for the given input.
      *
+     * Resolve to an opened widget or undefined, e.g. if a browser page is opened.
      * Reject if the given input is not a resource input.
      */
-    open<ResourceInput = any, Resource = any>(input: ResourceInput | any): Promise<Resource | undefined>;
+    open<I extends WidgetInput = WidgetInput, O extends Widget = Widget>(uri: URI, input?: I): Promise<O | undefined>;
 }
 
 @injectable()
 export class OpenerService {
 
     constructor(
-        @multiInject(ResourceOpener) protected readonly openers: ResourceOpener[]
+        @multiInject(WidgetOpener) protected readonly openers: WidgetOpener[]
     ) { }
 
-    open<ResourceInput = any, Resource = any>(input: ResourceInput): Promise<Resource | undefined> {
+    /**
+     * Open a widget for the given input.
+     *
+     * Resolve to an opened widget or undefined, e.g. if a browser page is opened.
+     * Reject if the given input is not a resource input.
+     */
+    open<I extends WidgetInput = WidgetInput, O extends Widget = Widget>(uri: URI, input?: I): Promise<O | undefined> {
         if (this.openers.length === 0) {
             return Promise.resolve(undefined);
         }
-        const initial = this.openers[0].open(input);
+        const initial = this.openers[0].open(uri, input);
         return this.openers.slice(1).reduce((current, opener) =>
-            current.catch(() => opener.open(input)),
+            current.catch(() => opener.open(uri, input)),
             initial
         );
     }

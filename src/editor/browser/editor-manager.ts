@@ -8,14 +8,14 @@
 import { injectable, inject } from "inversify";
 import URI from "../../application/common/uri";
 import { Event, Emitter, RecursivePartial } from "../../application/common";
-import { ResourceOpener, TheiaApplication, TheiaPlugin } from "../../application/browser";
+import { WidgetOpener, TheiaApplication, TheiaPlugin } from "../../application/browser";
 import { EditorWidget } from "./editor-widget";
 import { EditorRegistry } from "./editor-registry";
 import { TextEditorProvider, Range, Position } from "./editor";
 
 export const EditorManager = Symbol("EditorManager");
 
-export interface EditorManager extends ResourceOpener, TheiaPlugin {
+export interface EditorManager extends WidgetOpener, TheiaPlugin {
     /**
      * All opened editors.
      */
@@ -25,11 +25,10 @@ export interface EditorManager extends ResourceOpener, TheiaPlugin {
      */
     readonly onEditorsChanged: Event<void>;
     /**
-     * Open an editor for the given uri.
-     * Undefined if the given input is not an editor input.
-     * Resolve to undefined if an editor cannot be opened.
+     * Open an editor for the given uri and input.
+     * Reject if the given input is not an editor input or an editor cannot be opened.
      */
-    open(input: URI | EditorInput | any): Promise<EditorWidget | undefined>;
+    open(uri: URI, input?: EditorInput): Promise<EditorWidget>;
     /**
      * The most recently focused editor.
      */
@@ -49,21 +48,8 @@ export interface EditorManager extends ResourceOpener, TheiaPlugin {
 }
 
 export interface EditorInput {
-    uri: URI;
     revealIfVisible?: boolean;
     selection?: RecursivePartial<Range>;
-}
-
-export namespace EditorInput {
-    export function is(input: EditorInput | any): input is EditorInput {
-        return !!input && input.uri instanceof URI;
-    }
-    export function validate(input: URI | EditorInput | any): EditorInput | undefined {
-        if (input instanceof URI) {
-            return { uri: input };
-        }
-        return is(input) ? input : undefined;
-    }
 }
 
 @injectable()
@@ -110,12 +96,8 @@ export class EditorManagerImpl implements EditorManager {
         return this.activeObserver.onEditorChanged();
     }
 
-    open(raw: URI | EditorInput | any): Promise<EditorWidget | undefined> {
-        const input = EditorInput.validate(raw);
-        if (!input) {
-            return Promise.reject(undefined);
-        }
-        return this.getOrCreateEditor(input.uri).then(editor => {
+    open(uri: URI, input?: EditorInput): Promise<EditorWidget> {
+        return this.getOrCreateEditor(uri).then(editor => {
             this.revealIfVisible(editor, input);
             this.revealSelection(editor, input);
             return editor;
@@ -142,16 +124,16 @@ export class EditorManagerImpl implements EditorManager {
         })
     }
 
-    protected revealIfVisible(editor: EditorWidget, input: EditorInput): void {
-        if (input.revealIfVisible === undefined || input.revealIfVisible) {
+    protected revealIfVisible(editor: EditorWidget, input?: EditorInput): void {
+        if (input === undefined || input.revealIfVisible === undefined || input.revealIfVisible) {
             this.resolveApp.then(app =>
                 app.shell.activateMain(editor.id)
             );
         }
     }
 
-    protected revealSelection(widget: EditorWidget, input: EditorInput): void {
-        if (input.selection) {
+    protected revealSelection(widget: EditorWidget, input?: EditorInput): void {
+        if (input && input.selection) {
             const editor = widget.editor;
             const selection = this.getSelection(input.selection);
             if (Position.is(selection)) {
