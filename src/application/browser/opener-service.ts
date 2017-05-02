@@ -20,7 +20,7 @@ export interface OpenHandler {
      * Resolve to an opened widget or undefined, e.g. if a browser page is opened.
      * Reject if the given input cannot be opened.
      */
-    open(uri: URI, input?: OpenerOptions): Promise<any>;
+    open(uri: URI, input?: OpenerOptions): Promise<object | undefined>;
 }
 
 @injectable()
@@ -36,7 +36,7 @@ export class OpenerService {
      * Resolve to an opened widget or undefined, e.g. if a browser page is opened.
      * Reject if the given input cannot be opened.
      */
-    open(uri: URI, input?: OpenerOptions): Promise<any> {
+    open(uri: URI, input?: OpenerOptions): Promise<object | undefined> {
         if (this.openHandlers.length === 0) {
             return Promise.resolve(undefined);
         }
