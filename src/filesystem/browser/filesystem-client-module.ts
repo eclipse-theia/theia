@@ -7,14 +7,14 @@
 
 import { ContainerModule } from 'inversify';
 import { CommandContribution, MenuContribution, ResourceProvider } from '../../application/common';
-import { WebSocketConnection } from '../../messaging/browser/connection';
+import { WebSocketConnectionProvider } from '../../messaging/browser/connection';
 import { FileSystem, FileSystemWatcher, FileResourceProvider } from "../common";
 import { FileCommandContribution, FileMenuContribution } from './filesystem-commands';
 
 export const fileSystemClientModule = new ContainerModule(bind => {
     bind(FileSystemWatcher).toSelf().inSingletonScope();
     bind(FileSystem).toDynamicValue(ctx => {
-        const connnection = ctx.container.get(WebSocketConnection);
+        const connnection = ctx.container.get(WebSocketConnectionProvider);
         const fileSystemClient = ctx.container.get(FileSystemWatcher).getFileSystemClient();
         return connnection.createProxy<FileSystem>("/filesystem", fileSystemClient);
     })

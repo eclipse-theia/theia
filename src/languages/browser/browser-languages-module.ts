@@ -7,7 +7,7 @@
 
 import { ContainerModule, injectable, inject, optional } from "inversify";
 import { TheiaPlugin, TheiaApplication } from "../../application/browser";
-import { WebSocketConnection } from "../../messaging/browser";
+import { WebSocketConnectionProvider } from "../../messaging/browser";
 import {
     BaseLanguageClient,
     Commands,
@@ -32,7 +32,7 @@ export const browserLanguagesModule = new ContainerModule(bind => {
     bind(TheiaPlugin).to(LanguagesPlugin).inSingletonScope();
 
     bind<LanguagesService>(LanguagesService).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnection);
+        const connection = ctx.container.get(WebSocketConnectionProvider);
         return connection.createProxy<LanguagesService>(LANGUAGES_PATH);
     })
 });
@@ -46,7 +46,7 @@ export class LanguagesPlugin implements TheiaPlugin {
         @inject(Commands) @optional() protected readonly commands: Commands | undefined = undefined,
         @inject(Window) @optional() protected readonly window: Window | undefined = undefined,
         @inject(LanguagesService) protected readonly languagesService: LanguagesService,
-        @inject(WebSocketConnection) protected readonly connection: WebSocketConnection) {
+        @inject(WebSocketConnectionProvider) protected readonly connection: WebSocketConnectionProvider) {
     }
 
     onStart(app: TheiaApplication): void {

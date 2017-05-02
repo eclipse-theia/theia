@@ -8,7 +8,7 @@
 import * as http from 'http';
 import { ContainerModule, injectable, multiInject } from "inversify";
 import { ExpressContribution } from '../../application/node';
-import { openSocket } from '../../messaging/node';
+import { openSocket, toIWebSocket } from '../../messaging/node';
 import { WebSocketMessageReader, WebSocketMessageWriter, ConnectionHandler, JsonRpcProxyFactory } from "../../messaging/common";
 import { createConnection } from "vscode-ws-jsonrpc/lib/server";
 import { LanguageContribution } from "./language-contribution";
@@ -37,7 +37,8 @@ export class LanguagesExpressContribution implements ExpressContribution {
             openSocket({
                 server,
                 path
-            }, socket => {
+            }, s => {
+                const socket = toIWebSocket(s)
                 const reader = new WebSocketMessageReader(socket);
                 const writer = new WebSocketMessageWriter(socket);
                 const connection = createConnection(reader, writer, () => socket.dispose());
