@@ -36,7 +36,7 @@ export class MonacoEditorProvider {
     }
 
     get(uri: URI): Promise<MonacoEditor> {
-        return Promise.resolve(this.monacoModelResolver.createModelReference(uri.codeUri).then(reference => {
+        return Promise.resolve(this.monacoModelResolver.createModelReference(uri).then(reference => {
             const node = document.createElement('div');
             const model = reference.object;
             const editor = new MonacoEditor(

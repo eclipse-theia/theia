@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import URI from "../../application/common/uri";
 import { Event, Emitter, RecursivePartial } from "../../application/common";
-import { ResourceOpener, TheiaApplication, TheiaPlugin, UriInput } from "../../application/browser";
+import { ResourceOpener, TheiaApplication, TheiaPlugin } from "../../application/browser";
 import { EditorWidget } from "./editor-widget";
 import { EditorRegistry } from "./editor-registry";
 import { TextEditorProvider, Range, Position } from "./editor";
@@ -29,7 +29,7 @@ export interface EditorManager extends ResourceOpener, TheiaPlugin {
      * Undefined if the given input is not an editor input.
      * Resolve to undefined if an editor cannot be opened.
      */
-    open(input: UriInput | EditorInput | any): Promise<EditorWidget | undefined>;
+    open(input: URI | EditorInput | any): Promise<EditorWidget | undefined>;
     /**
      * The most recently focused editor.
      */
@@ -58,10 +58,9 @@ export namespace EditorInput {
     export function is(input: EditorInput | any): input is EditorInput {
         return !!input && input.uri instanceof URI;
     }
-    export function validate(input: UriInput | EditorInput | any): EditorInput | undefined {
-        if (UriInput.is(input)) {
-            const uri = UriInput.asURI(input);
-            return { uri };
+    export function validate(input: URI | EditorInput | any): EditorInput | undefined {
+        if (input instanceof URI) {
+            return { uri: input };
         }
         return is(input) ? input : undefined;
     }
@@ -111,7 +110,7 @@ export class EditorManagerImpl implements EditorManager {
         return this.activeObserver.onEditorChanged();
     }
 
-    open(raw: UriInput | EditorInput | any): Promise<EditorWidget | undefined> {
+    open(raw: URI | EditorInput | any): Promise<EditorWidget | undefined> {
         const input = EditorInput.validate(raw);
         if (!input) {
             return Promise.reject(undefined);

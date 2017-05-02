@@ -10,7 +10,7 @@ import { FileSystem, FileStat, FileChangesEvent, FileChangeType } from "../../fi
 import { FileSystemWatcher } from "../../filesystem/common/filesystem-watcher";
 import { UriSelection } from "../../filesystem/common/filesystem-selection";
 import { SelectionService } from '../../application/common';
-import { OpenerService, UriInput } from "../../application/browser";
+import { OpenerService } from "../../application/browser";
 import {
     ITree,
     ITreeSelectionService,
@@ -83,7 +83,7 @@ export class FileNavigatorModel extends TreeModel {
 
     protected doOpenNode(node: ITreeNode): void {
         if (FileNode.is(node)) {
-            this.openerService.open<UriInput>(node.fileStat.uri);
+            this.openerService.open<URI>(new URI(node.fileStat.uri));
         } else {
             super.doOpenNode(node);
         }

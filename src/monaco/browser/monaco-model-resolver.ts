@@ -8,6 +8,7 @@
 import { inject, injectable } from 'inversify';
 import { DisposableCollection, Disposable, UriHandlerRegistry } from "../../application/common";
 import { MonacoEditorModel } from "./monaco-editor-model";
+import URI from "../../application/common/uri";
 import ITextModelResolverService = monaco.editor.ITextModelResolverService;
 import ITextModelContentProvider = monaco.editor.ITextModelContentProvider;
 import ITextEditorModel = monaco.editor.ITextEditorModel;
@@ -24,7 +25,8 @@ export class MonacoModelResolver implements ITextModelResolverService {
     constructor( @inject(UriHandlerRegistry) protected readonly uriHandlerRegistry: UriHandlerRegistry) {
     }
 
-    createModelReference(uri: Uri): monaco.Promise<IReference<MonacoEditorModel>> {
+    createModelReference(raw: Uri | URI): monaco.Promise<IReference<MonacoEditorModel>> {
+        const uri = raw instanceof Uri ? new URI(raw.toString()) : raw;
         return this.getOrCreateModel(uri).then(model =>
             this.newReference(model)
         );
@@ -52,21 +54,21 @@ export class MonacoModelResolver implements ITextModelResolverService {
         return reference;
     }
 
-    protected getOrCreateModel(uri: Uri): monaco.Promise<MonacoEditorModel> {
+    protected getOrCreateModel(uri: URI): monaco.Promise<MonacoEditorModel> {
         const key = uri.path;
-        const model = this.models.get(key);
+        const model = this.models.get(key.toString());
         if (model) {
             return model;
         }
         const newModel = this.createModel(uri);
-        this.models.set(key, newModel);
-        newModel.then(m => m.onDispose(() => this.models.delete(key)));
+        this.models.set(key.toString(), newModel);
+        newModel.then(m => m.onDispose(() => this.models.delete(key.toString())));
         return newModel;
     }
 
-    protected createModel(uri: Uri): monaco.Promise<MonacoEditorModel> {
+    protected createModel(uri: URI): monaco.Promise<MonacoEditorModel> {
         return monaco.Promise.wrap(
-            this.uriHandlerRegistry.get(uri.toString()).then(uriHandler =>
+            this.uriHandlerRegistry.get(uri).then(uriHandler =>
                 new MonacoEditorModel(uriHandler).load()
             )
         );
