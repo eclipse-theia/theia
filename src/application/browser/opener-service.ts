@@ -6,8 +6,6 @@
  */
 
 import { multiInject, injectable } from "inversify";
-import Uri from 'vscode-uri';
-import URI from "../common/uri";
 
 export const ResourceOpener = Symbol("ResourceOpener");
 
@@ -38,14 +36,4 @@ export class OpenerService {
         );
     }
 
-}
-
-export type UriInput = string | Uri | URI;
-export namespace UriInput {
-    export function is(input: UriInput | any): input is UriInput {
-        return !!input && (input instanceof URI || input instanceof Uri || typeof input === 'string');
-    }
-    export function asURI(input: UriInput): URI {
-        return URI.toURI(input);
-    }
 }

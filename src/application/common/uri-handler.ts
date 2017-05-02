@@ -7,7 +7,6 @@
 
 import { injectable, multiInject } from "inversify";
 import URI from "../common/uri";
-import Uri from "vscode-uri/lib";
 
 export interface UriHandler {
     readonly uri: URI;
@@ -33,7 +32,7 @@ export class UriHandlerRegistry {
     /**
      * Reject if a handler cannot be provided.
      */
-    get(raw: string | Uri | URI): Promise<UriHandler> {
+    get(raw: URI): Promise<UriHandler> {
         const uri = URI.toURI(raw);
         if (this.providers.length === 0) {
             return Promise.reject(this.createHandlerNotRegisteredError(uri));
