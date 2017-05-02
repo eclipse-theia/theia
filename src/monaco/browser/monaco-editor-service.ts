@@ -25,8 +25,9 @@ export class MonacoEditorService implements IEditorService {
     ) { }
 
     openEditor(input: IResourceInput, sideBySide?: boolean | undefined): monaco.Promise<IEditorReference | undefined> {
+        const uri = new URI(input.resource.toString());
         const editorInput = this.createEditorInput(input);
-        return monaco.Promise.wrap(this.openerService.open<EditorInput, EditorWidget>(editorInput).then(widget => {
+        return monaco.Promise.wrap(this.openerService.open<EditorInput, EditorWidget>(uri, editorInput).then(widget => {
             if (widget && widget.editor instanceof MonacoEditor) {
                 return widget.editor;
             }
@@ -35,11 +36,9 @@ export class MonacoEditorService implements IEditorService {
     }
 
     protected createEditorInput(input: IResourceInput, sideBySide?: boolean | undefined): EditorInput {
-        const uri = new URI(input.resource.toString());
         const revealIfVisible = !input.options || input.options.revealIfVisible === undefined || input.options.revealIfVisible;
         const selection = !input.options ? undefined : this.m2p.asRange(input.options.selection);
         return {
-            uri,
             revealIfVisible,
             selection
         };

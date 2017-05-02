@@ -83,7 +83,7 @@ export class FileNavigatorModel extends TreeModel {
 
     protected doOpenNode(node: ITreeNode): void {
         if (FileNode.is(node)) {
-            this.openerService.open<URI>(new URI(node.fileStat.uri));
+            this.openerService.open(new URI(node.fileStat.uri));
         } else {
             super.doOpenNode(node);
         }
