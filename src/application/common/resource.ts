@@ -8,32 +8,31 @@
 import { injectable, multiInject } from "inversify";
 import URI from "../common/uri";
 
-export interface UriHandler {
+export interface Resource {
     readonly uri: URI;
-    resolve(): Promise<string>;
-    save?(content: string): Promise<void>;
+    readContents(options?: { encoding?: string }): Promise<string>;
+    saveContents?(content: string, options?: { encoding?: string }): Promise<void>;
 }
 
-export const UriHandlerProvider = Symbol('UriHandlerProvider');
-export interface UriHandlerProvider {
+export const ResourceProvider = Symbol('ResourceProvider');
+export interface ResourceProvider {
     /**
-     * Reject if a handler cannot be provided.
+     * Reject if a resource cannot be provided.
      */
-    get(uri: URI): Promise<UriHandler>;
+    get(uri: URI): Promise<Resource>;
 }
 
 @injectable()
-export class UriHandlerRegistry {
+export class ResourceService {
 
     constructor(
-        @multiInject(UriHandlerProvider) protected readonly providers: UriHandlerProvider[]
+        @multiInject(ResourceProvider) protected readonly providers: ResourceProvider[]
     ) { }
 
     /**
-     * Reject if a handler cannot be provided.
+     * Reject if a resource cannot be provided.
      */
-    get(raw: URI): Promise<UriHandler> {
-        const uri = URI.toURI(raw);
+    get(uri: URI): Promise<Resource> {
         if (this.providers.length === 0) {
             return Promise.reject(this.createHandlerNotRegisteredError(uri));
         }
@@ -45,7 +44,7 @@ export class UriHandlerRegistry {
     }
 
     protected createHandlerNotRegisteredError(uri: URI): any {
-        return `An uri handler for '${uri.toString()}' is not registered.`;
+        return `A resource provider for '${uri.toString()}' is not registered.`;
     }
 
 }

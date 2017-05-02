@@ -6,7 +6,7 @@
  */
 
 import { TextDocumentSaveReason } from "vscode-languageserver-types";
-import { DisposableCollection, Disposable, Emitter, Event, UriHandler } from '../../application/common';
+import { DisposableCollection, Disposable, Emitter, Event, Resource } from '../../application/common';
 import ITextEditorModel = monaco.editor.ITextEditorModel;
 
 export {
@@ -33,11 +33,11 @@ export class MonacoEditorModel implements ITextEditorModel {
     protected readonly onDidSaveModelEmitter = new Emitter<monaco.editor.IModel>();
     protected readonly onWillSaveModelEmitter = new Emitter<WillSaveModelEvent>();
 
-    constructor(protected readonly uriHandler: UriHandler) {
+    constructor(protected readonly resource: Resource) {
         this.toDispose.push(this.toDisposeOnAutoSave);
         this.toDispose.push(this.onDidSaveModelEmitter);
         this.toDispose.push(this.onWillSaveModelEmitter);
-        this.resolveModel = uriHandler.resolve().then(content => this.initialize(content));
+        this.resolveModel = resource.readContents().then(content => this.initialize(content));
     }
 
     /**
@@ -47,7 +47,7 @@ export class MonacoEditorModel implements ITextEditorModel {
      */
     protected initialize(content: string) {
         if (!this.toDispose.disposed) {
-            this.model = monaco.editor.createModel(content, undefined, this.uriHandler.uri.codeUri);
+            this.model = monaco.editor.createModel(content, undefined, this.resource.uri.codeUri);
             this.toDispose.push(this.model);
             this.toDispose.push(this.model.onDidChangeContent(event => this.doAutoSave()));
         }
@@ -58,7 +58,7 @@ export class MonacoEditorModel implements ITextEditorModel {
     }
 
     get readOnly(): boolean {
-        return this.uriHandler.save === undefined;
+        return this.resource.saveContents === undefined;
     }
 
     get onDispose(): monaco.IEvent<void> {
@@ -99,8 +99,8 @@ export class MonacoEditorModel implements ITextEditorModel {
 
     protected doSave(reason: TextDocumentSaveReason): Promise<void> {
         return new Promise<void>(resolve => {
-            if (this.uriHandler.save) {
-                const save = this.uriHandler.save.bind(this.uriHandler);
+            if (this.resource.saveContents) {
+                const save = this.resource.saveContents.bind(this.resource);
                 this.fireWillSaveModel(reason).then(() => {
                     const content = this.model.getValue();
                     resolve(save(content).then(() =>
