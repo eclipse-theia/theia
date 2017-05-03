@@ -12,40 +12,40 @@ export const FileSystem = Symbol("FileSystem");
 export interface FileSystem extends Disposable {
 
     /**
-     * Returns the filestat for the given uri.
+     * Returns the filestat for the given URI.
      *
-     * If the uri points to a folder it will contain one level of unresolved children.
+     * If the URI points to a folder it will contain one level of unresolved children.
      */
     getFileStat(uri: string): Promise<FileStat>;
 
     /**
-     *Finds out if a file identified by the resource exists.
+     * Finds out if the file identified by the resource URI exists.
      */
     exists(uri: string): Promise<boolean>;
 
     /**
-     * Resolve the contents of a file identified by the resource.
+     * Resolves the content of the file identified by the URI.
      */
     resolveContent(uri: string, options?: { encoding?: string }): Promise<{ stat: FileStat, content: string }>;
 
     /**
-     * Updates the content replacing its previous value.
+     * Updates the content by replacing its previous value with the new one.
      */
     setContent(file: FileStat, content: string, options?: { encoding?: string }): Promise<FileStat>;
 
     /**
-     * Moves the file to a new path identified by the resource.
+     * Moves the file to a new path identified by the target file URI.
      *
-     * The optional parameter overwrite can be set to replace an existing file at the location.
+     * The optional parameter `overwrite` can be set to replace an existing file at the given location.
      */
-    move(sourceUri: string, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat>;
+    move(sourceStat: FileStat, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat>;
 
     /**
-     * Copies the file to a path identified by the resource.
+     * Copies the file identified by the filestat to the desired target location.
      *
      * The optional parameter overwrite can be set to replace an existing file at the location.
      */
-    copy(sourceUri: string, targetUri: string, options?: { overwrite?: boolean, recursive?: boolean }): Promise<FileStat>;
+    copy(sourceStat: FileStat, targetUri: string, options?: { overwrite?: boolean, recursive?: boolean }): Promise<FileStat>;
 
     /**
      * Creates a new file with the given path. The returned promise
@@ -68,10 +68,10 @@ export interface FileSystem extends Disposable {
     touchFile(uri: string): Promise<FileStat>;
 
     /**
-     * Deletes the provided file. The optional moveToTrash parameter allows to
-     * move the file to trash.
+     * Deletes the provided file given as the filestat. The optional `moveToTrash` parameter allows to
+     * move the file to trash instead of deleting it permanently.
      */
-    delete(uri: string, options?: { moveToTrash?: boolean }): Promise<void>;
+    delete(file: FileStat, options?: { moveToTrash?: boolean }): Promise<void>;
 
     /**
      * Allows to start a watcher that reports file change events on the provided resource.
@@ -140,36 +140,34 @@ export enum FileChangeType {
 export interface FileStat {
 
     /**
-     * The uri of the file.
+     * The URI of the file.
      */
-    uri: string;
+    readonly uri: string;
 
     /**
      * The last modification of this file.
      */
-    lastModification: number;
+    readonly lastModification: number;
 
     /**
-     * The resource is a directory. Iff {{true}}
-     * {{encoding}} has no meaning.
+     * The resource is a directory.
      */
-    isDirectory: boolean;
+    readonly isDirectory: boolean;
 
     /**
-     * Return {{true}} when this is a directory
-     * that is not empty.
+     * Return `true` when this is a directory that is not empty.
      */
-    hasChildren?: boolean;
+    readonly hasChildren?: boolean;
 
     /**
      * The children of the file stat.
-     * If it is undefined and isDirectory is true, then this file stat is unresolved.
+     * If it is `undefined` and `isDirectory` is `true`, then this file stat is unresolved.
      */
-    children?: FileStat[];
+    readonly children?: FileStat[];
 
     /**
      * The size of the file if known.
      */
-    size?: number;
+    readonly size?: number;
 
 }
