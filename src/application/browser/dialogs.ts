@@ -100,11 +100,14 @@ export class Dialog<T> {
 }
 
 export class ConfirmDialog extends Dialog<void> {
-    okButton: HTMLButtonElement;
-    cancelButton: HTMLButtonElement;
 
     constructor(title: string, msg: string, cancel = 'Cancel', ok = 'OK') {
         super(title)
+
+        const messageNode = document.createElement("div")
+        messageNode.textContent = msg
+        messageNode.setAttribute('style', 'flex: 1 100%; padding-bottom: calc(var(--theia-ui-padding)*3);')
+        this.contentNode.appendChild(messageNode)
 
         const cancelButton = document.createElement("button")
         cancelButton.classList.add('dialogButton')
