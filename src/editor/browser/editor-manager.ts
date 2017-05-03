@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import URI from "../../application/common/uri";
-import { Event, Emitter, RecursivePartial } from "../../application/common";
+import { Emitter, Event, RecursivePartial, SelectionService } from '../../application/common';
 import { OpenHandler, TheiaApplication, TheiaPlugin } from "../../application/browser";
 import { EditorWidget } from "./editor-widget";
 import { EditorRegistry } from "./editor-registry";
@@ -65,7 +65,8 @@ export class EditorManagerImpl implements EditorManager {
 
     constructor(
         @inject(EditorRegistry) protected readonly editorRegistry: EditorRegistry,
-        @inject(TextEditorProvider) protected readonly editorProvider: TextEditorProvider
+        @inject(TextEditorProvider) protected readonly editorProvider: TextEditorProvider,
+        @inject(SelectionService) protected readonly selectionService: SelectionService
     ) { }
 
     onStart(app: TheiaApplication): void {
@@ -111,7 +112,7 @@ export class EditorManagerImpl implements EditorManager {
                 return editor;
             }
             return this.editorProvider(uri).then(textEditor => {
-                const editor = new EditorWidget(textEditor);
+                const editor = new EditorWidget(textEditor, this.selectionService);
                 editor.title.closable = true;
                 editor.title.label = uri.lastSegment();
                 this.editorRegistry.addEditor(uri, editor);

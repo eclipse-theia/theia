@@ -7,7 +7,7 @@
 
 import { Widget } from "@phosphor/widgets";
 import { Message } from "@phosphor/messaging";
-import { DisposableCollection } from "../../application/common";
+import { DisposableCollection, SelectionService } from '../../application/common';
 import { TextEditor } from "./editor";
 
 export class EditorWidget extends Widget {
@@ -15,7 +15,8 @@ export class EditorWidget extends Widget {
     protected readonly toDispose = new DisposableCollection();
 
     constructor(
-        readonly editor: TextEditor
+        readonly editor: TextEditor,
+        readonly selectionService: SelectionService
     ) {
         super(editor);
         this.toDispose.push(this.editor);
@@ -32,6 +33,7 @@ export class EditorWidget extends Widget {
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg)
         this.editor.focus();
+        this.selectionService.selection = this.editor
     }
 
     protected onCloseRequest(msg: Message): void {
