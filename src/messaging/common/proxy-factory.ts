@@ -91,6 +91,6 @@ export class JsonRpcProxyFactory<T extends object> implements ConnectionHandler,
     }
 
     protected isNotification(p: PropertyKey): boolean {
-        return p.toString().startsWith("notify")
+        return p.toString().startsWith("notify") || p.toString().startsWith("on")
     }
 }

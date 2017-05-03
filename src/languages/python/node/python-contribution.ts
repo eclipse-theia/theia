@@ -35,8 +35,15 @@ export class PythonContribution implements LanguageContribution {
         const command = 'pyls';
         const args: string[] = [
         ];
-        const serverConnection = createServerProcess(this.description.name, command, args);
-        forward(clientConnection, serverConnection);
+        try {
+            const serverConnection = createServerProcess(this.description.name, command, args);
+            forward(clientConnection, serverConnection);
+        } catch (err) {
+            console.error(err)
+            console.error("Error starting python language server.")
+            console.error("Please make sure it is installed on your system.")
+            console.error("Use the following command: 'pip install https://github.com/palantir/python-language-server/archive/master.zip'")
+        }
     }
 
 }

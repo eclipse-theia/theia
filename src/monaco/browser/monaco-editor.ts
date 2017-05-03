@@ -8,7 +8,7 @@
 import { ElementExt } from "@phosphor/domutils";
 import URI from "../../application/common/uri";
 import { DisposableCollection, Disposable, Emitter, Event, SelectionService } from "../../application/common";
-import { TextEditor, TextDocument, Position, Range, Dimension } from "../../editor/browser";
+import { Dimension, Position, Range, TextDocument, TextEditor } from '../../editor/browser';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
 import { MonacoWorkspace } from "./monaco-workspace";
 
@@ -72,12 +72,11 @@ export class MonacoEditor implements TextEditor, IEditorReference {
             this.onCursorPositionChangedEmitter.fire(this.cursor)
         ));
         this.toDispose.push(this.editor.onDidChangeCursorSelection(e => {
-            this.selectionService.selection = e;
             this.onSelectionChangedEmitter.fire(this.selection);
         }));
-        this.toDispose.push(this.editor.onDidFocusEditor(() =>
+        this.toDispose.push(this.editor.onDidFocusEditor(() => {
             this.onFocusChangedEmitter.fire(this.isFocused())
-        ));
+        }));
         this.toDispose.push(this.editor.onDidBlurEditor(() =>
             this.onFocusChangedEmitter.fire(this.isFocused())
         ));

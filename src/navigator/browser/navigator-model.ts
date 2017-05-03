@@ -72,7 +72,7 @@ export class FileNavigatorModel extends TreeModel {
         const nodes: DirNode[] = [];
         for (const change of event.changes) {
             const uri = change.uri;
-            const id = change.type > FileChangeType.UPDATED ? new URI(uri).parent.toString() : uri;
+            const id = change.type > FileChangeType.UPDATED ? new URI(uri).parent().toString() : uri;
             const node = this.getNode(id);
             if (DirNode.is(node) && node.expanded) {
                 nodes.push(node);
@@ -101,8 +101,8 @@ export class FileNavigatorTree extends Tree {
     }
 
     protected createRootNode(fileStat: FileStat): DirNode {
-        const uri = fileStat.uri
-        const id = uri;
+        const uri = new URI(fileStat.uri)
+        const id = fileStat.uri;
         return {
             id, uri, fileStat,
             name: '/',
@@ -124,13 +124,10 @@ export class FileNavigatorTree extends Tree {
     }
 
     protected resolveFileStat(node: FileStatNode): Promise<FileStat> {
-        if (!node.fileStat.children && node.fileStat.isDirectory) {
-            return this.fileSystem.getFileStat(node.fileStat.uri).then(fileStat => {
-                node.fileStat = fileStat;
-                return fileStat;
-            });
-        }
-        return Promise.resolve(node.fileStat);
+        return this.fileSystem.getFileStat(node.fileStat.uri).then(fileStat => {
+            node.fileStat = fileStat;
+            return fileStat;
+        });
     }
 
     protected toNodes(fileStat: FileStat, parent: ICompositeTreeNode): ITreeNode[] {
@@ -143,15 +140,15 @@ export class FileNavigatorTree extends Tree {
     }
 
     protected toNode(fileStat: FileStat, parent: ICompositeTreeNode): FileNode | DirNode {
-        const uri = fileStat.uri
-        const id = uri;
+        const uri = new URI(fileStat.uri)
+        const id = fileStat.uri;
         const node = this.getNode(id);
         if (fileStat.isDirectory) {
             if (DirNode.is(node)) {
                 node.fileStat = fileStat;
                 return node;
             }
-            const name = new URI(fileStat.uri).lastSegment();
+            const name = uri.lastSegment();
             return <DirNode>{
                 id, uri, fileStat, name, parent,
                 expanded: false,

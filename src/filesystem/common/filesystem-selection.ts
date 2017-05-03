@@ -5,12 +5,14 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import URI from "../../application/common/uri";
+
 export interface UriSelection {
-    readonly uri: string
+    readonly uri: URI
 }
 
 export namespace UriSelection {
-    export function is(selection: any): selection is UriSelection {
-        return !!selection && 'uri' in selection
+    export function is(e: any): e is UriSelection {
+        return e && e["uri"] instanceof URI
     }
 }

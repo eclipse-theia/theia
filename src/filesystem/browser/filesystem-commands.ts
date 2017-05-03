@@ -248,7 +248,7 @@ export class FileSystemCommandHandler implements CommandHandler {
     execute(arg?: any): Promise<any> {
         const selection = this.options.selectionService.selection;
         if (UriSelection.is(selection)) {
-            return this.doExecute(new URI(selection.uri))
+            return this.doExecute(selection.uri)
         }
         return Promise.resolve()
     }
