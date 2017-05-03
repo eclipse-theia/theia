@@ -103,74 +103,59 @@ export class FileSystemNode implements FileSystem {
 
     setContent(file: FileStat, content: string, options?: { encoding?: string }): Promise<FileStat> {
         return new Promise<FileStat>((resolve, reject) => {
-            const _uri = new URI(file.uri);
-            const stat = this.doGetStat(_uri, 0);
-            if (!stat) {
-                return reject(new Error(`Cannot find file under the given URI. URI: ${file.uri}.`));
-            }
-            if (stat.isDirectory) {
-                return reject(new Error(`Cannot set the content of a directory. URI: ${file.uri}.`));
-            }
-            if (stat.lastModification !== file.lastModification) {
-                return reject(new Error(`File is out of sync. URI: ${file.uri}. Expected timestamp: ${stat.lastModification}. Actual timestamp: ${file.lastModification}.`));
-            }
-            if (stat.size !== file.size) {
-                return reject(new Error(`File is out of sync. URI: ${file.uri}. Expected size: ${stat.size}. Actual size: ${file.size}.`));
-            }
-            const encoding = this.doGetEncoding(options);
-            fs.writeFile(_uri.path(), content, encoding, error => {
-                if (error) {
-                    return reject(error);
-                }
-                try {
+            this.doCheckStat(file).then(stat => {
+                const _uri = new URI(stat.uri);
+                const encoding = this.doGetEncoding(options);
+                fs.writeFile(_uri.path(), content, encoding, error => {
+                    if (error) {
+                        return reject(error);
+                    }
                     resolve(this.doGetStat(_uri, 1));
-                } catch (error) {
-                    reject(error);
-                }
+                });
+            }).catch(error => {
+                reject(error);
             });
         });
     }
 
-    move(sourceUri: string, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat> {
+    move(sourceStat: FileStat, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat> {
         return new Promise<FileStat>((resolve, reject) => {
-            const _sourceUri = new URI(sourceUri);
-            const sourceStat = this.doGetStat(_sourceUri, 0);
-            if (!sourceStat) {
-                return reject(new Error(`File does not exist under ${sourceUri}.`));
-            }
-            const _targetUri = new URI(targetUri);
-            const overwrite = this.doGetOverwrite(options);
-            const targetStat = this.doGetStat(_targetUri, 0);
-            if (targetStat && !overwrite) {
-                return reject(new Error(`File already exist under the \'${targetUri}\' target location. Did you set the \'overwrite\' flag to true?`));
-            }
-            fs.rename(_sourceUri.path(), _targetUri.path(), (error) => {
-                if (error) {
-                    return reject(error);
+            this.doCheckStat(sourceStat).then(stat => {
+                const _targetUri = new URI(targetUri);
+                const overwrite = this.doGetOverwrite(options);
+                const targetStat = this.doGetStat(_targetUri, 0);
+                if (targetStat && !overwrite) {
+                    return reject(new Error(`File already exist under the \'${targetUri}\' target location.`));
                 }
-                resolve(this.doGetStat(_targetUri, 1));
+                fs.rename(new URI(stat.uri).path(), _targetUri.path(), (error) => {
+                    if (error) {
+                        return reject(error);
+                    }
+                    resolve(this.doGetStat(_targetUri, 1));
+                });
+            }).catch(error => {
+                reject(error);
             });
         });
     }
 
-    copy(sourceUri: string, targetUri: string, options?: { overwrite?: boolean, recursive?: boolean }): Promise<FileStat> {
+    copy(sourceStat: FileStat, targetUri: string, options?: { overwrite?: boolean, recursive?: boolean }): Promise<FileStat> {
         return new Promise<FileStat>((resolve, reject) => {
-            const _sourceUri = new URI(sourceUri);
-            const sourceStat = this.doGetStat(_sourceUri, 0);
-            if (!sourceStat) {
-                return reject(new Error(`File does not exist under ${sourceUri}.`));
-            }
-            const overwrite = this.doGetOverwrite(options);
-            const _targetUri = new URI(targetUri);
-            const targetStat = this.doGetStat(_targetUri, 0);
-            if (targetStat && !overwrite) {
-                return reject(new Error(`File already exist under the \'${targetUri}\' target location. Did you set the \'overwrite\' flag to true?`));
-            }
-            fs.copy(_sourceUri.path(), _targetUri.path(), error => {
-                if (error) {
-                    return reject(error);
+            this.doCheckStat(sourceStat).then(stat => {
+                const _targetUri = new URI(targetUri);
+                const overwrite = this.doGetOverwrite(options);
+                const targetStat = this.doGetStat(_targetUri, 0);
+                if (targetStat && !overwrite) {
+                    return reject(new Error(`File already exist under the \'${targetUri}\' target location.`));
                 }
-                return resolve(this.doGetStat(_targetUri, 1));
+                fs.copy(new URI(stat.uri).path(), _targetUri.path(), error => {
+                    if (error) {
+                        return reject(error);
+                    }
+                    return resolve(this.doGetStat(_targetUri, 1));
+                });
+            }).catch(error => {
+                reject(error);
             });
         });
     }
@@ -241,23 +226,22 @@ export class FileSystemNode implements FileSystem {
         });
     }
 
-    delete(uri: string, options?: { moveToTrash?: boolean }): Promise<void> {
+    delete(file: FileStat, options?: { moveToTrash?: boolean }): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            const _uri = new URI(uri);
-            const stat = this.doGetStat(_uri, 0);
-            if (!stat) {
-                return reject(new Error(`File does not exist under ${uri}.`));
-            }
+            this.doCheckStat(file).then(stat => {
             const moveToTrash = this.doGetMoveToTrash(options);
             if (moveToTrash) {
-                resolve(trash([_uri.path()]));
+                resolve(trash([new URI(stat.uri).path()]));
             } else {
-                fs.remove(_uri.path(), error => {
+                fs.remove(new URI(stat.uri).path(), error => {
                     if (error) {
                         return reject(error);
                     }
                 });
             }
+            }).catch(error => {
+                reject(error);
+            })
         });
     }
 
@@ -341,6 +325,7 @@ export class FileSystemNode implements FileSystem {
                     uri: uri.toString(),
                     lastModification: stat.mtime.getTime(),
                     isDirectory: true,
+                    size: stat.size,
                     hasChildren: files.length > 0,
                     children
                 };
@@ -386,6 +371,23 @@ export class FileSystemNode implements FileSystem {
 
     protected doGetContent(option?: { content?: string }): string {
         return (option && option.content) || "";
+    }
+
+    protected doCheckStat(stat: FileStat): Promise<FileStat> {
+        return new Promise<FileStat>((resolve, reject) => {
+            const { uri, lastModification, size } = stat;
+            const expectedStat = this.doGetStat(new URI(uri.toString()), 0);
+            if (!expectedStat) {
+                return reject(new Error(`File does not exist under ${uri}.`));
+            }
+            if (expectedStat.lastModification !== lastModification) {
+                return reject(new Error(`File is out of sync. URI: ${uri}. Expected timestamp: ${lastModification}. Actual timestamp: ${expectedStat.lastModification}.`));
+            }
+            if (expectedStat.size !== size) {
+                return reject(new Error(`File is out of sync. URI: ${uri}. Expected size: ${size}. Actual size: ${expectedStat.size}.`));
+            }
+            resolve(stat);
+        });
     }
 
     private getFileChangeType(eventType: EventType): FileChangeType | undefined {

@@ -93,8 +93,9 @@ export class FileCommandContribution implements CommandContribution {
                                 return validateFileName(name, stat)
                             }
                         })
-                        dialog.acceptancePromise.then( name =>
-                            this.fileSystem.move(uri.toString(), uri.parent().append(name).toString()))
+                        dialog.acceptancePromise
+                            .then(name => this.fileSystem.getFileStat(uri.toString())
+                            .then(fileStat => this.fileSystem.move(fileStat, uri.parent().append(name).toString())));
                     })
             })
         );
@@ -127,7 +128,8 @@ export class FileCommandContribution implements CommandContribution {
                     let data: string = this.clipboardService.getData('text')
                     copyPath = new URI(data)
                     let targetUri = uri.append(copyPath.lastSegment())
-                    return this.fileSystem.copy(copyPath.toString(), targetUri.toString())
+                    return this.fileSystem.getFileStat(copyPath.toString())
+                        .then(fileStat => this.fileSystem.copy(fileStat, targetUri.toString()));
                 })
             })
         );
@@ -184,9 +186,9 @@ export class FileCommandContribution implements CommandContribution {
                 selectionService: this.selectionService
             }, uri => {
                 let dialog = new ConfirmDialog('Delete File', `Do you really want to delete '${uri.lastSegment()}`)
-                return dialog.acceptancePromise.then(() => {
-                    return this.fileSystem.delete(uri.toString())
-                })
+                return dialog.acceptancePromise
+                    .then(() => this.fileSystem.getFileStat(uri.toString()))
+                    .then(fileStat => this.fileSystem.delete(fileStat));
             })
         )
     }

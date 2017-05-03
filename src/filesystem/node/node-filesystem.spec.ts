@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { FileChangesEvent, FileChange, FileChangeType } from '../../../src/filesystem/common';
+import { FileChange, FileChangesEvent, FileChangeType, FileStat } from '../../../src/filesystem/common';
 import { FileSystemClient } from '../common';
 import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
@@ -157,7 +157,27 @@ describe("NodeFileSystem", () => {
             });
         });
 
-        it("Should be rejected with an error when trying to set the content of a file which is out-of-sync.", () => {
+        it("Should be rejected with an error when trying to set the content of a file which is out-of-sync. (Invalid timestamp)", () => {
+            const uri = root.append("foo.txt");
+            fs.writeFileSync(uri.path(), "foo", { encoding: "utf8" });
+            expect(fs.existsSync(uri.path())).to.be.true;
+            expect(fs.statSync(uri.path()).isFile()).to.be.true;
+            expect(fs.readFileSync(uri.path(), { encoding: "utf8" })).to.be.equal("foo");
+
+            const fileSystem = createFileSystem();
+            return fileSystem.getFileStat(uri.toString()).then(stat => {
+                sleep(1000).then(() => {
+                    // Make sure current file stat is out-of-sync.
+                    // Here we defer the modification in the way that the timestamp will differ.
+                    fs.writeFileSync(uri.path(), "foo", { encoding: "utf8" });
+                    expect(fs.readFileSync(uri.path(), { encoding: "utf8" })).to.be.equal("foo");
+
+                    fileSystem.setContent(stat, "baz").should.be.eventually.be.rejectedWith(Error);
+                });
+            });
+        });
+
+        it("Should be rejected with an error when trying to set the content of a file which is out-of-sync. (Invalid size)", () => {
             const uri = root.append("foo.txt");
             fs.writeFileSync(uri.path(), "foo", { encoding: "utf8" });
             expect(fs.existsSync(uri.path())).to.be.true;
@@ -212,7 +232,7 @@ describe("NodeFileSystem", () => {
             const targetUri = root.append("bar.txt");
             expect(fs.existsSync(sourceUri.path())).to.be.false;
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString()).should.eventually.be.rejectedWith(Error);
+            return createFileSystem().move(getFileStat(sourceUri), targetUri.toString()).should.eventually.be.rejectedWith(Error);
         });
 
         it("Should be rejected with an error if target exists and overwrite is not set to \'true\'.", () => {
@@ -223,7 +243,49 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(sourceUri.path()).isFile()).to.be.true;
             expect(fs.statSync(targetUri.path()).isFile()).to.be.true;
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString()).should.eventually.be.rejectedWith(Error);
+            return createFileSystem().move(getFileStat(sourceUri), targetUri.toString()).should.eventually.be.rejectedWith(Error);
+        });
+
+        it("Should be rejected with an error when trying to move a file which is out-of-sync. (Invalid timestamp)", () => {
+            const sourceUri = root.append("foo.txt");
+            const targetUri = root.append("bar.txt");
+            fs.writeFileSync(sourceUri.path(), "foo");
+            expect(fs.existsSync(sourceUri.path())).to.be.true;
+            expect(fs.statSync(sourceUri.path()).isFile()).to.be.true;
+            expect(fs.readFileSync(sourceUri.path(), { encoding: "utf8" })).to.be.equal("foo");
+            expect(fs.existsSync(targetUri.path())).to.be.false;
+
+            const fileSystem = createFileSystem();
+            return fileSystem.getFileStat(sourceUri.toString()).then(sourceStat => {
+                sleep(1000).then(() => {
+                    // Make sure current file stat is out-of-sync.
+                    // Here we defer the modification in the way that the timestamp will differ.
+                    fs.writeFileSync(sourceUri.path(), "foo", { encoding: "utf8" });
+                    expect(fs.readFileSync(sourceUri.path(), { encoding: "utf8" })).to.be.equal("foo");
+
+                    fileSystem.move(sourceStat, targetUri.toString()).should.be.eventually.be.rejectedWith(Error);
+                });
+            });
+        });
+
+        it("Should be rejected with an error when trying to move a file which is out-of-sync. (Invalid size)", () => {
+            const sourceUri = root.append("foo.txt");
+            const targetUri = root.append("bar.txt");
+            fs.writeFileSync(sourceUri.path(), "foo");
+            expect(fs.existsSync(sourceUri.path())).to.be.true;
+            expect(fs.statSync(sourceUri.path()).isFile()).to.be.true;
+            expect(fs.readFileSync(sourceUri.path(), { encoding: "utf8" })).to.be.equal("foo");
+            expect(fs.existsSync(targetUri.path())).to.be.false;
+
+            const fileSystem = createFileSystem();
+            return fileSystem.getFileStat(sourceUri.toString()).then(sourceStat => {
+                // Make sure current file stat is out-of-sync.
+                // Here the content is modified in the way that file sizes will differ.
+                fs.writeFileSync(sourceUri.path(), "longer", { encoding: "utf8" });
+                expect(fs.readFileSync(sourceUri.path(), { encoding: "utf8" })).to.be.equal("longer");
+
+                fileSystem.move(sourceStat, targetUri.toString()).should.be.eventually.be.rejectedWith(Error);
+            });
         });
 
         it("Moving a file to an empty directory. Should be rejected with an error because files cannot be moved to an existing directory locations.", () => {
@@ -236,7 +298,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(targetUri.path()).isDirectory()).to.be.true;
             expect(fs.readdirSync(targetUri.path())).to.be.empty;
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
+            return createFileSystem().move(getFileStat(sourceUri), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
         });
 
         it("Moving a file to a non-empty directory. Should be rejected with and error because files cannot be moved to an existing directory locations.", () => {
@@ -255,7 +317,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readFileSync(targetFileUri_02.path(), "utf8")).to.be.equal("bar_02");
             expect(fs.readdirSync(targetUri.path())).to.include("bar_01.txt").and.to.include("bar_02.txt");
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
+            return createFileSystem().move(getFileStat(sourceUri), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
         });
 
         it("Moving an empty directory to file. Should be rejected with an error because directories and cannot be moved to existing file locations.", () => {
@@ -268,7 +330,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readFileSync(targetUri.path(), "utf8")).to.be.equal("bar");
             expect(fs.readdirSync(sourceUri.path())).to.be.empty;
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
+            return createFileSystem().move(getFileStat(sourceUri), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
         });
 
         it("Moving a non-empty directory to file. Should be rejected with an error because directories cannot be moved to existing file locations.", () => {
@@ -285,7 +347,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readFileSync(targetUri.path(), "utf8")).to.be.equal("bar");
             expect(fs.readdirSync(sourceUri.path())).to.include("foo_01.txt").and.to.include("foo_02.txt");
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
+            return createFileSystem().move(getFileStat(sourceUri), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
         });
 
         it("Moving file to file. Should overwrite the target file content and delete the source file.", () => {
@@ -295,7 +357,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(sourceUri.path()).isFile()).to.be.true;
             expect(fs.existsSync(targetUri.path())).to.be.false;
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).then(stat => {
+            return createFileSystem().move(getFileStat(sourceUri), targetUri.toString(), { overwrite: true }).then(stat => {
                 expect(stat).is.an("object").and.has.property("uri").that.equals(targetUri.toString());
                 expect(fs.existsSync(sourceUri.path())).to.be.false;
                 expect(fs.statSync(targetUri.path()).isFile()).to.be.true;
@@ -313,7 +375,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readdirSync(sourceUri.path())).to.be.empty;
             expect(fs.readdirSync(targetUri.path())).to.be.empty;
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).then(stat => {
+            return createFileSystem().move(getFileStat(sourceUri), targetUri.toString(), { overwrite: true }).then(stat => {
                 expect(stat).is.an("object").and.has.property("uri").that.equals(targetUri.toString());
                 expect(fs.existsSync(sourceUri.path())).to.be.false;
                 expect(fs.statSync(targetUri.path()).isDirectory()).to.be.true;
@@ -337,7 +399,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readFileSync(targetFileUri_02.path(), "utf8")).to.be.equal("bar_02");
             expect(fs.readdirSync(targetUri.path())).to.include("bar_01.txt").and.to.include("bar_02.txt");
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
+            return createFileSystem().move(getFileStat(sourceUri), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
         });
 
         it("Moving a non-empty directory to an empty directory. Source folder and its content should be moved to the target location.", () => {
@@ -356,7 +418,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readFileSync(sourceFileUri_01.path(), "utf8")).to.be.equal("foo_01");
             expect(fs.readFileSync(sourceFileUri_02.path(), "utf8")).to.be.equal("foo_02");
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).then(stat => {
+            return createFileSystem().move(getFileStat(sourceUri), targetUri.toString(), { overwrite: true }).then(stat => {
                 expect(stat).is.an("object").and.has.property("uri").that.equals(targetUri.toString());
                 expect(fs.existsSync(sourceUri.path())).to.be.false;
                 expect(fs.statSync(targetUri.path()).isDirectory()).to.be.true;
@@ -388,7 +450,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readdirSync(sourceUri.path())).to.include("foo_01.txt").and.to.include("foo_02.txt");
             expect(fs.readdirSync(targetUri.path())).to.include("bar_01.txt").and.to.include("bar_02.txt");
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
+            return createFileSystem().move(getFileStat(sourceUri), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
         });
 
     });
@@ -402,7 +464,7 @@ describe("NodeFileSystem", () => {
             expect(fs.existsSync(sourceUri.path())).to.be.false;
             expect(fs.statSync(targetUri.path()).isDirectory()).to.be.true;
 
-            return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).should.eventually.be.rejectedWith(Error);
+            return createFileSystem().copy(getFileStat(sourceUri), targetUri.toString()).should.eventually.be.rejectedWith(Error);
         });
 
         it("Copy a file to existing location without overwrite enabled. Should be rejected with an error.", () => {
@@ -413,7 +475,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(sourceUri.path()).isDirectory()).to.be.true;
             expect(fs.statSync(targetUri.path()).isDirectory()).to.be.true;
 
-            return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).should.eventually.be.rejectedWith(Error);
+            return createFileSystem().copy(getFileStat(sourceUri), targetUri.toString()).should.eventually.be.rejectedWith(Error);
         });
 
         it("Copy an empty directory to a non-existing location. Should return with the file stat representing the new file at the target location.", () => {
@@ -423,7 +485,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(sourceUri.path()).isDirectory()).to.be.true;
             expect(fs.existsSync(targetUri.path())).to.be.false;
 
-            return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).then(stat => {
+            return createFileSystem().copy(getFileStat(sourceUri), targetUri.toString()).then(stat => {
                 expect(stat).to.be.an("object");
                 expect(stat).to.have.property("uri").that.is.equal(targetUri.toString());
                 expect(fs.existsSync(sourceUri.path())).to.be.true;
@@ -438,7 +500,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(sourceUri.path()).isDirectory()).to.be.true;
             expect(fs.existsSync(targetUri.path())).to.be.false;
 
-            return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).then(stat => {
+            return createFileSystem().copy(getFileStat(sourceUri), targetUri.toString()).then(stat => {
                 expect(stat).to.be.an("object");
                 expect(stat).to.have.property("uri").that.is.equal(targetUri.toString());
                 expect(fs.existsSync(sourceUri.path())).to.be.true;
@@ -457,7 +519,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readFileSync(subSourceUri.path(), "utf8")).to.be.equal("foo");
             expect(fs.existsSync(targetUri.path())).to.be.false;
 
-            return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).then(stat => {
+            return createFileSystem().copy(getFileStat(sourceUri), targetUri.toString()).then(stat => {
                 expect(stat).to.be.an("object");
                 expect(stat).to.have.property("uri").that.is.equal(targetUri.toString());
                 expect(fs.existsSync(sourceUri.path())).to.be.true;
@@ -480,7 +542,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readFileSync(subSourceUri.path(), "utf8")).to.be.equal("foo");
             expect(fs.existsSync(targetUri.path())).to.be.false;
 
-            return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).then(stat => {
+            return createFileSystem().copy(getFileStat(sourceUri), targetUri.toString()).then(stat => {
                 expect(stat).to.be.an("object");
                 expect(stat).to.have.property("uri").that.is.equal(targetUri.toString());
                 expect(fs.existsSync(sourceUri.path())).to.be.true;
@@ -489,6 +551,48 @@ describe("NodeFileSystem", () => {
                 expect(fs.readdirSync(targetUri.path())).to.contain("foo_01.txt");
                 expect(fs.readFileSync(subSourceUri.path(), "utf8")).to.be.equal("foo");
                 expect(fs.readFileSync(targetUri.append("foo_01.txt").path(), "utf8")).to.be.equal("foo");
+            });
+        });
+
+        it("Should be rejected with an error when trying to copy a file which is out-of-sync. (Invalid timestamp)", () => {
+            const sourceUri = root.append("foo.txt");
+            const targetUri = root.append("bar.txt");
+            fs.writeFileSync(sourceUri.path(), "foo");
+            expect(fs.existsSync(sourceUri.path())).to.be.true;
+            expect(fs.statSync(sourceUri.path()).isFile()).to.be.true;
+            expect(fs.readFileSync(sourceUri.path(), { encoding: "utf8" })).to.be.equal("foo");
+            expect(fs.existsSync(targetUri.path())).to.be.false;
+
+            const fileSystem = createFileSystem();
+            return fileSystem.getFileStat(sourceUri.toString()).then(sourceStat => {
+                sleep(1000).then(() => {
+                    // Make sure current file stat is out-of-sync.
+                    // Here we defer the modification in the way that the timestamp will differ.
+                    fs.writeFileSync(sourceUri.path(), "foo", { encoding: "utf8" });
+                    expect(fs.readFileSync(sourceUri.path(), { encoding: "utf8" })).to.be.equal("foo");
+
+                    fileSystem.copy(sourceStat, targetUri.toString()).should.be.eventually.be.rejectedWith(Error);
+                });
+            });
+        });
+
+        it("Should be rejected with an error when trying to copy a file which is out-of-sync. (Invalid size)", () => {
+            const sourceUri = root.append("foo.txt");
+            const targetUri = root.append("bar.txt");
+            fs.writeFileSync(sourceUri.path(), "foo");
+            expect(fs.existsSync(sourceUri.path())).to.be.true;
+            expect(fs.statSync(sourceUri.path()).isFile()).to.be.true;
+            expect(fs.readFileSync(sourceUri.path(), { encoding: "utf8" })).to.be.equal("foo");
+            expect(fs.existsSync(targetUri.path())).to.be.false;
+
+            const fileSystem = createFileSystem();
+            return fileSystem.getFileStat(sourceUri.toString()).then(sourceStat => {
+                // Make sure current file stat is out-of-sync.
+                // Here the content is modified in the way that file sizes will differ.
+                fs.writeFileSync(sourceUri.path(), "longer", { encoding: "utf8" });
+                expect(fs.readFileSync(sourceUri.path(), { encoding: "utf8" })).to.be.equal("longer");
+
+                fileSystem.copy(sourceStat, targetUri.toString()).should.be.eventually.be.rejectedWith(Error);
             });
         });
 
@@ -687,7 +791,45 @@ describe("NodeFileSystem", () => {
             const uri = root.append("foo.txt");
             expect(fs.existsSync(uri.path())).to.be.false;
 
-            return createFileSystem().delete(uri.toString()).should.be.eventually.rejectedWith(Error);
+            return createFileSystem().delete(getFileStat(uri)).should.be.eventually.rejectedWith(Error);
+        });
+
+        it("Should be rejected with an error when trying to delete a file which is out-of-sync. (Invalid timestamp)", () => {
+            const uri = root.append("foo.txt");
+            fs.writeFileSync(uri.path(), "foo");
+            expect(fs.existsSync(uri.path())).to.be.true;
+            expect(fs.statSync(uri.path()).isFile()).to.be.true;
+            expect(fs.readFileSync(uri.path(), { encoding: "utf8" })).to.be.equal("foo");
+
+            const fileSystem = createFileSystem();
+            return fileSystem.getFileStat(uri.toString()).then(stat => {
+                sleep(1000).then(() => {
+                    // Make sure current file stat is out-of-sync.
+                    // Here we defer the modification in the way that the timestamp will differ.
+                    fs.writeFileSync(uri.path(), "foo", { encoding: "utf8" });
+                    expect(fs.readFileSync(uri.path(), { encoding: "utf8" })).to.be.equal("foo");
+
+                    fileSystem.delete(stat).should.be.eventually.be.rejectedWith(Error);
+                });
+            });
+        });
+
+        it("Should be rejected with an error when trying to delete a file which is out-of-sync. (Invalid size)", () => {
+            const uri = root.append("foo.txt");
+            fs.writeFileSync(uri.path(), "foo");
+            expect(fs.existsSync(uri.path())).to.be.true;
+            expect(fs.statSync(uri.path()).isFile()).to.be.true;
+            expect(fs.readFileSync(uri.path(), { encoding: "utf8" })).to.be.equal("foo");
+
+            const fileSystem = createFileSystem();
+            return fileSystem.getFileStat(uri.toString()).then(stat => {
+                // Make sure current file stat is out-of-sync.
+                // Here the content is modified in the way that file sizes will differ.
+                fs.writeFileSync(uri.path(), "longer", { encoding: "utf8" });
+                expect(fs.readFileSync(uri.path(), { encoding: "utf8" })).to.be.equal("longer");
+
+                fileSystem.delete(stat).should.be.eventually.be.rejectedWith(Error);
+            });
         });
 
         it("Should delete the file.", () => {
@@ -695,7 +837,7 @@ describe("NodeFileSystem", () => {
             fs.writeFileSync(uri.path(), "foo");
             expect(fs.readFileSync(uri.path(), "utf8")).to.be.equal("foo");
 
-            return createFileSystem().delete(uri.toString()).then(() => {
+            return createFileSystem().delete(getFileStat(uri)).then(() => {
                 expect(fs.existsSync(uri.path())).to.be.false;
             });
         });
@@ -705,7 +847,7 @@ describe("NodeFileSystem", () => {
             fs.mkdirSync(uri.path());
             expect(fs.statSync(uri.path()).isDirectory()).to.be.true;
 
-            return createFileSystem().delete(uri.toString()).then(() => {
+            return createFileSystem().delete(getFileStat(uri)).then(() => {
                 expect(fs.existsSync(uri.path())).to.be.false;
             });
         });
@@ -718,7 +860,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(uri.path()).isDirectory()).to.be.true;
             expect(fs.readFileSync(subUri.path(), "utf8")).to.be.equal("bar");
 
-            return createFileSystem().delete(uri.toString()).then(() => {
+            return createFileSystem().delete(getFileStat(uri)).then(() => {
                 expect(fs.existsSync(uri.path())).to.be.false;
                 expect(fs.existsSync(subUri.path())).to.be.false;
             });
@@ -765,7 +907,7 @@ describe("NodeFileSystem", () => {
 
         it("Should receive file changes events from in the workspace by default.", function (done) {
             this.timeout(4000);
-            let expectedEvents = [
+            const expectedEvents = [
                 new FileChange(root.toString(), FileChangeType.ADDED),
                 new FileChange(root.append("foo").toString(), FileChangeType.ADDED),
                 new FileChange(root.append("foo", "bar").toString(), FileChangeType.ADDED),
@@ -795,7 +937,7 @@ describe("NodeFileSystem", () => {
             fs.writeFileSync(root.append("foo", "bar", "baz.txt").path(), "baz");
             expect(fs.readFileSync(root.append("foo", "bar", "baz.txt").path(), "utf8")).to.be.equal("baz");
             sleep(3000).then(() => {
-                expect(expectedEvents).to.be.empty;
+                expect(expectedEvents, `Expected ${JSON.stringify(expectedEvents)} to be empty.`).to.be.empty;
             });
         });
 
@@ -829,4 +971,24 @@ function deleteFolderRecursive(path: string) {
 
 function sleep(time: number) {
     return new Promise((resolve) => setTimeout(resolve, time));
+}
+
+function getFileStat(uri: string | URI, isDirectory: boolean = false, lastModification: number = 0): FileStat {
+    const _uri = typeof uri === "string" ? new URI(uri) : uri;
+    const path = _uri.path();
+    if (!fs.existsSync(path)) {
+        return {
+            uri: _uri.toString(),
+            isDirectory,
+            lastModification
+        }
+    } else {
+        const stat = fs.statSync(path);
+        return {
+            uri: _uri.toString(),
+            isDirectory: stat.isDirectory(),
+            lastModification: stat.mtime.getTime(),
+            size: stat.size
+        }
+    }
 }
