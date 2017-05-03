@@ -15,6 +15,7 @@ import * as lang from "../../languages/common";
 import { Emitter, Event, TextDocument, TextDocumentWillSaveEvent, TextEdit } from "../../languages/common";
 import { MonacoModelResolver } from "./monaco-model-resolver";
 import { WillSaveModelEvent } from "./monaco-editor-model";
+import URI from "../../application/common/uri";
 
 decorate(injectable(), BaseMonacoWorkspace);
 decorate(inject(MonacoToProtocolConverter), BaseMonacoWorkspace, 0);
@@ -64,6 +65,10 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
                 reference.dispose();
             });
         });
+    }
+
+    get rootPath(): string | null {
+        return this._rootUri && new URI(this._rootUri).path()
     }
 
     getTextDocument(uri: string): TextDocument | undefined {
