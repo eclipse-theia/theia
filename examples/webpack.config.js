@@ -3,7 +3,7 @@ const webpack = require("webpack");
 module.exports = require("../config/webpack/webpack.config")(__dirname, {
     devServer: {
         proxy: {
-            '/fileSystem/*': {
+            '/filesystem/*': {
                 target: 'ws://localhost:3000',
                 ws: true
             },
