@@ -8,7 +8,7 @@
 import { ContainerModule } from "inversify";
 import { ConnectionHandler } from "../../messaging/common";
 import { FileSystemNode } from "./node-filesystem";
-import { FileSystem, FileSystemClient } from "../common/filesystem";
+import { FileSystemClient } from "../common/filesystem";
 import { JsonRpcProxyFactory } from "../../messaging/common/proxy-factory";
 
 export const ROOT_DIR_OPTION = '--root-dir=';
@@ -18,10 +18,9 @@ export const fileSystemServerModule = new ContainerModule(bind => {
     if (rootDir) {
         const fileSystem = new FileSystemNode(`file://${rootDir}`)
         const proxyFactory = new JsonRpcProxyFactory<FileSystemClient>("/filesystem", fileSystem);
-        bind<ConnectionHandler>(ConnectionHandler).toConstantValue(proxyFactory)
-        bind<FileSystem>(FileSystem).toDynamicValue(ctx => {
+        bind<ConnectionHandler>(ConnectionHandler).toDynamicValue(ctx => {
             fileSystem.setClient(proxyFactory.createProxy())
-            return fileSystem
+            return proxyFactory
         })
     } else {
         throw new Error(`The directory is unknown, please use '${ROOT_DIR_OPTION}' option`);
