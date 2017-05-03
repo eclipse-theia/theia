@@ -76,19 +76,21 @@ describe('Proxy-Factory', () => {
     });
     it('Rejected Promise should result in rejected Promise.', done => {
         let it = getSetup();
+        let handle = setTimeout(() => done("timeout"), 500)
         it.serverProxy.fails('a', 'b').catch( err => {
             expect(<Error>err.message).to.contain("fails failed")
+            clearTimeout(handle)
             done()
         })
-        setTimeout(() => done("timeout"), 500)
     })
     it('Remote Exceptions should result in rejected Promise.', done => {
         let it = getSetup();
+        let handle = setTimeout(() => done("timeout"), 500)
         it.serverProxy.fails2('a', 'b').catch( err => {
             expect(<Error>err.message).to.contain("fails2 failed")
+            clearTimeout(handle)
             done()
         })
-        setTimeout(() => done("timeout"), 500)
     })
 });
 
