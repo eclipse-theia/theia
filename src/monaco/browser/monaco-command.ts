@@ -9,14 +9,13 @@ import { injectable, inject } from "inversify";
 import {
     CommandHandler, CommandContribution, CommandRegistry, CommonCommands, SelectionService
 } from '../../application/common';
-import { EditorManager, EditorWidget } from "../../editor/browser";
+import { EditorManager, EditorWidget, TextEditorSelection } from '../../editor/browser';
 import { MonacoEditor } from "./monaco-editor";
 import CommandsRegistry = monaco.commands.CommandsRegistry;
 import MenuRegistry = monaco.actions.MenuRegistry;
 import MenuId = monaco.actions.MenuId;
 import ICommand = monaco.commands.ICommand;
 import IMenuItem = monaco.actions.IMenuItem;
-import ICursorSelectionChangedEvent = monaco.editor.ICursorSelectionChangedEvent;
 
 @injectable()
 export class MonacoEditorCommandHandlers implements CommandContribution {
@@ -88,7 +87,7 @@ export class EditorCommandHandler implements CommandHandler {
     }
 
     isVisible(): boolean {
-        return isEditorSelection(this.selectionService.selection);
+        return TextEditorSelection.is(this.selectionService.selection);
     }
 
     isEnabled(): boolean {
@@ -126,8 +125,4 @@ export class TextModificationEditorCommandHandler extends EditorCommandHandler {
         return Promise.resolve();
     }
 
-}
-
-export function isEditorSelection(e: any): e is ICursorSelectionChangedEvent {
-    return e && e["selection"] instanceof monaco.Selection && typeof e["source"] === 'string'
 }

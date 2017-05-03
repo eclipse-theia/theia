@@ -16,7 +16,7 @@ export {
 export const TextEditorProvider = Symbol('TextEditorProvider');
 export type TextEditorProvider = (uri: URI) => Promise<TextEditor>;
 
-export interface TextEditor extends Disposable {
+export interface TextEditor extends Disposable, TextEditorSelection {
     readonly node: HTMLElement;
 
     readonly uri: URI;
@@ -50,4 +50,16 @@ export interface TextEditor extends Disposable {
 export interface Dimension {
     width: number;
     height: number;
+}
+
+export interface TextEditorSelection {
+    uri: URI
+    cursor?: Position
+    selection?: Range
+}
+
+export namespace TextEditorSelection {
+    export function is(e: any): e is TextEditorSelection {
+        return e && e["uri"] instanceof URI
+    }
 }

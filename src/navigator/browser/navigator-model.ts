@@ -101,8 +101,8 @@ export class FileNavigatorTree extends Tree {
     }
 
     protected createRootNode(fileStat: FileStat): DirNode {
-        const uri = fileStat.uri
-        const id = uri;
+        const uri = new URI(fileStat.uri)
+        const id = fileStat.uri;
         return {
             id, uri, fileStat,
             name: '/',
@@ -143,15 +143,15 @@ export class FileNavigatorTree extends Tree {
     }
 
     protected toNode(fileStat: FileStat, parent: ICompositeTreeNode): FileNode | DirNode {
-        const uri = fileStat.uri
-        const id = uri;
+        const uri = new URI(fileStat.uri)
+        const id = fileStat.uri;
         const node = this.getNode(id);
         if (fileStat.isDirectory) {
             if (DirNode.is(node)) {
                 node.fileStat = fileStat;
                 return node;
             }
-            const name = new URI(fileStat.uri).lastSegment();
+            const name = uri.lastSegment();
             return <DirNode>{
                 id, uri, fileStat, name, parent,
                 expanded: false,
