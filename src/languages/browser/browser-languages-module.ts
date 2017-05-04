@@ -6,9 +6,6 @@
  */
 
 import { ContainerModule, injectable, inject, optional } from "inversify";
-import { MessageConnection } from 'vscode-jsonrpc';
-import { ErrorAction, CloseAction } from "vscode-base-languageclient/lib/base";
-import { DisposableCollection } from '../../application/common';
 import { TheiaPlugin, TheiaApplication } from "../../application/browser";
 import { WebSocketConnection } from "../../messaging/browser";
 import {
@@ -23,6 +20,7 @@ import {
     Window,
     Workspace,
     ConsoleWindow,
+    LanguageIdentifier,
     LanguageDescription,
     FileSystemWatcher,
     LanguagesService,
@@ -55,42 +53,36 @@ export class LanguagesPlugin implements TheiaPlugin {
         Promise.all([this.workspace.ready, this.languagesService.getLanguages()]).then(result => {
             const languages = result[1];
             for (const language of languages) {
-                this.connection.listen({
-                    path: language.path,
-                    onConnection: connection => {
-                        const watchers = this.createFileSystemWatchers(language.description);
-                        const languageClient = this.createLanguageClient(language.description, watchers, connection);
-
-                        const disposeOnClose = new DisposableCollection();
-                        disposeOnClose.pushAll(watchers);
-                        disposeOnClose.push(languageClient.start());
-                        connection.onClose(() => disposeOnClose.dispose());
-                    }
-                });
+                const languageClient = this.createLanguageClient(language);
+                languageClient.start();
             }
         })
     }
 
-    protected createLanguageClient(language: LanguageDescription, fileEvents: FileSystemWatcher[], connection: MessageConnection): ILanguageClient {
+    protected createLanguageClient(identifier: LanguageIdentifier): ILanguageClient {
         const { workspace, languages, commands, window } = this;
+        const language = identifier.description;
         return new BaseLanguageClient({
             name: `${language.name || language.id} Language Client`,
             clientOptions: {
                 documentSelector: language.documentSelector,
                 synchronize: {
-                    fileEvents
-                },
-                errorHandler: {
-                    error: () => ErrorAction.Continue,
-                    closed: () => CloseAction.DoNotRestart
+                    fileEvents: this.createFileSystemWatchers(language)
                 }
             },
             services: { workspace, languages, commands, window },
             connectionProvider: {
                 // FIXME get rid of outputChannel
-                get: (errorHandler: ConnectionErrorHandler, closeHandler: ConnectionCloseHandler, outputChannel: OutputChannel | undefined) => {
-                    return Promise.resolve(createConnection(connection, errorHandler, closeHandler));
-                }
+                get: (errorHandler: ConnectionErrorHandler, closeHandler: ConnectionCloseHandler, outputChannel: OutputChannel | undefined) =>
+                    new Promise(resolve => {
+                        this.connection.listen({
+                            path: identifier.path,
+                            onConnection: messageConnection => {
+                                const connection = createConnection(messageConnection, errorHandler, closeHandler);
+                                resolve(connection);
+                            }
+                        }, { reconnecting: false })
+                    })
             }
         });
     }
