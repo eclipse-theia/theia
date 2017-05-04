@@ -24,7 +24,7 @@ describe("uri", () => {
     describe("01 #getParent", () => {
 
         it("Should return the parent.", () => {
-            expect(new URI("file:///foo/bar.txt").parent().toString()).equals("file:///foo");
+            expect(new URI("file:///foo/bar.txt").parent.toString()).equals("file:///foo");
         });
 
     });
@@ -32,8 +32,8 @@ describe("uri", () => {
     describe("02 #lastSegment", () => {
 
         it("Should return the last segment.", () => {
-            expect(new URI("file:///foo").lastSegment()).equals("foo");
-            expect(new URI("file:///foo/bar.txt").lastSegment()).equals("bar.txt");
+            expect(new URI("file:///foo").lastSegment).equals("foo");
+            expect(new URI("file:///foo/bar.txt").lastSegment).equals("bar.txt");
         });
 
     });
@@ -42,15 +42,15 @@ describe("uri", () => {
 
         it("Should return with this when the the segments array is empty.", () => {
             const uri = new URI("file:///foo");
-            expect(uri.append()).to.be.equal(uri);
+            expect(uri.append("").toString()).to.be.equal(uri.toString());
         });
 
         it("Should append a single segment.", () => {
-            expect(new URI("file:///foo").append("bar")).to.be.deep.equal(new URI("file:///foo/bar"));
+            expect(new URI("file:///foo").append("bar").toString()).to.be.equal("file:///foo/bar");
         });
 
         it("Should append multiple segments.", () => {
-            expect(new URI("file:///foo").append("bar", "baz")).to.be.deep.equal(new URI("file:///foo/bar/baz"));
+            expect(new URI("file:///foo").append("bar/baz").toString()).to.be.equal("file:///foo/bar/baz");
         });
 
     });
@@ -58,9 +58,12 @@ describe("uri", () => {
     describe("04 #path", () => {
 
         it("Should return with the FS path from the URI.", () => {
-            expect(new URI("file:///foo/bar/baz.txt").path()).equals("/foo/bar/baz.txt");
+            expect(new URI("file:///foo/bar/baz.txt").path).equals("/foo/bar/baz.txt");
         });
 
+        it("Should not return the encoded path", () => {
+            expect(new URI("file:///foo 3/bar 4/baz 4.txt").path).equals("/foo 3/bar 4/baz 4.txt");
+        })
     });
 
 });

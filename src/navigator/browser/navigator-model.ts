@@ -72,7 +72,7 @@ export class FileNavigatorModel extends TreeModel {
         const nodes: DirNode[] = [];
         for (const change of event.changes) {
             const uri = change.uri;
-            const id = change.type > FileChangeType.UPDATED ? new URI(uri).parent().toString() : uri;
+            const id = change.type > FileChangeType.UPDATED ? new URI(uri).parent.toString() : uri;
             const node = this.getNode(id);
             if (DirNode.is(node) && node.expanded) {
                 nodes.push(node);
@@ -148,7 +148,7 @@ export class FileNavigatorTree extends Tree {
                 node.fileStat = fileStat;
                 return node;
             }
-            const name = uri.lastSegment();
+            const name = uri.lastSegment;
             return <DirNode>{
                 id, uri, fileStat, name, parent,
                 expanded: false,
@@ -160,7 +160,7 @@ export class FileNavigatorTree extends Tree {
             node.fileStat = fileStat;
             return node;
         }
-        const name = new URI(fileStat.uri).lastSegment();
+        const name = uri.lastSegment;
         return <FileNode>{
             id, uri, fileStat, name, parent,
             selected: false

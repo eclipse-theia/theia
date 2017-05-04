@@ -88,13 +88,13 @@ export class FileCommandContribution implements CommandContribution {
                 return this.fileSystem.getFileStat(uri.toString())
                     .then( stat => {
                         let dialog = new SingleTextInputDialog('Rename File', {
-                            initialValue: uri.lastSegment(),
+                            initialValue: uri.lastSegment,
                             validate(name) {
                                 return validateFileName(name, stat)
                             }
                         })
                         dialog.acceptancePromise.then( name =>
-                            this.fileSystem.move(uri.toString(), uri.parent().append(name).toString()))
+                            this.fileSystem.move(uri.toString(), uri.parent.append(name).toString()))
                     })
             })
         );
@@ -126,7 +126,7 @@ export class FileCommandContribution implements CommandContribution {
                 .then(stat => {
                     let data: string = this.clipboardService.getData('text')
                     copyPath = new URI(data)
-                    let targetUri = uri.append(copyPath.lastSegment())
+                    let targetUri = uri.append(copyPath.lastSegment)
                     return this.fileSystem.copy(copyPath.toString(), targetUri.toString())
                 })
             })
@@ -142,8 +142,8 @@ export class FileCommandContribution implements CommandContribution {
                 return getDirectory(uri, this.fileSystem)
                     .then( stat => {
                         let freeUri = getFreeChild('Untitled', '.txt', stat)
-                        let dialog = new SingleTextInputDialog('New File', {
-                            initialValue: freeUri.lastSegment(),
+                        let dialog = new SingleTextInputDialog(`New File Below '${freeUri.parent.lastSegment}'`, {
+                            initialValue: freeUri.lastSegment,
                             validate(name) {
                                 return validateFileName(name, stat)
                             }
@@ -164,8 +164,8 @@ export class FileCommandContribution implements CommandContribution {
                 return getDirectory(uri, this.fileSystem)
                     .then( stat => {
                         let freeUri = getFreeChild('Untitled', '', stat)
-                        let dialog = new SingleTextInputDialog('New Folder', {
-                            initialValue: freeUri.lastSegment(),
+                        let dialog = new SingleTextInputDialog(`New Folder Below '${freeUri.parent.lastSegment}'`, {
+                            initialValue: freeUri.lastSegment,
                             validate(name) {
                                 return validateFileName(name, stat)
                             }
@@ -183,7 +183,7 @@ export class FileCommandContribution implements CommandContribution {
                 actionId: 'delete',
                 selectionService: this.selectionService
             }, uri => {
-                let dialog = new ConfirmDialog('Delete File', `Do you really want to delete '${uri.lastSegment()}`)
+                let dialog = new ConfirmDialog('Delete File', `Do you really want to delete '${uri.lastSegment}'?`)
                 return dialog.acceptancePromise.then(() => {
                     return this.fileSystem.delete(uri.toString())
                 })
@@ -203,7 +203,7 @@ function validateFileName(name: string, parent: FileStat): string {
     } else {
         if (parent.children) {
             for (let child of parent.children) {
-                if (new URI(child.uri).lastSegment() === name) {
+                if (new URI(child.uri).lastSegment === name) {
                     return 'A file with this name already exists.'
                 }
             }
@@ -217,7 +217,7 @@ function getDirectory(candidate: URI, fileSystem: FileSystem): Promise<FileStat>
         .then( stat => {
             if (!stat || !stat.isDirectory) {
                 // not folder? get parent
-                return fileSystem.getFileStat(new URI(stat.uri).parent().toString())
+                return fileSystem.getFileStat(new URI(stat.uri).parent.toString())
             } else {
                 return Promise.resolve(stat)
             }
@@ -230,7 +230,7 @@ function getFreeChild(prefix: string, suffix: string, fileStat: FileStat): URI {
     for (let infix of infixes) {
         let candidate = prefix + infix + suffix
         let children: FileStat[] = fileStat.children!
-        if (!children.some( stat => new URI(stat.uri).lastSegment() === candidate)) {
+        if (!children.some( stat => new URI(stat.uri).lastSegment === candidate)) {
             return parentUri.append(candidate)
         }
     }

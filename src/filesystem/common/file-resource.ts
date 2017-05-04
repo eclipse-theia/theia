@@ -42,7 +42,7 @@ export class FileResourceProvider implements ResourceProvider {
     ) { }
 
     get(uri: URI): Promise<Resource> {
-        if (uri.codeUri.scheme === 'file') {
+        if (uri.scheme === 'file') {
             return Promise.resolve(new FileResource(uri, this.fileSystem))
         }
         return Promise.reject(undefined);
