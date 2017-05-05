@@ -13,9 +13,9 @@ import { fileSystemClientModule } from "theia/lib/filesystem/browser";
 import { editorModule } from "theia/lib/editor/browser";
 import { browserLanguagesModule } from 'theia/lib/languages/browser';
 import { monacoModule } from 'theia/lib/monaco/browser';
-import "theia/lib/application/browser/style/index.css";
-import "theia/lib/monaco/browser/style/index.css";
-import "theia/lib/navigator/browser/style/index.css";
+import "theia/src/application/browser/style/index.css";
+import "theia/src/monaco/browser/style/index.css";
+import "theia/src/navigator/browser/style/index.css";
 
 export function start(clientContainer?: Container) {
 
