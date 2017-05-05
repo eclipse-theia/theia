@@ -29,7 +29,7 @@ export function start(clientContainer?: Container) {
     container.load(browserLanguagesModule);
     container.load(monacoModule);
 
-    // Merge the common conatiner with the client specific one. If any.
+    // Merge the common container with the client specific one. If any.
     const mainContainer = clientContainer ? Container.merge(container, clientContainer) : container;
 
     // Obtain application and start.

@@ -29,7 +29,7 @@ export declare type Keystroke = { first: Key, modifiers?: Modifier[] };
 export class KeyCode {
 
     // TODO: support chrods properly. Currently, second sequence is ignored.
-    private constructor(public readonly keystoke: string) {
+    private constructor(public readonly keystroke: string) {
         // const chord = ((secondSequence & 0x0000ffff) << 16) >>> 0;
         // (firstSequence | chord) >>> 0;
     }
@@ -39,16 +39,21 @@ export class KeyCode {
             const e: any = event;
 
             const sequence: string[] = [];
+            let code: string | undefined = undefined;
             if (e.code) {
-                sequence.push(e.code);
+                code = e.code;
             } else if (e.keyIdentifier) {
-                sequence.push(e.keyIdentifier);
+                code = e.keyIdentifier;
             } else if (e.keyCode) {
-                sequence.push(Key.getKey(e.keyCode).code);
+                code = Key.getKey(e.keyCode).code;
             } else if (e.which) {
-                sequence.push(Key.getKey(e.which).code);
-            } else {
-                throw new Error(`Cannot get key code from the keyborard event: ${event}.`);
+                code = Key.getKey(e.which).code;
+            }
+            if (!code) {
+                throw new Error(`Cannot get key code from the keyboard event: ${event}.`);
+            }
+            if (!Key.isModifier(code)) {
+                sequence.push(code);
             }
 
             // CTRL + COMMAND (M1)
@@ -80,7 +85,7 @@ export class KeyCode {
     }
 
     equals(event: KeyboardEvent | KeyCode): boolean {
-        return (event instanceof KeyCode ? event : KeyCode.createKeyCode(event)).keystoke === this.keystoke;
+        return (event instanceof KeyCode ? event : KeyCode.createKeyCode(event)).keystroke === this.keystroke;
     }
 
 }
@@ -108,6 +113,7 @@ export declare type Key = { code: string, keyCode: number };
 
 const CODE_TO_KEY: { [code: string]: Key } = {};
 const KEY_CODE_TO_KEY: { [keyCode: number]: Key } = {};
+const MODIFIERS: Key[] = [];
 
 export namespace Key {
 
@@ -116,7 +122,14 @@ export namespace Key {
     }
 
     export function getKey(arg: string | number) {
-        return typeof arg === 'number' ? KEY_CODE_TO_KEY[arg] : CODE_TO_KEY[arg];
+        return typeof arg === "number" ? KEY_CODE_TO_KEY[arg] : CODE_TO_KEY[arg];
+    }
+
+    export function isModifier(arg: string | number) {
+        if (typeof arg === "number") {
+            return MODIFIERS.map(key => key.keyCode).indexOf(arg) > 0;
+        }
+        return MODIFIERS.map(key => key.code).indexOf(arg) > 0;
     }
 
     export const ENTER: Key = { code: "Enter", keyCode: 13 };
@@ -226,5 +239,6 @@ export namespace Key {
     Object.keys(Key).map(prop => Reflect.get(Key, prop)).filter(key => Key.isKey(key)).forEach(key => {
         CODE_TO_KEY[key.code] = key;
         KEY_CODE_TO_KEY[key.keyCode] = key;
-    })
+    });
+    MODIFIERS.push(...[Key.ALT_LEFT, Key.ALT_RIGHT, Key.CONTROL_LEFT, Key.CONTROL_RIGHT, Key.O_S_LEFT, Key.O_S_RIGHT, Key.SHIFT_LEFT, Key.SHIFT_RIGHT]);
 })();
