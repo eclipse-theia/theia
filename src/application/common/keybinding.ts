@@ -128,9 +128,9 @@ export class KeybindingRegistry {
      */
     registerKeyBinding(binding: Keybinding) {
         const { keyCode, commandId } = binding;
-        const bindings = this.keybindings[keyCode.keystoke] || [];
+        const bindings = this.keybindings[keyCode.keystroke] || [];
         bindings.push(binding);
-        this.keybindings[keyCode.keystoke] = bindings;
+        this.keybindings[keyCode.keystroke] = bindings;
         const commands = this.commands[commandId] || [];
         commands.push(binding);
         this.commands[commandId] = bindings;
@@ -147,7 +147,7 @@ export class KeybindingRegistry {
      * @param keyCode the key code of the binding we are searching.
      */
     getKeybindingForKeyCode(keyCode: KeyCode): Keybinding | undefined {
-        return (this.keybindings[keyCode.keystoke] || []).find(binding => this.isValid(binding));
+        return (this.keybindings[keyCode.keystroke] || []).find(binding => this.isValid(binding));
     }
 
     private isValid(binding: Keybinding): boolean {
@@ -173,7 +173,7 @@ export class KeyEventEmitter implements Disposable {
         private keybindingRegistry: KeybindingRegistry) {
 
         this.listener = (event: any) => this.handleEvent(event);
-        window.addEventListener('keydown', this.listener, true);
+        window.addEventListener('keydown', this.listener, false);
     }
 
     dispose() {
@@ -181,18 +181,19 @@ export class KeyEventEmitter implements Disposable {
     }
 
     private handleEvent(event: KeyboardEvent): void {
-        if (!event.defaultPrevented && this.handleKey(KeyCode.createKeyCode(event))) {
-            event.preventDefault();
+        if (!event.defaultPrevented) {
+            this.handleKey(KeyCode.createKeyCode(event), event);
         }
     }
 
-    private handleKey(keyCode: KeyCode): boolean {
+    private handleKey(keyCode: KeyCode, event: KeyboardEvent): boolean {
         const binding = this.keybindingRegistry.getKeybindingForKeyCode(keyCode);
         if (binding) {
             const context = binding.context || KeybindingContext.NOOP_CONTEXT;
             if (context && context.isEnabled(binding)) {
                 const handler = this.commandRegistry.getActiveHandler(binding.commandId);
                 if (handler) {
+                    event.preventDefault();
                     handler.execute();
                     return true;
                 }
