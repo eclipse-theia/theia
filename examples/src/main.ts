@@ -16,6 +16,11 @@ import { monacoModule } from 'theia/lib/monaco/browser';
 import "theia/src/application/browser/style/index.css";
 import "theia/src/monaco/browser/style/index.css";
 import "theia/src/navigator/browser/style/index.css";
+import "theia/src/terminal/browser/terminal.css";
+
+// terminal extension
+import terminalFrontendModule from 'theia/lib/terminal/browser/terminal-frontend-module'
+import "xterm/dist/xterm.css";
 
 export function start(clientContainer?: Container) {
 
@@ -28,6 +33,9 @@ export function start(clientContainer?: Container) {
     container.load(editorModule);
     container.load(browserLanguagesModule);
     container.load(monacoModule);
+
+    // terminal extension
+    container.load(terminalFrontendModule);
 
     // Merge the common container with the client specific one. If any.
     const mainContainer = clientContainer ? Container.merge(container, clientContainer) : container;

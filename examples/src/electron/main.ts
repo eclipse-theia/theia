@@ -7,8 +7,8 @@
 
 import * as main from '../main';
 import { Container } from 'inversify';
-import { electronClipboardModule } from 'theia/src/application/electron-browser/clipboard/clipboard-module';
-import { electronMenuModule } from 'theia/src/application/electron-browser/menu/menu-module';
+import { electronClipboardModule } from 'theia/lib/application/electron-browser/clipboard/clipboard-module';
+import { electronMenuModule } from 'theia/lib/application/electron-browser/menu/menu-module';
 
 // Create the electron specific container.
 const container = new Container();

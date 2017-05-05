@@ -18,7 +18,7 @@ export interface WebSocketOptions {
 }
 
 @injectable()
-export class WebSocketConnection {
+export class WebSocketConnectionProvider {
 
     /**
      * Create a proxy object to remote interface of T type
@@ -37,8 +37,9 @@ export class WebSocketConnection {
      * Install a connection handler for the given path.
      */
     listen(handler: ConnectionHandler, options?: WebSocketOptions): void {
-        const url = this.createUrl(handler);
+        const url = this.createWebSocketUrl(handler.path);
         const webSocket = this.createWebSocket(url, options);
+
         const logger = this.createLogger();
         webSocket.onerror = function (error: Event) {
             logger.error('' + error)
@@ -55,12 +56,18 @@ export class WebSocketConnection {
         return new ConsoleLogger();
     }
 
-    protected createUrl(handler: ConnectionHandler): string {
+    /**
+     * Creates a websocket URL to the current location
+     */
+    createWebSocketUrl(path: string): string {
         const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-        return `${protocol}://${location.host || "127.0.0.1:3000"}${handler.path}`;
+        return `${protocol}://${location.host || "127.0.0.1:3000"}${path}`;
     }
 
-    protected createWebSocket(url: string, options?: WebSocketOptions): WebSocket {
+    /**
+     * Creates a web socket for the given url
+     */
+    createWebSocket(url: string, options?: WebSocketOptions): WebSocket {
         if (options === undefined ||  options.reconnecting) {
             const socketOptions = {
                 maxReconnectionDelay: 10000,

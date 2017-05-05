@@ -15,6 +15,7 @@ import { messagingModule } from "theia/lib/messaging/node";
 import { nodeLanguagesModule } from 'theia/lib/languages/node';
 import { nodeJavaModule } from 'theia/lib/java/node';
 import { nodePythonModule } from 'theia/lib/languages/python/node/node-python-module';
+import terminalBackendModule from 'theia/lib/terminal/node/terminal-backend-module'
 
 // FIXME introduce default error handler contribution
 process.on('uncaughtException', function (err: any) {
@@ -36,6 +37,7 @@ container.load(applicationModule);
 container.load(messagingModule);
 container.load(fileSystemServerModule);
 container.load(nodeLanguagesModule);
+container.load(terminalBackendModule);
 container.load(nodeJavaModule);
 container.load(nodePythonModule);
 container.bind(ExpressContribution).to(StaticServer);

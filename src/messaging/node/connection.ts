@@ -15,40 +15,47 @@ import { ConsoleLogger } from "./logger";
 
 export interface IServerOptions {
     readonly server: http.Server;
-    readonly path: string;
+    readonly path?: string;
+    matches?(request: http.IncomingMessage): boolean;
 }
 
 export function createServerWebSocketConnection(options: IServerOptions, onConnect: (connection: MessageConnection) => void): void {
-    openSocket(options, socket => onConnect(createWebSocketConnection(socket, new ConsoleLogger())));
+    openSocket(options, socket => onConnect(createWebSocketConnection(toIWebSocket(socket), new ConsoleLogger())));
 }
 
-export function openSocket(options: IServerOptions, onOpen: (socket: IWebSocket) => void): void {
-    // FIXME consider to have one web socket connection per a client and do dispatching on upgrade
+export interface OnOpen {
+    (webSocket: ws, request: http.IncomingMessage, socket: net.Socket, head: Buffer): void;
+}
+
+export function openSocket(options: IServerOptions, onOpen: OnOpen): void {
     const wss = new ws.Server({
         noServer: true,
         perMessageDeflate: false
     });
     options.server.on('upgrade', (request: http.IncomingMessage, socket: net.Socket, head: Buffer) => {
         const pathname = request.url ? url.parse(request.url).pathname : undefined;
-        if (pathname === options.path) {
+        if (options.path && pathname === options.path || options.matches && options.matches(request)) {
             wss.handleUpgrade(request, socket, head, webSocket => {
-                const socket: IWebSocket = {
-                    send: content => webSocket.send(content, error => {
-                        if (error) {
-                            throw error;
-                        }
-                    }),
-                    onMessage: cb => webSocket.on('message', cb),
-                    onError: cb => webSocket.on('error', cb),
-                    onClose: cb => webSocket.on('close', cb),
-                    dispose: () => webSocket.close()
-                };
                 if (webSocket.readyState === webSocket.OPEN) {
-                    onOpen(socket);
+                    onOpen(webSocket, request, socket, head);
                 } else {
-                    webSocket.on('open', () => onOpen(socket));
+                    webSocket.on('open', () => onOpen(webSocket, request, socket, head));
                 }
             });
         }
     });
+}
+
+export function toIWebSocket(webSocket: ws) {
+    return <IWebSocket> {
+        send: content => webSocket.send(content, error => {
+            if (error) {
+                throw error;
+            }
+        }),
+        onMessage: cb => webSocket.on('message', cb),
+        onError: cb => webSocket.on('error', cb),
+        onClose: cb => webSocket.on('close', cb),
+        dispose: () => webSocket.close()
+    };
 }
