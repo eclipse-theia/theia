@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Resource, ResourceProvider } from "../../application/common";
+import { Resource, ResourceResolver } from "../../application/common";
 import URI from "../../application/common/uri";
 import { FileSystem, FileStat } from "./filesystem";
 
@@ -35,13 +35,13 @@ export class FileResource implements Resource {
 }
 
 @injectable()
-export class FileResourceProvider implements ResourceProvider {
+export class FileResourceResolver implements ResourceResolver {
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) { }
 
-    get(uri: URI): Promise<Resource> {
+    resolve(uri: URI): Promise<FileResource> {
         if (uri.scheme === 'file') {
             return Promise.resolve(new FileResource(uri, this.fileSystem))
         }

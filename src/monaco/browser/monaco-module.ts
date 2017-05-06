@@ -36,11 +36,12 @@ export const monacoModule = new ContainerModule(bind => {
     bind(MonacoEditorService).toSelf().inSingletonScope();
     bind(MonacoModelResolver).toSelf().inSingletonScope();
     bind(MonacoContextMenuService).toSelf().inSingletonScope();
-    bind(TextEditorProvider).toProvider(context => {
-        return uri => new MonacoEditorProvider(context).get(uri);
-    });
+    bind(MonacoEditorProvider).toSelf().inSingletonScope();
+    bind(TextEditorProvider).toProvider(context =>
+        uri => context.container.get(MonacoEditorProvider).get(uri)
+    );
 
-    bind(CommandContribution).to(MonacoEditorCommandHandlers);
-    bind(MenuContribution).to(MonacoEditorMenuContribution);
-    bind(KeybindingContribution).to(MonacoKeybindingContribution);
+    bind(CommandContribution).to(MonacoEditorCommandHandlers).inSingletonScope();
+    bind(MenuContribution).to(MonacoEditorMenuContribution).inSingletonScope();
+    bind(KeybindingContribution).to(MonacoKeybindingContribution).inSingletonScope();
 });

@@ -5,4 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+export * from '../common';
+export * from './language-client-contribution';
+export * from './language-client-provider';
+export * from './language-client-launcher';
 export * from './browser-languages-module';
