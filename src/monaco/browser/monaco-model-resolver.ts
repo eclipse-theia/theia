@@ -6,7 +6,7 @@
  */
 
 import { inject, injectable } from 'inversify';
-import { DisposableCollection, Disposable, ResourceService } from "../../application/common";
+import { DisposableCollection, Disposable, ResourceProvider } from "../../application/common";
 import { MonacoEditorModel } from "./monaco-editor-model";
 import URI from "../../application/common/uri";
 import ITextModelResolverService = monaco.editor.ITextModelResolverService;
@@ -22,7 +22,9 @@ export class MonacoModelResolver implements ITextModelResolverService {
     protected readonly models = new Map<string, monaco.Promise<MonacoEditorModel>>();
     protected readonly references = new Map<ITextEditorModel, DisposableCollection>();
 
-    constructor( @inject(ResourceService) protected readonly resourceService: ResourceService) {
+    constructor(
+        @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider
+    ) {
     }
 
     createModelReference(raw: Uri | URI): monaco.Promise<IReference<MonacoEditorModel>> {
@@ -68,7 +70,7 @@ export class MonacoModelResolver implements ITextModelResolverService {
 
     protected createModel(uri: URI): monaco.Promise<MonacoEditorModel> {
         return monaco.Promise.wrap(
-            this.resourceService.get(uri).then(resource =>
+            this.resourceProvider(uri).then(resource =>
                 new MonacoEditorModel(resource).load()
             )
         );

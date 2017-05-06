@@ -5,6 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export * from '../common';
-export * from './java-contribution';
-export * from './node-java-module';
+export const JAVA_SCHEME = 'jdt';
+export const JAVA_LANGUAGE_ID = 'java';
+export const JAVA_DESCRIPTION = {
+    id: JAVA_LANGUAGE_ID,
+    name: 'Java',
+    documentSelector: [JAVA_LANGUAGE_ID],
+    fileEvents: [
+        '**/*.java', '**/pom.xml', '**/*.gradle'
+    ]
+}

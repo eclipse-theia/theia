@@ -10,5 +10,5 @@ import { LanguageContribution } from "../../node";
 import { PythonContribution } from './python-contribution';
 
 export const nodePythonModule = new ContainerModule(bind => {
-    bind<LanguageContribution>(LanguageContribution).to(PythonContribution);
+    bind<LanguageContribution>(LanguageContribution).to(PythonContribution).inSingletonScope();
 });

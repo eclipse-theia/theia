@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, multiInject } from "inversify";
+import { injectable, multiInject, optional } from "inversify";
 import URI from "../common/uri";
 
 export interface Resource {
@@ -14,36 +14,42 @@ export interface Resource {
     saveContents?(content: string, options?: { encoding?: string }): Promise<void>;
 }
 
-export const ResourceProvider = Symbol('ResourceProvider');
-export interface ResourceProvider {
+export const ResourceResolver = Symbol('ResourceResolver');
+export interface ResourceResolver {
     /**
      * Reject if a resource cannot be provided.
      */
-    get(uri: URI): Promise<Resource>;
+    resolve(uri: URI): Promise<Resource>;
 }
 
+export const ResourceProvider = Symbol('ResourceProvider');
+export type ResourceProvider = (uri: URI) => Promise<Resource>;
+
 @injectable()
-export class ResourceService {
+export class DefaultResourceProvider {
 
     constructor(
-        @multiInject(ResourceProvider) protected readonly providers: ResourceProvider[]
+        @multiInject(ResourceResolver) @optional()
+        protected readonly resolvers: ResourceResolver[] | undefined
     ) { }
 
     /**
      * Reject if a resource cannot be provided.
      */
     get(uri: URI): Promise<Resource> {
-        if (this.providers.length === 0) {
-            return Promise.reject(this.createHandlerNotRegisteredError(uri));
+        if (!this.resolvers) {
+            return Promise.reject(this.createNotRegisteredError(uri));
         }
-        const initial = this.providers[0].get(uri);
-        return this.providers.slice(1).reduce((current, provider) =>
-            current.catch(() => provider.get(uri)),
+        const initial = this.resolvers[0].resolve(uri);
+        return this.resolvers.slice(1).reduce((current, provider) =>
+            current.catch(() =>
+                provider.resolve(uri)
+            ),
             initial
-        ).catch(reason => !!reason ? reason : this.createHandlerNotRegisteredError(uri));
+        ).catch(reason => !!reason ? reason : this.createNotRegisteredError(uri));
     }
 
-    protected createHandlerNotRegisteredError(uri: URI): any {
+    protected createNotRegisteredError(uri: URI): any {
         return `A resource provider for '${uri.toString()}' is not registered.`;
     }
 

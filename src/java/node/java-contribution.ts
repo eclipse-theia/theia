@@ -8,6 +8,7 @@
 import * as path from 'path';
 import { injectable } from "inversify";
 import { LanguageContribution, IConnection, createServerProcess, forward } from "../../languages/node";
+import { JAVA_DESCRIPTION } from "../common";
 
 export type ConfigurationType = 'config_win' | 'config_mac' | 'config_linux';
 export const configurations = new Map<typeof process.platform, ConfigurationType>();
@@ -18,14 +19,7 @@ configurations.set('linux', 'config_linux');
 @injectable()
 export class JavaContribution implements LanguageContribution {
 
-    readonly description = {
-        id: 'java',
-        name: 'Java',
-        documentSelector: ['java'],
-        fileEvents: [
-            '**/*.java', '**/pom.xml', '**/*.gradle'
-        ]
-    }
+    readonly description = JAVA_DESCRIPTION;
 
     listen(clientConnection: IConnection): void {
         const projectPath = path.resolve(__dirname, '../../..');

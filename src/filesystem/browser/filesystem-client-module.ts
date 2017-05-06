@@ -6,9 +6,9 @@
  */
 
 import { ContainerModule } from 'inversify';
-import { CommandContribution, MenuContribution, ResourceProvider } from '../../application/common';
+import { CommandContribution, MenuContribution, ResourceResolver } from '../../application/common';
 import { WebSocketConnectionProvider } from '../../messaging/browser/connection';
-import { FileSystem, FileSystemWatcher, FileResourceProvider } from "../common";
+import { FileSystem, FileSystemWatcher, FileResourceResolver } from "../common";
 import { FileCommandContribution, FileMenuContribution } from './filesystem-commands';
 
 export const fileSystemClientModule = new ContainerModule(bind => {
@@ -17,12 +17,12 @@ export const fileSystemClientModule = new ContainerModule(bind => {
         const connnection = ctx.container.get(WebSocketConnectionProvider);
         const fileSystemClient = ctx.container.get(FileSystemWatcher).getFileSystemClient();
         return connnection.createProxy<FileSystem>("/filesystem", fileSystemClient);
-    })
+    }).inSingletonScope();
 
-    bind(FileResourceProvider).toSelf().inSingletonScope();
-    bind(ResourceProvider).toDynamicValue(ctx => ctx.container.get(FileResourceProvider));
+    bind(FileResourceResolver).toSelf().inSingletonScope();
+    bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(FileResourceResolver));
 
-    bind<CommandContribution>(CommandContribution).to(FileCommandContribution);
-    bind<MenuContribution>(MenuContribution).to(FileMenuContribution);
+    bind<CommandContribution>(CommandContribution).to(FileCommandContribution).inSingletonScope();
+    bind<MenuContribution>(MenuContribution).to(FileMenuContribution).inSingletonScope();
 });
 

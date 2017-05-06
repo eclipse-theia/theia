@@ -19,8 +19,12 @@ import "theia/src/navigator/browser/style/index.css";
 import "theia/src/terminal/browser/terminal.css";
 
 // terminal extension
-import terminalFrontendModule from 'theia/lib/terminal/browser/terminal-frontend-module'
+import terminalFrontendModule from 'theia/lib/terminal/browser/terminal-frontend-module';
 import "xterm/dist/xterm.css";
+
+// java extension
+import { browserJavaModule } from 'theia/lib/java/browser/browser-java-module';
+import 'theia/lib/java/browser/monaco-contribution';
 
 export function start(clientContainer?: Container) {
 
@@ -33,6 +37,7 @@ export function start(clientContainer?: Container) {
     container.load(editorModule);
     container.load(browserLanguagesModule);
     container.load(monacoModule);
+    container.load(browserJavaModule);
 
     // terminal extension
     container.load(terminalFrontendModule);

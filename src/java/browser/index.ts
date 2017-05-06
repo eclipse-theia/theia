@@ -6,5 +6,7 @@
  */
 
 export * from '../common';
-export * from './java-contribution';
-export * from './node-java-module';
+export * from './java-protocol';
+export * from './java-resource';
+export * from './java-client-contribution';
+export * from './browser-java-module';

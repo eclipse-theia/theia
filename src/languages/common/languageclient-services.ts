@@ -31,3 +31,8 @@ export interface IConnectionProvider extends connection.IConnectionProvider {}
 
 export const ILanguageClient = Symbol('ILanguageClient');
 export interface ILanguageClient extends base.BaseLanguageClient {}
+
+import LanguageClientOptions = base.BaseLanguageClientOptions;
+export {
+    LanguageClientOptions
+}

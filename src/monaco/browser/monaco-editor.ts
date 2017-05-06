@@ -7,7 +7,7 @@
 
 import { ElementExt } from "@phosphor/domutils";
 import URI from "../../application/common/uri";
-import { DisposableCollection, Disposable, Emitter, Event, SelectionService } from "../../application/common";
+import { DisposableCollection, Disposable, Emitter, Event } from "../../application/common";
 import { Dimension, Position, Range, TextDocument, TextEditor } from '../../editor/browser';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
 import { MonacoWorkspace } from "./monaco-workspace";
@@ -55,7 +55,6 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         protected readonly m2p: MonacoToProtocolConverter,
         protected readonly p2m: ProtocolToMonacoConverter,
         protected readonly workspace: MonacoWorkspace,
-        protected readonly selectionService: SelectionService,
         options?: MonacoEditor.IOptions,
         override?: IEditorOverrideServices,
     ) {
