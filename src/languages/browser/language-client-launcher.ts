@@ -21,10 +21,16 @@ export class LanguageClientLauncher {
     ) { }
 
     /**
-     * Create and start language clients for given languages.
+     * Create and start a language client for the given language.
      */
     launch(languages: LanguageIdentifier): Promise<Disposable>;
+    /**
+     * Create and start language clients for given languages.
+     */
     launch(languages: LanguageIdentifier[]): Promise<Disposable>[];
+    /**
+     * Implementation
+     */
     launch(arg: MaybeArray<LanguageIdentifier>): MaybeArray<Promise<Disposable>> {
         if (arg instanceof Array) {
             return arg.map(language => this.start(language));
