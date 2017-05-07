@@ -14,9 +14,13 @@ It's totally fine to ask questions by opening an Issue. We will close it once it
 
 ### Reporting Bugs
 
-If you think have found a bug, please provide am issue describing the problem and how to reproduce it.
+If you have found a bug, please provide an issue describing the problem including instructions on how to reproduce it.
 
 ### Reporting Feature Requests
 
 You may want to see a feature or have an idea. You can file a request and we can discuss it.
+
+## Coding Guidelines
+
+We follow the coding guidelines described [here](https://github.com/TypeFox/Theia/wiki/Coding-Guidelines).
 
