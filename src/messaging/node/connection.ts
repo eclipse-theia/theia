@@ -50,7 +50,7 @@ export function toIWebSocket(webSocket: ws) {
     return <IWebSocket> {
         send: content => webSocket.send(content, error => {
             if (error) {
-                throw error;
+                console.log(error);
             }
         }),
         onMessage: cb => webSocket.on('message', cb),
