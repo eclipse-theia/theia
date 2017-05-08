@@ -17,10 +17,27 @@ export const fileSystemServerModule = new ContainerModule(bind => {
     const rootDir = getRootDir();
     if (rootDir) {
         const fileSystem = new FileSystemNode(`file://${rootDir}`)
-        const proxyFactory = new JsonRpcProxyFactory<FileSystemClient>("/filesystem", fileSystem);
         bind<ConnectionHandler>(ConnectionHandler).toDynamicValue(ctx => {
-            fileSystem.setClient(proxyFactory.createProxy())
-            return proxyFactory
+            let clients: FileSystemClient[] = []
+            fileSystem.setClient({
+                onFileChanges(msg) {
+                    for (let client of clients) {
+                        client.onFileChanges(msg)
+                    }
+                }
+            })
+            return {
+                path: "/filesystem",
+                onConnection(connection) {
+                    const proxyFactory = new JsonRpcProxyFactory<FileSystemClient>("/filesystem", fileSystem)
+                    proxyFactory.onConnection(connection)
+                    const client = proxyFactory.createProxy()
+                    clients.push(client)
+                    connection.onDispose( () => {
+                        clients = clients.filter( e => e !== client)
+                    })
+                }
+            }
         })
     } else {
         throw new Error(`The directory is unknown, please use '${ROOT_DIR_OPTION}' option`);
