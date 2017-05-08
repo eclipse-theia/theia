@@ -11,6 +11,10 @@ module.exports = require("../config/webpack/webpack.config")(__dirname, {
                 target: 'ws://localhost:3000',
                 ws: true
             },
+            '/terminals/*': {
+                target: 'ws://localhost:3000',
+                ws: true
+            },
             '*': 'http://localhost:3000'
         },
         historyApiFallback: true,
