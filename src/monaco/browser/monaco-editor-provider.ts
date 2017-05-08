@@ -33,7 +33,7 @@ export class MonacoEditorProvider {
             const editor = new MonacoEditor(
                 uri, node, this.m2p, this.p2m, this.workspace, {
                     model: model.textEditorModel,
-                    wordWrap: true,
+                    wordWrap: false,
                     folding: true,
                     theme: 'vs-dark',
                     readOnly: model.readOnly
