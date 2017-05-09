@@ -25,7 +25,6 @@
     "@types/ws": "0.0.38",
     "@types/xterm": "^2.0.2",
     "chokidar": "^1.6.1",
-    "detect-character-encoding": "^0.3.1",
     "electron": "^1.6.2",
     "express": "^4.15.2",
     "fs-extra": "^2.1.2",
@@ -55,8 +54,8 @@
     "circular-dependency-plugin": "^2.0.0",
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.26.2",
+    "electron-rebuild": "^1.5.10",
     "file-loader": "^0.10.1",
-    "istanbul": "^0.4.5",
     "karma": "^1.5.0",
     "karma-chrome-launcher": "^2.0.0",
     "karma-mocha": "^1.3.0",
@@ -65,12 +64,11 @@
     "karma-webpack": "^2.0.2",
     "minimist": "^1.2.0",
     "mocha": "^3.2.0",
-    "nyc": "^10.3.0",
     "rimraf": "^2.6.1",
     "source-map-loader": "^0.1.6",
     "style-loader": "^0.13.2",
     "ts-loader": "^2.0.1",
-    "ts-node": "^2.1.2",
+    "ts-node": "^2.1.0",
     "tsc-watch": "^1.0.5",
     "tslint": "^4.5.1",
     "typescript": "^2.3.2",
@@ -79,30 +77,15 @@
     "webpack-dev-server": "^2.4.1",
     "webpack-merge": "^3.0.0"
   },
-  "nyc": {
-    "include": [
-        "src/**/*.ts"
-    ],
-    "exclude": [
-        "typings"
-    ],
-    "reporter": [
-      "html"
-    ],
-    "extension": [
-      ".ts",
-      ".tsx"
-    ]
-  },
   "scripts": {
     "prepublish": "npm run clean && npm run build && npm run test",
+    "postinstall": "./node_modules/.bin/electron-rebuild",
     "lint": "./node_modules/.bin/tslint -c ./config/tslint/tslint.json --project ./tsconfig.json",
     "build": "./node_modules/.bin/tsc && npm run lint",
     "watch": "./node_modules/.bin/tsc-watch --onSuccess \"npm run lint\"",
     "clean": "./node_modules/.bin/rimraf lib",
     "clean:node_modules": "./node_modules/.bin/rimraf node_modules",
     "test": "./node_modules/.bin/mocha src/**/*.spec.ts",
-    "coverage": "nyc _mocha --compilers ts:ts-node/register src/**/*.spec.ts",
     "test:watch": "./node_modules/.bin/mocha --watch src/**/*.spec.ts",
     "clean:vscode-ws-jsonrpc": "./node_modules/.bin/rimraf node_modules/vscode-ws-jsonrpc",
     "update:vscode-ws-jsonrpc": "npm run clean:vscode-ws-jsonrpc && npm install",
