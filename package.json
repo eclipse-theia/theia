@@ -25,7 +25,6 @@
     "@types/ws": "0.0.38",
     "@types/xterm": "^2.0.2",
     "chokidar": "^1.6.1",
-    "detect-character-encoding": "^0.3.1",
     "electron": "^1.6.2",
     "express": "^4.15.2",
     "fs-extra": "^2.1.2",
@@ -55,6 +54,7 @@
     "circular-dependency-plugin": "^2.0.0",
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.26.2",
+    "electron-rebuild": "^1.5.10",
     "file-loader": "^0.10.1",
     "karma": "^1.5.0",
     "karma-chrome-launcher": "^2.0.0",
@@ -79,6 +79,7 @@
   },
   "scripts": {
     "prepublish": "npm run clean && npm run build && npm run test",
+    "postinstall": "./node_modules/.bin/electron-rebuild",
     "lint": "./node_modules/.bin/tslint -c ./config/tslint/tslint.json --project ./tsconfig.json",
     "build": "./node_modules/.bin/tsc && npm run lint",
     "watch": "./node_modules/.bin/tsc-watch --onSuccess \"npm run lint\"",

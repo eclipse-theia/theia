@@ -748,7 +748,7 @@ describe("NodeFileSystem", () => {
             fs.writeFileSync(uri.path, "foo");
             expect(fs.statSync(uri.path).isFile()).to.be.true;
 
-            return createFileSystem().getEncoding(uri.toString()).should.be.eventually.be.equal("UTF-8");
+            return createFileSystem().getEncoding(uri.toString()).should.be.eventually.be.equal("utf8");
         });
 
     });
