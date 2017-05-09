@@ -14,7 +14,6 @@ import { FileStat, FileSystem, FileSystemClient, FileChange, FileChangeType, Fil
 
 const trash: (paths: Iterable<string>) => Promise<void> = require("trash");
 const chokidar: { watch(paths: string | string[], options?: WatchOptions): FSWatcher } = require("chokidar");
-const detectCharacterEncoding: (buffer: Buffer) => { encoding: string, confidence: number } = require("detect-character-encoding");
 
 type EventType =
     "all" |
@@ -283,7 +282,7 @@ export class FileSystemNode implements FileSystem {
         });
     }
 
-    getEncoding(uri: string, options?: { preferredEncoding?: string }): Promise<string> {
+    getEncoding(uri: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             const _uri = new URI(uri);
             const stat = this.doGetStat(_uri, 0);
@@ -293,17 +292,7 @@ export class FileSystemNode implements FileSystem {
             if (stat.isDirectory) {
                 return reject(new Error(`Cannot get the encoding of a director. URI: ${uri}.`));
             }
-            fs.readFile(_uri.path, {}, (error, buffer) => {
-                if (error) {
-                    return reject(error);
-                }
-                const encoding = detectCharacterEncoding(buffer);
-                if (encoding && encoding.encoding) {
-                    resolve(encoding.encoding);
-                } else {
-                    resolve(options && typeof (options.preferredEncoding) !== "undefined" ? options.preferredEncoding : this.defaults.encoding);
-                }
-            });
+            return resolve(this.defaults.encoding);
         });
     }
 
