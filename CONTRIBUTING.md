@@ -1,8 +1,8 @@
 # Contributing to Theia
 
-Theia is a young open-source project with based on a modular architecture. One of the goals is to make sure that we can customize and enhance any Theia application through extensions.
-So while the main theia repository contains some common functionality for IDE-like applications, like e.g. a file system or a navigator view, most functionality doesn't neccessarily need to be
-put into the core reposuotry but can be developed separately.
+Theia is a young open-source project with a modular architecture. One of the goals is to make sure that we can customize and enhance any Theia application through extensions.
+So while the main Theia repository contains some common functionality for IDE-like applications, like a file system or a navigator view, most functionality doesn't necessarily need to be
+put into the core repository but can be developed separately.
 
 ## How Can I Contribute?
 
@@ -10,20 +10,20 @@ In the following some of the typical ways of contribution are described.
 
 ### Asking Questions
 
-It's totally fine to ask questions by opening an Issue. We will close it once it's answered and tag it qith the 'question' label. Please check if the question has been asked before here or on stackoverflow.
+It's totally fine to ask questions by opening an issue in the Theia Github repository. We will close it once it's answered and tag it with the 'question' label. Please check if the question has been asked before there or on [Stack Overflow](https://stackoverflow.com).
 
 ### Reporting Bugs
 
-If you have found a bug, please you should first check if that has already been filed and maybe even fixed. If you find an existing unresolved issue, please add your case. If you could not find an exitsing bug report, please file a new one. In any case, please add all information you can share and that will help to reproduce and solve the problem. 
+If you have found a bug, you should first check if it has already been filed and maybe even fixed. If you find an existing unresolved issue, please add your case. If you could not find an existing bug report, please file a new one. In any case, please add all information you can share and that will help to reproduce and solve the problem.
 
 ### Reporting Feature Requests
 
 You may want to see a feature or have an idea. You can file a request and we can discuss it.
-If such a feature request already exists, please add a comment ro some other form of feedback to indicate you are interested, too. Also in this case any concrete use case scenario is appreciate to understand the motivation behind it.
+If such a feature request already exists, please add a comment or some other form of feedback to indicate you are interested too. Also in this case any concrete use case scenario is appreciated to understand the motivation behind it.
 
 ### Pull Requests
 
-Before you get started investing significant time on something you want to get merged and maintained as part of Theia, you should talk with the team through an issue. Simply choose the issue you would want to work on, and tell everyone that you are willing to do so and how you would approach it. The team will be happy to guide you and give feedback.
+Before you get started investing significant time in something you want to get merged and maintained as part of Theia, you should talk with the team through an issue. Simply choose the issue you would want to work on, and tell everyone that you are willing to do so and how you would approach it. The team will be happy to guide you and give feedback.
 
 ## Coding Guidelines
 
