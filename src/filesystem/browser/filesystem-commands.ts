@@ -94,7 +94,7 @@ export class FileCommandContribution implements CommandContribution {
                             }
                         })
                         dialog.acceptancePromise.then( name =>
-                            this.fileSystem.move(uri.toString(), uri.parent.append(name).toString()))
+                            this.fileSystem.move(uri.toString(), uri.parent.appendPath(name).toString()))
                     })
             })
         );
@@ -126,7 +126,7 @@ export class FileCommandContribution implements CommandContribution {
                 .then(stat => {
                     let data: string = this.clipboardService.getData('text')
                     copyPath = new URI(data)
-                    let targetUri = uri.append(copyPath.lastSegment)
+                    let targetUri = uri.appendPath(copyPath.lastSegment)
                     return this.fileSystem.copy(copyPath.toString(), targetUri.toString())
                 })
             })
@@ -149,7 +149,7 @@ export class FileCommandContribution implements CommandContribution {
                             }
                         })
                         dialog.acceptancePromise.then( name =>
-                            this.fileSystem.createFile(new URI(stat.uri).append(name).toString()))
+                            this.fileSystem.createFile(new URI(stat.uri).appendPath(name).toString()))
                     })
             })
         );
@@ -171,7 +171,7 @@ export class FileCommandContribution implements CommandContribution {
                             }
                         })
                         dialog.acceptancePromise.then( name =>
-                            this.fileSystem.createFolder(new URI(stat.uri).append(name).toString()))
+                            this.fileSystem.createFolder(new URI(stat.uri).appendPath(name).toString()))
                     })
             })
         )
@@ -231,10 +231,10 @@ function getFreeChild(prefix: string, suffix: string, fileStat: FileStat): URI {
         let candidate = prefix + infix + suffix
         let children: FileStat[] = fileStat.children!
         if (!children.some( stat => new URI(stat.uri).lastSegment === candidate)) {
-            return parentUri.append(candidate)
+            return parentUri.appendPath(candidate)
         }
     }
-    return parentUri.append(prefix + suffix)
+    return parentUri.appendPath(prefix + suffix)
 }
 
 export class FileSystemCommandHandler implements CommandHandler {

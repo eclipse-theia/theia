@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as chai from "chai"
+import * as chai from 'chai';
 import URI from "./uri"
 
 const expect = chai.expect;
@@ -38,19 +38,19 @@ describe("uri", () => {
 
     });
 
-    describe("03 #append", () => {
+    describe("03 #appendPath", () => {
 
         it("Should return with this when the the segments array is empty.", () => {
             const uri = new URI("file:///foo");
-            expect(uri.append("").toString()).to.be.equal(uri.toString());
+            expect(uri.appendPath("").toString()).to.be.equal(uri.toString());
         });
 
         it("Should append a single segment.", () => {
-            expect(new URI("file:///foo").append("bar").toString()).to.be.equal("file:///foo/bar");
+            expect(new URI("file:///foo").appendPath("bar").toString()).to.be.equal("file:///foo/bar");
         });
 
         it("Should append multiple segments.", () => {
-            expect(new URI("file:///foo").append("bar/baz").toString()).to.be.equal("file:///foo/bar/baz");
+            expect(new URI("file:///foo").appendPath("bar/baz").toString()).to.be.equal("file:///foo/bar/baz");
         });
 
     });
@@ -66,4 +66,43 @@ describe("uri", () => {
         })
     });
 
+    describe("05 #withFragment", () => {
+
+        it("Should replace the fragment.", () => {
+            expect(new URI("file:///foo/bar/baz.txt#345345").withFragment("foo").toString()).equals("file:///foo/bar/baz.txt#foo");
+            expect(new URI("file:///foo/bar/baz.txt?foo=2#345345").withFragment("foo").toString(true)).equals("file:///foo/bar/baz.txt?foo=2#foo");
+        });
+
+        it("Should remove the fragment.", () => {
+            expect(new URI("file:///foo/bar/baz.txt#345345").withFragment("").toString()).equals("file:///foo/bar/baz.txt");
+        });
+    });
+
+    describe("06 #toString()", () => {
+        it("should produce the non encoded string", () => {
+            function check(uri: string): void {
+                expect(new URI(uri).toString(true)).equals(uri)
+            }
+            check('file:///X?test=32')
+            check('file:///X?test=32#345')
+            check('file:///X test/ddd?test=32#345')
+        })
+    })
+
+    describe("07 #Uri.with...()", () => {
+        it("produce proper URIs", () => {
+            let uri = new URI().withScheme('file').withPath('/foo/bar.txt').withQuery("x=12").withFragment("baz")
+            expect(uri.toString(true)).equals("file:///foo/bar.txt?x=12#baz")
+
+            expect(uri.withoutScheme().toString(true)).equals("/foo/bar.txt?x=12#baz")
+
+            expect(uri.withScheme("http").toString(true)).equals("http:/foo/bar.txt?x=12#baz")
+
+            expect(uri.withoutQuery().toString(true)).equals("file:///foo/bar.txt#baz")
+
+            expect(uri.withoutFragment().toString(true)).equals(uri.withFragment('').toString(true))
+
+            expect(uri.withPath("hubba-bubba").toString(true)).equals("file://hubba-bubba?x=12#baz")
+        })
+    })
 });
