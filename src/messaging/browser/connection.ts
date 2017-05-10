@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { Endpoint } from '../../application/common/endpoint';
 import { injectable } from "inversify";
 import { listen as doListen, Logger, ConsoleLogger } from "vscode-ws-jsonrpc";
 import { ConnectionHandler, JsonRpcProxyFactory } from "../common";
@@ -60,8 +61,8 @@ export class WebSocketConnectionProvider {
      * Creates a websocket URL to the current location
      */
     createWebSocketUrl(path: string): string {
-        const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-        return `${protocol}://${location.host || "127.0.0.1:3000"}${path}`;
+        const endpoint = new Endpoint({ path })
+        return endpoint.getWebSocketUrl().toString()
     }
 
     /**

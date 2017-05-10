@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { Endpoint } from '../../application/common/endpoint';
 import { WebSocketConnectionProvider } from '../../messaging/browser';
 import { Disposable } from '../../application/common';
 import { DisposableCollection } from 'vscode-ws-jsonrpc/lib/disposable';
@@ -23,15 +24,17 @@ export class TerminalWidget extends Widget implements Disposable {
     private cols: number = 80
     private rows: number = 40
     private disposables = new DisposableCollection()
+    private endpoint: Endpoint
 
     constructor(private websocketConnectionProvider: WebSocketConnectionProvider) {
         super()
+        this.endpoint = new Endpoint({ path: '/terminals' })
         num++
         this.id = 'terminal-' + num
         this.title.caption = 'Terminal ' + num
         this.title.label = 'Terminal ' + num
         this.title.closable = true
-        this.addClass("terminal-container");
+        this.addClass("terminal-container")
 
         this.term = new Xterm({
             cursorBlink: true,
@@ -62,14 +65,14 @@ export class TerminalWidget extends Widget implements Disposable {
             }
             this.cols = size.cols
             this.rows = size.rows
-            let url = '/terminals/' + this.pid + '/size?cols=' + this.cols + '&rows=' + this.rows;
+            let url = this.endpoint.getRestUrl().toString() + "/" + this.pid + '/size?cols=' + this.cols + '&rows=' + this.rows;
             fetch(url, { method: 'POST' })
         });
         (this.term as any).fit()
     }
 
     protected startNewTerminal() {
-        fetch('/terminals?cols=' + this.cols + '&rows=' + this.rows, { method: 'POST' }).then((res) => {
+        fetch(this.endpoint.getRestUrl().toString() + '?cols=' + this.cols + '&rows=' + this.rows, { method: 'POST' }).then((res) => {
             res.text().then((pid: string) => {
                 this.pid = pid;
                 let socket = this.createWebSocket(pid);
@@ -93,8 +96,8 @@ export class TerminalWidget extends Widget implements Disposable {
     }
 
     protected createWebSocket(pid: string): WebSocket {
-        const url = this.websocketConnectionProvider.createWebSocketUrl(`/terminals/${pid}`)
-        return this.websocketConnectionProvider.createWebSocket(url, { reconnecting: false })
+        const url = this.endpoint.getWebSocketUrl().appendPath(pid)
+        return this.websocketConnectionProvider.createWebSocket(url.toString(), { reconnecting: false })
     }
 
     dispose() {

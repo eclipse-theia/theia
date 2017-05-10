@@ -11,8 +11,10 @@ export default class URI {
 
     private codeUri: Uri;
 
-    constructor(uri: string | Uri) {
-        if (uri instanceof Uri) {
+    constructor(uri?: string | Uri) {
+        if (uri === undefined) {
+            this.codeUri = Uri.from({})
+        } else if (uri instanceof Uri) {
             this.codeUri = uri
         } else {
             this.codeUri = Uri.parse(uri)
@@ -34,23 +36,125 @@ export default class URI {
         }
     }
 
-    append(toAppend: string): URI {
+    appendPath(toAppend: string): URI {
         if (!toAppend) {
-            return this;
+            return this
         }
-        return new URI(this.toString() + "/" + toAppend);
+        return this.withPath(this.codeUri.path + "/" + toAppend)
     }
 
-    get path(): string {
-        return decodeURIComponent(this.codeUri.path)
+    /**
+     * return a new URI replacing the current with the given scheme
+     */
+    withScheme(scheme: string): URI {
+        const newCodeUri = Uri.from({
+            ...this.codeUri.toJSON(),
+            scheme
+        })
+        return new URI(newCodeUri);
     }
 
-    toString() {
-        return this.codeUri.toString();
+    /**
+     * return this URI without a scheme
+     */
+    withoutScheme(): URI {
+        return this.withScheme('')
+    }
+
+    /**
+     * return a new URI replacing the current with the given authority
+     */
+    withAuthority(authority: string): URI {
+        const newCodeUri = Uri.from({
+            ...this.codeUri.toJSON(),
+            authority
+        })
+        return new URI(newCodeUri);
+    }
+
+    /**
+     * return this URI without a authority
+     */
+    withoutAuthority(): URI {
+        return this.withAuthority('')
+    }
+
+    /**
+     * return a new URI replacing the current with the given path
+     */
+    withPath(path: string): URI {
+        const newCodeUri = Uri.from({
+            ...this.codeUri.toJSON(),
+            path
+        })
+        return new URI(newCodeUri);
+    }
+
+    /**
+     * return this URI without a path
+     */
+    withoutPath(): URI {
+        return this.withPath('')
+    }
+
+    /**
+     * return a new URI replacing the current with the given query
+     */
+    withQuery(query: string): URI {
+        const newCodeUri = Uri.from({
+            ...this.codeUri.toJSON(),
+            query
+        })
+        return new URI(newCodeUri);
+    }
+
+    /**
+     * return this URI without a query
+     */
+    withoutQuery(): URI {
+        return this.withQuery('')
+    }
+
+    /**
+     * return a new URI replacing the current with the given fragment
+     */
+    withFragment(fragment: string): URI {
+        const newCodeUri = Uri.from({
+            ...this.codeUri.toJSON(),
+            fragment
+        })
+        return new URI(newCodeUri);
+    }
+
+    /**
+     * return this URI without a fragment
+     */
+    withoutFragment(): URI {
+        return this.withFragment('')
     }
 
     get scheme(): string {
         return this.codeUri.scheme
+    }
+
+    get authority(): string {
+        return this.codeUri.authority
+    }
+
+    get path(): string {
+        return this.codeUri.path
+    }
+
+    get query(): string {
+        return this.codeUri.query
+    }
+
+    get fragment(): string {
+        return this.codeUri.fragment
+    }
+
+    toString(skipEncoding?: boolean) {
+        return this.codeUri.toString(skipEncoding);
     }
 
 }
