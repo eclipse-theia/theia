@@ -16,8 +16,8 @@ export interface Event<T> {
      *
      * @param listener The listener function will be call when the event happens.
      * @param thisArgs The 'this' which will be used when calling the event listener.
-     * @param disposables An array to which a {{IDisposable}} will be added. The
-     * @return
+     * @param disposables An array to which a {{IDisposable}} will be added.
+     * @return a disposable to remove the listener again.
      */
     (listener: (e: T) => any, thisArgs?: any, disposables?: Disposable[]): Disposable;
 }
