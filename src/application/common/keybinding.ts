@@ -8,8 +8,9 @@
 import { Context } from './context';
 import { Disposable } from './disposable';
 import { CommandRegistry } from './command';
-import { injectable, inject, unmanaged } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { KeyCode, Accelerator } from './keys';
+import { ExtensionProvider } from './extension-provider';
 
 export interface Keybinding {
     readonly commandId: string;
@@ -31,46 +32,39 @@ export interface KeybindingContribution {
     contribute(registry: KeybindingRegistry): void;
 }
 
-@injectable()
-export abstract class KeybindingContext implements Context<Keybinding> {
+export const KeybindingContext = Symbol("KeybindingContextExtension")
+export interface KeybindingContext extends Context<Keybinding> { }
+export namespace KeybindingContexts {
 
-    static NOOP_CONTEXT: Context<Keybinding> = {
+    export const NOOP_CONTEXT: Context<Keybinding> = {
         id: 'noop.keybinding.context',
         isEnabled(arg?: Keybinding): boolean {
             return true;
         }
     }
 
-    static DEFAULT_CONTEXT: Context<Keybinding> = {
+    export const DEFAULT_CONTEXT: Context<Keybinding> = {
         id: 'default.keybinding.context',
         isEnabled(arg?: Keybinding): boolean {
             return false;
         }
     }
-
-    constructor( @unmanaged() public readonly id: string) {
-    }
-
-    abstract isEnabled(arg?: Keybinding): boolean;
-
 }
 
-export const KeybindingContextProvider = Symbol("KeybindingContextProvider");
 
 @injectable()
 export class KeybindingContextRegistry {
 
-    contexts: { [id: string]: KeybindingContext };
+    contexts: { [id: string]: KeybindingContext } = {};
     contextHierarchy: { [id: string]: KeybindingContext };
 
-    constructor( @inject(KeybindingContextProvider) private contributedContexts: () => KeybindingContext[]) {
-        this.contexts = {};
-        this.contexts[KeybindingContext.NOOP_CONTEXT.id] = KeybindingContext.NOOP_CONTEXT;
-        this.contexts[KeybindingContext.DEFAULT_CONTEXT.id] = KeybindingContext.DEFAULT_CONTEXT;
+    constructor( @inject(ExtensionProvider) @named(KeybindingContext) private contextProvider: ExtensionProvider<KeybindingContext>) {
+        this.registerContext(KeybindingContexts.NOOP_CONTEXT)
+        this.registerContext(KeybindingContexts.DEFAULT_CONTEXT)
     }
 
     initialize() {
-        this.contributedContexts().forEach(context => this.registerContext(context));
+        this.contextProvider.getExtensions().forEach(context => this.registerContext(context));
     }
 
     /**
@@ -97,8 +91,6 @@ export class KeybindingContextRegistry {
 
 }
 
-export const KeybindingContributionProvider = Symbol("KeybindingContributionProvider");
-
 @injectable()
 export class KeybindingRegistry {
 
@@ -108,7 +100,7 @@ export class KeybindingRegistry {
     constructor(
         @inject(CommandRegistry) protected commandRegistry: CommandRegistry,
         @inject(KeybindingContextRegistry) protected contextRegistry: KeybindingContextRegistry,
-        @inject(KeybindingContributionProvider) protected contributions: () => KeybindingContribution[], ) {
+        @inject(ExtensionProvider) @named(KeybindingContribution) protected contributions: ExtensionProvider<KeybindingContribution>) {
 
         this.keybindings = {};
         this.commands = {};
@@ -116,7 +108,7 @@ export class KeybindingRegistry {
     }
 
     initialize() {
-        for (let contribution of this.contributions()) {
+        for (let contribution of this.contributions.getExtensions()) {
             contribution.contribute(this);
         }
     }
@@ -189,7 +181,7 @@ export class KeyEventEmitter implements Disposable {
     private handleKey(keyCode: KeyCode, event: KeyboardEvent): boolean {
         const binding = this.keybindingRegistry.getKeybindingForKeyCode(keyCode);
         if (binding) {
-            const context = binding.context || KeybindingContext.NOOP_CONTEXT;
+            const context = binding.context || KeybindingContexts.NOOP_CONTEXT;
             if (context && context.isEnabled(binding)) {
                 const handler = this.commandRegistry.getActiveHandler(binding.commandId);
                 if (handler) {

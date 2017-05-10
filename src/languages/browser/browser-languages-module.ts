@@ -5,19 +5,22 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { bindExtensionProvider } from '../../application/common/extension-provider';
 import { ContainerModule, } from "inversify";
-import { TheiaPlugin, } from "../../application/browser";
+import { TheiaPlugin } from "../../application/browser";
 import { WebSocketConnectionProvider } from "../../messaging/browser";
 import { Window, ConsoleWindow, LanguagesService, LANGUAGES_PATH } from '../common';
 import { DefaultLanguageClientProvider, LanguageClientProvider } from './language-client-provider';
 import { LanguagesPlugin } from "./languages-plugin";
 import { LanguageClientLauncher } from './language-client-launcher';
-import { CompositeLanguageClientContribution } from "./language-client-contribution";
+import { CompositeLanguageClientContribution, LanguageClientContribution } from "./language-client-contribution";
 
 export const browserLanguagesModule = new ContainerModule(bind => {
     bind(Window).to(ConsoleWindow).inSingletonScope();
 
     bind(CompositeLanguageClientContribution).toSelf().inSingletonScope();
+    bindExtensionProvider(bind, LanguageClientContribution)
+
     bind(DefaultLanguageClientProvider).toSelf().inSingletonScope();
     bind(LanguageClientProvider).toProvider(context =>
         identifier => context.container.get(DefaultLanguageClientProvider).get(identifier)

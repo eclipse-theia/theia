@@ -12,13 +12,11 @@ import {
 import { EditorManager } from "./editor-manager";
 
 @injectable()
-export class EditorKeybindingContext extends KeybindingContext {
+export class EditorKeybindingContext implements KeybindingContext {
 
-    static ID = 'editor.keybinding.context';
+    constructor( @inject(EditorManager) protected readonly editorService: EditorManager) {}
 
-    constructor( @inject(EditorManager) protected readonly editorService: EditorManager) {
-        super(EditorKeybindingContext.ID);
-    }
+    id = 'editor.keybinding.context';
 
     isEnabled(arg?: Keybinding) {
         return this.editorService && !!this.editorService.activeEditor;

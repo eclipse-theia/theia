@@ -6,12 +6,13 @@
  */
 
 import * as http from 'http';
-import { ContainerModule, injectable, multiInject, optional } from "inversify";
+import { ContainerModule, injectable, inject, named } from "inversify";
 import { ExpressContribution } from '../../application/node';
 import { openSocket, toIWebSocket } from '../../messaging/node';
 import { WebSocketMessageReader, WebSocketMessageWriter, ConnectionHandler, JsonRpcProxyFactory } from "../../messaging/common";
 import { createConnection } from "vscode-ws-jsonrpc/lib/server";
 import { LanguageContribution } from "./language-contribution";
+import { bindExtensionProvider, ExtensionProvider } from '../../application/common/extension-provider';
 import { LANGUAGES_PATH, LanguagesService, LanguageIdentifier } from "../common";
 
 export const nodeLanguagesModule = new ContainerModule(bind => {
@@ -21,21 +22,19 @@ export const nodeLanguagesModule = new ContainerModule(bind => {
         const languagesService = ctx.container.get(LanguagesService);
         return new JsonRpcProxyFactory<LanguagesService>(LANGUAGES_PATH, languagesService);
     }).inSingletonScope();
+    bindExtensionProvider(bind, LanguageContribution)
 });
 
 @injectable()
 export class LanguagesExpressContribution implements ExpressContribution {
 
     constructor(
-        @multiInject(LanguageContribution) @optional() protected readonly contributors: LanguageContribution[] | undefined
+        @inject(ExtensionProvider) @named(LanguageContribution) protected readonly contributors: ExtensionProvider<LanguageContribution>
     ) {
     }
 
     onStart(server: http.Server): void {
-        if (!this.contributors) {
-            return;
-        }
-        for (const contribution of this.contributors) {
+        for (const contribution of this.contributors.getExtensions()) {
             const path = LanguageIdentifier.create(contribution.description).path;
             openSocket({
                 server,
@@ -56,15 +55,11 @@ export class LanguagesExpressContribution implements ExpressContribution {
 export class LanguagesServiceImpl implements LanguagesService {
 
     constructor(
-        @multiInject(LanguageContribution) @optional() protected readonly contributors: LanguageContribution[] | undefined
-    ) { }
+        @inject(ExtensionProvider) @named(LanguageContribution) protected readonly contributors: ExtensionProvider<LanguageContribution>) { }
 
     getLanguages(): Promise<LanguageIdentifier[]> {
-        if (!this.contributors) {
-            return Promise.resolve([]);
-        }
         return Promise.resolve(
-            this.contributors.map(contribution =>
+            this.contributors.getExtensions().map(contribution =>
                 LanguageIdentifier.create(contribution.description)
             )
         )
