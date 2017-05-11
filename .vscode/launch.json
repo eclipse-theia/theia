@@ -21,7 +21,7 @@
             "name": "Launch App (eclipse.jdt.ls)",
             "program": "${workspaceRoot}/examples/lib/app.js",
             "args": [
-                "--root-dir=/Users/kosyakov/oomph/theia-master/git/eclipse.jdt.ls"
+                "--root-dir=${workspaceRoot}/../eclipse.jdt.ls"
             ],
             "sourceMaps": true,
             "outFiles": [
