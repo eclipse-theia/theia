@@ -31,3 +31,14 @@ A Javascript framework for native desktop and cloud-based IDEs.
  && npm install \
  && npm run cold:start:electron
  ```
+ 
+### Running code coverage
+ ```
+npm run coverage
+
+### to view result
+
+firefox coverage/index.html 
+ ```
+
+
