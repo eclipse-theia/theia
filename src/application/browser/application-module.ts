@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -5,45 +6,46 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 import { ContainerModule } from "inversify"
+
 import { SelectionService } from '../common/selection-service'
 import { CommonCommandContribution, CommonMenuContribution } from '../common/commands-common'
-import { TheiaApplication } from './application'
-import { OpenerService } from "./opener-service"
-import { ResourceProvider, DefaultResourceProvider } from "../common";
-import { CommandContribution, CommandContributionProvider, CommandRegistry } from "../common/command"
-import { MenuModelRegistry, MenuContribution, MenuContributionProvider } from "../common/menu"
+import { bindExtensionProvider } from '../common/extension-provider';
+import { TheiaApplication, TheiaPlugin } from './application'
+import { OpenerService, OpenHandler } from "./opener-service"
+import { ResourceProvider, ResourceResolver, DefaultResourceProvider } from "../common";
+import { CommandContribution, CommandRegistry } from "../common/command"
+import { MenuModelRegistry, MenuContribution } from "../common/menu"
 import {
     KeybindingContextRegistry, KeybindingRegistry,
-    KeybindingContextProvider, KeybindingContext,
-    KeybindingContributionProvider, KeybindingContribution
+    KeybindingContext,
+    KeybindingContribution
 } from "../common/keybinding"
 
 export const browserApplicationModule = new ContainerModule(bind => {
     bind(TheiaApplication).toSelf().inSingletonScope()
+    bindExtensionProvider(bind, TheiaPlugin)
+
     bind(OpenerService).toSelf().inSingletonScope()
+    bindExtensionProvider(bind, OpenHandler)
 
     bind(DefaultResourceProvider).toSelf().inSingletonScope();
     bind(ResourceProvider).toProvider(context =>
         uri => context.container.get(DefaultResourceProvider).get(uri)
     );
+    bindExtensionProvider(bind, ResourceResolver)
 
     bind(SelectionService).toSelf().inSingletonScope();
     bind(CommandRegistry).toSelf().inSingletonScope()
     bind(CommandContribution).to(CommonCommandContribution)
-    bind(CommandContributionProvider).toFactory<CommandContribution[]>(ctx => {
-        return () => ctx.container.getAll<CommandContribution>(CommandContribution)
-    })
+    bindExtensionProvider(bind, CommandContribution)
+
     bind(MenuContribution).to(CommonMenuContribution)
-    bind(MenuContributionProvider).toFactory<MenuContribution[]>(ctx => {
-        return () => ctx.container.getAll<MenuContribution>(MenuContribution)
-    })
     bind(MenuModelRegistry).toSelf().inSingletonScope();
+    bindExtensionProvider(bind, MenuContribution)
+
     bind(KeybindingRegistry).toSelf().inSingletonScope()
+    bindExtensionProvider(bind, KeybindingContribution)
+
     bind(KeybindingContextRegistry).toSelf().inSingletonScope()
-    bind(KeybindingContextProvider).toFactory<KeybindingContext[]>(ctx => {
-        return () => ctx.container.getAll<KeybindingContext>(KeybindingContext);
-    });
-    bind(KeybindingContributionProvider).toFactory<KeybindingContribution[]>(ctx => {
-        return () => ctx.container.getAll<KeybindingContribution>(KeybindingContribution);
-    });
+    bindExtensionProvider(bind, KeybindingContext)
 });

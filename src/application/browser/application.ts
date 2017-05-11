@@ -1,3 +1,4 @@
+import { ExtensionProvider } from '../common/extension-provider';
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -11,12 +12,12 @@ import { KeybindingRegistry } from '../common/keybinding';
 import { MenuModelRegistry } from '../common/menu';
 import { ApplicationShell } from './shell';
 import { Application } from '@phosphor/application';
-import { inject, injectable, interfaces, multiInject } from 'inversify';
+import { inject, injectable, interfaces, named } from 'inversify';
 
-export const TheiaPlugin = Symbol("TheiaPlugin");
 /**
  * Clients can subclass to get a callback for contributing widgets to a shell on start.
  */
+export const TheiaPlugin = Symbol("TheiaPlugin");
 export interface TheiaPlugin {
     /**
      * Callback
@@ -35,7 +36,7 @@ export class TheiaApplication {
         @inject(CommandRegistry) commandRegistry: CommandRegistry,
         @inject(MenuModelRegistry) menuRegistry: MenuModelRegistry,
         @inject(KeybindingRegistry) keybindingRegistry: KeybindingRegistry,
-        @multiInject(TheiaPlugin) contributions: TheiaPlugin[]) {
+        @inject(ExtensionProvider) @named(TheiaPlugin) contributions: ExtensionProvider<TheiaPlugin>) {
 
         this.shell = new ApplicationShell();
         this.application = new Application<ApplicationShell>({
@@ -45,7 +46,7 @@ export class TheiaApplication {
             commandRegistry.initialize();
             keybindingRegistry.initialize();
             menuRegistry.initialize();
-            contributions.forEach(c => c.onStart(this));
+            contributions.getExtensions().forEach(c => c.onStart(this));
         })
     }
 

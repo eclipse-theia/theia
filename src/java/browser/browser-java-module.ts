@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2017 TypeFox and others.
  *

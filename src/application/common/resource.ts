@@ -5,7 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, multiInject, optional } from "inversify";
+import { ExtensionProvider } from './extension-provider';
+import { injectable, inject, named } from "inversify";
 import URI from "../common/uri";
 
 export interface Resource {
@@ -29,19 +30,20 @@ export type ResourceProvider = (uri: URI) => Promise<Resource>;
 export class DefaultResourceProvider {
 
     constructor(
-        @multiInject(ResourceResolver) @optional()
-        protected readonly resolvers: ResourceResolver[] | undefined
+        @inject(ExtensionProvider) @named(ResourceResolver)
+        protected readonly resolversProvider: ExtensionProvider<ResourceResolver>
     ) { }
 
     /**
      * Reject if a resource cannot be provided.
      */
     get(uri: URI): Promise<Resource> {
-        if (!this.resolvers) {
+        const resolvers = this.resolversProvider.getExtensions()
+        if (!resolvers) {
             return Promise.reject(this.createNotRegisteredError(uri));
         }
-        const initial = this.resolvers[0].resolve(uri);
-        return this.resolvers.slice(1).reduce((current, provider) =>
+        const initial = resolvers[0].resolve(uri);
+        return resolvers.slice(1).reduce((current, provider) =>
             current.catch(() =>
                 provider.resolve(uri)
             ),
