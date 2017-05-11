@@ -130,6 +130,7 @@ export class MainMenuFactory {
             if (item instanceof CompositeMenuNode) {
                 if (item.label) {
                     parent.addItem({
+                        type: 'submenu',
                         submenu: this.createMenuWidget(item, commands)
                     });
                 } else {

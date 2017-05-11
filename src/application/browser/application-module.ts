@@ -7,26 +7,27 @@
  */
 import { ContainerModule } from "inversify"
 
-import { SelectionService } from '../common/selection-service'
-import { CommonCommandContribution, CommonMenuContribution } from '../common/commands-common'
-import { bindExtensionProvider } from '../common/extension-provider';
-import { TheiaApplication, TheiaPlugin } from './application'
-import { OpenerService, OpenHandler } from "./opener-service"
-import { ResourceProvider, ResourceResolver, DefaultResourceProvider } from "../common";
-import { CommandContribution, CommandRegistry } from "../common/command"
-import { MenuModelRegistry, MenuContribution } from "../common/menu"
 import {
+    bindExtensionProvider,
+    SelectionService,
+    ResourceProvider, ResourceResolver, DefaultResourceProvider,
+    CommonCommandContribution, CommonMenuContribution,
+    CommandContribution, CommandRegistry,
+    MenuModelRegistry, MenuContribution,
     KeybindingContextRegistry, KeybindingRegistry,
     KeybindingContext,
     KeybindingContribution
-} from "../common/keybinding"
+} from "../common"
+import { TheiaApplication, TheiaPlugin } from './application'
+import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 
 export const browserApplicationModule = new ContainerModule(bind => {
     bind(TheiaApplication).toSelf().inSingletonScope()
     bindExtensionProvider(bind, TheiaPlugin)
 
-    bind(OpenerService).toSelf().inSingletonScope()
     bindExtensionProvider(bind, OpenHandler)
+    bind(DefaultOpenerService).toSelf().inSingletonScope();
+    bind(OpenerService).toDynamicValue(context => context.container.get(DefaultOpenerService));
 
     bind(DefaultResourceProvider).toSelf().inSingletonScope();
     bind(ResourceProvider).toProvider(context =>

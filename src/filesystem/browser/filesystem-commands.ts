@@ -5,23 +5,27 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { FileSystem, FileStat } from '../common/filesystem';
-import { ClipboardService, SelectionService } from '../../application/common';
-import { CommandContribution, CommandHandler, CommandRegistry } from '../../application/common/command';
-import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../../application/common/menu';
-import { UriSelection } from '../common/filesystem-selection';
 import { inject, injectable } from 'inversify';
-import { CommonCommands } from "../../application/common/commands-common";
 import URI from "../../application/common/uri";
+import { ClipboardService, SelectionService } from '../../application/common';
+import { Command, CommandContribution, CommandHandler, CommandRegistry } from '../../application/common/command';
+import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../../application/common/menu';
+import { CommonCommands } from "../../application/common/commands-common";
+import { FileSystem, FileStat } from '../common/filesystem';
+import { UriSelection } from '../common/filesystem-selection';
 import { SingleTextInputDialog, ConfirmDialog } from "../../application/browser/dialogs";
-
-
+import { OpenerService, OpenHandler, open } from "../../application/browser";
 
 export namespace Commands {
     export const FILE_MENU = "1_file";
     export const NEW_FILE = 'file:newFile';
     export const NEW_FOLDER = 'file:newFolder';
     export const FILE_OPEN = 'file:open';
+    export const FILE_OPEN_WITH = (opener: OpenHandler): Command => <Command>{
+        id: `file:openWith:${opener.id}`,
+        label: opener.label,
+        iconClass: opener.iconClass
+    };
     export const FILE_CUT = CommonCommands.EDIT_CUT
     export const FILE_COPY = CommonCommands.EDIT_COPY
     export const FILE_PASTE = CommonCommands.EDIT_PASTE
@@ -33,19 +37,16 @@ export namespace Commands {
 export class FileMenuContribution implements MenuContribution {
 
     contribute(registry: MenuModelRegistry) {
-            // Explicitly register the Edit Submenu
-            registry.registerSubmenu([MAIN_MENU_BAR], Commands.FILE_MENU, "File");
+        // Explicitly register the Edit Submenu
+        registry.registerSubmenu([MAIN_MENU_BAR], Commands.FILE_MENU, "File");
 
-            registry.registerMenuAction([MAIN_MENU_BAR, Commands.FILE_MENU, "1_new"], {
-                commandId: Commands.NEW_FILE
-            });
-            registry.registerMenuAction([MAIN_MENU_BAR, Commands.FILE_MENU, "1_new"], {
-                commandId: Commands.NEW_FOLDER
-            });
-            registry.registerMenuAction([MAIN_MENU_BAR, Commands.FILE_MENU, "2_open"], {
-                commandId: Commands.FILE_OPEN
-            });
-        }
+        registry.registerMenuAction([MAIN_MENU_BAR, Commands.FILE_MENU, "1_new"], {
+            commandId: Commands.NEW_FILE
+        });
+        registry.registerMenuAction([MAIN_MENU_BAR, Commands.FILE_MENU, "1_new"], {
+            commandId: Commands.NEW_FOLDER
+        });
+    }
 }
 
 @injectable()
@@ -54,7 +55,8 @@ export class FileCommandContribution implements CommandContribution {
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(ClipboardService) protected readonly clipboardService: ClipboardService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
-        ) {}
+        @inject(OpenerService) protected readonly openerService: OpenerService
+    ) { }
 
     contribute(registry: CommandRegistry): void {
         registry.registerCommand({
@@ -67,7 +69,7 @@ export class FileCommandContribution implements CommandContribution {
         });
         registry.registerCommand({
             id: Commands.FILE_OPEN,
-            label: 'Open ...'
+            label: 'Open'
         });
         registry.registerCommand({
             id: Commands.FILE_RENAME,
@@ -78,22 +80,30 @@ export class FileCommandContribution implements CommandContribution {
             label: 'Delete'
         });
 
+        this.openerService.getOpeners().then(openers => {
+            for (const opener of openers) {
+                const openWithCommand = Commands.FILE_OPEN_WITH(opener);
+                registry.registerCommand(openWithCommand);
+                registry.registerHandler(openWithCommand.id,
+                    new FileSystemCommandHandler(this.selectionService, uri => {
+                        return opener.open(uri);
+                    })
+                );
+            }
+        });
+
         registry.registerHandler(
             Commands.FILE_RENAME,
-            new FileSystemCommandHandler({
-                id: Commands.FILE_RENAME,
-                actionId: 'renamefile',
-                selectionService: this.selectionService
-            }, (uri) => {
+            new FileSystemCommandHandler(this.selectionService, uri => {
                 return this.fileSystem.getFileStat(uri.toString())
-                    .then( stat => {
+                    .then(stat => {
                         let dialog = new SingleTextInputDialog('Rename File', {
                             initialValue: uri.lastSegment,
                             validate(name) {
                                 return validateFileName(name, stat)
                             }
                         })
-                        dialog.acceptancePromise.then( name =>
+                        dialog.acceptancePromise.then(name =>
                             this.fileSystem.move(uri.toString(), uri.parent.appendPath(name).toString()))
                     })
             })
@@ -101,11 +111,7 @@ export class FileCommandContribution implements CommandContribution {
 
         registry.registerHandler(
             Commands.FILE_COPY,
-            new FileSystemCommandHandler({
-                id: Commands.FILE_COPY,
-                actionId: 'copyfile',
-                selectionService: this.selectionService
-            }, (uri) => {
+            new FileSystemCommandHandler(this.selectionService, uri => {
                 this.clipboardService.setData({
                     text: uri.toString()
                 })
@@ -115,32 +121,23 @@ export class FileCommandContribution implements CommandContribution {
 
         registry.registerHandler(
             Commands.FILE_PASTE,
-            new FileSystemCommandHandler({
-                id: Commands.FILE_PASTE,
-                actionId: 'pastefile',
-                selectionService: this.selectionService,
-                clipboardService: this.clipboardService
-            }, uri => {
+            new FileSystemCommandHandler(this.selectionService, uri => {
                 let copyPath: URI
                 return getDirectory(uri, this.fileSystem)
-                .then(stat => {
-                    let data: string = this.clipboardService.getData('text')
-                    copyPath = new URI(data)
-                    let targetUri = uri.appendPath(copyPath.lastSegment)
-                    return this.fileSystem.copy(copyPath.toString(), targetUri.toString())
-                })
-            })
+                    .then(stat => {
+                        let data: string = this.clipboardService.getData('text')
+                        copyPath = new URI(data)
+                        let targetUri = uri.appendPath(copyPath.lastSegment)
+                        return this.fileSystem.copy(copyPath.toString(), targetUri.toString())
+                    })
+            }, uri => !this.clipboardService.isEmpty && !!this.clipboardService.getData('text'))
         );
 
         registry.registerHandler(
             Commands.NEW_FILE,
-            new FileSystemCommandHandler({
-                id: Commands.NEW_FILE,
-                actionId: 'newfile',
-                selectionService: this.selectionService
-            }, uri => {
+            new FileSystemCommandHandler(this.selectionService, uri => {
                 return getDirectory(uri, this.fileSystem)
-                    .then( stat => {
+                    .then(stat => {
                         let freeUri = getFreeChild('Untitled', '.txt', stat)
                         let dialog = new SingleTextInputDialog(`New File Below '${freeUri.parent.lastSegment}'`, {
                             initialValue: freeUri.lastSegment,
@@ -148,7 +145,7 @@ export class FileCommandContribution implements CommandContribution {
                                 return validateFileName(name, stat)
                             }
                         })
-                        dialog.acceptancePromise.then( name =>
+                        dialog.acceptancePromise.then(name =>
                             this.fileSystem.createFile(new URI(stat.uri).appendPath(name).toString()))
                     })
             })
@@ -156,13 +153,9 @@ export class FileCommandContribution implements CommandContribution {
 
         registry.registerHandler(
             Commands.NEW_FOLDER,
-            new FileSystemCommandHandler({
-                id: Commands.NEW_FOLDER,
-                actionId: 'newfolder',
-                selectionService: this.selectionService
-            }, uri => {
+            new FileSystemCommandHandler(this.selectionService, uri => {
                 return getDirectory(uri, this.fileSystem)
-                    .then( stat => {
+                    .then(stat => {
                         let freeUri = getFreeChild('Untitled', '', stat)
                         let dialog = new SingleTextInputDialog(`New Folder Below '${freeUri.parent.lastSegment}'`, {
                             initialValue: freeUri.lastSegment,
@@ -170,7 +163,7 @@ export class FileCommandContribution implements CommandContribution {
                                 return validateFileName(name, stat)
                             }
                         })
-                        dialog.acceptancePromise.then( name =>
+                        dialog.acceptancePromise.then(name =>
                             this.fileSystem.createFolder(new URI(stat.uri).appendPath(name).toString()))
                     })
             })
@@ -178,17 +171,20 @@ export class FileCommandContribution implements CommandContribution {
 
         registry.registerHandler(
             Commands.FILE_DELETE,
-            new FileSystemCommandHandler({
-                id: Commands.FILE_DELETE,
-                actionId: 'delete',
-                selectionService: this.selectionService
-            }, uri => {
+            new FileSystemCommandHandler(this.selectionService, uri => {
                 let dialog = new ConfirmDialog('Delete File', `Do you really want to delete '${uri.lastSegment}'?`)
                 return dialog.acceptancePromise.then(() => {
                     return this.fileSystem.delete(uri.toString())
                 })
             })
         )
+
+        registry.registerHandler(
+            Commands.FILE_OPEN,
+            new FileSystemCommandHandler(this.selectionService,
+                uri => open(this.openerService, uri)
+            )
+        );
     }
 }
 
@@ -214,7 +210,7 @@ function validateFileName(name: string, parent: FileStat): string {
 
 function getDirectory(candidate: URI, fileSystem: FileSystem): Promise<FileStat> {
     return fileSystem.getFileStat(candidate.toString())
-        .then( stat => {
+        .then(stat => {
             if (!stat || !stat.isDirectory) {
                 // not folder? get parent
                 return fileSystem.getFileStat(new URI(stat.uri).parent.toString())
@@ -230,7 +226,7 @@ function getFreeChild(prefix: string, suffix: string, fileStat: FileStat): URI {
     for (let infix of infixes) {
         let candidate = prefix + infix + suffix
         let children: FileStat[] = fileStat.children!
-        if (!children.some( stat => new URI(stat.uri).lastSegment === candidate)) {
+        if (!children.some(stat => new URI(stat.uri).lastSegment === candidate)) {
             return parentUri.appendPath(candidate)
         }
     }
@@ -239,48 +235,33 @@ function getFreeChild(prefix: string, suffix: string, fileStat: FileStat): URI {
 
 export class FileSystemCommandHandler implements CommandHandler {
     constructor(
-        protected readonly options: FileSystemCommandHandler.Options,
-        protected readonly doExecute: (uri: URI) => Promise<any>) {
+        protected readonly selectionService: SelectionService,
+        protected readonly doExecute: (uri: URI) => any,
+        protected readonly testEnabled?: (uri: URI) => boolean
+    ) { }
+
+    protected get uri(): URI | undefined {
+        return UriSelection.getUri(this.selectionService.selection);
     }
 
-    execute(arg?: any): Promise<any> {
-        const selection = this.options.selectionService.selection;
-        if (UriSelection.is(selection)) {
-            return this.doExecute(selection.uri)
-        }
-        return Promise.resolve()
+    execute(): any {
+        const uri = this.uri;
+        return uri ? this.doExecute(uri) : undefined;
     }
 
-    isVisible(arg?: any): boolean {
-        if (UriSelection.is(this.options.selectionService.selection)) {
+    isVisible(): boolean {
+        return !!this.uri;
+    }
+
+    isEnabled(): boolean {
+        const uri = this.uri;
+        if (uri) {
+            if (this.testEnabled) {
+                return this.testEnabled(uri);
+            }
             return true;
         }
         return false;
     }
 
-    isEnabled(arg?: any): boolean {
-        if (this.options.actionId === 'pastefile') {
-            if (!this.options.clipboardService) {
-                return false
-            }
-            if (this.options.clipboardService.isEmpty) {
-                return false
-            }
-            let data: any = this.options.clipboardService.getData("text")
-            if (!data) {
-                return false
-            }
-        }
-        return true;
-    }
-
-}
-
-export namespace FileSystemCommandHandler {
-    export interface Options {
-        id: string;
-        actionId: string,
-        selectionService: SelectionService,
-        clipboardService?: ClipboardService
-    }
 }

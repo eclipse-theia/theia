@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import URI from "../../application/common/uri";
-import { Emitter, Event, RecursivePartial, SelectionService } from '../../application/common';
+import { Emitter, Event, RecursivePartial, ResourceProvider, SelectionService } from '../../application/common';
 import { OpenHandler, TheiaApplication, TheiaPlugin } from "../../application/browser";
 import { EditorWidget } from "./editor-widget";
 import { EditorRegistry } from "./editor-registry";
@@ -55,6 +55,9 @@ export interface EditorInput {
 @injectable()
 export class EditorManagerImpl implements EditorManager {
 
+    readonly id = "code-editor-opener";
+    readonly label = "Code Editor";
+
     private _resolveApp: (app: TheiaApplication) => void;
     protected readonly resolveApp = new Promise<TheiaApplication>(resolve =>
         this._resolveApp = resolve
@@ -66,7 +69,8 @@ export class EditorManagerImpl implements EditorManager {
     constructor(
         @inject(EditorRegistry) protected readonly editorRegistry: EditorRegistry,
         @inject(TextEditorProvider) protected readonly editorProvider: TextEditorProvider,
-        @inject(SelectionService) protected readonly selectionService: SelectionService
+        @inject(SelectionService) protected readonly selectionService: SelectionService,
+        @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider
     ) { }
 
     onStart(app: TheiaApplication): void {
@@ -97,7 +101,14 @@ export class EditorManagerImpl implements EditorManager {
         return this.activeObserver.onEditorChanged();
     }
 
-    open(uri: URI, input?: EditorInput): Promise<EditorWidget> {
+    canHandle(uri: URI, input?: EditorInput): Promise<number> {
+        return this.resourceProvider(uri).then(
+            () => 100,
+            () => 0
+        );
+    }
+
+    open(uri: URI, input?: EditorInput): Promise<EditorWidget>  {
         return this.getOrCreateEditor(uri).then(editor => {
             this.revealIfVisible(editor, input);
             this.revealSelection(editor, input);
