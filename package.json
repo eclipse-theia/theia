@@ -53,9 +53,7 @@
     "chai-as-promised": "^6.0.0",
     "circular-dependency-plugin": "^2.0.0",
     "copy-webpack-plugin": "^4.0.1",
-    "css-loader": "^0.26.2",
-    "electron-rebuild": "^1.5.10",
-    "file-loader": "^0.10.1",
+    "css-loader": "^0.26.4",
     "karma": "^1.5.0",
     "karma-chrome-launcher": "^2.0.0",
     "karma-mocha": "^1.3.0",
@@ -79,7 +77,6 @@
   },
   "scripts": {
     "prepublish": "npm run clean && npm run build && npm run test",
-    "postinstall": "./node_modules/.bin/electron-rebuild",
     "lint": "./node_modules/.bin/tslint -c ./config/tslint/tslint.json --project ./tsconfig.json",
     "build": "./node_modules/.bin/tsc && npm run lint",
     "watch": "./node_modules/.bin/tsc-watch --onSuccess \"npm run lint\"",
