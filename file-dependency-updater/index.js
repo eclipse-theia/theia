@@ -20,7 +20,7 @@ for (const dependency of Object.keys(currentPackageJson.dependencies)) {
             const targetPath = path.join(currentRoot, nodeModules, dependency, fileLocation);
             if (fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()) {
                 const sourcePath = path.join(upstreamRoot, fileLocation);
-                chokidar.watch(sourcePath, { ignored: /(^|[\/\\])\../, alwaysStat: true }).on("all", function (event, filePath, stat) {
+                chokidar.watch(sourcePath, { ignored: /(^|[\/\\])\../, alwaysStat: true, ignoreInitial: true }).on("all", function (event, filePath, stat) {
                     const relativeFilePath = path.relative(sourcePath, filePath);
                     const targetFilePath = path.resolve(targetPath, relativeFilePath);
                     if (stat) { // add, addDir, change 
