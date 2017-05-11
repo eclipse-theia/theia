@@ -11,7 +11,7 @@
     "monaco-languages": "^0.7.0",
     "monaco-typescript": "^2.1.2",
     "reflect-metadata": "^0.1.10",
-    "theia": "^0.0.1"
+    "theia": "file:../../Theia"
   },
   "scripts": {
     "install:theia": "cd ../ && npm link && cd examples && npm link theia",
@@ -28,6 +28,7 @@
     "cold:start:electron": "cd ../ && npm run clean && npm run build && cd examples && npm run clean && npm run build:app && npm run build:electron && npm run start:electron",
     "watch:app": "./node_modules/.bin/tsc --watch",
     "watch:web": "npm run build:web && ./node_modules/.bin/webpack --watch",
+    "watch:dependencies": "node ../file-dependency-updater/index.js",
     "test:ui": "./node_modules/.bin/wdio wdio.conf.js"
   },
   "devDependencies": {

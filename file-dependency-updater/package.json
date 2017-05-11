@@ -1,0 +1,17 @@
+{
+  "name": "file-dependency-updater",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chokidar": "^1.7.0",
+    "find-package-json": "^1.0.0",
+    "fs-extra": "^3.0.1",
+    "minimist": "^1.2.0"
+  }
+}
