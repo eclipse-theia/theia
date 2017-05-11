@@ -8,6 +8,7 @@
     "strictNullChecks": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "downlevelIteration": true,
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "es5",

@@ -15,4 +15,10 @@ export namespace UriSelection {
     export function is(e: any): e is UriSelection {
         return e && e["uri"] instanceof URI
     }
+    export function getUri(selection: any): URI | undefined {
+        if (UriSelection.is(selection)) {
+            return selection.uri;
+        }
+        return undefined;
+    }
 }

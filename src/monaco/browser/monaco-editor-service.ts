@@ -8,7 +8,7 @@
 import { injectable, inject } from 'inversify';
 import { MonacoToProtocolConverter } from "monaco-languageclient";
 import URI from "../../application/common/uri";
-import { OpenerService } from '../../application/browser';
+import { OpenerService, open } from '../../application/browser';
 import { EditorInput, EditorWidget } from '../../editor/browser';
 import { MonacoEditor } from './monaco-editor';
 
@@ -27,7 +27,7 @@ export class MonacoEditorService implements IEditorService {
     openEditor(input: IResourceInput, sideBySide?: boolean | undefined): monaco.Promise<IEditorReference | undefined> {
         const uri = new URI(input.resource.toString());
         const editorInput = this.createEditorInput(input);
-        return monaco.Promise.wrap(this.openerService.open(uri, editorInput).then(widget => {
+        return monaco.Promise.wrap(open(this.openerService, uri, editorInput).then(widget => {
             if (widget instanceof EditorWidget && widget.editor instanceof MonacoEditor) {
                 return widget.editor;
             }

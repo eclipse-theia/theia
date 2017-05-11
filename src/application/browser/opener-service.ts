@@ -1,4 +1,3 @@
-import { ExtensionProvider } from '../common/extension-provider';
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -8,42 +7,101 @@ import { ExtensionProvider } from '../common/extension-provider';
 
 import { named, injectable, inject } from "inversify";
 import URI from "../common/uri";
-
+import { ExtensionProvider, Prioritizeable, MaybePromise } from "../common";
 
 export interface OpenerOptions {
 }
 
 export const OpenHandler = Symbol("OpenHandler");
+/**
+ * `OpenHandler` should be implemented to provide a new opener.
+ */
 export interface OpenHandler {
     /**
-     * Open a widget for the given input.
-     *
-     * Resolve to an opened widget or undefined, e.g. if a browser page is opened.
-     * Reject if the given input cannot be opened.
+     * A unique id of this handler.
      */
-    open(uri: URI, input?: OpenerOptions): Promise<object | undefined>;
+    readonly id: string;
+    /**
+     * A human-readable name of this handler.
+     */
+    readonly label?: string;
+    /**
+     * A css icon class of this handler.
+     */
+    readonly iconClass?: string;
+    /**
+     * Test whether this handler can open the given URI for given options.
+     * Return a positive number if this handler can open; otherwise it cannot.
+     * Never reject.
+     *
+     * A returned value indicating a priorify of this handler.
+     */
+    canHandle(uri: URI, options?: OpenerOptions): MaybePromise<number>;
+    /**
+     * Open a widget for the given URI and options.
+     * Resolve to an opened widget or undefined, e.g. if a page is opened.
+     * Never reject if `canHandle` return a positive number; otherwise should reject.
+     */
+    open(uri: URI, options?: OpenerOptions): MaybePromise<object | undefined>;
+}
+
+export const OpenerService = Symbol("OpenerService");
+/**
+ * `OpenerService` provide an access to existing openers.
+ */
+export interface OpenerService {
+    /**
+     * Return all registered openers.
+     * Never reject.
+     */
+    getOpeners(): Promise<OpenHandler[]>;
+    /**
+     * Return all openers able to open the given URI for given options
+     * ordered according their priority.
+     * Never reject.
+     */
+    getOpeners(uri: URI, options?: OpenerOptions): Promise<OpenHandler[]>;
+    /**
+     * Return an opener with the higher priority for the given URI.
+     * Reject if such does not exist.
+     */
+    getOpener(uri: URI, options?: OpenerOptions): Promise<OpenHandler>;
+}
+
+export async function open(openerService: OpenerService, uri: URI, options?: OpenerOptions): Promise<object | undefined> {
+    const opener = await openerService.getOpener(uri);
+    return await opener.open(uri, options);
 }
 
 @injectable()
-export class OpenerService {
+export class DefaultOpenerService implements OpenerService {
 
-    constructor(@inject(ExtensionProvider) @named(OpenHandler) protected readonly openHandlers: ExtensionProvider<OpenHandler>) { }
+    constructor(
+        @inject(ExtensionProvider) @named(OpenHandler)
+        protected readonly handlersProvider: ExtensionProvider<OpenHandler>
+    ) { }
 
-    /**
-     * Open a widget for the given input.
-     *
-     * Resolve to an opened widget or undefined, e.g. if a browser page is opened.
-     * Reject if the given input cannot be opened.
-     */
-    open(uri: URI, input?: OpenerOptions): Promise<object | undefined> {
-        if (this.openHandlers.getExtensions().length === 0) {
-            return Promise.resolve(undefined);
+    async getOpener(uri: URI, options?: OpenerOptions): Promise<OpenHandler> {
+        const handlers = await this.prioritize(uri, options);
+        if (handlers.length >= 1) {
+            return handlers[0];
         }
-        const initial = this.openHandlers.getExtensions()[0].open(uri, input);
-        return this.openHandlers.getExtensions().slice(1).reduce(
-            (current, opener) => current.catch(() => opener.open(uri, input)),
-            initial
+        return Promise.reject(`There is no opener for ${uri}.`);
+    }
+
+    async getOpeners(uri?: URI, options?: OpenerOptions): Promise<OpenHandler[]> {
+        return uri ? this.prioritize(uri, options) : this.getHandlers();
+    }
+
+    protected async prioritize(uri: URI, options?: OpenerOptions): Promise<OpenHandler[]> {
+        const prioritized = await Prioritizeable.prioritizeAll(this.getHandlers(), handler =>
+            handler.canHandle(uri, options)
         );
+        return prioritized.map(p => p.value);
+    }
+
+    protected getHandlers(): OpenHandler[] {
+        return this.handlersProvider.getExtensions();
     }
 
 }

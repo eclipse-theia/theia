@@ -6,55 +6,58 @@
  */
 
 import { injectable, inject } from "inversify";
-import { CommandHandler, CommandContribution, CommandRegistry } from '../../application/common/command';
-import { CONTEXT_MENU_PATH } from "./navigator-widget";
-import { Commands } from '../../filesystem/browser/filesystem-commands';
-import { MenuContribution, MenuModelRegistry } from "../../application/common/menu";
+import { CommandHandler, MenuContribution, MenuModelRegistry } from "../../application/common";
+import { OpenerService } from '../../application/browser';
 import { FileSystem, FileStat } from "../../filesystem/common/filesystem";
+import { Commands } from '../../filesystem/browser/filesystem-commands';
+import { CONTEXT_MENU_PATH } from "./navigator-widget";
 import { FileNavigatorModel } from "./navigator-model";
 
-@injectable()
-export class NavigatorCommandHandlers implements CommandContribution {
-    constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(FileNavigatorModel) protected readonly model: FileNavigatorModel) { }
-    contribute(registry: CommandRegistry): void {
-        // registry.registerHandler(
-        //     Commands.FILE_DELETE,
-        //     new NavigatorCommandHandler({
-        //         id: Commands.FILE_DELETE,
-        //         actionId: 'delete',
-        //         fileSystem: this.fileSystem,
-        //         model: this.model
-        //     }, (path: Path) => {
-        //         this.fileSystem.rm(path)
-        //     })
-        // );
-    }
-}
+export const OPEN_MENU_GROUP = '1_open';
+export const OPEN_WITH_MENU = 'open-with';
+export const CUT_MENU_GROUP = '2_cut/copy/paste';
+export const MOVE_MENU_GROUP = '3_move';
+export const NEW_MENU_GROUP = '4_new';
 
 @injectable()
 export class NavigatorMenuContribution implements MenuContribution {
+
+    constructor(
+        @inject(OpenerService) protected readonly openerService: OpenerService
+    ) { }
+
     contribute(registry: MenuModelRegistry) {
-        // registry.registerMenuAction([CONTEXT_MENU_PATH, "1_cut/copy/paste"], {
+        registry.registerMenuAction([CONTEXT_MENU_PATH, OPEN_MENU_GROUP], {
+            commandId: Commands.FILE_OPEN
+        });
+        registry.registerSubmenu([CONTEXT_MENU_PATH, OPEN_MENU_GROUP], OPEN_WITH_MENU, 'Open With');
+        this.openerService.getOpeners().then(openers => {
+            for (const opener of openers) {
+                const openWithCommand = Commands.FILE_OPEN_WITH(opener);
+                registry.registerMenuAction([CONTEXT_MENU_PATH, OPEN_MENU_GROUP, OPEN_WITH_MENU], {
+                    commandId: openWithCommand.id
+                });
+            }
+        });
+        // registry.registerMenuAction([CONTEXT_MENU_PATH, CUT_MENU_GROUP], {
         //     commandId: Commands.FILE_CUT
         // });
-        registry.registerMenuAction([CONTEXT_MENU_PATH, "1_cut/copy/paste"], {
+        registry.registerMenuAction([CONTEXT_MENU_PATH, CUT_MENU_GROUP], {
             commandId: Commands.FILE_COPY
         });
-        registry.registerMenuAction([CONTEXT_MENU_PATH, "1_cut/copy/paste"], {
+        registry.registerMenuAction([CONTEXT_MENU_PATH, CUT_MENU_GROUP], {
             commandId: Commands.FILE_PASTE
         });
-        registry.registerMenuAction([CONTEXT_MENU_PATH, "2_move"], {
+        registry.registerMenuAction([CONTEXT_MENU_PATH, MOVE_MENU_GROUP], {
             commandId: Commands.FILE_RENAME
         });
-        registry.registerMenuAction([CONTEXT_MENU_PATH, "2_move"], {
+        registry.registerMenuAction([CONTEXT_MENU_PATH, MOVE_MENU_GROUP], {
             commandId: Commands.FILE_DELETE
         });
-        registry.registerMenuAction([CONTEXT_MENU_PATH, "3_new"], {
+        registry.registerMenuAction([CONTEXT_MENU_PATH, NEW_MENU_GROUP], {
             commandId: Commands.NEW_FILE
         });
-        registry.registerMenuAction([CONTEXT_MENU_PATH, "3_new"], {
+        registry.registerMenuAction([CONTEXT_MENU_PATH, NEW_MENU_GROUP], {
             commandId: Commands.NEW_FOLDER
         });
     }
