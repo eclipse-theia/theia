@@ -15,7 +15,9 @@ A Javascript framework for native desktop and cloud-based IDEs.
  git clone https://github.com/TypeFox/Theia.git \
  && cd Theia \
  && npm install \
- && cd examples/browser/ \
+ && cd releng/file-dependency-updater/ \
+ && npm install \
+ && cd ../../examples/browser/ \
  && npm install \
  && npm run cold:start:browser
  ```

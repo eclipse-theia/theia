@@ -3,12 +3,23 @@
 const fs = require("fs-extra");
 const path = require("path");
 const chokidar = require("chokidar");
-const minimist = require("minimist");
 const packageJsonFinder = require("find-package-json");
 
 const fileDependencyPrefix = "file:"
 const nodeModules = "node_modules";
 
+/**
+ * This function watches for changes in all direct, files-based, upstream npm dependencies and makes sure, that
+ * all those changes propagate into the `node_modules` folder of the use-site. So that, for instance, Webpack,
+ * can update the browser with the current state of the code.
+ * 
+ * This function locates the closest `package.json` file of the caller. That is the downstream project which could
+ * depend on file-based npm packages. If that is the case, it locates all upstream packages, and watches resource
+ * changes under the `files` directories. On file changes and file creations, it copies the new resources to
+ * the `node_modules` of the downstream project. On file deletion, it removes the corresponding files.
+ * 
+ * This function requires a `tsc --watch` running on the upstream project when code needs to be compiled.
+ */
 (function () {
     const currentPackageJson = packageJsonFinder().next().value;
     const currentRoot = path.resolve(currentPackageJson.__path, "..");
