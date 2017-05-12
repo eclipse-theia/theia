@@ -13,6 +13,8 @@ import { fileSystemClientModule } from "theia/lib/filesystem/browser";
 import { editorModule } from "theia/lib/editor/browser";
 import { browserLanguagesModule } from 'theia/lib/languages/browser';
 import { monacoModule } from 'theia/lib/monaco/browser';
+import { browserClipboardModule } from 'theia/lib/application/browser/clipboard/clipboard-module';
+import { browserMenuModule } from "theia/lib/application/browser/menu/menu-module";
 import "theia/src/application/browser/style/index.css";
 import "theia/src/monaco/browser/style/index.css";
 import "theia/src/navigator/browser/style/index.css";
@@ -26,9 +28,9 @@ import "xterm/dist/xterm.css";
 import { browserJavaModule } from 'theia/lib/java/browser/browser-java-module';
 import 'theia/lib/java/browser/monaco-contribution';
 
-export function start(clientContainer?: Container) {
+(() => {
 
-    // Create the common client container.
+    // Create the client container and load the common contributions.
     const container = new Container();
     container.load(browserApplicationModule);
     container.load(messagingModule);
@@ -39,13 +41,15 @@ export function start(clientContainer?: Container) {
     container.load(monacoModule);
     container.load(browserJavaModule);
 
+    // Load the browser specific contributions.
+    container.load(browserMenuModule);
+    container.load(browserClipboardModule);
+
     // terminal extension
     container.load(terminalFrontendModule);
 
-    // Merge the common container with the client specific one. If any.
-    const mainContainer = clientContainer ? Container.merge(container, clientContainer) : container;
-
     // Obtain application and start.
-    const application = mainContainer.get(TheiaApplication);
-    application.start(mainContainer);
-}
+    const application = container.get(TheiaApplication);
+    application.start(container);
+
+})();

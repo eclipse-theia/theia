@@ -20,8 +20,5 @@
   },
   "include": [
     "src"
-  ],
-  "files": [
-    "node_modules/theia/typings/monaco/index.d.ts"
   ]
 }
