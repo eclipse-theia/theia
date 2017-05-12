@@ -1,13 +1,5 @@
-const paths = require('./paths');
-
-module.exports = function (dirname) {
+module.exports = function () {
     return {
-
-        entry: paths(dirname).ENTRY,
-
-        output: {
-            path: paths(dirname).BUILD_ROOT
-        },
 
         target: 'web',
 
