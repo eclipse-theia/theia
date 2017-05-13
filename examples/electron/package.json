@@ -20,9 +20,13 @@
     "build": "npm run build:app && npm run build:electron",
     "build:app": "tsc && npm run lint",
     "build:electron": "npm run build:app && webpack --target electron && cp src/client/index.html lib/client",
+
+    "start": "npm run start:electron",
     "start:app": "node ./lib/app.js",
     "start:electron": "electron ./lib/client/electron-main.js",
-    "cold:start:electron": "cd ../../ && npm run clean && npm run build && cd examples/electron && npm run clean && npm run build && npm run start:electron",
+
+    "cold:start:electron": "cd ../../ && npm run clean && npm run build && cd examples/electron && npm run clean && npm run build && npm start",
+
     "watch:app": "tsc --watch",
     "test:ui": "wdio wdio.conf.js"
   },

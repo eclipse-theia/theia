@@ -19,9 +19,13 @@
     "build": "npm run build:app && npm run build:browser",
     "build:app": "tsc && npm run lint",
     "build:browser": "webpack && cp src/client/index.html lib/client",
+
+    "start": "concurrently \"npm run watch:dependencies\" \"npm run start:app\" \"npm run start:browser\"",
     "start:app": "node ./lib/app/app.js",
-    "start:browser": "concurrently \"npm run watch:dependencies\" \"npm run start:app\" \"webpack-dev-server --open\"",
-    "cold:start:browser": "cd ../../ && npm run clean && npm run build && cd examples/browser && npm run clean && npm run build && npm run start:browser",
+    "start:browser": "webpack-dev-server --open",
+
+    "cold:start:browser": "cd ../../ && npm run clean && npm run build && cd examples/browser && npm run clean && npm run build && npm start",
+
     "watch:app": "tsc --watch",
     "watch:browser": "npm run build:browser && webpack --watch",
     "watch:dependencies": "node ../../releng/file-dependency-updater/index.js",
