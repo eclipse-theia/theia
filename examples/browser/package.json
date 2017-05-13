@@ -13,18 +13,22 @@
     "theia": "file:../../../Theia"
   },
   "scripts": {
-    "clean": "./node_modules/.bin/rimraf lib",
-    "lint": "./node_modules/.bin/tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
+    "clean": "rimraf lib",
+    "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
     "build": "npm run build:app && npm run build:browser",
-    "build:app": "./node_modules/.bin/tsc && npm run lint",
-    "build:browser": "./node_modules/.bin/webpack && cp src/client/index.html lib/client",
-    "start:app": "./node_modules/.bin/node ./lib/app/app.js",
-    "start:browser": "./node_modules/.bin/concurrently \"npm run watch:dependencies\" \"npm run start:app\" \"./node_modules/.bin/webpack-dev-server --open\"",
-    "cold:start:browser": "cd ../../ && npm run clean && npm run build && cd examples/browser && npm run clean && npm run build:app && npm run build:browser && npm run start:browser",
-    "watch:app": "./node_modules/.bin/tsc --watch",
-    "watch:browser": "npm run build:browser && ./node_modules/.bin/webpack --watch",
+    "build:app": "tsc && npm run lint",
+    "build:browser": "webpack && cp src/client/index.html lib/client",
+
+    "start": "concurrently --names watch-deps,backend,webpack-server --prefix \"[{name}]\" \"npm run watch:dependencies\" \"npm run start:app\" \"npm run start:browser\"",
+    "start:app": "node ./lib/app/app.js",
+    "start:browser": "webpack-dev-server --open",
+
+    "cold:start:browser": "cd ../../ && npm run clean && npm run build && cd examples/browser && npm run clean && npm run build && npm start",
+
+    "watch:app": "tsc --watch",
+    "watch:browser": "npm run build:browser && webpack --watch",
     "watch:dependencies": "node ../../releng/file-dependency-updater/index.js",
-    "test:ui": "./node_modules/.bin/wdio wdio.conf.js"
+    "test:ui": "wdio wdio.conf.js"
   },
   "devDependencies": {
     "@types/chai": "^3.5.1",
