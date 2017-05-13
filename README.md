@@ -1,4 +1,5 @@
 # Theia
+[![Gitter](https://img.shields.io/badge/chat-on%20gitter-blue.svg)](https://gitter.im/theia-ide/theia)
 
 A Javascript framework for native desktop and cloud-based IDEs.
 
