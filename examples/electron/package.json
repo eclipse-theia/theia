@@ -16,7 +16,7 @@
   "scripts": {
     "clean": "rimraf lib",
     "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
-    "build": "npm run build:app && npm run build:web",
+    "build": "npm run build:app && npm run build:electron",
     "build:app": "tsc && npm run lint",
     "build:electron": "electron-rebuild && npm run build:app && webpack --target electron && cp src/client/index.html lib/client",
     "start:app": "node ./lib/app.js",
