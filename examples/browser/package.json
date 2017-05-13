@@ -13,12 +13,14 @@
     "theia": "file:../.."
   },
   "scripts": {
-    "prepublish": "npm run clean && npm run build",
     "clean": "rimraf lib",
-    "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
+
+    "prepare": "npm run clean && npm run build",
+
     "build": "npm run build:app && npm run build:browser",
     "build:app": "tsc && npm run lint",
     "build:browser": "webpack && cp src/client/index.html lib/client",
+    "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
 
     "start": "concurrently --names watch-deps,backend,webpack-server --prefix \"[{name}]\" \"npm run watch:dependencies\" \"npm run start:app\" \"npm run start:browser\"",
     "start:app": "node ./lib/app/app.js",
@@ -29,6 +31,7 @@
     "watch:app": "tsc --watch",
     "watch:browser": "npm run build:browser && webpack --watch",
     "watch:dependencies": "node ../../releng/file-dependency-updater/index.js",
+
     "test:ui": "wdio wdio.conf.js"
   },
   "devDependencies": {
