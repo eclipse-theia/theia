@@ -16,9 +16,10 @@
   "scripts": {
     "clean": "rimraf lib",
     "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
+    "postinstall": "electron-rebuild",
     "build": "npm run build:app && npm run build:electron",
     "build:app": "tsc && npm run lint",
-    "build:electron": "electron-rebuild && npm run build:app && webpack --target electron && cp src/client/index.html lib/client",
+    "build:electron": "npm run build:app && webpack --target electron && cp src/client/index.html lib/client",
     "start:app": "node ./lib/app.js",
     "start:electron": "electron ./lib/client/electron-main.js",
     "cold:start:electron": "cd ../../ && npm run clean && npm run build && cd examples/electron && npm run clean && npm run build && npm run start:electron",
