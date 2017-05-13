@@ -20,7 +20,7 @@
     "build:app": "tsc && npm run lint",
     "build:browser": "webpack && cp src/client/index.html lib/client",
 
-    "start": "concurrently \"npm run watch:dependencies\" \"npm run start:app\" \"npm run start:browser\"",
+    "start": "concurrently --names watch-deps,backend,webpack-server --prefix \"[{name}]\" \"npm run watch:dependencies\" \"npm run start:app\" \"npm run start:browser\"",
     "start:app": "node ./lib/app/app.js",
     "start:browser": "webpack-dev-server --open",
 
