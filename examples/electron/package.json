@@ -15,11 +15,14 @@
   },
   "scripts": {
     "clean": "rimraf lib",
-    "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
+
     "postinstall": "electron-rebuild",
+    "prepare": "npm run clean && npm run build",
+
     "build": "npm run build:app && npm run build:electron",
     "build:app": "tsc && npm run lint",
     "build:electron": "npm run build:app && webpack --target electron && cp src/client/index.html lib/client",
+    "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
 
     "start": "npm run start:electron",
     "start:app": "node ./lib/app.js",
@@ -28,6 +31,7 @@
     "cold:start:electron": "cd ../../ && npm run clean && npm run build && cd examples/electron && npm run clean && npm run build && npm start",
 
     "watch:app": "tsc --watch",
+
     "test:ui": "wdio wdio.conf.js"
   },
   "devDependencies": {
