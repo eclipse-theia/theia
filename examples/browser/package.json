@@ -21,7 +21,7 @@
     "build:browser": "webpack && cp src/client/index.html lib/client",
     "start:app": "node ./lib/app/app.js",
     "start:browser": "concurrently \"npm run watch:dependencies\" \"npm run start:app\" \"webpack-dev-server --open\"",
-    "cold:start:browser": "cd ../../ && npm run clean && npm run build && cd examples/browser && npm run clean && npm run build:app && npm run build:browser && npm run start:browser",
+    "cold:start:browser": "cd ../../ && npm run clean && npm run build && cd examples/browser && npm run clean && npm run build && npm run start:browser",
     "watch:app": "tsc --watch",
     "watch:browser": "npm run build:browser && webpack --watch",
     "watch:dependencies": "node ../../releng/file-dependency-updater/index.js",
