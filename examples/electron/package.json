@@ -21,7 +21,7 @@
     "build:electron": "electron-rebuild && npm run build:app && webpack --target electron && cp src/client/index.html lib/client",
     "start:app": "node ./lib/app.js",
     "start:electron": "electron ./lib/client/electron-main.js",
-    "cold:start:electron": "cd ../../ && npm run clean && npm run build && cd examples/electron && npm run clean && npm run build:app && npm run build:electron && npm run start:electron",
+    "cold:start:electron": "cd ../../ && npm run clean && npm run build && cd examples/electron && npm run clean && npm run build && npm run start:electron",
     "watch:app": "tsc --watch",
     "test:ui": "wdio wdio.conf.js"
   },
