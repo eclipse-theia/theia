@@ -14,7 +14,6 @@
     "theia": "file:../.."
   },
   "scripts": {
-    "install:theia": "cd ../ && npm link && cd examples && npm link theia",
     "clean": "rimraf lib",
     "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
     "build": "npm run build:app && npm run build:web",
