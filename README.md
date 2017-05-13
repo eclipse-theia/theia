@@ -11,26 +11,6 @@ Theia is a cloud & desktop IDE implemented in TypeScript.
  - Provide extenders with a platform on which to build their own products
  - Provide support for multiple languages via the language and debug server protocols
  
- ### Running the browser example
- ```
- git clone https://github.com/theia-ide/theia.git && \
- cd theia && \
- npm install && \
- npm run build && \
- cd releng/file-dependency-updater/ && \
- npm install && \
- cd ../../examples/browser/ && \
- npm install && \
- npm run cold:start:browser
- ```
+### Running the examples
 
- ### Running the electron example
- ```
- git clone https://github.com/theia-ide/theia.git && \
- cd theia && \
- npm install && \
- npm run build && \
- cd examples/electron/ && \
- npm install && \
- npm run cold:start:electron
- ```
+See [DEVELOPING.md](doc/DEVELOPING.md).

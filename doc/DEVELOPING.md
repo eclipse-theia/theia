@@ -1,5 +1,5 @@
 This file contains tips to help you take (and understand) your first steps in
-the world of Theia development.
+the world of Theia development.  Are you in a hurry?  See the [tl;dr](#tldr).
 
 # How to build Theia and the example applications
 
@@ -72,3 +72,27 @@ Building the electron-based example is similar:
 It can also be started with:
 
     $ npm start
+
+## tldr
+
+To build and run the browser example:
+
+    $ git clone https://github.com/theia-ide/theia && \
+      cd theia && \
+      npm install && \
+      cd releng/file-dependency-updater && \
+      npm install && \
+      cd ../../examples/browser && \
+      npm install && \
+      npm start
+
+To build and run the electron example:
+
+    $ git clone https://github.com/theia-ide/theia && \
+      cd theia && \
+      npm install && \
+      cd releng/file-dependency-updater && \
+      npm install && \
+      cd ../../examples/electron && \
+      npm install && \
+      npm start
