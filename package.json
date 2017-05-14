@@ -4,7 +4,7 @@
   "description": "Theia - JavaScript IDE Framework",
   "repository": {
     "type": "git",
-    "url": "https://github.com/TypeFox/Theia.git"
+    "url": "https://github.com/theia-ide/theia.git"
   },
   "files": [
     "lib",
@@ -92,7 +92,7 @@
     "update:file-deps": "npm run clean:file-deps && npm install"
   },
   "bugs": {
-    "url": "https://github.com/TypeFox/Theia/issues"
+    "url": "https://github.com/theia-ide/theia/issues"
   },
-  "homepage": "https://github.com/TypeFox/Theia"
+  "homepage": "https://github.com/theia-ide/theia"
 }
