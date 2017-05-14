@@ -1,7 +1,7 @@
 # Theia
 [![Gitter](https://img.shields.io/badge/chat-on%20gitter-blue.svg)](https://gitter.im/theia-ide/theia)
 
-A Javascript framework for native desktop and cloud-based IDEs.
+Theia is a cloud & desktop IDE implemented in TypeScript.
 
 ![Theia](https://cloud.githubusercontent.com/assets/372735/25758586/6939d0de-31cf-11e7-998a-e4ce997dd6b8.png)
 
