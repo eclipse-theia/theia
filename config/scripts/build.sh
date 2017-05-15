@@ -1,5 +1,5 @@
 #!/bin/bash
-npm run i \
+npm i \
 && npm run build \
 && npm run test \
 && cd releng/file-dependency-updater \
