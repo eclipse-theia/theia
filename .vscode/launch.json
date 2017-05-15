@@ -8,25 +8,25 @@
             "type": "node",
             "request": "launch",
             "name": "Launch App",
-            "program": "${workspaceRoot}/examples/lib/app.js",
+            "program": "${workspaceRoot}/examples/browser/lib/app/app.js",
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceRoot}/examples/lib/**/*.js",
-                "${workspaceRoot}/lib/**/*.js"
+                "${workspaceRoot}/examples/browser/lib/**/*.js",
+                "${workspaceRoot}/examples/browser/node_modules/theia/lib/**/*.js"
             ]
         },
         {
             "type": "node",
             "request": "launch",
             "name": "Launch App (eclipse.jdt.ls)",
-            "program": "${workspaceRoot}/examples/lib/app.js",
+            "program": "${workspaceRoot}/examples/browser/lib/app/app.js",
             "args": [
                 "--root-dir=${workspaceRoot}/../eclipse.jdt.ls"
             ],
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceRoot}/examples/lib/**/*.js",
-                "${workspaceRoot}/lib/**/*.js"
+                "${workspaceRoot}/examples/browser/lib/**/*.js",
+                "${workspaceRoot}/examples/browser/node_modules/theia/lib/**/*.js"
             ]
         },
         {

@@ -6,7 +6,7 @@
  */
 
 import { Container } from "inversify";
-import { TheiaApplication, browserApplicationModule } from "theia/lib/application/browser";
+import { FrontendApplication, browserApplicationModule } from "theia/lib/application/browser";
 import { messagingModule } from "theia/lib/messaging/browser";
 import { navigatorModule } from "theia/lib/navigator/browser";
 import { fileSystemClientModule } from "theia/lib/filesystem/browser";
@@ -49,7 +49,7 @@ import 'theia/lib/java/browser/monaco-contribution';
     container.load(terminalFrontendModule);
 
     // Obtain application and start.
-    const application = container.get(TheiaApplication);
-    application.start(container);
+    const application = container.get(FrontendApplication);
+    application.start();
 
 })();

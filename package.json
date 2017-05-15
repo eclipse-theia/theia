@@ -21,6 +21,7 @@
     "@types/electron": "^1.4.33",
     "@types/express": "^4.0.35",
     "@types/fs-extra": "^2.1.0",
+    "@types/glob": "^5.0.30",
     "@types/touch": "0.0.1",
     "@types/ws": "0.0.38",
     "@types/xterm": "^2.0.2",
@@ -28,6 +29,7 @@
     "electron": "^1.6.2",
     "express": "^4.15.2",
     "fs-extra": "^2.1.2",
+    "glob": "^7.1.1",
     "inversify": "^3.1.0",
     "monaco-editor": "^0.8.3",
     "monaco-editor-core": "^0.8.2",
@@ -54,6 +56,9 @@
     "circular-dependency-plugin": "^2.0.0",
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.26.2",
+    "gulp": "^3.9.1",
+    "gulp-decompress": "^2.0.1",
+    "gulp-download": "0.0.1",
     "karma": "^1.5.0",
     "karma-chrome-launcher": "^2.0.0",
     "karma-mocha": "^1.3.0",
@@ -76,7 +81,8 @@
     "webpack-merge": "^3.0.0"
   },
   "scripts": {
-    "prepublish": "npm run clean && npm run build && npm run test",
+    "prepare": "npm run clean && npm run build && npm run java:download",
+    "prepublishOnly": "npm run prepare && npm run test",
     "lint": "./node_modules/.bin/tslint -c ./config/tslint/tslint.json --project ./tsconfig.json",
     "build": "./node_modules/.bin/tsc && npm run lint",
     "watch": "./node_modules/.bin/tsc-watch --onSuccess \"npm run lint\"",
@@ -89,7 +95,10 @@
     "clean:monaco-languageclient": "./node_modules/.bin/rimraf node_modules/monaco-languageclient && ./node_modules/.bin/rimraf node_modules/vscode-base-languageclient",
     "update:monaco-languageclient": "npm run clean:monaco-languageclient && npm install",
     "clean:file-deps": "npm run clean:monaco-languageclient && npm run clean:vscode-ws-jsonrpc",
-    "update:file-deps": "npm run clean:file-deps && npm install"
+    "update:file-deps": "npm run clean:file-deps && npm install",
+    "java:download": "./node_modules/.bin/gulp download_java_server",
+    "java:build": "./node_modules/.bin/gulp build_java_server",
+    "java:watch": "./node_modules/.bin/gulp watch_java_server"
   },
   "bugs": {
     "url": "https://github.com/theia-ide/theia/issues"

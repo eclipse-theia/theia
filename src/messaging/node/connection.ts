@@ -56,6 +56,10 @@ export function toIWebSocket(webSocket: ws) {
         onMessage: cb => webSocket.on('message', cb),
         onError: cb => webSocket.on('error', cb),
         onClose: cb => webSocket.on('close', cb),
-        dispose: () => webSocket.close()
+        dispose: () => {
+            if (webSocket.readyState < ws.CLOSING) {
+                webSocket.close();
+            }
+        }
     };
 }

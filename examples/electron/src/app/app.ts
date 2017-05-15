@@ -9,7 +9,7 @@ import 'reflect-metadata';
 import * as path from 'path';
 import { Container, injectable } from "inversify";
 import * as express from 'express';
-import { BackendApplication, ExpressContribution, applicationModule } from "theia/lib/application/node";
+import { BackendApplication, BackendApplicationContribution, applicationModule } from "theia/lib/application/node";
 import { fileSystemServerModule } from "theia/lib/filesystem/node";
 import { messagingModule } from "theia/lib/messaging/node";
 import { nodeLanguagesModule } from 'theia/lib/languages/node';
@@ -26,7 +26,7 @@ process.on('uncaughtException', function (err: any) {
 });
 
 @injectable()
-class StaticServer implements ExpressContribution {
+class StaticServer implements BackendApplicationContribution {
     configure(app: express.Application): void {
         app.use(express.static(path.join(__dirname, '../client')));
     }
@@ -40,6 +40,6 @@ container.load(nodeLanguagesModule);
 container.load(terminalBackendModule);
 container.load(nodeJavaModule);
 container.load(nodePythonModule);
-container.bind(ExpressContribution).to(StaticServer);
+container.bind(BackendApplicationContribution).to(StaticServer);
 const application = container.get(BackendApplication);
 application.start();
