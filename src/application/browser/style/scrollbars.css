@@ -1,6 +1,6 @@
 ::-webkit-scrollbar {
-    height: 14px;
-    width: 14px;
+    height: 12px;
+    width: 12px;
     background: var(--theia-layout-color1);
 }
 
