@@ -7,11 +7,10 @@ branches:
     - master
 env:
   - CXX=g++-4.8
-  - BUILD_SCRIPT=/config/scripts/build.sh
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
     packages:
       - g++-4.8
-script: chmod a+x $BUILD_SCRIPT && ./$BUILD_SCRIPT
+script: chmod a+x ./config/scripts/build.sh && ./config/scripts/build.sh
