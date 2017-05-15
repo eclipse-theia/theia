@@ -28,7 +28,9 @@ process.on('uncaughtException', function (err: any) {
 @injectable()
 class StaticServer implements ExpressContribution {
     configure(app: express.Application): void {
-        app.use(express.static(path.join(__dirname, '../client')));
+        app.use(express.static(path.join(__dirname, '..'), {
+            index: path.join('client', 'index.html')
+        }));
     }
 }
 
