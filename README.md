@@ -13,22 +13,22 @@ Theia is a cloud & desktop IDE implemented in TypeScript.
  
  ### Running the browser example
  ```
- git clone https://github.com/theia-ide/theia.git \
- && cd theia \
- && npm install \
- && cd releng/file-dependency-updater/ \
- && npm install \
- && cd ../../examples/browser/ \
- && npm install \
- && npm run cold:start:browser
+ git clone https://github.com/theia-ide/theia.git && \
+ cd theia && \
+ npm install && \
+ cd releng/file-dependency-updater/ && \
+ npm install && \
+ cd ../../examples/browser/ && \
+ npm install && \
+ npm run cold:start:browser
  ```
 
  ### Running the electron example
  ```
- git clone https://github.com/theia-ide/theia.git \
- && cd theia \
- && npm install \
- && cd examples/electron/ \
- && npm install \
- && npm run cold:start:electron
+ git clone https://github.com/theia-ide/theia.git && \
+ cd theia && \
+ npm install && \
+ cd examples/electron/ && \
+ npm install && \
+ npm run cold:start:electron
  ```
