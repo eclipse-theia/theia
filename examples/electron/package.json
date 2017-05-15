@@ -33,6 +33,7 @@
     "concurrently": "^3.4.0",
     "css-loader": "^0.28.1",
     "electron-rebuild": "^1.5.11",
+    "file-loader": "^0.11.1",
     "rimraf": "^2.6.1",
     "selenium-standalone": "^6.2.0",
     "source-map-loader": "^0.2.1",
