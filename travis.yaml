@@ -1,0 +1,10 @@
+language: node_js
+node_js:
+  - "7"
+  - "6"
+branches:
+  only: 
+    - master
+env:
+  - BUILD_SCRIPT=build.sh
+script: chmod a+x $BUILD_SCRIPT && ./$BUILD_SCRIPT
