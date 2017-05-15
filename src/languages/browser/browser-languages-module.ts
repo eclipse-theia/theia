@@ -5,9 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { bindExtensionProvider } from '../../application/common/extension-provider';
+import { bindContributionProvider } from '../../application/common/contribution-provider';
 import { ContainerModule, } from "inversify";
-import { TheiaPlugin } from "../../application/browser";
+import { FrontendApplicationContribution } from "../../application/browser";
 import { WebSocketConnectionProvider } from "../../messaging/browser";
 import { Window, ConsoleWindow, LanguagesService, LANGUAGES_PATH } from '../common';
 import { DefaultLanguageClientProvider, LanguageClientProvider } from './language-client-provider';
@@ -19,14 +19,14 @@ export const browserLanguagesModule = new ContainerModule(bind => {
     bind(Window).to(ConsoleWindow).inSingletonScope();
 
     bind(CompositeLanguageClientContribution).toSelf().inSingletonScope();
-    bindExtensionProvider(bind, LanguageClientContribution)
+    bindContributionProvider(bind, LanguageClientContribution)
 
     bind(DefaultLanguageClientProvider).toSelf().inSingletonScope();
     bind(LanguageClientProvider).toProvider(context =>
         identifier => context.container.get(DefaultLanguageClientProvider).get(identifier)
     );
     bind(LanguageClientLauncher).toSelf().inSingletonScope();
-    bind(TheiaPlugin).to(LanguagesPlugin).inSingletonScope();
+    bind(FrontendApplicationContribution).to(LanguagesPlugin).inSingletonScope();
 
     bind<LanguagesService>(LanguagesService).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);

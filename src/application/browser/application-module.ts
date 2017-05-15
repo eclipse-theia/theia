@@ -8,7 +8,7 @@
 import { ContainerModule } from "inversify"
 
 import {
-    bindExtensionProvider,
+    bindContributionProvider,
     SelectionService,
     ResourceProvider, ResourceResolver, DefaultResourceProvider,
     CommonCommandContribution, CommonMenuContribution,
@@ -18,14 +18,14 @@ import {
     KeybindingContext,
     KeybindingContribution
 } from "../common"
-import { TheiaApplication, TheiaPlugin } from './application'
+import { FrontendApplication, FrontendApplicationContribution } from './application'
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 
 export const browserApplicationModule = new ContainerModule(bind => {
-    bind(TheiaApplication).toSelf().inSingletonScope()
-    bindExtensionProvider(bind, TheiaPlugin)
+    bind(FrontendApplication).toSelf().inSingletonScope()
+    bindContributionProvider(bind, FrontendApplicationContribution)
 
-    bindExtensionProvider(bind, OpenHandler)
+    bindContributionProvider(bind, OpenHandler)
     bind(DefaultOpenerService).toSelf().inSingletonScope();
     bind(OpenerService).toDynamicValue(context => context.container.get(DefaultOpenerService));
 
@@ -33,20 +33,20 @@ export const browserApplicationModule = new ContainerModule(bind => {
     bind(ResourceProvider).toProvider(context =>
         uri => context.container.get(DefaultResourceProvider).get(uri)
     );
-    bindExtensionProvider(bind, ResourceResolver)
+    bindContributionProvider(bind, ResourceResolver)
 
     bind(SelectionService).toSelf().inSingletonScope();
     bind(CommandRegistry).toSelf().inSingletonScope()
     bind(CommandContribution).to(CommonCommandContribution)
-    bindExtensionProvider(bind, CommandContribution)
+    bindContributionProvider(bind, CommandContribution)
 
     bind(MenuContribution).to(CommonMenuContribution)
     bind(MenuModelRegistry).toSelf().inSingletonScope();
-    bindExtensionProvider(bind, MenuContribution)
+    bindContributionProvider(bind, MenuContribution)
 
     bind(KeybindingRegistry).toSelf().inSingletonScope()
-    bindExtensionProvider(bind, KeybindingContribution)
+    bindContributionProvider(bind, KeybindingContribution)
 
     bind(KeybindingContextRegistry).toSelf().inSingletonScope()
-    bindExtensionProvider(bind, KeybindingContext)
+    bindContributionProvider(bind, KeybindingContext)
 });

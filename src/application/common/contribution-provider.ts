@@ -7,25 +7,25 @@
 
 import { interfaces } from "inversify/dts/interfaces/interfaces";
 
-export const ExtensionProvider = Symbol("ExtensionProvider")
+export const ContributionProvider = Symbol("ContributionProvider")
 
-export interface ExtensionProvider<T extends object> {
-    getExtensions(): T[]
+export interface ContributionProvider<T extends object> {
+    getContributions(): T[]
 }
 
-export function bindExtensionProvider(bind: interfaces.Bind, id: symbol): void {
-    bind(ExtensionProvider).toDynamicValue(ctx => {
-        return new ContainerBasedExtensionProvider(id, ctx.container)
+export function bindContributionProvider(bind: interfaces.Bind, id: symbol): void {
+    bind(ContributionProvider).toDynamicValue(ctx => {
+        return new ContainerBasedContributionProvider(id, ctx.container)
     }).inSingletonScope().whenTargetNamed(id)
 }
 
-class ContainerBasedExtensionProvider<T extends object> implements ExtensionProvider<T> {
+class ContainerBasedContributionProvider<T extends object> implements ContributionProvider<T> {
 
     constructor(private serviceIdentifier: interfaces.ServiceIdentifier<T>, private container: interfaces.Container) {}
 
     private services: T[]
 
-    getExtensions(): T[] {
+    getContributions(): T[] {
         if (this.services === undefined) {
             try {
                 this.services = this.container.getAll(this.serviceIdentifier)

@@ -65,9 +65,9 @@ describe('menu-model-registry', () => {
 });
 
 function createMenuRegistry(menuContrib: MenuContribution, commandContrib: CommandContribution) {
-    let cmdReg = new CommandRegistry({ getExtensions: () => [commandContrib]});
+    let cmdReg = new CommandRegistry({ getContributions: () => [commandContrib]});
     cmdReg.initialize();
-    let menuReg = new MenuModelRegistry({ getExtensions: () => [menuContrib] }, cmdReg);
+    let menuReg = new MenuModelRegistry({ getContributions: () => [menuContrib] }, cmdReg);
     menuReg.initialize();
     return menuReg;
 }

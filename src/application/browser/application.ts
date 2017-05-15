@@ -1,4 +1,3 @@
-import { ExtensionProvider } from '../common/extension-provider';
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -7,36 +6,36 @@ import { ExtensionProvider } from '../common/extension-provider';
  */
 
 import 'reflect-metadata';
+import { ContributionProvider } from '../common/contribution-provider';
 import { CommandRegistry } from '../common/command';
 import { KeybindingRegistry } from '../common/keybinding';
 import { MenuModelRegistry } from '../common/menu';
 import { ApplicationShell } from './shell';
 import { Application } from '@phosphor/application';
-import { inject, injectable, interfaces, named } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 
 /**
- * Clients can subclass to get a callback for contributing widgets to a shell on start.
+ * Clients can implement to get a callback for contributing widgets to a shell on start.
  */
-export const TheiaPlugin = Symbol("TheiaPlugin");
-export interface TheiaPlugin {
+export const FrontendApplicationContribution = Symbol("FrontendApplicationContribution");
+export interface FrontendApplicationContribution {
     /**
      * Callback
      */
-    onStart(app: TheiaApplication): void;
+    onStart(app: FrontendApplication): void;
 }
 
 @injectable()
-export class TheiaApplication {
+export class FrontendApplication {
 
     readonly shell: ApplicationShell;
     private application: Application<ApplicationShell>;
-    private container: interfaces.Container | undefined;
 
     constructor(
         @inject(CommandRegistry) commandRegistry: CommandRegistry,
         @inject(MenuModelRegistry) menuRegistry: MenuModelRegistry,
         @inject(KeybindingRegistry) keybindingRegistry: KeybindingRegistry,
-        @inject(ExtensionProvider) @named(TheiaPlugin) contributions: ExtensionProvider<TheiaPlugin>) {
+        @inject(ContributionProvider) @named(FrontendApplicationContribution) contributions: ContributionProvider<FrontendApplicationContribution>) {
 
         this.shell = new ApplicationShell();
         this.application = new Application<ApplicationShell>({
@@ -46,12 +45,11 @@ export class TheiaApplication {
             commandRegistry.initialize();
             keybindingRegistry.initialize();
             menuRegistry.initialize();
-            contributions.getExtensions().forEach(c => c.onStart(this));
+            contributions.getContributions().forEach(c => c.onStart(this));
         })
     }
 
-    start(container?: interfaces.Container): Promise<void> {
-        this.container = container;
+    start(): Promise<void> {
         return this.application.start();
     }
 

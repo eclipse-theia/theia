@@ -10,7 +10,7 @@ import { Widget } from '@phosphor/widgets/lib';
 import { Commands } from '../../filesystem/browser/filesystem-commands';
 import { MenuModelRegistry, MenuContribution, MAIN_MENU_BAR } from '../../application/common/menu';
 import { CommandContribution, CommandRegistry } from '../../application/common/command';
-import { TheiaApplication } from '../../application/browser';
+import { FrontendApplication } from '../../application/browser';
 import { ContainerModule, inject, injectable } from "inversify"
 import { TerminalWidget } from "./terminal-widget";
 
@@ -24,7 +24,7 @@ let CMD_OPEN_TERMINAL = 'open-terminal';
 @injectable()
 class TerminalCommands implements CommandContribution {
 
-    constructor(@inject(TheiaApplication) private app: TheiaApplication, @inject(WebSocketConnectionProvider) private wsProvider: WebSocketConnectionProvider) {
+    constructor(@inject(FrontendApplication) private app: FrontendApplication, @inject(WebSocketConnectionProvider) private wsProvider: WebSocketConnectionProvider) {
     }
 
     contribute(registry: CommandRegistry): void {

@@ -20,7 +20,7 @@ const openHandler: OpenHandler = {
     }
 };
 const openerService = new DefaultOpenerService({
-    getExtensions: () => [openHandler]
+    getContributions: () => [openHandler]
 });
 
 describe("opener-service", () => {

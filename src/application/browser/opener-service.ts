@@ -7,7 +7,7 @@
 
 import { named, injectable, inject } from "inversify";
 import URI from "../common/uri";
-import { ExtensionProvider, Prioritizeable, MaybePromise } from "../common";
+import { ContributionProvider, Prioritizeable, MaybePromise } from "../common";
 
 export interface OpenerOptions {
 }
@@ -77,8 +77,8 @@ export async function open(openerService: OpenerService, uri: URI, options?: Ope
 export class DefaultOpenerService implements OpenerService {
 
     constructor(
-        @inject(ExtensionProvider) @named(OpenHandler)
-        protected readonly handlersProvider: ExtensionProvider<OpenHandler>
+        @inject(ContributionProvider) @named(OpenHandler)
+        protected readonly handlersProvider: ContributionProvider<OpenHandler>
     ) { }
 
     async getOpener(uri: URI, options?: OpenerOptions): Promise<OpenHandler> {
@@ -101,7 +101,7 @@ export class DefaultOpenerService implements OpenerService {
     }
 
     protected getHandlers(): OpenHandler[] {
-        return this.handlersProvider.getExtensions();
+        return this.handlersProvider.getContributions();
     }
 
 }

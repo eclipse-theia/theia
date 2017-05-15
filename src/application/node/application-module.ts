@@ -5,11 +5,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { bindExtensionProvider } from '../common/extension-provider';
-import { BackendApplication, ExpressContribution } from "./application";
+import { bindContributionProvider } from '../common/contribution-provider';
+import { BackendApplication, BackendApplicationContribution } from "./application";
 import { ContainerModule } from "inversify";
 
 export const applicationModule = new ContainerModule((bind) => {
     bind(BackendApplication).toSelf().inSingletonScope();
-    bindExtensionProvider(bind, ExpressContribution);
+    bindContributionProvider(bind, BackendApplicationContribution);
 });

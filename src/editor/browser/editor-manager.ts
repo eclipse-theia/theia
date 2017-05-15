@@ -8,14 +8,14 @@
 import { injectable, inject } from "inversify";
 import URI from "../../application/common/uri";
 import { Emitter, Event, RecursivePartial, ResourceProvider, SelectionService } from '../../application/common';
-import { OpenHandler, TheiaApplication, TheiaPlugin } from "../../application/browser";
+import { OpenHandler, FrontendApplication, FrontendApplicationContribution } from "../../application/browser";
 import { EditorWidget } from "./editor-widget";
 import { EditorRegistry } from "./editor-registry";
 import { TextEditorProvider, Range, Position } from "./editor";
 
 export const EditorManager = Symbol("EditorManager");
 
-export interface EditorManager extends OpenHandler, TheiaPlugin {
+export interface EditorManager extends OpenHandler, FrontendApplicationContribution {
     /**
      * All opened editors.
      */
@@ -58,8 +58,8 @@ export class EditorManagerImpl implements EditorManager {
     readonly id = "code-editor-opener";
     readonly label = "Code Editor";
 
-    private _resolveApp: (app: TheiaApplication) => void;
-    protected readonly resolveApp = new Promise<TheiaApplication>(resolve =>
+    private _resolveApp: (app: FrontendApplication) => void;
+    protected readonly resolveApp = new Promise<FrontendApplication>(resolve =>
         this._resolveApp = resolve
     );
 
@@ -73,7 +73,7 @@ export class EditorManagerImpl implements EditorManager {
         @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider
     ) { }
 
-    onStart(app: TheiaApplication): void {
+    onStart(app: FrontendApplication): void {
         this._resolveApp(app);
     }
 
@@ -173,19 +173,19 @@ export class EditorManagerImpl implements EditorManager {
 
 export namespace EditorManagerImpl {
     export class Observer {
-        protected app: TheiaApplication | undefined;
+        protected app: FrontendApplication | undefined;
         protected readonly onEditorChangedEmitter = new Emitter<EditorWidget | undefined>();
 
         constructor(
             protected readonly kind: 'current' | 'active',
-            protected readonly ready: Promise<TheiaApplication>
+            protected readonly ready: Promise<FrontendApplication>
         ) {
             this.ready.then(app =>
                 this.initialize(app)
             );
         }
 
-        protected initialize(app: TheiaApplication) {
+        protected initialize(app: FrontendApplication) {
             this.app = app
             const key = this.kind === 'current' ? 'currentChanged' : 'activeChanged';
             app.shell[key].connect((shell, arg) => {
