@@ -1,11 +1,11 @@
 #!/bin/bash
-npm i \
+npm install \
 && npm run build \
 && npm run test \
-&& cd releng/file-dependency-updater \
-&& npm i \
+&& cd releng/file-dependency-updater/ \
+&& npm install \
 && cd ../../examples/browser
-&& npm i \
+&& npm install \
 && npm run build:app \
 && npm run build:browser \
 && cd ../electron \
