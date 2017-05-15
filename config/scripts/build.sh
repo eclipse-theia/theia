@@ -4,7 +4,7 @@ npm install \
 && npm run test \
 && cd releng/file-dependency-updater/ \
 && npm install \
-&& cd ../../examples/browser
+&& cd ../../examples/browser \
 && npm install \
 && npm run build:app \
 && npm run build:browser \
