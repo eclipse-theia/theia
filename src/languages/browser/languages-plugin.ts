@@ -6,19 +6,19 @@
  */
 
 import { injectable, inject } from "inversify";
-import { TheiaApplication, TheiaPlugin } from "../../application/browser";
+import { FrontendApplication, FrontendApplicationContribution } from "../../application/browser";
 import { LanguagesService } from '../common';
 import { LanguageClientLauncher } from "./language-client-launcher";
 
 @injectable()
-export class LanguagesPlugin implements TheiaPlugin {
+export class LanguagesPlugin implements FrontendApplicationContribution {
 
     constructor(
         @inject(LanguagesService) protected readonly service: LanguagesService,
         @inject(LanguageClientLauncher) protected readonly launcher: LanguageClientLauncher
     ) { }
 
-    onStart(app: TheiaApplication): void {
+    onStart(app: FrontendApplication): void {
         this.service.getLanguages().then(languages =>
             this.launcher.launch(languages)
         );

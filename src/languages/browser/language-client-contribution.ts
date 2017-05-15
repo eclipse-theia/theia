@@ -7,7 +7,7 @@
 
 import { injectable, inject, named } from "inversify";
 import { ILanguageClient, LanguageClientOptions, LanguageIdentifier } from '../common';
-import { ExtensionProvider } from '../../application/common/extension-provider';
+import { ContributionProvider } from '../../application/common/contribution-provider';
 
 export const LanguageClientContribution = Symbol('LanguageClientContribution');
 export interface LanguageClientContribution {
@@ -19,15 +19,15 @@ export interface LanguageClientContribution {
 export class CompositeLanguageClientContribution implements LanguageClientContribution {
 
     constructor(
-        @inject(ExtensionProvider) @named(LanguageClientContribution)
-        protected readonly contributions: ExtensionProvider<LanguageClientContribution>
+        @inject(ContributionProvider) @named(LanguageClientContribution)
+        protected readonly contributions: ContributionProvider<LanguageClientContribution>
     ) { }
 
     createOptions(identifier: LanguageIdentifier, initial: Promise<LanguageClientOptions>): Promise<LanguageClientOptions> {
         if (!this.contributions) {
             return initial;
         }
-        return this.contributions.getExtensions().reduce((options, contribution) =>
+        return this.contributions.getContributions().reduce((options, contribution) =>
             contribution.createOptions ? contribution.createOptions(identifier, options) : options
             , initial
         );
@@ -35,7 +35,7 @@ export class CompositeLanguageClientContribution implements LanguageClientContri
 
     onWillStart(language: LanguageIdentifier, languageClient: ILanguageClient): void {
         if (this.contributions) {
-            this.contributions.getExtensions().forEach(contribution => {
+            this.contributions.getContributions().forEach(contribution => {
                 if (contribution.onWillStart) {
                     contribution.onWillStart(language, languageClient);
                 }

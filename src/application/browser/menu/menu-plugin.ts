@@ -6,7 +6,7 @@
  */
 
 
-import { TheiaPlugin, TheiaApplication } from "../application";
+import { FrontendApplicationContribution, FrontendApplication } from "../application";
 import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget } from "@phosphor/widgets";
 import { CommandRegistry as PhosphorCommandRegistry } from "@phosphor/commands";
 import { CommandRegistry } from "../../common/command";
@@ -155,12 +155,12 @@ export class MainMenuFactory {
 }
 
 @injectable()
-export class BrowserMenuBarContribution implements TheiaPlugin {
+export class BrowserMenuBarContribution implements FrontendApplicationContribution {
 
     constructor( @inject(MainMenuFactory) private factory: MainMenuFactory) {
     }
 
-    onStart(app: TheiaApplication): void {
+    onStart(app: FrontendApplication): void {
         app.shell.addToTopArea(this.getLogo());
         const menu = this.factory.createMenuBar();
         app.shell.addToTopArea(menu);

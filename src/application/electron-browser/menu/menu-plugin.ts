@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { TheiaApplication, TheiaPlugin } from '../../browser/application';
+import { FrontendApplication, FrontendApplicationContribution } from '../../browser/application';
 import { CommandRegistry } from '../../common/command';
 import { ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry } from '../../common/menu';
 import * as electron from 'electron';
@@ -124,12 +124,12 @@ export class MainMenuFactory {
 }
 
 @injectable()
-export class MenuContribution implements TheiaPlugin {
+export class MenuContribution implements FrontendApplicationContribution {
 
   constructor( @inject(MainMenuFactory) private factory: MainMenuFactory) {
   }
 
-  onStart(app: TheiaApplication): void {
+  onStart(app: FrontendApplication): void {
     const itr = app.shell.children();
     let child = itr.next();
     while (child) {

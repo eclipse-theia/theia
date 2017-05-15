@@ -7,7 +7,7 @@
 
 import { Disposable } from "./disposable";
 import { injectable, inject, named } from "inversify";
-import { ExtensionProvider } from './extension-provider';
+import { ContributionProvider } from './contribution-provider';
 
 export interface Command {
     id: string;
@@ -32,13 +32,13 @@ export class CommandRegistry {
     private _commands: { [id: string]: Command };
     private _handlers: { [id: string]: CommandHandler[] };
 
-    constructor(@inject(ExtensionProvider) @named(CommandContribution) private contributionProvider: ExtensionProvider<CommandContribution>) {
+    constructor(@inject(ContributionProvider) @named(CommandContribution) private contributionProvider: ContributionProvider<CommandContribution>) {
     }
 
     initialize(): void {
         this._commands = {};
         this._handlers = {};
-        const contributions = this.contributionProvider.getExtensions();
+        const contributions = this.contributionProvider.getContributions();
         for (let contrib of contributions) {
             contrib.contribute(this);
         }

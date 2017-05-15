@@ -6,25 +6,25 @@
  */
 
 import * as http from 'http';
-import { bindExtensionProvider, ExtensionProvider } from '../../application/common/extension-provider';
+import { bindContributionProvider, ContributionProvider } from '../../application/common/contribution-provider';
 import {ContainerModule, injectable, inject, named} from "inversify";
-import {ExpressContribution} from "../../application/node";
+import {BackendApplicationContribution} from "../../application/node";
 import {createServerWebSocketConnection} from "../../messaging/node";
 import {ConnectionHandler} from "../common";
 
 export const messagingModule = new ContainerModule(bind => {
-    bind<ExpressContribution>(ExpressContribution).to(MessagingContribution);
-    bindExtensionProvider(bind, ConnectionHandler)
+    bind<BackendApplicationContribution>(BackendApplicationContribution).to(MessagingContribution);
+    bindContributionProvider(bind, ConnectionHandler)
 });
 
 @injectable()
-export class MessagingContribution implements ExpressContribution {
+export class MessagingContribution implements BackendApplicationContribution {
 
-    constructor(@inject(ExtensionProvider) @named(ConnectionHandler) protected readonly handlers: ExtensionProvider<ConnectionHandler>) {
+    constructor(@inject(ContributionProvider) @named(ConnectionHandler) protected readonly handlers: ContributionProvider<ConnectionHandler>) {
     }
 
     onStart(server: http.Server): void {
-        for (const handler of this.handlers.getExtensions()) {
+        for (const handler of this.handlers.getContributions()) {
             const path = handler.path;
             try {
                 createServerWebSocketConnection({

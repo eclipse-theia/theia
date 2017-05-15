@@ -10,7 +10,7 @@ import { h } from "@phosphor/virtualdom";
 import { Message } from "@phosphor/messaging";
 
 import { TreeWidget, VirtualWidget, ITreeNode, ISelectableTreeNode } from "./tree";
-import { TheiaPlugin, TheiaApplication } from "../../application/browser";
+import { FrontendApplicationContribution, FrontendApplication } from "../../application/browser";
 import { FileNavigatorModel, DirNode, FileStatNode } from "./navigator-model";
 import { ContextMenuRenderer } from "../../application/browser/menu/context-menu-renderer";
 import NodeProps = TreeWidget.NodeProps;
@@ -92,12 +92,12 @@ export class FileNavigatorWidget extends TreeWidget<FileNavigatorModel> {
 }
 
 @injectable()
-export class FileNavigatorContribution implements TheiaPlugin {
+export class FileNavigatorContribution implements FrontendApplicationContribution {
 
     constructor( @inject(FileNavigatorWidget) private fileNavigator: FileNavigatorWidget) {
     }
 
-    onStart(app: TheiaApplication): void {
+    onStart(app: FrontendApplication): void {
         this.fileNavigator.getModel().refresh();
         app.shell.addToLeftArea(this.fileNavigator);
     }

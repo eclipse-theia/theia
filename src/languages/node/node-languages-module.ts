@@ -7,34 +7,34 @@
 
 import * as http from 'http';
 import { ContainerModule, injectable, inject, named } from "inversify";
-import { ExpressContribution } from '../../application/node';
+import { BackendApplicationContribution } from '../../application/node';
 import { openSocket, toIWebSocket } from '../../messaging/node';
 import { WebSocketMessageReader, WebSocketMessageWriter, ConnectionHandler, JsonRpcProxyFactory } from "../../messaging/common";
 import { createConnection } from "vscode-ws-jsonrpc/lib/server";
 import { LanguageContribution } from "./language-contribution";
-import { bindExtensionProvider, ExtensionProvider } from '../../application/common/extension-provider';
+import { bindContributionProvider, ContributionProvider } from '../../application/common/contribution-provider';
 import { LANGUAGES_PATH, LanguagesService, LanguageIdentifier } from "../common";
 
 export const nodeLanguagesModule = new ContainerModule(bind => {
-    bind(ExpressContribution).to(LanguagesExpressContribution).inSingletonScope();
+    bind(BackendApplicationContribution).to(LanguagesExpressContribution).inSingletonScope();
     bind(LanguagesService).to(LanguagesServiceImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx => {
         const languagesService = ctx.container.get(LanguagesService);
         return new JsonRpcProxyFactory<LanguagesService>(LANGUAGES_PATH, languagesService);
     }).inSingletonScope();
-    bindExtensionProvider(bind, LanguageContribution)
+    bindContributionProvider(bind, LanguageContribution)
 });
 
 @injectable()
-export class LanguagesExpressContribution implements ExpressContribution {
+export class LanguagesExpressContribution implements BackendApplicationContribution {
 
     constructor(
-        @inject(ExtensionProvider) @named(LanguageContribution) protected readonly contributors: ExtensionProvider<LanguageContribution>
+        @inject(ContributionProvider) @named(LanguageContribution) protected readonly contributors: ContributionProvider<LanguageContribution>
     ) {
     }
 
     onStart(server: http.Server): void {
-        for (const contribution of this.contributors.getExtensions()) {
+        for (const contribution of this.contributors.getContributions()) {
             const path = LanguageIdentifier.create(contribution.description).path;
             openSocket({
                 server,
@@ -55,11 +55,11 @@ export class LanguagesExpressContribution implements ExpressContribution {
 export class LanguagesServiceImpl implements LanguagesService {
 
     constructor(
-        @inject(ExtensionProvider) @named(LanguageContribution) protected readonly contributors: ExtensionProvider<LanguageContribution>) { }
+        @inject(ContributionProvider) @named(LanguageContribution) protected readonly contributors: ContributionProvider<LanguageContribution>) { }
 
     getLanguages(): Promise<LanguageIdentifier[]> {
         return Promise.resolve(
-            this.contributors.getExtensions().map(contribution =>
+            this.contributors.getContributions().map(contribution =>
                 LanguageIdentifier.create(contribution.description)
             )
         )

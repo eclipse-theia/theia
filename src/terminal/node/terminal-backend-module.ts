@@ -6,7 +6,7 @@
  */
 
 import { openSocket } from '../../messaging/node';
-import { ExpressContribution } from '../../application/node';
+import { BackendApplicationContribution } from '../../application/node';
 import { getRootDir } from '../../filesystem/node/filesystem-server-module';
 import * as express from 'express';
 import * as http from 'http';
@@ -16,11 +16,11 @@ import URI from "../../application/common/uri";
 const pty = require("node-pty")
 
 export default new ContainerModule( bind => {
-    bind(ExpressContribution).to(TerminalExpressContribution)
+    bind(BackendApplicationContribution).to(TerminalExpressContribution)
 })
 
 @injectable()
-class TerminalExpressContribution implements ExpressContribution {
+class TerminalExpressContribution implements BackendApplicationContribution {
     private terminals: Map<number, any> = new Map()
     private logs: string[] = []
 

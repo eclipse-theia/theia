@@ -10,7 +10,7 @@ import { Disposable } from './disposable';
 import { CommandRegistry } from './command';
 import { injectable, inject, named } from 'inversify';
 import { KeyCode, Accelerator } from './keys';
-import { ExtensionProvider } from './extension-provider';
+import { ContributionProvider } from './contribution-provider';
 
 export interface Keybinding {
     readonly commandId: string;
@@ -58,13 +58,13 @@ export class KeybindingContextRegistry {
     contexts: { [id: string]: KeybindingContext } = {};
     contextHierarchy: { [id: string]: KeybindingContext };
 
-    constructor( @inject(ExtensionProvider) @named(KeybindingContext) private contextProvider: ExtensionProvider<KeybindingContext>) {
+    constructor( @inject(ContributionProvider) @named(KeybindingContext) private contextProvider: ContributionProvider<KeybindingContext>) {
         this.registerContext(KeybindingContexts.NOOP_CONTEXT)
         this.registerContext(KeybindingContexts.DEFAULT_CONTEXT)
     }
 
     initialize() {
-        this.contextProvider.getExtensions().forEach(context => this.registerContext(context));
+        this.contextProvider.getContributions().forEach(context => this.registerContext(context));
     }
 
     /**
@@ -100,7 +100,7 @@ export class KeybindingRegistry {
     constructor(
         @inject(CommandRegistry) protected commandRegistry: CommandRegistry,
         @inject(KeybindingContextRegistry) protected contextRegistry: KeybindingContextRegistry,
-        @inject(ExtensionProvider) @named(KeybindingContribution) protected contributions: ExtensionProvider<KeybindingContribution>) {
+        @inject(ContributionProvider) @named(KeybindingContribution) protected contributions: ContributionProvider<KeybindingContribution>) {
 
         this.keybindings = {};
         this.commands = {};
@@ -108,7 +108,7 @@ export class KeybindingRegistry {
     }
 
     initialize() {
-        for (let contribution of this.contributions.getExtensions()) {
+        for (let contribution of this.contributions.getContributions()) {
             contribution.contribute(this);
         }
     }

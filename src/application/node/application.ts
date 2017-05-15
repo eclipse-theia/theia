@@ -8,10 +8,10 @@
 import * as http from 'http';
 import * as express from 'express';
 import {inject, named, injectable} from "inversify";
-import { ExtensionProvider } from '../common/extension-provider';
+import { ContributionProvider } from '../common/contribution-provider';
 
-export const ExpressContribution = Symbol("ExpressContribution");
-export interface ExpressContribution {
+export const BackendApplicationContribution = Symbol("BackendApplicationContribution");
+export interface BackendApplicationContribution {
     configure?(app: express.Application): void;
     onStart?(server: http.Server): void;
 }
@@ -24,11 +24,11 @@ export class BackendApplication {
 
     private app: express.Application;
 
-    constructor(@inject(ExtensionProvider) @named(ExpressContribution) private contributionsProvider: ExtensionProvider<ExpressContribution>) {
+    constructor(@inject(ContributionProvider) @named(BackendApplicationContribution) private contributionsProvider: ContributionProvider<BackendApplicationContribution>) {
     }
 
     start(port: number = 3000): Promise<void> {
-        const contributions = this.contributionsProvider.getExtensions()
+        const contributions = this.contributionsProvider.getContributions()
         this.app = express();
         for (const contrib of contributions) {
             if (contrib.configure) {

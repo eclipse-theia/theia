@@ -8,7 +8,7 @@
 import { CommandRegistry } from './command';
 import { Disposable } from './';
 
-import { ExtensionProvider } from './extension-provider';
+import { ContributionProvider } from './contribution-provider';
 import { injectable, inject, named } from "inversify";
 
 export interface MenuAction {
@@ -29,12 +29,12 @@ export interface MenuContribution {
 export class MenuModelRegistry {
     public menus: CompositeMenuNode = new CompositeMenuNode("");
 
-    constructor(@inject(ExtensionProvider) @named(MenuContribution) private contributions: ExtensionProvider<MenuContribution>,
+    constructor(@inject(ContributionProvider) @named(MenuContribution) private contributions: ContributionProvider<MenuContribution>,
                 @inject(CommandRegistry) private commands: CommandRegistry) {
     }
 
     initialize() {
-        for (let contrib of this.contributions.getExtensions()) {
+        for (let contrib of this.contributions.getContributions()) {
             contrib.contribute(this);
         }
     }
