@@ -17,8 +17,8 @@ container (see below) to which extensions can contribute.
 
 The frontend process represents the client and renders the UI. In the browser,
 it simply runs in the rendering loop, while in Electron it runs in an Electron
-Window, which basically is a browser with additional Electron and node.js APIs.
-Therefore, any frontend code may assume browser as a platform but not node.js.
+Window, which basically is a browser with additional Electron and Node.js APIs.
+Therefore, any frontend code may assume browser as a platform but not Node.js.
 
 The startup of the frontend process will first load the DI modules of all
 contributing extensions before it obtains an instance of `FrontendApplication`
