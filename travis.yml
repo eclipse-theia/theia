@@ -6,5 +6,5 @@ branches:
   only: 
     - master
 env:
-  - BUILD_SCRIPT=build.sh
+  - BUILD_SCRIPT=/config/scripts/build.sh
 script: chmod a+x $BUILD_SCRIPT && ./$BUILD_SCRIPT
