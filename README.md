@@ -13,8 +13,8 @@ A Javascript framework for native desktop and cloud-based IDEs.
  
  ### Running the browser example
  ```
- git clone https://github.com/TypeFox/Theia.git \
- && cd Theia \
+ git clone https://github.com/theia-ide/theia.git \
+ && cd theia \
  && npm install \
  && cd releng/file-dependency-updater/ \
  && npm install \
@@ -25,8 +25,8 @@ A Javascript framework for native desktop and cloud-based IDEs.
 
  ### Running the electron example
  ```
- git clone https://github.com/TypeFox/Theia.git \
- && cd Theia \
+ git clone https://github.com/theia-ide/theia.git \
+ && cd theia \
  && npm install \
  && cd examples/electron/ \
  && npm install \
