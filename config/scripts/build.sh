@@ -9,5 +9,6 @@ npm install \
 && npm run build:app \
 && npm run build:browser \
 && cd ../electron \
+&& npm install \
 && npm run build:app \
 && npm run build:electron
