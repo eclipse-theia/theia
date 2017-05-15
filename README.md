@@ -13,8 +13,8 @@ Theia is a cloud & desktop IDE implemented in TypeScript.
  
  ### Running the browser example
  ```
- git clone https://github.com/TypeFox/Theia.git \
- && cd Theia \
+ git clone https://github.com/theia-ide/theia.git \
+ && cd theia \
  && npm install \
  && cd releng/file-dependency-updater/ \
  && npm install \
@@ -25,8 +25,8 @@ Theia is a cloud & desktop IDE implemented in TypeScript.
 
  ### Running the electron example
  ```
- git clone https://github.com/TypeFox/Theia.git \
- && cd Theia \
+ git clone https://github.com/theia-ide/theia.git \
+ && cd theia \
  && npm install \
  && cd examples/electron/ \
  && npm install \

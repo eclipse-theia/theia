@@ -45,7 +45,7 @@ happy to guide you and give feedback.
 ## Coding Guidelines
 
 We follow the coding guidelines described
-[here](https://github.com/TypeFox/Theia/wiki/Coding-Guidelines).
+[here](https://github.com/theia-ide/theia/wiki/Coding-Guidelines).
 
 ## Sign your work
 

@@ -11,7 +11,7 @@
     "monaco-languages": "^0.7.0",
     "monaco-typescript": "^2.1.2",
     "reflect-metadata": "^0.1.10",
-    "theia": "file:../../../Theia"
+    "theia": "file:../.."
   },
   "scripts": {
     "install:theia": "cd ../ && npm link && cd examples && npm link theia",

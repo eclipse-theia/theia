@@ -9,11 +9,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/TypeFox/Theia.git"
+    "url": "https://github.com/theia-ide/theia.git"
   },
   "main": "index.js",
   "bugs": {
-    "url": "https://github.com/TypeFox/Theia/issues"
+    "url": "https://github.com/theia-ide/theia/issues"
   },
-  "homepage": "https://github.com/TypeFox/Theia"
+  "homepage": "https://github.com/theia-ide/theia"
 }
