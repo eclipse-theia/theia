@@ -13,6 +13,7 @@
     "theia": "file:../.."
   },
   "scripts": {
+    "prepublish": "npm run clean && npm run build",
     "clean": "./node_modules/.bin/rimraf lib",
     "lint": "./node_modules/.bin/tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
     "build": "npm run build:app && npm run build:browser",

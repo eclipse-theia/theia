@@ -41,10 +41,15 @@ export class LanguagesExpressContribution implements BackendApplicationContribut
                 path
             }, s => {
                 const socket = toIWebSocket(s)
-                const reader = new WebSocketMessageReader(socket);
-                const writer = new WebSocketMessageWriter(socket);
-                const connection = createConnection(reader, writer, () => socket.dispose());
-                contribution.listen(connection);
+                try {
+                    const reader = new WebSocketMessageReader(socket);
+                    const writer = new WebSocketMessageWriter(socket);
+                    const connection = createConnection(reader, writer, () => socket.dispose());
+                    contribution.listen(connection);
+                } catch (e) {
+                    socket.dispose();
+                    throw e;
+                }
             });
         }
     }

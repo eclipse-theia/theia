@@ -5,7 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import * as os from 'os';
 import * as path from 'path';
+import * as glob from 'glob';
 import { injectable } from "inversify";
 import { LanguageContribution, IConnection, createServerProcess, forward } from "../../languages/node";
 import { JAVA_DESCRIPTION } from "../common";
@@ -22,10 +24,13 @@ export class JavaContribution implements LanguageContribution {
     readonly description = JAVA_DESCRIPTION;
 
     listen(clientConnection: IConnection): void {
-        const projectPath = path.resolve(__dirname, '../../..');
-        const serverPath = path.resolve(projectPath, '../eclipse.jdt.ls/org.eclipse.jdt.ls.product/target/repository');
-        const jarPath = path.resolve(serverPath, 'plugins/org.eclipse.equinox.launcher_1.4.0.v20161219-1356.jar');
-        const workspacePath = path.resolve(projectPath, '../../ws');
+        const serverPath = path.resolve(__dirname, 'server');
+        const jarPaths = glob.sync('**/plugins/org.eclipse.equinox.launcher_*.jar', { cwd: serverPath });
+        if (jarPaths.length === 0) {
+            throw new Error('The java server launcher is not found.');
+        }
+        const jarPath = path.resolve(serverPath, jarPaths[0]);
+        const workspacePath = path.resolve(os.tmpdir(), '_ws_' + new Date().getTime());
         const configuration = configurations.get(process.platform);
         const configurationPath = path.resolve(serverPath, configuration);
         const command = 'java';
