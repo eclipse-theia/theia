@@ -6,16 +6,15 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Resource, ResourceResolver } from "../../application/common";
+import { Resource, ResourceResolver, MaybePromise } from "../../application/common";
 import URI from "../../application/common/uri";
 import { FileSystem, FileStat } from "./filesystem";
 
 export class FileResource implements Resource {
 
-    protected stat: FileStat;
-
     constructor(
         readonly uri: URI,
+        protected stat: FileStat,
         protected readonly fileSystem: FileSystem
     ) { }
 
@@ -41,11 +40,16 @@ export class FileResourceResolver implements ResourceResolver {
         @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) { }
 
-    resolve(uri: URI): Promise<FileResource> {
-        if (uri.scheme === 'file') {
-            return Promise.resolve(new FileResource(uri, this.fileSystem))
+    resolve(uri: URI): MaybePromise<FileResource> {
+        if (uri.scheme !== 'file') {
+            throw new Error('The given uri is not file uri: ' + uri);
         }
-        return Promise.reject(undefined);
+        return this.fileSystem.getFileStat(uri.toString()).then(fileStat => {
+            if (!fileStat.isDirectory) {
+                return new FileResource(uri, fileStat, this.fileSystem);
+            }
+            throw new Error('The given uri is a directory: ' + uri);
+        });
     }
 
 }

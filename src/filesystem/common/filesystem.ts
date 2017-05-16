@@ -15,6 +15,8 @@ export interface FileSystem extends Disposable {
      * Returns the filestat for the given uri.
      *
      * If the uri points to a folder it will contain one level of unresolved children.
+     *
+     * Reject if a file for the given uri does not exist.
      */
     getFileStat(uri: string): Promise<FileStat>;
 
@@ -75,6 +77,14 @@ export interface FileSystem extends Disposable {
 
     /**
      * Allows to start a watcher that reports file change events on the provided resource.
+     *
+     * By default the workspace root and all its children are watched.
+     * It should be used only to start watching files outside of the workspace root.
+     *
+     * Use `FileSystemWatcher` to get notified about file changes.
+     *
+     * Resolve when watching of the given uri is started.
+     * Reject if a file for the given uri does not exist.
      */
     watchFileChanges(uri: string): Promise<void>;
 
