@@ -5,9 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { ContributionProvider } from './contribution-provider';
 import { injectable, inject, named } from "inversify";
 import URI from "../common/uri";
+import { ContributionProvider } from './contribution-provider';
+import { MaybePromise } from "./types";
 
 export interface Resource {
     readonly uri: URI;
@@ -20,7 +21,7 @@ export interface ResourceResolver {
     /**
      * Reject if a resource cannot be provided.
      */
-    resolve(uri: URI): Promise<Resource>;
+    resolve(uri: URI): MaybePromise<Resource>;
 }
 
 export const ResourceProvider = Symbol('ResourceProvider');
@@ -37,22 +38,16 @@ export class DefaultResourceProvider {
     /**
      * Reject if a resource cannot be provided.
      */
-    get(uri: URI): Promise<Resource> {
-        const resolvers = this.resolversProvider.getContributions()
-        if (!resolvers) {
-            return Promise.reject(this.createNotRegisteredError(uri));
+    async get(uri: URI): Promise<Resource> {
+        const resolvers = this.resolversProvider.getContributions();
+        for (const resolver of resolvers) {
+            try {
+                return await resolver.resolve(uri);
+            } catch (err) {
+                // no-op
+            }
         }
-        const initial = resolvers[0].resolve(uri);
-        return resolvers.slice(1).reduce((current, provider) =>
-            current.catch(() =>
-                provider.resolve(uri)
-            ),
-            initial
-        ).catch(reason => !!reason ? reason : this.createNotRegisteredError(uri));
-    }
-
-    protected createNotRegisteredError(uri: URI): any {
-        return `A resource provider for '${uri.toString()}' is not registered.`;
+        return Promise.reject(`A resource provider for '${uri.toString()}' is not registered.`);
     }
 
 }

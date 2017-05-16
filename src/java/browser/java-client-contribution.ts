@@ -24,13 +24,12 @@ export class JavaClientContribution implements ResourceResolver, LanguageClientC
         this.waitForDidStart();
     }
 
-    resolve(uri: URI): Promise<JavaResource> {
+    resolve(uri: URI): JavaResource {
         if (uri.scheme !== JAVA_SCHEME) {
-            return Promise.reject(undefined);
+            throw new Error("The given uri is not a java uri: " + uri);
         }
         const resolveLanguageClient = this.resolveLanguageClient.bind(this);
-        const javaResource = new JavaResource(uri, resolveLanguageClient);
-        return Promise.resolve(javaResource);
+        return new JavaResource(uri, resolveLanguageClient);
     }
 
     protected resolveLanguageClient(): Promise<ILanguageClient> {
