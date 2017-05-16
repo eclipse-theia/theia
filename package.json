@@ -1,6 +1,6 @@
 {
   "name": "theia",
-  "version": "0.0.1-alpha-1",
+  "version": "0.0.1-alpha.1",
   "description": "Theia - JavaScript IDE Framework",
   "repository": {
     "type": "git",
@@ -103,9 +103,9 @@
     "update:monaco-languageclient": "npm run clean:monaco-languageclient && npm install",
     "clean:file-deps": "npm run clean:monaco-languageclient && npm run clean:vscode-ws-jsonrpc",
     "update:file-deps": "npm run clean:file-deps && npm install",
-    "java:download": "gulp download_java_server",
-    "java:build": "gulp build_java_server",
-    "java:watch": "gulp watch_java_server"
+    "java:download": "gulp --gulpfile ./config/gulp/java-ls-tasks.js download_java_server",
+    "java:build": "gulp --gulpfile ./config/gulp/java-ls-tasks.js build_java_server",
+    "java:watch": "gulp --gulpfile ./config/gulp/java-ls-tasks.js watch_java_server"
   },
   "bugs": {
     "url": "https://github.com/theia-ide/theia/issues"
