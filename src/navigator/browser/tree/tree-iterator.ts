@@ -5,8 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {ITreeNode, ICompositeTreeNode} from "./tree";
-import {IExpandableTreeNode} from "./tree-expansion";
+import { ITreeNode, ICompositeTreeNode } from "./tree";
+import { IExpandableTreeNode } from "./tree-expansion";
 
 export interface ITreeNodeIterator extends Iterator<ITreeNode | undefined> {
 }
@@ -22,7 +22,7 @@ export namespace ITreeNodeIterator {
 
 export abstract class AbstractTreeNodeIterator implements ITreeNodeIterator {
     constructor(protected node: ITreeNode | undefined,
-                protected readonly options = ITreeNodeIterator.DEFAULT_OPTIONS) {
+        protected readonly options = ITreeNodeIterator.DEFAULT_OPTIONS) {
     }
 
     next(): IteratorResult<ITreeNode | undefined> {

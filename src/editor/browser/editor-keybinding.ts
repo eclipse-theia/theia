@@ -14,7 +14,7 @@ import { EditorManager } from "./editor-manager";
 @injectable()
 export class EditorKeybindingContext implements KeybindingContext {
 
-    constructor( @inject(EditorManager) protected readonly editorService: EditorManager) {}
+    constructor( @inject(EditorManager) protected readonly editorService: EditorManager) { }
 
     id = 'editor.keybinding.context';
 

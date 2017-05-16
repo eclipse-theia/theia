@@ -95,7 +95,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         }));
     }
 
-    get onDispose() {
+    get onDispose()  {
         return this.toDispose.onDispose;
     }
 

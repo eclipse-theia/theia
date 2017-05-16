@@ -33,8 +33,8 @@ export const fileSystemServerModule = new ContainerModule(bind => {
                     proxyFactory.onConnection(connection)
                     const client = proxyFactory.createProxy()
                     clients.push(client)
-                    connection.onDispose( () => {
-                        clients = clients.filter( e => e !== client)
+                    connection.onDispose(() => {
+                        clients = clients.filter(e => e !== client)
                     })
                 }
             }

@@ -14,9 +14,9 @@ import { FileCommandContribution, FileMenuContribution } from './filesystem-comm
 export const fileSystemClientModule = new ContainerModule(bind => {
     bind(FileSystemWatcher).toSelf().inSingletonScope();
     bind(FileSystem).toDynamicValue(ctx => {
-        const connnection = ctx.container.get(WebSocketConnectionProvider);
+        const connection = ctx.container.get(WebSocketConnectionProvider);
         const fileSystemClient = ctx.container.get(FileSystemWatcher).getFileSystemClient();
-        return connnection.createProxy<FileSystem>("/filesystem", fileSystemClient);
+        return connection.createProxy<FileSystem>("/filesystem", fileSystemClient);
     }).inSingletonScope();
 
     bind(FileResourceResolver).toSelf().inSingletonScope();

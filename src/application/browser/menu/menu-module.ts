@@ -5,8 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {ContainerModule} from "inversify";
-import {FrontendApplicationContribution} from "../application";
+import { ContainerModule } from "inversify";
+import { FrontendApplicationContribution } from "../application";
 import { BrowserMenuBarContribution, MainMenuFactory } from "./menu-plugin";
 import { ContextMenuRenderer, BrowserContextMenuRenderer } from "./context-menu-renderer";
 

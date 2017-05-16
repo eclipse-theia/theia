@@ -8,7 +8,7 @@
 import { injectable } from 'inversify';
 import { isOSX } from '../../application/common/os';
 import { isFirefox, isIE, isWebKit } from '../../application/browser';
-import { Keybinding, KeybindingContribution, KeybindingRegistry} from '../../application/common/keybinding';
+import { Keybinding, KeybindingContribution, KeybindingRegistry } from '../../application/common/keybinding';
 import { Accelerator, Key, KeyCode, Keystroke, Modifier } from '../../application/common/keys';
 import MenuRegistry = monaco.actions.MenuRegistry;
 import MenuId = monaco.actions.MenuId;

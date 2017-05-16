@@ -32,7 +32,7 @@ export class CommandRegistry {
     private _commands: { [id: string]: Command };
     private _handlers: { [id: string]: CommandHandler[] };
 
-    constructor(@inject(ContributionProvider) @named(CommandContribution) private contributionProvider: ContributionProvider<CommandContribution>) {
+    constructor( @inject(ContributionProvider) @named(CommandContribution) private contributionProvider: ContributionProvider<CommandContribution>) {
     }
 
     initialize(): void {

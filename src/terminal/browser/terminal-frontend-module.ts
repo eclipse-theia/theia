@@ -24,7 +24,7 @@ let CMD_OPEN_TERMINAL = 'open-terminal';
 @injectable()
 class TerminalCommands implements CommandContribution {
 
-    constructor(@inject(FrontendApplication) private app: FrontendApplication, @inject(WebSocketConnectionProvider) private wsProvider: WebSocketConnectionProvider) {
+    constructor( @inject(FrontendApplication) private app: FrontendApplication, @inject(WebSocketConnectionProvider) private wsProvider: WebSocketConnectionProvider) {
     }
 
     contribute(registry: CommandRegistry): void {

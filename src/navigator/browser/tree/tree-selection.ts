@@ -6,9 +6,9 @@
  */
 
 import { SelectionProvider } from '../../../application/common/selection-service';
-import {injectable, inject} from "inversify";
-import {Event, Emitter, Disposable} from "../../../application/common";
-import {ITree, ITreeNode} from "./tree";
+import { injectable, inject } from "inversify";
+import { Event, Emitter, Disposable } from "../../../application/common";
+import { ITree, ITreeNode } from "./tree";
 
 export const ITreeSelectionService = Symbol("ITreeSelectionService");
 
@@ -71,7 +71,7 @@ export class TreeSelectionService implements ITreeSelectionService {
     protected _selectedNode: ISelectableTreeNode | undefined;
     protected readonly onSelectionChangedEmitter = new Emitter<ISelectableTreeNode | undefined>();
 
-    constructor(@inject(ITree) protected readonly tree: ITree) {
+    constructor( @inject(ITree) protected readonly tree: ITree) {
         tree.onChanged(() => this.selectNode(this._selectedNode));
     }
 

@@ -13,8 +13,8 @@ import { ClipboardService } from "../../common/clipboard-service";
 @injectable()
 export class ElectronClipboardService implements ClipboardService {
     private _set: boolean
-    private _clipboard: {[index: string]: any} = electron.clipboard
-    private _formats: {[id: string]: string} = {
+    private _clipboard: { [index: string]: any } = electron.clipboard
+    private _formats: { [id: string]: string } = {
         text: 'readText',
         html: 'readHTML',
         image: 'readImage',

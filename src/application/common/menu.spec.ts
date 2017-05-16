@@ -38,34 +38,34 @@ describe('menu-model-registry', () => {
                     });
                 }
             }, {
-                contribute(reg: CommandRegistry) {
-                    reg.registerCommand({
-                        id : 'open',
-                        label : "A"
-                    });
-                    reg.registerCommand({
-                        id : 'open.with',
-                        label : "B"
-                    });
-                }
-            });
+                    contribute(reg: CommandRegistry) {
+                        reg.registerCommand({
+                            id: 'open',
+                            label: "A"
+                        });
+                        reg.registerCommand({
+                            id: 'open.with',
+                            label: "B"
+                        });
+                    }
+                });
             let all = service.getMenu();
-            let main = all.childrens[0] as CompositeMenuNode;
-            expect(main.childrens.length).equals(1);
+            let main = all.children[0] as CompositeMenuNode;
+            expect(main.children.length).equals(1);
             expect(main.id, "main");
-            expect(all.childrens.length).equals(1);
-            let file = main.childrens[0] as CompositeMenuNode;
-            expect(file.childrens.length).equals(1);
+            expect(all.children.length).equals(1);
+            let file = main.children[0] as CompositeMenuNode;
+            expect(file.children.length).equals(1);
             expect(file.label, "File");
-            let openGroup = file.childrens[0] as CompositeMenuNode;
-            expect(openGroup.childrens.length).equals(2);
+            let openGroup = file.children[0] as CompositeMenuNode;
+            expect(openGroup.children.length).equals(2);
             expect(openGroup.label).undefined;
         });
     });
 });
 
 function createMenuRegistry(menuContrib: MenuContribution, commandContrib: CommandContribution) {
-    let cmdReg = new CommandRegistry({ getContributions: () => [commandContrib]});
+    let cmdReg = new CommandRegistry({ getContributions: () => [commandContrib] });
     cmdReg.initialize();
     let menuReg = new MenuModelRegistry({ getContributions: () => [menuContrib] }, cmdReg);
     menuReg.initialize();

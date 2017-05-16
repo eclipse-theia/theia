@@ -6,14 +6,14 @@
  */
 
 import { decorate, injectable, inject } from "inversify";
-import {Widget} from "@phosphor/widgets";
-import {Message} from "@phosphor/messaging";
-import {ElementExt} from "@phosphor/domutils";
-import {h, VirtualNode, VirtualText, VirtualDOM, ElementAttrs, ElementInlineStyle} from "@phosphor/virtualdom";
-import {DisposableCollection, Disposable} from "../../../application/common";
-import {ITreeNode, ICompositeTreeNode} from "./tree";
-import {ITreeModel} from "./tree-model";
-import {IExpandableTreeNode} from "./tree-expansion";
+import { Widget } from "@phosphor/widgets";
+import { Message } from "@phosphor/messaging";
+import { ElementExt } from "@phosphor/domutils";
+import { h, VirtualNode, VirtualText, VirtualDOM, ElementAttrs, ElementInlineStyle } from "@phosphor/virtualdom";
+import { DisposableCollection, Disposable } from "../../../application/common";
+import { ITreeNode, ICompositeTreeNode } from "./tree";
+import { ITreeModel } from "./tree-model";
+import { IExpandableTreeNode } from "./tree-expansion";
 import { ISelectableTreeNode } from "./tree-selection";
 import { ContextMenuRenderer } from "../../../application/browser/menu/context-menu-renderer";
 
@@ -195,7 +195,7 @@ export abstract class AbstractTreeWidget<
             classNames.push(COLLAPSED_CLASS);
         }
         const className = classNames.join(' ');
-        const {width, height} = this.props.expansionToggleSize;
+        const { width, height } = this.props.expansionToggleSize;
         const expansionToggle = h.span({
             className,
             style: {
@@ -240,13 +240,13 @@ export abstract class AbstractTreeWidget<
             return props;
         }
         const visible = parent.expanded;
-        const {width} = this.props.expansionToggleSize;
+        const { width } = this.props.expansionToggleSize;
         const parentVisibility = ITreeNode.isVisible(parent) ? 1 : 0;
         const childExpansion = IExpandableTreeNode.is(child) ? 0 : 1;
         const indentMultiplier = parentVisibility + childExpansion;
         const relativeIndentSize = width * indentMultiplier;
         const indentSize = props.indentSize + relativeIndentSize;
-        return Object.assign({}, props, {visible, indentSize});
+        return Object.assign({}, props, { visible, indentSize });
     }
 
     protected onAfterAttach(msg: Message): void {

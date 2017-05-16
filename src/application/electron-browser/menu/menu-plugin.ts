@@ -37,7 +37,7 @@ export class MainMenuFactory {
   }
 
   private fillMenuTemplate(items: Electron.MenuItemOptions[], menuModel: CompositeMenuNode): Electron.MenuItemOptions[] {
-    for (let menu of menuModel.childrens) {
+    for (let menu of menuModel.children) {
       if (menu instanceof CompositeMenuNode) {
         if (menu.label) {
           // should we create a submenu?

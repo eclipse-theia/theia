@@ -49,9 +49,11 @@ export class TerminalWidget extends Widget implements Disposable {
         this.registerResize()
         this.startNewTerminal()
 
-        this.disposables.push({ dispose: () => {
-            this.term.destroy()
-        }})
+        this.disposables.push({
+            dispose: () => {
+                this.term.destroy()
+            }
+        })
     }
 
     protected registerResize() {

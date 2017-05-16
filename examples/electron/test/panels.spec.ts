@@ -48,7 +48,7 @@ describe('theia main elements loading', () => {
 
         // Make sure the menu location is directly under the bar tab
         let firstTabX = mainPage.getxBarTabPosition(1);
-        let menuX = mainPage.getxMenuPosition();;
+        let menuX = mainPage.getxMenuPosition();
         assert.equal(firstTabX, menuX);
 
         // Test with the second tab

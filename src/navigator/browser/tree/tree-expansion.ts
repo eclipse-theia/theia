@@ -5,9 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {injectable, inject} from "inversify";
-import {Emitter, Event, Disposable} from "../../../application/common";
-import {ICompositeTreeNode, ITreeNode, ITree} from "./tree";
+import { injectable, inject } from "inversify";
+import { Emitter, Event, Disposable } from "../../../application/common";
+import { ICompositeTreeNode, ITreeNode, ITree } from "./tree";
 
 export const ITreeExpansionService = Symbol("ITreeExpansionService");
 
@@ -68,7 +68,7 @@ export class TreeExpansionService implements ITreeExpansionService {
 
     protected readonly onExpansionChangedEmitter = new Emitter<IExpandableTreeNode>();
 
-    constructor(@inject(ITree) protected readonly state: ITree) {
+    constructor( @inject(ITree) protected readonly state: ITree) {
         state.onNodeRefreshed(node => {
             for (const child of node.children) {
                 if (IExpandableTreeNode.isExpanded(child)) {

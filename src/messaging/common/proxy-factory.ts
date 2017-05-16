@@ -62,7 +62,7 @@ export class JsonRpcProxyFactory<T extends object> implements ConnectionHandler,
      * @param target - The object to expose to JSON-RPC methods calls.  If this
      *   is omitted, the proxy won't be able to handle requests, only send them.
      */
-    constructor(readonly path: string, private readonly target?: any) {}
+    constructor(readonly path: string, private readonly target?: any) { }
 
     /**
      * Connect a MessageConnection to the factory.
@@ -72,7 +72,7 @@ export class JsonRpcProxyFactory<T extends object> implements ConnectionHandler,
      */
     onConnection(connection: MessageConnection) {
         this.connectionListeners.dispose();
-        connection.onError( error => {
+        connection.onError(error => {
             console.error(error)
         })
         let disposed = false;
@@ -91,14 +91,14 @@ export class JsonRpcProxyFactory<T extends object> implements ConnectionHandler,
         }
         connection.onDispose(() => {
             this.connectionListeners.dispose();
-            this.connectionPromise = new Promise(resolve => {this.connectionPromiseResolve = resolve});
+            this.connectionPromise = new Promise(resolve => { this.connectionPromiseResolve = resolve });
         });
         connection.listen();
         this.connectionPromiseResolve(connection);
     }
 
     private connectionPromiseResolve: (connection: MessageConnection) => void;
-    private connectionPromise: Promise<MessageConnection> = new Promise(resolve => {this.connectionPromiseResolve = resolve})
+    private connectionPromise: Promise<MessageConnection> = new Promise(resolve => { this.connectionPromiseResolve = resolve })
 
     /**
      * Process an incoming JSON-RPC method call.
@@ -117,8 +117,8 @@ export class JsonRpcProxyFactory<T extends object> implements ConnectionHandler,
             try {
                 let promise = this.target[method](...args) as Promise<any>
                 promise
-                    .catch( err => reject(err))
-                    .then( result => resolve(result))
+                    .catch(err => reject(err))
+                    .then(result => resolve(result))
             } catch (err) {
                 reject(err)
             }
@@ -170,7 +170,7 @@ export class JsonRpcProxyFactory<T extends object> implements ConnectionHandler,
     get(target: T, p: PropertyKey, receiver: any): any {
         const isNotify = this.isNotification(p)
         return (...args: any[]) => {
-            return this.connectionPromise.then( connection => {
+            return this.connectionPromise.then(connection => {
                 return new Promise((resolve, reject) => {
                     try {
                         if (isNotify) {

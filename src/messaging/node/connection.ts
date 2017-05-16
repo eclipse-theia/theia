@@ -47,7 +47,7 @@ export function openSocket(options: IServerOptions, onOpen: OnOpen): void {
 }
 
 export function toIWebSocket(webSocket: ws) {
-    return <IWebSocket> {
+    return <IWebSocket>{
         send: content => webSocket.send(content, error => {
             if (error) {
                 console.log(error);

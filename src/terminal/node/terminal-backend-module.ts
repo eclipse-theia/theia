@@ -15,7 +15,7 @@ import URI from "../../application/common/uri";
 
 const pty = require("node-pty")
 
-export default new ContainerModule( bind => {
+export default new ContainerModule(bind => {
     bind(BackendApplicationContribution).to(TerminalExpressContribution)
 })
 

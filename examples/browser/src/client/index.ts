@@ -22,11 +22,11 @@ window.onload = () => {
         ], (basic: any, css: any, ts: any, html: any, json: any, commands: any, actions: any, registry: any, resolver: any,
             keyCodes: any) => {
 
-            const global: any = self;
-            global.monaco.commands = commands;
-            global.monaco.actions = actions;
-            global.monaco.keybindings = Object.assign(registry, resolver, keyCodes);
-            require('./main');
-        });
+                const global: any = self;
+                global.monaco.commands = commands;
+                global.monaco.actions = actions;
+                global.monaco.keybindings = Object.assign(registry, resolver, keyCodes);
+                require('./main');
+            });
     });
 };

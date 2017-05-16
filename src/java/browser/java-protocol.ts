@@ -9,5 +9,5 @@ import { RequestType } from 'vscode-jsonrpc';
 import { TextDocumentIdentifier } from "../../languages/common";
 
 export namespace ClassFileContentsRequest {
-    export const type = new RequestType<TextDocumentIdentifier, string | undefined, void, void>('java/classFileContents');
+    export const type = new RequestType<TextDocumentIdentifier, string |  undefined, void, void>('java/classFileContents');
 }

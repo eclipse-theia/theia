@@ -66,7 +66,7 @@ describe('Proxy-Factory', () => {
                 setTimeout(check, 50)
             } else {
                 expect(it.client.notifications[0]).eq("hello")
-                it.serverProxy.doStuff("foo").then( result => {
+                it.serverProxy.doStuff("foo").then(result => {
                     expect(result).to.be.eq("done: foo")
                     done()
                 })
@@ -77,7 +77,7 @@ describe('Proxy-Factory', () => {
     it('Rejected Promise should result in rejected Promise.', done => {
         let it = getSetup();
         let handle = setTimeout(() => done("timeout"), 500)
-        it.serverProxy.fails('a', 'b').catch( err => {
+        it.serverProxy.fails('a', 'b').catch(err => {
             expect(<Error>err.message).to.contain("fails failed")
             clearTimeout(handle)
             done()
@@ -86,7 +86,7 @@ describe('Proxy-Factory', () => {
     it('Remote Exceptions should result in rejected Promise.', done => {
         let it = getSetup();
         let handle = setTimeout(() => done("timeout"), 500)
-        it.serverProxy.fails2('a', 'b').catch( err => {
+        it.serverProxy.fails2('a', 'b').catch(err => {
             expect(<Error>err.message).to.contain("fails2 failed")
             clearTimeout(handle)
             done()

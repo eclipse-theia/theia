@@ -5,12 +5,12 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {inject, injectable} from "inversify";
-import {DisposableCollection, Event, Emitter, SelectionProvider} from "../../../application/common";
-import {ITree, ITreeNode, ICompositeTreeNode} from "./tree";
-import {ITreeSelectionService, ISelectableTreeNode} from "./tree-selection";
-import {ITreeExpansionService, IExpandableTreeNode} from "./tree-expansion";
-import {ITreeNodeIterator, TreeNodeIterator, BackwardTreeNodeIterator} from "./tree-iterator";
+import { inject, injectable } from "inversify";
+import { DisposableCollection, Event, Emitter, SelectionProvider } from "../../../application/common";
+import { ITree, ITreeNode, ICompositeTreeNode } from "./tree";
+import { ITreeSelectionService, ISelectableTreeNode } from "./tree-selection";
+import { ITreeExpansionService, IExpandableTreeNode } from "./tree-expansion";
+import { ITreeNodeIterator, TreeNodeIterator, BackwardTreeNodeIterator } from "./tree-iterator";
 
 /**
  * The tree model.
@@ -39,7 +39,7 @@ export interface ITreeModel extends ITree, ITreeSelectionService, ITreeExpansion
     /**
      * Open a given node or a selected if the given is undefined.
      */
-    openNode(node?: ITreeNode | undefined): void;
+    openNode(node?: ITreeNode  |  undefined): void;
     /**
      * Select a parent node relatively to the selected taking into account node expansion.
      */
@@ -52,9 +52,9 @@ export class TreeModel implements ITreeModel, SelectionProvider<Readonly<ISelect
     protected readonly onChangedEmitter = new Emitter<void>();
     protected readonly toDispose = new DisposableCollection();
 
-    constructor(@inject(ITree) protected readonly tree: ITree,
-                @inject(ITreeSelectionService) protected readonly selection: ITreeSelectionService,
-                @inject(ITreeExpansionService) protected readonly expansion: ITreeExpansionService) {
+    constructor( @inject(ITree) protected readonly tree: ITree,
+        @inject(ITreeSelectionService) protected readonly selection: ITreeSelectionService,
+        @inject(ITreeExpansionService) protected readonly expansion: ITreeExpansionService) {
         this.toDispose.push(tree);
         this.toDispose.push(tree.onChanged(() => this.fireChanged()));
 
@@ -96,11 +96,11 @@ export class TreeModel implements ITreeModel, SelectionProvider<Readonly<ISelect
         return this.tree.onNodeRefreshed;
     }
 
-    getNode(id: string|undefined) {
+    getNode(id: string | undefined) {
         return this.tree.getNode(id);
     }
 
-    validateNode(node: ITreeNode|undefined) {
+    validateNode(node: ITreeNode | undefined) {
         return this.tree.validateNode(node);
     }
 
@@ -120,7 +120,7 @@ export class TreeModel implements ITreeModel, SelectionProvider<Readonly<ISelect
         return this.selection.onSelectionChanged;
     }
 
-    selectNode(node: ISelectableTreeNode|undefined): void {
+    selectNode(node: ISelectableTreeNode | undefined): void {
         this.selection.selectNode(node);
     }
 
@@ -186,7 +186,7 @@ export class TreeModel implements ITreeModel, SelectionProvider<Readonly<ISelect
         });
     }
 
-    openNode(raw?: ITreeNode|undefined): void {
+    openNode(raw?: ITreeNode | undefined): void {
         const node = raw || this.selectedNode;
         if (node) {
             this.doOpenNode(node);

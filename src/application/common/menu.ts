@@ -29,8 +29,8 @@ export interface MenuContribution {
 export class MenuModelRegistry {
     public menus: CompositeMenuNode = new CompositeMenuNode("");
 
-    constructor(@inject(ContributionProvider) @named(MenuContribution) private contributions: ContributionProvider<MenuContribution>,
-                @inject(CommandRegistry) private commands: CommandRegistry) {
+    constructor( @inject(ContributionProvider) @named(MenuContribution) private contributions: ContributionProvider<MenuContribution>,
+        @inject(CommandRegistry) private commands: CommandRegistry) {
     }
 
     initialize() {
@@ -54,7 +54,7 @@ export class MenuModelRegistry {
     private findGroup(menuPath: string[]): CompositeMenuNode {
         let currentMenu = this.menus;
         for (let segment of menuPath) {
-            let sub = currentMenu.childrens.find(e => e.id === segment);
+            let sub = currentMenu.children.find(e => e.id === segment);
             if (sub instanceof CompositeMenuNode) {
                 currentMenu = sub;
             } else if (!sub) {
@@ -84,13 +84,13 @@ export interface MenuNode {
 }
 
 export class CompositeMenuNode implements MenuNode {
-    public childrens: MenuNode[] = []
+    public children: MenuNode[] = []
     constructor(public id: string,
-                public label?: string) {}
+        public label?: string) { }
 
     public addNode(node: MenuNode): Disposable {
-        this.childrens.push(node);
-        this.childrens.sort((m1, m2) => {
+        this.children.push(node);
+        this.children.sort((m1, m2) => {
             if (m1.sortString < m2.sortString) {
                 return -1
             } else if (m1.sortString > m2.sortString) {
@@ -101,9 +101,9 @@ export class CompositeMenuNode implements MenuNode {
         });
         return {
             dispose: () => {
-                const idx = this.childrens.indexOf(node);
+                const idx = this.children.indexOf(node);
                 if (idx >= 0) {
-                    this.childrens.splice(idx, 1);
+                    this.children.splice(idx, 1);
                 }
             }
         }
@@ -119,7 +119,7 @@ export class CompositeMenuNode implements MenuNode {
 }
 
 export class ActionMenuNode implements MenuNode {
-    constructor(public action: MenuAction, private commands: CommandRegistry) {}
+    constructor(public action: MenuAction, private commands: CommandRegistry) { }
 
     get id(): string {
         return this.action.commandId;
@@ -136,7 +136,7 @@ export class ActionMenuNode implements MenuNode {
         return cmd.label;
     }
 
-    get icon(): string|undefined {
+    get icon(): string | undefined {
         return this.action.icon;
     }
 

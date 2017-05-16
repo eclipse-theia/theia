@@ -108,7 +108,7 @@ export class EditorManagerImpl implements EditorManager {
         );
     }
 
-    open(uri: URI, input?: EditorInput): Promise<EditorWidget>  {
+    open(uri: URI, input?: EditorInput): Promise<EditorWidget> {
         return this.getOrCreateEditor(uri).then(editor => {
             this.revealIfVisible(editor, input);
             this.revealSelection(editor, input);

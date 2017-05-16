@@ -69,7 +69,7 @@ export class WebSocketConnectionProvider {
      * Creates a web socket for the given url
      */
     createWebSocket(url: string, options?: WebSocketOptions): WebSocket {
-        if (options === undefined ||  options.reconnecting) {
+        if (options === undefined || options.reconnecting) {
             const socketOptions = {
                 maxReconnectionDelay: 10000,
                 minReconnectionDelay: 1000,

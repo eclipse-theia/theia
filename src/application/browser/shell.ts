@@ -5,8 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {ArrayExt, each, find, toArray} from "@phosphor/algorithm";
-import {ISignal, Signal} from "@phosphor/signaling";
+import { ArrayExt, each, find, toArray } from "@phosphor/algorithm";
+import { ISignal, Signal } from "@phosphor/signaling";
 
 import {
     BoxLayout,
@@ -275,7 +275,7 @@ export class ApplicationShell extends Widget {
             console.error('widgets added to app shell must have unique id property');
             return;
         }
-        this._dockPanel.addWidget(widget, {mode: 'tab-after'});
+        this._dockPanel.addWidget(widget, { mode: 'tab-after' });
         this._tracker.add(widget);
     }
 
@@ -444,7 +444,7 @@ namespace ApplicationShell {
      * The options for adding a widget to a side area of the shell.
      */
     export
-    interface ISideAreaOptions {
+        interface ISideAreaOptions {
         /**
          * The rank order of the widget among its siblings.
          */
@@ -464,7 +464,7 @@ namespace Private {
      * An object which holds a widget and its sort rank.
      */
     export
-    interface IRankItem {
+        interface IRankItem {
         /**
          * The widget for the item.
          */
@@ -547,7 +547,7 @@ namespace Private {
         addWidget(widget: Widget, rank: number): void {
             widget.parent = null;
             widget.hide();
-            let item = {widget, rank};
+            let item = { widget, rank };
             let index = this._findInsertIndex(item);
             ArrayExt.insert(this._items, index, item);
             this._stackedPanel.insertWidget(index, widget);

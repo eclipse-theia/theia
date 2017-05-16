@@ -21,7 +21,7 @@ export function bindContributionProvider(bind: interfaces.Bind, id: symbol): voi
 
 class ContainerBasedContributionProvider<T extends object> implements ContributionProvider<T> {
 
-    constructor(private serviceIdentifier: interfaces.ServiceIdentifier<T>, private container: interfaces.Container) {}
+    constructor(private serviceIdentifier: interfaces.ServiceIdentifier<T>, private container: interfaces.Container) { }
 
     private services: T[]
 

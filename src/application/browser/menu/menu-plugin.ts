@@ -29,7 +29,7 @@ export class MainMenuFactory {
         menuBar.id = 'theia:menubar';
         const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
         const phosphorCommands = this.createPhosporCommands(menuModel);
-        for (let menu of menuModel.childrens) {
+        for (let menu of menuModel.children) {
             if (menu instanceof CompositeMenuNode) {
                 const menuWidget = this.createMenuWidget(menu, phosphorCommands);
                 menuBar.addMenu(menuWidget);
@@ -46,14 +46,14 @@ export class MainMenuFactory {
             commands: phosphorCommands
         });
 
-        for (let menu of menuModel.childrens) {
+        for (let menu of menuModel.children) {
             if (menu instanceof CompositeMenuNode) {
                 if (menu.label) {
                     contextMenu.addItem({
                         type: 'submenu',
                         submenu: this.createMenuWidget(menu, phosphorCommands)
                     });
-                } else if (menu.childrens.length > 0) {
+                } else if (menu.children.length > 0) {
                     if (contextMenu.items.length > 0) {
                         contextMenu.addItem({
                             type: 'separator'
@@ -76,7 +76,7 @@ export class MainMenuFactory {
         const commandRegistry = this.commandRegistry;
         const keybindingRegistry = this.keybindingRegistry;
         function initCommands(current: CompositeMenuNode): void {
-            for (let menu of current.childrens) {
+            for (let menu of current.children) {
                 if (menu instanceof ActionMenuNode) {
                     const command = commandRegistry.getCommand(menu.action.commandId);
                     if (command) {
@@ -126,7 +126,7 @@ export class MainMenuFactory {
     }
 
     private fillSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: PhosphorCommandRegistry): void {
-        for (let item of menu.childrens) {
+        for (let item of menu.children) {
             if (item instanceof CompositeMenuNode) {
                 if (item.label) {
                     parent.addItem({
@@ -134,7 +134,7 @@ export class MainMenuFactory {
                         submenu: this.createMenuWidget(item, commands)
                     });
                 } else {
-                    if (item.childrens.length > 0) {
+                    if (item.children.length > 0) {
                         if (parent.items.length > 0) {
                             parent.addItem({
                                 type: 'separator'

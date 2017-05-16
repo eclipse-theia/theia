@@ -7,7 +7,7 @@
 
 import * as http from 'http';
 import * as express from 'express';
-import {inject, named, injectable} from "inversify";
+import { inject, named, injectable } from "inversify";
 import { ContributionProvider } from '../common/contribution-provider';
 
 export const BackendApplicationContribution = Symbol("BackendApplicationContribution");
@@ -24,7 +24,7 @@ export class BackendApplication {
 
     private app: express.Application;
 
-    constructor(@inject(ContributionProvider) @named(BackendApplicationContribution) private contributionsProvider: ContributionProvider<BackendApplicationContribution>) {
+    constructor( @inject(ContributionProvider) @named(BackendApplicationContribution) private contributionsProvider: ContributionProvider<BackendApplicationContribution>) {
     }
 
     start(port: number = 3000): Promise<void> {

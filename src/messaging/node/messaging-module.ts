@@ -7,10 +7,10 @@
 
 import * as http from 'http';
 import { bindContributionProvider, ContributionProvider } from '../../application/common/contribution-provider';
-import {ContainerModule, injectable, inject, named} from "inversify";
-import {BackendApplicationContribution} from "../../application/node";
-import {createServerWebSocketConnection} from "../../messaging/node";
-import {ConnectionHandler} from "../common";
+import { ContainerModule, injectable, inject, named } from "inversify";
+import { BackendApplicationContribution } from "../../application/node";
+import { createServerWebSocketConnection } from "../../messaging/node";
+import { ConnectionHandler } from "../common";
 
 export const messagingModule = new ContainerModule(bind => {
     bind<BackendApplicationContribution>(BackendApplicationContribution).to(MessagingContribution);
@@ -20,7 +20,7 @@ export const messagingModule = new ContainerModule(bind => {
 @injectable()
 export class MessagingContribution implements BackendApplicationContribution {
 
-    constructor(@inject(ContributionProvider) @named(ConnectionHandler) protected readonly handlers: ContributionProvider<ConnectionHandler>) {
+    constructor( @inject(ContributionProvider) @named(ConnectionHandler) protected readonly handlers: ContributionProvider<ConnectionHandler>) {
     }
 
     onStart(server: http.Server): void {
