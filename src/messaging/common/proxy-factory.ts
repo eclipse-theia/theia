@@ -5,9 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { DisposableCollection } from '../../application/common';
-import { ConnectionHandler } from './handler';
 import { MessageConnection } from "vscode-jsonrpc";
+import { ConnectionHandler } from './handler';
 
 /**
  * Factory for JSON-RPC proxy objects.
@@ -53,8 +52,6 @@ import { MessageConnection } from "vscode-jsonrpc";
  */
 export class JsonRpcProxyFactory<T extends object> implements ConnectionHandler, ProxyHandler<T> {
 
-    protected readonly connectionListeners = new DisposableCollection();
-
     /**
      * Build a new JsonRpcProxyFactory.
      *
@@ -71,16 +68,6 @@ export class JsonRpcProxyFactory<T extends object> implements ConnectionHandler,
      * response.
      */
     onConnection(connection: MessageConnection) {
-        this.connectionListeners.dispose();
-        connection.onError(error => {
-            console.error(error)
-        })
-        let disposed = false;
-        this.connectionListeners.push({
-            dispose() {
-                disposed = true;
-            }
-        });
         if (this.target) {
             for (let prop in this.target) {
                 if (typeof this.target[prop] === 'function') {
@@ -90,7 +77,6 @@ export class JsonRpcProxyFactory<T extends object> implements ConnectionHandler,
             }
         }
         connection.onDispose(() => {
-            this.connectionListeners.dispose();
             this.connectionPromise = new Promise(resolve => { this.connectionPromiseResolve = resolve });
         });
         connection.listen();

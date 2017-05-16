@@ -42,7 +42,7 @@
     "trash": "^4.0.1",
     "vscode-languageserver": "^3.2.0",
     "vscode-uri": "^1.0.0",
-    "vscode-ws-jsonrpc": "^0.0.1-alpha.1",
+    "vscode-ws-jsonrpc": "^0.0.1-alpha.2",
     "ws": "^2.2.0",
     "xterm": "^2.6.0"
   },

@@ -18,6 +18,8 @@
       "dom"
     ],
     "sourceMap": true
+    // uncomment for debugging
+    // ,"sourceRoot": "src"
   },
   "include": [
     "src"
