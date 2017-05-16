@@ -32,17 +32,6 @@ This command does a few things:
  - runs the Typescript linter
  - runs the unit tests
 
-## Build the `file-dependency-updater` tool
-
-Before building the examples, we need to build a small utility that helps
-handling the dependency of the example applications on the main `theia`
-package.  This tool watches for any change in the build artifacts of `theia`
-and propagates them to the examples' `node_modules` directories.  It helps
-keeping our edit-build-test cycle short when doing changes to `theia`.
-
-    $ cd $THEIA/config/file-dependency-updater
-    $ npm install
-
 ## Build and run the browser-based example application
 
 Now that the `theia` package is built, we can do the same with the browser
@@ -53,7 +42,7 @@ example.
 
 Note that because of the dependency that the example has on `file:../.., the
 `prepare` step of `theia` will be called, causing its build process to run
-again.  This is expected.
+again. This is expected.
 
 Once this is done, we can start the application with:
 
@@ -73,22 +62,26 @@ It can also be started with:
 
     $ npm start
 
-## tldr
+## tl;dr
 
 To build and run the browser example:
 
-    $ git clone https://github.com/theia-ide/theia && \
-      cd theia && \
-      npm install && \
-      cd examples/browser && \
-      npm install && \
-      npm start
+    $ git clone https://github.com/theia-ide/theia \
+      && cd theia \
+      && npm install \
+      && npm run build \
+      && cd examples/browser \
+      && npm install \
+      && npm run build \
+      && npm run start
 
 To build and run the electron example:
 
-    $ git clone https://github.com/theia-ide/theia && \
-      cd theia && \
-      npm install && \
-      cd examples/electron && \
-      npm install && \
-      npm start
+    $ git clone https://github.com/theia-ide/theia \
+      && cd theia \
+      && npm install \
+      && npm run build \
+      && cd examples/electron \
+      && npm install \
+      && npm run build \
+      && npm run start

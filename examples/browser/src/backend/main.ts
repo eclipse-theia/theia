@@ -29,7 +29,7 @@ process.on('uncaughtException', function (err: any) {
 class StaticServer implements BackendApplicationContribution {
     configure(app: express.Application): void {
         app.use(express.static(path.join(__dirname, '..'), {
-            index: path.join('client', 'index.html')
+            index: path.join('frontend', 'index.html')
         }));
     }
 }
