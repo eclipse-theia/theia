@@ -1,5 +1,6 @@
 # Theia
 [![Gitter](https://img.shields.io/badge/chat-on%20gitter-blue.svg)](https://gitter.im/theia-ide/theia)
+[![Build Status](https://travis-ci.org/theia-ide/theia.svg?branch=master)](https://travis-ci.org/theia-ide/theia)
 
 Theia is a cloud & desktop IDE implemented in TypeScript.
 
