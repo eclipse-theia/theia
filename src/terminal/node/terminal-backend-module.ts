@@ -22,7 +22,6 @@ export default new ContainerModule(bind => {
 @injectable()
 class TerminalExpressContribution implements BackendApplicationContribution {
     private terminals: Map<number, any> = new Map()
-    private logs: string[] = []
 
     configure(app: express.Application): void {
         app.post('/terminals', (req, res) => {
@@ -39,10 +38,6 @@ class TerminalExpressContribution implements BackendApplicationContribution {
             term.write("source ~/.profile\n")
 
             this.terminals.set(term.pid, term)
-            this.logs[term.pid] = '';
-            term.on('data', (data: any) => {
-                this.logs[term.pid] += data;
-            });
             res.send(term.pid.toString());
             res.end();
         });
@@ -88,7 +83,6 @@ class TerminalExpressContribution implements BackendApplicationContribution {
             ws.on('close', (msg: any) => {
                 term.kill()
                 this.terminals.delete(pid)
-                delete this.logs[pid]
             })
         })
     }
