@@ -7,12 +7,13 @@
 
 import { injectable } from "inversify";
 import URI from "../../application/common/uri";
-import { Emitter, Event } from "../../application/common";
+import { Emitter, Event, MaybePromise } from "../../application/common";
 import { EditorWidget } from "./editor-widget";
 
 @injectable()
 export class EditorRegistry {
-    protected readonly editors = new Map<string, Promise<EditorWidget> | EditorWidget | undefined>();
+    protected idSequence = 0;
+    protected readonly editors = new Map<string, MaybePromise<EditorWidget>>();
     protected readonly onEditorsChangedEmitter = new Emitter<void>();
 
     onEditorsChanged(): Event<void> {
@@ -36,7 +37,7 @@ export class EditorRegistry {
     }
 
     addEditor(uri: URI, editor: EditorWidget): void {
-        editor.id = `editor-${this.getEditorCount()}`;
+        editor.id = this.nextId();
         this.editors.set(uri.toString(), editor);
         this.onEditorsChangedEmitter.fire(undefined);
     }
@@ -45,5 +46,9 @@ export class EditorRegistry {
         if (this.editors.delete(uri.toString())) {
             this.onEditorsChangedEmitter.fire(undefined);
         }
+    }
+
+    protected nextId(): string {
+        return `editor-${this.idSequence++}`;
     }
 }
