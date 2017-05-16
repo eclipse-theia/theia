@@ -42,7 +42,9 @@
                 "--timeout",
                 "999999",
                 "--colors",
-                "${file}"
+                "${file}",
+                "--opts",
+                "${workspaceRoot}/config/mocha/mocha.opts"
             ],
             "sourceMaps": true,
             "internalConsoleOptions": "openOnSessionStart",

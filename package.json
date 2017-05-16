@@ -91,7 +91,7 @@
     "watch": "tsc-watch --onSuccess \"npm run lint\"",
     "clean": "rimraf lib",
     "test": "mocha --opts ./config/mocha/mocha.opts src/**/*.spec.ts",
-    "test:watch": "mocha --watch src/**/*.spec.ts",
+    "test:watch": "mocha --watch --opts ./config/mocha/mocha.opts src/**/*.spec.ts",
     "clean:vscode-ws-jsonrpc": "rimraf node_modules/vscode-ws-jsonrpc",
     "update:vscode-ws-jsonrpc": "npm run clean:vscode-ws-jsonrpc && npm install",
     "clean:monaco-languageclient": "rimraf node_modules/monaco-languageclient && rimraf node_modules/vscode-base-languageclient",
