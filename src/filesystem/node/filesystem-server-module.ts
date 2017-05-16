@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -8,7 +9,8 @@
 import { ContainerModule } from "inversify";
 import { ConnectionHandler } from "../../messaging/common";
 import { FileSystemNode } from "./node-filesystem";
-import { FileSystemClient } from "../common/filesystem";
+import { FileSystemWatcher } from '../common/filesystem-watcher';
+import { FileSystemClient, FileSystem } from "../common/filesystem";
 import { JsonRpcProxyFactory } from "../../messaging/common/proxy-factory";
 
 export const ROOT_DIR_OPTION = '--root-dir=';
@@ -17,8 +19,11 @@ export const fileSystemServerModule = new ContainerModule(bind => {
     const rootDir = getRootDir();
     if (rootDir) {
         const fileSystem = new FileSystemNode(`file://${rootDir}`)
+        const fileSystemWatcher = new FileSystemWatcher()
         bind<ConnectionHandler>(ConnectionHandler).toDynamicValue(ctx => {
-            let clients: FileSystemClient[] = []
+            let clients: FileSystemClient[] = [
+                fileSystemWatcher.getFileSystemClient()
+            ]
             fileSystem.setClient({
                 onFileChanges(msg) {
                     for (let client of clients) {
@@ -39,6 +44,8 @@ export const fileSystemServerModule = new ContainerModule(bind => {
                 }
             }
         })
+        bind<FileSystem>(FileSystem).toConstantValue(fileSystem)
+        bind<FileSystemWatcher>(FileSystemWatcher).toConstantValue(fileSystemWatcher)
     } else {
         throw new Error(`The directory is unknown, please use '${ROOT_DIR_OPTION}' option`);
     }
