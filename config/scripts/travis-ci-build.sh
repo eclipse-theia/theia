@@ -4,9 +4,7 @@ npm install \
 && npm run test \
 && cd examples/browser \
 && npm install \
-&& npm run build:app \
-&& npm run build:browser \
+&& npm run build \
 && cd ../electron \
 && npm install \
-&& npm run build:app \
-&& npm run build:electron
+&& npm run build
