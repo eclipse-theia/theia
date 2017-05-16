@@ -23,6 +23,6 @@
     "src"
   ],
   "files": [
-    "typings/monaco/index.d.ts"
+    "src/monaco/typings/monaco/index.d.ts"
   ]
 }
