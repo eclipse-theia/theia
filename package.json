@@ -6,7 +6,7 @@
     "type": "git",
     "url": "https://github.com/theia-ide/theia.git"
   },
- "license": "Apache-2.0",
+  "license": "Apache-2.0",
   "files": [
     "lib",
     "src"
@@ -34,7 +34,7 @@
     "inversify": "^3.1.0",
     "monaco-editor": "^0.8.3",
     "monaco-editor-core": "^0.8.2",
-    "monaco-languageclient": "^0.0.1-alpha.5",
+    "monaco-languageclient": "^0.0.1-alpha.6",
     "node-pty": "^0.6.4",
     "reconnecting-websocket": "^3.0.3",
     "reflect-metadata": "^0.1.10",
@@ -42,7 +42,7 @@
     "trash": "^4.0.1",
     "vscode-languageserver": "^3.2.0",
     "vscode-uri": "^1.0.0",
-    "vscode-ws-jsonrpc": "^0.0.1-alpha.2",
+    "vscode-ws-jsonrpc": "^0.0.1-alpha.3",
     "ws": "^2.2.0",
     "xterm": "^2.6.0"
   },

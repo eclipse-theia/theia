@@ -8,7 +8,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch App",
-            "program": "${workspaceRoot}/examples/browser/lib/app/app.js",
+            "program": "${workspaceRoot}/examples/browser/lib/backend/main.js",
             "sourceMaps": true,
             "outFiles": [
                 "${workspaceRoot}/examples/browser/lib/**/*.js",
@@ -19,7 +19,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch App (eclipse.jdt.ls)",
-            "program": "${workspaceRoot}/examples/browser/lib/app/app.js",
+            "program": "${workspaceRoot}/examples/browser/lib/backend/main.js",
             "args": [
                 "--root-dir=${workspaceRoot}/../eclipse.jdt.ls"
             ],
