@@ -6,12 +6,7 @@
     "type": "git",
     "url": "https://github.com/theia-ide/theia.git"
   },
-  "licenses": [
-    {
-      "type": "Apache-2.0",
-      "url": "http://www.apache.org/licenses/LICENSE-2.0"
-    }
-  ],
+ "license": "Apache-2.0",
   "files": [
     "lib",
     "src"
