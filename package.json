@@ -1,5 +1,5 @@
 {
-  "name": "theia",
+  "name": "theia-core",
   "version": "0.0.1-alpha.1",
   "description": "Theia - JavaScript IDE Framework",
   "repository": {
