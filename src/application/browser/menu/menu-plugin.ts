@@ -25,13 +25,13 @@ export class MainMenuFactory {
     }
 
     createMenuBar(): MenuBarWidget {
-        const menuBar = new MenuBarWidget();
+        const menuBar = new DynamicMenuBarWidget();
         menuBar.id = 'theia:menubar';
         const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
         const phosphorCommands = this.createPhosporCommands(menuModel);
         for (let menu of menuModel.children) {
             if (menu instanceof CompositeMenuNode) {
-                const menuWidget = this.createMenuWidget(menu, phosphorCommands);
+                const menuWidget = new DynamicMenuWidget(menu, { commands: phosphorCommands });
                 menuBar.addMenu(menuWidget);
             }
         }
@@ -42,32 +42,7 @@ export class MainMenuFactory {
         const menuModel = this.menuProvider.getMenu(path);
         const phosphorCommands = this.createPhosporCommands(menuModel);
 
-        const contextMenu = new MenuWidget({
-            commands: phosphorCommands
-        });
-
-        for (let menu of menuModel.children) {
-            if (menu instanceof CompositeMenuNode) {
-                if (menu.label) {
-                    contextMenu.addItem({
-                        type: 'submenu',
-                        submenu: this.createMenuWidget(menu, phosphorCommands)
-                    });
-                } else if (menu.children.length > 0) {
-                    if (contextMenu.items.length > 0) {
-                        contextMenu.addItem({
-                            type: 'separator'
-                        });
-                    }
-                    this.fillSubMenus(contextMenu, menu, phosphorCommands);
-                }
-            } else if (menu instanceof ActionMenuNode) {
-                contextMenu.addItem({
-                    command: menu.action.commandId,
-                    type: 'command'
-                });
-            }
-        }
+        const contextMenu = new DynamicMenuWidget(menuModel, { commands: phosphorCommands });
         return contextMenu;
     }
 
@@ -80,19 +55,25 @@ export class MainMenuFactory {
                 if (menu instanceof ActionMenuNode) {
                     const command = commandRegistry.getCommand(menu.action.commandId);
                     if (command) {
-                        let handler = commandRegistry.getActiveHandler(command.id) || {
-                            execute: () => { },
-                            isEnabled: () => { return false; },
-                            isVisible: () => { return true; }
-                        };
-
-                        handler = handler!;
+                        const getHandler = (commandId: string) => {
+                            return commandRegistry.getActiveHandler(commandId) || {
+                                execute: () => { },
+                                isEnabled: () => { return false; },
+                                isVisible: () => { return true; }
+                            }
+                        }
                         commands.addCommand(command.id, {
-                            execute: (e: any) => handler.execute(),
+                            execute: (e: any) => getHandler(command.id).execute(),
                             label: menu.label,
                             icon: command.iconClass,
-                            isEnabled: (e: any) => !handler.isEnabled || handler.isEnabled(),
-                            isVisible: (e: any) => !handler.isVisible || handler.isVisible()
+                            isEnabled: (e: any) => {
+                                let handler = getHandler(command.id)
+                                return !handler.isEnabled || handler.isEnabled()
+                            },
+                            isVisible: (e: any) => {
+                                let handler = getHandler(command.id)
+                                return !handler.isVisible || handler.isVisible()
+                            }
                         });
 
                         const binding = keybindingRegistry.getKeybindingForCommand(command.id);
@@ -114,24 +95,46 @@ export class MainMenuFactory {
         return commands;
     }
 
-    private createMenuWidget(menu: CompositeMenuNode, commands: PhosphorCommandRegistry): MenuWidget {
-        const result = new MenuWidget({
-            commands
-        });
-        if (menu.label) {
-            result.title.label = menu.label;
+
+}
+class DynamicMenuBarWidget extends MenuBarWidget {
+
+    constructor() {
+        super()
+        // HACK we need to hook in on private method _openChildMenu. Don't do this at home!
+        DynamicMenuBarWidget.prototype['_openChildMenu'] = () => {
+            if (this.activeMenu instanceof DynamicMenuWidget) {
+                this.activeMenu.aboutToShow()
+            }
+            super['_openChildMenu']()
         }
-        this.fillSubMenus(result, menu, commands);
-        return result;
+    }
+}
+/**
+ * A menu widget that would recompute its items on update
+ */
+class DynamicMenuWidget extends MenuWidget {
+
+    constructor(protected menu: CompositeMenuNode, protected options: MenuWidget.IOptions) {
+        super(options)
+        if (menu.label) {
+            this.title.label = menu.label;
+        }
+        this.updateSubMenus(this, this.menu, this.options.commands)
     }
 
-    private fillSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: PhosphorCommandRegistry): void {
+    public aboutToShow(): void {
+        this.clearItems()
+        this.updateSubMenus(this, this.menu, this.options.commands)
+    }
+
+    private updateSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: PhosphorCommandRegistry): void {
         for (let item of menu.children) {
             if (item instanceof CompositeMenuNode) {
                 if (item.label) {
                     parent.addItem({
                         type: 'submenu',
-                        submenu: this.createMenuWidget(item, commands)
+                        submenu: new DynamicMenuWidget(item, this.options)
                     });
                 } else {
                     if (item.children.length > 0) {
@@ -140,7 +143,7 @@ export class MainMenuFactory {
                                 type: 'separator'
                             });
                         }
-                        this.fillSubMenus(parent, item, commands);
+                        this.updateSubMenus(parent, item, commands);
                     }
                 }
             } else if (item instanceof ActionMenuNode) {
@@ -151,7 +154,6 @@ export class MainMenuFactory {
             }
         }
     }
-
 }
 
 @injectable()
