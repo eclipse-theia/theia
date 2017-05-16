@@ -14,4 +14,4 @@ Theia is a cloud & desktop IDE implemented in TypeScript.
  
 ### Running the examples
 
-See [DEVELOPING.md](doc/DEVELOPING.md).
+See [DEVELOPING.md](doc/Developing.md).
