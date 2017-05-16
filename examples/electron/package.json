@@ -1,6 +1,13 @@
 {
   "private": true,
   "name": "electron-example",
+  "version": "0.0.1-alpha-1",
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
   "dependencies": {
     "electron": "^1.6.2",
     "monaco-css": "^1.3.1",
@@ -15,23 +22,17 @@
   },
   "scripts": {
     "clean": "rimraf lib",
-
     "postinstall": "electron-rebuild",
     "prepare": "npm run clean && npm run build",
-
     "build": "npm run build:app && npm run build:electron",
     "build:app": "tsc && npm run lint",
     "build:electron": "npm run build:app && webpack --target electron && cp src/client/index.html lib/client",
     "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
-
     "start": "npm run start:electron",
     "start:app": "node ./lib/app.js",
     "start:electron": "electron ./lib/client/electron-main.js",
-
     "cold:start:electron": "cd ../../ && npm run clean && npm run build && cd examples/electron && npm run clean && npm run build && npm start",
-
     "watch:app": "tsc --watch",
-
     "test:ui": "wdio wdio.conf.js"
   },
   "devDependencies": {
@@ -41,6 +42,7 @@
     "concurrently": "^3.4.0",
     "css-loader": "^0.28.1",
     "electron-rebuild": "^1.5.11",
+    "file-loader": "^0.11.1",
     "rimraf": "^2.6.1",
     "selenium-standalone": "^6.2.0",
     "source-map-loader": "^0.2.1",

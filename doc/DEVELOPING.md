@@ -40,7 +40,7 @@ package.  This tool watches for any change in the build artifacts of `theia`
 and propagates them to the examples' `node_modules` directories.  It helps
 keeping our edit-build-test cycle short when doing changes to `theia`.
 
-    $ cd $THEIA/releng/file-dependency-updater
+    $ cd $THEIA/config/file-dependency-updater
     $ npm install
 
 ## Build and run the browser-based example application
@@ -80,9 +80,7 @@ To build and run the browser example:
     $ git clone https://github.com/theia-ide/theia && \
       cd theia && \
       npm install && \
-      cd releng/file-dependency-updater && \
-      npm install && \
-      cd ../../examples/browser && \
+      cd examples/browser && \
       npm install && \
       npm start
 
@@ -91,8 +89,6 @@ To build and run the electron example:
     $ git clone https://github.com/theia-ide/theia && \
       cd theia && \
       npm install && \
-      cd releng/file-dependency-updater && \
-      npm install && \
-      cd ../../examples/electron && \
+      cd examples/electron && \
       npm install && \
       npm start

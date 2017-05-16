@@ -1,0 +1,16 @@
+language: node_js
+node_js:
+  - "7"
+  - "6"
+branches:
+  only: 
+    - master
+env:
+  - CXX=g++-4.8
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
+script: chmod a+x ./config/scripts/travis-ci-build.sh && ./config/scripts/travis-ci-build.sh

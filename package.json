@@ -1,11 +1,17 @@
 {
   "name": "theia",
-  "version": "0.0.1",
+  "version": "0.0.1-alpha-1",
   "description": "Theia - JavaScript IDE Framework",
   "repository": {
     "type": "git",
     "url": "https://github.com/theia-ide/theia.git"
   },
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
   "files": [
     "lib",
     "src"
@@ -56,6 +62,8 @@
     "circular-dependency-plugin": "^2.0.0",
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.26.2",
+    "file-loader": "^0.11.1",
+    "find-package-json": "^1.0.0",
     "gulp": "^3.9.1",
     "gulp-decompress": "^2.0.1",
     "gulp-download": "0.0.1",
@@ -83,22 +91,21 @@
   "scripts": {
     "prepare": "npm run clean && npm run build && npm run java:download",
     "prepublishOnly": "npm run prepare && npm run test",
-    "lint": "./node_modules/.bin/tslint -c ./config/tslint/tslint.json --project ./tsconfig.json",
-    "build": "./node_modules/.bin/tsc && npm run lint",
-    "watch": "./node_modules/.bin/tsc-watch --onSuccess \"npm run lint\"",
-    "clean": "./node_modules/.bin/rimraf lib",
-    "clean:node_modules": "./node_modules/.bin/rimraf node_modules",
-    "test": "./node_modules/.bin/mocha src/**/*.spec.ts",
-    "test:watch": "./node_modules/.bin/mocha --watch src/**/*.spec.ts",
-    "clean:vscode-ws-jsonrpc": "./node_modules/.bin/rimraf node_modules/vscode-ws-jsonrpc",
+    "lint": "tslint -c ./config/tslint/tslint.json --project ./tsconfig.json",
+    "build": "tsc && npm run lint",
+    "watch": "tsc-watch --onSuccess \"npm run lint\"",
+    "clean": "rimraf lib",
+    "test": "mocha --opts ./config/mocha/mocha.opts src/**/*.spec.ts",
+    "test:watch": "mocha --watch src/**/*.spec.ts",
+    "clean:vscode-ws-jsonrpc": "rimraf node_modules/vscode-ws-jsonrpc",
     "update:vscode-ws-jsonrpc": "npm run clean:vscode-ws-jsonrpc && npm install",
-    "clean:monaco-languageclient": "./node_modules/.bin/rimraf node_modules/monaco-languageclient && ./node_modules/.bin/rimraf node_modules/vscode-base-languageclient",
+    "clean:monaco-languageclient": "rimraf node_modules/monaco-languageclient && rimraf node_modules/vscode-base-languageclient",
     "update:monaco-languageclient": "npm run clean:monaco-languageclient && npm install",
     "clean:file-deps": "npm run clean:monaco-languageclient && npm run clean:vscode-ws-jsonrpc",
     "update:file-deps": "npm run clean:file-deps && npm install",
-    "java:download": "./node_modules/.bin/gulp download_java_server",
-    "java:build": "./node_modules/.bin/gulp build_java_server",
-    "java:watch": "./node_modules/.bin/gulp watch_java_server"
+    "java:download": "gulp download_java_server",
+    "java:build": "gulp build_java_server",
+    "java:watch": "gulp watch_java_server"
   },
   "bugs": {
     "url": "https://github.com/theia-ide/theia/issues"

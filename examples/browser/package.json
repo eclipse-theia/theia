@@ -1,6 +1,13 @@
 {
   "private": true,
   "name": "browser-example",
+  "version": "0.0.1-alpha-1",
+  "licenses": [
+    {
+      "type": "Apache-2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  ],
   "dependencies": {
     "monaco-css": "^1.3.1",
     "monaco-editor": "^0.8.3",
@@ -14,24 +21,18 @@
   },
   "scripts": {
     "clean": "rimraf lib",
-
     "prepare": "npm run clean && npm run build",
-
     "build": "npm run build:app && npm run build:browser",
     "build:app": "tsc && npm run lint",
     "build:browser": "webpack && cp src/client/index.html lib/client",
     "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
-
     "start": "concurrently --names watch-deps,backend,webpack-server --prefix \"[{name}]\" \"npm run watch:dependencies\" \"npm run start:app\" \"npm run start:browser\"",
     "start:app": "node ./lib/app/app.js",
     "start:browser": "webpack-dev-server --open",
-
     "cold:start:browser": "cd ../../ && npm run clean && npm run build && cd examples/browser && npm run clean && npm run build && npm start",
-
     "watch:app": "tsc --watch",
     "watch:browser": "npm run build:browser && webpack --watch",
-    "watch:dependencies": "node ../../releng/file-dependency-updater/index.js",
-
+    "watch:dependencies": "node ../../config/file-dependency-updater/index.js",
     "test:ui": "wdio wdio.conf.js"
   },
   "devDependencies": {
@@ -40,6 +41,7 @@
     "chai": "^3.5.0",
     "concurrently": "^3.4.0",
     "css-loader": "^0.28.1",
+    "file-loader": "^0.11.1",
     "rimraf": "^2.6.1",
     "selenium-standalone": "^6.2.0",
     "source-map-loader": "^0.2.1",
