@@ -12,6 +12,7 @@ import * as express from 'express';
 import * as http from 'http';
 import { ContainerModule, injectable } from 'inversify';
 import URI from "../../application/common/uri";
+import { isWindows } from "../../application/common/os";
 
 const pty = require("node-pty")
 
@@ -23,11 +24,19 @@ export default new ContainerModule(bind => {
 class TerminalExpressContribution implements BackendApplicationContribution {
     private terminals: Map<number, any> = new Map()
 
+    private getShellExecutablePath(): string {
+        if (isWindows) {
+            return 'cmd.exe';
+        } else {
+            return process.env.SHELL;
+        }
+    }
+
     configure(app: express.Application): void {
         app.post('/terminals', (req, res) => {
             let cols = parseInt(req.query.cols, 10),
                 rows = parseInt(req.query.rows, 10),
-                term = pty.spawn(process.platform === 'win32' ? 'cmd.exe' : 'bash', [], {
+                term = pty.spawn(this.getShellExecutablePath(), [], {
                     name: 'xterm-color',
                     cols: cols || 80,
                     rows: rows || 24,
