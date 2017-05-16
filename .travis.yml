@@ -14,3 +14,10 @@ addons:
     packages:
       - g++-4.8
 script: chmod a+x ./config/scripts/travis-ci-build.sh && ./config/scripts/travis-ci-build.sh
+notifications:
+  webhooks:
+    urls:
+      - https://webhooks.gitter.im/e/c42ddc125fe6bbfccb48
+    on_success: change
+    on_failure: always
+    on_start: never
