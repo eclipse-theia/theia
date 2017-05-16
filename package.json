@@ -57,6 +57,8 @@
     "circular-dependency-plugin": "^2.0.0",
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.26.2",
+    "electron-rebuild": "^1.5.10",
+    "istanbul": "^0.4.5",
     "file-loader": "^0.11.1",
     "find-package-json": "^1.0.0",
     "gulp": "^3.9.1",
@@ -70,11 +72,12 @@
     "karma-webpack": "^2.0.2",
     "minimist": "^1.2.0",
     "mocha": "^3.2.0",
+    "nyc": "^10.3.0",
     "rimraf": "^2.6.1",
     "source-map-loader": "^0.1.6",
     "style-loader": "^0.13.2",
     "ts-loader": "^2.0.1",
-    "ts-node": "^2.1.0",
+    "ts-node": "^2.1.2",
     "tsc-watch": "^1.0.5",
     "tslint": "^4.5.1",
     "typescript": "^2.3.2",
@@ -83,7 +86,22 @@
     "webpack-dev-server": "^2.4.1",
     "webpack-merge": "^3.0.0"
   },
+  "nyc": {
+    "include": [
+        "src/**/*.ts"
+    ],
+    "exclude": [
+        "typings"
+    ],
+    "reporter": [
+      "html"
+    ],
+    "extension": [
+      ".ts"
+    ]
+  },
   "scripts": {
+    "coverage": "./node_modules/.bin/nyc _mocha --compilers ts:ts-node/register src/**/*.spec.ts",
     "prepare": "npm run clean && npm run build && npm run java:download",
     "prepublishOnly": "npm run prepare && npm run test",
     "lint": "tslint -c ./config/tslint/tslint.json --project ./tsconfig.json",

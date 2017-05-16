@@ -14,4 +14,25 @@ Theia is a cloud & desktop IDE implemented in TypeScript.
  
 ### Running the examples
 
+
+ ### Running the electron example
+ ```
+ git clone https://github.com/TypeFox/Theia.git \
+ && cd Theia \
+ && npm install \
+ && cd examples \
+ && npm run install:theia \
+ && npm install \
+ && npm run cold:start:electron
+ ```
+ 
+### Running code coverage
+ ```
+npm run coverage
+
+### to view result
+
+firefox coverage/index.html 
+ ```
+
 You can find more details on how to run the examples [here](doc/Developing.md).
