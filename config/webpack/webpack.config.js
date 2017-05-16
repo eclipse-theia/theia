@@ -20,8 +20,11 @@ const monacoHtmlLanguagePath = './node_modules/monaco-html/release/min';
 module.exports = function (dirname, config = {}) {
     const commonConfiguration = {
 
+        entry: paths(dirname).ENTRY,
+
         output: {
-            filename: 'bundle.js'
+            filename: 'bundle.js',
+            path: paths(dirname).BUILD_ROOT,
         },
 
         module: {
@@ -77,6 +80,20 @@ module.exports = function (dirname, config = {}) {
 
     };
     const argv = minimist(process.argv.slice(2));
-    const electron = (argv && argv.target === 'electron');
-    return merge(merge(commonConfiguration, electron ? electronConfiguration(dirname) : webConfiguration(dirname)), config);
+    const isElectron = (argv && argv.target === 'electron');
+
+    /* Start with the common config. */
+    let finalConfiguration = commonConfiguration;
+
+    /* Add the Electron/web specific variant. */
+    if (isElectron) {
+        finalConfiguration = merge(finalConfiguration, electronConfiguration(dirname));
+    } else {
+        finalConfiguration = merge(finalConfiguration, webConfiguration(dirname));
+    }
+
+    /* And finally apply the user config. */
+    finalConfiguration = merge(finalConfiguration, config);
+
+    return finalConfiguration;
 };
