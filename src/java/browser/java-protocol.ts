@@ -5,9 +5,20 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { RequestType } from 'vscode-jsonrpc';
-import { TextDocumentIdentifier } from "../../languages/common";
+import { RequestType, NotificationType } from 'vscode-jsonrpc';
+import { TextDocumentIdentifier, Command, MessageType } from "../../languages/common";
+
+export interface ActionableMessage {
+    severity: MessageType;
+    message: string;
+    data?: any;
+    commands?: Command[];
+}
 
 export namespace ClassFileContentsRequest {
-    export const type = new RequestType<TextDocumentIdentifier, string |  undefined, void, void>('java/classFileContents');
+    export const type = new RequestType<TextDocumentIdentifier, string | undefined, void, void>('java/classFileContents');
+}
+
+export namespace ActionableNotification {
+    export const type = new NotificationType<ActionableMessage, void>('language/actionableNotification');
 }

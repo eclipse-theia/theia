@@ -2,6 +2,15 @@
 
 declare module monaco.editor {
 
+    export interface ICommandService {
+        executeCommand<T>(commandId: string, ...args: any[]): monaco.Promise<T>;
+        executeCommand(commandId: string, ...args: any[]): monaco.Promise<any>;
+    }
+
+    export interface ICommonCodeEditor {
+        readonly _commandService: ICommandService;
+    }
+
     export interface IEditorOverrideServices {
         editorService?: IEditorService;
         textModelResolverService?: ITextModelResolverService;
@@ -127,11 +136,9 @@ declare module monaco.commands {
 
     export interface ICommand {
         handler: ICommandHandler;
-        // TODO as described below, it is undefined in our case.
         description?: ICommandHandlerDescription;
     }
 
-    // TODO shalll we get rid of this. Currently non of the commands have a handler.
     export interface ICommandHandlerDescription {
         description: string;
         args: { name: string; description?: string; constraint?: string | Function; }[];
@@ -146,6 +153,9 @@ declare module monaco.commands {
     }
 
     export interface ICommandRegistry {
+        registerCommand(id: string, command: ICommandHandler): IDisposable;
+        registerCommand(id: string, command: ICommand): IDisposable;
+
         /**
          * Returns with the command for the given command ID argument.
          */

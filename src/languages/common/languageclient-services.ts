@@ -20,9 +20,6 @@ export interface Workspace extends services.Workspace {
     readonly ready: Promise<void>;
 }
 
-export const Commands = Symbol('Commands');
-export interface Commands extends services.Commands { }
-
 export const Window = Symbol('Window');
 export interface Window extends services.Window { }
 
