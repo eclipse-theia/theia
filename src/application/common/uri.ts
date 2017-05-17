@@ -23,9 +23,9 @@ export default class URI {
         } else {
             const idx = fileScheme.length;
             if (isWindows && uri.startsWith(fileScheme) && uri.charAt(idx) !== "/") {
-                this.codeUri = Uri.parse(uri.slice(0, idx + 1) + "/" + uri.substr(idx + 1));
+                this.codeUri = Uri.parse(slash(uri.substring(0, idx) + "/" + uri.substring(idx)));
             } else {
-                this.codeUri = Uri.parse(uri)
+                this.codeUri = Uri.parse(slash(uri))
             }
         }
     }
@@ -154,7 +154,7 @@ export default class URI {
      * Platform independent path representation of the URI `as/the/following/format`.
      */
     get path(): string {
-        return normalize(this.codeUri.path)
+        return normalize(this.codeUri.fsPath)
     }
 
     get query(): string {
