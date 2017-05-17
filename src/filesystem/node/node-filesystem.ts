@@ -8,6 +8,7 @@
 import * as fs from "fs-extra";
 import * as touch from "touch";
 import * as path from "path";
+import { isWindows } from "../../application/common/os";
 import URI from "../../application/common/uri";
 import { WatchOptions, FSWatcher } from "chokidar";
 import { FileStat, FileSystem, FileSystemClient, FileChange, FileChangeType, FileChangesEvent } from "../common/filesystem";
@@ -44,12 +45,12 @@ export class FileSystemNode implements FileSystem {
         if (!stat.isDirectory) {
             throw new Error(`File system root should point to a directory location. URI: ${this.rootUri}.`);
         }
-        const rootPath = _rootUri.path;
+        const rootPath = FileSystemNode.fsPath(_rootUri);
         this.watcher = chokidar.watch(rootPath).on("all", (eventType: EventType, filename: string) => {
             if (this.client) {
                 const changeType = this.getFileChangeType(eventType);
                 if (changeType && typeof filename === "string") {
-                    const segments = path.normalize(path.relative(_rootUri.path, filename));
+                    const segments = path.normalize(path.relative(FileSystemNode.fsPath(_rootUri), filename));
                     const changedUri = segments === "." ? rootUri : _rootUri.appendPath(segments);
                     const change = new FileChange(changedUri.toString(), changeType);
                     const event = new FileChangesEvent([change]);
@@ -91,7 +92,7 @@ export class FileSystemNode implements FileSystem {
                 return reject(new Error(`Cannot resolve the content of a directory. URI: ${uri}.`));
             }
             const encoding = this.doGetEncoding(options);
-            fs.readFile(_uri.path, encoding, (error, content) => {
+            fs.readFile(FileSystemNode.fsPath(_uri), encoding, (error, content) => {
                 if (error) {
                     return reject(error);
                 }
@@ -117,7 +118,7 @@ export class FileSystemNode implements FileSystem {
                 return reject(new Error(`File is out of sync. URI: ${file.uri}. Expected size: ${stat.size}. Actual size: ${file.size}.`));
             }
             const encoding = this.doGetEncoding(options);
-            fs.writeFile(_uri.path, content, encoding, error => {
+            fs.writeFile(FileSystemNode.fsPath(_uri), content, encoding, error => {
                 if (error) {
                     return reject(error);
                 }
@@ -143,7 +144,7 @@ export class FileSystemNode implements FileSystem {
             if (targetStat && !overwrite) {
                 return reject(new Error(`File already exist under the \'${targetUri}\' target location. Did you set the \'overwrite\' flag to true?`));
             }
-            fs.rename(_sourceUri.path, _targetUri.path, (error) => {
+            fs.rename(FileSystemNode.fsPath(_sourceUri), FileSystemNode.fsPath(_targetUri), (error) => {
                 if (error) {
                     return reject(error);
                 }
@@ -165,7 +166,7 @@ export class FileSystemNode implements FileSystem {
             if (targetStat && !overwrite) {
                 return reject(new Error(`File already exist under the \'${targetUri}\' target location. Did you set the \'overwrite\' flag to true?`));
             }
-            fs.copy(_sourceUri.path, _targetUri.path, error => {
+            fs.copy(FileSystemNode.fsPath(_sourceUri), FileSystemNode.fsPath(_targetUri), error => {
                 if (error) {
                     return reject(error);
                 }
@@ -185,7 +186,7 @@ export class FileSystemNode implements FileSystem {
             const doCreateFile = () => {
                 const content = this.doGetContent(options);
                 const encoding = this.doGetEncoding(options);
-                fs.writeFile(_uri.path, content, { encoding }, error => {
+                fs.writeFile(FileSystemNode.fsPath(_uri), content, { encoding }, error => {
                     if (error) {
                         return reject(error);
                     }
@@ -193,7 +194,7 @@ export class FileSystemNode implements FileSystem {
                 });
             }
             if (!this.doGetStat(parentUri, 0)) {
-                fs.mkdirs(parentUri.path, error => {
+                fs.mkdirs(FileSystemNode.fsPath(parentUri), error => {
                     if (error) {
                         return reject(error);
                     }
@@ -212,7 +213,7 @@ export class FileSystemNode implements FileSystem {
             if (stat) {
                 return reject(new Error(`Error occurred while creating the directory. File already exists at ${uri}.`));
             }
-            fs.mkdirs(_uri.path, error => {
+            fs.mkdirs(FileSystemNode.fsPath(_uri), error => {
                 if (error) {
                     return reject(error);
                 }
@@ -230,7 +231,7 @@ export class FileSystemNode implements FileSystem {
                     resolve(stat);
                 });
             } else {
-                touch(_uri.path, (error: any) => {
+                touch(FileSystemNode.fsPath(_uri), (error: any) => {
                     if (error) {
                         return reject(error);
                     }
@@ -249,9 +250,9 @@ export class FileSystemNode implements FileSystem {
             }
             const moveToTrash = this.doGetMoveToTrash(options);
             if (moveToTrash) {
-                resolve(trash([_uri.path]));
+                resolve(trash([FileSystemNode.fsPath(_uri)]));
             } else {
-                fs.remove(_uri.path, error => {
+                fs.remove(FileSystemNode.fsPath(_uri), error => {
                     if (error) {
                         return reject(error);
                     }
@@ -267,7 +268,7 @@ export class FileSystemNode implements FileSystem {
             if (!stat) {
                 return reject(new Error(`File does not exist under ${uri}.`));
             }
-            this.watcher.add(_uri.path);
+            this.watcher.add(FileSystemNode.fsPath(_uri));
         });
     }
 
@@ -278,7 +279,7 @@ export class FileSystemNode implements FileSystem {
             if (!stat) {
                 return reject(new Error(`File does not exist under ${uri}.`));
             }
-            this.watcher.unwatch(_uri.path);
+            this.watcher.unwatch(FileSystemNode.fsPath(_uri));
         });
     }
 
@@ -311,7 +312,7 @@ export class FileSystemNode implements FileSystem {
     }
 
     protected doGetStat(uri: URI, depth: number): FileStat | undefined {
-        const path = uri.path;
+        const path = FileSystemNode.fsPath(uri);
         try {
             const stat = fs.statSync(path);
             if (stat.isDirectory()) {
@@ -394,6 +395,21 @@ export class FileSystemNode implements FileSystem {
         }
     }
 
+}
+
+export namespace FileSystemNode {
+
+    /**
+     * Returns with the platform specific FS path that is represented by the URI argument.
+     *
+     * @param uri the file URI that has to be resolved to a platform specific FS path.
+     */
+    export function fsPath(uri: URI): string {
+        if (uri.scheme !== "file") {
+            throw new Error(`URI argument does not have a file scheme. ${uri}`);
+        }
+        return isWindows ? uri.path.slice(1) : uri.path;
+    }
 }
 
 function isErrnoException(error: any | NodeJS.ErrnoException): error is NodeJS.ErrnoException {

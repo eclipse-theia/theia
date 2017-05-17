@@ -5,11 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import Uri from "vscode-uri";
-import { isWindows } from "./os";
+import Uri from 'vscode-uri';
+import { isWindows } from './os';
 
 const slash: (path: string) => string = require("slash");
-const fileScheme = "file://";
 
 export default class URI {
 
@@ -21,23 +20,18 @@ export default class URI {
         } else if (uri instanceof Uri) {
             this.codeUri = uri
         } else {
-            const idx = fileScheme.length;
-            if (isWindows && uri.startsWith(fileScheme) && uri.charAt(idx) !== "/") {
-                this.codeUri = Uri.parse(slash(uri.substring(0, idx) + "/" + uri.substring(idx)));
-            } else {
-                this.codeUri = Uri.parse(slash(uri))
-            }
+            this.codeUri = Uri.parse(uri)
         }
     }
 
     get parent(): URI {
         let str = this.codeUri.toString()
-        return new URI(str.substr(0, str.lastIndexOf("/")))
+        return new URI(str.substr(0, str.lastIndexOf('/')))
     }
 
     get lastSegment(): string {
         let path = this.path
-        let idx = path.lastIndexOf("/")
+        let idx = path.lastIndexOf('/')
         if (idx === -1) {
             return path
         } else {
@@ -67,7 +61,7 @@ export default class URI {
      * return this URI without a scheme
      */
     withoutScheme(): URI {
-        return this.withScheme("")
+        return this.withScheme('')
     }
 
     /**
@@ -85,7 +79,7 @@ export default class URI {
      * return this URI without a authority
      */
     withoutAuthority(): URI {
-        return this.withAuthority("")
+        return this.withAuthority('')
     }
 
     /**
@@ -103,7 +97,7 @@ export default class URI {
      * return this URI without a path
      */
     withoutPath(): URI {
-        return this.withPath("")
+        return this.withPath('')
     }
 
     /**
@@ -121,7 +115,7 @@ export default class URI {
      * return this URI without a query
      */
     withoutQuery(): URI {
-        return this.withQuery("")
+        return this.withQuery('')
     }
 
     /**
@@ -139,7 +133,7 @@ export default class URI {
      * return this URI without a fragment
      */
     withoutFragment(): URI {
-        return this.withFragment("")
+        return this.withFragment('')
     }
 
     get scheme(): string {
@@ -150,11 +144,8 @@ export default class URI {
         return this.codeUri.authority
     }
 
-    /**
-     * Platform independent path representation of the URI `as/the/following/format`.
-     */
     get path(): string {
-        return normalize(this.codeUri.fsPath)
+        return this.codeUri.path
     }
 
     get query(): string {
@@ -171,6 +162,8 @@ export default class URI {
 
 }
 
-function normalize(path: string) {
-    return isWindows ? slash(path.replace(/\//g, '\\')) : path;
+export namespace URIHelper {
+    export function fromFsPath(fsPath: string): string {
+        return isWindows ? `file:///${slash(fsPath)}` : `file://${fsPath}`;
+    }
 }
