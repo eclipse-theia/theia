@@ -70,7 +70,7 @@ module.exports = function (dirname, config = {}) {
             ]),
             new CircularDependencyPlugin({
                 exclude: /(node_modules|examples)\/./,
-                failOnError: true
+                failOnError: false // https://github.com/nodejs/readable-stream/issues/280#issuecomment-297076462
             })
         ],
 
