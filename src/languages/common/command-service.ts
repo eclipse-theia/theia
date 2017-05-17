@@ -9,6 +9,9 @@ import { injectable, inject } from "inversify";
 import { CommandRegistry, DisposableCollection, Disposable, CommandHandler } from '../../application/common';
 import * as services from 'vscode-base-languageclient/lib/services';
 
+// FIXME inject it as a constant
+import CommandsRegistry = monaco.commands.CommandsRegistry;
+
 /**
  * FIXME:
  * consider move it to the application module, but without dependencies to `services.Commands`
@@ -41,6 +44,12 @@ export class CommandService implements services.Commands {
             execute: rawHandler.bind(thisArg)
         } : rawHandler;
         toDispose.push(this.registry.registerHandler(command, handler));
+
+        // FIXME remove dependencies from it
+        // FIXME check that such command is already registered
+        toDispose.push(CommandsRegistry.registerCommand(command, (_, ...args: string[]) =>
+            this.executeCommand(command, args)
+        ));
         return toDispose;
     }
 

@@ -6,11 +6,9 @@
  */
 
 import { injectable, inject } from "inversify";
-import { ProtocolToMonacoConverter } from "monaco-languageclient";
 import { ResourceResolver } from "../../application/common";
 import URI from "../../application/common/uri";
-import { EditorManager } from "../../editor/browser";
-import { MonacoEditor } from "../../monaco/browser/monaco-editor";
+import { EditorManager, SHOW_REFERENCES } from "../../editor/browser";
 import {
     ILanguageClient, LanguageIdentifier, LanguageClientContribution,
     Window, CommandService, Workspace,
@@ -18,11 +16,8 @@ import {
 } from '../../languages/browser';
 import { JAVA_LANGUAGE_ID, JAVA_SCHEME } from '../common';
 import { JavaResource } from "./java-resource";
-import { SHOW_REFERENCES, APPLY_WORKSPACE_EDIT, SHOW_JAVA_REFERENCES } from './java-commands';
+import { APPLY_WORKSPACE_EDIT, SHOW_JAVA_REFERENCES } from './java-commands';
 import { ActionableNotification, ActionableMessage } from "./java-protocol";
-
-// FIXME inject it as a constant
-import CommandsRegistry = monaco.commands.CommandsRegistry;
 
 @injectable()
 export class JavaClientContribution implements ResourceResolver, LanguageClientContribution {
@@ -36,30 +31,13 @@ export class JavaClientContribution implements ResourceResolver, LanguageClientC
         @inject(Window) protected readonly window: Window,
         @inject(CommandService) protected readonly commands: CommandService,
         @inject(Workspace) protected readonly workspace: Workspace,
-        @inject(EditorManager) protected readonly editorManager: EditorManager,
-        @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter
+        @inject(EditorManager) protected readonly editorManager: EditorManager
     ) {
         this.waitForDidStart();
-        /*
         commands.registerCommand(SHOW_JAVA_REFERENCES, (uri: string, position: Position, locations: Location[]) =>
             commands.executeCommand(SHOW_REFERENCES, uri, position, locations)
         );
         commands.registerCommand(APPLY_WORKSPACE_EDIT, (changes: WorkspaceEdit) =>
-            !!workspace.applyEdit && workspace.applyEdit(changes)
-        );
-        */
-        CommandsRegistry.registerCommand(SHOW_JAVA_REFERENCES, (_, uri: string, position: Position, locations: Location[]) => {
-            const currentEditor = this.editorManager.currentEditor;
-            if (currentEditor && currentEditor.editor instanceof MonacoEditor) {
-                currentEditor.editor.getControl()._commandService.executeCommand(
-                    SHOW_REFERENCES,
-                    monaco.Uri.parse(uri),
-                    this.p2m.asPosition(position),
-                    locations.map(l => this.p2m.asLocation(l))
-                );
-            }
-        });
-        CommandsRegistry.registerCommand(APPLY_WORKSPACE_EDIT, (changes: WorkspaceEdit) =>
             !!workspace.applyEdit && workspace.applyEdit(changes)
         );
     }

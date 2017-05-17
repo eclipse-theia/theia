@@ -9,6 +9,11 @@ import { injectable, inject } from "inversify";
 import { CommandContribution, CommandRegistry } from "../../application/common";
 import { EditorManager } from "./editor-manager";
 
+/**
+ * Show editor references
+ */
+export const SHOW_REFERENCES = 'editor.action.showReferences';
+
 @injectable()
 export class EditorCommandHandlers implements CommandContribution {
 

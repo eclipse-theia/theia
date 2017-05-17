@@ -11,11 +11,6 @@
 export const SHOW_JAVA_REFERENCES = 'java.show.references';
 
 /**
- * Show editor references
- */
-export const SHOW_REFERENCES = 'editor.action.showReferences';
-
-/**
  * Apply Workspace Edit
  */
 export const APPLY_WORKSPACE_EDIT = 'java.apply.workspaceEdit';

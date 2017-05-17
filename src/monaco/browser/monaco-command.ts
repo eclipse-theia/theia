@@ -6,10 +6,12 @@
  */
 
 import { injectable, inject } from "inversify";
+import { ProtocolToMonacoConverter } from "monaco-languageclient/lib";
 import {
     CommandHandler, CommandContribution, CommandRegistry, CommonCommands, SelectionService
 } from '../../application/common';
-import { EditorManager, EditorWidget, TextEditorSelection } from '../../editor/browser';
+import { EditorManager, EditorWidget, TextEditorSelection, SHOW_REFERENCES } from '../../editor/browser';
+import { CommandService, Position, Location } from "../../languages/common"
 import { MonacoEditor } from "./monaco-editor";
 import CommandsRegistry = monaco.commands.CommandsRegistry;
 import MenuRegistry = monaco.actions.MenuRegistry;
@@ -22,10 +24,24 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
 
     constructor(
         @inject(EditorManager) protected readonly editorManager: EditorManager,
-        @inject(SelectionService) protected readonly selectionService: SelectionService
+        @inject(SelectionService) protected readonly selectionService: SelectionService,
+        @inject(CommandService) protected readonly commands: CommandService,
+        @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter
     ) { }
 
     contribute(registry: CommandRegistry) {
+        this.commands.registerCommand(SHOW_REFERENCES, (uri: string, position: Position, locations: Location[]) => {
+            const currentEditor = this.editorManager.currentEditor;
+            if (currentEditor && currentEditor.editor instanceof MonacoEditor) {
+                currentEditor.editor.getControl()._commandService.executeCommand(
+                    SHOW_REFERENCES,
+                    monaco.Uri.parse(uri),
+                    this.p2m.asPosition(position),
+                    locations.map(l => this.p2m.asLocation(l))
+                );
+            }
+        });
+
         [CommonCommands.EDIT_UNDO, CommonCommands.EDIT_REDO].forEach(id => {
             const doExecute = (editorWidget: EditorWidget, ...args: any[]): any => {
                 const editor = editorWidget.editor;
