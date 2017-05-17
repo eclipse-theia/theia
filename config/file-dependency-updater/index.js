@@ -32,7 +32,19 @@ const nodeModules = "node_modules";
                 const targetPath = path.join(currentRoot, nodeModules, dependency, fileLocation);
                 if (fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()) {
                     const sourcePath = path.join(upstreamRoot, fileLocation);
-                    chokidar.watch(sourcePath, { ignored: /(^|[\/\\])\../, alwaysStat: true, ignoreInitial: true }).on("all", function (event, filePath, stat) {
+                    console.log("Adding a watch on", sourcePath);
+
+                    chokidar.watch(sourcePath, {
+                        ignored: /(^|[\/\\])\../,
+                        alwaysStat: true,
+                        ignoreInitial: true,
+                        awaitWriteFinish: {
+                            /* To avoid getting change events before files are
+                             * completely written, wait until they are stable for
+                             * 100ms second before firing the event. */
+                            stabilityThreshold: 100,
+                        },
+                    }).on("all", function (event, filePath, stat) {
                         const relativeFilePath = path.relative(sourcePath, filePath);
                         const targetFilePath = path.resolve(targetPath, relativeFilePath);
                         if (stat) { // add, addDir, change 
