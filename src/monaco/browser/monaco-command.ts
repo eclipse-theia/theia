@@ -21,7 +21,7 @@ import IMenuItem = monaco.actions.IMenuItem;
 export class MonacoEditorCommandHandlers implements CommandContribution {
 
     constructor(
-        @inject(EditorManager) protected readonly editorService: EditorManager,
+        @inject(EditorManager) protected readonly editorManager: EditorManager,
         @inject(SelectionService) protected readonly selectionService: SelectionService
     ) { }
 
@@ -60,12 +60,12 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     }
 
     private newHandler(id: string): CommandHandler {
-        return new EditorCommandHandler(id, this.editorService, this.selectionService);
+        return new EditorCommandHandler(id, this.editorManager, this.selectionService);
     }
 
     private newClipboardHandler(id: string, doExecute: (editorWidget: EditorWidget, ...args: any[]) => any) {
         const commandArgs = (widget: EditorWidget) => [{}];
-        return new TextModificationEditorCommandHandler(this.editorService, this.selectionService, id, commandArgs, doExecute);
+        return new TextModificationEditorCommandHandler(this.editorManager, this.selectionService, id, commandArgs, doExecute);
     }
 
 }

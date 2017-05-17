@@ -9,7 +9,7 @@ import { bindContributionProvider } from '../../application/common/contribution-
 import { ContainerModule, } from "inversify";
 import { FrontendApplicationContribution } from "../../application/browser";
 import { WebSocketConnectionProvider } from "../../messaging/browser";
-import { Window, ConsoleWindow, LanguagesService, LANGUAGES_PATH } from '../common';
+import { Window, ConsoleWindow, LanguagesService, LANGUAGES_PATH, CommandService } from '../common';
 import { DefaultLanguageClientProvider, LanguageClientProvider } from './language-client-provider';
 import { LanguagesPlugin } from "./languages-plugin";
 import { LanguageClientLauncher } from './language-client-launcher';
@@ -17,6 +17,7 @@ import { CompositeLanguageClientContribution, LanguageClientContribution } from 
 
 export const browserLanguagesModule = new ContainerModule(bind => {
     bind(Window).to(ConsoleWindow).inSingletonScope();
+    bind(CommandService).toSelf().inSingletonScope();
 
     bind(CompositeLanguageClientContribution).toSelf().inSingletonScope();
     bindContributionProvider(bind, LanguageClientContribution)

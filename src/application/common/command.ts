@@ -15,9 +15,9 @@ export interface Command {
     iconClass?: string;
 }
 export interface CommandHandler {
-    execute(): any;
-    isEnabled(): boolean;
-    isVisible?(): boolean;
+    execute(...args: any[]): any;
+    isEnabled(...args: any[]): boolean;
+    isVisible?(...args: any[]): boolean;
 }
 
 export const CommandContribution = Symbol("CommandContribution");
