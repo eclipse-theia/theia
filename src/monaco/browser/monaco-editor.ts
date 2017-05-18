@@ -284,8 +284,12 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         return monaco.Promise.as(undefined)
     }
 
-    get commandService(): monaco.editor.ICommandService {
+    get commandService(): monaco.commands.ICommandService {
         return this.editor._commandService;
+    }
+
+    get instantiationService(): monaco.instantiation.IInstantiationService {
+        return this.editor._instantiationService;
     }
 
 }

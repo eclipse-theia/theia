@@ -19,6 +19,8 @@ import { MonacoWorkspace } from "./monaco-workspace";
 import { MonacoEditorService } from "./monaco-editor-service";
 import { MonacoModelResolver } from "./monaco-model-resolver";
 import { MonacoContextMenuService } from "./monaco-context-menu";
+import { MonacoCommandService, MonacoCommandServiceFactory } from './monaco-command-service';
+
 
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
@@ -37,6 +39,8 @@ export const monacoModule = new ContainerModule(bind => {
     bind(MonacoModelResolver).toSelf().inSingletonScope();
     bind(MonacoContextMenuService).toSelf().inSingletonScope();
     bind(MonacoEditorProvider).toSelf().inSingletonScope();
+    bind(MonacoCommandService).toSelf().inTransientScope();
+    bind(MonacoCommandServiceFactory).toAutoFactory(MonacoCommandService);
     bind(TextEditorProvider).toProvider(context =>
         uri => context.container.get(MonacoEditorProvider).get(uri)
     );

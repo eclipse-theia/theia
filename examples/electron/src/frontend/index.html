@@ -44,12 +44,14 @@
                 'vs/platform/actions/common/actions',
                 'vs/platform/keybinding/common/keybindingsRegistry',
                 'vs/platform/keybinding/common/keybindingResolver',
-                'vs/base/common/keyCodes'
-            ], (basic, css, ts, html, json, commands, actions, registry, resolver, keyCodes) => {
+                'vs/base/common/keyCodes',
+                'vs/editor/browser/standalone/simpleServices'
+            ], (basic, css, ts, html, json, commands, actions, registry, resolver, keyCodes, simpleServices) => {
                 const global = self;
                 global.monaco.commands = commands;
                 global.monaco.actions = actions;
                 global.monaco.keybindings = Object.assign(registry, resolver, keyCodes);
+                global.monaco.services = simpleServices;
                 require("../bundle.js");
             });
         });

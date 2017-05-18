@@ -1,20 +1,22 @@
 /// <reference path='../../../../node_modules/monaco-editor-core/monaco.d.ts'/>
 
+declare module monaco.instantiation {
+    export interface IInstantiationService {
+    }
+}
+
 declare module monaco.editor {
 
-    export interface ICommandService {
-        executeCommand<T>(commandId: string, ...args: any[]): monaco.Promise<T>;
-        executeCommand(commandId: string, ...args: any[]): monaco.Promise<any>;
-    }
-
     export interface ICommonCodeEditor {
-        readonly _commandService: ICommandService;
+        readonly _commandService: monaco.commands.ICommandService;
+        readonly _instantiationService: monaco.instantiation.IInstantiationService;
     }
 
     export interface IEditorOverrideServices {
         editorService?: IEditorService;
         textModelResolverService?: ITextModelResolverService;
         contextMenuService?: IContextMenuService;
+        commandService?: monaco.commands.ICommandService;
     }
 
     export interface IResourceInput {
@@ -118,59 +120,15 @@ declare module monaco.editor {
 
 declare module monaco.commands {
 
-    /**
-     * Identifies a service of type T
-     */
-    export interface ServiceIdentifier<T> {
-        (...args: any[]): void;
-        type: T;
+    export interface ICommandEvent {
+        commandId: string;
     }
 
-    export interface ServicesAccessor {
-        get<T>(id: ServiceIdentifier<T>, isOptional?: any): T;
+    export interface ICommandService {
+        onWillExecuteCommand: monaco.IEvent<ICommandEvent>;
+        executeCommand<T>(commandId: string, ...args: any[]): monaco.Promise<T>;
+        executeCommand(commandId: string, ...args: any[]): monaco.Promise<any>;
     }
-
-    export interface ICommandHandler {
-        (accessor: ServicesAccessor, ...args: any[]): void;
-    }
-
-    export interface ICommand {
-        handler: ICommandHandler;
-        description?: ICommandHandlerDescription;
-    }
-
-    export interface ICommandHandlerDescription {
-        description: string;
-        args: { name: string; description?: string; constraint?: string | Function; }[];
-        returns?: string;
-    }
-
-    export interface ICommandsMap {
-        /**
-         * A read only mapping from command IDs to the commands. 
-         */
-        readonly [id: string]: ICommand;
-    }
-
-    export interface ICommandRegistry {
-        registerCommand(id: string, command: ICommandHandler): IDisposable;
-        registerCommand(id: string, command: ICommand): IDisposable;
-
-        /**
-         * Returns with the command for the given command ID argument.
-         */
-        getCommand(id: string): ICommand;
-
-        /**
-         * Returns with a mapping of all registered command IDs to the commands.
-         */
-        getCommands(): ICommandsMap;
-    }
-
-    /**
-     * The shared command registry instance.
-     */
-    export const CommandsRegistry: ICommandRegistry;
 
 }
 
@@ -212,7 +170,6 @@ declare module monaco.actions {
 
 declare module monaco.keybindings {
 
-
     export interface IKeybindingItem {
         keybinding: number;
         command: string;
@@ -231,4 +188,13 @@ declare module monaco.keybindings {
         export function toString(key: any): string;
     }
 
+}
+
+declare module monaco.services {
+    export class StandaloneCommandService implements monaco.commands.ICommandService {
+        constructor(instantiationService: monaco.instantiation.IInstantiationService);
+        onWillExecuteCommand: monaco.IEvent<monaco.commands.ICommandEvent>;
+        executeCommand<T>(commandId: string, ...args: any[]): monaco.Promise<T>;
+        executeCommand(commandId: string, ...args: any[]): monaco.Promise<any>;
+    }
 }
