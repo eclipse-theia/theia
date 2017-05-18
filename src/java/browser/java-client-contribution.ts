@@ -8,11 +8,7 @@
 import { injectable, inject } from "inversify";
 import { ResourceResolver, CommandService } from "../../application/common";
 import URI from "../../application/common/uri";
-import { EditorManager } from "../../editor/browser";
-import {
-    ILanguageClient, LanguageIdentifier, LanguageClientContribution,
-    Window, Workspace
-} from '../../languages/browser';
+import { ILanguageClient, LanguageIdentifier, LanguageClientContribution, Window } from '../../languages/browser';
 import { JAVA_LANGUAGE_ID, JAVA_SCHEME } from '../common';
 import { JavaResource } from "./java-resource";
 import { ActionableNotification, ActionableMessage } from "./java-protocol";
@@ -27,9 +23,7 @@ export class JavaClientContribution implements ResourceResolver, LanguageClientC
 
     constructor(
         @inject(Window) protected readonly window: Window,
-        @inject(CommandService) protected readonly commands: CommandService,
-        @inject(Workspace) protected readonly workspace: Workspace,
-        @inject(EditorManager) protected readonly editorManager: EditorManager
+        @inject(CommandService) protected readonly commands: CommandService
     ) {
         this.waitForDidStart();
     }

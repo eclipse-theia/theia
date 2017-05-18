@@ -11,12 +11,12 @@ import { ContributionProvider } from './contribution-provider';
 
 export interface Command {
     id: string;
-    label: string;
+    label?: string;
     iconClass?: string;
 }
 export interface CommandHandler {
     execute(...args: any[]): any;
-    isEnabled(...args: any[]): boolean;
+    isEnabled?(...args: any[]): boolean;
     isVisible?(...args: any[]): boolean;
 }
 
@@ -49,28 +49,14 @@ export class CommandRegistry implements CommandService {
         }
     }
 
-    registerCommand(command: string | Command): Disposable;
-    registerCommand(command: string | Command, handler: CommandHandler): Disposable;
-    registerCommand(command: string | Command, handler: (...args: any[]) => any, thisArg?: any): Disposable;
-    registerCommand(commandArg: string | Command, handler?: CommandHandler | ((...args: any[]) => any), thisArg?: any): Disposable {
-        const command = this.asCommand(commandArg);
+    registerCommand(command: Command, handler?: CommandHandler): Disposable {
         if (handler) {
             const toDispose = new DisposableCollection();
             toDispose.push(this.doRegisterCommand(command));
-            toDispose.push(this.doRegisterHandler(command.id, handler, thisArg));
+            toDispose.push(this.registerHandler(command.id, handler));
             return toDispose;
         }
         return this.doRegisterCommand(command);
-    }
-
-    protected asCommand(command: string | Command): Command {
-        if (typeof command === 'string') {
-            return {
-                id: command,
-                label: command // FIXME label should be optional
-            }
-        }
-        return command;
     }
 
     protected doRegisterCommand(command: Command): Disposable {
@@ -85,18 +71,11 @@ export class CommandRegistry implements CommandService {
         }
     }
 
-    registerHandler(commandId: string, handler: CommandHandler): Disposable;
-    registerHandler(commandId: string, handler: (...args: any[]) => any, thisArg?: any): Disposable;
-    registerHandler(commandId: string, handlerArg: CommandHandler | ((...args: any[]) => any), thisArg?: any): Disposable {
-        return this.doRegisterHandler(commandId, handlerArg, thisArg);
-    }
-
-    protected doRegisterHandler(commandId: string, handlerArg: CommandHandler | ((...args: any[]) => any), thisArg?: any): Disposable {
+    registerHandler(commandId: string, handler: CommandHandler): Disposable {
         let handlers = this._handlers[commandId];
         if (!handlers) {
             this._handlers[commandId] = handlers = [];
         }
-        const handler = this.asHandler(handlerArg, thisArg);
         handlers.push(handler);
         return {
             dispose: () => {
@@ -106,16 +85,6 @@ export class CommandRegistry implements CommandService {
                 }
             }
         }
-    }
-
-    protected asHandler(handler: ((...args: any[]) => any) | CommandHandler, thisArg?: any): CommandHandler {
-        if (typeof handler === 'function') {
-            return {
-                isEnabled: () => true,
-                execute: handler.bind(thisArg)
-            }
-        }
-        return handler;
     }
 
     executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined> {
@@ -129,8 +98,8 @@ export class CommandRegistry implements CommandService {
     getActiveHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
         const handlers = this._handlers[commandId];
         if (handlers) {
-            for (let handler of handlers) {
-                if (handler.isEnabled(...args)) {
+            for (const handler of handlers) {
+                if (!handler.isEnabled || handler.isEnabled(...args)) {
                     return handler;
                 }
             }
