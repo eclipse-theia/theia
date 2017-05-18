@@ -51,8 +51,9 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
         for (const menuItem of MenuRegistry.getMenuItems(MenuId.EditorContext)) {
             const { id, title, iconClass } = menuItem.command;
             commands.registerCommand({
-                id, iconClass,
-                label: title,
+                id,
+                iconClass,
+                label: title
             }, this.newHandler(id));
         }
     }
