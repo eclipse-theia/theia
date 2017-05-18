@@ -5,8 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { FileChangesEvent, FileChange, FileChangeType } from '../../../src/filesystem/common';
-import { FileSystemClient } from '../common';
+import { FileChangesEvent, FileChange, FileChangeType, FileSystemClient } from '../common';
 import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as fs from "fs-extra";
@@ -16,24 +15,35 @@ import { FileUri } from "../../application/node/file-uri";
 import { FileSystem } from "../common/filesystem";
 import { FileSystemNode } from "./node-filesystem";
 
-const root: URI = FileUri.create(os.tmpdir()).appendPath("node-fs-root");
 const expect = chai.expect;
-
-before(() => {
-    chai.config.showDiff = true;
-    chai.config.includeStack = true;
-    chai.should();
-    chai.use(chaiAsPromised);
-});
-
-beforeEach(() => {
-    deleteFolderRecursive(FileUri.fsPath(root));
-    fs.mkdirSync(FileUri.fsPath(root));
-    expect(fs.existsSync(FileUri.fsPath(root))).to.be.true;
-    expect(fs.readdirSync(FileUri.fsPath(root))).to.be.empty;
-});
+const uuidV1 = require('uuid/v1');
+const TEST_ROOT = FileUri.create(os.tmpdir()).appendPath("node-fs-root");
 
 describe("NodeFileSystem", () => {
+
+    const root: URI = TEST_ROOT.appendPath(uuidV1());
+
+    before(() => {
+        chai.config.showDiff = true;
+        chai.config.includeStack = true;
+        chai.should();
+        chai.use(chaiAsPromised);
+    });
+
+    beforeEach(() => {
+        if (fs.existsSync(FileUri.fsPath(root))) {
+            fs.removeSync(FileUri.fsPath(root));
+        }
+        fs.mkdirSync(FileUri.fsPath(root));
+        expect(fs.existsSync(FileUri.fsPath(root))).to.be.true;
+        expect(fs.readdirSync(FileUri.fsPath(root))).to.be.empty;
+    });
+
+    afterEach(() => {
+        if (fs.existsSync(FileUri.fsPath(root))) {
+            fs.removeSync(FileUri.fsPath(root));
+        }
+    })
 
     describe("01 #getFileStat", () => {
 
@@ -802,32 +812,16 @@ describe("NodeFileSystem", () => {
 
     });
 
+    function createFileSystem(uri: URI = root): FileSystem {
+        return new FileSystemNode(uri);
+    }
+
+    function sleep(time: number) {
+        return new Promise((resolve) => setTimeout(resolve, time));
+    }
+
 });
 
 process.on("unhandledRejection", (reason: any) => {
     console.error("Unhandled promise rejection: " + reason);
 });
-
-function createFileSystem(uri: URI = root): FileSystem {
-    return new FileSystemNode(uri);
-}
-
-function deleteFolderRecursive(path: string) {
-    if (fs.existsSync(path)) {
-        fs.readdirSync(path).forEach((file) => {
-            const currentPath = `${path}/${file}`;
-            if (fs.lstatSync(currentPath).isDirectory()) {
-                deleteFolderRecursive(currentPath);
-            } else {
-                fs.chmodSync(currentPath, parseInt("0777", 8));
-                fs.unlinkSync(currentPath);
-            }
-        });
-        fs.chmodSync(path, parseInt("0777", 8));
-        fs.rmdirSync(path);
-    }
-}
-
-function sleep(time: number) {
-    return new Promise((resolve) => setTimeout(resolve, time));
-}
