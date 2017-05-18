@@ -38,7 +38,6 @@
     "node-pty": "^0.6.4",
     "reconnecting-websocket": "^3.0.3",
     "reflect-metadata": "^0.1.10",
-    "slash": "^1.0.0",
     "touch": "^1.0.0",
     "trash": "^4.0.1",
     "vscode-languageserver": "^3.2.0",
