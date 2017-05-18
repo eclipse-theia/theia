@@ -9,7 +9,7 @@ import Uri from 'vscode-uri';
 
 export default class URI {
 
-    private codeUri: Uri;
+    private readonly codeUri: Uri;
 
     constructor(uri?: string | Uri) {
         if (uri === undefined) {

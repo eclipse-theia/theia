@@ -10,7 +10,6 @@ import { WebSocketConnectionProvider } from "../../messaging/browser";
 import {
     BaseLanguageClient,
     LanguageClientOptions,
-    CommandService,
     ConnectionCloseHandler,
     ConnectionErrorHandler,
     createConnection,
@@ -19,6 +18,7 @@ import {
     OutputChannel,
     Window,
     Workspace,
+    Commands,
     LanguageIdentifier,
     FileSystemWatcher
 } from '../common';
@@ -33,7 +33,7 @@ export class DefaultLanguageClientProvider {
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(Languages) protected readonly languages: Languages,
-        @inject(CommandService) protected readonly commands: CommandService,
+        @inject(Commands) protected readonly commands: Commands,
         @inject(Window) protected readonly window: Window,
         @inject(WebSocketConnectionProvider) protected readonly connectionProvider: WebSocketConnectionProvider,
         @inject(CompositeLanguageClientContribution) protected readonly contribution: CompositeLanguageClientContribution

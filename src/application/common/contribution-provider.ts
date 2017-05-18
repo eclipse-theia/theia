@@ -30,6 +30,7 @@ class ContainerBasedContributionProvider<T extends object> implements Contributi
             try {
                 this.services = this.container.getAll(this.serviceIdentifier)
             } catch (error) {
+                console.warn(error);
                 this.services = []
             }
         }
