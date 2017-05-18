@@ -6,17 +6,15 @@
  */
 
 import { injectable, inject } from "inversify";
-import { ResourceResolver } from "../../application/common";
+import { ResourceResolver, CommandService } from "../../application/common";
 import URI from "../../application/common/uri";
-import { EditorManager, SHOW_REFERENCES } from "../../editor/browser";
+import { EditorManager } from "../../editor/browser";
 import {
     ILanguageClient, LanguageIdentifier, LanguageClientContribution,
-    Window, CommandService, Workspace,
-    Position, Location, WorkspaceEdit
+    Window, Workspace
 } from '../../languages/browser';
 import { JAVA_LANGUAGE_ID, JAVA_SCHEME } from '../common';
 import { JavaResource } from "./java-resource";
-import { APPLY_WORKSPACE_EDIT, SHOW_JAVA_REFERENCES } from './java-commands';
 import { ActionableNotification, ActionableMessage } from "./java-protocol";
 
 @injectable()
@@ -34,12 +32,6 @@ export class JavaClientContribution implements ResourceResolver, LanguageClientC
         @inject(EditorManager) protected readonly editorManager: EditorManager
     ) {
         this.waitForDidStart();
-        commands.registerCommand(SHOW_JAVA_REFERENCES, (uri: string, position: Position, locations: Location[]) =>
-            commands.executeCommand(SHOW_REFERENCES, uri, position, locations)
-        );
-        commands.registerCommand(APPLY_WORKSPACE_EDIT, (changes: WorkspaceEdit) =>
-            !!workspace.applyEdit && workspace.applyEdit(changes)
-        );
     }
 
     resolve(uri: URI): JavaResource {

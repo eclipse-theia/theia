@@ -12,7 +12,7 @@ import { EditorManager } from "./editor-manager";
 /**
  * Show editor references
  */
-export const SHOW_REFERENCES = 'editor.action.showReferences';
+export const SHOW_REFERENCES = 'textEditor.commands.showReferences';
 
 @injectable()
 export class EditorCommandHandlers implements CommandContribution {

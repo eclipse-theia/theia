@@ -6,11 +6,13 @@
  */
 
 import { ContainerModule } from "inversify";
-import { ResourceResolver } from '../../application/common';
+import { ResourceResolver, CommandContribution } from '../../application/common';
 import { JavaClientContribution } from "./java-client-contribution";
 import { LanguageClientContribution } from "../../languages/browser";
+import { JavaCommandContribution } from './java-commands';
 
 export const browserJavaModule = new ContainerModule(bind => {
+    bind(CommandContribution).to(JavaCommandContribution).inSingletonScope();
     bind(JavaClientContribution).toSelf().inSingletonScope();
     bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(JavaClientContribution));
     bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(JavaClientContribution));

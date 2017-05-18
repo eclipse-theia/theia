@@ -5,8 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Disposable } from "./disposable";
 import { injectable, inject, named } from "inversify";
+import { Disposable, DisposableCollection } from "./disposable";
 import { ContributionProvider } from './contribution-provider';
 
 export interface Command {
@@ -26,8 +26,13 @@ export interface CommandContribution {
     contribute(registry: CommandRegistry): void;
 }
 
+export const CommandService = Symbol("CommandService");
+export interface CommandService {
+    executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined>;
+}
+
 @injectable()
-export class CommandRegistry {
+export class CommandRegistry implements CommandService {
 
     private _commands: { [id: string]: Command };
     private _handlers: { [id: string]: CommandHandler[] };
@@ -39,12 +44,36 @@ export class CommandRegistry {
         this._commands = {};
         this._handlers = {};
         const contributions = this.contributionProvider.getContributions();
-        for (let contrib of contributions) {
+        for (const contrib of contributions) {
             contrib.contribute(this);
         }
     }
 
-    registerCommand(command: Command): Disposable {
+    registerCommand(command: string | Command): Disposable;
+    registerCommand(command: string | Command, handler: CommandHandler): Disposable;
+    registerCommand(command: string | Command, handler: (...args: any[]) => any, thisArg?: any): Disposable;
+    registerCommand(commandArg: string | Command, handler?: CommandHandler | ((...args: any[]) => any), thisArg?: any): Disposable {
+        const command = this.asCommand(commandArg);
+        if (handler) {
+            const toDispose = new DisposableCollection();
+            toDispose.push(this.doRegisterCommand(command));
+            toDispose.push(this.doRegisterHandler(command.id, handler, thisArg));
+            return toDispose;
+        }
+        return this.doRegisterCommand(command);
+    }
+
+    protected asCommand(command: string | Command): Command {
+        if (typeof command === 'string') {
+            return {
+                id: command,
+                label: command // FIXME label should be optional
+            }
+        }
+        return command;
+    }
+
+    protected doRegisterCommand(command: Command): Disposable {
         if (this._commands[command.id]) {
             throw Error(`A command ${command.id} is already registered.`);
         }
@@ -56,11 +85,18 @@ export class CommandRegistry {
         }
     }
 
-    registerHandler(commandId: string, handler: CommandHandler): Disposable {
+    registerHandler(commandId: string, handler: CommandHandler): Disposable;
+    registerHandler(commandId: string, handler: (...args: any[]) => any, thisArg?: any): Disposable;
+    registerHandler(commandId: string, handlerArg: CommandHandler | ((...args: any[]) => any), thisArg?: any): Disposable {
+        return this.doRegisterHandler(commandId, handlerArg, thisArg);
+    }
+
+    protected doRegisterHandler(commandId: string, handlerArg: CommandHandler | ((...args: any[]) => any), thisArg?: any): Disposable {
         let handlers = this._handlers[commandId];
         if (!handlers) {
             this._handlers[commandId] = handlers = [];
         }
+        const handler = this.asHandler(handlerArg, thisArg);
         handlers.push(handler);
         return {
             dispose: () => {
@@ -72,11 +108,29 @@ export class CommandRegistry {
         }
     }
 
-    getActiveHandler(commandId: string): CommandHandler | undefined {
+    protected asHandler(handler: ((...args: any[]) => any) | CommandHandler, thisArg?: any): CommandHandler {
+        if (typeof handler === 'function') {
+            return {
+                isEnabled: () => true,
+                execute: handler.bind(thisArg)
+            }
+        }
+        return handler;
+    }
+
+    executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined> {
+        const handler = this.getActiveHandler(command, ...args);
+        if (handler) {
+            return Promise.resolve(handler.execute(...args))
+        }
+        return Promise.resolve(undefined);
+    }
+
+    getActiveHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
         const handlers = this._handlers[commandId];
         if (handlers) {
             for (let handler of handlers) {
-                if (handler.isEnabled()) {
+                if (handler.isEnabled(...args)) {
                     return handler;
                 }
             }
@@ -89,7 +143,7 @@ export class CommandRegistry {
         for (let id of this.commandIds) {
             let cmd = this.getCommand(id);
             if (cmd) {
-                commands.push();
+                commands.push(cmd);
             }
         }
         return commands;
