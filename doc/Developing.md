@@ -85,3 +85,11 @@ To build and run the electron example:
       && npm install \
       && npm run build \
       && npm run start
+
+### Running code coverage
+
+npm run coverage
+
+### to view result
+
+firefox coverage/index.html
