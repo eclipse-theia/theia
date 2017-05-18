@@ -13,7 +13,6 @@ import {
 import { EditorManager, TextEditorSelection, SHOW_REFERENCES } from '../../editor/browser';
 import { Position, Location } from "../../languages/common"
 import { getCurrent, MonacoEditor } from './monaco-editor';
-import CommandsRegistry = monaco.commands.CommandsRegistry;
 import MenuRegistry = monaco.actions.MenuRegistry;
 import MenuId = monaco.actions.MenuId;
 
@@ -47,20 +46,13 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             commands.registerHandler(id, handler);
         });
 
-        const toIgnore: string[] = [];
         for (const menuItem of MenuRegistry.getMenuItems(MenuId.EditorContext)) {
             const { id, title, iconClass } = menuItem.command;
             commands.registerCommand({
                 id, iconClass,
                 label: title,
             }, this.newHandler(id));
-            toIgnore.push(id);
         }
-
-        // schedule contribution to monaco commands
-        setTimeout(() =>
-            this.contributeToMonacoCommands(commands, toIgnore)
-        );
     }
 
     protected newHandler(id: string): CommandHandler {
@@ -70,18 +62,6 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     protected newClipboardHandler(id: string, doExecute: (editor: MonacoEditor, ...args: any[]) => any) {
         const commandArgs = (editor: MonacoEditor) => [{}];
         return new TextModificationEditorCommandHandler(this.editorManager, this.selectionService, id, commandArgs, doExecute);
-    }
-
-    protected contributeToMonacoCommands(commands: CommandRegistry, toIgnore: string[]): void {
-        for (const command of commands.commandIds) {
-            if (CommandsRegistry.getCommand(command) === undefined) {
-                CommandsRegistry.registerCommand(command, (_, ...args: string[]) =>
-                    commands.executeCommand(command, ...args)
-                )
-            } else if (toIgnore.indexOf(command) === -1) {
-                console.warn(`[monaco]: a command ${command} is already registered`);
-            }
-        }
     }
 
 }
