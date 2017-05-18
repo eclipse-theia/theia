@@ -28,12 +28,14 @@ export class JavaCommandContribution implements CommandContribution {
     ) { }
 
     contribute(commands: CommandRegistry): void {
-        commands.registerCommand(SHOW_JAVA_REFERENCES, (uri: string, position: Position, locations: Location[]) =>
-            commands.executeCommand(SHOW_REFERENCES, uri, position, locations)
-        );
-        commands.registerCommand(APPLY_WORKSPACE_EDIT, (changes: WorkspaceEdit) =>
-            !!this.workspace.applyEdit && this.workspace.applyEdit(changes)
-        );
+        commands.registerCommand({ id: SHOW_JAVA_REFERENCES }, {
+            execute: (uri: string, position: Position, locations: Location[]) =>
+                commands.executeCommand(SHOW_REFERENCES, uri, position, locations)
+        });
+        commands.registerCommand({ id: APPLY_WORKSPACE_EDIT }, {
+            execute: (changes: WorkspaceEdit) =>
+                !!this.workspace.applyEdit && this.workspace.applyEdit(changes)
+        });
     }
 
 }

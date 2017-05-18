@@ -133,7 +133,7 @@ export class ActionMenuNode implements MenuNode {
         if (!cmd) {
             throw new Error(`A command with id '${this.action.commandId}' does not exist.`)
         }
-        return cmd.label;
+        return cmd.label || cmd.id;
     }
 
     get icon(): string | undefined {

@@ -26,15 +26,17 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     ) { }
 
     contribute(commands: CommandRegistry) {
-        commands.registerCommand(SHOW_REFERENCES, (uri: string, position: Position, locations: Location[]) => {
-            const editor = getCurrent(this.editorManager);
-            if (editor) {
-                editor.commandService.executeCommand(
-                    'editor.action.showReferences',
-                    monaco.Uri.parse(uri),
-                    this.p2m.asPosition(position),
-                    locations.map(l => this.p2m.asLocation(l))
-                );
+        commands.registerCommand({ id: SHOW_REFERENCES }, {
+            execute: (uri: string, position: Position, locations: Location[]) => {
+                const editor = getCurrent(this.editorManager);
+                if (editor) {
+                    editor.commandService.executeCommand(
+                        'editor.action.showReferences',
+                        monaco.Uri.parse(uri),
+                        this.p2m.asPosition(position),
+                        locations.map(l => this.p2m.asLocation(l))
+                    );
+                }
             }
         });
 
