@@ -21,7 +21,7 @@
             "name": "Launch App (eclipse.jdt.ls)",
             "program": "${workspaceRoot}/examples/browser/lib/backend/main.js",
             "args": [
-                "--root-dir=${workspaceRoot}/../eclipse.jdt.ls"
+                "--root-dir=${workspaceRoot}/../eclipse.jdt.ls/org.eclipse.jdt.ls.core"
             ],
             "sourceMaps": true,
             "outFiles": [
