@@ -12,11 +12,10 @@ import * as chaiAsPromised from "chai-as-promised";
 import * as fs from "fs-extra";
 import * as os from "os";
 import URI from "../../application/common/uri";
-import { URIHelper } from "../../application/common/uri";
 import { FileSystem } from "../common/filesystem";
 import { FileSystemNode } from "./node-filesystem";
 
-const root: URI = new URI(URIHelper.fromFsPath(os.tmpdir())).appendPath("node-fs-root");
+const root: URI = new URI(URI.createFileUriFromFsPath(os.tmpdir())).appendPath("node-fs-root");
 const expect = chai.expect;
 
 before(() => {

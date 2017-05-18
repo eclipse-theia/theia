@@ -27,6 +27,18 @@ type EventType =
 
 export class FileSystemNode implements FileSystem {
 
+    /**
+     * Returns with the platform specific FS path that is represented by the URI argument.
+     *
+     * @param uri the file URI that has to be resolved to a platform specific FS path.
+     */
+    static fsPath(uri: URI): string {
+        if (uri.scheme !== "file") {
+            throw new Error(`URI argument does not have a file scheme. ${uri}`);
+        }
+        return path.normalize(isWindows ? uri.path.slice(1) : uri.path);
+    }
+
     protected client: FileSystemClient | undefined;
     private watcher: FSWatcher;
 
@@ -395,21 +407,6 @@ export class FileSystemNode implements FileSystem {
         }
     }
 
-}
-
-export namespace FileSystemNode {
-
-    /**
-     * Returns with the platform specific FS path that is represented by the URI argument.
-     *
-     * @param uri the file URI that has to be resolved to a platform specific FS path.
-     */
-    export function fsPath(uri: URI): string {
-        if (uri.scheme !== "file") {
-            throw new Error(`URI argument does not have a file scheme. ${uri}`);
-        }
-        return isWindows ? uri.path.slice(1) : uri.path;
-    }
 }
 
 function isErrnoException(error: any | NodeJS.ErrnoException): error is NodeJS.ErrnoException {

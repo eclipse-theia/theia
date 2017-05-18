@@ -12,14 +12,14 @@ import { FileSystemNode } from "./node-filesystem";
 import { FileSystemWatcher } from '../common/filesystem-watcher';
 import { FileSystemClient, FileSystem } from "../common/filesystem";
 import { JsonRpcProxyFactory } from "../../messaging/common/proxy-factory";
-import { URIHelper } from "../../application/common/uri";
+import URI from "../../application/common/uri";
 
 export const ROOT_DIR_OPTION = '--root-dir=';
 
 export const fileSystemServerModule = new ContainerModule(bind => {
     const rootDir = getRootDir();
     if (rootDir) {
-        const fileSystem = new FileSystemNode(URIHelper.fromFsPath(rootDir))
+        const fileSystem = new FileSystemNode(URI.createFileUriFromFsPath(rootDir))
         const fileSystemWatcher = new FileSystemWatcher()
         bind<ConnectionHandler>(ConnectionHandler).toDynamicValue(ctx => {
             let clients: FileSystemClient[] = [

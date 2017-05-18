@@ -12,6 +12,14 @@ const slash: (path: string) => string = require("slash");
 
 export default class URI {
 
+    /**
+     * Creates a file URI string from the FS path argument.
+     * @param fsPath the OS dependent FS path.
+     */
+    static createFileUriFromFsPath(fsPath: string): string {
+        return isWindows ? `file:///${slash(fsPath)}` : `file://${fsPath}`;
+    }
+
     private codeUri: Uri;
 
     constructor(uri?: string | Uri) {
@@ -160,10 +168,4 @@ export default class URI {
         return this.codeUri.toString(skipEncoding);
     }
 
-}
-
-export namespace URIHelper {
-    export function fromFsPath(fsPath: string): string {
-        return isWindows ? `file:///${slash(fsPath)}` : `file://${fsPath}`;
-    }
 }
