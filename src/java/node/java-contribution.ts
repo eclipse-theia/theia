@@ -12,6 +12,7 @@ import * as net from 'net';
 import * as cp from 'child_process';
 import { injectable } from "inversify";
 import { JAVA_DESCRIPTION } from "../common";
+import { DEBUG_MODE } from '../../application/node';
 import { SocketMessageReader, SocketMessageWriter } from "../../messaging/common";
 import { LanguageContribution, IConnection, createConnection, forward } from "../../languages/node";
 
@@ -39,18 +40,24 @@ export class JavaContribution implements LanguageContribution {
         const configurationPath = path.resolve(serverPath, configuration);
         const command = 'java';
         const args = [
-            // '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044',
             '-Declipse.application=org.eclipse.jdt.ls.core.id1',
             '-Dosgi.bundles.defaultStartLevel=4',
-            '-Declipse.product=org.eclipse.jdt.ls.core.product',
-            '-Dlog.protocol=true',
-            '-Dlog.level=ALL',
-            '-noverify',
-            '-Xmx1G',
+            '-Declipse.product=org.eclipse.jdt.ls.core.product'
+        ];
+
+        if (DEBUG_MODE) {
+            args.push(
+                '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044',
+                '-Dlog.protocol=true',
+                '-Dlog.level=ALL'
+            );
+        }
+
+        args.push(
             '-jar', jarPath,
             '-configuration', configurationPath,
             '-data', workspacePath
-        ];
+        )
 
         Promise.all([
             this.startSocketServer(), this.startSocketServer()
