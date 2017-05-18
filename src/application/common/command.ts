@@ -28,6 +28,9 @@ export interface CommandContribution {
 
 export const CommandService = Symbol("CommandService");
 export interface CommandService {
+    /**
+     * Reject if a command cannot be executed.
+     */
     executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined>;
 }
 
@@ -92,7 +95,7 @@ export class CommandRegistry implements CommandService {
         if (handler) {
             return Promise.resolve(handler.execute(...args))
         }
-        return Promise.resolve(undefined);
+        return Promise.reject(`command '${command}' cannot be executed`);
     }
 
     getActiveHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
