@@ -134,16 +134,24 @@ export class FileSystemNode implements FileSystem {
     move(sourceUri: string, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat> {
         return new Promise<FileStat>((resolve, reject) => {
             const _sourceUri = new URI(sourceUri);
-            const sourceStat = this.doGetStat(_sourceUri, 0);
+            const sourceStat = this.doGetStat(_sourceUri, 1);
             if (!sourceStat) {
                 return reject(new Error(`File does not exist under ${sourceUri}.`));
             }
             const _targetUri = new URI(targetUri);
             const overwrite = this.doGetOverwrite(options);
-            const targetStat = this.doGetStat(_targetUri, 0);
+            const targetStat = this.doGetStat(_targetUri, 1);
             if (targetStat && !overwrite) {
                 return reject(new Error(`File already exist under the \'${targetUri}\' target location. Did you set the \'overwrite\' flag to true?`));
             }
+
+            // Different types. Files <-> Directory.
+            if (targetStat && sourceStat.isDirectory !== targetStat.isDirectory) {
+                const label: (stat: FileStat) => string = (stat) => stat.isDirectory ? "directory" : "file";
+                const message = `Cannot move a ${label(sourceStat)} to an existing ${label(targetStat)} location. Source URI: ${sourceUri}. Target URI: ${targetUri}.`;
+                return reject(new Error(message))
+            }
+
             fs.rename(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), (error) => {
                 if (error) {
                     return reject(error);
