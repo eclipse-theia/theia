@@ -34,7 +34,7 @@ describe("NodeFileSystem", () => {
         if (fs.existsSync(FileUri.fsPath(root))) {
             fs.removeSync(FileUri.fsPath(root));
         }
-        fs.mkdirSync(FileUri.fsPath(root));
+        fs.mkdirsSync(FileUri.fsPath(root));
         expect(fs.existsSync(FileUri.fsPath(root))).to.be.true;
         expect(fs.readdirSync(FileUri.fsPath(root))).to.be.empty;
     });
