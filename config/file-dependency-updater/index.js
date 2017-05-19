@@ -1,3 +1,4 @@
+// @ts-check
 'use strict'
 
 const fs = require("fs-extra");
@@ -7,6 +8,28 @@ const packageJsonFinder = require("find-package-json");
 
 const fileDependencyPrefix = "file:"
 const nodeModules = "node_modules";
+
+function removeFile(targetFilePath) {
+    return new Promise((resolve, reject) => {
+        fs.exists(targetFilePath, function (exists) {
+            if (exists) {
+                fs.stat(targetFilePath, (err, stats) => {
+                    if (err) {
+                        reject(err)
+                    } else if (stats.isFile()) {
+                        fs.unlink(targetFilePath, function (err) {
+                            if (err) {
+                                reject(err)
+                            } else {
+                                resolve();
+                            }
+                        });
+                    }
+                })
+            }
+        });
+    })
+}
 
 /**
  * This function watches for changes in all direct, files-based, upstream npm dependencies and makes sure, that
@@ -21,7 +44,7 @@ const nodeModules = "node_modules";
  * This function requires a `tsc --watch` running on the upstream project when code needs to be compiled.
  */
 (function () {
-    const currentPackageJson = packageJsonFinder().next().value;
+    const currentPackageJson = packageJsonFinder(undefined).next().value;
     const currentRoot = path.resolve(currentPackageJson.__path, "..");
     for (const dependency of Object.keys(currentPackageJson.dependencies)) {
         const upstreamRelativePath = currentPackageJson.dependencies[dependency];
@@ -58,17 +81,10 @@ const nodeModules = "node_modules";
                                 });
                             }
                         } else { // unlink, unlinkDir
-                            fs.exists(targetFilePath, function (exists) {
-                                if (exists) {
-                                    fs.unlink(destinationPath, function (err) {
-                                        if (err) {
-                                            console.error("Error while trying to delete file under " + targetFilePath + ".", err);
-                                        } else {
-                                            console.log("Removed file from '" + targetFilePath + "'.");
-                                        }
-                                    });
-                                }
-                            });
+                            removeFile(targetFilePath).then(
+                                () => console.log("Removed file from '" + targetFilePath + "'."),
+                                reason => console.error("Error while trying to delete file under " + targetFilePath + ".", reason)
+                            );
                         }
                     });
                 }
