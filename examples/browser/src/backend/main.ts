@@ -15,6 +15,7 @@ import { messagingModule } from "theia-core/lib/messaging/node";
 import { nodeLanguagesModule } from 'theia-core/lib/languages/node';
 import { nodeJavaModule } from 'theia-core/lib/java/node';
 import { nodePythonModule } from 'theia-core/lib/languages/python/node/node-python-module';
+import { nodeCppModule } from 'theia-core/lib/cpp/node';
 import terminalBackendModule from 'theia-core/lib/terminal/node/terminal-backend-module'
 
 // FIXME introduce default error handler contribution
@@ -42,6 +43,7 @@ container.load(nodeLanguagesModule);
 container.load(terminalBackendModule);
 container.load(nodeJavaModule);
 container.load(nodePythonModule);
+container.load(nodeCppModule);
 container.bind(BackendApplicationContribution).to(StaticServer);
 const application = container.get(BackendApplication);
 application.start();
