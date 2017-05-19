@@ -17,8 +17,8 @@ describe("file-uri", () => {
     const filePaths: string[] = ["with.txt", "with spaces.txt", "with:colon.txt", "with_Ö.txt"].map(filePath => path.join(os.tmpdir(), "file-uri-folder", filePath));
 
     it("create -> fsPath -> create should be symmetric", () => {
-        const orderedPaths = filePaths.sort();
-        expect(orderedPaths.map(filePath => FileUri.create(filePath)).map(uri => FileUri.fsPath(uri)).sort()).to.be.deep.equal(orderedPaths);
+        const orderedPaths = filePaths.map(filePath => filePath.toLowerCase()).sort();
+        expect(orderedPaths.map(filePath => FileUri.create(filePath)).map(uri => FileUri.fsPath(uri).toLowerCase()).sort()).to.be.deep.equal(orderedPaths);
     });
 
     it("fsPath -> create -> fsPath should be symmetric", () => {
