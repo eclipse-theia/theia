@@ -10,9 +10,6 @@ import { LanguageContribution, IConnection, createServerProcess, forward } from 
 
 export type ConfigurationType = 'config_win' | 'config_mac' | 'config_linux';
 export const configurations = new Map<typeof process.platform, ConfigurationType>();
-configurations.set('darwin', 'config_mac');
-configurations.set('win32', 'config_win');
-configurations.set('linux', 'config_linux');
 
 
 /**
