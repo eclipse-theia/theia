@@ -15,6 +15,8 @@ import { FileStat, FileSystem, FileSystemClient, FileChange, FileChangeType, Fil
 
 const trash: (paths: Iterable<string>) => Promise<void> = require("trash");
 const chokidar: { watch(paths: string | string[], options?: WatchOptions): FSWatcher } = require("chokidar");
+type MvOptions = { mkdirp?: boolean, clobber?: boolean, limit?: number };
+const mv: (sourcePath: string, targetPath: string, options: MvOptions, cb: (error: NodeJS.ErrnoException) => void) => void = require("mv");
 
 type EventType =
     "all" |
@@ -152,7 +154,7 @@ export class FileSystemNode implements FileSystem {
                 return reject(new Error(message))
             }
 
-            fs.rename(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), (error) => {
+            mv(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), { mkdirp: true }, (error) => {
                 if (error) {
                     return reject(error);
                 }
