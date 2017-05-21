@@ -31,6 +31,27 @@ function removeFile(targetFilePath) {
     })
 }
 
+function isOSX() {
+    return process.platform === 'darwin';
+}
+
+function getOptions() {
+    const options = {
+        ignored: /(^|[\/\\])\../,
+        alwaysStat: true,
+        ignoreInitial: true
+    };
+    if (!isOSX()) {
+        options.awaitWriteFinish = {
+            /* To avoid getting change events before files are
+                * completely written, wait until they are stable for
+                * 100ms second before firing the event. */
+            stabilityThreshold: 100,
+        }
+    }
+    return options;
+}
+
 /**
  * This function watches for changes in all direct, files-based, upstream npm dependencies and makes sure, that
  * all those changes propagate into the `node_modules` folder of the use-site. So that, for instance, Webpack,
@@ -56,18 +77,7 @@ function removeFile(targetFilePath) {
                 if (fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()) {
                     const sourcePath = path.join(upstreamRoot, fileLocation);
                     console.log("Adding a watch on", sourcePath);
-
-                    chokidar.watch(sourcePath, {
-                        ignored: /(^|[\/\\])\../,
-                        alwaysStat: true,
-                        ignoreInitial: true,
-                        awaitWriteFinish: {
-                            /* To avoid getting change events before files are
-                             * completely written, wait until they are stable for
-                             * 100ms second before firing the event. */
-                            stabilityThreshold: 100,
-                        },
-                    }).on("all", function (event, filePath, stat) {
+                    chokidar.watch(sourcePath, getOptions()).on("all", function (event, filePath, stat) {
                         const relativeFilePath = path.relative(sourcePath, filePath);
                         const targetFilePath = path.resolve(targetPath, relativeFilePath);
                         if (stat) { // add, addDir, change 
