@@ -13,9 +13,18 @@ import URI from "../../application/common/uri";
 import { WatchOptions, FSWatcher } from "chokidar";
 import { FileStat, FileSystem, FileSystemClient, FileChange, FileChangeType, FileChangesEvent } from "../common/filesystem";
 
+type MvOptions = { mkdirp?: boolean, clobber?: boolean, limit?: number };
+// If neither atime nor mtime are set, then both values are set. If one of them is set, then the other is not.
+type TouchOptions = {
+    force?: boolean,
+    time?: string | Date | number // Can be a Date object, or any parseable Date string, or epoch ms number.
+    atime?: boolean | Date // Can be either a Boolean, or a Date.
+    mtime?: boolean | Date // Can be either a Boolean, or a Date.
+    ref?: string // Must be path to a file.
+    nocreate?: boolean
+}
 const trash: (paths: Iterable<string>) => Promise<void> = require("trash");
 const chokidar: { watch(paths: string | string[], options?: WatchOptions): FSWatcher } = require("chokidar");
-type MvOptions = { mkdirp?: boolean, clobber?: boolean, limit?: number };
 const mv: (sourcePath: string, targetPath: string, options: MvOptions, cb: (error: NodeJS.ErrnoException) => void) => void = require("mv");
 
 type EventType =
@@ -154,12 +163,33 @@ export class FileSystemNode implements FileSystem {
                 return reject(new Error(message))
             }
 
-            mv(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), { mkdirp: true }, (error) => {
-                if (error) {
-                    return reject(error);
-                }
-                resolve(this.doGetStat(_targetUri, 1));
-            });
+            // Handling special Windows case when source and target resources are empty folders.
+            // Source should be deleted and target should be touched.
+            if (targetStat && targetStat.isDirectory && sourceStat.isDirectory && !targetStat.hasChildren && !sourceStat.hasChildren) {
+                fs.rmdir(FileUri.fsPath(_sourceUri), (err) => {
+                    if (err) {
+                        console.log(err);
+                        return reject(err);
+                    }
+                    const options: TouchOptions = { force: true, nocreate: true };
+                    touch(FileUri.fsPath(_targetUri), options, (error: any) => {
+                        if (error) {
+                            console.log(error);
+                            return reject(error);
+                        }
+                        resolve(this.doGetStat(_targetUri, 1));
+                    });
+
+                });
+            } else {
+                mv(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), { mkdirp: true }, (error) => {
+                    if (error) {
+                        return reject(error);
+                    }
+                    resolve(this.doGetStat(_targetUri, 1));
+                });
+            }
+
         });
     }
 

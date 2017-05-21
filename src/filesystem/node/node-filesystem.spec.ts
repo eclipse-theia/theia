@@ -303,11 +303,8 @@ describe("NodeFileSystem", () => {
             const sourceUri = root.appendPath("foo.txt");
             const targetUri = root.appendPath("bar.txt");
             fs.writeFileSync(FileUri.fsPath(sourceUri), "foo");
-            fs.writeFileSync(FileUri.fsPath(targetUri), "bar");
             expect(fs.statSync(FileUri.fsPath(sourceUri)).isFile()).to.be.true;
-            expect(fs.statSync(FileUri.fsPath(targetUri)).isFile()).to.be.true;
-            expect(fs.readFileSync(FileUri.fsPath(sourceUri), "utf8")).to.be.equal("foo");
-            expect(fs.readFileSync(FileUri.fsPath(targetUri), "utf8")).to.be.equal("bar");
+            expect(fs.existsSync(FileUri.fsPath(targetUri))).to.be.false;
 
             return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).then(stat => {
                 expect(stat).is.an("object").and.has.property("uri").that.equals(targetUri.toString());
