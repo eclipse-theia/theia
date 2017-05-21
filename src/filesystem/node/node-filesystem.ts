@@ -351,7 +351,7 @@ export class FileSystemNode implements FileSystem {
                 };
             }
         } catch (error) {
-            if (isErrnoException(error) && error.errno === -2 && error.code === "ENOENT") {
+            if (isErrnoException(error) && error.code === "ENOENT") {
                 return undefined;
             }
             throw error;

@@ -40,23 +40,12 @@ export interface FileSystem extends Disposable {
      *
      * The optional parameter overwrite can be set to replace an existing file at the location.
      *
-     * With `overwrite: false`
-     *
-     * |           | missing | file | empty dir | dir |
-     * |-----------|---------|------|-----------|-----|
-     * | missing   |    x    |   x  |     x     |  x  |
-     * | file      |    ✓    |   x  |     x     |  x  |
-     * | empty dir |    ✓    |   x  |     ✓     |  x  |
-     * | dir       |    ✓    |   x  |     x     |  x  |
-     *
-     * With `overwrite: true`
-     *
-     * |           | missing | file |     empty dir    |          dir       |
-     * |-----------|---------|------|------------------|--------------------|
-     * | missing   |    x    |   x  |         x        |           x        |
-     * | file      |    ✓    |   ✓  |         x        |           x        |
-     * | empty dir |    ✓    |   x  |         ✓        | ✓ (delete content) |
-     * | dir       |    ✓    |   x  | ✓ (copy content) | ✓ (merge content)  |
+     * |           | missing | file | empty dir |    dir    |
+     * |-----------|---------|------|-----------|-----------|
+     * | missing   |    x    |   x  |     x     |     x     |
+     * | file      |    ✓    |   x  |     x     |     x     |
+     * | empty dir |    ✓    |   x  |     x     | overwrite |
+     * | dir       |    ✓    |   x  | overwrite | overwrite |
      *
      */
     move(sourceUri: string, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat>;
