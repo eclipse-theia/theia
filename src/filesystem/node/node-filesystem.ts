@@ -53,7 +53,7 @@ export class FileSystemNode implements FileSystem {
                 const changeType = this.getFileChangeType(eventType);
                 if (changeType && typeof filename === "string") {
                     const segments = path.normalize(path.relative(rootPath, filename));
-                    const changedUri = segments === "." ? rootUri : this.rootUri.appendPath(segments);
+                    const changedUri = segments === "." ? rootUri : FileUri.create(path.resolve(rootPath, segments));
                     const change = new FileChange(changedUri.toString(), changeType);
                     const event = new FileChangesEvent([change]);
                     this.client.onFileChanges(event);
@@ -63,7 +63,7 @@ export class FileSystemNode implements FileSystem {
     }
 
     setClient(client: FileSystemClient | undefined) {
-        this.client = client
+        this.client = client;
     }
 
     getFileStat(uriAsString: string): Promise<FileStat> {
