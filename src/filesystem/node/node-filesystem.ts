@@ -14,15 +14,7 @@ import { WatchOptions, FSWatcher } from "chokidar";
 import { FileStat, FileSystem, FileSystemClient, FileChange, FileChangeType, FileChangesEvent } from "../common/filesystem";
 
 type MvOptions = { mkdirp?: boolean, clobber?: boolean, limit?: number };
-// If neither atime nor mtime are set, then both values are set. If one of them is set, then the other is not.
-type TouchOptions = {
-    force?: boolean,
-    time?: string | Date | number // Can be a Date object, or any parseable Date string, or epoch ms number.
-    atime?: boolean | Date // Can be either a Boolean, or a Date.
-    mtime?: boolean | Date // Can be either a Boolean, or a Date.
-    ref?: string // Must be path to a file.
-    nocreate?: boolean
-}
+
 const trash: (paths: Iterable<string>) => Promise<void> = require("trash");
 const chokidar: { watch(paths: string | string[], options?: WatchOptions): FSWatcher } = require("chokidar");
 const mv: (sourcePath: string, targetPath: string, options: MvOptions, cb: (error: NodeJS.ErrnoException) => void) => void = require("mv");
@@ -171,15 +163,14 @@ export class FileSystemNode implements FileSystem {
                         console.log(err);
                         return reject(err);
                     }
-                    const options: TouchOptions = { force: true, nocreate: true };
-                    touch(FileUri.fsPath(_targetUri), options, (error: any) => {
+                    const now = new Date().getTime();
+                    fs.utimes(FileUri.fsPath(_targetUri), now, now, (error) => {
                         if (error) {
-                            console.log(error);
                             return reject(error);
                         }
                         resolve(this.doGetStat(_targetUri, 1));
-                    });
 
+                    })
                 });
             } else {
                 mv(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), { mkdirp: true }, (error) => {
