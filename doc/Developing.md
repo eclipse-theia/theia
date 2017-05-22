@@ -86,13 +86,13 @@ To build and run the electron example:
     && npm run build \
     && npm run start
 
-### Running code coverage
+## Code coverage
 
-npm run coverage
+    npm run coverage
 
-### to view result
+If you would like to check the generated code coverage report
 
-firefox coverage/index.html
+    firefox coverage/index.html
 
 ## Troubleshooting
 
@@ -103,9 +103,9 @@ Theia uses native modules and also requires Python 2.x to be installed on the sy
 
  If you are facing with `EPERM: operation not permitted` or `permission denied` errors while building, testing or running the application then;
  - You don't have write access to the installation directory.
- - Try to run your command line (`PowerShell`, `GitBash`, `cygwin` ro whatever you are using) as an administrator.
+ - Try to run your command line (`PowerShell`, `GitBash`, `Cygwin` or whatever you are using) as an administrator.
  - The permissions in the NPM cache might get corrupted. Please try to run `npm cache clean` to fix them.
- - Still have issue on Windows? File a [bug].
+ - Still having issues on Windows? File a [bug]. We are working on Linux or OS X operating systems. Hence we are more than happy to receive any Windows related feedbacks, bug reports.
 
 [all-in-one packages]: https://github.com/felixrieseberg/windows-build-tools
 [bug]: https://github.com/theia-ide/theia/issues
