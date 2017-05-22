@@ -158,21 +158,29 @@ export class FileSystemNode implements FileSystem {
             // Handling special Windows case when source and target resources are empty folders.
             // Source should be deleted and target should be touched.
             if (targetStat && targetStat.isDirectory && sourceStat.isDirectory && !targetStat.hasChildren && !sourceStat.hasChildren) {
-                fs.rmdir(FileUri.fsPath(_sourceUri), (err) => {
-                    if (err) {
-                        return reject(err);
+                // The value should be a Unix timestamp in seconds.
+                // For example, `Date.now()` returns milliseconds, so it should be divided by `1000` before passing it in.
+                const now = Date.now() / 1000;
+                fs.utimes(FileUri.fsPath(_targetUri), now, now, (error) => {
+                    if (error) {
+                        return reject(error);
                     }
-                    // The value should be a Unix timestamp in seconds.
-                    // For example, `Date.now()` returns milliseconds, so it should be divided by `1000` before passing it in.
-                    const now = Date.now() / 1000;
-                    fs.utimes(FileUri.fsPath(_targetUri), now, now, (error) => {
-                        if (error) {
-                            return reject(error);
+                    fs.rmdir(FileUri.fsPath(_sourceUri), (err) => {
+                        if (err) {
+                            return reject(err);
                         }
                         resolve(this.doGetStat(_targetUri, 1));
-
-                    })
+                    });
                 });
+            } else if (targetStat && targetStat.isDirectory && sourceStat.isDirectory && !targetStat.hasChildren && sourceStat.hasChildren) {
+                // Copy source to target, since target is empty. Then wipe the source content.
+                this.copy(sourceUri, targetUri, { overwrite: true }).then(stat => {
+                    this.delete(sourceUri).then(() => {
+                        return resolve(stat);
+                    });
+                }).catch(error => {
+                    reject(error);
+                })
             } else {
                 mv(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), { mkdirp: true }, (error) => {
                     if (error) {
@@ -181,7 +189,6 @@ export class FileSystemNode implements FileSystem {
                     resolve(this.doGetStat(_targetUri, 1));
                 });
             }
-
         });
     }
 
