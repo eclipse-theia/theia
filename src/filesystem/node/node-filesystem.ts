@@ -17,7 +17,7 @@ type MvOptions = { mkdirp?: boolean, clobber?: boolean, limit?: number };
 
 const trash: (paths: Iterable<string>) => Promise<void> = require("trash");
 const chokidar: { watch(paths: string | string[], options?: WatchOptions): FSWatcher } = require("chokidar");
-const mv: (sourcePath: string, targetPath: string, options: MvOptions, cb: (error: NodeJS.ErrnoException) => void) => void = require("mv");
+const mv: (sourcePath: string, targetPath: string, options?: MvOptions, cb?: (error: NodeJS.ErrnoException) => void) => void = require("mv");
 
 type EventType =
     "all" |
@@ -29,7 +29,6 @@ type EventType =
     "error";
 
 export class FileSystemNode implements FileSystem {
-
 
     protected client: FileSystemClient | undefined;
     private watcher: FSWatcher;

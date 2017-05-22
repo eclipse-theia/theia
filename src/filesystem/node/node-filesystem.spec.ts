@@ -21,7 +21,8 @@ const TEST_ROOT = FileUri.create(os.tmpdir()).appendPath("node-fs-root");
 
 describe("NodeFileSystem", () => {
 
-    const root: URI = TEST_ROOT.appendPath(uuidV1());
+    let root: URI;
+    let fileSystem: FileSystem;
 
     before(() => {
         chai.config.showDiff = true;
@@ -31,19 +32,19 @@ describe("NodeFileSystem", () => {
     });
 
     beforeEach(() => {
-        if (fs.existsSync(FileUri.fsPath(root))) {
-            fs.removeSync(FileUri.fsPath(root));
-        }
+        root = TEST_ROOT.appendPath(uuidV1());
         fs.mkdirsSync(FileUri.fsPath(root));
         expect(fs.existsSync(FileUri.fsPath(root))).to.be.true;
         expect(fs.readdirSync(FileUri.fsPath(root))).to.be.empty;
+        fileSystem = createFileSystem();
     });
 
     afterEach(() => {
+        fileSystem.dispose();
         if (fs.existsSync(FileUri.fsPath(root))) {
             fs.removeSync(FileUri.fsPath(root));
         }
-    })
+    });
 
     describe("01 #getFileStat", () => {
 
@@ -51,7 +52,7 @@ describe("NodeFileSystem", () => {
             const uri = root.appendPath("foo.txt");
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            return createFileSystem().getFileStat(uri.toString()).should.eventually.be.rejectedWith(Error);
+            return fileSystem.getFileStat(uri.toString()).should.eventually.be.rejectedWith(Error);
         });
 
         it("Should return a proper result for a file.", () => {
@@ -59,7 +60,7 @@ describe("NodeFileSystem", () => {
             fs.writeFileSync(FileUri.fsPath(uri), "foo");
             expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
 
-            return createFileSystem().getFileStat(uri.toString()).then(stat => {
+            return fileSystem.getFileStat(uri.toString()).then(stat => {
                 expect(stat.isDirectory).to.be.false;
                 expect(stat.uri).to.eq(uri.toString());
             });
@@ -73,7 +74,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(FileUri.fsPath(uri_1)).isFile()).to.be.true;
             expect(fs.statSync(FileUri.fsPath(uri_2)).isFile()).to.be.true;
 
-            return createFileSystem().getFileStat(root.toString()).then(stat => {
+            return fileSystem.getFileStat(root.toString()).then(stat => {
                 expect(stat.hasChildren).to.be.true;
                 expect(stat.children!.length).to.equal(2);
             });
@@ -87,7 +88,7 @@ describe("NodeFileSystem", () => {
             const uri = root.appendPath("foo.txt");
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            return createFileSystem().resolveContent(uri.toString()).should.eventually.be.rejectedWith(Error);
+            return fileSystem.resolveContent(uri.toString()).should.eventually.be.rejectedWith(Error);
         });
 
         it("Should be rejected with an error when trying to resolve the content of a directory.", () => {
@@ -96,7 +97,7 @@ describe("NodeFileSystem", () => {
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.true;
             expect(fs.statSync(FileUri.fsPath(uri)).isDirectory()).to.be.true;
 
-            return createFileSystem().resolveContent(uri.toString()).should.eventually.be.rejectedWith(Error);
+            return fileSystem.resolveContent(uri.toString()).should.eventually.be.rejectedWith(Error);
         });
 
         it("Should be rejected with an error if the desired encoding cannot be handled.", () => {
@@ -106,7 +107,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
             expect(fs.readFileSync(FileUri.fsPath(uri), { encoding: "utf8" })).to.be.equal("foo");
 
-            return createFileSystem().resolveContent(uri.toString(), { encoding: "unknownEncoding" }).should.eventually.be.rejectedWith(Error);
+            return fileSystem.resolveContent(uri.toString(), { encoding: "unknownEncoding" }).should.eventually.be.rejectedWith(Error);
         })
 
         it("Should be return with the content for an existing file.", () => {
@@ -116,7 +117,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
             expect(fs.readFileSync(FileUri.fsPath(uri), { encoding: "utf8" })).to.be.equal("foo");
 
-            return createFileSystem().resolveContent(uri.toString()).should.eventually.have.property("content").that.is.equal("foo");
+            return fileSystem.resolveContent(uri.toString()).should.eventually.have.property("content").that.is.equal("foo");
         });
 
         it("Should be return with the stat object for an existing file.", () => {
@@ -126,7 +127,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
             expect(fs.readFileSync(FileUri.fsPath(uri), { encoding: "utf8" })).to.be.equal("foo");
 
-            const content = createFileSystem().resolveContent(uri.toString());
+            const content = fileSystem.resolveContent(uri.toString());
             return Promise.all([
                 content.should.eventually.be.fulfilled,
                 content.should.eventually.have.be.an("object"),
@@ -153,7 +154,7 @@ describe("NodeFileSystem", () => {
                 lastModification: new Date().getTime(),
                 isDirectory: false
             };
-            return createFileSystem().setContent(stat, "foo").should.eventually.be.rejectedWith(Error);
+            return fileSystem.setContent(stat, "foo").should.eventually.be.rejectedWith(Error);
         });
 
         it("Should be rejected with an error when trying to set the content of a directory.", () => {
@@ -223,7 +224,7 @@ describe("NodeFileSystem", () => {
             const targetUri = root.appendPath("bar.txt");
             expect(fs.existsSync(FileUri.fsPath(sourceUri))).to.be.false;
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString()).should.eventually.be.rejectedWith(Error);
+            return fileSystem.move(sourceUri.toString(), targetUri.toString()).should.eventually.be.rejectedWith(Error);
         });
 
         it("Should be rejected with an error if target exists and overwrite is not set to \'true\'.", () => {
@@ -234,7 +235,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(FileUri.fsPath(sourceUri)).isFile()).to.be.true;
             expect(fs.statSync(FileUri.fsPath(targetUri)).isFile()).to.be.true;
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString()).should.eventually.be.rejectedWith(Error);
+            return fileSystem.move(sourceUri.toString(), targetUri.toString()).should.eventually.be.rejectedWith(Error);
         });
 
         it("Moving a file to an empty directory. Should be rejected with an error because files cannot be moved to an existing directory locations.", () => {
@@ -247,7 +248,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(FileUri.fsPath(targetUri)).isDirectory()).to.be.true;
             expect(fs.readdirSync(FileUri.fsPath(targetUri))).to.be.empty;
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
+            return fileSystem.move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
         });
 
         it("Moving a file to a non-empty directory. Should be rejected with and error because files cannot be moved to an existing directory locations.", () => {
@@ -266,7 +267,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readFileSync(FileUri.fsPath(targetFileUri_02), "utf8")).to.be.equal("bar_02");
             expect(fs.readdirSync(FileUri.fsPath(targetUri))).to.include("bar_01.txt").and.to.include("bar_02.txt");
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
+            return fileSystem.move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
         });
 
         it("Moving an empty directory to file. Should be rejected with an error because directories and cannot be moved to existing file locations.", () => {
@@ -279,7 +280,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readFileSync(FileUri.fsPath(targetUri), "utf8")).to.be.equal("bar");
             expect(fs.readdirSync(FileUri.fsPath(sourceUri))).to.be.empty;
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
+            return fileSystem.move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
         });
 
         it("Moving a non-empty directory to file. Should be rejected with an error because directories cannot be moved to existing file locations.", () => {
@@ -296,7 +297,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readFileSync(FileUri.fsPath(targetUri), "utf8")).to.be.equal("bar");
             expect(fs.readdirSync(FileUri.fsPath(sourceUri))).to.include("foo_01.txt").and.to.include("foo_02.txt");
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
+            return fileSystem.move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
         });
 
         it("Moving file to file. Should overwrite the target file content and delete the source file.", () => {
@@ -306,7 +307,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(FileUri.fsPath(sourceUri)).isFile()).to.be.true;
             expect(fs.existsSync(FileUri.fsPath(targetUri))).to.be.false;
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).then(stat => {
+            return fileSystem.move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).then(stat => {
                 expect(stat).is.an("object").and.has.property("uri").that.equals(targetUri.toString());
                 expect(fs.existsSync(FileUri.fsPath(sourceUri))).to.be.false;
                 expect(fs.statSync(FileUri.fsPath(targetUri)).isFile()).to.be.true;
@@ -324,7 +325,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readdirSync(FileUri.fsPath(sourceUri))).to.be.empty;
             expect(fs.readdirSync(FileUri.fsPath(targetUri))).to.be.empty;
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).then(stat => {
+            return fileSystem.move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).then(stat => {
                 expect(stat).is.an("object").and.has.property("uri").that.equals(targetUri.toString());
                 expect(fs.existsSync(FileUri.fsPath(sourceUri))).to.be.false;
                 expect(fs.statSync(FileUri.fsPath(targetUri)).isDirectory()).to.be.true;
@@ -348,7 +349,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readFileSync(FileUri.fsPath(targetFileUri_02), "utf8")).to.be.equal("bar_02");
             expect(fs.readdirSync(FileUri.fsPath(targetUri))).to.include("bar_01.txt").and.to.include("bar_02.txt");
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
+            return fileSystem.move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
         });
 
         it("Moving a non-empty directory to an empty directory. Source folder and its content should be moved to the target location.", () => {
@@ -367,7 +368,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readFileSync(FileUri.fsPath(sourceFileUri_01), "utf8")).to.be.equal("foo_01");
             expect(fs.readFileSync(FileUri.fsPath(sourceFileUri_02), "utf8")).to.be.equal("foo_02");
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).then(stat => {
+            return fileSystem.move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).then(stat => {
                 expect(stat).is.an("object").and.has.property("uri").that.equals(targetUri.toString());
                 expect(fs.existsSync(FileUri.fsPath(sourceUri))).to.be.false;
                 expect(fs.statSync(FileUri.fsPath(targetUri)).isDirectory()).to.be.true;
@@ -399,7 +400,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readdirSync(FileUri.fsPath(sourceUri))).to.include("foo_01.txt").and.to.include("foo_02.txt");
             expect(fs.readdirSync(FileUri.fsPath(targetUri))).to.include("bar_01.txt").and.to.include("bar_02.txt");
 
-            return createFileSystem().move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
+            return fileSystem.move(sourceUri.toString(), targetUri.toString(), { overwrite: true }).should.eventually.be.rejectedWith(Error);
         });
 
     });
@@ -413,7 +414,7 @@ describe("NodeFileSystem", () => {
             expect(fs.existsSync(FileUri.fsPath(sourceUri))).to.be.false;
             expect(fs.statSync(FileUri.fsPath(targetUri)).isDirectory()).to.be.true;
 
-            return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).should.eventually.be.rejectedWith(Error);
+            return fileSystem.copy(sourceUri.toString(), targetUri.toString()).should.eventually.be.rejectedWith(Error);
         });
 
         it("Copy a file to existing location without overwrite enabled. Should be rejected with an error.", () => {
@@ -424,7 +425,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(FileUri.fsPath(sourceUri)).isDirectory()).to.be.true;
             expect(fs.statSync(FileUri.fsPath(targetUri)).isDirectory()).to.be.true;
 
-            return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).should.eventually.be.rejectedWith(Error);
+            return fileSystem.copy(sourceUri.toString(), targetUri.toString()).should.eventually.be.rejectedWith(Error);
         });
 
         it("Copy an empty directory to a non-existing location. Should return with the file stat representing the new file at the target location.", () => {
@@ -434,7 +435,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(FileUri.fsPath(sourceUri)).isDirectory()).to.be.true;
             expect(fs.existsSync(FileUri.fsPath(targetUri))).to.be.false;
 
-            return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).then(stat => {
+            return fileSystem.copy(sourceUri.toString(), targetUri.toString()).then(stat => {
                 expect(stat).to.be.an("object");
                 expect(stat).to.have.property("uri").that.is.equal(targetUri.toString());
                 expect(fs.existsSync(FileUri.fsPath(sourceUri))).to.be.true;
@@ -449,7 +450,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(FileUri.fsPath(sourceUri)).isDirectory()).to.be.true;
             expect(fs.existsSync(FileUri.fsPath(targetUri))).to.be.false;
 
-            return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).then(stat => {
+            return fileSystem.copy(sourceUri.toString(), targetUri.toString()).then(stat => {
                 expect(stat).to.be.an("object");
                 expect(stat).to.have.property("uri").that.is.equal(targetUri.toString());
                 expect(fs.existsSync(FileUri.fsPath(sourceUri))).to.be.true;
@@ -468,7 +469,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readFileSync(FileUri.fsPath(subSourceUri), "utf8")).to.be.equal("foo");
             expect(fs.existsSync(FileUri.fsPath(targetUri))).to.be.false;
 
-            return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).then(stat => {
+            return fileSystem.copy(sourceUri.toString(), targetUri.toString()).then(stat => {
                 expect(stat).to.be.an("object");
                 expect(stat).to.have.property("uri").that.is.equal(targetUri.toString());
                 expect(fs.existsSync(FileUri.fsPath(sourceUri))).to.be.true;
@@ -491,7 +492,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readFileSync(FileUri.fsPath(subSourceUri), "utf8")).to.be.equal("foo");
             expect(fs.existsSync(FileUri.fsPath(targetUri))).to.be.false;
 
-            return createFileSystem().copy(sourceUri.toString(), targetUri.toString()).then(stat => {
+            return fileSystem.copy(sourceUri.toString(), targetUri.toString()).then(stat => {
                 expect(stat).to.be.an("object");
                 expect(stat).to.have.property("uri").that.is.equal(targetUri.toString());
                 expect(fs.existsSync(FileUri.fsPath(sourceUri))).to.be.true;
@@ -529,7 +530,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readdirSync(FileUri.fsPath(uri_1))).to.include("foo_01.txt").and.to.include("foo_02.txt");
             expect(fs.readdirSync(FileUri.fsPath(uri_2))).to.include("bar_01.txt").and.to.include("bar_02.txt");
 
-            return createFileSystem().getWorkspaceRoot().then(stat => {
+            return fileSystem.getWorkspaceRoot().then(stat => {
                 expect(stat).to.be.an("object");
                 expect(stat).to.have.property("uri").that.equals(root.toString());
                 expect(stat).to.have.property("hasChildren").that.be.true;
@@ -552,21 +553,21 @@ describe("NodeFileSystem", () => {
             fs.writeFileSync(FileUri.fsPath(uri), "foo");
             expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
 
-            return createFileSystem().createFile(uri.toString()).should.be.eventually.rejectedWith(Error);
+            return fileSystem.createFile(uri.toString()).should.be.eventually.rejectedWith(Error);
         });
 
         it("Should be rejected with an error if the encoding is given but cannot be handled.", () => {
             const uri = root.appendPath("foo.txt");
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            return createFileSystem().createFile(uri.toString(), { encoding: "unknownEncoding" }).should.be.eventually.rejectedWith(Error);
+            return fileSystem.createFile(uri.toString(), { encoding: "unknownEncoding" }).should.be.eventually.rejectedWith(Error);
         });
 
         it("Should create an empty file without any contents by default.", () => {
             const uri = root.appendPath("foo.txt");
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            return createFileSystem().createFile(uri.toString()).then(stat => {
+            return fileSystem.createFile(uri.toString()).then(stat => {
                 expect(stat).is.an("object");
                 expect(stat).has.property("uri").that.is.equal(uri.toString());
                 expect(stat).not.has.property("children");
@@ -579,7 +580,7 @@ describe("NodeFileSystem", () => {
             const uri = root.appendPath("foo.txt");
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            return createFileSystem().createFile(uri.toString(), { content: "foo" }).then(stat => {
+            return fileSystem.createFile(uri.toString(), { content: "foo" }).then(stat => {
                 expect(stat).is.an("object");
                 expect(stat).has.property("uri").that.is.equal(uri.toString());
                 expect(stat).not.has.property("children");
@@ -592,7 +593,7 @@ describe("NodeFileSystem", () => {
             const uri = root.appendPath("foo/bar/baz.txt");
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            return createFileSystem().createFile(uri.toString(), { content: "foo" }).then(stat => {
+            return fileSystem.createFile(uri.toString(), { content: "foo" }).then(stat => {
                 expect(stat).is.an("object");
                 expect(stat).has.property("uri").that.is.equal(uri.toString());
                 expect(stat).not.has.property("children");
@@ -605,7 +606,7 @@ describe("NodeFileSystem", () => {
             const uri = root.appendPath("foo.txt");
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            return createFileSystem().createFile(uri.toString(), { content: "foo", encoding: "utf8" }).then(stat => {
+            return fileSystem.createFile(uri.toString(), { content: "foo", encoding: "utf8" }).then(stat => {
                 expect(stat).is.an("object");
                 expect(stat).has.property("uri").that.is.equal(uri.toString());
                 expect(stat).not.has.property("children");
@@ -623,14 +624,14 @@ describe("NodeFileSystem", () => {
             fs.mkdirSync(FileUri.fsPath(uri));
             expect(fs.statSync(FileUri.fsPath(uri)).isDirectory()).to.be.true;
 
-            return createFileSystem().createFolder(uri.toString()).should.eventually.be.rejectedWith(Error);
+            return fileSystem.createFolder(uri.toString()).should.eventually.be.rejectedWith(Error);
         });
 
         it("Should create a directory and return with the stat object on successful directory creation.", () => {
             const uri = root.appendPath("foo");
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            return createFileSystem().createFolder(uri.toString()).then(stat => {
+            return fileSystem.createFolder(uri.toString()).then(stat => {
                 expect(stat).to.be.an("object");
                 expect(stat).to.have.property("uri").that.equals(uri.toString());
                 expect(stat).to.have.property("hasChildren").that.is.false;
@@ -642,7 +643,7 @@ describe("NodeFileSystem", () => {
             const uri = root.appendPath("foo/bar");
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            return createFileSystem().createFolder(uri.toString()).then(stat => {
+            return fileSystem.createFolder(uri.toString()).then(stat => {
                 expect(stat).to.be.an("object");
                 expect(stat).to.have.property("uri").that.equals(uri.toString());
                 expect(stat).to.have.property("hasChildren").that.is.false;
@@ -658,7 +659,7 @@ describe("NodeFileSystem", () => {
             const uri = root.appendPath("foo.txt");
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            return createFileSystem().touchFile(uri.toString()).then(stat => {
+            return fileSystem.touchFile(uri.toString()).then(stat => {
                 expect(stat).is.an("object");
                 expect(stat).has.property("uri").that.equals(uri.toString());
                 expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
@@ -698,7 +699,7 @@ describe("NodeFileSystem", () => {
             const uri = root.appendPath("foo.txt");
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            return createFileSystem().delete(uri.toString()).should.be.eventually.rejectedWith(Error);
+            return fileSystem.delete(uri.toString()).should.be.eventually.rejectedWith(Error);
         });
 
         it("Should delete the file.", () => {
@@ -706,7 +707,7 @@ describe("NodeFileSystem", () => {
             fs.writeFileSync(FileUri.fsPath(uri), "foo");
             expect(fs.readFileSync(FileUri.fsPath(uri), "utf8")).to.be.equal("foo");
 
-            return createFileSystem().delete(uri.toString()).then(() => {
+            return fileSystem.delete(uri.toString()).then(() => {
                 expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
             });
         });
@@ -716,7 +717,7 @@ describe("NodeFileSystem", () => {
             fs.mkdirSync(FileUri.fsPath(uri));
             expect(fs.statSync(FileUri.fsPath(uri)).isDirectory()).to.be.true;
 
-            return createFileSystem().delete(uri.toString()).then(() => {
+            return fileSystem.delete(uri.toString()).then(() => {
                 expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
             });
         });
@@ -729,7 +730,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(FileUri.fsPath(uri)).isDirectory()).to.be.true;
             expect(fs.readFileSync(FileUri.fsPath(subUri), "utf8")).to.be.equal("bar");
 
-            return createFileSystem().delete(uri.toString()).then(() => {
+            return fileSystem.delete(uri.toString()).then(() => {
                 expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
                 expect(fs.existsSync(FileUri.fsPath(subUri))).to.be.false;
             });
@@ -743,7 +744,7 @@ describe("NodeFileSystem", () => {
             const uri = root.appendPath("foo.txt");
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            return createFileSystem().getEncoding(uri.toString()).should.be.eventually.rejectedWith(Error);
+            return fileSystem.getEncoding(uri.toString()).should.be.eventually.rejectedWith(Error);
         });
 
         it("Should be rejected with an error if the URI points to a directory instead of a file.", () => {
@@ -751,7 +752,7 @@ describe("NodeFileSystem", () => {
             fs.mkdirSync(FileUri.fsPath(uri));
             expect(fs.statSync(FileUri.fsPath(uri)).isDirectory()).to.be.true;
 
-            return createFileSystem().getEncoding(uri.toString()).should.be.eventually.rejectedWith(Error);
+            return fileSystem.getEncoding(uri.toString()).should.be.eventually.rejectedWith(Error);
         });
 
         it("Should return with the encoding of the file.", () => {
@@ -759,7 +760,7 @@ describe("NodeFileSystem", () => {
             fs.writeFileSync(FileUri.fsPath(uri), "foo");
             expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
 
-            return createFileSystem().getEncoding(uri.toString()).should.be.eventually.be.equal("utf8");
+            return fileSystem.getEncoding(uri.toString()).should.be.eventually.be.equal("utf8");
         });
 
     });
