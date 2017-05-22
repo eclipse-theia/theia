@@ -5,12 +5,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject, optional } from "inversify";
+import { injectable, inject } from "inversify";
 import { WebSocketConnectionProvider } from "../../messaging/browser";
 import {
     BaseLanguageClient,
     LanguageClientOptions,
-    Commands,
     ConnectionCloseHandler,
     ConnectionErrorHandler,
     createConnection,
@@ -19,6 +18,7 @@ import {
     OutputChannel,
     Window,
     Workspace,
+    Commands,
     LanguageIdentifier,
     FileSystemWatcher
 } from '../common';
@@ -33,8 +33,8 @@ export class DefaultLanguageClientProvider {
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(Languages) protected readonly languages: Languages,
-        @inject(Commands) @optional() protected readonly commands: Commands | undefined,
-        @inject(Window) @optional() protected readonly window: Window | undefined,
+        @inject(Commands) protected readonly commands: Commands,
+        @inject(Window) protected readonly window: Window,
         @inject(WebSocketConnectionProvider) protected readonly connectionProvider: WebSocketConnectionProvider,
         @inject(CompositeLanguageClientContribution) protected readonly contribution: CompositeLanguageClientContribution
     ) { }

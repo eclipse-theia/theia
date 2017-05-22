@@ -13,6 +13,7 @@ import { MonacoEditorService } from "./monaco-editor-service";
 import { MonacoModelResolver } from "./monaco-model-resolver";
 import { MonacoContextMenuService } from "./monaco-context-menu";
 import { MonacoWorkspace } from "./monaco-workspace";
+import { MonacoCommandServiceFactory } from "./monaco-command-service";
 
 @injectable()
 export class MonacoEditorProvider {
@@ -23,11 +24,14 @@ export class MonacoEditorProvider {
         @inject(MonacoContextMenuService) protected readonly contextMenuService: MonacoContextMenuService,
         @inject(MonacoToProtocolConverter) protected readonly m2p: MonacoToProtocolConverter,
         @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter,
-        @inject(MonacoWorkspace) protected readonly workspace: MonacoWorkspace
+        @inject(MonacoWorkspace) protected readonly workspace: MonacoWorkspace,
+        @inject(MonacoCommandServiceFactory) protected readonly commandServiceFactory: MonacoCommandServiceFactory
     ) { }
 
     get(uri: URI): Promise<MonacoEditor> {
         return Promise.resolve(this.monacoModelResolver.createModelReference(uri).then(reference => {
+            const commandService = this.commandServiceFactory();
+
             const node = document.createElement('div');
             const model = reference.object;
             const editor = new MonacoEditor(
@@ -40,10 +44,15 @@ export class MonacoEditorProvider {
                 }, {
                     editorService: this.editorService,
                     textModelResolverService: this.monacoModelResolver,
-                    contextMenuService: this.contextMenuService
+                    contextMenuService: this.contextMenuService,
+                    commandService
                 }
             );
             editor.onDispose(() => reference.dispose());
+
+            const standaloneCommandService = new monaco.services.StandaloneCommandService(editor.instantiationService);
+            commandService.setDelegate(standaloneCommandService);
+
             return editor;
         }));
     }

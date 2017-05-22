@@ -79,6 +79,21 @@
     "webpack-dev-server": "^2.4.1",
     "webpack-merge": "^3.0.0"
   },
+  "nyc": {
+    "include": [
+      "src/**/*.ts"
+    ],
+    "exclude": [
+      "typings",
+      "src/**/*.spec.ts"
+    ],
+    "reporter": [
+      "html"
+    ],
+    "extension": [
+      ".ts"
+    ]
+  },
   "scripts": {
     "prepare": "npm run clean && npm run build && npm run java:download",
     "prepublishOnly": "npm run prepare && npm run test",
@@ -87,6 +102,7 @@
     "watch": "tsc-watch --onSuccess \"npm run lint\"",
     "clean": "rimraf lib",
     "test": "mocha --opts ./config/mocha/mocha.opts src/**/*.spec.ts",
+    "coverage": "nyc mocha --require reflect-metadata/Reflect --compilers ts:ts-node/register src/**/*.spec.ts",
     "test:watch": "mocha --watch --opts ./config/mocha/mocha.opts src/**/*.spec.ts",
     "clean:vscode-ws-jsonrpc": "rimraf node_modules/vscode-ws-jsonrpc",
     "update:vscode-ws-jsonrpc": "npm run clean:vscode-ws-jsonrpc && npm install",

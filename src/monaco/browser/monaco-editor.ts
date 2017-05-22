@@ -8,7 +8,15 @@
 import { ElementExt } from "@phosphor/domutils";
 import URI from "../../application/common/uri";
 import { DisposableCollection, Disposable, Emitter, Event } from "../../application/common";
-import { Dimension, Position, Range, TextDocument, TextEditor } from '../../editor/browser';
+import {
+    Dimension,
+    EditorManager,
+    EditorWidget,
+    Position,
+    Range,
+    TextDocument,
+    TextEditor
+} from '../../editor/browser';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
 import { MonacoWorkspace } from "./monaco-workspace";
 
@@ -35,6 +43,25 @@ export namespace MonacoEditor {
          */
         minHeight?: number
     }
+}
+
+export function getAll(manager: EditorManager): MonacoEditor[] {
+    return manager.editors.map(e => get(e)).filter(e => !!e) as MonacoEditor[];
+}
+
+export function getCurrent(manager: EditorManager): MonacoEditor | undefined {
+    return get(manager.currentEditor);
+}
+
+export function getActive(manager: EditorManager): MonacoEditor | undefined {
+    return get(manager.activeEditor);
+}
+
+export function get(editorWidget: EditorWidget | undefined) {
+    if (editorWidget && editorWidget.editor instanceof MonacoEditor) {
+        return editorWidget.editor;
+    }
+    return undefined;
 }
 
 export class MonacoEditor implements TextEditor, IEditorReference {
@@ -95,7 +122,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         }));
     }
 
-    get onDispose()  {
+    get onDispose() {
         return this.toDispose.onDispose;
     }
 
@@ -255,6 +282,14 @@ export class MonacoEditor implements TextEditor, IEditorReference {
             return action.run()
         }
         return monaco.Promise.as(undefined)
+    }
+
+    get commandService(): monaco.commands.ICommandService {
+        return this.editor._commandService;
+    }
+
+    get instantiationService(): monaco.instantiation.IInstantiationService {
+        return this.editor._instantiationService;
     }
 
 }

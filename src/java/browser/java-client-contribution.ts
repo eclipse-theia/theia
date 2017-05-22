@@ -5,12 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable } from "inversify";
-import { ResourceResolver } from "../../application/common";
+import { injectable, inject } from "inversify";
+import { ResourceResolver, CommandService } from "../../application/common";
 import URI from "../../application/common/uri";
-import { ILanguageClient, LanguageIdentifier, LanguageClientContribution } from '../../languages/browser';
+import { ILanguageClient, LanguageIdentifier, LanguageClientContribution, Window } from '../../languages/browser';
 import { JAVA_LANGUAGE_ID, JAVA_SCHEME } from '../common';
 import { JavaResource } from "./java-resource";
+import { ActionableNotification, ActionableMessage } from "./java-protocol";
 
 @injectable()
 export class JavaClientContribution implements ResourceResolver, LanguageClientContribution {
@@ -20,7 +21,10 @@ export class JavaClientContribution implements ResourceResolver, LanguageClientC
     protected resolveDidStart: (languageClient: ILanguageClient) => void;
     protected didStart: Promise<ILanguageClient>;
 
-    constructor() {
+    constructor(
+        @inject(Window) protected readonly window: Window,
+        @inject(CommandService) protected readonly commands: CommandService
+    ) {
         this.waitForDidStart();
     }
 
@@ -45,6 +49,7 @@ export class JavaClientContribution implements ResourceResolver, LanguageClientC
     }
 
     protected onDidStart(language: LanguageIdentifier, languageClient: ILanguageClient): void {
+        languageClient.onNotification(ActionableNotification.type, this.showActionableMessage.bind(this));
         this.languageClient = languageClient
         this.resolveDidStart(this.languageClient);
         this.waitForDidStart();
@@ -54,6 +59,19 @@ export class JavaClientContribution implements ResourceResolver, LanguageClientC
         this.didStart = new Promise<ILanguageClient>(resolve =>
             this.resolveDidStart = resolve
         );
+    }
+
+    protected showActionableMessage(message: ActionableMessage): void {
+        if (!this.window) {
+            return;
+        }
+        const items = message.commands || [];
+        this.window.showMessage(message.severity, message.message, ...items).then(command => {
+            if (command) {
+                const args = command.arguments || [];
+                this.commands.executeCommand(command.command, ...args);
+            }
+        });
     }
 
 }
