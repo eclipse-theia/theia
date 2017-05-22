@@ -28,6 +28,9 @@ import "xterm/dist/xterm.css";
 import { browserJavaModule } from 'theia-core/lib/java/browser/browser-java-module';
 import 'theia-core/lib/java/browser/monaco-contribution';
 
+// python extension
+import { browserPythonModule } from 'theia-core/lib/languages/python/browser/browser-python-module';
+
 // cpp extension
 import { browserCppModule } from 'theia-core/lib/cpp/browser/browser-cpp-module';
 
@@ -43,6 +46,7 @@ import { browserCppModule } from 'theia-core/lib/cpp/browser/browser-cpp-module'
     container.load(browserLanguagesModule);
     container.load(monacoModule);
     container.load(browserJavaModule);
+    container.load(browserPythonModule);
     container.load(browserCppModule);
 
     // Load the browser specific contributions.

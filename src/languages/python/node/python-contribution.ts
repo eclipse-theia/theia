@@ -7,6 +7,7 @@
 
 import { injectable } from "inversify";
 import { BaseLanguageServerContribution, IConnection } from "../../node";
+import { PYTHON_LANGUAGE_ID, PYTHON_LANGUAGE_NAME } from '../common';
 
 /**
  * IF you have python on your machine, `pyls` can be installed with the following command:
@@ -15,17 +16,8 @@ import { BaseLanguageServerContribution, IConnection } from "../../node";
 @injectable()
 export class PythonContribution extends BaseLanguageServerContribution {
 
-    readonly id = 'python';
-    readonly name = this.id;
-
-    readonly description = {
-        id: 'python',
-        name: 'Python',
-        documentSelector: ['python'],
-        fileEvents: [
-            '**/*.py'
-        ]
-    }
+    readonly id = PYTHON_LANGUAGE_ID;
+    readonly name = PYTHON_LANGUAGE_NAME;
 
     start(clientConnection: IConnection): void {
         const command = 'pyls';
