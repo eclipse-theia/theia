@@ -39,6 +39,14 @@ export interface FileSystem extends Disposable {
      * Moves the file to a new path identified by the resource.
      *
      * The optional parameter overwrite can be set to replace an existing file at the location.
+     *
+     * |           | missing | file | empty dir |    dir    |
+     * |-----------|---------|------|-----------|-----------|
+     * | missing   |    x    |   x  |     x     |     x     |
+     * | file      |    ✓    |   x  |     x     |     x     |
+     * | empty dir |    ✓    |   x  |     x     | overwrite |
+     * | dir       |    ✓    |   x  | overwrite | overwrite |
+     *
      */
     move(sourceUri: string, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat>;
 

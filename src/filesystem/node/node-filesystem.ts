@@ -8,12 +8,16 @@
 import * as fs from "fs-extra";
 import * as touch from "touch";
 import * as path from "path";
+import { FileUri } from "../../application/node/file-uri";
 import URI from "../../application/common/uri";
 import { WatchOptions, FSWatcher } from "chokidar";
 import { FileStat, FileSystem, FileSystemClient, FileChange, FileChangeType, FileChangesEvent } from "../common/filesystem";
 
+type MvOptions = { mkdirp?: boolean, clobber?: boolean, limit?: number };
+
 const trash: (paths: Iterable<string>) => Promise<void> = require("trash");
 const chokidar: { watch(paths: string | string[], options?: WatchOptions): FSWatcher } = require("chokidar");
+const mv: (sourcePath: string, targetPath: string, options?: MvOptions, cb?: (error: NodeJS.ErrnoException) => void) => void = require("mv");
 
 type EventType =
     "all" |
@@ -29,28 +33,27 @@ export class FileSystemNode implements FileSystem {
     protected client: FileSystemClient | undefined;
     private watcher: FSWatcher;
 
-    constructor(protected rootUri: string, protected defaults: FileSystem.Configuration = {
+    constructor(protected rootUri: URI, protected defaults: FileSystem.Configuration = {
         encoding: "utf8",
         overwrite: false,
         recursive: true,
         moveToTrash: true,
     }) {
 
-        const _rootUri = new URI(this.rootUri);
-        const stat = this.doGetStat(_rootUri, 0);
+        const stat = this.doGetStat(this.rootUri, 0);
         if (!stat) {
             throw new Error(`File system root cannot be located under ${this.rootUri}.`);
         }
         if (!stat.isDirectory) {
             throw new Error(`File system root should point to a directory location. URI: ${this.rootUri}.`);
         }
-        const rootPath = _rootUri.path;
+        const rootPath = FileUri.fsPath(this.rootUri);
         this.watcher = chokidar.watch(rootPath).on("all", (eventType: EventType, filename: string) => {
             if (this.client) {
                 const changeType = this.getFileChangeType(eventType);
                 if (changeType && typeof filename === "string") {
-                    const segments = path.normalize(path.relative(_rootUri.path, filename));
-                    const changedUri = segments === "." ? rootUri : _rootUri.appendPath(segments);
+                    const segments = path.normalize(path.relative(rootPath, filename));
+                    const changedUri = segments === "." ? rootUri : FileUri.create(path.resolve(rootPath, segments));
                     const change = new FileChange(changedUri.toString(), changeType);
                     const event = new FileChangesEvent([change]);
                     this.client.onFileChanges(event);
@@ -60,7 +63,7 @@ export class FileSystemNode implements FileSystem {
     }
 
     setClient(client: FileSystemClient | undefined) {
-        this.client = client
+        this.client = client;
     }
 
     getFileStat(uriAsString: string): Promise<FileStat> {
@@ -91,7 +94,7 @@ export class FileSystemNode implements FileSystem {
                 return reject(new Error(`Cannot resolve the content of a directory. URI: ${uri}.`));
             }
             const encoding = this.doGetEncoding(options);
-            fs.readFile(_uri.path, encoding, (error, content) => {
+            fs.readFile(FileUri.fsPath(_uri), encoding, (error, content) => {
                 if (error) {
                     return reject(error);
                 }
@@ -117,7 +120,7 @@ export class FileSystemNode implements FileSystem {
                 return reject(new Error(`File is out of sync. URI: ${file.uri}. Expected size: ${stat.size}. Actual size: ${file.size}.`));
             }
             const encoding = this.doGetEncoding(options);
-            fs.writeFile(_uri.path, content, encoding, error => {
+            fs.writeFile(FileUri.fsPath(_uri), content, encoding, error => {
                 if (error) {
                     return reject(error);
                 }
@@ -133,22 +136,58 @@ export class FileSystemNode implements FileSystem {
     move(sourceUri: string, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat> {
         return new Promise<FileStat>((resolve, reject) => {
             const _sourceUri = new URI(sourceUri);
-            const sourceStat = this.doGetStat(_sourceUri, 0);
+            const sourceStat = this.doGetStat(_sourceUri, 1);
             if (!sourceStat) {
                 return reject(new Error(`File does not exist under ${sourceUri}.`));
             }
             const _targetUri = new URI(targetUri);
             const overwrite = this.doGetOverwrite(options);
-            const targetStat = this.doGetStat(_targetUri, 0);
+            const targetStat = this.doGetStat(_targetUri, 1);
             if (targetStat && !overwrite) {
                 return reject(new Error(`File already exist under the \'${targetUri}\' target location. Did you set the \'overwrite\' flag to true?`));
             }
-            fs.rename(_sourceUri.path, _targetUri.path, (error) => {
-                if (error) {
-                    return reject(error);
-                }
-                resolve(this.doGetStat(_targetUri, 1));
-            });
+
+            // Different types. Files <-> Directory.
+            if (targetStat && sourceStat.isDirectory !== targetStat.isDirectory) {
+                const label: (stat: FileStat) => string = (stat) => stat.isDirectory ? "directory" : "file";
+                const message = `Cannot move a ${label(sourceStat)} to an existing ${label(targetStat)} location. Source URI: ${sourceUri}. Target URI: ${targetUri}.`;
+                return reject(new Error(message))
+            }
+
+            // Handling special Windows case when source and target resources are empty folders.
+            // Source should be deleted and target should be touched.
+            if (targetStat && targetStat.isDirectory && sourceStat.isDirectory && !targetStat.hasChildren && !sourceStat.hasChildren) {
+                // The value should be a Unix timestamp in seconds.
+                // For example, `Date.now()` returns milliseconds, so it should be divided by `1000` before passing it in.
+                const now = Date.now() / 1000;
+                fs.utimes(FileUri.fsPath(_targetUri), now, now, (error) => {
+                    if (error) {
+                        return reject(error);
+                    }
+                    fs.rmdir(FileUri.fsPath(_sourceUri), (error) => {
+                        if (error) {
+                            return reject(error);
+                        }
+                        resolve(this.doGetStat(_targetUri, 1));
+                    });
+                });
+            } else if (targetStat && targetStat.isDirectory && sourceStat.isDirectory && !targetStat.hasChildren && sourceStat.hasChildren) {
+                // Copy source to target, since target is empty. Then wipe the source content.
+                this.copy(sourceUri, targetUri, { overwrite: true }).then(stat => {
+                    this.delete(sourceUri).then(() => {
+                        return resolve(stat);
+                    });
+                }).catch(error => {
+                    reject(error);
+                });
+            } else {
+                mv(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), { mkdirp: true }, (error) => {
+                    if (error) {
+                        return reject(error);
+                    }
+                    resolve(this.doGetStat(_targetUri, 1));
+                });
+            }
         });
     }
 
@@ -165,7 +204,7 @@ export class FileSystemNode implements FileSystem {
             if (targetStat && !overwrite) {
                 return reject(new Error(`File already exist under the \'${targetUri}\' target location. Did you set the \'overwrite\' flag to true?`));
             }
-            fs.copy(_sourceUri.path, _targetUri.path, error => {
+            fs.copy(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), error => {
                 if (error) {
                     return reject(error);
                 }
@@ -185,7 +224,7 @@ export class FileSystemNode implements FileSystem {
             const doCreateFile = () => {
                 const content = this.doGetContent(options);
                 const encoding = this.doGetEncoding(options);
-                fs.writeFile(_uri.path, content, { encoding }, error => {
+                fs.writeFile(FileUri.fsPath(_uri), content, { encoding }, error => {
                     if (error) {
                         return reject(error);
                     }
@@ -193,7 +232,7 @@ export class FileSystemNode implements FileSystem {
                 });
             }
             if (!this.doGetStat(parentUri, 0)) {
-                fs.mkdirs(parentUri.path, error => {
+                fs.mkdirs(FileUri.fsPath(parentUri), error => {
                     if (error) {
                         return reject(error);
                     }
@@ -212,7 +251,7 @@ export class FileSystemNode implements FileSystem {
             if (stat) {
                 return reject(new Error(`Error occurred while creating the directory. File already exists at ${uri}.`));
             }
-            fs.mkdirs(_uri.path, error => {
+            fs.mkdirs(FileUri.fsPath(_uri), error => {
                 if (error) {
                     return reject(error);
                 }
@@ -230,7 +269,7 @@ export class FileSystemNode implements FileSystem {
                     resolve(stat);
                 });
             } else {
-                touch(_uri.path, (error: any) => {
+                touch(FileUri.fsPath(_uri), (error: any) => {
                     if (error) {
                         return reject(error);
                     }
@@ -247,14 +286,18 @@ export class FileSystemNode implements FileSystem {
             if (!stat) {
                 return reject(new Error(`File does not exist under ${uri}.`));
             }
+            // Windows 10.
+            // Deleting an empty directory triggers `error` instead of `unlinkDir`.
+            // https://github.com/paulmillr/chokidar/issues/566
             const moveToTrash = this.doGetMoveToTrash(options);
             if (moveToTrash) {
-                resolve(trash([_uri.path]));
+                resolve(trash([FileUri.fsPath(_uri)]));
             } else {
-                fs.remove(_uri.path, error => {
+                fs.remove(FileUri.fsPath(_uri), error => {
                     if (error) {
                         return reject(error);
                     }
+                    resolve();
                 });
             }
         });
@@ -267,7 +310,7 @@ export class FileSystemNode implements FileSystem {
             if (!stat) {
                 return reject(new Error(`File does not exist under ${uri}.`));
             }
-            this.watcher.add(_uri.path);
+            this.watcher.add(FileUri.fsPath(_uri));
         });
     }
 
@@ -278,7 +321,7 @@ export class FileSystemNode implements FileSystem {
             if (!stat) {
                 return reject(new Error(`File does not exist under ${uri}.`));
             }
-            this.watcher.unwatch(_uri.path);
+            this.watcher.unwatch(FileUri.fsPath(_uri));
         });
     }
 
@@ -298,7 +341,7 @@ export class FileSystemNode implements FileSystem {
 
     getWorkspaceRoot(): Promise<FileStat> {
         return new Promise<FileStat>((resolve, reject) => {
-            const stat = this.doGetStat(new URI(this.rootUri), 1);
+            const stat = this.doGetStat(this.rootUri, 1);
             if (!stat) {
                 return reject(new Error(`Cannot locate workspace root under ${this.rootUri}.`));
             }
@@ -311,7 +354,7 @@ export class FileSystemNode implements FileSystem {
     }
 
     protected doGetStat(uri: URI, depth: number): FileStat | undefined {
-        const path = uri.path;
+        const path = FileUri.fsPath(uri);
         try {
             const stat = fs.statSync(path);
             if (stat.isDirectory()) {
@@ -342,7 +385,7 @@ export class FileSystemNode implements FileSystem {
                 };
             }
         } catch (error) {
-            if (isErrnoException(error) && error.errno === -2 && error.code === "ENOENT") {
+            if (isErrnoException(error) && error.code === "ENOENT") {
                 return undefined;
             }
             throw error;
