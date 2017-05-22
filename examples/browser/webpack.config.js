@@ -24,7 +24,7 @@ module.exports = require("../../config/webpack/webpack.config")(__dirname, {
             colors: true,
             warnings: false
         },
-        host: process.env.HOST || '0.0.0.0',
+        host: process.env.HOST || '127.0.0.1',
         port: process.env.PORT
     }, plugins: [
         new webpack.HotModuleReplacementPlugin()
