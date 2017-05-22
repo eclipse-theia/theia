@@ -5,5 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export * from './language-contribution';
+export * from './language-server-contribution';
+export * from './languages-backend-contribution';
 export * from './node-languages-module';

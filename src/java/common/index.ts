@@ -7,11 +7,3 @@
 
 export const JAVA_SCHEME = 'jdt';
 export const JAVA_LANGUAGE_ID = 'java';
-export const JAVA_DESCRIPTION = {
-    id: JAVA_LANGUAGE_ID,
-    name: 'Java',
-    documentSelector: [JAVA_LANGUAGE_ID],
-    fileEvents: [
-        '**/*.java', '**/pom.xml', '**/*.gradle'
-    ]
-}

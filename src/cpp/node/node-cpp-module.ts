@@ -6,9 +6,9 @@
  */
 
 import { ContainerModule } from "inversify";
-import { LanguageContribution } from "../../languages/node";
+import { LanguageServerContribution } from "../../languages/node";
 import { CppContribution } from './cpp-contribution';
 
 export const nodeCppModule = new ContainerModule(bind => {
-    bind<LanguageContribution>(LanguageContribution).to(CppContribution).inSingletonScope();
+    bind(LanguageServerContribution).to(CppContribution).inSingletonScope();
 });
