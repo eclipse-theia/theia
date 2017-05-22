@@ -160,10 +160,11 @@ export class FileSystemNode implements FileSystem {
             if (targetStat && targetStat.isDirectory && sourceStat.isDirectory && !targetStat.hasChildren && !sourceStat.hasChildren) {
                 fs.rmdir(FileUri.fsPath(_sourceUri), (err) => {
                     if (err) {
-                        console.log(err);
                         return reject(err);
                     }
-                    const now = new Date().getTime();
+                    // The value should be a Unix timestamp in seconds.
+                    // For example, `Date.now()` returns milliseconds, so it should be divided by `1000` before passing it in.
+                    const now = Date.now() / 1000;
                     fs.utimes(FileUri.fsPath(_targetUri), now, now, (error) => {
                         if (error) {
                             return reject(error);
