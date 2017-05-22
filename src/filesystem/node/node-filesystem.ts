@@ -297,6 +297,7 @@ export class FileSystemNode implements FileSystem {
                     if (error) {
                         return reject(error);
                     }
+                    resolve();
                 });
             }
         });

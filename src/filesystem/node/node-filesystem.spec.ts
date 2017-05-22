@@ -21,6 +21,9 @@ const TEST_ROOT = FileUri.create(os.tmpdir()).appendPath("node-fs-root");
 
 describe("NodeFileSystem", () => {
 
+    const roots: URI[] = [];
+    const fileSystems: FileSystem[] = [];
+
     let root: URI;
     let fileSystem: FileSystem;
 
@@ -36,14 +39,24 @@ describe("NodeFileSystem", () => {
         fs.mkdirsSync(FileUri.fsPath(root));
         expect(fs.existsSync(FileUri.fsPath(root))).to.be.true;
         expect(fs.readdirSync(FileUri.fsPath(root))).to.be.empty;
+        roots.push(root);
         fileSystem = createFileSystem();
+        fileSystems.push(fileSystem);
     });
 
-    afterEach(() => {
-        fileSystem.dispose();
-        if (fs.existsSync(FileUri.fsPath(root))) {
-            fs.removeSync(FileUri.fsPath(root));
-        }
+    after(() => {
+        fileSystems.forEach(fileSystem => {
+            (fileSystem as any).watcher.close();
+        });
+        roots.map(root => FileUri.fsPath(root)).forEach(root => {
+            if (fs.existsSync(root)) {
+                try {
+                    fs.removeSync(root);
+                } catch (error) {
+                    // Please do not fail during the clean-up phase.
+                }
+            }
+        });
     });
 
     describe("01 #getFileStat", () => {
@@ -699,7 +712,7 @@ describe("NodeFileSystem", () => {
             const uri = root.appendPath("foo.txt");
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            return fileSystem.delete(uri.toString()).should.be.eventually.rejectedWith(Error);
+            return fileSystem.delete(uri.toString(), { moveToTrash: false }).should.be.eventually.rejectedWith(Error);
         });
 
         it("Should delete the file.", () => {
@@ -707,7 +720,7 @@ describe("NodeFileSystem", () => {
             fs.writeFileSync(FileUri.fsPath(uri), "foo");
             expect(fs.readFileSync(FileUri.fsPath(uri), "utf8")).to.be.equal("foo");
 
-            return fileSystem.delete(uri.toString()).then(() => {
+            return fileSystem.delete(uri.toString(), { moveToTrash: false }).then(() => {
                 expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
             });
         });
@@ -717,7 +730,7 @@ describe("NodeFileSystem", () => {
             fs.mkdirSync(FileUri.fsPath(uri));
             expect(fs.statSync(FileUri.fsPath(uri)).isDirectory()).to.be.true;
 
-            return fileSystem.delete(uri.toString()).then(() => {
+            return fileSystem.delete(uri.toString(), { moveToTrash: false }).then(() => {
                 expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
             });
         });
@@ -730,7 +743,7 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(FileUri.fsPath(uri)).isDirectory()).to.be.true;
             expect(fs.readFileSync(FileUri.fsPath(subUri), "utf8")).to.be.equal("bar");
 
-            return fileSystem.delete(uri.toString()).then(() => {
+            return fileSystem.delete(uri.toString(), { moveToTrash: false }).then(() => {
                 expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
                 expect(fs.existsSync(FileUri.fsPath(subUri))).to.be.false;
             });
