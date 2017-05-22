@@ -20,7 +20,18 @@ export interface IServerOptions {
 }
 
 export function createServerWebSocketConnection(options: IServerOptions, onConnect: (connection: MessageConnection) => void): void {
-    openSocket(options, socket => onConnect(createWebSocketConnection(toIWebSocket(socket), new ConsoleLogger())));
+    openJsonRpcSocket(options, socket => {
+        const logger = new ConsoleLogger();
+        const connection = createWebSocketConnection(socket, logger);
+        onConnect(connection);
+    });
+}
+
+export function openJsonRpcSocket(options: IServerOptions, onOpen: (socket: IWebSocket) => void): void {
+    openSocket(options, socket => {
+        const webSocket = toIWebSocket(socket);
+        onOpen(webSocket);
+    });
 }
 
 export interface OnOpen {
