@@ -16,6 +16,7 @@ import { BaseLanguageServerContribution, IConnection } from "../../node";
 export class PythonContribution extends BaseLanguageServerContribution {
 
     readonly id = 'python';
+    readonly name = this.id;
 
     readonly description = {
         id: 'python',

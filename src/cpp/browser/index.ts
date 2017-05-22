@@ -5,13 +5,4 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export interface LanguageContribution {
-    readonly id: string;
-    readonly name: string;
-}
-
-export namespace LanguageContribution {
-    export function getPath(contribution: LanguageContribution): string {
-        return '/languages/' + contribution.id;
-    }
-}
+export * from './browser-cpp-module';

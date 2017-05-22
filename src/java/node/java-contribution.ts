@@ -9,7 +9,7 @@ import * as os from 'os';
 import * as path from 'path';
 import * as glob from 'glob';
 import { injectable } from "inversify";
-import { JAVA_LANGUAGE_ID } from '../common';
+import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME } from '../common';
 import { DEBUG_MODE } from '../../application/node';
 import { IConnection, BaseLanguageServerContribution } from "../../languages/node";
 
@@ -23,6 +23,7 @@ configurations.set('linux', 'config_linux');
 export class JavaContribution extends BaseLanguageServerContribution {
 
     readonly id = JAVA_LANGUAGE_ID;
+    readonly name = JAVA_LANGUAGE_NAME;
 
     start(clientConnection: IConnection): void {
         const serverPath = path.resolve(__dirname, 'server');
