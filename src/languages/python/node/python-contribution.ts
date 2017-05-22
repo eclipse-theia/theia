@@ -23,15 +23,15 @@ export class PythonContribution extends BaseLanguageServerContribution {
         const command = 'pyls';
         const args: string[] = [
         ];
-        try {
-            const serverConnection = this.createProcessStreamConnection(command, args);
-            this.forward(clientConnection, serverConnection);
-        } catch (err) {
-            console.error(err)
-            console.error("Error starting python language server.")
-            console.error("Please make sure it is installed on your system.")
-            console.error("Use the following command: 'pip install https://github.com/palantir/python-language-server/archive/master.zip'")
-        }
+        const serverConnection = this.createProcessStreamConnection(command, args);
+        this.forward(clientConnection, serverConnection);
+    }
+
+    protected onDidFailSpawnProcess(error: Error): void {
+        super.onDidFailSpawnProcess(error);
+        console.error("Error starting python language server.")
+        console.error("Please make sure it is installed on your system.")
+        console.error("Use the following command: 'pip install https://github.com/palantir/python-language-server/archive/master.zip'")
     }
 
 }
