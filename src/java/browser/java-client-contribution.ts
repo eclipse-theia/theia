@@ -6,72 +6,52 @@
  */
 
 import { injectable, inject } from "inversify";
-import { ResourceResolver, CommandService } from "../../application/common";
-import URI from "../../application/common/uri";
-import { ILanguageClient, LanguageIdentifier, LanguageClientContribution, Window } from '../../languages/browser';
-import { JAVA_LANGUAGE_ID, JAVA_SCHEME } from '../common';
-import { JavaResource } from "./java-resource";
+import { CommandService } from "../../application/common";
+import {
+    Workspace, Languages, Window,
+    ILanguageClient, BaseLanguageClientContribution, FileSystemWatcher, LanguageClientFactory
+} from '../../languages/browser';
+import { JAVA_LANGUAGE_ID } from '../common';
 import { ActionableNotification, ActionableMessage } from "./java-protocol";
 
 @injectable()
-export class JavaClientContribution implements ResourceResolver, LanguageClientContribution {
+export class JavaClientContribution extends BaseLanguageClientContribution {
 
-    protected languageClient: ILanguageClient | undefined;
-
-    protected resolveDidStart: (languageClient: ILanguageClient) => void;
-    protected didStart: Promise<ILanguageClient>;
+    readonly id = JAVA_LANGUAGE_ID;
 
     constructor(
+        @inject(Workspace) protected readonly workspace: Workspace,
+        @inject(Languages) protected readonly languages: Languages,
         @inject(Window) protected readonly window: Window,
-        @inject(CommandService) protected readonly commands: CommandService
+        @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory,
+        @inject(CommandService) protected readonly commandService: CommandService
     ) {
-        this.waitForDidStart();
+        super(workspace, languages, languageClientFactory);
     }
 
-    resolve(uri: URI): JavaResource {
-        if (uri.scheme !== JAVA_SCHEME) {
-            throw new Error("The given uri is not a java uri: " + uri);
-        }
-        const resolveLanguageClient = this.resolveLanguageClient.bind(this);
-        return new JavaResource(uri, resolveLanguageClient);
-    }
-
-    protected resolveLanguageClient(): Promise<ILanguageClient> {
-        return this.languageClient ? Promise.resolve(this.languageClient) : this.didStart;
-    }
-
-    onWillStart(language: LanguageIdentifier, languageClient: ILanguageClient): void {
-        if (language.description.id === JAVA_LANGUAGE_ID) {
-            languageClient.onReady().then(() =>
-                this.onDidStart(language, languageClient)
-            );
-        }
-    }
-
-    protected onDidStart(language: LanguageIdentifier, languageClient: ILanguageClient): void {
+    protected onReady(languageClient: ILanguageClient): void {
         languageClient.onNotification(ActionableNotification.type, this.showActionableMessage.bind(this));
-        this.languageClient = languageClient
-        this.resolveDidStart(this.languageClient);
-        this.waitForDidStart();
-    }
-
-    protected waitForDidStart(): void {
-        this.didStart = new Promise<ILanguageClient>(resolve =>
-            this.resolveDidStart = resolve
-        );
+        super.onReady(languageClient);
     }
 
     protected showActionableMessage(message: ActionableMessage): void {
-        if (!this.window) {
-            return;
-        }
         const items = message.commands || [];
         this.window.showMessage(message.severity, message.message, ...items).then(command => {
             if (command) {
                 const args = command.arguments || [];
-                this.commands.executeCommand(command.command, ...args);
+                this.commandService.executeCommand(command.command, ...args);
             }
         });
+    }
+
+    protected createFileEvents(): FileSystemWatcher[] {
+        const watchers = [];
+        if (this.workspace.createFileSystemWatcher) {
+            watchers.push(this.workspace.createFileSystemWatcher('**/*.java'));
+            watchers.push(this.workspace.createFileSystemWatcher('**/pom.xml'));
+            watchers.push(this.workspace.createFileSystemWatcher('**/*.gradle'));
+        }
+        return watchers;
     }
 
 }

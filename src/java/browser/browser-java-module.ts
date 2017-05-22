@@ -10,10 +10,14 @@ import { ResourceResolver, CommandContribution } from '../../application/common'
 import { JavaClientContribution } from "./java-client-contribution";
 import { LanguageClientContribution } from "../../languages/browser";
 import { JavaCommandContribution } from './java-commands';
+import { JavaResourceResolver } from './java-resource';
 
 export const browserJavaModule = new ContainerModule(bind => {
     bind(CommandContribution).to(JavaCommandContribution).inSingletonScope();
+
     bind(JavaClientContribution).toSelf().inSingletonScope();
-    bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(JavaClientContribution));
     bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(JavaClientContribution));
+
+    bind(JavaResourceResolver).toSelf().inSingletonScope();
+    bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(JavaResourceResolver));
 });

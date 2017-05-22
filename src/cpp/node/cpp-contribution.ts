@@ -6,10 +6,10 @@
  */
 
 import { injectable } from "inversify";
-import { LanguageContribution, IConnection, createServerProcess, forward } from "../../languages/node";
+import { BaseLanguageServerContribution, IConnection } from "../../languages/node";
 
 @injectable()
-export class CppContribution implements LanguageContribution {
+export class CppContribution extends BaseLanguageServerContribution {
 
     readonly description = {
         id: 'cpp',
@@ -20,12 +20,14 @@ export class CppContribution implements LanguageContribution {
         ]
     }
 
-    listen(clientConnection: IConnection): void {
+    readonly id = 'cpp';
+
+    start(clientConnection: IConnection): void {
         // TODO: clangd has to be on PATH, this should be a preference.
         const command = 'clangd';
         const args: string[] = [];
-        const serverConnection = createServerProcess(this.description.name, command, args);
-        forward(clientConnection, serverConnection);
+        const serverConnection = this.createProcessStreamConnection(command, args);
+        this.forward(clientConnection, serverConnection);
     }
 
 }

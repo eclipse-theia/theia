@@ -5,42 +5,119 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject, named } from "inversify";
-import { ILanguageClient, LanguageClientOptions, LanguageIdentifier } from '../common';
-import { ContributionProvider } from '../../application/common/contribution-provider';
+import { injectable, inject } from "inversify";
+import { Disposable } from "../../application/common";
+import { FrontendApplication } from '../../application/browser';
+import {
+    LanguageContribution, ILanguageClient, LanguageClientOptions,
+    DocumentSelector, TextDocument, FileSystemWatcher,
+    Workspace, Languages
+} from '../common';
+import { LanguageClientFactory } from "./language-client-factory";
+
+export {
+    LanguageContribution, ILanguageClient, FrontendApplication
+}
 
 export const LanguageClientContribution = Symbol('LanguageClientContribution');
-export interface LanguageClientContribution {
-    createOptions?(identifier: LanguageIdentifier, initial: Promise<LanguageClientOptions>): Promise<LanguageClientOptions>;
-    onWillStart?(language: LanguageIdentifier, languageClient: ILanguageClient): void;
+export interface LanguageClientContribution extends LanguageContribution {
+    readonly languageClient: Promise<ILanguageClient>;
+    waitForActivation(app: FrontendApplication): Promise<void>;
+    activate(app: FrontendApplication): Disposable;
 }
 
 @injectable()
-export class CompositeLanguageClientContribution implements LanguageClientContribution {
+export abstract class BaseLanguageClientContribution implements LanguageClientContribution {
+
+    abstract readonly id: string;
+
+    protected _languageClient: ILanguageClient | undefined;
+
+    protected resolveReady: (languageClient: ILanguageClient) => void;
+    protected ready: Promise<ILanguageClient>;
 
     constructor(
-        @inject(ContributionProvider) @named(LanguageClientContribution)
-        protected readonly contributions: ContributionProvider<LanguageClientContribution>
-    ) { }
+        @inject(Workspace) protected readonly workspace: Workspace,
+        @inject(Languages) protected readonly languages: Languages,
+        @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory
+    ) {
+        this.waitForReady();
+    }
 
-    createOptions(identifier: LanguageIdentifier, initial: Promise<LanguageClientOptions>): Promise<LanguageClientOptions> {
-        if (!this.contributions) {
-            return initial;
+    get languageClient(): Promise<ILanguageClient> {
+        return this._languageClient ? Promise.resolve(this._languageClient) : this.ready;
+    }
+
+    waitForActivation(app: FrontendApplication): Promise<any> {
+        const documentSelector = this.documentSelector;
+        if (documentSelector) {
+            return Promise.all([
+                this.workspace.ready,
+                this.waitForOpenTextDocument(documentSelector)
+            ]);
         }
-        return this.contributions.getContributions().reduce((options, contribution) =>
-            contribution.createOptions ? contribution.createOptions(identifier, options) : options
-            , initial
+        return this.workspace.ready;
+    }
+
+    activate(): Disposable {
+        const languageClient = this.createLanguageClient();
+        languageClient.onReady().then(() => {
+            this._languageClient = languageClient
+            this.resolveReady(this._languageClient);
+            this.waitForReady();
+        });
+        return languageClient.start();
+    }
+
+    protected onReady(languageClient: ILanguageClient): void {
+        this._languageClient = languageClient
+        this.resolveReady(this._languageClient);
+        this.waitForReady();
+    }
+
+    protected waitForReady(): void {
+        this.ready = new Promise<ILanguageClient>(resolve =>
+            this.resolveReady = resolve
         );
     }
 
-    onWillStart(language: LanguageIdentifier, languageClient: ILanguageClient): void {
-        if (this.contributions) {
-            this.contributions.getContributions().forEach(contribution => {
-                if (contribution.onWillStart) {
-                    contribution.onWillStart(language, languageClient);
+    protected createLanguageClient(): ILanguageClient {
+        const clientOptions = this.createOptions();
+        return this.languageClientFactory.get(this, clientOptions);
+    }
+
+    protected createOptions(): LanguageClientOptions {
+        const fileEvents = this.createFileEvents();
+        return {
+            documentSelector: this.documentSelector,
+            synchronize: { fileEvents }
+        };
+    }
+
+    protected get documentSelector(): DocumentSelector | undefined {
+        return [this.id];
+    }
+
+    protected createFileEvents(): FileSystemWatcher[] {
+        return [];
+    }
+
+    // FIXME move it to the workspace
+    protected waitForOpenTextDocument(selector: DocumentSelector): Promise<TextDocument> {
+        const document = this.workspace.textDocuments.filter(document =>
+            this.languages.match(selector, document)
+        )[0];
+        if (document !== undefined) {
+            return Promise.resolve(document);
+        }
+        return new Promise<TextDocument>(resolve => {
+            const disposable = this.workspace.onDidOpenTextDocument(document => {
+                if (this.languages.match(selector, document)) {
+                    disposable.dispose();
+                    resolve(document);
                 }
             });
-        }
+        });
     }
 
 }

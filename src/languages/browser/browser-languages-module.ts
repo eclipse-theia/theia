@@ -8,29 +8,17 @@
 import { ContainerModule, } from "inversify";
 import { bindContributionProvider } from '../../application/common';
 import { FrontendApplicationContribution } from "../../application/browser";
-import { WebSocketConnectionProvider } from "../../messaging/browser";
-import { Window, ConsoleWindow, LanguagesService, LANGUAGES_PATH, Commands, DefaultCommands } from '../common';
-import { DefaultLanguageClientProvider, LanguageClientProvider } from './language-client-provider';
-import { LanguagesPlugin } from "./languages-plugin";
-import { LanguageClientLauncher } from './language-client-launcher';
-import { CompositeLanguageClientContribution, LanguageClientContribution } from "./language-client-contribution";
+import { Window, ConsoleWindow, Commands, DefaultCommands } from '../common';
+import { LanguageClientFactory } from './language-client-factory';
+import { LanguagesFrontendContribution } from './languages-frontend-contribution';
+import { LanguageClientContribution } from "./language-client-contribution";
 
 export const browserLanguagesModule = new ContainerModule(bind => {
     bind(Window).to(ConsoleWindow).inSingletonScope();
     bind(Commands).to(DefaultCommands).inSingletonScope();
 
-    bind(CompositeLanguageClientContribution).toSelf().inSingletonScope();
-    bindContributionProvider(bind, LanguageClientContribution)
+    bind(LanguageClientFactory).toSelf().inSingletonScope();
 
-    bind(DefaultLanguageClientProvider).toSelf().inSingletonScope();
-    bind(LanguageClientProvider).toProvider(context =>
-        identifier => context.container.get(DefaultLanguageClientProvider).get(identifier)
-    );
-    bind(LanguageClientLauncher).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).to(LanguagesPlugin).inSingletonScope();
-
-    bind<LanguagesService>(LanguagesService).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        return connection.createProxy<LanguagesService>(LANGUAGES_PATH);
-    }).inSingletonScope();
+    bindContributionProvider(bind, LanguageClientContribution);
+    bind(FrontendApplicationContribution).to(LanguagesFrontendContribution);
 });

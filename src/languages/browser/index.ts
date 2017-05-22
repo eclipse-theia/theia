@@ -6,7 +6,7 @@
  */
 
 export * from '../common';
+export * from './language-client-factory';
 export * from './language-client-contribution';
-export * from './language-client-provider';
-export * from './language-client-launcher';
+export * from './languages-frontend-contribution';
 export * from './browser-languages-module';

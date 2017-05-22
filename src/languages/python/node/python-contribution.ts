@@ -6,21 +6,16 @@
  */
 
 import { injectable } from "inversify";
-import { LanguageContribution, IConnection, createServerProcess, forward } from "../../node";
-
-export type ConfigurationType = 'config_win' | 'config_mac' | 'config_linux';
-export const configurations = new Map<typeof process.platform, ConfigurationType>();
-configurations.set('darwin', 'config_mac');
-configurations.set('win32', 'config_win');
-configurations.set('linux', 'config_linux');
-
+import { BaseLanguageServerContribution, IConnection } from "../../node";
 
 /**
  * IF you have python on your machine, `pyls` can be installed with the following command:
  * `pip install `
  */
 @injectable()
-export class PythonContribution implements LanguageContribution {
+export class PythonContribution extends BaseLanguageServerContribution {
+
+    readonly id = 'python';
 
     readonly description = {
         id: 'python',
@@ -31,13 +26,13 @@ export class PythonContribution implements LanguageContribution {
         ]
     }
 
-    listen(clientConnection: IConnection): void {
+    start(clientConnection: IConnection): void {
         const command = 'pyls';
         const args: string[] = [
         ];
         try {
-            const serverConnection = createServerProcess(this.description.name, command, args);
-            forward(clientConnection, serverConnection);
+            const serverConnection = this.createProcessStreamConnection(command, args);
+            this.forward(clientConnection, serverConnection);
         } catch (err) {
             console.error(err)
             console.error("Error starting python language server.")

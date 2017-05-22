@@ -5,6 +5,12 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export * from './language-contribution';
-export * from './languageclient-services';
-export * from './console-window';
+export interface LanguageContribution {
+    readonly id: string;
+}
+
+export namespace LanguageContribution {
+    export function getPath(contribution: LanguageContribution): string {
+        return '/languages/' + contribution.id;
+    }
+}
