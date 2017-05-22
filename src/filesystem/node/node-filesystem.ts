@@ -165,9 +165,9 @@ export class FileSystemNode implements FileSystem {
                     if (error) {
                         return reject(error);
                     }
-                    fs.rmdir(FileUri.fsPath(_sourceUri), (err) => {
-                        if (err) {
-                            return reject(err);
+                    fs.rmdir(FileUri.fsPath(_sourceUri), (error) => {
+                        if (error) {
+                            return reject(error);
                         }
                         resolve(this.doGetStat(_targetUri, 1));
                     });
@@ -180,7 +180,7 @@ export class FileSystemNode implements FileSystem {
                     });
                 }).catch(error => {
                     reject(error);
-                })
+                });
             } else {
                 mv(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), { mkdirp: true }, (error) => {
                     if (error) {
@@ -287,6 +287,9 @@ export class FileSystemNode implements FileSystem {
             if (!stat) {
                 return reject(new Error(`File does not exist under ${uri}.`));
             }
+            // Windows 10.
+            // Deleting an empty directory triggers `error` instead of `unlinkDir`.
+            // https://github.com/paulmillr/chokidar/issues/566
             const moveToTrash = this.doGetMoveToTrash(options);
             if (moveToTrash) {
                 resolve(trash([FileUri.fsPath(_uri)]));
