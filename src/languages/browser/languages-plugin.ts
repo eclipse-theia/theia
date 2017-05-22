@@ -39,22 +39,19 @@ export class LanguagesPlugin implements FrontendApplicationContribution {
     }
 
     protected waitForOpenTextDocument(selector: DocumentSelector): Promise<TextDocument> {
+        const document = this.workspace.textDocuments.filter(document =>
+            this.languages.match(selector, document)
+        )[0];
+        if (document !== undefined) {
+            return Promise.resolve(document);
+        }
         return new Promise<TextDocument>(resolve => {
-            if (selector) {
-                const document = this.workspace.textDocuments.filter(document =>
-                    this.languages.match(selector, document)
-                )[0];
-                if (document !== undefined) {
+            const disposable = this.workspace.onDidOpenTextDocument(document => {
+                if (this.languages.match(selector, document)) {
+                    disposable.dispose();
                     resolve(document);
-                } else {
-                    const disposable = this.workspace.onDidOpenTextDocument(document => {
-                        if (this.languages.match(selector, document)) {
-                            disposable.dispose();
-                            resolve(document);
-                        }
-                    });
                 }
-            }
+            });
         });
     }
 
