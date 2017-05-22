@@ -30,6 +30,7 @@ export interface LanguageClientContribution extends LanguageContribution {
 export abstract class BaseLanguageClientContribution implements LanguageClientContribution {
 
     abstract readonly id: string;
+    abstract readonly name: string;
 
     protected _languageClient: ILanguageClient | undefined;
 
@@ -99,6 +100,16 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
     }
 
     protected createFileEvents(): FileSystemWatcher[] {
+        const watchers = [];
+        if (this.workspace.createFileSystemWatcher) {
+            for (const globPattern of this.globPatterns) {
+                watchers.push(this.workspace.createFileSystemWatcher(globPattern));
+            }
+        }
+        return watchers;
+    }
+
+    protected get globPatterns(): string[] {
         return [];
     }
 

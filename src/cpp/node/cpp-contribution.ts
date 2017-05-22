@@ -7,20 +7,13 @@
 
 import { injectable } from "inversify";
 import { BaseLanguageServerContribution, IConnection } from "../../languages/node";
+import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME } from '../common';
 
 @injectable()
 export class CppContribution extends BaseLanguageServerContribution {
 
-    readonly description = {
-        id: 'cpp',
-        name: 'C/C++',
-        documentSelector: ['h', 'hxx', 'hh', 'hpp', 'inc', 'c', 'cxx', 'C', 'c++', 'cc', 'cc', 'cpp'],
-        fileEvents: [
-            '**/*.h', '**/*.hxx', '**/*.hh', '**/*.hpp', '**/*.inc', '**/*.c', '**/*.cxx', '**/*.C', '**/*.c++', '**/*.cc', '**/*.cc', '**/*.cpp',
-        ]
-    }
-
-    readonly id = 'cpp';
+    readonly id = CPP_LANGUAGE_ID;
+    readonly name = CPP_LANGUAGE_NAME;
 
     start(clientConnection: IConnection): void {
         // TODO: clangd has to be on PATH, this should be a preference.

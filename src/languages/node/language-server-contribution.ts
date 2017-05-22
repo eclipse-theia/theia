@@ -31,6 +31,7 @@ export interface LanguageServerContribution extends LanguageContribution {
 @injectable()
 export abstract class BaseLanguageServerContribution implements LanguageServerContribution {
     abstract readonly id: string;
+    abstract readonly name: string;
     abstract start(clientConnection: IConnection): void;
 
     protected forward(clientConnection: IConnection, serverConnection: IConnection): void {
@@ -72,13 +73,13 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
 
     protected logError(data: string | Buffer) {
         if (data) {
-            console.error(`${this.id}: ${data}`)
+            console.error(`${this.name}: ${data}`)
         }
     }
 
     protected logInfo(data: string | Buffer) {
         if (data) {
-            console.info(`${this.id}: ${data}`);
+            console.info(`${this.name}: ${data}`);
         }
     }
 

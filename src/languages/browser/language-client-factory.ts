@@ -29,7 +29,7 @@ export class LanguageClientFactory {
         const { workspace, languages, commands, window } = this;
         const services = { workspace, languages, commands, window }
         return new BaseLanguageClient({
-            name: contribution.id,
+            name: contribution.name,
             clientOptions,
             services,
             connectionProvider: {

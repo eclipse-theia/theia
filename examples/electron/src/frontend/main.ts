@@ -28,6 +28,9 @@ import "xterm/dist/xterm.css";
 import { browserJavaModule } from 'theia-core/lib/java/browser/browser-java-module';
 import 'theia-core/lib/java/browser/monaco-contribution';
 
+// cpp extension
+import { browserCppModule } from 'theia-core/lib/cpp/browser/browser-cpp-module';
+
 (() => {
 
     // Create the client container and load the common contributions.
@@ -40,6 +43,7 @@ import 'theia-core/lib/java/browser/monaco-contribution';
     container.load(browserLanguagesModule);
     container.load(monacoModule);
     container.load(browserJavaModule);
+    container.load(browserCppModule);
 
     // Load the electron specific contributions.
     container.load(electronMenuModule);

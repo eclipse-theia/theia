@@ -8,25 +8,29 @@
 import { injectable, inject } from "inversify";
 import { CommandService } from "../../application/common";
 import {
-    Workspace, Languages, Window,
-    ILanguageClient, BaseLanguageClientContribution, FileSystemWatcher, LanguageClientFactory
+    Window, ILanguageClient, BaseLanguageClientContribution, Workspace, Languages, LanguageClientFactory
 } from '../../languages/browser';
-import { JAVA_LANGUAGE_ID } from '../common';
+import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME } from '../common';
 import { ActionableNotification, ActionableMessage } from "./java-protocol";
 
 @injectable()
 export class JavaClientContribution extends BaseLanguageClientContribution {
 
     readonly id = JAVA_LANGUAGE_ID;
+    readonly name = JAVA_LANGUAGE_NAME;
 
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(Languages) protected readonly languages: Languages,
-        @inject(Window) protected readonly window: Window,
         @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory,
+        @inject(Window) protected readonly window: Window,
         @inject(CommandService) protected readonly commandService: CommandService
     ) {
-        super(workspace, languages, languageClientFactory);
+        super(workspace, languages, languageClientFactory)
+    }
+
+    protected get globPatterns() {
+        return ['**/*.java', '**/pom.xml', '**/*.gradle'];
     }
 
     protected onReady(languageClient: ILanguageClient): void {
@@ -42,16 +46,6 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
                 this.commandService.executeCommand(command.command, ...args);
             }
         });
-    }
-
-    protected createFileEvents(): FileSystemWatcher[] {
-        const watchers = [];
-        if (this.workspace.createFileSystemWatcher) {
-            watchers.push(this.workspace.createFileSystemWatcher('**/*.java'));
-            watchers.push(this.workspace.createFileSystemWatcher('**/pom.xml'));
-            watchers.push(this.workspace.createFileSystemWatcher('**/*.gradle'));
-        }
-        return watchers;
     }
 
 }
