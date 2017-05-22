@@ -52,6 +52,29 @@ function getOptions() {
     return options;
 }
 
+function getRoot(currentPackageJson) {
+    return path.resolve(currentPackageJson.__path, "..");
+}
+
+function getFileDependencies(currentPackageJson) {
+    const result = [];
+    for (const dependency of Object.keys(currentPackageJson.dependencies)) {
+        const upstreamRelativePath = currentPackageJson.dependencies[dependency];
+        if (upstreamRelativePath.startsWith(fileDependencyPrefix)) {
+            const upstreamRoot = path.resolve(process.cwd(), upstreamRelativePath.split(fileDependencyPrefix).slice(-1)[0]);
+            result.push({ dependency, upstreamRoot });
+        }
+    }
+    return result;
+}
+
+function getFileLocations(root) {
+    const upstreamPackageJson = packageJsonFinder(root).next().value;
+    return upstreamPackageJson.files
+        // fall back to lib and src
+        || ['lib', 'src'];
+}
+
 /**
  * This function watches for changes in all direct, files-based, upstream npm dependencies and makes sure, that
  * all those changes propagate into the `node_modules` folder of the use-site. So that, for instance, Webpack,
@@ -66,38 +89,33 @@ function getOptions() {
  */
 (function () {
     const currentPackageJson = packageJsonFinder(undefined).next().value;
-    const currentRoot = path.resolve(currentPackageJson.__path, "..");
-    for (const dependency of Object.keys(currentPackageJson.dependencies)) {
-        const upstreamRelativePath = currentPackageJson.dependencies[dependency];
-        if (upstreamRelativePath.startsWith(fileDependencyPrefix)) {
-            const upstreamRoot = path.resolve(process.cwd(), upstreamRelativePath.split(fileDependencyPrefix).slice(-1)[0]);
-            const upstreamPackageJson = packageJsonFinder(upstreamRoot).next().value;
-            for (const fileLocation of upstreamPackageJson.files) {
-                const targetPath = path.join(currentRoot, nodeModules, dependency, fileLocation);
-                if (fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()) {
-                    const sourcePath = path.join(upstreamRoot, fileLocation);
-                    console.log("Adding a watch on", sourcePath);
-                    chokidar.watch(sourcePath, getOptions()).on("all", function (event, filePath, stat) {
-                        const relativeFilePath = path.relative(sourcePath, filePath);
-                        const targetFilePath = path.resolve(targetPath, relativeFilePath);
-                        if (stat) { // add, addDir, change 
-                            if (stat.isFile()) {
-                                fs.copy(filePath, targetFilePath, function (err) {
-                                    if (err) {
-                                        console.error("Error while copying file to '" + targetFilePath + "'.", err);
-                                    } else {
-                                        console.log("Updated file under '" + targetFilePath + "'.");
-                                    }
-                                });
-                            }
-                        } else { // unlink, unlinkDir
-                            removeFile(targetFilePath).then(
-                                () => console.log("Removed file from '" + targetFilePath + "'."),
-                                reason => console.error("Error while trying to delete file under " + targetFilePath + ".", reason)
-                            );
+    const currentRoot = getRoot(currentPackageJson);
+    for (const { dependency, upstreamRoot } of getFileDependencies(currentPackageJson)) {
+        for (const fileLocation of getFileLocations(upstreamRoot)) {
+            const targetPath = path.join(currentRoot, nodeModules, dependency, fileLocation);
+            if (fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()) {
+                const sourcePath = path.join(upstreamRoot, fileLocation);
+                console.log("Adding a watch on", sourcePath);
+                chokidar.watch(sourcePath, getOptions()).on("all", function (event, filePath, stat) {
+                    const relativeFilePath = path.relative(sourcePath, filePath);
+                    const targetFilePath = path.resolve(targetPath, relativeFilePath);
+                    if (stat) { // add, addDir, change 
+                        if (stat.isFile()) {
+                            fs.copy(filePath, targetFilePath, function (err) {
+                                if (err) {
+                                    console.error("Error while copying file to '" + targetFilePath + "'.", err);
+                                } else {
+                                    console.log("Updated file under '" + targetFilePath + "'.");
+                                }
+                            });
                         }
-                    });
-                }
+                    } else { // unlink, unlinkDir
+                        removeFile(targetFilePath).then(
+                            () => console.log("Removed file from '" + targetFilePath + "'."),
+                            reason => console.error("Error while trying to delete file under " + targetFilePath + ".", reason)
+                        );
+                    }
+                });
             }
         }
     }
