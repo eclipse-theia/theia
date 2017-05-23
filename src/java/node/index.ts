@@ -7,4 +7,4 @@
 
 export * from '../common';
 export * from './java-contribution';
-export * from './node-java-module';
+export * from './backend-java-module';

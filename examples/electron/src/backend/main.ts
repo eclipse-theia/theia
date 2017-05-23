@@ -13,7 +13,7 @@ import { BackendApplication, BackendApplicationContribution, applicationModule }
 import { fileSystemServerModule } from "theia-core/lib/filesystem/node";
 import { messagingModule } from "theia-core/lib/messaging/node";
 import { nodeLanguagesModule } from 'theia-core/lib/languages/node';
-import { nodeJavaModule } from 'theia-core/lib/java/node';
+import { backendJavaModule } from 'theia-core/lib/java/node';
 import { backendPythonModule } from 'theia-core/lib/python/node';
 import { backendCppModule } from 'theia-core/lib/cpp/node';
 import terminalBackendModule from 'theia-core/lib/terminal/node/terminal-backend-module'
@@ -41,7 +41,7 @@ container.load(messagingModule);
 container.load(fileSystemServerModule);
 container.load(nodeLanguagesModule);
 container.load(terminalBackendModule);
-container.load(nodeJavaModule);
+container.load(backendJavaModule);
 container.load(backendPythonModule);
 container.load(backendCppModule);
 container.bind(BackendApplicationContribution).to(StaticServer);
