@@ -6,7 +6,7 @@
  */
 
 import { injectable } from "inversify";
-import { BaseLanguageServerContribution, IConnection } from "../../node";
+import { BaseLanguageServerContribution, IConnection } from "../../languages/node";
 import { PYTHON_LANGUAGE_ID, PYTHON_LANGUAGE_NAME } from '../common';
 
 /**

@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from "inversify";
-import { BaseLanguageClientContribution, Workspace, Languages, LanguageClientFactory } from '../../../languages/browser';
+import { BaseLanguageClientContribution, Workspace, Languages, LanguageClientFactory } from '../../languages/browser';
 import { PYTHON_LANGUAGE_ID, PYTHON_LANGUAGE_NAME } from '../common';
 
 @injectable()
