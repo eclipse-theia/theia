@@ -1,56 +1,12 @@
 // @ts-check
 'use strict'
 
-const fs = require("fs-extra");
 const path = require("path");
-const chokidar = require("chokidar");
 const packageJsonFinder = require("find-package-json");
+const cpx = require("cpx");
 
-const fileDependencyPrefix = "file:"
+const fileDependencyPrefix = "file:";
 const nodeModules = "node_modules";
-
-function removeFile(targetFilePath) {
-    return new Promise((resolve, reject) => {
-        fs.exists(targetFilePath, function (exists) {
-            if (exists) {
-                fs.stat(targetFilePath, (err, stats) => {
-                    if (err) {
-                        reject(err)
-                    } else if (stats.isFile()) {
-                        fs.unlink(targetFilePath, function (err) {
-                            if (err) {
-                                reject(err)
-                            } else {
-                                resolve();
-                            }
-                        });
-                    }
-                })
-            }
-        });
-    })
-}
-
-function isOSX() {
-    return process.platform === 'darwin';
-}
-
-function getOptions() {
-    const options = {
-        ignored: /(^|[\/\\])\../,
-        alwaysStat: true,
-        ignoreInitial: true
-    };
-    if (!isOSX()) {
-        options.awaitWriteFinish = {
-            /* To avoid getting change events before files are
-                * completely written, wait until they are stable for
-                * 100ms second before firing the event. */
-            stabilityThreshold: 100,
-        }
-    }
-    return options;
-}
 
 function getRoot(currentPackageJson) {
     return path.resolve(currentPackageJson.__path, "..");
@@ -100,31 +56,24 @@ function logInfo(message, ...optionalParams) {
     const currentRoot = getRoot(currentPackageJson);
     for (const { dependency, upstreamRoot } of getFileDependencies(currentPackageJson)) {
         for (const fileLocation of getFileLocations(upstreamRoot)) {
-            const targetPath = path.join(currentRoot, nodeModules, dependency, fileLocation);
-            if (fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()) {
-                const sourcePath = path.join(upstreamRoot, fileLocation);
-                logInfo("Adding a watch on", sourcePath);
-                chokidar.watch(sourcePath, getOptions()).on("all", function (event, filePath, stat) {
-                    const relativeFilePath = path.relative(sourcePath, filePath);
-                    const targetFilePath = path.resolve(targetPath, relativeFilePath);
-                    if (stat) { // add, addDir, change 
-                        if (stat.isFile()) {
-                            fs.copy(filePath, targetFilePath, function (err) {
-                                if (err) {
-                                    logError("Error while copying file to '" + targetFilePath + "'.", err);
-                                } else {
-                                    logInfo(`Copied ${targetFilePath}`)
-                                }
-                            });
-                        }
-                    } else { // unlink, unlinkDir
-                        removeFile(targetFilePath).then(
-                            () => logInfo(`Removed ${targetFilePath}`),
-                            reason => logError("Error while trying to delete file under " + targetFilePath + ".", reason)
-                        );
-                    }
-                });
+            const source = path.join(upstreamRoot, fileLocation, '**', '*');
+            const dest = path.join(currentRoot, nodeModules, dependency, fileLocation);
+            // @ts-ignore
+            const watcher = new cpx.Cpx(source, dest);
+            watcher.on("watch-ready", e => logInfo('Be watching in:', watcher.base));
+            watcher.on("copy", e => logInfo('Copied:', e.srcPath, '-->', e.dstPath));
+            watcher.on("remove", e => logInfo('Removed:', e.path));
+            watcher.on("watch-error", err => logError(err.message));
+
+            logInfo('Clean:', watcher.src2dst(watcher.source))
+            try {
+                watcher.cleanSync();
+            } catch (err) {
+                logError('Failed to clean:', err.message);
+                process.exit(1);
             }
+
+            watcher.watch();
         }
     }
 })();
