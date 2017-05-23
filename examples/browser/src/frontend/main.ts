@@ -25,14 +25,14 @@ import terminalFrontendModule from 'theia-core/lib/terminal/browser/terminal-fro
 import "xterm/dist/xterm.css";
 
 // java extension
-import { browserJavaModule } from 'theia-core/lib/java/browser/browser-java-module';
+import { browserJavaModule } from 'theia-core/lib/java/browser';
 import 'theia-core/lib/java/browser/monaco-contribution';
 
 // python extension
-import { frontendPythonModule } from 'theia-core/lib/python/browser/frontend-python-module';
+import { frontendPythonModule } from 'theia-core/lib/python/browser';
 
 // cpp extension
-import { browserCppModule } from 'theia-core/lib/cpp/browser/browser-cpp-module';
+import { frontendCppModule } from 'theia-core/lib/cpp/browser';
 
 (() => {
 
@@ -47,7 +47,7 @@ import { browserCppModule } from 'theia-core/lib/cpp/browser/browser-cpp-module'
     container.load(monacoModule);
     container.load(browserJavaModule);
     container.load(frontendPythonModule);
-    container.load(browserCppModule);
+    container.load(frontendCppModule);
 
     // Load the browser specific contributions.
     container.load(browserMenuModule);
