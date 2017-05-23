@@ -1,7 +1,7 @@
 {
   "name": "theia-core",
   "version": "0.0.1-alpha.1",
-  "description": "Theia - JavaScript IDE Framework",
+  "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
   "repository": {
     "type": "git",
     "url": "https://github.com/theia-ide/theia.git"
