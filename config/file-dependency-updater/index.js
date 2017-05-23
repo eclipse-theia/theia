@@ -75,6 +75,14 @@ function getFileLocations(root) {
         || ['lib', 'src'];
 }
 
+function logError(message, ...optionalParams) {
+    console.error(new Date().toLocaleString() + ': ' + message, ...optionalParams);
+}
+
+function logInfo(message, ...optionalParams) {
+    console.log(new Date().toLocaleString() + ': ' + message, ...optionalParams);
+}
+
 /**
  * This function watches for changes in all direct, files-based, upstream npm dependencies and makes sure, that
  * all those changes propagate into the `node_modules` folder of the use-site. So that, for instance, Webpack,
@@ -95,7 +103,7 @@ function getFileLocations(root) {
             const targetPath = path.join(currentRoot, nodeModules, dependency, fileLocation);
             if (fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()) {
                 const sourcePath = path.join(upstreamRoot, fileLocation);
-                console.log("Adding a watch on", sourcePath);
+                logInfo("Adding a watch on", sourcePath);
                 chokidar.watch(sourcePath, getOptions()).on("all", function (event, filePath, stat) {
                     const relativeFilePath = path.relative(sourcePath, filePath);
                     const targetFilePath = path.resolve(targetPath, relativeFilePath);
@@ -103,16 +111,16 @@ function getFileLocations(root) {
                         if (stat.isFile()) {
                             fs.copy(filePath, targetFilePath, function (err) {
                                 if (err) {
-                                    console.error("Error while copying file to '" + targetFilePath + "'.", err);
+                                    logError("Error while copying file to '" + targetFilePath + "'.", err);
                                 } else {
-                                    console.log("Updated file under '" + targetFilePath + "'.");
+                                    logInfo(`Copied ${targetFilePath}`)
                                 }
                             });
                         }
                     } else { // unlink, unlinkDir
                         removeFile(targetFilePath).then(
-                            () => console.log("Removed file from '" + targetFilePath + "'."),
-                            reason => console.error("Error while trying to delete file under " + targetFilePath + ".", reason)
+                            () => logInfo(`Removed ${targetFilePath}`),
+                            reason => logError("Error while trying to delete file under " + targetFilePath + ".", reason)
                         );
                     }
                 });

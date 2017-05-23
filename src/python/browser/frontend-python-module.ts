@@ -6,10 +6,10 @@
  */
 
 import { ContainerModule } from "inversify";
-import { LanguageClientContribution } from "../../../languages/browser";
+import { LanguageClientContribution } from "../../languages/browser";
 import { PythonClientContribution } from "./python-client-contribution";
 
-export const browserPythonModule = new ContainerModule(bind => {
+export const frontendPythonModule = new ContainerModule(bind => {
     bind(PythonClientContribution).toSelf().inSingletonScope();
     bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(PythonClientContribution));
 });

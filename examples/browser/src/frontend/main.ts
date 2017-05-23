@@ -29,7 +29,7 @@ import { browserJavaModule } from 'theia-core/lib/java/browser/browser-java-modu
 import 'theia-core/lib/java/browser/monaco-contribution';
 
 // python extension
-import { browserPythonModule } from 'theia-core/lib/languages/python/browser/browser-python-module';
+import { frontendPythonModule } from 'theia-core/lib/python/browser/frontend-python-module';
 
 // cpp extension
 import { browserCppModule } from 'theia-core/lib/cpp/browser/browser-cpp-module';
@@ -46,7 +46,7 @@ import { browserCppModule } from 'theia-core/lib/cpp/browser/browser-cpp-module'
     container.load(browserLanguagesModule);
     container.load(monacoModule);
     container.load(browserJavaModule);
-    container.load(browserPythonModule);
+    container.load(frontendPythonModule);
     container.load(browserCppModule);
 
     // Load the browser specific contributions.

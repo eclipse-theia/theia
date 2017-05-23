@@ -35,7 +35,7 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
     abstract start(clientConnection: IConnection): void;
 
     protected forward(clientConnection: IConnection, serverConnection: IConnection): void {
-        forward(clientConnection, serverConnection, this.map);
+        forward(clientConnection, serverConnection, this.map.bind(this));
     }
 
     protected map(message: Message): Message {
