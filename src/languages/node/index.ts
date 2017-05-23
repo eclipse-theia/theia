@@ -7,4 +7,4 @@
 
 export * from './language-server-contribution';
 export * from './languages-backend-contribution';
-export * from './node-languages-module';
+export * from './backend-languages-module';
