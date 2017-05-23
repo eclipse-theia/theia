@@ -96,7 +96,7 @@
   },
   "scripts": {
     "prepare": "npm run clean && npm run build && npm run java:download",
-    "prepublishOnly": "npm run prepare && npm run test",
+    "prepublishOnly": "npm run test",
     "lint": "tslint -c ./config/tslint/tslint.json --project ./tsconfig.json",
     "build": "tsc && npm run lint",
     "watch": "tsc-watch --onSuccess \"npm run lint\"",
