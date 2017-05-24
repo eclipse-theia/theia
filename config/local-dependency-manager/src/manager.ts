@@ -18,8 +18,17 @@ export class LocalDependencyManager {
     readonly pck = new Package(process.cwd());
 
     list(pattern?: string): void {
-        for (const dependency of this.getLocalDependencies(pattern)) {
-            console.log(dependency, this.pck.getLocalPath(dependency));
+        const dependencies = this.getLocalDependencies(pattern);
+        if (dependencies.length !== 0) {
+            for (const dependency of dependencies) {
+                console.log(dependency, this.pck.getLocalPath(dependency));
+            }
+        } else {
+            if (pattern) {
+                console.log(`There are no local dependencies for the pattern: '${pattern}'`);
+            } else {
+                console.log('There are no local dependencies');
+            }
         }
     }
 

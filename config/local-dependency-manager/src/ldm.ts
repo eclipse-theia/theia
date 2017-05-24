@@ -7,16 +7,27 @@
 
 import { LocalDependencyManager } from './manager';
 
+const verbose = '--verbose';
+const options = [
+    verbose
+];
+
+function getPattern(index: number): string | undefined {
+    return process.argv.slice(index).find(arg =>
+        options.indexOf(arg) === -1
+    )
+}
+
 const manager = new LocalDependencyManager();
-manager.verbose = process.argv.some(argv => argv === '--verbose');
+manager.verbose = process.argv.some(argv => argv === verbose);
 
 const command = process.argv[2];
 if (command === 'clean') {
-    manager.clean(process.argv[3]);
+    manager.clean(getPattern(3));
 } else if (command === 'update') {
-    manager.update(process.argv[3]);
+    manager.update(getPattern(3));
 } else if (command === 'watch') {
-    manager.watch(process.argv[3]);
+    manager.watch(getPattern(3));
 } else {
-    manager.list(process.argv[2]);
+    manager.list(getPattern(2));
 }
