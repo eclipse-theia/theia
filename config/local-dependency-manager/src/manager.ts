@@ -25,30 +25,45 @@ export class LocalDependencyManager {
 
     clean(pattern?: string): void {
         for (const dependency of this.getLocalDependencies(pattern)) {
-            const nodeModulePath = this.pck.getNodeModulePath(dependency);
-            try {
-                fs.removeSync(nodeModulePath);
-                console.log('Removed', nodeModulePath);
-            } catch (err) {
-                console.error(err.message);
-            }
+            this.cleanDependency(dependency);
         }
     }
 
     update(pattern?: string): void {
-        this.clean(pattern);
         for (const dependency of this.getLocalDependencies(pattern)) {
-            try {
-                cp.execSync(`npm install ${dependency}`, { stdio: [0, 1, 2] });
-            } catch (err) {
-                // no-op
-            }
+            this.cleanDependency(dependency);
+            this.installDependency(dependency);
         }
     }
 
     watch(pattern?: string): void {
         for (const dependency of this.getLocalDependencies(pattern)) {
-            const dependencyPackage = new Package(this.pck.getLocalPath(dependency)!);
+            this.watchDependency(dependency);
+        }
+    }
+
+    cleanDependency(dependency: string): void {
+        const nodeModulePath = this.pck.getNodeModulePath(dependency);
+        try {
+            fs.removeSync(nodeModulePath);
+            console.log('Removed', nodeModulePath);
+        } catch (err) {
+            console.error(err.message);
+        }
+    }
+
+    installDependency(dependency: string): void {
+        try {
+            cp.execSync(`npm install ${dependency}`, { stdio: [0, 1, 2] });
+        } catch (err) {
+            // no-op
+        }
+    }
+
+    watchDependency(dependency: string): void {
+        const localPath = this.pck.getLocalPath(dependency);
+        if (localPath) {
+            const dependencyPackage = new Package(localPath);
             for (const file of dependencyPackage.files) {
                 const source = path.join(dependencyPackage.resolvePath(file), '**', '*');
                 const dest = path.join(this.pck.getNodeModulePath(dependency), file);
