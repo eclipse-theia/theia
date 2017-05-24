@@ -27,7 +27,7 @@
     "cold:start": "npm run clean && npm run build && npm start",
     "watch:backend": "tsc --watch",
     "watch:frontend": "npm run build:frontend && webpack --watch",
-    "watch:dependencies": "node ../../config/file-dependency-updater/index.js --verbose",
+    "watch:dependencies": "ldm watch --verbose",
     "test:ui": "wdio wdio.conf.js"
   },
   "devDependencies": {
@@ -52,6 +52,7 @@
     "wdio-spec-reporter": "^0.1.0",
     "webdriverio": "^4.6.2",
     "webpack": "^2.2.1",
-    "webpack-dev-server": "^2.4.1"
+    "webpack-dev-server": "^2.4.1",
+    "local-dependency-manager": "file:../../config/local-dependency-manager"
   }
 }
