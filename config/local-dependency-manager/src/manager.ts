@@ -11,6 +11,11 @@ import * as fs from "fs-extra";
 import * as cp from "child_process";
 import { Package } from "./package";
 
+export interface Watcher {
+    watch(sync?: boolean): void;
+    sync(): void;
+}
+
 export class LocalDependencyManager {
 
     verbose: boolean = true;
@@ -45,9 +50,15 @@ export class LocalDependencyManager {
         }
     }
 
-    watch(pattern?: string): void {
+    sync(pattern?: string): void {
         for (const dependency of this.getLocalDependencies(pattern)) {
-            this.watchDependency(dependency);
+            this.syncDependency(dependency);
+        }
+    }
+
+    watch(pattern?: string, sync?: boolean): void {
+        for (const dependency of this.getLocalDependencies(pattern)) {
+            this.watchDependency(dependency, sync);
         }
     }
 
@@ -69,34 +80,66 @@ export class LocalDependencyManager {
         }
     }
 
-    watchDependency(dependency: string): void {
-        const localPath = this.pck.getLocalPath(dependency);
-        if (localPath) {
-            const dependencyPackage = new Package(localPath);
-            for (const file of dependencyPackage.files) {
-                const source = path.join(dependencyPackage.resolvePath(file), '**', '*');
-                const dest = path.join(this.pck.getNodeModulePath(dependency), file);
-                const watcher = new cpx.Cpx(source, dest);
-                watcher.on("watch-ready", e => console.log('Watch directory:', watcher.base));
-                watcher.on("copy", e => this.logInfo('Copied:', e.srcPath, '-->', e.dstPath));
-                watcher.on("remove", e => this.logInfo('Removed:', e.path));
-                watcher.on("watch-error", err => console.error(err.message));
+    watchDependency(dependency: string, sync?: boolean): void {
+        this.createDependencyWatcher(dependency).watch(sync);
+    }
 
-                console.log('Sync:', watcher.src2dst(watcher.source))
-                try {
-                    watcher.cleanSync();
-                } catch (err) {
-                    console.error('Failed to sync:', err.message);
-                }
-
-                watcher.watch();
-            }
-        }
+    syncDependency(dependency: string): void {
+        this.createDependencyWatcher(dependency).sync();
     }
 
     getLocalDependencies(pattern?: string): string[] {
         const test = this.test(pattern);
         return this.pck.localDependencies.filter(test);
+    }
+
+    createDependencyWatcher(dependency: string): Watcher {
+        const watchers = this.createFileWatchers(dependency);
+        return this.composeWatcher(watchers);
+    }
+
+    protected composeWatcher(watchers: Watcher[]): Watcher {
+        return {
+            sync: () => watchers.forEach(w => w.sync()),
+            watch: (shouldSync: boolean) => watchers.forEach(w => w.watch(shouldSync))
+        }
+    }
+
+    protected createFileWatchers(dependency: string): Watcher[] {
+        const localPath = this.pck.getLocalPath(dependency);
+        if (!localPath) {
+            return [];
+        }
+        const dependencyPackage = new Package(localPath);
+        return dependencyPackage.files.map(file => {
+            const source = path.join(dependencyPackage.resolvePath(file), '**', '*');
+            const dest = path.join(this.pck.getNodeModulePath(dependency), file);
+            return this.createFileWatcher(source, dest);
+        });
+    }
+
+    protected createFileWatcher(source: string, dest: string): Watcher {
+        const watcher = new cpx.Cpx(source, dest);
+        watcher.on("watch-ready", e => console.log('Watch directory:', watcher.base));
+        watcher.on("copy", e => this.logInfo('Copied:', e.srcPath, '-->', e.dstPath));
+        watcher.on("remove", e => this.logInfo('Removed:', e.path));
+        watcher.on("watch-error", err => console.error(err.message));
+        const sync = () => {
+            console.log('Sync:', watcher.src2dst(watcher.source));
+            try {
+                watcher.cleanSync();
+                watcher.copySync();
+            } catch (err) {
+                console.error('Failed to sync:', err.message);
+            }
+        }
+        const watch = (shouldSync?: boolean) => {
+            if (shouldSync) {
+                sync();
+            }
+            watcher.watch();
+        }
+        return { sync, watch };
     }
 
     protected logInfo(message: string, ...optionalParams: any[]) {

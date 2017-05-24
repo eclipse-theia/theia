@@ -8,8 +8,9 @@
 import { LocalDependencyManager } from './manager';
 
 const verbose = '--verbose';
+const sync = '--sync';
 const options = [
-    verbose
+    verbose, sync
 ];
 
 function getPattern(index: number): string | undefined {
@@ -18,16 +19,22 @@ function getPattern(index: number): string | undefined {
     )
 }
 
+function testOption(option: string): boolean {
+    return process.argv.some(argv => argv === option);
+}
+
 const manager = new LocalDependencyManager();
-manager.verbose = process.argv.some(argv => argv === verbose);
+manager.verbose = testOption(verbose);
 
 const command = process.argv[2];
 if (command === 'clean') {
     manager.clean(getPattern(3));
 } else if (command === 'update') {
     manager.update(getPattern(3));
+} else if (command === 'sync') {
+    manager.sync(getPattern(3));
 } else if (command === 'watch') {
-    manager.watch(getPattern(3));
+    manager.watch(getPattern(3), testOption(sync));
 } else {
     manager.list(getPattern(2));
 }
