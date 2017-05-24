@@ -1,0 +1,30 @@
+{
+  "name": "local-dependency-manager",
+  "version": "0.0.1-alpha.1",
+  "description": "Local dependency manager",
+  "main": "./lib/index.js",
+  "typings": "./lib/index.d.ts",
+  "files": [
+    "lib",
+    "src",
+    "bin"
+  ],
+  "bin": {
+    "ldm": "./bin/ldm"
+  },
+  "scripts": {
+    "prepublish": "npm run compile",
+    "compile": "tsc",
+    "watch": "tsc -w",
+    "clean": "rimraf lib"
+  },
+  "devDependencies": {
+    "@types/node": "^7.0.22",
+    "rimraf": "^2.6.1",
+    "typescript": "^2.3.3"
+  },
+  "dependencies": {
+    "cpx": "^1.5.0",
+    "fs-extra": "^3.0.1"
+  }
+}
