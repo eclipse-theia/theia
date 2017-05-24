@@ -2,7 +2,9 @@
 npm install \
 && npm run build \
 && npm run test \
-&& cd examples/browser \
+&& cd config/local-dependency-manager \
+&& npm install \
+&& cd ../../examples/browser \
 && npm install \
 && npm run build \
 && cd ../electron \
