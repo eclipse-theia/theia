@@ -62,12 +62,12 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
 
     activate(): Disposable {
         const languageClient = this.createLanguageClient();
-        languageClient.onReady().then(() => {
-            this._languageClient = languageClient
-            this.resolveReady(this._languageClient);
-            this.waitForReady();
-        });
+        this.onWillStart(languageClient);
         return languageClient.start();
+    }
+
+    protected onWillStart(languageClient: ILanguageClient): void {
+        languageClient.onReady().then(this.onReady.bind(this));
     }
 
     protected onReady(languageClient: ILanguageClient): void {
