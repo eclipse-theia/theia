@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "inlineSources": false,
+        "declaration": true,
+        "stripInternal": true,
+        "lib": [
+            "es2016"
+        ],
+        "outDir": "lib",
+        "strictNullChecks": true,
+        "noImplicitAny": false,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "noUnusedLocals": true,
+        "typeRoots": [
+            "node_modules/@types"
+        ]
+    },
+    "include": [
+        "src"
+    ]
+}
