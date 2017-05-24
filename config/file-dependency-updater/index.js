@@ -8,6 +8,8 @@ const cpx = require("cpx");
 const fileDependencyPrefix = "file:";
 const nodeModules = "node_modules";
 
+const verbose = process.argv.some(arg => arg === '--verbose');
+
 function getRoot(currentPackageJson) {
     return path.resolve(currentPackageJson.__path, "..");
 }
@@ -36,7 +38,9 @@ function logError(message, ...optionalParams) {
 }
 
 function logInfo(message, ...optionalParams) {
-    console.log(new Date().toLocaleString() + ': ' + message, ...optionalParams);
+    if (verbose) {
+        console.log(new Date().toLocaleString() + ': ' + message, ...optionalParams);
+    }
 }
 
 /**
@@ -60,7 +64,7 @@ function logInfo(message, ...optionalParams) {
             const dest = path.join(currentRoot, nodeModules, dependency, fileLocation);
             // @ts-ignore
             const watcher = new cpx.Cpx(source, dest);
-            watcher.on("watch-ready", e => logInfo('Be watching in:', watcher.base));
+            watcher.on("watch-ready", e => logInfo('Watch directory:', watcher.base));
             watcher.on("copy", e => logInfo('Copied:', e.srcPath, '-->', e.dstPath));
             watcher.on("remove", e => logInfo('Removed:', e.path));
             watcher.on("watch-error", err => logError(err.message));
