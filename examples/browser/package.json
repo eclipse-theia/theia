@@ -27,7 +27,7 @@
     "cold:start": "npm run clean && npm run build && npm start",
     "watch:backend": "tsc --watch",
     "watch:frontend": "npm run build:frontend && webpack --watch",
-    "watch:dependencies": "node ../../config/file-dependency-updater/index.js",
+    "watch:dependencies": "node ../../config/file-dependency-updater/index.js --verbose",
     "test:ui": "wdio wdio.conf.js"
   },
   "devDependencies": {
