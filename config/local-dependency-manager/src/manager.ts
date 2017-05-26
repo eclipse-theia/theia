@@ -5,22 +5,18 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as cpx from "cpx";
 import * as path from "path";
 import * as fs from "fs-extra";
 import * as cp from "child_process";
 import { Package } from "./package";
-
-export interface Watcher {
-    watch(sync?: boolean): void;
-    sync(): void;
-}
+import { FileWatcherProvider, Watcher } from "./watcher";
 
 export class LocalDependencyManager {
 
-    verbose: boolean = true;
-
-    readonly pck = new Package(process.cwd());
+    constructor(
+        readonly pck: Package,
+        readonly fileWatcherProvider: FileWatcherProvider
+    ) { }
 
     list(pattern?: string): void {
         const dependencies = this.getLocalDependencies(pattern);
@@ -95,14 +91,7 @@ export class LocalDependencyManager {
 
     createDependencyWatcher(dependency: string): Watcher {
         const watchers = this.createFileWatchers(dependency);
-        return this.composeWatcher(watchers);
-    }
-
-    protected composeWatcher(watchers: Watcher[]): Watcher {
-        return {
-            sync: () => watchers.forEach(w => w.sync()),
-            watch: (shouldSync: boolean) => watchers.forEach(w => w.watch(shouldSync))
-        }
+        return Watcher.compose(watchers);
     }
 
     protected createFileWatchers(dependency: string): Watcher[] {
@@ -111,41 +100,15 @@ export class LocalDependencyManager {
             return [];
         }
         const dependencyPackage = new Package(localPath);
-        return dependencyPackage.files.map(file => {
-            const source = path.join(dependencyPackage.resolvePath(file), '**', '*');
-            const dest = path.join(this.pck.getNodeModulePath(dependency), file);
-            return this.createFileWatcher(source, dest);
-        });
+        return dependencyPackage.files.map(file =>
+            this.createFileWatcher(dependency, dependencyPackage, file)
+        );
     }
 
-    protected createFileWatcher(source: string, dest: string): Watcher {
-        const watcher = new cpx.Cpx(source, dest);
-        watcher.on("watch-ready", e => console.log('Watch directory:', watcher.base));
-        watcher.on("copy", e => this.logInfo('Copied:', e.srcPath, '-->', e.dstPath));
-        watcher.on("remove", e => this.logInfo('Removed:', e.path));
-        watcher.on("watch-error", err => console.error(err.message));
-        const sync = () => {
-            console.log('Sync:', watcher.src2dst(watcher.source));
-            try {
-                watcher.cleanSync();
-                watcher.copySync();
-            } catch (err) {
-                console.error('Failed to sync:', err.message);
-            }
-        }
-        const watch = (shouldSync?: boolean) => {
-            if (shouldSync) {
-                sync();
-            }
-            watcher.watch();
-        }
-        return { sync, watch };
-    }
-
-    protected logInfo(message: string, ...optionalParams: any[]) {
-        if (this.verbose) {
-            console.log(new Date().toLocaleString() + ': ' + message, ...optionalParams);
-        }
+    protected createFileWatcher(dependency: string, dependencyPackage: Package, file: string) {
+        const source = path.join(dependencyPackage.resolvePath(file), '**', '*');
+        const dest = path.join(this.pck.getNodeModulePath(dependency), file);
+        return this.fileWatcherProvider.get(source, dest);
     }
 
     protected test(pattern?: string): (dependency: string) => boolean {
