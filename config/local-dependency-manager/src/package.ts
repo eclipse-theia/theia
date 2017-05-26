@@ -5,9 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as path from 'path';
+import * as path from "path";
+import * as fs from "fs-extra";
+import * as cp from "child_process";
+import { FileWatcherProvider, Watcher } from "./watcher";
 
 export interface RawPackage {
+    name?: string;
     dependencies?: {
         [name: string]: string
     }
@@ -20,9 +24,32 @@ export class Package {
     protected readonly raw: RawPackage;
 
     constructor(
-        readonly packagePath: string
+        readonly packagePath: string,
+        readonly fileWatcherProvider: FileWatcherProvider
     ) {
         this.raw = require(path.resolve(packagePath, 'package.json')) || {};
+    }
+
+    get name(): string {
+        if (this.raw.name) {
+            return this.raw.name;
+        }
+        return this.baseName;
+    }
+
+    get baseName(): string {
+        return path.basename(this.packagePath);
+    }
+
+    get localPackages(): Package[] {
+        const packages: Package[] = [];
+        for (const dependency of this.localDependencies) {
+            const pck = this.getLocalPackage(dependency);
+            if (pck) {
+                packages.push(pck);
+            }
+        }
+        return packages;
     }
 
     get localDependencies(): string[] {
@@ -31,6 +58,11 @@ export class Package {
 
     isLocalDependency(dependency: string | undefined): boolean {
         return this.getLocalPath(dependency) !== undefined;
+    }
+
+    getLocalPackage(dependency: string): Package | undefined {
+        const localPath = this.getLocalPath(dependency);
+        return localPath ? new Package(localPath, this.fileWatcherProvider) : undefined;
     }
 
     getLocalPath(dependency: string | undefined): string | undefined {
@@ -78,6 +110,54 @@ export class Package {
 
     resolvePath(localPath: string): string {
         return path.normalize(path.resolve(this.packagePath, localPath));
+    }
+
+    updateDependency(dependency: Package): void {
+        this.cleanDependency(dependency);
+        this.installDependency(dependency);
+    }
+
+    cleanDependency(dependency: Package): void {
+        const nodeModulePath = this.getNodeModulePath(dependency.baseName);
+        try {
+            fs.removeSync(nodeModulePath);
+            console.log('Removed', nodeModulePath);
+        } catch (err) {
+            console.error(err.message);
+        }
+    }
+
+    installDependency(dependency: Package): void {
+        this.exec(`npm install ${dependency.name}`);
+    }
+
+    run(script: string): void {
+        this.exec(`npm run ${script}`);
+    }
+
+    exec(command: string): void {
+        try {
+            cp.execSync(command, {
+                cwd: this.packagePath,
+                stdio: [0, 1, 2]
+            });
+        } catch (err) {
+            // no-op
+        }
+    }
+
+    createWatcher(dependency: Package): Watcher {
+        return Watcher.compose(
+            dependency.files.map(file =>
+                this.createFileWatcher(dependency, file)
+            )
+        );
+    }
+
+    protected createFileWatcher(dependency: Package, file: string): Watcher {
+        const source = path.join(dependency.resolvePath(file), '**', '*');
+        const dest = path.join(this.getNodeModulePath(dependency.baseName), file);
+        return this.fileWatcherProvider.get(source, dest);
     }
 
 }
