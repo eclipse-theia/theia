@@ -128,16 +128,37 @@ export class Package {
     }
 
     installDependency(dependency: Package): void {
-        this.exec(`npm install ${dependency.name}`);
+        this.execSync('npm', 'install', dependency.name);
     }
 
     run(script: string): void {
-        this.exec(`npm run ${script}`);
+        this.exec('npm', 'run', script);
     }
 
-    exec(command: string): void {
+    runSync(script: string): void {
+        this.execSync('npm', 'run', script);
+    }
+
+    exec(command: string, ...args: string[]): void {
+        console.log(`${this.name}: ${command} ${args.join(' ')}`);
+        const process = cp.spawn(command, args, {
+            cwd: this.packagePath
+        })
+        process.on('error', err =>
+            console.error(`${this.name}: ${err.message}`)
+        );
+        process.stdout.on('data', data =>
+            console.log(`${this.name}: ${data}`)
+        );
+        process.stderr.on('data', data =>
+            console.error(`${this.name}: ${data}`)
+        );
+    }
+
+    execSync(command: string, ...args: string[]): void {
+        console.log(`${this.name}: ${command} ${args.join(' ')}`);
         try {
-            cp.execSync(command, {
+            cp.spawnSync(command, args, {
                 cwd: this.packagePath,
                 stdio: [0, 1, 2]
             });

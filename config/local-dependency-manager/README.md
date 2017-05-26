@@ -7,7 +7,7 @@
 - `ldm run ${script}` to run a script on all local dependencies
 - `ldm sync` to sync all installed local dependencies
 - `ldm watch` to watch for changes in all local dependencies and sync them
-  - `--run=${script}` can be provided to run a script on all dependencies before watching
+  - `--run=${script}` can be provided to run async a script on all dependencies
   - `--sync` can be provided to sync all changes before watching
 - all commands accept an additional reg exp pattern option to filter out local dependencies
 - `--verbose` can be provided to enable verbose logging
