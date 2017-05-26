@@ -15,8 +15,8 @@ const options = [
     verbose, sync
 ];
 
-function getPattern(index: number): string | undefined {
-    return process.argv.slice(index).find(arg =>
+function getArgs(index: number): (string | undefined)[] {
+    return process.argv.slice(index).filter(arg =>
         options.indexOf(arg) === -1
     )
 }
@@ -25,19 +25,27 @@ function testOption(option: string): boolean {
     return process.argv.some(argv => argv === option);
 }
 
-const pck = new Package(process.cwd())
 const fileWatcherProvider = new FileWatcherProvider(testOption(verbose));
-const manager = new LocalDependencyManager(pck, fileWatcherProvider);
+const pck = new Package(process.cwd(), fileWatcherProvider);
+const manager = new LocalDependencyManager(pck);
 
 const command = process.argv[2];
+const args = getArgs(3);
 if (command === 'clean') {
-    manager.clean(getPattern(3));
+    manager.clean(args[0]);
 } else if (command === 'update') {
-    manager.update(getPattern(3));
+    manager.update(args[0]);
 } else if (command === 'sync') {
-    manager.sync(getPattern(3));
+    manager.sync(args[0]);
 } else if (command === 'watch') {
-    manager.watch(getPattern(3), testOption(sync));
+    manager.watch(args[0], testOption(sync));
+} else if (command === 'run') {
+    const script = args[0];
+    if (script) {
+        manager.run(script, args[1]);
+    } {
+        console.log("A script should be provided, e.g. `ldm run build`");
+    }
 } else {
-    manager.list(getPattern(2));
+    manager.list(getArgs(2)[0]);
 }

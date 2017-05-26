@@ -5,24 +5,19 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as path from "path";
-import * as fs from "fs-extra";
-import * as cp from "child_process";
 import { Package } from "./package";
-import { FileWatcherProvider, Watcher } from "./watcher";
 
 export class LocalDependencyManager {
 
     constructor(
-        readonly pck: Package,
-        readonly fileWatcherProvider: FileWatcherProvider
+        readonly pck: Package
     ) { }
 
     list(pattern?: string): void {
         const dependencies = this.getLocalDependencies(pattern);
         if (dependencies.length !== 0) {
             for (const dependency of dependencies) {
-                console.log(dependency, this.pck.getLocalPath(dependency));
+                console.log(dependency, dependency.packagePath);
             }
         } else {
             if (pattern) {
@@ -35,89 +30,50 @@ export class LocalDependencyManager {
 
     clean(pattern?: string): void {
         for (const dependency of this.getLocalDependencies(pattern)) {
-            this.cleanDependency(dependency);
+            this.pck.cleanDependency(dependency);
         }
     }
 
     update(pattern?: string): void {
         for (const dependency of this.getLocalDependencies(pattern)) {
-            this.cleanDependency(dependency);
-            this.installDependency(dependency);
+            this.pck.updateDependency(dependency);
         }
     }
 
     sync(pattern?: string): void {
         for (const dependency of this.getLocalDependencies(pattern)) {
-            this.syncDependency(dependency);
+            this.pck.createWatcher(dependency).sync();
         }
     }
 
     watch(pattern?: string, sync?: boolean): void {
         for (const dependency of this.getLocalDependencies(pattern)) {
-            this.watchDependency(dependency, sync);
+            this.pck.createWatcher(dependency).watch(sync);
         }
     }
 
-    cleanDependency(dependency: string): void {
-        const nodeModulePath = this.pck.getNodeModulePath(dependency);
-        try {
-            fs.removeSync(nodeModulePath);
-            console.log('Removed', nodeModulePath);
-        } catch (err) {
-            console.error(err.message);
+    run(script: string, pattern?: string): void {
+        for (const dependency of this.getLocalDependencies(pattern)) {
+            dependency.run(script);
         }
     }
 
-    installDependency(dependency: string): void {
-        try {
-            cp.execSync(`npm install ${dependency}`, { stdio: [0, 1, 2] });
-        } catch (err) {
-            // no-op
-        }
-    }
-
-    watchDependency(dependency: string, sync?: boolean): void {
-        this.createDependencyWatcher(dependency).watch(sync);
-    }
-
-    syncDependency(dependency: string): void {
-        this.createDependencyWatcher(dependency).sync();
-    }
-
-    getLocalDependencies(pattern?: string): string[] {
+    getLocalDependencies(pattern?: string): Package[] {
+        // TODO topological sort
         const test = this.test(pattern);
-        return this.pck.localDependencies.filter(test);
+        return this.pck.localPackages.filter(test);
     }
 
-    createDependencyWatcher(dependency: string): Watcher {
-        const watchers = this.createFileWatchers(dependency);
-        return Watcher.compose(watchers);
-    }
-
-    protected createFileWatchers(dependency: string): Watcher[] {
-        const localPath = this.pck.getLocalPath(dependency);
-        if (!localPath) {
-            return [];
-        }
-        const dependencyPackage = new Package(localPath);
-        return dependencyPackage.files.map(file =>
-            this.createFileWatcher(dependency, dependencyPackage, file)
-        );
-    }
-
-    protected createFileWatcher(dependency: string, dependencyPackage: Package, file: string) {
-        const source = path.join(dependencyPackage.resolvePath(file), '**', '*');
-        const dest = path.join(this.pck.getNodeModulePath(dependency), file);
-        return this.fileWatcherProvider.get(source, dest);
-    }
-
-    protected test(pattern?: string): (dependency: string) => boolean {
+    protected test(pattern?: string): (dependency: Package) => boolean {
         const regExp = pattern ? new RegExp(pattern) : undefined;
-        return (dependency: string) => {
-            if (regExp) {
+        return (dependency: Package) => {
+            if (!regExp) {
+                return true;
+            }
+            if (typeof dependency === 'string') {
                 return regExp.test(dependency);
             }
-            return true;
+            return regExp.test(dependency.baseName);
         }
     }
 
