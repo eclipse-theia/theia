@@ -14,8 +14,11 @@ export interface RawPackage {
     name?: string;
     dependencies?: {
         [name: string]: string
-    }
-    files?: string[]
+    };
+    devDependencies?: {
+        [name: string]: string
+    };
+    files?: string[];
 }
 
 export class Package {
@@ -49,11 +52,21 @@ export class Package {
                 packages.push(pck);
             }
         }
+        for (const dependency of this.localDevDependencies) {
+            const pck = this.getLocalPackage(dependency);
+            if (pck) {
+                packages.push(pck);
+            }
+        }
         return packages;
     }
 
     get localDependencies(): string[] {
         return this.dependencies.filter(this.isLocalDependency.bind(this));
+    }
+
+    get localDevDependencies(): string[] {
+        return this.devDependencies.filter(this.isLocalDependency.bind(this));
     }
 
     isLocalDependency(dependency: string | undefined): boolean {
@@ -88,8 +101,14 @@ export class Package {
     }
 
     getVersion(dependency: string | undefined): string | undefined {
-        if (dependency && this.raw.dependencies) {
+        if (!dependency) {
+            return undefined;
+        }
+        if (this.raw.dependencies && this.raw.dependencies[dependency]) {
             return this.raw.dependencies[dependency];
+        }
+        if (this.raw.devDependencies) {
+            return this.raw.devDependencies[dependency];
         }
         return undefined;
     }
@@ -97,6 +116,13 @@ export class Package {
     get dependencies(): string[] {
         if (this.raw.dependencies) {
             return Object.keys(this.raw.dependencies);
+        }
+        return [];
+    }
+
+    get devDependencies(): string[] {
+        if (this.raw.devDependencies) {
+            return Object.keys(this.raw.devDependencies);
         }
         return [];
     }
