@@ -5,6 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { Package } from "./package";
+import { FileWatcherProvider } from './watcher';
 import { LocalDependencyManager } from './manager';
 
 const verbose = '--verbose';
@@ -23,8 +25,9 @@ function testOption(option: string): boolean {
     return process.argv.some(argv => argv === option);
 }
 
-const manager = new LocalDependencyManager();
-manager.verbose = testOption(verbose);
+const pck = new Package(process.cwd())
+const fileWatcherProvider = new FileWatcherProvider(testOption(verbose));
+const manager = new LocalDependencyManager(pck, fileWatcherProvider);
 
 const command = process.argv[2];
 if (command === 'clean') {
