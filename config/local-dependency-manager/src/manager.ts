@@ -17,7 +17,7 @@ export class LocalDependencyManager {
         const dependencies = this.getLocalDependencies(pattern);
         if (dependencies.length !== 0) {
             for (const dependency of dependencies) {
-                console.log(dependency, dependency.packagePath);
+                console.log(dependency.name, dependency.packagePath);
             }
         } else {
             if (pattern) {
@@ -46,15 +46,18 @@ export class LocalDependencyManager {
         }
     }
 
-    watch(pattern?: string, sync?: boolean): void {
+    watch(pattern?: string, sync?: boolean, script?: string): void {
         for (const dependency of this.getLocalDependencies(pattern)) {
+            if (script) {
+                dependency.run(script);
+            }
             this.pck.createWatcher(dependency).watch(sync);
         }
     }
 
     run(script: string, pattern?: string): void {
         for (const dependency of this.getLocalDependencies(pattern)) {
-            dependency.run(script);
+            dependency.runSync(script);
         }
     }
 

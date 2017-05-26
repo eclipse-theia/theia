@@ -27,7 +27,7 @@
     "cold:start": "npm run clean && npm run build && npm start",
     "watch:backend": "tsc --watch",
     "watch:frontend": "npm run build:frontend && webpack --watch",
-    "watch:dependencies": "ldm watch --sync --verbose",
+    "watch:dependencies": "ldm watch --sync --verbose --run=watch",
     "test:ui": "wdio wdio.conf.js"
   },
   "devDependencies": {
