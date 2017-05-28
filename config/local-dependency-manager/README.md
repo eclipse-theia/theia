@@ -11,3 +11,4 @@
   - `--sync` can be provided to sync all changes before watching
 - all commands accept an additional reg exp pattern option to filter out local dependencies
 - `--verbose` can be provided to enable verbose logging
+- `--dev` to include `devDependencies`
