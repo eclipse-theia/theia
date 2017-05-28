@@ -12,9 +12,14 @@
     "monaco-languages": "^0.7.0",
     "monaco-typescript": "^2.1.2",
     "reflect-metadata": "^0.1.10",
-    "theia-core": "file:../.."
+    "theia-core": "latest"
+  },
+  "localDependencies": {
+    "theia-core": "../.."
   },
   "scripts": {
+    "bootstrap": "npm install ../../config/local-dependency-manager && npm run localinstall",
+    "localinstall": "ldm install --dev",
     "clean": "rimraf lib",
     "prepare": "npm run clean && npm run build",
     "build": "npm run build:dependencies && npm run build:backend && npm run build:frontend",
@@ -53,7 +58,9 @@
     "wdio-spec-reporter": "^0.1.0",
     "webdriverio": "^4.6.2",
     "webpack": "^2.2.1",
-    "webpack-dev-server": "^2.4.1",
-    "local-dependency-manager": "file:../../config/local-dependency-manager"
+    "webpack-dev-server": "^2.4.1"
+  },
+  "localDevDependencies": {
+    "local-dependency-manager": "../../config/local-dependency-manager"
   }
 }

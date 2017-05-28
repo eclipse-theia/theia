@@ -6,15 +6,17 @@
  */
 
 import * as path from "path";
+import * as fs from "fs-extra";
 import * as cp from "child_process";
 import { FileWatcherProvider, Watcher } from "./watcher";
 
 export interface RawPackage {
     name?: string;
-    dependencies?: {
+    version?: string;
+    localDependencies?: {
         [name: string]: string
     };
-    devDependencies?: {
+    localDevDependencies?: {
         [name: string]: string
     };
     files?: string[];
@@ -22,12 +24,11 @@ export interface RawPackage {
 
 export class Package {
 
-    static readonly LOCAL_PATH_PREFIX = 'file:';
     protected readonly raw: RawPackage;
-    protected readonly rawDependencies: {
+    protected readonly rawLocalDependencies: {
         [name: string]: string
     };
-    protected readonly rawDevDependencies: {
+    protected readonly rawLocalDevDependencies: {
         [name: string]: string
     };
 
@@ -37,8 +38,8 @@ export class Package {
         readonly includeDev: boolean
     ) {
         this.raw = require(path.resolve(packagePath, 'package.json')) || {};
-        this.rawDependencies = !!this.raw.dependencies ? this.raw.dependencies : {};
-        this.rawDevDependencies = this.includeDev && !!this.raw.devDependencies ? this.raw.devDependencies : {};
+        this.rawLocalDependencies = !!this.raw.localDependencies ? this.raw.localDependencies : {};
+        this.rawLocalDevDependencies = this.includeDev && !!this.raw.localDevDependencies ? this.raw.localDevDependencies : {};
     }
 
     get name(): string {
@@ -48,8 +49,19 @@ export class Package {
         return this.baseName;
     }
 
+    get version(): string | undefined {
+        return this.raw.version;
+    }
+
     get baseName(): string {
         return path.basename(this.packagePath);
+    }
+
+    get archiveName(): string | undefined {
+        if (!this.version) {
+            return undefined;
+        }
+        return `${this.name}-${this.version}.tgz`;
     }
 
     get localPackages(): Package[] {
@@ -69,52 +81,31 @@ export class Package {
         return packages;
     }
 
-    get localDependencies(): string[] {
-        return this.dependencies.filter(this.isLocalDependency.bind(this));
-    }
-
-    get localDevDependencies(): string[] {
-        return this.devDependencies.filter(this.isLocalDependency.bind(this));
-    }
-
-    isLocalDependency(dependency: string | undefined): boolean {
-        return this.getLocalPath(dependency) !== undefined;
-    }
-
     getLocalPackage(dependency: string): Package | undefined {
         const localPath = this.getLocalPath(dependency);
         return localPath ? new Package(localPath, this.fileWatcherProvider, this.includeDev) : undefined;
     }
 
     getLocalPath(dependency: string | undefined): string | undefined {
-        const version = this.getVersion(dependency);
-        return this.asLocalPath(version);
-    }
-
-    asLocalPath(version: string | undefined): string | undefined {
-        if (version && version.startsWith(Package.LOCAL_PATH_PREFIX)) {
-            const localPath = version.substr(Package.LOCAL_PATH_PREFIX.length);
-            return this.resolvePath(localPath);
-        }
-        return undefined;
-    }
-
-    getVersion(dependency: string | undefined): string | undefined {
         if (!dependency) {
             return undefined;
         }
-        if (this.rawDependencies[dependency]) {
-            return this.rawDependencies[dependency];
+        if (this.rawLocalDependencies[dependency]) {
+            return this.asLocalPath(this.rawLocalDependencies[dependency]);
         }
-        return this.rawDevDependencies[dependency];
+        return this.asLocalPath(this.rawLocalDevDependencies[dependency]);
     }
 
-    get dependencies(): string[] {
-        return Object.keys(this.rawDependencies);
+    protected asLocalPath(value: string | undefined): string | undefined {
+        return !!value ? this.resolvePath(value) : undefined;
     }
 
-    get devDependencies(): string[] {
-        return Object.keys(this.rawDevDependencies);
+    get localDependencies(): string[] {
+        return Object.keys(this.rawLocalDependencies);
+    }
+
+    get localDevDependencies(): string[] {
+        return Object.keys(this.rawLocalDevDependencies);
     }
 
     get files(): string[] {
@@ -137,17 +128,45 @@ export class Package {
         return undefined;
     }
 
-    updateDependency(dependency: Package): void {
-        this.uninstallDependency(dependency);
-        this.installDependency(dependency);
+    isDependencyInstalled(dependency: Package): boolean {
+        const path = this.getNodeModulePath(dependency);
+        return fs.existsSync(path);
+    }
+
+    installDependency(dependency: Package): void {
+        if (!this.isDependencyInstalled(dependency)) {
+            const archivePath = this.packDependency(dependency);
+            if (archivePath) {
+                try {
+                    this.execSync('npm', 'install', archivePath);
+                } finally {
+                    fs.removeSync(archivePath);
+                }
+            }
+        }
     }
 
     uninstallDependency(dependency: Package): void {
         this.execSync('npm', 'uninstall', dependency.name);
     }
 
-    installDependency(dependency: Package): void {
-        this.execSync('npm', 'install', dependency.name);
+    cleanDependency(dependency: Package): void {
+        fs.removeSync(this.getNodeModulePath(dependency));
+    }
+
+    updateDependency(dependency: Package): void {
+        this.cleanDependency(dependency);
+        this.installDependency(dependency);
+    }
+
+    packDependency(dependency: Package): string | undefined {
+        const archiveName = dependency.archiveName;
+        if (archiveName) {
+            this.execSync('npm', 'pack', dependency.packagePath);
+            return this.resolvePath(archiveName);
+        }
+        console.error(`${this.name} cannot be packed, since the version is not declared`);
+        return undefined;
     }
 
     run(script: string): void {
