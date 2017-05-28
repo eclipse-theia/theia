@@ -41,8 +41,8 @@ const manager = new LocalDependencyManager(pck);
 
 const command = process.argv[2];
 const args = getArgs(3);
-if (command === 'clean') {
-    manager.clean(args[0]);
+if (command === 'uninstall') {
+    manager.uninstall(args[0]);
 } else if (command === 'update') {
     manager.update(args[0]);
 } else if (command === 'sync') {

@@ -138,11 +138,11 @@ export class Package {
     }
 
     updateDependency(dependency: Package): void {
-        this.cleanDependency(dependency);
+        this.uninstallDependency(dependency);
         this.installDependency(dependency);
     }
 
-    cleanDependency(dependency: Package): void {
+    uninstallDependency(dependency: Package): void {
         this.execSync('npm', 'uninstall', dependency.name);
     }
 
