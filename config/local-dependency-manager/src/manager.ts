@@ -28,9 +28,9 @@ export class LocalDependencyManager {
         }
     }
 
-    clean(pattern?: string): void {
+    uninstall(pattern?: string): void {
         for (const dependency of this.getLocalDependencies(pattern)) {
-            this.pck.cleanDependency(dependency);
+            this.pck.uninstallDependency(dependency);
         }
     }
 
