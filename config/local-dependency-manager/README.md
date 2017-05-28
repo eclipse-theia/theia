@@ -1,6 +1,6 @@
 # Local Dependency Manager
 
-- `npm install -g .` to install `ldm` on the path
+- `npm install` and `npm install -g .` to install `ldm` on the path
 - `ldm` to show all local dependencies of this package
 - `ldm install` install all local dependencies and then install all remote dependencies if they have not been yet installed
 - `ldm uninstall` to uninstall all local dependendencies
