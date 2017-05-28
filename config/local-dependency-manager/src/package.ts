@@ -195,7 +195,7 @@ export class Package {
     }
 
     protected createFileWatcher(dependency: Package, file: string): Watcher {
-        const source = path.join(dependency.resolvePath(file), '**', '*');
+        const source = path.join(dependency.resolvePath(file), '**', '*.*');
         const dest = path.join(this.getNodeModulePath(dependency), file);
         return this.fileWatcherProvider.get(source, dest);
     }
