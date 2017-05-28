@@ -151,7 +151,11 @@ export class Package {
     }
 
     cleanDependency(dependency: Package): void {
-        fs.removeSync(this.getNodeModulePath(dependency));
+        if (this.isDependencyInstalled(dependency)) {
+            const path = this.getNodeModulePath(dependency);
+            fs.removeSync(path);
+            console.log('Cleaned: ' + path);
+        }
     }
 
     updateDependency(dependency: Package): void {
