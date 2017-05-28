@@ -2,8 +2,10 @@
 
 - `npm install -g .` to install `ldm` on the path
 - `ldm` to show all local dependencies of this package
+- `ldm install` install all local dependencies and then install all remote dependencies if they have not been yet installed
 - `ldm uninstall` to uninstall all local dependendencies
-- `ldm update` to uninstall and install  all local dependencies again
+- `ldm clean` to remove all local dependencies from `node_modules`
+- `ldm update` to clean all local dependencies and then install again
 - `ldm run ${script}` to run a script on all local dependencies
 - `ldm sync` to sync all installed local dependencies
 - `ldm watch` to watch for changes in all local dependencies and sync them

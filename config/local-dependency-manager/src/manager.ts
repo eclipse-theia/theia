@@ -28,9 +28,24 @@ export class LocalDependencyManager {
         }
     }
 
+    install(pattern?: string): void {
+        for (const dependency of this.getLocalDependencies(pattern)) {
+            this.pck.installDependency(dependency);
+        }
+        if (!pattern) {
+            this.pck.execSync('npm', 'install');
+        }
+    }
+
     uninstall(pattern?: string): void {
         for (const dependency of this.getLocalDependencies(pattern)) {
             this.pck.uninstallDependency(dependency);
+        }
+    }
+
+    clean(pattern?: string): void {
+        for (const dependency of this.getLocalDependencies(pattern)) {
+            this.pck.cleanDependency(dependency);
         }
     }
 
