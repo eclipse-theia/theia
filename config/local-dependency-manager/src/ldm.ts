@@ -12,8 +12,9 @@ import { LocalDependencyManager } from './manager';
 const verbose = '--verbose';
 const sync = '--sync';
 const run = '--run';
+const dev = '--dev';
 const options = [
-    verbose, sync, run
+    verbose, sync, run, dev
 ];
 
 function testOption(option: string): boolean {
@@ -35,7 +36,7 @@ function getArgs(index: number): (string | undefined)[] {
 }
 
 const fileWatcherProvider = new FileWatcherProvider(testOption(verbose));
-const pck = new Package(process.cwd(), fileWatcherProvider);
+const pck = new Package(process.cwd(), fileWatcherProvider, testOption(dev));
 const manager = new LocalDependencyManager(pck);
 
 const command = process.argv[2];

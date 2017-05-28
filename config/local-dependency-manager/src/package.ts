@@ -6,7 +6,6 @@
  */
 
 import * as path from "path";
-import * as fs from "fs-extra";
 import * as cp from "child_process";
 import { FileWatcherProvider, Watcher } from "./watcher";
 
@@ -25,12 +24,21 @@ export class Package {
 
     static readonly LOCAL_PATH_PREFIX = 'file:';
     protected readonly raw: RawPackage;
+    protected readonly rawDependencies: {
+        [name: string]: string
+    };
+    protected readonly rawDevDependencies: {
+        [name: string]: string
+    };
 
     constructor(
         readonly packagePath: string,
-        readonly fileWatcherProvider: FileWatcherProvider
+        readonly fileWatcherProvider: FileWatcherProvider,
+        readonly includeDev: boolean
     ) {
         this.raw = require(path.resolve(packagePath, 'package.json')) || {};
+        this.rawDependencies = !!this.raw.dependencies ? this.raw.dependencies : {};
+        this.rawDevDependencies = this.includeDev && !!this.raw.devDependencies ? this.raw.devDependencies : {};
     }
 
     get name(): string {
@@ -75,7 +83,7 @@ export class Package {
 
     getLocalPackage(dependency: string): Package | undefined {
         const localPath = this.getLocalPath(dependency);
-        return localPath ? new Package(localPath, this.fileWatcherProvider) : undefined;
+        return localPath ? new Package(localPath, this.fileWatcherProvider, this.includeDev) : undefined;
     }
 
     getLocalPath(dependency: string | undefined): string | undefined {
@@ -91,40 +99,22 @@ export class Package {
         return undefined;
     }
 
-    getNodeModulePath(dependency: undefined): undefined;
-    getNodeModulePath(dependency: string): string;
-    getNodeModulePath(dependency: string | undefined): string | undefined {
-        if (dependency) {
-            return this.resolvePath(path.join('node_modules', dependency));
-        }
-        return undefined;
-    }
-
     getVersion(dependency: string | undefined): string | undefined {
         if (!dependency) {
             return undefined;
         }
-        if (this.raw.dependencies && this.raw.dependencies[dependency]) {
-            return this.raw.dependencies[dependency];
+        if (this.rawDependencies[dependency]) {
+            return this.rawDependencies[dependency];
         }
-        if (this.raw.devDependencies) {
-            return this.raw.devDependencies[dependency];
-        }
-        return undefined;
+        return this.rawDevDependencies[dependency];
     }
 
     get dependencies(): string[] {
-        if (this.raw.dependencies) {
-            return Object.keys(this.raw.dependencies);
-        }
-        return [];
+        return Object.keys(this.rawDependencies);
     }
 
     get devDependencies(): string[] {
-        if (this.raw.devDependencies) {
-            return Object.keys(this.raw.devDependencies);
-        }
-        return [];
+        return Object.keys(this.rawDevDependencies);
     }
 
     get files(): string[] {
@@ -138,19 +128,22 @@ export class Package {
         return path.normalize(path.resolve(this.packagePath, localPath));
     }
 
+    getNodeModulePath(dependency: undefined): undefined;
+    getNodeModulePath(dependency: Package): string;
+    getNodeModulePath(dependency: Package | undefined): string | undefined {
+        if (dependency) {
+            return this.resolvePath(path.join('node_modules', dependency.name));
+        }
+        return undefined;
+    }
+
     updateDependency(dependency: Package): void {
         this.cleanDependency(dependency);
         this.installDependency(dependency);
     }
 
     cleanDependency(dependency: Package): void {
-        const nodeModulePath = this.getNodeModulePath(dependency.baseName);
-        try {
-            fs.removeSync(nodeModulePath);
-            console.log('Removed', nodeModulePath);
-        } catch (err) {
-            console.error(err.message);
-        }
+        this.execSync('npm', 'uninstall', dependency.name);
     }
 
     installDependency(dependency: Package): void {
@@ -203,7 +196,7 @@ export class Package {
 
     protected createFileWatcher(dependency: Package, file: string): Watcher {
         const source = path.join(dependency.resolvePath(file), '**', '*');
-        const dest = path.join(this.getNodeModulePath(dependency.baseName), file);
+        const dest = path.join(this.getNodeModulePath(dependency), file);
         return this.fileWatcherProvider.get(source, dest);
     }
 

@@ -76,7 +76,7 @@ export class LocalDependencyManager {
             if (typeof dependency === 'string') {
                 return regExp.test(dependency);
             }
-            return regExp.test(dependency.baseName);
+            return regExp.test(dependency.name);
         }
     }
 
