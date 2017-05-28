@@ -25,7 +25,7 @@
     "build": "npm run build:dependencies && npm run build:backend && npm run build:frontend",
     "build:backend": "tsc && npm run lint",
     "build:frontend": "webpack && cp src/frontend/index.html lib/frontend",
-    "build:dependencies": "ldm run build && ldm sync --verbose",
+    "build:dependencies": "ldm run build && ldm sync",
     "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
     "start": "concurrently --names watch-deps,backend,webpack-server --prefix \"[{name}]\" \"npm run watch:dependencies\" \"npm run start:backend\" \"npm run start:frontend\"",
     "start:backend": "node ./lib/backend/main.js",
@@ -33,7 +33,7 @@
     "cold:start": "npm run clean && npm run build && npm start",
     "watch:backend": "tsc --watch",
     "watch:frontend": "npm run build:frontend && webpack --watch",
-    "watch:dependencies": "ldm watch --sync --verbose --run=watch",
+    "watch:dependencies": "ldm watch --sync --run=watch",
     "test:ui": "wdio wdio.conf.js"
   },
   "devDependencies": {
