@@ -103,7 +103,7 @@ export class FileCommandContribution implements CommandContribution {
                                 return validateFileName(name, stat)
                             }
                         })
-                        dialog.acceptancePromise.then(name =>
+                        dialog.open().then(name =>
                             this.fileSystem.move(uri.toString(), uri.parent.appendPath(name).toString()))
                     })
             })
@@ -145,7 +145,7 @@ export class FileCommandContribution implements CommandContribution {
                                 return validateFileName(name, stat)
                             }
                         })
-                        dialog.acceptancePromise.then(name =>
+                        dialog.open().then(name =>
                             this.fileSystem.createFile(new URI(stat.uri).appendPath(name).toString()))
                     })
             })
@@ -163,7 +163,7 @@ export class FileCommandContribution implements CommandContribution {
                                 return validateFileName(name, stat)
                             }
                         })
-                        dialog.acceptancePromise.then(name =>
+                        dialog.open().then(name =>
                             this.fileSystem.createFolder(new URI(stat.uri).appendPath(name).toString()))
                     })
             })
@@ -172,10 +172,10 @@ export class FileCommandContribution implements CommandContribution {
         registry.registerHandler(
             Commands.FILE_DELETE,
             new FileSystemCommandHandler(this.selectionService, uri => {
-                let dialog = new ConfirmDialog('Delete File', `Do you really want to delete '${uri.lastSegment}'?`)
-                return dialog.acceptancePromise.then(() => {
+                const dialog = new ConfirmDialog('Delete File', `Do you really want to delete '${uri.lastSegment}'?`)
+                return dialog.open().then(() => {
                     return this.fileSystem.delete(uri.toString())
-                })
+                });
             })
         )
 

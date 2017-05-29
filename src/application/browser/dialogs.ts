@@ -1,4 +1,3 @@
-import { DisposableCollection } from 'vscode-ws-jsonrpc/lib/disposable';
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -6,37 +5,23 @@ import { DisposableCollection } from 'vscode-ws-jsonrpc/lib/disposable';
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-
 import { Widget } from '@phosphor/widgets';
+import { DisposableCollection, Disposable } from "../common";
 
-export class Dialog<T> {
+export abstract class AbstractDialog<T> {
 
-    accept: (value?: T) => void
-    reject: () => void
+    protected readonly titleNode: HTMLDivElement;
+    protected readonly contentNode: HTMLDivElement;
+    protected readonly closeCrossNode: HTMLElement;
 
-    readonly acceptancePromise = new Promise<T>((resolve, reject) => {
-        this.accept = (value) => {
-            Widget.detach(this.widget)
-            this.disposables.dispose()
-            resolve(value)
-        }
-        this.reject = () => {
-            Widget.detach(this.widget)
-            this.disposables.dispose()
-            reject()
-        }
-    })
+    protected readonly widget: Widget;
+    protected readonly toDisposeOnDetach = new DisposableCollection();
 
-    titleNode: HTMLDivElement;
-    contentNode: HTMLDivElement;
-    closeCrossNode: HTMLElement;
-
-    protected widget: Widget
-
-    protected disposables = new DisposableCollection()
+    protected resolve: undefined | ((value: T) => void);
+    protected reject: undefined | (() => void);
 
     constructor(title: string) {
-        this.widget = new Widget(document.createElement("div"))
+        this.widget = new Widget()
         this.widget.addClass('dialogBlock')
 
         let wrapper = document.createElement("div")
@@ -57,19 +42,12 @@ export class Dialog<T> {
         this.closeCrossNode.classList.add('fa-times')
         this.closeCrossNode.setAttribute('aria-hidden', 'true')
         wrapper.appendChild(this.closeCrossNode)
-
-        this.attachListeners()
-        this.show()
     }
 
-    protected attachListeners() {
-        let closeButton = this.closeCrossNode
-        closeButton.addEventListener('click', (e: Event) => {
-            this.reject()
-            e.preventDefault()
-            return false
-        })
-        let keyEventHandler = (e: KeyboardEvent) => {
+    protected attach(): void {
+        Widget.attach(this.widget, document.body);
+        this.addCloseListener(this.closeCrossNode, 'click');
+        this.addEventListener(document.body, 'keydown', (e: KeyboardEvent) => {
             let isEscape = false
             let isEnter = false
             if ("key" in e) {
@@ -80,26 +58,106 @@ export class Dialog<T> {
                 isEnter = (e.keyCode === 13)
             }
             if (isEscape) {
-                this.reject()
+                this.close();
             } else if (isEnter) {
-                this.accept()
+                this.accept();
             }
-        }
-        document.body.addEventListener('keydown', keyEventHandler)
-        this.disposables.push({
-            dispose: () => document.body.removeEventListener('keydown', keyEventHandler)
-        })
+        });
     }
 
-    show() {
-        if (!this.widget.isAttached) {
-            Widget.attach(this.widget, document.body)
+    protected detach(): void {
+        this.toDisposeOnDetach.dispose();
+        Widget.detach(this.widget);
+    }
+
+    open(): Promise<T> {
+        if (this.resolve) {
+            return Promise.reject('The dialog is already opened.')
         }
+        return new Promise<T>((resolve, reject) => {
+            this.resolve = resolve;
+            this.reject = reject;
+            this.toDisposeOnDetach.push(Disposable.create(() => {
+                this.resolve = undefined;
+                this.reject = undefined;
+            }));
+            this.attach();
+        });
+    }
+
+    close(): void {
+        if (this.reject) {
+            this.reject();
+            this.detach();
+        }
+    }
+
+    protected validate(): void {
+        if (this.resolve) {
+            const value = this.value;
+            const error = this.isValid(value);
+            this.setErrorMessage(error);
+        }
+    }
+
+    protected accept(): void {
+        if (this.resolve) {
+            const value = this.value;
+            const error = this.isValid(value);
+            if (error) {
+                this.setErrorMessage(error);
+            } else {
+                this.resolve(value);
+                this.detach();
+            }
+        }
+    }
+
+    abstract get value(): T;
+    isValid(value: T): string {
+        return '';
+    }
+    protected setErrorMessage(error: string): void {
+        console.warn(error);
+    }
+
+    protected addValidateListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K): void {
+        this.addEventListener(element, type, e => {
+            this.validate();
+            e.preventDefault();
+            return false;
+        });
+    }
+
+    protected addCloseListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K): void {
+        this.addEventListener(element, type, e => {
+            this.close();
+            e.preventDefault();
+            return false;
+        });
+    }
+
+    protected addAcceptListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K): void {
+        this.addEventListener(element, type, e => {
+            this.accept();
+            e.preventDefault();
+            return false;
+        });
+    }
+
+    protected addEventListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any): void {
+        element.addEventListener(type, listener);
+        this.toDisposeOnDetach.push(Disposable.create(() =>
+            element.removeEventListener(type, listener)
+        ));
     }
 
 }
 
-export class ConfirmDialog extends Dialog<void> {
+export class ConfirmDialog extends AbstractDialog<void> {
+
+    protected readonly okButton: HTMLButtonElement;
+    protected readonly cancelButton: HTMLButtonElement;
 
     constructor(title: string, msg: string, cancel = 'Cancel', ok = 'OK') {
         super(title)
@@ -109,23 +167,31 @@ export class ConfirmDialog extends Dialog<void> {
         messageNode.setAttribute('style', 'flex: 1 100%; padding-bottom: calc(var(--theia-ui-padding)*3);')
         this.contentNode.appendChild(messageNode)
 
-        const cancelButton = document.createElement("button")
-        cancelButton.classList.add('dialogButton')
-        cancelButton.textContent = cancel
-        cancelButton.setAttribute('style', 'flex: 1 20%;')
-        cancelButton.addEventListener('click', event => this.reject())
-        this.contentNode.appendChild(cancelButton)
+        const cancelButton = document.createElement("button");
+        cancelButton.classList.add('dialogButton');
+        cancelButton.textContent = cancel;
+        cancelButton.setAttribute('style', 'flex: 1 20%;');
+        this.contentNode.appendChild(this.cancelButton);
+        this.cancelButton = cancelButton;
 
-        const okButton = document.createElement("button")
-        okButton.classList.add('dialogButton')
-        okButton.classList.add('main')
-        okButton.textContent = ok
-        okButton.setAttribute('style', 'flex: 1 20%;')
-        okButton.addEventListener('click', event => this.accept())
-        okButton.focus()
+        const okButton = document.createElement("button");
+        okButton.classList.add('dialogButton');
+        okButton.classList.add('main');
+        okButton.textContent = ok;
+        okButton.setAttribute('style', 'flex: 1 20%;');
+        this.contentNode.appendChild(okButton);
+        this.okButton = okButton;
+    }
 
-        this.contentNode.appendChild(okButton)
-        okButton.focus()
+    protected attach(): void {
+        super.attach();
+        this.addCloseListener(this.cancelButton, 'click');
+        this.addAcceptListener(this.okButton, 'click');
+        this.okButton.focus();
+    }
+
+    get value(): void {
+        return;
     }
 
 }
@@ -138,62 +204,67 @@ export namespace SingleTextInputDialog {
     }
 }
 
-export class SingleTextInputDialog extends Dialog<string> {
-    errorMessageNode: HTMLDivElement;
+export class SingleTextInputDialog extends AbstractDialog<string> {
 
-    inputField: HTMLInputElement;
-    okButton: HTMLButtonElement;
+    protected readonly errorMessageNode: HTMLDivElement;
+    protected readonly inputField: HTMLInputElement;
+    protected readonly okButton: HTMLButtonElement;
 
-    constructor(title: string, options: SingleTextInputDialog.Options) {
-        super(title)
+    constructor(
+        title: string,
+        protected readonly options: SingleTextInputDialog.Options
+    ) {
+        super(title);
 
-        this.inputField = document.createElement("input")
-        this.inputField.classList.add('dialogButton')
-        this.inputField.type = 'text'
-        this.inputField.setAttribute('style', 'flex: 1 auto;')
-        this.inputField.value = options.initialValue || ''
-        if (options.validate) {
-            this.inputField.addEventListener('input', event => {
-                let msg = options.validate!(this.inputField.value)
-                this.setErrorMessage(msg)
-            })
-        }
-        this.contentNode.appendChild(this.inputField)
+        this.inputField = document.createElement("input");
+        this.inputField.classList.add('dialogButton');
+        this.inputField.type = 'text';
+        this.inputField.setAttribute('style', 'flex: 1 auto;');
+        this.inputField.value = options.initialValue || '';
+        this.contentNode.appendChild(this.inputField);
 
-        this.okButton = document.createElement("button")
-        this.okButton.classList.add('dialogButton')
-        this.okButton.classList.add('main')
-        this.okButton.setAttribute('style', 'flex: 1 20%;')
-        this.okButton.textContent = options.confirmButtonLabel || 'OK'
-        this.okButton.addEventListener('click', event => this.accept(this.inputField.value))
+        this.okButton = document.createElement("button");
+        this.okButton.classList.add('dialogButton');
+        this.okButton.classList.add('main');
+        this.okButton.setAttribute('style', 'flex: 1 20%;');
+        this.okButton.textContent = options.confirmButtonLabel || 'OK';
 
-        this.contentNode.appendChild(this.okButton)
+        this.contentNode.appendChild(this.okButton);
 
-        this.errorMessageNode = document.createElement("div")
-        this.errorMessageNode.setAttribute('style', 'flex: 1 100%;')
+        this.errorMessageNode = document.createElement("div");
+        this.errorMessageNode.setAttribute('style', 'flex: 1 100%;');
 
-        this.contentNode.appendChild(this.errorMessageNode)
-        this.inputField.focus()
-        this.inputField.select()
-
-        const oldAccept = this.accept
-        this.accept = () => {
-            if (!this.okButton.disabled) {
-                oldAccept(this.inputField.value)
-            }
-        }
+        this.contentNode.appendChild(this.errorMessageNode);
     }
 
-    private setErrorMessage(msg: string) {
-        if (msg) {
-            this.widget.node.classList.add('error')
-            this.errorMessageNode.innerHTML = msg
-            this.okButton.disabled = true
-        } else {
-            this.widget.node.classList.remove('error')
-            this.errorMessageNode.innerHTML = msg
-            this.okButton.disabled = false
+    get value(): string {
+        return this.inputField.value;
+    }
+
+    isValid(value: string): string {
+        if (this.options.validate) {
+            return this.options.validate(value);
         }
+        return super.isValid(value);
+    }
+
+    protected attach(): void {
+        super.attach();
+        this.addValidateListener(this.inputField, 'input');
+        this.addAcceptListener(this.okButton, 'click');
+        this.inputField.focus();
+        this.inputField.select();
+    }
+
+    protected setErrorMessage(error: string) {
+        if (error) {
+            this.widget.addClass('error');
+            this.okButton.disabled = true;
+        } else {
+            this.widget.removeClass('error');
+            this.okButton.disabled = false;
+        }
+        this.errorMessageNode.innerHTML = error;
     }
 
 }
