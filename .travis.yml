@@ -13,6 +13,8 @@ addons:
       - ubuntu-toolchain-r-test
     packages:
       - g++-4.8
+before_install:
+  - "npm install -g npm@^4"
 script: chmod a+x ./config/scripts/travis-ci-build.sh && ./config/scripts/travis-ci-build.sh
 notifications:
   webhooks:
