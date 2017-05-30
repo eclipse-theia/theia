@@ -12,6 +12,8 @@ import { ITreeSelectionService, ISelectableTreeNode } from "./tree-selection";
 import { ITreeExpansionService, IExpandableTreeNode } from "./tree-expansion";
 import { ITreeNodeIterator, TreeNodeIterator, BackwardTreeNodeIterator } from "./tree-iterator";
 
+export const ITreeModel = Symbol("ITreeModel");
+
 /**
  * The tree model.
  */

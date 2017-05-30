@@ -5,17 +5,17 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { decorate, injectable, inject } from "inversify";
+import { injectable, inject } from "inversify";
 import { Widget } from "@phosphor/widgets";
 import { Message } from "@phosphor/messaging";
 import { ElementExt } from "@phosphor/domutils";
 import { h, VirtualNode, VirtualText, VirtualDOM, ElementAttrs, ElementInlineStyle } from "@phosphor/virtualdom";
 import { DisposableCollection, Disposable } from "../../../application/common";
+import { ContextMenuRenderer } from "../../../application/browser";
 import { ITreeNode, ICompositeTreeNode } from "./tree";
 import { ITreeModel } from "./tree-model";
 import { IExpandableTreeNode } from "./tree-expansion";
 import { ISelectableTreeNode } from "./tree-selection";
-import { ContextMenuRenderer } from "../../../application/browser/menu/context-menu-renderer";
 
 export const TREE_CLASS = 'theia-Tree';
 export const TREE_NODE_CLASS = 'theia-TreeNode';
@@ -26,55 +26,80 @@ export const EXPANSION_TOGGLE_CLASS = 'theia-ExpansionToggle';
 export const COLLAPSED_CLASS = 'theia-mod-collapsed';
 export const SELECTED_CLASS = 'theia-mod-selected';
 
-decorate(injectable(), Widget)
+export interface Size {
+    readonly width: number
+    readonly height: number
+}
+
+export const TreeProps = Symbol('TreeProps');
+export interface TreeProps {
+    readonly contextMenuPath?: string;
+    readonly expansionToggleSize: Size;
+}
+
+export interface NodeProps {
+    /**
+     * An indentation size relatively to the root node.
+     */
+    readonly indentSize: number;
+    /**
+     * Test whether the node should be rendered as hidden.
+     *
+     * It is different from visibility of a node: an invisible node is not rendered at all.
+     */
+    readonly visible: boolean;
+}
+
+export const defaultTreeProps: TreeProps = {
+    expansionToggleSize: {
+        width: 16,
+        height: 16
+    }
+}
 
 @injectable()
-export abstract class AbstractTreeWidget<
-    Model extends ITreeModel,
-    TreeProps extends TreeWidget.TreeProps,
-    NodeProps extends TreeWidget.NodeProps> extends Widget implements EventListenerObject {
+export class TreeWidget extends Widget implements EventListenerObject {
 
     /**
      * FIXME extract to VirtualWidget
      */
-    protected model: Model | undefined;
-    protected modelListeners = new DisposableCollection();
     protected readonly onRender = new DisposableCollection();
 
     constructor(
-        protected readonly props: TreeProps,
-        protected readonly contextMenuRenderer: ContextMenuRenderer) {
+        @inject(TreeProps) readonly props: TreeProps,
+        @inject(ITreeModel) readonly model: ITreeModel,
+        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
+    ) {
         super();
         this.addClass(TREE_CLASS);
         this.node.tabIndex = 0;
-    }
-
-    getModel() {
-        return this.model;
-    }
-
-    setModel(model: Model | undefined) {
-        if (this.model !== model) {
-            this.modelListeners.dispose();
-            this.model = model;
-            if (model) {
-                this.modelListeners.push(model.onChanged(() => this.update()));
-            }
-            this.update();
-        }
+        model.onChanged(() => this.update());
+        this.node.addEventListener('contextmenu', event =>
+            this.showContextMenu(event, this.model.root)
+        );
+        this.node.addEventListener('click', event =>
+            this.selectNode(event, this.model.root)
+        );
     }
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
+
         const children = this.render();
         const content = VirtualWidget.toContent(children);
         VirtualDOM.render(content, this.node);
+        this.onRender.dispose();
+
+        if (ISelectableTreeNode.isSelected(this.model.root)) {
+            this.addClass(SELECTED_CLASS);
+        } else {
+            this.removeClass(SELECTED_CLASS);
+        }
 
         const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
         if (selected) {
-            ElementExt.scrollIntoViewIfNeeded(this.node, selected)
+            ElementExt.scrollIntoViewIfNeeded(this.node, selected);
         }
-        this.onRender.dispose();
     }
 
     protected render(): h.Child {
@@ -84,7 +109,7 @@ export abstract class AbstractTreeWidget<
         return null;
     }
 
-    protected renderTree(model: Model): h.Child {
+    protected renderTree(model: ITreeModel): h.Child {
         if (model.root) {
             const props = this.createRootProps(model.root);
             return this.renderNodes(model.root, props);
@@ -92,7 +117,12 @@ export abstract class AbstractTreeWidget<
         return null;
     }
 
-    protected abstract createRootProps(node: ITreeNode): NodeProps;
+    protected createRootProps(node: ITreeNode): NodeProps {
+        return {
+            indentSize: 0,
+            visible: true
+        };
+    }
 
     protected renderNodes(node: ITreeNode, props: NodeProps): h.Child {
         const children = this.renderNodeChildren(node, props);
@@ -112,22 +142,21 @@ export abstract class AbstractTreeWidget<
     protected showContextMenu(event: MouseEvent, node: ITreeNode | undefined): boolean {
         if (this.model && ISelectableTreeNode.is(node)) {
             this.model.selectNode(node);
-            if (this.props.contextMenuPath) {
+            const contextMenuPath = this.props.contextMenuPath;
+            if (contextMenuPath) {
                 this.onRender.push(Disposable.create(() =>
-                    setTimeout(() => {
-                        this.contextMenuRenderer.render(
-                            this.props.contextMenuPath!,
-                            event
-                        );
-                    })
+                    setTimeout(() =>
+                        this.contextMenuRenderer.render(contextMenuPath, event)
+                    )
                 ));
             }
             this.update();
         }
-        event.stopPropagation()
-        event.preventDefault()
-        return false
+        event.stopPropagation();
+        event.preventDefault();
+        return false;
     }
+
     protected selectNode(event: MouseEvent, node: ITreeNode | undefined): void {
         if (this.model && ISelectableTreeNode.is(node)) {
             this.model.selectNode(node);
@@ -296,53 +325,6 @@ export abstract class AbstractTreeWidget<
         return false;
     }
 
-}
-
-export class TreeWidget<Model extends ITreeModel> extends AbstractTreeWidget<Model, TreeWidget.TreeProps, TreeWidget.NodeProps> {
-
-    // tslint:disable-next-line:no-use-before-declare https://github.com/palantir/tslint/issues/884
-    constructor(
-        props: TreeWidget.TreeProps,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer) {
-        super(props, contextMenuRenderer);
-    }
-
-    protected createRootProps(node: ITreeNode): TreeWidget.NodeProps {
-        return {
-            indentSize: 0,
-            visible: true
-        };
-    }
-
-}
-
-export namespace TreeWidget {
-    export interface Size {
-        readonly width: number
-        readonly height: number
-    }
-    export interface TreeProps {
-        readonly contextMenuPath?: string;
-        readonly expansionToggleSize: Size;
-    }
-    export interface NodeProps {
-        /**
-         * An indentation size relatively to the root node.
-         */
-        readonly indentSize: number;
-        /**
-         * Test whether the node should be rendered as hidden.
-         *
-         * It is different from visibility of a node: an invisible node is not rendered at all.
-         */
-        readonly visible: boolean;
-    }
-    export const DEFAULT_PROPS: TreeProps = {
-        expansionToggleSize: {
-            width: 16,
-            height: 16
-        }
-    }
 }
 
 export namespace VirtualWidget {

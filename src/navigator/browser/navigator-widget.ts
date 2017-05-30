@@ -5,67 +5,26 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject, decorate } from "inversify";
+import { injectable, inject } from "inversify";
 import { h } from "@phosphor/virtualdom";
-import { Message } from "@phosphor/messaging";
-
-import { TreeWidget, VirtualWidget, ITreeNode, ISelectableTreeNode } from "./tree";
+import { ContextMenuRenderer } from "../../application/browser";
+import { TreeWidget, NodeProps, TreeProps, VirtualWidget, ITreeNode } from "./tree";
 import { DirNode, FileStatNode } from "./navigator-tree";
 import { FileNavigatorModel } from "./navigator-model";
-import { ContextMenuRenderer } from "../../application/browser/menu/context-menu-renderer";
-import NodeProps = TreeWidget.NodeProps;
 
-export const FILE_NAVIGATOR_CLASS = 'theia-FileNavigator';
-export const ROOT_ACTIVE_CLASS = 'theia-mod-selected';
-export const CONTEXT_MENU_PATH = 'navigator-context-menu';
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
 export const DIR_NODE_CLASS = 'theia-DirNode';
 export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 
-const FILE_NAVIGATOR_PARAMS: TreeWidget.TreeProps = {
-    ...TreeWidget.DEFAULT_PROPS,
-    contextMenuPath: CONTEXT_MENU_PATH
-}
-
-decorate(injectable(), TreeWidget);
-
 @injectable()
-export class FileNavigatorWidget extends TreeWidget<FileNavigatorModel> {
-
-    static readonly ID = 'file-navigator';
+export class FileNavigatorWidget extends TreeWidget {
 
     constructor(
-        @inject(FileNavigatorModel) model: FileNavigatorModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(TreeProps) readonly props: TreeProps,
+        @inject(FileNavigatorModel) readonly model: FileNavigatorModel,
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
-        super(FILE_NAVIGATOR_PARAMS, contextMenuRenderer);
-        this.addClass(FILE_NAVIGATOR_CLASS);
-        this.id = FileNavigatorWidget.ID;
-        this.title.label = 'Files';
-        this.setModel(model);
-        this.node.addEventListener(
-            'contextmenu',
-            (event) => {
-                this.showContextMenu(event, this.getModel().root)
-            }, false)
-        this.node.addEventListener(
-            'click',
-            (event) => {
-                this.selectNode(event, this.getModel().root)
-            })
-    }
-
-    getModel(): FileNavigatorModel {
-        return super.getModel()!;
-    }
-
-    protected onUpdateRequest(msg: Message): void {
-        if (ISelectableTreeNode.isSelected(this.getModel().root)) {
-            this.addClass(ROOT_ACTIVE_CLASS)
-        } else {
-            this.removeClass(ROOT_ACTIVE_CLASS)
-        }
-        super.onUpdateRequest(msg);
+        super(props, model, contextMenuRenderer);
     }
 
     protected createNodeClassNames(node: ITreeNode, props: NodeProps): string[] {
@@ -90,4 +49,5 @@ export class FileNavigatorWidget extends TreeWidget<FileNavigatorModel> {
         const icon = h.span({ className: FILE_STAT_ICON_CLASS });
         return super.decorateCaption(node, VirtualWidget.merge(icon, caption), props);
     }
+
 }

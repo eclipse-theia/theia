@@ -10,7 +10,7 @@ import { CommandHandler, MenuContribution, MenuModelRegistry } from "../../appli
 import { OpenerService } from '../../application/browser';
 import { FileSystem, FileStat } from "../../filesystem/common/filesystem";
 import { Commands } from '../../filesystem/browser/filesystem-commands';
-import { CONTEXT_MENU_PATH } from "./navigator-widget";
+import { CONTEXT_MENU_PATH } from "./navigator-contribution";
 import { FileNavigatorModel } from "./navigator-model";
 
 export const OPEN_MENU_GROUP = '1_open';
