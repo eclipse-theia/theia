@@ -10,7 +10,6 @@ import { h } from "@phosphor/virtualdom";
 import { Message } from "@phosphor/messaging";
 
 import { TreeWidget, VirtualWidget, ITreeNode, ISelectableTreeNode } from "./tree";
-import { FrontendApplicationContribution, FrontendApplication } from "../../application/browser";
 import { FileNavigatorModel, DirNode, FileStatNode } from "./navigator-model";
 import { ContextMenuRenderer } from "../../application/browser/menu/context-menu-renderer";
 import NodeProps = TreeWidget.NodeProps;
@@ -36,7 +35,8 @@ export class FileNavigatorWidget extends TreeWidget<FileNavigatorModel> {
 
     constructor(
         @inject(FileNavigatorModel) model: FileNavigatorModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer) {
+        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
+    ) {
         super(FILE_NAVIGATOR_PARAMS, contextMenuRenderer);
         this.addClass(FILE_NAVIGATOR_CLASS);
         this.id = FileNavigatorWidget.ID;
@@ -89,17 +89,4 @@ export class FileNavigatorWidget extends TreeWidget<FileNavigatorModel> {
         const icon = h.span({ className: FILE_STAT_ICON_CLASS });
         return super.decorateCaption(node, VirtualWidget.merge(icon, caption), props);
     }
-}
-
-@injectable()
-export class FileNavigatorContribution implements FrontendApplicationContribution {
-
-    constructor( @inject(FileNavigatorWidget) private fileNavigator: FileNavigatorWidget) {
-    }
-
-    onStart(app: FrontendApplication): void {
-        this.fileNavigator.getModel().refresh();
-        app.shell.addToLeftArea(this.fileNavigator);
-    }
-
 }
