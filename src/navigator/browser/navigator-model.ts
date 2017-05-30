@@ -26,7 +26,6 @@ export class FileNavigatorModel extends TreeModel {
         super(tree, selection, expansion);
         this.toDispose.push(watcher.onFileChanges(event => this.onFileChanges(event)));
     }
-
     get selectedFileStatNode(): Readonly<FileStatNode> | undefined {
         const selectedNode = this.selectedNode;
         if (FileStatNode.is(selectedNode)) {
