@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
+import { injectable, inject, named } from "inversify";
 import { SelectionService } from "../../application/common";
 import { FrontendApplicationContribution, FrontendApplication } from "../../application/browser";
 import { FileSystem } from "../../filesystem/common";
@@ -30,7 +30,7 @@ export class FileNavigatorContribution implements FrontendApplicationContributio
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
-        @inject(FileNavigatorWidget) protected readonly fileNavigator: FileNavigatorWidget
+        @inject(FileNavigatorWidget) @named(ID) protected readonly fileNavigator: FileNavigatorWidget
     ) {
         fileNavigator.id = ID;
         fileNavigator.title.label = LABEL;

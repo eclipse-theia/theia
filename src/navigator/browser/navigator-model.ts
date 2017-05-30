@@ -9,8 +9,8 @@ import { injectable, inject } from "inversify";
 import URI from '../../application/common/uri';
 import { OpenerService, open } from "../../application/browser";
 import { FileSystem, FileSystemWatcher, FileChangesEvent, FileChangeType } from "../../filesystem/common";
-import { ITree, ITreeSelectionService, ITreeExpansionService, ITreeNode, ICompositeTreeNode, TreeModel } from "./tree";
-import { FileStatNode, DirNode, FileNode } from "./navigator-tree";
+import { ITreeSelectionService, ITreeExpansionService, ITreeNode, ICompositeTreeNode, TreeModel } from "./tree";
+import { FileStatNode, DirNode, FileNode, FileNavigatorTree } from "./navigator-tree";
 
 @injectable()
 export class FileNavigatorModel extends TreeModel {
@@ -19,7 +19,7 @@ export class FileNavigatorModel extends TreeModel {
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcher) watcher: FileSystemWatcher,
         @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(ITree) tree: ITree,
+        @inject(FileNavigatorTree) protected readonly tree: FileNavigatorTree,
         @inject(ITreeSelectionService) selection: ITreeSelectionService,
         @inject(ITreeExpansionService) expansion: ITreeExpansionService
     ) {
