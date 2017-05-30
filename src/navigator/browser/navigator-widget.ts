@@ -10,7 +10,8 @@ import { h } from "@phosphor/virtualdom";
 import { Message } from "@phosphor/messaging";
 
 import { TreeWidget, VirtualWidget, ITreeNode, ISelectableTreeNode } from "./tree";
-import { FileNavigatorModel, DirNode, FileStatNode } from "./navigator-model";
+import { DirNode, FileStatNode } from "./navigator-tree";
+import { FileNavigatorModel } from "./navigator-model";
 import { ContextMenuRenderer } from "../../application/browser/menu/context-menu-renderer";
 import NodeProps = TreeWidget.NodeProps;
 

@@ -6,22 +6,11 @@
  */
 
 import { injectable, inject } from "inversify";
-import { FileSystem, FileStat, FileChangesEvent, FileChangeType } from "../../filesystem/common/filesystem";
-import { FileSystemWatcher } from "../../filesystem/common/filesystem-watcher";
-import { UriSelection } from "../../filesystem/common/filesystem-selection";
-import { OpenerService, open } from "../../application/browser";
-import {
-    ITree,
-    ITreeSelectionService,
-    ITreeExpansionService,
-    ITreeNode,
-    ICompositeTreeNode,
-    IExpandableTreeNode,
-    TreeModel,
-    Tree
-} from "./tree";
-import { ISelectableTreeNode } from "./tree/tree-selection";
 import URI from '../../application/common/uri';
+import { OpenerService, open } from "../../application/browser";
+import { FileSystem, FileSystemWatcher, FileChangesEvent, FileChangeType } from "../../filesystem/common";
+import { ITree, ITreeSelectionService, ITreeExpansionService, ITreeNode, ICompositeTreeNode, TreeModel } from "./tree";
+import { FileStatNode, DirNode, FileNode } from "./navigator-tree";
 
 @injectable()
 export class FileNavigatorModel extends TreeModel {
@@ -84,117 +73,5 @@ export class FileNavigatorModel extends TreeModel {
         } else {
             super.doOpenNode(node);
         }
-    }
-}
-
-@injectable()
-export class FileNavigatorTree extends Tree {
-
-    constructor( @inject(FileSystem) protected readonly fileSystem: FileSystem) {
-        super();
-        this.fileSystem.getWorkspaceRoot().then(fileStat => {
-            this.root = this.createRootNode(fileStat);
-        });
-    }
-
-    protected createRootNode(fileStat: FileStat): DirNode {
-        const uri = new URI(fileStat.uri)
-        const id = fileStat.uri;
-        return {
-            id, uri, fileStat,
-            name: '/',
-            visible: false,
-            parent: undefined,
-            children: [],
-            expanded: true,
-            selected: false
-        }
-    }
-
-    resolveChildren(parent: ICompositeTreeNode): Promise<ITreeNode[]> {
-        if (FileStatNode.is(parent)) {
-            return this.resolveFileStat(parent).then(fileStat =>
-                this.toNodes(fileStat, parent)
-            )
-        }
-        return super.resolveChildren(parent);
-    }
-
-    protected resolveFileStat(node: FileStatNode): Promise<FileStat> {
-        return this.fileSystem.getFileStat(node.fileStat.uri).then(fileStat => {
-            node.fileStat = fileStat;
-            return fileStat;
-        });
-    }
-
-    protected toNodes(fileStat: FileStat, parent: ICompositeTreeNode): ITreeNode[] {
-        if (!fileStat.children) {
-            return [];
-        }
-        return fileStat.children.map(child =>
-            this.toNode(child, parent)
-        ).sort(DirNode.compare);
-    }
-
-    protected toNode(fileStat: FileStat, parent: ICompositeTreeNode): FileNode | DirNode {
-        const uri = new URI(fileStat.uri)
-        const id = fileStat.uri;
-        const node = this.getNode(id);
-        if (fileStat.isDirectory) {
-            if (DirNode.is(node)) {
-                node.fileStat = fileStat;
-                return node;
-            }
-            const name = uri.lastSegment;
-            return <DirNode>{
-                id, uri, fileStat, name, parent,
-                expanded: false,
-                selected: false,
-                children: []
-            }
-        }
-        if (FileNode.is(node)) {
-            node.fileStat = fileStat;
-            return node;
-        }
-        const name = uri.lastSegment;
-        return <FileNode>{
-            id, uri, fileStat, name, parent,
-            selected: false
-        }
-    }
-
-}
-
-export interface FileStatNode extends ISelectableTreeNode, UriSelection {
-    fileStat: FileStat;
-}
-export namespace FileStatNode {
-    export function is(node: ITreeNode | undefined): node is FileStatNode {
-        return !!node && 'fileStat' in node;
-    }
-}
-
-export type FileNode = FileStatNode;
-export namespace FileNode {
-    export function is(node: ITreeNode | undefined): node is FileNode {
-        return FileStatNode.is(node) && !IExpandableTreeNode.is(node);
-    }
-}
-
-export type DirNode = FileStatNode & IExpandableTreeNode;
-export namespace DirNode {
-    export function is(node: ITreeNode | undefined): node is DirNode {
-        return FileStatNode.is(node) && IExpandableTreeNode.is(node);
-    }
-
-    export function compare(node: ITreeNode, node2: ITreeNode): number {
-        return DirNode.dirCompare(node, node2) || node.name.localeCompare(node2.name);
-    }
-
-    export function dirCompare(node: ITreeNode, node2: ITreeNode): number {
-        const a = DirNode.is(node) ? 1 : 0;
-        const b = DirNode.is(node2) ? 1 : 0;
-        return b - a;
     }
 }

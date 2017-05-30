@@ -68,11 +68,11 @@ export class TreeExpansionService implements ITreeExpansionService {
 
     protected readonly onExpansionChangedEmitter = new Emitter<IExpandableTreeNode>();
 
-    constructor( @inject(ITree) protected readonly state: ITree) {
-        state.onNodeRefreshed(node => {
+    constructor( @inject(ITree) protected readonly tree: ITree) {
+        tree.onNodeRefreshed(node => {
             for (const child of node.children) {
                 if (IExpandableTreeNode.isExpanded(child)) {
-                    this.state.refresh(child);
+                    this.tree.refresh(child);
                 }
             }
         });
@@ -91,7 +91,7 @@ export class TreeExpansionService implements ITreeExpansionService {
     }
 
     expandNode(raw: IExpandableTreeNode): boolean {
-        const node = this.state.validateNode(raw);
+        const node = this.tree.validateNode(raw);
         if (IExpandableTreeNode.isCollapsed(node)) {
             return this.doExpandNode(node);
         }
@@ -101,12 +101,12 @@ export class TreeExpansionService implements ITreeExpansionService {
     protected doExpandNode(node: IExpandableTreeNode): boolean {
         node.expanded = true;
         this.fireExpansionChanged(node);
-        this.state.refresh(node);
+        this.tree.refresh(node);
         return true;
     }
 
     collapseNode(raw: IExpandableTreeNode): boolean {
-        const node = this.state.validateNode(raw);
+        const node = this.tree.validateNode(raw);
         if (IExpandableTreeNode.isExpanded(node)) {
             return this.doCollapseNode(node);
         }
