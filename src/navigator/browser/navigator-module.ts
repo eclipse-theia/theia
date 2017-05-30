@@ -6,14 +6,13 @@
  */
 
 import { ContainerModule } from 'inversify';
-
+import { MenuContribution } from '../../application/common';
 import { FrontendApplicationContribution } from "../../application/browser";
-import { FileNavigatorWidget } from "./navigator-widget";
-
-import { MenuContribution } from '../../application/common/menu';
-import { FileNavigatorModel, FileNavigatorTree } from "./navigator-model";
-import { NavigatorMenuContribution } from './navigator-command';
 import { ITree, ITreeSelectionService, TreeSelectionService, ITreeExpansionService, TreeExpansionService } from "./tree";
+import { FileNavigatorTree } from "./navigator-tree";
+import { FileNavigatorModel } from "./navigator-model";
+import { FileNavigatorWidget } from "./navigator-widget";
+import { NavigatorMenuContribution } from './navigator-command';
 import { FileNavigatorContribution } from "./navigator-contribution";
 
 export const navigatorModule = new ContainerModule(bind => {

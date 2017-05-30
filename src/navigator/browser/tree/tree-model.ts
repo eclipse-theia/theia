@@ -39,7 +39,7 @@ export interface ITreeModel extends ITree, ITreeSelectionService, ITreeExpansion
     /**
      * Open a given node or a selected if the given is undefined.
      */
-    openNode(node?: ITreeNode  |  undefined): void;
+    openNode(node?: ITreeNode | undefined): void;
     /**
      * Select a parent node relatively to the selected taking into account node expansion.
      */
@@ -52,9 +52,11 @@ export class TreeModel implements ITreeModel, SelectionProvider<Readonly<ISelect
     protected readonly onChangedEmitter = new Emitter<void>();
     protected readonly toDispose = new DisposableCollection();
 
-    constructor( @inject(ITree) protected readonly tree: ITree,
+    constructor(
+        @inject(ITree) protected readonly tree: ITree,
         @inject(ITreeSelectionService) protected readonly selection: ITreeSelectionService,
-        @inject(ITreeExpansionService) protected readonly expansion: ITreeExpansionService) {
+        @inject(ITreeExpansionService) protected readonly expansion: ITreeExpansionService
+    ) {
         this.toDispose.push(tree);
         this.toDispose.push(tree.onChanged(() => this.fireChanged()));
 
