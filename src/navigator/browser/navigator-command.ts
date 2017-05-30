@@ -6,12 +6,10 @@
  */
 
 import { injectable, inject } from "inversify";
-import { CommandHandler, MenuContribution, MenuModelRegistry } from "../../application/common";
+import { MenuContribution, MenuModelRegistry } from "../../application/common";
 import { OpenerService } from '../../application/browser';
-import { FileSystem, FileStat } from "../../filesystem/common/filesystem";
 import { Commands } from '../../filesystem/browser/filesystem-commands';
 import { CONTEXT_MENU_PATH } from "./navigator-contribution";
-import { FileNavigatorModel } from "./navigator-model";
 
 export const OPEN_MENU_GROUP = '1_open';
 export const OPEN_WITH_MENU = 'open-with';
@@ -60,41 +58,5 @@ export class NavigatorMenuContribution implements MenuContribution {
         registry.registerMenuAction([CONTEXT_MENU_PATH, NEW_MENU_GROUP], {
             commandId: Commands.NEW_FOLDER
         });
-    }
-}
-
-export class NavigatorCommandHandler implements CommandHandler {
-    constructor(
-        protected readonly options: NavigatorCommandHandler.Options,
-        protected readonly doExecute: (fileStat: FileStat) => Promise<any>) {
-    }
-
-    execute(arg?: any): Promise<any> {
-        const node = this.options.model.selectedFileStatNode;
-        if (node) {
-            return this.doExecute(node.fileStat)
-        }
-        return Promise.resolve()
-    }
-
-    isVisible(arg?: any): boolean {
-        if (this.options.model.selectedNode) {
-            return true;
-        }
-        return false;
-    }
-
-    isEnabled(arg?: any): boolean {
-        return true;
-    }
-
-}
-
-export namespace NavigatorCommandHandler {
-    export interface Options {
-        id: string;
-        actionId: string,
-        fileSystem: FileSystem,
-        model: FileNavigatorModel
     }
 }
