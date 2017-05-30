@@ -6,13 +6,13 @@
  */
 
 import 'reflect-metadata';
-import { ContributionProvider } from '../common/contribution-provider';
-import { CommandRegistry } from '../common/command';
-import { KeybindingRegistry } from '../common/keybinding';
-import { MenuModelRegistry } from '../common/menu';
-import { ApplicationShell } from './shell';
+import { inject, injectable, named, decorate } from 'inversify';
+import { Widget } from "@phosphor/widgets";
 import { Application } from '@phosphor/application';
-import { inject, injectable, named } from 'inversify';
+import { ContributionProvider, CommandRegistry, KeybindingRegistry, MenuModelRegistry } from '../common';
+import { ApplicationShell } from './shell';
+
+decorate(injectable(), Widget);
 
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.
