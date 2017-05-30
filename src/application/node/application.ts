@@ -9,6 +9,7 @@ import * as http from 'http';
 import * as express from 'express';
 import { inject, named, injectable } from "inversify";
 import { ContributionProvider } from '../common/contribution-provider';
+import { ILogger } from '../common/logger';
 
 export const BackendApplicationContribution = Symbol("BackendApplicationContribution");
 export interface BackendApplicationContribution {
@@ -24,7 +25,8 @@ export class BackendApplication {
 
     private app: express.Application;
 
-    constructor( @inject(ContributionProvider) @named(BackendApplicationContribution) private contributionsProvider: ContributionProvider<BackendApplicationContribution>) {
+    constructor( @inject(ContributionProvider) @named(BackendApplicationContribution) private contributionsProvider: ContributionProvider<BackendApplicationContribution>,
+        @inject(ILogger) protected readonly logger: ILogger) {
     }
 
     start(port: number = 3000): Promise<void> {
@@ -37,7 +39,7 @@ export class BackendApplication {
         }
         return new Promise<void>(resolve => {
             const server = this.app.listen(port, () => {
-                console.log(`Theia app listening on port ${port}.`)
+                this.logger.info(`Theia app listening on port ${port}.`);
                 resolve();
             });
             for (const contrib of contributions) {
