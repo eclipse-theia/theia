@@ -15,23 +15,6 @@ export class FileNavigatorTree extends Tree {
 
     constructor( @inject(FileSystem) protected readonly fileSystem: FileSystem) {
         super();
-        this.fileSystem.getWorkspaceRoot().then(fileStat => {
-            this.root = this.createRootNode(fileStat);
-        });
-    }
-
-    protected createRootNode(fileStat: FileStat): DirNode {
-        const uri = new URI(fileStat.uri)
-        const id = fileStat.uri;
-        return {
-            id, uri, fileStat,
-            name: '/',
-            visible: false,
-            parent: undefined,
-            children: [],
-            expanded: true,
-            selected: false
-        }
     }
 
     resolveChildren(parent: ICompositeTreeNode): Promise<ITreeNode[]> {
@@ -119,5 +102,19 @@ export namespace DirNode {
         const a = DirNode.is(node) ? 1 : 0;
         const b = DirNode.is(node2) ? 1 : 0;
         return b - a;
+    }
+
+    export function createRoot(fileStat: FileStat): DirNode {
+        const uri = new URI(fileStat.uri)
+        const id = fileStat.uri;
+        return {
+            id, uri, fileStat,
+            name: '/',
+            visible: false,
+            parent: undefined,
+            children: [],
+            expanded: true,
+            selected: false
+        }
     }
 }

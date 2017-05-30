@@ -6,24 +6,33 @@
  */
 
 import { injectable, inject } from "inversify";
-
 import { SelectionService } from "../../application/common";
 import { FrontendApplicationContribution, FrontendApplication } from "../../application/browser";
+import { FileSystem } from "../../filesystem/common";
+import { DirNode } from "./navigator-tree";
 import { FileNavigatorWidget } from "./navigator-widget";
 
 @injectable()
 export class FileNavigatorContribution implements FrontendApplicationContribution {
 
+    protected readonly onReady: Promise<void>;
+
     constructor(
+        @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(FileNavigatorWidget) protected readonly fileNavigator: FileNavigatorWidget
-    ) { }
-
-    onStart(app: FrontendApplication): void {
-        this.fileNavigator.getModel().refresh();
-        app.shell.addToLeftArea(this.fileNavigator);
+    ) {
         this.fileNavigator.getModel().onSelectionChanged(selection =>
             this.selectionService.selection = selection
+        );
+        this.onReady = this.fileSystem.getWorkspaceRoot().then(fileStat => {
+            this.fileNavigator.getModel().root = DirNode.createRoot(fileStat);
+        });
+    }
+
+    onStart(app: FrontendApplication): void {
+        this.onReady.then(() =>
+            app.shell.addToLeftArea(this.fileNavigator)
         );
     }
 
