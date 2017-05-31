@@ -65,6 +65,9 @@ export class TreeWidget extends Widget implements EventListenerObject {
      */
     protected readonly onRender = new DisposableCollection();
 
+    protected readonly toDispose = new DisposableCollection();
+    protected readonly toDisposeOnDetach = new DisposableCollection();
+
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
         @inject(ITreeModel) readonly model: ITreeModel,
@@ -74,12 +77,12 @@ export class TreeWidget extends Widget implements EventListenerObject {
         this.addClass(TREE_CLASS);
         this.node.tabIndex = 0;
         model.onChanged(() => this.update());
-        this.node.addEventListener('contextmenu', event =>
-            this.showContextMenu(event, this.model.root)
-        );
-        this.node.addEventListener('click', event =>
-            this.selectNode(event, this.model.root)
-        );
+        this.toDispose.push(model);
+    }
+
+    dispose(): void {
+        super.dispose();
+        this.toDispose.dispose();
     }
 
     protected onUpdateRequest(msg: Message): void {
@@ -139,7 +142,7 @@ export class TreeWidget extends Widget implements EventListenerObject {
         return h.div(attributes, caption);
     }
 
-    protected showContextMenu(event: MouseEvent, node: ITreeNode | undefined): boolean {
+    protected showContextMenu(event: MouseEvent, node: ITreeNode | undefined): void {
         if (this.model && ISelectableTreeNode.is(node)) {
             this.model.selectNode(node);
             const contextMenuPath = this.props.contextMenuPath;
@@ -154,7 +157,6 @@ export class TreeWidget extends Widget implements EventListenerObject {
         }
         event.stopPropagation();
         event.preventDefault();
-        return false;
     }
 
     protected selectNode(event: MouseEvent, node: ITreeNode | undefined): void {
@@ -280,18 +282,36 @@ export class TreeWidget extends Widget implements EventListenerObject {
 
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
+
         this.node.addEventListener('keydown', this);
+        this.toDisposeOnDetach.push(Disposable.create(() =>
+            this.node.removeEventListener('keydown', this)
+        ));
+
+        this.node.addEventListener('contextmenu', this);
+        this.toDisposeOnDetach.push(Disposable.create(() =>
+            this.node.removeEventListener('contextmenu', this)
+        ));
+
+        this.node.addEventListener('click', this);
+        this.toDisposeOnDetach.push(Disposable.create(() =>
+            this.node.removeEventListener('click', this)
+        ));
     }
 
     protected onBeforeDetach(msg: Message): void {
-        this.node.removeEventListener('keydown', this);
+        this.toDisposeOnDetach.dispose();
         super.onBeforeDetach(msg);
     }
 
     handleEvent(event: Event): void {
-        if (event.type === 'keydown' && this.handleKeyDown(event as KeyboardEvent)) {
+        if (event.type === 'contextmenu') {
+            this.showContextMenu(event as PointerEvent, this.model.root);
+        } else if (event.type === 'keydown' && this.handleKeyDown(event as KeyboardEvent)) {
             event.preventDefault();
             event.stopPropagation();
+        } else if (event.type === 'click') {
+            this.selectNode(event as MouseEvent, this.model.root);
         }
     }
 

@@ -12,17 +12,18 @@ import { DisposableCollection, Disposable } from "../common";
 export const DialogTitle = Symbol('DialogTitle');
 
 @injectable()
-export abstract class AbstractDialog<T> {
+export abstract class AbstractDialog<T> implements Disposable {
 
     protected readonly titleNode: HTMLDivElement;
     protected readonly contentNode: HTMLDivElement;
     protected readonly closeCrossNode: HTMLElement;
 
     protected readonly widget: Widget;
+    protected readonly toDispose = new DisposableCollection();
     protected readonly toDisposeOnDetach = new DisposableCollection();
 
     protected resolve: undefined | ((value: T) => void);
-    protected reject: undefined | (() => void);
+    protected reject: undefined | ((reason: any) => void);
 
     constructor(
         @inject(DialogTitle) title: string
@@ -64,7 +65,7 @@ export abstract class AbstractDialog<T> {
                 isEnter = (e.keyCode === 13)
             }
             if (isEscape) {
-                this.close();
+                this.dispose();
             } else if (isEnter) {
                 this.accept();
             }
@@ -91,11 +92,11 @@ export abstract class AbstractDialog<T> {
         });
     }
 
-    close(): void {
+    dispose(): void {
         if (this.reject) {
-            this.reject();
             this.detach();
         }
+        this.toDispose.dispose();
     }
 
     protected validate(): void {
@@ -137,7 +138,7 @@ export abstract class AbstractDialog<T> {
 
     protected addCloseListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K): void {
         this.addEventListener(element, type, e => {
-            this.close();
+            this.dispose();
             e.preventDefault();
             return false;
         });
