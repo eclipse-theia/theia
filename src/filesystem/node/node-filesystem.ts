@@ -358,38 +358,49 @@ export class FileSystemNode implements FileSystem {
         try {
             const stat = fs.statSync(path);
             if (stat.isDirectory()) {
-                const files = fs.readdirSync(path);
-                let children: FileStat[] | undefined = undefined;
-                if (depth > 0) {
-                    children = [];
-                    files.map(file => uri.appendPath(file)).forEach(childURI => {
-                        const child = this.doGetStat(childURI, depth - 1);
-                        if (child) {
-                            children!.push(child);
-                        }
-                    });
-                }
-                return {
-                    uri: uri.toString(),
-                    lastModification: stat.mtime.getTime(),
-                    isDirectory: true,
-                    hasChildren: files.length > 0,
-                    children
-                };
-            } else {
-                return {
-                    uri: uri.toString(),
-                    lastModification: stat.mtime.getTime(),
-                    isDirectory: false,
-                    size: stat.size
-                };
+                return this.doCreateDirectoryStat(uri, path, stat, depth);
             }
+            return this.doCreateFileStat(uri, stat);
         } catch (error) {
             if (isErrnoException(error) && error.code === "ENOENT") {
                 return undefined;
             }
             throw error;
         }
+    }
+
+    protected doCreateFileStat(uri: URI, stat: fs.Stats): FileStat {
+        return {
+            uri: uri.toString(),
+            lastModification: stat.mtime.getTime(),
+            isDirectory: false,
+            size: stat.size
+        };
+    }
+
+    protected doCreateDirectoryStat(uri: URI, path: string, stat: fs.Stats, depth: number): FileStat {
+        const files = fs.readdirSync(path);
+        const hasChildren = files.length > 0;
+        const children = hasChildren && depth > 0 ? this.doGetChildren(uri, files, depth) : undefined;
+        return {
+            uri: uri.toString(),
+            lastModification: stat.mtime.getTime(),
+            isDirectory: true,
+            hasChildren,
+            children
+        };
+    }
+
+    protected doGetChildren(uri: URI, files: string[], depth: number): FileStat[] {
+        const children = [];
+        for (const file of files) {
+            const childUri = uri.appendPath(file);
+            const child = this.doGetStat(childUri, depth - 1);
+            if (child) {
+                children.push(child);
+            }
+        }
+        return children;
     }
 
     protected doGetEncoding(option?: { encoding?: string }): string {
