@@ -24,6 +24,7 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
         @inject(FileTreeWidget) readonly fileTreeWidget: FileTreeWidget
     ) {
         super(title);
+        this.toDispose.push(fileTreeWidget);
     }
 
     protected attach(): void {
