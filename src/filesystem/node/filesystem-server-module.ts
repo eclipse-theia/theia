@@ -13,6 +13,7 @@ import { FileSystemWatcher } from '../common/filesystem-watcher';
 import { FileSystemClient, FileSystem } from "../common/filesystem";
 import { JsonRpcProxyFactory } from "../../messaging/common/proxy-factory";
 import { FileUri } from "../../application/node/file-uri";
+import * as path from 'path';
 
 export const ROOT_DIR_OPTION = '--root-dir=';
 
@@ -54,10 +55,15 @@ export const fileSystemServerModule = new ContainerModule(bind => {
 
 export function getRootDir(): string | undefined {
     const arg = process.argv.filter(arg => arg.startsWith(ROOT_DIR_OPTION))[0];
+    const cwd = process.cwd();
     if (arg) {
-        return arg.substring(ROOT_DIR_OPTION.length);
+        const rootDir = arg.substring(ROOT_DIR_OPTION.length);
+        if (path.isAbsolute(rootDir)) {
+            return rootDir;
+        } else {
+            return path.join(cwd, rootDir);
+        }
     } else {
-        const cwd = process.cwd();
         console.info(`--root-dir= was not present. Falling back to current working directory: '${cwd}.'`)
         return cwd;
     }
