@@ -15,6 +15,10 @@ export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
 export const DIR_NODE_CLASS = 'theia-DirNode';
 export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 
+export const ID = 'files';
+export const LABEL = 'Files';
+export const CLASS = 'theia-Files';
+
 @injectable()
 export class FileNavigatorWidget extends FileTreeWidget {
 
@@ -24,6 +28,9 @@ export class FileNavigatorWidget extends FileTreeWidget {
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
+        this.id = ID;
+        this.title.label = LABEL;
+        this.addClass(CLASS);
     }
 
 }

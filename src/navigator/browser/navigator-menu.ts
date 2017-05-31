@@ -9,7 +9,8 @@ import { injectable, inject } from "inversify";
 import { MenuContribution, MenuModelRegistry } from "../../application/common";
 import { OpenerService } from '../../application/browser';
 import { Commands } from '../../filesystem/browser/filesystem-commands';
-import { CONTEXT_MENU_PATH } from "./navigator-contribution";
+
+export const NAVIGATOR_CONTEXT_MENU = 'navigator-context-menu';
 
 export const OPEN_MENU_GROUP = '1_open';
 export const OPEN_WITH_MENU = 'open-with';
@@ -25,14 +26,14 @@ export class NavigatorMenuContribution implements MenuContribution {
     ) { }
 
     contribute(registry: MenuModelRegistry) {
-        registry.registerMenuAction([CONTEXT_MENU_PATH, OPEN_MENU_GROUP], {
+        registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, OPEN_MENU_GROUP], {
             commandId: Commands.FILE_OPEN
         });
-        registry.registerSubmenu([CONTEXT_MENU_PATH, OPEN_MENU_GROUP], OPEN_WITH_MENU, 'Open With');
+        registry.registerSubmenu([NAVIGATOR_CONTEXT_MENU, OPEN_MENU_GROUP], OPEN_WITH_MENU, 'Open With');
         this.openerService.getOpeners().then(openers => {
             for (const opener of openers) {
                 const openWithCommand = Commands.FILE_OPEN_WITH(opener);
-                registry.registerMenuAction([CONTEXT_MENU_PATH, OPEN_MENU_GROUP, OPEN_WITH_MENU], {
+                registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, OPEN_MENU_GROUP, OPEN_WITH_MENU], {
                     commandId: openWithCommand.id
                 });
             }
@@ -40,22 +41,22 @@ export class NavigatorMenuContribution implements MenuContribution {
         // registry.registerMenuAction([CONTEXT_MENU_PATH, CUT_MENU_GROUP], {
         //     commandId: Commands.FILE_CUT
         // });
-        registry.registerMenuAction([CONTEXT_MENU_PATH, CUT_MENU_GROUP], {
+        registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, CUT_MENU_GROUP], {
             commandId: Commands.FILE_COPY
         });
-        registry.registerMenuAction([CONTEXT_MENU_PATH, CUT_MENU_GROUP], {
+        registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, CUT_MENU_GROUP], {
             commandId: Commands.FILE_PASTE
         });
-        registry.registerMenuAction([CONTEXT_MENU_PATH, MOVE_MENU_GROUP], {
+        registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, MOVE_MENU_GROUP], {
             commandId: Commands.FILE_RENAME
         });
-        registry.registerMenuAction([CONTEXT_MENU_PATH, MOVE_MENU_GROUP], {
+        registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, MOVE_MENU_GROUP], {
             commandId: Commands.FILE_DELETE
         });
-        registry.registerMenuAction([CONTEXT_MENU_PATH, NEW_MENU_GROUP], {
+        registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, NEW_MENU_GROUP], {
             commandId: Commands.NEW_FILE
         });
-        registry.registerMenuAction([CONTEXT_MENU_PATH, NEW_MENU_GROUP], {
+        registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, NEW_MENU_GROUP], {
             commandId: Commands.NEW_FOLDER
         });
     }

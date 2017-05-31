@@ -9,18 +9,8 @@ import { injectable, inject, named } from "inversify";
 import { SelectionService } from "../../application/common";
 import { FrontendApplicationContribution, FrontendApplication } from "../../application/browser";
 import { FileSystem } from "../../filesystem/common";
-import { TreeProps, defaultTreeProps } from "./tree";
 import { DirNode } from "./file-tree";
-import { FileNavigatorWidget } from "./navigator-widget";
-
-export const ID = 'files';
-export const LABEL = 'Files';
-export const CLASS = 'theia-Files';
-export const CONTEXT_MENU_PATH = 'navigator-context-menu';
-export const TREE_PROPS = <TreeProps>{
-    ...defaultTreeProps,
-    contextMenuPath: CONTEXT_MENU_PATH
-}
+import { FileNavigatorWidget, ID } from "./navigator-widget";
 
 @injectable()
 export class FileNavigatorContribution implements FrontendApplicationContribution {
@@ -32,9 +22,6 @@ export class FileNavigatorContribution implements FrontendApplicationContributio
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(FileNavigatorWidget) @named(ID) protected readonly fileNavigator: FileNavigatorWidget
     ) {
-        fileNavigator.id = ID;
-        fileNavigator.title.label = LABEL;
-        fileNavigator.addClass(CLASS);
         this.fileNavigator.model.onSelectionChanged(selection =>
             this.selectionService.selection = selection
         );
