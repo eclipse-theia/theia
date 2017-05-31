@@ -16,8 +16,7 @@ import { UriSelection } from '../common/filesystem-selection';
 import { SingleTextInputDialog, ConfirmDialog } from "../../application/browser/dialogs";
 import { OpenerService, OpenHandler, open } from "../../application/browser";
 
-export namespace Commands {
-    export const FILE_MENU = "1_file";
+export namespace FileCommands {
     export const NEW_FILE = 'file:newFile';
     export const NEW_FOLDER = 'file:newFolder';
     export const FILE_OPEN = 'file:open';
@@ -33,18 +32,24 @@ export namespace Commands {
     export const FILE_DELETE = 'file:fileDelete';
 }
 
+export namespace FileMenus {
+    export const FILE = [MAIN_MENU_BAR, "1_file"];
+    export const NEW_GROUP = [...FILE, '1_new'];
+    export const OPEN_GROUP = [...FILE, '2_open'];
+}
+
 @injectable()
 export class FileMenuContribution implements MenuContribution {
 
     contribute(registry: MenuModelRegistry) {
         // Explicitly register the Edit Submenu
-        registry.registerSubmenu([MAIN_MENU_BAR], Commands.FILE_MENU, "File");
+        registry.registerSubmenu([MAIN_MENU_BAR], FileMenus.FILE[1], "File");
 
-        registry.registerMenuAction([MAIN_MENU_BAR, Commands.FILE_MENU, "1_new"], {
-            commandId: Commands.NEW_FILE
+        registry.registerMenuAction(FileMenus.NEW_GROUP, {
+            commandId: FileCommands.NEW_FILE
         });
-        registry.registerMenuAction([MAIN_MENU_BAR, Commands.FILE_MENU, "1_new"], {
-            commandId: Commands.NEW_FOLDER
+        registry.registerMenuAction(FileMenus.NEW_GROUP, {
+            commandId: FileCommands.NEW_FOLDER
         });
     }
 }
@@ -60,29 +65,29 @@ export class FileCommandContribution implements CommandContribution {
 
     contribute(registry: CommandRegistry): void {
         registry.registerCommand({
-            id: Commands.NEW_FILE,
+            id: FileCommands.NEW_FILE,
             label: 'New File'
         });
         registry.registerCommand({
-            id: Commands.NEW_FOLDER,
+            id: FileCommands.NEW_FOLDER,
             label: 'New Folder'
         });
         registry.registerCommand({
-            id: Commands.FILE_OPEN,
+            id: FileCommands.FILE_OPEN,
             label: 'Open'
         });
         registry.registerCommand({
-            id: Commands.FILE_RENAME,
+            id: FileCommands.FILE_RENAME,
             label: 'Rename'
         });
         registry.registerCommand({
-            id: Commands.FILE_DELETE,
+            id: FileCommands.FILE_DELETE,
             label: 'Delete'
         });
 
         this.openerService.getOpeners().then(openers => {
             for (const opener of openers) {
-                const openWithCommand = Commands.FILE_OPEN_WITH(opener);
+                const openWithCommand = FileCommands.FILE_OPEN_WITH(opener);
                 registry.registerCommand(openWithCommand);
                 registry.registerHandler(openWithCommand.id,
                     new FileSystemCommandHandler(this.selectionService, uri => {
@@ -93,7 +98,7 @@ export class FileCommandContribution implements CommandContribution {
         });
 
         registry.registerHandler(
-            Commands.FILE_RENAME,
+            FileCommands.FILE_RENAME,
             new FileSystemCommandHandler(this.selectionService, uri => {
                 return this.fileSystem.getFileStat(uri.toString())
                     .then(stat => {
@@ -110,7 +115,7 @@ export class FileCommandContribution implements CommandContribution {
         );
 
         registry.registerHandler(
-            Commands.FILE_COPY,
+            FileCommands.FILE_COPY,
             new FileSystemCommandHandler(this.selectionService, uri => {
                 this.clipboardService.setData({
                     text: uri.toString()
@@ -120,7 +125,7 @@ export class FileCommandContribution implements CommandContribution {
         );
 
         registry.registerHandler(
-            Commands.FILE_PASTE,
+            FileCommands.FILE_PASTE,
             new FileSystemCommandHandler(this.selectionService, uri => {
                 let copyPath: URI
                 return getDirectory(uri, this.fileSystem)
@@ -134,7 +139,7 @@ export class FileCommandContribution implements CommandContribution {
         );
 
         registry.registerHandler(
-            Commands.NEW_FILE,
+            FileCommands.NEW_FILE,
             new FileSystemCommandHandler(this.selectionService, uri => {
                 return getDirectory(uri, this.fileSystem)
                     .then(stat => {
@@ -152,7 +157,7 @@ export class FileCommandContribution implements CommandContribution {
         );
 
         registry.registerHandler(
-            Commands.NEW_FOLDER,
+            FileCommands.NEW_FOLDER,
             new FileSystemCommandHandler(this.selectionService, uri => {
                 return getDirectory(uri, this.fileSystem)
                     .then(stat => {
@@ -170,7 +175,7 @@ export class FileCommandContribution implements CommandContribution {
         )
 
         registry.registerHandler(
-            Commands.FILE_DELETE,
+            FileCommands.FILE_DELETE,
             new FileSystemCommandHandler(this.selectionService, uri => {
                 const dialog = new ConfirmDialog('Delete File', `Do you really want to delete '${uri.lastSegment}'?`)
                 return dialog.open().then(() => {
@@ -180,7 +185,7 @@ export class FileCommandContribution implements CommandContribution {
         )
 
         registry.registerHandler(
-            Commands.FILE_OPEN,
+            FileCommands.FILE_OPEN,
             new FileSystemCommandHandler(this.selectionService,
                 uri => open(this.openerService, uri)
             )

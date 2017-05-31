@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { inject, injectable, interfaces } from "inversify";
 import { Endpoint } from '../../application/common/endpoint';
 import { WebSocketConnectionProvider } from '../../messaging/browser';
 import { Disposable } from '../../application/common';
@@ -17,6 +18,12 @@ import 'xterm/lib/addons/attach/attach';
 
 let num = 0
 
+export const TerminalWidgetFactory = Symbol('TerminalWidgetFactory');
+export interface TerminalWidgetFactory extends interfaces.Factory<TerminalWidget> {
+    (): TerminalWidget;
+}
+
+@injectable()
 export class TerminalWidget extends Widget implements Disposable {
 
     private pid: string | undefined
@@ -26,8 +33,10 @@ export class TerminalWidget extends Widget implements Disposable {
     private disposables = new DisposableCollection()
     private endpoint: Endpoint
 
-    constructor(private websocketConnectionProvider: WebSocketConnectionProvider) {
-        super()
+    constructor(
+        @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider
+    ) {
+        super();
         this.endpoint = new Endpoint({ path: '/terminals' })
         num++
         this.id = 'terminal-' + num
@@ -99,7 +108,7 @@ export class TerminalWidget extends Widget implements Disposable {
 
     protected createWebSocket(pid: string): WebSocket {
         const url = this.endpoint.getWebSocketUrl().appendPath(pid)
-        return this.websocketConnectionProvider.createWebSocket(url.toString(), { reconnecting: false })
+        return this.webSocketConnectionProvider.createWebSocket(url.toString(), { reconnecting: false })
     }
 
     dispose() {
