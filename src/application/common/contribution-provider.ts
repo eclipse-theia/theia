@@ -27,11 +27,15 @@ class ContainerBasedContributionProvider<T extends object> implements Contributi
 
     getContributions(): T[] {
         if (this.services === undefined) {
-            try {
-                this.services = this.container.getAll(this.serviceIdentifier)
-            } catch (error) {
-                console.warn(error);
-                this.services = []
+            if (this.container.isBound(this.serviceIdentifier)) {
+                try {
+                    this.services = this.container.getAll(this.serviceIdentifier);
+                } catch (error) {
+                    console.error(error);
+                    this.services = [];
+                }
+            } else {
+                this.services = [];
             }
         }
         return this.services
