@@ -177,7 +177,7 @@ export class ConfirmDialog extends AbstractDialog<void> {
         cancelButton.classList.add('dialogButton');
         cancelButton.textContent = cancel;
         cancelButton.setAttribute('style', 'flex: 1 20%;');
-        this.contentNode.appendChild(this.cancelButton);
+        this.contentNode.appendChild(cancelButton);
         this.cancelButton = cancelButton;
 
         const okButton = document.createElement("button");
