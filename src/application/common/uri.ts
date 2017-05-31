@@ -8,7 +8,7 @@
 import Uri from 'vscode-uri';
 
 export default class URI {
-
+    private static separator = '/';
     private readonly codeUri: Uri;
 
     constructor(uri?: string | Uri) {
@@ -22,13 +22,13 @@ export default class URI {
     }
 
     get parent(): URI {
-        let str = this.codeUri.toString()
-        return new URI(str.substr(0, str.lastIndexOf('/')))
+        const str = this.codeUri.toString()
+        return new URI(str.substr(0, str.lastIndexOf(URI.separator)))
     }
 
     get lastSegment(): string {
-        let path = this.path
-        let idx = path.lastIndexOf('/')
+        const path = this.path
+        const idx = path.lastIndexOf(URI.separator)
         if (idx === -1) {
             return path
         } else {
@@ -38,9 +38,14 @@ export default class URI {
 
     appendPath(toAppend: string): URI {
         if (!toAppend) {
-            return this
+            return this;
         }
-        return this.withPath(this.codeUri.path + "/" + toAppend)
+        const path = this.path;
+        const idx = path.lastIndexOf(URI.separator);
+        if (idx === path.length - 1) {
+            return this.withPath(this.codeUri.path + toAppend);
+        }
+        return this.withPath(this.codeUri.path + URI.separator + toAppend);
     }
 
     /**
