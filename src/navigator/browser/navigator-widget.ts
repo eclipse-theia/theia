@@ -6,10 +6,9 @@
  */
 
 import { injectable, inject } from "inversify";
-import { h } from "@phosphor/virtualdom";
 import { ContextMenuRenderer } from "../../application/browser";
-import { TreeWidget, NodeProps, TreeProps, VirtualWidget, ITreeNode } from "./tree";
-import { DirNode, FileStatNode } from "./navigator-tree";
+import { TreeProps } from "./tree";
+import { FileTreeWidget } from "./file-tree";
 import { FileNavigatorModel } from "./navigator-model";
 
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
@@ -17,7 +16,7 @@ export const DIR_NODE_CLASS = 'theia-DirNode';
 export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 
 @injectable()
-export class FileNavigatorWidget extends TreeWidget {
+export class FileNavigatorWidget extends FileTreeWidget {
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -25,29 +24,6 @@ export class FileNavigatorWidget extends TreeWidget {
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
-    }
-
-    protected createNodeClassNames(node: ITreeNode, props: NodeProps): string[] {
-        const classNames = super.createNodeClassNames(node, props);
-        if (FileStatNode.is(node)) {
-            classNames.push(FILE_STAT_NODE_CLASS);
-        }
-        if (DirNode.is(node)) {
-            classNames.push(DIR_NODE_CLASS);
-        }
-        return classNames;
-    }
-
-    protected decorateCaption(node: ITreeNode, caption: h.Child, props: NodeProps): h.Child {
-        if (FileStatNode.is(node)) {
-            return this.decorateFileStatCaption(node, caption, props);
-        }
-        return super.decorateCaption(node, caption, props);
-    }
-
-    protected decorateFileStatCaption(node: FileStatNode, caption: h.Child, props: NodeProps): h.Child {
-        const icon = h.span({ className: FILE_STAT_ICON_CLASS });
-        return super.decorateCaption(node, VirtualWidget.merge(icon, caption), props);
     }
 
 }
