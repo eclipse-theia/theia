@@ -5,9 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { injectable, inject } from "inversify";
 import { Widget } from '@phosphor/widgets';
 import { DisposableCollection, Disposable } from "../common";
 
+export const DialogTitle = Symbol('DialogTitle');
+
+@injectable()
 export abstract class AbstractDialog<T> {
 
     protected readonly titleNode: HTMLDivElement;
@@ -20,7 +24,9 @@ export abstract class AbstractDialog<T> {
     protected resolve: undefined | ((value: T) => void);
     protected reject: undefined | (() => void);
 
-    constructor(title: string) {
+    constructor(
+        @inject(DialogTitle) title: string
+    ) {
         this.widget = new Widget()
         this.widget.addClass('dialogBlock')
 

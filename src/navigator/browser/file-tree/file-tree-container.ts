@@ -13,7 +13,6 @@ import { FileTreeWidget } from "./file-tree-widget";
 
 export function createFileTreeContainer(parent: interfaces.Container): Container {
     const child = createTreeContainer(parent);
-    child.parent = parent;
 
     child.unbind(Tree);
     child.bind(FileTree).toSelf();

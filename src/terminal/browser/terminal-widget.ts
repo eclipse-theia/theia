@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable, interfaces } from "inversify";
+import { inject, injectable } from "inversify";
 import { Endpoint } from '../../application/common/endpoint';
 import { WebSocketConnectionProvider } from '../../messaging/browser';
 import { Disposable } from '../../application/common';
@@ -19,7 +19,7 @@ import 'xterm/lib/addons/attach/attach';
 let num = 0
 
 export const TerminalWidgetFactory = Symbol('TerminalWidgetFactory');
-export interface TerminalWidgetFactory extends interfaces.Factory<TerminalWidget> {
+export interface TerminalWidgetFactory {
     (): TerminalWidget;
 }
 
