@@ -10,7 +10,7 @@ import { SelectionService } from "../../application/common";
 import { FrontendApplicationContribution, FrontendApplication } from "../../application/browser";
 import { FileSystem } from "../../filesystem/common";
 import { TreeProps, defaultTreeProps } from "./tree";
-import { DirNode } from "./navigator-tree";
+import { DirNode } from "./file-tree";
 import { FileNavigatorWidget } from "./navigator-widget";
 
 export const ID = 'files';
