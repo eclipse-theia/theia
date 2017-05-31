@@ -356,14 +356,16 @@ export class FileSystemNode implements FileSystem {
     protected doGetStat(uri: URI, depth: number): FileStat | undefined {
         const path = FileUri.fsPath(uri);
         try {
-            const stat = fs.statSync(path);
-            if (stat.isDirectory()) {
-                return this.doCreateDirectoryStat(uri, path, stat, depth);
+            const stats = fs.statSync(path);
+            if (stats.isDirectory()) {
+                return this.doCreateDirectoryStat(uri, path, stats, depth);
             }
-            return this.doCreateFileStat(uri, stat);
+            return this.doCreateFileStat(uri, stats);
         } catch (error) {
-            if (isErrnoException(error) && error.code === "ENOENT") {
-                return undefined;
+            if (isErrnoException(error)) {
+                if (error.code === "ENOENT" || error.code === "EACCES") {
+                    return undefined;
+                }
             }
             throw error;
         }
