@@ -20,7 +20,6 @@ export const FILE_NAVIGATOR_PROPS = <TreeProps>{
 
 export function createFileNavigatorContainer(parent: interfaces.Container): Container {
     const child = createFileTreeContainer(parent);
-    child.parent = parent;
 
     child.unbind(FileTree);
     child.bind(FileNavigatorTree).toSelf();
@@ -36,4 +35,8 @@ export function createFileNavigatorContainer(parent: interfaces.Container): Cont
     child.rebind(TreeProps).toConstantValue(FILE_NAVIGATOR_PROPS);
 
     return child;
+}
+
+export function createFileNavigatorWidget(parent: interfaces.Container): FileNavigatorWidget {
+    return createFileNavigatorContainer(parent).get(FileNavigatorWidget);
 }

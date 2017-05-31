@@ -5,13 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable, interfaces } from "inversify";
+import { inject, injectable } from "inversify";
 import { CommandRegistry, Emitter, DisposableCollection } from '../../application/common';
 import ICommandEvent = monaco.commands.ICommandEvent;
 import ICommandService = monaco.commands.ICommandService;
 
 export const MonacoCommandServiceFactory = Symbol('MonacoCommandServiceFactory');
-export interface MonacoCommandServiceFactory extends interfaces.Factory<MonacoCommandService> {
+export interface MonacoCommandServiceFactory {
     (): MonacoCommandService;
 }
 
