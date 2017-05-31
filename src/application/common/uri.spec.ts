@@ -53,6 +53,19 @@ describe("uri", () => {
             expect(new URI("file:///foo").appendPath("bar/baz").toString()).to.be.equal("file:///foo/bar/baz");
         });
 
+        it("Should append with the trailing path delimiter #01", () => {
+            const uri = new URI("file:///");
+            expect(uri.appendPath("").toString()).to.be.equal(uri.toString());
+        });
+
+        it("Should append with the trailing path delimiter #02", () => {
+            expect(new URI("file:///").appendPath("bar").toString()).to.be.equal("file:///bar");
+        });
+
+        it("Should append with the trailing path delimiter #03", () => {
+            expect(new URI("file:///").appendPath("bar/baz").toString()).to.be.equal("file:///bar/baz");
+        });
+
     });
 
     describe("04 #path", () => {
