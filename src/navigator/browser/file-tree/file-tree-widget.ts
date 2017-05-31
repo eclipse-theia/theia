@@ -12,6 +12,7 @@ import { TreeWidget, NodeProps, TreeProps, VirtualWidget, ITreeNode } from "../t
 import { DirNode, FileStatNode } from "./file-tree";
 import { FileTreeModel } from "./file-tree-model";
 
+export const FILE_TREE_CLASS = 'theia-FileTree';
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
 export const DIR_NODE_CLASS = 'theia-DirNode';
 export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
@@ -25,6 +26,7 @@ export class FileTreeWidget extends TreeWidget {
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
+        this.addClass(FILE_TREE_CLASS);
     }
 
     protected createNodeClassNames(node: ITreeNode, props: NodeProps): string[] {
