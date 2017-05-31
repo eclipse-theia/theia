@@ -11,19 +11,21 @@ import { messagingModule } from "theia-core/lib/messaging/browser";
 import { navigatorModule } from "theia-core/lib/navigator/browser";
 import { fileSystemClientModule } from "theia-core/lib/filesystem/browser";
 import { editorModule } from "theia-core/lib/editor/browser";
+import { workspaceFrontendModule } from 'theia-core/lib/workspace/browser';
 import { frontendLanguagesModule } from 'theia-core/lib/languages/browser';
 import { monacoModule } from 'theia-core/lib/monaco/browser';
 import { browserClipboardModule } from 'theia-core/lib/application/browser/clipboard/clipboard-module';
 import { browserMenuModule } from "theia-core/lib/application/browser/menu/menu-module";
 import { loggerFrontendModule } from 'theia-core/lib/application/browser/logger-frontend-module';
-import "theia-core/src/application/browser/style/index.css";
-import "theia-core/src/monaco/browser/style/index.css";
-import "theia-core/src/navigator/browser/style/index.css";
-import "theia-core/src/terminal/browser/terminal.css";
+import 'theia-core/src/application/browser/style/index.css';
+import 'theia-core/src/monaco/browser/style/index.css';
+import 'theia-core/src/navigator/browser/style/index.css';
+import 'theia-core/src/terminal/browser/terminal.css';
+import 'theia-core/src/workspace/browser/workspace.css';
 
 // terminal extension
 import terminalFrontendModule from 'theia-core/lib/terminal/browser/terminal-frontend-module';
-import "xterm/dist/xterm.css";
+import 'xterm/dist/xterm.css';
 
 // java extension
 import { frontendJavaModule } from 'theia-core/lib/java/browser';
@@ -45,6 +47,7 @@ import { frontendCppModule } from 'theia-core/lib/cpp/browser';
     container.load(navigatorModule);
     container.load(fileSystemClientModule);
     container.load(editorModule);
+    container.load(workspaceFrontendModule);
     container.load(frontendLanguagesModule);
     container.load(monacoModule);
     container.load(frontendJavaModule);
