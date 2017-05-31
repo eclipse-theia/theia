@@ -20,9 +20,14 @@ decorate(injectable(), Widget);
 export const FrontendApplicationContribution = Symbol("FrontendApplicationContribution");
 export interface FrontendApplicationContribution {
     /**
-     * Callback
+     * At the initialization phase an application contribution can contribute commands, keybindings and menus.
      */
-    onStart(app: FrontendApplication): void;
+    onInitialize?(app: FrontendApplication): void;
+    /**
+     * When the application is started an application contribution can access existing commands, keybindings, menus,
+     * but should not contribute new.
+     */
+    onStart?(app: FrontendApplication): void;
 }
 
 @injectable()
@@ -32,21 +37,31 @@ export class FrontendApplication {
     private application: Application<ApplicationShell>;
 
     constructor(
-        @inject(CommandRegistry) commandRegistry: CommandRegistry,
-        @inject(MenuModelRegistry) menuRegistry: MenuModelRegistry,
-        @inject(KeybindingRegistry) keybindingRegistry: KeybindingRegistry,
-        @inject(ContributionProvider) @named(FrontendApplicationContribution) contributions: ContributionProvider<FrontendApplicationContribution>) {
-
+        @inject(CommandRegistry) readonly commands: CommandRegistry,
+        @inject(MenuModelRegistry) readonly menus: MenuModelRegistry,
+        @inject(KeybindingRegistry) readonly keybindings: KeybindingRegistry,
+        @inject(ContributionProvider) @named(FrontendApplicationContribution) contributions: ContributionProvider<FrontendApplicationContribution>
+    ) {
         this.shell = new ApplicationShell();
         this.application = new Application<ApplicationShell>({
             shell: this.shell
         });
         this.application.started.then(() => {
-            commandRegistry.initialize();
-            keybindingRegistry.initialize();
-            menuRegistry.initialize();
-            contributions.getContributions().forEach(c => c.onStart(this));
-        })
+            commands.initialize();
+            keybindings.initialize();
+            menus.initialize();
+            const appContributions = contributions.getContributions();
+            for (const contribution of appContributions) {
+                if (contribution.onInitialize) {
+                    contribution.onInitialize(this);
+                }
+            }
+            for (const contribution of appContributions) {
+                if (contribution.onStart) {
+                    contribution.onStart(this);
+                }
+            }
+        });
     }
 
     start(): Promise<void> {
