@@ -106,10 +106,7 @@ export class TreeWidget extends Widget implements EventListenerObject {
     }
 
     protected render(): h.Child {
-        if (this.model) {
-            return this.renderTree(this.model);
-        }
-        return null;
+        return this.renderTree(this.model);
     }
 
     protected renderTree(model: ITreeModel): h.Child {
@@ -142,47 +139,14 @@ export class TreeWidget extends Widget implements EventListenerObject {
         return h.div(attributes, caption);
     }
 
-    protected showContextMenu(event: MouseEvent, node: ITreeNode | undefined): void {
-        if (this.model && ISelectableTreeNode.is(node)) {
-            this.model.selectNode(node);
-            const contextMenuPath = this.props.contextMenuPath;
-            if (contextMenuPath) {
-                this.onRender.push(Disposable.create(() =>
-                    setTimeout(() =>
-                        this.contextMenuRenderer.render(contextMenuPath, event)
-                    )
-                ));
-            }
-            this.update();
-        }
-        event.stopPropagation();
-        event.preventDefault();
-    }
-
-    protected selectNode(event: MouseEvent, node: ITreeNode | undefined): void {
-        if (this.model && ISelectableTreeNode.is(node)) {
-            this.model.selectNode(node);
-            event.stopPropagation();
-        }
-    }
-
     protected createNodeAttributes(node: ITreeNode, props: NodeProps): ElementAttrs {
         const className = this.createNodeClassNames(node, props).join(' ');
         const style = this.createNodeStyle(node, props);
         return {
             className, style,
-            onclick: (event) => {
-                this.selectNode(event, node)
-            },
-            ondblclick: (event) => {
-                if (this.model) {
-                    this.model.openNode(node);
-                    event.stopPropagation();
-                }
-            },
-            oncontextmenu: (event) => {
-                this.showContextMenu(event, node)
-            },
+            onclick: event => this.handleClickEvent(node, event),
+            ondblclick: event => this.handleDblClickEvent(node, event),
+            oncontextmenu: event => this.handleContextMenuEvent(node, event),
         };
     }
 
@@ -233,11 +197,9 @@ export class TreeWidget extends Widget implements EventListenerObject {
                 width: `${width}px`,
                 height: `${height}px`
             },
-            onclick: (event) => {
-                if (this.model) {
-                    this.model.toggleNodeExpansion(node);
-                    event.stopPropagation();
-                }
+            onclick: event => {
+                this.model.toggleNodeExpansion(node);
+                event.stopPropagation();
             }
         });
         return VirtualWidget.merge(expansionToggle, caption);
@@ -306,43 +268,75 @@ export class TreeWidget extends Widget implements EventListenerObject {
 
     handleEvent(event: Event): void {
         if (event.type === 'contextmenu') {
-            this.showContextMenu(event as PointerEvent, this.model.root);
-        } else if (event.type === 'keydown' && this.handleKeyDown(event as KeyboardEvent)) {
-            event.preventDefault();
+            this.handleContextMenuEvent(this.model.root, event as PointerEvent);
+        } else if (event.type === 'keydown' && this.handleKeyDownEvent(event as KeyboardEvent)) {
             event.stopPropagation();
+            event.preventDefault();
         } else if (event.type === 'click') {
-            this.selectNode(event as MouseEvent, this.model.root);
+            this.handleClickEvent(this.model.root, event as MouseEvent);
         }
     }
 
-    protected handleKeyDown(event: KeyboardEvent): boolean {
-        if (this.model) {
-            if (event.keyCode === 37) { // Left Arrow
-                if (!this.model.collapseNode()) {
-                    this.model.selectParent();
-                }
-                return true;
+    protected handleKeyDownEvent(event: KeyboardEvent): boolean {
+        if (event.keyCode === 37) { // Left Arrow
+            if (!this.model.collapseNode()) {
+                this.model.selectParent();
             }
-            if (event.keyCode === 38) { // Up Arrow
-                this.model.selectPrevNode();
-                return true;
-            }
-            if (event.keyCode === 39) { // Right Arrow
-                if (!this.model.expandNode()) {
-                    this.model.selectNextNode();
-                }
-                return true;
-            }
-            if (event.keyCode === 40) { // Down Arrow
+            return true;
+        }
+        if (event.keyCode === 38) { // Up Arrow
+            this.model.selectPrevNode();
+            return true;
+        }
+        if (event.keyCode === 39) { // Right Arrow
+            if (!this.model.expandNode()) {
                 this.model.selectNextNode();
-                return true;
             }
-            if (event.keyCode === 13) { // Enter
-                this.model.openNode();
-                return true;
-            }
+            return true;
+        }
+        if (event.keyCode === 40) { // Down Arrow
+            this.model.selectNextNode();
+            return true;
+        }
+        if (event.keyCode === 13) { // Enter
+            this.model.openNode();
+            return true;
         }
         return false;
+    }
+
+    protected handleClickEvent(node: ITreeNode | undefined, event: MouseEvent): void {
+        if (node) {
+            if (ISelectableTreeNode.is(node)) {
+                this.model.selectNode(node);
+            }
+            if (IExpandableTreeNode.is(node)) {
+                this.model.toggleNodeExpansion(node);
+            }
+            event.stopPropagation();
+        }
+    }
+
+    protected handleDblClickEvent(node: ITreeNode | undefined, event: MouseEvent): void {
+        this.model.openNode(node);
+        event.stopPropagation();
+    }
+
+    protected handleContextMenuEvent(node: ITreeNode | undefined, event: MouseEvent): void {
+        if (ISelectableTreeNode.is(node)) {
+            this.model.selectNode(node);
+            const contextMenuPath = this.props.contextMenuPath;
+            if (contextMenuPath) {
+                this.onRender.push(Disposable.create(() =>
+                    setTimeout(() =>
+                        this.contextMenuRenderer.render(contextMenuPath, event)
+                    )
+                ));
+            }
+            this.update();
+        }
+        event.stopPropagation();
+        event.preventDefault();
     }
 
 }
