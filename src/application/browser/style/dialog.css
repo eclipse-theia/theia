@@ -10,6 +10,7 @@
     position: fixed;
     color: var(--theia-ui-font-color1);
     font-size: var(--theia-ui-font-size1);
+    padding: 2px;
 }
 .p-Widget.dialogBlock .dialogWrapper {
     background-color: var(--theia-layout-color1);
@@ -19,34 +20,33 @@
     padding: calc(var(--theia-ui-padding)*3);
     text-align: center;
 }
-.p-Widget.dialogBlock .dialogTitle{
+.p-Widget.dialogBlock .dialogTitle {
     text-align: center;
     font-size: var(--theia-ui-font-size1);
     padding-bottom: 20px;
 }
-.p-Widget.dialogBlock .dialogClose{
+.p-Widget.dialogBlock .dialogClose {
     pointer-events: auto;
     position: absolute;
     right: calc(var(--theia-ui-padding)*2);
     top: calc(var(--theia-ui-padding)*2);
     cursor: pointer;
 }
-.p-Widget.dialogBlock .dialogContent{
+.p-Widget.dialogBlock .dialogContent {
     pointer-events: auto;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-between;
 }
 
-.p-Widget.dialogBlock.dialogContent > div {
-    margin: auto;
+.dialogContent > * {
+    margin: 2px;
 }
 
-.p-Widget.dialogBlock .dialogButton{
+.p-Widget.dialogBlock .dialogButton {
     border: 1px solid var(--theia-border-color1);
     color: var(--theia-ui-font-color1);
     font-size: var(--theia-ui-font-size1);
-    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding)*2);
     border-radius: 0;
     background: transparent;
     outline: none;
@@ -54,10 +54,10 @@
     cursor: pointer;
 }
 
-.p-Widget.dialogBlock .dialogButton.main{
+.p-Widget.dialogBlock .dialogButton.main {
     background-color: var(--theia-accent-color3);
 }
-.p-Widget.dialogBlock .dialogButton[disabled]{
+.p-Widget.dialogBlock .dialogButton[disabled] {
     background-color: var(--theia-disabled-color1);
     cursor: default;
 }
@@ -65,21 +65,21 @@
 .p-Widget.dialogBlock.hidden {
     display: none;
 }
-.p-Widget.dialogBlock.dialogErrorMessage{
+.p-Widget.dialogBlock.dialogErrorMessage {
     display: none;
 }
-.p-Widget.dialogBlock.error{
+.p-Widget.dialogBlock.error {
     color: var(--theia-error-color1);
 }
 .p-Widget.dialogBlock.error.main {
     color: var(--theia-error-color1);
     border-color: var(--theia-error-color1);
 }
-.p-Widget.dialogBlock.error > .dialogButton.main{
+.p-Widget.dialogBlock.error > .dialogButton.main {
     background-color: var(--theia-error-color1);
     color: var(--theia-ui-font-color1);
 }
-.p-Widget.dialogBlock.error > .dialogErrorMessage{
+.p-Widget.dialogBlock.error > .dialogErrorMessage {
     margin-top: calc(var(--theia-ui-padding)*3);
     font-size: var(--theia-ui-font-size1);
     display: block;
