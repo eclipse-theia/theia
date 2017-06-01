@@ -85,6 +85,14 @@ export class TreeWidget extends Widget implements EventListenerObject {
         this.toDispose.dispose();
     }
 
+    onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        if (!this.model.selectedNode && ISelectableTreeNode.is(this.model.root)) {
+            this.model.selectNode(this.model.root);
+        }
+        this.node.focus();
+    }
+
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
 
