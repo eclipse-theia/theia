@@ -7,6 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import { Widget } from "@phosphor/widgets/lib";
+import { Disposable } from '../../../application/common';
 import { AbstractDialog, DialogTitle } from "../../../application/browser";
 import { UriSelection } from '../../../filesystem/common';
 import { FileDialogWidget } from './file-dialog-widget';
@@ -27,14 +28,18 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
         this.toDispose.push(fileDialogWidget);
     }
 
-    protected attach(): void {
-        super.attach();
+    protected afterAttach(): void {
         Widget.attach(this.fileDialogWidget, this.contentNode);
+        this.appendCloseButton();
+        this.appendAcceptButton('Open');
+        this.toDisposeOnDetach.push(Disposable.create(() =>
+            Widget.detach(this.fileDialogWidget)
+        ));
+        super.afterAttach();
     }
 
-    protected detach(): void {
-        Widget.detach(this.fileDialogWidget);
-        super.detach();
+    protected activate(): void {
+        this.fileDialogWidget.activate();
     }
 
     get value(): UriSelection | undefined {
