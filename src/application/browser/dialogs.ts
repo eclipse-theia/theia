@@ -25,6 +25,9 @@ export abstract class AbstractDialog<T> implements Disposable {
     protected resolve: undefined | ((value: T) => void);
     protected reject: undefined | ((reason: any) => void);
 
+    protected closeButton: HTMLButtonElement | undefined;
+    protected acceptButton: HTMLButtonElement | undefined;
+
     constructor(
         @inject(DialogTitle) title: string
     ) {
@@ -51,6 +54,14 @@ export abstract class AbstractDialog<T> implements Disposable {
         wrapper.appendChild(this.closeCrossNode)
     }
 
+    protected appendCloseButton(text: string = 'Cancel'): void {
+        this.closeButton = this.appendButton(text);
+    }
+
+    protected appendAcceptButton(text: string = 'OK'): void {
+        this.acceptButton = this.appendButton(text);
+    }
+
     protected appendButton(text: string): HTMLButtonElement {
         const button = document.createElement("button");
         button.classList.add('dialogButton');
@@ -62,6 +73,16 @@ export abstract class AbstractDialog<T> implements Disposable {
 
     protected attach(): void {
         Widget.attach(this.widget, document.body);
+        this.afterAttach();
+    }
+
+    protected afterAttach(): void {
+        if (this.closeButton) {
+            this.addCloseListener(this.closeButton, 'click');
+        }
+        if (this.acceptButton) {
+            this.addAcceptListener(this.acceptButton, 'click');
+        }
         this.addCloseListener(this.closeCrossNode, 'click');
         this.addEventListener(document.body, 'keydown', (e: KeyboardEvent) => {
             let isEscape = false
@@ -81,6 +102,12 @@ export abstract class AbstractDialog<T> implements Disposable {
         });
     }
 
+    protected activate(): void {
+        if (this.acceptButton) {
+            this.acceptButton.focus();
+        }
+    }
+
     protected detach(): void {
         this.toDisposeOnDetach.dispose();
         Widget.detach(this.widget);
@@ -98,6 +125,7 @@ export abstract class AbstractDialog<T> implements Disposable {
                 this.reject = undefined;
             }));
             this.attach();
+            this.activate();
         });
     }
 
@@ -134,7 +162,9 @@ export abstract class AbstractDialog<T> implements Disposable {
         return '';
     }
     protected setErrorMessage(error: string): void {
-        console.warn(error);
+        if (this.acceptButton) {
+            this.acceptButton.disabled = !!error;
+        }
     }
 
     protected addValidateListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K): void {
@@ -172,26 +202,15 @@ export abstract class AbstractDialog<T> implements Disposable {
 
 export class ConfirmDialog extends AbstractDialog<void> {
 
-    protected readonly okButton: HTMLButtonElement;
-    protected readonly cancelButton: HTMLButtonElement;
-
-    constructor(title: string, msg: string, cancel = 'Cancel', ok = 'OK') {
+    constructor(title: string, msg: string, protected readonly cancel = 'Cancel', protected readonly ok = 'OK') {
         super(title)
 
         const messageNode = document.createElement("div");
         messageNode.textContent = msg;
         messageNode.setAttribute('style', 'flex: 1 100%; padding-bottom: calc(var(--theia-ui-padding)*3);');
         this.contentNode.appendChild(messageNode);
-
-        this.cancelButton = this.appendButton(cancel);
-        this.okButton = this.appendButton(ok);
-    }
-
-    protected attach(): void {
-        super.attach();
-        this.addCloseListener(this.cancelButton, 'click');
-        this.addAcceptListener(this.okButton, 'click');
-        this.okButton.focus();
+        this.appendCloseButton(this.cancel);
+        this.appendAcceptButton(this.ok);
     }
 
     get value(): void {
@@ -212,7 +231,6 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
 
     protected readonly errorMessageNode: HTMLDivElement;
     protected readonly inputField: HTMLInputElement;
-    protected readonly okButton: HTMLButtonElement;
 
     constructor(
         title: string,
@@ -227,7 +245,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         this.inputField.value = options.initialValue || '';
         this.contentNode.appendChild(this.inputField);
 
-        this.okButton = this.appendButton(options.confirmButtonLabel || 'OK');
+        this.appendAcceptButton(options.confirmButtonLabel);
 
         this.errorMessageNode = document.createElement("div");
         this.errorMessageNode.setAttribute('style', 'flex: 1 100%;');
@@ -246,21 +264,22 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         return super.isValid(value);
     }
 
-    protected attach(): void {
-        super.attach();
+    protected afterAttach(): void {
+        super.afterAttach();
         this.addValidateListener(this.inputField, 'input');
-        this.addAcceptListener(this.okButton, 'click');
+    }
+
+    protected activate(): void {
         this.inputField.focus();
         this.inputField.select();
     }
 
     protected setErrorMessage(error: string) {
+        super.setErrorMessage(error);
         if (error) {
             this.widget.addClass('error');
-            this.okButton.disabled = true;
         } else {
             this.widget.removeClass('error');
-            this.okButton.disabled = false;
         }
         this.errorMessageNode.innerHTML = error;
     }
