@@ -51,6 +51,15 @@ export abstract class AbstractDialog<T> implements Disposable {
         wrapper.appendChild(this.closeCrossNode)
     }
 
+    protected appendButton(text: string): HTMLButtonElement {
+        const button = document.createElement("button");
+        button.classList.add('dialogButton');
+        button.textContent = text;
+        button.setAttribute('style', 'flex: 1 20%;');
+        this.contentNode.appendChild(button);
+        return button;
+    }
+
     protected attach(): void {
         Widget.attach(this.widget, document.body);
         this.addCloseListener(this.closeCrossNode, 'click');
@@ -169,25 +178,13 @@ export class ConfirmDialog extends AbstractDialog<void> {
     constructor(title: string, msg: string, cancel = 'Cancel', ok = 'OK') {
         super(title)
 
-        const messageNode = document.createElement("div")
-        messageNode.textContent = msg
-        messageNode.setAttribute('style', 'flex: 1 100%; padding-bottom: calc(var(--theia-ui-padding)*3);')
-        this.contentNode.appendChild(messageNode)
+        const messageNode = document.createElement("div");
+        messageNode.textContent = msg;
+        messageNode.setAttribute('style', 'flex: 1 100%; padding-bottom: calc(var(--theia-ui-padding)*3);');
+        this.contentNode.appendChild(messageNode);
 
-        const cancelButton = document.createElement("button");
-        cancelButton.classList.add('dialogButton');
-        cancelButton.textContent = cancel;
-        cancelButton.setAttribute('style', 'flex: 1 20%;');
-        this.contentNode.appendChild(cancelButton);
-        this.cancelButton = cancelButton;
-
-        const okButton = document.createElement("button");
-        okButton.classList.add('dialogButton');
-        okButton.classList.add('main');
-        okButton.textContent = ok;
-        okButton.setAttribute('style', 'flex: 1 20%;');
-        this.contentNode.appendChild(okButton);
-        this.okButton = okButton;
+        this.cancelButton = this.appendButton(cancel);
+        this.okButton = this.appendButton(ok);
     }
 
     protected attach(): void {
@@ -230,13 +227,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         this.inputField.value = options.initialValue || '';
         this.contentNode.appendChild(this.inputField);
 
-        this.okButton = document.createElement("button");
-        this.okButton.classList.add('dialogButton');
-        this.okButton.classList.add('main');
-        this.okButton.setAttribute('style', 'flex: 1 20%;');
-        this.okButton.textContent = options.confirmButtonLabel || 'OK';
-
-        this.contentNode.appendChild(this.okButton);
+        this.okButton = this.appendButton(options.confirmButtonLabel || 'OK');
 
         this.errorMessageNode = document.createElement("div");
         this.errorMessageNode.setAttribute('style', 'flex: 1 100%;');
