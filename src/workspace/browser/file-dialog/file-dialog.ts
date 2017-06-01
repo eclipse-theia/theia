@@ -9,7 +9,7 @@ import { injectable, inject } from "inversify";
 import { Widget } from "@phosphor/widgets/lib";
 import { AbstractDialog, DialogTitle } from "../../../application/browser";
 import { UriSelection } from '../../../filesystem/common';
-import { FileTreeWidget } from "../../../navigator/browser/file-tree";
+import { FileDialogWidget } from './file-dialog-widget';
 
 export const FileDialogFactory = Symbol('FileDialogFactory');
 export interface FileDialogFactory {
@@ -21,24 +21,24 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
 
     constructor(
         @inject(DialogTitle) title: string,
-        @inject(FileTreeWidget) readonly fileTreeWidget: FileTreeWidget
+        @inject(FileDialogWidget) readonly fileDialogWidget: FileDialogWidget
     ) {
         super(title);
-        this.toDispose.push(fileTreeWidget);
+        this.toDispose.push(fileDialogWidget);
     }
 
     protected attach(): void {
         super.attach();
-        Widget.attach(this.fileTreeWidget, this.contentNode);
+        Widget.attach(this.fileDialogWidget, this.contentNode);
     }
 
     protected detach(): void {
-        Widget.detach(this.fileTreeWidget);
+        Widget.detach(this.fileDialogWidget);
         super.detach();
     }
 
     get value(): UriSelection | undefined {
-        return this.fileTreeWidget.model.selectedFileStatNode;
+        return this.fileDialogWidget.model.selectedFileStatNode;
     }
 
 }

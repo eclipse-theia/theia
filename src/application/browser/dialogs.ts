@@ -31,7 +31,7 @@ export abstract class AbstractDialog<T> implements Disposable {
         this.widget = new Widget()
         this.widget.addClass('dialogBlock')
 
-        let wrapper = document.createElement("div")
+        const wrapper = document.createElement("div")
         wrapper.classList.add('dialogWrapper')
         this.widget.node.appendChild(wrapper)
         this.titleNode = document.createElement("div")

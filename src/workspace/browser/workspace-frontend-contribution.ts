@@ -37,7 +37,7 @@ export class WorkspaceFrontendContribution implements FrontendApplicationContrib
             execute: () => {
                 this.fileSystem.getFileStat(FileUri.create('/').toString()).then(fileStat => {
                     const fileDialog = this.fileDialogFactory(WorkspaceCommands.OPEN.label!);
-                    fileDialog.fileTreeWidget.model.root = DirNode.createRoot(fileStat);
+                    fileDialog.fileDialogWidget.model.root = DirNode.createRoot(fileStat);
                     fileDialog.open();
                 });
             }

@@ -7,11 +7,21 @@
 
 import { interfaces, Container } from "inversify";
 import { DialogTitle } from '../../../application/browser/dialogs';
-import { createFileTreeContainer } from '../../../navigator/browser/file-tree';
+import { ITreeModel } from "../../../navigator/browser/tree";
+import { createFileTreeContainer, FileTreeModel, FileTreeWidget } from '../../../navigator/browser/file-tree';
 import { FileDialog } from "./file-dialog";
+import { FileDialogModel } from "./file-dialog-model"; import { FileDialogWidget } from './file-dialog-widget';
+
 
 export function createFileDialogContainer(parent: interfaces.Container): Container {
     const child = createFileTreeContainer(parent);
+
+    child.unbind(FileTreeModel);
+    child.bind(FileDialogModel).toSelf();
+    child.rebind(ITreeModel).toDynamicValue(ctx => ctx.container.get(FileDialogModel));
+
+    child.unbind(FileTreeWidget);
+    child.bind(FileDialogWidget).toSelf();
 
     child.bind(FileDialog).toSelf();
 
