@@ -32,17 +32,27 @@ This command does a few things:
  - runs the Typescript linter
  - runs the unit tests
 
+## Build the `local-dependency-manager`
+
+The local dependency manager takes care of installing the theia-core
+dependency in the examples.
+
+See it's [readme](https://github.com/theia-ide/theia/tree/master/config/local-dependency-manager) for more.
+
+	cd $THEIA/config/local-dependency-manager
+	npm install
+
 ## Build and run the browser-based example application
 
 Now that the `theia` package is built, we can do the same with the browser
 example.
 
     cd $THEIA/examples/browser
-    npm install
+    npm run bootstrap
 
-Note that because of the dependency that the example has on `file:../.., the
-`prepare` step of `theia` will be called, causing its build process to run
-again. This is expected.
+Bootstrap will:
+ - copy the required theia-core dependency using the local-dependency-manager.
+ - run npm install.
 
 Once this is done, we can start the application with:
 
@@ -56,7 +66,7 @@ tab with the frontend.
 Building the electron-based example is similar:
 
     cd $THEIA/examples/electron
-    npm install
+    npm run bootstrap
 
 It can also be started with:
 
@@ -69,10 +79,10 @@ To build and run the browser example:
     git clone https://github.com/theia-ide/theia \
     && cd theia \
     && npm install \
-    && npm run build \
-    && cd examples/browser \
+    && cd config/local-dependency-manager \
     && npm install \
-    && npm run build \
+    && cd ../../examples/browser \
+    && npm run bootstrap \
     && npm run start
 
 To build and run the electron example:
@@ -80,10 +90,10 @@ To build and run the electron example:
     git clone https://github.com/theia-ide/theia \
     && cd theia \
     && npm install \
-    && npm run build \
-    && cd examples/electron \
+    && cd config/local-dependency-manager \
     && npm install \
-    && npm run build \
+    && cd ../../examples/electron \
+    && npm run bootstrap \
     && npm run start
 
 ## Code coverage
