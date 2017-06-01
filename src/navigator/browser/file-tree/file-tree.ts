@@ -109,8 +109,8 @@ export namespace DirNode {
         const id = fileStat.uri;
         return {
             id, uri, fileStat,
-            name: '/',
-            visible: false,
+            name: uri.lastSegment,
+            visible: true,
             parent: undefined,
             children: [],
             expanded: true,

@@ -6,6 +6,6 @@
  */
 
  .dialogContent .theia-FileTree {
-     max-height: 500px;
+     height: 500px;
      border: var(--theia-border-width) solid var(--theia-border-color1);
  }
