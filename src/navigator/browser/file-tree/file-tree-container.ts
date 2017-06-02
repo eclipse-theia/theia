@@ -6,9 +6,9 @@
  */
 
 import { interfaces, Container } from 'inversify';
-import { createTreeContainer, ITree, Tree, ITreeModel, TreeModel, TreeWidget } from "../tree";
+import { createTreeContainer, ITree, Tree, ITreeModel, TreeModel, TreeServices, TreeWidget } from "../tree";
 import { FileTree } from "./file-tree";
-import { FileTreeModel } from "./file-tree-model";
+import { FileTreeModel, FileTreeServices } from './file-tree-model';
 import { FileTreeWidget } from "./file-tree-widget";
 
 export function createFileTreeContainer(parent: interfaces.Container): Container {
@@ -17,6 +17,9 @@ export function createFileTreeContainer(parent: interfaces.Container): Container
     child.unbind(Tree);
     child.bind(FileTree).toSelf();
     child.rebind(ITree).toDynamicValue(ctx => ctx.container.get(FileTree));
+
+    child.unbind(TreeServices);
+    child.bind(FileTreeServices).toSelf();
 
     child.unbind(TreeModel);
     child.bind(FileTreeModel).toSelf();

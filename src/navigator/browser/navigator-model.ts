@@ -7,23 +7,25 @@
 
 import { injectable, inject } from "inversify";
 import { OpenerService, open } from "../../application/browser";
-import { FileSystem, FileSystemWatcher } from "../../filesystem/common";
-import { ITreeSelectionService, ITreeExpansionService, ITreeNode } from "./tree";
-import { FileNode, FileTreeModel } from "./file-tree";
+import { ITreeNode } from "./tree";
+import { FileNode, FileTreeModel, FileTreeServices } from "./file-tree";
 import { FileNavigatorTree } from "./navigator-tree";
+
+@injectable()
+export class FileNavigatorServices extends FileTreeServices {
+    @inject(OpenerService) readonly openerService: OpenerService;
+}
 
 @injectable()
 export class FileNavigatorModel extends FileTreeModel {
 
+    protected readonly openerService: OpenerService;
+
     constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
         @inject(FileNavigatorTree) protected readonly tree: FileNavigatorTree,
-        @inject(ITreeSelectionService) protected readonly selection: ITreeSelectionService,
-        @inject(ITreeExpansionService) protected readonly expansion: ITreeExpansionService,
-        @inject(OpenerService) protected readonly openerService: OpenerService
+        @inject(FileNavigatorServices) services: FileNavigatorServices
     ) {
-        super(fileSystem, watcher, tree, selection, expansion);
+        super(tree, services);
     }
 
     protected doOpenNode(node: ITreeNode): void {

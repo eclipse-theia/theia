@@ -8,21 +8,27 @@
 import { injectable, inject } from "inversify";
 import URI from '../../../application/common/uri';
 import { FileSystem, FileSystemWatcher, FileChangesEvent, FileChangeType } from "../../../filesystem/common";
-import { ITreeSelectionService, ITreeExpansionService, ICompositeTreeNode, TreeModel } from "../tree";
+import { ICompositeTreeNode, TreeModel, TreeServices } from "../tree";
 import { FileStatNode, DirNode, FileTree } from "./file-tree";
+
+@injectable()
+export class FileTreeServices extends TreeServices {
+    @inject(FileSystem) readonly fileSystem: FileSystem;
+    @inject(FileSystemWatcher) readonly watcher: FileSystemWatcher;
+}
 
 @injectable()
 export class FileTreeModel extends TreeModel {
 
+    protected readonly fileSystem: FileSystem;
+    protected readonly watcher: FileSystemWatcher;
+
     constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
         @inject(FileTree) protected readonly tree: FileTree,
-        @inject(ITreeSelectionService) protected readonly selection: ITreeSelectionService,
-        @inject(ITreeExpansionService) protected readonly expansion: ITreeExpansionService
+        @inject(FileTreeServices) services: FileTreeServices
     ) {
-        super(tree, selection, expansion);
-        this.toDispose.push(watcher.onFileChanges(event => this.onFileChanges(event)));
+        super(tree, services);
+        this.toDispose.push(this.watcher.onFileChanges(event => this.onFileChanges(event)));
     }
 
     get selectedFileStatNode(): Readonly<FileStatNode> | undefined {
