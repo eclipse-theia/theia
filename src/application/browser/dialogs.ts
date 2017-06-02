@@ -77,19 +77,10 @@ export abstract class AbstractDialog<T> extends Widget {
             this.addAcceptListener(this.acceptButton, 'click');
         }
         this.addCloseListener(this.closeCrossNode, 'click');
-        this.addEventListener(document.body, 'keydown', (e: KeyboardEvent) => {
-            let isEscape = false
-            let isEnter = false
-            if ("key" in e) {
-                isEscape = (e.key === "Escape" || e.key === "Esc")
-                isEnter = e.key === "Enter"
-            } else {
-                isEscape = (e.keyCode === 27)
-                isEnter = (e.keyCode === 13)
-            }
-            if (isEscape) {
+        this.addEventListener(document.body, 'keydown', e => {
+            if (this.isEsc(e)) {
                 this.dispose();
-            } else if (isEnter) {
+            } else if (this.isEnter(e)) {
                 this.accept();
             }
         });
@@ -167,24 +158,39 @@ export abstract class AbstractDialog<T> extends Widget {
         this.addEventListener(element, type, e => {
             this.update();
             e.preventDefault();
-            return false;
         });
     }
 
     protected addCloseListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K): void {
-        this.addEventListener(element, type, e => {
+        const doDispose = (e: Event) => {
             this.dispose();
+            e.stopPropagation();
             e.preventDefault();
-            return false;
+        }
+        this.addEventListener(element, 'keydown', e => {
+            if (this.isEnter(e)) {
+                doDispose(e);
+            }
         });
+        this.addEventListener(element, type, e =>
+            doDispose(e)
+        );
     }
 
     protected addAcceptListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K): void {
-        this.addEventListener(element, type, e => {
+        const doAccept = (e: Event) => {
             this.accept();
+            e.stopPropagation();
             e.preventDefault();
-            return false;
+        }
+        this.addEventListener(element, 'keydown', e => {
+            if (this.isEnter(e)) {
+                doAccept(e)
+            }
         });
+        this.addEventListener(element, type, e =>
+            doAccept(e)
+        );
     }
 
     protected addEventListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any): void {
@@ -192,6 +198,20 @@ export abstract class AbstractDialog<T> extends Widget {
         this.toDisposeOnDetach.push(Disposable.create(() =>
             element.removeEventListener(type, listener)
         ));
+    }
+
+    protected isEnter(e: KeyboardEvent): boolean {
+        if ('key' in e) {
+            return e.key === 'Enter';
+        }
+        return e.keyCode === 13;
+    }
+
+    protected isEsc(e: KeyboardEvent): boolean {
+        if ('key' in e) {
+            return e.key === 'Escape' || e.key === 'Esc';
+        }
+        return e.keyCode === 27;
     }
 
 }
