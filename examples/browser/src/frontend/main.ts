@@ -21,7 +21,7 @@ import 'theia-core/src/application/browser/style/index.css';
 import 'theia-core/src/monaco/browser/style/index.css';
 import 'theia-core/src/navigator/browser/style/index.css';
 import 'theia-core/src/terminal/browser/terminal.css';
-import 'theia-core/src/workspace/browser/workspace.css';
+import 'theia-core/src/workspace/browser/file-dialog/file-dialog.css';
 
 // terminal extension
 import terminalFrontendModule from 'theia-core/lib/terminal/browser/terminal-frontend-module';

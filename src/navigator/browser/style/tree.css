@@ -5,9 +5,6 @@
     background:var(--theia-layout-color1);
     font-size: var(--theia-ui-font-size1);
 }
-.theia-Tree.theia-mod-selected{
-    box-shadow: inset 0px 0px 1px 1px var(--theia-accent-color3);
-}
 
 .theia-TreeNode {
     width: 500px;
