@@ -6,9 +6,7 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Widget } from "@phosphor/widgets";
 import { Message } from '@phosphor/messaging';
-import { Disposable } from '../../../application/common';
 import { AbstractDialog, DialogTitle } from "../../../application/browser";
 import { UriSelection } from '../../../filesystem/common';
 import { FileDialogModel } from './file-dialog-model';
@@ -19,6 +17,9 @@ export interface FileDialogFactory {
     (title: string): FileDialog;
 }
 
+export const NAVIGATION_PANEL_CLASS = 'theia-NavigationPanel';
+export const CONTROL_PANEL_CLASS = 'theia-ControlPanel';
+
 @injectable()
 export class FileDialog extends AbstractDialog<UriSelection | undefined> {
 
@@ -27,22 +28,33 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
 
     constructor(
         @inject(DialogTitle) title: string,
-        @inject(FileDialogWidget) readonly fileDialogWidget: FileDialogWidget
+        @inject(FileDialogWidget) readonly widget: FileDialogWidget
     ) {
         super(title);
-        this.toDispose.push(fileDialogWidget);
-
-        this.back = this.appendButton('Back');
-        this.forward = this.appendButton('Forward');
-
+        this.toDispose.push(widget);
         this.toDispose.push(this.model.onChanged(() =>
             this.update()
         ));
-        this.update();
+
+        const navigationPanel = document.createElement('div');
+        navigationPanel.classList.add(NAVIGATION_PANEL_CLASS);
+        this.contentNode.appendChild(navigationPanel);
+
+        this.back = this.appendButton('Back', navigationPanel);
+        this.forward = this.appendButton('Forward', navigationPanel);
+
+        this.contentNode.appendChild(this.widget.node);
+
+        const controlPanel = document.createElement('div');
+        controlPanel.classList.add(CONTROL_PANEL_CLASS);
+        this.contentNode.appendChild(controlPanel);
+
+        this.appendCloseButton('Cancel', controlPanel);
+        this.appendAcceptButton('Open', controlPanel);
     }
 
     get model(): FileDialogModel {
-        return this.fileDialogWidget.model;
+        return this.widget.model;
     }
 
     protected onUpdateRequest(msg: Message): void {
@@ -52,12 +64,6 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
     }
 
     protected onAfterAttach(msg: Message): void {
-        Widget.attach(this.fileDialogWidget, this.contentNode);
-        this.appendCloseButton();
-        this.appendAcceptButton('Open');
-        this.toDisposeOnDetach.push(Disposable.create(() =>
-            Widget.detach(this.fileDialogWidget)
-        ));
         this.addEventListener(this.back, 'click', () =>
             this.model.navigateBackward()
         );
@@ -68,11 +74,11 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
     }
 
     protected onActivateRequest(msg: Message): void {
-        this.fileDialogWidget.activate();
+        this.widget.activate();
     }
 
     get value(): UriSelection | undefined {
-        return this.fileDialogWidget.model.selectedFileStatNode;
+        return this.widget.model.selectedFileStatNode;
     }
 
 }

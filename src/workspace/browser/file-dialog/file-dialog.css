@@ -10,3 +10,25 @@
      width: 500px;
      border: var(--theia-border-width) solid var(--theia-border-color1);
  }
+
+ .dialogContent .theia-NavigationPanel {
+     display: flex;
+     flex-direction: row;
+     justify-content: flex-start;
+     margin-top: 0px;
+ }
+
+ .dialogContent .theia-NavigationPanel > * {
+     margin-right: 4px;
+}
+
+.dialogContent .theia-ControlPanel {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-bottom: 0px;
+}
+
+.dialogContent .theia-ControlPanel > * {
+    margin-left: 4px;
+}
