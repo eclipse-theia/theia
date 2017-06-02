@@ -40,8 +40,8 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
         navigationPanel.classList.add(NAVIGATION_PANEL_CLASS);
         this.contentNode.appendChild(navigationPanel);
 
-        this.back = this.appendButton('Back', navigationPanel);
-        this.forward = this.appendButton('Forward', navigationPanel);
+        navigationPanel.appendChild(this.back = this.createButton('Back'));
+        navigationPanel.appendChild(this.forward = this.createButton('Forward'));
 
         this.contentNode.appendChild(this.widget.node);
 
@@ -49,8 +49,8 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
         controlPanel.classList.add(CONTROL_PANEL_CLASS);
         this.contentNode.appendChild(controlPanel);
 
-        this.appendCloseButton('Cancel', controlPanel);
-        this.appendAcceptButton('Open', controlPanel);
+        controlPanel.appendChild(this.createCloseButton('Cancel'));
+        controlPanel.appendChild(this.createAcceptButton('Open'));
     }
 
     get model(): FileDialogModel {

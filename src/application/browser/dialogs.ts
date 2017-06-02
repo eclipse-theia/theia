@@ -52,19 +52,26 @@ export abstract class AbstractDialog<T> extends Widget {
         this.update();
     }
 
-    protected appendCloseButton(text: string = 'Cancel', host?: HTMLElement): HTMLButtonElement {
-        return this.closeButton = this.appendButton(text, host);
+    protected appendCloseButton(text?: string): void {
+        this.contentNode.appendChild(this.createCloseButton(text));
     }
 
-    protected appendAcceptButton(text: string = 'OK', host?: HTMLElement): HTMLButtonElement {
-        return this.acceptButton = this.appendButton(text, host);
+    protected appendAcceptButton(text?: string): void {
+        this.contentNode.appendChild(this.createAcceptButton(text));
     }
 
-    protected appendButton(text: string, host: HTMLElement = this.contentNode): HTMLButtonElement {
+    protected createCloseButton(text: string = 'Cancel'): HTMLButtonElement {
+        return this.closeButton = this.createButton(text);
+    }
+
+    protected createAcceptButton(text: string = 'OK'): HTMLButtonElement {
+        return this.acceptButton = this.createButton(text);
+    }
+
+    protected createButton(text: string): HTMLButtonElement {
         const button = document.createElement("button");
         button.classList.add('dialogButton');
         button.textContent = text;
-        host.appendChild(button);
         return button;
     }
 
