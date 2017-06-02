@@ -11,6 +11,7 @@ import { TreeModel, ITreeModel, TreeServices } from "./tree-model";
 import { Tree, ITree } from "./tree";
 import { ITreeSelectionService, TreeSelectionService } from "./tree-selection";
 import { ITreeExpansionService, TreeExpansionService } from "./tree-expansion";
+import { TreeNavigationService } from './tree-navigation';
 
 export function createTreeContainer(parent: interfaces.Container): Container {
     const child = new Container({ defaultScope: 'Singleton' });
@@ -25,6 +26,7 @@ export function createTreeContainer(parent: interfaces.Container): Container {
     child.bind(TreeExpansionService).toSelf();
     child.bind(ITreeExpansionService).toDynamicValue(ctx => ctx.container.get(TreeExpansionService));
 
+    child.bind(TreeNavigationService).toSelf();
     child.bind(TreeServices).toSelf();
 
     child.bind(TreeModel).toSelf();
