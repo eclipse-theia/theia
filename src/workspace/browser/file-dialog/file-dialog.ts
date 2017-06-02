@@ -7,18 +7,22 @@
 
 import { injectable, inject } from "inversify";
 import { Message } from '@phosphor/messaging';
-import { AbstractDialog, DialogTitle } from "../../../application/browser";
+import { AbstractDialog, DialogProps } from "../../../application/browser";
 import { UriSelection } from '../../../filesystem/common';
 import { FileDialogModel } from './file-dialog-model';
 import { FileDialogWidget } from './file-dialog-widget';
 
 export const FileDialogFactory = Symbol('FileDialogFactory');
 export interface FileDialogFactory {
-    (title: string): FileDialog;
+    (props: FileDialogProps): FileDialog;
 }
 
 export const NAVIGATION_PANEL_CLASS = 'theia-NavigationPanel';
 export const CONTROL_PANEL_CLASS = 'theia-ControlPanel';
+
+@injectable()
+export class FileDialogProps extends DialogProps {
+}
 
 @injectable()
 export class FileDialog extends AbstractDialog<UriSelection | undefined> {
@@ -27,10 +31,10 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
     protected readonly forward: HTMLButtonElement;
 
     constructor(
-        @inject(DialogTitle) title: string,
+        @inject(FileDialogProps) props: FileDialogProps,
         @inject(FileDialogWidget) readonly widget: FileDialogWidget
     ) {
-        super(title);
+        super(props);
         this.toDispose.push(widget);
         this.toDispose.push(this.model.onChanged(() =>
             this.update()

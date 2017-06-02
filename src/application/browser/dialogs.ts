@@ -10,7 +10,10 @@ import { Widget } from '@phosphor/widgets';
 import { Message } from "@phosphor/messaging";
 import { DisposableCollection, Disposable } from "../common";
 
-export const DialogTitle = Symbol('DialogTitle');
+@injectable()
+export class DialogProps {
+    readonly title: string;
+}
 
 @injectable()
 export abstract class AbstractDialog<T> extends Widget {
@@ -29,7 +32,7 @@ export abstract class AbstractDialog<T> extends Widget {
     protected acceptButton: HTMLButtonElement | undefined;
 
     constructor(
-        @inject(DialogTitle) title: string
+        @inject(DialogProps) protected readonly props: DialogProps
     ) {
         super();
         this.addClass('dialogBlock');
@@ -40,7 +43,7 @@ export abstract class AbstractDialog<T> extends Widget {
 
         this.titleNode = document.createElement("div");
         this.titleNode.classList.add('dialogTitle');
-        this.titleNode.textContent = title;
+        this.titleNode.textContent = props.title;
         this.contentNode.appendChild(this.titleNode);
 
         this.closeCrossNode = document.createElement("i");
@@ -223,17 +226,27 @@ export abstract class AbstractDialog<T> extends Widget {
 
 }
 
+@injectable()
+export class ConfirmDialogProps extends DialogProps {
+    readonly msg: string;
+    readonly cancel?: string;
+    readonly ok?: string;
+}
+
+
 export class ConfirmDialog extends AbstractDialog<void> {
 
-    constructor(title: string, msg: string, protected readonly cancel = 'Cancel', protected readonly ok = 'OK') {
-        super(title)
+    constructor(
+        @inject(ConfirmDialogProps) protected readonly props: ConfirmDialogProps
+    ) {
+        super(props);
 
         const messageNode = document.createElement("div");
-        messageNode.textContent = msg;
+        messageNode.textContent = props.msg;
         messageNode.setAttribute('style', 'flex: 1 100%; padding-bottom: calc(var(--theia-ui-padding)*3);');
         this.contentNode.appendChild(messageNode);
-        this.appendCloseButton(this.cancel);
-        this.appendAcceptButton(this.ok);
+        this.appendCloseButton(props.cancel);
+        this.appendAcceptButton(props.ok);
     }
 
     get value(): void {
@@ -242,12 +255,11 @@ export class ConfirmDialog extends AbstractDialog<void> {
 
 }
 
-export namespace SingleTextInputDialog {
-    export interface Options {
-        confirmButtonLabel?: string,
-        initialValue?: string,
-        validate?(input: string): string
-    }
+@injectable()
+export class SingleTextInputDialogProps extends DialogProps {
+    readonly confirmButtonLabel?: string;
+    readonly initialValue?: string;
+    readonly validate?: (input: string) => string;
 }
 
 export class SingleTextInputDialog extends AbstractDialog<string> {
@@ -256,19 +268,18 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
     protected readonly inputField: HTMLInputElement;
 
     constructor(
-        title: string,
-        protected readonly options: SingleTextInputDialog.Options
+        @inject(SingleTextInputDialogProps) protected readonly props: SingleTextInputDialogProps
     ) {
-        super(title);
+        super(props);
 
         this.inputField = document.createElement("input");
         this.inputField.classList.add('dialogButton');
         this.inputField.type = 'text';
         this.inputField.setAttribute('style', 'flex: 1 auto;');
-        this.inputField.value = options.initialValue || '';
+        this.inputField.value = props.initialValue || '';
         this.contentNode.appendChild(this.inputField);
 
-        this.appendAcceptButton(options.confirmButtonLabel);
+        this.appendAcceptButton(props.confirmButtonLabel);
 
         this.errorMessageNode = document.createElement("div");
         this.errorMessageNode.setAttribute('style', 'flex: 1 100%;');
@@ -281,8 +292,8 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
     }
 
     isValid(value: string): string {
-        if (this.options.validate) {
-            return this.options.validate(value);
+        if (this.props.validate) {
+            return this.props.validate(value);
         }
         return super.isValid(value);
     }
