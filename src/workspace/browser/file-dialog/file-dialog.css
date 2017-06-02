@@ -7,5 +7,6 @@
 
  .dialogContent .theia-FileDialog {
      height: 500px;
+     width: 500px;
      border: var(--theia-border-width) solid var(--theia-border-color1);
  }

@@ -7,18 +7,18 @@
 
 import { injectable, inject } from "inversify";
 import { Widget } from '@phosphor/widgets';
+import { Message } from "@phosphor/messaging";
 import { DisposableCollection, Disposable } from "../common";
 
 export const DialogTitle = Symbol('DialogTitle');
 
 @injectable()
-export abstract class AbstractDialog<T> implements Disposable {
+export abstract class AbstractDialog<T> extends Widget {
 
     protected readonly titleNode: HTMLDivElement;
     protected readonly contentNode: HTMLDivElement;
     protected readonly closeCrossNode: HTMLElement;
 
-    protected readonly widget: Widget;
     protected readonly toDispose = new DisposableCollection();
     protected readonly toDisposeOnDetach = new DisposableCollection();
 
@@ -31,27 +31,24 @@ export abstract class AbstractDialog<T> implements Disposable {
     constructor(
         @inject(DialogTitle) title: string
     ) {
-        this.widget = new Widget()
-        this.widget.addClass('dialogBlock')
+        super();
+        this.addClass('dialogBlock');
 
-        const wrapper = document.createElement("div")
-        wrapper.classList.add('dialogWrapper')
-        this.widget.node.appendChild(wrapper)
-        this.titleNode = document.createElement("div")
-        this.titleNode.classList.add('dialogTitle')
-        this.titleNode.textContent = title
-        wrapper.appendChild(this.titleNode)
+        this.contentNode = document.createElement("div");
+        this.contentNode.classList.add('dialogContent');
+        this.node.appendChild(this.contentNode);
 
-        this.contentNode = document.createElement("div")
-        this.contentNode.classList.add('dialogContent')
-        wrapper.appendChild(this.contentNode)
+        this.titleNode = document.createElement("div");
+        this.titleNode.classList.add('dialogTitle');
+        this.titleNode.textContent = title;
+        this.contentNode.appendChild(this.titleNode);
 
-        this.closeCrossNode = document.createElement("i")
-        this.closeCrossNode.classList.add('dialogClose')
-        this.closeCrossNode.classList.add('fa')
-        this.closeCrossNode.classList.add('fa-times')
-        this.closeCrossNode.setAttribute('aria-hidden', 'true')
-        wrapper.appendChild(this.closeCrossNode)
+        this.closeCrossNode = document.createElement("i");
+        this.closeCrossNode.classList.add('dialogClose');
+        this.closeCrossNode.classList.add('fa');
+        this.closeCrossNode.classList.add('fa-times');
+        this.closeCrossNode.setAttribute('aria-hidden', 'true');
+        this.contentNode.appendChild(this.closeCrossNode);
     }
 
     protected appendCloseButton(text: string = 'Cancel'): void {
@@ -66,17 +63,12 @@ export abstract class AbstractDialog<T> implements Disposable {
         const button = document.createElement("button");
         button.classList.add('dialogButton');
         button.textContent = text;
-        button.style.flex = '1 20%';
         this.contentNode.appendChild(button);
         return button;
     }
 
-    protected attach(): void {
-        Widget.attach(this.widget, document.body);
-        this.afterAttach();
-    }
-
-    protected afterAttach(): void {
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
         if (this.closeButton) {
             this.addCloseListener(this.closeButton, 'click');
         }
@@ -102,15 +94,16 @@ export abstract class AbstractDialog<T> implements Disposable {
         });
     }
 
-    protected activate(): void {
+    protected onBeforeDetach(msg: Message): void {
+        this.toDisposeOnDetach.dispose();
+        super.onBeforeDetach(msg);
+    }
+
+    protected onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
         if (this.acceptButton) {
             this.acceptButton.focus();
         }
-    }
-
-    protected detach(): void {
-        this.toDisposeOnDetach.dispose();
-        Widget.detach(this.widget);
     }
 
     open(): Promise<T> {
@@ -124,14 +117,15 @@ export abstract class AbstractDialog<T> implements Disposable {
                 this.resolve = undefined;
                 this.reject = undefined;
             }));
-            this.attach();
+            Widget.attach(this, document.body);
             this.activate();
         });
     }
 
     dispose(): void {
+        super.dispose();
         if (this.reject) {
-            this.detach();
+            Widget.detach(this);
         }
         this.toDispose.dispose();
     }
@@ -152,7 +146,7 @@ export abstract class AbstractDialog<T> implements Disposable {
                 this.setErrorMessage(error);
             } else {
                 this.resolve(value);
-                this.detach();
+                Widget.detach(this);
             }
         }
     }
@@ -264,12 +258,12 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
         return super.isValid(value);
     }
 
-    protected afterAttach(): void {
-        super.afterAttach();
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
         this.addValidateListener(this.inputField, 'input');
     }
 
-    protected activate(): void {
+    protected onActivateRequest(msg: Message): void {
         this.inputField.focus();
         this.inputField.select();
     }
@@ -277,9 +271,9 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
     protected setErrorMessage(error: string) {
         super.setErrorMessage(error);
         if (error) {
-            this.widget.addClass('error');
+            this.addClass('error');
         } else {
-            this.widget.removeClass('error');
+            this.removeClass('error');
         }
         this.errorMessageNode.innerHTML = error;
     }
