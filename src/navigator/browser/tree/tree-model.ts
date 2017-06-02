@@ -49,24 +49,33 @@ export interface ITreeModel extends ITree, ITreeSelectionService, ITreeExpansion
 }
 
 @injectable()
+export class TreeServices {
+    @inject(ITreeSelectionService) readonly selection: ITreeSelectionService;
+    @inject(ITreeExpansionService) readonly expansion: ITreeExpansionService;
+}
+
+@injectable()
 export class TreeModel implements ITreeModel, SelectionProvider<Readonly<ISelectableTreeNode>> {
 
     protected readonly onChangedEmitter = new Emitter<void>();
     protected readonly toDispose = new DisposableCollection();
 
+    protected readonly selection: ITreeSelectionService;
+    protected readonly expansion: ITreeExpansionService;
+
     constructor(
         @inject(ITree) protected readonly tree: ITree,
-        @inject(ITreeSelectionService) protected readonly selection: ITreeSelectionService,
-        @inject(ITreeExpansionService) protected readonly expansion: ITreeExpansionService
+        @inject(TreeServices) services: TreeServices
     ) {
+        Object.assign(this, services);
         this.toDispose.push(tree);
         this.toDispose.push(tree.onChanged(() => this.fireChanged()));
 
-        this.toDispose.push(selection);
-        this.toDispose.push(selection.onSelectionChanged(() => this.fireChanged()));
+        this.toDispose.push(this.selection);
+        this.toDispose.push(this.selection.onSelectionChanged(() => this.fireChanged()));
 
-        this.toDispose.push(expansion);
-        this.toDispose.push(expansion.onExpansionChanged((node) => {
+        this.toDispose.push(this.expansion);
+        this.toDispose.push(this.expansion.onExpansionChanged((node) => {
             this.fireChanged();
             if (!node.expanded && ICompositeTreeNode.isAncestor(node, this.selectedNode)) {
                 this.selectNode(ISelectableTreeNode.isVisible(node) ? node : undefined);

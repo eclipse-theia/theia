@@ -7,7 +7,7 @@
 
 import { interfaces, Container } from 'inversify';
 import { TreeWidget, TreeProps, defaultTreeProps } from "./tree-widget";
-import { TreeModel, ITreeModel } from "./tree-model";
+import { TreeModel, ITreeModel, TreeServices } from "./tree-model";
 import { Tree, ITree } from "./tree";
 import { ITreeSelectionService, TreeSelectionService } from "./tree-selection";
 import { ITreeExpansionService, TreeExpansionService } from "./tree-expansion";
@@ -24,6 +24,8 @@ export function createTreeContainer(parent: interfaces.Container): Container {
 
     child.bind(TreeExpansionService).toSelf();
     child.bind(ITreeExpansionService).toDynamicValue(ctx => ctx.container.get(TreeExpansionService));
+
+    child.bind(TreeServices).toSelf();
 
     child.bind(TreeModel).toSelf();
     child.bind(ITreeModel).toDynamicValue(ctx => ctx.container.get(TreeModel));
