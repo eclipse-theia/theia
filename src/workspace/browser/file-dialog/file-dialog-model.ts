@@ -14,7 +14,7 @@ export class FileDialogModel extends FileTreeModel {
 
     protected doOpenNode(node: ITreeNode): void {
         if (DirNode.is(node)) {
-            this.root = node;
+            this.navigateTo(node);
         } else {
             super.doOpenNode(node);
         }

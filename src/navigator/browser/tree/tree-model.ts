@@ -10,6 +10,7 @@ import { DisposableCollection, Event, Emitter, SelectionProvider } from "../../.
 import { ITree, ITreeNode, ICompositeTreeNode } from "./tree";
 import { ITreeSelectionService, ISelectableTreeNode } from "./tree-selection";
 import { ITreeExpansionService, IExpandableTreeNode } from "./tree-expansion";
+import { TreeNavigationService } from "./tree-navigation";
 import { ITreeNodeIterator, TreeNodeIterator, BackwardTreeNodeIterator } from "./tree-iterator";
 
 export const ITreeModel = Symbol("ITreeModel");
@@ -46,12 +47,34 @@ export interface ITreeModel extends ITree, ITreeSelectionService, ITreeExpansion
      * Select a parent node relatively to the selected taking into account node expansion.
      */
     selectParent(): void;
+    /**
+     * Navigate to the given node if it is defined.
+     * Navigation sets a node as a root node.
+     */
+    navigateTo(node: ITreeNode | undefined): void;
+    /**
+     * Test whether it is possible to navigate forward.
+     */
+    canNavigateForward(): boolean;
+    /**
+     * Test whether it is possible to navigate backward.
+     */
+    canNavigateBackward(): boolean;
+    /**
+     * Navigate forward.
+     */
+    navigateForward(): void;
+    /**
+     * Navigate backward.
+     */
+    navigateBackward(): void;
 }
 
 @injectable()
 export class TreeServices {
     @inject(ITreeSelectionService) readonly selection: ITreeSelectionService;
     @inject(ITreeExpansionService) readonly expansion: ITreeExpansionService;
+    @inject(TreeNavigationService) readonly navigation: TreeNavigationService;
 }
 
 @injectable()
@@ -62,6 +85,7 @@ export class TreeModel implements ITreeModel, SelectionProvider<Readonly<ISelect
 
     protected readonly selection: ITreeSelectionService;
     protected readonly expansion: ITreeExpansionService;
+    protected readonly navigation: TreeNavigationService;
 
     constructor(
         @inject(ITree) protected readonly tree: ITree,
@@ -217,6 +241,35 @@ export class TreeModel implements ITreeModel, SelectionProvider<Readonly<ISelect
         const parent = ISelectableTreeNode.getVisibleParent(node);
         if (parent) {
             this.selectNode(parent);
+        }
+    }
+
+    navigateTo(node: ITreeNode | undefined): void {
+        if (node) {
+            this.navigation.push(node);
+            this.tree.root = node;
+        }
+    }
+
+    canNavigateForward(): boolean {
+        return !!this.navigation.next;
+    }
+
+    canNavigateBackward(): boolean {
+        return !!this.navigation.prev;
+    }
+
+    navigateForward(): void {
+        const node = this.navigation.advance();
+        if (node) {
+            this.tree.root = node;
+        }
+    }
+
+    navigateBackward(): void {
+        const node = this.navigation.retreat();
+        if (node) {
+            this.tree.root = node;
         }
     }
 
