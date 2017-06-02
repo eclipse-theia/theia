@@ -6,7 +6,8 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Widget } from "@phosphor/widgets/lib";
+import { Widget } from "@phosphor/widgets";
+import { Message } from '@phosphor/messaging';
 import { Disposable } from '../../../application/common';
 import { AbstractDialog, DialogTitle } from "../../../application/browser";
 import { UriSelection } from '../../../filesystem/common';
@@ -44,12 +45,13 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
         return this.fileDialogWidget.model;
     }
 
-    protected update(): void {
+    protected onUpdateRequest(msg: Message): void {
+        super.onUpdateRequest(msg);
         this.back.disabled = !this.model.canNavigateBackward();
         this.forward.disabled = !this.model.canNavigateForward();
     }
 
-    protected afterAttach(): void {
+    protected onAfterAttach(msg: Message): void {
         Widget.attach(this.fileDialogWidget, this.contentNode);
         this.appendCloseButton();
         this.appendAcceptButton('Open');
@@ -62,10 +64,10 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
         this.addEventListener(this.forward, 'click', () =>
             this.model.navigateForward()
         );
-        super.afterAttach();
+        super.onAfterAttach(msg);
     }
 
-    protected activate(): void {
+    protected onActivateRequest(msg: Message): void {
         this.fileDialogWidget.activate();
     }
 

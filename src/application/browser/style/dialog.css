@@ -1,4 +1,4 @@
-.p-Widget.dialogBlock{
+.p-Widget.dialogBlock {
     width: 100vw;
     height: 100vh;
     top: 0;
@@ -12,11 +12,10 @@
     font-size: var(--theia-ui-font-size1);
     padding: 2px;
 }
-.p-Widget.dialogBlock .dialogWrapper {
+.p-Widget.dialogBlock .dialogContent {
     background-color: var(--theia-layout-color1);
     border: 1px solid var(--theia-border-color1);
     position: relative;
-    width: 260px;
     padding: calc(var(--theia-ui-padding)*3);
     text-align: center;
 }
@@ -32,15 +31,9 @@
     top: calc(var(--theia-ui-padding)*2);
     cursor: pointer;
 }
-.p-Widget.dialogBlock .dialogContent {
-    pointer-events: auto;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-}
 
 .dialogContent > * {
-    margin: 2px;
+    margin: 4px;
 }
 
 .dialogContent :focus {
@@ -55,6 +48,10 @@
     background: transparent;
     outline: none;
     cursor: pointer;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 4px;
+    padding-bottom: 4px;
 }
 
 .p-Widget.dialogBlock .dialogButton.main {
