@@ -10,6 +10,7 @@ import { Widget } from "@phosphor/widgets/lib";
 import { Disposable } from '../../../application/common';
 import { AbstractDialog, DialogTitle } from "../../../application/browser";
 import { UriSelection } from '../../../filesystem/common';
+import { FileDialogModel } from './file-dialog-model';
 import { FileDialogWidget } from './file-dialog-widget';
 
 export const FileDialogFactory = Symbol('FileDialogFactory');
@@ -20,12 +21,32 @@ export interface FileDialogFactory {
 @injectable()
 export class FileDialog extends AbstractDialog<UriSelection | undefined> {
 
+    protected readonly back: HTMLButtonElement;
+    protected readonly forward: HTMLButtonElement;
+
     constructor(
         @inject(DialogTitle) title: string,
         @inject(FileDialogWidget) readonly fileDialogWidget: FileDialogWidget
     ) {
         super(title);
         this.toDispose.push(fileDialogWidget);
+
+        this.back = this.appendButton('Back');
+        this.forward = this.appendButton('Forward');
+
+        this.toDispose.push(this.model.onChanged(() =>
+            this.update()
+        ));
+        this.update();
+    }
+
+    get model(): FileDialogModel {
+        return this.fileDialogWidget.model;
+    }
+
+    protected update(): void {
+        this.back.disabled = !this.model.canNavigateBackward();
+        this.forward.disabled = !this.model.canNavigateForward();
     }
 
     protected afterAttach(): void {
@@ -35,6 +56,12 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
         this.toDisposeOnDetach.push(Disposable.create(() =>
             Widget.detach(this.fileDialogWidget)
         ));
+        this.addEventListener(this.back, 'click', () =>
+            this.model.navigateBackward()
+        );
+        this.addEventListener(this.forward, 'click', () =>
+            this.model.navigateForward()
+        );
         super.afterAttach();
     }
 
