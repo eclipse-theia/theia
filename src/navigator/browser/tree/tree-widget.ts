@@ -101,12 +101,6 @@ export class TreeWidget extends Widget implements EventListenerObject {
         VirtualDOM.render(content, this.node);
         this.onRender.dispose();
 
-        if (ISelectableTreeNode.isSelected(this.model.root)) {
-            this.addClass(SELECTED_CLASS);
-        } else {
-            this.removeClass(SELECTED_CLASS);
-        }
-
         const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
         if (selected) {
             ElementExt.scrollIntoViewIfNeeded(this.node, selected);

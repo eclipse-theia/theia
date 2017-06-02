@@ -43,6 +43,10 @@
     margin: 2px;
 }
 
+.dialogContent :focus {
+  box-shadow: inset 0px 0px 1px 1px var(--theia-accent-color3);
+}
+
 .p-Widget.dialogBlock .dialogButton {
     border: 1px solid var(--theia-border-color1);
     color: var(--theia-ui-font-color1);
@@ -50,7 +54,6 @@
     border-radius: 0;
     background: transparent;
     outline: none;
-    box-shadow: none;
     cursor: pointer;
 }
 

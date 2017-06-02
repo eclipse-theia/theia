@@ -66,7 +66,7 @@ export abstract class AbstractDialog<T> implements Disposable {
         const button = document.createElement("button");
         button.classList.add('dialogButton');
         button.textContent = text;
-        button.setAttribute('style', 'flex: 1 20%;');
+        button.style.flex = '1 20%';
         this.contentNode.appendChild(button);
         return button;
     }
