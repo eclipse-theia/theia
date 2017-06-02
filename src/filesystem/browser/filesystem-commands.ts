@@ -101,7 +101,8 @@ export class FileCommandContribution implements CommandContribution {
             FileCommands.FILE_RENAME,
             new FileSystemCommandHandler(this.selectionService, uri =>
                 this.getParent(uri).then(parent => {
-                    const dialog = new SingleTextInputDialog('Rename File', {
+                    const dialog = new SingleTextInputDialog({
+                        title: 'Rename File',
                         initialValue: uri.lastSegment,
                         validate: name => this.validateFileName(name, parent)
                     });
@@ -139,7 +140,8 @@ export class FileCommandContribution implements CommandContribution {
             new FileSystemCommandHandler(this.selectionService, uri =>
                 this.getDirectory(uri).then(parent => {
                     const freeUri = this.getFreeChild('Untitled', '.txt', parent)
-                    const dialog = new SingleTextInputDialog(`New File Below '${freeUri.parent.lastSegment}'`, {
+                    const dialog = new SingleTextInputDialog({
+                        title: `New File Below '${freeUri.parent.lastSegment}'`,
                         initialValue: freeUri.lastSegment,
                         validate: name => this.validateFileName(name, parent)
                     })
@@ -155,7 +157,8 @@ export class FileCommandContribution implements CommandContribution {
             new FileSystemCommandHandler(this.selectionService, uri =>
                 this.getDirectory(uri).then(stat => {
                     const freeUri = this.getFreeChild('Untitled', '', stat);
-                    const dialog = new SingleTextInputDialog(`New Folder Below '${freeUri.parent.lastSegment}'`, {
+                    const dialog = new SingleTextInputDialog({
+                        title: `New Folder Below '${freeUri.parent.lastSegment}'`,
                         initialValue: freeUri.lastSegment,
                         validate: name => this.validateFileName(name, stat)
                     });
@@ -169,7 +172,10 @@ export class FileCommandContribution implements CommandContribution {
         registry.registerHandler(
             FileCommands.FILE_DELETE,
             new FileSystemCommandHandler(this.selectionService, uri => {
-                const dialog = new ConfirmDialog('Delete File', `Do you really want to delete '${uri.lastSegment}'?`)
+                const dialog = new ConfirmDialog({
+                    title: 'Delete File',
+                    msg: `Do you really want to delete '${uri.lastSegment}'?`
+                });
                 return dialog.open().then(() => {
                     return this.fileSystem.delete(uri.toString())
                 });

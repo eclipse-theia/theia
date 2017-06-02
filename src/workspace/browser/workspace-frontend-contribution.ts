@@ -36,7 +36,9 @@ export class WorkspaceFrontendContribution implements FrontendApplicationContrib
             isEnabled: () => true,
             execute: () => {
                 this.fileSystem.getFileStat(FileUri.create('/').toString()).then(fileStat => {
-                    const fileDialog = this.fileDialogFactory(WorkspaceCommands.OPEN.label!);
+                    const fileDialog = this.fileDialogFactory({
+                        title: WorkspaceCommands.OPEN.label!
+                    });
                     fileDialog.model.navigateTo(DirNode.createRoot(fileStat));
                     fileDialog.open();
                 });

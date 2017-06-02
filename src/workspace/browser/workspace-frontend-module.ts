@@ -8,7 +8,7 @@
 import { ContainerModule } from "inversify";
 import { FrontendApplicationContribution } from '../../application/browser/application';
 import { WorkspaceFrontendContribution } from "./workspace-frontend-contribution";
-import { FileDialogFactory, createFileDialog } from './file-dialog';
+import { FileDialogFactory, createFileDialog, FileDialogProps } from './file-dialog';
 
 export const workspaceFrontendModule = new ContainerModule(bind => {
     bind(WorkspaceFrontendContribution).toSelf().inSingletonScope();
@@ -17,7 +17,7 @@ export const workspaceFrontendModule = new ContainerModule(bind => {
     ).inSingletonScope();
 
     bind(FileDialogFactory).toFactory(ctx =>
-        (title: string) =>
-            createFileDialog(ctx.container, title)
+        (props: FileDialogProps) =>
+            createFileDialog(ctx.container, props)
     );
 });
