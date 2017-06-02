@@ -49,21 +49,22 @@ export abstract class AbstractDialog<T> extends Widget {
         this.closeCrossNode.classList.add('fa-times');
         this.closeCrossNode.setAttribute('aria-hidden', 'true');
         this.contentNode.appendChild(this.closeCrossNode);
+        this.update();
     }
 
-    protected appendCloseButton(text: string = 'Cancel'): void {
-        this.closeButton = this.appendButton(text);
+    protected appendCloseButton(text: string = 'Cancel', host?: HTMLElement): HTMLButtonElement {
+        return this.closeButton = this.appendButton(text, host);
     }
 
-    protected appendAcceptButton(text: string = 'OK'): void {
-        this.acceptButton = this.appendButton(text);
+    protected appendAcceptButton(text: string = 'OK', host?: HTMLElement): HTMLButtonElement {
+        return this.acceptButton = this.appendButton(text, host);
     }
 
-    protected appendButton(text: string): HTMLButtonElement {
+    protected appendButton(text: string, host: HTMLElement = this.contentNode): HTMLButtonElement {
         const button = document.createElement("button");
         button.classList.add('dialogButton');
         button.textContent = text;
-        this.contentNode.appendChild(button);
+        host.appendChild(button);
         return button;
     }
 
@@ -130,7 +131,8 @@ export abstract class AbstractDialog<T> extends Widget {
         this.toDispose.dispose();
     }
 
-    protected validate(): void {
+    protected onUpdateRequest(msg: Message): void {
+        super.onUpdateRequest(msg);
         if (this.resolve) {
             const value = this.value;
             const error = this.isValid(value);
@@ -161,9 +163,9 @@ export abstract class AbstractDialog<T> extends Widget {
         }
     }
 
-    protected addValidateListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K): void {
+    protected addUpdateListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K): void {
         this.addEventListener(element, type, e => {
-            this.validate();
+            this.update();
             e.preventDefault();
             return false;
         });
@@ -260,7 +262,7 @@ export class SingleTextInputDialog extends AbstractDialog<string> {
 
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        this.addValidateListener(this.inputField, 'input');
+        this.addUpdateListener(this.inputField, 'input');
     }
 
     protected onActivateRequest(msg: Message): void {
