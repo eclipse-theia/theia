@@ -6,7 +6,6 @@
  */
 
 import { Package } from "./package";
-import { FileWatcherProvider } from './watcher';
 import { LocalDependencyManager } from './manager';
 
 const verbose = '--verbose';
@@ -35,8 +34,7 @@ function getArgs(index: number): (string | undefined)[] {
     )
 }
 
-const fileWatcherProvider = new FileWatcherProvider(testOption(verbose));
-const pck = new Package(process.cwd(), fileWatcherProvider, testOption(dev));
+const pck = new Package(process.cwd(), testOption(dev), testOption(verbose));
 const manager = new LocalDependencyManager(pck);
 
 const command = process.argv[2];

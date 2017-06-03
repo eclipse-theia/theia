@@ -5,10 +5,16 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import * as gulp from "gulp";
+import * as File from "vinyl";
+import * as vinylPaths from "vinyl-paths";
+import * as through from "through2";
+import * as chokidar from "chokidar";
+import * as newer from "gulp-newer";
 import * as path from "path";
 import * as fs from "fs-extra";
 import * as cp from "child_process";
-import { FileWatcherProvider, Watcher } from "./watcher";
+import * as stream from 'stream';
 
 export interface RawPackage {
     name?: string;
@@ -34,8 +40,8 @@ export class Package {
 
     constructor(
         readonly packagePath: string,
-        readonly fileWatcherProvider: FileWatcherProvider,
-        readonly includeDev: boolean
+        readonly includeDev: boolean,
+        readonly verbose: boolean
     ) {
         this.raw = require(path.resolve(packagePath, 'package.json')) || {};
         this.rawLocalDependencies = !!this.raw.localDependencies ? this.raw.localDependencies : {};
@@ -83,7 +89,7 @@ export class Package {
 
     getLocalPackage(dependency: string): Package | undefined {
         const localPath = this.getLocalPath(dependency);
-        return localPath ? new Package(localPath, this.fileWatcherProvider, this.includeDev) : undefined;
+        return localPath ? new Package(localPath, this.includeDev, this.verbose) : undefined;
     }
 
     getLocalPath(dependency: string | undefined): string | undefined {
@@ -119,13 +125,8 @@ export class Package {
         return path.normalize(path.resolve(this.packagePath, localPath));
     }
 
-    getNodeModulePath(dependency: undefined): undefined;
-    getNodeModulePath(dependency: Package): string;
-    getNodeModulePath(dependency: Package | undefined): string | undefined {
-        if (dependency) {
-            return this.resolvePath(path.join('node_modules', dependency.name));
-        }
-        return undefined;
+    getNodeModulePath(dependency: Package): string {
+        return this.resolvePath(path.join('node_modules', dependency.name));
     }
 
     isDependencyInstalled(dependency: Package): boolean {
@@ -209,18 +210,87 @@ export class Package {
         }
     }
 
-    createWatcher(dependency: Package): Watcher {
-        return Watcher.compose(
-            dependency.files.map(file =>
-                this.createFileWatcher(dependency, file)
-            )
+    get sources(): string[] {
+        return this.files.map(file =>
+            path.join(this.resolvePath(file), '**', '*')
         );
     }
 
-    protected createFileWatcher(dependency: Package, file: string): Watcher {
-        const source = path.join(dependency.resolvePath(file), '**', '*.*');
-        const dest = path.join(this.getNodeModulePath(dependency), file);
-        return this.fileWatcherProvider.get(source, dest);
+    syncDependency(dependency: Package): void {
+        this.copyUptodate(dependency);
+        this.removeOutdated(dependency);
+    }
+
+    protected removeOutdated(dependency: Package): void {
+        const dest = this.getNodeModulePath(dependency);
+        const base = dependency.packagePath;
+
+        const vp = vinylPaths();
+        gulp.src(path.join(dest, '**', '*'))
+            .pipe(this.outdated(base))
+            .pipe(vp)
+            .pipe(gulp.dest(dest))
+            .on('end', () => {
+                for (const path of vp.paths) {
+                    if (fs.existsSync(path)) {
+                        this.logInfo('Removed:', path)
+                        fs.removeSync(path);
+                    }
+                }
+            })
+    }
+
+    protected copyUptodate(dependency: Package): void {
+        const dest = this.getNodeModulePath(dependency);
+        const base = dependency.packagePath;
+
+        const vp = vinylPaths();
+        gulp.src(dependency.sources, { base })
+            .pipe(newer(dest))
+            .pipe(vp)
+            .pipe(gulp.dest(dest))
+            .on('end', () => {
+                for (const path of vp.paths) {
+                    this.logInfo('Copied:', path)
+                }
+            });
+    }
+
+    watchDependency(dependency: Package, sync: boolean): void {
+        const sources = dependency.sources;
+        const watcher = (gulp as any).watch(dependency.sources, {
+            ignoreInitial: !sync,
+            events: ['add', 'change', 'unlink', 'addDir', 'unlinkDir', 'ready', 'error']
+        }, done => {
+            this.syncDependency(dependency);
+            done();
+        }) as chokidar.FSWatcher;
+
+        let index = 0;
+        watcher.on('ready', () => console.log('Watching for changes: ' + sources[index++]));
+        watcher.on('error', error => console.error(`Watcher error: ${error}`));
+    }
+
+    protected outdated(base: string): stream.Transform {
+        return through.obj((file: File, encoding, done) => {
+            const relativePath = path.relative(file.base, file.path);
+            const fullPath = path.resolve(base, relativePath);
+            try {
+                if (fs.existsSync(fullPath)) {
+                    done();
+                } else {
+                    done(undefined, file);
+                }
+            } catch (err) {
+                done(err);
+            }
+        });
+    }
+
+    protected logInfo(message: string, ...optionalParams: any[]) {
+        if (this.verbose) {
+            console.log(new Date().toLocaleString() + ': ' + message, ...optionalParams);
+        }
     }
 
 }

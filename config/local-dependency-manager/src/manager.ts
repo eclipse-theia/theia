@@ -57,7 +57,7 @@ export class LocalDependencyManager {
 
     sync(pattern?: string): void {
         for (const dependency of this.getLocalDependencies(pattern)) {
-            this.pck.createWatcher(dependency).sync();
+            this.pck.syncDependency(dependency);
         }
     }
 
@@ -66,7 +66,7 @@ export class LocalDependencyManager {
             if (script) {
                 dependency.run(script);
             }
-            this.pck.createWatcher(dependency).watch(sync);
+            this.pck.watchDependency(dependency, !!sync);
         }
     }
 
@@ -87,9 +87,6 @@ export class LocalDependencyManager {
         return (dependency: Package) => {
             if (!regExp) {
                 return true;
-            }
-            if (typeof dependency === 'string') {
-                return regExp.test(dependency);
             }
             return regExp.test(dependency.name);
         }
