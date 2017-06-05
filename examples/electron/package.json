@@ -31,7 +31,9 @@
     "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
     "start": "electron ./lib/frontend/electron-main.js",
     "cold:start": "npm run clean && npm run build && npm start",
+    "watch": "concurrently --names watch-deps,watch-backend,watch-frontend --prefix \"[{name}]\" \"npm run watch:localdeps\" \"npm run watch:backend\"  \"npm run watch:frontend\"",
     "watch:backend": "tsc --watch",
+    "watch:frontend": "npm run build:frontend && webpack --watch",
     "watch:localdeps": "ldm watch --sync --run=watch",
     "test:ui": "wdio wdio.conf.js"
   },
