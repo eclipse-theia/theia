@@ -37,7 +37,7 @@ This command does a few things:
 The local dependency manager takes care of installing the theia-core
 dependency in the examples.
 
-See it's [readme](https://github.com/theia-ide/theia/tree/master/config/local-dependency-manager) for more.
+See its [readme](https://github.com/theia-ide/theia/tree/master/config/local-dependency-manager) for more.
 
 	cd $THEIA/config/local-dependency-manager
 	npm install
@@ -72,6 +72,56 @@ It can also be started with:
 
     npm start
 
+## Rebuilding
+
+### theia-core
+
+In the core directory run:
+
+	$ npm run build
+
+### <a name="rebuilding-the-example"></a>the examples
+
+In the example directory run:
+
+	$ npm run build
+
+Note that this will:
+ - build theia-core.
+ - sync theia-core with the example's version in its node_modules folder.
+ - build the backend.
+ - build the frontend.
+
+## Watching
+
+### theia-core
+
+To rebuild each time a change is detected in theia-core run:
+
+	$ npm run watch
+
+### the examples
+
+To rebuild each time a change is detected in theia-core or the example's
+frontend or backend you can run:
+
+	$ npm run watch
+
+Note that you don't need to watch theia-core separately, this will be done
+by this command.
+
+## Debugging
+
+To debug an example using VSCode:
+
+- Uncomment the "sourceRoot" property in theia/tsconfig.json.
+- Rebuild the example as described [here](#rebuilding-the-example).
+- Start the debug tab and run the program, this will start the backend
+  process.
+- Start the frontend using:
+
+   `$ npm run start:frontend`
+
 ## tl;dr
 
 To build and run the browser example:
@@ -105,6 +155,15 @@ If you would like to check the generated code coverage report
     firefox coverage/index.html
 
 ## Troubleshooting
+
+### Linux
+
+The npm start command will start a watcher on many files in the theia
+directory. To avoid ENOSPC errors, increase your default inotify watches.
+
+It can be done like so:
+
+	$ echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
 
 ### Windows
 
