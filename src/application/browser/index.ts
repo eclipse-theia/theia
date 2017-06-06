@@ -12,3 +12,4 @@ export * from './application-module';
 export * from './browser';
 export * from './menu';
 export * from './dialogs';
+export * from './vwidget';
