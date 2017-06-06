@@ -6,12 +6,11 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Widget } from "@phosphor/widgets";
 import { Message } from "@phosphor/messaging";
 import { ElementExt } from "@phosphor/domutils";
-import { h, VirtualNode, VirtualText, VirtualDOM, ElementAttrs, ElementInlineStyle } from "@phosphor/virtualdom";
+import { h, ElementAttrs, ElementInlineStyle } from "@phosphor/virtualdom";
 import { DisposableCollection, Disposable } from "../../../application/common";
-import { ContextMenuRenderer } from "../../../application/browser";
+import { ContextMenuRenderer, VirtualWidget } from "../../../application/browser";
 import { ITreeNode, ICompositeTreeNode } from "./tree";
 import { ITreeModel } from "./tree-model";
 import { IExpandableTreeNode } from "./tree-expansion";
@@ -58,12 +57,7 @@ export const defaultTreeProps: TreeProps = {
 }
 
 @injectable()
-export class TreeWidget extends Widget implements EventListenerObject {
-
-    /**
-     * FIXME extract to VirtualWidget
-     */
-    protected readonly onRender = new DisposableCollection();
+export class TreeWidget extends VirtualWidget implements EventListenerObject {
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly toDisposeOnDetach = new DisposableCollection();
@@ -95,11 +89,6 @@ export class TreeWidget extends Widget implements EventListenerObject {
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
-
-        const children = this.render();
-        const content = VirtualWidget.toContent(children);
-        VirtualDOM.render(content, this.node);
-        this.onRender.dispose();
 
         const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
         if (selected) {
@@ -341,46 +330,4 @@ export class TreeWidget extends Widget implements EventListenerObject {
         event.preventDefault();
     }
 
-}
-
-export namespace VirtualWidget {
-    export function flatten(children: h.Child[]): h.Child {
-        return children.reduce((prev, current) => merge(prev, current), null);
-    }
-
-    export function merge(left: h.Child | undefined, right: h.Child | undefined): h.Child {
-        if (!right) {
-            return left || null;
-        }
-        if (!left) {
-            return right;
-        }
-        const result = left instanceof Array ? left : [left];
-        if (right instanceof Array) {
-            result.push(...right);
-        } else {
-            result.push(right);
-        }
-        return result;
-    }
-
-    export function toContent(children: h.Child): VirtualNode | VirtualNode[] | null {
-        if (!children) {
-            return null;
-        }
-        if (typeof children === "string") {
-            return new VirtualText(children);
-        }
-        if (children instanceof Array) {
-            const nodes: VirtualNode[] = [];
-            for (const child of children) {
-                if (child) {
-                    const node = typeof child === "string" ? new VirtualText(child) : child;
-                    nodes.push(node);
-                }
-            }
-            return nodes;
-        }
-        return children;
-    }
 }
