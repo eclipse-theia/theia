@@ -5,11 +5,5 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export * from './shell';
-export * from './application';
-export * from './opener-service';
-export * from './application-module';
-export * from './browser';
-export * from './menu';
-export * from './dialogs';
-export * from './widgets';
+export * from './widget';
+export * from './virtual-widget';

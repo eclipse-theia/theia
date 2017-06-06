@@ -5,11 +5,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export * from './shell';
-export * from './application';
-export * from './opener-service';
-export * from './application-module';
-export * from './browser';
-export * from './menu';
-export * from './dialogs';
-export * from './widgets';
+import { injectable, decorate, unmanaged } from "inversify";
+import { Widget } from "@phosphor/widgets";
+
+decorate(injectable(), Widget);
+decorate(unmanaged(), Widget, 0);
+
+export * from "@phosphor/widgets";
+export * from "@phosphor/messaging";
