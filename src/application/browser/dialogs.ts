@@ -6,8 +6,8 @@
  */
 
 import { injectable, inject } from "inversify";
-import { DisposableCollection, Disposable } from "../common";
-import { Widget, Message } from './widgets';
+import { Disposable } from "../common";
+import { Widget, BaseWidget, Message } from './widgets';
 
 @injectable()
 export class DialogProps {
@@ -15,14 +15,11 @@ export class DialogProps {
 }
 
 @injectable()
-export abstract class AbstractDialog<T> extends Widget {
+export abstract class AbstractDialog<T> extends BaseWidget {
 
     protected readonly titleNode: HTMLDivElement;
     protected readonly contentNode: HTMLDivElement;
     protected readonly closeCrossNode: HTMLElement;
-
-    protected readonly toDispose = new DisposableCollection();
-    protected readonly toDisposeOnDetach = new DisposableCollection();
 
     protected resolve: undefined | ((value: T) => void);
     protected reject: undefined | ((reason: any) => void);
@@ -35,6 +32,12 @@ export abstract class AbstractDialog<T> extends Widget {
     ) {
         super();
         this.addClass('dialogBlock');
+
+        this.toDispose.push(Disposable.create(() => {
+            if (this.reject) {
+                Widget.detach(this);
+            }
+        }));
 
         this.contentNode = document.createElement("div");
         this.contentNode.classList.add('dialogContent');
@@ -88,16 +91,11 @@ export abstract class AbstractDialog<T> extends Widget {
         this.addCloseListener(this.closeCrossNode, 'click');
         this.addEventListener(document.body, 'keydown', e => {
             if (this.isEsc(e)) {
-                this.dispose();
+                this.close();
             } else if (this.isEnter(e)) {
                 this.accept();
             }
         });
-    }
-
-    protected onBeforeDetach(msg: Message): void {
-        this.toDisposeOnDetach.dispose();
-        super.onBeforeDetach(msg);
     }
 
     protected onActivateRequest(msg: Message): void {
@@ -121,14 +119,6 @@ export abstract class AbstractDialog<T> extends Widget {
             Widget.attach(this, document.body);
             this.activate();
         });
-    }
-
-    dispose(): void {
-        super.dispose();
-        if (this.reject) {
-            Widget.detach(this);
-        }
-        this.toDispose.dispose();
     }
 
     protected onUpdateRequest(msg: Message): void {
@@ -163,26 +153,19 @@ export abstract class AbstractDialog<T> extends Widget {
         }
     }
 
-    protected addUpdateListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K): void {
-        this.addEventListener(element, type, e => {
-            this.update();
-            e.preventDefault();
-        });
-    }
-
     protected addCloseListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K): void {
-        const doDispose = (e: Event) => {
-            this.dispose();
+        const doClose = (e: Event) => {
+            this.close();
             e.stopPropagation();
             e.preventDefault();
         }
         this.addEventListener(element, 'keydown', e => {
             if (this.isEnter(e)) {
-                doDispose(e);
+                doClose(e);
             }
         });
         this.addEventListener(element, type, e =>
-            doDispose(e)
+            doClose(e)
         );
     }
 
@@ -200,13 +183,6 @@ export abstract class AbstractDialog<T> extends Widget {
         this.addEventListener(element, type, e =>
             doAccept(e)
         );
-    }
-
-    protected addEventListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any): void {
-        element.addEventListener(type, listener);
-        this.toDisposeOnDetach.push(Disposable.create(() =>
-            element.removeEventListener(type, listener)
-        ));
     }
 
     protected isEnter(e: KeyboardEvent): boolean {

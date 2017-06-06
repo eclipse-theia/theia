@@ -8,10 +8,10 @@
 import { injectable } from "inversify";
 import { h, VirtualNode, VirtualText, VirtualDOM } from "@phosphor/virtualdom";
 import { DisposableCollection } from "../../common";
-import { Widget, Message } from "./widget";
+import { BaseWidget, Message } from "./widget";
 
 @injectable()
-export class VirtualWidget extends Widget {
+export class VirtualWidget extends BaseWidget {
 
     protected readonly onRender = new DisposableCollection();
 

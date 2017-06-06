@@ -9,7 +9,7 @@ import { injectable, inject } from "inversify";
 import { Message } from "@phosphor/messaging";
 import { ElementExt } from "@phosphor/domutils";
 import { h, ElementAttrs, ElementInlineStyle } from "@phosphor/virtualdom";
-import { DisposableCollection, Disposable } from "../../../application/common";
+import { Disposable } from "../../../application/common";
 import { ContextMenuRenderer, VirtualWidget } from "../../../application/browser";
 import { ITreeNode, ICompositeTreeNode } from "./tree";
 import { ITreeModel } from "./tree-model";
@@ -59,9 +59,6 @@ export const defaultTreeProps: TreeProps = {
 @injectable()
 export class TreeWidget extends VirtualWidget implements EventListenerObject {
 
-    protected readonly toDispose = new DisposableCollection();
-    protected readonly toDisposeOnDetach = new DisposableCollection();
-
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
         @inject(ITreeModel) readonly model: ITreeModel,
@@ -72,11 +69,6 @@ export class TreeWidget extends VirtualWidget implements EventListenerObject {
         this.node.tabIndex = 0;
         model.onChanged(() => this.update());
         this.toDispose.push(model);
-    }
-
-    dispose(): void {
-        super.dispose();
-        this.toDispose.dispose();
     }
 
     onActivateRequest(msg: Message): void {
@@ -235,26 +227,9 @@ export class TreeWidget extends VirtualWidget implements EventListenerObject {
 
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-
-        this.node.addEventListener('keydown', this);
-        this.toDisposeOnDetach.push(Disposable.create(() =>
-            this.node.removeEventListener('keydown', this)
-        ));
-
-        this.node.addEventListener('contextmenu', this);
-        this.toDisposeOnDetach.push(Disposable.create(() =>
-            this.node.removeEventListener('contextmenu', this)
-        ));
-
-        this.node.addEventListener('click', this);
-        this.toDisposeOnDetach.push(Disposable.create(() =>
-            this.node.removeEventListener('click', this)
-        ));
-    }
-
-    protected onBeforeDetach(msg: Message): void {
-        this.toDisposeOnDetach.dispose();
-        super.onBeforeDetach(msg);
+        this.addEventListener(this.node, 'keydown', this);
+        this.addEventListener(this.node, 'contextmenu', this);
+        this.addEventListener(this.node, 'click', this);
     }
 
     handleEvent(event: Event): void {
