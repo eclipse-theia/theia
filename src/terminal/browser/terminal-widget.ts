@@ -6,8 +6,8 @@
  */
 
 import { inject, injectable } from "inversify";
-import { Endpoint, Disposable, DisposableCollection } from '../../application/common';
-import { Widget, Message } from '../../application/browser';
+import { Endpoint, Disposable } from '../../application/common';
+import { Widget, BaseWidget, Message } from '../../application/browser';
 import { WebSocketConnectionProvider } from '../../messaging/browser';
 import * as Xterm from 'xterm';
 import 'xterm/lib/addons/fit/fit';
@@ -21,13 +21,12 @@ export interface TerminalWidgetFactory {
 }
 
 @injectable()
-export class TerminalWidget extends Widget implements Disposable {
+export class TerminalWidget extends BaseWidget {
 
     private pid: string | undefined
     private term: Xterm
     private cols: number = 80
     private rows: number = 40
-    private disposables = new DisposableCollection()
     private endpoint: Endpoint
 
     constructor(
@@ -55,11 +54,9 @@ export class TerminalWidget extends Widget implements Disposable {
         this.registerResize()
         this.startNewTerminal()
 
-        this.disposables.push({
-            dispose: () => {
-                this.term.destroy()
-            }
-        })
+        this.toDispose.push(Disposable.create(() =>
+            this.term.destroy()
+        ));
     }
 
     protected registerResize() {
@@ -94,11 +91,9 @@ export class TerminalWidget extends Widget implements Disposable {
                 socket.onerror = (err) => {
                     console.error(err)
                 }
-                this.disposables.push({
-                    dispose() {
-                        socket.close()
-                    }
-                })
+                this.toDispose.push(Disposable.create(() =>
+                    socket.close()
+                ));
             });
         });
     }
@@ -108,22 +103,9 @@ export class TerminalWidget extends Widget implements Disposable {
         return this.webSocketConnectionProvider.createWebSocket(url.toString(), { reconnecting: false })
     }
 
-    dispose() {
-        if (this.isDisposed) {
-            return;
-        }
-        super.dispose()
-        this.disposables.dispose()
-    }
-
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg)
         this.term.focus()
-    }
-
-    protected onCloseRequest(msg: Message): void {
-        super.onCloseRequest(msg)
-        this.dispose()
     }
 
     private resizeTimer: any
