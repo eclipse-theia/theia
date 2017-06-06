@@ -18,3 +18,4 @@ export * from './selection-service';
 export * from './os';
 export * from './resource';
 export * from './contribution-provider';
+export * from './endpoint';

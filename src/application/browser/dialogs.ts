@@ -6,9 +6,8 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Widget } from '@phosphor/widgets';
-import { Message } from "@phosphor/messaging";
 import { DisposableCollection, Disposable } from "../common";
+import { Widget, Message } from './widgets';
 
 @injectable()
 export class DialogProps {

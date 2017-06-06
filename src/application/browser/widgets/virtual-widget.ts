@@ -5,11 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Widget } from "@phosphor/widgets";
-import { Message } from '@phosphor/messaging';
-import { h, VirtualNode, VirtualText, VirtualDOM } from "@phosphor/virtualdom";
-import { DisposableCollection } from "../common";
 import { injectable } from "inversify";
+import { h, VirtualNode, VirtualText, VirtualDOM } from "@phosphor/virtualdom";
+import { DisposableCollection } from "../../common";
+import { Widget, Message } from "./widget";
 
 @injectable()
 export class VirtualWidget extends Widget {

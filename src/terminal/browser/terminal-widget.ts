@@ -6,12 +6,9 @@
  */
 
 import { inject, injectable } from "inversify";
-import { Endpoint } from '../../application/common/endpoint';
+import { Endpoint, Disposable, DisposableCollection } from '../../application/common';
+import { Widget, Message } from '../../application/browser';
 import { WebSocketConnectionProvider } from '../../messaging/browser';
-import { Disposable } from '../../application/common';
-import { DisposableCollection } from 'vscode-ws-jsonrpc/lib/disposable';
-import { Message } from '@phosphor/messaging/lib';
-import { Widget } from '@phosphor/widgets/lib';
 import * as Xterm from 'xterm';
 import 'xterm/lib/addons/fit/fit';
 import 'xterm/lib/addons/attach/attach';

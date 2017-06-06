@@ -5,9 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Widget } from "@phosphor/widgets";
-import { Message } from "@phosphor/messaging";
 import { DisposableCollection, SelectionService } from '../../application/common';
+import { Widget, Message } from '../../application/browser';
 import { TextEditor } from "./editor";
 
 export class EditorWidget extends Widget {
