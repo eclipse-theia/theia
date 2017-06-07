@@ -13,6 +13,7 @@ import { CommandContribution, CommandRegistry } from '../../application/common/c
 import { FrontendApplication } from '../../application/browser';
 import { ContainerModule, inject, injectable } from "inversify"
 import { TerminalWidget } from "./terminal-widget";
+import { ILogger } from '../../application/common/logger';
 
 export default new ContainerModule(bind => {
     bind<CommandContribution>(CommandContribution).to(TerminalCommands)
@@ -24,7 +25,8 @@ let CMD_OPEN_TERMINAL = 'open-terminal';
 @injectable()
 class TerminalCommands implements CommandContribution {
 
-    constructor( @inject(FrontendApplication) private app: FrontendApplication, @inject(WebSocketConnectionProvider) private wsProvider: WebSocketConnectionProvider) {
+    constructor( @inject(FrontendApplication) private app: FrontendApplication, @inject(WebSocketConnectionProvider) private wsProvider: WebSocketConnectionProvider,
+        @inject(ILogger) private logger: ILogger) {
     }
 
     contribute(registry: CommandRegistry): void {
@@ -37,6 +39,7 @@ class TerminalCommands implements CommandContribution {
                 let newTerminal: Widget = new TerminalWidget(this.wsProvider)
                 this.app.shell.addToMainArea(newTerminal)
                 this.app.shell.activateMain(newTerminal.id)
+                this.logger.debug('Started terminal id: %s', newTerminal.id);
             },
             isEnabled: () => true
         })
