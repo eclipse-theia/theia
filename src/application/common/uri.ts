@@ -6,10 +6,12 @@
  */
 
 import Uri from 'vscode-uri';
+import { Path } from "./path";
 
 export default class URI {
-    private static separator = '/';
+
     private readonly codeUri: Uri;
+    private _path: Path | undefined;
 
     constructor(uri?: string | Uri) {
         if (uri === undefined) {
@@ -22,30 +24,21 @@ export default class URI {
     }
 
     get parent(): URI {
-        const str = this.codeUri.toString()
-        return new URI(str.substr(0, str.lastIndexOf(URI.separator)))
+        return this.withPath(this.path.dir);
     }
 
     get lastSegment(): string {
-        const path = this.path
-        const idx = path.lastIndexOf(URI.separator)
-        if (idx === -1) {
-            return path
-        } else {
-            return path.substr(idx + 1)
+        if (this.path.base) {
+            return this.path.base;
         }
+        if (this.path.root) {
+            return Path.separator;
+        }
+        return '';
     }
 
     appendPath(toAppend: string): URI {
-        if (!toAppend) {
-            return this;
-        }
-        const path = this.path;
-        const idx = path.lastIndexOf(URI.separator);
-        if (idx === path.length - 1) {
-            return this.withPath(this.codeUri.path + toAppend);
-        }
-        return this.withPath(this.codeUri.path + URI.separator + toAppend);
+        return this.withPath(this.path.join(toAppend));
     }
 
     /**
@@ -87,10 +80,10 @@ export default class URI {
     /**
      * return a new URI replacing the current with the given path
      */
-    withPath(path: string): URI {
+    withPath(path: string | Path): URI {
         const newCodeUri = Uri.from({
             ...this.codeUri.toJSON(),
-            path
+            path: path.toString()
         })
         return new URI(newCodeUri);
     }
@@ -146,8 +139,11 @@ export default class URI {
         return this.codeUri.authority
     }
 
-    get path(): string {
-        return this.codeUri.path
+    get path(): Path {
+        if (this._path === undefined) {
+            this._path = new Path(this.codeUri.path);
+        }
+        return this._path;
     }
 
     get query(): string {
