@@ -19,6 +19,7 @@ import { backendCppModule } from 'theia-core/lib/cpp/node';
 import terminalBackendModule from 'theia-core/lib/terminal/node/terminal-backend-module'
 import { loggerBackendModule } from 'theia-core/lib/application/node/logger-backend-module';
 import { loggerServerModule } from 'theia-core/lib/application/node/logger-server-module';
+import * as Yargs from 'yargs';
 
 // FIXME introduce default error handler contribution
 process.on('uncaughtException', function (err: any) {
@@ -36,6 +37,12 @@ class StaticServer implements BackendApplicationContribution {
         }));
     }
 }
+
+Yargs.usage(`Usage main.js [--loglevel='trace','debug','info','warn','error','fatal']`)
+    .default('loglevel', 'info')
+    .describe('loglevel', 'Sets the log level')
+    .help()
+    .argv;
 
 const container = new Container();
 container.load(applicationModule);

@@ -9,6 +9,7 @@ import { injectable } from 'inversify';
 import { LogLevel } from '../../application/common/logger';
 import { ILoggerServer, ILoggerClient } from '../../application/common/logger-protocol';
 import * as Bunyan from 'bunyan';
+import * as Yargs from 'yargs';
 
 @injectable()
 export class BunyanLoggerServer implements ILoggerServer {
@@ -30,7 +31,16 @@ export class BunyanLoggerServer implements ILoggerServer {
 	 * sending null rather than the number 0. In effect this starts
 	 * the loggers indexes at 1. */
         this.loggers.push({} as any);
-        this.loggers.push(Bunyan.createLogger({ name: 'Theia' }));
+
+        let logLevel = Yargs.argv.loglevel;
+        if (['trace', 'debug', 'info', 'warn', 'error', 'fatal'].indexOf(logLevel) < 0) {
+            logLevel = 'info';
+        }
+
+        this.loggers.push(Bunyan.createLogger({
+            name: 'Theia',
+            level: logLevel
+        }));
     }
 
     /* See the bunyan child documentation, this creates a child logger
