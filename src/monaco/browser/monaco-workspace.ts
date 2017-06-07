@@ -68,7 +68,7 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
     }
 
     get rootPath(): string | null {
-        return this._rootUri && new URI(this._rootUri).path
+        return this._rootUri && new URI(this._rootUri).path.toString();
     }
 
     getTextDocument(uri: string): TextDocument | undefined {

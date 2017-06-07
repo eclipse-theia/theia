@@ -70,7 +70,7 @@ class TerminalExpressContribution implements BackendApplicationContribution {
             server,
             matches: (request) => {
                 const uri = new URI(request.url!)
-                return uri.path.startsWith('/terminals/')
+                return uri.path.toString().startsWith('/terminals/')
             }
         }, (ws, request) => {
             const uri = new URI(request.url!)
