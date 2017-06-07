@@ -31,6 +31,7 @@
     "build:localdeps": "ldm run build && ldm sync",
     "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
     "start": "electron ./lib/frontend/electron-main.js | bunyan",
+    "start:debug": "electron ./lib/frontend/electron-main.js --loglevel=debug | bunyan",
     "cold:start": "npm run clean && npm run build && npm start",
     "watch": "concurrently --names watch-deps,watch-backend,watch-frontend --prefix \"[{name}]\" \"npm run watch:localdeps\" \"npm run watch:backend\"  \"npm run watch:frontend\"",
     "watch:backend": "tsc --watch",

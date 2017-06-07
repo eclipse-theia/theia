@@ -30,6 +30,7 @@
     "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
     "start": "concurrently --names backend,webpack-server --prefix \"[{name}]\" \"npm run start:backend\" \"npm run start:frontend\"",
     "start:backend": "node ./lib/backend/main.js | bunyan",
+    "start:backend:debug": "node ./lib/backend/main.js --loglevel=debug | bunyan",
     "start:frontend": "webpack-dev-server --open",
     "cold:start": "npm run clean && npm run build && npm start",
     "watch": "concurrently --names watch-deps,watch-backend,watch-frontend --prefix \"[{name}]\" \"npm run watch:localdeps\" \"npm run watch:backend\"  \"npm run watch:frontend\"",
