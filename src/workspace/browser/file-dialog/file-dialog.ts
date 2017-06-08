@@ -9,9 +9,9 @@ import { injectable, inject } from "inversify";
 import { Message } from '@phosphor/messaging';
 import { AbstractDialog, DialogProps } from "../../../application/browser";
 import { UriSelection } from '../../../filesystem/common';
+import { LocationListRenderer } from "../../../navigator/browser/file-tree";
 import { FileDialogModel } from './file-dialog-model';
 import { FileDialogWidget } from './file-dialog-widget';
-import { LocationListRenderer } from './location-list-renderer';
 
 export const FileDialogFactory = Symbol('FileDialogFactory');
 export interface FileDialogFactory {

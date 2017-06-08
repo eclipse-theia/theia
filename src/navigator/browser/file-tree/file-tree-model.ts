@@ -9,6 +9,7 @@ import { injectable, inject } from "inversify";
 import URI from '../../../application/common/uri';
 import { FileSystem, FileSystemWatcher, FileChangesEvent, FileChangeType } from "../../../filesystem/common";
 import { ICompositeTreeNode, TreeModel, TreeServices } from "../tree";
+import { LocationModel } from './location-service';
 import { FileStatNode, DirNode, FileTree } from "./file-tree";
 
 @injectable()
@@ -18,7 +19,7 @@ export class FileTreeServices extends TreeServices {
 }
 
 @injectable()
-export class FileTreeModel extends TreeModel {
+export class FileTreeModel extends TreeModel implements LocationModel {
 
     protected readonly fileSystem: FileSystem;
     protected readonly watcher: FileSystemWatcher;
@@ -48,25 +49,6 @@ export class FileTreeModel extends TreeModel {
         } else {
             super.navigateTo(undefined);
         }
-    }
-
-    /**
-     * Return all location from the current to the top most.
-     * If the current location is undefined then return an empty list.
-     */
-    get allLocations(): URI[] {
-        const root = this.root;
-        if (!FileStatNode.is(root)) {
-            return [];
-        }
-        const locations = [];
-        let location = root.uri;
-        while (!location.path.root) {
-            locations.push(location);
-            location = location.parent;
-        }
-        locations.push(location);
-        return locations;
     }
 
     get selectedFileStatNode(): Readonly<FileStatNode> | undefined {

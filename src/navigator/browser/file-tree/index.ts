@@ -5,6 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+export * from './location-service';
+export * from './location-renderer';
 export * from './file-tree';
 export * from './file-tree-model';
 export * from './file-tree-widget';

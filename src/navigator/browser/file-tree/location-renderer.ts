@@ -7,17 +7,21 @@
 
 import { h } from '@phosphor/virtualdom';
 import { VirtualRenderer } from "../../../application/browser";
-import { FileDialogModel } from './file-dialog-model';
 import URI from "../../../application/common/uri";
+import { LocationModel, LocationService } from "./location-service";
+
 export const LOCATION_LIST_CLASS = 'theia-LocationList';
 
 export class LocationListRenderer extends VirtualRenderer {
 
+    protected readonly service: LocationService;
+
     constructor(
-        readonly model: FileDialogModel,
+        readonly model: LocationModel,
         host?: HTMLElement
     ) {
         super(host);
+        this.service = new LocationService(model);
     }
 
     protected onRender(): void {
@@ -29,7 +33,7 @@ export class LocationListRenderer extends VirtualRenderer {
     }
 
     protected doRender(): h.Child {
-        const locations = this.model.allLocations.reverse();
+        const locations = this.service.allLocations.reverse();
         const options = locations.map(value => this.renderLocation(value));
         return h.select({
             className: LOCATION_LIST_CLASS,
@@ -55,7 +59,7 @@ export class LocationListRenderer extends VirtualRenderer {
         e.stopPropagation();
     }
 
-    protected get locationList(): HTMLSelectElement | undefined {
+    get locationList(): HTMLSelectElement | undefined {
         const locationList = this.host.getElementsByClassName(LOCATION_LIST_CLASS)[0];
         if (locationList instanceof HTMLSelectElement) {
             return locationList;
