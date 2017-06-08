@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import URI from '../../../application/common/uri';
 import { FileSystem, FileSystemWatcher, FileChangesEvent, FileChangeType } from "../../../filesystem/common";
-import { ICompositeTreeNode, TreeModel, TreeServices, ITreeNode } from "../tree";
+import { ICompositeTreeNode, TreeModel, TreeServices } from "../tree";
 import { FileStatNode, DirNode, FileTree } from "./file-tree";
 
 @injectable()
@@ -31,15 +31,42 @@ export class FileTreeModel extends TreeModel {
         this.toDispose.push(this.watcher.onFileChanges(event => this.onFileChanges(event)));
     }
 
-    navigateTo(arg: URI | ITreeNode | undefined): void {
-        if (arg instanceof URI) {
-            this.fileSystem.getFileStat(arg.toString()).then(fileStat => {
+    get currentLocation(): URI | undefined {
+        const root = this.root;
+        if (FileStatNode.is(root)) {
+            return root.uri;
+        }
+        return undefined;
+    }
+
+    set currentLocation(uri: URI | undefined) {
+        if (uri) {
+            this.fileSystem.getFileStat(uri.toString()).then(fileStat => {
                 const node = DirNode.createRoot(fileStat);
                 super.navigateTo(node);
             });
         } else {
-            super.navigateTo(arg);
+            super.navigateTo(undefined);
         }
+    }
+
+    /**
+     * Return all location from the current to the top most.
+     * If the current location is undefined then return an empty list.
+     */
+    get allLocations(): URI[] {
+        const root = this.root;
+        if (!FileStatNode.is(root)) {
+            return [];
+        }
+        const locations = [];
+        let location = root.uri;
+        while (!location.path.root) {
+            locations.push(location);
+            location = location.parent;
+        }
+        locations.push(location);
+        return locations;
     }
 
     get selectedFileStatNode(): Readonly<FileStatNode> | undefined {

@@ -10,7 +10,6 @@ import { Message } from '@phosphor/messaging';
 import { h } from '@phosphor/virtualdom';
 import { AbstractDialog, DialogProps, VirtualWidget } from "../../../application/browser";
 import { UriSelection } from '../../../filesystem/common';
-import { FileStatNode } from "../../../navigator/browser/file-tree";
 import { FileDialogModel } from './file-dialog-model';
 import { FileDialogWidget } from './file-dialog-widget';
 import URI from "../../../application/common/uri";
@@ -78,31 +77,22 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
     }
 
     protected updateLocationList(): void {
-        const root = this.model.root;
-        if (!FileStatNode.is(root)) {
-            return;
-        }
-        const values = [];
-        let value = root.uri;
-        while (!value.path.root) {
-            values.push(value);
-            value = value.parent;
-        }
-        values.push(value);
-        VirtualWidget.render(this.renderLocationList(values.reverse()), this.locationListHost, () => {
+        VirtualWidget.render(this.renderLocationList(), this.locationListHost, () => {
             const locationList = this.locationList;
             if (locationList) {
-                locationList.value = root.uri.toString();
+                const currentLocation = this.model.currentLocation;
+                locationList.value = currentLocation ? currentLocation.toString() : '';
             }
         });
     }
 
-    protected renderLocationList(values: URI[]): h.Child {
-        const options = values.map(value => this.renderLocation(value));
+    protected renderLocationList(): h.Child {
+        const locations = this.model.allLocations.reverse();
+        const options = locations.map(value => this.renderLocation(value));
         return h.select({
             className: LOCATION_LIST_CLASS,
             onchange: e => this.onLocationChanged(e)
-        }, ...options.reverse());
+        }, ...options);
     }
 
     protected renderLocation(uri: URI): h.Child {
@@ -117,7 +107,7 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
         if (locationList) {
             const value = locationList.value;
             const uri = new URI(value);
-            this.model.navigateTo(uri);
+            this.model.currentLocation = uri;
         }
         e.preventDefault();
         e.stopPropagation();
