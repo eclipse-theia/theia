@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import { h } from "@phosphor/virtualdom";
-import { ContextMenuRenderer, VirtualWidget } from "../../../application/browser";
+import { ContextMenuRenderer, VirtualRenderer } from "../../../application/browser";
 import { TreeWidget, NodeProps, TreeProps, ITreeNode } from "../tree";
 import { DirNode, FileStatNode } from "./file-tree";
 import { FileTreeModel } from "./file-tree-model";
@@ -49,7 +49,7 @@ export class FileTreeWidget extends TreeWidget {
 
     protected decorateFileStatCaption(node: FileStatNode, caption: h.Child, props: NodeProps): h.Child {
         const icon = h.span({ className: FILE_STAT_ICON_CLASS });
-        return super.decorateCaption(node, VirtualWidget.merge(icon, caption), props);
+        return super.decorateCaption(node, VirtualRenderer.merge(icon, caption), props);
     }
 
 }

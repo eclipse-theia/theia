@@ -7,12 +7,11 @@
 
 import { injectable, inject } from "inversify";
 import { Message } from '@phosphor/messaging';
-import { h } from '@phosphor/virtualdom';
-import { AbstractDialog, DialogProps, VirtualWidget } from "../../../application/browser";
+import { AbstractDialog, DialogProps } from "../../../application/browser";
 import { UriSelection } from '../../../filesystem/common';
 import { FileDialogModel } from './file-dialog-model';
 import { FileDialogWidget } from './file-dialog-widget';
-import URI from "../../../application/common/uri";
+import { LocationListRenderer } from './location-list-renderer';
 
 export const FileDialogFactory = Symbol('FileDialogFactory');
 export interface FileDialogFactory {
@@ -21,7 +20,6 @@ export interface FileDialogFactory {
 
 export const NAVIGATION_PANEL_CLASS = 'theia-NavigationPanel';
 export const CONTROL_PANEL_CLASS = 'theia-ControlPanel';
-export const LOCATION_LIST_CLASS = 'theia-LocationList';
 
 @injectable()
 export class FileDialogProps extends DialogProps {
@@ -32,7 +30,7 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
 
     protected readonly back: HTMLButtonElement;
     protected readonly forward: HTMLButtonElement;
-    protected readonly locationListHost: HTMLDivElement;
+    protected readonly locationListRenderer: LocationListRenderer;
 
     constructor(
         @inject(FileDialogProps) props: FileDialogProps,
@@ -51,8 +49,8 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
         navigationPanel.appendChild(this.back = this.createButton('Back'));
         navigationPanel.appendChild(this.forward = this.createButton('Forward'));
 
-        this.locationListHost = document.createElement('div');
-        navigationPanel.appendChild(this.locationListHost);
+        this.locationListRenderer = new LocationListRenderer(this.model);
+        navigationPanel.appendChild(this.locationListRenderer.host);
 
         this.contentNode.appendChild(this.widget.node);
 
@@ -72,53 +70,7 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
         super.onUpdateRequest(msg);
         this.back.disabled = !this.model.canNavigateBackward();
         this.forward.disabled = !this.model.canNavigateForward();
-
-        this.updateLocationList();
-    }
-
-    protected updateLocationList(): void {
-        VirtualWidget.render(this.renderLocationList(), this.locationListHost, () => {
-            const locationList = this.locationList;
-            if (locationList) {
-                const currentLocation = this.model.currentLocation;
-                locationList.value = currentLocation ? currentLocation.toString() : '';
-            }
-        });
-    }
-
-    protected renderLocationList(): h.Child {
-        const locations = this.model.allLocations.reverse();
-        const options = locations.map(value => this.renderLocation(value));
-        return h.select({
-            className: LOCATION_LIST_CLASS,
-            onchange: e => this.onLocationChanged(e)
-        }, ...options);
-    }
-
-    protected renderLocation(uri: URI): h.Child {
-        const value = uri.toString();
-        return h.option({
-            value
-        }, uri.lastSegment);
-    }
-
-    protected onLocationChanged(e: Event): void {
-        const locationList = this.locationList;
-        if (locationList) {
-            const value = locationList.value;
-            const uri = new URI(value);
-            this.model.currentLocation = uri;
-        }
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    protected get locationList(): HTMLSelectElement | undefined {
-        const locationList = this.node.getElementsByClassName(LOCATION_LIST_CLASS)[0];
-        if (locationList instanceof HTMLSelectElement) {
-            return locationList;
-        }
-        return undefined;
+        this.locationListRenderer.render();
     }
 
     protected onAfterAttach(msg: Message): void {
