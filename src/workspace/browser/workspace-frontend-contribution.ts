@@ -11,10 +11,8 @@ import { FrontendApplicationContribution, FrontendApplication } from "../../appl
 import { FileSystem } from "../../filesystem/common";
 import { FileMenus } from "../../filesystem/browser/filesystem-commands";
 import { FileDialogFactory } from "./file-dialog";
-import { DirNode } from '../../navigator/browser/file-tree';
 // FIXME move FileUri to common
 import { FileUri } from "../../application/node/file-uri";
-
 
 export namespace WorkspaceCommands {
     export const OPEN: Command = {
@@ -35,13 +33,11 @@ export class WorkspaceFrontendContribution implements FrontendApplicationContrib
         commands.registerCommand(WorkspaceCommands.OPEN, {
             isEnabled: () => true,
             execute: () => {
-                this.fileSystem.getFileStat(FileUri.create('/').toString()).then(fileStat => {
-                    const fileDialog = this.fileDialogFactory({
-                        title: WorkspaceCommands.OPEN.label!
-                    });
-                    fileDialog.model.navigateTo(DirNode.createRoot(fileStat));
-                    fileDialog.open();
+                const fileDialog = this.fileDialogFactory({
+                    title: WorkspaceCommands.OPEN.label!
                 });
+                fileDialog.model.navigateTo(FileUri.create('/'));
+                fileDialog.open();
             }
         });
         menus.registerMenuAction(FileMenus.OPEN_GROUP, {

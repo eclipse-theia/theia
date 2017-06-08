@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import URI from '../../../application/common/uri';
 import { FileSystem, FileSystemWatcher, FileChangesEvent, FileChangeType } from "../../../filesystem/common";
-import { ICompositeTreeNode, TreeModel, TreeServices } from "../tree";
+import { ICompositeTreeNode, TreeModel, TreeServices, ITreeNode } from "../tree";
 import { FileStatNode, DirNode, FileTree } from "./file-tree";
 
 @injectable()
@@ -29,6 +29,17 @@ export class FileTreeModel extends TreeModel {
     ) {
         super(tree, services);
         this.toDispose.push(this.watcher.onFileChanges(event => this.onFileChanges(event)));
+    }
+
+    navigateTo(arg: URI | ITreeNode | undefined): void {
+        if (arg instanceof URI) {
+            this.fileSystem.getFileStat(arg.toString()).then(fileStat => {
+                const node = DirNode.createRoot(fileStat);
+                super.navigateTo(node);
+            });
+        } else {
+            super.navigateTo(arg);
+        }
     }
 
     get selectedFileStatNode(): Readonly<FileStatNode> | undefined {
