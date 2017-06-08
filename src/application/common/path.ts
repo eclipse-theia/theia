@@ -28,8 +28,8 @@ export class Path {
         private raw: string
     ) {
         this.absolute = raw.startsWith(Path.separator);
+        this.root = raw === Path.separator;
         const sepIndex = raw.lastIndexOf(Path.separator);
-        this.root = sepIndex === 0;
         this.base = sepIndex === -1 ? raw : raw.substr(sepIndex + 1);
         const extIndex = this.base.lastIndexOf('.');
         this.name = extIndex === -1 ? this.base : this.base.substr(0, extIndex);
@@ -42,7 +42,13 @@ export class Path {
                 this._dir = Path.root;
             } else {
                 const sepIndex = this.raw.lastIndexOf(Path.separator);
-                this._dir = sepIndex !== -1 ? new Path(this.raw.substr(0, sepIndex)) : this;
+                if (sepIndex === 0) {
+                    this._dir = Path.root;
+                } else if (sepIndex !== -1) {
+                    this._dir = new Path(this.raw.substr(0, sepIndex));
+                } else {
+                    this._dir = this;
+                }
             }
         }
         return this._dir;
