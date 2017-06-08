@@ -18,10 +18,10 @@ export class VirtualWidget extends BaseWidget {
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
 
-        const children = this.render();
-        const content = VirtualWidget.toContent(children);
-        VirtualDOM.render(content, this.node);
-        this.onRender.dispose();
+        const child = this.render();
+        VirtualWidget.render(child, this.node, () =>
+            this.onRender.dispose()
+        );
     }
 
     protected render(): h.Child {
@@ -31,6 +31,13 @@ export class VirtualWidget extends BaseWidget {
 }
 
 export namespace VirtualWidget {
+    export function render(child: h.Child, host: HTMLElement, onRender?: () => void) {
+        const content = toContent(child);
+        VirtualDOM.render(content, host);
+        if (onRender) {
+            onRender();
+        }
+    }
     export function flatten(children: h.Child[]): h.Child {
         return children.reduce((prev, current) => merge(prev, current), null);
     }
