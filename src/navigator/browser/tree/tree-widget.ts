@@ -10,7 +10,7 @@ import { Message } from "@phosphor/messaging";
 import { ElementExt } from "@phosphor/domutils";
 import { h, ElementAttrs, ElementInlineStyle } from "@phosphor/virtualdom";
 import { Disposable } from "../../../application/common";
-import { ContextMenuRenderer, VirtualWidget } from "../../../application/browser";
+import { ContextMenuRenderer, VirtualWidget, VirtualRenderer } from "../../../application/browser";
 import { ITreeNode, ICompositeTreeNode } from "./tree";
 import { ITreeModel } from "./tree-model";
 import { IExpandableTreeNode } from "./tree-expansion";
@@ -113,7 +113,7 @@ export class TreeWidget extends VirtualWidget implements EventListenerObject {
             return children;
         }
         const parent = this.renderNode(node, props);
-        return VirtualWidget.merge(parent, children);
+        return VirtualRenderer.merge(parent, children);
     }
 
     protected renderNode(node: ITreeNode, props: NodeProps): h.Child {
@@ -185,7 +185,7 @@ export class TreeWidget extends VirtualWidget implements EventListenerObject {
                 event.stopPropagation();
             }
         });
-        return VirtualWidget.merge(expansionToggle, caption);
+        return VirtualRenderer.merge(expansionToggle, caption);
     }
 
     protected renderNodeChildren(node: ITreeNode, props: NodeProps): h.Child {
@@ -196,7 +196,7 @@ export class TreeWidget extends VirtualWidget implements EventListenerObject {
     }
 
     protected renderCompositeChildren(parent: ICompositeTreeNode, props: NodeProps): h.Child {
-        return VirtualWidget.flatten(parent.children.map(child => this.renderChild(child, parent, props)));
+        return VirtualRenderer.flatten(parent.children.map(child => this.renderChild(child, parent, props)));
     }
 
     protected renderChild(child: ITreeNode, parent: ICompositeTreeNode, props: NodeProps): h.Child {
