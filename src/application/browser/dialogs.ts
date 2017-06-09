@@ -153,12 +153,12 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         }
     }
 
-    protected addCloseAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...types: K[]): void {
-        this.addEscAction(element, () => this.close(), ...types);
+    protected addCloseAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
+        this.addEscAction(element, () => this.close(), ...additionalEventTypes);
     }
 
-    protected addAcceptAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...types: K[]): void {
-        this.addEnterAction(element, () => this.accept(), ...types);
+    protected addAcceptAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
+        this.addEnterAction(element, () => this.accept(), ...additionalEventTypes);
     }
 
 }
