@@ -67,7 +67,8 @@
     "wdio-spec-reporter": "^0.1.0",
     "webdriverio": "^4.6.2",
     "webpack": "^2.2.1",
-    "webpack-dev-server": "^2.4.1"
+    "webpack-dev-server": "^2.4.1",
+    "font-awesome-webpack": "0.0.5-beta.2"
   },
   "localDevDependencies": {
     "local-dependency-manager": "../../config/local-dependency-manager"
