@@ -26,6 +26,11 @@
     background: url('../icons/expand.svg') center center no-repeat;
 }
 
-.theia-TreeNode.theia-mod-selected {
+.theia-Tree:focus .theia-TreeNode.theia-mod-selected {
     background:var(--theia-accent-color3);
 }
+
+.theia-Tree:not(:focus) .theia-TreeNode.theia-mod-selected {
+    background:var(--md-grey-800);
+}
+
