@@ -12,7 +12,8 @@
     "monaco-languages": "^0.7.0",
     "monaco-typescript": "^2.1.2",
     "reflect-metadata": "^0.1.10",
-    "theia-core": "latest"
+    "theia-core": "latest",
+    "yargs": "^8.0.1"
   },
   "localDependencies": {
     "theia-core": "../.."
@@ -28,7 +29,8 @@
     "build:localdeps": "ldm run build && ldm sync",
     "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
     "start": "concurrently --names backend,webpack-server --prefix \"[{name}]\" \"npm run start:backend\" \"npm run start:frontend\"",
-    "start:backend": "node ./lib/backend/main.js",
+    "start:backend": "node ./lib/backend/main.js | bunyan",
+    "start:backend:debug": "node ./lib/backend/main.js --loglevel=debug | bunyan",
     "start:frontend": "webpack-dev-server --open",
     "cold:start": "npm run clean && npm run build && npm start",
     "watch": "concurrently --names watch-deps,watch-backend,watch-frontend --prefix \"[{name}]\" \"npm run watch:localdeps\" \"npm run watch:backend\"  \"npm run watch:frontend\"",
@@ -40,6 +42,8 @@
   "devDependencies": {
     "@types/chai": "^3.5.1",
     "@types/webdriverio": "^4.7.0",
+    "@types/yargs": "^6.6.0",
+    "bunyan": "^1.8.10",
     "chai": "^3.5.0",
     "concurrently": "^3.4.0",
     "css-loader": "^0.28.1",

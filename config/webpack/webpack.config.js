@@ -1,6 +1,6 @@
 const webpack = require('webpack');
 const merge = require('webpack-merge');
-const minimist = require('minimist');
+const yargs = require('yargs');
 const path = require('path');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
 const paths = require('./paths');
@@ -79,7 +79,7 @@ module.exports = function (dirname, config = {}) {
         }
 
     };
-    const argv = minimist(process.argv.slice(2));
+    const argv = yargs.argv;
     const isElectron = (argv && argv.target === 'electron');
 
     /* Start with the common config. */
