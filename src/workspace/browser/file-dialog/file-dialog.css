@@ -14,7 +14,7 @@
  .dialogContent .theia-NavigationPanel {
      display: flex;
      flex-direction: row;
-     justify-content: flex-start;
+     justify-content: center;
      align-items: center;
      margin-top: 0px;
  }

@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import { Message } from '@phosphor/messaging';
-import { AbstractDialog, DialogProps } from "../../../application/browser";
+import { AbstractDialog, DialogProps, setEnabled, createIconButton } from "../../../application/browser";
 import { UriSelection } from '../../../filesystem/common';
 import { LocationListRenderer } from "../../../navigator/browser/file-tree";
 import { FileDialogModel } from './file-dialog-model';
@@ -28,8 +28,8 @@ export class FileDialogProps extends DialogProps {
 @injectable()
 export class FileDialog extends AbstractDialog<UriSelection | undefined> {
 
-    protected readonly back: HTMLButtonElement;
-    protected readonly forward: HTMLButtonElement;
+    protected readonly back: HTMLSpanElement;
+    protected readonly forward: HTMLSpanElement;
     protected readonly locationListRenderer: LocationListRenderer;
 
     constructor(
@@ -46,8 +46,8 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
         navigationPanel.classList.add(NAVIGATION_PANEL_CLASS);
         this.contentNode.appendChild(navigationPanel);
 
-        navigationPanel.appendChild(this.back = this.createButton('Back'));
-        navigationPanel.appendChild(this.forward = this.createButton('Forward'));
+        navigationPanel.appendChild(this.back = createIconButton('fa', 'fa-chevron-left'));
+        navigationPanel.appendChild(this.forward = createIconButton('fa', 'fa-chevron-right'));
 
         this.locationListRenderer = new LocationListRenderer(this.model);
         navigationPanel.appendChild(this.locationListRenderer.host);
@@ -68,8 +68,8 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
-        this.back.disabled = !this.model.canNavigateBackward();
-        this.forward.disabled = !this.model.canNavigateForward();
+        setEnabled(this.back, this.model.canNavigateBackward());
+        setEnabled(this.forward, this.model.canNavigateForward());
         this.locationListRenderer.render();
     }
 
