@@ -7,7 +7,8 @@
 
 import { injectable, inject } from "inversify";
 import { Message } from '@phosphor/messaging';
-import { AbstractDialog, DialogProps, setEnabled, createIconButton } from "../../../application/browser";
+import { Disposable } from "../../../application/common";
+import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget } from "../../../application/browser";
 import { UriSelection } from '../../../filesystem/common';
 import { LocationListRenderer } from "../../../navigator/browser/file-tree";
 import { FileDialogModel } from './file-dialog-model';
@@ -51,15 +52,6 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
 
         this.locationListRenderer = new LocationListRenderer(this.model);
         navigationPanel.appendChild(this.locationListRenderer.host);
-
-        this.contentNode.appendChild(this.widget.node);
-
-        const controlPanel = document.createElement('div');
-        controlPanel.classList.add(CONTROL_PANEL_CLASS);
-        this.contentNode.appendChild(controlPanel);
-
-        controlPanel.appendChild(this.createCloseButton('Cancel'));
-        controlPanel.appendChild(this.createAcceptButton('Open'));
     }
 
     get model(): FileDialogModel {
@@ -74,6 +66,18 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
     }
 
     protected onAfterAttach(msg: Message): void {
+        Widget.attach(this.widget, this.contentNode);
+        this.toDisposeOnDetach.push(Disposable.create(() =>
+            Widget.detach(this.widget)
+        ));
+
+        const controlPanel = document.createElement('div');
+        controlPanel.classList.add(CONTROL_PANEL_CLASS);
+        this.contentNode.appendChild(controlPanel);
+
+        controlPanel.appendChild(this.createCloseButton('Cancel'));
+        controlPanel.appendChild(this.createAcceptButton('Open'));
+
         this.addEnterAction(this.back, () => this.model.navigateBackward(), 'click');
         this.addEnterAction(this.forward, () => this.model.navigateForward(), 'click');
         super.onAfterAttach(msg);
