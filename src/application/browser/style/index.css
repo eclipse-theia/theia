@@ -29,6 +29,10 @@ body {
   margin-left: 8px;
 }
 
+.theia-disabled {
+  opacity: 0.4;
+}
+
 .p-Widget.p-mod-hidden {
   display: none !important;
 }

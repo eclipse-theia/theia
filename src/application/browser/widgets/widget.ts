@@ -16,6 +16,8 @@ decorate(unmanaged(), Widget, 0);
 export * from "@phosphor/widgets";
 export * from "@phosphor/messaging";
 
+export const DISABLED_CLASS = 'theia-disabled';
+
 @injectable()
 export class BaseWidget extends Widget {
 
@@ -60,4 +62,17 @@ export class BaseWidget extends Widget {
         ));
     }
 
+}
+
+export function setEnabled(element: HTMLElement, enabled: boolean): void {
+    element.classList.toggle(DISABLED_CLASS, !enabled);
+}
+
+export function createIconButton(...classNames: string[]): HTMLSpanElement {
+    const icon = document.createElement('i');
+    icon.classList.add(...classNames);
+    const button = document.createElement('span');
+    button.tabIndex = 0;
+    button.appendChild(icon);
+    return button;
 }
