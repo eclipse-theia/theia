@@ -125,6 +125,7 @@ export interface EventAction<K extends keyof HTMLElementEventMap> {
 
 export function setEnabled(element: HTMLElement, enabled: boolean): void {
     element.classList.toggle(DISABLED_CLASS, !enabled);
+    element.tabIndex = enabled ? 0 : -1;
 }
 
 export function createIconButton(...classNames: string[]): HTMLSpanElement {
