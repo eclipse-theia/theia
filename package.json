@@ -20,7 +20,7 @@
     "@phosphor/virtualdom": "^0.1.1",
     "@phosphor/widgets": "^0.1.7",
     "@types/bunyan": "0.0.36",
-    "@types/electron": "^1.4.33",
+    "@types/electron": "1.4.38",
     "@types/express": "^4.0.35",
     "@types/fs-extra": "^2.1.0",
     "@types/glob": "^5.0.30",
