@@ -6,6 +6,11 @@
     font-size: var(--theia-ui-font-size1);
 }
 
+.theia-Tree:focus {
+    outline: 0;
+    box-shadow: none;
+}
+
 .theia-TreeNode {
     width: 500px;
 }
