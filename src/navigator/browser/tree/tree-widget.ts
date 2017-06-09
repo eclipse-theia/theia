@@ -10,7 +10,7 @@ import { Message } from "@phosphor/messaging";
 import { ElementExt } from "@phosphor/domutils";
 import { h, ElementAttrs, ElementInlineStyle } from "@phosphor/virtualdom";
 import { Disposable } from "../../../application/common";
-import { ContextMenuRenderer, VirtualWidget, VirtualRenderer } from "../../../application/browser";
+import { ContextMenuRenderer, VirtualWidget, VirtualRenderer, SELECTED_CLASS, COLLAPSED_CLASS } from "../../../application/browser";
 import { ITreeNode, ICompositeTreeNode } from "./tree";
 import { ITreeModel } from "./tree-model";
 import { IExpandableTreeNode } from "./tree-expansion";
@@ -22,8 +22,6 @@ export const EXPANDABLE_TREE_NODE_CLASS = 'theia-ExpandableTreeNode';
 export const COMPOSITE_TREE_NODE_CLASS = 'theia-CompositeTreeNode';
 export const TREE_NODE_CAPTION_CLASS = 'theia-TreeNodeCaption';
 export const EXPANSION_TOGGLE_CLASS = 'theia-ExpansionToggle';
-export const COLLAPSED_CLASS = 'theia-mod-collapsed';
-export const SELECTED_CLASS = 'theia-mod-selected';
 
 export interface Size {
     readonly width: number

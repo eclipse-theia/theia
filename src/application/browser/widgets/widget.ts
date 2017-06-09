@@ -16,7 +16,9 @@ decorate(unmanaged(), Widget, 0);
 export * from "@phosphor/widgets";
 export * from "@phosphor/messaging";
 
-export const DISABLED_CLASS = 'theia-disabled';
+export const DISABLED_CLASS = 'theia-mod-disabled';
+export const COLLAPSED_CLASS = 'theia-mod-collapsed';
+export const SELECTED_CLASS = 'theia-mod-selected';
 
 @injectable()
 export class BaseWidget extends Widget {
