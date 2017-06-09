@@ -54,6 +54,15 @@
     padding-bottom: 4px;
 }
 
+.p-Widget.dialogBlock select {
+    border: 1px solid var(--theia-border-color1);
+    color: var(--theia-ui-font-color1);
+    font-size: var(--theia-ui-font-size1);
+    border-radius: 0;
+    background: transparent;
+    outline: none;    
+}
+
 .p-Widget.dialogBlock .dialogButton.main {
     background-color: var(--theia-accent-color3);
 }
