@@ -74,12 +74,8 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
     }
 
     protected onAfterAttach(msg: Message): void {
-        this.addEventListener(this.back, 'click', () =>
-            this.model.navigateBackward()
-        );
-        this.addEventListener(this.forward, 'click', () =>
-            this.model.navigateForward()
-        );
+        this.addEnterAction(this.back, () => this.model.navigateBackward(), 'click');
+        this.addEnterAction(this.forward, () => this.model.navigateForward(), 'click');
         super.onAfterAttach(msg);
     }
 
