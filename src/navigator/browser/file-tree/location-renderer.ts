@@ -33,7 +33,7 @@ export class LocationListRenderer extends VirtualRenderer {
     }
 
     protected doRender(): h.Child {
-        const locations = this.service.allLocations.reverse();
+        const locations = this.service.allLocations;
         const options = locations.map(value => this.renderLocation(value));
         return h.select({
             className: LOCATION_LIST_CLASS,
