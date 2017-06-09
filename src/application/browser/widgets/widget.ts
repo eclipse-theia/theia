@@ -62,30 +62,41 @@ export class BaseWidget extends Widget {
         ));
     }
 
-    protected addKeyboardAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, isAction: (e: KeyboardEvent) => boolean, action: () => any, ...types: K[]): void {
-        const doAction = (e: Event) => {
-            action();
-            e.stopPropagation();
-            e.preventDefault();
-        }
-        this.addEventListener(element, 'keydown', e => {
-            if (isAction(e)) {
-                doAction(e);
+    protected addAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, action: EventAction<K>) {
+        this.addEventListener(element, action.type, e => {
+            if (!action.isActive || action.isActive(e)) {
+                action.run();
+                e.stopPropagation();
+                e.preventDefault();
             }
         });
-        for (const type of types) {
-            this.addEventListener(element, type, e => {
-                doAction(e);
-            });
+    }
+
+    protected addActions<K extends keyof HTMLElementEventMap>(element: HTMLElement, run: () => void, ...eventTypes: K[]) {
+        for (const type of eventTypes) {
+            this.addAction(element, { type, run });
         }
     }
 
-    protected addEscAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, action: () => any, ...types: K[]): void {
-        this.addKeyboardAction(element, e => this.isEsc(e), action, ...types);
+    protected addKeyboardAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, action: EventAction<'keydown'>, ...eventTypes: K[]): void {
+        this.addAction(element, action);
+        this.addActions(element, action.run.bind(action), ...eventTypes);
     }
 
-    protected addEnterAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, action: () => any, ...types: K[]): void {
-        this.addKeyboardAction(element, e => this.isEnter(e), action, ...types);
+    protected addEscAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, run: () => void, ...additionalEventTypes: K[]): void {
+        this.addKeyboardAction(element, {
+            type: 'keydown',
+            run,
+            isActive: e => this.isEsc(e)
+        }, ...additionalEventTypes);
+    }
+
+    protected addEnterAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, run: () => void, ...additionalEventTypes: K[]): void {
+        this.addKeyboardAction(element, {
+            type: 'keydown',
+            run,
+            isActive: e => this.isEnter(e)
+        }, ...additionalEventTypes);
     }
 
     protected isEnter(e: KeyboardEvent): boolean {
@@ -102,6 +113,12 @@ export class BaseWidget extends Widget {
         return e.keyCode === 27;
     }
 
+}
+
+export interface EventAction<K extends keyof HTMLElementEventMap> {
+    readonly type: K;
+    run(): void;
+    isActive?(e: HTMLElementEventMap[K]): boolean;
 }
 
 export function setEnabled(element: HTMLElement, enabled: boolean): void {
