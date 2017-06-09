@@ -278,6 +278,9 @@ export class TreeModel implements ITreeModel, SelectionProvider<Readonly<ISelect
         if (IExpandableTreeNode.is(node)) {
             this.expandNode(node);
         }
+        if (ISelectableTreeNode.is(node)) {
+            this.selectNode(node);
+        }
     }
 
 }
