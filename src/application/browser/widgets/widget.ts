@@ -62,6 +62,46 @@ export class BaseWidget extends Widget {
         ));
     }
 
+    protected addKeyboardAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, isAction: (e: KeyboardEvent) => boolean, action: () => any, ...types: K[]): void {
+        const doAction = (e: Event) => {
+            action();
+            e.stopPropagation();
+            e.preventDefault();
+        }
+        this.addEventListener(element, 'keydown', e => {
+            if (isAction(e)) {
+                doAction(e);
+            }
+        });
+        for (const type of types) {
+            this.addEventListener(element, type, e => {
+                doAction(e);
+            });
+        }
+    }
+
+    protected addEscAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, action: () => any, ...types: K[]): void {
+        this.addKeyboardAction(element, e => this.isEsc(e), action, ...types);
+    }
+
+    protected addEnterAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, action: () => any, ...types: K[]): void {
+        this.addKeyboardAction(element, e => this.isEnter(e), action, ...types);
+    }
+
+    protected isEnter(e: KeyboardEvent): boolean {
+        if ('key' in e) {
+            return e.key === 'Enter';
+        }
+        return e.keyCode === 13;
+    }
+
+    protected isEsc(e: KeyboardEvent): boolean {
+        if ('key' in e) {
+            return e.key === 'Escape' || e.key === 'Esc';
+        }
+        return e.keyCode === 27;
+    }
+
 }
 
 export function setEnabled(element: HTMLElement, enabled: boolean): void {

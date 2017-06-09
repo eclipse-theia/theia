@@ -83,12 +83,12 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         if (this.closeButton) {
-            this.addCloseListener(this.closeButton, 'click');
+            this.addCloseAction(this.closeButton, 'click');
         }
         if (this.acceptButton) {
-            this.addAcceptListener(this.acceptButton, 'click');
+            this.addAcceptAction(this.acceptButton, 'click');
         }
-        this.addCloseListener(this.closeCrossNode, 'click');
+        this.addCloseAction(this.closeCrossNode, 'click');
         this.addEventListener(document.body, 'keydown', e => {
             if (this.isEsc(e)) {
                 this.close();
@@ -153,50 +153,12 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         }
     }
 
-    protected addCloseListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K): void {
-        const doClose = (e: Event) => {
-            this.close();
-            e.stopPropagation();
-            e.preventDefault();
-        }
-        this.addEventListener(element, 'keydown', e => {
-            if (this.isEnter(e)) {
-                doClose(e);
-            }
-        });
-        this.addEventListener(element, type, e =>
-            doClose(e)
-        );
+    protected addCloseAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...types: K[]): void {
+        this.addEscAction(element, () => this.close(), ...types);
     }
 
-    protected addAcceptListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K): void {
-        const doAccept = (e: Event) => {
-            this.accept();
-            e.stopPropagation();
-            e.preventDefault();
-        }
-        this.addEventListener(element, 'keydown', e => {
-            if (this.isEnter(e)) {
-                doAccept(e)
-            }
-        });
-        this.addEventListener(element, type, e =>
-            doAccept(e)
-        );
-    }
-
-    protected isEnter(e: KeyboardEvent): boolean {
-        if ('key' in e) {
-            return e.key === 'Enter';
-        }
-        return e.keyCode === 13;
-    }
-
-    protected isEsc(e: KeyboardEvent): boolean {
-        if ('key' in e) {
-            return e.key === 'Escape' || e.key === 'Esc';
-        }
-        return e.keyCode === 27;
+    protected addAcceptAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...types: K[]): void {
+        this.addEnterAction(element, () => this.accept(), ...types);
     }
 
 }
