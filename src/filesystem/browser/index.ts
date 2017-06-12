@@ -6,4 +6,6 @@
  */
 
 export * from './filesystem-client-module';
+export * from './filesystem-commands';
 export * from './file-tree';
+export * from './file-dialog';

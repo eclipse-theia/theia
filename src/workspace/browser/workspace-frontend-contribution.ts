@@ -9,8 +9,7 @@ import { injectable, inject } from "inversify";
 import { Command } from "../../application/common";
 import { FrontendApplicationContribution, FrontendApplication } from "../../application/browser";
 import { FileSystem } from "../../filesystem/common";
-import { FileMenus } from "../../filesystem/browser/filesystem-commands";
-import { FileDialogFactory } from "./file-dialog";
+import { FileMenus, FileDialogFactory } from "../../filesystem/browser";
 // FIXME move FileUri to common
 import { FileUri } from "../../application/node/file-uri";
 
