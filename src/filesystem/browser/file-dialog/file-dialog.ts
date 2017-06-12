@@ -9,8 +9,7 @@ import { injectable, inject } from "inversify";
 import { Message } from '@phosphor/messaging';
 import { Disposable } from "../../../application/common";
 import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget } from "../../../application/browser";
-import { UriSelection } from '../../../filesystem/common';
-import { LocationListRenderer } from '../../../filesystem/browser';
+import { LocationListRenderer, FileStatNode } from '../../../filesystem/browser';
 import { FileDialogModel } from './file-dialog-model';
 import { FileDialogWidget } from './file-dialog-widget';
 
@@ -27,7 +26,7 @@ export class FileDialogProps extends DialogProps {
 }
 
 @injectable()
-export class FileDialog extends AbstractDialog<UriSelection | undefined> {
+export class FileDialog extends AbstractDialog<Readonly<FileStatNode> | undefined> {
 
     protected readonly back: HTMLSpanElement;
     protected readonly forward: HTMLSpanElement;
@@ -41,6 +40,9 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
         this.toDispose.push(widget);
         this.toDispose.push(this.model.onChanged(() =>
             this.update()
+        ));
+        this.toDispose.push(this.model.onDidOpenFile(() =>
+            this.accept()
         ));
 
         const navigationPanel = document.createElement('div');
@@ -91,7 +93,7 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
         this.widget.activate();
     }
 
-    get value(): UriSelection | undefined {
+    get value(): Readonly<FileStatNode> | undefined {
         return this.widget.model.selectedFileStatNode;
     }
 
