@@ -7,8 +7,8 @@
 
 import { injectable, inject } from "inversify";
 import URI from '../../../application/common/uri';
+import { ITreeNode, ICompositeTreeNode, ISelectableTreeNode, IExpandableTreeNode, Tree } from "../../../application/browser";
 import { FileSystem, FileStat, UriSelection } from "../../../filesystem/common";
-import { ITreeNode, ICompositeTreeNode, ISelectableTreeNode, IExpandableTreeNode, Tree } from "../tree";
 
 @injectable()
 export class FileTree extends Tree {

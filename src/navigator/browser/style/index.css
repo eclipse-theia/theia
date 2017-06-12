@@ -12,5 +12,3 @@
 .theia-FileStatNode.theia-DirNode > .theia-TreeNodeCaption > .theia-FileStatIcon {
     background: url('../icons/dir.svg') center center no-repeat;
 }
-
-@import './tree.css';

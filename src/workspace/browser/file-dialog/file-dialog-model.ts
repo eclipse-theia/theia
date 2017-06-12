@@ -6,7 +6,7 @@
  */
 
 import { injectable } from "inversify";
-import { ITreeNode } from "../../../navigator/browser/tree";
+import { ITreeNode } from "../../../application/browser";
 import { DirNode, FileTreeModel } from '../../../navigator/browser/file-tree';
 
 @injectable()

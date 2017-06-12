@@ -6,7 +6,7 @@
  */
 
 import { interfaces, Container } from 'inversify';
-import { createTreeContainer, ITree, Tree, ITreeModel, TreeModel, TreeServices, TreeWidget } from "../tree";
+import { createTreeContainer, ITree, Tree, ITreeModel, TreeModel, TreeServices, TreeWidget } from "../../../application/browser";
 import { FileTree } from "./file-tree";
 import { FileTreeModel, FileTreeServices } from './file-tree-model';
 import { FileTreeWidget } from "./file-tree-widget";

@@ -5,9 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { SelectionProvider } from '../../../application/common/selection-service';
 import { injectable, inject } from "inversify";
-import { Event, Emitter, Disposable } from "../../../application/common";
+import { Event, Emitter, Disposable, SelectionProvider } from "../../../application/common";
 import { ITree, ITreeNode } from "./tree";
 
 export const ITreeSelectionService = Symbol("ITreeSelectionService");
