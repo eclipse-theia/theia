@@ -8,20 +8,17 @@
 import { h } from '@phosphor/virtualdom';
 import { VirtualRenderer } from "../../../application/browser";
 import URI from "../../../application/common/uri";
-import { LocationModel, LocationService } from "./location-service";
+import { LocationService } from "./location-service";
 
 export const LOCATION_LIST_CLASS = 'theia-LocationList';
 
 export class LocationListRenderer extends VirtualRenderer {
 
-    protected readonly service: LocationService;
-
     constructor(
-        readonly model: LocationModel,
+        readonly model: LocationService,
         host?: HTMLElement
     ) {
         super(host);
-        this.service = new LocationService(model);
     }
 
     render(): void {
@@ -34,7 +31,7 @@ export class LocationListRenderer extends VirtualRenderer {
     }
 
     protected doRender(): h.Child {
-        const locations = this.service.allLocations;
+        const locations = this.model.allLocations;
         const options = locations.map(value => this.renderLocation(value));
         return h.select({
             className: LOCATION_LIST_CLASS,

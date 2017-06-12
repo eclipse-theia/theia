@@ -7,26 +7,20 @@
 
 import URI from "../../../application/common/uri";
 
-export interface LocationModel {
+export interface LocationService {
+
     currentLocation: URI | undefined;
-}
-
-export class LocationService {
-
-    constructor(
-        readonly model: LocationModel
-    ) { }
 
     /**
      * Return all locations from the current to the top most.
      * If the current location is undefined then return an empty list.
      */
-    get allLocations(): URI[] {
-        return this.getAllLocations();
-    }
+    readonly allLocations: URI[];
+}
 
-    protected getAllLocations(): URI[] {
-        const current = this.model.currentLocation;
+export namespace LocationService {
+    export function getAllLocations(service: LocationService): URI[] {
+        const current = service.currentLocation;
         if (!current) {
             return [];
         }
@@ -39,6 +33,4 @@ export class LocationService {
         locations.push(location);
         return locations;
     }
-
 }
-

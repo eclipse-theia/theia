@@ -50,12 +50,16 @@ export class FileDialog extends AbstractDialog<UriSelection | undefined> {
         navigationPanel.appendChild(this.back = createIconButton('fa', 'fa-chevron-left'));
         navigationPanel.appendChild(this.forward = createIconButton('fa', 'fa-chevron-right'));
 
-        this.locationListRenderer = new LocationListRenderer(this.model);
+        this.locationListRenderer = this.createLocationListRenderer();
         navigationPanel.appendChild(this.locationListRenderer.host);
     }
 
     get model(): FileDialogModel {
         return this.widget.model;
+    }
+
+    protected createLocationListRenderer(): LocationListRenderer {
+        return new LocationListRenderer(this.model);
     }
 
     protected onUpdateRequest(msg: Message): void {
