@@ -6,3 +6,4 @@
  */
 
 export * from './filesystem-client-module';
+export * from './file-tree';

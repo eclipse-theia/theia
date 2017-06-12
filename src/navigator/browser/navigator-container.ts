@@ -7,7 +7,7 @@
 
 import { interfaces, Container } from 'inversify';
 import { ITree, ITreeModel, TreeProps, defaultTreeProps } from "../../application/browser";
-import { createFileTreeContainer, FileTree, FileTreeModel, FileTreeWidget, FileTreeServices } from "./file-tree";
+import { createFileTreeContainer, FileTree, FileTreeModel, FileTreeWidget, FileTreeServices } from "../../filesystem/browser";
 import { FileNavigatorTree } from "./navigator-tree";
 import { FileNavigatorModel, FileNavigatorServices } from "./navigator-model";
 import { FileNavigatorWidget } from "./navigator-widget";

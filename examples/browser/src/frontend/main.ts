@@ -19,7 +19,7 @@ import { browserMenuModule } from "theia-core/lib/application/browser/menu/menu-
 import { loggerFrontendModule } from 'theia-core/lib/application/browser/logger-frontend-module';
 import 'theia-core/src/application/browser/style/index.css';
 import 'theia-core/src/monaco/browser/style/index.css';
-import 'theia-core/src/navigator/browser/style/index.css';
+import 'theia-core/src/filesystem/browser/style/index.css';
 import 'theia-core/src/terminal/browser/terminal.css';
 import 'theia-core/src/workspace/browser/file-dialog/file-dialog.css';
 import 'font-awesome/css/font-awesome.min.css';
