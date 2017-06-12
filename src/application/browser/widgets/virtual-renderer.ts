@@ -16,27 +16,18 @@ export class VirtualRenderer {
     }
 
     render(): void {
-        VirtualRenderer.render(this.doRender(), this.host, () =>
-            this.onRender()
-        );
+        VirtualRenderer.render(this.doRender(), this.host);
     }
 
     protected doRender(): h.Child {
         return null;
     }
-
-    protected onRender(): void {
-        // no-op
-    }
 }
 
 export namespace VirtualRenderer {
-    export function render(child: h.Child, host: HTMLElement, onRender?: () => void) {
+    export function render(child: h.Child, host: HTMLElement) {
         const content = toContent(child);
         VirtualDOM.render(content, host);
-        if (onRender) {
-            onRender();
-        }
     }
     export function flatten(children: h.Child[]): h.Child {
         return children.reduce((prev, current) => merge(prev, current), null);

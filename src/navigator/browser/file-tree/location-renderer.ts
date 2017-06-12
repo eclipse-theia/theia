@@ -24,7 +24,8 @@ export class LocationListRenderer extends VirtualRenderer {
         this.service = new LocationService(model);
     }
 
-    protected onRender(): void {
+    render(): void {
+        super.render();
         const locationList = this.locationList;
         if (locationList) {
             const currentLocation = this.model.currentLocation;
