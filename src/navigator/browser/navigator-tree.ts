@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import { FileSystem } from "../../filesystem/common";
-import { FileTree } from "./file-tree";
+import { FileTree } from "../../filesystem/browser";
 
 @injectable()
 export class FileNavigatorTree extends FileTree {

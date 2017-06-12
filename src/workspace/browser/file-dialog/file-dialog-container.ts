@@ -7,7 +7,7 @@
 
 import { interfaces, Container } from "inversify";
 import { ITreeModel } from "../../../application/browser";
-import { createFileTreeContainer, FileTreeModel, FileTreeWidget } from '../../../navigator/browser/file-tree';
+import { createFileTreeContainer, FileTreeModel, FileTreeWidget } from '../../../filesystem/browser';
 import { FileDialog, FileDialogProps } from "./file-dialog";
 import { FileDialogModel } from "./file-dialog-model";
 import { FileDialogWidget } from './file-dialog-widget';

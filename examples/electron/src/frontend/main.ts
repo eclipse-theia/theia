@@ -18,7 +18,7 @@ import { electronMenuModule } from 'theia-core/lib/application/electron-browser/
 import { loggerFrontendModule } from 'theia-core/lib/application/browser/logger-frontend-module';
 import "theia-core/src/application/browser/style/index.css";
 import "theia-core/src/monaco/browser/style/index.css";
-import "theia-core/src/navigator/browser/style/index.css";
+import "theia-core/src/filesystem/browser/style/index.css";
 import "theia-core/src/terminal/browser/terminal.css";
 import "font-awesome/css/font-awesome.min.css";
 

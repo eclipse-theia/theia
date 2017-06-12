@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import { ContextMenuRenderer, TreeProps } from "../../application/browser";
-import { FileTreeWidget } from "./file-tree";
+import { FileTreeWidget } from "../../filesystem/browser";
 import { FileNavigatorModel } from "./navigator-model";
 
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';

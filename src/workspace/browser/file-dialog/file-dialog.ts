@@ -10,7 +10,7 @@ import { Message } from '@phosphor/messaging';
 import { Disposable } from "../../../application/common";
 import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget } from "../../../application/browser";
 import { UriSelection } from '../../../filesystem/common';
-import { LocationListRenderer } from "../../../navigator/browser/file-tree";
+import { LocationListRenderer } from '../../../filesystem/browser';
 import { FileDialogModel } from './file-dialog-model';
 import { FileDialogWidget } from './file-dialog-widget';
 

@@ -9,7 +9,7 @@ import { injectable, inject, named } from "inversify";
 import { SelectionService } from "../../application/common";
 import { FrontendApplicationContribution, FrontendApplication } from "../../application/browser";
 import { FileSystem } from "../../filesystem/common";
-import { DirNode } from "./file-tree";
+import { DirNode } from "../../filesystem/browser";
 import { FileNavigatorWidget, ID } from "./navigator-widget";
 
 @injectable()

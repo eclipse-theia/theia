@@ -7,7 +7,7 @@
 
 import { injectable } from "inversify";
 import { ITreeNode } from "../../../application/browser";
-import { DirNode, FileTreeModel } from '../../../navigator/browser/file-tree';
+import { DirNode, FileTreeModel } from '../../../filesystem/browser';
 
 @injectable()
 export class FileDialogModel extends FileTreeModel {
