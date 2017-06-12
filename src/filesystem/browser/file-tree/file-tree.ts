@@ -84,14 +84,14 @@ export namespace FileStatNode {
 export type FileNode = FileStatNode;
 export namespace FileNode {
     export function is(node: ITreeNode | undefined): node is FileNode {
-        return FileStatNode.is(node) && !IExpandableTreeNode.is(node);
+        return FileStatNode.is(node) && !node.fileStat.isDirectory;
     }
 }
 
 export type DirNode = FileStatNode & IExpandableTreeNode;
 export namespace DirNode {
     export function is(node: ITreeNode | undefined): node is DirNode {
-        return FileStatNode.is(node) && IExpandableTreeNode.is(node);
+        return FileStatNode.is(node) && node.fileStat.isDirectory;
     }
 
     export function compare(node: ITreeNode, node2: ITreeNode): number {

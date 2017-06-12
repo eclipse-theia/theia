@@ -7,9 +7,9 @@
 
 import { injectable, inject } from "inversify";
 import { Command } from "../../application/common";
-import { FrontendApplicationContribution, FrontendApplication } from "../../application/browser";
-import { FileSystem } from "../../filesystem/common";
-import { FileMenus, FileDialogFactory } from "../../filesystem/browser";
+import { FrontendApplicationContribution, FrontendApplication, OpenerService, open } from "../../application/browser";
+import { FileSystem } from '../../filesystem/common';
+import { FileMenus, FileDialogFactory, FileStatNode } from "../../filesystem/browser";
 // FIXME move FileUri to common
 import { FileUri } from "../../application/node/file-uri";
 
@@ -25,23 +25,39 @@ export class WorkspaceFrontendContribution implements FrontendApplicationContrib
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(FileDialogFactory) protected readonly fileDialogFactory: FileDialogFactory
+        @inject(FileDialogFactory) protected readonly fileDialogFactory: FileDialogFactory,
+        @inject(OpenerService) protected readonly openerService: OpenerService
     ) { }
 
     onInitialize({ commands, menus }: FrontendApplication): void {
         commands.registerCommand(WorkspaceCommands.OPEN, {
             isEnabled: () => true,
-            execute: () => {
-                const fileDialog = this.fileDialogFactory({
-                    title: WorkspaceCommands.OPEN.label!
-                });
-                fileDialog.model.currentLocation = FileUri.create('/');
-                fileDialog.open();
-            }
+            execute: () => this.showFileDialog()
         });
         menus.registerMenuAction(FileMenus.OPEN_GROUP, {
             commandId: WorkspaceCommands.OPEN.id
         });
+    }
+
+    protected showFileDialog(): void {
+        const fileDialog = this.fileDialogFactory({
+            title: WorkspaceCommands.OPEN.label!
+        });
+        fileDialog.model.currentLocation = FileUri.create('/');
+        fileDialog.open().then(node =>
+            this.openFile(node)
+        );
+    }
+
+    protected openFile(node: Readonly<FileStatNode> | undefined): void {
+        if (!node) {
+            return;
+        }
+        if (node.fileStat.isDirectory) {
+
+        } else {
+            open(this.openerService, node.uri);
+        }
     }
 
 }
