@@ -9,8 +9,8 @@ import { injectable, inject } from "inversify";
 import URI from '../../../application/common/uri';
 import { ICompositeTreeNode, TreeModel, TreeServices } from "../../../application/browser";
 import { FileSystem, FileSystemWatcher, FileChangesEvent, FileChangeType } from "../../../filesystem/common";
-import { LocationModel } from './location-service';
 import { FileStatNode, DirNode, FileTree } from "./file-tree";
+import { LocationService } from '../location';
 
 @injectable()
 export class FileTreeServices extends TreeServices {
@@ -19,7 +19,7 @@ export class FileTreeServices extends TreeServices {
 }
 
 @injectable()
-export class FileTreeModel extends TreeModel implements LocationModel {
+export class FileTreeModel extends TreeModel implements LocationService {
 
     protected readonly fileSystem: FileSystem;
     protected readonly watcher: FileSystemWatcher;
@@ -49,6 +49,10 @@ export class FileTreeModel extends TreeModel implements LocationModel {
         } else {
             super.navigateTo(undefined);
         }
+    }
+
+    get allLocations(): URI[] {
+        return LocationService.getAllLocations(this);
     }
 
     get selectedFileStatNode(): Readonly<FileStatNode> | undefined {
