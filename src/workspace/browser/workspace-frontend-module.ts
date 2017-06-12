@@ -6,9 +6,9 @@
  */
 
 import { ContainerModule } from "inversify";
-import { FrontendApplicationContribution } from '../../application/browser/application';
+import { FrontendApplicationContribution } from '../../application/browser';
+import { FileDialogFactory, createFileDialog, FileDialogProps } from '../../filesystem/browser';
 import { WorkspaceFrontendContribution } from "./workspace-frontend-contribution";
-import { FileDialogFactory, createFileDialog, FileDialogProps } from './file-dialog';
 
 export const workspaceFrontendModule = new ContainerModule(bind => {
     bind(WorkspaceFrontendContribution).toSelf().inSingletonScope();
