@@ -7,8 +7,10 @@
 
 import { injectable, inject } from "inversify";
 import { h } from "@phosphor/virtualdom";
-import { ContextMenuRenderer, VirtualRenderer } from "../../../application/browser";
-import { TreeWidget, NodeProps, TreeProps, ITreeNode } from "../tree";
+import {
+    ContextMenuRenderer, VirtualRenderer,
+    TreeWidget, NodeProps, TreeProps, ITreeNode
+} from "../../../application/browser";
 import { DirNode, FileStatNode } from "./file-tree";
 import { FileTreeModel } from "./file-tree-model";
 

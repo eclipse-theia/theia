@@ -6,8 +6,7 @@
  */
 
 import { injectable, inject } from "inversify";
-import { ContextMenuRenderer } from "../../application/browser";
-import { TreeProps } from "./tree";
+import { ContextMenuRenderer, TreeProps } from "../../application/browser";
 import { FileTreeWidget } from "./file-tree";
 import { FileNavigatorModel } from "./navigator-model";
 

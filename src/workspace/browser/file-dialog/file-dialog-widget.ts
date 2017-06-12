@@ -6,10 +6,9 @@
  */
 
 import { injectable, inject } from "inversify";
-import { ContextMenuRenderer } from "../../../application/browser";
+import { ContextMenuRenderer, TreeProps } from "../../../application/browser";
 import { FileTreeWidget } from "../../../navigator/browser/file-tree";
 import { FileDialogModel } from "./file-dialog-model";
-import { TreeProps } from "../../../navigator/browser/tree";
 
 export const FILE_DIALOG_CLASS = 'theia-FileDialog';
 

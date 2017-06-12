@@ -6,11 +6,11 @@
  */
 
 import { interfaces, Container } from "inversify";
-import { ITreeModel } from "../../../navigator/browser/tree";
+import { ITreeModel } from "../../../application/browser";
 import { createFileTreeContainer, FileTreeModel, FileTreeWidget } from '../../../navigator/browser/file-tree';
 import { FileDialog, FileDialogProps } from "./file-dialog";
-import { FileDialogModel } from "./file-dialog-model"; import { FileDialogWidget } from './file-dialog-widget';
-
+import { FileDialogModel } from "./file-dialog-model";
+import { FileDialogWidget } from './file-dialog-widget';
 
 export function createFileDialogContainer(parent: interfaces.Container): Container {
     const child = createFileTreeContainer(parent);

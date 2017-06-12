@@ -7,8 +7,8 @@
 
 import { injectable, inject } from "inversify";
 import URI from '../../../application/common/uri';
+import { ICompositeTreeNode, TreeModel, TreeServices } from "../../../application/browser";
 import { FileSystem, FileSystemWatcher, FileChangesEvent, FileChangeType } from "../../../filesystem/common";
-import { ICompositeTreeNode, TreeModel, TreeServices } from "../tree";
 import { LocationModel } from './location-service';
 import { FileStatNode, DirNode, FileTree } from "./file-tree";
 

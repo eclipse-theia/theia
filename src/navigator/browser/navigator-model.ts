@@ -6,8 +6,7 @@
  */
 
 import { injectable, inject } from "inversify";
-import { OpenerService, open } from "../../application/browser";
-import { ITreeNode } from "./tree";
+import { OpenerService, open, ITreeNode } from "../../application/browser";
 import { FileNode, FileTreeModel, FileTreeServices } from "./file-tree";
 import { FileNavigatorTree } from "./navigator-tree";
 
