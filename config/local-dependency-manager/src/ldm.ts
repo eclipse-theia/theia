@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Package } from "./package";
+import { Package } from './package';
 import { LocalDependencyManager } from './manager';
 
 const verbose = '--verbose';
@@ -56,7 +56,7 @@ if (command === 'install') {
     if (script) {
         manager.run(script, args[1]);
     } else {
-        console.log("A script should be provided, e.g. `ldm run build`");
+        console.log('A script should be provided, e.g. `ldm run build`');
     }
 } else {
     manager.list(getArgs(2)[0]);

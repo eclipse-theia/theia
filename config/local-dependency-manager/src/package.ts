@@ -5,16 +5,18 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as gulp from "gulp";
-import * as File from "vinyl";
-import * as vinylPaths from "vinyl-paths";
-import * as through from "through2";
-import * as chokidar from "chokidar";
-import * as newer from "gulp-newer";
-import * as path from "path";
-import * as fs from "fs-extra";
-import * as cp from "child_process";
+import * as gulp from 'gulp';
+import * as File from 'vinyl';
+import * as vinylPaths from 'vinyl-paths';
+import * as through from 'through2';
+import * as chokidar from 'chokidar';
+import * as newer from 'gulp-newer';
+import * as path from 'path';
+import * as fs from 'fs-extra';
+import * as cp from 'child_process';
 import * as stream from 'stream';
+
+export const NPM_COMMAND = require('check-if-windows') ? 'npm.cmd' : 'npm';
 
 export interface RawPackage {
     name?: string;
@@ -139,7 +141,7 @@ export class Package {
             const archivePath = this.packDependency(dependency);
             if (archivePath) {
                 try {
-                    this.execSync('npm', 'install', archivePath);
+                    this.execSync(NPM_COMMAND, 'install', archivePath);
                 } finally {
                     fs.removeSync(archivePath);
                 }
@@ -148,7 +150,7 @@ export class Package {
     }
 
     uninstallDependency(dependency: Package): void {
-        this.execSync('npm', 'uninstall', dependency.name);
+        this.execSync(NPM_COMMAND, 'uninstall', dependency.name);
     }
 
     cleanDependency(dependency: Package): void {
@@ -167,7 +169,7 @@ export class Package {
     packDependency(dependency: Package): string | undefined {
         const archiveName = dependency.archiveName;
         if (archiveName) {
-            this.execSync('npm', 'pack', dependency.packagePath);
+            this.execSync(NPM_COMMAND, 'pack', dependency.packagePath);
             return this.resolvePath(archiveName);
         }
         console.error(`${this.name} cannot be packed, since the version is not declared`);
@@ -175,11 +177,11 @@ export class Package {
     }
 
     run(script: string): void {
-        this.exec('npm', 'run', script);
+        this.exec(NPM_COMMAND, 'run', script);
     }
 
     runSync(script: string): void {
-        this.execSync('npm', 'run', script);
+        this.execSync(NPM_COMMAND, 'run', script);
     }
 
     exec(command: string, ...args: string[]): void {
@@ -206,7 +208,7 @@ export class Package {
                 stdio: [0, 1, 2]
             });
         } catch (err) {
-            // no-op
+            console.error(`An error occurred while executing the command: ${command} with the following arguments: ${args}`, err);
         }
     }
 
