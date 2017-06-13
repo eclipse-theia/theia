@@ -78,13 +78,13 @@ It can also be started with:
 
 In the core directory run:
 
-	$ npm run build
+    npm run build
 
 ### <a name="rebuilding-the-example"></a>the examples
 
 In the example directory run:
 
-	$ npm run build
+    npm run build
 
 Note that this will:
  - build theia-core.
@@ -98,14 +98,14 @@ Note that this will:
 
 To rebuild each time a change is detected in theia-core run:
 
-	$ npm run watch
+    npm run watch
 
 ### the examples
 
 To rebuild each time a change is detected in theia-core or the example's
 frontend or backend you can run:
 
-	$ npm run watch
+    npm run watch
 
 Note that you don't need to watch theia-core separately, this will be done
 by this command.
@@ -120,7 +120,7 @@ To debug an example using VSCode:
   process.
 - Start the frontend using:
 
-   `$ npm run start:frontend`
+   npm run start:frontend
 
 ## tl;dr
 
@@ -163,7 +163,7 @@ directory. To avoid ENOSPC errors, increase your default inotify watches.
 
 It can be done like so:
 
-	$ echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+    echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
 
 ### Windows
 
