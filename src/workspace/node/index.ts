@@ -5,7 +5,5 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export * from "./application";
-export * from "./application-module";
-export * from "./debug";
-export * from "./file-uri";
+export * from './default-workspace-server';
+export * from './workspace-backend-module';

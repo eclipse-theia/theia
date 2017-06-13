@@ -12,6 +12,7 @@ import { FileSystem } from '../../filesystem/common';
 import { FileMenus, FileDialogFactory, FileStatNode } from "../../filesystem/browser";
 // FIXME move FileUri to common
 import { FileUri } from "../../application/node/file-uri";
+import { WorkspaceService } from "./workspace-service";
 
 export namespace WorkspaceCommands {
     export const OPEN: Command = {
@@ -26,7 +27,8 @@ export class WorkspaceFrontendContribution implements FrontendApplicationContrib
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileDialogFactory) protected readonly fileDialogFactory: FileDialogFactory,
-        @inject(OpenerService) protected readonly openerService: OpenerService
+        @inject(OpenerService) protected readonly openerService: OpenerService,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
     ) { }
 
     onInitialize({ commands, menus }: FrontendApplication): void {
@@ -54,7 +56,7 @@ export class WorkspaceFrontendContribution implements FrontendApplicationContrib
             return;
         }
         if (node.fileStat.isDirectory) {
-
+            this.workspaceService.open(node.uri);
         } else {
             open(this.openerService, node.uri);
         }

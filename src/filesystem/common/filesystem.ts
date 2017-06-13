@@ -106,11 +106,6 @@ export interface FileSystem extends Disposable {
      */
     getEncoding(uri: string): Promise<string>;
 
-    /**
-     * Returns the workspace root
-     */
-    getWorkspaceRoot(): Promise<FileStat>;
-
 }
 
 export namespace FileSystem {

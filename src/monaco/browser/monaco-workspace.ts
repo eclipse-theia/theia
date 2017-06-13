@@ -11,6 +11,7 @@ import {
 } from "monaco-languageclient";
 import { DisposableCollection } from "../../application/common";
 import { FileChangeType, FileSystem, FileSystemWatcher } from '../../filesystem/common';
+import { WorkspaceService } from "../../workspace/browser";
 import * as lang from "../../languages/common";
 import { Emitter, Event, TextDocument, TextDocumentWillSaveEvent, TextEdit } from "../../languages/common";
 import { MonacoModelResolver } from "./monaco-model-resolver";
@@ -44,13 +45,14 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(FileSystemWatcher) protected readonly fileSystemWatcher: FileSystemWatcher,
         @inject(MonacoModelResolver) protected readonly monacoModelResolver: MonacoModelResolver,
         @inject(MonacoToProtocolConverter) protected readonly m2p: MonacoToProtocolConverter,
         @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter
     ) {
         super(m2p);
-        fileSystem.getWorkspaceRoot().then(rootStat => {
+        workspaceService.root.then(rootStat => {
             this._rootUri = rootStat.uri;
             this.resolveReady();
         });

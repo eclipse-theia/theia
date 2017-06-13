@@ -7,10 +7,19 @@
 
 import { ContainerModule } from "inversify";
 import { FrontendApplicationContribution } from '../../application/browser';
+import { WebSocketConnectionProvider } from '../../messaging/browser';
 import { FileDialogFactory, createFileDialog, FileDialogProps } from '../../filesystem/browser';
+import { WorkspaceServer, workspacePath } from '../common';
 import { WorkspaceFrontendContribution } from "./workspace-frontend-contribution";
+import { WorkspaceService } from './workspace-service';
 
 export const workspaceFrontendModule = new ContainerModule(bind => {
+    bind(WorkspaceService).toSelf().inSingletonScope();
+    bind(WorkspaceServer).toDynamicValue(ctx => {
+        const provider = ctx.container.get(WebSocketConnectionProvider);
+        return provider.createProxy<WorkspaceServer>(workspacePath);
+    }).inSingletonScope();
+
     bind(WorkspaceFrontendContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toDynamicValue(ctx =>
         ctx.container.get(WorkspaceFrontendContribution)
