@@ -44,10 +44,10 @@ export class FileTreeModel extends TreeModel implements LocationService {
         if (uri) {
             this.fileSystem.getFileStat(uri.toString()).then(fileStat => {
                 const node = DirNode.createRoot(fileStat);
-                super.navigateTo(node);
+                this.navigateTo(node);
             });
         } else {
-            super.navigateTo(undefined);
+            this.navigateTo(undefined);
         }
     }
 
