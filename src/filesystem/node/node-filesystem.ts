@@ -51,7 +51,7 @@ export class FileSystemNode implements FileSystem {
         this.watcher = chokidar.watch(rootPath).on("all", (eventType: EventType, filename: string) => {
             if (this.client) {
                 const changeType = this.getFileChangeType(eventType);
-                if (changeType && typeof filename === "string") {
+                if (changeType !== undefined && typeof filename === "string") {
                     const segments = path.normalize(path.relative(rootPath, filename));
                     const changedUri = segments === "." ? rootUri : FileUri.create(path.resolve(rootPath, segments));
                     const change = new FileChange(changedUri.toString(), changeType);
