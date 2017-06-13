@@ -56,7 +56,7 @@ describe("uri", () => {
         });
 
         it("of file:///", () => {
-            expect(new URI("file:///").lastSegment).equals("/");
+            expect(new URI("file:///").lastSegment).equals("");
         });
 
         it("of file://", () => {

@@ -51,7 +51,7 @@ export class FileTree extends Tree {
                 node.fileStat = fileStat;
                 return node;
             }
-            const name = uri.lastSegment;
+            const name = uri.displayName;
             return <DirNode>{
                 id, uri, fileStat, name, parent,
                 expanded: false,
@@ -63,7 +63,7 @@ export class FileTree extends Tree {
             node.fileStat = fileStat;
             return node;
         }
-        const name = uri.lastSegment;
+        const name = uri.displayName;
         return <FileNode>{
             id, uri, fileStat, name, parent,
             selected: false
@@ -109,7 +109,7 @@ export namespace DirNode {
         const id = fileStat.uri;
         return {
             id, uri, fileStat,
-            name: uri.lastSegment,
+            name: uri.displayName,
             visible: true,
             parent: undefined,
             children: [],

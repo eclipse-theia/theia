@@ -45,7 +45,7 @@ export class WorkspaceFrontendContribution implements FrontendApplicationContrib
         const fileDialog = this.fileDialogFactory({
             title: WorkspaceCommands.OPEN.label!
         });
-        fileDialog.model.currentLocation = FileUri.create('/');
+        fileDialog.model.location = FileUri.create('/');
         fileDialog.open().then(node =>
             this.openFile(node)
         );
