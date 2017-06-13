@@ -8,8 +8,7 @@
 import * as http from 'http';
 import * as express from 'express';
 import { inject, named, injectable } from "inversify";
-import { ContributionProvider } from '../common/contribution-provider';
-import { ILogger } from '../common/logger';
+import { ILogger, ContributionProvider } from '../common';
 
 export const BackendApplicationContribution = Symbol("BackendApplicationContribution");
 export interface BackendApplicationContribution {
@@ -25,9 +24,11 @@ export class BackendApplication {
 
     private app: express.Application;
 
-    constructor( @inject(ContributionProvider) @named(BackendApplicationContribution) private contributionsProvider: ContributionProvider<BackendApplicationContribution>,
-        @inject(ILogger) protected readonly logger: ILogger) {
-    }
+    constructor(
+        @inject(ContributionProvider) @named(BackendApplicationContribution)
+        protected readonly contributionsProvider: ContributionProvider<BackendApplicationContribution>,
+        @inject(ILogger) protected readonly logger: ILogger
+    ) { }
 
     start(port: number = 3000): Promise<void> {
         const contributions = this.contributionsProvider.getContributions()

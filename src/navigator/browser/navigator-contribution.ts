@@ -10,6 +10,7 @@ import { SelectionService } from "../../application/common";
 import { FrontendApplicationContribution, FrontendApplication } from "../../application/browser";
 import { FileSystem } from "../../filesystem/common";
 import { DirNode } from "../../filesystem/browser";
+import { WorkspaceService } from "../../workspace/browser";
 import { FileNavigatorWidget, ID } from "./navigator-widget";
 
 @injectable()
@@ -19,13 +20,14 @@ export class FileNavigatorContribution implements FrontendApplicationContributio
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(FileNavigatorWidget) @named(ID) protected readonly fileNavigator: FileNavigatorWidget
     ) {
         this.fileNavigator.model.onSelectionChanged(selection =>
             this.selectionService.selection = selection
         );
-        this.onReady = this.fileSystem.getWorkspaceRoot().then(fileStat => {
+        this.onReady = this.workspaceService.root.then(fileStat => {
             this.fileNavigator.model.root = DirNode.createRoot(fileStat);
         });
     }

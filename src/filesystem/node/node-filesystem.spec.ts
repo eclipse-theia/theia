@@ -519,46 +519,6 @@ describe("NodeFileSystem", () => {
 
     });
 
-    describe("06 #getWorkspaceRoot", () => {
-
-        it("Should be return with the stat of the root. The root stat has information of its direct descendants but not the children of the descendants.", () => {
-            const uri_1 = root.appendPath("foo");
-            const uri_2 = root.appendPath("bar");
-            const uri_1_01 = uri_1.appendPath("foo_01.txt");
-            const uri_1_02 = uri_1.appendPath("foo_02.txt");
-            const uri_2_01 = uri_2.appendPath("bar_01.txt");
-            const uri_2_02 = uri_2.appendPath("bar_02.txt");
-            fs.mkdirSync(FileUri.fsPath(uri_1));
-            fs.mkdirSync(FileUri.fsPath(uri_2));
-            fs.writeFileSync(FileUri.fsPath(uri_1_01), "foo_01");
-            fs.writeFileSync(FileUri.fsPath(uri_1_02), "foo_02");
-            fs.writeFileSync(FileUri.fsPath(uri_2_01), "bar_01");
-            fs.writeFileSync(FileUri.fsPath(uri_2_02), "bar_02");
-            expect(fs.statSync(FileUri.fsPath(uri_1)).isDirectory()).to.be.true;
-            expect(fs.statSync(FileUri.fsPath(uri_2)).isDirectory()).to.be.true;
-            expect(fs.readFileSync(FileUri.fsPath(uri_1_01), "utf8")).to.be.equal("foo_01");
-            expect(fs.readFileSync(FileUri.fsPath(uri_1_02), "utf8")).to.be.equal("foo_02");
-            expect(fs.readFileSync(FileUri.fsPath(uri_2_01), "utf8")).to.be.equal("bar_01");
-            expect(fs.readFileSync(FileUri.fsPath(uri_2_02), "utf8")).to.be.equal("bar_02");
-            expect(fs.readdirSync(FileUri.fsPath(uri_1))).to.include("foo_01.txt").and.to.include("foo_02.txt");
-            expect(fs.readdirSync(FileUri.fsPath(uri_2))).to.include("bar_01.txt").and.to.include("bar_02.txt");
-
-            return fileSystem.getWorkspaceRoot().then(stat => {
-                expect(stat).to.be.an("object");
-                expect(stat).to.have.property("uri").that.equals(root.toString());
-                expect(stat).to.have.property("hasChildren").that.be.true;
-                expect(stat).to.have.property("children").that.is.not.undefined;
-                expect(stat).to.have.property("children").that.has.lengthOf(2);
-                expect(stat.children!.map(childStat => childStat.uri)).to.contain(uri_1.toString()).and.contain(uri_2.toString());
-                expect(stat.children!.find(childStat => childStat.uri === uri_1.toString())).to.be.not.undefined;
-                expect(stat.children!.find(childStat => childStat.uri === uri_2.toString())).to.be.not.undefined;
-                expect(stat.children!.find(childStat => childStat.uri === uri_1.toString())!.children).to.be.undefined;
-                expect(stat.children!.find(childStat => childStat.uri === uri_2.toString())!.children).to.be.undefined;
-            });
-        });
-
-    });
-
     describe("07 #createFile", () => {
 
         it("Should be rejected with an error if a file already exists with the given URI.", () => {

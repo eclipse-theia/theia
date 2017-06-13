@@ -20,3 +20,4 @@ export * from './resource';
 export * from './contribution-provider';
 export * from './endpoint';
 export * from './path';
+export * from './logger';
