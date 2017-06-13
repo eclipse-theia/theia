@@ -169,7 +169,7 @@ export class Package {
     packDependency(dependency: Package): string | undefined {
         const archiveName = dependency.archiveName;
         if (archiveName) {
-            this.execSync('npm', 'pack', dependency.packagePath);
+            this.execSync(NPM_COMMAND, 'pack', dependency.packagePath);
             return this.resolvePath(archiveName);
         }
         console.error(`${this.name} cannot be packed, since the version is not declared`);
