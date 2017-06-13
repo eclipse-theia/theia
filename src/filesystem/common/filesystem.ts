@@ -106,15 +106,11 @@ export interface FileSystem extends Disposable {
      */
     getEncoding(uri: string): Promise<string>;
 
-}
+    /**
+     * Return list of available roots.
+     */
+    getRoots(): Promise<FileStat[]>;
 
-export namespace FileSystem {
-    export declare type Configuration = {
-        encoding: string,
-        recursive: boolean,
-        overwrite: boolean,
-        moveToTrash: true,
-    };
 }
 
 export interface FileSystemClient {

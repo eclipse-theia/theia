@@ -31,6 +31,7 @@
     "@types/yargs": "^6.6.0",
     "bunyan": "^1.8.10",
     "chokidar": "^1.6.1",
+    "drivelist": "^5.0.22",
     "electron": "1.6.8",
     "express": "^4.15.2",
     "font-awesome": "^4.7.0",

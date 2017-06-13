@@ -9,9 +9,7 @@ import { injectable, inject } from "inversify";
 import { Command } from "../../application/common";
 import { FrontendApplicationContribution, FrontendApplication, OpenerService, open } from "../../application/browser";
 import { FileSystem } from '../../filesystem/common';
-import { FileMenus, FileDialogFactory, FileStatNode } from "../../filesystem/browser";
-// FIXME move FileUri to common
-import { FileUri } from "../../application/node/file-uri";
+import { FileMenus, FileDialogFactory, FileStatNode, DirNode } from "../../filesystem/browser";
 import { WorkspaceService } from "./workspace-service";
 
 export namespace WorkspaceCommands {
@@ -42,13 +40,17 @@ export class WorkspaceFrontendContribution implements FrontendApplicationContrib
     }
 
     protected showFileDialog(): void {
-        const fileDialog = this.fileDialogFactory({
-            title: WorkspaceCommands.OPEN.label!
+        this.fileSystem.getRoots().then(roots => {
+            const node = DirNode.createRoot(roots[0]);
+
+            const fileDialog = this.fileDialogFactory({
+                title: WorkspaceCommands.OPEN.label!
+            });
+            fileDialog.model.navigateTo(node);
+            fileDialog.open().then(node =>
+                this.openFile(node)
+            );
         });
-        fileDialog.model.location = FileUri.create('/');
-        fileDialog.open().then(node =>
-            this.openFile(node)
-        );
     }
 
     protected openFile(node: Readonly<FileStatNode> | undefined): void {

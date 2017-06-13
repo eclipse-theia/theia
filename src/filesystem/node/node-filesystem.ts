@@ -5,12 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as fs from "fs-extra";
-import * as touch from "touch";
-import * as path from "path";
-import { FileUri } from "../../application/node/file-uri";
-import URI from "../../application/common/uri";
+import * as fs from 'fs-extra';
+import * as touch from 'touch';
+import * as path from 'path';
+import * as drivelist from 'drivelist';
 import { WatchOptions, FSWatcher } from "chokidar";
+import URI from "../../application/common/uri";
+import { FileUri } from "../../application/node";
 import { FileStat, FileSystem, FileSystemClient, FileChange, FileChangeType, FileChangesEvent } from "../common/filesystem";
 
 type MvOptions = { mkdirp?: boolean, clobber?: boolean, limit?: number };
@@ -28,18 +29,29 @@ type EventType =
     "change" |
     "error";
 
+export type Configuration = {
+    encoding: string,
+    recursive: boolean,
+    overwrite: boolean,
+    moveToTrash: true,
+};
+
+export const defaultConfiguration: Configuration = {
+    encoding: "utf8",
+    overwrite: false,
+    recursive: true,
+    moveToTrash: true
+}
+
 export class FileSystemNode implements FileSystem {
 
     protected client: FileSystemClient | undefined;
     private watcher: FSWatcher;
 
-    constructor(protected rootUri: URI, protected defaults: FileSystem.Configuration = {
-        encoding: "utf8",
-        overwrite: false,
-        recursive: true,
-        moveToTrash: true,
-    }) {
-
+    constructor(
+        protected readonly rootUri: URI,
+        protected readonly defaults: Configuration = defaultConfiguration
+    ) {
         const stat = this.doGetStat(this.rootUri, 0);
         if (!stat) {
             throw new Error(`File system root cannot be located under ${this.rootUri}.`);
@@ -339,13 +351,27 @@ export class FileSystemNode implements FileSystem {
         });
     }
 
-    getWorkspaceRoot(): Promise<FileStat> {
-        return new Promise<FileStat>((resolve, reject) => {
-            const stat = this.doGetStat(this.rootUri, 1);
-            if (!stat) {
-                return reject(new Error(`Cannot locate workspace root under ${this.rootUri}.`));
-            }
-            resolve(stat);
+    getRoots(): Promise<FileStat[]> {
+        return new Promise((resolve, reject) => {
+            drivelist.list((error, drives) => {
+                if (error) {
+                    reject(error);
+                } else {
+                    const roots: FileStat[] = [];
+                    Promise.all(drives.map(d => {
+                        const mountpoint = d.mountpoints[0]
+                        if (mountpoint) {
+                            const rootUri = FileUri.create(mountpoint.path);
+                            const root = this.doGetStat(rootUri, 1)
+                            if (root) {
+                                roots.push(root);
+                            } else {
+                                console.error(`Cannot locate the file system root under ${this.rootUri}.`);
+                            }
+                        }
+                    })).then(() => resolve(roots));
+                }
+            });
         });
     }
 
