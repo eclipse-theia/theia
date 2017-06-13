@@ -32,7 +32,7 @@ export class FileTreeModel extends TreeModel implements LocationService {
         this.toDispose.push(this.watcher.onFileChanges(event => this.onFileChanges(event)));
     }
 
-    get currentLocation(): URI | undefined {
+    get location(): URI | undefined {
         const root = this.root;
         if (FileStatNode.is(root)) {
             return root.uri;
@@ -40,7 +40,7 @@ export class FileTreeModel extends TreeModel implements LocationService {
         return undefined;
     }
 
-    set currentLocation(uri: URI | undefined) {
+    set location(uri: URI | undefined) {
         if (uri) {
             this.fileSystem.getFileStat(uri.toString()).then(fileStat => {
                 const node = DirNode.createRoot(fileStat);
@@ -49,10 +49,6 @@ export class FileTreeModel extends TreeModel implements LocationService {
         } else {
             super.navigateTo(undefined);
         }
-    }
-
-    get allLocations(): URI[] {
-        return LocationService.getAllLocations(this);
     }
 
     get selectedFileStatNode(): Readonly<FileStatNode> | undefined {

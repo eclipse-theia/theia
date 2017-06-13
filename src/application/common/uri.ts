@@ -23,18 +23,40 @@ export default class URI {
         }
     }
 
+    get displayName(): string {
+        const lastSegment = this.lastSegment;
+        if (lastSegment) {
+            return lastSegment;
+        }
+        if (this.path.isRoot) {
+            return this.path.toString();
+        }
+        return '';
+    }
+
+    /**
+     * Return all uri from the current to the top most.
+     */
+    get allLocations(): URI[] {
+        const locations = [];
+        let location: URI = this;
+        while (!location.path.isRoot) {
+            locations.push(location);
+            location = location.parent;
+        }
+        locations.push(location);
+        return locations;
+    }
+
     get parent(): URI {
+        if (this.path.isRoot) {
+            return this;
+        }
         return this.withPath(this.path.dir);
     }
 
     get lastSegment(): string {
-        if (this.path.base) {
-            return this.path.base;
-        }
-        if (this.path.root) {
-            return Path.separator;
-        }
-        return '';
+        return this.path.base;
     }
 
     appendPath(toAppend: string): URI {

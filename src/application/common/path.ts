@@ -15,10 +15,9 @@
  */
 export class Path {
     public static separator: '/' = '/';
-    public static root = new Path(Path.separator);
 
-    readonly absolute: boolean;
-    readonly root: boolean;
+    readonly isAbsolute: boolean;
+    readonly isRoot: boolean;
     private _dir: Path;
     readonly base: string;
     readonly name: string;
@@ -27,8 +26,8 @@ export class Path {
     constructor(
         private raw: string
     ) {
-        this.absolute = raw.startsWith(Path.separator);
-        this.root = raw === Path.separator;
+        this.isAbsolute = raw.startsWith(Path.separator);
+        this.isRoot = raw === Path.separator;
         const sepIndex = raw.lastIndexOf(Path.separator);
         this.base = sepIndex === -1 ? raw : raw.substr(sepIndex + 1);
         const extIndex = this.base.lastIndexOf('.');
@@ -38,12 +37,12 @@ export class Path {
 
     get dir(): Path {
         if (this._dir === undefined) {
-            if (this.root) {
-                this._dir = Path.root;
+            if (this.isRoot) {
+                this._dir = this;
             } else {
                 const sepIndex = this.raw.lastIndexOf(Path.separator);
                 if (sepIndex === 0) {
-                    this._dir = Path.root;
+                    this._dir = new Path(Path.separator);
                 } else if (sepIndex !== -1) {
                     this._dir = new Path(this.raw.substr(0, sepIndex));
                 } else {

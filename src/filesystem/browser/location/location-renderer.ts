@@ -15,7 +15,7 @@ export const LOCATION_LIST_CLASS = 'theia-LocationList';
 export class LocationListRenderer extends VirtualRenderer {
 
     constructor(
-        readonly model: LocationService,
+        readonly service: LocationService,
         host?: HTMLElement
     ) {
         super(host);
@@ -25,13 +25,14 @@ export class LocationListRenderer extends VirtualRenderer {
         super.render();
         const locationList = this.locationList;
         if (locationList) {
-            const currentLocation = this.model.currentLocation;
+            const currentLocation = this.service.location;
             locationList.value = currentLocation ? currentLocation.toString() : '';
         }
     }
 
     protected doRender(): h.Child {
-        const locations = this.model.allLocations;
+        const location = this.service.location;
+        const locations = !!location ? location.allLocations : [];
         const options = locations.map(value => this.renderLocation(value));
         return h.select({
             className: LOCATION_LIST_CLASS,
@@ -43,7 +44,7 @@ export class LocationListRenderer extends VirtualRenderer {
         const value = uri.toString();
         return h.option({
             value
-        }, uri.lastSegment);
+        }, uri.displayName);
     }
 
     protected onLocationChanged(e: Event): void {
@@ -51,7 +52,7 @@ export class LocationListRenderer extends VirtualRenderer {
         if (locationList) {
             const value = locationList.value;
             const uri = new URI(value);
-            this.model.currentLocation = uri;
+            this.service.location = uri;
         }
         e.preventDefault();
         e.stopPropagation();
