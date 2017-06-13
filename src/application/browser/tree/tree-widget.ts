@@ -262,7 +262,7 @@ export class TreeWidget extends VirtualWidget implements EventListenerObject {
             this.model.selectNextNode();
             return true;
         }
-        if (event.keyCode === 13) { // Enter
+        if (this.isEnter(event)) {
             this.model.openNode();
             return true;
         }
