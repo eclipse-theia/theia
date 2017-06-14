@@ -8,6 +8,20 @@
 import { MessageConnection } from "vscode-jsonrpc";
 import { ConnectionHandler } from './handler';
 
+export class JsonRpcConnectionHandler<T extends object> implements ConnectionHandler {
+    constructor(
+        readonly path: string,
+        readonly targetFactory: (proxy: T) => any
+    ) { }
+
+    onConnection(connection: MessageConnection): void {
+        const factory = new JsonRpcProxyFactory<T>(this.path);
+        const proxy = factory.createProxy();
+        factory.target = this.targetFactory(proxy);
+        factory.listen(connection);
+    }
+}
+
 /**
  * Factory for JSON-RPC proxy objects.
  *
@@ -50,16 +64,15 @@ import { ConnectionHandler } from './handler';
  *
  * @param <T> - The type of the object to expose to JSON-RPC.
  */
-export class JsonRpcProxyFactory<T extends object> implements ConnectionHandler, ProxyHandler<T> {
+export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
 
     /**
      * Build a new JsonRpcProxyFactory.
      *
-     * @param path - The HTTP path to which this proxy will respond.
      * @param target - The object to expose to JSON-RPC methods calls.  If this
      *   is omitted, the proxy won't be able to handle requests, only send them.
      */
-    constructor(readonly path: string, private readonly target?: any) { }
+    constructor(public target?: any) { }
 
     /**
      * Connect a MessageConnection to the factory.
@@ -67,7 +80,7 @@ export class JsonRpcProxyFactory<T extends object> implements ConnectionHandler,
      * This connection will be used to send/receive JSON-RPC requests and
      * response.
      */
-    onConnection(connection: MessageConnection) {
+    listen(connection: MessageConnection) {
         if (this.target) {
             for (let prop in this.target) {
                 if (typeof this.target[prop] === 'function') {

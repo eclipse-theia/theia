@@ -7,11 +7,10 @@
  */
 
 import { ContainerModule } from "inversify";
-import { ConnectionHandler } from "../../messaging/common";
+import { ConnectionHandler, JsonRpcConnectionHandler } from "../../messaging/common";
 import { FileSystemNode } from './node-filesystem';
-import { FileSystemWatcher, FileSystemClient } from '../common/filesystem-watcher';
+import { FileSystemWatcher } from '../common/filesystem-watcher';
 import { FileSystem } from "../common/filesystem";
-import { JsonRpcProxyFactory } from "../../messaging/common/proxy-factory";
 
 export const fileSystemServerModule = new ContainerModule(bind => {
     bind(FileSystemWatcher).toSelf();
@@ -19,14 +18,9 @@ export const fileSystemServerModule = new ContainerModule(bind => {
     bind(FileSystemNode).toSelf().inSingletonScope();
     bind(FileSystem).toDynamicValue(ctx => ctx.container.get(FileSystemNode)).inSingletonScope();
 
-    bind<ConnectionHandler>(ConnectionHandler).toDynamicValue(ctx => {
-        return {
-            path: "/filesystem",
-            onConnection: connection => {
-                const fileSystem = ctx.container.get(FileSystem);
-                const factory = new JsonRpcProxyFactory<FileSystemClient>("/filesystem", fileSystem);
-                factory.onConnection(connection);
-            }
-        }
-    }).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler("/filesystem", () =>
+            ctx.container.get(FileSystem)
+        )
+    ).inSingletonScope();
 });
