@@ -25,13 +25,18 @@
 export class Path {
     public static separator: '/' = '/';
 
+    public static isDrive(segment: string): boolean {
+        return segment.endsWith(':');
+    }
+
     readonly isAbsolute: boolean;
     readonly isRoot: boolean;
-    private _dir: Path;
-    readonly drive: string;
+    readonly root: Path | undefined;
     readonly base: string;
     readonly name: string;
     readonly ext: string;
+
+    private _dir: Path;
 
     /**
      * The raw should be normalized, meaning that only '/' is allowed as a path separator.
@@ -43,11 +48,32 @@ export class Path {
         const lastIndex = raw.lastIndexOf(Path.separator);
         this.isAbsolute = firstIndex === 0;
         this.base = lastIndex === -1 ? raw : raw.substr(lastIndex + 1);
-        this.isRoot = this.isAbsolute && firstIndex === lastIndex && (!this.base || this.base.endsWith(':'));
+        this.isRoot = this.isAbsolute && firstIndex === lastIndex && (!this.base || Path.isDrive(this.base));
+        this.root = this.computeRoot();
 
         const extIndex = this.base.lastIndexOf('.');
         this.name = extIndex === -1 ? this.base : this.base.substr(0, extIndex);
         this.ext = extIndex === -1 ? '' : this.base.substr(extIndex);
+    }
+
+    protected computeRoot(): Path | undefined {
+        // '/' -> '/'
+        // '/c:' -> '/c:'
+        if (this.isRoot) {
+            return this;
+        }
+        // 'foo/bar' -> `undefined`
+        if (!this.isAbsolute) {
+            return undefined;
+        }
+        const index = this.raw.indexOf(Path.separator, Path.separator.length);
+        if (index === -1) {
+            // '/foo/bar' -> '/'
+            return new Path(Path.separator);
+        }
+        // '/c:/foo/bar' -> '/c:'
+        // '/foo/bar' -> '/'
+        return new Path(this.raw.substr(0, index)).root;
     }
 
     get dir(): Path {
