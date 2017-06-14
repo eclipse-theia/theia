@@ -7,76 +7,38 @@
 
 import * as fs from 'fs-extra';
 import * as touch from 'touch';
-import * as path from 'path';
 import * as drivelist from 'drivelist';
-import { WatchOptions, FSWatcher } from "chokidar";
+import { injectable, inject, optional } from "inversify";
 import URI from "../../application/common/uri";
 import { FileUri } from "../../application/node";
-import { FileStat, FileSystem, FileSystemClient, FileChange, FileChangeType, FileChangesEvent } from "../common/filesystem";
+import { FileStat, FileSystem } from "../common/filesystem";
 
 type MvOptions = { mkdirp?: boolean, clobber?: boolean, limit?: number };
 
 const trash: (paths: Iterable<string>) => Promise<void> = require("trash");
-const chokidar: { watch(paths: string | string[], options?: WatchOptions): FSWatcher } = require("chokidar");
 const mv: (sourcePath: string, targetPath: string, options?: MvOptions, cb?: (error: NodeJS.ErrnoException) => void) => void = require("mv");
 
-type EventType =
-    "all" |
-    "add" |
-    "addDir" |
-    "unlink" |
-    "unlinkDir" |
-    "change" |
-    "error";
+@injectable()
+export class FileSystemNodeOptions {
+    encoding: string;
+    recursive: boolean;
+    overwrite: boolean;
+    moveToTrash: true;
 
-export type Configuration = {
-    encoding: string,
-    recursive: boolean,
-    overwrite: boolean,
-    moveToTrash: true,
-};
-
-export const defaultConfiguration: Configuration = {
-    encoding: "utf8",
-    overwrite: false,
-    recursive: true,
-    moveToTrash: true
+    public static default: FileSystemNodeOptions = {
+        encoding: "utf8",
+        overwrite: false,
+        recursive: true,
+        moveToTrash: true
+    }
 }
 
+@injectable()
 export class FileSystemNode implements FileSystem {
 
-    protected client: FileSystemClient | undefined;
-    private watcher: FSWatcher;
-
     constructor(
-        protected readonly rootUri: URI,
-        protected readonly defaults: Configuration = defaultConfiguration
-    ) {
-        const stat = this.doGetStat(this.rootUri, 0);
-        if (!stat) {
-            throw new Error(`File system root cannot be located under ${this.rootUri}.`);
-        }
-        if (!stat.isDirectory) {
-            throw new Error(`File system root should point to a directory location. URI: ${this.rootUri}.`);
-        }
-        const rootPath = FileUri.fsPath(this.rootUri);
-        this.watcher = chokidar.watch(rootPath).on("all", (eventType: EventType, filename: string) => {
-            if (this.client) {
-                const changeType = this.getFileChangeType(eventType);
-                if (changeType !== undefined && typeof filename === "string") {
-                    const segments = path.normalize(path.relative(rootPath, filename));
-                    const changedUri = segments === "." ? rootUri : FileUri.create(path.resolve(rootPath, segments));
-                    const change = new FileChange(changedUri.toString(), changeType);
-                    const event = new FileChangesEvent([change]);
-                    this.client.onFileChanges(event);
-                }
-            }
-        });
-    }
-
-    setClient(client: FileSystemClient | undefined) {
-        this.client = client;
-    }
+        @inject(FileSystemNodeOptions) @optional() protected readonly options: FileSystemNodeOptions = FileSystemNodeOptions.default
+    ) { }
 
     getFileStat(uriAsString: string): Promise<FileStat> {
         const uri = new URI(uriAsString);
@@ -315,28 +277,6 @@ export class FileSystemNode implements FileSystem {
         });
     }
 
-    watchFileChanges(uri: string): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            const _uri = new URI(uri);
-            const stat = this.doGetStat(_uri, 0);
-            if (!stat) {
-                return reject(new Error(`File does not exist under ${uri}.`));
-            }
-            this.watcher.add(FileUri.fsPath(_uri));
-        });
-    }
-
-    unwatchFileChanges(uri: string): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            const _uri = new URI(uri);
-            const stat = this.doGetStat(_uri, 0);
-            if (!stat) {
-                return reject(new Error(`File does not exist under ${uri}.`));
-            }
-            this.watcher.unwatch(FileUri.fsPath(_uri));
-        });
-    }
-
     getEncoding(uri: string): Promise<string> {
         return new Promise<string>((resolve, reject) => {
             const _uri = new URI(uri);
@@ -347,7 +287,7 @@ export class FileSystemNode implements FileSystem {
             if (stat.isDirectory) {
                 return reject(new Error(`Cannot get the encoding of a director. URI: ${uri}.`));
             }
-            return resolve(this.defaults.encoding);
+            return resolve(this.options.encoding);
         });
     }
 
@@ -366,7 +306,7 @@ export class FileSystemNode implements FileSystem {
                             if (root) {
                                 roots.push(root);
                             } else {
-                                console.error(`Cannot locate the file system root under ${this.rootUri}.`);
+                                console.error(`Cannot locate the file system root under ${rootUri}.`);
                             }
                         }
                     })).then(() => resolve(roots));
@@ -376,7 +316,6 @@ export class FileSystemNode implements FileSystem {
     }
 
     dispose(): void {
-        this.watcher.close();
     }
 
     protected doGetStat(uri: URI, depth: number): FileStat | undefined {
@@ -434,46 +373,29 @@ export class FileSystemNode implements FileSystem {
     protected doGetEncoding(option?: { encoding?: string }): string {
         return option && typeof (option.encoding) !== "undefined"
             ? option.encoding
-            : this.defaults.encoding;
+            : this.options.encoding;
     }
 
     protected doGetOverwrite(option?: { overwrite?: boolean }): boolean {
         return option && typeof (option.overwrite) !== "undefined"
             ? option.overwrite
-            : this.defaults.overwrite;
+            : this.options.overwrite;
     }
 
     protected doGetRecursive(option?: { recursive?: boolean }): boolean {
         return option && typeof (option.recursive) !== "undefined"
             ? option.recursive
-            : this.defaults.recursive;
+            : this.options.recursive;
     }
 
     protected doGetMoveToTrash(option?: { moveToTrash?: boolean }): boolean {
         return option && typeof (option.moveToTrash) !== "undefined"
             ? option.moveToTrash
-            : this.defaults.moveToTrash;
+            : this.options.moveToTrash;
     }
 
     protected doGetContent(option?: { content?: string }): string {
         return (option && option.content) || "";
-    }
-
-    private getFileChangeType(eventType: EventType): FileChangeType | undefined {
-        switch (eventType) {
-            case "add":
-            case "addDir":
-                return FileChangeType.ADDED;
-            case "unlink":
-            case "unlinkDir":
-                return FileChangeType.DELETED;
-            case "change":
-                return FileChangeType.UPDATED;
-            case "error":
-                return undefined;
-            default:
-                throw new Error(`Unexpected file change event type: ${event}.`);
-        }
     }
 
 }

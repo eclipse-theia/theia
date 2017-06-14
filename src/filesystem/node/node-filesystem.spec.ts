@@ -5,7 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { FileChangesEvent, FileChange, FileChangeType, FileSystemClient } from '../common';
 import * as chai from "chai";
 import * as chaiAsPromised from "chai-as-promised";
 import * as fs from "fs-extra";
@@ -45,9 +44,6 @@ describe("NodeFileSystem", () => {
     });
 
     after(() => {
-        fileSystems.forEach(fileSystem => {
-            (fileSystem as any).watcher.close();
-        });
         roots.map(root => FileUri.fsPath(root)).forEach(root => {
             if (fs.existsSync(root)) {
                 try {
@@ -738,15 +734,7 @@ describe("NodeFileSystem", () => {
 
     });
 
-    describe("#12 constructor", () => {
-
-        it("Should throw an exception if the workspace root does not exist.", () => {
-            return expect(() => new FileSystemNode(FileUri.create("some/missing/path"))).to.throw(Error);
-        });
-
-    });
-
-    describe("#13 watchFileChanges", () => {
+    /*describe("#13 watchFileChanges", () => {
 
         it("Should receive file changes events from in the workspace by default.", function (done) {
             this.timeout(4000);
@@ -784,10 +772,10 @@ describe("NodeFileSystem", () => {
             });
         });
 
-    });
+    });*/
 
-    function createFileSystem(uri: URI = root): FileSystem {
-        return new FileSystemNode(uri);
+    function createFileSystem(): FileSystem {
+        return new FileSystemNode();
     }
 
     function sleep(time: number) {
