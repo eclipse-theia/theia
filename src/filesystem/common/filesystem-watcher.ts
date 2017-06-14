@@ -7,7 +7,6 @@
 
 import { injectable } from "inversify";
 import { Emitter, Event } from '../../application/common';
-import { FileSystemClient, FileChangesEvent } from './filesystem';
 
 @injectable()
 export class FileSystemWatcher {
@@ -26,5 +25,33 @@ export class FileSystemWatcher {
     get onFileChanges(): Event<FileChangesEvent> {
         return this.onFileChangesEmitter.event;
     }
+}
 
+export interface FileSystemClient {
+    /**
+     * Notifies about file changes
+     */
+    onFileChanges(event: FileChangesEvent): void
+}
+
+export class FileChangesEvent {
+    constructor(public readonly changes: FileChange[]) { }
+}
+
+export class FileChange {
+
+    constructor(
+        public readonly uri: string,
+        public readonly type: FileChangeType) { }
+
+    equals(other: any): boolean {
+        return other instanceof FileChange && other.type === this.type && other.uri === this.uri;
+    }
+
+}
+
+export enum FileChangeType {
+    UPDATED = 0,
+    ADDED = 1,
+    DELETED = 2
 }
