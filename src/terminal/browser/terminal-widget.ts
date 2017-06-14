@@ -9,6 +9,7 @@ import { inject, injectable } from "inversify";
 import { Endpoint, Disposable } from '../../application/common';
 import { Widget, BaseWidget, Message } from '../../application/browser';
 import { WebSocketConnectionProvider } from '../../messaging/browser';
+import { WorkspaceService } from "../../workspace/browser";
 import * as Xterm from 'xterm';
 import 'xterm/lib/addons/fit/fit';
 import 'xterm/lib/addons/attach/attach';
@@ -30,6 +31,7 @@ export class TerminalWidget extends BaseWidget {
     private endpoint: Endpoint
 
     constructor(
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider
     ) {
         super();
@@ -59,7 +61,7 @@ export class TerminalWidget extends BaseWidget {
         ));
     }
 
-    protected registerResize() {
+    protected registerResize(): void {
         let initialGeometry = (this.term as any).proposeGeometry()
         this.cols = initialGeometry.cols;
         this.rows = initialGeometry.rows;
@@ -76,26 +78,30 @@ export class TerminalWidget extends BaseWidget {
         (this.term as any).fit()
     }
 
-    protected startNewTerminal() {
-        fetch(this.endpoint.getRestUrl().toString() + '?cols=' + this.cols + '&rows=' + this.rows, { method: 'POST' }).then((res) => {
-            res.text().then((pid: string) => {
-                this.pid = pid;
-                let socket = this.createWebSocket(pid);
-                socket.onopen = () => {
-                    (this.term as any).attach(socket);
-                    (this.term as any)._initialized = true
-                }
-                socket.onclose = () => {
-                    this.title.label = `<terminated>`
-                };
-                socket.onerror = (err) => {
-                    console.error(err)
-                }
-                this.toDispose.push(Disposable.create(() =>
-                    socket.close()
-                ));
-            });
+    protected async startNewTerminal(): Promise<void> {
+        const root = await this.workspaceService.root;
+        const res = await fetch(this.endpoint.getRestUrl().toString() + '?cols=' + this.cols + '&rows=' + this.rows, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ uri: root.uri })
         });
+        this.pid = await res.text();
+        const socket = this.createWebSocket(this.pid);
+        socket.onopen = () => {
+            (this.term as any).attach(socket);
+            (this.term as any)._initialized = true;
+        };
+        socket.onclose = () => {
+            this.title.label = `<terminated>`;
+        };
+        socket.onerror = (err) => {
+            console.error(err);
+        };
+        this.toDispose.push(Disposable.create(() =>
+            socket.close()
+        ));
     }
 
     protected createWebSocket(pid: string): WebSocket {

@@ -5,14 +5,14 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { openSocket } from '../../messaging/node';
-import { BackendApplicationContribution } from '../../application/node';
-import { getRootDir } from '../../filesystem/node/filesystem-server-module';
-import * as express from 'express';
 import * as http from 'http';
+import * as express from 'express';
+import * as bodyParser from 'body-parser';
 import { ContainerModule, injectable } from 'inversify';
 import URI from "../../application/common/uri";
-import { isWindows } from "../../application/common/os";
+import { isWindows } from "../../application/common";
+import { BackendApplicationContribution } from '../../application/node';
+import { openSocket } from '../../messaging/node';
 
 const pty = require("node-pty")
 
@@ -33,20 +33,25 @@ class TerminalExpressContribution implements BackendApplicationContribution {
     }
 
     configure(app: express.Application): void {
-        app.post('/terminals', (req, res) => {
-            let cols = parseInt(req.query.cols, 10),
-                rows = parseInt(req.query.rows, 10),
-                term = pty.spawn(this.getShellExecutablePath(), [], {
-                    name: 'xterm-color',
-                    cols: cols || 80,
-                    rows: rows || 24,
-                    cwd: process.env.PWD,
-                    env: process.env
-                })
-            term.write(`cd ${getRootDir()} && `)
-            term.write("source ~/.profile\n")
+        app.post('/terminals', bodyParser.json({ type: 'application/json' }), (req, res) => {
+            const cols = parseInt(req.query.cols, 10);
+            const rows = parseInt(req.query.rows, 10);
+            const term = pty.spawn(this.getShellExecutablePath(), [], {
+                name: 'xterm-color',
+                cols: cols || 80,
+                rows: rows || 24,
+                cwd: process.env.PWD,
+                env: process.env
+            });
 
-            this.terminals.set(term.pid, term)
+            const root: { uri?: string } | undefined = req.body;
+            if (root && root.uri) {
+                const uri = new URI(root.uri);
+                term.write(`cd ${uri.path} && `);
+                term.write("source ~/.profile\n");
+            }
+
+            this.terminals.set(term.pid, term);
             res.send(term.pid.toString());
             res.end();
         });
