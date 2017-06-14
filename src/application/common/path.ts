@@ -6,11 +6,20 @@
  */
 
 /**
+ * On POSIX:
  * ┌─────────────────────┬────────────┐
  * │          dir        │    base    │
  * ├──────┬              ├──────┬─────┤
  * │ root │              │ name │ ext │
  * "  /    home/user/dir / file  .txt "
+ * └──────┴──────────────┴──────┴─────┘
+ *
+ * On Windows:
+ * ┌─────────────────────┬────────────┐
+ * │          dir        │    base    │
+ * ├──────┬              ├──────┬─────┤
+ * │ root │              │ name │ ext │
+ * "  /c:  /home/user/dir / file  .txt "
  * └──────┴──────────────┴──────┴─────┘
  */
 export class Path {
@@ -19,17 +28,23 @@ export class Path {
     readonly isAbsolute: boolean;
     readonly isRoot: boolean;
     private _dir: Path;
+    readonly drive: string;
     readonly base: string;
     readonly name: string;
     readonly ext: string;
 
+    /**
+     * The raw should be normalized, meaning that only '/' is allowed as a path separator.
+     */
     constructor(
         private raw: string
     ) {
-        this.isAbsolute = raw.startsWith(Path.separator);
-        this.isRoot = raw === Path.separator;
-        const sepIndex = raw.lastIndexOf(Path.separator);
-        this.base = sepIndex === -1 ? raw : raw.substr(sepIndex + 1);
+        const firstIndex = raw.indexOf(Path.separator);
+        const lastIndex = raw.lastIndexOf(Path.separator);
+        this.isAbsolute = firstIndex === 0;
+        this.base = lastIndex === -1 ? raw : raw.substr(lastIndex + 1);
+        this.isRoot = this.isAbsolute && firstIndex === lastIndex && (!this.base || this.base.endsWith(':'));
+
         const extIndex = this.base.lastIndexOf('.');
         this.name = extIndex === -1 ? this.base : this.base.substr(0, extIndex);
         this.ext = extIndex === -1 ? '' : this.base.substr(extIndex);
@@ -37,20 +52,26 @@ export class Path {
 
     get dir(): Path {
         if (this._dir === undefined) {
-            if (this.isRoot) {
-                this._dir = this;
-            } else {
-                const sepIndex = this.raw.lastIndexOf(Path.separator);
-                if (sepIndex === 0) {
-                    this._dir = new Path(Path.separator);
-                } else if (sepIndex !== -1) {
-                    this._dir = new Path(this.raw.substr(0, sepIndex));
-                } else {
-                    this._dir = this;
-                }
-            }
+            this._dir = this.computeDir();
         }
         return this._dir;
+    }
+
+    protected computeDir(): Path {
+        if (this.isRoot) {
+            return this;
+        }
+        const lastIndex = this.raw.lastIndexOf(Path.separator);
+        if (lastIndex === -1) {
+            return this;
+        }
+        if (this.isAbsolute) {
+            const firstIndex = this.raw.indexOf(Path.separator);
+            if (firstIndex === lastIndex) {
+                return new Path(this.raw.substr(0, firstIndex + 1));
+            }
+        }
+        return new Path(this.raw.substr(0, lastIndex));
     }
 
     join(...segments: string[]): Path {
