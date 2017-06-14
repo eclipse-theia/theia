@@ -16,7 +16,7 @@ declare module 'drivelist' {
          */
         description: string;
         /**
-         * [{path: '/'}]
+         * [{path: '/'}, {path: 'c:'}]
          */
         mountpoints: { path: string }[];
         size: number;

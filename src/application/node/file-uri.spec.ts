@@ -30,4 +30,29 @@ describe("file-uri", () => {
         });
     });
 
+    it('from /', () => {
+        const uri = FileUri.create('/');
+        expect(uri.toString(true)).to.be.equal('file:///');
+    });
+
+    it('from //', () => {
+        const uri = FileUri.create('//');
+        expect(uri.toString(true)).to.be.equal('file:///');
+    });
+
+    it('from c:', () => {
+        const uri = FileUri.create('c:');
+        expect(uri.toString(true)).to.be.equal('file:///c:');
+    });
+
+    it('from /c:', () => {
+        const uri = FileUri.create('/c:');
+        expect(uri.toString(true)).to.be.equal('file:///c:');
+    });
+
+    it('from /c:/', () => {
+        const uri = FileUri.create('/c:/');
+        expect(uri.toString(true)).to.be.equal('file:///c:/');
+    });
+
 })
