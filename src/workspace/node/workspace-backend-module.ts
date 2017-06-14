@@ -6,7 +6,7 @@
  */
 
 import { ContainerModule } from "inversify";
-import { ConnectionHandler, JsonRpcProxyFactory } from '../../messaging/common';
+import { ConnectionHandler, JsonRpcConnectionHandler } from '../../messaging/common';
 import { WorkspaceServer, workspacePath } from "../common";
 import { DefaultWorkspaceServer } from "./default-workspace-server";
 
@@ -16,8 +16,9 @@ export const workspaceBackendModule = new ContainerModule(bind => {
         ctx.container.get(DefaultWorkspaceServer)
     ).inSingletonScope();
 
-    bind(ConnectionHandler).toDynamicValue(ctx => {
-        const server = ctx.container.get(WorkspaceServer);
-        return new JsonRpcProxyFactory(workspacePath, server);
-    }).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler(workspacePath, () =>
+            ctx.container.get(WorkspaceServer)
+        )
+    ).inSingletonScope();
 });

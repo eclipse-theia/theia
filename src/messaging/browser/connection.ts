@@ -29,8 +29,11 @@ export class WebSocketConnectionProvider {
      * notifications and requests from a remote side.
      */
     createProxy<T extends object>(path: string, target?: object, options?: WebSocketOptions): T {
-        const factory = new JsonRpcProxyFactory<T>(path, target);
-        this.listen(factory, options);
+        const factory = new JsonRpcProxyFactory<T>(target);
+        this.listen({
+            path,
+            onConnection: c => factory.listen(c)
+        }, options);
         return factory.createProxy();
     }
 

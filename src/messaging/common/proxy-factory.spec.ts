@@ -99,16 +99,16 @@ function getSetup() {
     let client = new TestClient()
     let server = new TestServer()
 
-    let serverProxyFactory = new JsonRpcProxyFactory<TestServer>("/test", client)
+    let serverProxyFactory = new JsonRpcProxyFactory<TestServer>(client)
     let client2server = new NoTransform()
     let server2client = new NoTransform()
     let serverConnection = createMessageConnection(server2client, client2server, new ConsoleLogger())
-    serverProxyFactory.onConnection(serverConnection)
+    serverProxyFactory.listen(serverConnection)
     let serverProxy = serverProxyFactory.createProxy()
 
-    let clientProxyFactory = new JsonRpcProxyFactory<TestClient>("/test", server)
+    let clientProxyFactory = new JsonRpcProxyFactory<TestClient>(server)
     let clientConnection = createMessageConnection(client2server, server2client, new ConsoleLogger())
-    clientProxyFactory.onConnection(clientConnection)
+    clientProxyFactory.listen(clientConnection)
     let clientProxy = clientProxyFactory.createProxy()
     return {
         client,

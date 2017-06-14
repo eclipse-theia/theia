@@ -6,21 +6,15 @@
  */
 
 import { ContainerModule } from 'inversify';
-import { JsonRpcProxyFactory } from "../../messaging/common/proxy-factory";
-import { ConnectionHandler } from "../../messaging/common";
+import { ConnectionHandler, JsonRpcConnectionHandler } from "../../messaging/common";
 import { ILoggerServer, ILoggerClient } from '../../application/common/logger-protocol';
 
 export const loggerServerModule = new ContainerModule(bind => {
-    bind<ConnectionHandler>(ConnectionHandler).toDynamicValue(ctx => {
-        let loggerServer = ctx.container.get<ILoggerServer>(ILoggerServer);
-        return {
-            path: "/logger",
-            onConnection(connection) {
-                const proxyFactory = new JsonRpcProxyFactory<ILoggerClient>("/logger", loggerServer);
-                proxyFactory.onConnection(connection);
-                let proxy = proxyFactory.createProxy();
-                loggerServer.setClient(proxy);
-            }
-        }
-    }).inSingletonScope()
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler<ILoggerClient>("/logger", client => {
+            const loggerServer = ctx.container.get<ILoggerServer>(ILoggerServer);
+            loggerServer.setClient(client);
+            return loggerServer;
+        })
+    ).inSingletonScope()
 });
