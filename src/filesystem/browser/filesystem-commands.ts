@@ -139,14 +139,15 @@ export class FileCommandContribution implements CommandContribution {
             FileCommands.NEW_FILE,
             new FileSystemCommandHandler(this.selectionService, uri =>
                 this.getDirectory(uri).then(parent => {
-                    const freeUri = this.getFreeChild('Untitled', '.txt', parent)
+                    const parentUri = new URI(parent.uri);
+                    const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled', '.txt');
                     const dialog = new SingleTextInputDialog({
-                        title: `New File Below '${freeUri.parent.lastSegment}'`,
-                        initialValue: freeUri.lastSegment,
+                        title: `New File Below '${parentUri.lastSegment}'`,
+                        initialValue: vacantChildUri.lastSegment,
                         validate: name => this.validateFileName(name, parent)
                     })
                     dialog.open().then(name =>
-                        this.fileSystem.createFile(new URI(parent.uri).appendPath(name).toString())
+                        this.fileSystem.createFile(parentUri.appendPath(name).toString())
                     )
                 })
             )
@@ -155,15 +156,16 @@ export class FileCommandContribution implements CommandContribution {
         registry.registerHandler(
             FileCommands.NEW_FOLDER,
             new FileSystemCommandHandler(this.selectionService, uri =>
-                this.getDirectory(uri).then(stat => {
-                    const freeUri = this.getFreeChild('Untitled', '', stat);
+                this.getDirectory(uri).then(parent => {
+                    const parentUri = new URI(parent.uri);
+                    const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled');
                     const dialog = new SingleTextInputDialog({
-                        title: `New Folder Below '${freeUri.parent.lastSegment}'`,
-                        initialValue: freeUri.lastSegment,
-                        validate: name => this.validateFileName(name, stat)
+                        title: `New Folder Below '${parentUri.lastSegment}'`,
+                        initialValue: vacantChildUri.lastSegment,
+                        validate: name => this.validateFileName(name, parent)
                     });
                     dialog.open().then(name =>
-                        this.fileSystem.createFolder(new URI(stat.uri).appendPath(name).toString())
+                        this.fileSystem.createFolder(parentUri.appendPath(name).toString())
                     );
                 })
             )
@@ -221,17 +223,16 @@ export class FileCommandContribution implements CommandContribution {
         return this.fileSystem.getFileStat(candidate.parent.toString());
     }
 
-    protected getFreeChild(prefix: string, suffix: string, fileStat: FileStat): URI {
-        const infixes = ['', ' 1', ' 2', ' 3', ' 4', ' 5']
-        const parentUri = new URI(fileStat.uri)
-        for (const infix of infixes) {
-            const candidate = prefix + infix + suffix
-            const children: FileStat[] = fileStat.children!
-            if (!children.some(stat => new URI(stat.uri).lastSegment === candidate)) {
-                return parentUri.appendPath(candidate)
-            }
+    protected findVacantChildUri(parentUri: URI, parent: FileStat, name: string, ext: string = ''): URI {
+        const children = !parent.children ? [] : parent.children!.map(child => new URI(child.uri));
+
+        let index = 1;
+        let base = name + ext;
+        while (children.some(child => child.lastSegment === base)) {
+            index = index + 1;
+            base = name + '_' + index + ext;
         }
-        return parentUri.appendPath(prefix + suffix)
+        return parentUri.appendPath(base);
     }
 }
 
