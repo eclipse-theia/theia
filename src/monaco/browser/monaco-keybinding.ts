@@ -188,7 +188,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
                 modifiers: []
             }
             // CTRL + COMMAND
-            if ((isOSX && keyCode & KeyMod.CtrlCmd) || keyCode & KeyMod.WinCtrl) {
+            if ((keyCode & KeyMod.CtrlCmd) || (keyCode & KeyMod.WinCtrl)) {
                 sequence.modifiers!.push(Modifier.M1);
             }
             // SHIFT
