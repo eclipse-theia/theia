@@ -9,6 +9,9 @@
             "request": "launch",
             "name": "Launch Backend",
             "program": "${workspaceRoot}/examples/browser/lib/backend/main.js",
+            "args": [
+                "--loglevel=debug"
+            ],
             "sourceMaps": true,
             "outFiles": [
                 "${workspaceRoot}/examples/browser/lib/**/*.js",
@@ -21,6 +24,7 @@
             "name": "Launch Backend (eclipse.jdt.ls)",
             "program": "${workspaceRoot}/examples/browser/lib/backend/main.js",
             "args": [
+                "--loglevel=debug",
                 "--root-dir=${workspaceRoot}/../eclipse.jdt.ls/org.eclipse.jdt.ls.core"
             ],
             "sourceMaps": true,

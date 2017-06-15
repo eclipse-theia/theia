@@ -11,13 +11,13 @@ import { ConnectionHandler } from './handler';
 export class JsonRpcConnectionHandler<T extends object> implements ConnectionHandler {
     constructor(
         readonly path: string,
-        readonly targetFactory: (proxy: T) => any
+        readonly targetFactory: (proxy: T, connection: MessageConnection) => any
     ) { }
 
     onConnection(connection: MessageConnection): void {
         const factory = new JsonRpcProxyFactory<T>(this.path);
         const proxy = factory.createProxy();
-        factory.target = this.targetFactory(proxy);
+        factory.target = this.targetFactory(proxy, connection);
         factory.listen(connection);
     }
 }

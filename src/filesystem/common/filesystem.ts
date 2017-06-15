@@ -7,6 +7,8 @@
 
 import { Disposable } from '../../application/common';
 
+export const fileSystemPath = '/filesystem';
+
 export const FileSystem = Symbol("FileSystem");
 
 export interface FileSystem extends Disposable {

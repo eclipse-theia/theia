@@ -118,8 +118,8 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
         const disposables = new DisposableCollection()
         const onFileEventEmitter = new lang.Emitter<lang.FileEvent>()
         disposables.push(onFileEventEmitter);
-        disposables.push(this.fileSystemWatcher.onFileChanges(event => {
-            for (const change of event.changes) {
+        disposables.push(this.fileSystemWatcher.onFilesChanged(changes => {
+            for (const change of changes) {
                 const result: [lang.FileChangeType, boolean | undefined] =
                     change.type === FileChangeType.ADDED ? [lang.FileChangeType.Created, ignoreCreateEvents] :
                         change.type === FileChangeType.UPDATED ? [lang.FileChangeType.Changed, ignoreChangeEvents] :
@@ -127,7 +127,7 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
 
                 const type = result[0];
                 const ignoreEvents = result[1];
-                const uri = change.uri;
+                const uri = change.uri.toString();
                 if (ignoreEvents === undefined && ignoreEvents === false && testGlob(globPattern, uri)) {
                     onFileEventEmitter.fire({ uri, type });
                 }

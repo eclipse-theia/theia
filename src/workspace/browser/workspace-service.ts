@@ -1,3 +1,4 @@
+import { FileSystemWatcher } from '../../filesystem/common/filesystem-watcher';
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -23,10 +24,14 @@ export class WorkspaceService {
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
         @inject(WorkspaceServer) protected readonly server: WorkspaceServer
     ) {
         this.root = this.server.getRoot().then(uri =>
             this.validateRoot(uri)
+        );
+        this.root.then(root =>
+            watcher.watchFileChanges(new URI(root.uri))
         );
     }
 

@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import URI from '../../../application/common/uri';
 import { ICompositeTreeNode, TreeModel, TreeServices } from "../../../application/browser";
-import { FileSystem, FileSystemWatcher, FileChangesEvent, FileChangeType } from "../../../filesystem/common";
+import { FileSystem, FileSystemWatcher, FileChangeType, FileChange } from "../../../filesystem/common";
 import { FileStatNode, DirNode, FileTree } from "./file-tree";
 import { LocationService } from '../location';
 
@@ -29,7 +29,7 @@ export class FileTreeModel extends TreeModel implements LocationService {
         @inject(FileTreeServices) services: FileTreeServices
     ) {
         super(tree, services);
-        this.toDispose.push(this.watcher.onFileChanges(event => this.onFileChanges(event)));
+        this.toDispose.push(this.watcher.onFilesChanged(changes => this.onFilesChanged(changes)));
     }
 
     get location(): URI | undefined {
@@ -59,30 +59,30 @@ export class FileTreeModel extends TreeModel implements LocationService {
         return undefined;
     }
 
-    protected onFileChanges(event: FileChangesEvent): void {
-        const affectedNodes = this.getAffectedNodes(event);
+    protected onFilesChanged(changes: FileChange[]): void {
+        const affectedNodes = this.getAffectedNodes(changes);
         if (affectedNodes.length !== 0) {
             affectedNodes.forEach(node => this.refresh(node));
-        } else if (this.isRootAffected(event)) {
+        } else if (this.isRootAffected(changes)) {
             this.refresh();
         }
     }
 
-    protected isRootAffected(event: FileChangesEvent): boolean {
+    protected isRootAffected(changes: FileChange[]): boolean {
         const root = this.root;
         if (FileStatNode.is(root)) {
-            return event.changes.some(change =>
-                change.type < FileChangeType.DELETED && change.uri === root.fileStat.uri
+            return changes.some(change =>
+                change.type < FileChangeType.DELETED && change.uri.toString() === root.uri.toString()
             );
         }
         return false;
     }
 
-    protected getAffectedNodes(event: FileChangesEvent): ICompositeTreeNode[] {
+    protected getAffectedNodes(changes: FileChange[]): ICompositeTreeNode[] {
         const nodes: DirNode[] = [];
-        for (const change of event.changes) {
+        for (const change of changes) {
             const uri = change.uri;
-            const id = change.type > FileChangeType.UPDATED ? new URI(uri).parent.toString() : uri;
+            const id = change.type > FileChangeType.UPDATED ? uri.parent.toString() : uri.toString();
             const node = this.getNode(id);
             if (DirNode.is(node) && node.expanded) {
                 nodes.push(node);
