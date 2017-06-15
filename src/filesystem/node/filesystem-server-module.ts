@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -9,18 +8,40 @@
 import { ContainerModule } from "inversify";
 import { ConnectionHandler, JsonRpcConnectionHandler } from "../../messaging/common";
 import { FileSystemNode } from './node-filesystem';
-import { FileSystemWatcher } from '../common/filesystem-watcher';
-import { FileSystem } from "../common/filesystem";
+import { FileSystemWatcher, FileSystem, fileSystemPath, FileSystemWatcherClientListener } from "../common";
+import { FileSystemWatcherServer, FileSystemWatcherClient, fileSystemWatcherPath } from '../common/filesystem-watcher-protocol';
+import { NodeFileSytemWatcherServer } from './node-filesystem-watcher';
 
 export const fileSystemServerModule = new ContainerModule(bind => {
-    bind(FileSystemWatcher).toSelf();
-
     bind(FileSystemNode).toSelf().inSingletonScope();
     bind(FileSystem).toDynamicValue(ctx => ctx.container.get(FileSystemNode)).inSingletonScope();
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler("/filesystem", () =>
+        new JsonRpcConnectionHandler(fileSystemPath, () =>
             ctx.container.get(FileSystem)
         )
     ).inSingletonScope();
+
+    bind(NodeFileSytemWatcherServer).toSelf();
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler<FileSystemWatcherClient>(fileSystemWatcherPath, (client, connection) => {
+            const server = ctx.container.get(NodeFileSytemWatcherServer);
+            connection.onDispose(() => server.dispose());
+            server.setClient(client);
+            return server;
+        })
+    ).inSingletonScope();
+
+    bind(FileSystemWatcher).toSelf();
+    bind(FileSystemWatcherClientListener).toSelf();
+    bind(FileSystemWatcher).toDynamicValue(({ container }) => {
+        const client = container.get(FileSystemWatcherClientListener);
+        const server = container.get(NodeFileSytemWatcherServer);
+        server.setClient(client);
+
+        const child = container.createChild();
+        child.bind(FileSystemWatcherClientListener).toConstantValue(client);
+        child.bind(FileSystemWatcherServer).toConstantValue(server);
+        return child.get(FileSystemWatcher);
+    });
 });

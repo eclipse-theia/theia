@@ -5,53 +5,79 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable } from "inversify";
-import { Emitter, Event } from '../../application/common';
+import { injectable, inject } from "inversify";
+import { Emitter, Event, Disposable, DisposableCollection } from '../../application/common';
+import URI from "../../application/common/uri";
+import { FileChangeType, DidFilesChangedParams, FileSystemWatcherClient, FileSystemWatcherServer } from "./filesystem-watcher-protocol";
+
+export {
+    FileChangeType
+}
+
+export interface FileChange {
+    uri: URI;
+    type: FileChangeType;
+}
 
 @injectable()
-export class FileSystemWatcher {
+export class FileSystemWatcherClientListener implements FileSystemWatcherClient {
 
-    getFileSystemClient(): FileSystemClient {
-        const emitter = this.onFileChangesEmitter
-        return {
-            onFileChanges(event: FileChangesEvent) {
-                emitter.fire(event)
-            }
-        }
+    protected readonly onFileChangedEmitter = new Emitter<FileChange[]>();
+
+    dispose(): void {
+        this.onFileChangedEmitter.dispose();
     }
 
-    private onFileChangesEmitter = new Emitter<FileChangesEvent>();
-
-    get onFileChanges(): Event<FileChangesEvent> {
-        return this.onFileChangesEmitter.event;
+    get onFilesChanged(): Event<FileChange[]> {
+        return this.onFileChangedEmitter.event;
     }
+
+    onDidFilesChanged(event: DidFilesChangedParams): void {
+        const changes = event.changes.map(change => <FileChange>{
+            uri: new URI(change.uri),
+            type: change.type
+        });
+        this.onFileChangedEmitter.fire(changes);
+    }
+
 }
 
-export interface FileSystemClient {
-    /**
-     * Notifies about file changes
-     */
-    onFileChanges(event: FileChangesEvent): void
-}
+@injectable()
+export class FileSystemWatcher implements Disposable {
 
-export class FileChangesEvent {
-    constructor(public readonly changes: FileChange[]) { }
-}
-
-export class FileChange {
+    protected readonly toDispose = new DisposableCollection();
 
     constructor(
-        public readonly uri: string,
-        public readonly type: FileChangeType) { }
-
-    equals(other: any): boolean {
-        return other instanceof FileChange && other.type === this.type && other.uri === this.uri;
+        @inject(FileSystemWatcherServer) protected readonly server: FileSystemWatcherServer,
+        @inject(FileSystemWatcherClientListener) protected readonly listener: FileSystemWatcherClientListener
+    ) {
+        this.toDispose.push(server);
+        this.toDispose.push(listener);
     }
 
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
+    /**
+     * Allows to start a watcher that reports file change events on the provided resource.
+     */
+    watchFileChanges(uri: URI): Promise<Disposable> {
+        const raw = uri.toString();
+        return this.server.watchFileChanges(raw).then(() => {
+            const disposable = Disposable.create(() =>
+                this.server.unwatchFileChanges(raw)
+            );
+            this.toDispose.push(disposable);
+            return disposable;
+        });
+    }
+
+    /**
+      * Notifies about file changes
+      */
+    get onFilesChanged(): Event<FileChange[]> {
+        return this.listener.onFilesChanged;
+    }
 }
 
-export enum FileChangeType {
-    UPDATED = 0,
-    ADDED = 1,
-    DELETED = 2
-}

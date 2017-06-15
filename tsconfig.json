@@ -21,9 +21,5 @@
   },
   "include": [
     "src"
-  ],
-  "files": [
-    "src/monaco/typings/monaco/index.d.ts",
-    "src/filesystem/typings/drivelist/index.d.ts"
   ]
 }

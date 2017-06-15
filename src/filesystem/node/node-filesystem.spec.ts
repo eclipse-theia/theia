@@ -5,14 +5,18 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as chai from "chai";
-import * as chaiAsPromised from "chai-as-promised";
-import * as fs from "fs-extra";
-import * as os from "os";
+import * as chai from 'chai';
+import * as assert from 'assert';
+import * as chaiAsPromised from 'chai-as-promised';
+import * as fs from 'fs-extra';
+import * as os from 'os';
 import URI from "../../application/common/uri";
-import { FileUri } from "../../application/node/file-uri";
+import { FileUri } from "../../application/node";
 import { FileSystem } from "../common/filesystem";
+import { FileSystemWatcher, FileSystemWatcherClientListener, FileChange, FileChangeType } from '../common';
 import { FileSystemNode } from "./node-filesystem";
+import { NodeFileSytemWatcherServer } from './node-filesystem-watcher';
+
 
 const expect = chai.expect;
 const uuidV1 = require('uuid/v1');
@@ -25,6 +29,7 @@ describe("NodeFileSystem", () => {
 
     let root: URI;
     let fileSystem: FileSystem;
+    let watcher: FileSystemWatcher;
 
     before(() => {
         chai.config.showDiff = true;
@@ -41,9 +46,12 @@ describe("NodeFileSystem", () => {
         roots.push(root);
         fileSystem = createFileSystem();
         fileSystems.push(fileSystem);
+
+        watcher = createFileSystemWatcher();
     });
 
     after(() => {
+        watcher.dispose();
         roots.map(root => FileUri.fsPath(root)).forEach(root => {
             if (fs.existsSync(root)) {
                 try {
@@ -734,48 +742,48 @@ describe("NodeFileSystem", () => {
 
     });
 
-    /*describe("#13 watchFileChanges", () => {
+    describe("#13 watchFileChanges", () => {
 
         it("Should receive file changes events from in the workspace by default.", function (done) {
             this.timeout(4000);
-            let expectedEvents = [
-                new FileChange(root.toString(), FileChangeType.ADDED),
-                new FileChange(root.appendPath("foo").toString(), FileChangeType.ADDED),
-                new FileChange(root.appendPath("foo").appendPath("bar").toString(), FileChangeType.ADDED),
-                new FileChange(root.appendPath("foo").appendPath("bar").appendPath("baz.txt").toString(), FileChangeType.ADDED)
+            const type = FileChangeType.ADDED;
+            const expectedChanges: FileChange[] = [
+                { uri: root.appendPath("foo"), type },
+                { uri: root.withPath(root.path.join('foo', 'bar')), type },
+                { uri: root.withPath(root.path.join('foo', 'bar', 'baz.txt')), type }
             ];
-            const fileSystem = createFileSystem();
-            const client: FileSystemClient = {
-                onFileChanges(event: FileChangesEvent) {
-                    const index = expectedEvents.findIndex((value, index, obj) => {
-                        return event.changes.length === 1 && event.changes[0].equals(value);
-                    });
-                    if (index >= 0) {
-                        expectedEvents.splice(index, 1);
-                    }
-                    if (expectedEvents.length === 0) {
-                        (<FileSystemNode>fileSystem).setClient(undefined);
-                        fileSystem.dispose();
-                        done();
-                    }
-                }
-            };
-            (<FileSystemNode>fileSystem).setClient(client);
-            fs.mkdirSync(FileUri.fsPath(root.appendPath("foo")));
-            expect(fs.statSync(FileUri.fsPath(root.appendPath("foo"))).isDirectory()).to.be.true;
-            fs.mkdirSync(FileUri.fsPath(root.appendPath("foo").appendPath("bar")));
-            expect(fs.statSync(FileUri.fsPath(root.appendPath("foo").appendPath("bar"))).isDirectory()).to.be.true;
-            fs.writeFileSync(FileUri.fsPath(root.appendPath("foo").appendPath("bar").appendPath("baz.txt")), "baz");
-            expect(fs.readFileSync(FileUri.fsPath(root.appendPath("foo").appendPath("bar").appendPath("baz.txt")), "utf8")).to.be.equal("baz");
-            sleep(3000).then(() => {
-                expect(expectedEvents).to.be.empty;
+            const actualChanges: FileChange[] = [];
+            watcher.onFilesChanged(changes =>
+                actualChanges.push(...changes)
+            );
+            watcher.watchFileChanges(root).then(() => {
+                fs.mkdirSync(FileUri.fsPath(root.appendPath("foo")));
+                expect(fs.statSync(FileUri.fsPath(root.appendPath("foo"))).isDirectory()).to.be.true;
+                fs.mkdirSync(FileUri.fsPath(root.appendPath("foo").appendPath("bar")));
+                expect(fs.statSync(FileUri.fsPath(root.appendPath("foo").appendPath("bar"))).isDirectory()).to.be.true;
+                fs.writeFileSync(FileUri.fsPath(root.appendPath("foo").appendPath("bar").appendPath("baz.txt")), "baz");
+                expect(fs.readFileSync(FileUri.fsPath(root.appendPath("foo").appendPath("bar").appendPath("baz.txt")), "utf8")).to.be.equal("baz");
             });
+            setTimeout(() => {
+                assert.deepEqual(expectedChanges, actualChanges);
+                done();
+            }, 2000);
         });
 
-    });*/
+    });
 
     function createFileSystem(): FileSystem {
         return new FileSystemNode();
+    }
+
+    function createFileSystemWatcher(): FileSystemWatcher {
+        const logger: any = {
+            debug(): void { }
+        };
+        const listener = new FileSystemWatcherClientListener();
+        const server = new NodeFileSytemWatcherServer(logger);
+        server.setClient(listener);
+        return new FileSystemWatcher(server, listener);
     }
 
     function sleep(time: number) {
