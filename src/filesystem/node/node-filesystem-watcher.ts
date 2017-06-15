@@ -39,11 +39,17 @@ export class NodeFileSytemWatcherServer implements FileSystemWatcherServer {
 
     watchFileChanges(uri: string): Promise<void> {
         const paths = this.toPaths(uri);
+        this.logger.debug('Starting watching:', paths)
+        return this.doWatchFileChanges(paths).then(() =>
+            this.logger.debug('Started watching:', paths)
+        );
+    }
+
+    protected doWatchFileChanges(paths: string | string[]): Promise<any> {
         if (this._watcher) {
-            return this._watcher.then(watcher => {
-                watcher.add(paths);
-                this.logger.debug('Watch: ', paths);
-            });
+            return this._watcher.then(watcher =>
+                watcher.add(paths)
+            );
         }
         this._watcher = new Promise<Watcher>(resolve => {
             const watcher = this.createWatcher(paths);
@@ -54,15 +60,16 @@ export class NodeFileSytemWatcherServer implements FileSystemWatcherServer {
         this.toDispose.push(Disposable.create(() => {
             this._watcher = undefined;
         }));
-        return this._watcher.then(() => { });
+        return this._watcher;
     }
 
     unwatchFileChanges(uri: string): Promise<void> {
         if (this._watcher) {
             return this._watcher.then(watcher => {
                 const paths = this.toPaths(uri);
+                this.logger.debug('Stopping watching:', paths);
                 watcher.unwatch(paths);
-                this.logger.debug('Unwatch: ', paths);
+                this.logger.debug('Stopped watching:', paths);
             });
         }
         return Promise.resolve();
@@ -77,7 +84,7 @@ export class NodeFileSytemWatcherServer implements FileSystemWatcherServer {
             ignoreInitial: true
         });
         watcher.on('error', error =>
-            this.logger.error('Watching error: ', error)
+            this.logger.error('Watching error:', error)
         );
         watcher.on('add', path => this.pushAdded(path));
         watcher.on('addDir', path => this.pushAdded(path));
@@ -85,8 +92,8 @@ export class NodeFileSytemWatcherServer implements FileSystemWatcherServer {
         watcher.on('unlink', path => this.pushDeleted(path));
         watcher.on('unlinkDir', path => this.pushDeleted(path));
         this.toDispose.push(Disposable.create(() => {
-            this.logger.debug('Stop watching.');
             watcher.close();
+            this.logger.debug('Stopped watching.');
         }));
         return watcher;
     }
@@ -123,7 +130,7 @@ export class NodeFileSytemWatcherServer implements FileSystemWatcherServer {
         if (this.client) {
             this.client.onDidFilesChanged(event);
         }
-        this.logger.debug('Files changed: ', event);
+        this.logger.debug('Files changed:', event);
     }
 
 }

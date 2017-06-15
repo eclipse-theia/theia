@@ -6,18 +6,25 @@
  */
 
 import { MessageConnection } from "vscode-jsonrpc";
+import { Event, Emitter } from "../../application/common";
 import { ConnectionHandler } from './handler';
+
+export interface JsonRpcConnectionEventEmitter {
+    readonly onDidOpenConnection: Event<void>;
+    readonly onDidCloseConnection: Event<void>;
+}
+export type JsonRpcProxy<T> = T & JsonRpcConnectionEventEmitter;
 
 export class JsonRpcConnectionHandler<T extends object> implements ConnectionHandler {
     constructor(
         readonly path: string,
-        readonly targetFactory: (proxy: T, connection: MessageConnection) => any
+        readonly targetFactory: (proxy: JsonRpcProxy<T>) => any
     ) { }
 
     onConnection(connection: MessageConnection): void {
         const factory = new JsonRpcProxyFactory<T>(this.path);
         const proxy = factory.createProxy();
-        factory.target = this.targetFactory(proxy, connection);
+        factory.target = this.targetFactory(proxy);
         factory.listen(connection);
     }
 }
@@ -66,13 +73,33 @@ export class JsonRpcConnectionHandler<T extends object> implements ConnectionHan
  */
 export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
 
+    protected readonly onDidOpenConnectionEmitter = new Emitter<void>();
+    protected readonly onDidCloseConnectionEmitter = new Emitter<void>();
+
+    protected connectionPromiseResolve: (connection: MessageConnection) => void;
+    protected connectionPromise: Promise<MessageConnection>;
+
     /**
      * Build a new JsonRpcProxyFactory.
      *
      * @param target - The object to expose to JSON-RPC methods calls.  If this
      *   is omitted, the proxy won't be able to handle requests, only send them.
      */
-    constructor(public target?: any) { }
+    constructor(public target?: any) {
+        this.waitForConnection();
+    }
+
+    protected waitForConnection(): void {
+        this.connectionPromise = new Promise(resolve =>
+            this.connectionPromiseResolve = resolve
+        );
+        this.connectionPromise.then(connection => {
+            connection.onClose(() =>
+                this.onDidCloseConnectionEmitter.fire(undefined)
+            );
+            this.onDidOpenConnectionEmitter.fire(undefined)
+        });
+    }
 
     /**
      * Connect a MessageConnection to the factory.
@@ -89,15 +116,10 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
                 }
             }
         }
-        connection.onDispose(() => {
-            this.connectionPromise = new Promise(resolve => { this.connectionPromiseResolve = resolve });
-        });
+        connection.onDispose(() => this.waitForConnection());
         connection.listen();
         this.connectionPromiseResolve(connection);
     }
-
-    private connectionPromiseResolve: (connection: MessageConnection) => void;
-    private connectionPromise: Promise<MessageConnection> = new Promise(resolve => { this.connectionPromiseResolve = resolve })
 
     /**
      * Process an incoming JSON-RPC method call.
@@ -139,7 +161,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * can be used to do JSON-RPC method calls on the remote target object as
      * if it was local.
      */
-    createProxy(): T {
+    createProxy(): JsonRpcProxy<T> {
         const result = new Proxy<T>(this as any, this)
         return result as any
     }
@@ -167,6 +189,12 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * @returns A callable that executes the JSON-RPC call.
      */
     get(target: T, p: PropertyKey, receiver: any): any {
+        if (p === 'onDidOpenConnection') {
+            return this.onDidOpenConnectionEmitter.event;
+        }
+        if (p === 'onDidCloseConnection') {
+            return this.onDidCloseConnectionEmitter.event;
+        }
         const isNotify = this.isNotification(p)
         return (...args: any[]) => {
             return this.connectionPromise.then(connection => {

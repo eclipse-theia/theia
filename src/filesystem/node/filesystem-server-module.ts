@@ -24,15 +24,14 @@ export const fileSystemServerModule = new ContainerModule(bind => {
 
     bind(NodeFileSytemWatcherServer).toSelf();
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<FileSystemWatcherClient>(fileSystemWatcherPath, (client, connection) => {
+        new JsonRpcConnectionHandler<FileSystemWatcherClient>(fileSystemWatcherPath, client => {
             const server = ctx.container.get(NodeFileSytemWatcherServer);
-            connection.onDispose(() => server.dispose());
             server.setClient(client);
+            client.onDidCloseConnection(() => server.dispose());
             return server;
         })
     ).inSingletonScope();
 
-    bind(FileSystemWatcher).toSelf();
     bind(FileSystemWatcherClientListener).toSelf();
     bind(FileSystemWatcher).toDynamicValue(({ container }) => {
         const client = container.get(FileSystemWatcherClientListener);
@@ -42,6 +41,7 @@ export const fileSystemServerModule = new ContainerModule(bind => {
         const child = container.createChild();
         child.bind(FileSystemWatcherClientListener).toConstantValue(client);
         child.bind(FileSystemWatcherServer).toConstantValue(server);
+        child.bind(FileSystemWatcher).toSelf();
         return child.get(FileSystemWatcher);
     });
 });
