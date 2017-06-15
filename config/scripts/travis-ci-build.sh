@@ -6,4 +6,6 @@ npm install \
 && cd ../../examples/browser \
 && npm run bootstrap \
 && cd ../electron \
-&& npm run bootstrap
+&& npm run bootstrap \
+&& npm run test
+ 
