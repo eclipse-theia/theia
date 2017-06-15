@@ -9,16 +9,20 @@ import { ContainerModule } from 'inversify';
 import { CommandContribution, MenuContribution, ResourceResolver } from '../../application/common';
 import { WebSocketConnectionProvider } from '../../messaging/browser/connection';
 import { FileSystem, FileSystemWatcher, FileResourceResolver, fileSystemPath, FileSystemWatcherClientListener } from "../common";
-import { FileSystemWatcherServer, fileSystemWatcherPath } from "../common/filesystem-watcher-protocol";
+import {
+    fileSystemWatcherPath, FileSystemWatcherServer,
+    FileSystemWatcherServerProxy, ReconnectingFileSystemWatcherServer
+} from '../common/filesystem-watcher-protocol';
 import { FileCommandContribution, FileMenuContribution } from './filesystem-commands';
 
 export const fileSystemClientModule = new ContainerModule(bind => {
     bind(FileSystemWatcherClientListener).toSelf().inSingletonScope();
-    bind(FileSystemWatcherServer).toDynamicValue(ctx => {
+    bind(FileSystemWatcherServerProxy).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
         const target = ctx.container.get(FileSystemWatcherClientListener);
         return connection.createProxy<FileSystemWatcherServer>(fileSystemWatcherPath, target);
     }).inSingletonScope();
+    bind(FileSystemWatcherServer).to(ReconnectingFileSystemWatcherServer).inSingletonScope();
     bind(FileSystemWatcher).toSelf().inSingletonScope();
 
     bind(FileSystem).toDynamicValue(ctx => {
