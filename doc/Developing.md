@@ -114,13 +114,37 @@ by this command.
 
 To debug an example using VSCode:
 
-- Uncomment the "sourceRoot" property in theia/tsconfig.json.
-- Rebuild the example as described [here](#rebuilding-the-example).
-- Start the debug tab and run the program, this will start the backend
-  process.
-- Start the frontend using:
+### Debug the browser example's backend
 
-   npm run start:frontend
+- Start the debug tab and run the `Launch Backend` configuration.
+
+### Debug the browser example's frontend
+
+- Start the frontend using `npm run start:frontend`
+- Start the debug tab and run the `Launch Frontend` configuration.
+
+### Debug the browser example's frontend and backend at the same time
+
+- create a symlink to theia directory `ln -s theia theia-frontend`
+- Open one vscode in theia directory.
+- Open another vscode in theia-frontend directory.
+- In one vscode window: start the debug tab and run the `Launch Backend` configuration.
+- In the other vscode window: start the debug tab and run the `Launch Frontend`
+  configuration.
+
+### Debug the electron example
+
+This one you can build as usual with `npm run build` and then use Chrome's
+dev tools to debug.
+
+There's an issue debugging with vscode it seems electron runs at 100% and
+debugging doesn't work.
+
+### Issues
+
+Note that we should be able to debug both frontend and backend in one window but I've this
+[this issue](https://github.com/Microsoft/vscode/issues/28817) when trying
+that. tl;dr Some breakpoints don't hit.
 
 ## tl;dr
 
