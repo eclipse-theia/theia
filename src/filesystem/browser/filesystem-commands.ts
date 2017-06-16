@@ -142,13 +142,16 @@ export class FileCommandContribution implements CommandContribution {
                     const parentUri = new URI(parent.uri);
                     const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled', '.txt');
                     const dialog = new SingleTextInputDialog({
-                        title: `New File Below '${parentUri.lastSegment}'`,
+                        title: `New File`,
                         initialValue: vacantChildUri.lastSegment,
                         validate: name => this.validateFileName(name, parent)
                     })
-                    dialog.open().then(name =>
-                        this.fileSystem.createFile(parentUri.appendPath(name).toString())
-                    )
+                    dialog.open().then(name => {
+                        const fileUri = parentUri.appendPath(name);
+                        this.fileSystem.createFile(fileUri.toString()).then(() => {
+                            open(this.openerService, fileUri)
+                        });
+                    })
                 })
             )
         );
@@ -160,7 +163,7 @@ export class FileCommandContribution implements CommandContribution {
                     const parentUri = new URI(parent.uri);
                     const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled');
                     const dialog = new SingleTextInputDialog({
-                        title: `New Folder Below '${parentUri.lastSegment}'`,
+                        title: `New Folder`,
                         initialValue: vacantChildUri.lastSegment,
                         validate: name => this.validateFileName(name, parent)
                     });
