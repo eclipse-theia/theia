@@ -8,6 +8,10 @@ module.exports = require("../../config/webpack/webpack.config")(__dirname, {
                 target: 'ws://localhost:3000',
                 ws: true
             },
+            '/fs-watcher/*': {
+                target: 'ws://localhost:3000',
+                ws: true
+            },
             '/workspace/*': {
                 target: 'ws://localhost:3000',
                 ws: true
