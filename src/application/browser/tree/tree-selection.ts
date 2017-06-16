@@ -93,9 +93,7 @@ export class TreeSelectionService implements ITreeSelectionService {
     selectNode(raw: ISelectableTreeNode | undefined): void {
         const node = this.tree.validateNode(raw);
         if (ISelectableTreeNode.is(node)) {
-            if (!node.selected) {
-                this.doSelectNode(node);
-            }
+            this.doSelectNode(node);
         } else {
             this.doSelectNode(undefined);
         }
