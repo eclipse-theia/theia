@@ -50,11 +50,8 @@
     "concurrently": "^3.4.0",
     "css-loader": "^0.28.1",
     "file-loader": "^0.11.1",
-<<<<<<< HEAD
     "local-dependency-manager": "../../config/local-dependency-manager",
-=======
     "font-awesome-webpack": "0.0.5-beta.2",
->>>>>>> added font-awesome
     "rimraf": "^2.6.1",
     "selenium-standalone": "^6.2.0",
     "source-map-loader": "^0.2.1",
