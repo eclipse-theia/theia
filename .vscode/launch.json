@@ -7,7 +7,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch App",
+            "name": "Launch Backend",
             "program": "${workspaceRoot}/examples/browser/lib/backend/main.js",
             "sourceMaps": true,
             "outFiles": [
@@ -18,7 +18,7 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch App (eclipse.jdt.ls)",
+            "name": "Launch Backend (eclipse.jdt.ls)",
             "program": "${workspaceRoot}/examples/browser/lib/backend/main.js",
             "args": [
                 "--root-dir=${workspaceRoot}/../eclipse.jdt.ls/org.eclipse.jdt.ls.core"
@@ -49,6 +49,13 @@
             "sourceMaps": true,
             "internalConsoleOptions": "openOnSessionStart",
             "port": 9229
+        },
+        {
+            "name": "Launch Frontend",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:8080/",
+            "webRoot": "${workspaceRoot}"
         }
     ]
 }
