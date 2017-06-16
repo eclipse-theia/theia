@@ -51,9 +51,9 @@ export interface ILogger {
     /**
      * Log a message with the given level if it is enabled.
      *
-     * @params logLEvel - The loglevel to use.
-     * @params message - The message format string.
-     * @params params - The format string variables.
+     * @param logLEvel - The loglevel to use.
+     * @param message - The message format string.
+     * @param params - The format string variables.
      */
     log(logLevel: number, message: string, ...params: any[]): void;
 
@@ -68,8 +68,8 @@ export interface ILogger {
     /**
      * Log a message with the trace level if it is enabled.
      *
-     * @params message - The message format string.
-     * @params params - The format string variables.
+     * @param message - The message format string.
+     * @param params - The format string variables.
      */
     trace(message: string, ...params: any[]): void;
 
@@ -84,8 +84,8 @@ export interface ILogger {
     /**
      * Log a message with the debug level if it is enabled.
      *
-     * @params message - The message format string.
-     * @params params - The format string variables.
+     * @param message - The message format string.
+     * @param params - The format string variables.
      */
     debug(message: string, ...params: any[]): void;
 
@@ -100,8 +100,8 @@ export interface ILogger {
     /**
      * Log a message with the info level if it is enabled.
      *
-     * @params message - The message format string.
-     * @params params - The format string variables.
+     * @param message - The message format string.
+     * @param params - The format string variables.
      */
     info(message: string, ...params: any[]): void;
 
@@ -116,8 +116,8 @@ export interface ILogger {
     /**
      * Log a message with the warn level if it is enabled.
      *
-     * @params message - The message format string.
-     * @params params - The format string variables.
+     * @param message - The message format string.
+     * @param params - The format string variables.
      */
     warn(message: string, ...params: any[]): void;
 
@@ -132,8 +132,8 @@ export interface ILogger {
     /**
      * Log a message with the error level.
      *
-     * @params message - The message format string.
-     * @params params - The format string variables.
+     * @param message - The message format string.
+     * @param params - The format string variables.
      */
     error(message: string, ...params: any[]): void;
 
@@ -148,15 +148,15 @@ export interface ILogger {
     /**
      * Log a message with the fatal level if it is enabled.
      *
-     * @params message - The message format string.
-     * @params params - The format string variables.
+     * @param message - The message format string.
+     * @param params - The format string variables.
      */
     fatal(message: string, ...params: any[]): void;
 
     /**
      * Create a child logger from this logger.
      *
-     * @params obj - The options object to create the logger with.
+     * @param obj - The options object to create the logger with.
      */
     child(obj: Object): ILogger;
 }
