@@ -26,15 +26,139 @@ export const LoggerOptions = Symbol('LoggerOptions')
 export const ILogger = Symbol('ILogger');
 
 export interface ILogger {
-    child(obj: Object): ILogger;
+    /**
+     * Set the log level.
+     *
+     * @param loglevel - The loglevel to set. see Logger.LogLevel for
+     * possible options.
+     */
     setLogLevel(logLevel: number): Promise<void>
+    /**
+     * Get the log level.
+     *
+     * @returns a Promise to the log level.
+     */
     getLogLevel(): Promise<number>;
+
+    /**
+     * Test whether the given log level is enabled.
+     */
+    isEnabled(logLevel: number): Promise<boolean>;
+    /**
+     * Resolve if the given log is enabled.
+     */
+    ifEnabled(logLevel: number): Promise<void>;
+    /**
+     * Log a message with the given level if it is enabled.
+     *
+     * @params logLEvel - The loglevel to use.
+     * @params message - The message format string.
+     * @params params - The format string variables.
+     */
+    log(logLevel: number, message: string, ...params: any[]): void;
+
+    /**
+     * Test whether the trace level is enabled.
+     */
+    isTrace(): Promise<boolean>;
+    /**
+     * Resolve if the trace level is enabled.
+     */
+    ifTrace(): Promise<void>;
+    /**
+     * Log a message with the trace level if it is enabled.
+     *
+     * @params message - The message format string.
+     * @params params - The format string variables.
+     */
     trace(message: string, ...params: any[]): void;
+
+    /**
+     * Test whether the debug level is enabled.
+     */
+    isDebug(): Promise<boolean>;
+    /**
+     * Resolve if the debug level is enabled.
+     */
+    ifDebug(): Promise<void>;
+    /**
+     * Log a message with the debug level if it is enabled.
+     *
+     * @params message - The message format string.
+     * @params params - The format string variables.
+     */
     debug(message: string, ...params: any[]): void;
+
+    /**
+     * Test whether the info level is enabled.
+     */
+    isInfo(): Promise<boolean>;
+    /**
+     * Resolve if the info level is enabled.
+     */
+    ifInfo(): Promise<void>;
+    /**
+     * Log a message with the info level if it is enabled.
+     *
+     * @params message - The message format string.
+     * @params params - The format string variables.
+     */
     info(message: string, ...params: any[]): void;
+
+    /**
+     * Test whether the warn level is enabled.
+     */
+    isWarn(): Promise<boolean>;
+    /**
+     * Resolve if the warn level is enabled.
+     */
+    ifWarn(): Promise<void>;
+    /**
+     * Log a message with the warn level if it is enabled.
+     *
+     * @params message - The message format string.
+     * @params params - The format string variables.
+     */
     warn(message: string, ...params: any[]): void;
+
+    /**
+     * Test whether the error level is enabled.
+     */
+    isError(): Promise<boolean>;
+    /**
+     * Resolve if the error level is enabled.
+     */
+    ifError(): Promise<void>;
+    /**
+     * Log a message with the error level.
+     *
+     * @params message - The message format string.
+     * @params params - The format string variables.
+     */
     error(message: string, ...params: any[]): void;
+
+    /**
+     * Test whether the fatal level is enabled.
+     */
+    isFatal(): Promise<boolean>;
+    /**
+     * Resolve if the fatal level is enabled.
+     */
+    ifFatal(): Promise<void>;
+    /**
+     * Log a message with the fatal level if it is enabled.
+     *
+     * @params message - The message format string.
+     * @params params - The format string variables.
+     */
     fatal(message: string, ...params: any[]): void;
+
+    /**
+     * Create a child logger from this logger.
+     *
+     * @params obj - The options object to create the logger with.
+     */
+    child(obj: Object): ILogger;
 }
 
 @injectable()
@@ -79,12 +203,6 @@ export class Logger implements ILogger {
         });
     }
 
-    /**
-     * Set the log level.
-     *
-     * @param loglevel - The loglevel to set. see Logger.LogLevel for
-     * possible options.
-     */
     setLogLevel(logLevel: number): Promise<void> {
         return new Promise<void>((resolve) => {
             this.id.then(id => {
@@ -97,99 +215,93 @@ export class Logger implements ILogger {
             });
         });
     }
-
-    /**
-     * Get the log level.
-     *
-     * @returns a Promise to the log level.
-     */
     getLogLevel(): Promise<number> {
         return this._logLevel;
     }
 
-    /**
-     * Create a child logger from this logger.
-     *
-     * @params obj - The options object to create the logger with. See
-     * bunyan documentation for more information.
-     */
-    child(obj: object): ILogger {
-        return this.factory(obj);
+    isEnabled(logLevel: number): Promise<boolean> {
+        return this._logLevel.then(level =>
+            logLevel >= level
+        );
+    }
+    ifEnabled(logLevel: number): Promise<void> {
+        return new Promise<void>(resolve =>
+            this.isEnabled(logLevel).then(enabled => {
+                if (enabled) {
+                    resolve();
+                }
+            })
+        );
+    }
+    log(logLevel: number, message: string, ...params: any[]): void {
+        this.ifEnabled(logLevel).then(() =>
+            this.id.then(id =>
+                this.server.log(id, logLevel, message, params)
+            )
+        );
     }
 
-    /**
-     * Log a message with the trace level.
-     *
-     * @params message - The message format string.
-     * @params params - The format string variables.
-     */
+    isTrace(): Promise<boolean> {
+        return this.isEnabled(LogLevel.TRACE);
+    }
+    ifTrace(): Promise<void> {
+        return this.ifEnabled(LogLevel.TRACE);
+    }
     trace(message: string, ...params: any[]): void {
         this.log(LogLevel.TRACE, message, params);
     }
 
-    /**
-     * Log a message with the debug level.
-     *
-     * @params message - The message format string.
-     * @params params - The format string variables.
-     */
+    isDebug(): Promise<boolean> {
+        return this.isEnabled(LogLevel.DEBUG);
+    }
+    ifDebug(): Promise<void> {
+        return this.ifEnabled(LogLevel.DEBUG);
+    }
     debug(message: string, ...params: any[]): void {
         this.log(LogLevel.DEBUG, message, params);
     }
 
-    /**
-     * Log a message with the info level.
-     *
-     * @params message - The message format string.
-     * @params params - The format string variables.
-     */
+    isInfo(): Promise<boolean> {
+        return this.isEnabled(LogLevel.INFO);
+    }
+    ifInfo(): Promise<void> {
+        return this.ifEnabled(LogLevel.INFO);
+    }
     info(message: string, ...params: any[]): void {
         this.log(LogLevel.INFO, message, params);
     }
 
-    /**
-     * Log a message with the warn level.
-     *
-     * @params message - The message format string.
-     * @params params - The format string variables.
-     */
+    isWarn(): Promise<boolean> {
+        return this.isEnabled(LogLevel.WARN);
+    }
+    ifWarn(): Promise<void> {
+        return this.ifEnabled(LogLevel.WARN);
+    }
     warn(message: string, ...params: any[]): void {
         this.log(LogLevel.WARN, message, params);
     }
 
-    /**
-     * Log a message with the error level.
-     *
-     * @params message - The message format string.
-     * @params params - The format string variables.
-     */
+    isError(): Promise<boolean> {
+        return this.isEnabled(LogLevel.ERROR);
+    }
+    ifError(): Promise<void> {
+        return this.ifEnabled(LogLevel.ERROR);
+    }
     error(message: string, ...params: any[]): void {
         this.log(LogLevel.ERROR, message, params);
     }
 
-    /**
-     * Log a message with the fatal level.     *
-     * @params message - The message format string.
-     * @params params - The format string variables.
-     */
+    isFatal(): Promise<boolean> {
+        return this.isEnabled(LogLevel.FATAL);
+    }
+    ifFatal(): Promise<void> {
+        return this.ifEnabled(LogLevel.FATAL);
+    }
     fatal(message: string, ...params: any[]): void {
         this.log(LogLevel.FATAL, message, params);
     }
 
-    /**
-     * Log a message with the a variable level.
-     *
-     * @params logLEvel - The loglevel to use.
-     * @params message - The message format string.
-     * @params params - The format string variables.
-     */
-    protected log(logLevel: number, message: string, ...params: any[]): void {
-        this.id.then(id => {
-            this._logLevel.then(level => {
-                if (logLevel >= level) {
-                    this.server.log(id, logLevel, message, params)
-                }
-            })
-        });
+    child(obj: object): ILogger {
+        return this.factory(obj);
     }
 }
