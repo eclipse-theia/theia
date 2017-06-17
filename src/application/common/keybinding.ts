@@ -29,7 +29,7 @@ export interface Keybinding {
 
 export const KeybindingContribution = Symbol("KeybindingContribution");
 export interface KeybindingContribution {
-    contribute(registry: KeybindingRegistry): void;
+    registerKeyBindings(keybindings: KeybindingRegistry): void;
 }
 
 export const KeybindingContext = Symbol("KeybindingContextExtension")
@@ -94,23 +94,41 @@ export class KeybindingContextRegistry {
 @injectable()
 export class KeybindingRegistry {
 
-    keybindings: { [index: string]: Keybinding[] }
-    commands: { [commandId: string]: Keybinding[] }
+    protected _keybindings: { [index: string]: Keybinding[] } | undefined;
+    protected _commands: { [commandId: string]: Keybinding[] } | undefined;
 
     constructor(
         @inject(CommandRegistry) protected commandRegistry: CommandRegistry,
         @inject(KeybindingContextRegistry) protected contextRegistry: KeybindingContextRegistry,
         @inject(ContributionProvider) @named(KeybindingContribution) protected contributions: ContributionProvider<KeybindingContribution>) {
 
-        this.keybindings = {};
-        this.commands = {};
         new KeyEventEmitter(commandRegistry, this);
     }
 
-    initialize() {
+    activate() {
+        this._keybindings = {};
+        this._commands = {};
         for (let contribution of this.contributions.getContributions()) {
-            contribution.contribute(this);
+            contribution.registerKeyBindings(this);
         }
+        return Disposable.create(() => {
+            this._keybindings = undefined;
+            this._commands = undefined;
+        })
+    }
+
+    protected getCommands(): { [commandId: string]: Keybinding[] } {
+        if (this._commands) {
+            return this._commands;
+        }
+        throw new Error("The keybinding refistry is not initialized.");
+    }
+
+    protected getKeyBindings(): { [index: string]: Keybinding[] } {
+        if (this._keybindings) {
+            return this._keybindings;
+        }
+        throw new Error("The keybinding refistry is not initialized.");
     }
 
     /**
@@ -119,27 +137,30 @@ export class KeybindingRegistry {
      * @param binding
      */
     registerKeyBinding(binding: Keybinding) {
+        const keybindings = this.getKeyBindings();
         const { keyCode, commandId } = binding;
-        const bindings = this.keybindings[keyCode.keystroke] || [];
+        const bindings = keybindings[keyCode.keystroke] || [];
         bindings.push(binding);
-        this.keybindings[keyCode.keystroke] = bindings;
-        const commands = this.commands[commandId] || [];
+        keybindings[keyCode.keystroke] = bindings;
+
+        const commandToKeybindings = this.getCommands();
+        const commands = commandToKeybindings[commandId] || [];
         commands.push(binding);
-        this.commands[commandId] = bindings;
+        commandToKeybindings[commandId] = bindings;
     }
 
     /**
      * @param commandId the unique ID of the command for we the associated ke binding are looking for.
      */
     getKeybindingForCommand(commandId: string): Keybinding | undefined {
-        return (this.commands[commandId] || []).find(binding => this.isValid(binding));
+        return (this.getCommands()[commandId] || []).find(binding => this.isValid(binding));
     }
 
     /**
      * @param keyCode the key code of the binding we are searching.
      */
     getKeybindingForKeyCode(keyCode: KeyCode): Keybinding | undefined {
-        return (this.keybindings[keyCode.keystroke] || []).find(binding => this.isValid(binding));
+        return (this.getCommands()[keyCode.keystroke] || []).find(binding => this.isValid(binding));
     }
 
     private isValid(binding: Keybinding): boolean {

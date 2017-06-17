@@ -25,7 +25,7 @@ export class NavigatorMenuContribution implements MenuContribution {
         @inject(OpenerService) protected readonly openerService: OpenerService
     ) { }
 
-    contribute(registry: MenuModelRegistry) {
+    registerMenus(registry: MenuModelRegistry) {
         registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, OPEN_MENU_GROUP], {
             commandId: FileCommands.FILE_OPEN
         });

@@ -41,7 +41,7 @@ export namespace FileMenus {
 @injectable()
 export class FileMenuContribution implements MenuContribution {
 
-    contribute(registry: MenuModelRegistry) {
+    registerMenus(registry: MenuModelRegistry) {
         // Explicitly register the Edit Submenu
         registry.registerSubmenu([MAIN_MENU_BAR], FileMenus.FILE[1], "File");
 
@@ -63,7 +63,7 @@ export class FileCommandContribution implements CommandContribution {
         @inject(OpenerService) protected readonly openerService: OpenerService
     ) { }
 
-    contribute(registry: CommandRegistry): void {
+    registerCommands(registry: CommandRegistry): void {
         registry.registerCommand({
             id: FileCommands.NEW_FILE,
             label: 'New File'

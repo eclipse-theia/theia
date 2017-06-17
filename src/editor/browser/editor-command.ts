@@ -6,13 +6,15 @@
  */
 
 import { injectable, inject } from "inversify";
-import { CommandContribution, CommandRegistry } from "../../application/common";
+import { CommandContribution, CommandRegistry, Command } from "../../application/common";
 import { EditorManager } from "./editor-manager";
 
 /**
  * Show editor references
  */
-export const SHOW_REFERENCES = 'textEditor.commands.showReferences';
+export const SHOW_REFERENCES: Command = {
+    id: 'textEditor.commands.showReferences'
+};
 
 @injectable()
 export class EditorCommandHandlers implements CommandContribution {
@@ -21,7 +23,7 @@ export class EditorCommandHandlers implements CommandContribution {
         @inject(EditorManager) private editorService: EditorManager
     ) { }
 
-    contribute(registry: CommandRegistry): void {
+    registerCommands(registry: CommandRegistry): void {
         registry.registerCommand({
             id: 'editor.close',
             label: 'Close Active Editor'

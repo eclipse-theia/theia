@@ -28,7 +28,7 @@ describe('menu-model-registry', () => {
     describe('01 #register', () => {
         it('Should allow to register menu actions.', () => {
             let service = createMenuRegistry({
-                contribute(menuRegistry: MenuModelRegistry): void {
+                registerMenus(menuRegistry: MenuModelRegistry): void {
                     menuRegistry.registerSubmenu(["main"], "File", "File");
                     menuRegistry.registerMenuAction(["main", "File", "0_open"], {
                         commandId: 'open'
@@ -38,7 +38,7 @@ describe('menu-model-registry', () => {
                     });
                 }
             }, {
-                    contribute(reg: CommandRegistry) {
+                    registerCommands(reg: CommandRegistry) {
                         reg.registerCommand({
                             id: 'open',
                             label: "A"
@@ -66,8 +66,8 @@ describe('menu-model-registry', () => {
 
 function createMenuRegistry(menuContrib: MenuContribution, commandContrib: CommandContribution) {
     let cmdReg = new CommandRegistry({ getContributions: () => [commandContrib] });
-    cmdReg.initialize();
+    cmdReg.activate();
     let menuReg = new MenuModelRegistry({ getContributions: () => [menuContrib] }, cmdReg);
-    menuReg.initialize();
+    menuReg.activate();
     return menuReg;
 }

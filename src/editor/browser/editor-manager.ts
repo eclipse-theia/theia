@@ -58,23 +58,18 @@ export class EditorManagerImpl implements EditorManager {
     readonly id = "code-editor-opener";
     readonly label = "Code Editor";
 
-    private _resolveApp: (app: FrontendApplication) => void;
-    protected readonly resolveApp = new Promise<FrontendApplication>(resolve =>
-        this._resolveApp = resolve
-    );
-
-    protected readonly currentObserver = new EditorManagerImpl.Observer('current', this.resolveApp);
-    protected readonly activeObserver = new EditorManagerImpl.Observer('active', this.resolveApp);
+    protected readonly currentObserver: EditorManagerImpl.Observer;
+    protected readonly activeObserver: EditorManagerImpl.Observer;
 
     constructor(
         @inject(EditorRegistry) protected readonly editorRegistry: EditorRegistry,
         @inject(TextEditorProvider) protected readonly editorProvider: TextEditorProvider,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
-        @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider
-    ) { }
-
-    onStart(app: FrontendApplication): void {
-        this._resolveApp(app);
+        @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
+        @inject(FrontendApplication) protected readonly app: FrontendApplication
+    ) {
+        this.currentObserver = new EditorManagerImpl.Observer('current', app);
+        this.activeObserver = new EditorManagerImpl.Observer('active', app);
     }
 
     get editors() {
@@ -117,30 +112,26 @@ export class EditorManagerImpl implements EditorManager {
     }
 
     protected getOrCreateEditor(uri: URI): Promise<EditorWidget> {
-        return this.resolveApp.then(app => {
-            const editor = this.editorRegistry.getEditor(uri);
-            if (editor) {
-                return editor;
-            }
-            return this.editorProvider(uri).then(textEditor => {
-                const editor = new EditorWidget(textEditor, this.selectionService);
-                editor.title.closable = true;
-                editor.title.label = uri.lastSegment;
-                this.editorRegistry.addEditor(uri, editor);
-                editor.disposed.connect(() =>
-                    this.editorRegistry.removeEditor(uri)
-                );
-                app.shell.addToMainArea(editor);
-                return editor;
-            });
-        })
+        const editor = this.editorRegistry.getEditor(uri);
+        if (editor) {
+            return editor;
+        }
+        return this.editorProvider(uri).then(textEditor => {
+            const editor = new EditorWidget(textEditor, this.selectionService);
+            editor.title.closable = true;
+            editor.title.label = uri.lastSegment;
+            this.editorRegistry.addEditor(uri, editor);
+            editor.disposed.connect(() =>
+                this.editorRegistry.removeEditor(uri)
+            );
+            this.app.shell.addToMainArea(editor);
+            return editor;
+        });
     }
 
     protected revealIfVisible(editor: EditorWidget, input?: EditorInput): void {
         if (input === undefined || input.revealIfVisible === undefined || input.revealIfVisible) {
-            this.resolveApp.then(app =>
-                app.shell.activateMain(editor.id)
-            );
+            this.app.shell.activateMain(editor.id);
         }
     }
 
@@ -173,20 +164,12 @@ export class EditorManagerImpl implements EditorManager {
 
 export namespace EditorManagerImpl {
     export class Observer {
-        protected app: FrontendApplication | undefined;
         protected readonly onEditorChangedEmitter = new Emitter<EditorWidget | undefined>();
 
         constructor(
             protected readonly kind: 'current' | 'active',
-            protected readonly ready: Promise<FrontendApplication>
+            protected readonly app: FrontendApplication
         ) {
-            this.ready.then(app =>
-                this.initialize(app)
-            );
-        }
-
-        protected initialize(app: FrontendApplication) {
-            this.app = app
             const key = this.kind === 'current' ? 'currentChanged' : 'activeChanged';
             app.shell[key].connect((shell, arg) => {
                 if (arg.newValue instanceof EditorWidget || arg.oldValue instanceof EditorWidget) {

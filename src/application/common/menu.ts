@@ -5,11 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { CommandRegistry } from './command';
-import { Disposable } from './';
-
-import { ContributionProvider } from './contribution-provider';
 import { injectable, inject, named } from "inversify";
+import { Disposable } from './disposable';
+import { CommandRegistry } from './command';
+import { ContributionProvider } from './contribution-provider';
 
 export interface MenuAction {
     commandId: string
@@ -22,21 +21,34 @@ export const MAIN_MENU_BAR = 'menubar';
 
 export const MenuContribution = Symbol("MenuContribution");
 export interface MenuContribution {
-    contribute(menuRegistry: MenuModelRegistry): void;
+    registerMenus(menus: MenuModelRegistry): void;
 }
 
 @injectable()
 export class MenuModelRegistry {
-    public menus: CompositeMenuNode = new CompositeMenuNode("");
+    protected _root: CompositeMenuNode | undefined;
 
-    constructor( @inject(ContributionProvider) @named(MenuContribution) private contributions: ContributionProvider<MenuContribution>,
-        @inject(CommandRegistry) private commands: CommandRegistry) {
+    constructor(
+        @inject(ContributionProvider) @named(MenuContribution)
+        protected readonly contributions: ContributionProvider<MenuContribution>,
+        @inject(CommandRegistry) protected readonly commands: CommandRegistry
+    ) { }
+
+    activate(): Disposable {
+        this._root = new CompositeMenuNode("");
+        for (const contrib of this.contributions.getContributions()) {
+            contrib.registerMenus(this);
+        }
+        return Disposable.create(() =>
+            this._root = undefined
+        );
     }
 
-    initialize() {
-        for (let contrib of this.contributions.getContributions()) {
-            contrib.contribute(this);
+    protected getRoot(): CompositeMenuNode {
+        if (this._root) {
+            return this._root;
         }
+        throw new Error('The menu registry is not initialized.')
     }
 
     registerMenuAction(menuPath: string[], item: MenuAction): Disposable {
@@ -51,21 +63,25 @@ export class MenuModelRegistry {
         return parent.addNode(groupNode);
     }
 
-    private findGroup(menuPath: string[]): CompositeMenuNode {
-        let currentMenu = this.menus;
-        for (let segment of menuPath) {
-            let sub = currentMenu.children.find(e => e.id === segment);
-            if (sub instanceof CompositeMenuNode) {
-                currentMenu = sub;
-            } else if (!sub) {
-                const newSub = new CompositeMenuNode(segment);
-                currentMenu.addNode(newSub);
-                currentMenu = newSub;
-            } else {
-                throw Error(`'${segment}' is not a menu group.`)
-            }
+    protected findGroup(menuPath: string[]): CompositeMenuNode {
+        let currentMenu = this.getRoot();
+        for (const segment of menuPath) {
+            currentMenu = this.findSubMenu(currentMenu, segment);
         }
         return currentMenu;
+    }
+
+    protected findSubMenu(current: CompositeMenuNode, menuId: string): CompositeMenuNode {
+        const sub = current.children.find(e => e.id === menuId);
+        if (sub instanceof CompositeMenuNode) {
+            return sub;
+        }
+        if (sub) {
+            throw Error(`'${menuId}' is not a menu group.`)
+        }
+        const newSub = new CompositeMenuNode(menuId);
+        current.addNode(newSub);
+        return newSub;
     }
 
     getMenu(...menuPath: string[]): CompositeMenuNode {
@@ -84,13 +100,19 @@ export interface MenuNode {
 }
 
 export class CompositeMenuNode implements MenuNode {
-    public children: MenuNode[] = []
-    constructor(public id: string,
-        public label?: string) { }
+    protected readonly _children: MenuNode[] = [];
+    constructor(
+        public readonly id: string,
+        public readonly label?: string
+    ) { }
+
+    get children(): ReadonlyArray<MenuNode> {
+        return this._children;
+    }
 
     public addNode(node: MenuNode): Disposable {
-        this.children.push(node);
-        this.children.sort((m1, m2) => {
+        this._children.push(node);
+        this._children.sort((m1, m2) => {
             if (m1.sortString < m2.sortString) {
                 return -1
             } else if (m1.sortString > m2.sortString) {
@@ -101,9 +123,9 @@ export class CompositeMenuNode implements MenuNode {
         });
         return {
             dispose: () => {
-                const idx = this.children.indexOf(node);
+                const idx = this._children.indexOf(node);
                 if (idx >= 0) {
-                    this.children.splice(idx, 1);
+                    this._children.splice(idx, 1);
                 }
             }
         }
@@ -119,7 +141,10 @@ export class CompositeMenuNode implements MenuNode {
 }
 
 export class ActionMenuNode implements MenuNode {
-    constructor(public action: MenuAction, private commands: CommandRegistry) { }
+    constructor(
+        public readonly action: MenuAction,
+        protected readonly commands: CommandRegistry
+    ) { }
 
     get id(): string {
         return this.action.commandId;

@@ -5,24 +5,23 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-
-import { FrontendApplicationContribution, FrontendApplication } from "../application";
+import { injectable, inject } from "inversify";
 import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget } from "@phosphor/widgets";
 import { CommandRegistry as PhosphorCommandRegistry } from "@phosphor/commands";
-import { CommandRegistry } from "../../common/command";
-import { KeybindingRegistry } from "../../common/keybinding";
-import { injectable, inject } from "inversify";
-import { ActionMenuNode, CompositeMenuNode, MenuModelRegistry, MAIN_MENU_BAR } from '../../common/menu';
+import {
+    Disposable, CommandRegistry, KeybindingRegistry,
+    ActionMenuNode, CompositeMenuNode, MenuModelRegistry, MAIN_MENU_BAR
+} from "../../common";
+import { FrontendApplicationContribution, FrontendApplication } from "../application";
 
 @injectable()
 export class MainMenuFactory {
 
     constructor(
-        @inject(CommandRegistry) protected commandRegistry: CommandRegistry,
-        @inject(KeybindingRegistry) protected keybindingRegistry: KeybindingRegistry,
-        @inject(MenuModelRegistry) protected menuProvider: MenuModelRegistry
-    ) {
-    }
+        @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
+        @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry,
+        @inject(MenuModelRegistry) protected readonly menuProvider: MenuModelRegistry
+    ) { }
 
     createMenuBar(): MenuBarWidget {
         const menuBar = new DynamicMenuBarWidget();
@@ -159,16 +158,19 @@ class DynamicMenuWidget extends MenuWidget {
 @injectable()
 export class BrowserMenuBarContribution implements FrontendApplicationContribution {
 
-    constructor( @inject(MainMenuFactory) private factory: MainMenuFactory) {
-    }
+    constructor(
+        @inject(MainMenuFactory) protected readonly factory: MainMenuFactory
+    ) { }
 
-    onStart(app: FrontendApplication): void {
-        app.shell.addToTopArea(this.getLogo());
+    activate(app: FrontendApplication): Disposable {
+        const logo = this.createLogo();
+        app.shell.addToTopArea(logo);
         const menu = this.factory.createMenuBar();
         app.shell.addToTopArea(menu);
+        return Disposable.NULL;
     }
 
-    private getLogo(): Widget {
+    private createLogo(): Widget {
         const logo = new Widget();
         logo.id = 'theia:icon';
         logo.addClass('theia-icon');

@@ -7,62 +7,121 @@
 
 import 'reflect-metadata';
 import { inject, injectable, named } from 'inversify';
-import { Application } from '@phosphor/application';
-import { ContributionProvider, CommandRegistry, KeybindingRegistry, MenuModelRegistry } from '../common';
+import {
+    ContributionProvider,
+    CommandRegistry, KeybindingRegistry, MenuModelRegistry,
+    MaybePromise, Disposable, DisposableCollection
+} from '../common';
 import { ApplicationShell } from './shell';
+import { Widget } from "./widgets";
 
 /**
- * Clients can implement to get a callback for contributing widgets to a shell on start.
+ * The frontend application contribution is an entry point for frontend extensions.
  */
 export const FrontendApplicationContribution = Symbol("FrontendApplicationContribution");
 export interface FrontendApplicationContribution {
     /**
-     * At the initialization phase an application contribution can contribute commands, keybindings and menus.
+     * Activate this extension.
+     *
+     * Return a disposable to deactivate this extension.
      */
-    onInitialize?(app: FrontendApplication): void;
-    /**
-     * When the application is started an application contribution can access existing commands, keybindings, menus,
-     * but should not contribute new.
-     */
-    onStart?(app: FrontendApplication): void;
+    activate?(app: FrontendApplication): MaybePromise<Disposable>;
+}
+
+export interface FrontendApplicationStartOptions {
+    host: HTMLElement
+}
+export const defaultFrontendApplicationStartOptions: FrontendApplicationStartOptions = {
+    host: document.body
 }
 
 @injectable()
 export class FrontendApplication {
 
-    readonly shell: ApplicationShell;
-    private application: Application<ApplicationShell>;
+    protected _shell: ApplicationShell | undefined;
 
     constructor(
-        @inject(CommandRegistry) readonly commands: CommandRegistry,
-        @inject(MenuModelRegistry) readonly menus: MenuModelRegistry,
-        @inject(KeybindingRegistry) readonly keybindings: KeybindingRegistry,
-        @inject(ContributionProvider) @named(FrontendApplicationContribution) contributions: ContributionProvider<FrontendApplicationContribution>
-    ) {
-        this.shell = new ApplicationShell();
-        this.application = new Application<ApplicationShell>({
-            shell: this.shell
-        });
-        this.application.started.then(() => {
-            commands.initialize();
-            keybindings.initialize();
-            menus.initialize();
-            const appContributions = contributions.getContributions();
-            for (const contribution of appContributions) {
-                if (contribution.onInitialize) {
-                    contribution.onInitialize(this);
-                }
-            }
-            for (const contribution of appContributions) {
-                if (contribution.onStart) {
-                    contribution.onStart(this);
-                }
-            }
+        @inject(CommandRegistry) protected readonly commands: CommandRegistry,
+        @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry,
+        @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry,
+        @inject(ContributionProvider) @named(FrontendApplicationContribution)
+        protected readonly contributions: ContributionProvider<FrontendApplicationContribution>
+    ) { }
+
+    get shell(): ApplicationShell {
+        if (this._shell) {
+            return this._shell;
+        }
+        throw new Error('The application has not been started yet.');
+    }
+
+    /**
+     * Start the frontend application.
+     *
+     * Start up consists of the following steps:
+     * - create the application shell
+     * - activate frontend extensions
+     * - display the application shell
+     *
+     * Return a disposable to stop the frontend applicaiton.
+     * Reject if the application is already running.
+     */
+    async start(
+        options: FrontendApplicationStartOptions = defaultFrontendApplicationStartOptions
+    ): Promise<Disposable> {
+        const toDispose = new DisposableCollection();
+        toDispose.push(this.createShell());
+        toDispose.push(await this.activateExtensions());
+        toDispose.push(this.attachShell(options));
+        return toDispose;
+    }
+
+    protected createShell(): Disposable {
+        if (this._shell) {
+            throw new Error('The application is already running.');
+        }
+        /**
+         * Fixme: use the application shell factory to create an instance
+         */
+        this._shell = new ApplicationShell();
+
+        const toDispose = new DisposableCollection();
+        toDispose.push(this._shell);
+        toDispose.push(Disposable.create(() =>
+            this._shell = undefined
+        ));
+        return toDispose;
+    }
+
+    protected attachShell(options: FrontendApplicationStartOptions): Disposable {
+        Widget.attach(this.shell, options.host);
+        const listener = () => this.shell.update();
+        window.addEventListener('resize', listener);
+        return Disposable.create(() => {
+            Widget.detach(this.shell);
+            window.removeEventListener('resize', listener);
         });
     }
 
-    start(): Promise<void> {
-        return this.application.start();
+    protected async activateExtensions(): Promise<Disposable> {
+        const toDispose = new DisposableCollection();
+        /**
+         * FIXME:
+         * - decouple commands & menus
+         * - consider treat commands, keybindings and menus as frontend application contributions
+         */
+        toDispose.push(this.commands.activate());
+        toDispose.push(this.keybindings.activate());
+        toDispose.push(this.menus.activate());
+
+        const toActivate: Promise<Disposable>[] = [];
+        for (const contribution of this.contributions.getContributions()) {
+            if (contribution.activate) {
+                toActivate.push(Promise.resolve(contribution.activate(this)));
+            }
+        }
+        toDispose.pushAll(await Promise.all(toActivate));
+        return toDispose;
     }
 
 }

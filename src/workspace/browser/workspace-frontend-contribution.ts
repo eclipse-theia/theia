@@ -6,11 +6,11 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Command } from "../../application/common";
-import { FrontendApplicationContribution, FrontendApplication, OpenerService, open } from "../../application/browser";
+import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "../../application/common";
+import { open, OpenerService } from '../../application/browser';
+import { DirNode, FileDialogFactory, FileMenus, FileStatNode } from '../../filesystem/browser';
 import { FileSystem } from '../../filesystem/common';
-import { FileMenus, FileDialogFactory, FileStatNode, DirNode } from "../../filesystem/browser";
-import { WorkspaceService } from "./workspace-service";
+import { WorkspaceService } from './workspace-service';
 
 export namespace WorkspaceCommands {
     export const OPEN: Command = {
@@ -20,7 +20,7 @@ export namespace WorkspaceCommands {
 }
 
 @injectable()
-export class WorkspaceFrontendContribution implements FrontendApplicationContribution {
+export class WorkspaceFrontendContribution implements CommandContribution, MenuContribution {
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
@@ -29,11 +29,14 @@ export class WorkspaceFrontendContribution implements FrontendApplicationContrib
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
     ) { }
 
-    onInitialize({ commands, menus }: FrontendApplication): void {
+    registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(WorkspaceCommands.OPEN, {
             isEnabled: () => true,
             execute: () => this.showFileDialog()
         });
+    }
+
+    registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(FileMenus.OPEN_GROUP, {
             commandId: WorkspaceCommands.OPEN.id
         });

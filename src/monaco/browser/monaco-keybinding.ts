@@ -159,7 +159,7 @@ const MONACO_KEY_CODE_MAP: { [keyCode: number]: number } = {};
 @injectable()
 export class MonacoKeybindingContribution implements KeybindingContribution {
 
-    contribute(registry: KeybindingRegistry): void {
+    registerKeyBindings(registry: KeybindingRegistry): void {
 
         const ids = MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command.id);
         const accelerator = (kb: IKeybindingItem): Accelerator => {

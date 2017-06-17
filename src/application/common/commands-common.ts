@@ -25,7 +25,7 @@ export namespace CommonCommands {
 @injectable()
 export class CommonMenuContribution implements MenuContribution {
 
-    contribute(registry: MenuModelRegistry): void {
+    registerMenus(registry: MenuModelRegistry): void {
         // Explicitly register the Edit Submenu
         registry.registerSubmenu([MAIN_MENU_BAR], CommonCommands.EDIT_MENU, "Edit");
         registry.registerMenuAction([MAIN_MENU_BAR, CommonCommands.EDIT_MENU, CommonCommands.EDIT_MENU_UNDO_GROUP], {
@@ -44,7 +44,7 @@ export class CommonMenuContribution implements MenuContribution {
 @injectable()
 export class CommonCommandContribution implements CommandContribution {
 
-    contribute(commandRegistry: CommandRegistry): void {
+    registerCommands(commandRegistry: CommandRegistry): void {
         commandRegistry.registerCommand({
             id: CommonCommands.EDIT_CUT,
             label: 'Cut'

@@ -6,19 +6,23 @@
  */
 
 import { inject, injectable } from "inversify";
-import { CommandContribution, CommandRegistry } from '../../application/common';
+import { CommandContribution, CommandRegistry, Command } from '../../application/common';
 import { SHOW_REFERENCES } from "../../editor/browser";
 import { WorkspaceEdit, Workspace } from "../../languages/common";
 
 /**
  * Show Java references
  */
-export const SHOW_JAVA_REFERENCES = 'java.show.references';
+export const SHOW_JAVA_REFERENCES: Command = {
+    id: 'java.show.references'
+};
 
 /**
  * Apply Workspace Edit
  */
-export const APPLY_WORKSPACE_EDIT = 'java.apply.workspaceEdit';
+export const APPLY_WORKSPACE_EDIT: Command = {
+    id: 'java.apply.workspaceEdit'
+};
 
 @injectable()
 export class JavaCommandContribution implements CommandContribution {
@@ -27,12 +31,12 @@ export class JavaCommandContribution implements CommandContribution {
         @inject(Workspace) protected readonly workspace: Workspace
     ) { }
 
-    contribute(commands: CommandRegistry): void {
-        commands.registerCommand({ id: SHOW_JAVA_REFERENCES }, {
+    registerCommands(commands: CommandRegistry): void {
+        commands.registerCommand(SHOW_JAVA_REFERENCES, {
             execute: (uri: string, position: Position, locations: Location[]) =>
-                commands.executeCommand(SHOW_REFERENCES, uri, position, locations)
+                commands.executeCommand(SHOW_REFERENCES.id, uri, position, locations)
         });
-        commands.registerCommand({ id: APPLY_WORKSPACE_EDIT }, {
+        commands.registerCommand(APPLY_WORKSPACE_EDIT, {
             execute: (changes: WorkspaceEdit) =>
                 !!this.workspace.applyEdit && this.workspace.applyEdit(changes)
         });
