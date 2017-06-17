@@ -14,7 +14,7 @@ import IMenuItem = monaco.actions.IMenuItem;
 
 @injectable()
 export class MonacoEditorMenuContribution implements MenuContribution {
-    contribute(registry: MenuModelRegistry) {
+    registerMenus(registry: MenuModelRegistry) {
         // Explicitly register the Edit Submenu
         registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "1_undo/redo"], {
             commandId: CommonCommands.EDIT_UNDO

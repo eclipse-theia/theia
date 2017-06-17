@@ -6,9 +6,9 @@
  */
 
 import { injectable, inject, named } from "inversify";
-import { ContributionProvider } from '../../application/common';
-import { FrontendApplication, FrontendApplicationContribution } from "../../application/browser";
-import { LanguageClientContribution } from "./language-client-contribution";
+import { ContributionProvider, Disposable, DisposableCollection } from '../../application/common';
+import { FrontendApplication, FrontendApplicationContribution } from '../../application/browser';
+import { LanguageClientContribution } from './language-client-contribution';
 
 @injectable()
 export class LanguagesFrontendContribution implements FrontendApplicationContribution {
@@ -18,12 +18,14 @@ export class LanguagesFrontendContribution implements FrontendApplicationContrib
         protected readonly contributions: ContributionProvider<LanguageClientContribution>
     ) { }
 
-    onStart(app: FrontendApplication): void {
+    activate(app: FrontendApplication): Disposable {
+        const toDispose = new DisposableCollection();
         for (const contribution of this.contributions.getContributions()) {
             contribution.waitForActivation(app).then(() =>
-                contribution.activate(app)
-            );
+                toDispose.push(contribution.activate(app))
+            )
         }
+        return toDispose;
     }
 
 }

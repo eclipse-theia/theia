@@ -23,7 +23,7 @@ export interface CommandHandler {
 export const CommandContribution = Symbol("CommandContribution");
 
 export interface CommandContribution {
-    contribute(registry: CommandRegistry): void;
+    registerCommands(commands: CommandRegistry): void;
 }
 
 export const CommandService = Symbol("CommandService");
@@ -37,19 +37,39 @@ export interface CommandService {
 @injectable()
 export class CommandRegistry implements CommandService {
 
-    private _commands: { [id: string]: Command };
-    private _handlers: { [id: string]: CommandHandler[] };
+    private _commands: { [id: string]: Command } | undefined;
+    private _handlers: { [id: string]: CommandHandler[] } | undefined;
 
-    constructor( @inject(ContributionProvider) @named(CommandContribution) private contributionProvider: ContributionProvider<CommandContribution>) {
-    }
+    constructor(
+        @inject(ContributionProvider) @named(CommandContribution)
+        protected readonly contributionProvider: ContributionProvider<CommandContribution>
+    ) { }
 
-    initialize(): void {
+    activate(): Disposable {
         this._commands = {};
         this._handlers = {};
         const contributions = this.contributionProvider.getContributions();
         for (const contrib of contributions) {
-            contrib.contribute(this);
+            contrib.registerCommands(this);
         }
+        return Disposable.create(() => {
+            this._commands = undefined;
+            this._handlers = undefined;
+        });
+    }
+
+    protected getCommands(): { [id: string]: Command } {
+        if (this._commands) {
+            return this._commands;
+        }
+        throw new Error('The command registry is not initialized');
+    }
+
+    protected getHandlers(): { [id: string]: CommandHandler[] } {
+        if (this._handlers) {
+            return this._handlers;
+        }
+        throw new Error('The command registry is not initialized');
     }
 
     registerCommand(command: Command, handler?: CommandHandler): Disposable {
@@ -63,21 +83,23 @@ export class CommandRegistry implements CommandService {
     }
 
     protected doRegisterCommand(command: Command): Disposable {
-        if (this._commands[command.id]) {
+        const commands = this.getCommands();
+        if (commands[command.id]) {
             throw Error(`A command ${command.id} is already registered.`);
         }
-        this._commands[command.id] = command;
+        commands[command.id] = command;
         return {
             dispose: () => {
-                delete this._commands[command.id];
+                delete commands[command.id];
             }
         }
     }
 
     registerHandler(commandId: string, handler: CommandHandler): Disposable {
-        let handlers = this._handlers[commandId];
+        const allHandlers = this.getHandlers();
+        let handlers = allHandlers[commandId];
         if (!handlers) {
-            this._handlers[commandId] = handlers = [];
+            allHandlers[commandId] = handlers = [];
         }
         handlers.push(handler);
         return {
@@ -99,7 +121,7 @@ export class CommandRegistry implements CommandService {
     }
 
     getActiveHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
-        const handlers = this._handlers[commandId];
+        const handlers = this.getHandlers()[commandId];
         if (handlers) {
             for (const handler of handlers) {
                 if (!handler.isEnabled || handler.isEnabled(...args)) {
@@ -122,7 +144,7 @@ export class CommandRegistry implements CommandService {
     }
 
     getCommand(id: string): Command | undefined {
-        return this._commands[id];
+        return this.getCommands()[id];
     }
 
     get commandIds(): string[] {

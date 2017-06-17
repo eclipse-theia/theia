@@ -19,6 +19,7 @@ export namespace Disposable {
             dispose: func
         };
     }
+    export const NULL = create(() => { });
 }
 
 export class DisposableCollection implements Disposable {

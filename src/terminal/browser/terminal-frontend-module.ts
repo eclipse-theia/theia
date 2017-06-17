@@ -7,16 +7,18 @@
 
 
 import { ContainerModule } from "inversify"
-import { FrontendApplicationContribution } from "../../application/browser";
+import { CommandContribution, MenuContribution } from '../../application/common';
+import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalWidget, TerminalWidgetFactory } from './terminal-widget';
-import { TerminalFrontendContribution } from "./terminal-frontend-contribution";
 
 export default new ContainerModule(bind => {
     bind(TerminalWidget).toSelf().inTransientScope();
     bind(TerminalWidgetFactory).toAutoFactory(TerminalWidget);
 
     bind(TerminalFrontendContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toDynamicValue(ctx =>
-        ctx.container.get(TerminalFrontendContribution)
-    );
+    for (const identifier of [CommandContribution, MenuContribution]) {
+        bind(identifier).toDynamicValue(ctx =>
+            ctx.container.get(TerminalFrontendContribution)
+        ).inSingletonScope();
+    }
 });

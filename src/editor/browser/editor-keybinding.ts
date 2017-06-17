@@ -31,7 +31,7 @@ export class EditorKeybindingContribution implements KeybindingContribution {
         @inject(EditorKeybindingContext) protected readonly editorKeybindingContext: EditorKeybindingContext
     ) { }
 
-    contribute(registry: KeybindingRegistry): void {
+    registerKeyBindings(registry: KeybindingRegistry): void {
         [
             {
                 commandId: 'editor.close',

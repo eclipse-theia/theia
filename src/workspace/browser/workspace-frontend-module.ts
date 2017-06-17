@@ -6,7 +6,7 @@
  */
 
 import { ContainerModule } from "inversify";
-import { FrontendApplicationContribution } from '../../application/browser';
+import { CommandContribution, MenuContribution } from "../../application/common";
 import { WebSocketConnectionProvider } from '../../messaging/browser';
 import { FileDialogFactory, createFileDialog, FileDialogProps } from '../../filesystem/browser';
 import { WorkspaceServer, workspacePath } from '../common';
@@ -21,9 +21,11 @@ export const workspaceFrontendModule = new ContainerModule(bind => {
     }).inSingletonScope();
 
     bind(WorkspaceFrontendContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toDynamicValue(ctx =>
-        ctx.container.get(WorkspaceFrontendContribution)
-    ).inSingletonScope();
+    for (const identifier of [CommandContribution, MenuContribution]) {
+        bind(identifier).toDynamicValue(ctx =>
+            ctx.container.get(WorkspaceFrontendContribution)
+        ).inSingletonScope();
+    }
 
     bind(FileDialogFactory).toFactory(ctx =>
         (props: FileDialogProps) =>

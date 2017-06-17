@@ -6,10 +6,13 @@
  */
 
 import { inject, injectable } from "inversify"
-import { Command } from '../../application/common';
-import { FrontendApplication, FrontendApplicationContribution } from '../../application/browser';
+import {
+    CommandContribution, Command, CommandRegistry,
+    MenuContribution, MenuModelRegistry
+} from '../../application/common';
+import { FrontendApplication } from '../../application/browser';
 import { FileMenus } from '../../filesystem/browser/filesystem-commands';
-import { TerminalWidgetFactory } from "./terminal-widget";
+import { TerminalWidgetFactory } from './terminal-widget';
 
 export namespace TerminalCommands {
     export const NEW: Command = {
@@ -19,25 +22,30 @@ export namespace TerminalCommands {
 }
 
 @injectable()
-export class TerminalFrontendContribution implements FrontendApplicationContribution {
+export class TerminalFrontendContribution implements CommandContribution, MenuContribution {
 
     constructor(
+        @inject(FrontendApplication) protected readonly app: FrontendApplication,
         @inject(TerminalWidgetFactory) protected readonly terminalWidgetFactory: TerminalWidgetFactory
     ) { }
 
-    onInitialize(app: FrontendApplication): void {
-        const { commands, menus } = app;
+    registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(TerminalCommands.NEW, {
             isEnabled: () => true,
-            execute: () => {
-                const newTerminal = this.terminalWidgetFactory();
-                app.shell.addToMainArea(newTerminal);
-                app.shell.activateMain(newTerminal.id);
-            },
+            execute: () => this.newTerminal()
         });
+    }
+
+    registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(FileMenus.OPEN_GROUP, {
             commandId: TerminalCommands.NEW.id
         });
+    }
+
+    protected newTerminal(): void {
+        const newTerminal = this.terminalWidgetFactory();
+        this.app.shell.addToMainArea(newTerminal);
+        this.app.shell.activateMain(newTerminal.id);
     }
 
 }

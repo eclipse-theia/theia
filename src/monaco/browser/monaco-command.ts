@@ -25,8 +25,8 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
         @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter
     ) { }
 
-    contribute(commands: CommandRegistry) {
-        commands.registerCommand({ id: SHOW_REFERENCES }, {
+    registerCommands(commands: CommandRegistry) {
+        commands.registerCommand(SHOW_REFERENCES, {
             execute: (uri: string, position: Position, locations: Location[]) => {
                 const editor = getCurrent(this.editorManager);
                 if (editor) {
