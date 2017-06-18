@@ -22,14 +22,14 @@
   },
   "scripts": {
     "bootstrap": "npm install ../../config/local-dependency-manager && npm run localinstall",
-    "localinstall": "ldm install --dev",
+    "localinstall": "ldm install --dev --original-sources",
     "clean": "rimraf lib",
     "postinstall": "electron-rebuild",
     "prepare": "npm run clean && npm run build",
     "build": "npm run build:localdeps && npm run build:backend && npm run build:frontend",
     "build:backend": "tsc && npm run lint",
     "build:frontend": "webpack --target electron && cp src/frontend/index.html lib/frontend",
-    "build:localdeps": "ldm run build && ldm sync",
+    "build:localdeps": "ldm run build && ldm sync --original-sources",
     "lint": "tslint -c ../../config/tslint/tslint.json --project ./tsconfig.json",
     "start": "electron ./lib/frontend/electron-main.js | bunyan",
     "start:debug": "electron ./lib/frontend/electron-main.js --loglevel=debug | bunyan",
@@ -37,7 +37,7 @@
     "watch": "concurrently --names watch-deps,watch-backend,watch-frontend --prefix \"[{name}]\" \"npm run watch:localdeps\" \"npm run watch:backend\"  \"npm run watch:frontend\"",
     "watch:backend": "tsc --watch",
     "watch:frontend": "npm run build:frontend && webpack --watch",
-    "watch:localdeps": "ldm watch --sync --run=watch",
+    "watch:localdeps": "ldm watch --sync --run=watch --original-sources",
     "test": "electron-mocha --timeout 60000 --require ts-node/register test/**/*.espec.ts",
     "test:ui": "wdio wdio.conf.js"
   },
@@ -68,7 +68,8 @@
     "webdriverio": "^4.6.2",
     "webpack": "^2.2.1",
     "webpack-dev-server": "^2.4.1",
-    "font-awesome-webpack": "0.0.5-beta.2"
+    "font-awesome-webpack": "0.0.5-beta.2",
+    "less": "^2.7.2"
   },
   "localDevDependencies": {
     "local-dependency-manager": "../../config/local-dependency-manager"

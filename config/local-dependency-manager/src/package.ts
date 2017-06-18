@@ -8,6 +8,7 @@
 import * as gulp from 'gulp';
 import * as File from 'vinyl';
 import * as vinylPaths from 'vinyl-paths';
+import * as sourcemaps from 'gulp-sourcemaps';
 import * as through from 'through2';
 import * as chokidar from 'chokidar';
 import * as newer from 'gulp-newer';
@@ -16,7 +17,50 @@ import * as fs from 'fs-extra';
 import * as cp from 'child_process';
 import * as stream from 'stream';
 
-export const NPM_COMMAND = require('check-if-windows') ? 'npm.cmd' : 'npm';
+export const NPM = require('check-if-windows') ? 'npm.cmd' : 'npm';
+
+export function trimExtname(p: string): string {
+    return path.join(path.dirname(p), path.basename(p, path.extname(p)));
+}
+export function filterByExtname(extname: string): (p: string) => boolean {
+    return p => path.extname(p) === extname;
+}
+export const sourcemapExtname = '.map';
+export const filterSourcemaps = filterByExtname(sourcemapExtname);
+
+export function negateGlog(glob: string): string {
+    return '!' + glob;
+}
+export function includeDir(dir: string): string {
+    return path.join(dir, '**', '*');
+}
+export function excludeDir(dir: string): string {
+    return negateGlog(includeDir(dir));
+}
+export function nodeModules(base: string): string {
+    return path.join(base, 'node_modules');
+}
+export function includeNodeModules(base: string): string {
+    return includeDir(nodeModules(base));
+}
+export function excludeNodeModules(base: string): string {
+    return excludeDir(nodeModules(base));
+}
+
+export function awaitDirPaths(dir: string, resolvePaths?: Promise<string[]>): Promise<string[]> {
+    return resolvePaths || resolveDirPaths(dir);
+}
+export function resolveDirPaths(dir: string): Promise<string[]> {
+    return new Promise(resolve => {
+        const vp = vinylPaths();
+        gulp.src(includeDir(dir))
+            .pipe(vp)
+            .pipe(gulp.dest(dir))
+            .on('end', () =>
+                resolve(vp.paths)
+            );
+    });
+}
 
 export interface RawPackage {
     name?: string;
@@ -28,6 +72,12 @@ export interface RawPackage {
         [name: string]: string
     };
     files?: string[];
+}
+
+export interface PackageOptions {
+    readonly includeDev: boolean;
+    readonly verbose: boolean;
+    readonly originalSources: boolean;
 }
 
 export class Package {
@@ -42,12 +92,11 @@ export class Package {
 
     constructor(
         readonly packagePath: string,
-        readonly includeDev: boolean,
-        readonly verbose: boolean
+        readonly options: PackageOptions
     ) {
         this.raw = require(path.resolve(packagePath, 'package.json')) || {};
         this.rawLocalDependencies = !!this.raw.localDependencies ? this.raw.localDependencies : {};
-        this.rawLocalDevDependencies = this.includeDev && !!this.raw.localDevDependencies ? this.raw.localDevDependencies : {};
+        this.rawLocalDevDependencies = this.options.includeDev && !!this.raw.localDevDependencies ? this.raw.localDevDependencies : {};
     }
 
     get name(): string {
@@ -91,7 +140,7 @@ export class Package {
 
     getLocalPackage(dependency: string): Package | undefined {
         const localPath = this.getLocalPath(dependency);
-        return localPath ? new Package(localPath, this.includeDev, this.verbose) : undefined;
+        return localPath ? new Package(localPath, this.options) : undefined;
     }
 
     getLocalPath(dependency: string | undefined): string | undefined {
@@ -141,7 +190,8 @@ export class Package {
             const archivePath = this.packDependency(dependency);
             if (archivePath) {
                 try {
-                    this.execSync(NPM_COMMAND, 'install', archivePath);
+                    this.npmSync('install', archivePath);
+                    this.installOriginalSources(dependency);
                 } finally {
                     fs.removeSync(archivePath);
                 }
@@ -150,7 +200,7 @@ export class Package {
     }
 
     uninstallDependency(dependency: Package): void {
-        this.execSync(NPM_COMMAND, 'uninstall', dependency.name);
+        this.npmSync('uninstall', dependency.name);
     }
 
     cleanDependency(dependency: Package): void {
@@ -169,7 +219,7 @@ export class Package {
     packDependency(dependency: Package): string | undefined {
         const archiveName = dependency.archiveName;
         if (archiveName) {
-            this.execSync(NPM_COMMAND, 'pack', dependency.packagePath);
+            this.npmSync('pack', dependency.packagePath);
             return this.resolvePath(archiveName);
         }
         console.error(`${this.name} cannot be packed, since the version is not declared`);
@@ -177,11 +227,19 @@ export class Package {
     }
 
     run(script: string): void {
-        this.exec(NPM_COMMAND, 'run', script);
+        this.npm('run', script);
     }
 
     runSync(script: string): void {
-        this.execSync(NPM_COMMAND, 'run', script);
+        this.npmSync('run', script);
+    }
+
+    npm(...args: string[]): void {
+        this.exec(NPM, '--no-shrinkwrap', ...args);
+    }
+
+    npmSync(...args: string[]): void {
+        this.execSync(NPM, '--no-shrinkwrap', ...args);
     }
 
     exec(command: string, ...args: string[]): void {
@@ -214,48 +272,15 @@ export class Package {
 
     get sources(): string[] {
         return this.files.map(file =>
-            path.join(this.resolvePath(file), '**', '*')
+            includeDir(this.resolvePath(file))
         );
     }
 
     syncDependency(dependency: Package): void {
-        this.copyUptodate(dependency);
+        this.installOriginalSources(dependency,
+            this.copyUptodate(dependency)
+        );
         this.removeOutdated(dependency);
-    }
-
-    protected removeOutdated(dependency: Package): void {
-        const dest = this.getNodeModulePath(dependency);
-        const base = dependency.packagePath;
-
-        const vp = vinylPaths();
-        gulp.src(path.join(dest, '**', '*'))
-            .pipe(this.outdated(base))
-            .pipe(vp)
-            .pipe(gulp.dest(dest))
-            .on('end', () => {
-                for (const path of vp.paths) {
-                    if (fs.existsSync(path)) {
-                        this.logInfo('Removed:', path)
-                        fs.removeSync(path);
-                    }
-                }
-            })
-    }
-
-    protected copyUptodate(dependency: Package): void {
-        const dest = this.getNodeModulePath(dependency);
-        const base = dependency.packagePath;
-
-        const vp = vinylPaths();
-        gulp.src(dependency.sources, { base })
-            .pipe(newer(dest))
-            .pipe(vp)
-            .pipe(gulp.dest(dest))
-            .on('end', () => {
-                for (const path of vp.paths) {
-                    this.logInfo('Copied:', path)
-                }
-            });
     }
 
     watchDependency(dependency: Package, sync: boolean): void {
@@ -271,6 +296,103 @@ export class Package {
         let index = 0;
         watcher.on('ready', () => console.log('Watching for changes: ' + sources[index++]));
         watcher.on('error', error => console.error(`Watcher error: ${error}`));
+    }
+
+    protected removeOutdated(dependency: Package): void {
+        const dest = this.getNodeModulePath(dependency);
+        const base = dependency.packagePath;
+
+        const vp = vinylPaths();
+        gulp.src(includeDir(dest))
+            .pipe(this.outdated(base))
+            .pipe(vp)
+            .pipe(gulp.dest(dest))
+            .on('end', () => {
+                const paths: string[] = [];
+                for (const path of vp.paths) {
+                    if (fs.existsSync(path)) {
+                        this.logVerbose('Removed:', path)
+                        fs.removeSync(path);
+                        paths.push(path);
+                    }
+                }
+                this.logTask(dependency, `removed ${paths.length} outdated files`);
+            });
+    }
+
+    protected copyUptodate(dependency: Package): Promise<string[]> {
+        return new Promise(resolve => {
+            const dest = this.getNodeModulePath(dependency);
+            const base = dependency.packagePath;
+            const vp = vinylPaths();
+            gulp.src(dependency.sources, { base })
+                .pipe(newer(dest))
+                .pipe(vp)
+                .pipe(gulp.dest(dest))
+                .on('end', () => {
+                    const paths: string[] = [];
+                    for (const sourcePath of vp.paths) {
+                        const targetPath = path.join(dest, sourcePath.substr(base.length));
+                        this.logVerbose('Copied:', sourcePath, '->', targetPath);
+                        paths.push(targetPath);
+                    }
+                    this.logTask(dependency, `copied ${paths.length} changed files`);
+                    resolve(paths);
+                });
+        });
+    }
+
+    protected installOriginalSources(dependency: Package, resolvePaths?: Promise<string[]>): void {
+        if (!this.options.originalSources) {
+            return;
+        }
+        const base = this.getNodeModulePath(dependency);
+        awaitDirPaths(base, resolvePaths).then(paths => {
+            const sourcemapPaths = paths.filter(filterSourcemaps).map(trimExtname);
+            if (sourcemapPaths.length === 0) {
+                return [];
+            }
+            sourcemapPaths.push(excludeNodeModules(base));
+            return this.doInstallOriginalSources(dependency, base, sourcemapPaths);
+        }).then(sourcemaps => this.logTask(dependency, `installed original sources in ${sourcemaps.length} sourcemaps`));
+    }
+
+    protected doInstallOriginalSources(dependency: Package, base: string, sourcemapPaths: string[]): Promise<string[]> {
+        return new Promise<string[]>(resolve => {
+            const vp = vinylPaths();
+            gulp.src(sourcemapPaths, { base, allowEmpty: true })
+                .pipe(sourcemaps.init({
+                    loadMaps: true
+                }))
+                .pipe(sourcemaps.mapSources(sourcePath =>
+                    this.getOriginalSourcePath(base, sourcePath, dependency)
+                ))
+                .pipe(sourcemaps.write('.', {
+                    includeContent: false,
+                    addComment: true
+                }))
+                .pipe(vp)
+                .pipe(gulp.dest(base))
+                .on('end', () => {
+                    const rewrittenSourcemaps = vp.paths.filter(filterSourcemaps);
+                    if (this.isVerbose) {
+                        for (const path of rewrittenSourcemaps) {
+                            this.logVerbose('Installed original sources:', path)
+                        }
+                    }
+                    resolve(rewrittenSourcemaps);
+                });
+        });
+    }
+
+    protected getOriginalSourcePath(base: string, sourcePath: string, dependency: Package) {
+        const absoluteSourcePath = path.dirname(path.join(base, sourcePath));
+        const dependencySourcePath = path.relative(absoluteSourcePath, dependency.packagePath);
+        return path.join(dependencySourcePath, sourcePath);
+    }
+
+    protected logTask(dependency: Package, message: string): void {
+        console.log(`${dependency.name} -> ${this.name}: ${message}`);
     }
 
     protected outdated(base: string): stream.Transform {
@@ -289,8 +411,12 @@ export class Package {
         });
     }
 
-    protected logInfo(message: string, ...optionalParams: any[]) {
-        if (this.verbose) {
+    protected get isVerbose(): boolean {
+        return this.options.verbose;
+    }
+
+    protected logVerbose(message: string, ...optionalParams: any[]) {
+        if (this.isVerbose) {
             console.log(new Date().toLocaleString() + ': ' + message, ...optionalParams);
         }
     }

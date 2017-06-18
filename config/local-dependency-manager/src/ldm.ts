@@ -12,8 +12,9 @@ const verbose = '--verbose';
 const sync = '--sync';
 const run = '--run';
 const dev = '--dev';
+const originalSources = '--original-sources';
 const options = [
-    verbose, sync, run, dev
+    verbose, sync, run, dev, originalSources
 ];
 
 function testOption(option: string): boolean {
@@ -34,7 +35,11 @@ function getArgs(index: number): (string | undefined)[] {
     )
 }
 
-const pck = new Package(process.cwd(), testOption(dev), testOption(verbose));
+const pck = new Package(process.cwd(), {
+    includeDev: testOption(dev),
+    verbose: testOption(verbose),
+    originalSources: testOption(originalSources)
+});
 const manager = new LocalDependencyManager(pck);
 
 const command = process.argv[2];

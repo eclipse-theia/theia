@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Package, NPM_COMMAND } from './package';
+import { Package } from './package';
 
 export class LocalDependencyManager {
 
@@ -33,7 +33,7 @@ export class LocalDependencyManager {
             this.pck.installDependency(dependency);
         }
         if (!pattern) {
-            this.pck.execSync(NPM_COMMAND, 'install');
+            this.pck.npmSync('install');
         }
     }
 
