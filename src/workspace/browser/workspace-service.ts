@@ -1,4 +1,3 @@
-import { FileSystemWatcher } from '../../filesystem/common/filesystem-watcher';
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -9,7 +8,7 @@ import { FileSystemWatcher } from '../../filesystem/common/filesystem-watcher';
 import { injectable, inject } from "inversify";
 import URI from "../../application/common/uri";
 import { WorkspaceServer } from "../common";
-import { FileSystem, FileStat } from "../../filesystem/common";
+import { FileSystem, FileStat, FileSystemWatcher } from "../../filesystem/common";
 
 /**
  * The workspace service.

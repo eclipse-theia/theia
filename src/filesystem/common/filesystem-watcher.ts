@@ -63,10 +63,10 @@ export class FileSystemWatcher implements Disposable {
     }
 
     /**
-     * Allow to start a watcher that reports file change events on the provided resource.
+     * Start file watching under the given uri.
      *
-     * Resolve when watching of the given URI started.
-     * Return a disposable that should be used to stop watching of the given URI.
+     * Resolve when watching is started.
+     * Return a disposable to stop file watching under the given uri.
      */
     watchFileChanges(uri: URI): Promise<Disposable> {
         const raw = uri.toString();
@@ -80,7 +80,7 @@ export class FileSystemWatcher implements Disposable {
     }
 
     /**
-      * Emit when files under watched URIs are changed.
+      * Emit when files under watched uris are changed.
       */
     get onFilesChanged(): Event<FileChange[]> {
         return this.listener.onFilesChanged;
