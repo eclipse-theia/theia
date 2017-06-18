@@ -11,6 +11,7 @@ import * as chaiAsPromised from 'chai-as-promised';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import URI from "../../application/common/uri";
+import { Logger } from "../../application/common";
 import { FileUri } from "../../application/node";
 import { FileSystem } from "../common/filesystem";
 import { FileSystemWatcher, FileSystemWatcherClientListener, FileChange, FileChangeType } from '../common';
@@ -777,9 +778,16 @@ describe("NodeFileSystem", () => {
     }
 
     function createFileSystemWatcher(): FileSystemWatcher {
-        const logger: any = {
-            debug(): void { }
-        };
+        const logger = new Proxy<Logger>({} as any, {
+            get: (target, name) => () => {
+                if (name.toString().startsWith('is')) {
+                    return Promise.resolve(false);
+                }
+                if (name.toString().startsWith('if')) {
+                    return new Promise(resolve => { });
+                }
+            }
+        });
         const listener = new FileSystemWatcherClientListener();
         const server = new NodeFileSytemWatcherServer(logger);
         server.setClient(listener);

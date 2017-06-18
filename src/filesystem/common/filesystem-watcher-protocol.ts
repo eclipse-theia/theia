@@ -14,23 +14,21 @@ export const fileSystemWatcherPath = '/fs-watcher';
 export const FileSystemWatcherServer = Symbol('FileSystemWatcherServer');
 export interface FileSystemWatcherServer extends Disposable {
     /**
-     * Allows to start a watcher that reports file change events on the provided resource.
-     *
-     * Resolve when watching of the given uri is started.
+     * Start file watching under the given uri.
+     * Resolve when watching is started.
      */
     watchFileChanges(uri: string): Promise<void>;
 
     /**
-     * Allows to stop a watcher on the provided resource or absolute fs path.
-     *
-     * Resolve when watching of the given uri is stopped.
+     * Stop file watching under the given uri.
+     * Resolve when watching is stopped.
      */
     unwatchFileChanges(uri: string): Promise<void>;
 }
 
 export interface FileSystemWatcherClient extends Disposable {
     /**
-     * Notifies about file changes
+     * Notify when files under watched uris are changed.
      */
     onDidFilesChanged(event: DidFilesChangedParams): void;
 }
