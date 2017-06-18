@@ -14,3 +14,4 @@
 - all commands accept an additional reg exp pattern option to filter out local dependencies
 - `--verbose` can be provided to enable verbose logging
 - `--dev` to include `devDependencies`
+- `--original-sources` to install original sources in sourcemaps
