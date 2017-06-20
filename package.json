@@ -32,6 +32,7 @@
     "bunyan": "^1.8.10",
     "chokidar": "^1.6.1",
     "electron": "1.6.8",
+    "electron-mocha": "^3.5.0",
     "express": "^4.15.2",
     "fs-extra": "^2.1.2",
     "glob": "^7.1.1",
