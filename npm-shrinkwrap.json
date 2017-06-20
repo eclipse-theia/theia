@@ -316,7 +316,8 @@
     "argparse": {
       "version": "1.0.9",
       "from": "argparse@>=1.0.7 <2.0.0",
-      "resolved": "https://registry.npmjs.org/argparse/-/argparse-1.0.9.tgz"
+      "resolved": "https://registry.npmjs.org/argparse/-/argparse-1.0.9.tgz",
+      "dev": true
     },
     "arr-diff": {
       "version": "2.0.0",
@@ -1211,18 +1212,6 @@
       "resolved": "https://registry.npmjs.org/dot-prop/-/dot-prop-4.1.1.tgz",
       "dev": true
     },
-    "drivelist": {
-      "version": "5.0.22",
-      "from": "drivelist@>=5.0.22 <6.0.0",
-      "resolved": "https://registry.npmjs.org/drivelist/-/drivelist-5.0.22.tgz",
-      "dependencies": {
-        "bluebird": {
-          "version": "3.5.0",
-          "from": "bluebird@>=3.5.0 <4.0.0",
-          "resolved": "https://registry.npmjs.org/bluebird/-/bluebird-3.5.0.tgz"
-        }
-      }
-    },
     "dtrace-provider": {
       "version": "0.8.3",
       "from": "dtrace-provider@>=0.8.0 <0.9.0",
@@ -1372,7 +1361,8 @@
     "esprima": {
       "version": "2.7.3",
       "from": "esprima@>=2.6.0 <3.0.0",
-      "resolved": "https://registry.npmjs.org/esprima/-/esprima-2.7.3.tgz"
+      "resolved": "https://registry.npmjs.org/esprima/-/esprima-2.7.3.tgz",
+      "dev": true
     },
     "esutils": {
       "version": "2.0.2",
@@ -3055,7 +3045,8 @@
     "js-yaml": {
       "version": "3.7.0",
       "from": "js-yaml@>=3.7.0 <3.8.0",
-      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-3.7.0.tgz"
+      "resolved": "https://registry.npmjs.org/js-yaml/-/js-yaml-3.7.0.tgz",
+      "dev": true
     },
     "jsbn": {
       "version": "0.1.1",
@@ -3189,7 +3180,8 @@
     "lodash": {
       "version": "4.17.4",
       "from": "lodash@>=4.3.0 <5.0.0",
-      "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.4.tgz"
+      "resolved": "https://registry.npmjs.org/lodash/-/lodash-4.17.4.tgz",
+      "dev": true
     },
     "lodash._baseassign": {
       "version": "3.2.0",
@@ -3838,11 +3830,6 @@
           "resolved": "https://registry.npmjs.org/path-key/-/path-key-2.0.1.tgz"
         }
       }
-    },
-    "os-tmpdir": {
-      "version": "1.0.2",
-      "from": "os-tmpdir@>=1.0.1 <1.1.0",
-      "resolved": "https://registry.npmjs.org/os-tmpdir/-/os-tmpdir-1.0.2.tgz"
     },
     "p-finally": {
       "version": "1.0.0",
@@ -4874,7 +4861,8 @@
     "sprintf-js": {
       "version": "1.0.3",
       "from": "sprintf-js@>=1.0.2 <1.1.0",
-      "resolved": "https://registry.npmjs.org/sprintf-js/-/sprintf-js-1.0.3.tgz"
+      "resolved": "https://registry.npmjs.org/sprintf-js/-/sprintf-js-1.0.3.tgz",
+      "dev": true
     },
     "sshpk": {
       "version": "1.13.1",
@@ -5090,11 +5078,6 @@
       "from": "timers-browserify@>=2.0.2 <3.0.0",
       "resolved": "https://registry.npmjs.org/timers-browserify/-/timers-browserify-2.0.2.tgz",
       "dev": true
-    },
-    "tmp": {
-      "version": "0.0.31",
-      "from": "tmp@0.0.31",
-      "resolved": "https://registry.npmjs.org/tmp/-/tmp-0.0.31.tgz"
     },
     "to-arraybuffer": {
       "version": "1.0.1",
