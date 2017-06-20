@@ -7,7 +7,6 @@
 
 import * as fs from 'fs-extra';
 import * as touch from 'touch';
-import * as drivelist from 'drivelist';
 import { injectable, inject, optional } from "inversify";
 import URI from "../../application/common/uri";
 import { FileUri } from "../../application/node";
@@ -292,27 +291,13 @@ export class FileSystemNode implements FileSystem {
     }
 
     getRoots(): Promise<FileStat[]> {
-        return new Promise((resolve, reject) => {
-            drivelist.list((error, drives) => {
-                if (error) {
-                    reject(error);
-                } else {
-                    const roots: FileStat[] = [];
-                    Promise.all(drives.map(d => {
-                        const mountpoint = d.mountpoints[0]
-                        if (mountpoint) {
-                            const rootUri = FileUri.create(mountpoint.path);
-                            const root = this.doGetStat(rootUri, 1)
-                            if (root) {
-                                roots.push(root);
-                            } else {
-                                console.error(`Cannot locate the file system root under ${rootUri}.`);
-                            }
-                        }
-                    })).then(() => resolve(roots));
-                }
-            });
-        });
+        const rootUri = FileUri.create(process.cwd());
+        const root = this.doGetStat(rootUri, 1);
+        if (root) {
+            return Promise.resolve([root]);
+        }
+        console.error(`Cannot locate the file system root under ${rootUri}.`);
+        return Promise.resolve([]);
     }
 
     dispose(): void {
