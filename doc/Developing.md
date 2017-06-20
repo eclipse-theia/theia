@@ -121,7 +121,8 @@ To debug an example using VSCode:
 ### Debug the browser example's frontend
 
 - Start the frontend using `npm run start:frontend`
-- Start the debug tab and run the `Launch Frontend` configuration.
+- In a browser: open http://localhost:8080/ and use the dev tools for debugging
+- In VS Code: start the debug tab and run the `Launch Frontend` configuration.
 
 ### Debug the browser example's frontend and backend at the same time
 
