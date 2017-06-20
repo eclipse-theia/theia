@@ -198,6 +198,7 @@ Theia uses native modules and also requires Python 2.x to be installed on the sy
  - You don't have write access to the installation directory.
  - Try to run your command line (`PowerShell`, `GitBash`, `Cygwin` or whatever you are using) as an administrator.
  - The permissions in the NPM cache might get corrupted. Please try to run `npm cache clean` to fix them.
+ If you experience issues such as `Error: EBUSY: resource busy or locked, rename`, try to disable (or uninstall) your anti-malware software. See [here](https://github.com/npm/npm/issues/13461#issuecomment-282556281).
  - Still having issues on Windows? File a [bug]. We are working on Linux or OS X operating systems. Hence we are more than happy to receive any Windows related feedbacks, bug reports.
 
 [all-in-one packages]: https://github.com/felixrieseberg/windows-build-tools
