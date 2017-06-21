@@ -27,7 +27,7 @@
     "@types/ws": "0.0.38",
     "@types/xterm": "^2.0.2",
     "chokidar": "^1.6.1",
-    "electron": "^1.6.2",
+    "electron": "^1.6.8",
     "express": "^4.15.2",
     "fs-extra": "^2.1.2",
     "glob": "^7.1.1",
