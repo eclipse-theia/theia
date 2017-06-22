@@ -73,9 +73,8 @@ export class ReconnectingFileSystemWatcherServer implements FileSystemWatcherSer
     }
 
     watchFileChanges(uri: string): Promise<void> {
-        return this.proxy.watchFileChanges(uri).then(() => {
-            this.uris.add(uri)
-        });
+        this.uris.add(uri)
+        return this.proxy.watchFileChanges(uri);
     }
 
     unwatchFileChanges(uri: string): Promise<void> {
