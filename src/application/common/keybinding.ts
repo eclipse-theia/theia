@@ -94,8 +94,8 @@ export class KeybindingContextRegistry {
 @injectable()
 export class KeybindingRegistry {
 
-    protected _keybindings: { [index: string]: Keybinding[] } | undefined;
-    protected _commands: { [commandId: string]: Keybinding[] } | undefined;
+    protected readonly keybindings: { [index: string]: Keybinding[] } = {};
+    protected readonly commands: { [commandId: string]: Keybinding[] } = {};
 
     constructor(
         @inject(CommandRegistry) protected commandRegistry: CommandRegistry,
@@ -105,30 +105,10 @@ export class KeybindingRegistry {
         new KeyEventEmitter(commandRegistry, this);
     }
 
-    activate() {
-        this._keybindings = {};
-        this._commands = {};
-        for (let contribution of this.contributions.getContributions()) {
+    onStart(): void {
+        for (const contribution of this.contributions.getContributions()) {
             contribution.registerKeyBindings(this);
         }
-        return Disposable.create(() => {
-            this._keybindings = undefined;
-            this._commands = undefined;
-        })
-    }
-
-    protected getCommands(): { [commandId: string]: Keybinding[] } {
-        if (this._commands) {
-            return this._commands;
-        }
-        throw new Error("The keybinding refistry is not initialized.");
-    }
-
-    protected getKeyBindings(): { [index: string]: Keybinding[] } {
-        if (this._keybindings) {
-            return this._keybindings;
-        }
-        throw new Error("The keybinding refistry is not initialized.");
     }
 
     /**
@@ -137,30 +117,28 @@ export class KeybindingRegistry {
      * @param binding
      */
     registerKeyBinding(binding: Keybinding) {
-        const keybindings = this.getKeyBindings();
         const { keyCode, commandId } = binding;
-        const bindings = keybindings[keyCode.keystroke] || [];
+        const bindings = this.keybindings[keyCode.keystroke] || [];
         bindings.push(binding);
-        keybindings[keyCode.keystroke] = bindings;
+        this.keybindings[keyCode.keystroke] = bindings;
 
-        const commandToKeybindings = this.getCommands();
-        const commands = commandToKeybindings[commandId] || [];
+        const commands = this.commands[commandId] || [];
         commands.push(binding);
-        commandToKeybindings[commandId] = bindings;
+        this.commands[commandId] = bindings;
     }
 
     /**
      * @param commandId the unique ID of the command for we the associated ke binding are looking for.
      */
     getKeybindingForCommand(commandId: string): Keybinding | undefined {
-        return (this.getCommands()[commandId] || []).find(binding => this.isValid(binding));
+        return (this.commands[commandId] || []).find(binding => this.isValid(binding));
     }
 
     /**
      * @param keyCode the key code of the binding we are searching.
      */
     getKeybindingForKeyCode(keyCode: KeyCode): Keybinding | undefined {
-        return (this.getCommands()[keyCode.keystroke] || []).find(binding => this.isValid(binding));
+        return (this.commands[keyCode.keystroke] || []).find(binding => this.isValid(binding));
     }
 
     private isValid(binding: Keybinding): boolean {

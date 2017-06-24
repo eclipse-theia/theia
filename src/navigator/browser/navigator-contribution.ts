@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject, named } from "inversify";
-import { SelectionService, Disposable } from "../../application/common";
+import { SelectionService } from "../../application/common";
 import { FrontendApplicationContribution, FrontendApplication } from "../../application/browser";
 import { FileSystem } from "../../filesystem/common";
 import { DirNode } from "../../filesystem/browser";
@@ -32,9 +32,8 @@ export class FileNavigatorContribution implements FrontendApplicationContributio
         });
     }
 
-    activate(app: FrontendApplication): Disposable {
+    onStart(app: FrontendApplication): void {
         app.shell.addToLeftArea(this.fileNavigator);
-        return Disposable.NULL;
     }
 
 }
