@@ -107,7 +107,7 @@ export class FileCommandContribution implements CommandContribution {
                         validate: name => this.validateFileName(name, parent)
                     });
                     dialog.open().then(name =>
-                        this.fileSystem.move(uri.toString(), uri.parent.appendPath(name).toString())
+                        this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString())
                     )
                 })
             )
@@ -129,7 +129,7 @@ export class FileCommandContribution implements CommandContribution {
                 this.getDirectory(uri).then(stat => {
                     const data: string = this.clipboardService.getData('text');
                     const copyPath = new URI(data);
-                    const targetUri = uri.appendPath(copyPath.path.base);
+                    const targetUri = uri.resolve(copyPath.path.base);
                     return this.fileSystem.copy(copyPath.toString(), targetUri.toString());
                 }),
                 uri => !this.clipboardService.isEmpty && !!this.clipboardService.getData('text'))
@@ -147,7 +147,7 @@ export class FileCommandContribution implements CommandContribution {
                         validate: name => this.validateFileName(name, parent)
                     })
                     dialog.open().then(name => {
-                        const fileUri = parentUri.appendPath(name);
+                        const fileUri = parentUri.resolve(name);
                         this.fileSystem.createFile(fileUri.toString()).then(() => {
                             open(this.openerService, fileUri)
                         });
@@ -168,7 +168,7 @@ export class FileCommandContribution implements CommandContribution {
                         validate: name => this.validateFileName(name, parent)
                     });
                     dialog.open().then(name =>
-                        this.fileSystem.createFolder(parentUri.appendPath(name).toString())
+                        this.fileSystem.createFolder(parentUri.resolve(name).toString())
                     );
                 })
             )
@@ -235,7 +235,7 @@ export class FileCommandContribution implements CommandContribution {
             index = index + 1;
             base = name + '_' + index + ext;
         }
-        return parentUri.appendPath(base);
+        return parentUri.resolve(base);
     }
 }
 

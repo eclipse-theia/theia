@@ -346,7 +346,7 @@ export class FileSystemNode implements FileSystem {
     protected doGetChildren(uri: URI, files: string[], depth: number): FileStat[] {
         const children = [];
         for (const file of files) {
-            const childUri = uri.appendPath(file);
+            const childUri = uri.resolve(file);
             const child = this.doGetStat(childUri, depth - 1);
             if (child) {
                 children.push(child);

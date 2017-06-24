@@ -105,7 +105,7 @@ export class TerminalWidget extends BaseWidget {
     }
 
     protected createWebSocket(pid: string): WebSocket {
-        const url = this.endpoint.getWebSocketUrl().appendPath(pid)
+        const url = this.endpoint.getWebSocketUrl().resolve(pid)
         return this.webSocketConnectionProvider.createWebSocket(url.toString(), { reconnecting: false })
     }
 

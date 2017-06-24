@@ -69,28 +69,28 @@ describe("uri", () => {
 
         it("'' to file:///foo", () => {
             const uri = new URI("file:///foo");
-            expect(uri.appendPath("").toString()).to.be.equal(uri.toString());
+            expect(uri.resolve("").toString()).to.be.equal(uri.toString());
         });
 
         it("bar to file:///foo", () => {
-            expect(new URI("file:///foo").appendPath("bar").toString()).to.be.equal("file:///foo/bar");
+            expect(new URI("file:///foo").resolve("bar").toString()).to.be.equal("file:///foo/bar");
         });
 
         it("bar/baz to file:///foo", () => {
-            expect(new URI("file:///foo").appendPath("bar/baz").toString()).to.be.equal("file:///foo/bar/baz");
+            expect(new URI("file:///foo").resolve("bar/baz").toString()).to.be.equal("file:///foo/bar/baz");
         });
 
         it("'' to file:///", () => {
             const uri = new URI("file:///");
-            expect(uri.appendPath("").toString()).to.be.equal(uri.toString());
+            expect(uri.resolve("").toString()).to.be.equal(uri.toString());
         });
 
         it("bar to file:///", () => {
-            expect(new URI("file:///").appendPath("bar").toString()).to.be.equal("file:///bar");
+            expect(new URI("file:///").resolve("bar").toString()).to.be.equal("file:///bar");
         });
 
         it("bar/baz to file:///", () => {
-            expect(new URI("file:///").appendPath("bar/baz").toString()).to.be.equal("file:///bar/baz");
+            expect(new URI("file:///").resolve("bar/baz").toString()).to.be.equal("file:///bar/baz");
         });
 
     });
