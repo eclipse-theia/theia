@@ -26,7 +26,7 @@ export interface MenuContribution {
 
 @injectable()
 export class MenuModelRegistry {
-    protected _root: CompositeMenuNode | undefined;
+    protected readonly root = new CompositeMenuNode("");
 
     constructor(
         @inject(ContributionProvider) @named(MenuContribution)
@@ -34,21 +34,10 @@ export class MenuModelRegistry {
         @inject(CommandRegistry) protected readonly commands: CommandRegistry
     ) { }
 
-    activate(): Disposable {
-        this._root = new CompositeMenuNode("");
+    onStart(): void {
         for (const contrib of this.contributions.getContributions()) {
             contrib.registerMenus(this);
         }
-        return Disposable.create(() =>
-            this._root = undefined
-        );
-    }
-
-    protected getRoot(): CompositeMenuNode {
-        if (this._root) {
-            return this._root;
-        }
-        throw new Error('The menu registry is not initialized.')
     }
 
     registerMenuAction(menuPath: string[], item: MenuAction): Disposable {
@@ -64,7 +53,7 @@ export class MenuModelRegistry {
     }
 
     protected findGroup(menuPath: string[]): CompositeMenuNode {
-        let currentMenu = this.getRoot();
+        let currentMenu = this.root;
         for (const segment of menuPath) {
             currentMenu = this.findSubMenu(currentMenu, segment);
         }

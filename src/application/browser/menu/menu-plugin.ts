@@ -9,7 +9,7 @@ import { injectable, inject } from "inversify";
 import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget } from "@phosphor/widgets";
 import { CommandRegistry as PhosphorCommandRegistry } from "@phosphor/commands";
 import {
-    Disposable, CommandRegistry, KeybindingRegistry,
+    CommandRegistry, KeybindingRegistry,
     ActionMenuNode, CompositeMenuNode, MenuModelRegistry, MAIN_MENU_BAR
 } from "../../common";
 import { FrontendApplicationContribution, FrontendApplication } from "../application";
@@ -162,15 +162,14 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
         @inject(MainMenuFactory) protected readonly factory: MainMenuFactory
     ) { }
 
-    activate(app: FrontendApplication): Disposable {
+    onStart(app: FrontendApplication): void {
         const logo = this.createLogo();
         app.shell.addToTopArea(logo);
         const menu = this.factory.createMenuBar();
         app.shell.addToTopArea(menu);
-        return Disposable.NULL;
     }
 
-    private createLogo(): Widget {
+    protected createLogo(): Widget {
         const logo = new Widget();
         logo.id = 'theia:icon';
         logo.addClass('theia-icon');

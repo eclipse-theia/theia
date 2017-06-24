@@ -8,7 +8,7 @@
 import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
 import {
-    isOSX, Disposable, CommandRegistry,
+    isOSX, CommandRegistry,
     ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry
 } from '../../common';
 import { FrontendApplication, FrontendApplicationContribution } from '../../browser/application';
@@ -131,7 +131,7 @@ export class MenuContribution implements FrontendApplicationContribution {
         @inject(MainMenuFactory) protected readonly factory: MainMenuFactory
     ) { }
 
-    activate(app: FrontendApplication): Disposable {
+    onStart(app: FrontendApplication): void {
         const itr = app.shell.children();
         let child = itr.next();
         while (child) {
@@ -145,9 +145,6 @@ export class MenuContribution implements FrontendApplicationContribution {
             }
         }
         electron.remote.Menu.setApplicationMenu(this.factory.createMenuBar());
-        return Disposable.create(() =>
-            electron.remote.Menu.setApplicationMenu(null)
-        );
     }
 
 }

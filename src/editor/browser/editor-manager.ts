@@ -8,14 +8,14 @@
 import { injectable, inject } from "inversify";
 import URI from "../../application/common/uri";
 import { Emitter, Event, RecursivePartial, ResourceProvider, SelectionService } from '../../application/common';
-import { OpenHandler, FrontendApplication, FrontendApplicationContribution } from "../../application/browser";
+import { OpenHandler, FrontendApplication } from "../../application/browser";
 import { EditorWidget } from "./editor-widget";
 import { EditorRegistry } from "./editor-registry";
 import { TextEditorProvider, Range, Position } from "./editor";
 
 export const EditorManager = Symbol("EditorManager");
 
-export interface EditorManager extends OpenHandler, FrontendApplicationContribution {
+export interface EditorManager extends OpenHandler {
     /**
      * All opened editors.
      */
