@@ -100,8 +100,8 @@ export class Path {
         return new Path(this.raw.substr(0, lastIndex));
     }
 
-    join(...segments: string[]): Path {
-        const relativePath = segments.filter(s => !!s).join(Path.separator);
+    join(...paths: string[]): Path {
+        const relativePath = paths.filter(s => !!s).join(Path.separator);
         if (!relativePath) {
             return this;
         }

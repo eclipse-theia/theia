@@ -55,8 +55,8 @@ export default class URI {
         return this.withPath(this.path.dir);
     }
 
-    appendPath(toAppend: string): URI {
-        return this.withPath(this.path.join(toAppend));
+    resolve(path: string | Path): URI {
+        return this.withPath(this.path.join(path.toString()));
     }
 
     /**
