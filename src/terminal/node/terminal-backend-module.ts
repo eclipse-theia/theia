@@ -79,7 +79,7 @@ class TerminalExpressContribution implements BackendApplicationContribution {
             }
         }, (ws, request) => {
             const uri = new URI(request.url!)
-            const pid = parseInt(uri.lastSegment, 10)
+            const pid = parseInt(uri.path.base, 10)
             const term = this.terminals.get(pid)
             if (!term) {
                 return;

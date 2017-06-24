@@ -103,7 +103,7 @@ export class FileCommandContribution implements CommandContribution {
                 this.getParent(uri).then(parent => {
                     const dialog = new SingleTextInputDialog({
                         title: 'Rename File',
-                        initialValue: uri.lastSegment,
+                        initialValue: uri.path.base,
                         validate: name => this.validateFileName(name, parent)
                     });
                     dialog.open().then(name =>
@@ -129,7 +129,7 @@ export class FileCommandContribution implements CommandContribution {
                 this.getDirectory(uri).then(stat => {
                     const data: string = this.clipboardService.getData('text');
                     const copyPath = new URI(data);
-                    const targetUri = uri.appendPath(copyPath.lastSegment);
+                    const targetUri = uri.appendPath(copyPath.path.base);
                     return this.fileSystem.copy(copyPath.toString(), targetUri.toString());
                 }),
                 uri => !this.clipboardService.isEmpty && !!this.clipboardService.getData('text'))
@@ -143,7 +143,7 @@ export class FileCommandContribution implements CommandContribution {
                     const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled', '.txt');
                     const dialog = new SingleTextInputDialog({
                         title: `New File`,
-                        initialValue: vacantChildUri.lastSegment,
+                        initialValue: vacantChildUri.path.base,
                         validate: name => this.validateFileName(name, parent)
                     })
                     dialog.open().then(name => {
@@ -164,7 +164,7 @@ export class FileCommandContribution implements CommandContribution {
                     const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled');
                     const dialog = new SingleTextInputDialog({
                         title: `New Folder`,
-                        initialValue: vacantChildUri.lastSegment,
+                        initialValue: vacantChildUri.path.base,
                         validate: name => this.validateFileName(name, parent)
                     });
                     dialog.open().then(name =>
@@ -179,7 +179,7 @@ export class FileCommandContribution implements CommandContribution {
             new FileSystemCommandHandler(this.selectionService, uri => {
                 const dialog = new ConfirmDialog({
                     title: 'Delete File',
-                    msg: `Do you really want to delete '${uri.lastSegment}'?`
+                    msg: `Do you really want to delete '${uri.path.base}'?`
                 });
                 return dialog.open().then(() => {
                     return this.fileSystem.delete(uri.toString())
@@ -206,7 +206,7 @@ export class FileCommandContribution implements CommandContribution {
         }
         if (parent.children) {
             for (const child of parent.children) {
-                if (new URI(child.uri).lastSegment === name) {
+                if (new URI(child.uri).path.base === name) {
                     return 'A file with this name already exists.';
                 }
             }
@@ -231,7 +231,7 @@ export class FileCommandContribution implements CommandContribution {
 
         let index = 1;
         let base = name + ext;
-        while (children.some(child => child.lastSegment === base)) {
+        while (children.some(child => child.path.base === base)) {
             index = index + 1;
             base = name + '_' + index + ext;
         }

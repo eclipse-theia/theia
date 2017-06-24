@@ -119,7 +119,7 @@ export class EditorManagerImpl implements EditorManager {
         return this.editorProvider(uri).then(textEditor => {
             const editor = new EditorWidget(textEditor, this.selectionService);
             editor.title.closable = true;
-            editor.title.label = uri.lastSegment;
+            editor.title.label = uri.path.base;
             this.editorRegistry.addEditor(uri, editor);
             editor.disposed.connect(() =>
                 this.editorRegistry.removeEditor(uri)

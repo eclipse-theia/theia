@@ -48,19 +48,19 @@ describe("uri", () => {
     describe("#lastSegment", () => {
 
         it("of file:///foo/bar.txt", () => {
-            expect(new URI("file:///foo/bar.txt").lastSegment).equals("bar.txt");
+            expect(new URI("file:///foo/bar.txt").path.base).equals("bar.txt");
         });
 
         it("of file:///foo", () => {
-            expect(new URI("file:///foo").lastSegment).equals("foo");
+            expect(new URI("file:///foo").path.base).equals("foo");
         });
 
         it("of file:///", () => {
-            expect(new URI("file:///").lastSegment).equals("");
+            expect(new URI("file:///").path.base).equals("");
         });
 
         it("of file://", () => {
-            expect(new URI("file://").lastSegment).equals("");
+            expect(new URI("file://").path.base).equals("");
         });
 
     });

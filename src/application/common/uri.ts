@@ -24,9 +24,9 @@ export default class URI {
     }
 
     get displayName(): string {
-        const lastSegment = this.lastSegment;
-        if (lastSegment) {
-            return lastSegment;
+        const base = this.path.base;
+        if (base) {
+            return base;
         }
         if (this.path.isRoot) {
             return this.path.toString();
@@ -53,10 +53,6 @@ export default class URI {
             return this;
         }
         return this.withPath(this.path.dir);
-    }
-
-    get lastSegment(): string {
-        return this.path.base;
     }
 
     appendPath(toAppend: string): URI {
