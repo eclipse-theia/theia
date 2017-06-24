@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import * as paths from 'path';
 import * as fs from 'fs-extra';
 import * as touch from 'touch';
 import { injectable, inject, optional } from "inversify";
@@ -291,7 +292,8 @@ export class FileSystemNode implements FileSystem {
     }
 
     getRoots(): Promise<FileStat[]> {
-        const rootUri = FileUri.create(process.cwd());
+        const cwdRoot = paths.parse(process.cwd()).root;
+        const rootUri = FileUri.create(cwdRoot);
         const root = this.doGetStat(rootUri, 1);
         if (root) {
             return Promise.resolve([root]);
