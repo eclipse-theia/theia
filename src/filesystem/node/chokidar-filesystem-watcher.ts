@@ -130,9 +130,9 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
         if (this.client) {
             this.client.onDidFilesChanged(event);
         }
-        this.logger.ifDebug().then(() =>
-            this.logger.debug('Files changed:', event)
-        );
+        this.logger.debug(log =>
+            log('Files changed:', event)
+        )
     }
 
 }
