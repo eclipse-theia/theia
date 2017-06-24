@@ -18,7 +18,7 @@ import {
 } from '../common/filesystem-watcher-protocol';
 
 @injectable()
-export class NodeFileSytemWatcherServer implements FileSystemWatcherServer {
+export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer {
 
     protected _watcher: Promise<Watcher> | undefined;
     protected client: FileSystemWatcherClient | undefined;
