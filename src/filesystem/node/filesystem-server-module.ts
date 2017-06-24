@@ -10,7 +10,7 @@ import { ConnectionHandler, JsonRpcConnectionHandler } from "../../messaging/com
 import { FileSystemNode } from './node-filesystem';
 import { FileSystemWatcher, FileSystem, fileSystemPath, FileSystemWatcherClientListener } from "../common";
 import { FileSystemWatcherServer, FileSystemWatcherClient, fileSystemWatcherPath } from '../common/filesystem-watcher-protocol';
-import { NodeFileSytemWatcherServer } from './node-filesystem-watcher';
+import { ChokidarFileSystemWatcherServer } from './chokidar-filesystem-watcher';
 
 export const fileSystemServerModule = new ContainerModule(bind => {
     bind(FileSystemNode).toSelf().inSingletonScope();
@@ -22,10 +22,10 @@ export const fileSystemServerModule = new ContainerModule(bind => {
         )
     ).inSingletonScope();
 
-    bind(NodeFileSytemWatcherServer).toSelf();
+    bind(ChokidarFileSystemWatcherServer).toSelf();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<FileSystemWatcherClient>(fileSystemWatcherPath, client => {
-            const server = ctx.container.get(NodeFileSytemWatcherServer);
+            const server = ctx.container.get(ChokidarFileSystemWatcherServer);
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;
@@ -35,7 +35,7 @@ export const fileSystemServerModule = new ContainerModule(bind => {
     bind(FileSystemWatcherClientListener).toSelf();
     bind(FileSystemWatcher).toDynamicValue(({ container }) => {
         const client = container.get(FileSystemWatcherClientListener);
-        const server = container.get(NodeFileSytemWatcherServer);
+        const server = container.get(ChokidarFileSystemWatcherServer);
         server.setClient(client);
 
         const child = container.createChild();
