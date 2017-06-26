@@ -77,7 +77,6 @@
     "style-loader": "^0.13.2",
     "ts-loader": "^2.0.1",
     "ts-node": "^2.1.0",
-    "tsc-watch": "^1.0.5",
     "tslint": "^4.5.1",
     "typescript": "^2.3.2",
     "url-loader": "^0.5.8",
