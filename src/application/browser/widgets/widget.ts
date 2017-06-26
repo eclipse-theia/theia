@@ -8,7 +8,7 @@
 import { injectable, decorate, unmanaged } from "inversify";
 import { Widget } from "@phosphor/widgets";
 import { Message } from "@phosphor/messaging";
-import { DisposableCollection, Disposable } from "../../common";
+import { Disposable, DisposableCollection, Key, KeyCode } from '../../common';
 
 decorate(injectable(), Widget);
 decorate(unmanaged(), Widget, 0);
@@ -44,83 +44,21 @@ export class BaseWidget extends Widget {
         super.onBeforeDetach(msg);
     }
 
-    protected addUpdateListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K): void {
+    protected addUpdateListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K, useCapture?: boolean): void {
         this.addEventListener(element, type, e => {
             this.update();
             e.preventDefault();
-        });
+        }, useCapture);
     }
 
-    protected addEventListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K, listener: (this: HTMLElement, ev: HTMLElementEventMap[K]) => any): void;
-    protected addEventListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K, listener: EventListenerOrEventListenerObject): void;
-    protected addEventListener<K extends keyof HTMLElementEventMap>(
-        element: HTMLElement,
-        type: K,
-        listener: ((this: HTMLElement, ev: HTMLElementEventMap[K]) => any) | EventListenerOrEventListenerObject
-    ): void {
-        element.addEventListener(type, listener);
-        this.toDisposeOnDetach.push(Disposable.create(() =>
-            element.removeEventListener(type, listener)
-        ));
+    protected addEventListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K, listener: EventListenerOrEventListenerObject<K>, useCapture?: boolean): void {
+        this.toDisposeOnDetach.push(addEventListener(element, type, listener));
     }
 
-    protected addAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, action: EventAction<K>) {
-        this.addEventListener(element, action.type, e => {
-            if (!action.isActive || action.isActive(e)) {
-                action.run();
-                e.stopPropagation();
-                e.preventDefault();
-            }
-        });
+    protected addKeyListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, keybinding: Key, action: () => void, ...additionalEventTypes: K[]): void {
+        this.toDisposeOnDetach.push(addKeyListener(element, keybinding, action, ...additionalEventTypes));
     }
 
-    protected addActions<K extends keyof HTMLElementEventMap>(element: HTMLElement, run: () => void, ...eventTypes: K[]) {
-        for (const type of eventTypes) {
-            this.addAction(element, { type, run });
-        }
-    }
-
-    protected addKeyboardAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, action: EventAction<'keydown'>, ...eventTypes: K[]): void {
-        this.addAction(element, action);
-        this.addActions(element, action.run.bind(action), ...eventTypes);
-    }
-
-    protected addEscAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, run: () => void, ...additionalEventTypes: K[]): void {
-        this.addKeyboardAction(element, {
-            type: 'keydown',
-            run,
-            isActive: e => this.isEsc(e)
-        }, ...additionalEventTypes);
-    }
-
-    protected addEnterAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, run: () => void, ...additionalEventTypes: K[]): void {
-        this.addKeyboardAction(element, {
-            type: 'keydown',
-            run,
-            isActive: e => this.isEnter(e)
-        }, ...additionalEventTypes);
-    }
-
-    protected isEnter(e: KeyboardEvent): boolean {
-        if ('key' in e) {
-            return e.key === 'Enter';
-        }
-        return e.keyCode === 13;
-    }
-
-    protected isEsc(e: KeyboardEvent): boolean {
-        if ('key' in e) {
-            return e.key === 'Escape' || e.key === 'Esc';
-        }
-        return e.keyCode === 27;
-    }
-
-}
-
-export interface EventAction<K extends keyof HTMLElementEventMap> {
-    readonly type: K;
-    run(): void;
-    isActive?(e: HTMLElementEventMap[K]): boolean;
 }
 
 export function setEnabled(element: HTMLElement, enabled: boolean): void {
@@ -135,4 +73,38 @@ export function createIconButton(...classNames: string[]): HTMLSpanElement {
     button.tabIndex = 0;
     button.appendChild(icon);
     return button;
+}
+
+export type EventListener<K extends keyof HTMLElementEventMap> = (this: HTMLElement, event: HTMLElementEventMap[K]) => any;
+export interface EventListenerObject<K extends keyof HTMLElementEventMap> {
+    handleEvent(evt: HTMLElementEventMap[K]): void;
+}
+export type EventListenerOrEventListenerObject<K extends keyof HTMLElementEventMap> = EventListener<K> | EventListenerObject<K>;
+export function addEventListener<K extends keyof HTMLElementEventMap>(
+    element: HTMLElement, type: K, listener: EventListenerOrEventListenerObject<K>, useCapture?: boolean
+): Disposable {
+    element.addEventListener(type, listener, useCapture);
+    return Disposable.create(() =>
+        element.removeEventListener(type, listener)
+    );
+}
+
+export function addKeyListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, keybinding: Key, action: () => void, ...additionalEventTypes: K[]): Disposable {
+    const toDispose = new DisposableCollection();
+    const keyCode = KeyCode.createKeyCode({ first: keybinding });
+    toDispose.push(addEventListener(element, 'keydown', e => {
+        if (KeyCode.createKeyCode(e).equals(keyCode)) {
+            action();
+            e.stopPropagation();
+            e.preventDefault();
+        }
+    }));
+    for (const type of additionalEventTypes) {
+        toDispose.push(addEventListener(element, type, e => {
+            action();
+            e.stopPropagation();
+            e.preventDefault();
+        }));
+    }
+    return toDispose;
 }

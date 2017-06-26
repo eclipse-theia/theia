@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import { Message } from '@phosphor/messaging';
-import { Disposable } from "../../../application/common";
+import { Disposable, Key } from "../../../application/common";
 import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget } from "../../../application/browser";
 import { LocationListRenderer, FileStatNode } from '../../../filesystem/browser';
 import { FileDialogModel } from './file-dialog-model';
@@ -84,8 +84,8 @@ export class FileDialog extends AbstractDialog<Readonly<FileStatNode> | undefine
         controlPanel.appendChild(this.createCloseButton('Cancel'));
         controlPanel.appendChild(this.createAcceptButton('Open'));
 
-        this.addEnterAction(this.back, () => this.model.navigateBackward(), 'click');
-        this.addEnterAction(this.forward, () => this.model.navigateForward(), 'click');
+        this.addKeyListener(this.back, Key.ENTER, () => this.model.navigateBackward(), 'click');
+        this.addKeyListener(this.forward, Key.ENTER, () => this.model.navigateForward(), 'click');
         super.onAfterAttach(msg);
     }
 

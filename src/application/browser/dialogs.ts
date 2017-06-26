@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Disposable } from "../common";
+import { Disposable, Key } from "../common";
 import { Widget, BaseWidget, Message } from './widgets';
 
 @injectable()
@@ -89,13 +89,8 @@ export abstract class AbstractDialog<T> extends BaseWidget {
             this.addAcceptAction(this.acceptButton, 'click');
         }
         this.addCloseAction(this.closeCrossNode, 'click');
-        this.addEventListener(document.body, 'keydown', e => {
-            if (this.isEsc(e)) {
-                this.close();
-            } else if (this.isEnter(e)) {
-                this.accept();
-            }
-        });
+        this.addKeyListener(document.body, Key.ESCAPE, () => this.close());
+        this.addKeyListener(document.body, Key.ENTER, () => this.accept());
     }
 
     protected onActivateRequest(msg: Message): void {
@@ -154,11 +149,11 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     }
 
     protected addCloseAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
-        this.addEscAction(element, () => this.close(), ...additionalEventTypes);
+        this.addKeyListener(element, Key.ESCAPE, () => this.close(), ...additionalEventTypes);
     }
 
     protected addAcceptAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
-        this.addEnterAction(element, () => this.accept(), ...additionalEventTypes);
+        this.addKeyListener(element, Key.ENTER, () => this.accept(), ...additionalEventTypes);
     }
 
 }

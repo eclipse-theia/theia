@@ -9,7 +9,7 @@ import { injectable, inject } from "inversify";
 import { Message } from "@phosphor/messaging";
 import { ElementExt } from "@phosphor/domutils";
 import { h, ElementAttrs, ElementInlineStyle } from "@phosphor/virtualdom";
-import { Disposable } from "../../../application/common";
+import { Disposable, Key } from "../../../application/common";
 import { ContextMenuRenderer, VirtualWidget, VirtualRenderer, SELECTED_CLASS, COLLAPSED_CLASS } from "../../../application/browser";
 import { ITreeNode, ICompositeTreeNode } from "./tree";
 import { ITreeModel } from "./tree-model";
@@ -55,7 +55,7 @@ export const defaultTreeProps: TreeProps = {
 }
 
 @injectable()
-export class TreeWidget extends VirtualWidget implements EventListenerObject {
+export class TreeWidget extends VirtualWidget {
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -225,48 +225,37 @@ export class TreeWidget extends VirtualWidget implements EventListenerObject {
 
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        this.addEventListener(this.node, 'keydown', this);
-        this.addEventListener(this.node, 'contextmenu', this);
-        this.addEventListener(this.node, 'click', this);
+        this.addKeyListener(this.node, Key.ARROW_LEFT, () => this.handleLeft());
+        this.addKeyListener(this.node, Key.ARROW_RIGHT, () => this.handleRight());
+        this.addKeyListener(this.node, Key.ARROW_UP, () => this.handleUp());
+        this.addKeyListener(this.node, Key.ARROW_DOWN, () => this.handleDown());
+        this.addKeyListener(this.node, Key.ENTER, () => this.handleEnter());
+        this.addEventListener(this.node, 'contextmenu', e => this.handleContextMenuEvent(this.model.root, e));
+        this.addEventListener(this.node, 'click', e => this.handleClickEvent(this.model.root, e));
     }
 
-    handleEvent(event: Event): void {
-        if (event.type === 'contextmenu') {
-            this.handleContextMenuEvent(this.model.root, event as PointerEvent);
-        } else if (event.type === 'keydown' && this.handleKeyDownEvent(event as KeyboardEvent)) {
-            event.stopPropagation();
-            event.preventDefault();
-        } else if (event.type === 'click') {
-            this.handleClickEvent(this.model.root, event as MouseEvent);
+    protected handleLeft(): void {
+        if (!this.model.collapseNode()) {
+            this.model.selectParent();
         }
     }
 
-    protected handleKeyDownEvent(event: KeyboardEvent): boolean {
-        if (event.keyCode === 37) { // Left Arrow
-            if (!this.model.collapseNode()) {
-                this.model.selectParent();
-            }
-            return true;
-        }
-        if (event.keyCode === 38) { // Up Arrow
-            this.model.selectPrevNode();
-            return true;
-        }
-        if (event.keyCode === 39) { // Right Arrow
-            if (!this.model.expandNode()) {
-                this.model.selectNextNode();
-            }
-            return true;
-        }
-        if (event.keyCode === 40) { // Down Arrow
+    protected handleRight(): void {
+        if (!this.model.expandNode()) {
             this.model.selectNextNode();
-            return true;
         }
-        if (this.isEnter(event)) {
-            this.model.openNode();
-            return true;
-        }
-        return false;
+    }
+
+    protected handleUp(): void {
+        this.model.selectPrevNode();
+    }
+
+    protected handleDown(): void {
+        this.model.selectNextNode();
+    }
+
+    protected handleEnter(): void {
+        this.model.openNode();
     }
 
     protected handleClickEvent(node: ITreeNode | undefined, event: MouseEvent): void {
