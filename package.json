@@ -117,5 +117,14 @@
   "bugs": {
     "url": "https://github.com/theia-ide/theia/issues"
   },
-  "homepage": "https://github.com/theia-ide/theia"
+  "homepage": "https://github.com/theia-ide/theia",
+  "backendModules": {
+    "fileSystemBackendModule": "lib/filesystem/node",
+    "workspaceBackendModule": "lib/workspace/node",
+    "terminalBackendModule": "lib/terminal/node",
+    "languagesBackendModule": "lib/languages/node",
+    "javaBackendModule": "lib/java/node",
+    "pythonBackendModule": "lib/python/node",
+    "cppBackendModule": "lib/cpp/node"
+  }
 }
