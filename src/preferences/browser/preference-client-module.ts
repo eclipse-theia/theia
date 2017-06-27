@@ -6,7 +6,7 @@
  */
 
 import { ContainerModule, } from 'inversify';
-import { IPreferenceServer } from '../common/preference-server'
+import { IPreferenceServer } from '../node/preference-server'
 import { IPreferenceService, PreferenceService } from '../common/preference-service'
 import { WebSocketConnectionProvider } from '../../messaging/browser/connection';
 

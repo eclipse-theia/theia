@@ -8,9 +8,9 @@
 import { ContainerModule, } from 'inversify';
 import { ConnectionHandler } from '../../messaging/common';
 import { JsonRpcProxyFactory } from '../../messaging/common/proxy-factory';
-import { IPreferenceServer } from '../common/preference-server'
-import { JsonPreferenceServer, PreferencePath } from '../common/json-preference-server'
-import { IPreferenceClient } from '../common/preference-service'
+import { IPreferenceServer } from './preference-server'
+import { JsonPreferenceServer, PreferencePath } from './json-preference-server'
+import { IPreferenceClient } from '../common/preference-protocol'
 
 export const preferenceServerModule = new ContainerModule(bind => {
     bind(IPreferenceServer).to(JsonPreferenceServer).inSingletonScope();

@@ -9,8 +9,8 @@ import { inject, injectable } from 'inversify';
 import URI from '../../application/common/uri';
 import { FileSystem, FileChangesEvent } from '../../filesystem/common/filesystem';
 import { FileSystemWatcher } from '../../filesystem/common/filesystem-watcher'
-import { IPreferenceClient } from './preference-service'
-import { PreferenceChangedEvent } from './preference-event'
+import { IPreferenceClient } from '../common/preference-protocol'
+import { PreferenceChangedEvent } from '../common/preference-event'
 import { IPreferenceServer } from './preference-server'
 import * as coreutils from "@phosphor/coreutils";
 

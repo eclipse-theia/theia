@@ -6,7 +6,7 @@
  */
 
 import { PreferenceService } from './preference-service';
-import { IPreferenceServer } from './preference-server'
+import { IPreferenceServer } from '../node/preference-server'
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 
