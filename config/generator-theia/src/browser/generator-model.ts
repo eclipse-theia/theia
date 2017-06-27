@@ -13,6 +13,8 @@ export interface Modules {
 
 export interface ModulesOwner {
     frontendModules?: Modules;
+    browserFrontendModules?: Modules;
+    electronFrontendModules?: Modules;
     backendModules?: Modules;
 }
 
@@ -39,6 +41,8 @@ export class Model {
 
     protected _frontendModules: Map<string, string> | undefined;
     protected _backendModules: Map<string, string> | undefined;
+    protected _browserFrontendModules: Map<string, string> | undefined;
+    protected _electronFrontendModules: Map<string, string> | undefined;
     protected readonly extensionPackages = new Map<string, ExtensionPackage>();
 
     get allExtensions(): string[] {
@@ -82,6 +86,20 @@ export class Model {
             this._frontendModules = this.computeModules('frontendModules');
         }
         return this._frontendModules;
+    }
+
+    get browserFrontendModules(): Map<string, string> {
+        if (!this._browserFrontendModules) {
+            this._browserFrontendModules = this.computeModules('browserFrontendModules');
+        }
+        return this._browserFrontendModules;
+    }
+
+    get electronFrontendModules(): Map<string, string> {
+        if (!this._electronFrontendModules) {
+            this._electronFrontendModules = this.computeModules('electronFrontendModules');
+        }
+        return this._electronFrontendModules;
     }
 
     protected computeModules<K extends keyof ModulesOwner>(moduleKind: K): Map<string, string> {
