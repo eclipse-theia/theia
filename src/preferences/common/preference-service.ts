@@ -8,7 +8,8 @@
 import { inject, injectable } from 'inversify';
 import { Event, Emitter } from '../../application/common/event'
 import { PreferenceChangedEvent } from './preference-event'
-import { IPreferenceServer } from './preference-server'
+import { IPreferenceServer } from '../node/preference-server'
+import { IPreferenceClient } from './preference-protocol'
 
 export const IPreferenceService = Symbol("IPreferenceService")
 
@@ -36,9 +37,7 @@ export interface IPreferenceService {
 
 }
 
-export interface IPreferenceClient {
-    onDidChangePreference(event: PreferenceChangedEvent): void
-}
+
 
 export class PreferenceService implements IPreferenceService, IPreferenceClient {
 

@@ -5,7 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export * from './preference-event';
-export * from './preference-protocol';
-export * from './preference-service';
+import { PreferenceChangedEvent } from './preference-event'
 
+export interface IPreferenceClient {
+    onDidChangePreference(event: PreferenceChangedEvent): void
+}

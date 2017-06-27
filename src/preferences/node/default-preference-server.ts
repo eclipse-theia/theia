@@ -27,15 +27,28 @@ export interface PreferenceContribution {
 
 export class DefaultPreferenceServer implements IPreferenceServer {
 
+    defaultPrefs: Map<string, any>;
+
     constructor( @inject(ContributionProvider) @named(PreferenceContribution) protected readonly defaultProviders: ContributionProvider<PreferenceContribution>) {
-        const contributions: PreferenceContribution = defaultProviders.getContributions();
+        const prefContributions: PreferenceContribution[] = defaultProviders.getContributions();
+
+        for (let prefContribution of prefContributions) {
+            for (let preference of prefContribution.preferences) {
+                this.defaultPrefs.set(preference.name, preference);
+            }
+        }
     }
 
     has(preferenceName: string): Promise<boolean> {
-
+        if (this.defaultPrefs.has(preferenceName)) {
+            return Promise.resolve(true);
+        }
+        return Promise.resolve(false);
     }
 
     get<T>(preferenceName: string): Promise<T | undefined> {
+        let pref = this.defaultPrefs.get(preferenceName)
 
+        return Promise.resolve(!!pref ? pref : undefined);
     }
 }
