@@ -41,10 +41,10 @@ export class JsonPreferenceServer implements IPreferenceServer {
      * Checks to see if the preference file was modified
      */
     protected arePreferencesAffected(event: FileChangesEvent): boolean {
+        const outerThis = this;
         return event.changes.some(c => {
-            return (c.uri === this.preferencePath.toString() && c.type === FileChangeType.UPDATED);
-        }
-        )
+            return (c.uri.substring(7) === outerThis.preferencePath.toString() && c.type === FileChangeType.UPDATED);
+        })
     }
 
     /**

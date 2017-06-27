@@ -15,6 +15,7 @@ export const IPreferenceServer = Symbol("IPreferenceServer")
 export interface IPreferenceServer {
     has(preferenceName: string): Promise<boolean>;
     get<T>(preferenceName: string): Promise<T | undefined>;
+    setClient(client: IPreferenceClient | undefined): void;
 }
 
 export interface IPreferenceClient {
