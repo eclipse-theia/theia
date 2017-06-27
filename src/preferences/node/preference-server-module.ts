@@ -6,11 +6,9 @@
  */
 
 import { ContainerModule, } from 'inversify';
-import { ConnectionHandler } from '../../messaging/common';
-import { JsonRpcProxyFactory } from '../../messaging/common/proxy-factory';
+import { ConnectionHandler, JsonRpcConnectionHandler } from '../../messaging/common';
 import { IPreferenceServer, IPreferenceClient } from '../common/preference-protocol'
 import { DefaultPreferenceServer } from '../node/default-preference-server'
-import { getRootDir } from '../../filesystem/node/filesystem-server-module'
 import { CompoundPreferenceServer } from '../common/compound-preference-server'
 import { JsonPreferenceServer, PreferencePath } from './json-preference-server'
 import { FileUri } from "../../application/node/file-uri";
@@ -26,17 +24,7 @@ export const preferenceServerModule = new ContainerModule(bind => {
     bind(WorkspacePreferenceServer).to(JsonPreferenceServer).inSingletonScope();
     bind(UserPreferenceServer).to(JsonPreferenceServer).inSingletonScope();
 
-    // bind(JsonPreferenceServer).to(WorkspacePreferenceServer).inSingletonScope();
-    // bind(PreferencePath).toConstantValue(path.join('.theia', 'prefs.json')).whenInjectedInto(WorkspacePreferenceServer.toString());
-    // const userHome = ".default"; // FIXME
-    // bind(PreferencePath).toConstantValue(path.join(userHome, '.theia', 'prefs.json')).whenInjectedInto(UserPreferenceServer.toString());
-    // const home = ctx.container.get(FileSystemNode);
-
-    const root = getRootDir();
-    if (root) {
-        bind(PreferencePath).toConstantValue(FileUri.create(path.resolve(root, '.theia', 'prefs.json')));
-    }
-
+    bind(PreferencePath).toConstantValue(FileUri.create(path.resolve('.theia', 'prefs.json')));
     bind(IPreferenceServer).toDynamicValue(ctx => {
         const defaultServer = ctx.container.get(DefaultPreferenceServer);
         const userServer = ctx.container.get<IPreferenceServer>(UserPreferenceServer);
@@ -45,7 +33,7 @@ export const preferenceServerModule = new ContainerModule(bind => {
 
     }).inSingletonScope();
 
-    bind<ConnectionHandler>(ConnectionHandler).toDynamicValue(ctx => {
+    bind(ConnectionHandler).toDynamicValue(ctx => {
         let clients: IPreferenceClient[] = []
         const prefServer = ctx.container.get<IPreferenceServer>(IPreferenceServer);
 
@@ -57,17 +45,9 @@ export const preferenceServerModule = new ContainerModule(bind => {
             }
         })
 
-        return {
-            path: "/preferences",
-            onConnection(connection) {
-                const proxyFactory = new JsonRpcProxyFactory<IPreferenceClient>("/preferences", prefServer)
-                proxyFactory.onConnection(connection)
-                const client = proxyFactory.createProxy()
-                clients.push(client)
-                connection.onDispose(() => {
-                    clients = clients.filter(e => e !== client)
-                })
-            }
-        }
-    })
+        return new JsonRpcConnectionHandler<IPreferenceClient>("preferences", client => {
+            const prefServer = ctx.container.get(IPreferenceServer);
+            return prefServer;
+        })
+    }).inSingletonScope()
 });
