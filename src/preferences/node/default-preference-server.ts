@@ -6,9 +6,9 @@
  */
 
 import { ContributionProvider } from '../../application/common/contribution-provider'
-import { IPreferenceServer } from './preference-server'
+import { IPreferenceServer } from '../common/preference-protocol'
 
-import { inject, named } from 'inversify'
+import { inject, injectable, named } from 'inversify'
 
 
 export const PreferenceContribution = Symbol("PreferenceContribution");
@@ -24,16 +24,16 @@ export interface PreferenceContribution {
     readonly preferences: Preference[]
 }
 
-
+@injectable()
 export class DefaultPreferenceServer implements IPreferenceServer {
 
-    defaultPrefs: Map<string, any> = new Map<string, any>();
+    protected readonly defaultPrefs: Map<string, any> = new Map<string, any>();
 
     constructor( @inject(ContributionProvider) @named(PreferenceContribution) protected readonly defaultProviders: ContributionProvider<PreferenceContribution>) {
         const prefContributions: PreferenceContribution[] = defaultProviders.getContributions();
 
-        for (let prefContribution of prefContributions) {
-            for (let preference of prefContribution.preferences) {
+        for (const prefContribution of prefContributions) {
+            for (const preference of prefContribution.preferences) {
                 this.defaultPrefs.set(preference.name, preference);
             }
         }

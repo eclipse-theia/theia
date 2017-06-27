@@ -8,7 +8,7 @@
 import { ContainerModule, } from 'inversify';
 import { ConnectionHandler } from '../../messaging/common';
 import { JsonRpcProxyFactory } from '../../messaging/common/proxy-factory';
-import { IPreferenceServer } from './preference-server'
+import { IPreferenceServer } from '../common/preference-protocol'
 import { JsonPreferenceServer, PreferencePath } from './json-preference-server'
 import { IPreferenceClient } from '../common/preference-protocol'
 

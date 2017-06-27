@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { IPreferenceServer } from './preference-server'
+import { IPreferenceServer } from '../common/preference-protocol'
 import { DefaultPreferenceServer, PreferenceContribution, Preference } from './default-preference-server'
 import { ContributionProvider } from '../../application/common/contribution-provider'
 import * as chai from 'chai';
