@@ -68,7 +68,7 @@ export class PreferenceService implements IPreferenceService, IPreferenceClient 
     }
 
     getBoolean(preferenceName: string, defaultValue?: boolean): Promise<boolean | undefined> {
-        return this.server.get(preferenceName).then(result => result !== undefined ? !!result : (defaultValue ? defaultValue : undefined));
+        return this.server.get(preferenceName).then(result => result !== undefined ? !!result : (defaultValue !== undefined ? defaultValue : undefined));
     }
 
     getString(preferenceName: string, defaultValue?: string): Promise<string | undefined> {
@@ -88,7 +88,8 @@ export class PreferenceService implements IPreferenceService, IPreferenceClient 
         return this.server.get(preferenceName).then(result => {
             if (result !== undefined) {
                 if (typeof result !== "number") {
-                    return parseInt(result.toString(), 10);
+                    const value = Number(result);
+                    return value === value ? value : undefined; // NaN test
                 } else {
                     return result;
                 }
