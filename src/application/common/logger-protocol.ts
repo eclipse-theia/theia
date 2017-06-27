@@ -7,6 +7,8 @@
 
 export const ILoggerServer = Symbol('ILoggerServer');
 
+export const loggerPath = '/services/logger';
+
 export interface ILoggerServer {
     setClient(client: ILoggerClient | undefined): void;
     setLogLevel(id: number, logLevel: number): Promise<void>;

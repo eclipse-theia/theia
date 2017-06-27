@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export const workspacePath = '/workspace';
+export const workspacePath = '/services/workspace';
 
 /**
  * The JSON-RPC workspace interface.

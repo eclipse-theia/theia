@@ -6,7 +6,7 @@
  */
 import { ContainerModule, Container } from 'inversify';
 import { ILogger, LoggerFactory, LoggerOptions, Logger } from '../common/logger';
-import { ILoggerServer, ILoggerClient } from '../common/logger-protocol';
+import { ILoggerServer, ILoggerClient, loggerPath } from '../common/logger-protocol';
 import { BunyanLoggerServer } from './logger-server';
 import { LoggerWatcher } from '../common/logger-watcher';
 import { ConnectionHandler, JsonRpcConnectionHandler } from "../../messaging/common";
@@ -26,7 +26,7 @@ export const loggerBackendModule = new ContainerModule(bind => {
     );
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<ILoggerClient>("/logger", client => {
+        new JsonRpcConnectionHandler<ILoggerClient>(loggerPath, client => {
             const loggerServer = ctx.container.get<ILoggerServer>(ILoggerServer);
             loggerServer.setClient(client);
             return loggerServer;

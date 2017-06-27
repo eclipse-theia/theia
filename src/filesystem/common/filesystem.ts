@@ -7,7 +7,7 @@
 
 import { Disposable } from '../../application/common';
 
-export const fileSystemPath = '/filesystem';
+export const fileSystemPath = '/services/filesystem';
 
 export const FileSystem = Symbol("FileSystem");
 

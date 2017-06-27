@@ -4,31 +4,10 @@ const path = require("path");
 module.exports = require("../../config/webpack/webpack.config")(__dirname, {
     devServer: {
         proxy: {
-            '/filesystem/*': {
+            '/services/*': {
                 target: 'ws://localhost:3000',
                 ws: true
             },
-            '/fs-watcher/*': {
-                target: 'ws://localhost:3000',
-                ws: true
-            },
-            '/workspace/*': {
-                target: 'ws://localhost:3000',
-                ws: true
-            },
-            '/languages/*': {
-                target: 'ws://localhost:3000',
-                ws: true
-            },
-            '/terminals/*': {
-                target: 'ws://localhost:3000',
-                ws: true
-            },
-            '/logger/*': {
-                target: 'ws://localhost:3000',
-                ws: true
-            },
-
             '*': 'http://localhost:3000'
         },
         historyApiFallback: true,

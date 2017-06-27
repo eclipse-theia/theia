@@ -7,8 +7,8 @@
 
 import { ContainerModule, Container } from 'inversify';
 import { WebSocketConnectionProvider } from '../../messaging/browser/connection';
-import { ILogger, LoggerFactory, LoggerOptions, Logger } from '../common/logger';
-import { ILoggerServer } from '../common/logger-protocol';
+import { ILogger, Logger, LoggerFactory, LoggerOptions } from '../common/logger';
+import { ILoggerServer, loggerPath } from '../common/logger-protocol';
 import { LoggerWatcher } from '../common/logger-watcher';
 
 export const loggerFrontendModule = new ContainerModule(bind => {
@@ -17,7 +17,7 @@ export const loggerFrontendModule = new ContainerModule(bind => {
     bind(ILoggerServer).toDynamicValue(ctx => {
         const loggerWatcher = ctx.container.get(LoggerWatcher);
         const connection = ctx.container.get(WebSocketConnectionProvider);
-        return connection.createProxy<ILoggerServer>("/logger", loggerWatcher.getLoggerClient());
+        return connection.createProxy<ILoggerServer>(loggerPath, loggerWatcher.getLoggerClient());
     }).inSingletonScope();
     bind(LoggerFactory).toFactory(ctx =>
         (options?: any) => {

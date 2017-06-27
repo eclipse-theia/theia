@@ -33,7 +33,7 @@ class TerminalExpressContribution implements BackendApplicationContribution {
     }
 
     configure(app: express.Application): void {
-        app.post('/terminals', bodyParser.json({ type: 'application/json' }), (req, res) => {
+        app.post('/services/terminals', bodyParser.json({ type: 'application/json' }), (req, res) => {
             const cols = parseInt(req.query.cols, 10);
             const rows = parseInt(req.query.rows, 10);
             const term = pty.spawn(this.getShellExecutablePath(), [], {
@@ -56,7 +56,7 @@ class TerminalExpressContribution implements BackendApplicationContribution {
             res.end();
         });
 
-        app.post('/terminals/:pid/size', (req, res) => {
+        app.post('/services/terminals/:pid/size', (req, res) => {
             let pid = parseInt(req.params.pid, 10),
                 cols = parseInt(req.query.cols, 10),
                 rows = parseInt(req.query.rows, 10),
@@ -75,7 +75,7 @@ class TerminalExpressContribution implements BackendApplicationContribution {
             server,
             matches: (request) => {
                 const uri = new URI(request.url!)
-                return uri.path.toString().startsWith('/terminals/')
+                return uri.path.toString().startsWith('/services/terminals/')
             }
         }, (ws, request) => {
             const uri = new URI(request.url!)
