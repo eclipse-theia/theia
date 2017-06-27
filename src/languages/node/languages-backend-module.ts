@@ -11,7 +11,7 @@ import { BackendApplicationContribution } from '../../application/node';
 import { LanguagesBackendContribution } from "./languages-backend-contribution";
 import { LanguageServerContribution } from "./language-server-contribution";
 
-export const backendLanguagesModule = new ContainerModule(bind => {
+export const languagesBackendModule = new ContainerModule(bind => {
     bind(BackendApplicationContribution).to(LanguagesBackendContribution).inSingletonScope();
     bindContributionProvider(bind, LanguageServerContribution);
 });

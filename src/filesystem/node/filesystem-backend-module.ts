@@ -12,7 +12,7 @@ import { FileSystemWatcher, FileSystem, fileSystemPath, FileSystemWatcherClientL
 import { FileSystemWatcherServer, FileSystemWatcherClient, fileSystemWatcherPath } from '../common/filesystem-watcher-protocol';
 import { ChokidarFileSystemWatcherServer } from './chokidar-filesystem-watcher';
 
-export const fileSystemServerModule = new ContainerModule(bind => {
+export const fileSystemBackendModule = new ContainerModule(bind => {
     bind(FileSystemNode).toSelf().inSingletonScope();
     bind(FileSystem).toDynamicValue(ctx => ctx.container.get(FileSystemNode)).inSingletonScope();
 

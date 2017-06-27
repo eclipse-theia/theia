@@ -6,4 +6,4 @@
  */
 
 export * from './connection';
-export * from './messaging-module';
+export * from './messaging-backend-module';
