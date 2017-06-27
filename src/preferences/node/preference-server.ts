@@ -24,31 +24,22 @@ export class PreferenceServer implements IPreferenceServer {
     }
 
     has(preferenceName: string): Promise<boolean> {
-        const hasJsonPref = this.jsonPrefServer.has(preferenceName);
-        const hasDefaultPref = this.defaultPrefServer.has(preferenceName);
-
-        return Promise.all([hasJsonPref, hasDefaultPref]).then((values) => {
-            for (let value of values) {
-                if (value) {
-                    return Promise.resolve(true);
-                }
+        return this.jsonPrefServer.has(preferenceName).then((prefExists) => {
+            if (prefExists) {
+                return Promise.resolve(true);
+            } else {
+                return this.defaultPrefServer.has(preferenceName);
             }
-            return Promise.resolve(false);
         });
     }
 
     get<T>(preferenceName: string): Promise<T | undefined> {
-        const hasJsonPref = this.jsonPrefServer.get(preferenceName);
-        const hasDefaultPref = this.defaultPrefServer.get(preferenceName);
-
-        return Promise.all([hasJsonPref, hasDefaultPref]).then((values) => {
-
-            if (values[0] !== undefined) { // The pref in JSON
-                return Promise.resolve(values[0]);
-            } else if (values[1] !== undefined) { // The default pref
-                return Promise.resolve(values[1]);
+        return this.jsonPrefServer.get<T>(preferenceName).then((pref) => {
+            if (pref) {
+                return Promise.resolve(pref);
+            } else {
+                return this.defaultPrefServer.get<T>(preferenceName);
             }
-            return Promise.resolve(undefined); // Pref doesn't exist in JSON nor is contributed to the defaults
         });
     }
 }

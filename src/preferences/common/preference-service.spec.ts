@@ -12,20 +12,38 @@ import * as chaiAsPromised from 'chai-as-promised';
 
 class PreferenceServerStub implements IPreferenceServer {
     has(preferenceName: string): Promise<boolean> {
-        return new Promise(() => {
-        })
+        switch (preferenceName) {
+            case ("prefExists"): {
+                return Promise.resolve(true);
+            }
+            default: {
+                return Promise.resolve(false);
+            }
+        }
     }
 
     get<T>(preferenceName: string): Promise<T | undefined> {
         switch (preferenceName) {
-            case ("testNumber"): {
-                return Promise.resolve(<any>1);
+            case ("testString1"): {
+                return Promise.resolve(<any>"1");
             }
-            case ("testBoolean"): {
-                return Promise.resolve(<any>true);
+            case ("testNumber0"): {
+                return Promise.resolve(<any>0);
+            }
+            case ("testStringEmpty"): {
+                return Promise.resolve(<any>"");
+            }
+            case ("testStringTrue"): {
+                return Promise.resolve(<any>"true");
             }
             case ("testString"): {
                 return Promise.resolve(<any>"string");
+            }
+            case ("testBooleanTrue"): {
+                return Promise.resolve(<any>true);
+            }
+            case ("testNumber1"): {
+                return Promise.resolve(<any>1);
             }
             default:
                 return Promise.resolve(undefined);
@@ -45,51 +63,82 @@ before(() => {
 
     prefStub = new PreferenceServerStub();
     prefService = new PreferenceService(prefStub);
-
-
 });
 
-after(() => {
-});
+describe('preference-service  (simplified api)', () => {
+    let valNumber: number | undefined, valBoolean: boolean | undefined, valString: string | undefined;
 
-// class FileWatcherStub extends FileSystemWatcher {
-//     getFileSystemClient(): FileSystemClient {
-//         const emitter = this.onFileChangesEmitter
-//         return {
-//             onFileChanges(event: FileChangesEvent) {
-//                 emitter.fire(event)
-//             }
-//         }
-//     }
 
-//     private onFileChangesEmitter = new Emitter<FileChangesEvent>();
+    it('should get the has() from the server', async () => {
+        let hasValue = await prefService.has("prefExists");
+        expect(hasValue).to.be.true;
 
-//     get onFileChanges(): Event<FileChangesEvent> {
-//         return this.onFileChangesEmitter.event;
-//     }
-// }
-
-describe('preference-service', () => {
-    describe('01 #getNumber', () => {
-        it('should return true for the has preference', () => {
-            // return expect(prefServer.has("lineNumbers")).to.eventually.equal(true);
-            return expect(prefService.getNumber("testNumber")).to.eventually.equal(1);
-        });
-
-        // it('should return false for the has preference', () => {
-        //     return expect(prefServer.has("nonExistingPref")).to.eventually.equal(false);
-        // });
+        hasValue = await prefService.has("doesNotExist");
+        expect(hasValue).to.be.false;
     });
 
-    // describe('02 #get preference', () => {
-    //     it('should get the value for the preference', () => {
-    //         return expect(prefServer.get("lineNumbers")).is.eventually.equal("on");
-    //     });
+    it('should return the correct values without casting', async () => {
+        valBoolean = await prefService.getBoolean("testBooleanTrue");
+        expect(valBoolean).to.be.true;
 
-    //     it('should get no value for unknown preference', () => {
-    //         return expect(prefServer.get("unknownPreference")).is.eventually.equal(undefined);
-    //     });
-    // })
+        valString = await prefService.getString("testString");
+        expect(valString).to.be.equal("string");
 
+        valNumber = await prefService.getNumber("testNumber1");
+        expect(valNumber).to.be.equal(1);
+    });
 
+    it('should return correct values when casting to other types', async () => {
+        // should return true for a non-empty string
+        valBoolean = await prefService.getBoolean("testString");
+        expect(valBoolean).to.be.true;
+
+        // should return false for an empty string
+        valBoolean = await prefService.getBoolean("testStringEmpty");
+        expect(valBoolean).to.be.false;
+
+        // should return true for an non-zero number
+        valBoolean = await prefService.getBoolean("testString1");
+        expect(valBoolean).to.be.true;
+
+        // should return false for an zero number
+        valBoolean = await prefService.getBoolean("testNumber0");
+        expect(valBoolean).to.be.false;
+
+        // should return true value as a "true" string
+        valString = await prefService.getString("testBooleanTrue")
+        expect(valString).to.be.equal("true");
+
+        // should return undefined for a NaN
+        valNumber = await prefService.getNumber("testString");
+        expect(valNumber).to.be.undefined;
+    })
+
+    it('should return undefined when wrong value and no default value supplied', async () => {
+        // should return undefined for a non-existing boolean key
+        valBoolean = await prefService.getBoolean("doesntExist");
+        expect(valBoolean).to.be.undefined;
+
+        // should return undefined for a non-existing string key
+        valString = await prefService.getString("doesntExist");
+        expect(valBoolean).to.be.undefined;
+
+        // should return undefined for a non-existing number key
+        valNumber = await prefService.getNumber("doesntExist");
+        expect(valNumber).to.be.undefined;
+    });
+
+    it('should return the default values', async () => {
+        // should return the default value for a boolean
+        valBoolean = await prefService.getBoolean("doesntExist", true);
+        expect(valBoolean).to.be.true;
+
+        // should return the default value for a string
+        valString = await prefService.getString("doesntExist", "true");
+        expect(valString).to.be.equal("true");
+
+        // should return the default value for a number
+        valNumber = await prefService.getNumber("doesntExist", 57);
+        expect(valNumber).to.be.equal(57);
+    });
 });
