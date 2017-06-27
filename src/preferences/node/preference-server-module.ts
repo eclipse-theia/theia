@@ -8,18 +8,19 @@
 import { ContainerModule, } from 'inversify';
 import { ConnectionHandler } from '../../messaging/common';
 import { JsonRpcProxyFactory } from '../../messaging/common/proxy-factory';
-import { JsonPreferenceService, IPreferenceServer, PreferencePath } from '../common/preference-server'
+import { IPreferenceServer } from '../common/preference-server'
+import { JsonPreferenceServer, PreferencePath } from '../common/json-preference-server'
 import { IPreferenceClient } from '../common/preference-service'
 
 export const preferenceServerModule = new ContainerModule(bind => {
-    bind(IPreferenceServer).to(JsonPreferenceService).inSingletonScope();
+    bind(IPreferenceServer).to(JsonPreferenceServer).inSingletonScope();
     bind(PreferencePath).toConstantValue(".theia/prefs.json");
 
     bind<ConnectionHandler>(ConnectionHandler).toDynamicValue(ctx => {
         let clients: IPreferenceClient[] = [
             // Not sure what to have here...
         ]
-        const prefService = <JsonPreferenceService>ctx.container.get(IPreferenceServer);
+        const prefService = <JsonPreferenceServer>ctx.container.get(IPreferenceServer);
 
         prefService.setClient({
             onDidChangePreference(pref) {
