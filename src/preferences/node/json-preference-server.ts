@@ -7,7 +7,7 @@
 
 import { inject, injectable } from 'inversify';
 import URI from '../../application/common/uri';
-import { FileSystem, FileChangesEvent } from '../../filesystem/common/filesystem';
+import { FileSystem, FileChangesEvent, FileChangeType } from '../../filesystem/common/filesystem';
 import { FileSystemWatcher } from '../../filesystem/common/filesystem-watcher'
 import { IPreferenceClient } from '../common/preference-protocol'
 import { PreferenceChangedEvent } from '../common/preference-event'
@@ -21,23 +21,26 @@ export class JsonPreferenceServer implements IPreferenceServer {
 
     protected prefs: { [key: string]: any } | undefined; // Preferences cache
     protected client: IPreferenceClient | undefined;
-    protected readonly resolveUri: Promise<URI>;
+    // protected readonly resolveUri: Promise<URI>;
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
-        @inject(PreferencePath) protected readonly preferencePath: string) {
-        this.resolveUri = fileSystem.getWorkspaceRoot().
-            then(root =>
-                new URI(root.uri).appendPath(preferencePath)
-            );
+        @inject(PreferencePath) protected readonly preferencePath: URI) {
+        // this.resolveUri = fileSystem.getWorkspaceRoot().
+        //     then(root =>
+        //         new URI(root.uri).appendPath(preferencePath)
+        //     );
 
         watcher.onFileChanges(event => {
-            this.arePreferencesAffected(event).then((arePrefsAffected) => {
-                if (arePrefsAffected) {
-                    this.reconcilePreferences();
-                }
-            })
+            // this.arePreferencesAffected(event).then((arePrefsAffected) => {
+            //     if (arePrefsAffected) {
+            //         this.reconcilePreferences();
+            //     }
+            // })
+            if (this.arePreferencesAffected(event)) {
+                this.reconcilePreferences();
+            }
         });
 
         this.reconcilePreferences();
@@ -46,12 +49,26 @@ export class JsonPreferenceServer implements IPreferenceServer {
     /**
      * Checks to see if the preference file was modified
      */
-    protected arePreferencesAffected(event: FileChangesEvent): Promise<boolean> {
-        return this.resolveUri.then(uri =>
-            event.changes.some(c =>
-                c.uri === uri.toString()
-            )
-        );
+    protected arePreferencesAffected(event: FileChangesEvent): boolean {
+        // return this.resolveUri.then(uri =>
+        //     event.changes.some(c =>
+        //         c.uri === uri.toString() && c.type !== FileChangeType.DELETED
+        //     )
+        // );
+
+        for (const change of event.changes) {
+            console.log(change.uri);
+        }
+
+        return event.changes.some(c => {
+            // console.log(c.uri);
+            // console.log(this.preferencePath.toString());
+
+            return c.uri === this.preferencePath.toString() && c.type === FileChangeType.UPDATED
+        }
+        )
+
+        // return this.preferencePath === uri.toString() && c.type !== FileChangeType.DELETED
     }
 
     /**
@@ -59,11 +76,17 @@ export class JsonPreferenceServer implements IPreferenceServer {
      */
     protected reconcilePreferences(): void {
 
-        this.resolveUri.then((uri) => {
-            this.fileSystem.resolveContent(uri.toString()).then(({ stat, content }) => {
-                const newPrefs = JSON.parse(content) // Might need a custom parser because comments and whatnot?
-                this.notifyPreferences(newPrefs);
-            })
+        // this.resolveUri.then((uri) => {
+        //     this.fileSystem.resolveContent(uri.toString()).then(({ stat, content }) => {
+        //         const newPrefs = JSON.parse(content) // Might need a custom parser because comments and whatnot?
+        //         // TODO what do if the content of the file is not JSON-valid, delete current prefs and service resorts to defaults?
+        //         this.notifyPreferences(newPrefs);
+        //     })
+        // })
+        this.fileSystem.resolveContent(this.preferencePath.toString()).then(({ stat, content }) => {
+            const newPrefs = JSON.parse(content) // Might need a custom parser because comments and whatnot?
+            // TODO what do if the content of the file is not JSON-valid, delete current prefs and service resorts to defaults?
+            this.notifyPreferences(newPrefs);
         })
     }
 
