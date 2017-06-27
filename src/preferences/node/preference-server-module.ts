@@ -42,11 +42,14 @@ export const preferenceServerModule = new ContainerModule(bind => {
         const userServer = ctx.container.get<IPreferenceServer>(UserPreferenceServer);
         const workspaceServer = ctx.container.get<IPreferenceServer>(WorkspacePreferenceServer);
         return new CompoundPreferenceServer(defaultServer, userServer, workspaceServer);
+
     }).inSingletonScope();
 
     bind<ConnectionHandler>(ConnectionHandler).toDynamicValue(ctx => {
         let clients: IPreferenceClient[] = []
-        const prefServer = ctx.container.get<IPreferenceServer>(IPreferenceServer).setClient({
+        const prefServer = ctx.container.get<IPreferenceServer>(IPreferenceServer);
+
+        prefServer.setClient({
             onDidChangePreference(pref) {
                 for (let client of clients) {
                     client.onDidChangePreference(pref)
