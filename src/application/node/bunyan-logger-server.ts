@@ -5,17 +5,23 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import * as bunyan from 'bunyan';
+import * as yargs from 'yargs';
 import { injectable } from 'inversify';
 import { LogLevel } from '../../application/common/logger';
 import { ILoggerServer, ILoggerClient } from '../../application/common/logger-protocol';
-import * as Bunyan from 'bunyan';
-import * as Yargs from 'yargs';
+
+yargs.usage(`Usage main.js [--loglevel='trace','debug','info','warn','error','fatal']`)
+    .default('loglevel', 'info')
+    .describe('loglevel', 'Sets the log level')
+    .help()
+    .argv;
 
 @injectable()
 export class BunyanLoggerServer implements ILoggerServer {
 
     /* Root logger and all child logger array.  */
-    private loggers: Bunyan[] = [];
+    private loggers: bunyan[] = [];
 
     /* Logger client to send notifications to.  */
     private client: ILoggerClient | undefined = undefined;
@@ -27,17 +33,17 @@ export class BunyanLoggerServer implements ILoggerServer {
     private readonly rootLoggerId = 1;
 
     constructor() {
-	/* This is a workaround to a bug in json-rpc sending 0 is actually
-	 * sending null rather than the number 0. In effect this starts
-	 * the loggers indexes at 1. */
+        /* This is a workaround to a bug in json-rpc sending 0 is actually
+         * sending null rather than the number 0. In effect this starts
+         * the loggers indexes at 1. */
         this.loggers.push({} as any);
 
-        let logLevel = Yargs.argv.loglevel;
+        let logLevel = yargs.argv.loglevel;
         if (['trace', 'debug', 'info', 'warn', 'error', 'fatal'].indexOf(logLevel) < 0) {
             logLevel = 'info';
         }
 
-        this.loggers.push(Bunyan.createLogger({
+        this.loggers.push(bunyan.createLogger({
             name: 'Theia',
             level: logLevel
         }));
@@ -106,19 +112,19 @@ export class BunyanLoggerServer implements ILoggerServer {
     private toBunyanLevel(logLevel: number): number {
         switch (logLevel) {
             case LogLevel.FATAL:
-                return Bunyan.FATAL;
+                return bunyan.FATAL;
             case LogLevel.ERROR:
-                return Bunyan.ERROR;
+                return bunyan.ERROR;
             case LogLevel.WARN:
-                return Bunyan.WARN;
+                return bunyan.WARN;
             case LogLevel.INFO:
-                return Bunyan.INFO;
+                return bunyan.INFO;
             case LogLevel.DEBUG:
-                return Bunyan.DEBUG;
+                return bunyan.DEBUG;
             case LogLevel.TRACE:
-                return Bunyan.TRACE;
+                return bunyan.TRACE;
             default:
-                return Bunyan.INFO;
+                return bunyan.INFO;
         }
     }
 }

@@ -5,33 +5,24 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Container } from "inversify";
-import { FrontendApplication, frontendApplicationModule } from "theia-core/lib/application/browser";
-import { messagingFrontendModule } from "theia-core/lib/messaging/browser";
-import { loggerFrontendModule } from "theia-core/lib/application/browser";
+import { Container } from 'inversify';
+import { FrontendApplication, frontendApplicationModule } from 'theia-core/lib/application/browser';
+import { messagingFrontendModule } from 'theia-core/lib/messaging/browser';
+import { loggerFrontendModule } from 'theia-core/lib/application/browser';
 
-import { browserMenuModule } from "theia-core/lib/application/browser/menu";
-import { browserClipboardModule } from "theia-core/lib/application/browser/clipboard";
+import { browserMenuModule } from 'theia-core/lib/application/browser/menu';
+import { browserClipboardModule } from 'theia-core/lib/application/browser/clipboard';
 
-import { fileSystemFrontendModule } from "theia-core/lib/filesystem/browser";
-import { workspaceFrontendModule } from "theia-core/lib/workspace/browser";
-import { navigatorFrontendModule } from "theia-core/lib/navigator/browser";
-import { editorFrontendModule } from "theia-core/lib/editor/browser";
-import { monacoFrontendModule } from "theia-core/lib/monaco/browser";
-import { terminalFrontendModule } from "theia-core/lib/terminal/browser";
-import { languagesFrontendModule } from "theia-core/lib/languages/browser";
-import { javaFrontendModule } from "theia-core/lib/java/browser";
-import { pythonFrontendModule } from "theia-core/lib/python/browser";
-import { cppFrontendModule } from "theia-core/lib/cpp/browser";
-
-import "theia-core/src/application/browser/style/index.css";
-import "font-awesome/css/font-awesome.min.css";
-
-import "theia-core/src/filesystem/browser/style/index.css";
-import "theia-core/src/monaco/browser/style/index.css";
-import "theia-core/src/terminal/browser/terminal.css";
-import "xterm/dist/xterm.css";
-import "theia-core/lib/java/browser/monaco-contribution";
+import { fileSystemFrontendModule } from 'theia-core/lib/filesystem/browser';
+import { workspaceFrontendModule } from 'theia-core/lib/workspace/browser';
+import { navigatorFrontendModule } from 'theia-core/lib/navigator/browser';
+import { editorFrontendModule } from 'theia-core/lib/editor/browser';
+import { monacoFrontendModule } from 'theia-core/lib/monaco/browser';
+import { terminalFrontendModule } from 'theia-core/lib/terminal/browser';
+import { languagesFrontendModule } from 'theia-core/lib/languages/browser';
+import { javaFrontendModule } from 'theia-core/lib/java/browser';
+import { pythonFrontendModule } from 'theia-core/lib/python/browser';
+import { cppFrontendModule } from 'theia-core/lib/cpp/browser';
 
 // Create the client container and load the common contributions.
 const container = new Container();
