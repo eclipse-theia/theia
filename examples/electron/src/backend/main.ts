@@ -9,7 +9,7 @@ import 'reflect-metadata';
 import * as path from 'path';
 import { Container, injectable } from "inversify";
 import * as express from 'express';
-import { BackendApplication, BackendApplicationContribution, applicationModule } from "theia-core/lib/application/node";
+import { BackendApplication, BackendApplicationContribution, backendApplicationModule } from "theia-core/lib/application/node";
 import { fileSystemBackendModule } from "theia-core/lib/filesystem/node";
 import { workspaceBackendModule } from "theia-core/lib/workspace/node";
 import { messagingBackendModule } from "theia-core/lib/messaging/node";
@@ -44,7 +44,7 @@ Yargs.usage(`Usage main.js [--loglevel='trace','debug','info','warn','error','fa
     .argv;
 
 const container = new Container();
-container.load(applicationModule);
+container.load(backendApplicationModule);
 container.load(messagingBackendModule);
 container.load(loggerBackendModule);
 container.load(fileSystemBackendModule);

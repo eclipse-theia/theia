@@ -11,10 +11,10 @@ import {
     isOSX, CommandRegistry,
     ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry
 } from '../../common';
-import { FrontendApplication, FrontendApplicationContribution } from '../../browser/application';
+import { FrontendApplication, FrontendApplicationContribution } from '../../browser';
 
 @injectable()
-export class MainMenuFactory {
+export class ElectronMainMenuFactory {
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
@@ -125,10 +125,10 @@ export class MainMenuFactory {
 }
 
 @injectable()
-export class MenuContribution implements FrontendApplicationContribution {
+export class ElectronMenuContribution implements FrontendApplicationContribution {
 
     constructor(
-        @inject(MainMenuFactory) protected readonly factory: MainMenuFactory
+        @inject(ElectronMainMenuFactory) protected readonly factory: ElectronMainMenuFactory
     ) { }
 
     onStart(app: FrontendApplication): void {

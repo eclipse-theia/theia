@@ -5,12 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-
 import { ContainerModule } from "inversify";
+import { WebSocketConnectionProvider } from './connection';
 
-import { ClipboardService } from "../../common/clipboard-service";
-import { BrowserClipboardService } from "./browser-clipboard-service";
-
-export const browserClipboardModule = new ContainerModule(bind => {
-    bind(ClipboardService).to(BrowserClipboardService).inSingletonScope();
+export const messagingFrontendModule = new ContainerModule(bind => {
+    bind(WebSocketConnectionProvider).toSelf().inSingletonScope();
 });

@@ -16,7 +16,7 @@ import { EditorRegistry } from './editor-registry';
 import { EditorCommandHandlers } from "./editor-command";
 import { EditorKeybindingContribution, EditorKeybindingContext } from "./editor-keybinding";
 
-export const editorModule = new ContainerModule(bind => {
+export const editorFrontendModule = new ContainerModule(bind => {
     bind(EditorRegistry).toSelf().inSingletonScope();
     bind(EditorManager).to(EditorManagerImpl).inSingletonScope();
     bind(OpenHandler).toDynamicValue(context => context.container.get(EditorManager));

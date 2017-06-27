@@ -12,10 +12,10 @@ import {
     CommandRegistry, KeybindingRegistry,
     ActionMenuNode, CompositeMenuNode, MenuModelRegistry, MAIN_MENU_BAR
 } from "../../common";
-import { FrontendApplicationContribution, FrontendApplication } from "../application";
+import { FrontendApplicationContribution, FrontendApplication } from "../frontend-application";
 
 @injectable()
-export class MainMenuFactory {
+export class BrowserMainMenuFactory {
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
@@ -159,7 +159,7 @@ class DynamicMenuWidget extends MenuWidget {
 export class BrowserMenuBarContribution implements FrontendApplicationContribution {
 
     constructor(
-        @inject(MainMenuFactory) protected readonly factory: MainMenuFactory
+        @inject(BrowserMainMenuFactory) protected readonly factory: BrowserMainMenuFactory
     ) { }
 
     onStart(app: FrontendApplication): void {

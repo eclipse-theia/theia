@@ -13,7 +13,7 @@ import { LanguageClientFactory } from './language-client-factory';
 import { LanguagesFrontendContribution } from './languages-frontend-contribution';
 import { LanguageClientContribution } from "./language-client-contribution";
 
-export const frontendLanguagesModule = new ContainerModule(bind => {
+export const languagesFrontendModule = new ContainerModule(bind => {
     bind(Window).to(ConsoleWindow).inSingletonScope();
     bind(Commands).to(DefaultCommands).inSingletonScope();
 

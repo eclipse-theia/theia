@@ -12,7 +12,7 @@ import { LanguageClientContribution } from "../../languages/browser";
 import { JavaCommandContribution } from './java-commands';
 import { JavaResourceResolver } from './java-resource';
 
-export const frontendJavaModule = new ContainerModule(bind => {
+export const javaFrontendModule = new ContainerModule(bind => {
     bind(CommandContribution).to(JavaCommandContribution).inSingletonScope();
 
     bind(JavaClientContribution).toSelf().inSingletonScope();

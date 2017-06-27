@@ -15,7 +15,7 @@ import {
 } from '../common/filesystem-watcher-protocol';
 import { FileCommandContribution, FileMenuContribution } from './filesystem-commands';
 
-export const fileSystemClientModule = new ContainerModule(bind => {
+export const fileSystemFrontendModule = new ContainerModule(bind => {
     bind(FileSystemWatcherClientListener).toSelf().inSingletonScope();
     bind(FileSystemWatcherServerProxy).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);

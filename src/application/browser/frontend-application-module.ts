@@ -17,10 +17,10 @@ import {
     KeybindingContext,
     KeybindingContribution
 } from "../common"
-import { FrontendApplication, FrontendApplicationContribution } from './application'
+import { FrontendApplication, FrontendApplicationContribution } from './frontend-application'
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 
-export const browserApplicationModule = new ContainerModule(bind => {
+export const frontendApplicationModule = new ContainerModule(bind => {
     bind(FrontendApplication).toSelf().inSingletonScope()
     bindContributionProvider(bind, FrontendApplicationContribution)
 
