@@ -7,8 +7,8 @@
 
 import { inject, injectable } from 'inversify';
 import URI from '../../application/common/uri';
-import { FileSystem, FileChangesEvent, FileChangeType } from '../../filesystem/common/filesystem';
-import { FileSystemWatcher } from '../../filesystem/common/filesystem-watcher'
+import { FileSystem } from '../../filesystem/common/filesystem';
+import { FileSystemWatcher, FileChange, FileChangeType } from '../../filesystem/common/filesystem-watcher'
 import { IPreferenceClient } from '../common/preference-protocol'
 import { PreferenceChangedEvent } from '../common/preference-event'
 import { IPreferenceServer } from '../common/preference-protocol'
@@ -27,8 +27,8 @@ export class JsonPreferenceServer implements IPreferenceServer {
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
         @inject(PreferencePath) protected readonly preferencePath: URI) {
 
-        watcher.onFileChanges(event => {
-            if (this.arePreferencesAffected(event)) {
+        watcher.onFilesChanged(changes => {
+            if (this.arePreferencesAffected(changes)) {
                 this.reconcilePreferences();
             }
         });
@@ -39,9 +39,10 @@ export class JsonPreferenceServer implements IPreferenceServer {
     /**
      * Checks to see if the preference file was modified
      */
-    protected arePreferencesAffected(event: FileChangesEvent): boolean {
-        return event.changes.some(c => {
-            return (c.uri === this.preferencePath.toString() && c.type === FileChangeType.UPDATED);
+    protected arePreferencesAffected(changes: FileChange[]): boolean {
+
+        return changes.some(c => {
+            return (c.uri === this.preferencePath && c.type === FileChangeType.UPDATED);
         })
     }
 

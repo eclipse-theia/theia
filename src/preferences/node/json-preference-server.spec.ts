@@ -11,8 +11,10 @@ import * as temp from 'temp';
 import URI from '../../application/common/uri';
 import { FileUri } from '../../application/node/file-uri';
 import { FileSystemNode } from "../../filesystem/node/node-filesystem"
-import { FileSystemWatcher } from '../../filesystem/common/filesystem-watcher'
+import { FileSystemWatcher, FileSystemWatcherClientListener } from '../../filesystem/common/filesystem-watcher'
+import { ChokidarFileSystemWatcherServer } from '../../filesystem/node/chokidar-filesystem-watcher'
 import { JsonPreferenceServer } from './json-preference-server'
+import { Logger } from '../../application/common/logger'
 import * as chaiAsPromised from "chai-as-promised";
 
 
@@ -33,14 +35,13 @@ before(() => {
     chai.config.includeStack = true;
 
     rootUri = FileUri.create(track.mkdirSync());
-    preferenceFileUri = rootUri.appendPath(preferencePath);
-    fs.mkdirSync(FileUri.fsPath(rootUri.appendPath('.theia')));
+    preferenceFileUri = rootUri.resolve(preferencePath);
+    fs.mkdirSync(FileUri.fsPath(rootUri.resolve('.theia')));
 
     fs.writeFileSync(FileUri.fsPath(preferenceFileUri), '{ "showLineNumbers": false }');
 
-    fileSystem = new FileSystemNode(rootUri);
-    fileWatcher = new FileSystemWatcher();
-    fileSystem.setClient(fileWatcher.getFileSystemClient());
+    fileSystem = new FileSystemNode();
+    fileWatcher = createFileSystemWatcher();
     prefServer = new JsonPreferenceServer(fileSystem, fileWatcher, preferenceFileUri);
 });
 
@@ -93,6 +94,7 @@ describe('json-preference-server', () => {
                 })
             })
 
+
             // Make sure, it is `true` by default.
             const initialState = await prefServer.get("showLineNumbers");
             expect(initialState).to.be.false;
@@ -108,3 +110,22 @@ describe('json-preference-server', () => {
         }).timeout(20000)
     });
 });
+
+
+/* From node-filesystem.spec.ts */
+function createFileSystemWatcher(): FileSystemWatcher {
+    const logger = new Proxy<Logger>({} as any, {
+        get: (target, name) => () => {
+            if (name.toString().startsWith('is')) {
+                return Promise.resolve(false);
+            }
+            if (name.toString().startsWith('if')) {
+                return new Promise(resolve => { });
+            }
+        }
+    });
+    const listener = new FileSystemWatcherClientListener();
+    const server = new ChokidarFileSystemWatcherServer(logger);
+    server.setClient(listener);
+    return new FileSystemWatcher(server, listener);
+}
