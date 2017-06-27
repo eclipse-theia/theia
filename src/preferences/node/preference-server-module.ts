@@ -17,9 +17,7 @@ export const preferenceServerModule = new ContainerModule(bind => {
     bind(PreferencePath).toConstantValue(".theia/prefs.json");
 
     bind<ConnectionHandler>(ConnectionHandler).toDynamicValue(ctx => {
-        let clients: IPreferenceClient[] = [
-            // Not sure what to have here...
-        ]
+        let clients: IPreferenceClient[] = []
         const prefService = <JsonPreferenceServer>ctx.container.get(IPreferenceServer);
 
         prefService.setClient({

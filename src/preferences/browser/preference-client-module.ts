@@ -7,10 +7,13 @@
 
 import { ContainerModule, } from 'inversify';
 import { IPreferenceServer } from '../common/preference-server'
+import { IPreferenceService, PreferenceService } from '../common/preference-service'
 import { WebSocketConnectionProvider } from '../../messaging/browser/connection';
 
 
 export const preferenceClientModule = new ContainerModule(bind => {
+    bind(IPreferenceService).to(PreferenceService).inSingletonScope();
+
     bind(IPreferenceServer).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
         const prefServiceClient = ctx.container.get(IPreferenceServer);

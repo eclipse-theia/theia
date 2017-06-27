@@ -63,10 +63,7 @@ export class JsonPreferenceServer implements IPreferenceServer {
             this.fileSystem.resolveContent(uri.toString()).then(({ stat, content }) => {
                 const newPrefs = JSON.parse(content) // Might need a custom parser because comments and whatnot?
                 this.notifyPreferences(newPrefs);
-            }).catch((error) => {
-                // File does not exist?
-                console.log(error);
-            });
+            })
         })
     }
 
