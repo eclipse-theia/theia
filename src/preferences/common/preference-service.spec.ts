@@ -7,6 +7,7 @@
 
 import { PreferenceService } from './preference-service';
 import { IPreferenceServer, IPreferenceClient } from './preference-protocol'
+import { PreferenceChangedEvent } from './preference-event'
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 
@@ -144,5 +145,37 @@ describe('preference-service  (simplified api)', () => {
         // should return the default value for a number
         valNumber = await prefService.getNumber("doesntExist", 57);
         expect(valNumber).to.be.equal(57);
+    });
+
+    it('register for preference change and receive event', async () => {
+
+        const events: PreferenceChangedEvent[] = [
+            { preferenceName: "test" },
+            { preferenceName: "test2", newValue: true },
+            { preferenceName: "test3", newValue: true, oldValue: false },
+        ]
+
+        prefService.onPreferenceChanged((event) => {
+            switch (event.preferenceName) {
+                case ("test"): {
+                    expect(event.newValue).to.be.undefined;
+                    break;
+                }
+                case ("test2"): {
+                    expect(event.newValue).to.be.true;
+                    expect(event.oldValue).to.be.undefined;
+                    break;
+                }
+                case ("test3"): {
+                    expect(event.newValue).to.be.true;
+                    expect(event.oldValue).to.be.false;
+                    break;
+                }
+            }
+        })
+
+        for (const event of events) {
+            prefService.onDidChangePreference(event)
+        }
     });
 });

@@ -8,4 +8,5 @@
 export * from './preference-event';
 export * from './preference-protocol';
 export * from './preference-service';
+export * from './compound-preference-server';
 
