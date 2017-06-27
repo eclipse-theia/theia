@@ -118,6 +118,26 @@
     "url": "https://github.com/theia-ide/theia/issues"
   },
   "homepage": "https://github.com/theia-ide/theia",
+  "frontendModules": {
+    "fileSystemFrontendModule": "lib/filesystem/browser",
+    "workspaceFrontendModule": "lib/workspace/browser",
+    "navigatorFrontendModule": "lib/navigator/browser",
+    "editorFrontendModule": "lib/editor/browser",
+    "monacoFrontendModule": "lib/monaco/browser",
+    "terminalFrontendModule": "lib/terminal/browser",
+    "languagesFrontendModule": "lib/languages/browser",
+    "javaFrontendModule": "lib/java/browser",
+    "pythonFrontendModule": "lib/python/browser",
+    "cppFrontendModule": "lib/cpp/browser"
+  },
+  "browserFrontendModules": {
+    "browserMenuModule": "lib/application/browser/menu",
+    "browserClipboardModule": "lib/application/browser/clipboard"
+  },
+  "electronFrontendModules": {
+    "electronMenuModule": "lib/application/electron-browser/menu",
+    "electronClipboardModule": "lib/application/electron-browser/clipboard"
+  },
   "backendModules": {
     "fileSystemBackendModule": "lib/filesystem/node",
     "workspaceBackendModule": "lib/workspace/node",
