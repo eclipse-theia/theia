@@ -7,6 +7,16 @@
 
 import { PreferenceChangedEvent } from './preference-event'
 
+export const IPreferenceServer = Symbol("IPreferenceServer")
+
+/**
+ * Minimal preference API with basic functionalities
+ */
+export interface IPreferenceServer {
+    has(preferenceName: string): Promise<boolean>;
+    get<T>(preferenceName: string): Promise<T | undefined>;
+}
+
 export interface IPreferenceClient {
     onDidChangePreference(event: PreferenceChangedEvent): void
 }

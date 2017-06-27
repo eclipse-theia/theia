@@ -6,17 +6,8 @@
  */
 
 import { inject, injectable } from 'inversify'
+import { IPreferenceServer } from '../common/preference-protocol'
 
-export const IPreferenceServer = Symbol("IPreferenceServer")
-
-/**
- * Minimal preference API with basic functionalities
- */
-export interface IPreferenceServer {
-    // A minimal part of the interface.
-    has(preferenceName: string): Promise<boolean>;
-    get<T>(preferenceName: string): Promise<T | undefined>;
-}
 
 /**
  * This class presents an API that composes the json preference service and the

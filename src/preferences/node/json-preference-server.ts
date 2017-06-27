@@ -11,7 +11,7 @@ import { FileSystem, FileChangesEvent, FileChangeType } from '../../filesystem/c
 import { FileSystemWatcher } from '../../filesystem/common/filesystem-watcher'
 import { IPreferenceClient } from '../common/preference-protocol'
 import { PreferenceChangedEvent } from '../common/preference-event'
-import { IPreferenceServer } from './preference-server'
+import { IPreferenceServer } from '../common/preference-protocol'
 import * as coreutils from "@phosphor/coreutils";
 
 export const PreferencePath = Symbol("PreferencePath")
@@ -27,17 +27,8 @@ export class JsonPreferenceServer implements IPreferenceServer {
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
         @inject(PreferencePath) protected readonly preferencePath: URI) {
-        // this.resolveUri = fileSystem.getWorkspaceRoot().
-        //     then(root =>
-        //         new URI(root.uri).appendPath(preferencePath)
-        //     );
 
         watcher.onFileChanges(event => {
-            // this.arePreferencesAffected(event).then((arePrefsAffected) => {
-            //     if (arePrefsAffected) {
-            //         this.reconcilePreferences();
-            //     }
-            // })
             if (this.arePreferencesAffected(event)) {
                 this.reconcilePreferences();
             }
@@ -50,44 +41,38 @@ export class JsonPreferenceServer implements IPreferenceServer {
      * Checks to see if the preference file was modified
      */
     protected arePreferencesAffected(event: FileChangesEvent): boolean {
-        // return this.resolveUri.then(uri =>
-        //     event.changes.some(c =>
-        //         c.uri === uri.toString() && c.type !== FileChangeType.DELETED
-        //     )
-        // );
-
-        for (const change of event.changes) {
-            console.log(change.uri);
-        }
-
         return event.changes.some(c => {
-            // console.log(c.uri);
-            // console.log(this.preferencePath.toString());
-
-            return c.uri === this.preferencePath.toString() && c.type === FileChangeType.UPDATED
+            return (c.uri === this.preferencePath.toString() && c.type === FileChangeType.UPDATED);
         }
         )
-
-        // return this.preferencePath === uri.toString() && c.type !== FileChangeType.DELETED
     }
 
     /**
      * Read preferences
      */
     protected reconcilePreferences(): void {
-
-        // this.resolveUri.then((uri) => {
-        //     this.fileSystem.resolveContent(uri.toString()).then(({ stat, content }) => {
-        //         const newPrefs = JSON.parse(content) // Might need a custom parser because comments and whatnot?
-        //         // TODO what do if the content of the file is not JSON-valid, delete current prefs and service resorts to defaults?
-        //         this.notifyPreferences(newPrefs);
-        //     })
-        // })
         this.fileSystem.resolveContent(this.preferencePath.toString()).then(({ stat, content }) => {
             const newPrefs = JSON.parse(content) // Might need a custom parser because comments and whatnot?
             // TODO what do if the content of the file is not JSON-valid, delete current prefs and service resorts to defaults?
             this.notifyPreferences(newPrefs);
         })
+    }
+
+    protected notifyPreferences(newPrefs: any) {
+
+        if (this.prefs !== undefined && this.prefs !== newPrefs) {
+            // Different prefs detected
+            this.notifyDifferentPrefs(newPrefs);
+
+        } else if (this.prefs === undefined && newPrefs !== undefined) {
+            const newKeys: string[] = Object.keys(newPrefs);
+            // All prefs are new, send events for all of them
+            newKeys.forEach((newKey: string) => {
+                const event: PreferenceChangedEvent = { preferenceName: newKey };
+                this.fireEvent(event);
+            })
+        }
+        this.prefs = newPrefs;
     }
 
     protected notifyDifferentPrefs(newPrefs: any) {
@@ -119,22 +104,7 @@ export class JsonPreferenceServer implements IPreferenceServer {
         }
     }
 
-    protected notifyPreferences(newPrefs: any) {
 
-        if (this.prefs !== undefined && this.prefs !== newPrefs) {
-            // Different prefs detected
-            this.notifyDifferentPrefs(newPrefs);
-
-        } else if (this.prefs === undefined && newPrefs !== undefined) {
-            const newKeys: string[] = Object.keys(newPrefs);
-            // All prefs are new, send events for all of them
-            newKeys.forEach((newKey: string) => {
-                const event: PreferenceChangedEvent = { preferenceName: newKey };
-                this.fireEvent(event);
-            })
-        }
-        this.prefs = newPrefs;
-    }
 
     protected fireEvent(event: PreferenceChangedEvent) {
         if (this.client) {
