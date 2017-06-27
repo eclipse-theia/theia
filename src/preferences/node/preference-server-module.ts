@@ -9,28 +9,65 @@ import { ContainerModule, } from 'inversify';
 import { ConnectionHandler } from '../../messaging/common';
 import { JsonRpcProxyFactory } from '../../messaging/common/proxy-factory';
 import { IPreferenceServer } from '../common/preference-protocol'
+import { DefaultPreferenceServer } from '../node/default-preference-server'
+import { getRootDir } from '../../filesystem/node/filesystem-server-module'
+import { CompoundPreferenceServer } from '../common/compound-preference-server'
 import { JsonPreferenceServer, PreferencePath } from './json-preference-server'
 import { IPreferenceClient } from '../common/preference-protocol'
+import * as path from 'path';
+
 
 export const preferenceServerModule = new ContainerModule(bind => {
-    bind(IPreferenceServer).to(JsonPreferenceServer).inSingletonScope();
-    bind(PreferencePath).toConstantValue(".theia/prefs.json");
+    const WorkspacePreferenceServer = Symbol('WorkspacePreferenceServer');
+    const UserPreferenceServer = Symbol('UserPreferenceServer');
+
+    bind(DefaultPreferenceServer).to(DefaultPreferenceServer).inSingletonScope();
+
+    bind(WorkspacePreferenceServer).to(JsonPreferenceServer).inSingletonScope();
+    bind(UserPreferenceServer).to(JsonPreferenceServer).inSingletonScope();
+
+    // bind(JsonPreferenceServer).to(WorkspacePreferenceServer).inSingletonScope();
+    // bind(PreferencePath).toConstantValue(path.join('.theia', 'prefs.json')).whenInjectedInto(WorkspacePreferenceServer.toString());
+    // const userHome = ".default"; // FIXME
+    // bind(PreferencePath).toConstantValue(path.join(userHome, '.theia', 'prefs.json')).whenInjectedInto(UserPreferenceServer.toString());
+    // const home = ctx.container.get(FileSystemNode);
+    const root = getRootDir();
+    if (root) {
+        bind(PreferencePath).toConstantValue(path.join(root, '.theia', 'prefs.json'));
+    }
+
+    bind(IPreferenceServer).toDynamicValue(ctx => {
+        const defaultServer = ctx.container.get(DefaultPreferenceServer);
+        const userServer = ctx.container.get<IPreferenceServer>(UserPreferenceServer);
+        const workspaceServer = ctx.container.get<IPreferenceServer>(WorkspacePreferenceServer);
+        return new CompoundPreferenceServer(defaultServer, userServer, workspaceServer);
+    }).inSingletonScope();
+
+    // bind(IPreferenceServer).to(JsonPreferenceServer).inSingletonScope();
+    // bind(PreferencePath).toConstantValue(".theia/prefs.json");
 
     bind<ConnectionHandler>(ConnectionHandler).toDynamicValue(ctx => {
         let clients: IPreferenceClient[] = []
-        const prefService = <JsonPreferenceServer>ctx.container.get(IPreferenceServer);
+        // const prefServers = ctx.container.getAll(JsonPreferenceServer);
+        // const prefServers: Map<string, IPreferenceServer> = new Map<string, IPreferenceServer>();
+        const prefServers: JsonPreferenceServer[] = [];
+        prefServers.push(ctx.container.get<JsonPreferenceServer>(WorkspacePreferenceServer));
+        prefServers.push(ctx.container.get<JsonPreferenceServer>(UserPreferenceServer));
 
-        prefService.setClient({
-            onDidChangePreference(pref) {
-                for (let client of clients) {
-                    client.onDidChangePreference(pref)
+        for (const prefServer of prefServers) {
+            prefServer.setClient({
+                onDidChangePreference(pref) {
+                    for (let client of clients) {
+                        client.onDidChangePreference(pref)
+                    }
                 }
-            }
-        })
+            })
+        }
+
         return {
             path: "/preferences",
             onConnection(connection) {
-                const proxyFactory = new JsonRpcProxyFactory<IPreferenceClient>("/preferences", prefService)
+                const proxyFactory = new JsonRpcProxyFactory<IPreferenceClient>("/preferences", prefServers)
                 proxyFactory.onConnection(connection)
                 const client = proxyFactory.createProxy()
                 clients.push(client)
