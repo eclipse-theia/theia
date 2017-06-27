@@ -50,14 +50,18 @@ export class JsonPreferenceServer implements IPreferenceServer {
      */
     protected reconcilePreferences(): void {
         this.fileSystem.resolveContent(this.preferencePath.toString()).then(({ stat, content }) => {
-            const newPrefs = JSON.parse(content) // Might need a custom parser because comments and whatnot?
-            // TODO what do if the content of the file is not JSON-valid, delete current prefs and service resorts to defaults?
-            this.notifyPreferences(newPrefs);
+            try {
+                const newPrefs = JSON.parse(content) // Might need a custom parser because comments and whatnot?
+                this.notifyPreferences(newPrefs);
+            } catch (e) { // JSON could be invalid
+                console.log(e);
+                this.prefs = undefined;
+                // TODO user the logger and notify the user that the prefs.json is not valid
+            }
         })
     }
 
     protected notifyPreferences(newPrefs: any) {
-
         if (this.prefs !== undefined && this.prefs !== newPrefs) {
             // Different prefs detected
             this.notifyDifferentPrefs(newPrefs);
