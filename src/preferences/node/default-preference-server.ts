@@ -7,6 +7,7 @@
 
 import { ContributionProvider } from '../../application/common/contribution-provider'
 import { IPreferenceServer } from '../common/preference-protocol'
+import { IPreferenceClient } from '../common/preference-protocol'
 
 import { inject, injectable, named } from 'inversify'
 
@@ -51,4 +52,6 @@ export class DefaultPreferenceServer implements IPreferenceServer {
 
         return Promise.resolve(!!pref ? pref.defaultValue : undefined);
     }
+
+    setClient(client: IPreferenceClient | undefined) { }
 }

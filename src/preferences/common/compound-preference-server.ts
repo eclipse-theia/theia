@@ -6,6 +6,7 @@
  */
 
 import { IPreferenceServer } from '../common/preference-protocol'
+import { IPreferenceClient } from '../common/preference-protocol'
 
 export class CompoundPreferenceServer implements IPreferenceServer {
 
@@ -33,5 +34,11 @@ export class CompoundPreferenceServer implements IPreferenceServer {
             }
         }
         return undefined;
+    }
+
+    setClient(client: IPreferenceClient | undefined) {
+        for (const server of this.servers) {
+            server.setClient(client);
+        }
     }
 }

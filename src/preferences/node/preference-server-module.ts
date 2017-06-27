@@ -21,7 +21,7 @@ export const preferenceServerModule = new ContainerModule(bind => {
     const WorkspacePreferenceServer = Symbol('WorkspacePreferenceServer');
     const UserPreferenceServer = Symbol('UserPreferenceServer');
 
-    bind(DefaultPreferenceServer).to(DefaultPreferenceServer).inSingletonScope();
+    bind(DefaultPreferenceServer).toSelf().inSingletonScope();
 
     bind(WorkspacePreferenceServer).to(JsonPreferenceServer).inSingletonScope();
     bind(UserPreferenceServer).to(JsonPreferenceServer).inSingletonScope();
@@ -43,31 +43,20 @@ export const preferenceServerModule = new ContainerModule(bind => {
         return new CompoundPreferenceServer(defaultServer, userServer, workspaceServer);
     }).inSingletonScope();
 
-    // bind(IPreferenceServer).to(JsonPreferenceServer).inSingletonScope();
-    // bind(PreferencePath).toConstantValue(".theia/prefs.json");
-
     bind<ConnectionHandler>(ConnectionHandler).toDynamicValue(ctx => {
         let clients: IPreferenceClient[] = []
-        // const prefServers = ctx.container.getAll(JsonPreferenceServer);
-        // const prefServers: Map<string, IPreferenceServer> = new Map<string, IPreferenceServer>();
-        const prefServers: JsonPreferenceServer[] = [];
-        prefServers.push(ctx.container.get<JsonPreferenceServer>(WorkspacePreferenceServer));
-        prefServers.push(ctx.container.get<JsonPreferenceServer>(UserPreferenceServer));
-
-        for (const prefServer of prefServers) {
-            prefServer.setClient({
-                onDidChangePreference(pref) {
-                    for (let client of clients) {
-                        client.onDidChangePreference(pref)
-                    }
+        ctx.container.get<IPreferenceServer>(IPreferenceServer).setClient({
+            onDidChangePreference(pref) {
+                for (let client of clients) {
+                    client.onDidChangePreference(pref)
                 }
-            })
-        }
+            }
+        })
 
         return {
             path: "/preferences",
             onConnection(connection) {
-                const proxyFactory = new JsonRpcProxyFactory<IPreferenceClient>("/preferences", prefServers)
+                const proxyFactory = new JsonRpcProxyFactory<IPreferenceClient>("/preferences", ctx.container.get(IPreferenceServer))
                 proxyFactory.onConnection(connection)
                 const client = proxyFactory.createProxy()
                 clients.push(client)
