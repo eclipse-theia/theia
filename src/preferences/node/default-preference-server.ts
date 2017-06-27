@@ -27,7 +27,7 @@ export interface PreferenceContribution {
 
 export class DefaultPreferenceServer implements IPreferenceServer {
 
-    defaultPrefs: Map<string, any>;
+    defaultPrefs: Map<string, any> = new Map<string, any>();
 
     constructor( @inject(ContributionProvider) @named(PreferenceContribution) protected readonly defaultProviders: ContributionProvider<PreferenceContribution>) {
         const prefContributions: PreferenceContribution[] = defaultProviders.getContributions();
@@ -49,6 +49,6 @@ export class DefaultPreferenceServer implements IPreferenceServer {
     get<T>(preferenceName: string): Promise<T | undefined> {
         let pref = this.defaultPrefs.get(preferenceName)
 
-        return Promise.resolve(!!pref ? pref : undefined);
+        return Promise.resolve(!!pref ? pref.defaultValue : undefined);
     }
 }
