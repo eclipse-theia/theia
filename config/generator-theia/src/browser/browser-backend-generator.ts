@@ -7,12 +7,15 @@
 
 import * as os from 'os';
 
+import { Model } from "./generator-model";
+
 export class BrowserBackendGenerator {
-    generate(options: {
-        frontendModules: { [moduleName: string]: string }
-        backendModules: { [moduleName: string]: string }
-    }): string {
-        const { backendModules } = options;
+
+    constructor(
+        protected readonly model: Model
+    ) { }
+
+    generate(): string {
         return `${this.generateCopyright()}
 
 import 'reflect-metadata';
@@ -24,7 +27,7 @@ import { Container, injectable } from "inversify";
 import { BackendApplication, BackendApplicationContribution, applicationModule } from "theia-core/lib/application/node";
 import { messagingBackendModule } from "theia-core/lib/messaging/node";
 import { loggerBackendModule } from 'theia-core/lib/application/node';
-${Object.keys(backendModules).map(moduleName => `import { ${moduleName} } from "${backendModules[moduleName]}"`).join(os.EOL)}
+${this.generateModuleImports(this.model.backendModules)}
 
 process.on('uncaughtException', function (err: any) {
     console.error('Uncaught Exception: ', err.toString());
@@ -53,11 +56,23 @@ container.load(applicationModule);
 container.load(messagingBackendModule);
 container.load(loggerBackendModule);
 
-${Object.keys(backendModules).map(moduleName => `container.load(${moduleName});`).join(os.EOL)}
+${this.generateModuleLoading(this.model.backendModules)}
 
 container.bind(BackendApplicationContribution).to(StaticServer);
 const application = container.get(BackendApplication);
 application.start();`;
+    }
+
+    protected generateModuleImports(modules: Map<string, string>): string {
+        return Array.from(modules.keys()).map(moduleName =>
+            `import { ${moduleName} } from "${modules.get(moduleName)}";`
+        ).join(os.EOL);
+    }
+
+    protected generateModuleLoading(modules: Map<string, string>): string {
+        return Array.from(modules.keys()).map(moduleName =>
+            `container.load(${moduleName});`
+        ).join(os.EOL);
     }
 
     protected generateCopyright(): string {

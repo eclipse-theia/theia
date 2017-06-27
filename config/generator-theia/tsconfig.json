@@ -17,6 +17,7 @@
         "noImplicitReturns": true,
         "noImplicitThis": true,
         "noUnusedLocals": true,
+        "downlevelIteration": true,
         "typeRoots": [
             "node_modules/@types"
         ]
