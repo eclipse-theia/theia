@@ -21,11 +21,10 @@ import { MonacoModelResolver } from "./monaco-model-resolver";
 import { MonacoContextMenuService } from "./monaco-context-menu";
 import { MonacoCommandService, MonacoCommandServiceFactory } from './monaco-command-service';
 
-
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
 
-export const monacoModule = new ContainerModule(bind => {
+export const monacoFrontendModule = new ContainerModule(bind => {
     bind(MonacoToProtocolConverter).toSelf().inSingletonScope();
     bind(ProtocolToMonacoConverter).toSelf().inSingletonScope();
 

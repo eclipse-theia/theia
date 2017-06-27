@@ -5,64 +5,56 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Container } from "inversify";
-import { FrontendApplication, browserApplicationModule } from "theia-core/lib/application/browser";
-import { messagingModule } from "theia-core/lib/messaging/browser";
-import { navigatorModule } from "theia-core/lib/navigator/browser";
-import { fileSystemClientModule } from "theia-core/lib/filesystem/browser";
-import { editorModule } from "theia-core/lib/editor/browser";
+import { Container } from 'inversify';
+import { FrontendApplication, frontendApplicationModule } from 'theia-core/lib/application/browser';
+import { messagingFrontendModule } from 'theia-core/lib/messaging/browser';
+import { loggerFrontendModule } from 'theia-core/lib/application/browser';
+
+import { electronMenuModule } from 'theia-core/lib/application/electron-browser/menu';
+import { electronClipboardModule } from 'theia-core/lib/application/electron-browser/clipboard';
+
+import { fileSystemFrontendModule } from 'theia-core/lib/filesystem/browser';
 import { workspaceFrontendModule } from 'theia-core/lib/workspace/browser';
-import { frontendLanguagesModule } from 'theia-core/lib/languages/browser';
-import { monacoModule } from 'theia-core/lib/monaco/browser';
-import { electronClipboardModule } from 'theia-core/lib/application/electron-browser/clipboard/clipboard-module';
-import { electronMenuModule } from 'theia-core/lib/application/electron-browser/menu/menu-module';
-import { loggerFrontendModule } from 'theia-core/lib/application/browser/logger-frontend-module';
-import "theia-core/src/application/browser/style/index.css";
-import "theia-core/src/monaco/browser/style/index.css";
-import "theia-core/src/filesystem/browser/style/index.css";
-import "theia-core/src/terminal/browser/terminal.css";
-import "font-awesome/css/font-awesome.min.css";
+import { navigatorFrontendModule } from 'theia-core/lib/navigator/browser';
+import { editorFrontendModule } from 'theia-core/lib/editor/browser';
+import { monacoFrontendModule } from 'theia-core/lib/monaco/browser';
+import { terminalFrontendModule } from 'theia-core/lib/terminal/browser';
+import { languagesFrontendModule } from 'theia-core/lib/languages/browser';
+import { javaFrontendModule } from 'theia-core/lib/java/browser';
+import { pythonFrontendModule } from 'theia-core/lib/python/browser';
+import { cppFrontendModule } from 'theia-core/lib/cpp/browser';
 
-// terminal extension
-import terminalFrontendModule from 'theia-core/lib/terminal/browser/terminal-frontend-module';
-import "xterm/dist/xterm.css";
+import 'theia-core/src/application/browser/style/index.css';
+import 'font-awesome/css/font-awesome.min.css';
 
-// java extension
-import { frontendJavaModule } from 'theia-core/lib/java/browser';
+import 'theia-core/src/filesystem/browser/style/index.css';
+import 'theia-core/src/monaco/browser/style/index.css';
+import 'theia-core/src/terminal/browser/terminal.css';
+import 'xterm/dist/xterm.css';
 import 'theia-core/lib/java/browser/monaco-contribution';
 
-// python extension
-import { frontendPythonModule } from 'theia-core/lib/python/browser';
+// Create the client container and load the common contributions.
+const container = new Container();
+container.load(frontendApplicationModule);
+container.load(messagingFrontendModule);
+container.load(loggerFrontendModule);
 
-// cpp extension
-import { frontendCppModule } from 'theia-core/lib/cpp/browser';
+// Load the electron contributions.
+container.load(electronMenuModule);
+container.load(electronClipboardModule);
 
-(() => {
+// Load the frontend contributions.
+container.load(fileSystemFrontendModule);
+container.load(workspaceFrontendModule);
+container.load(navigatorFrontendModule);
+container.load(editorFrontendModule);
+container.load(monacoFrontendModule);
+container.load(terminalFrontendModule);
+container.load(languagesFrontendModule);
+container.load(javaFrontendModule);
+container.load(pythonFrontendModule);
+container.load(cppFrontendModule);
 
-    // Create the client container and load the common contributions.
-    const container = new Container();
-    container.load(browserApplicationModule);
-    container.load(messagingModule);
-    container.load(loggerFrontendModule);
-    container.load(navigatorModule);
-    container.load(fileSystemClientModule);
-    container.load(editorModule);
-    container.load(workspaceFrontendModule);
-    container.load(frontendLanguagesModule);
-    container.load(monacoModule);
-    container.load(frontendJavaModule);
-    container.load(frontendPythonModule);
-    container.load(frontendCppModule);
-
-    // Load the electron specific contributions.
-    container.load(electronMenuModule);
-    container.load(electronClipboardModule);
-
-    // terminal extension
-    container.load(terminalFrontendModule);
-
-    // Obtain application and start.
-    const application = container.get(FrontendApplication);
-    application.start();
-
-})();
+// Obtain the application and start.
+const application = container.get(FrontendApplication);
+application.start();

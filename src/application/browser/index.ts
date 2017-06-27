@@ -6,11 +6,12 @@
  */
 
 export * from './shell';
-export * from './application';
+export * from './frontend-application';
+export * from './frontend-application-module';
+export * from './logger-frontend-module';
 export * from './opener-service';
-export * from './application-module';
 export * from './browser';
-export * from './menu';
+export * from './context-menu-renderer';
 export * from './widgets';
 export * from './dialogs';
 export * from './tree';

@@ -9,7 +9,7 @@ import { ContainerModule } from "inversify";
 import { LanguageClientContribution } from "../../languages/browser";
 import { CppClientContribution } from "./cpp-client-contribution";
 
-export const frontendCppModule = new ContainerModule(bind => {
+export const cppFrontendModule = new ContainerModule(bind => {
     bind(CppClientContribution).toSelf().inSingletonScope();
     bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(CppClientContribution));
 });

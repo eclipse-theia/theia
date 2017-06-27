@@ -5,7 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-
 import { ContainerModule } from "inversify";
 
 import { ClipboardService } from "../../common/clipboard-service";

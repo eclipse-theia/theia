@@ -6,13 +6,13 @@
  */
 
 import { inject, injectable } from "inversify";
-import { MainMenuFactory } from "./menu-plugin";
-import { Anchor, ContextMenuRenderer } from "../../browser/menu/context-menu-renderer";
+import { ContextMenuRenderer, Anchor } from "../../browser";
+import { ElectronMainMenuFactory } from "./electron-menu-plugin";
 
 @injectable()
 export class ElectronContextMenuRenderer implements ContextMenuRenderer {
 
-    constructor( @inject(MainMenuFactory) private menuFactory: MainMenuFactory) {
+    constructor( @inject(ElectronMainMenuFactory) private menuFactory: ElectronMainMenuFactory) {
     }
 
     render(path: string, anchor: Anchor): void {

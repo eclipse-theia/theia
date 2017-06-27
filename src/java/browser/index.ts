@@ -10,4 +10,4 @@ export * from './java-protocol';
 export * from './java-commands';
 export * from './java-resource';
 export * from './java-client-contribution';
-export * from './frontend-java-module';
+export * from './java-frontend-module';
