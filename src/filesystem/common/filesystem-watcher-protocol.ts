@@ -9,7 +9,7 @@ import { injectable, inject } from "inversify";
 import { Disposable } from '../../application/common';
 import { JsonRpcProxy } from "../../messaging/common";
 
-export const fileSystemWatcherPath = '/fs-watcher';
+export const fileSystemWatcherPath = '/services/fs-watcher';
 
 export const FileSystemWatcherServer = Symbol('FileSystemWatcherServer');
 export interface FileSystemWatcherServer extends Disposable {
