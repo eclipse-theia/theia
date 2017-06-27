@@ -8,14 +8,14 @@
 import { ContainerModule, } from 'inversify';
 import { ConnectionHandler } from '../../messaging/common';
 import { JsonRpcProxyFactory } from '../../messaging/common/proxy-factory';
-import { IPreferenceServer } from '../common/preference-protocol'
+import { IPreferenceServer, IPreferenceClient } from '../common/preference-protocol'
 import { DefaultPreferenceServer } from '../node/default-preference-server'
 import { getRootDir } from '../../filesystem/node/filesystem-server-module'
 import { CompoundPreferenceServer } from '../common/compound-preference-server'
 import { JsonPreferenceServer, PreferencePath } from './json-preference-server'
-import { IPreferenceClient } from '../common/preference-protocol'
-import * as path from 'path';
+import { FileUri } from "../../application/node/file-uri";
 
+import * as path from 'path';
 
 export const preferenceServerModule = new ContainerModule(bind => {
     const WorkspacePreferenceServer = Symbol('WorkspacePreferenceServer');
@@ -31,9 +31,10 @@ export const preferenceServerModule = new ContainerModule(bind => {
     // const userHome = ".default"; // FIXME
     // bind(PreferencePath).toConstantValue(path.join(userHome, '.theia', 'prefs.json')).whenInjectedInto(UserPreferenceServer.toString());
     // const home = ctx.container.get(FileSystemNode);
+
     const root = getRootDir();
     if (root) {
-        bind(PreferencePath).toConstantValue(path.join(root, '.theia', 'prefs.json'));
+        bind(PreferencePath).toConstantValue(FileUri.create(path.resolve(root, '.theia', 'prefs.json')));
     }
 
     bind(IPreferenceServer).toDynamicValue(ctx => {
@@ -45,7 +46,7 @@ export const preferenceServerModule = new ContainerModule(bind => {
 
     bind<ConnectionHandler>(ConnectionHandler).toDynamicValue(ctx => {
         let clients: IPreferenceClient[] = []
-        ctx.container.get<IPreferenceServer>(IPreferenceServer).setClient({
+        const prefServer = ctx.container.get<IPreferenceServer>(IPreferenceServer).setClient({
             onDidChangePreference(pref) {
                 for (let client of clients) {
                     client.onDidChangePreference(pref)
@@ -56,7 +57,7 @@ export const preferenceServerModule = new ContainerModule(bind => {
         return {
             path: "/preferences",
             onConnection(connection) {
-                const proxyFactory = new JsonRpcProxyFactory<IPreferenceClient>("/preferences", ctx.container.get(IPreferenceServer))
+                const proxyFactory = new JsonRpcProxyFactory<IPreferenceClient>("/preferences", prefServer)
                 proxyFactory.onConnection(connection)
                 const client = proxyFactory.createProxy()
                 clients.push(client)
