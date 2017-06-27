@@ -12,7 +12,7 @@ import { BackendApplicationContribution } from "../../application/node";
 import { createServerWebSocketConnection } from "../../messaging/node";
 import { ConnectionHandler } from "../common";
 
-export const messagingModule = new ContainerModule(bind => {
+export const messagingBackendModule = new ContainerModule(bind => {
     bind<BackendApplicationContribution>(BackendApplicationContribution).to(MessagingContribution);
     bindContributionProvider(bind, ConnectionHandler)
 });

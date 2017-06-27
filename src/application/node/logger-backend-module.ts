@@ -6,9 +6,10 @@
  */
 import { ContainerModule, Container } from 'inversify';
 import { ILogger, LoggerFactory, LoggerOptions, Logger } from '../common/logger';
-import { ILoggerServer } from '../common/logger-protocol';
+import { ILoggerServer, ILoggerClient } from '../common/logger-protocol';
 import { BunyanLoggerServer } from './logger-server';
 import { LoggerWatcher } from '../common/logger-watcher';
+import { ConnectionHandler, JsonRpcConnectionHandler } from "../../messaging/common";
 
 export const loggerBackendModule = new ContainerModule(bind => {
     bind(ILogger).to(Logger).inSingletonScope();
@@ -23,5 +24,13 @@ export const loggerBackendModule = new ContainerModule(bind => {
             return child.get(ILogger);
         }
     );
+
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler<ILoggerClient>("/logger", client => {
+            const loggerServer = ctx.container.get<ILoggerServer>(ILoggerServer);
+            loggerServer.setClient(client);
+            return loggerServer;
+        })
+    ).inSingletonScope();
 });
 

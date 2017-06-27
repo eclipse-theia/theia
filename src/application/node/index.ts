@@ -9,3 +9,4 @@ export * from "./application";
 export * from "./application-module";
 export * from "./debug";
 export * from "./file-uri";
+export * from "./logger-backend-module";

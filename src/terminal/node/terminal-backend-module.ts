@@ -16,7 +16,7 @@ import { openSocket } from '../../messaging/node';
 
 const pty = require("node-pty")
 
-export default new ContainerModule(bind => {
+export const terminalBackendModule = new ContainerModule(bind => {
     bind(BackendApplicationContribution).to(TerminalExpressContribution)
 })
 

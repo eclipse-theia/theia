@@ -9,6 +9,6 @@ import { ContainerModule } from "inversify";
 import { LanguageServerContribution } from "../../languages/node";
 import { JavaContribution } from './java-contribution';
 
-export const backendJavaModule = new ContainerModule(bind => {
+export const javaBackendModule = new ContainerModule(bind => {
     bind(LanguageServerContribution).to(JavaContribution).inSingletonScope();
 });

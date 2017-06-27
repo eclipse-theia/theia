@@ -10,19 +10,17 @@ import * as path from 'path';
 import { Container, injectable } from "inversify";
 import * as express from 'express';
 import { BackendApplication, BackendApplicationContribution, applicationModule } from "theia-core/lib/application/node";
-import { fileSystemServerModule } from "theia-core/lib/filesystem/node";
+import { fileSystemBackendModule } from "theia-core/lib/filesystem/node";
 import { workspaceBackendModule } from "theia-core/lib/workspace/node";
-import { messagingModule } from "theia-core/lib/messaging/node";
-import { backendLanguagesModule } from 'theia-core/lib/languages/node';
-import { backendJavaModule } from 'theia-core/lib/java/node';
-import { backendPythonModule } from 'theia-core/lib/python/node';
-import { backendCppModule } from 'theia-core/lib/cpp/node';
-import terminalBackendModule from 'theia-core/lib/terminal/node/terminal-backend-module'
-import { loggerBackendModule } from 'theia-core/lib/application/node/logger-backend-module';
-import { loggerServerModule } from 'theia-core/lib/application/node/logger-server-module';
+import { messagingBackendModule } from "theia-core/lib/messaging/node";
+import { languagesBackendModule } from 'theia-core/lib/languages/node';
+import { javaBackendModule } from 'theia-core/lib/java/node';
+import { pythonBackendModule } from 'theia-core/lib/python/node';
+import { cppBackendModule } from 'theia-core/lib/cpp/node';
+import { terminalBackendModule } from 'theia-core/lib/terminal/node';
+import { loggerBackendModule } from 'theia-core/lib/application/node';
 import * as Yargs from 'yargs';
 
-// FIXME introduce default error handler contribution
 process.on('uncaughtException', function (err: any) {
     console.error('Uncaught Exception: ', err.toString());
     if (err.stack) {
@@ -47,16 +45,15 @@ Yargs.usage(`Usage main.js [--loglevel='trace','debug','info','warn','error','fa
 
 const container = new Container();
 container.load(applicationModule);
-container.load(messagingModule);
+container.load(messagingBackendModule);
 container.load(loggerBackendModule);
-container.load(loggerServerModule);
-container.load(fileSystemServerModule);
+container.load(fileSystemBackendModule);
 container.load(workspaceBackendModule);
-container.load(backendLanguagesModule);
+container.load(languagesBackendModule);
 container.load(terminalBackendModule);
-container.load(backendJavaModule);
-container.load(backendPythonModule);
-container.load(backendCppModule);
+container.load(javaBackendModule);
+container.load(pythonBackendModule);
+container.load(cppBackendModule);
 container.bind(BackendApplicationContribution).to(StaticServer);
 const application = container.get(BackendApplication);
 application.start();
