@@ -15,6 +15,8 @@ import {
 } from '../common/filesystem-watcher-protocol';
 import { FileCommandContribution, FileMenuContribution } from './filesystem-commands';
 
+import "theia-core/src/filesystem/browser/style/index.css";
+
 export const fileSystemFrontendModule = new ContainerModule(bind => {
     bind(FileSystemWatcherClientListener).toSelf().inSingletonScope();
     bind(FileSystemWatcherServerProxy).toDynamicValue(ctx => {

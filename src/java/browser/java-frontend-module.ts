@@ -12,6 +12,8 @@ import { LanguageClientContribution } from "../../languages/browser";
 import { JavaCommandContribution } from './java-commands';
 import { JavaResourceResolver } from './java-resource';
 
+import "./monaco-contribution";
+
 export const javaFrontendModule = new ContainerModule(bind => {
     bind(CommandContribution).to(JavaCommandContribution).inSingletonScope();
 

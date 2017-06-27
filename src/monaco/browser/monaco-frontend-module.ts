@@ -24,6 +24,8 @@ import { MonacoCommandService, MonacoCommandServiceFactory } from './monaco-comm
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
 
+import 'theia-core/src/monaco/browser/style/index.css';
+
 export const monacoFrontendModule = new ContainerModule(bind => {
     bind(MonacoToProtocolConverter).toSelf().inSingletonScope();
     bind(ProtocolToMonacoConverter).toSelf().inSingletonScope();

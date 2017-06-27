@@ -7,26 +7,20 @@
 
 import 'reflect-metadata';
 import * as path from 'path';
-import { Container, injectable } from "inversify";
 import * as express from 'express';
+import { Container, injectable } from "inversify";
+
 import { BackendApplication, BackendApplicationContribution, backendApplicationModule } from "theia-core/lib/application/node";
+import { messagingBackendModule } from "theia-core/lib/messaging/node";
+import { loggerBackendModule } from 'theia-core/lib/application/node';
+
 import { fileSystemBackendModule } from "theia-core/lib/filesystem/node";
 import { workspaceBackendModule } from "theia-core/lib/workspace/node";
-import { messagingBackendModule } from "theia-core/lib/messaging/node";
+import { terminalBackendModule } from 'theia-core/lib/terminal/node';
 import { languagesBackendModule } from 'theia-core/lib/languages/node';
 import { javaBackendModule } from 'theia-core/lib/java/node';
 import { pythonBackendModule } from 'theia-core/lib/python/node';
 import { cppBackendModule } from 'theia-core/lib/cpp/node';
-import { terminalBackendModule } from 'theia-core/lib/terminal/node';
-import { loggerBackendModule } from 'theia-core/lib/application/node';
-import * as Yargs from 'yargs';
-
-process.on('uncaughtException', function (err: any) {
-    console.error('Uncaught Exception: ', err.toString());
-    if (err.stack) {
-        console.error(err.stack);
-    }
-});
 
 @injectable()
 class StaticServer implements BackendApplicationContribution {
@@ -36,12 +30,6 @@ class StaticServer implements BackendApplicationContribution {
         }));
     }
 }
-
-Yargs.usage(`Usage main.js [--loglevel='trace','debug','info','warn','error','fatal']`)
-    .default('loglevel', 'info')
-    .describe('loglevel', 'Sets the log level')
-    .help()
-    .argv;
 
 // Create the client container and load the common contributions.
 const container = new Container();

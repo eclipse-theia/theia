@@ -24,15 +24,6 @@ import { javaFrontendModule } from 'theia-core/lib/java/browser';
 import { pythonFrontendModule } from 'theia-core/lib/python/browser';
 import { cppFrontendModule } from 'theia-core/lib/cpp/browser';
 
-import 'theia-core/src/application/browser/style/index.css';
-import 'font-awesome/css/font-awesome.min.css';
-
-import 'theia-core/src/filesystem/browser/style/index.css';
-import 'theia-core/src/monaco/browser/style/index.css';
-import 'theia-core/src/terminal/browser/terminal.css';
-import 'xterm/dist/xterm.css';
-import 'theia-core/lib/java/browser/monaco-contribution';
-
 // Create the client container and load the common contributions.
 const container = new Container();
 container.load(frontendApplicationModule);

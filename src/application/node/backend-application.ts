@@ -22,13 +22,20 @@ export interface BackendApplicationContribution {
 @injectable()
 export class BackendApplication {
 
-    private app: express.Application;
+    protected app: express.Application;
 
     constructor(
         @inject(ContributionProvider) @named(BackendApplicationContribution)
         protected readonly contributionsProvider: ContributionProvider<BackendApplicationContribution>,
         @inject(ILogger) protected readonly logger: ILogger
-    ) { }
+    ) {
+        process.on('uncaughtException', error => {
+            logger.error('Uncaught Exception: ', error.toString());
+            if (error.stack) {
+                logger.error(error.stack);
+            }
+        });
+    }
 
     start(port: number = 3000): Promise<void> {
         const contributions = this.contributionsProvider.getContributions()
