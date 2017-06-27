@@ -19,13 +19,13 @@ class PreferenceServerStub implements IPreferenceServer {
     get<T>(preferenceName: string): Promise<T | undefined> {
         switch (preferenceName) {
             case ("testNumber"): {
-                return Promise.resolve<T | undefined>(<T><any>1);
+                return Promise.resolve(<any>1);
             }
             case ("testBoolean"): {
-                return Promise.resolve<T | undefined>(<T><any>true);
+                return Promise.resolve(<any>true);
             }
             case ("testString"): {
-                return Promise.resolve<T | undefined>(<T><any>"string");
+                return Promise.resolve(<any>"string");
             }
             default:
                 return Promise.resolve(undefined);

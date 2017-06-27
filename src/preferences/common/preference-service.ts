@@ -10,6 +10,8 @@ import { Event, Emitter } from '../../application/common/event'
 import { PreferenceChangedEvent } from './preference-event'
 import { IPreferenceServer } from './preference-server'
 
+export const IPreferenceService = Symbol("IPreferenceService")
+
 
 injectable()
 export interface IPreferenceService {
@@ -17,13 +19,21 @@ export interface IPreferenceService {
 
     has(preferenceName: string): Promise<boolean>;
 
+    get<T>(preferenceName: string): Promise<T | undefined>;
     get<T>(preferenceName: string, defaultValue?: T): Promise<T>;
 
+
+    getBoolean(preferenceName: string): Promise<boolean | undefined>;
     getBoolean(preferenceName: string, defaultValue?: boolean): Promise<boolean>;
 
+
+    getString(preferenceName: string): Promise<string | undefined>;
     getString(preferenceName: string, defaultValue?: string): Promise<string>;
 
+
+    getNumber(preferenceName: string): Promise<number | undefined>;
     getNumber(preferenceName: string, defaultValue?: number): Promise<number>;
+
 }
 
 export interface IPreferenceClient {
@@ -67,10 +77,28 @@ export class PreferenceService implements IPreferenceService, IPreferenceClient 
     }
 
     getString(preferenceName: string, defaultValue?: string): Promise<string | undefined> {
-        return this.server.get(preferenceName).then(result => result !== undefined ? !!result : (defaultValue ? defaultValue : undefined));
+        return this.server.get(preferenceName).then(result => {
+            if (result !== undefined) {
+                if (typeof result !== "string") {
+                    return result.toString();
+                } else {
+                    return result;
+                }
+            }
+            return defaultValue ? defaultValue : undefined
+        })
     }
 
     getNumber(preferenceName: string, defaultValue?: number): Promise<number | undefined> {
-        return this.server.get(preferenceName).then(result => result !== undefined ? +result : (defaultValue ? defaultValue : undefined));
+        return this.server.get(preferenceName).then(result => {
+            if (result !== undefined) {
+                if (typeof result !== "number") {
+                    return parseInt(result.toString(), 10);
+                } else {
+                    return result;
+                }
+            }
+            return defaultValue ? defaultValue : undefined
+        })
     }
 }
