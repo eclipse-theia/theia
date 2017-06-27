@@ -5,7 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { JsonPreferenceService, IPreferenceServer } from './preference-server';
+import { IPreferenceServer } from './preference-server';
+import { JsonPreferenceServer } from './json-preference-server'
 import { FileSystem } from '../../filesystem/common/filesystem';
 import { FileSystemWatcher } from '../../filesystem/common/filesystem-watcher'
 import * as chai from 'chai';
@@ -17,8 +18,9 @@ import { FileUri } from '../../application/node/file-uri';
 import { FileSystemNode } from "../../filesystem/node/node-filesystem"
 
 
+
 const expect = chai.expect;
-let prefService: IPreferenceServer;
+let prefServer: IPreferenceServer;
 let fileWatcher: FileSystemWatcher;
 let fs: FileSystem;
 const TEST_ROOT = FileUri.create(os.tmpdir()).appendPath("node-fs-root");
@@ -42,7 +44,7 @@ before(() => {
 
     fs = new FileSystemNode(root);
     fileWatcher = new FileSystemWatcher();
-    prefService = new JsonPreferenceService(fs, fileWatcher, ".theia/prefs.json");
+    prefServer = new JsonPreferenceServer(fs, fileWatcher, ".theia/prefs.json");
 
 });
 
@@ -51,52 +53,41 @@ after(() => {
     fsXtra.removeSync(FileUri.fsPath(root));
 });
 
-// class FileWatcherStub extends FileSystemWatcher {
-//     getFileSystemClient(): FileSystemClient {
-//         const emitter = this.onFileChangesEmitter
-//         return {
-//             onFileChanges(event: FileChangesEvent) {
-//                 emitter.fire(event)
-//             }
-//         }
-//     }
 
-//     private onFileChangesEmitter = new Emitter<FileChangesEvent>();
-
-//     get onFileChanges(): Event<FileChangesEvent> {
-//         return this.onFileChangesEmitter.event;
-//     }
-// }
-
-describe('preference-service', () => {
+describe('preference-server', () => {
     describe('01 #has preference', () => {
         it('should return true for the has preference', () => {
-            return expect(prefService.has("lineNumbers")).to.eventually.equal(true);
+            return expect(prefServer.has("lineNumbers")).to.eventually.equal(true);
         });
 
         it('should return false for the has preference', () => {
-            return expect(prefService.has("nonExistingPref")).to.eventually.equal(false);
+            return expect(prefServer.has("nonExistingPref")).to.eventually.equal(false);
         });
     });
 
     describe('02 #get preference', () => {
         it('should get the value for the preference', () => {
-            return expect(prefService.get("lineNumbers")).is.eventually.equal("on");
+            return expect(prefServer.get("lineNumbers")).is.eventually.equal("on");
         });
 
         it('should get no value for unknown preference', () => {
-            return expect(prefService.get("unknownPreference")).is.eventually.equal(undefined);
+            return expect(prefServer.get("unknownPreference")).is.eventually.equal(undefined);
         });
     })
 
     describe('03 #onPreferenceChanged', () => {
         it('should get notified of changed pref', () => {
+            console.log()
             fileSystemNode = new FileSystemNode(root);
             const stat = fileSystemNode.getFileStat(uri.toString());
 
             stat.then((fileStat) => {
                 fileSystemNode.setContent(fileStat, '{"lineNumbers": "off"}');
+                // expect(prefServer.get("lineNumbers")).is.eventually.equal("off");
             });
+
+
+
 
             // xtra test to try to trigger a change event - remove if not necessary
             // uri = root.appendPath(".theia/prefs2.json");
