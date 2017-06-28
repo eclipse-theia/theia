@@ -14,6 +14,8 @@ import { PreferenceChangedEvent } from '../common/preference-event'
 import { IPreferenceServer } from '../common/preference-protocol'
 import * as coreutils from "@phosphor/coreutils";
 
+export const WorkspacePreferenceServer = Symbol('WorkspacePreferenceServer');
+export const UserPreferenceServer = Symbol('UserPreferenceServer');
 export const PreferencePath = Symbol("PreferencePath")
 
 @injectable()
@@ -25,12 +27,13 @@ export class JsonPreferenceServer implements IPreferenceServer {
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
-        @inject(PreferencePath) protected readonly preferencePath: URI) {
+        @inject(PreferencePath) protected readonly preferencePath: Promise<URI>) {
 
         watcher.onFilesChanged(changes => {
-            if (this.arePreferencesAffected(changes)) {
-                this.reconcilePreferences();
-            }
+            this.arePreferencesAffected(changes).then(areAffected => {
+                if (areAffected)
+                    this.reconcilePreferences();
+            })
         });
 
         this.reconcilePreferences();
@@ -39,10 +42,11 @@ export class JsonPreferenceServer implements IPreferenceServer {
     /**
      * Checks to see if the preference file was modified
      */
-    protected arePreferencesAffected(changes: FileChange[]): boolean {
-
-        return changes.some(c => {
-            return (c.uri === this.preferencePath && c.type === FileChangeType.UPDATED);
+    protected arePreferencesAffected(changes: FileChange[]): Promise<boolean> {
+        return this.preferencePath.then((path) => {
+            return changes.some(c => {
+                return (c.uri.toString() === path.toString() && c.type === FileChangeType.UPDATED);
+            })
         })
     }
 
