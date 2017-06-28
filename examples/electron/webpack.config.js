@@ -1,7 +1,1 @@
-const webpack = require("webpack");
-
-module.exports = require("../../config/webpack/webpack.config")(__dirname, {
-    plugins: [
-        new webpack.HotModuleReplacementPlugin()
-    ]
-});
+module.exports = require("theia-core/config/webpack/webpack.config.electron.dev")(__dirname);
