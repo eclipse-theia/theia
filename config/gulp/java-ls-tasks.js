@@ -1,15 +1,33 @@
 // @ts-check
+const fs = require('fs');
+const path = require('path');
 const gulp = require('gulp');
 const cp = require('child_process');
 const decompress = require('gulp-decompress');
 const download = require('gulp-download');
 const serverDir = '../../../eclipse.jdt.ls';
+const downloadDir = '../../download';
 const extensionDir = '../../lib/java/node/server';
+const archiveUri = "http://download.eclipse.org/jdtls/snapshots/jdt-language-server-latest.tar.gz"
+const downloadPath = path.join(__dirname, downloadDir);
+const archivePath = path.join(downloadPath, path.basename(archiveUri));
 
-gulp.task('download_java_server', () => {
-    download("http://download.eclipse.org/jdtls/snapshots/jdt-language-server-latest.tar.gz")
+function decompressArchive() {
+    gulp.src(archivePath)
         .pipe(decompress())
         .pipe(gulp.dest(extensionDir))
+}
+
+gulp.task('download_java_server', () => {
+    if (fs.existsSync(archivePath)) {
+        decompressArchive();
+    } else {
+        download(archiveUri)
+            .pipe(gulp.dest(downloadPath))
+            .on('end', () =>
+                decompressArchive()
+            );
+    }
 });
 
 gulp.task('build_java_server', () => {

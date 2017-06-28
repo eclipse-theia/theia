@@ -39,6 +39,8 @@
     "bunyan": "^1.8.10",
     "chai": "^3.5.0",
     "concurrently": "^3.4.0",
+    "copy-webpack-plugin": "^4.0.1",
+    "circular-dependency-plugin": "^3.0.0",
     "css-loader": "^0.28.1",
     "electron-rebuild": "^1.5.11",
     "file-loader": "^0.11.1",
@@ -58,7 +60,8 @@
     "wdio-spec-reporter": "^0.1.0",
     "webdriverio": "^4.6.2",
     "webpack": "^2.2.1",
-    "webpack-dev-server": "^2.4.1"
+    "webpack-dev-server": "^2.5.0",
+    "webpack-merge": "^4.1.0"
   },
   "localDevDependencies": {
     "local-dependency-manager": "../../config/local-dependency-manager"
