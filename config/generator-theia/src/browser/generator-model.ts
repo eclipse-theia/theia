@@ -7,112 +7,113 @@
 
 import * as path from 'path';
 
-export interface Modules {
-    [name: string]: string
+export interface NodePackage {
+    dependencies?: Dependencies;
+    localDependencies?: Dependencies;
+    scripts?: any;
+    devDependencies?: any;
 }
 
-export interface ModulesOwner {
-    frontendModules?: Modules;
-    browserFrontendModules?: Modules;
-    electronFrontendModules?: Modules;
-    backendModules?: Modules;
-}
-
-export interface ExtensionPackage extends ModulesOwner {
+export interface TheiaNodePackage {
     name: string;
+    theiaExtensions?: Extension[];
 }
 
-export interface Extensions {
+export interface Extension {
+    frontend?: string;
+    frontendElectron?: string;
+    backend?: string;
+    backendElectron?: string;
+}
+
+export interface Dependencies {
     [name: string]: string
-}
-
-export interface Config {
-    name: string;
-    extensions: Extensions;
-    localExtensions: Extensions;
 }
 
 export class Model {
-    config: Config = {
-        name: '',
-        extensions: {},
-        localExtensions: {}
-    }
+    pck: NodePackage = {}
 
     protected _frontendModules: Map<string, string> | undefined;
+    protected _frontendElectronModules: Map<string, string> | undefined;
     protected _backendModules: Map<string, string> | undefined;
-    protected _browserFrontendModules: Map<string, string> | undefined;
-    protected _electronFrontendModules: Map<string, string> | undefined;
-    protected readonly extensionPackages = new Map<string, ExtensionPackage>();
+    protected _backendElectronModules: Map<string, string> | undefined;
+    protected readonly extensionPackages = new Map<string, TheiaNodePackage>();
 
     get allExtensions(): string[] {
-        return [...Object.keys(this.config.localExtensions), ...Object.keys(this.config.extensions)];
+        return [...Object.keys(this.pck.localDependencies), ...Object.keys(this.pck.dependencies)];
     }
 
-    readExtensionPackages(read: (extension: string, version: string) => ExtensionPackage | undefined): void {
+    readExtensionPackages(read: (extension: string, version: string) => TheiaNodePackage | undefined): void {
+        if (!this.pck.dependencies) {
+            return;
+        }
         // tslint:disable-next-line:forin
-        for (const extension in this.config.extensions) {
-            const version = this.config.extensions[extension];
+        for (const extension in this.pck.dependencies) {
+            const version = this.pck.dependencies[extension];
             this.readExtensionPackage(extension, () => read(extension, version));
         }
     }
 
-    readLocalExtensionPackages(read: (extension: string, path: string) => ExtensionPackage | undefined): void {
+    readLocalExtensionPackages(read: (extension: string, path: string) => TheiaNodePackage | undefined): void {
+        if (!this.pck.localDependencies) {
+            return;
+        }
         // tslint:disable-next-line:forin
-        for (const extension in this.config.localExtensions) {
-            const path = this.config.localExtensions[extension];
+        for (const extension in this.pck.localDependencies) {
+            const path = this.pck.localDependencies[extension];
             this.readExtensionPackage(extension, () => read(extension, path));
         }
     }
 
-    protected readExtensionPackage(extension: string, read: () => ExtensionPackage | undefined): void {
+    protected readExtensionPackage(extension: string, read: () => TheiaNodePackage | undefined): void {
         if (!this.extensionPackages.has(extension)) {
-            const extensionPackage: ExtensionPackage | undefined = read();
+            const extensionPackage: TheiaNodePackage | undefined = read();
             if (extensionPackage) {
                 this.extensionPackages.set(extension, extensionPackage);
             }
         }
     }
 
-    get backendModules(): Map<string, string> {
-        if (!this._backendModules) {
-            this._backendModules = this.computeModules('backendModules');
-        }
-        return this._backendModules;
-    }
-
     get frontendModules(): Map<string, string> {
         if (!this._frontendModules) {
-            this._frontendModules = this.computeModules('frontendModules');
+            this._frontendModules = this.computeModules('frontend');
         }
         return this._frontendModules;
     }
 
-    get browserFrontendModules(): Map<string, string> {
-        if (!this._browserFrontendModules) {
-            this._browserFrontendModules = this.computeModules('browserFrontendModules');
+    get frontendElectronModules(): Map<string, string> {
+        if (!this._frontendElectronModules) {
+            this._frontendElectronModules = this.computeModules('frontendElectron', 'frontend');
         }
-        return this._browserFrontendModules;
+        return this._frontendElectronModules;
     }
 
-    get electronFrontendModules(): Map<string, string> {
-        if (!this._electronFrontendModules) {
-            this._electronFrontendModules = this.computeModules('electronFrontendModules');
+    get backendModules(): Map<string, string> {
+        if (!this._backendModules) {
+            this._backendModules = this.computeModules('backend');
         }
-        return this._electronFrontendModules;
+        return this._backendModules;
     }
 
-    protected computeModules<K extends keyof ModulesOwner>(moduleKind: K): Map<string, string> {
+    get backendElectronModules(): Map<string, string> {
+        if (!this._backendElectronModules) {
+            this._backendElectronModules = this.computeModules('backendElectron', 'backend');
+        }
+        return this._backendElectronModules;
+    }
+
+    protected computeModules<P extends keyof Extension, S extends keyof Extension = P>(primary: P, secondary?: S): Map<string, string> {
         const result = new Map<string, string>();
-        for (const extension of this.extensionPackages.values()) {
-            const modules = extension[moduleKind];
-            if (modules) {
-                // tslint:disable-next-line:forin
-                for (const moduleName in modules) {
-                    if (!result.has(moduleName)) {
-                        const modulePath = modules[moduleName];
-                        const extensionPath = path.join(extension.name, modulePath);
-                        result.set(moduleName, extensionPath);
+        let moduleIndex = 1;
+        for (const extensionPackage of this.extensionPackages.values()) {
+            const extensions = extensionPackage.theiaExtensions;
+            if (extensions) {
+                for (const extension of extensions) {
+                    const modulePath = extension[primary] || (secondary && extension[secondary]);
+                    if (typeof modulePath === 'string') {
+                        const extensionPath = path.join(extensionPackage.name, modulePath);
+                        result.set(`${primary}_${moduleIndex}`, extensionPath);
+                        moduleIndex = moduleIndex + 1;
                     }
                 }
             }

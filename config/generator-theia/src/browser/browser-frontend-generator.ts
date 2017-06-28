@@ -20,18 +20,14 @@ import { Container } from 'inversify';
 import { FrontendApplication, frontendApplicationModule } from 'theia-core/lib/application/browser';
 import { messagingFrontendModule } from 'theia-core/lib/messaging/browser';
 import { loggerFrontendModule } from 'theia-core/lib/application/browser';
-${this.compileModuleImports(this.model.browserFrontendModules)}
 ${this.compileModuleImports(this.model.frontendModules)}
 
-// Create the app container and load the common contributions.
 const container = new Container();
 container.load(frontendApplicationModule);
 container.load(messagingFrontendModule);
 container.load(loggerFrontendModule);
-${this.compileModuleLoading('Load the browser contributions.', this.model.browserFrontendModules)}
-${this.compileModuleLoading('Load the frontend contributions.', this.model.frontendModules)}
+${this.compileModuleLoading(this.model.frontendModules)}
 
-// Obtain the application and start.
 const application = container.get(FrontendApplication);
 application.start();`;
     }
