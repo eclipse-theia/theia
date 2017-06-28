@@ -5,16 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { AbstractGenerator, FileSystem } from "./abstract-generator";
-
-export class BrowserBackendGenerator extends AbstractGenerator {
-
-    generate(fs: FileSystem): void {
-        fs.write(this.backend('main.ts'), this.compileMain());
-    }
-
-    protected compileMain(): string {
-        return `${this.compileCopyright()}
 import 'reflect-metadata';
 import * as path from 'path';
 import * as express from 'express';
@@ -23,7 +13,14 @@ import { Container, injectable } from 'inversify';
 import { BackendApplication, BackendApplicationContribution, backendApplicationModule } from 'theia-core/lib/application/node';
 import { messagingBackendModule } from 'theia-core/lib/messaging/node';
 import { loggerBackendModule } from 'theia-core/lib/application/node';
-${this.compileModuleImports(this.model.backendModules)}
+
+import backend_1 from 'theia-core/lib/filesystem/node/filesystem-backend-module';
+import backend_2 from 'theia-core/lib/workspace/node/workspace-backend-module';
+import backend_3 from 'theia-core/lib/terminal/node/terminal-backend-module';
+import backend_4 from 'theia-core/lib/languages/node/languages-backend-module';
+import backend_5 from 'theia-core/lib/java/node/java-backend-module';
+import backend_6 from 'theia-core/lib/python/node/python-backend-module';
+import backend_7 from 'theia-core/lib/cpp/node/cpp-backend-module';
 
 @injectable()
 class StaticServer implements BackendApplicationContribution {
@@ -38,11 +35,15 @@ const container = new Container();
 container.load(backendApplicationModule);
 container.load(messagingBackendModule);
 container.load(loggerBackendModule);
-${this.compileModuleLoading(this.model.backendModules)}
+
+container.load(backend_1);
+container.load(backend_2);
+container.load(backend_3);
+container.load(backend_4);
+container.load(backend_5);
+container.load(backend_6);
+container.load(backend_7);
 
 container.bind(BackendApplicationContribution).to(StaticServer);
 const application = container.get(BackendApplication);
-application.start();`;
-    }
-
-}
+application.start();
