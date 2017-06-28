@@ -39,14 +39,14 @@
     "fs-extra": "^2.1.2",
     "glob": "^7.1.1",
     "inversify": "^3.1.0",
+    "monaco-css": "^1.3.1",
     "monaco-editor": "^0.8.3",
     "monaco-editor-core": "^0.8.2",
-    "monaco-css": "^1.3.1",
     "monaco-html": "^1.2.1",
     "monaco-json": "^1.2.2",
+    "monaco-languageclient": "^0.0.1-alpha.6",
     "monaco-languages": "^0.7.0",
     "monaco-typescript": "^2.1.2",
-    "monaco-languageclient": "^0.0.1-alpha.6",
     "mv": "^2.1.1",
     "node-pty": "^0.6.4",
     "reconnecting-websocket": "^3.0.3",
@@ -123,33 +123,51 @@
     "url": "https://github.com/theia-ide/theia/issues"
   },
   "homepage": "https://github.com/theia-ide/theia",
-  "frontendModules": {
-    "fileSystemFrontendModule": "lib/filesystem/browser",
-    "workspaceFrontendModule": "lib/workspace/browser",
-    "navigatorFrontendModule": "lib/navigator/browser",
-    "editorFrontendModule": "lib/editor/browser",
-    "monacoFrontendModule": "lib/monaco/browser",
-    "terminalFrontendModule": "lib/terminal/browser",
-    "languagesFrontendModule": "lib/languages/browser",
-    "javaFrontendModule": "lib/java/browser",
-    "pythonFrontendModule": "lib/python/browser",
-    "cppFrontendModule": "lib/cpp/browser"
-  },
-  "browserFrontendModules": {
-    "browserMenuModule": "lib/application/browser/menu",
-    "browserClipboardModule": "lib/application/browser/clipboard"
-  },
-  "electronFrontendModules": {
-    "electronMenuModule": "lib/application/electron-browser/menu",
-    "electronClipboardModule": "lib/application/electron-browser/clipboard"
-  },
-  "backendModules": {
-    "fileSystemBackendModule": "lib/filesystem/node",
-    "workspaceBackendModule": "lib/workspace/node",
-    "terminalBackendModule": "lib/terminal/node",
-    "languagesBackendModule": "lib/languages/node",
-    "javaBackendModule": "lib/java/node",
-    "pythonBackendModule": "lib/python/node",
-    "cppBackendModule": "lib/cpp/node"
-  }
+  "theiaExtensions": [
+    {
+      "frontend": "lib/application/browser/menu/browser-menu-module",
+      "frontendElectron": "lib/application/electron-browser/menu/electron-menu-module"
+    },
+    {
+      "frontend": "lib/application/browser/clipboard/browser-clipboard-module",
+      "frontendElectron": "lib/application/electron-browser/clipboard/electron-clipboard-module"
+    },
+    {
+      "frontend": "lib/filesystem/browser/filesystem-frontend-module",
+      "backend": "lib/filesystem/browser/filesystem-backend-module"
+    },
+    {
+      "frontend": "lib/workspace/browser/workspace-frontend-module",
+      "backend": "lib/workspace/node/workspace-backend-module"
+    },
+    {
+      "frontend": "lib/navigator/browser/navigator-frontend-module"
+    },
+    {
+      "frontend": "lib/editor/browser/editor-frontend-module"
+    },
+    {
+      "frontend": "lib/editor/browser/monaco-frontend-module"
+    },
+    {
+      "frontend": "lib/terminal/browser/terminal-frontend-module",
+      "backend": "lib/terminal/node/terminal-backend-module"
+    },
+    {
+      "frontend": "lib/languages/browser/languages-frontend-module",
+      "backend": "lib/languages/node/languages-backend-module"
+    },
+    {
+      "frontend": "lib/java/browser/java-frontend-module",
+      "backend": "lib/java/node/java-backend-module"
+    },
+    {
+      "frontend": "lib/python/browser/python-frontend-module",
+      "backend": "lib/python/node/python-backend-module"
+    },
+    {
+      "frontend": "lib/cpp/browser/cpp-frontend-module",
+      "backend": "lib/cpp/node/cpp-backend-module"
+    }
+  ]
 }
