@@ -3,13 +3,6 @@ const paths = require('./paths');
 module.exports = function (dirname) {
     return [
         {
-            test: /\.tsx?$/,
-            exclude: [
-                paths(dirname).NODE_MODULES
-            ],
-            loader: 'ts-loader'
-        },
-        {
             test: /\.css$/,
             loader: 'style-loader!css-loader'
         },

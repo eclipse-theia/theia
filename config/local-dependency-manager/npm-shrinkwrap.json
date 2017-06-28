@@ -2100,9 +2100,9 @@
       "resolved": "https://registry.npmjs.org/to-absolute-glob/-/to-absolute-glob-0.1.1.tgz"
     },
     "typescript": {
-      "version": "2.3.4",
-      "from": "typescript@>=2.3.3 <3.0.0",
-      "resolved": "https://registry.npmjs.org/typescript/-/typescript-2.3.4.tgz",
+      "version": "2.4.1",
+      "from": "typescript@2.4.1",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-2.4.1.tgz",
       "dev": true
     },
     "unc-path-regex": {

@@ -97,7 +97,7 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
             );
             event.waitUntil(
                 Promise.race([resolveEdits, timeout]).then(edits =>
-                    this.p2m.asTextEdits(edits)
+                    this.p2m.asTextEdits(edits).map(edit => edit as monaco.editor.IIdentifiedSingleEditOperation)
                 )
             );
         }

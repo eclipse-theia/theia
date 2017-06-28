@@ -27,7 +27,7 @@
     "@types/through2": "^2.0.33",
     "@types/vinyl-paths": "0.0.29",
     "rimraf": "^2.6.1",
-    "typescript": "^2.3.3"
+    "typescript": "^2.4.1"
   },
   "dependencies": {
     "check-if-windows": "^1.0.0",

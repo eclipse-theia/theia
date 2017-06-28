@@ -29,7 +29,7 @@ export class BackendApplication {
         protected readonly contributionsProvider: ContributionProvider<BackendApplicationContribution>,
         @inject(ILogger) protected readonly logger: ILogger
     ) {
-        process.on('uncaughtException', error => {
+        process.on('uncaughtException', (error: any) => {
             logger.error('Uncaught Exception: ', error.toString());
             if (error.stack) {
                 logger.error(error.stack);

@@ -94,7 +94,7 @@ export class FileSystemNode implements FileSystem {
                 return reject(new Error(`File is out of sync. URI: ${file.uri}. Expected size: ${stat.size}. Actual size: ${file.size}.`));
             }
             const encoding = this.doGetEncoding(options);
-            fs.writeFile(FileUri.fsPath(_uri), content, encoding, error => {
+            fs.writeFile(FileUri.fsPath(_uri), content, { encoding }, error => {
                 if (error) {
                     return reject(error);
                 }

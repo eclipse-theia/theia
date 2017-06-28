@@ -135,9 +135,9 @@
       "resolved": "https://registry.npmjs.org/@types/minimatch/-/minimatch-2.0.29.tgz"
     },
     "@types/node": {
-      "version": "8.0.3",
-      "from": "@types/node@*",
-      "resolved": "https://registry.npmjs.org/@types/node/-/node-8.0.3.tgz"
+      "version": "7.0.32",
+      "from": "@types/node@>=7.0.32 <8.0.0",
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-7.0.32.tgz"
     },
     "@types/serve-static": {
       "version": "1.7.31",
@@ -6465,20 +6465,6 @@
       "from": "trim-newlines@>=1.0.0 <2.0.0",
       "resolved": "https://registry.npmjs.org/trim-newlines/-/trim-newlines-1.0.0.tgz"
     },
-    "ts-loader": {
-      "version": "2.2.0",
-      "from": "ts-loader@>=2.0.3 <3.0.0",
-      "resolved": "https://registry.npmjs.org/ts-loader/-/ts-loader-2.2.0.tgz",
-      "dev": true,
-      "dependencies": {
-        "semver": {
-          "version": "5.3.0",
-          "from": "semver@^5.0.1",
-          "resolved": "https://registry.npmjs.org/semver/-/semver-5.3.0.tgz",
-          "dev": true
-        }
-      }
-    },
     "ts-node": {
       "version": "3.1.0",
       "from": "ts-node@>=3.0.2 <4.0.0",
@@ -6535,20 +6521,6 @@
         }
       }
     },
-    "tslint-loader": {
-      "version": "3.5.3",
-      "from": "tslint-loader@>=3.4.3 <4.0.0",
-      "resolved": "https://registry.npmjs.org/tslint-loader/-/tslint-loader-3.5.3.tgz",
-      "dev": true,
-      "dependencies": {
-        "semver": {
-          "version": "5.3.0",
-          "from": "semver@^5.3.0",
-          "resolved": "https://registry.npmjs.org/semver/-/semver-5.3.0.tgz",
-          "dev": true
-        }
-      }
-    },
     "tsutils": {
       "version": "1.9.1",
       "from": "tsutils@>=1.1.0 <2.0.0",
@@ -6589,9 +6561,9 @@
       "resolved": "https://registry.npmjs.org/typedarray/-/typedarray-0.0.6.tgz"
     },
     "typescript": {
-      "version": "2.3.4",
-      "from": "typescript@>=2.3.2 <3.0.0",
-      "resolved": "https://registry.npmjs.org/typescript/-/typescript-2.3.4.tgz",
+      "version": "2.4.1",
+      "from": "typescript@>=2.4.1 <3.0.0",
+      "resolved": "https://registry.npmjs.org/typescript/-/typescript-2.4.1.tgz",
       "dev": true
     },
     "uglify-js": {

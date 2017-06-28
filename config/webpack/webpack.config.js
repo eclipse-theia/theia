@@ -33,7 +33,7 @@ module.exports = function (dirname, config = {}) {
         },
 
         resolve: {
-            extensions: ['.ts', '.js'],
+            extensions: ['.js'],
             alias: {
                 'vs': path.resolve(paths(dirname).BUILD_ROOT, monacoEditorPath)
             }
