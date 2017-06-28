@@ -13,7 +13,7 @@ import { NavigatorMenuContribution } from './navigator-menu';
 import { FileNavigatorContribution } from "./navigator-contribution";
 import { createFileNavigatorWidget } from "./navigator-container";
 
-export const navigatorFrontendModule = new ContainerModule(bind => {
+export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).to(FileNavigatorContribution).inSingletonScope();
     bind(MenuContribution).to(NavigatorMenuContribution).inSingletonScope();
     bind(FileNavigatorWidget).toDynamicValue(ctx =>

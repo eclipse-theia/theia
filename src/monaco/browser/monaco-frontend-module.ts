@@ -26,7 +26,7 @@ decorate(injectable(), ProtocolToMonacoConverter);
 
 import 'theia-core/src/monaco/browser/style/index.css';
 
-export const monacoFrontendModule = new ContainerModule(bind => {
+export default new ContainerModule(bind => {
     bind(MonacoToProtocolConverter).toSelf().inSingletonScope();
     bind(ProtocolToMonacoConverter).toSelf().inSingletonScope();
 

@@ -17,7 +17,7 @@ import { FileCommandContribution, FileMenuContribution } from './filesystem-comm
 
 import "theia-core/src/filesystem/browser/style/index.css";
 
-export const fileSystemFrontendModule = new ContainerModule(bind => {
+export default new ContainerModule(bind => {
     bind(FileSystemWatcherClientListener).toSelf().inSingletonScope();
     bind(FileSystemWatcherServerProxy).toDynamicValue(ctx => {
         const connection = ctx.container.get(WebSocketConnectionProvider);

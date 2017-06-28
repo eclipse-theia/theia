@@ -10,31 +10,25 @@ import { FrontendApplication, frontendApplicationModule } from 'theia-core/lib/a
 import { messagingFrontendModule } from 'theia-core/lib/messaging/browser';
 import { loggerFrontendModule } from 'theia-core/lib/application/browser';
 
-import { browserMenuModule } from 'theia-core/lib/application/browser/menu';
-import { browserClipboardModule } from 'theia-core/lib/application/browser/clipboard';
+import browserMenuModule from 'theia-core/lib/application/browser/menu/browser-menu-module';
+import browserClipboardModule from 'theia-core/lib/application/browser/clipboard/browser-clipboard-module';
+import fileSystemFrontendModule from 'theia-core/lib/filesystem/browser/filesystem-frontend-module';
+import workspaceFrontendModule from 'theia-core/lib/workspace/browser/workspace-frontend-module';
+import navigatorFrontendModule from 'theia-core/lib/navigator/browser/navigator-frontend-module';
+import editorFrontendModule from 'theia-core/lib/editor/browser/editor-frontend-module';
+import monacoFrontendModule from 'theia-core/lib/monaco/browser/monaco-frontend-module';
+import terminalFrontendModule from 'theia-core/lib/terminal/browser/terminal-frontend-module';
+import languagesFrontendModule from 'theia-core/lib/languages/browser/languages-frontend-module';
+import javaFrontendModule from 'theia-core/lib/java/browser/java-frontend-module';
+import pythonFrontendModule from 'theia-core/lib/python/browser/python-frontend-module';
+import cppFrontendModule from 'theia-core/lib/cpp/browser/cpp-frontend-module';
 
-import { fileSystemFrontendModule } from 'theia-core/lib/filesystem/browser';
-import { workspaceFrontendModule } from 'theia-core/lib/workspace/browser';
-import { navigatorFrontendModule } from 'theia-core/lib/navigator/browser';
-import { editorFrontendModule } from 'theia-core/lib/editor/browser';
-import { monacoFrontendModule } from 'theia-core/lib/monaco/browser';
-import { terminalFrontendModule } from 'theia-core/lib/terminal/browser';
-import { languagesFrontendModule } from 'theia-core/lib/languages/browser';
-import { javaFrontendModule } from 'theia-core/lib/java/browser';
-import { pythonFrontendModule } from 'theia-core/lib/python/browser';
-import { cppFrontendModule } from 'theia-core/lib/cpp/browser';
-
-// Create the client container and load the common contributions.
 const container = new Container();
 container.load(frontendApplicationModule);
 container.load(messagingFrontendModule);
 container.load(loggerFrontendModule);
-
-// Load the browser contributions.
 container.load(browserMenuModule);
 container.load(browserClipboardModule);
-
-// Load the frontend contributions.
 container.load(fileSystemFrontendModule);
 container.load(workspaceFrontendModule);
 container.load(navigatorFrontendModule);
@@ -46,6 +40,5 @@ container.load(javaFrontendModule);
 container.load(pythonFrontendModule);
 container.load(cppFrontendModule);
 
-// Obtain the application and start.
 const application = container.get(FrontendApplication);
 application.start();

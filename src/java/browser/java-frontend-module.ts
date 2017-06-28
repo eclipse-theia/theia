@@ -14,7 +14,7 @@ import { JavaResourceResolver } from './java-resource';
 
 import "./monaco-contribution";
 
-export const javaFrontendModule = new ContainerModule(bind => {
+export default new ContainerModule(bind => {
     bind(CommandContribution).to(JavaCommandContribution).inSingletonScope();
 
     bind(JavaClientContribution).toSelf().inSingletonScope();
