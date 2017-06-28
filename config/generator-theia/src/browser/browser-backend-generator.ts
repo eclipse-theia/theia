@@ -10,12 +10,11 @@ import { AbstractGenerator, FileSystem } from "./abstract-generator";
 export class BrowserBackendGenerator extends AbstractGenerator {
 
     generate(fs: FileSystem): void {
-        fs.write('src/backend/main.ts', this.compileBackendMain());
+        fs.write('src/backend/main.ts', this.compileMain());
     }
 
-    protected compileBackendMain(): string {
+    protected compileMain(): string {
         return `${this.compileCopyright()}
-
 import 'reflect-metadata';
 import * as path from 'path';
 import * as express from 'express';
