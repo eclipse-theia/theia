@@ -30,8 +30,17 @@ export interface Dependencies {
     [name: string]: string
 }
 
+export interface Config {
+    port: number;
+    host: string;
+}
+
 export class Model {
     pck: NodePackage = {}
+    config: Config = {
+        port: 3000,
+        host: 'localhost'
+    }
 
     protected _frontendModules: Map<string, string> | undefined;
     protected _frontendElectronModules: Map<string, string> | undefined;
