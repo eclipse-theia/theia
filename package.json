@@ -134,7 +134,7 @@
     },
     {
       "frontend": "lib/filesystem/browser/filesystem-frontend-module",
-      "backend": "lib/filesystem/browser/filesystem-backend-module"
+      "backend": "lib/filesystem/node/filesystem-backend-module"
     },
     {
       "frontend": "lib/workspace/browser/workspace-frontend-module",
@@ -147,7 +147,7 @@
       "frontend": "lib/editor/browser/editor-frontend-module"
     },
     {
-      "frontend": "lib/editor/browser/monaco-frontend-module"
+      "frontend": "lib/monaco/browser/monaco-frontend-module"
     },
     {
       "frontend": "lib/terminal/browser/terminal-frontend-module",

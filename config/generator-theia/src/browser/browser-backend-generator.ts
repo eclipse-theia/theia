@@ -35,14 +35,12 @@ class StaticServer implements BackendApplicationContribution {
     }
 }
 
-// Create the app container and load the common contributions.
 const container = new Container();
 container.load(backendApplicationModule);
 container.load(messagingBackendModule);
 container.load(loggerBackendModule);
-${this.compileModuleLoading('Load the backend contributions.', this.model.backendModules)}
+${this.compileModuleLoading(this.model.backendModules)}
 
-// Obtain the application and start.
 container.bind(BackendApplicationContribution).to(StaticServer);
 const application = container.get(BackendApplication);
 application.start();`;

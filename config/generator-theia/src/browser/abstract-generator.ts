@@ -25,19 +25,18 @@ export abstract class AbstractGenerator {
             return '';
         }
         const lines = Array.from(modules.keys()).map(moduleName =>
-            `import { ${moduleName} } from '${modules.get(moduleName)}';`
+            `import ${moduleName} from '${modules.get(moduleName)}';`
         );
         return os.EOL + lines.join(os.EOL);
     }
 
-    protected compileModuleLoading(comment: string, modules: Map<string, string>): string {
+    protected compileModuleLoading(modules: Map<string, string>): string {
         if (modules.size === 0) {
             return '';
         }
-        const lines = [`// ${comment}`];
-        lines.push(...Array.from(modules.keys()).map(moduleName =>
+        const lines = Array.from(modules.keys()).map(moduleName =>
             `container.load(${moduleName});`
-        ));
+        );
         return os.EOL + lines.join(os.EOL);
     }
 

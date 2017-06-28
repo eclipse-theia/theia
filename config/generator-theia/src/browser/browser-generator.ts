@@ -25,19 +25,10 @@ export class TheiaBrowserGenerator extends BaseGenerator {
     protected readonly frontend = new BrowserFrontendGenerator(this.model);
 
     initializing(): void {
-        this.config.defaults({
-            extensions: {},
-            localExtensions: {}
-        });
-        this.model.config = {
-            name: this.appname.replace(/\s+/g, '-'),
-            extensions: this.config.get('extensions'),
-            localExtensions: this.config.get('localExtensions')
-        };
+        this.model.pck = this.fs.readJSON('theia.package.json') || {};
     }
 
     configuring(): void {
-        this.config.save();
         this.model.readLocalExtensionPackages((extension, path) => {
             const extensionPath = paths.join(process.cwd(), `${path}/package.json`);
             console.log(extensionPath);
@@ -57,7 +48,7 @@ export class TheiaBrowserGenerator extends BaseGenerator {
     }
 
     install(): void {
-        this.spawnCommandSync('npm', ['run', 'localinstall']);
+        this.spawnCommandSync('npm', ['run', 'bootstrap']);
     }
 
 }
