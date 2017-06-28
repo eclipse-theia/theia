@@ -11,7 +11,22 @@ Theia is a cloud & desktop IDE framework implemented in TypeScript.
  - Support equally the paradigm of Cloud IDE and Desktop IDE
  - Provide extenders with a platform on which to build their own products
  - Provide support for multiple languages via the language and debug server protocols
- 
+
+## Roadmap
+A [`1.0 BETA`version of Theia](https://github.com/theia-ide/theia/milestone/3) is planned for December 6, 2017. The contributing parties are committed to deliver a framwork for building browser and desktop IDEs with the following features by then:
+
+ - Dynamic Extension System
+ - Rich Text Editing incl. Language Server Protocol Support
+ - Launching and Debugging Processes
+ - Shell With Flexible Layouts and Side Panels
+ - Electron & Browser Support
+ - Language Support for TypeScript, C/C++, Java, Python, Go, [YANG](https://tools.ietf.org/html/rfc6020)
+ - Diagramming Support through [Sprotty](https://github.com/theia-ide/sprotty)
+ - [many more features](https://github.com/theia-ide/theia/milestone/3)
+
+The team is also working on the following Open-Source Products based on Theia:
+ - [Yangster](https://github.com/yang-tools/yangster) - A YANG IDE
+
 ### Running the examples
 
 You can find more details on how to run the examples [here](doc/Developing.md).
