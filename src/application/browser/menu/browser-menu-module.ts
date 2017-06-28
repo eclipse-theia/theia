@@ -11,7 +11,7 @@ import { ContextMenuRenderer } from "../context-menu-renderer";
 import { BrowserMenuBarContribution, BrowserMainMenuFactory } from "./browser-menu-plugin";
 import { BrowserContextMenuRenderer } from "./browser-context-menu-renderer";
 
-export const browserMenuModule = new ContainerModule(bind => {
+export default new ContainerModule(bind => {
     bind(BrowserMainMenuFactory).toSelf().inSingletonScope();
     bind(ContextMenuRenderer).to(BrowserContextMenuRenderer).inSingletonScope();
     bind(FrontendApplicationContribution).to(BrowserMenuBarContribution).inSingletonScope();

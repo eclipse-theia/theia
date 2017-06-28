@@ -13,7 +13,7 @@ import { TerminalWidget, TerminalWidgetFactory } from './terminal-widget';
 import 'theia-core/src/terminal/browser/terminal.css';
 import 'xterm/dist/xterm.css';
 
-export const terminalFrontendModule = new ContainerModule(bind => {
+export default new ContainerModule(bind => {
     bind(TerminalWidget).toSelf().inTransientScope();
     bind(TerminalWidgetFactory).toAutoFactory(TerminalWidget);
 

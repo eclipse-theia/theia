@@ -14,13 +14,13 @@ import { BackendApplication, BackendApplicationContribution, backendApplicationM
 import { messagingBackendModule } from "theia-core/lib/messaging/node";
 import { loggerBackendModule } from 'theia-core/lib/application/node';
 
-import { fileSystemBackendModule } from "theia-core/lib/filesystem/node";
-import { workspaceBackendModule } from "theia-core/lib/workspace/node";
-import { terminalBackendModule } from 'theia-core/lib/terminal/node';
-import { languagesBackendModule } from 'theia-core/lib/languages/node';
-import { javaBackendModule } from 'theia-core/lib/java/node';
-import { pythonBackendModule } from 'theia-core/lib/python/node';
-import { cppBackendModule } from 'theia-core/lib/cpp/node';
+import fileSystemBackendModule from "theia-core/lib/filesystem/node/filesystem-backend-module";
+import workspaceBackendModule from "theia-core/lib/workspace/node/workspace-backend-module";
+import terminalBackendModule from 'theia-core/lib/terminal/node/terminal-backend-module';
+import languagesBackendModule from 'theia-core/lib/languages/node/languages-backend-module';
+import javaBackendModule from 'theia-core/lib/java/node/java-backend-module';
+import pythonBackendModule from 'theia-core/lib/python/node/python-backend-module';
+import cppBackendModule from 'theia-core/lib/cpp/node/cpp-backend-module';
 
 @injectable()
 class StaticServer implements BackendApplicationContribution {
@@ -31,13 +31,11 @@ class StaticServer implements BackendApplicationContribution {
     }
 }
 
-// Create the client container and load the common contributions.
 const container = new Container();
 container.load(backendApplicationModule);
 container.load(messagingBackendModule);
 container.load(loggerBackendModule);
 
-// Load the backend contributions.
 container.load(fileSystemBackendModule);
 container.load(workspaceBackendModule);
 container.load(languagesBackendModule);
@@ -46,7 +44,6 @@ container.load(javaBackendModule);
 container.load(pythonBackendModule);
 container.load(cppBackendModule);
 
-// Obtain the application and start.
 container.bind(BackendApplicationContribution).to(StaticServer);
 const application = container.get(BackendApplication);
 application.start();

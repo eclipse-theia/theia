@@ -10,7 +10,7 @@ import { FrontendApplicationContribution, ContextMenuRenderer } from '../../brow
 import { ElectronMenuContribution, ElectronMainMenuFactory } from "./electron-menu-plugin";
 import { ElectronContextMenuRenderer } from "./electron-context-menu-renderer";
 
-export const electronMenuModule = new ContainerModule(bind => {
+export default new ContainerModule(bind => {
     bind(ElectronMainMenuFactory).toSelf().inSingletonScope();
     bind(ContextMenuRenderer).to(ElectronContextMenuRenderer).inSingletonScope();
     bind(FrontendApplicationContribution).to(ElectronMenuContribution).inSingletonScope();
