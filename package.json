@@ -83,7 +83,7 @@
     "ts-loader": "^2.0.1",
     "ts-node": "^2.1.0",
     "tslint": "^4.5.1",
-    "typescript": "^2.3.2",
+    "typescript": "^2.4.1",
     "url-loader": "^0.5.8",
     "uuid": "^3.0.1",
     "webpack": "^2.2.1",

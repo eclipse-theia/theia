@@ -77,7 +77,9 @@ export class BunyanLoggerServer implements ILoggerServer {
 
     /* Get the log level for a logger.  */
     getLogLevel(id: number): Promise<number> {
-        return Promise.resolve(this.loggers[id].level());
+        return Promise.resolve(
+            this.toLogLevel(this.loggers[id].level())
+        );
     }
 
     /* Log a message to a logger.  */
@@ -109,7 +111,7 @@ export class BunyanLoggerServer implements ILoggerServer {
     }
 
     /* Convert Theia's log levels to bunyan's.  */
-    private toBunyanLevel(logLevel: number): number {
+    protected toBunyanLevel(logLevel: number): number {
         switch (logLevel) {
             case LogLevel.FATAL:
                 return bunyan.FATAL;
@@ -127,4 +129,24 @@ export class BunyanLoggerServer implements ILoggerServer {
                 return bunyan.INFO;
         }
     }
+
+    protected toLogLevel(bunyanLogLevel: number | string): number {
+        switch (Number(bunyanLogLevel)) {
+            case bunyan.FATAL:
+                return LogLevel.FATAL;
+            case bunyan.ERROR:
+                return LogLevel.ERROR;
+            case bunyan.WARN:
+                return LogLevel.WARN;
+            case bunyan.INFO:
+                return LogLevel.INFO;
+            case bunyan.DEBUG:
+                return LogLevel.DEBUG;
+            case bunyan.TRACE:
+                return LogLevel.TRACE;
+            default:
+                return LogLevel.INFO;
+        }
+    }
+
 }
