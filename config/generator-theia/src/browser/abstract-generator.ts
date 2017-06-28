@@ -6,6 +6,7 @@
  */
 
 import * as os from 'os';
+import * as path from 'path';
 import Base = require('yeoman-generator');
 
 import { Model } from "./generator-model";
@@ -19,6 +20,18 @@ export abstract class AbstractGenerator {
     ) { }
 
     abstract generate(fs: FileSystem): void;
+
+    protected srcGen(...paths: string[]): string {
+        return path.join('src-gen', ...paths);
+    }
+
+    protected backend(...paths: string[]): string {
+        return this.srcGen('backend', ...paths);
+    }
+
+    protected frontend(...paths: string[]): string {
+        return this.srcGen('frontend', ...paths);
+    }
 
     protected compileModuleImports(modules: Map<string, string>): string {
         if (modules.size === 0) {

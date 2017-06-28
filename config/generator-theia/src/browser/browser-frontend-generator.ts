@@ -10,9 +10,9 @@ import { AbstractGenerator, FileSystem } from "./abstract-generator";
 export class BrowserFrontendGenerator extends AbstractGenerator {
 
     generate(fs: FileSystem): void {
-        fs.write('src/frontend/index.html', this.compileIndex());
-        fs.write('src/frontend/index.ts', this.compileMonaco());
-        fs.write('src/frontend/main.ts', this.compileMain());
+        fs.write(this.frontend('index.html'), this.compileIndex());
+        fs.write(this.frontend('index.ts'), this.compileMonaco());
+        fs.write(this.frontend('main.ts'), this.compileMain());
     }
 
     protected compileIndex(): string {

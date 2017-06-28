@@ -19,6 +19,6 @@
     "sourceMap": true
   },
   "include": [
-    "src"
+    "src-gen"
   ]
 }

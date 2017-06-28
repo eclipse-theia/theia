@@ -26,7 +26,7 @@ export class BrowserPackageGenerator extends AbstractGenerator {
                 "build": "npm run build:app",
                 "build:app": "npm run build:backend && npm run build:frontend",
                 "build:backend": "tsc",
-                "build:frontend": "webpack && cp src/frontend/index.html lib/frontend",
+                "build:frontend": `webpack && cp ${this.srcGen()}/frontend/index.html lib/frontend`,
                 "start": "npm run start:app",
                 "start:app": "concurrently --names backend,webpack-server --prefix \"[{name}]\" \"npm run start:backend\" \"npm run start:frontend\"",
                 "start:backend": "node ./lib/backend/main.js | bunyan",
@@ -82,7 +82,7 @@ export class BrowserPackageGenerator extends AbstractGenerator {
                 "sourceMap": true
             },
             "include": [
-                "src"
+                this.srcGen()
             ]
         }
     }
