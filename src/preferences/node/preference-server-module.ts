@@ -8,28 +8,50 @@
 import { ContainerModule, } from 'inversify';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '../../messaging/common';
 import { IPreferenceServer, IPreferenceClient } from '../common/preference-protocol'
+import { WorkspaceServer } from '../../workspace/common';
 import { DefaultPreferenceServer } from '../node/default-preference-server'
 import { CompoundPreferenceServer } from '../common/compound-preference-server'
-import { JsonPreferenceServer, PreferencePath } from './json-preference-server'
+import { JsonPreferenceServer, WorkspacePreferenceServer, UserPreferenceServer, PreferencePath } from './json-preference-server'
 import { FileUri } from "../../application/node/file-uri";
 
 import * as path from 'path';
 
 export const preferenceServerModule = new ContainerModule(bind => {
-    const WorkspacePreferenceServer = Symbol('WorkspacePreferenceServer');
-    const UserPreferenceServer = Symbol('UserPreferenceServer');
-
     bind(DefaultPreferenceServer).toSelf().inSingletonScope();
+    bind(JsonPreferenceServer).toSelf();
 
-    bind(WorkspacePreferenceServer).to(JsonPreferenceServer).inSingletonScope();
-    bind(UserPreferenceServer).to(JsonPreferenceServer).inSingletonScope();
+    // Workspace preference server that watches the current workspace
+    bind(WorkspacePreferenceServer).toDynamicValue(ctx => {
+        const workspaceServer = ctx.container.get<WorkspaceServer>(WorkspaceServer);
+        const preferencePath = workspaceServer.getRoot().then(root => {
+            path.resolve(root, '.theia', 'prefs.json');
+        })
 
-    bind(PreferencePath).toConstantValue(FileUri.create(path.resolve('.theia', 'prefs.json')));
+        const child = ctx.container.createChild();
+        child.bind(PreferencePath).toConstantValue(preferencePath);
+
+        return child.get(JsonPreferenceServer);
+    });
+
+    // User preference server that watches the home directory of the user
+    bind(UserPreferenceServer).toDynamicValue(ctx => {
+        const workspaceServer = ctx.container.get<WorkspaceServer>(WorkspaceServer);
+        const preferencePath = workspaceServer.getRoot().then(root => {
+            return FileUri.create(path.resolve(root, '.theia', 'prefs.json'))
+        })
+
+        const child = ctx.container.createChild();
+        child.bind(PreferencePath).toConstantValue(preferencePath);
+
+        return child.get(JsonPreferenceServer);
+    });
+
+    // Preference server that merges the default with the different json servers
     bind(IPreferenceServer).toDynamicValue(ctx => {
         const defaultServer = ctx.container.get(DefaultPreferenceServer);
         const userServer = ctx.container.get<IPreferenceServer>(UserPreferenceServer);
         const workspaceServer = ctx.container.get<IPreferenceServer>(WorkspacePreferenceServer);
-        return new CompoundPreferenceServer(defaultServer, userServer, workspaceServer);
+        return new CompoundPreferenceServer(workspaceServer, userServer, defaultServer);
 
     }).inSingletonScope();
 
@@ -39,15 +61,19 @@ export const preferenceServerModule = new ContainerModule(bind => {
 
         prefServer.setClient({
             onDidChangePreference(pref) {
-                for (let client of clients) {
+                for (const client of clients) {
                     client.onDidChangePreference(pref)
                 }
             }
         })
 
         return new JsonRpcConnectionHandler<IPreferenceClient>("preferences", client => {
-            const prefServer = ctx.container.get(IPreferenceServer);
+            clients.push(client);
+            client.onDidCloseConnection(() => {
+                clients = clients.filter(e => e !== client)
+            })
             return prefServer;
+
         })
     }).inSingletonScope()
 });
