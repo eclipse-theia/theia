@@ -1662,9 +1662,9 @@
       }
     },
     "electron-to-chromium": {
-      "version": "1.3.14",
+      "version": "1.3.15",
       "from": "electron-to-chromium@>=1.2.7 <2.0.0",
-      "resolved": "https://registry.npmjs.org/electron-to-chromium/-/electron-to-chromium-1.3.14.tgz",
+      "resolved": "https://registry.npmjs.org/electron-to-chromium/-/electron-to-chromium-1.3.15.tgz",
       "dev": true
     },
     "elliptic": {
@@ -3587,9 +3587,9 @@
       "dev": true
     },
     "js-tokens": {
-      "version": "3.0.1",
+      "version": "3.0.2",
       "from": "js-tokens@>=3.0.0 <4.0.0",
-      "resolved": "https://registry.npmjs.org/js-tokens/-/js-tokens-3.0.1.tgz",
+      "resolved": "https://registry.npmjs.org/js-tokens/-/js-tokens-3.0.2.tgz",
       "dev": true
     },
     "js-yaml": {
@@ -6952,7 +6952,7 @@
     },
     "webpack-dev-server": {
       "version": "2.5.0",
-      "from": "webpack-dev-server@>=2.4.1 <3.0.0",
+      "from": "webpack-dev-server@>=2.5.0 <3.0.0",
       "resolved": "https://registry.npmjs.org/webpack-dev-server/-/webpack-dev-server-2.5.0.tgz",
       "dev": true,
       "dependencies": {
@@ -6989,9 +6989,9 @@
       }
     },
     "webpack-merge": {
-      "version": "3.0.0",
-      "from": "webpack-merge@>=3.0.0 <4.0.0",
-      "resolved": "https://registry.npmjs.org/webpack-merge/-/webpack-merge-3.0.0.tgz",
+      "version": "4.1.0",
+      "from": "webpack-merge@>=4.1.0 <5.0.0",
+      "resolved": "https://registry.npmjs.org/webpack-merge/-/webpack-merge-4.1.0.tgz",
       "dev": true
     },
     "webpack-sources": {

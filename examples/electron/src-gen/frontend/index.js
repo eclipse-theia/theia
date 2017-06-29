@@ -5,11 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-// @ts-check
 import { Container } from 'inversify';
-import { FrontendApplication, frontendApplicationModule } from 'theia-core/lib/application/browser';
+import { FrontendApplication, frontendApplicationModule, loggerFrontendModule } from 'theia-core/lib/application/browser';
 import { messagingFrontendModule } from 'theia-core/lib/messaging/browser';
-import { loggerFrontendModule } from 'theia-core/lib/application/browser';
 
 const container = new Container();
 container.load(frontendApplicationModule);
@@ -27,16 +25,17 @@ function start() {
     application.start();
 }
 
-import('theia-core/lib/application/electron-browser/menu/electron-menu-module').then(load)
-    .then(function () { return import('theia-core/lib/application/electron-browser/clipboard/electron-clipboard-module').then(load) })
-    .then(function () { return import('theia-core/lib/filesystem/browser/filesystem-frontend-module').then(load) })
-    .then(function () { return import('theia-core/lib/workspace/browser/workspace-frontend-module').then(load) })
-    .then(function () { return import('theia-core/lib/navigator/browser/navigator-frontend-module').then(load) })
-    .then(function () { return import('theia-core/lib/terminal/browser/terminal-frontend-module').then(load) })
-    .then(function () { return import('theia-core/lib/editor/browser/editor-frontend-module').then(load) })
-    .then(function () { return import('theia-core/lib/monaco/electron-browser/monaco-electron-module').then(load) })
-    .then(function () { return import('theia-core/lib/languages/browser/languages-frontend-module').then(load) })
-    .then(function () { return import('theia-core/lib/java/browser/java-frontend-module').then(load) })
-    .then(function () { return import('theia-core/lib/python/browser/python-frontend-module').then(load) })
-    .then(function () { return import('theia-core/lib/cpp/browser/cpp-frontend-module').then(load) })
-    .then(start);
+Promise.resolve()
+.then(function () { return import('theia-core/lib/application/electron-browser/menu/electron-menu-module').then(load) })
+.then(function () { return import('theia-core/lib/application/electron-browser/clipboard/electron-clipboard-module').then(load) })
+.then(function () { return import('theia-core/lib/filesystem/browser/filesystem-frontend-module').then(load) })
+.then(function () { return import('theia-core/lib/workspace/browser/workspace-frontend-module').then(load) })
+.then(function () { return import('theia-core/lib/navigator/browser/navigator-frontend-module').then(load) })
+.then(function () { return import('theia-core/lib/terminal/browser/terminal-frontend-module').then(load) })
+.then(function () { return import('theia-core/lib/editor/browser/editor-frontend-module').then(load) })
+.then(function () { return import('theia-core/lib/monaco/electron-browser/monaco-electron-module').then(load) })
+.then(function () { return import('theia-core/lib/languages/browser/languages-frontend-module').then(load) })
+.then(function () { return import('theia-core/lib/java/browser/java-frontend-module').then(load) })
+.then(function () { return import('theia-core/lib/python/browser/python-frontend-module').then(load) })
+.then(function () { return import('theia-core/lib/cpp/browser/cpp-frontend-module').then(load) })
+.then(start);
