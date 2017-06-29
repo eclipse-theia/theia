@@ -22,7 +22,7 @@ export interface BackendApplicationContribution {
 @injectable()
 export class BackendApplication {
 
-    protected app: express.Application;
+    protected readonly app: express.Application = express();
 
     constructor(
         @inject(ContributionProvider) @named(BackendApplicationContribution)
@@ -35,22 +35,24 @@ export class BackendApplication {
                 logger.error(error.stack);
             }
         });
+        for (const contribution of this.contributionsProvider.getContributions()) {
+            if (contribution.configure) {
+                contribution.configure(this.app);
+            }
+        }
+    }
+
+    use(...handlers: express.Handler[]): void {
+        this.app.use(...handlers);
     }
 
     start(port: number = 3000): Promise<void> {
-        const contributions = this.contributionsProvider.getContributions()
-        this.app = express();
-        for (const contrib of contributions) {
-            if (contrib.configure) {
-                contrib.configure(this.app);
-            }
-        }
         return new Promise<void>(resolve => {
             const server = this.app.listen(port, () => {
                 this.logger.info(`Theia app listening on port ${port}.`);
                 resolve();
             });
-            for (const contrib of contributions) {
+            for (const contrib of this.contributionsProvider.getContributions()) {
                 if (contrib.onStart) {
                     contrib.onStart(server);
                 }

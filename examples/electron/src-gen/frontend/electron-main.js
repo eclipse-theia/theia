@@ -5,6 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+// @ts-check
+
 // Workaround for https://github.com/electron/electron/issues/9225. Chrome has an issue where
 // in certain locales (e.g. PL), image metrics are wrongly computed. We explicitly set the
 // LC_NUMERIC to prevent this from happening (selects the numeric formatting category of the
@@ -14,23 +16,24 @@ if (process.env.LC_ALL) {
 }
 process.env.LC_NUMERIC = 'C';
 
-import * as electron from 'electron';
-import * as path from 'path';
+const electron = require('electron');
+const path = require('path');
 
-let mainWindow: Electron.BrowserWindow | undefined = undefined;
+let mainWindow = undefined;
 
-electron.app.on('window-all-closed', () => {
+electron.app.on('window-all-closed', function () {
     if (process.platform !== 'darwin') {
         electron.app.quit();
     }
 });
 
-electron.app.on('ready', () => {
-    require("../backend/main"); // start the express server
+electron.app.on('ready', function () {
+    // start the express server
+    require("../backend/main");
     mainWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
     mainWindow.webContents.openDevTools();
-    mainWindow.loadURL(`file://${path.join(__dirname, 'index.html')}`);
-    mainWindow.on('closed', () => {
+    mainWindow.loadURL(`file://${path.join(__dirname, '../../lib/index.html')}`);
+    mainWindow.on('closed', function () {
         mainWindow = undefined;
     });
 });
