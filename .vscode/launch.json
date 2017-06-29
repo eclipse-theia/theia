@@ -8,12 +8,13 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Backend",
-            "program": "${workspaceRoot}/examples/browser/lib/backend/main.js",
+            "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
             "args": [
                 "--loglevel=debug"
             ],
             "sourceMaps": true,
             "outFiles": [
+                "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
                 "${workspaceRoot}/examples/browser/lib/**/*.js",
                 "${workspaceRoot}/examples/browser/node_modules/theia-core/lib/**/*.js"
             ]
@@ -22,13 +23,14 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Backend (eclipse.jdt.ls)",
-            "program": "${workspaceRoot}/examples/browser/lib/backend/main.js",
+            "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
             "args": [
                 "--loglevel=debug",
                 "--root-dir=${workspaceRoot}/../eclipse.jdt.ls/org.eclipse.jdt.ls.core"
             ],
             "sourceMaps": true,
             "outFiles": [
+                "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
                 "${workspaceRoot}/examples/browser/lib/**/*.js",
                 "${workspaceRoot}/examples/browser/node_modules/theia-core/lib/**/*.js"
             ]

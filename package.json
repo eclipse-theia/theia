@@ -133,14 +133,15 @@
       "frontend": "lib/navigator/browser/navigator-frontend-module"
     },
     {
+      "frontend": "lib/terminal/browser/terminal-frontend-module",
+      "backend": "lib/terminal/node/terminal-backend-module"
+    },
+    {
       "frontend": "lib/editor/browser/editor-frontend-module"
     },
     {
-      "frontend": "lib/monaco/browser/monaco-frontend-module"
-    },
-    {
-      "frontend": "lib/terminal/browser/terminal-frontend-module",
-      "backend": "lib/terminal/node/terminal-backend-module"
+      "frontend": "lib/monaco/browser/monaco-browser-module",
+      "frontendElectron": "lib/monaco/electron-browser/monaco-electron-module"
     },
     {
       "frontend": "lib/languages/browser/languages-frontend-module",
