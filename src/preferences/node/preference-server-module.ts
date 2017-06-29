@@ -15,6 +15,7 @@ import { JsonPreferenceServer, WorkspacePreferenceServer, UserPreferenceServer, 
 import { FileUri } from "../../application/node/file-uri";
 
 import * as path from 'path';
+import * as os from 'os';
 
 export const preferenceServerModule = new ContainerModule(bind => {
     bind(DefaultPreferenceServer).toSelf().inSingletonScope();
@@ -24,7 +25,7 @@ export const preferenceServerModule = new ContainerModule(bind => {
     bind(WorkspacePreferenceServer).toDynamicValue(ctx => {
         const workspaceServer = ctx.container.get<WorkspaceServer>(WorkspaceServer);
         const preferencePath = workspaceServer.getRoot().then(root => {
-            path.resolve(root, '.theia', 'prefs.json');
+            return FileUri.create(root).resolve(path.join('.theia', 'prefs.json'));
         })
 
         const child = ctx.container.createChild();
@@ -35,13 +36,10 @@ export const preferenceServerModule = new ContainerModule(bind => {
 
     // User preference server that watches the home directory of the user
     bind(UserPreferenceServer).toDynamicValue(ctx => {
-        const workspaceServer = ctx.container.get<WorkspaceServer>(WorkspaceServer);
-        const preferencePath = workspaceServer.getRoot().then(root => {
-            return FileUri.create(path.resolve(root, '.theia', 'prefs.json'))
-        })
+        const uri = Promise.resolve(FileUri.create(os.homedir()).resolve(path.join('.theia', 'prefs.json')));
 
         const child = ctx.container.createChild();
-        child.bind(PreferencePath).toConstantValue(preferencePath);
+        child.bind(PreferencePath).toConstantValue(uri);
 
         return child.get(JsonPreferenceServer);
     });
