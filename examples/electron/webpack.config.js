@@ -1,7 +1,8 @@
-const webpack = require("webpack");
+/*
+ * Copyright (C) 2017 TypeFox and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
 
-module.exports = require("../../config/webpack/webpack.config")(__dirname, {
-    plugins: [
-        new webpack.HotModuleReplacementPlugin()
-    ]
-});
+module.exports = require("theia-core/config/webpack/webpack.config.electron.dev")(__dirname);

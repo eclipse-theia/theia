@@ -1,0 +1,39 @@
+{
+    "private": true,
+    "name": "browser-example",
+    "version": "0.0.1-alpha.1",
+    "license": "Apache-2.0",
+    "dependencies": {
+        "theia-core": "latest"
+    },
+    "localDependencies": {
+        "theia-core": "../.."
+    },
+    "scripts": {
+        "bootstrap": "npm install ../../config/local-dependency-manager && npm run localinstall",
+        "localinstall": "ldm install --dev --original-sources",
+        "build": "npm run build:localdeps && npm run build:frontend",
+        "build:localdeps": "ldm run build && ldm sync --original-sources",
+        "watch": "concurrently --names watch-deps,watch-frontend --prefix \"[{name}]\" \"npm run watch:localdeps\" \"npm run watch:frontend\"",
+        "watch:localdeps": "ldm watch --sync --run=watch --original-sources",
+        "test:ui": "wdio wdio.conf.js"
+    },
+    "devDependencies": {
+        "@types/chai": "^3.5.1",
+        "@types/webdriverio": "^4.7.0",
+        "chai": "^3.5.0",
+        "local-dependency-manager": "../../config/local-dependency-manager",
+        "selenium-standalone": "^6.2.0",
+        "typescript": "^2.4.1",
+        "tslint": "^4.5.1",
+        "ts-node": "^3.0.2",
+        "wdio-mocha-framework": "^0.5.9",
+        "wdio-phantomjs-service": "^0.2.2",
+        "wdio-selenium-standalone-service": "0.0.8",
+        "wdio-spec-reporter": "^0.1.0",
+        "webdriverio": "^4.6.2"
+    },
+    "localDevDependencies": {
+        "local-dependency-manager": "../../config/local-dependency-manager"
+    }
+}

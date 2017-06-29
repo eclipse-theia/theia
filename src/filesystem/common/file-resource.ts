@@ -18,7 +18,7 @@ export class FileResource implements Resource {
         protected readonly fileSystem: FileSystem
     ) { }
 
-    readContents(options?: { encodings?: string }): Promise<string> {
+    readContents(options?: { encoding?: string }): Promise<string> {
         return this.fileSystem.resolveContent(this.uri.toString(), options).then(result => {
             this.stat = result.stat;
             return result.content;

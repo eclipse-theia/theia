@@ -5,11 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-
-import { ContainerModule } from "inversify"
+import { ContainerModule } from 'inversify'
 import { CommandContribution, MenuContribution } from '../../application/common';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalWidget, TerminalWidgetFactory } from './terminal-widget';
+
+import 'theia-core/src/terminal/browser/terminal.css';
+import 'xterm/dist/xterm.css';
 
 export default new ContainerModule(bind => {
     bind(TerminalWidget).toSelf().inTransientScope();

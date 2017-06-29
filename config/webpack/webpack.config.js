@@ -9,13 +9,12 @@ const electronConfiguration = require('./webpack.config.electron');
 const webConfiguration = require('./webpack.config.web');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
-const monacoEditorPath = './node_modules/monaco-editor-core/dev/vs';
+const monacoEditorPath = './node_modules/monaco-editor-core/min/vs';
 const monacoLanguagesPath = './node_modules/monaco-languages/release';
 const monacoCssLanguagePath = './node_modules/monaco-css/release/min';
 const monacoTsLanguagePath = './node_modules/monaco-typescript/release';
 const monacoJsonLanguagePath = './node_modules/monaco-json/release/min';
 const monacoHtmlLanguagePath = './node_modules/monaco-html/release/min';
-
 
 module.exports = function (dirname, config = {}) {
     const commonConfiguration = {
@@ -33,7 +32,7 @@ module.exports = function (dirname, config = {}) {
         },
 
         resolve: {
-            extensions: ['.ts', '.js'],
+            extensions: ['.js'],
             alias: {
                 'vs': path.resolve(paths(dirname).BUILD_ROOT, monacoEditorPath)
             }

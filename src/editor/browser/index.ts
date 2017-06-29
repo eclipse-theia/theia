@@ -12,4 +12,4 @@ export * from './editor-manager';
 export * from './editor-command';
 export * from './editor-menu';
 export * from './editor-keybinding';
-export * from './editor-module';
+export * from './editor-frontend-module';

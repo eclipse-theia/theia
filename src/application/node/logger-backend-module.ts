@@ -4,11 +4,13 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
+
 import { ContainerModule, Container } from 'inversify';
 import { ILogger, LoggerFactory, LoggerOptions, Logger } from '../common/logger';
-import { ILoggerServer } from '../common/logger-protocol';
-import { BunyanLoggerServer } from './logger-server';
+import { ILoggerServer, ILoggerClient, loggerPath } from '../common/logger-protocol';
+import { BunyanLoggerServer } from './bunyan-logger-server';
 import { LoggerWatcher } from '../common/logger-watcher';
+import { ConnectionHandler, JsonRpcConnectionHandler } from "../../messaging/common";
 
 export const loggerBackendModule = new ContainerModule(bind => {
     bind(ILogger).to(Logger).inSingletonScope();
@@ -23,5 +25,13 @@ export const loggerBackendModule = new ContainerModule(bind => {
             return child.get(ILogger);
         }
     );
+
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler<ILoggerClient>(loggerPath, client => {
+            const loggerServer = ctx.container.get<ILoggerServer>(ILoggerServer);
+            loggerServer.setClient(client);
+            return loggerServer;
+        })
+    ).inSingletonScope();
 });
 

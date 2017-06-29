@@ -35,7 +35,7 @@ export class TerminalWidget extends BaseWidget {
         @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider
     ) {
         super();
-        this.endpoint = new Endpoint({ path: '/terminals' })
+        this.endpoint = new Endpoint({ path: '/services/terminals' })
         num++
         this.id = 'terminal-' + num
         this.title.caption = 'Terminal ' + num

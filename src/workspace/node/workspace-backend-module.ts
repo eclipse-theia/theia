@@ -10,7 +10,7 @@ import { ConnectionHandler, JsonRpcConnectionHandler } from '../../messaging/com
 import { WorkspaceServer, workspacePath } from "../common";
 import { DefaultWorkspaceServer } from "./default-workspace-server";
 
-export const workspaceBackendModule = new ContainerModule(bind => {
+export default new ContainerModule(bind => {
     bind(DefaultWorkspaceServer).toSelf().inSingletonScope();
     bind(WorkspaceServer).toDynamicValue(ctx =>
         ctx.container.get(DefaultWorkspaceServer)

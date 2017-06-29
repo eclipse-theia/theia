@@ -13,7 +13,7 @@ import { WorkspaceServer, workspacePath } from '../common';
 import { WorkspaceFrontendContribution } from "./workspace-frontend-contribution";
 import { WorkspaceService } from './workspace-service';
 
-export const workspaceFrontendModule = new ContainerModule(bind => {
+export default new ContainerModule(bind => {
     bind(WorkspaceService).toSelf().inSingletonScope();
     bind(WorkspaceServer).toDynamicValue(ctx => {
         const provider = ctx.container.get(WebSocketConnectionProvider);

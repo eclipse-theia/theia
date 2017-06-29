@@ -29,7 +29,7 @@ describe('basic-example-spec', () => {
     describe('01 #start example app', () => {
         it('should start the electron example app', (done) => {
             if (app.isReady()) {
-                require("../src/backend/main"); // start the express server
+                require("../src-gen/backend/main"); // start the express server
 
                 mainWindow.webContents.openDevTools();
                 mainWindow.loadURL(`file://${path.join(__dirname, 'index.html')}`);

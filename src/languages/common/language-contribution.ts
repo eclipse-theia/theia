@@ -12,6 +12,6 @@ export interface LanguageContribution {
 
 export namespace LanguageContribution {
     export function getPath(contribution: LanguageContribution): string {
-        return '/languages/' + contribution.id;
+        return '/services/languages/' + contribution.id;
     }
 }

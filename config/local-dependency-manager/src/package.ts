@@ -190,7 +190,7 @@ export class Package {
             const archivePath = this.packDependency(dependency);
             if (archivePath) {
                 try {
-                    this.npmSync('install', archivePath, '--no-shrinkwrap');
+                    this.npmSync('install', archivePath);
                     this.installOriginalSources(dependency);
                 } finally {
                     fs.removeSync(archivePath);
@@ -200,7 +200,7 @@ export class Package {
     }
 
     uninstallDependency(dependency: Package): void {
-        this.npmSync('uninstall', dependency.name, '--no-shrinkwrap');
+        this.npmSync('uninstall', dependency.name);
     }
 
     cleanDependency(dependency: Package): void {
