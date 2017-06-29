@@ -17,7 +17,12 @@ import { Widget } from "./widgets";
 export const FrontendApplicationContribution = Symbol("FrontendApplicationContribution");
 export interface FrontendApplicationContribution {
     /**
-     * Callback
+     *CallbackThe value of the $TRAVIS_OS_NAME variable is
+     *set to linux or osx according to the operating system
+     *a particular build is running on, so you can use it
+     *to conditionalize your build scripts.
+
+If you are already using a build matrix to test multiple versions, the os key also multiplies the matrix.
      */
     onStart(app: FrontendApplication): void;
 }
@@ -26,6 +31,7 @@ export interface FrontendApplicationContribution {
 export class FrontendApplication {
 
     protected _shell: ApplicationShell | undefined;
+    public static isBrowser: boolean = true;
 
     constructor(
         @inject(CommandRegistry) protected readonly commands: CommandRegistry,
@@ -51,6 +57,7 @@ export class FrontendApplication {
      * - display the application shell
      */
     start(): void {
+
         if (this._shell) {
             throw new Error('The application is already running.');
         }

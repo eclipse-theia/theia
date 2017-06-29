@@ -59,4 +59,4 @@ container.load(backendPythonModule);
 container.load(backendCppModule);
 container.bind(BackendApplicationContribution).to(StaticServer);
 const application = container.get(BackendApplication);
-application.start();
+application.start(+(process.argv[2]));

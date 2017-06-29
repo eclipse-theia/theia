@@ -23,6 +23,7 @@ export interface BackendApplicationContribution {
 export class BackendApplication {
 
     private app: express.Application;
+    private fs = require('fs');
 
     constructor(
         @inject(ContributionProvider) @named(BackendApplicationContribution)
@@ -30,19 +31,46 @@ export class BackendApplication {
         @inject(ILogger) protected readonly logger: ILogger
     ) { }
 
-    start(port: number = 3000): Promise<void> {
+    createFile(portNumber: number) {
+
+        this.fs.writeFile('port', portNumber.toString(), function (err: string) {
+            if (err) {
+                return console.error(err);
+            }
+        });
+    }
+
+    start(portNumber: number): Promise<void> {
         const contributions = this.contributionsProvider.getContributions()
         this.app = express();
+
+        if (portNumber < 1024 || isNaN(portNumber)) {
+            portNumber = 3000
+        }
+
         for (const contrib of contributions) {
             if (contrib.configure) {
                 contrib.configure(this.app);
             }
         }
+
+
+        return this.attemptToListen(contributions, portNumber)
+    }
+
+
+    attemptToListen(contributions: BackendApplicationContribution[], portNumber: number): Promise<void> {
+        this.createFile(portNumber)
+        let self = this;
         return new Promise<void>(resolve => {
-            const server = this.app.listen(port, () => {
-                this.logger.info(`Theia app listening on port ${port}.`);
+            const server = this.app.listen(portNumber, function () {
+                console.log(`Theia app listening on port ` + portNumber);
                 resolve();
+            }).on('error', function (e) {
+                portNumber++
+                self.attemptToListen(contributions, portNumber)
             });
+
             for (const contrib of contributions) {
                 if (contrib.onStart) {
                     contrib.onStart(server);
