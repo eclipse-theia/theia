@@ -1,0 +1,7 @@
+{
+  "generator-theia": {
+    "port": 3000,
+    "host": "localhost",
+    "copyright": "/*\n * Copyright (C) 2017 TypeFox and others.\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0\n */"
+  }
+}
