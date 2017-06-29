@@ -22,16 +22,10 @@ export interface IPreferenceService {
 
 
     getBoolean(preferenceName: string): Promise<boolean | undefined>;
-    getBoolean(preferenceName: string, defaultValue?: boolean): Promise<boolean>;
-
 
     getString(preferenceName: string): Promise<string | undefined>;
-    getString(preferenceName: string, defaultValue?: string): Promise<string>;
-
 
     getNumber(preferenceName: string): Promise<number | undefined>;
-    getNumber(preferenceName: string, defaultValue?: number): Promise<number>;
-
 }
 
 @injectable()
@@ -63,12 +57,30 @@ export class PreferenceService implements IPreferenceService, IPreferenceClient 
         return this.server.has(preferenceName);
     }
 
-    get<T>(preferenceName: string, defaultValue?: T): Promise<T> {
-        return this.server.get<T>(preferenceName).then(result => result !== undefined ? result : (defaultValue ? defaultValue : undefined));
+    get<T>(preferenceName: string, defaultValue?: T): Promise<T | undefined> {
+
+        return this.server.get<T>(preferenceName).then(
+            result => {
+                return result !== undefined ? result : (defaultValue ? defaultValue : undefined)
+            });
     }
 
     getBoolean(preferenceName: string, defaultValue?: boolean): Promise<boolean | undefined> {
-        return this.server.get(preferenceName).then(result => result !== undefined ? !!result : (defaultValue !== undefined ? defaultValue : undefined));
+        return this.server.get(preferenceName).then(result => {
+            if (result !== undefined) {
+                return !!result;
+            } else {
+                if (defaultValue !== undefined) {
+                    return defaultValue
+                } else {
+                    return undefined
+                }
+            }
+        });
+
+        // return this.server.get(preferenceName).then(result => {
+        //     return result !== undefined ? !!result : (defaultValue !== undefined ? defaultValue : undefined)
+        // });
     }
 
     getString(preferenceName: string, defaultValue?: string): Promise<string | undefined> {
