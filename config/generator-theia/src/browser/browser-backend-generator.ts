@@ -10,39 +10,40 @@ import { AbstractGenerator, FileSystem } from "./abstract-generator";
 export class BrowserBackendGenerator extends AbstractGenerator {
 
     generate(fs: FileSystem): void {
-        fs.write(this.backend('main.ts'), this.compileMain());
+        fs.write(this.backend('main.js'), this.compileMainJs());
     }
 
-    protected compileMain(): string {
+    protected compileMainJs(): string {
         return `${this.compileCopyright()}
-import 'reflect-metadata';
-import * as path from 'path';
-import * as express from 'express';
-import { Container, injectable } from 'inversify';
+require('reflect-metadata');
+const path = require('path');
+const express = require('express');
+const { Container, injectable } = require('inversify');
 
-import { BackendApplication, BackendApplicationContribution, backendApplicationModule } from 'theia-core/lib/application/node';
-import { messagingBackendModule } from 'theia-core/lib/messaging/node';
-import { loggerBackendModule } from 'theia-core/lib/application/node';
-${this.compileModuleImports(this.model.backendModules)}
-
-@injectable()
-class StaticServer implements BackendApplicationContribution {
-    configure(app: express.Application): void {
-        app.use(express.static(path.join(__dirname, '..'), {
-            index: path.join('frontend', 'index.html')
-        }));
-    }
-}
+const { BackendApplication, backendApplicationModule, loggerBackendModule } = require('theia-core/lib/application/node');
+const { messagingBackendModule } = require("theia-core/lib/messaging/node");
 
 const container = new Container();
 container.load(backendApplicationModule);
 container.load(messagingBackendModule);
 container.load(loggerBackendModule);
-${this.compileModuleLoading(this.model.backendModules)}
 
-container.bind(BackendApplicationContribution).to(StaticServer);
-const application = container.get(BackendApplication);
-application.start();`;
+function load(raw) {
+    return Promise.resolve(raw.default).then(module =>
+        container.load(module)
+    )
+}
+
+function start() {
+    const application = container.get(BackendApplication);
+    application.use(express.static(path.join(__dirname, '../../lib'), {
+        index: 'index.html'
+    }));
+    application.start();
+}
+
+Promise.resolve()${this.compileBackendModuleImports(this.model.backendModules)}
+.then(start);`;
     }
 
 }

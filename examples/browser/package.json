@@ -15,8 +15,7 @@
     "prepare": "npm run clean && npm run build",
     "build": "npm run build:localdeps && npm run build:frontend",
     "build:frontend": "webpack && cp src-gen/frontend/index.html lib",
-    "start": "npm run start:app",
-    "start:app": "concurrently --names backend,webpack-server --prefix \"[{name}]\" \"npm run start:backend\" \"npm run start:frontend\"",
+    "start": "concurrently --names backend,webpack-server --prefix \"[{name}]\" \"npm run start:backend\" \"npm run start:frontend\"",
     "start:backend": "node ./src-gen/backend/main.js | bunyan",
     "start:backend:debug": "node ./src-gen/backend/main.js --loglevel=debug | bunyan",
     "start:frontend": "webpack-dev-server --open",
@@ -29,7 +28,6 @@
     "test:ui": "wdio wdio.conf.js"
   },
   "devDependencies": {
-    "typescript": "^2.4.1",
     "bunyan": "^1.8.10",
     "concurrently": "^3.4.0",
     "copy-webpack-plugin": "^4.0.1",
@@ -49,8 +47,9 @@
     "chai": "^3.5.0",
     "local-dependency-manager": "../../config/local-dependency-manager",
     "selenium-standalone": "^6.2.0",
-    "ts-node": "^3.0.2",
+    "typescript": "^2.4.1",
     "tslint": "^4.5.1",
+    "ts-node": "^3.0.2",
     "wdio-mocha-framework": "^0.5.9",
     "wdio-phantomjs-service": "^0.2.2",
     "wdio-selenium-standalone-service": "0.0.8",
