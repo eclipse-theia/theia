@@ -17,15 +17,15 @@ import { FileUri } from "../../application/node/file-uri";
 import * as path from 'path';
 import * as os from 'os';
 
-export const preferenceServerModule = new ContainerModule(bind => {
+export const preferenceBackendModule = new ContainerModule(bind => {
     bind(DefaultPreferenceServer).toSelf().inSingletonScope();
     bind(JsonPreferenceServer).toSelf();
 
     // Workspace preference server that watches the current workspace
     bind(WorkspacePreferenceServer).toDynamicValue(ctx => {
         const workspaceServer = ctx.container.get<WorkspaceServer>(WorkspaceServer);
-        const preferencePath = workspaceServer.getRoot().then(root => {
-            return FileUri.create(root).resolve(path.join('.theia', 'prefs.json'));
+        const preferencePath = workspaceServer.getRoot().then(wsRoot => {
+            return wsRoot + path.sep + (path.join('.theia', 'prefs.json'));
         })
 
         const child = ctx.container.createChild();

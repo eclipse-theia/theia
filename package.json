@@ -163,6 +163,10 @@
     {
       "frontend": "lib/cpp/browser/cpp-frontend-module",
       "backend": "lib/cpp/node/cpp-backend-module"
+    },
+    {
+      "frontend": "lib/preferences/browser/preference-client-module",
+      "backend": "lib/cpp/node/cpp-backend-module"
     }
   ]
 }
