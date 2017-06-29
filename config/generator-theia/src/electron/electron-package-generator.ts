@@ -6,7 +6,7 @@
  */
 
 import Base = require('yeoman-generator');
-import { AbstractGenerator } from '../common';
+import { AbstractGenerator, sortByKey } from '../common';
 
 export class ElectronPackageGenerator extends AbstractGenerator {
 
@@ -18,22 +18,22 @@ export class ElectronPackageGenerator extends AbstractGenerator {
     protected compilePackage(): object {
         return {
             ...this.model.pck,
-            "dependencies": {
+            "dependencies": sortByKey({
                 "electron": "1.6.8",
                 ...this.model.pck.dependencies
-            },
-            "scripts": {
+            }),
+            "scripts": sortByKey({
                 ...this.commonScripts('electron'),
                 "postinstall": "electron-rebuild",
                 "start": "electron ./src-gen/frontend/electron-main.js | bunyan",
                 "start:debug": "electron ./src-gen/frontend/electron-main.js --loglevel=debug | bunyan",
                 ...this.model.pck.scripts
-            },
-            "devDependencies": {
+            }),
+            "devDependencies": sortByKey({
                 ...this.commonDevDependencies,
                 "electron-rebuild": "^1.5.11",
                 ...this.model.pck.devDependencies
-            }
+            })
         }
     }
 
