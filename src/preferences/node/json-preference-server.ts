@@ -35,8 +35,9 @@ export class JsonPreferenceServer implements IPreferenceServer {
 
         watcher.onFilesChanged(changes => {
             this.arePreferencesAffected(changes).then(areAffected => {
-                if (areAffected)
+                if (areAffected) {
                     this.reconcilePreferences();
+                }
             })
         });
 
