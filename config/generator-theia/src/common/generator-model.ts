@@ -36,6 +36,14 @@ export interface Config {
     copyright: string;
 }
 
+
+export function sortByKey(object: { [key: string]: any }): { [key: string]: any } {
+    return Object.keys(object).sort().reduce((sorted, key) => {
+        sorted[key] = object[key];
+        return sorted;
+    }, {});
+}
+
 export class Model {
     pck: NodePackage = {}
     config: Config = {

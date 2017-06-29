@@ -6,7 +6,7 @@
  */
 
 import Base = require('yeoman-generator');
-import { AbstractGenerator } from '../common';
+import { AbstractGenerator, sortByKey } from '../common';
 
 export class BrowserPackageGenerator extends AbstractGenerator {
 
@@ -18,19 +18,22 @@ export class BrowserPackageGenerator extends AbstractGenerator {
     protected compilePackage(): object {
         return {
             ...this.model.pck,
-            "scripts": {
+            "dependencies": sortByKey({
+                ...this.model.pck.dependencies
+            }),
+            "scripts": sortByKey({
                 ...this.commonScripts('web'),
                 "start": "concurrently --names backend,webpack-server --prefix \"[{name}]\" \"npm run start:backend\" \"npm run start:frontend\"",
                 "start:backend": "node ./src-gen/backend/main.js | bunyan",
                 "start:backend:debug": "node ./src-gen/backend/main.js --loglevel=debug | bunyan",
                 "start:frontend": "webpack-dev-server --open",
                 ...this.model.pck.scripts
-            },
-            "devDependencies": {
+            }),
+            "devDependencies": sortByKey({
                 ...this.commonDevDependencies,
                 "webpack-dev-server": "^2.5.0",
                 ...this.model.pck.devDependencies
-            }
+            })
         }
     }
 
