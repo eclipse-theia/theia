@@ -5,8 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-// @ts-check
-
 // Workaround for https://github.com/electron/electron/issues/9225. Chrome has an issue where
 // in certain locales (e.g. PL), image metrics are wrongly computed. We explicitly set the
 // LC_NUMERIC to prevent this from happening (selects the numeric formatting category of the
@@ -28,7 +26,6 @@ electron.app.on('window-all-closed', function () {
 });
 
 electron.app.on('ready', function () {
-    // start the express server
     require("../backend/main");
     mainWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
     mainWindow.webContents.openDevTools();
