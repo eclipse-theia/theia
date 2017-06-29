@@ -20,9 +20,12 @@ export abstract class AbstractAppGenerator extends BaseGenerator {
 
     initializing(): void {
         this.model.pck = this.fs.readJSON('theia.package.json') || {};
+        this.config.defaults(this.model.config);
+        Object.assign(this.model.config, this.config.getAll());
     }
 
     configuring(): void {
+        this.config.save();
         this.model.readLocalExtensionPackages((extension, path) => {
             const extensionPath = paths.join(process.cwd(), `${path}/package.json`);
             console.log(extensionPath);

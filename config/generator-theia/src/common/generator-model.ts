@@ -33,13 +33,15 @@ export interface Dependencies {
 export interface Config {
     port: number;
     host: string;
+    copyright: string;
 }
 
 export class Model {
     pck: NodePackage = {}
     config: Config = {
         port: 3000,
-        host: 'localhost'
+        host: 'localhost',
+        copyright: ''
     }
 
     protected _frontendModules: Map<string, string> | undefined;
