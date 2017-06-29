@@ -33,23 +33,25 @@ export abstract class AbstractGenerator {
         return this.srcGen('frontend', ...paths);
     }
 
-    protected compileModuleImports(modules: Map<string, string>): string {
-        if (modules.size === 0) {
-            return '';
-        }
-        const lines = Array.from(modules.keys()).map(moduleName =>
-            `import ${moduleName} from '${modules.get(moduleName)}';`
-        );
-        return os.EOL + lines.join(os.EOL);
+    protected compileFrontendModuleImports(modules: Map<string, string>): string {
+        return this.compileModuleImports(modules, 'import')
     }
 
-    protected compileModuleLoading(modules: Map<string, string>): string {
+    protected compileBackendModuleImports(modules: Map<string, string>): string {
+        return this.compileModuleImports(modules, 'require')
+    }
+
+    protected compileModuleImports(modules: Map<string, string>, fn: 'import' | 'require'): string {
         if (modules.size === 0) {
             return '';
         }
-        const lines = Array.from(modules.keys()).map(moduleName =>
-            `container.load(${moduleName});`
-        );
+        const lines = Array.from(modules.keys()).map(moduleName => {
+            const invocation = `${fn}('${modules.get(moduleName)}')`;
+            if (fn === 'require') {
+                return `Promise.resolve(${invocation})`;
+            }
+            return invocation;
+        }).map(statement => `.then(function () { return ${statement}.then(load) })`);
         return os.EOL + lines.join(os.EOL);
     }
 
