@@ -8,7 +8,7 @@
 import Base = require('yeoman-generator');
 import { AbstractGenerator } from '../common';
 
-export class BrowserPackageGenerator extends AbstractGenerator {
+export class ElectronPackageGenerator extends AbstractGenerator {
 
     generate(fs: Base.MemFsEditor): void {
         fs.writeJSON('package.json', this.compilePackage());
@@ -18,17 +18,20 @@ export class BrowserPackageGenerator extends AbstractGenerator {
     protected compilePackage(): object {
         return {
             ...this.model.pck,
+            "dependencies": {
+                "electron": "1.6.8",
+                ...this.model.pck.dependencies
+            },
             "scripts": {
-                ...this.commonScripts('web'),
-                "start": "concurrently --names backend,webpack-server --prefix \"[{name}]\" \"npm run start:backend\" \"npm run start:frontend\"",
-                "start:backend": "node ./src-gen/backend/main.js | bunyan",
-                "start:backend:debug": "node ./src-gen/backend/main.js --loglevel=debug | bunyan",
-                "start:frontend": "webpack-dev-server --open",
+                ...this.commonScripts('electron'),
+                "postinstall": "electron-rebuild",
+                "start": "electron ./src-gen/frontend/electron-main.js | bunyan",
+                "start:debug": "electron ./src-gen/frontend/electron-main.js --loglevel=debug | bunyan",
                 ...this.model.pck.scripts
             },
             "devDependencies": {
                 ...this.commonDevDependencies,
-                "webpack-dev-server": "^2.5.0",
+                "electron-rebuild": "^1.5.11",
                 ...this.model.pck.devDependencies
             }
         }
@@ -36,7 +39,7 @@ export class BrowserPackageGenerator extends AbstractGenerator {
 
     protected compileWebpackConfig(): string {
         return `${this.compileCopyright()}
-module.exports = require("theia-core/config/webpack/webpack.config.web.dev")(__dirname, ${this.model.config.port}, "${this.model.config.host}");`
+module.exports = require("theia-core/config/webpack/webpack.config.electron.dev")(__dirname);`
     }
 
 }

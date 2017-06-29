@@ -7,10 +7,10 @@
 
 import { AbstractBackendGenerator, FileSystem } from "../common";
 
-export class BrowserBackendGenerator extends AbstractBackendGenerator {
+export class ElectronBackendGenerator extends AbstractBackendGenerator {
 
     generate(fs: FileSystem): void {
-        this.doGenerate(fs, this.model.backendModules);
+        this.doGenerate(fs, this.model.backendElectronModules);
     }
 
 }
