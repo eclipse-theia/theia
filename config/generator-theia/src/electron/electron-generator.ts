@@ -6,15 +6,15 @@
  */
 
 import { AbstractAppGenerator } from "../common";
-import { BrowserPackageGenerator } from "./browser-package-generator";
-import { BrowserBackendGenerator } from "./browser-backend-generator";
-import { BrowserFrontendGenerator } from "./browser-frontend-generator";
+import { ElectronPackageGenerator } from "./electron-package-generator";
+import { ElectronBackendGenerator } from "./electron-backend-generator";
+import { ElectronFrontendGenerator } from "./electron-frontend-generator";
 
-export class TheiaBrowserGenerator extends AbstractAppGenerator {
+export class TheiaElectronGenerator extends AbstractAppGenerator {
 
-    protected readonly pck = new BrowserPackageGenerator(this.model);
-    protected readonly backend = new BrowserBackendGenerator(this.model);
-    protected readonly frontend = new BrowserFrontendGenerator(this.model);
+    protected readonly pck = new ElectronPackageGenerator(this.model);
+    protected readonly backend = new ElectronBackendGenerator(this.model);
+    protected readonly frontend = new ElectronFrontendGenerator(this.model);
 
     initializing(): void {
         super.initializing();

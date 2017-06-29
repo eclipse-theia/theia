@@ -5,12 +5,5 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { AbstractBackendGenerator, FileSystem } from "../common";
-
-export class BrowserBackendGenerator extends AbstractBackendGenerator {
-
-    generate(fs: FileSystem): void {
-        this.doGenerate(fs, this.model.backendModules);
-    }
-
-}
+import { TheiaElectronGenerator } from './electron-generator';
+module.exports = TheiaElectronGenerator;

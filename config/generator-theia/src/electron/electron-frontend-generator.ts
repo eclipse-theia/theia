@@ -5,12 +5,12 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { AbstractBackendGenerator, FileSystem } from "../common";
+import { AbstractFrontendGenerator, FileSystem } from "../common";
 
-export class BrowserBackendGenerator extends AbstractBackendGenerator {
+export class ElectronFrontendGenerator extends AbstractFrontendGenerator {
 
     generate(fs: FileSystem): void {
-        this.doGenerate(fs, this.model.backendModules);
+        this.doGenerate(fs, this.model.frontendElectronModules);
     }
 
 }

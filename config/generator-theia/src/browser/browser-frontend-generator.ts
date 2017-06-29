@@ -5,16 +5,15 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { AbstractGenerator, FileSystem } from "./abstract-generator";
+import { AbstractFrontendGenerator, FileSystem } from "../common";
 
-export class BrowserFrontendGenerator extends AbstractGenerator {
+export class BrowserFrontendGenerator extends AbstractFrontendGenerator {
 
     generate(fs: FileSystem): void {
-        fs.write(this.frontend('index.html'), this.compileIndexHtml())
-        fs.write(this.frontend('index.js'), this.compileIndexJs());
+        this.doGenerate(fs, this.model.frontendModules);
     }
 
-    protected compileIndexHtml(): string {
+    protected compileIndexHtml(frontendModules: Map<string, string>): string {
         return `<!DOCTYPE html>
 <html>
 
@@ -30,32 +29,6 @@ export class BrowserFrontendGenerator extends AbstractGenerator {
 </body>
 
 </html>`;
-    }
-
-    protected compileIndexJs(): string {
-        return `${this.compileCopyright()}
-import { Container } from 'inversify';
-import { FrontendApplication, frontendApplicationModule, loggerFrontendModule } from 'theia-core/lib/application/browser';
-import { messagingFrontendModule } from 'theia-core/lib/messaging/browser';
-
-const container = new Container();
-container.load(frontendApplicationModule);
-container.load(messagingFrontendModule);
-container.load(loggerFrontendModule);
-
-function load(raw) {
-    return Promise.resolve(raw.default).then(module =>
-        container.load(module)
-    )
-}
-
-function start() {
-    const application = container.get(FrontendApplication);
-    application.start();
-}
-
-Promise.resolve()${this.compileFrontendModuleImports(this.model.frontendModules)}
-.then(start);`;
     }
 
 }
