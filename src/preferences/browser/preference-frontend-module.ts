@@ -11,7 +11,7 @@ import { IPreferenceService, PreferenceService } from '../common/preference-serv
 import { WebSocketConnectionProvider } from '../../messaging/browser/connection';
 
 
-export const preferenceClientModule = new ContainerModule(bind => {
+export const preferenceFrontendModule = new ContainerModule(bind => {
     bind(IPreferenceService).to(PreferenceService).inSingletonScope();
 
     bind(IPreferenceServer).toDynamicValue(ctx => {

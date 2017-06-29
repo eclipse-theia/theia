@@ -40,9 +40,10 @@ before(() => {
 
     fs.writeFileSync(FileUri.fsPath(preferenceFileUri), '{ "showLineNumbers": false }');
 
+
     fileSystem = new FileSystemNode();
     fileWatcher = createFileSystemWatcher();
-    prefServer = new JsonPreferenceServer(fileSystem, fileWatcher, preferenceFileUri);
+    prefServer = new JsonPreferenceServer(fileSystem, fileWatcher, Promise.resolve(preferenceFileUri));
 });
 
 describe('json-preference-server', () => {

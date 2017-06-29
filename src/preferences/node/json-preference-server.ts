@@ -29,6 +29,10 @@ export class JsonPreferenceServer implements IPreferenceServer {
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
         @inject(PreferencePath) protected readonly preferencePath: Promise<URI>) {
 
+        preferencePath.then(uri => {
+            watcher.watchFileChanges(uri)
+        })
+
         watcher.onFilesChanged(changes => {
             this.arePreferencesAffected(changes).then(areAffected => {
                 if (areAffected)
@@ -49,20 +53,21 @@ export class JsonPreferenceServer implements IPreferenceServer {
             })
         })
     }
-
     /**
      * Read preferences
      */
     protected reconcilePreferences(): void {
-        this.fileSystem.resolveContent(this.preferencePath.toString()).then(({ stat, content }) => {
-            try {
-                const newPrefs = JSON.parse(content) // Might need a custom parser because comments and whatnot?
-                this.notifyPreferences(newPrefs);
-            } catch (e) { // JSON could be invalid
-                console.log(e);
-                this.prefs = undefined;
-                // TODO user the logger and notify the user that the prefs.json is not valid
-            }
+        this.preferencePath.then(path => {
+            this.fileSystem.resolveContent(path.toString()).then(({ stat, content }) => {
+                try {
+                    const newPrefs = JSON.parse(content) // Might need a custom parser because comments and whatnot?
+                    this.notifyPreferences(newPrefs);
+                } catch (e) { // JSON could be invalid
+                    console.log(e);
+                    this.prefs = undefined;
+                    // TODO user the logger and notify the user that the prefs.json is not valid
+                }
+            })
         })
     }
 
