@@ -5,16 +5,21 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { IPreferenceServer } from '../common/preference-protocol'
-import { IPreferenceClient } from '../common/preference-protocol'
+import { PreferenceServer, PreferenceClient } from './preference-protocol'
 
-export class CompoundPreferenceServer implements IPreferenceServer {
+export class CompoundPreferenceServer implements PreferenceServer {
 
-    protected readonly servers: IPreferenceServer[];
+    protected readonly servers: PreferenceServer[];
     constructor(
-        ...servers: IPreferenceServer[]
+        ...servers: PreferenceServer[]
     ) {
         this.servers = servers;
+    }
+
+    dispose(): void {
+        for (const server of this.servers) {
+            server.dispose();
+        }
     }
 
     async has(preferenceName: string): Promise<boolean> {
@@ -36,7 +41,7 @@ export class CompoundPreferenceServer implements IPreferenceServer {
         return undefined;
     }
 
-    setClient(client: IPreferenceClient | undefined) {
+    setClient(client: PreferenceClient | undefined) {
         for (const server of this.servers) {
             server.setClient(client);
         }

@@ -5,53 +5,54 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { ContributionProvider } from '../../application/common/contribution-provider'
-import { IPreferenceServer } from '../common/preference-protocol'
-import { IPreferenceClient } from '../common/preference-protocol'
-
 import { inject, injectable, named } from 'inversify'
-
+import { ContributionProvider } from '../../application/common'
+import { PreferenceServer, PreferenceClient } from '../common';
 
 export const PreferenceContribution = Symbol("PreferenceContribution");
 
-
 export interface Preference {
-    name: string // name of preference (unique or resolved to unique later)
+    /**
+     * name of preference (unique or resolved to unique later)
+     */
+    name: string
     defaultValue?: any
     description?: string
 }
 
 export interface PreferenceContribution {
-    readonly preferences: Preference[]
+    readonly preferences: Preference[];
 }
 
 @injectable()
-export class DefaultPreferenceServer implements IPreferenceServer {
+export class DefaultPreferenceServer implements PreferenceServer {
 
-    protected readonly defaultPrefs: Map<string, any> = new Map<string, any>();
+    protected readonly preferences = new Map<string, any>();
 
-    constructor( @inject(ContributionProvider) @named(PreferenceContribution) protected readonly defaultProviders: ContributionProvider<PreferenceContribution>) {
-        const prefContributions: PreferenceContribution[] = defaultProviders.getContributions();
-
-        for (const prefContribution of prefContributions) {
-            for (const preference of prefContribution.preferences) {
-                this.defaultPrefs.set(preference.name, preference);
+    constructor(
+        @inject(ContributionProvider) @named(PreferenceContribution)
+        protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>
+    ) {
+        for (const { preferences } of preferenceContributions.getContributions()) {
+            for (const preference of preferences) {
+                this.preferences.set(preference.name, preference);
             }
         }
     }
 
+    dispose(): void { /* no-op */ }
+
     has(preferenceName: string): Promise<boolean> {
-        if (this.defaultPrefs.has(preferenceName)) {
+        if (this.preferences.has(preferenceName)) {
             return Promise.resolve(true);
         }
         return Promise.resolve(false);
     }
 
     get<T>(preferenceName: string): Promise<T | undefined> {
-        let pref = this.defaultPrefs.get(preferenceName)
-
-        return Promise.resolve(!!pref ? pref.defaultValue : undefined);
+        const preference = this.preferences.get(preferenceName)
+        return Promise.resolve(!!preference ? preference.defaultValue : undefined);
     }
 
-    setClient(client: IPreferenceClient | undefined) { }
+    setClient(client: PreferenceClient | undefined) { /* no-op */ }
 }

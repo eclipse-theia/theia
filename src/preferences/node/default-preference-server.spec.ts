@@ -5,14 +5,14 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { IPreferenceServer } from '../common/preference-protocol'
+import { PreferenceServer } from '../common/preference-protocol'
 import { DefaultPreferenceServer, PreferenceContribution, Preference } from './default-preference-server'
 import { ContributionProvider } from '../../application/common/contribution-provider'
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 
 const expect = chai.expect;
-let server: IPreferenceServer;
+let server: PreferenceServer;
 
 before(() => {
     chai.config.showDiff = true;

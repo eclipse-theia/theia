@@ -27,6 +27,16 @@ let fileWatcher: FileSystemWatcher;
 let fileSystem: FileSystemNode;
 let rootUri: URI;
 let preferenceFileUri: URI;
+const logger = new Proxy<Logger>({} as any, {
+    get: (target, name) => () => {
+        if (name.toString().startsWith('is')) {
+            return Promise.resolve(false);
+        }
+        if (name.toString().startsWith('if')) {
+            return new Promise(resolve => { });
+        }
+    }
+});
 
 before(() => {
     chai.should();
@@ -43,7 +53,7 @@ before(() => {
 
     fileSystem = new FileSystemNode();
     fileWatcher = createFileSystemWatcher();
-    prefServer = new JsonPreferenceServer(fileSystem, fileWatcher, Promise.resolve(preferenceFileUri));
+    prefServer = new JsonPreferenceServer(fileSystem, fileWatcher, logger, Promise.resolve(preferenceFileUri));
 });
 
 describe('json-preference-server', () => {
@@ -112,19 +122,7 @@ describe('json-preference-server', () => {
     });
 });
 
-
-/* From node-filesystem.spec.ts */
 function createFileSystemWatcher(): FileSystemWatcher {
-    const logger = new Proxy<Logger>({} as any, {
-        get: (target, name) => () => {
-            if (name.toString().startsWith('is')) {
-                return Promise.resolve(false);
-            }
-            if (name.toString().startsWith('if')) {
-                return new Promise(resolve => { });
-            }
-        }
-    });
     const listener = new FileSystemWatcherClientListener();
     const server = new ChokidarFileSystemWatcherServer(logger);
     server.setClient(listener);

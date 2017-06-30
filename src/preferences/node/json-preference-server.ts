@@ -5,79 +5,88 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import * as coreutils from '@phosphor/coreutils';
 import { inject, injectable } from 'inversify';
+import { ILogger, MaybePromise, DisposableCollection } from '../../application/common';
 import URI from '../../application/common/uri';
-import { FileSystem } from '../../filesystem/common/filesystem';
-import { FileSystemWatcher, FileChange, FileChangeType } from '../../filesystem/common/filesystem-watcher'
-import { IPreferenceClient } from '../common/preference-protocol'
-import { PreferenceChangedEvent } from '../common/preference-event'
-import { IPreferenceServer } from '../common/preference-protocol'
-import * as coreutils from "@phosphor/coreutils";
+import { FileChange, FileSystem, FileSystemWatcher } from '../../filesystem/common';
+import { PreferenceChangedEvent, PreferenceClient, PreferenceServer } from '../common';
 
-export const WorkspacePreferenceServer = Symbol('WorkspacePreferenceServer');
-export const UserPreferenceServer = Symbol('UserPreferenceServer');
-export const PreferencePath = Symbol("PreferencePath")
+export const PreferencePath = Symbol("PreferencePath");
+export type PreferencePath = MaybePromise<URI>;
 
 @injectable()
-export class JsonPreferenceServer implements IPreferenceServer {
+export class JsonPreferenceServer implements PreferenceServer {
 
-    protected prefs: { [key: string]: any } | undefined; // Preferences cache
-    protected client: IPreferenceClient | undefined;
+    protected preferences: { [key: string]: any } | undefined;
+    protected client: PreferenceClient | undefined;
+    protected readonly preferencePath: Promise<URI>;
+
+    protected readonly toDispose = new DisposableCollection();
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
-        @inject(PreferencePath) protected readonly preferencePath: Promise<URI>) {
+        @inject(ILogger) protected readonly logger: ILogger,
+        @inject(PreferencePath) preferencePath: PreferencePath
+    ) {
+        this.preferencePath = Promise.resolve(preferencePath);
+        this.preferencePath.then(uri =>
+            watcher.watchFileChanges(uri).then(disposable =>
+                this.toDispose.push(disposable)
+            )
+        );
 
-        preferencePath.then(uri => {
-            watcher.watchFileChanges(uri)
-        })
-
-        watcher.onFilesChanged(changes => {
-            this.arePreferencesAffected(changes).then(areAffected => {
-                if (areAffected) {
-                    this.reconcilePreferences();
-                }
-            })
-        });
+        this.toDispose.push(watcher.onFilesChanged(changes =>
+            this.arePreferencesAffected(changes).then(() =>
+                this.reconcilePreferences()
+            )
+        ));
 
         this.reconcilePreferences();
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     /**
      * Checks to see if the preference file was modified
      */
-    protected arePreferencesAffected(changes: FileChange[]): Promise<boolean> {
-        return this.preferencePath.then((path) => {
-            return changes.some(c => {
-                return (c.uri.toString() === path.toString() && c.type === FileChangeType.UPDATED);
+    protected arePreferencesAffected(changes: FileChange[]): Promise<void> {
+        return new Promise(resolve => {
+            this.preferencePath.then(preferenceUri => {
+                if (changes.some(c => c.uri.toString() === preferenceUri.toString())) {
+                    resolve();
+                }
             })
-        })
+        });
     }
+
     /**
      * Read preferences
      */
     protected reconcilePreferences(): void {
         this.preferencePath.then(path => {
-            this.fileSystem.resolveContent(path.toString()).then(({ stat, content }) => {
-                try {
-                    const newPrefs = JSON.parse(content) // Might need a custom parser because comments and whatnot?
-                    this.notifyPreferences(newPrefs);
-                } catch (e) { // JSON could be invalid
-                    console.log(e);
-                    this.prefs = undefined;
-                    // TODO user the logger and notify the user that the prefs.json is not valid
-                }
-            })
+            this.fileSystem.resolveContent(path.toString()).then(({ stat, content }) =>
+                JSON.parse(content)
+            ).then(newPreferences =>
+                this.notifyPreferences(newPreferences),
+                reason => {
+                    if (reason) {
+                        this.logger.error('Failed to reconcile preferences: ', reason);
+                    }
+                    this.notifyPreferences(undefined);
+                })
         })
     }
 
     protected notifyPreferences(newPrefs: any) {
-        if (this.prefs !== undefined && this.prefs !== newPrefs) {
+        if (this.preferences !== undefined && this.preferences !== newPrefs) {
             // Different prefs detected
             this.notifyDifferentPrefs(newPrefs);
 
-        } else if (this.prefs === undefined && newPrefs !== undefined) {
+        } else if (this.preferences === undefined && newPrefs !== undefined) {
             const newKeys: string[] = Object.keys(newPrefs);
             // All prefs are new, send events for all of them
             newKeys.forEach((newKey: string) => {
@@ -85,21 +94,21 @@ export class JsonPreferenceServer implements IPreferenceServer {
                 this.fireEvent(event);
             })
         }
-        this.prefs = newPrefs;
+        this.preferences = newPrefs;
     }
 
     protected notifyDifferentPrefs(newPrefs: any) {
         const newKeys: string[] = Object.keys(newPrefs);
-        const oldKeys = Object.keys(this.prefs);
+        const oldKeys = Object.keys(this.preferences);
         for (const newKey of newKeys) {
             const index = oldKeys.indexOf(newKey)
             if (index !== -1) {
                 oldKeys.splice(index);
                 // Existing pref
 
-                if (this.prefs !== undefined && !coreutils.JSONExt.deepEqual(newPrefs[newKey], this.prefs[newKey])) {
+                if (this.preferences !== undefined && !coreutils.JSONExt.deepEqual(newPrefs[newKey], this.preferences[newKey])) {
                     // New value
-                    const event: PreferenceChangedEvent = { preferenceName: newKey, newValue: newPrefs[newKey], oldValue: this.prefs[newKey] };
+                    const event: PreferenceChangedEvent = { preferenceName: newKey, newValue: newPrefs[newKey], oldValue: this.preferences[newKey] };
                     this.fireEvent(event);
                 }
 
@@ -117,8 +126,6 @@ export class JsonPreferenceServer implements IPreferenceServer {
         }
     }
 
-
-
     protected fireEvent(event: PreferenceChangedEvent) {
         if (this.client) {
             this.client.onDidChangePreference(event);
@@ -126,15 +133,14 @@ export class JsonPreferenceServer implements IPreferenceServer {
     }
 
     has(preferenceName: string): Promise<boolean> {
-        return Promise.resolve(!!this.prefs && (preferenceName in this.prefs));
+        return Promise.resolve(!!this.preferences && (preferenceName in this.preferences));
     }
 
     get<T>(preferenceName: string): Promise<T | undefined> {
-        return Promise.resolve(!!this.prefs ? this.prefs[preferenceName] : undefined);
-
+        return Promise.resolve(!!this.preferences ? this.preferences[preferenceName] : undefined);
     }
 
-    setClient(client: IPreferenceClient | undefined) {
+    setClient(client: PreferenceClient | undefined) {
         this.client = client;
     }
 }
