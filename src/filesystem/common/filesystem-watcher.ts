@@ -6,9 +6,9 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Emitter, Event, Disposable, DisposableCollection } from '../../application/common';
-import URI from "../../application/common/uri";
-import { FileChangeType, DidFilesChangedParams, FileSystemWatcherClient, FileSystemWatcherServer } from "./filesystem-watcher-protocol";
+import { Disposable, DisposableCollection, Emitter, Event } from '../../application/common';
+import URI from '../../application/common/uri';
+import { DidFilesChangedParams, FileChangeType, FileSystemWatcherServer } from './filesystem-watcher-protocol';
 
 export {
     FileChangeType
@@ -20,39 +20,19 @@ export interface FileChange {
 }
 
 @injectable()
-export class FileSystemWatcherClientListener implements FileSystemWatcherClient {
-
-    protected readonly onFileChangedEmitter = new Emitter<FileChange[]>();
-
-    dispose(): void {
-        this.onFileChangedEmitter.dispose();
-    }
-
-    get onFilesChanged(): Event<FileChange[]> {
-        return this.onFileChangedEmitter.event;
-    }
-
-    onDidFilesChanged(event: DidFilesChangedParams): void {
-        const changes = event.changes.map(change => <FileChange>{
-            uri: new URI(change.uri),
-            type: change.type
-        });
-        this.onFileChangedEmitter.fire(changes);
-    }
-
-}
-
-@injectable()
 export class FileSystemWatcher implements Disposable {
 
     protected readonly toDispose = new DisposableCollection();
+    protected readonly onFileChangedEmitter = new Emitter<FileChange[]>();
 
     constructor(
-        @inject(FileSystemWatcherServer) protected readonly server: FileSystemWatcherServer,
-        @inject(FileSystemWatcherClientListener) protected readonly listener: FileSystemWatcherClientListener
+        @inject(FileSystemWatcherServer) protected readonly server: FileSystemWatcherServer
     ) {
         this.toDispose.push(server);
-        this.toDispose.push(listener);
+        this.toDispose.push(this.onFileChangedEmitter);
+        server.setClient({
+            onDidFilesChanged: e => this.onDidFilesChanged(e)
+        });
     }
 
     /**
@@ -60,6 +40,14 @@ export class FileSystemWatcher implements Disposable {
      */
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    protected onDidFilesChanged(event: DidFilesChangedParams): void {
+        const changes = event.changes.map(change => <FileChange>{
+            uri: new URI(change.uri),
+            type: change.type
+        });
+        this.onFileChangedEmitter.fire(changes);
     }
 
     /**
@@ -83,7 +71,7 @@ export class FileSystemWatcher implements Disposable {
       * Emit when files under watched uris are changed.
       */
     get onFilesChanged(): Event<FileChange[]> {
-        return this.listener.onFilesChanged;
+        return this.onFileChangedEmitter.event;
     }
 }
 
