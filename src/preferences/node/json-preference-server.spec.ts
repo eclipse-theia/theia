@@ -50,11 +50,14 @@ before(() => {
 
     fs.writeFileSync(FileUri.fsPath(preferenceFileUri), '{ "showLineNumbers": false }');
 
-
     fileSystem = new FileSystemNode();
     fileWatcher = createFileSystemWatcher();
     prefServer = new JsonPreferenceServer(fileSystem, fileWatcher, logger, Promise.resolve(preferenceFileUri));
 });
+
+after(() => {
+    prefServer.dispose();
+})
 
 describe('json-preference-server', () => {
 
@@ -96,29 +99,66 @@ describe('json-preference-server', () => {
 
             // Register a simple client
             let promise: Promise<boolean> = new Promise<boolean>((done) => {
+                let eventNumbers: number = 0;
                 prefServer.setClient({
                     onDidChangePreference(event) {
-                        expect(event.newValue).to.be.equal(true);
-                        expect(event.oldValue).to.be.equal(false);
-                        done();
+                        if (event.preferenceName === 'showLineNumbers') {
+                            expect(event.newValue).to.be.equal(true);
+                            expect(event.oldValue).to.be.equal(false);
+                            eventNumbers++;
+                        } else if (event.preferenceName === 'tabWidth') {
+                            expect(event.newValue).to.be.equal(8);
+                            eventNumbers++;
+                        }
+                        if (eventNumbers === 2) {
+                            done();
+                        }
                     }
                 })
             })
-
 
             // Make sure, it is `true` by default.
             const initialState = await prefServer.get("showLineNumbers");
             expect(initialState).to.be.false;
 
+            const fileContent = '{"showLineNumbers":true,"tabWidth":8}'; // Invalid json
+
             // Modify the content.
-            fs.writeFileSync(FileUri.fsPath(preferenceFileUri), '{ "showLineNumbers": true }');
+            fs.writeFileSync(FileUri.fsPath(preferenceFileUri), fileContent);
 
             let { content } = await fileSystem.resolveContent(FileUri.fsPath(preferenceFileUri));
-            expect(content).to.be.equal('{ "showLineNumbers": true }');
+            expect(content).to.be.equal(fileContent);
 
             return promise;
 
         }).timeout(20000)
+
+        describe('03 #write invalid json pref file', () => {
+
+            it('should log an error and have undefined prefs', async () => {
+
+                // Register a simple client
+                let promise: Promise<boolean> = new Promise<boolean>((done) => {
+                    prefServer.setClient({
+                        onDidChangePreference(event) {
+                            expect(event.newValue).to.be.equal(undefined);
+                            done();
+                        }
+                    })
+                })
+
+                const fileContent = '{showLineNumbers":tue'; // Invalid json
+
+                // Modify the content.
+                fs.writeFileSync(FileUri.fsPath(preferenceFileUri), fileContent);
+
+                let { content } = await fileSystem.resolveContent(FileUri.fsPath(preferenceFileUri));
+                expect(content).to.be.equal(fileContent);
+
+                return promise;
+
+            }).timeout(20000)
+        });
     });
 });
 
