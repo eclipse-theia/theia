@@ -189,6 +189,11 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * @returns A callable that executes the JSON-RPC call.
      */
     get(target: T, p: PropertyKey, receiver: any): any {
+        if (p === 'setClient') {
+            return (client: any) => {
+                this.target = client;
+            }
+        }
         if (p === 'onDidOpenConnection') {
             return this.onDidOpenConnectionEmitter.event;
         }
