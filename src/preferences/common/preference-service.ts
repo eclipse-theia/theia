@@ -6,7 +6,7 @@
  */
 
 import { inject, injectable } from 'inversify';
-import { Event, Emitter } from '../../application/common/event';
+import { Event, Emitter, Disposable, DisposableCollection } from '../../application/common';
 import { PreferenceServer, PreferenceChangedEvent } from './preference-protocol';
 
 export {
@@ -14,8 +14,9 @@ export {
 }
 
 @injectable()
-export class PreferenceService {
+export class PreferenceService implements Disposable {
 
+    protected readonly toDispose = new DisposableCollection();
     protected readonly onPreferenceChangedEmitter = new Emitter<PreferenceChangedEvent>();
 
     constructor(
@@ -24,6 +25,11 @@ export class PreferenceService {
         server.setClient({
             onDidChangePreference: event => this.onDidChangePreference(event)
         });
+        this.toDispose.push(server);
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     protected onDidChangePreference(event: PreferenceChangedEvent): void {

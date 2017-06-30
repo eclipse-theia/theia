@@ -7,9 +7,10 @@
 
 import * as coreutils from '@phosphor/coreutils';
 import { inject, injectable } from 'inversify';
-import { ILogger, MaybePromise, DisposableCollection } from '../../application/common';
-import URI from '../../application/common/uri';
-import { FileChange, FileSystem, FileSystemWatcher } from '../../filesystem/common';
+import URI from "../../application/common/uri";
+import { Disposable, DisposableCollection, ILogger, MaybePromise } from '../../application/common';
+import { FileSystem } from '../../filesystem/common';
+import { FileSystemWatcherServer, DidFilesChangedParams, FileChange } from '../../filesystem/common/filesystem-watcher-protocol';
 import { PreferenceChangedEvent, PreferenceClient, PreferenceServer } from '../common';
 
 export const PreferencePath = Symbol("PreferencePath");
@@ -20,29 +21,29 @@ export class JsonPreferenceServer implements PreferenceServer {
 
     protected preferences: { [key: string]: any } | undefined;
     protected client: PreferenceClient | undefined;
-    protected readonly preferencePath: Promise<URI>;
+    protected readonly preferencePath: Promise<string>;
 
     protected readonly toDispose = new DisposableCollection();
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
+        @inject(FileSystemWatcherServer) protected readonly watcherServer: FileSystemWatcherServer,
         @inject(ILogger) protected readonly logger: ILogger,
         @inject(PreferencePath) preferencePath: PreferencePath
     ) {
-        this.preferencePath = Promise.resolve(preferencePath);
-        this.preferencePath.then(uri =>
-            watcher.watchFileChanges(uri).then(disposable =>
-                this.toDispose.push(disposable)
-            )
+        this.preferencePath = Promise.resolve(preferencePath).then(path => path.toString());
+        this.preferencePath.then(path =>
+            watcherServer.watchFileChanges(path).then(id => {
+                this.toDispose.push(Disposable.create(() =>
+                    watcherServer.unwatchFileChanges(id))
+                )
+            })
         );
 
-        this.toDispose.push(watcher.onFilesChanged(changes =>
-            this.arePreferencesAffected(changes).then(() =>
-                this.reconcilePreferences()
-            )
-        ));
-
+        this.toDispose.push(watcherServer);
+        watcherServer.setClient({
+            onDidFilesChanged: p => this.onDidFilesChanged(p)
+        });
         this.reconcilePreferences();
     }
 
@@ -50,13 +51,19 @@ export class JsonPreferenceServer implements PreferenceServer {
         this.toDispose.dispose();
     }
 
+    protected onDidFilesChanged(params: DidFilesChangedParams): void {
+        this.arePreferencesAffected(params.changes).then(() =>
+            this.reconcilePreferences()
+        )
+    }
+
     /**
      * Checks to see if the preference file was modified
      */
     protected arePreferencesAffected(changes: FileChange[]): Promise<void> {
         return new Promise(resolve => {
-            this.preferencePath.then(preferenceUri => {
-                if (changes.some(c => c.uri.toString() === preferenceUri.toString())) {
+            this.preferencePath.then(path => {
+                if (changes.some(c => c.uri === path)) {
                     resolve();
                 }
             })
@@ -68,20 +75,25 @@ export class JsonPreferenceServer implements PreferenceServer {
      */
     protected reconcilePreferences(): void {
         this.preferencePath.then(path => {
-            this.fileSystem.resolveContent(path.toString()).then(({ stat, content }) =>
-                JSON.parse(content)
-            ).then(newPreferences =>
-                this.assignPreferences(newPreferences),
+            this.fileSystem.exists(path).then(exists => {
+                if (!exists) {
+                    return undefined;
+                }
+                return this.fileSystem.resolveContent(path).then(({ stat, content }) =>
+                    JSON.parse(content)
+                )
+            }).then(newPreferences =>
+                this.notifyPreferences(newPreferences),
                 reason => {
                     if (reason) {
                         this.logger.error('Failed to reconcile preferences: ', reason);
                     }
-                    this.assignPreferences(undefined);
-                })
+                    this.notifyPreferences(undefined);
+                });
         })
     }
 
-    protected assignPreferences(newPrefs: any) {
+    protected notifyPreferences(newPrefs: any) {
         if (this.preferences !== undefined && this.preferences !== newPrefs) {
             // Different prefs detected
             this.notifyDifferentPrefs(newPrefs);
