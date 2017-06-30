@@ -6,18 +6,13 @@
  */
 
 import { ContainerModule, } from 'inversify';
-import { IPreferenceServer } from '../common/preference-protocol'
-import { IPreferenceService, PreferenceService } from '../common/preference-service'
-import { WebSocketConnectionProvider } from '../../messaging/browser/connection';
+import { WebSocketConnectionProvider } from '../../messaging/browser';
+import { PreferenceService, PreferenceServer, preferencesPath } from "../common";
 
+export default new ContainerModule(bind => {
+    bind(PreferenceService).toSelf().inSingletonScope();
 
-export const preferenceFrontendModule = new ContainerModule(bind => {
-    bind(IPreferenceService).to(PreferenceService).inSingletonScope();
-
-    bind(IPreferenceServer).toDynamicValue(ctx => {
-        const connection = ctx.container.get(WebSocketConnectionProvider);
-        const prefServiceClient = ctx.container.get(IPreferenceServer);
-        return connection.createProxy<IPreferenceServer>("/preferences", prefServiceClient);
-    }).inSingletonScope();
+    bind(PreferenceServer).toDynamicValue(ctx =>
+        ctx.container.get(WebSocketConnectionProvider).createProxy(preferencesPath)
+    ).inSingletonScope();
 });
-

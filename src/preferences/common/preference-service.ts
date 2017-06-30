@@ -6,107 +6,80 @@
  */
 
 import { inject, injectable } from 'inversify';
-import { Event, Emitter } from '../../application/common/event'
-import { PreferenceChangedEvent } from './preference-event'
-import { IPreferenceClient, IPreferenceServer } from './preference-protocol'
+import { Event, Emitter } from '../../application/common/event';
+import { PreferenceServer, PreferenceChangedEvent } from './preference-protocol';
 
-export const IPreferenceService = Symbol("IPreferenceService")
-
-export interface IPreferenceService {
-    readonly onPreferenceChanged: Event<PreferenceChangedEvent>;
-
-    has(preferenceName: string): Promise<boolean>;
-
-    get<T>(preferenceName: string): Promise<T | undefined>;
-    get<T>(preferenceName: string, defaultValue?: T): Promise<T>;
-
-
-    getBoolean(preferenceName: string): Promise<boolean | undefined>;
-
-    getString(preferenceName: string): Promise<string | undefined>;
-
-    getNumber(preferenceName: string): Promise<number | undefined>;
+export {
+    PreferenceChangedEvent
 }
 
 @injectable()
-export class PreferenceService implements IPreferenceService, IPreferenceClient {
+export class PreferenceService {
 
     protected readonly onPreferenceChangedEmitter = new Emitter<PreferenceChangedEvent>();
 
     constructor(
-        @inject(IPreferenceServer) protected readonly server: IPreferenceServer
-    ) { }
-
-    /**
-     * Used to register for preference changes
-     * this.prefService.onPreferenceChanged (callback);
-     */
-    get onPreferenceChanged(): Event<PreferenceChangedEvent> {
-        return this.onPreferenceChangedEmitter.event;
+        @inject(PreferenceServer) protected readonly server: PreferenceServer
+    ) {
+        server.setClient({
+            onDidChangePreference: event => this.onDidChangePreference(event)
+        });
     }
 
-    /**
-     * Used to notify preference changed listeners
-     * @param event PreferenceChangedEvent that contains changed preferences
-     */
-    onDidChangePreference(event: PreferenceChangedEvent): void {
+    protected onDidChangePreference(event: PreferenceChangedEvent): void {
         this.onPreferenceChangedEmitter.fire(event);
+    }
+
+    get onPreferenceChanged(): Event<PreferenceChangedEvent> {
+        return this.onPreferenceChangedEmitter.event;
     }
 
     has(preferenceName: string): Promise<boolean> {
         return this.server.has(preferenceName);
     }
 
+    get<T>(preferenceName: string): Promise<T | undefined>;
+    get<T>(preferenceName: string, defaultValue: T): Promise<T>;
     get<T>(preferenceName: string, defaultValue?: T): Promise<T | undefined> {
-
-        return this.server.get<T>(preferenceName).then(
-            result => {
-                return result !== undefined ? result : (defaultValue ? defaultValue : undefined)
-            });
+        return this.server.get<T>(preferenceName).then(value =>
+            value !== undefined ? value : defaultValue
+        );
     }
 
+    getBoolean(preferenceName: string): Promise<boolean | undefined>;
+    getBoolean(preferenceName: string, defaultValue: boolean): Promise<boolean>;
     getBoolean(preferenceName: string, defaultValue?: boolean): Promise<boolean | undefined> {
-        return this.server.get(preferenceName).then(result => {
-            if (result !== undefined) {
-                return !!result;
-            } else {
-                if (defaultValue !== undefined) {
-                    return defaultValue
-                } else {
-                    return undefined
-                }
-            }
-        });
-
-        // return this.server.get(preferenceName).then(result => {
-        //     return result !== undefined ? !!result : (defaultValue !== undefined ? defaultValue : undefined)
-        // });
+        return this.server.get(preferenceName).then(value =>
+            value !== undefined ? !!value : defaultValue
+        );
     }
 
+    getString(preferenceName: string): Promise<string | undefined>;
+    getString(preferenceName: string, defaultValue: string): Promise<string>;
     getString(preferenceName: string, defaultValue?: string): Promise<string | undefined> {
-        return this.server.get(preferenceName).then(result => {
-            if (result !== undefined) {
-                if (typeof result !== "string") {
-                    return result.toString();
-                } else {
-                    return result;
-                }
+        return this.server.get(preferenceName).then(value => {
+            if (value === undefined) {
+                return defaultValue;
             }
-            return defaultValue ? defaultValue : undefined
-        })
+            if (typeof value === "string") {
+                return value;
+            }
+            return value.toString();
+        });
     }
 
+    getNumber(preferenceName: string): Promise<number | undefined>;
+    getNumber(preferenceName: string, defaultValue: number): Promise<number>;
     getNumber(preferenceName: string, defaultValue?: number): Promise<number | undefined> {
-        return this.server.get(preferenceName).then(result => {
-            if (result !== undefined) {
-                if (typeof result !== "number") {
-                    const value = Number(result);
-                    return value === value ? value : undefined; // NaN test
-                } else {
-                    return result;
-                }
+        return this.server.get(preferenceName).then(value => {
+            if (value === undefined) {
+                return defaultValue;
             }
-            return defaultValue ? defaultValue : undefined
-        })
+            if (typeof value === "number") {
+                return value;
+            }
+            return Number(value);
+        });
     }
+
 }

@@ -5,19 +5,24 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { PreferenceChangedEvent } from './preference-event'
+import { Disposable } from "../../application/common";
 
-export const IPreferenceServer = Symbol("IPreferenceServer")
+export const preferencesPath = '/services/preferences';
 
-/**
- * Minimal preference API with basic functionalities
- */
-export interface IPreferenceServer {
+export const PreferenceServer = Symbol("PreferenceServer")
+
+export interface PreferenceServer extends Disposable {
     has(preferenceName: string): Promise<boolean>;
     get<T>(preferenceName: string): Promise<T | undefined>;
-    setClient(client: IPreferenceClient | undefined): void;
+    setClient(client: PreferenceClient | undefined): void;
 }
 
-export interface IPreferenceClient {
+export interface PreferenceClient {
     onDidChangePreference(event: PreferenceChangedEvent): void
+}
+
+export interface PreferenceChangedEvent {
+    readonly preferenceName: string;
+    readonly newValue?: any;
+    readonly oldValue?: any;
 }

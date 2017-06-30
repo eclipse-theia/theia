@@ -6,12 +6,11 @@
  */
 
 import { PreferenceService } from './preference-service';
-import { IPreferenceServer, IPreferenceClient } from './preference-protocol'
-import { PreferenceChangedEvent } from './preference-event'
+import { PreferenceServer, PreferenceClient, PreferenceChangedEvent } from './preference-protocol'
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 
-class PreferenceServerStub implements IPreferenceServer {
+class PreferenceServerStub implements PreferenceServer {
     has(preferenceName: string): Promise<boolean> {
         switch (preferenceName) {
             case ("prefExists"): {
@@ -51,14 +50,24 @@ class PreferenceServerStub implements IPreferenceServer {
         }
     }
 
-    setClient(client: IPreferenceClient) {
+    protected client: PreferenceClient | undefined;
 
+    setClient(client: PreferenceClient) {
+        this.client = client;
     }
+
+    onDidChangePreference(event: PreferenceChangedEvent): void {
+        if (this.client) {
+            this.client.onDidChangePreference(event);
+        }
+    }
+
+    dispose(): void { }
 }
 
 const expect = chai.expect;
 let prefService: PreferenceService;
-let prefStub: IPreferenceServer;
+let prefStub: PreferenceServerStub;
 
 before(() => {
     chai.config.showDiff = true;
@@ -114,9 +123,9 @@ describe('preference-service  (simplified api)', () => {
         valString = await prefService.getString("testBooleanTrue")
         expect(valString).to.be.equal("true");
 
-        // should return undefined for a NaN
+        // should return NaN for a NaN
         valNumber = await prefService.getNumber("testString");
-        expect(valNumber).to.be.undefined;
+        expect(isNaN(valNumber!)).to.be.true;
     })
 
     it('should return undefined when wrong value and no default value supplied', async () => {
@@ -175,7 +184,7 @@ describe('preference-service  (simplified api)', () => {
         })
 
         for (const event of events) {
-            prefService.onDidChangePreference(event)
+            prefStub.onDidChangePreference(event);
         }
     });
 });

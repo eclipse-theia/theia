@@ -135,6 +135,10 @@
       "backend": "lib/workspace/node/workspace-backend-module"
     },
     {
+      "frontend": "lib/preferences/browser/preference-frontend-module",
+      "backend": "lib/preferences/node/preference-backend-module"
+    },
+    {
       "frontend": "lib/navigator/browser/navigator-frontend-module"
     },
     {
@@ -162,10 +166,6 @@
     },
     {
       "frontend": "lib/cpp/browser/cpp-frontend-module",
-      "backend": "lib/cpp/node/cpp-backend-module"
-    },
-    {
-      "frontend": "lib/preferences/browser/preference-client-module",
       "backend": "lib/cpp/node/cpp-backend-module"
     }
   ]
