@@ -24,9 +24,11 @@ export interface FileSystemWatcherServer extends Disposable {
      * Resolve when watching is stopped.
      */
     unwatchFileChanges(uri: string): Promise<void>;
+
+    setClient(client: FileSystemWatcherClient): void;
 }
 
-export interface FileSystemWatcherClient extends Disposable {
+export interface FileSystemWatcherClient {
     /**
      * Notify when files under watched uris are changed.
      */
@@ -78,9 +80,12 @@ export class ReconnectingFileSystemWatcherServer implements FileSystemWatcherSer
     }
 
     unwatchFileChanges(uri: string): Promise<void> {
-        return this.proxy.unwatchFileChanges(uri).then(() => {
-            this.uris.delete(uri)
-        });
+        this.uris.delete(uri)
+        return this.proxy.unwatchFileChanges(uri);
+    }
+
+    setClient(client: FileSystemWatcherClient): void {
+        this.proxy.setClient(client);
     }
 
 }

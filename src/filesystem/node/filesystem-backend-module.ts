@@ -8,7 +8,7 @@
 import { ContainerModule } from "inversify";
 import { ConnectionHandler, JsonRpcConnectionHandler } from "../../messaging/common";
 import { FileSystemNode } from './node-filesystem';
-import { FileSystemWatcher, FileSystem, fileSystemPath, FileSystemWatcherClientListener } from "../common";
+import { FileSystemWatcher, FileSystem, fileSystemPath } from "../common";
 import { FileSystemWatcherServer, FileSystemWatcherClient, fileSystemWatcherPath } from '../common/filesystem-watcher-protocol';
 import { ChokidarFileSystemWatcherServer } from './chokidar-filesystem-watcher';
 
@@ -23,25 +23,19 @@ export default new ContainerModule(bind => {
     ).inSingletonScope();
 
     bind(ChokidarFileSystemWatcherServer).toSelf();
+    bind(FileSystemWatcherServer).toDynamicValue(ctx =>
+        ctx.container.get(ChokidarFileSystemWatcherServer)
+    );
+    bind(FileSystemWatcher).toSelf();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<FileSystemWatcherClient>(fileSystemWatcherPath, client => {
-            const server = ctx.container.get(ChokidarFileSystemWatcherServer);
+            const server = ctx.container.get<FileSystemWatcherServer>(FileSystemWatcherServer);
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;
         })
     ).inSingletonScope();
 
-    bind(FileSystemWatcherClientListener).toSelf();
-    bind(FileSystemWatcher).toDynamicValue(({ container }) => {
-        const client = container.get(FileSystemWatcherClientListener);
-        const server = container.get(ChokidarFileSystemWatcherServer);
-        server.setClient(client);
 
-        const child = container.createChild();
-        child.bind(FileSystemWatcherClientListener).toConstantValue(client);
-        child.bind(FileSystemWatcherServer).toConstantValue(server);
-        child.bind(FileSystemWatcher).toSelf();
-        return child.get(FileSystemWatcher);
-    });
+
 });
