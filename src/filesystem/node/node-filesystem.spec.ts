@@ -14,7 +14,7 @@ import URI from "../../application/common/uri";
 import { Logger } from "../../application/common";
 import { FileUri } from "../../application/node";
 import { FileSystem } from "../common/filesystem";
-import { FileSystemWatcher, FileSystemWatcherClientListener, FileChange, FileChangeType } from '../common';
+import { FileSystemWatcher, FileChange, FileChangeType } from '../common';
 import { FileSystemNode } from "./node-filesystem";
 import { ChokidarFileSystemWatcherServer } from './chokidar-filesystem-watcher';
 
@@ -788,10 +788,8 @@ describe("NodeFileSystem", () => {
                 }
             }
         });
-        const listener = new FileSystemWatcherClientListener();
         const server = new ChokidarFileSystemWatcherServer(logger);
-        server.setClient(listener);
-        return new FileSystemWatcher(server, listener);
+        return new FileSystemWatcher(server);
     }
 
     function sleep(time: number) {
