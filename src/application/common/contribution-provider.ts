@@ -16,14 +16,17 @@ export interface ContributionProvider<T extends object> {
 export function bindContributionProvider(bind: interfaces.Bind, id: symbol): void {
     bind(ContributionProvider).toDynamicValue(ctx => {
         return new ContainerBasedContributionProvider(id, ctx.container)
-    }).inSingletonScope().whenTargetNamed(id)
+    }).inSingletonScope().whenTargetNamed(id);
 }
 
 class ContainerBasedContributionProvider<T extends object> implements ContributionProvider<T> {
 
-    constructor(private serviceIdentifier: interfaces.ServiceIdentifier<T>, private container: interfaces.Container) { }
+    constructor(
+        protected readonly serviceIdentifier: interfaces.ServiceIdentifier<T>,
+        protected readonly container: interfaces.Container
+    ) { }
 
-    private services: T[]
+    protected services: T[] | undefined;
 
     getContributions(): T[] {
         if (this.services === undefined) {
