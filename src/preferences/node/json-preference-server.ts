@@ -71,17 +71,17 @@ export class JsonPreferenceServer implements PreferenceServer {
             this.fileSystem.resolveContent(path.toString()).then(({ stat, content }) =>
                 JSON.parse(content)
             ).then(newPreferences =>
-                this.notifyPreferences(newPreferences),
+                this.assignPreferences(newPreferences),
                 reason => {
                     if (reason) {
                         this.logger.error('Failed to reconcile preferences: ', reason);
                     }
-                    this.notifyPreferences(undefined);
+                    this.assignPreferences(undefined);
                 })
         })
     }
 
-    protected notifyPreferences(newPrefs: any) {
+    protected assignPreferences(newPrefs: any) {
         if (this.preferences !== undefined && this.preferences !== newPrefs) {
             // Different prefs detected
             this.notifyDifferentPrefs(newPrefs);
@@ -98,7 +98,11 @@ export class JsonPreferenceServer implements PreferenceServer {
     }
 
     protected notifyDifferentPrefs(newPrefs: any) {
-        const newKeys: string[] = Object.keys(newPrefs);
+        let newKeys: string[] = [];
+        if (newPrefs !== undefined) {
+            newKeys = Object.keys(newPrefs);
+        }
+
         const oldKeys = Object.keys(this.preferences);
         for (const newKey of newKeys) {
             const index = oldKeys.indexOf(newKey)
