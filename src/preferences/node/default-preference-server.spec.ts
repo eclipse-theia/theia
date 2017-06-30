@@ -6,8 +6,8 @@
  */
 
 import { PreferenceServer } from '../common/preference-protocol'
-import { DefaultPreferenceServer, PreferenceContribution, Preference } from './default-preference-server'
-import { ContributionProvider } from '../../application/common/contribution-provider'
+import { DefaultPreferenceServer } from './default-preference-server'
+import { PrefProviderStub } from './test/preference-stubs'
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 
@@ -44,43 +44,3 @@ describe('default preference-server', () => {
     })
 });
 
-
-class PrefProviderStub implements ContributionProvider<PreferenceContribution> {
-    getContributions(): PreferenceContribution[] {
-
-        let prefs1: Preference[] = [
-            {
-                name: "testBooleanTrue",
-                defaultValue: true,
-                description: "testBooleanTrue description"
-            },
-            {
-                name: "testBooleanTrue",
-                defaultValue: false,
-                description: "testBooleanFalse"
-            }
-        ];
-
-        let prefs2: Preference[] = [
-            {
-                name: "testStringSomething",
-                defaultValue: "testStringSomethingValue",
-                description: "testStringSomething description"
-            },
-            {
-                name: "testStringSomething2",
-                defaultValue: "testStringSomethingValue2"
-            }
-        ];
-
-        let prefContrib: PreferenceContribution[] = [new PreferenceContributionStub(prefs1), new PreferenceContributionStub(prefs2)];
-
-        return prefContrib;
-
-    }
-}
-
-class PreferenceContributionStub implements PreferenceContribution {
-    constructor(readonly preferences: Preference[]
-    ) { }
-}
