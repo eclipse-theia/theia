@@ -14,11 +14,11 @@ export const fileSystemWatcherPath = '/services/fs-watcher';
 export const FileSystemWatcherServer = Symbol('FileSystemWatcherServer');
 export interface FileSystemWatcherServer extends Disposable {
     /**
-     * Start file watching under the given uri.
+     * Start file watching for the given param.
      * Resolve when watching is started.
-     * Return a wathcer id.
+     * Return a watcher id.
      */
-    watchFileChanges(uri: string): Promise<number>;
+    watchFileChanges(uri: string, options?: WatchOptions): Promise<number>;
 
     /**
      * Stop file watching for the given id.
@@ -34,6 +34,10 @@ export interface FileSystemWatcherClient {
      * Notify when files under watched uris are changed.
      */
     onDidFilesChanged(event: DidFilesChangedParams): void;
+}
+
+export interface WatchOptions {
+    ignored: string[];
 }
 
 export interface DidFilesChangedParams {
@@ -58,7 +62,10 @@ export type FileSystemWatcherServerProxy = JsonRpcProxy<FileSystemWatcherServer>
 export class ReconnectingFileSystemWatcherServer implements FileSystemWatcherServer {
 
     protected watcherSequence = 1;
-    protected readonly watchOptions = new Map<number, string>();
+    protected readonly watchParams = new Map<number, {
+        uri: string;
+        options?: WatchOptions
+    }>();
     protected readonly localToRemoteWatcher = new Map<number, number>();
 
     constructor(
@@ -68,8 +75,8 @@ export class ReconnectingFileSystemWatcherServer implements FileSystemWatcherSer
     }
 
     protected reconnect(): void {
-        for (const [watcher, uri] of this.watchOptions.entries()) {
-            this.doWatchFileChanges(watcher, uri);
+        for (const [watcher, { uri, options }] of this.watchParams.entries()) {
+            this.doWatchFileChanges(watcher, uri, options);
         }
     }
 
@@ -77,21 +84,21 @@ export class ReconnectingFileSystemWatcherServer implements FileSystemWatcherSer
         this.proxy.dispose();
     }
 
-    watchFileChanges(uri: string): Promise<number> {
+    watchFileChanges(uri: string, options?: WatchOptions): Promise<number> {
         const watcher = this.watcherSequence++;
-        this.watchOptions.set(watcher, uri);
-        return this.doWatchFileChanges(watcher, uri);
+        this.watchParams.set(watcher, { uri, options });
+        return this.doWatchFileChanges(watcher, uri, options);
     }
 
-    protected doWatchFileChanges(watcher: number, uri: string): Promise<number> {
-        return this.proxy.watchFileChanges(uri).then(remote => {
+    protected doWatchFileChanges(watcher: number, uri: string, options?: WatchOptions): Promise<number> {
+        return this.proxy.watchFileChanges(uri, options).then(remote => {
             this.localToRemoteWatcher.set(watcher, remote)
             return watcher;
         });
     }
 
     unwatchFileChanges(watcher: number): Promise<void> {
-        this.watchOptions.delete(watcher);
+        this.watchParams.delete(watcher);
         const remote = this.localToRemoteWatcher.get(watcher);
         if (remote) {
             this.localToRemoteWatcher.delete(watcher);
