@@ -58,9 +58,9 @@ export class FileSystemWatcher implements Disposable {
      */
     watchFileChanges(uri: URI): Promise<Disposable> {
         const raw = uri.toString();
-        return this.server.watchFileChanges(raw).then(() => {
+        return this.server.watchFileChanges(raw).then(watcher => {
             const disposable = Disposable.create(() =>
-                this.server.unwatchFileChanges(raw)
+                this.server.unwatchFileChanges(watcher)
             );
             this.toDispose.push(disposable);
             return disposable;

@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { ChokidarWatcher as Watcher, watch } from "chokidar";
+import { watch } from "chokidar";
 import { injectable, inject } from "inversify";
 import URI from "../../application/common/uri";
 import { Disposable, DisposableCollection, ILogger } from '../../application/common';
@@ -20,8 +20,10 @@ import {
 @injectable()
 export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer {
 
-    protected _watcher: Promise<Watcher> | undefined;
     protected client: FileSystemWatcherClient | undefined;
+
+    protected watcherSequence = 1;
+    protected readonly watchers = new Map<number, Disposable>();
 
     protected readonly toDispose = new DisposableCollection();
 
@@ -37,40 +39,42 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
         this.toDispose.dispose();
     }
 
-    watchFileChanges(uri: string): Promise<void> {
+    watchFileChanges(uri: string): Promise<number> {
+        const watcherId = this.watcherSequence++;
         const paths = this.toPaths(uri);
-        this.logger.info('Starting watching:', paths)
-        return this.doWatchFileChanges(paths).then(() =>
-            this.logger.info('Started watching:', paths)
-        );
-    }
-
-    protected doWatchFileChanges(paths: string | string[]): Promise<any> {
-        if (this._watcher) {
-            return this._watcher.then(watcher =>
-                watcher.add(paths)
-            );
-        }
-        this._watcher = new Promise<Watcher>(resolve => {
-            const watcher = this.createWatcher(paths);
-            watcher.once('ready', () =>
-                resolve(watcher)
-            );
-        });
-        this.toDispose.push(Disposable.create(() => {
-            this._watcher = undefined;
-        }));
-        return this._watcher;
-    }
-
-    unwatchFileChanges(uri: string): Promise<void> {
-        if (this._watcher) {
-            return this._watcher.then(watcher => {
-                const paths = this.toPaths(uri);
-                this.logger.info('Stopping watching:', paths);
-                watcher.unwatch(paths);
-                this.logger.info('Stopped watching:', paths);
+        this.logger.info(`Starting watching:`, paths)
+        return new Promise<number>(resolve => {
+            const watcher = watch(paths, {
+                ignoreInitial: true
             });
+            watcher.once('ready', () => {
+                this.logger.info(`Started watching:`, paths)
+                resolve(watcherId)
+            });
+            watcher.on('error', error =>
+                this.logger.error(`Watching error:`, error)
+            );
+            watcher.on('add', path => this.pushAdded(watcherId, path));
+            watcher.on('addDir', path => this.pushAdded(watcherId, path));
+            watcher.on('change', path => this.pushUpdated(watcherId, path));
+            watcher.on('unlink', path => this.pushDeleted(watcherId, path));
+            watcher.on('unlinkDir', path => this.pushDeleted(watcherId, path));
+            const disposable = Disposable.create(() => {
+                this.watchers.delete(watcherId);
+                this.logger.info(`Stopping watching:`, paths);
+                watcher.close();
+                this.logger.info(`Stopped watching.`);
+            });
+            this.watchers.set(watcherId, disposable);
+            this.toDispose.push(disposable);
+        });
+    }
+
+    unwatchFileChanges(watcherId: number): Promise<void> {
+        const disposable = this.watchers.get(watcherId);
+        if (disposable) {
+            this.watchers.delete(watcherId);
+            disposable.dispose();
         }
         return Promise.resolve();
     }
@@ -79,42 +83,32 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
         this.client = client;
     }
 
-    protected createWatcher(paths: string | string[]): Watcher {
-        const watcher = watch(paths, {
-            ignoreInitial: true
-        });
-        watcher.on('error', error =>
-            this.logger.error('Watching error:', error)
-        );
-        watcher.on('add', path => this.pushAdded(path));
-        watcher.on('addDir', path => this.pushAdded(path));
-        watcher.on('change', path => this.pushUpdated(path));
-        watcher.on('unlink', path => this.pushDeleted(path));
-        watcher.on('unlinkDir', path => this.pushDeleted(path));
-        this.toDispose.push(Disposable.create(() => {
-            watcher.close();
-            this.logger.info('Stopped watching.');
-        }));
-        return watcher;
-    }
-
     protected toPaths(raw: string): string | string[] {
         return FileUri.fsPath(new URI(raw));
     }
 
-    protected pushAdded(path: string): void {
-        this.pushFileChange(path, FileChangeType.ADDED);
+    protected pushAdded(watcherId: number, path: string): void {
+        this.logger.debug(log =>
+            log(`Added:`, path)
+        );
+        this.pushFileChange(watcherId, path, FileChangeType.ADDED);
     }
 
-    protected pushUpdated(path: string): void {
-        this.pushFileChange(path, FileChangeType.UPDATED);
+    protected pushUpdated(watcherId: number, path: string): void {
+        this.logger.debug(log =>
+            log(`Updated:`, path)
+        );
+        this.pushFileChange(watcherId, path, FileChangeType.UPDATED);
     }
 
-    protected pushDeleted(path: string): void {
-        this.pushFileChange(path, FileChangeType.DELETED);
+    protected pushDeleted(watcherId: number, path: string): void {
+        this.logger.debug(log =>
+            log(`Deleted:`, path)
+        );
+        this.pushFileChange(watcherId, path, FileChangeType.DELETED);
     }
 
-    protected pushFileChange(path: string, type: FileChangeType): void {
+    protected pushFileChange(watcherId: number, path: string, type: FileChangeType): void {
         const uri = FileUri.create(path).toString();
         this.changes.push({ uri, type });
 
@@ -130,9 +124,6 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
         if (this.client) {
             this.client.onDidFilesChanged(event);
         }
-        this.logger.debug(log =>
-            log('Files changed:', event)
-        )
     }
 
 }
