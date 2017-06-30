@@ -11,8 +11,7 @@ import { bindContributionProvider } from '../../application/common';
 import { FileUri } from '../../application/node';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '../../messaging/common';
 import { WorkspaceServer } from '../../workspace/common';
-import { CompoundPreferenceServer, PreferenceClient, PreferenceServer, preferencesPath } from '../common';
-import { DefaultPreferenceServer, PreferenceContribution } from './default-preference-server';
+import { PreferenceService, CompoundPreferenceServer, PreferenceClient, PreferenceServer, preferencesPath, DefaultPreferenceServer, PreferenceContribution } from '../common';
 import { JsonPreferenceServer, PreferencePath } from './json-preference-server';
 
 /*
@@ -39,7 +38,7 @@ export default new ContainerModule(bind => {
         const child = ctx.container.createChild();
         child.bind(PreferencePath).toConstantValue(uri);
         return child.get(JsonPreferenceServer);
-    }).inSingletonScope();
+    });
 
     bind(WorkspacePreferenceServer).toDynamicValue(ctx => {
         const workspaceServer = ctx.container.get<WorkspaceServer>(WorkspaceServer);
@@ -68,4 +67,6 @@ export default new ContainerModule(bind => {
             return server;
         })
     ).inSingletonScope();
+
+    bind(PreferenceService).toSelf();
 });

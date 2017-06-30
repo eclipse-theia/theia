@@ -4,10 +4,13 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
+
+export type Deferred<T> = {
+    [P in keyof T]: Promise<T[P]>
+}
 export type RecursivePartial<T> = {
     [P in keyof T]?: RecursivePartial<T[P]>;
 };
-
 export type MaybeArray<T> = T | T[];
 export type MaybePromise<T> = T | Promise<T>;
 
