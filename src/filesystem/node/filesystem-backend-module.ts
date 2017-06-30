@@ -8,11 +8,13 @@
 import { ContainerModule } from "inversify";
 import { ConnectionHandler, JsonRpcConnectionHandler } from "../../messaging/common";
 import { FileSystemNode } from './node-filesystem';
-import { FileSystemWatcher, FileSystem, fileSystemPath } from "../common";
+import { FileSystemWatcher, FileSystem, fileSystemPath, bindFileSystemPreferences } from "../common";
 import { FileSystemWatcherServer, FileSystemWatcherClient, fileSystemWatcherPath } from '../common/filesystem-watcher-protocol';
 import { ChokidarFileSystemWatcherServer } from './chokidar-filesystem-watcher';
 
 export default new ContainerModule(bind => {
+    bindFileSystemPreferences(bind);
+
     bind(FileSystemNode).toSelf().inSingletonScope();
     bind(FileSystem).toDynamicValue(ctx => ctx.container.get(FileSystemNode)).inSingletonScope();
 
@@ -35,7 +37,4 @@ export default new ContainerModule(bind => {
             return server;
         })
     ).inSingletonScope();
-
-
-
 });
