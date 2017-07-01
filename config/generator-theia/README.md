@@ -1,7 +1,7 @@
 # Theia Generator
 
 ## Getting started
-
+- `npm install` in theia/config/generator-theia
 - `npm link` to install `generator-theia` as a global module
 - `yo theia:browser` to generate the browser app
 - `yo theia:electron` to generate the electron app
