@@ -24,10 +24,14 @@ export const defaultFileSystemConfiguration: FileSystemConfiguration = {
 export const FileSystemPreferences = Symbol('FileSystemPreferences');
 export type FileSystemPreferences = PreferenceProxy<FileSystemConfiguration>;
 
+export function createFileSystemPreferences(preferences: PreferenceService): FileSystemPreferences {
+    return createPreferenceProxy(preferences, defaultFileSystemConfiguration);
+}
+
 export function bindFileSystemPreferences(bind: interfaces.Bind): void {
     bind(FileSystemPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get(PreferenceService);
-        return createPreferenceProxy(preferences, defaultFileSystemConfiguration);
+        return createFileSystemPreferences(preferences);
     });
 
     bind(PreferenceContribution).toConstantValue({
