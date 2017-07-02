@@ -73,18 +73,19 @@ export class FileSystemWatcher implements Disposable {
                 this.server.watchFileChanges(uri.toString(), options)
             )
             .then(watcher => {
-                const toStop = new DisposableCollection();
-                const disposable = Disposable.create(() =>
+                const toDispose = new DisposableCollection();
+                const toStop = Disposable.create(() =>
                     this.server.unwatchFileChanges(watcher)
                 );
-                const toRestart = toStop.push(disposable);
+                const toRestart = toDispose.push(toStop);
                 this.toRestartAll.push(Disposable.create(() => {
                     toRestart.dispose();
+                    toStop.dispose();
                     this.watchFileChanges(uri).then(disposable =>
-                        toStop.push(disposable)
+                        toDispose.push(disposable)
                     );
                 }));
-                return toStop;
+                return toDispose;
             });
     }
 
