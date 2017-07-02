@@ -12,7 +12,7 @@ import { FileUri } from '../../application/node';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '../../messaging/common';
 import { WorkspaceServer } from '../../workspace/common';
 import { PreferenceService, CompoundPreferenceServer, PreferenceClient, PreferenceServer, preferencesPath, DefaultPreferenceServer, PreferenceContribution } from '../common';
-import { JsonPreferenceServer, PreferencePath } from './json-preference-server';
+import { JsonPreferenceServer, PreferenceUri } from './json-preference-server';
 
 /*
  * Workspace preference server that watches the current workspace
@@ -36,19 +36,19 @@ export default new ContainerModule(bind => {
         const uri = homeUri.withPath(homeUri.path.join('.theia', 'settings.json'));
 
         const child = ctx.container.createChild();
-        child.bind(PreferencePath).toConstantValue(uri);
+        child.bind(PreferenceUri).toConstantValue(uri);
         return child.get(JsonPreferenceServer);
     });
 
     bind(WorkspacePreferenceServer).toDynamicValue(ctx => {
         const workspaceServer = ctx.container.get<WorkspaceServer>(WorkspaceServer);
-        const preferencePath = workspaceServer.getRoot().then(root => {
+        const uri = workspaceServer.getRoot().then(root => {
             const rootUri = FileUri.create(root);
             return rootUri.withPath(rootUri.path.join('.theia', 'settings.json'));
         });
 
         const child = ctx.container.createChild();
-        child.bind(PreferencePath).toConstantValue(preferencePath);
+        child.bind(PreferenceUri).toConstantValue(uri);
         return child.get(JsonPreferenceServer);
     });
 

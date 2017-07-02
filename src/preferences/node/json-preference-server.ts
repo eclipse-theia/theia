@@ -13,27 +13,28 @@ import { FileSystem } from '../../filesystem/common';
 import { FileSystemWatcherServer, DidFilesChangedParams, FileChange } from '../../filesystem/common/filesystem-watcher-protocol';
 import { PreferenceChangedEvent, PreferenceClient, PreferenceServer } from '../common';
 
-export const PreferencePath = Symbol("PreferencePath");
-export type PreferencePath = MaybePromise<URI>;
+export const PreferenceUri = Symbol("PreferencePath");
+export type PreferenceUri = MaybePromise<URI>;
 
 @injectable()
 export class JsonPreferenceServer implements PreferenceServer {
 
     protected preferences: { [key: string]: any } | undefined;
     protected client: PreferenceClient | undefined;
-    protected readonly preferencePath: Promise<string>;
+    protected readonly preferenceUri: Promise<string>;
 
     protected readonly toDispose = new DisposableCollection();
+    protected readonly onReady: Promise<void>;
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcherServer) protected readonly watcherServer: FileSystemWatcherServer,
         @inject(ILogger) protected readonly logger: ILogger,
-        @inject(PreferencePath) preferencePath: PreferencePath
+        @inject(PreferenceUri) preferenceUri: PreferenceUri
     ) {
-        this.preferencePath = Promise.resolve(preferencePath).then(path => path.toString());
-        this.preferencePath.then(path =>
-            watcherServer.watchFileChanges(path).then(id => {
+        this.preferenceUri = Promise.resolve(preferenceUri).then(uri => uri.toString());
+        this.preferenceUri.then(uri =>
+            watcherServer.watchFileChanges(uri).then(id => {
                 this.toDispose.push(Disposable.create(() =>
                     watcherServer.unwatchFileChanges(id))
                 )
@@ -44,7 +45,7 @@ export class JsonPreferenceServer implements PreferenceServer {
         watcherServer.setClient({
             onDidFilesChanged: p => this.onDidFilesChanged(p)
         });
-        this.reconcilePreferences();
+        this.onReady = this.reconcilePreferences();
     }
 
     dispose(): void {
@@ -62,8 +63,8 @@ export class JsonPreferenceServer implements PreferenceServer {
      */
     protected arePreferencesAffected(changes: FileChange[]): Promise<void> {
         return new Promise(resolve => {
-            this.preferencePath.then(path => {
-                if (changes.some(c => c.uri === path)) {
+            this.preferenceUri.then(uri => {
+                if (changes.some(c => c.uri === uri)) {
                     resolve();
                 }
             })
@@ -73,13 +74,13 @@ export class JsonPreferenceServer implements PreferenceServer {
     /**
      * Read preferences
      */
-    protected reconcilePreferences(): void {
-        this.preferencePath.then(path => {
-            this.fileSystem.exists(path).then(exists => {
+    protected reconcilePreferences(): Promise<void> {
+        return this.preferenceUri.then(uri => {
+            this.fileSystem.exists(uri).then(exists => {
                 if (!exists) {
                     return undefined;
                 }
-                return this.fileSystem.resolveContent(path).then(({ stat, content }) =>
+                return this.fileSystem.resolveContent(uri).then(({ stat, content }) =>
                     JSON.parse(content)
                 )
             }).then(newPreferences =>
@@ -149,11 +150,15 @@ export class JsonPreferenceServer implements PreferenceServer {
     }
 
     has(preferenceName: string): Promise<boolean> {
-        return Promise.resolve(!!this.preferences && (preferenceName in this.preferences));
+        return this.onReady.then(() =>
+            !!this.preferences && (preferenceName in this.preferences)
+        );
     }
 
     get<T>(preferenceName: string): Promise<T | undefined> {
-        return Promise.resolve(!!this.preferences ? this.preferences[preferenceName] : undefined);
+        return this.onReady.then(() =>
+            !!this.preferences ? this.preferences[preferenceName] : undefined
+        );
     }
 
     setClient(client: PreferenceClient | undefined) {
