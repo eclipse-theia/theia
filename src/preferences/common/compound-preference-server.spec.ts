@@ -10,10 +10,10 @@ import * as chaiAsPromised from "chai-as-promised";
 import * as temp from 'temp';
 import * as fs from 'fs-extra';
 
-import { DefaultPreferenceServer } from '../node/default-preference-server'
 import { CompoundPreferenceServer } from './compound-preference-server'
 import { JsonPrefHelper, PrefProviderStub } from '../node/test/preference-stubs'
 import { FileUri } from '../../application/node/file-uri';
+import { DefaultPreferenceServer } from "./default-preference-server";
 
 const expect = chai.expect;
 const track = temp.track();
