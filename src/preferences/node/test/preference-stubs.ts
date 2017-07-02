@@ -8,15 +8,14 @@
 import { JsonPreferenceServer } from '../json-preference-server'
 import URI from '../../../application/common/uri';
 import { FileSystemNode } from "../../../filesystem/node/node-filesystem"
-import { FileSystemWatcher, FileSystemWatcherClientListener } from '../../../filesystem/common/filesystem-watcher'
 import { ChokidarFileSystemWatcherServer } from '../../../filesystem/node/chokidar-filesystem-watcher'
 import { Logger } from '../../../application/common/logger'
-import { PreferenceContribution, Preference } from '../default-preference-server'
+import { PreferenceContribution, Preference } from '../../common';
 import { ContributionProvider } from '../../../application/common/contribution-provider'
 
 export class JsonPrefHelper {
     readonly logger: Logger;
-    readonly fileWatcher: FileSystemWatcher;
+    readonly fileWatcher: ChokidarFileSystemWatcherServer;
     fileSystem: FileSystemNode;
     constructor() {
         this.logger = new Proxy<Logger>({} as any, {
@@ -41,11 +40,8 @@ export class JsonPrefHelper {
         return new JsonPreferenceServer(this.fileSystem, this.fileWatcher, this.logger, Promise.resolve(preferenceFileUri));
     }
 
-    private createFileSystemWatcher(): FileSystemWatcher {
-        const listener = new FileSystemWatcherClientListener();
-        const server = new ChokidarFileSystemWatcherServer(this.logger);
-        server.setClient(listener);
-        return new FileSystemWatcher(server, listener);
+    private createFileSystemWatcher(): ChokidarFileSystemWatcherServer {
+        return new ChokidarFileSystemWatcherServer(this.logger);
     }
 }
 

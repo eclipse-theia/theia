@@ -7,9 +7,9 @@
 
 import { PreferenceServer } from '../common/preference-protocol'
 import { DefaultPreferenceServer } from './default-preference-server'
-import { PrefProviderStub } from './test/preference-stubs'
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
+import { PrefProviderStub } from "../node/test/preference-stubs";
 
 const expect = chai.expect;
 let server: PreferenceServer;
