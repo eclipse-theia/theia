@@ -52,9 +52,8 @@ export class FileSystemNode implements FileSystem {
     }
 
     exists(uri: string): Promise<boolean> {
-        return new Promise<boolean>((resolve, reject) => {
-            return this.doGetStat(new URI(uri), 0) !== undefined;
-        });
+        const path = FileUri.fsPath(new URI(uri));
+        return Promise.resolve(fs.existsSync(path));
     }
 
     resolveContent(uri: string, options?: { encoding?: string }): Promise<{ stat: FileStat, content: string }> {
