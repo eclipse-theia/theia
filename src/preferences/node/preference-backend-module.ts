@@ -7,6 +7,7 @@
 
 import * as os from 'os';
 import { ContainerModule } from 'inversify';
+import URI from "../../application/common/uri";
 import { bindContributionProvider } from '../../application/common';
 import { FileUri } from '../../application/node';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '../../messaging/common';
@@ -43,7 +44,7 @@ export default new ContainerModule(bind => {
     bind(WorkspacePreferenceServer).toDynamicValue(ctx => {
         const workspaceServer = ctx.container.get<WorkspaceServer>(WorkspaceServer);
         const uri = workspaceServer.getRoot().then(root => {
-            const rootUri = FileUri.create(root);
+            const rootUri = new URI(root);
             return rootUri.withPath(rootUri.path.join('.theia', 'settings.json'));
         });
 
