@@ -12,6 +12,9 @@ import URI from "./uri";
  */
 export class Endpoint {
 
+    private fs = require('fs');
+    private static port: number = 3000;
+
     constructor(protected options: Endpoint.Options = {}) {
     }
 
@@ -24,7 +27,21 @@ export class Endpoint {
     }
 
     protected get host() {
-        return location.host || "127.0.0.1:3000"
+
+
+        if (location.host === "") {
+            this.fs.readFile('port', "utf8", function (err: string, data: any) {
+                if (err) {
+                    throw err;
+                }
+                Endpoint.port = data;
+                if (Endpoint.port === 0 || Endpoint.port < 1024 || isNaN(Endpoint.port)) {
+                    Endpoint.port = 3000
+                }
+
+            });
+        }
+        return location.host || "127.0.0.1:" + Endpoint.port;
     }
 
     protected get wsScheme() {
