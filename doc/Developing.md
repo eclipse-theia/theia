@@ -7,6 +7,14 @@ Theia is a framework to build IDEs, so you can't really "run" Theia itself.
 However, you can run the example applications included in its repository.  One
 is a browser-based IDE and the other is the electron-based equivalent.
 
+## Prerequisites
+* node.js/npm
+* git
+
+So far it has been confirmed that there are some problems and errors using nodejs 8.0+ and npm 5.0+ with theia. As of now, nodejs 7.10.0 and npm 4.2.0 are confirmed to be working well and are the currently recommended versions.
+
+[nvm](https://github.com/creationix/nvm) is recommended to easily switch between node versions.
+
 ## Clone the repository
 
     git clone https://github.com/theia-ide/theia
