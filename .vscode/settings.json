@@ -6,5 +6,9 @@
 {
     "tslint.enable": true,
     "tslint.configFile": "./config/tslint/tslint.json",
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "search.exclude": {
+        "**/node_modules": true,
+        "**/lib": true
+    }
 }
