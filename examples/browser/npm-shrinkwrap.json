@@ -140,9 +140,9 @@
       "resolved": "https://registry.npmjs.org/@types/minimatch/-/minimatch-2.0.29.tgz"
     },
     "@types/node": {
-      "version": "8.0.5",
+      "version": "8.0.7",
       "from": "@types/node@*",
-      "resolved": "https://registry.npmjs.org/@types/node/-/node-8.0.5.tgz"
+      "resolved": "https://registry.npmjs.org/@types/node/-/node-8.0.7.tgz"
     },
     "@types/serve-static": {
       "version": "1.7.31",
@@ -1691,9 +1691,9 @@
       "dev": true
     },
     "enhanced-resolve": {
-      "version": "3.1.0",
+      "version": "3.3.0",
       "from": "enhanced-resolve@>=3.0.0 <4.0.0",
-      "resolved": "https://registry.npmjs.org/enhanced-resolve/-/enhanced-resolve-3.1.0.tgz",
+      "resolved": "https://registry.npmjs.org/enhanced-resolve/-/enhanced-resolve-3.3.0.tgz",
       "dev": true
     },
     "errno": {
@@ -3053,9 +3053,9 @@
       "dev": true
     },
     "hash.js": {
-      "version": "1.1.2",
+      "version": "1.1.3",
       "from": "hash.js@>=1.0.0 <2.0.0",
-      "resolved": "https://registry.npmjs.org/hash.js/-/hash.js-1.1.2.tgz",
+      "resolved": "https://registry.npmjs.org/hash.js/-/hash.js-1.1.3.tgz",
       "dev": true
     },
     "hasha": {
@@ -3191,6 +3191,18 @@
       "resolved": "https://registry.npmjs.org/icss-utils/-/icss-utils-2.1.0.tgz",
       "dev": true,
       "dependencies": {
+        "ansi-styles": {
+          "version": "3.1.0",
+          "from": "ansi-styles@>=3.1.0 <4.0.0",
+          "resolved": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-3.1.0.tgz",
+          "dev": true
+        },
+        "chalk": {
+          "version": "2.0.1",
+          "from": "chalk@>=2.0.1 <3.0.0",
+          "resolved": "https://registry.npmjs.org/chalk/-/chalk-2.0.1.tgz",
+          "dev": true
+        },
         "has-flag": {
           "version": "2.0.0",
           "from": "has-flag@>=2.0.0 <3.0.0",
@@ -3198,15 +3210,15 @@
           "dev": true
         },
         "postcss": {
-          "version": "6.0.3",
+          "version": "6.0.4",
           "from": "postcss@>=6.0.1 <7.0.0",
-          "resolved": "https://registry.npmjs.org/postcss/-/postcss-6.0.3.tgz",
+          "resolved": "https://registry.npmjs.org/postcss/-/postcss-6.0.4.tgz",
           "dev": true
         },
         "supports-color": {
-          "version": "4.0.0",
+          "version": "4.1.0",
           "from": "supports-color@>=4.0.0 <5.0.0",
-          "resolved": "https://registry.npmjs.org/supports-color/-/supports-color-4.0.0.tgz",
+          "resolved": "https://registry.npmjs.org/supports-color/-/supports-color-4.1.0.tgz",
           "dev": true
         }
       }
@@ -3468,9 +3480,9 @@
       "dev": true,
       "dependencies": {
         "isobject": {
-          "version": "3.0.0",
+          "version": "3.0.1",
           "from": "isobject@>=3.0.0 <4.0.0",
-          "resolved": "https://registry.npmjs.org/isobject/-/isobject-3.0.0.tgz",
+          "resolved": "https://registry.npmjs.org/isobject/-/isobject-3.0.1.tgz",
           "dev": true
         }
       }
@@ -4204,9 +4216,9 @@
       "optional": true
     },
     "monaco-css": {
-      "version": "1.3.1",
+      "version": "1.3.2",
       "from": "monaco-css@>=1.3.1 <2.0.0",
-      "resolved": "https://registry.npmjs.org/monaco-css/-/monaco-css-1.3.1.tgz"
+      "resolved": "https://registry.npmjs.org/monaco-css/-/monaco-css-1.3.2.tgz"
     },
     "monaco-editor": {
       "version": "0.8.3",
@@ -4219,14 +4231,14 @@
       "resolved": "https://registry.npmjs.org/monaco-editor-core/-/monaco-editor-core-0.8.2.tgz"
     },
     "monaco-html": {
-      "version": "1.2.1",
+      "version": "1.3.0",
       "from": "monaco-html@>=1.2.1 <2.0.0",
-      "resolved": "https://registry.npmjs.org/monaco-html/-/monaco-html-1.2.1.tgz"
+      "resolved": "https://registry.npmjs.org/monaco-html/-/monaco-html-1.3.0.tgz"
     },
     "monaco-json": {
-      "version": "1.2.2",
+      "version": "1.3.0",
       "from": "monaco-json@>=1.2.2 <2.0.0",
-      "resolved": "https://registry.npmjs.org/monaco-json/-/monaco-json-1.2.2.tgz"
+      "resolved": "https://registry.npmjs.org/monaco-json/-/monaco-json-1.3.0.tgz"
     },
     "monaco-languageclient": {
       "version": "0.0.1-alpha.6",
@@ -4239,9 +4251,9 @@
       "resolved": "https://registry.npmjs.org/monaco-languages/-/monaco-languages-0.7.0.tgz"
     },
     "monaco-typescript": {
-      "version": "2.1.2",
+      "version": "2.2.0",
       "from": "monaco-typescript@>=2.1.2 <3.0.0",
-      "resolved": "https://registry.npmjs.org/monaco-typescript/-/monaco-typescript-2.1.2.tgz"
+      "resolved": "https://registry.npmjs.org/monaco-typescript/-/monaco-typescript-2.2.0.tgz"
     },
     "mount-point": {
       "version": "1.2.0",
@@ -4475,9 +4487,9 @@
           "dev": true
         },
         "isobject": {
-          "version": "3.0.0",
+          "version": "3.0.1",
           "from": "isobject@>=3.0.0 <4.0.0",
-          "resolved": "https://registry.npmjs.org/isobject/-/isobject-3.0.0.tgz",
+          "resolved": "https://registry.npmjs.org/isobject/-/isobject-3.0.1.tgz",
           "dev": true
         }
       }
@@ -5001,6 +5013,18 @@
       "resolved": "https://registry.npmjs.org/postcss-modules-extract-imports/-/postcss-modules-extract-imports-1.1.0.tgz",
       "dev": true,
       "dependencies": {
+        "ansi-styles": {
+          "version": "3.1.0",
+          "from": "ansi-styles@>=3.1.0 <4.0.0",
+          "resolved": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-3.1.0.tgz",
+          "dev": true
+        },
+        "chalk": {
+          "version": "2.0.1",
+          "from": "chalk@>=2.0.1 <3.0.0",
+          "resolved": "https://registry.npmjs.org/chalk/-/chalk-2.0.1.tgz",
+          "dev": true
+        },
         "has-flag": {
           "version": "2.0.0",
           "from": "has-flag@>=2.0.0 <3.0.0",
@@ -5008,15 +5032,15 @@
           "dev": true
         },
         "postcss": {
-          "version": "6.0.3",
+          "version": "6.0.4",
           "from": "postcss@>=6.0.1 <7.0.0",
-          "resolved": "https://registry.npmjs.org/postcss/-/postcss-6.0.3.tgz",
+          "resolved": "https://registry.npmjs.org/postcss/-/postcss-6.0.4.tgz",
           "dev": true
         },
         "supports-color": {
-          "version": "4.0.0",
+          "version": "4.1.0",
           "from": "supports-color@>=4.0.0 <5.0.0",
-          "resolved": "https://registry.npmjs.org/supports-color/-/supports-color-4.0.0.tgz",
+          "resolved": "https://registry.npmjs.org/supports-color/-/supports-color-4.1.0.tgz",
           "dev": true
         }
       }
@@ -5027,6 +5051,18 @@
       "resolved": "https://registry.npmjs.org/postcss-modules-local-by-default/-/postcss-modules-local-by-default-1.2.0.tgz",
       "dev": true,
       "dependencies": {
+        "ansi-styles": {
+          "version": "3.1.0",
+          "from": "ansi-styles@>=3.1.0 <4.0.0",
+          "resolved": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-3.1.0.tgz",
+          "dev": true
+        },
+        "chalk": {
+          "version": "2.0.1",
+          "from": "chalk@>=2.0.1 <3.0.0",
+          "resolved": "https://registry.npmjs.org/chalk/-/chalk-2.0.1.tgz",
+          "dev": true
+        },
         "has-flag": {
           "version": "2.0.0",
           "from": "has-flag@>=2.0.0 <3.0.0",
@@ -5034,15 +5070,15 @@
           "dev": true
         },
         "postcss": {
-          "version": "6.0.3",
+          "version": "6.0.4",
           "from": "postcss@>=6.0.1 <7.0.0",
-          "resolved": "https://registry.npmjs.org/postcss/-/postcss-6.0.3.tgz",
+          "resolved": "https://registry.npmjs.org/postcss/-/postcss-6.0.4.tgz",
           "dev": true
         },
         "supports-color": {
-          "version": "4.0.0",
+          "version": "4.1.0",
           "from": "supports-color@>=4.0.0 <5.0.0",
-          "resolved": "https://registry.npmjs.org/supports-color/-/supports-color-4.0.0.tgz",
+          "resolved": "https://registry.npmjs.org/supports-color/-/supports-color-4.1.0.tgz",
           "dev": true
         }
       }
@@ -5053,6 +5089,18 @@
       "resolved": "https://registry.npmjs.org/postcss-modules-scope/-/postcss-modules-scope-1.1.0.tgz",
       "dev": true,
       "dependencies": {
+        "ansi-styles": {
+          "version": "3.1.0",
+          "from": "ansi-styles@>=3.1.0 <4.0.0",
+          "resolved": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-3.1.0.tgz",
+          "dev": true
+        },
+        "chalk": {
+          "version": "2.0.1",
+          "from": "chalk@>=2.0.1 <3.0.0",
+          "resolved": "https://registry.npmjs.org/chalk/-/chalk-2.0.1.tgz",
+          "dev": true
+        },
         "has-flag": {
           "version": "2.0.0",
           "from": "has-flag@>=2.0.0 <3.0.0",
@@ -5060,15 +5108,15 @@
           "dev": true
         },
         "postcss": {
-          "version": "6.0.3",
+          "version": "6.0.4",
           "from": "postcss@>=6.0.1 <7.0.0",
-          "resolved": "https://registry.npmjs.org/postcss/-/postcss-6.0.3.tgz",
+          "resolved": "https://registry.npmjs.org/postcss/-/postcss-6.0.4.tgz",
           "dev": true
         },
         "supports-color": {
-          "version": "4.0.0",
+          "version": "4.1.0",
           "from": "supports-color@>=4.0.0 <5.0.0",
-          "resolved": "https://registry.npmjs.org/supports-color/-/supports-color-4.0.0.tgz",
+          "resolved": "https://registry.npmjs.org/supports-color/-/supports-color-4.1.0.tgz",
           "dev": true
         }
       }
@@ -5079,6 +5127,18 @@
       "resolved": "https://registry.npmjs.org/postcss-modules-values/-/postcss-modules-values-1.3.0.tgz",
       "dev": true,
       "dependencies": {
+        "ansi-styles": {
+          "version": "3.1.0",
+          "from": "ansi-styles@>=3.1.0 <4.0.0",
+          "resolved": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-3.1.0.tgz",
+          "dev": true
+        },
+        "chalk": {
+          "version": "2.0.1",
+          "from": "chalk@>=2.0.1 <3.0.0",
+          "resolved": "https://registry.npmjs.org/chalk/-/chalk-2.0.1.tgz",
+          "dev": true
+        },
         "has-flag": {
           "version": "2.0.0",
           "from": "has-flag@>=2.0.0 <3.0.0",
@@ -5086,15 +5146,15 @@
           "dev": true
         },
         "postcss": {
-          "version": "6.0.3",
+          "version": "6.0.4",
           "from": "postcss@>=6.0.1 <7.0.0",
-          "resolved": "https://registry.npmjs.org/postcss/-/postcss-6.0.3.tgz",
+          "resolved": "https://registry.npmjs.org/postcss/-/postcss-6.0.4.tgz",
           "dev": true
         },
         "supports-color": {
-          "version": "4.0.0",
+          "version": "4.1.0",
           "from": "supports-color@>=4.0.0 <5.0.0",
-          "resolved": "https://registry.npmjs.org/supports-color/-/supports-color-4.0.0.tgz",
+          "resolved": "https://registry.npmjs.org/supports-color/-/supports-color-4.1.0.tgz",
           "dev": true
         }
       }
@@ -5368,9 +5428,9 @@
       "resolved": "https://registry.npmjs.org/read-pkg-up/-/read-pkg-up-1.0.1.tgz"
     },
     "readable-stream": {
-      "version": "2.3.2",
+      "version": "2.3.3",
       "from": "readable-stream@>=2.0.2 <3.0.0",
-      "resolved": "https://registry.npmjs.org/readable-stream/-/readable-stream-2.3.2.tgz"
+      "resolved": "https://registry.npmjs.org/readable-stream/-/readable-stream-2.3.3.tgz"
     },
     "readdirp": {
       "version": "2.1.0",
@@ -5384,9 +5444,9 @@
       "dev": true
     },
     "reconnecting-websocket": {
-      "version": "3.0.5",
+      "version": "3.0.7",
       "from": "reconnecting-websocket@>=3.0.3 <4.0.0",
-      "resolved": "https://registry.npmjs.org/reconnecting-websocket/-/reconnecting-websocket-3.0.5.tgz"
+      "resolved": "https://registry.npmjs.org/reconnecting-websocket/-/reconnecting-websocket-3.0.7.tgz"
     },
     "redent": {
       "version": "1.0.0",
@@ -5607,7 +5667,7 @@
     },
     "safe-buffer": {
       "version": "5.1.1",
-      "from": "safe-buffer@>=5.1.0 <5.2.0",
+      "from": "safe-buffer@>=5.1.1 <5.2.0",
       "resolved": "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.1.1.tgz"
     },
     "safe-json-stringify": {
@@ -6011,7 +6071,7 @@
     },
     "string_decoder": {
       "version": "1.0.3",
-      "from": "string_decoder@>=1.0.0 <1.1.0",
+      "from": "string_decoder@>=1.0.3 <1.1.0",
       "resolved": "https://registry.npmjs.org/string_decoder/-/string_decoder-1.0.3.tgz"
     },
     "string-width": {

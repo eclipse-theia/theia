@@ -5,10 +5,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Endpoint } from '../../application/common/endpoint';
-import { injectable } from "inversify";
+import { injectable, interfaces } from "inversify";
 import { listen as doListen, Logger, ConsoleLogger } from "vscode-ws-jsonrpc";
 import { ConnectionHandler, JsonRpcProxyFactory, JsonRpcProxy } from "../common";
+import { Endpoint } from '../../application/common/endpoint';
+
 const ReconnectingWebSocket = require('reconnecting-websocket');
 
 export interface WebSocketOptions {
@@ -20,6 +21,10 @@ export interface WebSocketOptions {
 
 @injectable()
 export class WebSocketConnectionProvider {
+
+    static createProxy<T extends object>(container: interfaces.Container, path: string): JsonRpcProxy<T> {
+        return container.get(WebSocketConnectionProvider).createProxy<T>(path);
+    }
 
     /**
      * Create a proxy object to remote interface of T type

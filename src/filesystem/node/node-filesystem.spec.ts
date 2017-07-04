@@ -13,11 +13,11 @@ import * as os from 'os';
 import URI from "../../application/common/uri";
 import { Logger } from "../../application/common";
 import { FileUri } from "../../application/node";
+import { PreferenceService, DefaultPreferenceServer } from "../../preferences/common";
 import { FileSystem } from "../common/filesystem";
-import { FileSystemWatcher, FileSystemWatcherClientListener, FileChange, FileChangeType } from '../common';
+import { FileSystemWatcher, FileChange, FileChangeType, createFileSystemPreferences } from '../common';
 import { FileSystemNode } from "./node-filesystem";
 import { ChokidarFileSystemWatcherServer } from './chokidar-filesystem-watcher';
-
 
 const expect = chai.expect;
 const uuidV1 = require('uuid/v1');
@@ -788,10 +788,12 @@ describe("NodeFileSystem", () => {
                 }
             }
         });
-        const listener = new FileSystemWatcherClientListener();
+        const preferences = new PreferenceService(new DefaultPreferenceServer({
+            getContributions: () => []
+        }));
+        const fileSystemPreferences = createFileSystemPreferences(preferences);
         const server = new ChokidarFileSystemWatcherServer(logger);
-        server.setClient(listener);
-        return new FileSystemWatcher(server, listener);
+        return new FileSystemWatcher(server, fileSystemPreferences);
     }
 
     function sleep(time: number) {

@@ -7,7 +7,7 @@
 
 import { inject, injectable, named } from 'inversify'
 import { ContributionProvider } from '../../application/common'
-import { PreferenceServer, PreferenceClient } from '../common';
+import { PreferenceServer, PreferenceClient } from './preference-protocol';
 
 export const PreferenceContribution = Symbol("PreferenceContribution");
 

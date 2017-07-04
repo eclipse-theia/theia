@@ -5,49 +5,57 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as coreutils from '@phosphor/coreutils';
+import { JSONExt } from '@phosphor/coreutils';
 import { inject, injectable } from 'inversify';
-import { ILogger, MaybePromise, DisposableCollection } from '../../application/common';
-import URI from '../../application/common/uri';
-import { FileChange, FileSystem, FileSystemWatcher } from '../../filesystem/common';
+import URI from "../../application/common/uri";
+import { Disposable, DisposableCollection, ILogger, MaybePromise } from '../../application/common';
+import { FileSystem } from '../../filesystem/common';
+import { FileSystemWatcherServer, DidFilesChangedParams, FileChange } from '../../filesystem/common/filesystem-watcher-protocol';
 import { PreferenceChangedEvent, PreferenceClient, PreferenceServer } from '../common';
 
-export const PreferencePath = Symbol("PreferencePath");
-export type PreferencePath = MaybePromise<URI>;
+export const PreferenceUri = Symbol("PreferencePath");
+export type PreferenceUri = MaybePromise<URI>;
 
 @injectable()
 export class JsonPreferenceServer implements PreferenceServer {
 
     protected preferences: { [key: string]: any } | undefined;
     protected client: PreferenceClient | undefined;
-    protected readonly preferencePath: Promise<URI>;
+    protected readonly preferenceUri: Promise<string>;
 
     protected readonly toDispose = new DisposableCollection();
+    protected readonly onReady: Promise<void>;
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
+        @inject(FileSystemWatcherServer) protected readonly watcherServer: FileSystemWatcherServer,
         @inject(ILogger) protected readonly logger: ILogger,
-        @inject(PreferencePath) preferencePath: PreferencePath
+        @inject(PreferenceUri) preferenceUri: PreferenceUri
     ) {
-        this.preferencePath = Promise.resolve(preferencePath);
-        this.preferencePath.then(uri =>
-            watcher.watchFileChanges(uri).then(disposable =>
-                this.toDispose.push(disposable)
-            )
+        this.preferenceUri = Promise.resolve(preferenceUri).then(uri => uri.toString());
+
+        this.toDispose.push(watcherServer);
+        watcherServer.setClient({
+            onDidFilesChanged: p => this.onDidFilesChanged(p)
+        });
+        this.preferenceUri.then(uri =>
+            watcherServer.watchFileChanges(uri).then(id => {
+                this.toDispose.push(Disposable.create(() =>
+                    watcherServer.unwatchFileChanges(id))
+                )
+            })
         );
-
-        this.toDispose.push(watcher.onFilesChanged(changes =>
-            this.arePreferencesAffected(changes).then(() =>
-                this.reconcilePreferences()
-            )
-        ));
-
-        this.reconcilePreferences();
+        this.onReady = this.reconcilePreferences();
     }
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    protected onDidFilesChanged(params: DidFilesChangedParams): void {
+        this.arePreferencesAffected(params.changes).then(() =>
+            this.reconcilePreferences()
+        )
     }
 
     /**
@@ -55,93 +63,107 @@ export class JsonPreferenceServer implements PreferenceServer {
      */
     protected arePreferencesAffected(changes: FileChange[]): Promise<void> {
         return new Promise(resolve => {
-            this.preferencePath.then(preferenceUri => {
-                if (changes.some(c => c.uri.toString() === preferenceUri.toString())) {
+            this.preferenceUri.then(uri => {
+                if (changes.some(c => c.uri === uri)) {
                     resolve();
                 }
             })
         });
     }
 
-    /**
-     * Read preferences
-     */
-    protected reconcilePreferences(): void {
-        this.preferencePath.then(path => {
-            this.fileSystem.resolveContent(path.toString()).then(({ stat, content }) =>
-                JSON.parse(content)
-            ).then(newPreferences =>
-                this.assignPreferences(newPreferences),
-                reason => {
-                    if (reason) {
-                        this.logger.error('Failed to reconcile preferences: ', reason);
-                    }
-                    this.assignPreferences(undefined);
-                })
-        })
+    protected reconcilePreferences(): Promise<void> {
+        return this.readPreferences().then(preferences =>
+            this.doReconcilePreferences(preferences)
+        );
     }
 
-    protected assignPreferences(newPrefs: any) {
-        if (this.preferences !== undefined && this.preferences !== newPrefs) {
-            // Different prefs detected
-            this.notifyDifferentPrefs(newPrefs);
-
-        } else if (this.preferences === undefined && newPrefs !== undefined) {
-            const newKeys: string[] = Object.keys(newPrefs);
-            // All prefs are new, send events for all of them
-            newKeys.forEach((newKey: string) => {
-                const event: PreferenceChangedEvent = { preferenceName: newKey };
-                this.fireEvent(event);
-            })
-        }
-        this.preferences = newPrefs;
-    }
-
-    protected notifyDifferentPrefs(newPrefs: any) {
-        let newKeys: string[] = [];
-        if (newPrefs !== undefined) {
-            newKeys = Object.keys(newPrefs);
-        }
-
-        const oldKeys = Object.keys(this.preferences);
-        for (const newKey of newKeys) {
-            const index = oldKeys.indexOf(newKey)
-            if (index !== -1) {
-                oldKeys.splice(index);
-                // Existing pref
-
-                if (this.preferences !== undefined && !coreutils.JSONExt.deepEqual(newPrefs[newKey], this.preferences[newKey])) {
-                    // New value
-                    const event: PreferenceChangedEvent = { preferenceName: newKey, newValue: newPrefs[newKey], oldValue: this.preferences[newKey] };
-                    this.fireEvent(event);
+    protected readPreferences(): Promise<any | undefined> {
+        return this.preferenceUri.then(uri =>
+            this.fileSystem.exists(uri).then(exists => {
+                if (!exists) {
+                    return undefined;
                 }
+                return this.fileSystem.resolveContent(uri).then(({ stat, content }) =>
+                    JSON.parse(content)
+                )
+            }).catch(reason => {
+                if (reason) {
+                    this.logger.error(`Failed to read preferences ${uri}:`, reason);
+                }
+                return undefined;
+            })
+        );
+    }
 
+    protected doReconcilePreferences(preferences: any | undefined) {
+        if (preferences) {
+            if (this.preferences) {
+                this.fireChanged(this.preferences, preferences);
             } else {
-                // New pref
-                const event: PreferenceChangedEvent = { preferenceName: newKey, newValue: newPrefs[newKey] };
-                this.fireEvent(event);
+                this.fireNew(preferences);
             }
-        };
+        } else if (this.preferences) {
+            this.fireRemoved(this.preferences);
+        }
+        this.preferences = preferences;
+    }
 
-        // oldKeys now contain the deleted prefs that should have an event fired for
-        for (const deletedKey of oldKeys) {
-            const event: PreferenceChangedEvent = { preferenceName: deletedKey };
-            this.fireEvent(event);
+    protected fireNew(preferences: any): void {
+        // tslint:disable-next-line:forin
+        for (const preferenceName in preferences) {
+            const newValue = preferences[preferenceName];
+            this.fireEvent({ preferenceName, newValue });
+        }
+    }
+
+    protected fireRemoved(preferences: any): void {
+        // tslint:disable-next-line:forin
+        for (const preferenceName in preferences) {
+            const oldValue = preferences[preferenceName];
+            this.fireEvent({ preferenceName, oldValue });
+        }
+    }
+
+    protected fireChanged(target: any, source: any): void {
+        const deleted = new Set(Object.keys(target));
+        // tslint:disable-next-line:forin
+        for (const preferenceName in source) {
+            deleted.delete(preferenceName);
+            const newValue = source[preferenceName];
+            if (preferenceName in target) {
+                const oldValue = target[preferenceName];
+                if (!JSONExt.deepEqual(oldValue, newValue)) {
+                    this.fireEvent({ preferenceName, oldValue, newValue });
+                }
+            } else {
+                this.fireEvent({ preferenceName, newValue });
+            }
+        }
+        for (const preferenceName of deleted) {
+            const oldValue = target[preferenceName];
+            this.fireEvent({ preferenceName, oldValue });
         }
     }
 
     protected fireEvent(event: PreferenceChangedEvent) {
+        this.logger.debug(log =>
+            log('onDidChangePreference:', event)
+        );
         if (this.client) {
             this.client.onDidChangePreference(event);
         }
     }
 
     has(preferenceName: string): Promise<boolean> {
-        return Promise.resolve(!!this.preferences && (preferenceName in this.preferences));
+        return this.onReady.then(() =>
+            !!this.preferences && (preferenceName in this.preferences)
+        );
     }
 
     get<T>(preferenceName: string): Promise<T | undefined> {
-        return Promise.resolve(!!this.preferences ? this.preferences[preferenceName] : undefined);
+        return this.onReady.then(() =>
+            !!this.preferences ? this.preferences[preferenceName] : undefined
+        );
     }
 
     setClient(client: PreferenceClient | undefined) {
