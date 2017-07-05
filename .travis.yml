@@ -2,9 +2,6 @@ language: node_js
 node_js:
   - "7"
   - "6"
-os:
-  - linux
-  - osx
 branches:
   only: 
     - master
