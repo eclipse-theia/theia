@@ -24,6 +24,7 @@ export class BackendApplication {
 
     protected readonly app: express.Application = express();
 
+
     constructor(
         @inject(ContributionProvider) @named(BackendApplicationContribution)
         protected readonly contributionsProvider: ContributionProvider<BackendApplicationContribution>,
@@ -46,11 +47,21 @@ export class BackendApplication {
         this.app.use(...handlers);
     }
 
-    start(port: number = 3000): Promise<void> {
-        return new Promise<void>(resolve => {
-            const server = this.app.listen(port, () => {
-                this.logger.info(`Theia app listening on port ${port}.`);
-                resolve();
+    start(isBrowser: boolean): Promise<http.Server> {
+        let port : number;
+        if (isBrowser)
+        {
+            port = 3000
+        }
+        else
+        {
+            port = 0
+        }
+        
+        return new Promise<http.Server>(resolve => {
+            const server = this.app.listen(port, function () {
+                console.log(`Theia app listening on port ` + server.address().port);
+                resolve(server);
             });
             for (const contrib of this.contributionsProvider.getContributions()) {
                 if (contrib.onStart) {

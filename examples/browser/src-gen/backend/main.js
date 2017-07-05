@@ -29,7 +29,7 @@ function start() {
     application.use(express.static(path.join(__dirname, '../../lib'), {
         index: 'index.html'
     }));
-    application.start();
+    application.start(true);
 }
 
 Promise.resolve()

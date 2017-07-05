@@ -18,6 +18,8 @@ const electron = require('electron');
 const path = require('path');
 
 let mainWindow = undefined;
+var test;
+
 
 electron.app.on('window-all-closed', function () {
     if (process.platform !== 'darwin') {
@@ -25,11 +27,22 @@ electron.app.on('window-all-closed', function () {
     }
 });
 
+function foo() {
+    mainWindow.loadURL(`file://${path.join(__dirname, '../../lib/index.html')}?port=` + test.port);
+}
+
+
 electron.app.on('ready', function () {
-    require("../backend/main");
+
+    test = require("../backend/main")
     mainWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
     mainWindow.webContents.openDevTools();
-    mainWindow.loadURL(`file://${path.join(__dirname, '../../lib/index.html')}`);
+
+    // or as a parameter of a file URI
+    // mainWindow.loadURL(`file://${path.join(__dirname, '../../lib/index.html')}`);
+    setTimeout(foo, 1000);
+
+
     mainWindow.on('closed', function () {
         mainWindow = undefined;
     });

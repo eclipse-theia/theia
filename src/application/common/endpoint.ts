@@ -12,6 +12,8 @@ import URI from "./uri";
  */
 export class Endpoint {
 
+    public static port: number = 3000
+
     constructor(protected options: Endpoint.Options = {}) {
     }
 
@@ -24,7 +26,11 @@ export class Endpoint {
     }
 
     protected get host() {
-        return location.host || "127.0.0.1:3000"
+        if (location.host === "") {
+            let result = (new URL(window.document.URL).searchParams.get("port"));
+            Endpoint.port = Number(result)
+        }
+        return location.host || "127.0.0.1:" + Endpoint.port;
     }
 
     protected get wsScheme() {
