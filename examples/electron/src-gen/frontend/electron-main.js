@@ -18,7 +18,7 @@ const electron = require('electron');
 const path = require('path');
 
 let mainWindow = undefined;
-var test;
+var requireValue;
 
 
 electron.app.on('window-all-closed', function () {
@@ -27,20 +27,17 @@ electron.app.on('window-all-closed', function () {
     }
 });
 
-function foo() {
-    mainWindow.loadURL(`file://${path.join(__dirname, '../../lib/index.html')}?port=` + test.port);
+function loadURL() {
+    mainWindow.loadURL(`file://${path.join(__dirname, '../../lib/index.html')}?port=` + requireValue.port);
 }
 
 
 electron.app.on('ready', function () {
 
-    test = require("../backend/main")
+    requireValue = require("../backend/main")
     mainWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
     mainWindow.webContents.openDevTools();
-
-    // or as a parameter of a file URI
-    // mainWindow.loadURL(`file://${path.join(__dirname, '../../lib/index.html')}`);
-    setTimeout(foo, 1000);
+    setTimeout(loadURL, 1000);
 
 
     mainWindow.on('closed', function () {

@@ -12,7 +12,7 @@ import URI from "./uri";
  */
 export class Endpoint {
 
-    public static port: number = 3000
+    private port: number = 3000
 
     constructor(protected options: Endpoint.Options = {}) {
     }
@@ -28,9 +28,9 @@ export class Endpoint {
     protected get host() {
         if (location.host === "") {
             let result = (new URL(window.document.URL).searchParams.get("port"));
-            Endpoint.port = Number(result)
+            this.port = Number(result)
         }
-        return location.host || "127.0.0.1:" + Endpoint.port;
+        return location.host || "127.0.0.1:" + this.port;
     }
 
     protected get wsScheme() {

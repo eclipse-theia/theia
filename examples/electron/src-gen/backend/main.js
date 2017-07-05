@@ -26,7 +26,6 @@ function load(raw) {
 
 function start() {
     const application = container.get(BackendApplication);
-    module.exports.port = 1
     application.use(express.static(path.join(__dirname, '../../lib'), {
         index: 'index.html'
     }));
