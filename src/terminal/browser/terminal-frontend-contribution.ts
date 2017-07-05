@@ -7,12 +7,12 @@
 
 import { inject, injectable } from "inversify"
 import {
-    CommandContribution, Command, CommandRegistry,
-    MenuContribution, MenuModelRegistry
+    CommandContribution, Command, CommandRegistry, Endpoint,
+    MenuContribution, MenuModelRegistry,
 } from '../../application/common';
 import { FrontendApplication } from '../../application/browser';
 import { FileMenus } from '../../filesystem/browser/filesystem-commands';
-import { TerminalWidgetFactory } from './terminal-widget';
+import { TerminalWidgetFactory, TerminalWidgetOptions } from './terminal-widget';
 
 export namespace TerminalCommands {
     export const NEW: Command = {
@@ -23,6 +23,8 @@ export namespace TerminalCommands {
 
 @injectable()
 export class TerminalFrontendContribution implements CommandContribution, MenuContribution {
+
+    protected terminalNum = 0;
 
     constructor(
         @inject(FrontendApplication) protected readonly app: FrontendApplication,
@@ -43,7 +45,16 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
     }
 
     protected newTerminal(): void {
-        const newTerminal = this.terminalWidgetFactory();
+        const newTerminal = this.terminalWidgetFactory(<TerminalWidgetOptions>{
+            endpoint: new Endpoint({ path: '/services/terminals' }),
+            id: 'terminal-' + this.terminalNum,
+            caption: 'Terminal ' + this.terminalNum,
+            label: 'Terminal ' + this.terminalNum,
+            destroyTermOnClose: true
+        });
+        this.terminalNum++;
+
+        newTerminal.start();
         this.app.shell.addToMainArea(newTerminal);
         this.app.shell.activateMain(newTerminal.id);
     }
