@@ -163,7 +163,7 @@ To build and run the browser example:
     && cd theia \
     && npm install \
     && cd config/local-dependency-manager \
-    && npm install \
+    && npm install --unsafe-perm\
     && cd ../../examples/browser \
     && npm run bootstrap \
     && npm run start
@@ -174,7 +174,7 @@ To build and run the electron example:
     && cd theia \
     && npm install \
     && cd config/local-dependency-manager \
-    && npm install \
+    && npm install --unsafe-perm\
     && cd ../../examples/electron \
     && npm run bootstrap \
     && npm run start
