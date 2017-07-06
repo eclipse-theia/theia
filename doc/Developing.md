@@ -161,7 +161,7 @@ To build and run the browser example:
 
     git clone https://github.com/theia-ide/theia \
     && cd theia \
-    && npm install \
+    && npm install --unsafe-perm\
     && cd config/local-dependency-manager \
     && npm install --unsafe-perm\
     && cd ../../examples/browser \
@@ -172,7 +172,7 @@ To build and run the electron example:
 
     git clone https://github.com/theia-ide/theia \
     && cd theia \
-    && npm install \
+    && npm install --unsafe-perm\
     && cd config/local-dependency-manager \
     && npm install --unsafe-perm\
     && cd ../../examples/electron \
