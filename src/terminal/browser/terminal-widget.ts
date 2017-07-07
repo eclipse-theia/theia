@@ -14,11 +14,18 @@ import * as Xterm from 'xterm';
 import 'xterm/lib/addons/fit/fit';
 import 'xterm/lib/addons/attach/attach';
 
-let num = 0
-
 export const TerminalWidgetFactory = Symbol('TerminalWidgetFactory');
 export interface TerminalWidgetFactory {
-    (): TerminalWidget;
+    (options: TerminalWidgetOptions): TerminalWidget;
+}
+
+export const TerminalWidgetOptions = Symbol("TerminalWidgetOptions");
+export interface TerminalWidgetOptions {
+    endpoint: Endpoint,
+    id: string,
+    caption: string,
+    label: string
+    destroyTermOnClose: boolean
 }
 
 @injectable()
@@ -32,14 +39,21 @@ export class TerminalWidget extends BaseWidget {
 
     constructor(
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider
+        @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider,
+        @inject(TerminalWidgetOptions) options: TerminalWidgetOptions
     ) {
         super();
-        this.endpoint = new Endpoint({ path: '/services/terminals' })
-        num++
-        this.id = 'terminal-' + num
-        this.title.caption = 'Terminal ' + num
-        this.title.label = 'Terminal ' + num
+        this.endpoint = options.endpoint;
+        this.id = options.id;
+        this.title.caption = options.caption;
+        this.title.label = options.label;
+
+        if (options.destroyTermOnClose === true) {
+            this.toDispose.push(Disposable.create(() =>
+                this.term.destroy()
+            ));
+        }
+
         this.title.closable = true
         this.addClass("terminal-container")
 
@@ -53,12 +67,8 @@ export class TerminalWidget extends BaseWidget {
         this.term.on('title', (title: string) => {
             this.title.label = title;
         });
-        this.registerResize()
-        this.startNewTerminal()
 
-        this.toDispose.push(Disposable.create(() =>
-            this.term.destroy()
-        ));
+        this.registerResize();
     }
 
     protected registerResize(): void {
@@ -78,7 +88,7 @@ export class TerminalWidget extends BaseWidget {
         (this.term as any).fit()
     }
 
-    protected async startNewTerminal(): Promise<void> {
+    public async start(): Promise<void> {
         const root = await this.workspaceService.root;
         const res = await fetch(this.endpoint.getRestUrl().toString() + '?cols=' + this.cols + '&rows=' + this.rows, {
             method: 'POST',

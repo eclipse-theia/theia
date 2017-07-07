@@ -8,6 +8,7 @@
 import * as http from 'http';
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
+import * as ws from 'ws';
 import { injectable } from 'inversify';
 import URI from "../../application/common/uri";
 import { isWindows } from "../../application/common";
@@ -19,6 +20,9 @@ const pty = require("node-pty");
 @injectable()
 export class TerminalBackendContribution implements BackendApplicationContribution {
     private terminals: Map<number, any> = new Map()
+    private wsPromises: {
+        [pid: number]: (ws: any) => void | undefined
+    } = {};
 
     private getShellExecutablePath(): string {
         if (isWindows) {
@@ -39,6 +43,18 @@ export class TerminalBackendContribution implements BackendApplicationContributi
                 cwd: process.env.PWD,
                 env: process.env
             });
+
+            const wsPromise = new Promise<ws>(resolve => this.wsPromises[term.pid] = resolve);
+
+            term.on('data', (data: any) => {
+                wsPromise.then(ws => {
+                    try {
+                        ws.send(data)
+                    } catch (ex) {
+                        console.error(ex)
+                    }
+                });
+            })
 
             const root: { uri?: string } | undefined = req.body;
             if (root && root.uri) {
@@ -80,19 +96,19 @@ export class TerminalBackendContribution implements BackendApplicationContributi
             if (!term) {
                 return;
             }
-            term.on('data', (data: any) => {
-                try {
-                    ws.send(data)
-                } catch (ex) {
-                    console.error(ex)
-                }
-            })
+
+            const resolveWs = this.wsPromises[pid];
+            if (resolveWs) {
+                resolveWs(ws);
+            }
+
             ws.on('message', (msg: any) => {
                 term.write(msg)
             })
             ws.on('close', (msg: any) => {
                 term.kill()
                 this.terminals.delete(pid)
+                delete this.wsPromises[pid];
             })
         })
     }
