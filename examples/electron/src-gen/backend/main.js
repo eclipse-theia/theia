@@ -29,9 +29,8 @@ function start() {
     application.use(express.static(path.join(__dirname, '../../lib'), {
         index: 'index.html'
     }));
-    application.start(false).then(server => {
-        module.exports.port = server.address().port
-    });
+
+    module.exports.default = application.start(false, 0)
 }
 
 Promise.resolve()

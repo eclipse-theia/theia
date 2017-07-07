@@ -29,15 +29,15 @@ function start() {
     application.use(express.static(path.join(__dirname, '../../lib'), {
         index: 'index.html'
     }));
-    application.start(true);
+    application.start(true, 3000);
 }
 
 Promise.resolve()
-.then(function () { return Promise.resolve(require('theia-core/lib/filesystem/node/filesystem-backend-module')).then(load) })
-.then(function () { return Promise.resolve(require('theia-core/lib/workspace/node/workspace-backend-module')).then(load) })
-.then(function () { return Promise.resolve(require('theia-core/lib/terminal/node/terminal-backend-module')).then(load) })
-.then(function () { return Promise.resolve(require('theia-core/lib/languages/node/languages-backend-module')).then(load) })
-.then(function () { return Promise.resolve(require('theia-core/lib/java/node/java-backend-module')).then(load) })
-.then(function () { return Promise.resolve(require('theia-core/lib/python/node/python-backend-module')).then(load) })
-.then(function () { return Promise.resolve(require('theia-core/lib/cpp/node/cpp-backend-module')).then(load) })
-.then(start);
+    .then(function () { return Promise.resolve(require('theia-core/lib/filesystem/node/filesystem-backend-module')).then(load) })
+    .then(function () { return Promise.resolve(require('theia-core/lib/workspace/node/workspace-backend-module')).then(load) })
+    .then(function () { return Promise.resolve(require('theia-core/lib/terminal/node/terminal-backend-module')).then(load) })
+    .then(function () { return Promise.resolve(require('theia-core/lib/languages/node/languages-backend-module')).then(load) })
+    .then(function () { return Promise.resolve(require('theia-core/lib/java/node/java-backend-module')).then(load) })
+    .then(function () { return Promise.resolve(require('theia-core/lib/python/node/python-backend-module')).then(load) })
+    .then(function () { return Promise.resolve(require('theia-core/lib/cpp/node/cpp-backend-module')).then(load) })
+    .then(start);

@@ -16,6 +16,7 @@ process.env.LC_NUMERIC = 'C';
 
 const electron = require('electron');
 const path = require('path');
+const backend = require("../backend/main")
 
 let mainWindow = undefined;
 var requireValue;
@@ -28,18 +29,18 @@ electron.app.on('window-all-closed', function () {
 });
 
 function loadURL() {
-    mainWindow.loadURL(`file://${path.join(__dirname, '../../lib/index.html')}?port=` + requireValue.port);
+    backend.default.then(server => {
+        mainWindow.loadURL(`file://${path.join(__dirname, '../../lib/index.html')}?port=` + server.address().port);
+    });
+
 }
 
 
 electron.app.on('ready', function () {
 
-    requireValue = require("../backend/main")
     mainWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
     mainWindow.webContents.openDevTools();
-    setTimeout(loadURL, 1000);
-
-
+    loadURL();
     mainWindow.on('closed', function () {
         mainWindow = undefined;
     });

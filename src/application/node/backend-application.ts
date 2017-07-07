@@ -47,17 +47,7 @@ export class BackendApplication {
         this.app.use(...handlers);
     }
 
-    start(isBrowser: boolean): Promise<http.Server> {
-        let port : number;
-        if (isBrowser)
-        {
-            port = 3000
-        }
-        else
-        {
-            port = 0
-        }
-        
+    start(isBrowser: boolean, port: number): Promise<http.Server> {
         return new Promise<http.Server>(resolve => {
             const server = this.app.listen(port, function () {
                 console.log(`Theia app listening on port ` + server.address().port);
