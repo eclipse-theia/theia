@@ -230,6 +230,7 @@ export class TreeWidget extends VirtualWidget {
         this.addKeyListener(this.node, Key.ARROW_UP, () => this.handleUp());
         this.addKeyListener(this.node, Key.ARROW_DOWN, () => this.handleDown());
         this.addKeyListener(this.node, Key.ENTER, () => this.handleEnter());
+        this.addKeyListener(this.node, Key.NUMPAD_ENTER, () => this.handleEnter());
         this.addEventListener(this.node, 'contextmenu', e => this.handleContextMenuEvent(this.model.root, e));
         this.addEventListener(this.node, 'click', e => this.handleClickEvent(this.model.root, e));
     }

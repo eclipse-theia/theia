@@ -133,6 +133,7 @@ export namespace Key {
     }
 
     export const ENTER: Key = { code: "Enter", keyCode: 13 };
+    export const NUMPAD_ENTER: Key = { code: "NumpadEnter", keyCode: 13 };
     export const SPACE: Key = { code: "Space", keyCode: 32 };
     export const TAB: Key = { code: "Tab", keyCode: 9 };
     export const DELETE: Key = { code: "Delete", keyCode: 46 };
