@@ -5,7 +5,8 @@ npm install \
 && npm install \
 && cd ../../examples/browser \
 && npm run bootstrap \
+&& npm run test:ui \
+&& ps -ef | grep 'node ./src-gen/backend/main.js' | grep -v grep | awk '{print $2}' | xargs kill \
 && cd ../electron \
 && npm run bootstrap \
-&& npm run test
- 
+&& npm run test 

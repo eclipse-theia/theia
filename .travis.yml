@@ -7,16 +7,20 @@ branches:
     - master
 env:
   - CXX=g++-4.8
+dist: trusty
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
     packages:
       - g++-4.8
+      - oracle-java8-set-default
+    chrome: stable
 before_script:
   - export DISPLAY=:99.0; sh -e /etc/init.d/xvfb start
 before_install:
   - "npm install -g npm@^4"
+  - "google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &"
 script: chmod a+x ./config/scripts/travis-ci-build.sh && ./config/scripts/travis-ci-build.sh
 notifications:
   webhooks:
