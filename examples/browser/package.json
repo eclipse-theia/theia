@@ -22,7 +22,7 @@
     "start:backend": "node ./src-gen/backend/main.js | bunyan",
     "start:backend:debug": "node ./src-gen/backend/main.js --loglevel=debug | bunyan",
     "start:frontend": "webpack-dev-server --open",
-    "test:ui": "npm run start& wdio --waitforTimeout 300000 wdio.conf.js",
+    "test:ui": "wdio wdio.conf.js",
     "watch": "concurrently --names watch-deps,watch-frontend --prefix \"[{name}]\" \"npm run watch:localdeps\" \"npm run watch:frontend\"",
     "watch:frontend": "npm run build:frontend && webpack --target web --watch",
     "watch:localdeps": "ldm watch --sync --run=watch --original-sources"
