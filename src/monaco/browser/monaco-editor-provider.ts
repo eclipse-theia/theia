@@ -21,6 +21,8 @@ import { PreferenceChangedEvent } from "../../preferences/common/preference-prot
 @injectable()
 export class MonacoEditorProvider {
 
+    toDispose = new DisposableCollection();
+
     constructor(
         @inject(MonacoEditorService) protected readonly editorService: MonacoEditorService,
         @inject(MonacoModelResolver) protected readonly monacoModelResolver: MonacoModelResolver,
@@ -65,14 +67,13 @@ export class MonacoEditorProvider {
                     }
                 );
 
-                let toDispose = new DisposableCollection();
 
-                toDispose.push(this.editorPreferences.onPreferenceChanged(e => {
+                this.toDispose.push(this.editorPreferences.onPreferenceChanged(e => {
                     this.handlePreferenceEvent(e, editor);
                 }))
 
                 editor.onDispose(() => {
-                    toDispose.dispose();
+                    this.toDispose.dispose();
                     reference.dispose()
                 });
 
