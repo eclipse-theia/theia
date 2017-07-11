@@ -34,55 +34,48 @@ export class MonacoEditorProvider {
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
     ) { }
 
-    get(uri: URI): Promise<MonacoEditor> {
-        const promiseTabSize = this.editorPreferences["editor.tabSize"];
-        const promiseLineNumbers = this.editorPreferences["editor.lineNumbers"];
-        const promiseWhitespace = this.editorPreferences["editor.renderWhitespace"];
+    async get(uri: URI): Promise<MonacoEditor> {
+        return Promise.resolve(this.monacoModelResolver.createModelReference(uri).then((async (reference) => {
 
-        return Promise.all([promiseTabSize, promiseLineNumbers, promiseWhitespace]).then(values => {
-            return Promise.resolve(this.monacoModelResolver.createModelReference(uri).then(reference => {
+            const commandService = this.commandServiceFactory();
 
-                const commandService = this.commandServiceFactory();
+            const node = document.createElement('div');
+            const model = reference.object;
+            const textEditorModel = model.textEditorModel;
 
-                const node = document.createElement('div');
-                const model = reference.object;
-                const textEditorModel = model.textEditorModel;
+            textEditorModel.updateOptions({ tabSize: await this.editorPreferences["editor.tabSize"] });
 
-                textEditorModel.updateOptions({ tabSize: values[0] });
+            const editor = new MonacoEditor(
+                uri, node, this.m2p, this.p2m, this.workspace, {
+                    model: textEditorModel,
+                    wordWrap: false,
+                    folding: true,
+                    lineNumbers: await this.editorPreferences["editor.lineNumbers"],
+                    renderWhitespace: await this.editorPreferences["editor.renderWhitespace"],
+                    theme: 'vs-dark',
+                    readOnly: model.readOnly
+                }, {
+                    editorService: this.editorService,
+                    textModelResolverService: this.monacoModelResolver,
+                    contextMenuService: this.contextMenuService,
+                    commandService
+                }
+            );
 
-                const editor = new MonacoEditor(
-                    uri, node, this.m2p, this.p2m, this.workspace, {
-                        model: textEditorModel,
-                        wordWrap: false,
-                        folding: true,
-                        lineNumbers: values[1],
-                        renderWhitespace: values[2],
-                        theme: 'vs-dark',
-                        readOnly: model.readOnly
-                    }, {
-                        editorService: this.editorService,
-                        textModelResolverService: this.monacoModelResolver,
-                        contextMenuService: this.contextMenuService,
-                        commandService
-                    }
-                );
+            this.toDispose.push(this.editorPreferences.onPreferenceChanged(e => {
+                this.handlePreferenceEvent(e, editor);
+            }))
 
+            editor.onDispose(() => {
+                this.toDispose.dispose();
+                reference.dispose()
+            });
 
-                this.toDispose.push(this.editorPreferences.onPreferenceChanged(e => {
-                    this.handlePreferenceEvent(e, editor);
-                }))
+            const standaloneCommandService = new monaco.services.StandaloneCommandService(editor.instantiationService);
+            commandService.setDelegate(standaloneCommandService);
 
-                editor.onDispose(() => {
-                    this.toDispose.dispose();
-                    reference.dispose()
-                });
-
-                const standaloneCommandService = new monaco.services.StandaloneCommandService(editor.instantiationService);
-                commandService.setDelegate(standaloneCommandService);
-
-                return editor;
-            }));
-        });
+            return editor;
+        })));
     }
 
     protected handlePreferenceEvent(e: PreferenceChangedEvent, editor: MonacoEditor) {
