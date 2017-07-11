@@ -4,7 +4,7 @@
   "version": "0.0.1-alpha.1",
   "license": "Apache-2.0",
   "dependencies": {
-    "electron": "1.6.8",
+    "electron": "^1.6.11",
     "electron-mocha": "^3.5.0",
     "theia-core": "latest"
   },

@@ -104,11 +104,6 @@
       "from": "@types/chokidar@>=1.6.0 <2.0.0",
       "resolved": "https://registry.npmjs.org/@types/chokidar/-/chokidar-1.7.0.tgz"
     },
-    "@types/electron": {
-      "version": "1.4.38",
-      "from": "@types/electron@1.4.38",
-      "resolved": "https://registry.npmjs.org/@types/electron/-/electron-1.4.38.tgz"
-    },
     "@types/express": {
       "version": "4.0.36",
       "from": "@types/express@>=4.0.35 <5.0.0",
@@ -1561,9 +1556,9 @@
       "dev": true
     },
     "electron": {
-      "version": "1.6.8",
-      "from": "electron@1.6.8",
-      "resolved": "https://registry.npmjs.org/electron/-/electron-1.6.8.tgz"
+      "version": "1.6.11",
+      "from": "electron@1.6.11",
+      "resolved": "https://registry.npmjs.org/electron/-/electron-1.6.11.tgz"
     },
     "electron-download": {
       "version": "3.3.0",
