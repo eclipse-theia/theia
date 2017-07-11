@@ -37,7 +37,7 @@ export class ElectronMainMenuFactory {
         return electron.remote.Menu.buildFromTemplate(template);
     }
 
-    protected fillMenuTemplate(items: Electron.MenuItemOptions[], menuModel: CompositeMenuNode): Electron.MenuItemOptions[] {
+    protected fillMenuTemplate(items: Electron.MenuItemConstructorOptions[], menuModel: CompositeMenuNode): Electron.MenuItemConstructorOptions[] {
         for (let menu of menuModel.children) {
             if (menu instanceof CompositeMenuNode) {
                 if (menu.label) {
@@ -86,7 +86,7 @@ export class ElectronMainMenuFactory {
         return items;
     }
 
-    protected createOSXMenu(): Electron.MenuItemOptions {
+    protected createOSXMenu(): Electron.MenuItemConstructorOptions {
         return {
             label: 'Theia',
             submenu: [
