@@ -5,6 +5,7 @@ you already know the basics about Theia's architecture as described in:
 * [How create a backend service and connect to it over JSON-RPC](#backendfrontend).
 * [Contribution Providers](#contribution-providers).
 * [Events](#events).
+* [Preferences](Preferences.md)
 
 
 # <a name="backendfrontend"></a>How create a backend service and connect to it over JSON-RPC
@@ -459,6 +460,3 @@ So if you need to trigger events in theia:
  - Create an emitter
  - Register events with the emitter.event function
  - Fire events with emitter.fire(event)
-
-
-
