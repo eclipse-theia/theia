@@ -15,8 +15,12 @@ import { EditorManagerImpl, EditorManager } from './editor-manager';
 import { EditorRegistry } from './editor-registry';
 import { EditorCommandHandlers } from "./editor-command";
 import { EditorKeybindingContribution, EditorKeybindingContext } from "./editor-keybinding";
+import { bindEditorPreferences } from '../../editor/browser/editor-preferences'
+
 
 export default new ContainerModule(bind => {
+    bindEditorPreferences(bind);
+
     bind(EditorRegistry).toSelf().inSingletonScope();
     bind(EditorManager).to(EditorManagerImpl).inSingletonScope();
     bind(OpenHandler).toDynamicValue(context => context.container.get(EditorManager));
