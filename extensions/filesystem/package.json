@@ -1,7 +1,7 @@
 {
-  "name": "@theia/core",
+  "name": "@theia/filesystem",
   "version": "0.0.1-alpha.1",
-  "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
+  "description": "Theia - FileSystem Extension",
   "repository": {
     "type": "git",
     "url": "https://github.com/theia-ide/theia.git"
@@ -12,19 +12,15 @@
     "src"
   ],
   "dependencies": {
-    "@phosphor/widgets": "^1.5.0",
-    "@types/bunyan": "^1.8.0",
-    "@types/express": "^4.0.36",
-    "@types/ws": "^3.0.2",
-    "@types/yargs": "^8.0.1",
-    "bunyan": "^1.8.10",
-    "electron": "^1.6.11",
-    "express": "^4.15.3",
-    "inversify": "^4.2.0",
-    "vscode-uri": "^1.0.1",
-    "vscode-ws-jsonrpc": "0.0.1-alpha.4",
-    "ws": "^3.0.0",
-    "yargs": "^8.0.2"
+    "@theia/core": "^0.0.1-alpha.1",
+    "@types/chokidar": "^1.7.0",
+    "@types/fs-extra": "^3.0.3",
+    "@types/touch": "0.0.1",
+    "chokidar": "^1.7.0",
+    "fs-extra": "^3.0.1",
+    "mv": "^2.1.1",
+    "touch": "^3.1.0",
+    "trash": "^4.0.1"
   },
   "devDependencies": {
     "@types/chai": "^4.0.1",
