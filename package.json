@@ -4,5 +4,11 @@
     "version": "0.0.0",
     "devDependencies": {
         "lerna": "^2.0.0"
+    },
+    "scripts": {
+        "prepare": "npm run bootstrap && npm run clean && npm run build",
+        "bootstrap": "lerna bootstrap --hoist",
+        "clean": "lerna run clean",
+        "build": "lerna run build"
     }
 }
