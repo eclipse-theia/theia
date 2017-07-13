@@ -8,6 +8,12 @@ branches:
 env:
   - CXX=g++-4.8
 dist: trusty
+cache:
+  directories:
+    - "node_modules"
+    - "config/local-dependency-manager/node_modules"
+    - "download"
+    - "examples/electron/node_modules/electron"
 addons:
   apt:
     sources:
