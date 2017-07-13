@@ -1,0 +1,53 @@
+{
+  "name": "theia-core",
+  "version": "0.0.1-alpha.2",
+  "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "license": "Apache-2.0",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "dependencies": {
+    "@phosphor/widgets": "^1.5.0",
+    "@types/bunyan": "^1.8.0",
+    "@types/express": "^4.0.36",
+    "@types/ws": "^3.0.2",
+    "@types/yargs": "^8.0.1",
+    "bunyan": "^1.8.10",
+    "electron": "^1.6.11",
+    "express": "^4.15.3",
+    "inversify": "^4.2.0",
+    "vscode-uri": "^1.0.1",
+    "vscode-ws-jsonrpc": "0.0.1-alpha.4",
+    "ws": "^3.0.0",
+    "yargs": "^8.0.2"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.0.1",
+    "@types/chai-as-promised": "0.0.31",
+    "@types/mocha": "^2.2.41",
+    "chai": "^4.1.0",
+    "chai-as-promised": "^7.1.1",
+    "concurrently": "^3.5.0",
+    "mocha": "^3.4.2",
+    "rimraf": "^2.6.1",
+    "tslint": "^4.5.1",
+    "typescript": "^2.4.1"
+  },
+  "scripts": {
+    "prepare": "npm run clean && npm run build",
+    "clean": "rimraf lib",
+    "build": "concurrently -n \"compile,lint\" -c \"blue,green\" \"npm run compile\" \"npm run lint\"",
+    "compile": "tsc",
+    "lint": "tslint --project tsconfig.json",
+    "watch": "tsc -w"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia"
+}
