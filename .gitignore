@@ -7,3 +7,4 @@ lib
 .metadata
 jdt.ls-java-project
 download
+lerna-debug.log
