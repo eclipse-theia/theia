@@ -1,0 +1,9 @@
+{
+  "lerna": "2.0.0",
+  "packages": [
+    "core"
+    //"extensions/*",
+    //"examples/*"
+  ],
+  "version": "independent"
+}
