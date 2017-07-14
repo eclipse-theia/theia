@@ -105,9 +105,9 @@ export class FileSystemWatcher implements Disposable {
     }
 
     protected getIgnored(): Promise<string[]> {
-        return this.preferences['files.watcherExclude'].then(patterns =>
-            Object.keys(patterns).filter(pattern => patterns[pattern])
-        );
+        const patterns = this.preferences['files.watcherExclude'];
+        return Promise.resolve(Object.keys(patterns).filter(pattern => patterns[pattern]));
+
     }
 }
 

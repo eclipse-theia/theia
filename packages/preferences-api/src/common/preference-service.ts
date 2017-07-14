@@ -15,6 +15,7 @@ export {
 
 @injectable()
 export class PreferenceService implements Disposable {
+    protected prefCache: { [key: string]: any } = {};
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly onPreferenceChangedEmitter = new Emitter<PreferenceChangedEvent>();
@@ -33,6 +34,12 @@ export class PreferenceService implements Disposable {
     }
 
     protected onDidChangePreference(event: PreferenceChangedEvent): void {
+        // Pref removed
+        if (event.oldValue !== undefined && event.newValue === undefined) {
+            delete this.prefCache[event.preferenceName];
+        } else if (event.newValue !== undefined) {
+            this.prefCache[event.preferenceName] = event.newValue;
+        }
         this.onPreferenceChangedEmitter.fire(event);
     }
 
@@ -40,52 +47,48 @@ export class PreferenceService implements Disposable {
         return this.onPreferenceChangedEmitter.event;
     }
 
-    has(preferenceName: string): Promise<boolean> {
-        return this.server.has(preferenceName);
+    has(preferenceName: string): boolean {
+        return this.prefCache[preferenceName] !== undefined;
     }
 
-    get<T>(preferenceName: string): Promise<T | undefined>;
-    get<T>(preferenceName: string, defaultValue: T): Promise<T>;
-    get<T>(preferenceName: string, defaultValue?: T): Promise<T | undefined> {
-        return this.server.get<T>(preferenceName).then(value =>
-            value !== null && value !== undefined ? value : defaultValue
-        );
+    get<T>(preferenceName: string): T | undefined;
+    get<T>(preferenceName: string, defaultValue: T): T;
+    get<T>(preferenceName: string, defaultValue?: T): T | undefined {
+        const value = this.prefCache[preferenceName];
+        return value !== null && value !== undefined ? value : defaultValue;
     }
 
-    getBoolean(preferenceName: string): Promise<boolean | undefined>;
-    getBoolean(preferenceName: string, defaultValue: boolean): Promise<boolean>;
-    getBoolean(preferenceName: string, defaultValue?: boolean): Promise<boolean | undefined> {
-        return this.server.get(preferenceName).then(value =>
-            value !== null && value !== undefined ? !!value : defaultValue
-        );
+    getBoolean(preferenceName: string): boolean | undefined;
+    getBoolean(preferenceName: string, defaultValue: boolean): boolean;
+    getBoolean(preferenceName: string, defaultValue?: boolean): boolean | undefined {
+        const value = this.prefCache[preferenceName];
+        return value !== null && value !== undefined ? !!value : defaultValue;
     }
 
-    getString(preferenceName: string): Promise<string | undefined>;
-    getString(preferenceName: string, defaultValue: string): Promise<string>;
-    getString(preferenceName: string, defaultValue?: string): Promise<string | undefined> {
-        return this.server.get(preferenceName).then(value => {
-            if (value === null || value === undefined) {
-                return defaultValue;
-            }
-            if (typeof value === "string") {
-                return value;
-            }
-            return value.toString();
-        });
+    getString(preferenceName: string): string | undefined;
+    getString(preferenceName: string, defaultValue: string): string;
+    getString(preferenceName: string, defaultValue?: string): string | undefined {
+        const value = this.prefCache[preferenceName];
+        if (value === null || value === undefined) {
+            return defaultValue;
+        }
+        if (typeof value === "string") {
+            return value;
+        }
+        return value.toString();
     }
 
-    getNumber(preferenceName: string): Promise<number | undefined>;
-    getNumber(preferenceName: string, defaultValue: number): Promise<number>;
-    getNumber(preferenceName: string, defaultValue?: number): Promise<number | undefined> {
-        return this.server.get(preferenceName).then(value => {
-            if (value === null || value === undefined) {
-                return defaultValue;
-            }
-            if (typeof value === "number") {
-                return value;
-            }
-            return Number(value);
-        });
-    }
+    getNumber(preferenceName: string): number | undefined;
+    getNumber(preferenceName: string, defaultValue: number): number;
+    getNumber(preferenceName: string, defaultValue?: number): number | undefined {
+        const value = this.prefCache[preferenceName];
 
+        if (value === null || value === undefined) {
+            return defaultValue;
+        }
+        if (typeof value === "number") {
+            return value;
+        }
+        return Number(value);
+    }
 }

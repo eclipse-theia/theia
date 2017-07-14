@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Disposable, DisposableCollection, Event, Emitter, Deferred } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core/lib/common';
 import { PreferenceService, PreferenceChangedEvent } from "./preference-service";
 
 export type Configuration = {
@@ -18,7 +18,7 @@ export type PreferenceEventEmitter<T> = {
         readonly oldValue?: T[keyof T]
     }>
 };
-export type PreferenceProxy<T> = Readonly<Deferred<T>> & Disposable & PreferenceEventEmitter<T>;
+export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T>;
 export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, configuration: T): PreferenceProxy<T> {
     const toDispose = new DisposableCollection();
     const onPreferenceChangedEmitter = new Emitter<PreferenceChangedEvent>();

@@ -44,7 +44,7 @@ export class MonacoEditorProvider {
             const model = reference.object;
             const textEditorModel = model.textEditorModel;
 
-            textEditorModel.updateOptions({ tabSize: await this.editorPreferences["editor.tabSize"] });
+            textEditorModel.updateOptions({ tabSize: this.editorPreferences["editor.tabSize"] });
 
             const editor = new MonacoEditor(
                 uri, node, this.m2p, this.p2m, this.workspace, await this.getEditorOptions(model), {

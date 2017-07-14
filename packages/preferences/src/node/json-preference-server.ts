@@ -112,7 +112,7 @@ export class JsonPreferenceServer implements PreferenceServer {
         // tslint:disable-next-line:forin
         for (const preferenceName in preferences) {
             const newValue = preferences[preferenceName];
-            this.fireEvent({ preferenceName, newValue });
+            this.fireEvent({ preferenceName: preferenceName, newValue: newValue });
         }
     }
 
@@ -120,7 +120,7 @@ export class JsonPreferenceServer implements PreferenceServer {
         // tslint:disable-next-line:forin
         for (const preferenceName in preferences) {
             const oldValue = preferences[preferenceName];
-            this.fireEvent({ preferenceName, oldValue });
+            this.fireEvent({ preferenceName: preferenceName, oldValue: oldValue });
         }
     }
 
