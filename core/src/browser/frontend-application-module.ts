@@ -20,7 +20,7 @@ import {
 import { FrontendApplication, FrontendApplicationContribution } from './frontend-application'
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 
-import 'theia-core/src/application/browser/style/index.css';
+import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
 
 export const frontendApplicationModule = new ContainerModule(bind => {

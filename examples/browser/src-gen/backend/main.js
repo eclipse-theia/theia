@@ -4,14 +4,16 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-
+// @ts-check
 require('reflect-metadata');
 const path = require('path');
 const express = require('express');
 const { Container, injectable } = require('inversify');
 
-const { BackendApplication, backendApplicationModule, loggerBackendModule } = require('theia-core/lib/application/node');
-const { messagingBackendModule } = require("theia-core/lib/messaging/node");
+const { BackendApplication } = require('@theia/core/lib/node');
+const { backendApplicationModule } = require('@theia/core/lib/node/backend-application-module');
+const { messagingBackendModule } = require('@theia/core/lib/node/messaging/messaging-backend-module');
+const { loggerBackendModule } = require('@theia/core/lib/node/logger-backend-module');
 
 const container = new Container();
 container.load(backendApplicationModule);
@@ -33,12 +35,5 @@ function start() {
 }
 
 Promise.resolve()
-.then(function () { return Promise.resolve(require('theia-core/lib/filesystem/node/filesystem-backend-module')).then(load) })
-.then(function () { return Promise.resolve(require('theia-core/lib/workspace/node/workspace-backend-module')).then(load) })
-.then(function () { return Promise.resolve(require('theia-core/lib/preferences/node/preference-backend-module')).then(load) })
-.then(function () { return Promise.resolve(require('theia-core/lib/terminal/node/terminal-backend-module')).then(load) })
-.then(function () { return Promise.resolve(require('theia-core/lib/languages/node/languages-backend-module')).then(load) })
-.then(function () { return Promise.resolve(require('theia-core/lib/java/node/java-backend-module')).then(load) })
-.then(function () { return Promise.resolve(require('theia-core/lib/python/node/python-backend-module')).then(load) })
-.then(function () { return Promise.resolve(require('theia-core/lib/cpp/node/cpp-backend-module')).then(load) })
-.then(start);
+    .then(function () { return Promise.resolve(require('@theia/filesystem/lib/node/filesystem-backend-module')).then(load) })
+    .then(start);

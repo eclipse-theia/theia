@@ -15,6 +15,7 @@ const monacoCssLanguagePath = './node_modules/monaco-css/release/min';
 const monacoTsLanguagePath = './node_modules/monaco-typescript/release';
 const monacoJsonLanguagePath = './node_modules/monaco-json/release/min';
 const monacoHtmlLanguagePath = './node_modules/monaco-html/release/min';
+const requirePath = '../../node_modules/requirejs/require.js';
 
 module.exports = function (dirname, config = {}) {
     const commonConfiguration = {
@@ -43,6 +44,10 @@ module.exports = function (dirname, config = {}) {
         plugins: [
             new CopyWebpackPlugin([
                 {
+                    from: requirePath,
+                    to: '.'
+                }
+                /*{
                     from: monacoEditorPath,
                     to: 'vs'
                 },
@@ -65,7 +70,7 @@ module.exports = function (dirname, config = {}) {
                 {
                     from: monacoHtmlLanguagePath,
                     to: 'vs/language/html'
-                }
+                }*/
             ]),
             new CircularDependencyPlugin({
                 exclude: /(node_modules|examples)\/./,

@@ -15,7 +15,7 @@ import {
 } from '../common/filesystem-watcher-protocol';
 import { FileCommandContribution, FileMenuContribution } from './filesystem-commands';
 
-import "theia-core/src/filesystem/browser/style/index.css";
+import "../../src/browser/style/index.css";
 
 export default new ContainerModule(bind => {
     bindFileSystemPreferences(bind);

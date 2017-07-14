@@ -6,8 +6,8 @@
  */
 
 import { injectable } from "inversify";
-import { Emitter, Event } from '../common';
-import { ILoggerClient, ILogLevelChangedEvent } from '../common/logger-protocol';
+import { Emitter, Event } from './event';
+import { ILoggerClient, ILogLevelChangedEvent } from './logger-protocol';
 
 @injectable()
 export class LoggerWatcher {

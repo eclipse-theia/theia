@@ -4,10 +4,12 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-
+// @ts-check
 import { Container } from 'inversify';
-import { FrontendApplication, frontendApplicationModule, loggerFrontendModule } from 'theia-core/lib/application/browser';
-import { messagingFrontendModule } from 'theia-core/lib/messaging/browser';
+import { FrontendApplication } from '@theia/core/lib/browser';
+import { frontendApplicationModule } from '@theia/core/lib/browser/frontend-application-module';
+import { messagingFrontendModule } from '@theia/core/lib/browser/messaging/messaging-frontend-module';
+import { loggerFrontendModule } from '@theia/core/lib/browser/logger-frontend-module';
 
 const container = new Container();
 container.load(frontendApplicationModule);
@@ -26,17 +28,5 @@ function start() {
 }
 
 Promise.resolve()
-.then(function () { return import('theia-core/lib/application/browser/menu/browser-menu-module').then(load) })
-.then(function () { return import('theia-core/lib/application/browser/clipboard/browser-clipboard-module').then(load) })
-.then(function () { return import('theia-core/lib/filesystem/browser/filesystem-frontend-module').then(load) })
-.then(function () { return import('theia-core/lib/workspace/browser/workspace-frontend-module').then(load) })
-.then(function () { return import('theia-core/lib/preferences/browser/preference-frontend-module').then(load) })
-.then(function () { return import('theia-core/lib/navigator/browser/navigator-frontend-module').then(load) })
-.then(function () { return import('theia-core/lib/terminal/browser/terminal-frontend-module').then(load) })
-.then(function () { return import('theia-core/lib/editor/browser/editor-frontend-module').then(load) })
-.then(function () { return import('theia-core/lib/monaco/browser/monaco-browser-module').then(load) })
-.then(function () { return import('theia-core/lib/languages/browser/languages-frontend-module').then(load) })
-.then(function () { return import('theia-core/lib/java/browser/java-frontend-module').then(load) })
-.then(function () { return import('theia-core/lib/python/browser/python-frontend-module').then(load) })
-.then(function () { return import('theia-core/lib/cpp/browser/cpp-frontend-module').then(load) })
-.then(start);
+    .then(function () { return import('@theia/filesystem/lib/browser/filesystem-frontend-module').then(load) })
+    .then(start);

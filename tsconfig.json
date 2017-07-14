@@ -1,0 +1,24 @@
+{
+    "extends": "./config/base.tsconfig",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@theia/core/lib/*": [
+                "core/src/*"
+            ],
+            "@theia/filesystem/lib/*": [
+                "extensions/filesystem/src/*"
+            ],
+            "mv": [
+                "extensions/filesystem/src/typings/mv"
+            ],
+            "trash": [
+                "extensions/filesystem/src/typings/trash"
+            ]
+        }
+    },
+    "include": [
+        "core/src",
+        "extensions/filesystem/src"
+    ]
+}

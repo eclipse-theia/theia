@@ -5,4 +5,4 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-module.exports = require("theia-core/config/webpack/webpack.config.web.dev")(__dirname, 3000, "localhost");
+module.exports = require("../../config/webpack/webpack.config.web.dev")(__dirname, 3000, "localhost");
