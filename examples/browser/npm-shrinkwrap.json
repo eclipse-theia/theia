@@ -4362,9 +4362,9 @@
       }
     },
     "node-pty": {
-      "version": "0.6.8",
-      "from": "node-pty@>=0.6.4 <0.7.0",
-      "resolved": "https://registry.npmjs.org/node-pty/-/node-pty-0.6.8.tgz",
+      "version": "0.6.10",
+      "from": "node-pty@>=0.6.9 <0.7.0",
+      "resolved": "https://registry.npmjs.org/node-pty/-/node-pty-0.6.10.tgz",
       "dependencies": {
         "nan": {
           "version": "2.5.0",
