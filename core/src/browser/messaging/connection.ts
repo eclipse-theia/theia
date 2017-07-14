@@ -8,7 +8,6 @@
 import { injectable, interfaces } from "inversify";
 import { listen as doListen, Logger, ConsoleLogger } from "vscode-ws-jsonrpc";
 import { ConnectionHandler, JsonRpcProxyFactory, JsonRpcProxy, Endpoint } from "../../common";
-
 const ReconnectingWebSocket = require('reconnecting-websocket');
 
 export interface WebSocketOptions {

@@ -9,6 +9,7 @@
         "prepare": "npm run bootstrap && npm run clean && npm run build",
         "bootstrap": "lerna bootstrap --hoist",
         "clean": "lerna run clean",
-        "build": "lerna run build"
+        "build": "lerna run build",
+        "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel"
     }
 }

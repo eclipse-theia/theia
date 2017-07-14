@@ -37,10 +37,10 @@
   "scripts": {
     "prepare": "npm run clean && npm run build",
     "clean": "rimraf lib",
-    "build": "concurrently -n \"compile,lint\" -c \"blue,green\" \"npm run compile\" \"npm run lint\"",
-    "compile": "tsc",
-    "lint": "tslint --project tsconfig.json",
-    "watch": "tsc -w"
+    "build": "concurrently -n compile,lint -c blue,green \"npm run compile\" \"npm run lint\"",
+    "compile": "tsc -p compile.tsconfig.json",
+    "lint": "tslint -c ../../tslint.json --project compile.tsconfig.json",
+    "watch": "tsc -w -p compile.tsconfig.json"
   },
   "bugs": {
     "url": "https://github.com/theia-ide/theia/issues"

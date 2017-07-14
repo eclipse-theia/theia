@@ -1,45 +1,37 @@
 {
   "private": true,
-  "name": "browser-example",
-  "version": "0.0.1-alpha.1",
-  "license": "Apache-2.0",
+  "name": "@theia/example-browser",
+  "version": "0.0.0",
   "dependencies": {
-    "theia-core": "latest"
-  },
-  "localDependencies": {
-    "theia-core": "../.."
+    "@theia/core": "^0.0.1-alpha.1",
+    "@theia/filesystem": "^0.0.1-alpha.1"
   },
   "scripts": {
-    "bootstrap": "npm install ../../config/local-dependency-manager && npm run localinstall",
-    "build": "npm run build:localdeps && npm run build:frontend",
-    "build:frontend": "webpack --target web && cp src-gen/frontend/index.html lib",
-    "build:localdeps": "ldm run build && ldm sync --original-sources",
-    "clean": "rimraf lib",
-    "cold:start": "npm run clean && npm run build && npm start",
-    "localinstall": "ldm install --dev --original-sources",
     "prepare": "npm run clean && npm run build",
-    "start": "concurrently --names backend,webpack-server --prefix \"[{name}]\" \"npm run start:backend\" \"npm run start:frontend\"",
-    "start:backend": "node ./src-gen/backend/main.js | bunyan",
-    "start:backend:debug": "node ./src-gen/backend/main.js --loglevel=debug | bunyan",
+    "clean": "rimraf lib",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "webpack --target web",
+    "build:backend": "cp src-gen/frontend/index.html lib",
+    "start:cold": "npm run clean && npm start",
+    "start": "concurrently -n backend,frontend -c blue,green \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:backend": "npm run build:backend && node ./src-gen/backend/main.js | bunyan",
+    "start:backend:debug": "npm run build:backend && node ./src-gen/backend/main.js --loglevel=debug | bunyan",
     "start:frontend": "webpack-dev-server --open",
     "test:ui": "npm run start& wdio --waitforTimeout 300000 wdio.conf.js",
-    "watch": "concurrently --names watch-deps,watch-frontend --prefix \"[{name}]\" \"npm run watch:localdeps\" \"npm run watch:frontend\"",
-    "watch:frontend": "npm run build:frontend && webpack --target web --watch",
-    "watch:localdeps": "ldm watch --sync --run=watch --original-sources"
+    "watch": "webpack --target web --watch"
   },
   "devDependencies": {
-    "@types/chai": "^3.5.1",
+    "@types/chai": "^4.0.1",
     "@types/webdriverio": "^4.7.0",
     "bunyan": "^1.8.10",
-    "chai": "^3.5.0",
+    "chai": "^4.1.0",
     "circular-dependency-plugin": "^2.0.0",
-    "concurrently": "^3.4.0",
+    "concurrently": "^3.5.0",
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.28.1",
     "file-loader": "^0.11.1",
     "font-awesome-webpack": "0.0.5-beta.2",
     "less": "^2.7.2",
-    "local-dependency-manager": "../../config/local-dependency-manager",
     "rimraf": "^2.6.1",
     "selenium-standalone": "^6.2.0",
     "source-map-loader": "^0.2.1",
@@ -52,11 +44,8 @@
     "wdio-selenium-standalone-service": "0.0.8",
     "wdio-spec-reporter": "^0.1.0",
     "webdriverio": "^4.6.2",
-    "webpack": "^2.2.1",
+    "webpack": "^3.2.0",
     "webpack-dev-server": "^2.5.0",
     "webpack-merge": "^4.1.0"
-  },
-  "localDevDependencies": {
-    "local-dependency-manager": "../../config/local-dependency-manager"
   }
 }
