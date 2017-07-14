@@ -52,7 +52,7 @@ export function bindEditorPreferences(bind: interfaces.Bind): void {
         },
         {
             name: 'editor.renderWhitespace',
-            defaultValue: defaultEditorConfiguration['editor.lineNumbers'],
+            defaultValue: defaultEditorConfiguration['editor.renderWhitespace'],
             description: "Control the rendering of whitespaces in the editor"
         }]
     });
