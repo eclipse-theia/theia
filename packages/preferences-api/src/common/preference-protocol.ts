@@ -12,11 +12,11 @@ export const preferencesPath = '/services/preferences';
 export const PreferenceServer = Symbol("PreferenceServer")
 
 export interface PreferenceServer extends Disposable {
-    has(preferenceName: string): Promise<boolean>;
-    get<T>(preferenceName: string): Promise<T | undefined>;
     setClient(client: PreferenceClient | undefined): void;
-    onReady(): Promise<void>;
+    ready(): Promise<void>;
 }
+
+export const PREF_INIT = "INIT";
 
 export interface PreferenceClient {
     onDidChangePreference(event: PreferenceChangedEvent): void

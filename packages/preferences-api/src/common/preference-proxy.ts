@@ -16,14 +16,11 @@ export type PreferenceEventEmitter<T> = {
         readonly preferenceName: keyof T
         readonly newValue?: T[keyof T]
         readonly oldValue?: T[keyof T]
-    }>
+    }>;
+
+    ready(): Promise<void>;
 };
-
-export type PreferenceReadyEmitter = {
-    onReady(): Promise<void>;
-}
-
-export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T> & PreferenceReadyEmitter;
+export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T>;
 export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, configuration: T): PreferenceProxy<T> {
     const toDispose = new DisposableCollection();
     const onPreferenceChangedEmitter = new Emitter<PreferenceChangedEvent>();
@@ -44,8 +41,8 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
             if (p === 'dispose') {
                 return () => toDispose.dispose();
             }
-            if (p === 'onReady') {
-                return () => preferences.onReady();
+            if (p === 'ready') {
+                return () => preferences.ready();
             }
             throw new Error('unexpected property: ' + p);
         }

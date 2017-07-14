@@ -24,7 +24,8 @@ export class JsonPreferenceServer implements PreferenceServer {
     protected readonly preferenceUri: Promise<string>;
 
     protected readonly toDispose = new DisposableCollection();
-    protected readonly ready: Promise<void>;
+    protected initDone: Promise<void>;
+    protected isServerReady: boolean = false;
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
@@ -45,7 +46,7 @@ export class JsonPreferenceServer implements PreferenceServer {
                 )
             })
         );
-        this.ready = this.reconcilePreferences();
+        this.initDone = this.reconcilePreferences();
     }
 
     dispose(): void {
@@ -100,12 +101,24 @@ export class JsonPreferenceServer implements PreferenceServer {
             if (this.preferences) {
                 this.fireChanged(this.preferences, preferences);
             } else {
-                this.fireNew(preferences);
+                // Will not fire individual events until the server has finished reading the preferences once
+                if (this.isServerReady) {
+                    this.fireNew(preferences);
+                }
             }
         } else if (this.preferences) {
             this.fireRemoved(this.preferences);
         }
         this.preferences = preferences;
+        // Send an event containing all preferences once
+        if (!this.isServerReady) {
+            this.fireInitEvent();
+        }
+        this.isServerReady = true;
+    }
+
+    protected fireInitEvent(): void {
+        this.fireEvent({ preferenceName: "INIT", newValue: this.preferences });
     }
 
     protected fireNew(preferences: any): void {
@@ -155,13 +168,13 @@ export class JsonPreferenceServer implements PreferenceServer {
     }
 
     has(preferenceName: string): Promise<boolean> {
-        return this.ready.then(() =>
+        return this.initDone.then(() =>
             !!this.preferences && (preferenceName in this.preferences)
         );
     }
 
     get<T>(preferenceName: string): Promise<T | undefined> {
-        return this.ready.then(() =>
+        return this.initDone.then(() =>
             !!this.preferences ? this.preferences[preferenceName] : undefined
         );
     }
@@ -170,7 +183,7 @@ export class JsonPreferenceServer implements PreferenceServer {
         this.client = client;
     }
 
-    onReady(): Promise<void> {
-        return this.ready;
+    ready(): Promise<void> {
+        return this.initDone;
     }
 }

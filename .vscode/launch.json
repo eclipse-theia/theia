@@ -28,7 +28,8 @@
             "name": "Launch Backend",
             "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
             "args": [
-                "--loglevel=debug"
+                "--loglevel=debug",
+                "--root-dir=${workspaceRoot}/ws"
             ],
             "sourceMaps": true,
             "outFiles": [

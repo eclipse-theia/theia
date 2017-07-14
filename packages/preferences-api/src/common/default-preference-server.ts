@@ -6,8 +6,12 @@
  */
 
 import { inject, injectable, named } from 'inversify'
+<<<<<<< 2eaeab4ab74ddb2e09bc42bd22636ae61663e721:packages/preferences/src/common/default-preference-server.ts
 import { ContributionProvider } from '@theia/core/lib/common'
 import { PreferenceServer, PreferenceClient } from './preference-protocol';
+=======
+import { ContributionProvider } from '../../application/common'
+>>>>>>> [Preferences] Remove default pref server and get/has interfaces on pref servers[:src/preferences/common/default-preference-server.ts
 
 export const PreferenceContribution = Symbol("PreferenceContribution");
 
@@ -25,7 +29,7 @@ export interface PreferenceContribution {
 }
 
 @injectable()
-export class DefaultPreferenceServer implements PreferenceServer {
+export class DefaultPreferenceServer {
 
     protected readonly preferences = new Map<string, any>();
 
@@ -54,7 +58,10 @@ export class DefaultPreferenceServer implements PreferenceServer {
         return Promise.resolve(!!preference ? preference.defaultValue : undefined);
     }
 
-    setClient(client: PreferenceClient | undefined) { /* no-op */ }
+    ready(): Promise<void> { return Promise.resolve(undefined) };
 
-    onReady(): Promise<void> { return Promise.resolve(undefined) };
+    isValidValue(preferenceName: string, value: any) {
+
+    }
+
 }

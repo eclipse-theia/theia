@@ -13,6 +13,31 @@ import {
     PreferenceService,
 } from '@theia/preferences/lib/common';
 
+export const EditorConfigSchema = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Editor configuration Scheme",
+    "type": "object",
+    "properties": {
+        "editor.tabSize": {
+            "type": "number",
+            "minimum": 1
+        },
+        "editor.lineNumbers": {
+            "enum": [
+                "on",
+                "off"
+            ]
+        },
+        "editor.renderWhitespace": {
+            "enum": [
+                "none",
+                "boundary",
+                "all"
+            ]
+        }
+    }
+}
+
 export interface EditorConfiguration {
     'editor.tabSize': number,
     'editor.lineNumbers': 'on' | 'off'
@@ -23,7 +48,6 @@ export const defaultEditorConfiguration: EditorConfiguration = {
     'editor.tabSize': 4,
     'editor.lineNumbers': 'on',
     'editor.renderWhitespace': 'none'
-
 }
 
 export const EditorPreferences = Symbol('EditorPreferences');
@@ -38,6 +62,7 @@ export function bindEditorPreferences(bind: interfaces.Bind): void {
         const preferences = ctx.container.get(PreferenceService);
         return createEditorPreferences(preferences);
     });
+
 
     bind(PreferenceContribution).toConstantValue({
         preferences: [{

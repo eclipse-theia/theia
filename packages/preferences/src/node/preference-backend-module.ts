@@ -57,7 +57,7 @@ export default new ContainerModule(bind => {
         const defaultServer = ctx.container.get(DefaultPreferenceServer);
         const userServer = ctx.container.get<UserPreferenceServer>(UserPreferenceServer);
         const workspaceServer = ctx.container.get<WorkspacePreferenceServer>(WorkspacePreferenceServer);
-        return new CompoundPreferenceServer(workspaceServer, userServer, defaultServer);
+        return new CompoundPreferenceServer(defaultServer, workspaceServer, userServer);
     });
 
     bind(ConnectionHandler).toDynamicValue(ctx =>

@@ -66,7 +66,7 @@ class PreferenceServerStub implements PreferenceServer {
         this.client = client;
     }
 
-    onReady(): Promise<void> {
+    ready(): Promise<void> {
         return Promise.resolve(undefined);
     }
 

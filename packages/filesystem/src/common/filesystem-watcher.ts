@@ -110,4 +110,3 @@ export class FileSystemWatcher implements Disposable {
 
     }
 }
-
