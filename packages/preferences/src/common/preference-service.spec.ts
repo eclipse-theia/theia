@@ -66,6 +66,10 @@ class PreferenceServerStub implements PreferenceServer {
         this.client = client;
     }
 
+    onReady(): Promise<void> {
+        return Promise.resolve(undefined);
+    }
+
     onDidChangePreference(event: PreferenceChangedEvent): void {
         if (this.client) {
             this.client.onDidChangePreference(event);

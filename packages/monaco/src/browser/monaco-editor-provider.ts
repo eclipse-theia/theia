@@ -36,7 +36,11 @@ export class MonacoEditorProvider {
     ) { }
 
     async get(uri: URI): Promise<MonacoEditor> {
-        return Promise.resolve(this.monacoModelResolver.createModelReference(uri).then((async (reference) => {
+        let referencePromise = this.monacoModelResolver.createModelReference(uri)
+        let prefPromise = this.editorPreferences.onReady();
+
+        return Promise.all([referencePromise, prefPromise]).then(async (values) => {
+            const reference = values[0];
 
             const commandService = this.commandServiceFactory();
 
@@ -45,6 +49,7 @@ export class MonacoEditorProvider {
             const textEditorModel = model.textEditorModel;
 
             textEditorModel.updateOptions({ tabSize: this.editorPreferences["editor.tabSize"] });
+
 
             const editor = new MonacoEditor(
                 uri, node, this.m2p, this.p2m, this.workspace, await this.getEditorOptions(model), {
@@ -68,7 +73,7 @@ export class MonacoEditorProvider {
             commandService.setDelegate(standaloneCommandService);
 
             return editor;
-        })));
+        });
     }
 
     protected async getEditorOptions(model: MonacoEditorModel): Promise<MonacoEditor.IOptions | undefined> {

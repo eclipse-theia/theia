@@ -15,6 +15,7 @@ export interface PreferenceServer extends Disposable {
     has(preferenceName: string): Promise<boolean>;
     get<T>(preferenceName: string): Promise<T | undefined>;
     setClient(client: PreferenceClient | undefined): void;
+    onReady(): Promise<void>;
 }
 
 export interface PreferenceClient {

@@ -46,4 +46,6 @@ export class CompoundPreferenceServer implements PreferenceServer {
             server.setClient(client);
         }
     }
+
+    onReady(): Promise<void> { return Promise.resolve(undefined) }
 }

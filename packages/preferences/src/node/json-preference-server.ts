@@ -24,7 +24,7 @@ export class JsonPreferenceServer implements PreferenceServer {
     protected readonly preferenceUri: Promise<string>;
 
     protected readonly toDispose = new DisposableCollection();
-    protected readonly onReady: Promise<void>;
+    protected readonly ready: Promise<void>;
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
@@ -45,7 +45,7 @@ export class JsonPreferenceServer implements PreferenceServer {
                 )
             })
         );
-        this.onReady = this.reconcilePreferences();
+        this.ready = this.reconcilePreferences();
     }
 
     dispose(): void {
@@ -155,18 +155,22 @@ export class JsonPreferenceServer implements PreferenceServer {
     }
 
     has(preferenceName: string): Promise<boolean> {
-        return this.onReady.then(() =>
+        return this.ready.then(() =>
             !!this.preferences && (preferenceName in this.preferences)
         );
     }
 
     get<T>(preferenceName: string): Promise<T | undefined> {
-        return this.onReady.then(() =>
+        return this.ready.then(() =>
             !!this.preferences ? this.preferences[preferenceName] : undefined
         );
     }
 
     setClient(client: PreferenceClient | undefined) {
         this.client = client;
+    }
+
+    onReady(): Promise<void> {
+        return this.ready;
     }
 }

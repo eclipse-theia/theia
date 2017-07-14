@@ -55,4 +55,6 @@ export class DefaultPreferenceServer implements PreferenceServer {
     }
 
     setClient(client: PreferenceClient | undefined) { /* no-op */ }
+
+    onReady(): Promise<void> { return Promise.resolve(undefined) };
 }
