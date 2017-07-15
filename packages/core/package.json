@@ -54,11 +54,11 @@
     "compile:clean": "rimraf lib",
     "lint": "tslint -c ../tslint.json --project compile.tsconfig.json",
     "watch": "tsc -w -p compile.tsconfig.json",
-    "test": "nyc mocha --opts ../config/mocha/mocha.opts src/**/*.spec.ts",
-    "test:watch": "mocha -w --opts ../config/mocha/mocha.opts src/**/*.spec.ts",
+    "test": "nyc mocha --opts ../mocha.opts src/**/*.spec.ts",
+    "test:watch": "mocha -w --opts ../mocha.opts src/**/*.spec.ts",
     "test:clean": "rimraf .nyc_output && rimraf coverage"
   },
   "nyc": {
-    "extends": "../config/nyc.json"
+    "extends": "../nyc.json"
   }
 }

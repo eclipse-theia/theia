@@ -1,5 +1,5 @@
 {
-    "extends": "./config/base.tsconfig",
+    "extends": "./base.tsconfig",
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {
@@ -7,18 +7,17 @@
                 "core/src/*"
             ],
             "@theia/filesystem/lib/*": [
-                "extensions/filesystem/src/*"
+                "filesystem/src/*"
             ],
             "mv": [
-                "extensions/filesystem/src/typings/mv"
+                "filesystem/src/typings/mv"
             ],
             "trash": [
-                "extensions/filesystem/src/typings/trash"
+                "filesystem/src/typings/trash"
             ]
         }
     },
     "include": [
-        "core/src",
-        "extensions/filesystem/src"
+        "*/src"
     ]
 }
