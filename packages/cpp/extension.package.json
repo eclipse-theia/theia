@@ -1,0 +1,9 @@
+{
+  "name": "@theia/cpp",
+  "version": "0.0.1-alpha.1",
+  "description": "Theia - Cpp Extension",
+  "dependencies": {
+    "@theia/core": "^0.0.1-alpha.2",
+    "@theia/languages": "^0.0.1-alpha.1"
+  }
+}

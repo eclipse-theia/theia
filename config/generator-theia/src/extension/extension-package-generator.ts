@@ -69,6 +69,7 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
         return {
             "extends": "../base.tsconfig",
             "compilerOptions": {
+                "rootDir": "src",
                 "outDir": "lib"
             },
             "include": [

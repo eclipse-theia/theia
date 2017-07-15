@@ -11,7 +11,7 @@ import { interfaces } from "inversify";
     PreferenceContribution,
     PreferenceProxy,
     PreferenceService,
-} from '../../preferences/common';*/
+} from '@theia/preferences/lib/common';*/
 
 export interface FileSystemConfiguration {
     'files.watcherExclude': { [globPattern: string]: boolean }

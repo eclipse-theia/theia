@@ -1,18 +1,19 @@
 {
-    "extends": "../base.tsconfig",
-    "compilerOptions": {
-        "outDir": "lib",
-        "baseUrl": ".",
-        "paths": {
-            "mv": [
-                "src/typings/mv"
-            ],
-            "trash": [
-                "src/typings/trash"
-            ]
-        }
-    },
-    "include": [
-        "src"
-    ]
+  "extends": "../base.tsconfig",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib",
+    "baseUrl": ".",
+    "paths": {
+      "mv": [
+        "src/typings/mv"
+      ],
+      "trash": [
+        "src/typings/trash"
+      ]
+    }
+  },
+  "include": [
+    "src"
+  ]
 }

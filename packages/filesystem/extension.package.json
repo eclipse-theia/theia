@@ -3,7 +3,7 @@
   "version": "0.0.1-alpha.1",
   "description": "Theia - FileSystem Extension",
   "dependencies": {
-    "@theia/core": "^0.0.1-alpha.1",
+    "@theia/core": "^0.0.1-alpha.2",
     "@types/chokidar": "^1.7.0",
     "@types/fs-extra": "^3.0.3",
     "@types/touch": "0.0.1",

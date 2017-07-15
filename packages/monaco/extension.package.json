@@ -1,0 +1,19 @@
+{
+  "name": "@theia/monaco",
+  "version": "0.0.1-alpha.1",
+  "description": "Theia - Monaco Extension",
+  "dependencies": {
+    "@theia/core": "^0.0.1-alpha.2",
+    "@theia/filesystem": "^0.0.1-alpha.1",
+    "@theia/preferences": "^0.0.1-alpha.1",
+    "@theia/workspace": "^0.0.1-alpha.1",
+    "@theia/languages": "^0.0.1-alpha.1",
+    "@theia/editor": "^0.0.1-alpha.1",
+    "monaco-css": "^1.3.2",
+    "monaco-editor": "^0.9.0",
+    "monaco-html": "^1.3.1",
+    "monaco-json": "^1.3.1",
+    "monaco-languages": "^0.8.0",
+    "monaco-typescript": "^2.2.0"
+  }
+}
