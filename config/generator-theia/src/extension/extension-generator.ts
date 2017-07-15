@@ -15,6 +15,12 @@ export class TheiaExtensionGenerator extends BaseGenerator {
 
     initializing(): void {
         this.model.pck = this.fs.readJSON(`extension.package.json`) || {};
+        this.config.defaults(this.model.extensionConfig);
+        Object.assign(this.model.extensionConfig, this.config.getAll());
+    }
+
+    configuring(): void {
+        this.config.save();
     }
 
     writing(): void {

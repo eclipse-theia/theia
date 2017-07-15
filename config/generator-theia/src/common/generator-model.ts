@@ -35,6 +35,9 @@ export interface Config {
     copyright: string;
 }
 
+export interface ExtensionConfig {
+    testSupport: boolean;
+}
 
 export function sortByKey(object: { [key: string]: any }): { [key: string]: any } {
     return Object.keys(object).sort().reduce((sorted, key) => {
@@ -49,6 +52,9 @@ export class Model {
         port: 3000,
         host: 'localhost',
         copyright: ''
+    }
+    extensionConfig: ExtensionConfig = {
+        testSupport: true
     }
 
     protected _frontendModules: Map<string, string> | undefined;
