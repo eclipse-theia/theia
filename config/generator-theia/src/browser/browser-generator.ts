@@ -30,8 +30,4 @@ export class TheiaBrowserGenerator extends AbstractAppGenerator {
         this.frontend.generate(this.fs);
     }
 
-    install(): void {
-        super.install();
-    }
-
 }

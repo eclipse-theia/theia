@@ -10,3 +10,4 @@ download
 lerna-debug.log
 .nyc_output
 coverage
+packages/*/package.json

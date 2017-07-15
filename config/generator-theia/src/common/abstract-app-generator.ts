@@ -18,17 +18,15 @@ export abstract class AbstractAppGenerator extends BaseGenerator {
 
     protected readonly model = new Model();
 
-    initializing(): void {
-        this.model.pck = this.fs.readJSON('theia.package.json') || {};
-        this.config.defaults(this.model.config);
+    initializing(prefix = 'theia', defaults: object = this.model.config): void {
+        this.model.pck = this.fs.readJSON(`${prefix}.package.json`) || {};
+        this.config.defaults(defaults);
         Object.assign(this.model.config, this.config.getAll());
     }
 
     configuring(): void {
-        this.config.save();
         this.model.readLocalExtensionPackages((extension, path) => {
             const extensionPath = paths.join(process.cwd(), `${path}/package.json`);
-            console.log(extensionPath);
             return this.fs.readJSON(extensionPath, undefined);
         })
         this.model.readExtensionPackages((extension, version) => {
@@ -36,10 +34,6 @@ export abstract class AbstractAppGenerator extends BaseGenerator {
                 encoding: 'utf8'
             }));
         });
-    }
-
-    install(): void {
-        this.spawnCommandSync(NPM, ['run', 'bootstrap']);
     }
 
 }
