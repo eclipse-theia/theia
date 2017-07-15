@@ -10,8 +10,7 @@ import * as path from 'path';
 export interface NodePackage {
     dependencies?: Dependencies;
     localDependencies?: Dependencies;
-    scripts?: any;
-    devDependencies?: any;
+    [property: string]: any;
 }
 
 export interface TheiaNodePackage {
