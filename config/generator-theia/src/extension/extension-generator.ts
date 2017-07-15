@@ -5,19 +5,16 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { AbstractAppGenerator } from "../common";
+import BaseGenerator = require('yeoman-generator');
+import { Model } from "../common";
 import { ExtensionPackageGenerator } from "./extension-package-generator";
+export class TheiaExtensionGenerator extends BaseGenerator {
 
-export class TheiaExtensionGenerator extends AbstractAppGenerator {
-
+    protected readonly model = new Model();
     protected readonly pck = new ExtensionPackageGenerator(this.model);
 
     initializing(): void {
-        super.initializing('extension', {});
-    }
-
-    configuring(): void {
-        // no-op
+        this.model.pck = this.fs.readJSON(`extension.package.json`) || {};
     }
 
     writing(): void {

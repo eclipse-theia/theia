@@ -13,7 +13,7 @@ import * as os from 'os';
 import URI from "@theia/core/lib/common/uri";
 import { Logger } from "@theia/core/lib/common";
 import { FileUri } from "@theia/core/lib/node";
-// import { PreferenceService, DefaultPreferenceServer } from "../../preferences/common";
+// import { PreferenceService, DefaultPreferenceServer } from "@theia/preferences/lib/common";
 import { FileSystem } from "../common/filesystem";
 // import { FileSystemWatcher, FileChange, FileChangeType, createFileSystemPreferences } from '../common';
 import { FileSystemWatcher, FileChange, FileChangeType } from '../common';

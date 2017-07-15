@@ -1,20 +1,20 @@
 {
-    "private": true,
-    "name": "@theia/parent",
-    "version": "0.0.0",
-    "devDependencies": {
-        "lerna": "^2.0.0",
-        "yo": "^2.0.0"
-    },
-    "scripts": {
-        "preinstall": "cd config/generator-theia && npm install",
-        "prepare": "npm install config/generator-theia && npm run generate && npm run bootstrap && npm run clean && npm run build",
-        "prepublishOnly": "npm run test",
-        "generate": "node config/generate.js",
-        "bootstrap": "lerna bootstrap --hoist",
-        "clean": "lerna run clean --parallel",
-        "build": "lerna run build --stream",
-        "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel",
-        "test": "lerna run test --scope \"@theia/!(example-)*\" --parallel"
-    }
+  "private": true,
+  "name": "@theia/parent",
+  "version": "0.0.0",
+  "devDependencies": {
+    "lerna": "^2.0.0",
+    "yo": "^2.0.0"
+  },
+  "scripts": {
+    "preinstall": "cd config/generator-theia && npm install",
+    "prepare": "npm install config/generator-theia && npm run bootstrap && npm run clean && npm run build",
+    "prepublishOnly": "npm run test",
+    "bootstrap": "node config/generate.js && lerna bootstrap --hoist",
+    "refresh": "lerna clean --yes && npm run bootstrap",
+    "clean": "lerna run clean --parallel",
+    "build": "lerna run build --stream",
+    "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel",
+    "test": "lerna run test --scope \"@theia/!(example-)*\" --parallel"
+  }
 }

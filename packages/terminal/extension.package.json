@@ -1,0 +1,13 @@
+{
+  "name": "@theia/terminal",
+  "version": "0.0.1-alpha.1",
+  "description": "Theia - Terminal Extension",
+  "dependencies": {
+    "@theia/core": "^0.0.1-alpha.2",
+    "@theia/filesystem": "^0.0.1-alpha.1",
+    "@theia/workspace": "^0.0.1-alpha.1",
+    "@types/xterm": "^2.0.3",
+    "node-pty": "^0.6.10",
+    "xterm": "^2.8.1"
+  }
+}
