@@ -25,6 +25,7 @@ export abstract class AbstractAppGenerator extends BaseGenerator {
     }
 
     configuring(): void {
+        this.config.save();
         this.model.readLocalExtensionPackages((extension, path) => {
             const extensionPath = paths.join(process.cwd(), `${path}/package.json`);
             return this.fs.readJSON(extensionPath, undefined);
