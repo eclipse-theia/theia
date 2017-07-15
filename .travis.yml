@@ -21,7 +21,6 @@ before_script:
 before_install:
   - "npm install -g npm@^4"
   - "google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &"
-script: chmod a+x ./config/scripts/travis-ci-build.sh && ./config/scripts/travis-ci-build.sh
 notifications:
   webhooks:
     urls:
