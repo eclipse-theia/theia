@@ -1,12 +1,16 @@
 {
   "name": "@theia/core",
-  "version": "0.0.1-alpha.1",
+  "version": "0.0.1-alpha.2",
   "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/theia-ide/theia.git"
   },
-  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
   "files": [
     "lib",
     "src"
@@ -38,20 +42,23 @@
     "chai-as-promised": "^7.1.1",
     "concurrently": "^3.5.0",
     "mocha": "^3.4.2",
+    "nyc": "^11.0.3",
     "rimraf": "^2.6.1",
     "tslint": "^4.5.1",
     "typescript": "^2.4.1"
   },
   "scripts": {
-    "prepare": "npm run clean && npm run build",
-    "clean": "rimraf lib",
+    "clean": "npm run compile:clean && npm run test:clean",
     "build": "concurrently -n compile,lint -c blue,green \"npm run compile\" \"npm run lint\"",
     "compile": "tsc -p compile.tsconfig.json",
+    "compile:clean": "rimraf lib",
     "lint": "tslint -c ../tslint.json --project compile.tsconfig.json",
-    "watch": "tsc -w -p compile.tsconfig.json"
+    "watch": "tsc -w -p compile.tsconfig.json",
+    "test": "nyc mocha --opts ../config/mocha/mocha.opts src/**/*.spec.ts",
+    "test:watch": "mocha -w --opts ../config/mocha/mocha.opts src/**/*.spec.ts",
+    "test:clean": "rimraf .nyc_output && rimraf coverage"
   },
-  "bugs": {
-    "url": "https://github.com/theia-ide/theia/issues"
-  },
-  "homepage": "https://github.com/theia-ide/theia"
+  "nyc": {
+    "extends": "../config/nyc.json"
+  }
 }

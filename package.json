@@ -7,9 +7,11 @@
     },
     "scripts": {
         "prepare": "npm run bootstrap && npm run clean && npm run build",
+        "prepublishOnly": "npm run test",
         "bootstrap": "lerna bootstrap --hoist",
-        "clean": "lerna run clean",
-        "build": "lerna run build",
-        "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel"
+        "clean": "lerna run clean --parallel",
+        "build": "lerna run build --stream",
+        "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel",
+        "test": "lerna run test --scope \"@theia/!(example-)*\" --parallel"
     }
 }

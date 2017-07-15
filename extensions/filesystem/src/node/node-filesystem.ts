@@ -331,7 +331,7 @@ export class FileSystemNode implements FileSystem {
     protected doCreateDirectoryStat(uri: URI, path: string, stat: fs.Stats, depth: number): FileStat {
         const files = fs.readdirSync(path);
         const hasChildren = files.length > 0;
-        const children = hasChildren && depth > 0 ? this.doGetChildren(uri, files, depth) : undefined;
+        const children = hasChildren ? depth > 0 ? this.doGetChildren(uri, files, depth) : undefined : [];
         return {
             uri: uri.toString(),
             lastModification: stat.mtime.getTime(),
