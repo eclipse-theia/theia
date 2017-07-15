@@ -1,8 +1,7 @@
 {
   "lerna": "2.0.0",
   "packages": [
-    "core",
-    "extensions/*",
+    "packages/*",
     "examples/browser"
   ],
   "version": "independent"
