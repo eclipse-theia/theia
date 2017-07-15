@@ -48,7 +48,7 @@ export class PreferenceService implements Disposable {
     get<T>(preferenceName: string, defaultValue: T): Promise<T>;
     get<T>(preferenceName: string, defaultValue?: T): Promise<T | undefined> {
         return this.server.get<T>(preferenceName).then(value =>
-            value !== undefined ? value : defaultValue
+            value !== null && value !== undefined ? value : defaultValue
         );
     }
 
@@ -56,7 +56,7 @@ export class PreferenceService implements Disposable {
     getBoolean(preferenceName: string, defaultValue: boolean): Promise<boolean>;
     getBoolean(preferenceName: string, defaultValue?: boolean): Promise<boolean | undefined> {
         return this.server.get(preferenceName).then(value =>
-            value !== undefined ? !!value : defaultValue
+            value !== null && value !== undefined ? !!value : defaultValue
         );
     }
 
@@ -64,7 +64,7 @@ export class PreferenceService implements Disposable {
     getString(preferenceName: string, defaultValue: string): Promise<string>;
     getString(preferenceName: string, defaultValue?: string): Promise<string | undefined> {
         return this.server.get(preferenceName).then(value => {
-            if (value === undefined) {
+            if (value === null || value === undefined) {
                 return defaultValue;
             }
             if (typeof value === "string") {
@@ -78,7 +78,7 @@ export class PreferenceService implements Disposable {
     getNumber(preferenceName: string, defaultValue: number): Promise<number>;
     getNumber(preferenceName: string, defaultValue?: number): Promise<number | undefined> {
         return this.server.get(preferenceName).then(value => {
-            if (value === undefined) {
+            if (value === null || value === undefined) {
                 return defaultValue;
             }
             if (typeof value === "number") {
