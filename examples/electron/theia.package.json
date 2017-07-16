@@ -14,8 +14,7 @@
     "@theia/preferences": "^0.0.1-alpha.1",
     "@theia/python": "^0.0.1-alpha.1",
     "@theia/terminal": "^0.0.1-alpha.1",
-    "@theia/workspace": "^0.0.1-alpha.1",
-    "electron": "1.6.11"
+    "@theia/workspace": "^0.0.1-alpha.1"
   },
   "localDependencies": {
     "@theia/core": "../../packages/core",
