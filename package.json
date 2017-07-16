@@ -14,7 +14,7 @@
     "refresh": "lerna clean --yes && npm run bootstrap",
     "clean": "lerna run clean --parallel",
     "build": "lerna run build --stream",
-    "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel",
-    "test": "lerna run test --scope \"@theia/!(example-)*\" --parallel"
+    "test": "lerna run test --scope \"@theia/!(example-)*\" --parallel",
+    "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel"
   }
 }
