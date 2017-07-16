@@ -20,16 +20,16 @@ export abstract class AbstractAppGenerator extends BaseGenerator {
     protected readonly model = new Model();
     protected readonly pck = new AppPackageGenerator(this.model);
 
-    initializing(prefix = 'theia', defaults: object = this.model.config): void {
-        this.model.pck = this.fs.readJSON(`${prefix}.package.json`) || {};
-        this.config.defaults(defaults);
+    initializing(): void {
+        this.model.pck = this.fs.readJSON('theia.package.json') || {};
+        this.config.defaults(this.model.config);
         Object.assign(this.model.config, this.config.getAll());
     }
 
     configuring(): void {
         this.config.save();
         this.model.readLocalExtensionPackages((extension, path) => {
-            const extensionPath = paths.join(process.cwd(), `${path}/package.json`);
+            const extensionPath = paths.join(process.cwd(), path, 'extension.package.json');
             return this.fs.readJSON(extensionPath, undefined);
         })
         this.model.readExtensionPackages((extension, version) => {
