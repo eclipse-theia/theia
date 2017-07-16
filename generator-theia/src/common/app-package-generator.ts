@@ -22,9 +22,7 @@ export class AppPackageGenerator extends AbstractGenerator {
     }
 
     protected compilePackage(): NodePackage {
-        const dependendencies = this.isWeb() ? {} : {
-            "electron": "1.6.11",
-        }
+        const dependendencies = this.isWeb() ? {} : {}
         const scripts = this.isWeb() ? {
             "start": "concurrently -n backend,frontend -c blue,green \"npm run start:backend\" \"npm run start:frontend\"",
             "start:backend": "npm run build:backend && node ./src-gen/backend/main.js | bunyan",
@@ -32,13 +30,13 @@ export class AppPackageGenerator extends AbstractGenerator {
             "start:frontend": "webpack-dev-server --open",
         } : {
                 "postinstall": "electron-rebuild",
-                "start": "electron ./src-gen/frontend/electron-main.js | bunyan",
-                "start:debug": "electron ./src-gen/frontend/electron-main.js --loglevel=debug | bunyan",
+                "start": "npm run build:backend && electron ./src-gen/frontend/electron-main.js | bunyan",
+                "start:debug": "npm run build:backend && electron ./src-gen/frontend/electron-main.js --loglevel=debug | bunyan",
             }
         const devDependencies = this.isWeb() ? {
             "webpack-dev-server": "^2.5.0"
         } : {
-                "electron-rebuild": "^1.5.11",
+                "electron": "^1.6.11"
             }
         return {
             ...this.model.pck,
