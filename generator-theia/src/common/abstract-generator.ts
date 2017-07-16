@@ -60,35 +60,4 @@ export abstract class AbstractGenerator {
         return copyright ? copyright + os.EOL : '';
     }
 
-    protected commonScripts(target: 'electron' | 'web'): { [name: string]: string } {
-        return {
-            "bootstrap": "npm install",
-            "clean": "rimraf lib",
-            "prepare": "npm run clean && npm run build",
-            "cold:start": "npm run clean && npm run build && npm start",
-            "build": "run build:frontend",
-            "build:frontend": `webpack --target ${target} && cp ${this.srcGen()}/frontend/index.html lib`,
-            "watch": "npm run watch:frontend",
-            "watch:frontend": `npm run build:frontend && webpack --target ${target} --watch`,
-        }
-    }
-
-    protected get commonDevDependencies(): { [name: string]: string } {
-        return {
-            "rimraf": "^2.6.1",
-            "concurrently": "^3.4.0",
-            "bunyan": "^1.8.10",
-            "webpack": "^2.2.1",
-            "webpack-merge": "^4.1.0",
-            "copy-webpack-plugin": "^4.0.1",
-            "circular-dependency-plugin": "^2.0.0",
-            "css-loader": "^0.28.1",
-            "file-loader": "^0.11.1",
-            "source-map-loader": "^0.2.1",
-            "url-loader": "^0.5.8",
-            "font-awesome-webpack": "0.0.5-beta.2",
-            "less": "^2.7.2"
-        }
-    }
-
 }

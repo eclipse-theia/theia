@@ -8,8 +8,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "@theia/cpp/lib/browser/cpp-frontend-module",
-      "backend": "@theia/cpp/lib/node/cpp-backend-module"
+      "frontend": "lib/browser/cpp-frontend-module",
+      "backend": "lib/node/cpp-backend-module"
     }
   ]
 }

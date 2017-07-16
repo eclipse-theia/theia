@@ -6,17 +6,16 @@
  */
 
 import { AbstractAppGenerator } from "../common";
-import { BrowserPackageGenerator } from "./browser-package-generator";
 import { BrowserBackendGenerator } from "./browser-backend-generator";
 import { BrowserFrontendGenerator } from "./browser-frontend-generator";
 
 export class TheiaBrowserGenerator extends AbstractAppGenerator {
 
-    protected readonly pck = new BrowserPackageGenerator(this.model);
     protected readonly backend = new BrowserBackendGenerator(this.model);
     protected readonly frontend = new BrowserFrontendGenerator(this.model);
 
     initializing(): void {
+        this.model.target = 'web';
         super.initializing();
     }
 
@@ -25,7 +24,7 @@ export class TheiaBrowserGenerator extends AbstractAppGenerator {
     }
 
     writing(): void {
-        this.pck.generate(this.fs);
+        super.writing();
         this.backend.generate(this.fs);
         this.frontend.generate(this.fs);
     }

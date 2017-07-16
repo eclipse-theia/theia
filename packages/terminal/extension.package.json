@@ -12,8 +12,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "@theia/terminal/lib/browser/terminal-frontend-module",
-      "backend": "@theia/terminal/lib/node/terminal-backend-module"
+      "frontend": "lib/browser/terminal-frontend-module",
+      "backend": "lib/node/terminal-backend-module"
     }
   ]
 }

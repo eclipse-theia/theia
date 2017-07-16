@@ -47,6 +47,7 @@ export function sortByKey(object: { [key: string]: any }): { [key: string]: any 
 }
 
 export class Model {
+    target: 'web' | 'electron' | undefined;
     pck: NodePackage = {}
     config: Config = {
         port: 3000,

@@ -18,10 +18,7 @@ export abstract class AbstractFrontendGenerator extends AbstractGenerator {
         return `<!DOCTYPE html>
 <html>
 
-<head>
-  <meta charset="UTF-8">
-  <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
-  <script type="text/javascript" src="https://www.promisejs.org/polyfills/promise-6.1.0.js" charset="utf-8"></script>
+<head>${this.compileIndexHead(frontendModules)}
   <script type="text/javascript" src="./bundle.js" charset="utf-8"></script>
 </head>
 
@@ -31,11 +28,21 @@ export abstract class AbstractFrontendGenerator extends AbstractGenerator {
 </html>`;
     }
 
+    protected compileIndexHead(frontendModules: Map<string, string>): string {
+        return `
+  <meta charset="UTF-8">
+  <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+  <script type="text/javascript" src="https://www.promisejs.org/polyfills/promise-6.1.0.js" charset="utf-8"></script>`
+    }
+
     protected compileIndexJs(frontendModules: Map<string, string>): string {
         return `${this.compileCopyright()}
+// @ts-check
 import { Container } from 'inversify';
-import { FrontendApplication, frontendApplicationModule, loggerFrontendModule } from 'theia-core/lib/application/browser';
-import { messagingFrontendModule } from 'theia-core/lib/messaging/browser';
+import { FrontendApplication } from '@theia/core/lib/browser';
+import { frontendApplicationModule } from '@theia/core/lib/browser/frontend-application-module';
+import { messagingFrontendModule } from '@theia/core/lib/browser/messaging/messaging-frontend-module';
+import { loggerFrontendModule } from '@theia/core/lib/browser/logger-frontend-module';
 
 const container = new Container();
 container.load(frontendApplicationModule);

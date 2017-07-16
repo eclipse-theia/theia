@@ -9,7 +9,7 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "@theia/navigator/lib/browser/navigator-frontend-module"
+      "frontend": "lib/browser/navigator-frontend-module"
     }
   ]
 }

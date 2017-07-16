@@ -10,7 +10,7 @@ import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalWidget, TerminalWidgetFactory, TerminalWidgetOptions } from './terminal-widget';
 
-import 'theia-core/src/terminal/browser/terminal.css';
+import '../../src/browser/terminal.css';
 import 'xterm/dist/xterm.css';
 
 export default new ContainerModule(bind => {
