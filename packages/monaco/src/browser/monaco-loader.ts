@@ -5,8 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { FileUri } from "@theia/core/lib/node/file-uri";
-
 export function loadVsRequire(context: any): Promise<any> {
     // Monaco uses a custom amd loader that over-rides node's require.
     // Keep a reference to an original require so we can restore it after executing the amd loader file.
@@ -21,9 +19,6 @@ export function loadVsRequire(context: any): Promise<any> {
             // Save Monaco's amd require and restore the original require
             const amdRequire = context.require;
             context.require = originalRequire;
-
-            const baseUrl = FileUri.create(__dirname).toString();
-            amdRequire.config({ baseUrl });
             resolve(amdRequire);
         });
         document.body.appendChild(vsLoader);
@@ -44,7 +39,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/platform/keybinding/common/keybindingsRegistry',
                 'vs/platform/keybinding/common/keybindingResolver',
                 'vs/base/common/keyCodes',
-                'vs/editor/browser/standalone/simpleServices'
+                'vs/editor/standalone/browser/simpleServices'
             ], (basic: any, css: any, ts: any, html: any, json: any, commands: any, actions: any, registry: any, resolver: any,
                 keyCodes: any, simpleServices: any) => {
                     const global: any = self;
