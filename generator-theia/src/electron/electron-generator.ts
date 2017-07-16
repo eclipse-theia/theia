@@ -6,17 +6,16 @@
  */
 
 import { AbstractAppGenerator } from "../common";
-import { ElectronPackageGenerator } from "./electron-package-generator";
 import { ElectronBackendGenerator } from "./electron-backend-generator";
 import { ElectronFrontendGenerator } from "./electron-frontend-generator";
 
 export class TheiaElectronGenerator extends AbstractAppGenerator {
 
-    protected readonly pck = new ElectronPackageGenerator(this.model);
     protected readonly backend = new ElectronBackendGenerator(this.model);
     protected readonly frontend = new ElectronFrontendGenerator(this.model);
 
     initializing(): void {
+        this.model.target = 'electron';
         super.initializing();
     }
 
@@ -25,7 +24,7 @@ export class TheiaElectronGenerator extends AbstractAppGenerator {
     }
 
     writing(): void {
-        this.pck.generate(this.fs);
+        super.writing();
         this.backend.generate(this.fs);
         this.frontend.generate(this.fs);
     }

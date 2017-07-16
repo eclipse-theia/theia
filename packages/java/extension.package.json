@@ -20,8 +20,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "@theia/java/lib/browser/java-frontend-module",
-      "backend": "@theia/java/lib/node/java-backend-module"
+      "frontend": "lib/browser/java-frontend-module",
+      "backend": "lib/node/java-backend-module"
     }
   ]
 }

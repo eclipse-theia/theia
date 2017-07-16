@@ -11,12 +11,14 @@ import * as cp from 'child_process';
 import BaseGenerator = require('yeoman-generator');
 
 import { Model } from "./generator-model";
+import { AppPackageGenerator } from "./app-package-generator";
 
 export const NPM = require('check-if-windows') ? 'npm.cmd' : 'npm';
 
 export abstract class AbstractAppGenerator extends BaseGenerator {
 
     protected readonly model = new Model();
+    protected readonly pck = new AppPackageGenerator(this.model);
 
     initializing(prefix = 'theia', defaults: object = this.model.config): void {
         this.model.pck = this.fs.readJSON(`${prefix}.package.json`) || {};
@@ -35,6 +37,10 @@ export abstract class AbstractAppGenerator extends BaseGenerator {
                 encoding: 'utf8'
             }));
         });
+    }
+
+    writing(): void {
+        this.pck.generate(this.fs);
     }
 
 }

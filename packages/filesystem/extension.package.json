@@ -18,8 +18,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "@theia/filesystem/lib/browser/filesystem-frontend-module",
-      "backend": "@theia/filesystem/lib/filesystem-backend-module"
+      "frontend": "lib/browser/filesystem-frontend-module",
+      "backend": "lib/node/filesystem-backend-module"
     }
   ]
 }

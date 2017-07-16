@@ -15,10 +15,6 @@ import {
 } from '../common';
 import { LanguageClientFactory } from "./language-client-factory";
 
-export {
-    LanguageContribution, ILanguageClient, FrontendApplication
-}
-
 export const LanguageClientContribution = Symbol('LanguageClientContribution');
 export interface LanguageClientContribution extends LanguageContribution {
     readonly languageClient: Promise<ILanguageClient>;

@@ -13,8 +13,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "@theia/preferences/lib/browser/preference-frontend-module",
-      "backend": "@theia/preferences/lib/node/preference-backend-module"
+      "frontend": "lib/browser/preference-frontend-module",
+      "backend": "lib/node/preference-backend-module"
     }
   ]
 }

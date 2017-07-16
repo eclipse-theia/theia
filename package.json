@@ -7,10 +7,10 @@
     "yo": "^2.0.0"
   },
   "scripts": {
-    "preinstall": "cd config/generator-theia && npm install",
-    "prepare": "npm install config/generator-theia && npm run bootstrap && npm run clean && npm run build",
+    "preinstall": "cd generator-theia && npm install",
+    "prepare": "npm install generator-theia && npm run bootstrap && npm run clean && npm run build",
     "prepublishOnly": "npm run test",
-    "bootstrap": "node config/generate.js && lerna bootstrap --hoist",
+    "bootstrap": "node scripts/generate.js && lerna bootstrap --hoist",
     "refresh": "lerna clean --yes && npm run bootstrap",
     "clean": "lerna run clean --parallel",
     "build": "lerna run build --stream",

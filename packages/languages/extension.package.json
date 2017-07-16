@@ -9,8 +9,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "@theia/languages/lib/browser/languages-frontend-module",
-      "backend": "@theia/languages/lib/node/languages-backend-module"
+      "frontend": "lib/browser/languages-frontend-module",
+      "backend": "lib/node/languages-backend-module"
     }
   ]
 }

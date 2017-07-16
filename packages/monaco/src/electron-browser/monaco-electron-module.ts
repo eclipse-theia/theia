@@ -6,43 +6,19 @@
  */
 
 import { ContainerModule } from "inversify";
-import { loadMonaco } from "../browser/monaco-loader";
-import { FileUri } from "@theia/core/lib/node/file-uri";
+import { loadVsRequire, loadMonaco } from "../browser/monaco-loader";
 
 export { ContainerModule };
 
-const g = <any>global;
 const s = <any>self;
 
-// Monaco uses a custom amd loader that over-rides node's require.
-// Keep a reference to node's require so we can restore it after executing the amd loader file.
-const nodeRequire = g.require;
-
-const loadAmdRequire = new Promise<any>(resolve => {
-    const vsLoader = document.createElement('script');
-    vsLoader.type = 'text/javascript';
-    vsLoader.src = './vs/loader.js';
-    vsLoader.charset = 'utf-8';
-    vsLoader.addEventListener('load', () => {
-        // Save Monaco's amd require and restore Node's require
-        const amdRequire = g.require;
-        g.require = nodeRequire;
-
-        const baseUrl = FileUri.create(__dirname).toString();
-        amdRequire.config({ baseUrl });
-
+export default loadVsRequire(global)
+    .then(vsRequire => {
         // workaround monaco-css not understanding the environment
         s.module = undefined;
-
         // workaround monaco-typescript not understanding the environment
         s.process.browser = true;
-
-        resolve(amdRequire);
-    });
-    document.body.appendChild(vsLoader);
-});
-
-export default loadAmdRequire
-    .then(amdRequire => loadMonaco(amdRequire))
+        return loadMonaco(vsRequire)
+    })
     .then(() => import('../browser/monaco-frontend-module'))
     .then(module => module.default);

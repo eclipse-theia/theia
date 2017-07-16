@@ -12,3 +12,4 @@ lerna-debug.log
 coverage
 packages/*/package.json
 examples/*/package.json
+examples/*/src-gen

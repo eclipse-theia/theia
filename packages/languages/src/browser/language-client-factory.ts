@@ -10,9 +10,8 @@ import { WebSocketConnectionProvider } from "@theia/core/lib/browser";
 import {
     Workspace, Languages, Commands, Window,
     ILanguageClient, LanguageClientOptions, BaseLanguageClient,
-    createConnection, ConnectionErrorHandler, ConnectionCloseHandler
+    createConnection, ConnectionErrorHandler, ConnectionCloseHandler, LanguageContribution
 } from '../common';
-import { LanguageContribution } from "./language-client-contribution";
 
 @injectable()
 export class LanguageClientFactory {

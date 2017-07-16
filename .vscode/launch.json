@@ -50,7 +50,7 @@
                 "--colors",
                 "${file}",
                 "--opts",
-                "${workspaceRoot}/config/mocha/mocha.opts"
+                "${workspaceRoot}/packages/mocha.opts"
             ],
             "sourceMaps": true,
             "internalConsoleOptions": "openOnSessionStart",

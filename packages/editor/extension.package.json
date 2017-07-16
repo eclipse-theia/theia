@@ -9,7 +9,7 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "@theia/editor/lib/browser/editor-frontend-module"
+      "frontend": "lib/browser/editor-frontend-module"
     }
   ]
 }

@@ -8,8 +8,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "@theia/workspace/lib/browser/workspace-frontend-module",
-      "backend": "@theia/workspace/lib/node/workspace-backend-module"
+      "frontend": "lib/browser/workspace-frontend-module",
+      "backend": "lib/node/workspace-backend-module"
     }
   ]
 }

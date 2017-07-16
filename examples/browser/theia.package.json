@@ -1,37 +1,50 @@
 {
-    "private": true,
-    "name": "@theia/example-browser",
-    "version": "0.0.0",
-    "dependencies": {
-        "@theia/core": "^0.0.1-alpha.2",
-        "@theia/filesystem": "^0.0.1-alpha.1",
-        "@theia/workspace": "^0.0.1-alpha.1",
-        "@theia/preferences": "^0.0.1-alpha.1",
-        "@theia/navigator": "^0.0.1-alpha.1",
-        "@theia/teminal": "^0.0.1-alpha.1",
-        "@theia/editor": "^0.0.1-alpha.1",
-        "@theia/languages": "^0.0.1-alpha.1",
-        "@theia/languages": "^0.0.1-alpha.1",
-        "@theia/monaco": "^0.0.1-alpha.1",
-        "@theia/java": "^0.0.1-alpha.1",
-        "@theia/python": "^0.0.1-alpha.1",
-        "@theia/cpp": "^0.0.1-alpha.1"
-    },
-    "scripts": {
-        "test:ui": "npm run start& wdio --waitforTimeout 300000 wdio.conf.js"
-    },
-    "devDependencies": {
-        "@types/chai": "^4.0.1",
-        "@types/webdriverio": "^4.7.0",
-        "chai": "^4.1.0",
-        "selenium-standalone": "^6.2.0",
-        "typescript": "^2.4.1",
-        "tslint": "^4.5.1",
-        "ts-node": "^3.0.2",
-        "wdio-mocha-framework": "^0.5.9",
-        "wdio-phantomjs-service": "^0.2.2",
-        "wdio-selenium-standalone-service": "0.0.8",
-        "wdio-spec-reporter": "^0.1.0",
-        "webdriverio": "^4.6.2"
-    }
+  "private": true,
+  "name": "@theia/example-browser",
+  "version": "0.0.0",
+  "dependencies": {
+    "@theia/core": "^0.0.1-alpha.2",
+    "@theia/filesystem": "^0.0.1-alpha.1",
+    "@theia/workspace": "^0.0.1-alpha.1",
+    "@theia/preferences": "^0.0.1-alpha.1",
+    "@theia/navigator": "^0.0.1-alpha.1",
+    "@theia/terminal": "^0.0.1-alpha.1",
+    "@theia/editor": "^0.0.1-alpha.1",
+    "@theia/languages": "^0.0.1-alpha.1",
+    "@theia/monaco": "^0.0.1-alpha.1",
+    "@theia/java": "^0.0.1-alpha.1",
+    "@theia/python": "^0.0.1-alpha.1",
+    "@theia/cpp": "^0.0.1-alpha.1"
+  },
+  "localDependencies": {
+    "@theia/core": "../../packages/core",
+    "@theia/filesystem": "../../packages/filesystem",
+    "@theia/workspace": "../../packages/workspace",
+    "@theia/preferences": "../../packages/preferences",
+    "@theia/navigator": "../../packages/navigator",
+    "@theia/terminal": "../../packages/terminal",
+    "@theia/editor": "../../packages/editor",
+    "@theia/languages": "../../packages/languages",
+    "@theia/monaco": "../../packages/monaco",
+    "@theia/java": "../../packages/java",
+    "@theia/python": "../../packages/python",
+    "@theia/cpp": "../../packages/cpp"
+  },
+  "scripts": {
+    "test:ui": "npm run start && wdio --waitforTimeout 300000 wdio.conf.js"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.0.1",
+    "@types/webdriverio": "^4.7.0",
+    "chai": "^4.1.0",
+    "selenium-standalone": "^6.2.0",
+    "typescript": "^2.4.1",
+    "tslint": "^4.5.1",
+    "ts-node": "^3.0.2",
+    "wdio-mocha-framework": "^0.5.9",
+    "wdio-phantomjs-service": "^0.2.2",
+    "wdio-selenium-standalone-service": "0.0.8",
+    "wdio-spec-reporter": "^0.1.0",
+    "webdriverio": "^4.6.2"
+  }
 }

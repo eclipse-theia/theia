@@ -6,12 +6,12 @@
  */
 
 import { ContainerModule } from "inversify";
-import { loadMonaco } from "./monaco-loader";
+import { loadMonaco, loadVsRequire } from "./monaco-loader";
 
 export { ContainerModule };
 
-const amdRequire = (<any>window).require;
-export default loadMonaco(amdRequire)
+export default loadVsRequire(window)
+    .then(vsRequire => loadMonaco(vsRequire))
     .then(() =>
         import('./monaco-frontend-module')
     ).then(module =>

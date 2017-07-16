@@ -18,8 +18,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "@theia/monaco/lib/browser/monaco-browser-module",
-      "frontendElectron": "@theia/monaco/electron-browser/monaco-electron-module"
+      "frontend": "lib/browser/monaco-browser-module",
+      "frontendElectron": "lib/electron-browser/monaco-electron-module"
     }
   ]
 }
