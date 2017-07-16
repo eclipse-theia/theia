@@ -6,6 +6,7 @@
  */
 
 import { ContainerModule } from "inversify";
+import { FileUri } from "@theia/core/lib/node/file-uri";
 import { loadVsRequire, loadMonaco } from "../browser/monaco-loader";
 
 export { ContainerModule };
@@ -14,6 +15,9 @@ const s = <any>self;
 
 export default loadVsRequire(global)
     .then(vsRequire => {
+        const baseUrl = FileUri.create(__dirname).toString();
+        vsRequire.config({ baseUrl });
+
         // workaround monaco-css not understanding the environment
         s.module = undefined;
         // workaround monaco-typescript not understanding the environment
