@@ -14,14 +14,19 @@ function generate(name, cwd, prefix, target) {
         const command = 'yo';
         const args = ['theia:' + target, '--force'];
         console.log(`${name}: ${command} ${args.join(' ')}`);
-        const process = cp.spawn(command, args, { cwd });
-        process.on('error', err =>
+        const p = cp.spawn(command, args, { cwd });
+        p.on('exit', code => {
+            if (code !== 0) {
+                process.exit(code)
+            }
+        });
+        p.on('error', err =>
             console.error(`${name}: ${err.message}`)
         );
-        process.stdout.on('data', data =>
+        p.stdout.on('data', data =>
             console.log(`${name}: ${data}`)
         );
-        process.stderr.on('data', data =>
+        p.stderr.on('data', data =>
             console.error(`${name}: ${data}`)
         );
     }
