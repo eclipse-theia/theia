@@ -31,7 +31,7 @@
     "@theia/cpp": "../../packages/cpp"
   },
   "scripts": {
-    "test:ui": "npm run start && wdio --waitforTimeout 300000 wdio.conf.js"
+    "test": "npm run start& wdio --waitforTimeout 300000 wdio.conf.js"
   },
   "devDependencies": {
     "@types/chai": "^4.0.1",
