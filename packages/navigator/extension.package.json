@@ -6,5 +6,10 @@
     "@theia/core": "^0.0.1-alpha.2",
     "@theia/filesystem": "^0.0.1-alpha.1",
     "@theia/workspace": "^0.0.1-alpha.1"
-  }
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "@theia/navigator/lib/browser/navigator-frontend-module"
+    }
+  ]
 }

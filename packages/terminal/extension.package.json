@@ -9,5 +9,11 @@
     "@types/xterm": "^2.0.3",
     "node-pty": "^0.6.10",
     "xterm": "^2.8.1"
-  }
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "@theia/terminal/lib/browser/terminal-frontend-module",
+      "backend": "@theia/terminal/lib/node/terminal-backend-module"
+    }
+  ]
 }

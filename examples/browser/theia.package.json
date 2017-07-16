@@ -3,8 +3,19 @@
     "name": "@theia/example-browser",
     "version": "0.0.0",
     "dependencies": {
-        "@theia/core": "^0.0.1-alpha.1",
-        "@theia/filesystem": "^0.0.1-alpha.1"
+        "@theia/core": "^0.0.1-alpha.2",
+        "@theia/filesystem": "^0.0.1-alpha.1",
+        "@theia/workspace": "^0.0.1-alpha.1",
+        "@theia/preferences": "^0.0.1-alpha.1",
+        "@theia/navigator": "^0.0.1-alpha.1",
+        "@theia/teminal": "^0.0.1-alpha.1",
+        "@theia/editor": "^0.0.1-alpha.1",
+        "@theia/languages": "^0.0.1-alpha.1",
+        "@theia/languages": "^0.0.1-alpha.1",
+        "@theia/monaco": "^0.0.1-alpha.1",
+        "@theia/java": "^0.0.1-alpha.1",
+        "@theia/python": "^0.0.1-alpha.1",
+        "@theia/cpp": "^0.0.1-alpha.1"
     },
     "scripts": {
         "test:ui": "npm run start& wdio --waitforTimeout 300000 wdio.conf.js"
