@@ -15,5 +15,11 @@
   },
   "devDependencies": {
     "uuid": "^3.1.0"
-  }
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "@theia/filesystem/lib/browser/filesystem-frontend-module",
+      "backend": "@theia/filesystem/lib/filesystem-backend-module"
+    }
+  ]
 }

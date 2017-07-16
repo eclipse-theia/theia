@@ -5,5 +5,11 @@
   "dependencies": {
     "@theia/core": "^0.0.1-alpha.2",
     "@theia/filesystem": "^0.0.1-alpha.1"
-  }
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "@theia/workspace/lib/browser/workspace-frontend-module",
+      "backend": "@theia/workspace/lib/node/workspace-backend-module"
+    }
+  ]
 }

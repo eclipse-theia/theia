@@ -5,5 +5,11 @@
   "dependencies": {
     "@theia/core": "^0.0.1-alpha.2",
     "@theia/languages": "^0.0.1-alpha.1"
-  }
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "@theia/cpp/lib/browser/cpp-frontend-module",
+      "backend": "@theia/cpp/lib/node/cpp-backend-module"
+    }
+  ]
 }

@@ -17,5 +17,11 @@
   },
   "scripts": {
     "build": "concurrently -n download,compile,lint -c red,blue,green \"gulp download_java_server\" \"npm run compile\" \"npm run lint\""
-  }
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "@theia/java/lib/browser/java-frontend-module",
+      "backend": "@theia/java/lib/node/java-backend-module"
+    }
+  ]
 }

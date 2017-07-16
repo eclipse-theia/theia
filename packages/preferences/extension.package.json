@@ -10,5 +10,11 @@
   "devDependencies": {
     "@types/temp": "^0.8.29",
     "temp": "^0.8.3"
-  }
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "@theia/preferences/lib/browser/preference-frontend-module",
+      "backend": "@theia/preferences/lib/node/preference-backend-module"
+    }
+  ]
 }

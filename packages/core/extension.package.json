@@ -22,5 +22,15 @@
     "vscode-ws-jsonrpc": "0.0.1-alpha.4",
     "ws": "^3.0.0",
     "yargs": "^8.0.2"
-  }
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "@theia/core/lib/browser/menu/browser-menu-module",
+      "frontendElectron": "@theia/core/lib/electron-browser/menu/electron-menu-module"
+    },
+    {
+      "frontend": "@theia/core/lib/browser/clipboard/browser-clipboard-module",
+      "frontendElectron": "@theia/core/lib/electron-browser/clipboard/electron-clipboard-module"
+    }
+  ]
 }
