@@ -138,7 +138,7 @@ export class KeybindingRegistry {
      * @param keyCode the key code of the binding we are searching.
      */
     getKeybindingForKeyCode(keyCode: KeyCode): Keybinding | undefined {
-        return (this.commands[keyCode.keystroke] || []).find(binding => this.isValid(binding));
+        return (this.keybindings[keyCode.keystroke] || []).find(binding => this.isValid(binding));
     }
 
     private isValid(binding: Keybinding): boolean {
