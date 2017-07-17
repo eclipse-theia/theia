@@ -11,7 +11,7 @@ export interface IDebugger {
     id: number,
     /* FIXME use a base options */
     start(options: object): void;
-    debugProcess: IDebugProcess;
+    debugProcess: Promise<IDebugProcess>;
 }
 
 

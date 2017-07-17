@@ -19,11 +19,36 @@ import { GDBTerminalProcess, GDBTerminalProcessFactory, GDBTerminalProcessOption
 import { GDBRawProcess, GDBRawProcessFactory, GDBRawProcessOptions } from './gdb-raw-process';
 import { IDebugSession } from '@theia/debug/lib/node/debug-session';
 import { GDBDebugSession } from './gdb-debug-session';
+import { IDebugProcessFactoryProvider, IDebugProcessFactory } from '@theia/debug/lib/node/debug-process';
 import { GDBProbe } from './gdb-probe';
 
 export default new ContainerModule(bind => {
     bindGDBPreferences(bind);
-    bind<IMIDebugger>(IMIDebugger).to(MIDebugger);
+
+    bind<IMIDebugger>(IMIDebugger).toDynamicValue((context) => {
+        const child = new Container({ defaultScope: 'Singleton' });
+        child.parent = context.container;
+
+        child.bind<Function>(IDebugProcessFactoryProvider).toProvider<IDebugProcessFactory>((context) =>
+            () =>
+                new Promise<IDebugProcessFactory>(resolve => {
+                    const probe = context.container.get<GDBProbe>(GDBProbe);
+                    probe.probeCommand("new-ui").then(result => {
+                        if (result === true) {
+                            child.bind<IDebugProcessFactory>(IDebugProcessFactory).toDynamicValue(ctx =>
+                                ctx.container.get(GDBTerminalProcessFactory));
+                        } else {
+                            child.bind<IDebugProcessFactory>(IDebugProcessFactory).toDynamicValue(ctx =>
+                                ctx.container.get(GDBRawProcessFactory));
+                        }
+                        resolve(child.get<IDebugProcessFactory>(IDebugProcessFactory));
+                    });
+                }));
+        child.bind(IMIDebugger).to(MIDebugger).inTransientScope();
+        return child.get<IMIDebugger>(IMIDebugger);
+    });
+
+
     bind<MIInterpreter>(MIInterpreter).to(MIInterpreter);
     bind<IMIParser>(IMIParser).to(MIParser);
     bind<MIOutputParser>(MIOutputParser).toSelf();

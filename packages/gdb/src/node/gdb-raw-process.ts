@@ -11,7 +11,7 @@ import { RawProcess, ProcessManager } from '@theia/process/lib/node';
 import { ILogger, Path } from '@theia/core/lib/common';
 
 export const GDBRawProcessFactory = Symbol("GDBRawProcessFactory");
-export type DebutRawProcessFactory = (options: GDBRawProcessOptions) => GDBRawProcess;
+export type DebugRawProcessFactory = (options: GDBRawProcessOptions) => GDBRawProcess;
 
 export const GDBRawProcessOptions = Symbol("GDBRawProcessOptions");
 export interface GDBRawProcessOptions {
