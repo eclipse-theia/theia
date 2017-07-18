@@ -13,7 +13,7 @@ import * as os from 'os';
 import URI from "@theia/core/lib/common/uri";
 import { Logger } from "@theia/core/lib/common";
 import { FileUri } from "@theia/core/lib/node";
-import { PreferenceService, DefaultPreferenceServer } from "@theia/preferences-api";
+import { PreferenceService, PreferenceServer, PreferenceClient } from "@theia/preferences-api";
 import { FileSystem } from "../common/filesystem";
 import { FileSystemWatcher, FileChange, FileChangeType, createFileSystemPreferences } from '../common';
 import { FileSystemNode } from "./node-filesystem";
@@ -788,9 +788,9 @@ describe("NodeFileSystem", () => {
                 }
             }
         });
-        const preferences = new PreferenceService(new DefaultPreferenceServer({
-            getContributions: () => []
-        }));
+
+
+        const preferences = new PreferenceService(new PreferenceServerStub());
         const fileSystemPreferences = createFileSystemPreferences(preferences);
         const server = new ChokidarFileSystemWatcherServer(logger);
         return new FileSystemWatcher(server, fileSystemPreferences);
@@ -805,3 +805,20 @@ describe("NodeFileSystem", () => {
 process.on("unhandledRejection", (reason: any) => {
     console.error("Unhandled promise rejection: " + reason);
 });
+
+class PreferenceServerStub implements PreferenceServer {
+
+    constructor() {
+
+    }
+    setClient(client: PreferenceClient | undefined): void {
+
+    }
+
+    dispose(): void {
+
+    }
+
+    ready(): Promise<void> { return Promise.resolve() }
+
+}

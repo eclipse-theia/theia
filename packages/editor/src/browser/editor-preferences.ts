@@ -8,7 +8,6 @@
 import { interfaces } from "inversify";
 import {
     createPreferenceProxy,
-    PreferenceContribution,
     PreferenceProxy,
     PreferenceService,
 } from '@theia/preferences/lib/common';
@@ -61,24 +60,5 @@ export function bindEditorPreferences(bind: interfaces.Bind): void {
     bind(EditorPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get(PreferenceService);
         return createEditorPreferences(preferences);
-    });
-
-
-    bind(PreferenceContribution).toConstantValue({
-        preferences: [{
-            name: 'editor.tabSize',
-            defaultValue: defaultEditorConfiguration['editor.tabSize'],
-            description: "Configure the tab size in the monaco editor"
-        },
-        {
-            name: 'editor.lineNumbers',
-            defaultValue: defaultEditorConfiguration['editor.lineNumbers'],
-            description: "Control the rendering of line numbers"
-        },
-        {
-            name: 'editor.renderWhitespace',
-            defaultValue: defaultEditorConfiguration['editor.renderWhitespace'],
-            description: "Control the rendering of whitespaces in the editor"
-        }]
     });
 }

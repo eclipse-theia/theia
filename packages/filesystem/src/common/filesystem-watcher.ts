@@ -42,6 +42,7 @@ export class FileSystemWatcher implements Disposable {
         this.toDispose.push(preferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'files.watcherExclude') {
                 this.toRestartAll.dispose();
+
             }
         }));
     }
@@ -107,6 +108,5 @@ export class FileSystemWatcher implements Disposable {
     protected getIgnored(): Promise<string[]> {
         const patterns = this.preferences['files.watcherExclude'];
         return Promise.resolve(Object.keys(patterns).filter(pattern => patterns[pattern]));
-
     }
 }

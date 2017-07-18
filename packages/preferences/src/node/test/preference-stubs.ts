@@ -10,8 +10,7 @@ import URI from '@theia/core/lib/common/uri';
 import { FileSystemNode } from "@theia/filesystem/lib/node/node-filesystem"
 import { ChokidarFileSystemWatcherServer } from '@theia/filesystem/lib/node/chokidar-filesystem-watcher'
 import { Logger } from '@theia/core/lib/common/logger'
-import { PreferenceContribution, Preference } from '../../common';
-import { ContributionProvider } from '@theia/core/lib/common/contribution-provider'
+// import { PreferenceContribution, Preference } from '@theia/preferences/lib/*';
 
 export class JsonPrefHelper {
     readonly logger: Logger;
@@ -45,42 +44,42 @@ export class JsonPrefHelper {
     }
 }
 
-export class PrefProviderStub implements ContributionProvider<PreferenceContribution> {
-    getContributions(): PreferenceContribution[] {
+// export class PrefProviderStub implements ContributionProvider<PreferenceContribution> {
+//     getContributions(): PreferenceContribution[] {
 
-        let prefs1: Preference[] = [
-            {
-                name: "testBooleanTrue",
-                defaultValue: true,
-                description: "testBooleanTrue description"
-            },
-            {
-                name: "testBooleanFalse",
-                defaultValue: false,
-                description: "testBooleanFalse description"
-            }
-        ];
+//         let prefs1: Preference[] = [
+//             {
+//                 name: "testBooleanTrue",
+//                 defaultValue: true,
+//                 description: "testBooleanTrue description"
+//             },
+//             {
+//                 name: "testBooleanFalse",
+//                 defaultValue: false,
+//                 description: "testBooleanFalse description"
+//             }
+//         ];
 
-        let prefs2: Preference[] = [
-            {
-                name: "testStringSomething",
-                defaultValue: "testStringSomethingValue",
-                description: "testStringSomething description"
-            },
-            {
-                name: "testStringSomething2",
-                defaultValue: "testStringSomethingValue2"
-            }
-        ];
+//         let prefs2: Preference[] = [
+//             {
+//                 name: "testStringSomething",
+//                 defaultValue: "testStringSomethingValue",
+//                 description: "testStringSomething description"
+//             },
+//             {
+//                 name: "testStringSomething2",
+//                 defaultValue: "testStringSomethingValue2"
+//             }
+//         ];
 
-        let prefContrib: PreferenceContribution[] = [new PreferenceContributionStub(prefs1), new PreferenceContributionStub(prefs2)];
+//         let prefContrib: PreferenceContribution[] = [new PreferenceContributionStub(prefs1), new PreferenceContributionStub(prefs2)];
 
-        return prefContrib;
+//         return prefContrib;
 
-    }
-}
+//     }
+// }
 
-export class PreferenceContributionStub implements PreferenceContribution {
-    constructor(readonly preferences: Preference[]
-    ) { }
-}
+// export class PreferenceContributionStub implements PreferenceContribution {
+//     constructor(readonly preferences: Preference[]
+//     ) { }
+// }
