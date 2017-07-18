@@ -6,7 +6,6 @@
  */
 
 import { PreferenceServer, PreferenceClient, PreferenceChangedEvent } from './preference-protocol'
-import { DefaultPreferenceServer } from './default-preference-server'
 
 export class CompoundPreferenceServer implements PreferenceServer {
 
@@ -15,7 +14,7 @@ export class CompoundPreferenceServer implements PreferenceServer {
     protected serversReady: boolean = false;
 
     constructor(
-        defaultServer: DefaultPreferenceServer, ...servers: PreferenceServer[],
+        ...servers: PreferenceServer[],
     ) {
         this.servers = servers;
         for (const server of servers) {
@@ -27,7 +26,7 @@ export class CompoundPreferenceServer implements PreferenceServer {
 
     // TODO scope management should happen here
     protected onDidChangePreference(event: PreferenceChangedEvent): void {
-        if (event.preferenceName == "INIT") {
+        if (!this.serversReady) { // First event contains all the preferences
             if (this.client) {
                 // TODO only fire when all pref servers have sent their "ok"
                 this.client.onDidChangePreference(event);
