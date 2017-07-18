@@ -163,7 +163,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
 
         const ids = MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command.id);
         const accelerator = (kb: IKeybindingItem): Accelerator => {
-            const keyCode = kb.keybinding.keyCode!;
+            const keyCode = kb.keybinding;
             let keys: string[] = [];
             if (keyCode & KeyMod.WinCtrl) {
                 keys.push('Accel');
@@ -182,7 +182,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         }
 
         const keyCode = (kb: IKeybindingItem): KeyCode => {
-            const keyCode = kb.keybinding.keyCode!;
+            const keyCode = kb.keybinding;
             const sequence: Keystroke = {
                 first: Key.getKey(MONACO_KEY_CODE_MAP[keyCode & 255]),
                 modifiers: []
@@ -207,7 +207,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         }
 
         const bindings: Keybinding[] = KeybindingsRegistry.getDefaultKeybindings()
-            .filter(kb => ids.indexOf(kb.command) >= 0 && !!kb.keybinding.keyCode)
+            .filter(kb => ids.indexOf(kb.command) >= 0)
             .map(kb => {
                 return {
                     commandId: kb.command,

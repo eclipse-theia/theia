@@ -167,9 +167,7 @@ declare module monaco.actions {
 declare module monaco.keybindings {
 
     export interface IKeybindingItem {
-        keybinding: {
-            keyCode?: number;
-        };
+        keybinding: number;
         command: string;
     }
 

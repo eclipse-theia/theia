@@ -48,7 +48,7 @@ export class MonacoEditorProvider {
             const editor = new MonacoEditor(
                 uri, node, this.m2p, this.p2m, this.workspace, {
                     model: textEditorModel,
-                    wordWrap: 'off',
+                    wordWrap: false,
                     folding: true,
                     lineNumbers: await this.editorPreferences["editor.lineNumbers"],
                     renderWhitespace: await this.editorPreferences["editor.renderWhitespace"],
