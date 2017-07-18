@@ -25,10 +25,9 @@ variable in your shell:
 
     THEIA=$PWD/theia
 
-## Build the `theia` package
+## Build core, extensions and examples packages
 
-The top-level directory contains the `theia` npm, the Theia framework.  You can
-fetch its dependencies and build it using:
+You can download dependencies and build it using:
 
     cd $THEIA
     npm install
@@ -36,45 +35,20 @@ fetch its dependencies and build it using:
 This command does a few things:
 
  - downloads npm package dependencies
- - compiles Typescript files to Javascript
- - runs the Typescript linter
- - runs the unit tests
+ - generate package.json for node packages
+ - link core, extensions and examples packages
+ - build core, extensions and examples packages
 
-## Build the `local-dependency-manager`
+## Run the browser-based example application
 
-The local dependency manager takes care of installing the theia-core
-dependency in the examples.
-
-See its [readme](https://github.com/theia-ide/theia/tree/master/config/local-dependency-manager) for more.
-
-	cd $THEIA/config/local-dependency-manager
-	npm install
-
-## Build and run the browser-based example application
-
-Now that the `theia` package is built, we can do the same with the browser
-example.
-
-    cd $THEIA/examples/browser
-    npm run bootstrap
-
-Bootstrap will:
- - copy the required theia-core dependency using the local-dependency-manager.
- - run npm install.
-
-Once this is done, we can start the application with:
+We can start the application with:
 
     npm start
 
 This command starts the backend application, a small web server and a browser
 tab with the frontend.
 
-## Build and run the electron-based example application
-
-Building the electron-based example is similar:
-
-    cd $THEIA/examples/electron
-    npm run bootstrap
+## Run the electron-based example application
 
 It can also be started with:
 
@@ -82,41 +56,22 @@ It can also be started with:
 
 ## Rebuilding
 
-### theia-core
-
-In the core directory run:
+In the root directory run:
 
     npm run build
-
-### <a name="rebuilding-the-example"></a>the examples
-
-In the example directory run:
-
-    npm run build
-
-Note that this will:
- - build theia-core.
- - sync theia-core with the example's version in its node_modules folder.
- - build the backend.
- - build the frontend.
-
 ## Watching
 
-### theia-core
+### core and extension packages
 
-To rebuild each time a change is detected in theia-core run:
+To rebuild each time a change is detected run:
 
     npm run watch
 
 ### the examples
 
-To rebuild each time a change is detected in theia-core or the example's
-frontend or backend you can run:
+To rebuild each time a change is detected in frontend or backend you can run:
 
     npm run watch
-
-Note that you don't need to watch theia-core separately, this will be done
-by this command.
 
 ## Debugging
 
@@ -162,10 +117,7 @@ To build and run the browser example:
     git clone https://github.com/theia-ide/theia \
     && cd theia \
     && npm install --unsafe-perm\
-    && cd config/local-dependency-manager \
-    && npm install --unsafe-perm\
     && cd ../../examples/browser \
-    && npm run bootstrap \
     && npm run start
 
 To build and run the electron example:
@@ -173,15 +125,12 @@ To build and run the electron example:
     git clone https://github.com/theia-ide/theia \
     && cd theia \
     && npm install --unsafe-perm\
-    && cd config/local-dependency-manager \
-    && npm install --unsafe-perm\
     && cd ../../examples/electron \
-    && npm run bootstrap \
     && npm run start
 
 ## Code coverage
 
-    npm run coverage
+    npm run test
 
 If you would like to check the generated code coverage report
 
