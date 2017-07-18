@@ -36,9 +36,8 @@ export class MonacoEditorProvider {
     ) { }
 
     async get(uri: URI): Promise<MonacoEditor> {
-        let referencePromise = this.monacoModelResolver.createModelReference(uri)
-        let prefPromise = this.editorPreferences.ready();
-        this.editorPreferences.dispose();
+        const referencePromise = this.monacoModelResolver.createModelReference(uri)
+        const prefPromise = this.editorPreferences.ready();
 
         return Promise.all([referencePromise, prefPromise]).then(async (values) => {
             const reference = values[0];
