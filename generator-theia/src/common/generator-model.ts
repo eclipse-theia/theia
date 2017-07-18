@@ -9,7 +9,6 @@ import * as path from 'path';
 
 export interface NodePackage {
     dependencies?: Dependencies;
-    localDependencies?: Dependencies;
     [property: string]: any;
 }
 
@@ -33,6 +32,7 @@ export interface Config {
     port: number;
     host: string;
     copyright: string;
+    localDependencies?: Dependencies;
 }
 
 export interface ExtensionConfig {
@@ -80,12 +80,12 @@ export class Model {
     }
 
     readLocalExtensionPackages(read: (extension: string, path: string) => TheiaNodePackage | undefined): void {
-        if (!this.pck.localDependencies) {
+        if (!this.config.localDependencies) {
             return;
         }
         // tslint:disable-next-line:forin
-        for (const extension in this.pck.localDependencies) {
-            const path = this.pck.localDependencies[extension];
+        for (const extension in this.config.localDependencies) {
+            const path = this.config.localDependencies[extension];
             this.readExtensionPackage(extension, () => read(extension, path));
         }
     }
