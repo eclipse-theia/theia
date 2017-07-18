@@ -22,6 +22,9 @@ export class MonacoEditorMenuContribution implements MenuContribution {
         registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "1_undo/redo"], {
             commandId: CommonCommands.EDIT_REDO
         });
+        // registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "1_undo/redo"], {
+        //     commandId: CommonCommands.SWITCH_HEADER_SOURCE
+        // });
 
         const wrap: (item: IMenuItem) => { path: string[], commandId: string } = (item) => {
             return { path: [EDITOR_CONTEXT_MENU_ID, (item.group || "")], commandId: item.command.id };
