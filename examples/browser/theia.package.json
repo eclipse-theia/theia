@@ -16,20 +16,6 @@
     "@theia/python": "^0.0.1-alpha.1",
     "@theia/cpp": "^0.0.1-alpha.1"
   },
-  "localDependencies": {
-    "@theia/core": "../../packages/core",
-    "@theia/filesystem": "../../packages/filesystem",
-    "@theia/workspace": "../../packages/workspace",
-    "@theia/preferences": "../../packages/preferences",
-    "@theia/navigator": "../../packages/navigator",
-    "@theia/terminal": "../../packages/terminal",
-    "@theia/editor": "../../packages/editor",
-    "@theia/languages": "../../packages/languages",
-    "@theia/monaco": "../../packages/monaco",
-    "@theia/java": "../../packages/java",
-    "@theia/python": "../../packages/python",
-    "@theia/cpp": "../../packages/cpp"
-  },
   "scripts": {
     "test": "npm run start& wdio --waitforTimeout 300000 wdio.conf.js"
   },
