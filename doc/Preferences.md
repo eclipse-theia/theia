@@ -1,6 +1,6 @@
 Theia has a preference service which allows modules to get preference values, contribute default preferences and listen for preference changes.
 
-Preferences can be saved in the root of the workspace under `.theia/prefs.json` or under `$HOME/.theia/prefs.json` on Linux systems. For Windows systems, the user settings will by default be in the `%USERPROFILE%/.theia/settings.json` (something like `C:\Users\epatpol\.theia/settings.json`)
+Preferences can be saved in the root of the workspace under `.theia/settings.json` or under `$HOME/.theia/settings.json` on Linux systems. For Windows systems, the user settings will by default be in the `%USERPROFILE%/.theia/settings.json` (something like `C:\Users\epatpol\.theia/settings.json`)
 
 As of right now the files must contain a valid a JSON containing the names and values of preferences i.e (note that the following preference names are not official and only used as an example)
 
