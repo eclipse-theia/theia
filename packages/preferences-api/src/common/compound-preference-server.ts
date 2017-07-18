@@ -11,7 +11,6 @@ export class CompoundPreferenceServer implements PreferenceServer {
 
     protected readonly servers: PreferenceServer[];
     protected client: PreferenceClient | undefined;
-    protected serversReady: boolean = false;
 
     constructor(
         ...servers: PreferenceServer[],
@@ -26,19 +25,12 @@ export class CompoundPreferenceServer implements PreferenceServer {
 
     // TODO scope management should happen here
     protected onDidChangePreference(event: PreferenceChangedEvent): void {
-        if (!this.serversReady) { // First event contains all the preferences
-            if (this.client) {
-                // TODO only fire when all pref servers have sent their "ok"
-                this.client.onDidChangePreference(event);
-                this.serversReady = true;
-            }
-        } else {
-            if (this.serversReady) {
-                if (this.client) {
-                    this.client.onDidChangePreference(event);
-                }
-            }
+
+        // TODO only fire when all pref servers are ready (scope management)
+        if (this.client) {
+            this.client.onDidChangePreference(event);
         }
+
     }
 
     dispose(): void {

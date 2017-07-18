@@ -118,7 +118,7 @@ export class JsonPreferenceServer implements PreferenceServer {
     }
 
     protected fireInitEvent(): void {
-        this.fireEvent({ preferenceName: "INIT", newValue: this.preferences });
+        this.fireEvent({ preferenceName: "", newValue: this.preferences });
     }
 
     protected fireNew(preferences: any): void {

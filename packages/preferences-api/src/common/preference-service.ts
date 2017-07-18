@@ -38,7 +38,7 @@ export class PreferenceService implements Disposable {
     }
 
     protected onDidChangePreference(event: PreferenceChangedEvent): void {
-        if (event.preferenceName === "INIT") {
+        if (this.prefCache === undefined) { // First event
             this.prefCache = event.newValue;
         } else {
             // Pref removed

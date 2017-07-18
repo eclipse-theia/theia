@@ -16,8 +16,6 @@ export interface PreferenceServer extends Disposable {
     ready(): Promise<void>;
 }
 
-export const PREF_INIT = "INIT";
-
 export interface PreferenceClient {
     onDidChangePreference(event: PreferenceChangedEvent): void
 }
