@@ -10,14 +10,14 @@ import { ProtocolToMonacoConverter } from "monaco-languageclient/lib";
 import {
     CommandHandler, CommandContribution, CommandRegistry, CommonCommands, SelectionService
 } from '@theia/core/lib/common';
-import { EditorManager, TextEditorSelection, SHOW_REFERENCES } from '@theia/editor/lib/browser';
-import { Position, Location } from "@theia/languages/lib/common"
-import { getCurrent, MonacoEditor } from './monaco-editor';
+import { EditorManager, TextEditorSelection} from '@theia/editor/lib/browser';
+import { getCurrent, MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import MenuRegistry = monaco.actions.MenuRegistry;
 import MenuId = monaco.actions.MenuId;
 
 @injectable()
-export class MonacoEditorCommandHandlers implements CommandContribution {
+
+export class CppMonacoEditorCommandHandlers implements CommandContribution {
 
     constructor(
         @inject(EditorManager) protected readonly editorManager: EditorManager,
@@ -26,19 +26,19 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     ) { }
 
     registerCommands(commands: CommandRegistry) {
-        commands.registerCommand(SHOW_REFERENCES, {
-            execute: (uri: string, position: Position, locations: Location[]) => {
-                const editor = getCurrent(this.editorManager);
-                if (editor) {
-                    editor.commandService.executeCommand(
-                        'editor.action.showReferences',
-                        monaco.Uri.parse(uri),
-                        this.p2m.asPosition(position),
-                        locations.map(l => this.p2m.asLocation(l))
-                    );
-                }
-            }
-        });
+        // commands.registerCommand(SHOW_REFERENCES, {
+        //     execute: (uri: string, position: Position, locations: Location[]) => {
+        //         const editor = getCurrent(this.editorManager);
+        //         if (editor) {
+        //             editor.commandService.executeCommand(
+        //                 'editor.action.showReferences',
+        //                 monaco.Uri.parse(uri),
+        //                 this.p2m.asPosition(position),
+        //                 locations.map(l => this.p2m.asLocation(l))
+        //             );
+        //         }
+        //     }
+        // });
 
         [CommonCommands.EDIT_UNDO, CommonCommands.EDIT_REDO].forEach(id => {
             const doExecute = (editor: MonacoEditor, ...args: any[]): any => {

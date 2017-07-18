@@ -7,6 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import { BaseLanguageClientContribution, Workspace, Languages, LanguageClientFactory } from '@theia/languages/lib/browser';
+import { CommandService } from "@theia/core/lib/common";
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME } from '../common';
 
 @injectable()
@@ -18,21 +19,11 @@ export class CppClientContribution extends BaseLanguageClientContribution {
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(Languages) protected readonly languages: Languages,
-        @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory
+        @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory,
+        @inject(Window) protected readonly window: Window,
+        @inject(CommandService) protected readonly commandService: CommandService
     ) {
-        super(workspace, languages, languageClientFactory);
-    }
-
-    protected get documentSelector() {
-        return [
-            'h', 'hxx', 'hh', 'hpp', 'inc', 'c', 'cxx', 'C', 'c++', 'cc', 'cc', 'cpp'
-        ];
-    }
-
-    protected get globPatterns() {
-        return [
-            '**/*.h', '**/*.hxx', '**/*.hh', '**/*.hpp', '**/*.inc', '**/*.c', '**/*.cxx', '**/*.C', '**/*.c++', '**/*.cc', '**/*.cc', '**/*.cpp'
-        ];
+        super(workspace, languages, languageClientFactory)
     }
 
 }
