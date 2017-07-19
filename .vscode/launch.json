@@ -7,6 +7,24 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Launch Electron Backend",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+            "program": "${workspaceRoot}/examples/electron/src-gen/frontend/electron-main.js",
+            "protocol": "legacy",
+            "args": [
+                "--loglevel=debug"
+            ],
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/examples/electron/src-gen/frontend/electron-main.js",
+                "${workspaceRoot}/examples/electron/src-gen/backend/main.js",
+                "${workspaceRoot}/examples/browser/lib/**/*.js",
+                "${workspaceRoot}/packages/*/lib/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch Backend",
             "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
             "args": [
