@@ -110,3 +110,9 @@ registering `OpenHandler`s. You can have a look at the code
 Theia comes with an extensive list of contribution points already. A good way
 to see what contribution points exist is to do a find references on
 `bindContributionProvider`.
+
+## See also
+
+For a high level overview of Theia's Architecture, see this document: 
+
+[Multi-Language IDE Implemented in JS - Scope and Architecture](https://docs.google.com/document/d/1aodR1LJEF_zu7xBis2MjpHRyv7JKJzW7EWI9XRYCt48)
