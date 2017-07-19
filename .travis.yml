@@ -21,6 +21,7 @@ before_script:
 before_install:
   - "npm install -g npm@^4"
   - "google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &"
+bundler_args: --retry 0
 notifications:
   webhooks:
     urls:
