@@ -41,7 +41,7 @@ This command does a few things:
 
 ## Run the browser-based example application
 
-We can start the application with:
+We can start the application from examples/browser directory with:
 
     npm start
 
@@ -50,7 +50,16 @@ tab with the frontend.
 
 ## Run the electron-based example application
 
-It can also be started with:
+From the root directory run:
+
+    npm run rebuild:electron
+
+This command rebuilds native node packages against the version of node used by electron.
+To rollback changes run:
+
+    npm run rebuild:web
+
+It can also be started with from examples/electron directory:
 
     npm start
 
@@ -116,16 +125,17 @@ To build and run the browser example:
 
     git clone https://github.com/theia-ide/theia \
     && cd theia \
-    && npm install --unsafe-perm\
-    && cd ../../examples/browser \
+    && npm install --unsafe-perm \
+    && cd examples/browser \
     && npm run start
 
 To build and run the electron example:
 
     git clone https://github.com/theia-ide/theia \
     && cd theia \
-    && npm install --unsafe-perm\
-    && cd ../../examples/electron \
+    && npm install --unsafe-perm \
+    && npm run rebuild:electron \
+    && cd examples/electron \
     && npm run start
 
 ## Code coverage
