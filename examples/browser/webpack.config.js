@@ -13,7 +13,6 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
 
 const outputPath = path.resolve(__dirname, 'lib');
-const emptyPath = path.resolve(__dirname, 'webpack_empty.js');
 
 const monacoEditorPath = '../../node_modules/monaco-editor-core/min/vs';
 const monacoLanguagesPath = '../../node_modules/monaco-languages/release';
@@ -64,18 +63,13 @@ module.exports = {
     resolve: {
         extensions: ['.js'],
         alias: {
-            'vs': path.resolve(outputPath, monacoEditorPath),
-            'dtrace-provider': emptyPath,
-            'safe-json-stringify': emptyPath,
-            'mv': emptyPath,
-            'source-map-support': emptyPath
+            'vs': path.resolve(outputPath, monacoEditorPath)
         }
     },
     devtool: 'source-map',
     plugins: [
-        // @ts-ignore
         new webpack.HotModuleReplacementPlugin(),
-        CopyWebpackPlugin([
+        new CopyWebpackPlugin([
             {
                 from: requirePath,
                 to: '.'
@@ -124,8 +118,6 @@ module.exports = {
             '*': 'http://' + host + ':' + port,
         },
         historyApiFallback: true,
-        hot: true,
-        inline: true,
         stats: {
             colors: true,
             warnings: false

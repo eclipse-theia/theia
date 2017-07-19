@@ -15,9 +15,6 @@ export class AppPackageGenerator extends AbstractGenerator {
         fs.writeJSON('package.json', this.compilePackage());
         if (!fs.exists('webpack.config.js')) {
             fs.write('webpack.config.js', this.compileWebpackConfig());
-            if (this.isWeb()) {
-                fs.write('webpack_empty.js', '');
-            }
         }
     }
 
@@ -29,14 +26,14 @@ export class AppPackageGenerator extends AbstractGenerator {
             "start:backend:debug": "npm run build:backend && node ./src-gen/backend/main.js --loglevel=debug | bunyan",
             "start:frontend": "webpack-dev-server --open",
         } : {
-                "postinstall": "electron-rebuild",
                 "start": "npm run build:backend && electron ./src-gen/frontend/electron-main.js | bunyan",
-                "start:debug": "npm run build:backend && electron ./src-gen/frontend/electron-main.js --loglevel=debug | bunyan",
+                "start:debug": "npm run build:backend && npm run build:backend && electron ./src-gen/frontend/electron-main.js --loglevel=debug | bunyan"
             }
         const devDependencies = this.isWeb() ? {
             "webpack-dev-server": "^2.5.0"
         } : {
-                "electron": "^1.6.11"
+                "electron": "^1.6.11",
+                "electron-rebuild": "^1.5.11"
             }
         return {
             ...this.model.pck,
@@ -44,7 +41,7 @@ export class AppPackageGenerator extends AbstractGenerator {
                 ...dependendencies,
                 ...this.model.pck.dependencies
             }),
-            "scripts": {
+            "scripts": sortByKey({
                 "clean": "rimraf lib",
                 "cold:start": "npm run clean && npm start",
                 "build": "npm run build:frontend && npm run build:backend",
@@ -53,7 +50,7 @@ export class AppPackageGenerator extends AbstractGenerator {
                 "watch": "npm run build:frontend && webpack --watch",
                 ...scripts,
                 ...this.model.pck.scripts
-            },
+            }),
             "devDependencies": sortByKey({
                 "rimraf": "^2.6.1",
                 "concurrently": "^3.5.0",
@@ -74,22 +71,6 @@ export class AppPackageGenerator extends AbstractGenerator {
         }
     }
 
-    protected isWeb(): boolean {
-        return this.model.target === 'web';
-    }
-
-    protected isElectron(): boolean {
-        return this.model.target === 'electron';
-    }
-
-    protected ifWeb(value: string, defaultValue: string = '') {
-        return this.isWeb() ? value : defaultValue;
-    }
-
-    protected ifElectron(value: string, defaultValue: string = '') {
-        return this.isElectron() ? value : defaultValue;
-    }
-
     protected compileWebpackConfig(): string {
         return `${this.compileCopyright()}
 // @ts-check
@@ -99,8 +80,7 @@ const merge = require('webpack-merge');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
 
-const outputPath = path.resolve(__dirname, 'lib');${this.ifWeb(`
-const emptyPath = path.resolve(__dirname, 'webpack_empty.js');`)}
+const outputPath = path.resolve(__dirname, 'lib');
 
 const monacoEditorPath = '../../node_modules/monaco-editor-core/min/vs';
 const monacoLanguagesPath = '../../node_modules/monaco-languages/release';
@@ -118,8 +98,7 @@ module.exports = {
     output: {
         filename: 'bundle.js',
         path: outputPath${this.ifElectron(`,
-        libraryTarget: 'umd'
-        `)}
+        libraryTarget: 'umd'`)}
     },
     target: '${this.model.target}',
     node: {${this.ifElectron(`
@@ -155,18 +134,13 @@ module.exports = {
     resolve: {
         extensions: ['.js'],
         alias: {
-            'vs': path.resolve(outputPath, monacoEditorPath)${this.ifWeb(`,
-            'dtrace-provider': emptyPath,
-            'safe-json-stringify': emptyPath,
-            'mv': emptyPath,
-            'source-map-support': emptyPath`)}
+            'vs': path.resolve(outputPath, monacoEditorPath)
         }
     },
     devtool: 'source-map',
     plugins: [
-        // @ts-ignore
         new webpack.HotModuleReplacementPlugin(),
-        CopyWebpackPlugin([${this.ifWeb(`
+        new CopyWebpackPlugin([${this.ifWeb(`
             {
                 from: requirePath,
                 to: '.'
@@ -215,8 +189,6 @@ module.exports = {
             '*': 'http://' + host + ':' + port,
         },
         historyApiFallback: true,
-        hot: true,
-        inline: true,
         stats: {
             colors: true,
             warnings: false

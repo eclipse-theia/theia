@@ -2,6 +2,9 @@
   "private": true,
   "name": "@theia/parent",
   "version": "0.0.0",
+  "dependencies": {
+    "node-pty": "^0.6.10"
+  },
   "devDependencies": {
     "lerna": "^2.0.0",
     "yo": "^2.0.0"
@@ -10,11 +13,13 @@
     "preinstall": "cd generator-theia && npm install",
     "prepare": "npm install generator-theia && npm run bootstrap && npm run clean && npm run build",
     "prepublishOnly": "npm run test",
-    "bootstrap": "node scripts/generate.js && lerna bootstrap --hoist",
+    "bootstrap": "node scripts/generate.js && lerna bootstrap --hoist -- --no-optional",
     "refresh": "lerna clean --yes && npm run bootstrap",
     "clean": "lerna run clean --parallel",
     "build": "lerna run build --stream",
     "test": "lerna run test --scope \"@theia/!(example-)*\" --parallel",
-    "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel"
+    "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel",
+    "rebuild:web": "npm uninstall node-pty && npm run refresh",
+    "rebuild:electron": "electron-rebuild"
   }
 }
