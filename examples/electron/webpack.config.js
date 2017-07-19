@@ -27,7 +27,6 @@ module.exports = {
         filename: 'bundle.js',
         path: outputPath,
         libraryTarget: 'umd'
-        
     },
     target: 'electron',
     node: {
@@ -64,9 +63,8 @@ module.exports = {
     },
     devtool: 'source-map',
     plugins: [
-        // @ts-ignore
         new webpack.HotModuleReplacementPlugin(),
-        CopyWebpackPlugin([
+        new CopyWebpackPlugin([
             {
                 from: monacoEditorPath,
                 to: 'vs'
