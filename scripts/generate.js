@@ -14,7 +14,7 @@ function generate(name, cwd, prefix, target) {
         const command = 'yo';
         const args = ['theia:' + target, '--force'];
         console.log(`${name}: ${command} ${args.join(' ')}`);
-        const p = cp.spawn(command, args, { cwd });
+        const p = cp.spawn(command, args, { cwd, env: process.env });
         p.on('exit', code => {
             if (code !== 0) {
                 process.exit(code)
