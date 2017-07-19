@@ -136,7 +136,7 @@ export class Model {
                 for (const extension of extensions) {
                     const modulePath = extension[primary] || (secondary && extension[secondary]);
                     if (typeof modulePath === 'string') {
-                        const extensionPath = path.join(extensionPackage.name, modulePath);
+                        const extensionPath = path.join(extensionPackage.name, modulePath).split(path.sep).join('/')
                         result.set(`${primary}_${moduleIndex}`, extensionPath);
                         moduleIndex = moduleIndex + 1;
                     }
