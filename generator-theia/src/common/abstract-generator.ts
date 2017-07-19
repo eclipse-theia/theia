@@ -51,13 +51,29 @@ export abstract class AbstractGenerator {
                 return `Promise.resolve(${invocation})`;
             }
             return invocation;
-        }).map(statement => `.then(function () { return ${statement}.then(load) })`);
+        }).map(statement => `    .then(function () { return ${statement}.then(load) })`);
         return os.EOL + lines.join(os.EOL);
     }
 
     protected compileCopyright(): string {
         const copyright = this.model.config.copyright;
         return copyright ? copyright + os.EOL : '';
+    }
+
+    protected isWeb(): boolean {
+        return this.model.target === 'web';
+    }
+
+    protected isElectron(): boolean {
+        return this.model.target === 'electron';
+    }
+
+    protected ifWeb(value: string, defaultValue: string = '') {
+        return this.isWeb() ? value : defaultValue;
+    }
+
+    protected ifElectron(value: string, defaultValue: string = '') {
+        return this.isElectron() ? value : defaultValue;
     }
 
 }

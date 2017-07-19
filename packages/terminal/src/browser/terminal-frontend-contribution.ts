@@ -6,11 +6,8 @@
  */
 
 import { inject, injectable } from "inversify"
-import {
-    CommandContribution, Command, CommandRegistry, Endpoint,
-    MenuContribution, MenuModelRegistry,
-} from '@theia/core/lib/common';
-import { FrontendApplication } from '@theia/core/lib/browser';
+import { CommandContribution, Command, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
+import { FrontendApplication, Endpoint } from '@theia/core/lib/browser';
 import { FileMenus } from '@theia/filesystem/lib/browser/filesystem-commands';
 import { TerminalWidgetFactory, TerminalWidgetOptions } from './terminal-widget';
 

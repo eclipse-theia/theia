@@ -6,9 +6,8 @@
  */
 
 import { inject, injectable } from "inversify";
-import { Endpoint, Disposable } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message } from '@theia/core/lib/browser';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { Disposable } from '@theia/core/lib/common';
+import { Widget, BaseWidget, Message, WebSocketConnectionProvider, Endpoint } from '@theia/core/lib/browser';
 import { WorkspaceService } from "@theia/workspace/lib/browser";
 import * as Xterm from 'xterm';
 import 'xterm/lib/addons/fit/fit';

@@ -6,6 +6,7 @@
  */
 
 import * as http from 'http';
+import * as pty from 'node-pty';
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
 import { injectable } from 'inversify';
@@ -13,8 +14,6 @@ import URI from "@theia/core/lib/common/uri";
 import { isWindows } from "@theia/core/lib/common";
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { openSocket } from '@theia/core/lib/node';
-
-const pty = require("node-pty");
 
 @injectable()
 export class TerminalBackendContribution implements BackendApplicationContribution {
@@ -36,8 +35,8 @@ export class TerminalBackendContribution implements BackendApplicationContributi
                 name: 'xterm-color',
                 cols: cols || 80,
                 rows: rows || 24,
-                cwd: process.env.PWD,
-                env: process.env
+                cwd: process.cwd(),
+                env: process.env as any
             });
 
             const root: { uri?: string } | undefined = req.body;
@@ -47,8 +46,9 @@ export class TerminalBackendContribution implements BackendApplicationContributi
                 term.write("source ~/.profile\n");
             }
 
-            this.terminals.set(term.pid, term);
-            res.send(term.pid.toString());
+            const pid = (term as any).pid;
+            this.terminals.set(pid, term);
+            res.send(pid.toString());
             res.end();
         });
 
