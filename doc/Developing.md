@@ -41,12 +41,18 @@ This command does a few things:
 
 ## Run the browser-based example application
 
-We can start the application from examples/browser directory with:
+We can start the application from the examples/browser directory with:
 
     npm start
 
 This command starts the backend application, a small web server and a browser
 tab with the frontend.
+
+If you rebuild native node packages for electron then 
+rollback these changes before starting the browser example
+by running from the root directory:
+
+    npm run rebuild:web
 
 ## Run the electron-based example application
 
@@ -55,11 +61,8 @@ From the root directory run:
     npm run rebuild:electron
 
 This command rebuilds native node packages against the version of node used by electron.
-To rollback changes run:
 
-    npm run rebuild:web
-
-It can also be started with from examples/electron directory:
+It can also be started from the examples/electron directory with:
 
     npm start
 

@@ -35,7 +35,7 @@ import { ILoggerServer, ILoggerClient } from '../../application/common/logger-pr
 
 export const loggerServerModule = new ContainerModule(bind => {
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<ILoggerClient>("/logger", client => {
+        new JsonRpcConnectionHandler<ILoggerClient>("/services/logger", client => {
             const loggerServer = ctx.container.get<ILoggerServer>(ILoggerServer);
             loggerServer.setClient(client);
             return loggerServer;
@@ -124,7 +124,7 @@ To dig more into ContributionProvider see this [section](#contribution-providers
 So now:
 
 ``` typescript
-new JsonRpcConnectionHandler<ILoggerClient>("/logger", client => {
+new JsonRpcConnectionHandler<ILoggerClient>("/services/logger", client => {
 ```
 
 This does a few things if we look at this class implementation:
@@ -198,6 +198,15 @@ And it returns the loggerServer as the object that will be exposed over JSON-RPC
 
 This connects the factory to the connection.
 
+The endpoints with `services/*` path are served by the webpack dev server, see `webpack.config.js`:
+
+``` javascript
+    '/services/*': {
+        target: 'ws://localhost:3000',
+        ws: true
+    },
+```
+
 ## Connecting to a service
 
 So now that we have a backend service let's see how to connect to it from
@@ -220,7 +229,7 @@ export const loggerFrontendModule = new ContainerModule(bind => {
     bind(ILoggerServer).toDynamicValue(ctx => {
         const loggerWatcher = ctx.container.get(LoggerWatcher);
         const connection = ctx.container.get(WebSocketConnectionProvider);
-        return connection.createProxy<ILoggerServer>("/logger", loggerWatcher.getLoggerClient());
+        return connection.createProxy<ILoggerServer>("/services/logger", loggerWatcher.getLoggerClient());
     }).inSingletonScope();
 });
 ```
@@ -231,7 +240,7 @@ The important bit here are those lines:
     bind(ILoggerServer).toDynamicValue(ctx => {
         const loggerWatcher = ctx.container.get(LoggerWatcher);
         const connection = ctx.container.get(WebSocketConnectionProvider);
-        return connection.createProxy<ILoggerServer>("/logger", loggerWatcher.getLoggerClient());
+        return connection.createProxy<ILoggerServer>("/services/logger", loggerWatcher.getLoggerClient());
     }).inSingletonScope();
 
 ```
@@ -255,7 +264,7 @@ See more information about how events works in theia [here](events).
 Here we're getting the websocket connection, this will be used to create a proxy from.
 
 ``` typescript
-        return connection.createProxy<ILoggerServer>("/logger", loggerWatcher.getLoggerClient());
+        return connection.createProxy<ILoggerServer>("/services/logger", loggerWatcher.getLoggerClient());
 ```
 
 So here at the last line we're binding the ILoggerServer interface to a
