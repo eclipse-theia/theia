@@ -42,11 +42,16 @@ function start() {
     application.use(express.static(path.join(__dirname, '../../lib'), {
         index: 'index.html'
     }));
-    application.start();
+    return application.start(${this.ifWeb(`${this.model.config.port}, '${this.model.config.host}'`)})
 }
 
-Promise.resolve()${this.compileBackendModuleImports(backendModules)}
-.then(start);`;
+module.exports = Promise.resolve()${this.compileBackendModuleImports(backendModules)}
+    .then(start).catch(reason => {
+        console.error('Failed to start the backend application.');
+        if (reason) {
+            console.error(reason);
+        }
+    });`;
     }
 
 }

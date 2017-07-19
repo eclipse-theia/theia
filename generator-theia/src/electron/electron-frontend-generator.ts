@@ -28,8 +28,6 @@ process.env.LC_NUMERIC = 'C';
 const electron = require('electron');
 const path = require('path');
 
-let mainWindow = undefined;
-
 electron.app.on('window-all-closed', function () {
     if (process.platform !== 'darwin') {
         electron.app.quit();
@@ -37,12 +35,13 @@ electron.app.on('window-all-closed', function () {
 });
 
 electron.app.on('ready', function () {
-    require("../backend/main");
-    mainWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
-    mainWindow.webContents.openDevTools();
-    mainWindow.loadURL(\`file://\${path.join(__dirname, '../../lib/index.html')}\`);
+    const mainWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
+    require("../backend/main").then(server => {
+        mainWindow.loadURL(\`file://\${path.join(__dirname, '../../lib/index.html')}?port=\${server.address().port}\`);
+        mainWindow.webContents.openDevTools();
+    });
     mainWindow.on('closed', function () {
-        mainWindow = undefined;
+        electron.app.exit(0);
     });
 });`;
     }

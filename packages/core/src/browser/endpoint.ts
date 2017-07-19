@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import URI from "./uri";
+import URI from "../common/uri";
 
 /**
  * An endpoint provides URLs for http and ws, based on configuration ansd defaults.
@@ -24,7 +24,27 @@ export class Endpoint {
     }
 
     protected get host() {
-        return location.host || "127.0.0.1:3000"
+        if (location.host) {
+            return location.host;
+        }
+        return 'localhost:' + this.port;
+    }
+
+    protected get port(): string {
+        return this.getSearchParam('port', '3000');
+    }
+
+    protected getSearchParam(name: string, defaultValue: string): string {
+        const search = location.search;
+        if (!search) {
+            return defaultValue;
+        }
+        return search.substr(1).split('&')
+            .filter(value => value.startsWith(name + '='))
+            .map(value => {
+                const encoded = value.substr(name.length + 1);
+                return decodeURIComponent(encoded)
+            })[0] || defaultValue;
     }
 
     protected get wsScheme() {

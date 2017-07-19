@@ -60,8 +60,13 @@ function start() {
     application.start();
 }
 
-Promise.resolve()${this.compileFrontendModuleImports(frontendModules)}
-.then(start);`;
+module.exports = Promise.resolve()${this.compileFrontendModuleImports(frontendModules)}
+    .then(start).catch(reason => {
+        console.error('Failed to start the frontend application.');
+        if (reason) {
+            console.error(reason);
+        }
+    });`;
     }
 
 }

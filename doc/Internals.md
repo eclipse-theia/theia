@@ -198,20 +198,6 @@ And it returns the loggerServer as the object that will be exposed over JSON-RPC
 
 This connects the factory to the connection.
 
-So now all is set for backend/frontend communication.
-
-The only point left is that if you're using the webpack dev server which
-you probably are you need to add something like this:
-
-``` javascript
-            '/logger/*': {
-                target: 'ws://localhost:3000',
-                ws: true
-            },
-```
-
-To webpack.config.js so that the requests are proxied to the backend properly.
-
 ## Connecting to a service
 
 So now that we have a backend service let's see how to connect to it from
