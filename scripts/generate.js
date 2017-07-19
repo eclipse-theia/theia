@@ -9,12 +9,19 @@ const fs = require('fs');
 const paths = require('path');
 const cp = require('child_process');
 
+function spawn(command, args, options) {
+    if (process.platform !== 'win32') {
+        return cp.spawn(command, args, options);
+    }
+    return cp.spawn('cmd', ['/c', command, ...args], options);
+}
+
 function generate(name, cwd, prefix, target) {
     if (fs.existsSync(paths.resolve(cwd, prefix + '.package.json'))) {
         const command = 'yo';
         const args = ['theia:' + target, '--force'];
         console.log(`${name}: ${command} ${args.join(' ')}`);
-        const p = cp.spawn(command, args, { cwd, env: process.env });
+        const p = spawn(command, args, { cwd, env: process.env });
         p.on('exit', code => {
             if (code !== 0) {
                 process.exit(code)
