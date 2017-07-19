@@ -27,7 +27,7 @@ export class AppPackageGenerator extends AbstractGenerator {
             "start:frontend": "webpack-dev-server --open",
         } : {
                 "start": "npm run build:backend && electron ./src-gen/frontend/electron-main.js | bunyan",
-                "start:debug": "npm run build:backend && npm run build:backend && electron ./src-gen/frontend/electron-main.js --loglevel=debug | bunyan"
+                "start:debug": "npm run build:backend && electron ./src-gen/frontend/electron-main.js --loglevel=debug | bunyan"
             }
         const devDependencies = this.isWeb() ? {
             "webpack-dev-server": "^2.5.0"
