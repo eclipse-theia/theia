@@ -164,14 +164,24 @@ In the case of the preference file being modified, the flow would then be:
 
 ## Fetching the value of a preference
 
-In the case of the filesystem, one would use the same proxied config as above to access the preferences i.e:
+In the case of the filesystem, one would use the same proxied config as above to access the preferences. Please note that the preference service uses a cache that must be filled on startup (and modified with every pref change coming from the different scoped servers). Before using (getting) a preference, use the `ready` promise to make sure that the service is ready:
 
 ```typescript
-preferences['files.watcherExclude'].then(pref => {...});
+this.prefService.ready.then(()=> {
+    if (this.prefService['preferenceName']) {
+    ...
+    }
+    
+    if (this.prefService['preferenceName2']) {
+    ...
+    }
+})
 ```
 
-This works because, as we have seen it above, the proxy will simply call prefService.get('files.watcherExclude').
+This works because, as we have seen it above, the proxy will simply call prefService.get('preferenceName').
 
 ## TODO/FIXME for preferences
-* Add comments to different settings.json
+* Add comments to different settings.json (use the same parser from vscode that strips comments)
+* Add validation with json schemas
+* Add scopes with server priority in CompoundPreferenceServer
 * Add autocomplete/description when modifying the settings.json from within theia
