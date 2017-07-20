@@ -19,7 +19,11 @@ export class PreferenceService implements Disposable {
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly onPreferenceChangedEmitter = new Emitter<PreferenceChangedEvent>();
-    protected isReady: Promise<void>;
+
+    protected resolveReady: () => void;
+    readonly ready = new Promise<void>(resolve => {
+        this.resolveReady = resolve
+    });
 
     constructor(
         @inject(PreferenceServer) protected readonly server: PreferenceServer
@@ -34,21 +38,16 @@ export class PreferenceService implements Disposable {
         this.toDispose.dispose();
     }
 
-    ready(): Promise<void> {
-        return this.isReady;
-    }
-
     protected onDidChangePreference(event: PreferenceChangedEvent): void {
         for (const prefChange of event.changes) {
-            // Pref removed
-            if (prefChange.oldValue !== undefined && prefChange.newValue === undefined) {
+            if (prefChange.newValue === undefined || prefChange.newValue === null) {
                 delete this.prefCache[prefChange.preferenceName];
             } else if (prefChange.newValue !== undefined) {
                 this.prefCache[prefChange.preferenceName] = prefChange.newValue;
             }
         }
 
-        Promise.resolve(this.ready);
+        this.resolveReady();
         this.onPreferenceChangedEmitter.fire(event);
     }
 

@@ -20,7 +20,7 @@ export type PreferenceEventEmitter<T> = {
         }]
     }>;
 
-    ready(): Promise<void>;
+    ready: Promise<void>;
 };
 export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T>;
 export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, configuration: T): PreferenceProxy<T> {
@@ -46,7 +46,7 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
                 return () => toDispose.dispose();
             }
             if (p === 'ready') {
-                return () => preferences.ready();
+                return () => preferences.ready;
             }
             throw new Error('unexpected property: ' + p);
         }

@@ -112,7 +112,7 @@ export class JsonPreferenceServer implements PreferenceServer {
 
         // tslint:disable-next-line:forin
 
-        let changes: PreferenceChange[] = [];
+        const changes: PreferenceChange[] = [];
 
         for (const preferenceName in preferences) {
             const newValue = preferences[preferenceName];
@@ -127,7 +127,7 @@ export class JsonPreferenceServer implements PreferenceServer {
     protected fireRemoved(preferences: any): void {
         // tslint:disable-next-line:forin
 
-        let changes: PreferenceChange[] = [];
+        const changes: PreferenceChange[] = [];
         for (const preferenceName of preferences) {
             const oldValue = preferences[preferenceName];
             changes.push({
@@ -139,7 +139,7 @@ export class JsonPreferenceServer implements PreferenceServer {
 
     protected fireChanged(target: any, source: any): void {
         const deleted = new Set(Object.keys(target));
-        let changes: PreferenceChange[] = [];
+        const changes: PreferenceChange[] = [];
 
         // tslint:disable-next-line:forin
         for (const preferenceName in source) {
@@ -172,9 +172,9 @@ export class JsonPreferenceServer implements PreferenceServer {
     }
 
     has(preferenceName: string): Promise<boolean> {
-        return this.initDone.then(() =>
-            !!this.preferences && (preferenceName in this.preferences)
-        );
+        return this.initDone.then(() => {
+            return !!this.preferences && (preferenceName in this.preferences)
+        })
     }
 
     get<T>(preferenceName: string): Promise<T | undefined> {
