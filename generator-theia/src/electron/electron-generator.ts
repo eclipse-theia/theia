@@ -15,7 +15,7 @@ export class TheiaElectronGenerator extends AbstractAppGenerator {
     protected readonly frontend = new ElectronFrontendGenerator(this.model);
 
     initializing(): void {
-        this.model.target = 'electron';
+        this.model.target = 'electron-renderer';
         super.initializing();
     }
 

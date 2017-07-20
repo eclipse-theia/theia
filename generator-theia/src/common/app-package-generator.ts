@@ -56,7 +56,6 @@ export class AppPackageGenerator extends AbstractGenerator {
                 "concurrently": "^3.5.0",
                 "bunyan": "^1.8.10",
                 "webpack": "^2.2.1",
-                "webpack-merge": "^4.1.0",
                 "copy-webpack-plugin": "^4.0.1",
                 "circular-dependency-plugin": "^2.0.0",
                 "css-loader": "^0.28.1",
@@ -76,7 +75,6 @@ export class AppPackageGenerator extends AbstractGenerator {
 // @ts-check
 const path = require('path');
 const webpack = require('webpack');
-const merge = require('webpack-merge');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
 
@@ -97,8 +95,7 @@ module.exports = {
     entry: path.resolve(__dirname, 'src-gen/frontend/index.js'),
     output: {
         filename: 'bundle.js',
-        path: outputPath${this.ifElectron(`,
-        libraryTarget: 'umd'`)}
+        path: outputPath
     },
     target: '${this.model.target}',
     node: {${this.ifElectron(`

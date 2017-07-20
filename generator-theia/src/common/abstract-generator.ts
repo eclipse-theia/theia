@@ -34,7 +34,7 @@ export abstract class AbstractGenerator {
     }
 
     protected compileFrontendModuleImports(modules: Map<string, string>): string {
-        return this.compileModuleImports(modules, 'import')
+        return this.compileModuleImports(modules, 'require')
     }
 
     protected compileBackendModuleImports(modules: Map<string, string>): string {
@@ -69,7 +69,7 @@ export abstract class AbstractGenerator {
     }
 
     protected isElectron(): boolean {
-        return this.model.target === 'electron';
+        return this.model.target === 'electron-renderer';
     }
 
     protected ifWeb(value: string, defaultValue: string = '') {

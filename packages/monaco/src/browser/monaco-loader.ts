@@ -11,17 +11,19 @@ export function loadVsRequire(context: any): Promise<any> {
     const originalRequire = context.require;
 
     return new Promise<any>(resolve => {
-        const vsLoader = document.createElement('script');
-        vsLoader.type = 'text/javascript';
-        vsLoader.src = './vs/loader.js';
-        vsLoader.charset = 'utf-8';
-        vsLoader.addEventListener('load', () => {
-            // Save Monaco's amd require and restore the original require
-            const amdRequire = context.require;
-            context.require = originalRequire;
-            resolve(amdRequire);
-        });
-        document.body.appendChild(vsLoader);
+        window.onload = () => {
+            const vsLoader = document.createElement('script');
+            vsLoader.type = 'text/javascript';
+            vsLoader.src = './vs/loader.js';
+            vsLoader.charset = 'utf-8';
+            vsLoader.addEventListener('load', () => {
+                // Save Monaco's amd require and restore the original require
+                const amdRequire = context.require;
+                context.require = originalRequire;
+                resolve(amdRequire);
+            });
+            document.body.appendChild(vsLoader);
+        }
     });
 }
 
