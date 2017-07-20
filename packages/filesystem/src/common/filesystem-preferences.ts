@@ -6,12 +6,12 @@
  */
 
 import { interfaces } from "inversify";
-/*import {
+import {
     createPreferenceProxy,
     PreferenceContribution,
     PreferenceProxy,
     PreferenceService,
-} from '@theia/preferences/lib/common';*/
+} from '@theia/preferences-api';
 
 export interface FileSystemConfiguration {
     'files.watcherExclude': { [globPattern: string]: boolean }
@@ -22,16 +22,16 @@ export const defaultFileSystemConfiguration: FileSystemConfiguration = {
         "**/.git/subtree-cache/**": true,
         "**/node_modules/**": true
     }
-}/*
+}
 export const FileSystemPreferences = Symbol('FileSystemPreferences');
 export type FileSystemPreferences = PreferenceProxy<FileSystemConfiguration>;
 
 export function createFileSystemPreferences(preferences: PreferenceService): FileSystemPreferences {
     return createPreferenceProxy(preferences, defaultFileSystemConfiguration);
-}*/
+}
 
 export function bindFileSystemPreferences(bind: interfaces.Bind): void {
-    /*bind(FileSystemPreferences).toDynamicValue(ctx => {
+    bind(FileSystemPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get(PreferenceService);
         return createFileSystemPreferences(preferences);
     });
@@ -42,5 +42,5 @@ export function bindFileSystemPreferences(bind: interfaces.Bind): void {
             defaultValue: defaultFileSystemConfiguration['files.watcherExclude'],
             description: "Configure glob patterns of file paths to exclude from file watching."
         }]
-    });*/
+    });
 }

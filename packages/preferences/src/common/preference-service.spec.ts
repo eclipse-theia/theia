@@ -5,8 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { PreferenceService } from './preference-service';
-import { PreferenceServer, PreferenceClient, PreferenceChangedEvent } from './preference-protocol'
+import { PreferenceService, PreferenceServer, PreferenceClient, PreferenceChangedEvent } from '@theia/preferences-api';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 
