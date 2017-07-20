@@ -8,7 +8,6 @@
 // @ts-check
 const path = require('path');
 const webpack = require('webpack');
-const merge = require('webpack-merge');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const CircularDependencyPlugin = require('circular-dependency-plugin');
 
@@ -25,10 +24,9 @@ module.exports = {
     entry: path.resolve(__dirname, 'src-gen/frontend/index.js'),
     output: {
         filename: 'bundle.js',
-        path: outputPath,
-        libraryTarget: 'umd'
+        path: outputPath
     },
-    target: 'electron',
+    target: 'electron-renderer',
     node: {
         __dirname: false,
         __filename: false

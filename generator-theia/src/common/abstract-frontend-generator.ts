@@ -38,11 +38,11 @@ export abstract class AbstractFrontendGenerator extends AbstractGenerator {
     protected compileIndexJs(frontendModules: Map<string, string>): string {
         return `${this.compileCopyright()}
 // @ts-check
-import { Container } from 'inversify';
-import { FrontendApplication } from '@theia/core/lib/browser';
-import { frontendApplicationModule } from '@theia/core/lib/browser/frontend-application-module';
-import { messagingFrontendModule } from '@theia/core/lib/browser/messaging/messaging-frontend-module';
-import { loggerFrontendModule } from '@theia/core/lib/browser/logger-frontend-module';
+const { Container } = require('inversify');
+const { FrontendApplication } = require('@theia/core/lib/browser');
+const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');
+const { messagingFrontendModule } = require('@theia/core/lib/browser/messaging/messaging-frontend-module');
+const { loggerFrontendModule } = require('@theia/core/lib/browser/logger-frontend-module');
 
 const container = new Container();
 container.load(frontendApplicationModule);
