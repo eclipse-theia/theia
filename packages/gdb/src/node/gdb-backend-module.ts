@@ -19,6 +19,7 @@ import { GDBTerminalProcess, GDBTerminalProcessFactory, GDBTerminalProcessOption
 import { GDBRawProcess, GDBRawProcessFactory, GDBRawProcessOptions } from './gdb-raw-process';
 import { IDebugSession } from '@theia/debug/lib/node/debug-session';
 import { GDBDebugSession } from './gdb-debug-session';
+import { GDBProbe } from './gdb-probe';
 
 export default new ContainerModule(bind => {
     bindGDBPreferences(bind);
@@ -30,6 +31,8 @@ export default new ContainerModule(bind => {
     bind<GDBRawProcess>(GDBRawProcess).toSelf();
     bind(IDebugSession).to(GDBDebugSession);
     bind(IGDBTerminalServer).to(GDBTerminalServer).inSingletonScope();
+    bind<GDBDebugSession>(GDBDebugSession).toSelf();
+    bind<GDBProbe>(GDBProbe).toSelf().inSingletonScope();
 
     bind(GDBTerminalProcessFactory).toFactory(ctx =>
         (options: GDBTerminalProcessOptions) => {
