@@ -53,6 +53,8 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
     protected compileCommonPackage(): NodePackage {
         return {
             ...this.model.pck,
+            "main": this.model.pck.main || "lib/common/index.js",
+            "typings": this.model.pck.typings || "lib/common/index.d.ts",
             "license": this.model.pck.license || "Apache-2.0",
             "repository": this.model.pck.repository || {
                 "type": "git",
