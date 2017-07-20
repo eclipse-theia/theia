@@ -25,7 +25,6 @@ export class JsonPreferenceServer implements PreferenceServer {
 
     protected readonly toDispose = new DisposableCollection();
     protected initDone: Promise<void>;
-    protected isServerReady: boolean = false;
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
@@ -184,9 +183,5 @@ export class JsonPreferenceServer implements PreferenceServer {
 
     setClient(client: PreferenceClient | undefined) {
         this.client = client;
-    }
-
-    ready(): Promise<void> {
-        return this.initDone;
     }
 }

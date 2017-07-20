@@ -35,7 +35,7 @@ export class MonacoEditorProvider {
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
     ) { }
 
-    async get(uri: URI): Promise<MonacoEditor> {
+    get(uri: URI): Promise<MonacoEditor> {
         const referencePromise = this.monacoModelResolver.createModelReference(uri)
         const prefPromise = this.editorPreferences.ready();
 

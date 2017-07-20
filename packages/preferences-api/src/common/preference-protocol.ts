@@ -13,7 +13,6 @@ export const PreferenceServer = Symbol("PreferenceServer")
 
 export interface PreferenceServer extends Disposable {
     setClient(client: PreferenceClient | undefined): void;
-    ready(): Promise<void>;
 }
 
 export interface PreferenceClient {
