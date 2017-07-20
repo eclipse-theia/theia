@@ -52,7 +52,7 @@ If you rebuild native node packages for electron then
 rollback these changes before starting the browser example
 by running from the root directory:
 
-    npm run rebuild:web
+    npm run rebuild:browser
 
 ## Run the electron-based example application
 
