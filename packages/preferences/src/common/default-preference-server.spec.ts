@@ -5,8 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { PreferenceServer } from '../common/preference-protocol'
-import { DefaultPreferenceServer } from './default-preference-server'
+import { PreferenceServer, DefaultPreferenceServer } from '@theia/preferences-api';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 import { PrefProviderStub } from "../node/test/preference-stubs";

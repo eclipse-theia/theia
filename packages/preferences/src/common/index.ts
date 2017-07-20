@@ -5,9 +5,5 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export * from './preference-protocol';
-export * from './preference-service';
-export * from './preference-proxy';
-export * from './compound-preference-server';
-export * from './default-preference-server';
+export * from '@theia/preferences-api';
 

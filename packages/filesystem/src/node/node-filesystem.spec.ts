@@ -13,10 +13,9 @@ import * as os from 'os';
 import URI from "@theia/core/lib/common/uri";
 import { Logger } from "@theia/core/lib/common";
 import { FileUri } from "@theia/core/lib/node";
-// import { PreferenceService, DefaultPreferenceServer } from "@theia/preferences/lib/common";
+import { PreferenceService, DefaultPreferenceServer } from "@theia/preferences-api";
 import { FileSystem } from "../common/filesystem";
-// import { FileSystemWatcher, FileChange, FileChangeType, createFileSystemPreferences } from '../common';
-import { FileSystemWatcher, FileChange, FileChangeType } from '../common';
+import { FileSystemWatcher, FileChange, FileChangeType, createFileSystemPreferences } from '../common';
 import { FileSystemNode } from "./node-filesystem";
 import { ChokidarFileSystemWatcherServer } from './chokidar-filesystem-watcher';
 
@@ -789,14 +788,12 @@ describe("NodeFileSystem", () => {
                 }
             }
         });
-        /*const preferences = new PreferenceService(new DefaultPreferenceServer({
+        const preferences = new PreferenceService(new DefaultPreferenceServer({
             getContributions: () => []
         }));
         const fileSystemPreferences = createFileSystemPreferences(preferences);
         const server = new ChokidarFileSystemWatcherServer(logger);
-        return new FileSystemWatcher(server, fileSystemPreferences);*/
-        const server = new ChokidarFileSystemWatcherServer(logger);
-        return new FileSystemWatcher(server);
+        return new FileSystemWatcher(server, fileSystemPreferences);
     }
 
     function sleep(time: number) {

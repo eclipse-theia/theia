@@ -10,10 +10,9 @@ import * as chaiAsPromised from "chai-as-promised";
 import * as temp from 'temp';
 import * as fs from 'fs-extra';
 
-import { CompoundPreferenceServer } from './compound-preference-server'
+import { CompoundPreferenceServer, DefaultPreferenceServer } from '@theia/preferences-api'
 import { JsonPrefHelper, PrefProviderStub } from '../node/test/preference-stubs'
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { DefaultPreferenceServer } from "./default-preference-server";
 
 const expect = chai.expect;
 const track = temp.track();
