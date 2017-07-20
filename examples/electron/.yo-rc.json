@@ -16,6 +16,7 @@
       "@theia/java": "../../packages/java",
       "@theia/python": "../../packages/python",
       "@theia/cpp": "../../packages/cpp"
-    }
+    },
+    "node_modulesPath": "../../node_modules"
   }
 }

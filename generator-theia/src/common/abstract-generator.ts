@@ -60,6 +60,10 @@ export abstract class AbstractGenerator {
         return copyright ? copyright + os.EOL : '';
     }
 
+    protected node_modulesPath(): string {
+        return this.model.config.node_modulesPath;
+    }
+
     protected isWeb(): boolean {
         return this.model.target === 'web';
     }

@@ -82,13 +82,13 @@ const CircularDependencyPlugin = require('circular-dependency-plugin');
 
 const outputPath = path.resolve(__dirname, 'lib');
 
-const monacoEditorPath = '../../node_modules/monaco-editor-core/min/vs';
-const monacoLanguagesPath = '../../node_modules/monaco-languages/release';
-const monacoCssLanguagePath = '../../node_modules/monaco-css/release/min';
-const monacoTsLanguagePath = '../../node_modules/monaco-typescript/release';
-const monacoJsonLanguagePath = '../../node_modules/monaco-json/release/min';
-const monacoHtmlLanguagePath = '../../node_modules/monaco-html/release/min';${this.ifWeb(`
-const requirePath = '../../node_modules/requirejs/require.js';
+const monacoEditorPath = '${this.node_modulesPath()}/monaco-editor-core/min/vs';
+const monacoLanguagesPath = '${this.node_modulesPath()}/monaco-languages/release';
+const monacoCssLanguagePath = '${this.node_modulesPath()}/monaco-css/release/min';
+const monacoTsLanguagePath = '${this.node_modulesPath()}/monaco-typescript/release';
+const monacoJsonLanguagePath = '${this.node_modulesPath()}/monaco-json/release/min';
+const monacoHtmlLanguagePath = '${this.node_modulesPath()}/monaco-html/release/min';${this.ifWeb(`
+const requirePath = '${this.node_modulesPath()}/requirejs/require.js';
 
 const host = '${this.model.config.host}';
 const port = ${this.model.config.port};`)}

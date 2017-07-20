@@ -32,6 +32,7 @@ export interface Config {
     port: number;
     host: string;
     copyright: string;
+    node_modulesPath: string;
     localDependencies?: Dependencies;
 }
 
@@ -52,7 +53,8 @@ export class Model {
     config: Config = {
         port: 3000,
         host: 'localhost',
-        copyright: ''
+        copyright: '',
+        node_modulesPath: "../../node_modules"
     }
     extensionConfig: ExtensionConfig = {
         testSupport: true
