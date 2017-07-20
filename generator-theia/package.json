@@ -11,7 +11,7 @@
     "yeoman-generator"
   ],
   "scripts": {
-    "prepare": "npm run clean && npm run compile",
+    "prepublishOnly": "npm run clean && npm run compile",
     "compile": "tsc",
     "watch": "tsc -w",
     "clean": "rimraf generators"

@@ -42,7 +42,7 @@ function start() {
     application.use(express.static(path.join(__dirname, '../../lib'), {
         index: 'index.html'
     }));
-    return application.start(${this.ifWeb(`${this.model.config.port}, '${this.model.config.host}'`)})
+    return application.start(${this.ifWeb(`${this.model.config.port}, '${this.model.config.host}'`)});
 }
 
 module.exports = Promise.resolve()${this.compileBackendModuleImports(backendModules)}
@@ -51,6 +51,7 @@ module.exports = Promise.resolve()${this.compileBackendModuleImports(backendModu
         if (reason) {
             console.error(reason);
         }
+        throw reason;
     });`;
     }
 

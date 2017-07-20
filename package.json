@@ -10,16 +10,21 @@
     "yo": "^2.0.0"
   },
   "scripts": {
-    "preinstall": "cd generator-theia && npm install",
-    "prepare": "npm install generator-theia && npm run bootstrap && npm run clean && npm run build",
+    "prepare": "npm run install:generator && npm run bootstrap && npm run clean && npm run build",
+    "install:generator": "npm run build:generator && npm install generator-theia --no-optional",
+    "build:generator": "cd generator-theia && npm install && npm run prepublishOnly",
     "prepublishOnly": "npm run test",
     "bootstrap": "node scripts/generate.js && lerna bootstrap --hoist -- --no-optional",
     "refresh": "lerna clean --yes && npm run bootstrap",
     "clean": "lerna run clean --parallel",
     "build": "lerna run build --stream",
-    "test": "lerna run test --scope \"@theia/!(example-)*\" --parallel",
-    "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel",
-    "rebuild:web": "npm uninstall node-pty && npm run refresh",
-    "rebuild:electron": "electron-rebuild"
+    "test": "lerna run test --scope \"@theia/!(example-electron)*\" --parallel && npm run rebuild:electron && npm run test:electron",
+    "test:theia": "lerna run test --scope \"@theia/!(example-)*\" --parallel",
+    "test:browser": "lerna run test --scope \"@theia/example-browser\"",
+    "test:electron": "lerna run test --scope \"@theia/example-electron\"",
+    "rebuild:browser": "rimraf node_modules/node-pty && npm run refresh",
+    "rebuild:electron": "electron-rebuild",
+    "rebuild:electron:debug": "DEBUG=electron-rebuild && electron-rebuild",
+    "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel"
   }
 }

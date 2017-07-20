@@ -16,6 +16,7 @@ export class ElectronFrontendGenerator extends AbstractFrontendGenerator {
 
     protected compileElectronMain(): string {
         return `${this.compileCopyright()}
+// @ts-check
 // Workaround for https://github.com/electron/electron/issues/9225. Chrome has an issue where
 // in certain locales (e.g. PL), image metrics are wrongly computed. We explicitly set the
 // LC_NUMERIC to prevent this from happening (selects the numeric formatting category of the
@@ -39,6 +40,8 @@ electron.app.on('ready', function () {
     require("../backend/main").then(server => {
         mainWindow.loadURL(\`file://\${path.join(__dirname, '../../lib/index.html')}?port=\${server.address().port}\`);
         mainWindow.webContents.openDevTools();
+    }).catch(() => {
+        electron.app.exit(1);
     });
     mainWindow.on('closed', function () {
         electron.app.exit(0);

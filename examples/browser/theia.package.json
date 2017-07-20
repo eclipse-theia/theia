@@ -17,7 +17,8 @@
     "@theia/cpp": "^0.0.1-alpha.1"
   },
   "scripts": {
-    "test": "npm run start& wdio --waitforTimeout 300000 wdio.conf.js"
+    "clean": "rimraf lib && rimraf errorShots",
+    "test": "wdio"
   },
   "devDependencies": {
     "@types/chai": "^4.0.1",
