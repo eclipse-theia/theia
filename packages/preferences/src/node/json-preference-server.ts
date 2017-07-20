@@ -131,7 +131,7 @@ export class JsonPreferenceServer implements PreferenceServer {
         for (const preferenceName of preferences) {
             const oldValue = preferences[preferenceName];
             changes.push({
-                preferenceName, oldValue: oldValue
+                preferenceName, oldValue
             })
         }
         this.fireEvent({ changes });
@@ -156,7 +156,7 @@ export class JsonPreferenceServer implements PreferenceServer {
         }
         for (const preferenceName of deleted) {
             const oldValue = target[preferenceName];
-            changes.push({ preferenceName, oldValue: oldValue });
+            changes.push({ preferenceName, oldValue });
         }
 
         this.fireEvent({ changes });
