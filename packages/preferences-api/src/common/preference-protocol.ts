@@ -20,6 +20,10 @@ export interface PreferenceClient {
 }
 
 export interface PreferenceChangedEvent {
+    changes: PreferenceChange[]
+}
+
+export interface PreferenceChange {
     readonly preferenceName: string;
     readonly newValue?: any;
     readonly oldValue?: any;

@@ -39,16 +39,13 @@ export class PreferenceService implements Disposable {
     }
 
     protected onDidChangePreference(event: PreferenceChangedEvent): void {
-        if (this.prefCache === undefined) { // First event
-            this.prefCache = event.newValue;
-        } else {
+        for (const prefChange of event.changes) {
             // Pref removed
-            if (event.oldValue !== undefined && event.newValue === undefined) {
-                delete this.prefCache[event.preferenceName];
-            } else if (event.newValue !== undefined) {
-                this.prefCache[event.preferenceName] = event.newValue;
+            if (prefChange.oldValue !== undefined && prefChange.newValue === undefined) {
+                delete this.prefCache[prefChange.preferenceName];
+            } else if (prefChange.newValue !== undefined) {
+                this.prefCache[prefChange.preferenceName] = prefChange.newValue;
             }
-            this.onPreferenceChangedEmitter.fire(event);
         }
 
         Promise.resolve(this.ready);

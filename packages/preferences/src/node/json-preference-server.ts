@@ -11,7 +11,7 @@ import URI from "@theia/core/lib/common/uri";
 import { Disposable, DisposableCollection, ILogger, MaybePromise } from '@theia/core/lib/common';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { FileSystemWatcherServer, DidFilesChangedParams, FileChange } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
-import { PreferenceChangedEvent, PreferenceClient, PreferenceServer } from '../common';
+import { PreferenceChangedEvent, PreferenceClient, PreferenceServer, PreferenceChange } from '../common';
 
 export const PreferenceUri = Symbol("PreferencePath");
 export type PreferenceUri = MaybePromise<URI>;
@@ -100,47 +100,47 @@ export class JsonPreferenceServer implements PreferenceServer {
             if (this.preferences) {
                 this.fireChanged(this.preferences, preferences);
             } else {
-                // Will not fire individual events until the server has finished reading the preferences once
-                if (this.isServerReady) {
-                    this.fireNew(preferences);
-                }
+                this.fireNew(preferences);
             }
         } else if (this.preferences) {
             this.fireRemoved(this.preferences);
         }
         this.preferences = preferences;
-        // Send an event containing all preferences once
-        if (!this.isServerReady) {
-            this.fireInitEvent();
-        }
-        this.isServerReady = true;
-    }
-
-    protected fireInitEvent(): void {
-        this.fireEvent({ preferenceName: "", newValue: this.preferences });
     }
 
     protected fireNew(preferences: any): void {
 
         // tslint:disable-next-line:forin
+
+        let changes: PreferenceChange[] = [];
+
         for (const preferenceName in preferences) {
-            if (preferenceName) {
-                const newValue = preferences[preferenceName];
-                this.fireEvent({ preferenceName, newValue });
-            }
+            const newValue = preferences[preferenceName];
+            changes.push({
+                preferenceName, newValue
+            })
         }
+        this.fireEvent({ changes });
+
     }
 
     protected fireRemoved(preferences: any): void {
         // tslint:disable-next-line:forin
-        for (const preferenceName in preferences) {
+
+        let changes: PreferenceChange[] = [];
+        for (const preferenceName of preferences) {
             const oldValue = preferences[preferenceName];
-            this.fireEvent({ preferenceName: preferenceName, oldValue: oldValue });
+            changes.push({
+                preferenceName, oldValue: oldValue
+            })
         }
+        this.fireEvent({ changes });
     }
 
     protected fireChanged(target: any, source: any): void {
         const deleted = new Set(Object.keys(target));
+        let changes: PreferenceChange[] = [];
+
         // tslint:disable-next-line:forin
         for (const preferenceName in source) {
             deleted.delete(preferenceName);
@@ -148,16 +148,18 @@ export class JsonPreferenceServer implements PreferenceServer {
             if (preferenceName in target) {
                 const oldValue = target[preferenceName];
                 if (!JSONExt.deepEqual(oldValue, newValue)) {
-                    this.fireEvent({ preferenceName, oldValue, newValue });
+                    changes.push({ preferenceName, newValue, oldValue });
                 }
             } else {
-                this.fireEvent({ preferenceName, newValue });
+                changes.push({ preferenceName, newValue });
             }
         }
         for (const preferenceName of deleted) {
             const oldValue = target[preferenceName];
-            this.fireEvent({ preferenceName, oldValue });
+            changes.push({ preferenceName, oldValue: oldValue });
         }
+
+        this.fireEvent({ changes });
     }
 
     protected fireEvent(event: PreferenceChangedEvent) {

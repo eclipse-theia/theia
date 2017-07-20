@@ -89,18 +89,20 @@ export class MonacoEditorProvider {
     }
 
     protected handlePreferenceEvent(e: PreferenceChangedEvent, editor: MonacoEditor) {
-        switch (e.preferenceName) {
-            case ('editor.tabSize'): {
-                editor.getControl().getModel().updateOptions({ tabSize: <number>e.newValue });
-                break;
-            }
-            case ('editor.lineNumbers'): {
-                editor.getControl().updateOptions({ lineNumbers: <'on' | 'off'>e.newValue })
-                break;
-            }
-            case ('editor.renderWhitespace'): {
-                editor.getControl().updateOptions({ renderWhitespace: <'none' | 'boundary' | 'all'>e.newValue })
-                break;
+        for (const event of e.changes) {
+            switch (event.preferenceName) {
+                case ('editor.tabSize'): {
+                    editor.getControl().getModel().updateOptions({ tabSize: <number>event.newValue });
+                    break;
+                }
+                case ('editor.lineNumbers'): {
+                    editor.getControl().updateOptions({ lineNumbers: <'on' | 'off'>event.newValue })
+                    break;
+                }
+                case ('editor.renderWhitespace'): {
+                    editor.getControl().updateOptions({ renderWhitespace: <'none' | 'boundary' | 'all'>event.newValue })
+                    break;
+                }
             }
         }
     }

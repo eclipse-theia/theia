@@ -13,9 +13,11 @@ export type Configuration = {
 }
 export type PreferenceEventEmitter<T> = {
     readonly onPreferenceChanged: Event<{
-        readonly preferenceName: keyof T
-        readonly newValue?: T[keyof T]
-        readonly oldValue?: T[keyof T]
+        changes: [{
+            readonly preferenceName: keyof T
+            readonly nealue?: T[keyof T]
+            readonly oldValue?: T[keyof T]
+        }]
     }>;
 
     ready(): Promise<void>;
@@ -26,8 +28,10 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
     const onPreferenceChangedEmitter = new Emitter<PreferenceChangedEvent>();
     toDispose.push(onPreferenceChangedEmitter);
     toDispose.push(preferences.onPreferenceChanged(e => {
-        if (e.preferenceName in configuration) {
-            onPreferenceChangedEmitter.fire(e);
+        for (const event of e.changes) {
+            if (event.preferenceName in configuration) {
+                onPreferenceChangedEmitter.fire(e);
+            }
         }
     }));
     return new Proxy({} as any, {
