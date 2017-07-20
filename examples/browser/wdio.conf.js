@@ -2,7 +2,8 @@
 const http = require('http');
 const path = require('path');
 
-const theiaConfig = require(path.resolve(__dirname, '.yo-rc.json'))['generator-theia'];
+const port = 3000;
+const host = 'localhost';
 
 let server;
 
@@ -80,7 +81,7 @@ exports.config = {
     //
     // Set a base URL in order to shorten url command calls. If your url parameter starts
     // with "/", then the base url gets prepended.
-    baseUrl: `http://${theiaConfig.host}:${theiaConfig.port}`,
+    baseUrl: `http://${host}:${port}`,
     //
     // Default timeout for all waitFor* commands.
     waitforTimeout: 300000,
@@ -150,6 +151,7 @@ exports.config = {
     //
     // Gets executed once before all workers get launched.
     onPrepare: function (config, capabilities) {
+        // TODO pass host/port to the server from here
         return require('./src-gen/backend/main').then(s => {
             server = s;
         });
