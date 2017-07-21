@@ -4,9 +4,9 @@
 
 In the generator-theia directory:
 
-- `npm install`
-- `npm link` to install `generator-theia` as a global module
-- `npm install -g yo` to install yo globally
+- `yarn`
+- `yarn link` to install `generator-theia` as a global module
+- `yarn global add yo` to install yo globally
 
 In the example root directory:
 - `yo theia:browser` to generate the browser app

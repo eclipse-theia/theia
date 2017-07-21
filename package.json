@@ -6,25 +6,26 @@
     "node-pty": "^0.6.10"
   },
   "devDependencies": {
+    "generator-theia": "generator-theia",
     "lerna": "^2.0.0",
     "yo": "^2.0.0"
   },
   "scripts": {
-    "prepare": "npm run install:generator && npm run bootstrap && npm run clean && npm run build",
-    "install:generator": "npm run build:generator && npm install generator-theia --no-optional",
-    "build:generator": "cd generator-theia && npm install && npm run prepublishOnly",
-    "prepublishOnly": "npm run test",
+    "preinstall": "cd generator-theia && yarn",
+    "prepare": "yarn run bootstrap && yarn run clean && yarn run clean:rebuild && yarn run build",
+    "prepublishOnly": "yarn run test",
     "bootstrap": "node scripts/generate.js && lerna bootstrap --hoist -- --no-optional",
-    "refresh": "lerna clean --yes && npm run bootstrap",
+    "refresh": "lerna clean --yes && yarn run bootstrap",
     "clean": "lerna run clean --parallel",
     "build": "lerna run build --stream",
-    "test": "lerna run test --scope \"@theia/!(example-electron)*\" --parallel && npm run rebuild:electron && npm run test:electron",
+    "test": "yarn run test:theia && yarn run test:electron && yarn run test:browser",
     "test:theia": "lerna run test --scope \"@theia/!(example-)*\" --parallel",
-    "test:browser": "lerna run test --scope \"@theia/example-browser\"",
-    "test:electron": "lerna run test --scope \"@theia/example-electron\"",
-    "rebuild:browser": "rimraf node_modules/node-pty && npm run refresh",
-    "rebuild:electron": "electron-rebuild",
-    "rebuild:electron:debug": "DEBUG=electron-rebuild && electron-rebuild",
+    "test:browser": "yarn run rebuild:browser && lerna run test --scope \"@theia/example-browser\"",
+    "test:electron": "yarn run rebuild:electron && lerna run test --scope \"@theia/example-electron\"",
+    "clean:rebuild": "rimraf .browser_modules",
+    "rebuild:browser": "node scripts/rebuild.js --target=browser",
+    "rebuild:electron": "node scripts/rebuild.js --target=electron",
+    "rebuild:electron:debug": "DEBUG=electron-rebuild && yarn run rebuild:electron",
     "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel"
   }
 }

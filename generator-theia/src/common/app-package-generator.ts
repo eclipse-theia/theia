@@ -21,13 +21,13 @@ export class AppPackageGenerator extends AbstractGenerator {
     protected compilePackage(): NodePackage {
         const dependendencies = this.isWeb() ? {} : {}
         const scripts = this.isWeb() ? {
-            "start": "concurrently -n backend,frontend -c blue,green \"npm run start:backend\" \"npm run start:frontend\"",
-            "start:backend": "npm run build:backend && node ./src-gen/backend/main.js | bunyan",
-            "start:backend:debug": "npm run build:backend && node ./src-gen/backend/main.js --loglevel=debug | bunyan",
+            "start": "concurrently -n backend,frontend -c blue,green \"yarn run start:backend\" \"yarn run start:frontend\"",
+            "start:backend": "yarn run build:backend && node ./src-gen/backend/main.js | bunyan",
+            "start:backend:debug": "yarn run build:backend && node ./src-gen/backend/main.js --loglevel=debug | bunyan",
             "start:frontend": "webpack-dev-server --open",
         } : {
-                "start": "npm run build:backend && electron ./src-gen/frontend/electron-main.js | bunyan",
-                "start:debug": "npm run build:backend && electron ./src-gen/frontend/electron-main.js --loglevel=debug | bunyan"
+                "start": "yarn run build:backend && electron ./src-gen/frontend/electron-main.js | bunyan",
+                "start:debug": "yarn run build:backend && electron ./src-gen/frontend/electron-main.js --loglevel=debug | bunyan"
             }
         const devDependencies = this.isWeb() ? {
             "webpack-dev-server": "^2.5.0"
@@ -43,11 +43,11 @@ export class AppPackageGenerator extends AbstractGenerator {
             }),
             "scripts": sortByKey({
                 "clean": "rimraf lib",
-                "cold:start": "npm run clean && npm start",
-                "build": "npm run build:frontend && npm run build:backend",
+                "cold:start": "yarn run clean && yarn run start",
+                "build": "yarn run build:frontend && yarn run build:backend",
                 "build:frontend": "webpack",
                 "build:backend": `cp ${this.srcGen()}/frontend/index.html lib`,
-                "watch": "npm run build:frontend && webpack --watch",
+                "watch": "yarn run build:frontend && webpack --watch",
                 ...scripts,
                 ...this.model.pck.scripts
             }),
