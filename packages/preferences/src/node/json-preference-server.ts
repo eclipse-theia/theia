@@ -12,6 +12,7 @@ import { Disposable, DisposableCollection, ILogger, MaybePromise } from '@theia/
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { FileSystemWatcherServer, DidFilesChangedParams, FileChange } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { PreferenceChangedEvent, PreferenceClient, PreferenceServer, PreferenceChange } from '../common';
+import * as jsoncparser from "jsonc-parser"
 
 export const PreferenceUri = Symbol("PreferencePath");
 export type PreferenceUri = MaybePromise<URI>;
@@ -83,9 +84,10 @@ export class JsonPreferenceServer implements PreferenceServer {
                 if (!exists) {
                     return undefined;
                 }
-                return this.fileSystem.resolveContent(uri).then(({ stat, content }) =>
-                    JSON.parse(content)
-                )
+                return this.fileSystem.resolveContent(uri).then(({ stat, content }) => {
+                    const strippedContent = jsoncparser.stripComments(content);
+                    return JSON.parse(strippedContent)
+                })
             }).catch(reason => {
                 if (reason) {
                     this.logger.error(`Failed to read preferences ${uri}:`, reason);
