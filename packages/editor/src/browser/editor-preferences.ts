@@ -19,20 +19,24 @@ export const EditorConfigSchema = {
     "properties": {
         "editor.tabSize": {
             "type": "number",
-            "minimum": 1
+            "minimum": 1,
+            "description": "Configure the tab size in the monaco editor"
         },
         "editor.lineNumbers": {
             "enum": [
                 "on",
                 "off"
-            ]
+            ],
+            "description": "Control the rendering of line numbers"
+
         },
         "editor.renderWhitespace": {
             "enum": [
                 "none",
                 "boundary",
                 "all"
-            ]
+            ],
+            "description": "Control the rendering of whitespaces in the editor"
         }
     }
 }

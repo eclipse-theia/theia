@@ -7,10 +7,10 @@
 
 import { inject, injectable } from 'inversify';
 import { Event, Emitter, Disposable, DisposableCollection } from '@theia/core/lib/common';
-import { PreferenceServer, PreferenceChangedEvent } from './preference-protocol';
+import { PreferenceServer, PreferenceChangedEvent, PreferenceChange } from './preference-protocol';
 
 export {
-    PreferenceChangedEvent
+    PreferenceChange
 }
 
 @injectable()
@@ -18,7 +18,7 @@ export class PreferenceService implements Disposable {
     protected prefCache: { [key: string]: any } = {};
 
     protected readonly toDispose = new DisposableCollection();
-    protected readonly onPreferenceChangedEmitter = new Emitter<PreferenceChangedEvent>();
+    protected readonly onPreferenceChangedEmitter = new Emitter<PreferenceChange>();
 
     protected resolveReady: () => void;
     readonly ready = new Promise<void>(resolve => {
@@ -48,10 +48,12 @@ export class PreferenceService implements Disposable {
         }
 
         this.resolveReady();
-        this.onPreferenceChangedEmitter.fire(event);
+        for (const change of event.changes) {
+            this.onPreferenceChangedEmitter.fire(change);
+        }
     }
 
-    get onPreferenceChanged(): Event<PreferenceChangedEvent> {
+    get onPreferenceChanged(): Event<PreferenceChange> {
         return this.onPreferenceChangedEmitter.event;
     }
 

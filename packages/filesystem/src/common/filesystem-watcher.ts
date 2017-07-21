@@ -40,11 +40,8 @@ export class FileSystemWatcher implements Disposable {
 
         this.toDispose.push(preferences);
         this.toDispose.push(preferences.onPreferenceChanged(e => {
-            for (const change of e.changes) {
-                if (change.preferenceName === 'files.watcherExclude') {
-                    this.toRestartAll.dispose();
-                }
-
+            if (e.preferenceName === 'files.watcherExclude') {
+                this.toRestartAll.dispose();
             }
         }));
     }

@@ -10,7 +10,7 @@ import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-lan
 import URI from "@theia/core/lib/common/uri";
 import { DisposableCollection } from '@theia/core/lib/common';
 import { EditorPreferences } from "@theia/editor/lib/browser";
-import { PreferenceChangedEvent } from "@theia/preferences/lib/common";
+import { PreferenceChange } from "@theia/preferences/lib/common";
 import { MonacoEditor } from "./monaco-editor";
 import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditorService } from "./monaco-editor-service";
@@ -88,22 +88,22 @@ export class MonacoEditorProvider {
         }
     }
 
-    protected handlePreferenceEvent(e: PreferenceChangedEvent, editor: MonacoEditor) {
-        for (const event of e.changes) {
-            switch (event.preferenceName) {
-                case ('editor.tabSize'): {
-                    editor.getControl().getModel().updateOptions({ tabSize: <number>event.newValue });
-                    break;
-                }
-                case ('editor.lineNumbers'): {
-                    editor.getControl().updateOptions({ lineNumbers: <'on' | 'off'>event.newValue })
-                    break;
-                }
-                case ('editor.renderWhitespace'): {
-                    editor.getControl().updateOptions({ renderWhitespace: <'none' | 'boundary' | 'all'>event.newValue })
-                    break;
-                }
+
+    protected handlePreferenceEvent(e: PreferenceChange, editor: MonacoEditor) {
+        switch (e.preferenceName) {
+            case ('editor.tabSize'): {
+                editor.getControl().getModel().updateOptions({ tabSize: <number>e.newValue });
+                break;
+            }
+            case ('editor.lineNumbers'): {
+                editor.getControl().updateOptions({ lineNumbers: <'on' | 'off'>e.newValue })
+                break;
+            }
+            case ('editor.renderWhitespace'): {
+                editor.getControl().updateOptions({ renderWhitespace: <'none' | 'boundary' | 'all'>e.newValue })
+                break;
             }
         }
+
     }
 }

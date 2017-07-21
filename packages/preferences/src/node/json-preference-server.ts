@@ -24,7 +24,7 @@ export class JsonPreferenceServer implements PreferenceServer {
     protected readonly preferenceUri: Promise<string>;
 
     protected readonly toDispose = new DisposableCollection();
-    protected initDone: Promise<void>;
+    protected ready: Promise<void>;
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
@@ -45,7 +45,7 @@ export class JsonPreferenceServer implements PreferenceServer {
                 )
             })
         );
-        this.initDone = this.reconcilePreferences();
+        this.ready = this.reconcilePreferences();
     }
 
     dispose(): void {
@@ -109,11 +109,9 @@ export class JsonPreferenceServer implements PreferenceServer {
     }
 
     protected fireNew(preferences: any): void {
-
-        // tslint:disable-next-line:forin
-
         const changes: PreferenceChange[] = [];
 
+        // tslint:disable-next-line:forin
         for (const preferenceName in preferences) {
             const newValue = preferences[preferenceName];
             changes.push({
@@ -125,10 +123,11 @@ export class JsonPreferenceServer implements PreferenceServer {
     }
 
     protected fireRemoved(preferences: any): void {
-        // tslint:disable-next-line:forin
+
 
         const changes: PreferenceChange[] = [];
-        for (const preferenceName of preferences) {
+        // tslint:disable-next-line:forin
+        for (const preferenceName in preferences) {
             const oldValue = preferences[preferenceName];
             changes.push({
                 preferenceName, oldValue
@@ -172,13 +171,13 @@ export class JsonPreferenceServer implements PreferenceServer {
     }
 
     has(preferenceName: string): Promise<boolean> {
-        return this.initDone.then(() => {
+        return this.ready.then(() => {
             return !!this.preferences && (preferenceName in this.preferences)
         })
     }
 
     get<T>(preferenceName: string): Promise<T | undefined> {
-        return this.initDone.then(() =>
+        return this.ready.then(() =>
             !!this.preferences ? this.preferences[preferenceName] : undefined
         );
     }

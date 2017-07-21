@@ -6,32 +6,28 @@
  */
 
 import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core/lib/common';
-import { PreferenceService, PreferenceChangedEvent } from "./preference-service";
+import { PreferenceService, PreferenceChange } from "./preference-service";
 
 export type Configuration = {
     [preferenceName: string]: any
 }
 export type PreferenceEventEmitter<T> = {
     readonly onPreferenceChanged: Event<{
-        changes: [{
-            readonly preferenceName: keyof T
-            readonly nealue?: T[keyof T]
-            readonly oldValue?: T[keyof T]
-        }]
+        readonly preferenceName: keyof T
+        readonly nealue?: T[keyof T]
+        readonly oldValue?: T[keyof T]
     }>;
 
-    ready: Promise<void>;
+    readonly ready: Promise<void>;
 };
 export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T>;
 export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, configuration: T): PreferenceProxy<T> {
     const toDispose = new DisposableCollection();
-    const onPreferenceChangedEmitter = new Emitter<PreferenceChangedEvent>();
+    const onPreferenceChangedEmitter = new Emitter<PreferenceChange>();
     toDispose.push(onPreferenceChangedEmitter);
     toDispose.push(preferences.onPreferenceChanged(e => {
-        for (const event of e.changes) {
-            if (event.preferenceName in configuration) {
-                onPreferenceChangedEmitter.fire(e);
-            }
+        if (e.preferenceName in configuration) {
+            onPreferenceChangedEmitter.fire(e);
         }
     }));
     return new Proxy({} as any, {
