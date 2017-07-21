@@ -10,10 +10,11 @@ import { AbstractGenerator, FileSystem } from "../common";
 export abstract class AbstractBackendGenerator extends AbstractGenerator {
 
     protected doGenerate(fs: FileSystem, backendModules: Map<string, string>): void {
-        fs.write(this.backend('main.js'), this.compileMainJs(backendModules));
+        fs.write(this.backend('server.js'), this.compileServer(backendModules));
+        fs.write(this.backend('main.js'), this.compileMain(backendModules));
     }
 
-    protected compileMainJs(backendModules: Map<string, string>): string {
+    protected compileServer(backendModules: Map<string, string>): string {
         return `${this.compileCopyright()}
 // @ts-check
 require('reflect-metadata');
@@ -37,22 +38,28 @@ function load(raw) {
     )
 }
 
-function start() {
+function start(port, host) {
     const application = container.get(BackendApplication);
     application.use(express.static(path.join(__dirname, '../../lib'), {
         index: 'index.html'
     }));
-    return application.start(${this.ifWeb(`${this.model.config.port}, '${this.model.config.host}'`)});
+    return application.start(port, host);
 }
 
-module.exports = Promise.resolve()${this.compileBackendModuleImports(backendModules)}
-    .then(start).catch(reason => {
+module.exports = (port, host) => Promise.resolve()${this.compileBackendModuleImports(backendModules)}
+    .then(() => start(port, host)).catch(reason => {
         console.error('Failed to start the backend application.');
         if (reason) {
             console.error(reason);
         }
         throw reason;
     });`;
+    }
+
+    protected compileMain(backendModules: Map<string, string>): string {
+        return `${this.compileCopyright()}
+// @ts-check
+module.exports = require('./server')(${this.ifWeb(`${this.model.config.port}, '${this.model.config.host}'`)});`;
     }
 
 }

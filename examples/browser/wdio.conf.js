@@ -151,8 +151,7 @@ exports.config = {
     //
     // Gets executed once before all workers get launched.
     onPrepare: function (config, capabilities) {
-        // TODO pass host/port to the server from here
-        return require('./src-gen/backend/main').then(s => {
+        return require('./src-gen/backend/server')(port, host).then(s => {
             server = s;
         });
     },
