@@ -12,6 +12,7 @@ import { DisposableCollection } from '@theia/core/lib/common';
 import { EditorPreferences } from "@theia/editor/lib/browser";
 import { PreferenceChangedEvent } from "@theia/preferences/lib/common";
 import { MonacoEditor } from "./monaco-editor";
+import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditorService } from "./monaco-editor-service";
 import { MonacoModelResolver } from "./monaco-model-resolver";
 import { MonacoContextMenuService } from "./monaco-context-menu";
@@ -46,15 +47,7 @@ export class MonacoEditorProvider {
             textEditorModel.updateOptions({ tabSize: await this.editorPreferences["editor.tabSize"] });
 
             const editor = new MonacoEditor(
-                uri, node, this.m2p, this.p2m, this.workspace, {
-                    model: textEditorModel,
-                    wordWrap: false,
-                    folding: true,
-                    lineNumbers: await this.editorPreferences["editor.lineNumbers"],
-                    renderWhitespace: await this.editorPreferences["editor.renderWhitespace"],
-                    theme: 'vs-dark',
-                    readOnly: model.readOnly
-                }, {
+                uri, node, this.m2p, this.p2m, this.workspace, await this.getEditorOptions(model), {
                     editorService: this.editorService,
                     textModelResolverService: this.monacoModelResolver,
                     contextMenuService: this.contextMenuService,
@@ -76,6 +69,18 @@ export class MonacoEditorProvider {
 
             return editor;
         })));
+    }
+
+    protected async getEditorOptions(model: MonacoEditorModel): Promise<MonacoEditor.IOptions | undefined> {
+        return {
+            model: model.textEditorModel,
+            wordWrap: false,
+            folding: true,
+            lineNumbers: await this.editorPreferences["editor.lineNumbers"],
+            renderWhitespace: await this.editorPreferences["editor.renderWhitespace"],
+            theme: 'vs-dark',
+            readOnly: model.readOnly
+        }
     }
 
     protected handlePreferenceEvent(e: PreferenceChangedEvent, editor: MonacoEditor) {
