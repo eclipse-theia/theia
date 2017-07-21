@@ -5,6 +5,13 @@ node_js:
 branches:
   only: 
     - master
+matrix:
+  fast_finish: true
+git:
+  depth: 1
+cache:
+  directories:
+  - node_modules
 env:
   - CXX=g++-4.8
 dist: trusty
