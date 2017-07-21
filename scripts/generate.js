@@ -9,32 +9,39 @@ const fs = require('fs');
 const paths = require('path');
 const cp = require('child_process');
 
-function spawn(command, args, options) {
+function spawn(command, args, options, error, log) {
+    log(`${command} ${args.join(' ')}`);
     if (process.platform !== 'win32') {
-        return cp.spawn(command, args, options);
+        const p = cp.spawn(command, args, options);
+        p.on('exit', code => {
+            if (code !== 0) {
+                process.exit(code)
+            }
+        });
+        p.on('error', err => error(err));
+        p.stdout.on('data', data => log(data));
+        p.stderr.on('data', data => error(data));
+    } else {
+        const p = cp.spawnSync('cmd', ['/c', command, ...args], options);
+        if (p.error) {
+            error(p.error);
+        }
+        if (p.output) {
+            log(p.output);
+        }
+        if (p.status !== 0) {
+            process.exit(p.status);
+        }
     }
-    return cp.spawn('cmd', ['/c', command, ...args], options);
 }
 
 function generate(name, cwd, prefix, target) {
     if (fs.existsSync(paths.resolve(cwd, prefix + '.package.json'))) {
         const command = 'yo';
         const args = ['theia:' + target, '--force'];
-        console.log(`${name}: ${command} ${args.join(' ')}`);
-        const p = spawn(command, args, { cwd, env: process.env });
-        p.on('exit', code => {
-            if (code !== 0) {
-                process.exit(code)
-            }
-        });
-        p.on('error', err =>
-            console.error(`${name}: ${err.message}`)
-        );
-        p.stdout.on('data', data =>
-            console.log(`${name}: ${data}`)
-        );
-        p.stderr.on('data', data =>
-            console.error(`${name}: ${data}`)
+        spawn(command, args, { cwd, env: process.env },
+            msg => console.error(`${name}: ${msg}`),
+            msg => console.log(`${name}: ${msg}`)
         );
     }
 }
