@@ -16,7 +16,7 @@
     "gulp-download": "0.0.1"
   },
   "scripts": {
-    "build": "concurrently -n download,compile,lint -c red,blue,green \"gulp download_java_server\" \"npm run compile\" \"npm run lint\""
+    "build": "concurrently -n download,compile,lint -c red,blue,green \"gulp download_java_server\" \"yarn run compile\" \"yarn run lint\""
   },
   "theiaExtensions": [
     {

@@ -8,10 +8,10 @@ However, you can run the example applications included in its repository.  One
 is a browser-based IDE and the other is the electron-based equivalent.
 
 ## Prerequisites
-* node.js/npm
+* https://yarnpkg.com/en/docs/install
 * git
 
-So far it has been confirmed that there are some problems and errors using nodejs 8.0+ and npm 5.0+ with theia. As of now, nodejs 7.10.0 and npm 4.2.0 are confirmed to be working well and are the currently recommended versions.
+So far it has been confirmed that there are some problems and errors using nodejs 8.0+ with Theia. As of now, nodejs 7.10.0 is confirmed to be working well and is the currently recommended versions.
 
 [nvm](https://github.com/creationix/nvm) is recommended to easily switch between node versions.
 
@@ -30,11 +30,11 @@ variable in your shell:
 You can download dependencies and build it using:
 
     cd $THEIA
-    npm install
+    yarn
 
 This command does a few things:
 
- - downloads npm package dependencies
+ - downloads node package dependencies
  - generate package.json for node packages
  - link core, extensions and examples packages
  - build core, extensions and examples packages
@@ -43,7 +43,7 @@ This command does a few things:
 
 We can start the application from the examples/browser directory with:
 
-    npm start
+    yarn run start
 
 This command starts the backend application, a small web server and a browser
 tab with the frontend.
@@ -52,38 +52,38 @@ If you rebuild native node packages for electron then
 rollback these changes before starting the browser example
 by running from the root directory:
 
-    npm run rebuild:browser
+    yarn run rebuild:browser
 
 ## Run the electron-based example application
 
 From the root directory run:
 
-    npm run rebuild:electron
+    yarn run rebuild:electron
 
 This command rebuilds native node packages against the version of node used by electron.
 
 It can also be started from the examples/electron directory with:
 
-    npm start
+    yarn run start
 
 ## Rebuilding
 
 In the root directory run:
 
-    npm run build
+    yarn run build
 ## Watching
 
 ### core and extension packages
 
 To rebuild each time a change is detected run:
 
-    npm run watch
+    yarn run watch
 
 ### the examples
 
 To rebuild each time a change is detected in frontend or backend you can run:
 
-    npm run watch
+    yarn run watch
 
 ## Debugging
 
@@ -95,7 +95,7 @@ To debug an example using VSCode:
 
 ### Debug the browser example's frontend
 
-- Start the frontend using `npm run start:frontend`
+- Start the frontend using `yarn run start:frontend`
 - In a browser: open http://localhost:8080/ and use the dev tools for debugging
 - In VS Code: start the debug tab and run the `Launch Frontend` configuration.
 
@@ -110,7 +110,7 @@ To debug an example using VSCode:
 
 ### Debug the electron example
 
-This one you can build as usual with `npm run build` and then use Chrome's
+This one you can build as usual with `yarn run build` and then use Chrome's
 dev tools to debug.
 
 There's an issue debugging with vscode it seems electron runs at 100% and
@@ -128,22 +128,22 @@ To build and run the browser example:
 
     git clone https://github.com/theia-ide/theia \
     && cd theia \
-    && npm install --unsafe-perm \
+    && yarn --unsafe-perm \
     && cd examples/browser \
-    && npm run start
+    && yarn run start
 
 To build and run the electron example:
 
     git clone https://github.com/theia-ide/theia \
     && cd theia \
-    && npm install --unsafe-perm \
-    && npm run rebuild:electron \
+    && yarn --unsafe-perm \
+    && yarn run rebuild:electron \
     && cd examples/electron \
-    && npm run start
+    && yarn run start
 
 ## Code coverage
 
-    npm run test
+    yarn run test
 
 If you would like to check the generated code coverage report
 
@@ -153,7 +153,7 @@ If you would like to check the generated code coverage report
 
 ### Linux
 
-The npm start command will start a watcher on many files in the theia
+The start command will start a watcher on many files in the theia
 directory. To avoid ENOSPC errors, increase your default inotify watches.
 
 It can be done like so:

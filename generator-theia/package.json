@@ -11,14 +11,13 @@
     "yeoman-generator"
   ],
   "scripts": {
-    "prepublishOnly": "npm run clean && npm run compile",
+    "prepare": "npm run clean && npm run compile",
     "compile": "tsc",
     "watch": "tsc -w",
     "clean": "rimraf generators"
   },
   "dependencies": {
     "@types/yeoman-generator": "^1.0.2",
-    "check-if-windows": "^1.0.0",
     "yeoman-generator": "^1.1.1"
   },
   "devDependencies": {

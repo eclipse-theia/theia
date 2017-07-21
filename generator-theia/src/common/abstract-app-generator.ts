@@ -13,8 +13,6 @@ import BaseGenerator = require('yeoman-generator');
 import { Model } from "./generator-model";
 import { AppPackageGenerator } from "./app-package-generator";
 
-export const NPM = require('check-if-windows') ? 'npm.cmd' : 'npm';
-
 export abstract class AbstractAppGenerator extends BaseGenerator {
 
     protected readonly model = new Model();
@@ -37,7 +35,9 @@ export abstract class AbstractAppGenerator extends BaseGenerator {
             return this.fs.readJSON(extensionPackagePath, undefined);
         })
         this.model.readExtensionPackages((extension, version) => {
-            return JSON.parse(cp.execSync([NPM, 'view', `${extension}@${version}`, '--json'].join(' '), {
+            const raw = ['yarn', 'info', `${extension}@${version}`, '--json'];
+            const args = process.platform === 'win32' ? ['cmd', '/c', ...raw] : raw;
+            return JSON.parse(cp.execSync(args.join(' '), {
                 encoding: 'utf8'
             }));
         });

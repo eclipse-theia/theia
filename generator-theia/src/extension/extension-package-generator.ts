@@ -29,7 +29,7 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
             },
             "scripts": {
                 ...pck.scripts,
-                "clean": "npm run compile:clean && npm run test:clean",
+                "clean": "yarn run compile:clean && yarn run test:clean",
                 "test": "nyc mocha --opts ../mocha.opts src/**/*.spec.ts",
                 "test:watch": "mocha -w --opts ../mocha.opts src/**/*.spec.ts",
                 "test:clean": "rimraf .nyc_output && rimraf coverage",
@@ -67,8 +67,8 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
                 "src"
             ],
             "scripts": {
-                "clean": "npm run compile:clean",
-                "build": "concurrently -n compile,lint -c blue,green \"npm run compile\" \"npm run lint\"",
+                "clean": "yarn run compile:clean",
+                "build": "concurrently -n compile,lint -c blue,green \"yarn run compile\" \"yarn run lint\"",
                 "compile": "tsc -p compile.tsconfig.json",
                 "compile:clean": "rimraf lib",
                 "lint": "tslint -c ../tslint.json --project compile.tsconfig.json",
