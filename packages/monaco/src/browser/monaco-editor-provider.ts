@@ -79,6 +79,7 @@ export class MonacoEditorProvider {
             lineNumbers: await this.editorPreferences["editor.lineNumbers"],
             renderWhitespace: await this.editorPreferences["editor.renderWhitespace"],
             theme: 'vs-dark',
+            glyphMargin: true,
             readOnly: model.readOnly
         }
     }

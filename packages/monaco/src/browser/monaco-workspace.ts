@@ -12,6 +12,7 @@ import {
 import { DisposableCollection } from "@theia/core/lib/common";
 import { FileChangeType, FileSystem, FileSystemWatcher } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from "@theia/workspace/lib/browser";
+import { EditorManager } from "@theia/editor/lib/browser"
 import * as lang from "@theia/languages/lib/common";
 import { Emitter, Event, TextDocument, TextDocumentWillSaveEvent, TextEdit } from "@theia/languages/lib/common";
 import { MonacoModelResolver } from "./monaco-model-resolver";
@@ -49,7 +50,8 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
         @inject(FileSystemWatcher) protected readonly fileSystemWatcher: FileSystemWatcher,
         @inject(MonacoModelResolver) protected readonly monacoModelResolver: MonacoModelResolver,
         @inject(MonacoToProtocolConverter) protected readonly m2p: MonacoToProtocolConverter,
-        @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter
+        @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter,
+        @inject(EditorManager) protected readonly editorManager: EditorManager
     ) {
         super(m2p);
         workspaceService.root.then(rootStat => {
@@ -146,13 +148,22 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
         for (const edit of workspaceEdit.edits) {
             promises.push(this.monacoModelResolver.createModelReference(edit.resource).then(reference => {
                 const model = reference.object.textEditorModel;
+                // start a fresh operation
+                model.pushStackElement();
                 const range = edit.range;
-                model.applyEdits([{
+                const selections = [new monaco.Selection(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn)]
+                model.pushEditOperations(selections, [{
                     identifier: undefined!,
                     forceMoveMarkers: false,
-                    range: new monaco.Range(range.startColumn, range.startLineNumber, range.endColumn, range.endLineNumber),
+                    range: new monaco.Range(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn),
                     text: edit.newText
-                }]);
+                }], (edits) => selections);
+                const editor = this.editorManager.editors.find(editor => editor.editor.uri.toString() === model.uri.toString());
+                if (editor) {
+                    editor.editor.focus();
+                }
+                // push again to make this change an undoable operation
+                model.pushStackElement();
                 reference.dispose();
             }));
         }

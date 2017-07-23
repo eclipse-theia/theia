@@ -103,6 +103,22 @@ declare module monaco.editor {
          * Returns with an HTML element or the client coordinates as the anchor of the context menu to open.
          */
         getAnchor(): HTMLElement | { x: number; y: number; };
+
+        /**
+         * Returns the actions for the menu
+         */
+        getActions(): monaco.Promise<IAction[]>
+    }
+
+    export interface IAction {
+        id: string;
+        label: string;
+        tooltip: string;
+        class: string;
+        enabled: boolean;
+        checked: boolean;
+        radio: boolean;
+        run(event?: any): monaco.Promise<any>;
     }
 
     export interface IContextMenuService {
