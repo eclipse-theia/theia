@@ -48,8 +48,7 @@ export class MonacoEditorProvider {
             const model = reference.object;
             const textEditorModel = model.textEditorModel;
 
-            textEditorModel.updateOptions({ tabSize: this.editorPreferences["editor.tabSize"] });
-
+            textEditorModel.updateOptions(this.getModelOptions());
 
             const editor = new MonacoEditor(
                 uri, node, this.m2p, this.p2m, this.workspace, await this.getEditorOptions(model), {
@@ -76,13 +75,19 @@ export class MonacoEditorProvider {
         });
     }
 
+    protected getModelOptions() {
+        return {
+            tabSize: this.editorPreferences["editor.tabSize"]
+        };
+    }
+
     protected async getEditorOptions(model: MonacoEditorModel): Promise<MonacoEditor.IOptions | undefined> {
         return {
             model: model.textEditorModel,
             wordWrap: false,
             folding: true,
-            lineNumbers: await this.editorPreferences["editor.lineNumbers"],
-            renderWhitespace: await this.editorPreferences["editor.renderWhitespace"],
+            lineNumbers: this.editorPreferences["editor.lineNumbers"],
+            renderWhitespace: this.editorPreferences["editor.renderWhitespace"],
             theme: 'vs-dark',
             readOnly: model.readOnly
         }

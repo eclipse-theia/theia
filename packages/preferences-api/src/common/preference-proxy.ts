@@ -14,7 +14,7 @@ export type Configuration = {
 export type PreferenceEventEmitter<T> = {
     readonly onPreferenceChanged: Event<{
         readonly preferenceName: keyof T
-        readonly nealue?: T[keyof T]
+        readonly newValue?: T[keyof T]
         readonly oldValue?: T[keyof T]
     }>;
 
