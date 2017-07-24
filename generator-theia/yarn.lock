@@ -10,8 +10,8 @@
     "@types/through" "*"
 
 "@types/node@*":
-  version "8.0.14"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-8.0.14.tgz#4a19dc6bb61d16c01cbadc7b30ac23518fff176b"
+  version "8.0.16"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-8.0.16.tgz#5aa51abd72621a0ce53fb86bccd76825ee1b4ca9"
 
 "@types/rx-core-binding@*":
   version "4.0.4"
@@ -181,12 +181,6 @@ chalk@^1.0.0:
     has-ansi "^2.0.0"
     strip-ansi "^3.0.0"
     supports-color "^2.0.0"
-
-check-if-windows@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/check-if-windows/-/check-if-windows-1.0.0.tgz#c4a8648eda0f892d61421bebd913a3c29579d4b8"
-  dependencies:
-    utils-platform "^1.0.0"
 
 class-extend@^0.1.0:
   version "0.1.2"
@@ -848,8 +842,8 @@ safe-buffer@^5.0.1, safe-buffer@~5.1.0, safe-buffer@~5.1.1:
   resolved "https://registry.yarnpkg.com/safe-buffer/-/safe-buffer-5.1.1.tgz#893312af69b2123def71f57889001671eeb2c853"
 
 "semver@2 || 3 || 4 || 5":
-  version "5.3.0"
-  resolved "https://registry.yarnpkg.com/semver/-/semver-5.3.0.tgz#9b2ce5d3de02d17c6012ad326aa6b4d0cf54f94f"
+  version "5.4.1"
+  resolved "https://registry.yarnpkg.com/semver/-/semver-5.4.1.tgz#e059c09d8571f0540823733433505d3a2f00b18e"
 
 shebang-command@^1.2.0:
   version "1.2.0"
@@ -997,10 +991,6 @@ user-home@^2.0.0:
 util-deprecate@~1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
-
-utils-platform@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/utils-platform/-/utils-platform-1.0.0.tgz#595eac97a3f68d9b36f4932b294fc226974513b0"
 
 validate-npm-package-license@^3.0.1:
   version "3.0.1"

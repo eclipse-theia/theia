@@ -1,23 +1,26 @@
 {
   "private": true,
-  "name": "@theia/parent",
+  "name": "parent",
   "version": "0.0.0",
   "dependencies": {
     "jsonc-parser": "^1.0.0",
     "node-pty": "^0.6.10"
   },
   "devDependencies": {
-    "generator-theia": "generator-theia",
     "lerna": "^2.0.0",
     "yo": "^2.0.0"
   },
   "scripts": {
-    "preinstall": "cd generator-theia && yarn",
-    "prepare": "yarn run bootstrap && yarn run clean && yarn run clean:rebuild && yarn run build",
-    "bootstrap": "node scripts/generate.js && lerna bootstrap --hoist -- --no-optional",
-    "refresh": "lerna clean --yes && yarn run bootstrap",
-    "clean": "lerna run clean --parallel",
-    "build": "lerna run build --stream",
+    "prepare": "yarn run prepare:generator && yarn run prepare:packages",
+    "prepare:generator": "yarn run bootstrap:generator && yarn run build:generator && yarn run link:generator",
+    "bootstrap:generator": "lerna bootstrap --scope generator-theia -- --no-optional",
+    "build:generator": "lerna run prepare --scope generator-theia --stream",
+    "link:generator": "lerna exec --scope generator-theia --stream -- yarn link && yarn link generator-theia",
+    "prepare:packages": "yarn run bootstrap && yarn run clean && yarn run clean:rebuild && yarn run build",
+    "bootstrap": "node scripts/generate.js && lerna bootstrap --scope \"@theia/*\" --hoist -- --no-optional",
+    "refresh": "lerna clean --scope \"@theia/*\" --yes && yarn run bootstrap",
+    "clean": "lerna run clean --scope \"@theia/*\" --parallel",
+    "build": "lerna run build --scope \"@theia/*\" --stream",
     "test": "yarn run test:theia && yarn run test:electron && yarn run test:browser",
     "test:theia": "lerna run test --scope \"@theia/!(example-)*\" --parallel",
     "test:browser": "yarn run rebuild:browser && lerna run test --scope \"@theia/example-browser\"",
