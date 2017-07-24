@@ -1,6 +1,6 @@
 {
   "name": "generator-theia",
-  "version": "0.0.1-alpha.1",
+  "version": "0.0.0",
   "description": "Theia Generator",
   "license": "Apache-2.0",
   "files": [
