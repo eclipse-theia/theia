@@ -1,6 +1,6 @@
 {
   "name": "@theia/core",
-  "version": "0.0.1-alpha.2",
+  "version": "0.0.0",
   "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
   "dependencies": {
     "@phosphor/widgets": "^0.1.7",
