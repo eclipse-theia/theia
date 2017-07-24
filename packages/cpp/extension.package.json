@@ -6,6 +6,9 @@
     "@theia/core": "^0.0.0",
     "@theia/languages": "^0.0.0"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "theiaExtensions": [
     {
       "frontend": "lib/browser/cpp-frontend-module",

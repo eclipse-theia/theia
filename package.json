@@ -14,7 +14,6 @@
   "scripts": {
     "preinstall": "cd generator-theia && yarn",
     "prepare": "yarn run bootstrap && yarn run clean && yarn run clean:rebuild && yarn run build",
-    "prepublishOnly": "yarn run test",
     "bootstrap": "node scripts/generate.js && lerna bootstrap --hoist -- --no-optional",
     "refresh": "lerna clean --yes && yarn run bootstrap",
     "clean": "lerna run clean --parallel",
@@ -27,6 +26,9 @@
     "rebuild:browser": "node scripts/rebuild.js --target=browser",
     "rebuild:electron": "node scripts/rebuild.js --target=electron",
     "rebuild:electron:debug": "DEBUG=electron-rebuild && yarn run rebuild:electron",
-    "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel"
+    "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel",
+    "publish": "yarn && yarn test && yarn run publish:latest && node scripts/update-versions.js",
+    "publish:latest": "lerna publish --registry=https://registry.npmjs.org/ --skip-git",
+    "publish:next": "lerna publish --registry=https://registry.npmjs.org/ --canary=next --npm-tag=next --force-publish --skip-git --yes"
   }
 }
