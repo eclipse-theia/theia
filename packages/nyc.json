@@ -11,5 +11,6 @@
     ],
     "extension": [
         ".ts"
-    ]
+    ],
+    "all": true
 }

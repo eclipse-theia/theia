@@ -1,5 +1,5 @@
 {
   "generator-theia": {
-    "testSupport": false
+    "testSupport": true
   }
 }
