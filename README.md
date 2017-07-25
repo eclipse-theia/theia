@@ -30,3 +30,11 @@ The team is also working on the following Open-Source Products based on Theia:
 ## Running the examples
 
 You can find more details on how to run the examples [here](doc/Developing.md).
+
+## Using Theia
+
+Use the `next` tag to make sure you get the latest nightly builds of `@theia/core` and extensions.
+E.g.:
+
+    npm install @theia/core@next
+    npm install @theia/filesystem@next
