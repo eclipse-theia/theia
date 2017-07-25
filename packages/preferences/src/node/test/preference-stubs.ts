@@ -8,13 +8,14 @@
 import { JsonPreferenceServer } from '../json-preference-server'
 import URI from '@theia/core/lib/common/uri';
 import { FileSystemNode } from "@theia/filesystem/lib/node/node-filesystem"
-import { ChokidarFileSystemWatcherServer } from '@theia/filesystem/lib/node/chokidar-filesystem-watcher'
+import { FileSystemWatcherServer, DidFilesChangedParams, WatchOptions, FileSystemWatcherClient } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { Logger } from '@theia/core/lib/common/logger'
-// import { PreferenceContribution, Preference } from '@theia/preferences/lib/*';
+
+
 
 export class JsonPrefHelper {
     readonly logger: Logger;
-    readonly fileWatcher: ChokidarFileSystemWatcherServer;
+    readonly fileWatcher: FileSystemWatcherServerstub;
     fileSystem: FileSystemNode;
     constructor() {
         this.logger = new Proxy<Logger>({} as any, {
@@ -35,51 +36,40 @@ export class JsonPrefHelper {
         return this.fileSystem;
     }
 
+    getWatcher(): FileSystemWatcherServerstub {
+        return this.fileWatcher;
+    }
+
     createJsonPrefServer(preferenceFileUri: URI) {
         return new JsonPreferenceServer(this.fileSystem, this.fileWatcher, this.logger, Promise.resolve(preferenceFileUri));
     }
 
-    private createFileSystemWatcher(): ChokidarFileSystemWatcherServer {
-        return new ChokidarFileSystemWatcherServer(this.logger);
+    private createFileSystemWatcher(): FileSystemWatcherServerstub {
+
+        return new FileSystemWatcherServerstub();
     }
 }
 
-// export class PrefProviderStub implements ContributionProvider<PreferenceContribution> {
-//     getContributions(): PreferenceContribution[] {
 
-//         let prefs1: Preference[] = [
-//             {
-//                 name: "testBooleanTrue",
-//                 defaultValue: true,
-//                 description: "testBooleanTrue description"
-//             },
-//             {
-//                 name: "testBooleanFalse",
-//                 defaultValue: false,
-//                 description: "testBooleanFalse description"
-//             }
-//         ];
+export class FileSystemWatcherServerstub implements FileSystemWatcherServer {
+    protected client: FileSystemWatcherClient;
+    watchFileChanges(uri: string, options?: WatchOptions): Promise<number> {
+        return Promise.resolve(2);
+    }
 
-//         let prefs2: Preference[] = [
-//             {
-//                 name: "testStringSomething",
-//                 defaultValue: "testStringSomethingValue",
-//                 description: "testStringSomething description"
-//             },
-//             {
-//                 name: "testStringSomething2",
-//                 defaultValue: "testStringSomethingValue2"
-//             }
-//         ];
+    unwatchFileChanges(watcher: number): Promise<void> {
+        return Promise.resolve();
+    }
 
-//         let prefContrib: PreferenceContribution[] = [new PreferenceContributionStub(prefs1), new PreferenceContributionStub(prefs2)];
+    setClient(client: FileSystemWatcherClient): void {
+        this.client = client;
+    }
 
-//         return prefContrib;
+    dispose() { }
 
-//     }
-// }
-
-// export class PreferenceContributionStub implements PreferenceContribution {
-//     constructor(readonly preferences: Preference[]
-//     ) { }
-// }
+    fireEvents(event: DidFilesChangedParams) {
+        if (this.client) {
+            this.client.onDidFilesChanged(event);
+        }
+    }
+}
