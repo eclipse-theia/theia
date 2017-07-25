@@ -807,18 +807,7 @@ process.on("unhandledRejection", (reason: any) => {
 });
 
 class PreferenceServerStub implements PreferenceServer {
-
-    constructor() {
-
-    }
-    setClient(client: PreferenceClient | undefined): void {
-
-    }
-
-    dispose(): void {
-
-    }
-
-    ready(): Promise<void> { return Promise.resolve() }
-
+    constructor() { }
+    setClient(client: PreferenceClient | undefined): void { }
+    dispose(): void { }
 }

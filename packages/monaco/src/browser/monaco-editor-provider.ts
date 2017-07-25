@@ -39,7 +39,7 @@ export class MonacoEditorProvider {
         const referencePromise = this.monacoModelResolver.createModelReference(uri);
         const prefPromise = this.editorPreferences.ready;
 
-        return Promise.all([referencePromise, prefPromise]).then(async (values) => {
+        return Promise.all([referencePromise, prefPromise]).then((values) => {
             const reference = values[0];
 
             const commandService = this.commandServiceFactory();
@@ -51,7 +51,7 @@ export class MonacoEditorProvider {
             textEditorModel.updateOptions(this.getModelOptions());
 
             const editor = new MonacoEditor(
-                uri, node, this.m2p, this.p2m, this.workspace, await this.getEditorOptions(model), {
+                uri, node, this.m2p, this.p2m, this.workspace, this.getEditorOptions(model), {
                     editorService: this.editorService,
                     textModelResolverService: this.monacoModelResolver,
                     contextMenuService: this.contextMenuService,
@@ -75,13 +75,13 @@ export class MonacoEditorProvider {
         });
     }
 
-    protected getModelOptions() {
+    protected getModelOptions(): monaco.editor.ITextModelUpdateOptions {
         return {
             tabSize: this.editorPreferences["editor.tabSize"]
         };
     }
 
-    protected async getEditorOptions(model: MonacoEditorModel): Promise<MonacoEditor.IOptions | undefined> {
+    protected getEditorOptions(model: MonacoEditorModel): MonacoEditor.IOptions | undefined {
         return {
             model: model.textEditorModel,
             wordWrap: false,
