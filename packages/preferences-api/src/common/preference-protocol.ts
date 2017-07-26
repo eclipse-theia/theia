@@ -12,8 +12,6 @@ export const preferencesPath = '/services/preferences';
 export const PreferenceServer = Symbol("PreferenceServer")
 
 export interface PreferenceServer extends Disposable {
-    has(preferenceName: string): Promise<boolean>;
-    get<T>(preferenceName: string): Promise<T | undefined>;
     setClient(client: PreferenceClient | undefined): void;
 }
 
@@ -22,6 +20,10 @@ export interface PreferenceClient {
 }
 
 export interface PreferenceChangedEvent {
+    changes: PreferenceChange[]
+}
+
+export interface PreferenceChange {
     readonly preferenceName: string;
     readonly newValue?: any;
     readonly oldValue?: any;

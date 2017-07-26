@@ -5,15 +5,32 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { PreferenceServer, PreferenceClient } from './preference-protocol'
+import { PreferenceServer, PreferenceClient, PreferenceChangedEvent } from './preference-protocol'
 
 export class CompoundPreferenceServer implements PreferenceServer {
 
     protected readonly servers: PreferenceServer[];
+    protected client: PreferenceClient | undefined;
+
     constructor(
-        ...servers: PreferenceServer[]
+        ...servers: PreferenceServer[],
     ) {
         this.servers = servers;
+        for (const server of servers) {
+            server.setClient({
+                onDidChangePreference: event => this.onDidChangePreference(event)
+            })
+        }
+    }
+
+    // TODO scope management should happen here
+    protected onDidChangePreference(event: PreferenceChangedEvent): void {
+
+        // TODO only fire when all pref servers are ready (scope management)
+        if (this.client) {
+            this.client.onDidChangePreference(event);
+        }
+
     }
 
     dispose(): void {
@@ -22,28 +39,7 @@ export class CompoundPreferenceServer implements PreferenceServer {
         }
     }
 
-    async has(preferenceName: string): Promise<boolean> {
-        for (const server of this.servers) {
-            if (await server.has(preferenceName)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    async get<T>(preferenceName: string): Promise<T | undefined> {
-        for (const server of this.servers) {
-            const result = await server.get<T>(preferenceName);
-            if (result !== undefined) {
-                return result;
-            }
-        }
-        return undefined;
-    }
-
     setClient(client: PreferenceClient | undefined) {
-        for (const server of this.servers) {
-            server.setClient(client);
-        }
+        this.client = client;
     }
 }

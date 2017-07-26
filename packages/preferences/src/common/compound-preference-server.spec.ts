@@ -10,8 +10,8 @@ import * as chaiAsPromised from "chai-as-promised";
 import * as temp from 'temp';
 import * as fs from 'fs-extra';
 
-import { CompoundPreferenceServer, DefaultPreferenceServer } from '@theia/preferences-api'
-import { JsonPrefHelper, PrefProviderStub } from '../node/test/preference-stubs'
+import { CompoundPreferenceServer } from '@theia/preferences-api'
+import { JsonPrefHelper } from '../node/test/preference-stubs'
 import { FileUri } from '@theia/core/lib/node/file-uri';
 
 const expect = chai.expect;
@@ -19,6 +19,9 @@ const track = temp.track();
 const preferencePath = '.theia/prefs.json';
 
 let compoundPrefServer: CompoundPreferenceServer;
+let preferenceFileUri: any;
+let helper = new JsonPrefHelper();
+
 
 before(() => {
     chai.should();
@@ -27,13 +30,12 @@ before(() => {
     chai.config.includeStack = true;
 
     const rootUri = FileUri.create(track.mkdirSync());
-    let preferenceFileUri = rootUri.resolve(preferencePath);
+    preferenceFileUri = rootUri.resolve(preferencePath);
     fs.mkdirSync(FileUri.fsPath(rootUri.resolve('.theia')));
-    fs.writeFileSync(FileUri.fsPath(preferenceFileUri), '{ "showLineNumbers": false }');
+    fs.writeFileSync(FileUri.fsPath(preferenceFileUri), '');
 
-    const jsonPrefServer = (new JsonPrefHelper()).createJsonPrefServer(preferenceFileUri);
-    const defaultPrefServer = new DefaultPreferenceServer(new PrefProviderStub());
-    compoundPrefServer = new CompoundPreferenceServer(jsonPrefServer, defaultPrefServer);
+    const jsonPrefServer = helper.createJsonPrefServer(preferenceFileUri);
+    compoundPrefServer = new CompoundPreferenceServer(jsonPrefServer);
 });
 
 after(() => {
@@ -42,38 +44,42 @@ after(() => {
 })
 
 describe('compound-preference-server', () => {
+    it('register a client', async () => {
 
-    describe('01 #has preference', () => {
-        it('should return true for the has preference (json server)', async () => {
-            const actual = await compoundPrefServer.has("showLineNumbers");
-            expect(actual).to.be.true;
-        });
+        // Register a simple client
+        let promise: Promise<boolean> = new Promise<boolean>((done) => {
+            compoundPrefServer.setClient({
+                onDidChangePreference(event) {
+                    for (const change of event.changes) {
+                        switch (change.preferenceName) {
+                            case "showLineNumbers":
+                                expect(change.newValue).to.be.true;
+                                done();
+                                break;
+                        }
+                    }
+                }
+            })
+        })
 
-        it('should return true for the testBooleanTrue preference (default provider)', async () => {
-            const actual = await compoundPrefServer.has("testBooleanTrue");
-            expect(actual).to.be.true;
-        });
+        const fileContent = '{ "showLineNumbers": true }';
 
-        it('should return false for an unexisting pref in all servers', async () => {
-            const actual = await compoundPrefServer.has("undefinedPref");
-            expect(actual).to.be.false;
-        });
-    });
+        // Modify the content.
+        fs.writeFileSync(FileUri.fsPath(preferenceFileUri), fileContent);
 
-    describe('02 #get preference', () => {
-        it('should get the value from the json server', async () => {
-            const actual = await compoundPrefServer.get("showLineNumbers");
-            expect(actual).to.be.false;
-        });
+        let { content } = await helper.getFS().resolveContent(FileUri.fsPath(preferenceFileUri));
+        expect(content).to.be.equal(fileContent);
 
-        it('should get the value from the default server', async () => {
-            const actual = await compoundPrefServer.get("testBooleanTrue");
-            expect(actual).to.be.true;
-        });
+        helper.getWatcher().fireEvents(
+            {
+                changes: [{
+                    uri: preferenceFileUri.toString(),
+                    type: 0
+                }]
+            }
+        )
 
-        it('should get undefined for unexisting pref', async () => {
-            const actual = await compoundPrefServer.get("undefinedPref");
-            expect(actual).to.be.undefined;
-        });
-    });
+        return promise;
+
+    })
 });

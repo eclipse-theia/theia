@@ -8,7 +8,6 @@
 import { interfaces } from "inversify";
 import {
     createPreferenceProxy,
-    PreferenceContribution,
     PreferenceProxy,
     PreferenceService,
 } from '@theia/preferences-api';
@@ -31,16 +30,9 @@ export function createFileSystemPreferences(preferences: PreferenceService): Fil
 }
 
 export function bindFileSystemPreferences(bind: interfaces.Bind): void {
+
     bind(FileSystemPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get(PreferenceService);
         return createFileSystemPreferences(preferences);
-    });
-
-    bind(PreferenceContribution).toConstantValue({
-        preferences: [{
-            name: 'files.watcherExclude',
-            defaultValue: defaultFileSystemConfiguration['files.watcherExclude'],
-            description: "Configure glob patterns of file paths to exclude from file watching."
-        }]
     });
 }

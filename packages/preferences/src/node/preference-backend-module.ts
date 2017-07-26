@@ -8,11 +8,10 @@
 import * as os from 'os';
 import { ContainerModule } from 'inversify';
 import URI from "@theia/core/lib/common/uri";
-import { bindContributionProvider } from '@theia/core/lib/common';
 import { FileUri } from '@theia/core/lib/node';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
-import { PreferenceService, CompoundPreferenceServer, PreferenceClient, PreferenceServer, preferencesPath, DefaultPreferenceServer, PreferenceContribution } from '../common';
+import { PreferenceService, CompoundPreferenceServer, PreferenceClient, PreferenceServer, preferencesPath } from '../common';
 import { JsonPreferenceServer, PreferenceUri } from './json-preference-server';
 
 /*
@@ -28,8 +27,6 @@ export const UserPreferenceServer = Symbol('UserPreferenceServer');
 export type UserPreferenceServer = PreferenceServer;
 
 export default new ContainerModule(bind => {
-    bindContributionProvider(bind, PreferenceContribution);
-    bind(DefaultPreferenceServer).toSelf().inSingletonScope();
     bind(JsonPreferenceServer).toSelf();
 
     bind(UserPreferenceServer).toDynamicValue(ctx => {
@@ -54,10 +51,9 @@ export default new ContainerModule(bind => {
     });
 
     bind(PreferenceServer).toDynamicValue(ctx => {
-        const defaultServer = ctx.container.get(DefaultPreferenceServer);
         const userServer = ctx.container.get<UserPreferenceServer>(UserPreferenceServer);
         const workspaceServer = ctx.container.get<WorkspacePreferenceServer>(WorkspacePreferenceServer);
-        return new CompoundPreferenceServer(workspaceServer, userServer, defaultServer);
+        return new CompoundPreferenceServer(workspaceServer, userServer);
     });
 
     bind(ConnectionHandler).toDynamicValue(ctx =>

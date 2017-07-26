@@ -29,10 +29,9 @@ before(() => {
 
     const rootUri = FileUri.create(track.mkdirSync());
     preferenceFileUri = rootUri.resolve(preferencePath);
+    prefServer = helper.createJsonPrefServer(preferenceFileUri);
     fs.mkdirSync(FileUri.fsPath(rootUri.resolve('.theia')));
     fs.writeFileSync(FileUri.fsPath(preferenceFileUri), '{ "showLineNumbers": false }');
-
-    prefServer = helper.createJsonPrefServer(preferenceFileUri);
 });
 
 after(() => {
@@ -41,63 +40,24 @@ after(() => {
 });
 
 describe('json-preference-server', () => {
-    describe('01 #has preference', () => {
 
-        it('should return true for the has preference', async () => {
-            const actual = await prefServer.has("showLineNumbers");
-            expect(actual).to.be.true;
-        });
+    describe('Json pref server client', () => {
 
-        it('should return false for the has preference', async () => {
-            const actual = await prefServer.has("missingPreferenceKey");
-            expect(actual).to.be.false;
-        });
-
-    });
-
-    describe('02 #get preference', () => {
-
-        it('should get the value for the preference', async () => {
-            const actual = await prefServer.get("showLineNumbers");
-            expect(actual).to.be.false;
-        });
-
-        it('should get no value for unknown preference', async () => {
-            const actual = await prefServer.get("unknownPreference");
-            expect(actual).to.be.undefined;
-        });
-
-    });
-
-    describe('03 #register and wait for pref change', () => {
-
-        it('should get notified of changed pref with the correct new/old values', async () => {
+        it('Register a client and change the value', async () => {
 
             // Register a simple client
-            let promise: Promise<boolean> = new Promise<boolean>((done) => {
-                let eventNumbers: number = 0;
+            let promise: Promise<boolean> = new Promise<boolean>(async (done) => {
                 prefServer.setClient({
                     onDidChangePreference(event) {
-                        if (event.preferenceName === 'showLineNumbers') {
-                            expect(event.newValue).to.be.equal(true);
-                            expect(event.oldValue).to.be.equal(false);
-                            eventNumbers++;
-                        } else if (event.preferenceName === 'tabWidth') {
-                            expect(event.newValue).to.be.equal(8);
-                            eventNumbers++;
-                        }
-                        if (eventNumbers === 2) {
+                        for (const change of event.changes) {
+                            expect(change.newValue).to.be.equal(true);
                             done();
                         }
                     }
                 })
             })
 
-            // Make sure, it is `true` by default.
-            const initialState = await prefServer.get("showLineNumbers");
-            expect(initialState).to.be.false;
-
-            const fileContent = '{"showLineNumbers":true,"tabWidth":8}'; // Invalid json
+            const fileContent = '{ "showLineNumbers": true }';
 
             // Modify the content.
             fs.writeFileSync(FileUri.fsPath(preferenceFileUri), fileContent);
@@ -105,37 +65,18 @@ describe('json-preference-server', () => {
             let { content } = await helper.getFS().resolveContent(FileUri.fsPath(preferenceFileUri));
             expect(content).to.be.equal(fileContent);
 
-            return promise;
-
-        }).timeout(20000)
-
-
-    });
-    describe('03 #write invalid json pref file', () => {
-
-        it('should log an error and have undefined prefs', async () => {
-
-            // Register a simple client
-            let promise: Promise<boolean> = new Promise<boolean>((done) => {
-                prefServer.setClient({
-                    onDidChangePreference(event) {
-                        expect(event.newValue).to.be.equal(undefined);
-                        done();
-                    }
-                })
-            })
-
-            const fileContent = '{showLineNumbers":tue'; // Invalid json
-
-            // Modify the content.
-            fs.writeFileSync(FileUri.fsPath(preferenceFileUri), fileContent);
-
-            let { content } = await helper.getFS().resolveContent(FileUri.fsPath(preferenceFileUri));
-            expect(content).to.be.equal(fileContent);
+            helper.getWatcher().fireEvents(
+                {
+                    changes: [{
+                        uri: preferenceFileUri.toString(),
+                        type: 0
+                    }]
+                }
+            )
 
             return promise;
 
-        }).timeout(20000)
+        }).timeout(10000);
     });
 });
 

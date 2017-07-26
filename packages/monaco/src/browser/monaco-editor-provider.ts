@@ -10,7 +10,7 @@ import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-lan
 import URI from "@theia/core/lib/common/uri";
 import { DisposableCollection } from '@theia/core/lib/common';
 import { EditorPreferences } from "@theia/editor/lib/browser";
-import { PreferenceChangedEvent } from "@theia/preferences/lib/common";
+import { PreferenceChange } from "@theia/preferences/lib/common";
 import { MonacoEditor } from "./monaco-editor";
 import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditorService } from "./monaco-editor-service";
@@ -35,8 +35,12 @@ export class MonacoEditorProvider {
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
     ) { }
 
-    async get(uri: URI): Promise<MonacoEditor> {
-        return Promise.resolve(this.monacoModelResolver.createModelReference(uri).then((async (reference) => {
+    get(uri: URI): Promise<MonacoEditor> {
+        const referencePromise = this.monacoModelResolver.createModelReference(uri);
+        const prefPromise = this.editorPreferences.ready;
+
+        return Promise.all([referencePromise, prefPromise]).then((values) => {
+            const reference = values[0];
 
             const commandService = this.commandServiceFactory();
 
@@ -44,10 +48,10 @@ export class MonacoEditorProvider {
             const model = reference.object;
             const textEditorModel = model.textEditorModel;
 
-            textEditorModel.updateOptions({ tabSize: await this.editorPreferences["editor.tabSize"] });
+            textEditorModel.updateOptions(this.getModelOptions());
 
             const editor = new MonacoEditor(
-                uri, node, this.m2p, this.p2m, this.workspace, await this.getEditorOptions(model), {
+                uri, node, this.m2p, this.p2m, this.workspace, this.getEditorOptions(model), {
                     editorService: this.editorService,
                     textModelResolverService: this.monacoModelResolver,
                     contextMenuService: this.contextMenuService,
@@ -68,23 +72,30 @@ export class MonacoEditorProvider {
             commandService.setDelegate(standaloneCommandService);
 
             return editor;
-        })));
+        });
     }
 
-    protected async getEditorOptions(model: MonacoEditorModel): Promise<MonacoEditor.IOptions | undefined> {
+    protected getModelOptions(): monaco.editor.ITextModelUpdateOptions {
+        return {
+            tabSize: this.editorPreferences["editor.tabSize"]
+        };
+    }
+
+    protected getEditorOptions(model: MonacoEditorModel): MonacoEditor.IOptions | undefined {
         return {
             model: model.textEditorModel,
             wordWrap: false,
             folding: true,
-            lineNumbers: await this.editorPreferences["editor.lineNumbers"],
-            renderWhitespace: await this.editorPreferences["editor.renderWhitespace"],
+            lineNumbers: this.editorPreferences["editor.lineNumbers"],
+            renderWhitespace: this.editorPreferences["editor.renderWhitespace"],
             theme: 'vs-dark',
             glyphMargin: true,
             readOnly: model.readOnly
         }
     }
 
-    protected handlePreferenceEvent(e: PreferenceChangedEvent, editor: MonacoEditor) {
+
+    protected handlePreferenceEvent(e: PreferenceChange, editor: MonacoEditor) {
         switch (e.preferenceName) {
             case ('editor.tabSize'): {
                 editor.getControl().getModel().updateOptions({ tabSize: <number>e.newValue });
@@ -99,5 +110,6 @@ export class MonacoEditorProvider {
                 break;
             }
         }
+
     }
 }

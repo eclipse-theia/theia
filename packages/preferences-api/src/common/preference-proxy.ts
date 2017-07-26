@@ -5,8 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Disposable, DisposableCollection, Event, Emitter, Deferred } from '@theia/core/lib/common';
-import { PreferenceService, PreferenceChangedEvent } from "./preference-service";
+import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core/lib/common';
+import { PreferenceService, PreferenceChange } from "./preference-service";
 
 export type Configuration = {
     [preferenceName: string]: any
@@ -16,12 +16,14 @@ export type PreferenceEventEmitter<T> = {
         readonly preferenceName: keyof T
         readonly newValue?: T[keyof T]
         readonly oldValue?: T[keyof T]
-    }>
+    }>;
+
+    readonly ready: Promise<void>;
 };
-export type PreferenceProxy<T> = Readonly<Deferred<T>> & Disposable & PreferenceEventEmitter<T>;
+export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T>;
 export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, configuration: T): PreferenceProxy<T> {
     const toDispose = new DisposableCollection();
-    const onPreferenceChangedEmitter = new Emitter<PreferenceChangedEvent>();
+    const onPreferenceChangedEmitter = new Emitter<PreferenceChange>();
     toDispose.push(onPreferenceChangedEmitter);
     toDispose.push(preferences.onPreferenceChanged(e => {
         if (e.preferenceName in configuration) {
@@ -38,6 +40,9 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
             }
             if (p === 'dispose') {
                 return () => toDispose.dispose();
+            }
+            if (p === 'ready') {
+                return () => preferences.ready;
             }
             throw new Error('unexpected property: ' + p);
         }

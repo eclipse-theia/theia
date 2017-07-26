@@ -8,10 +8,38 @@
 import { interfaces } from "inversify";
 import {
     createPreferenceProxy,
-    PreferenceContribution,
     PreferenceProxy,
     PreferenceService,
 } from '@theia/preferences/lib/common';
+
+export const EditorConfigSchema = {
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "title": "Editor configuration Scheme",
+    "type": "object",
+    "properties": {
+        "editor.tabSize": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Configure the tab size in the monaco editor"
+        },
+        "editor.lineNumbers": {
+            "enum": [
+                "on",
+                "off"
+            ],
+            "description": "Control the rendering of line numbers"
+
+        },
+        "editor.renderWhitespace": {
+            "enum": [
+                "none",
+                "boundary",
+                "all"
+            ],
+            "description": "Control the rendering of whitespaces in the editor"
+        }
+    }
+}
 
 export interface EditorConfiguration {
     'editor.tabSize': number,
@@ -23,7 +51,6 @@ export const defaultEditorConfiguration: EditorConfiguration = {
     'editor.tabSize': 4,
     'editor.lineNumbers': 'on',
     'editor.renderWhitespace': 'none'
-
 }
 
 export const EditorPreferences = Symbol('EditorPreferences');
@@ -37,23 +64,5 @@ export function bindEditorPreferences(bind: interfaces.Bind): void {
     bind(EditorPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get(PreferenceService);
         return createEditorPreferences(preferences);
-    });
-
-    bind(PreferenceContribution).toConstantValue({
-        preferences: [{
-            name: 'editor.tabSize',
-            defaultValue: defaultEditorConfiguration['editor.tabSize'],
-            description: "Configure the tab size in the monaco editor"
-        },
-        {
-            name: 'editor.lineNumbers',
-            defaultValue: defaultEditorConfiguration['editor.lineNumbers'],
-            description: "Control the rendering of line numbers"
-        },
-        {
-            name: 'editor.renderWhitespace',
-            defaultValue: defaultEditorConfiguration['editor.lineNumbers'],
-            description: "Control the rendering of whitespaces in the editor"
-        }]
     });
 }
