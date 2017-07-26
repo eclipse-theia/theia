@@ -6,7 +6,6 @@ lib
 .idea
 .metadata
 jdt.ls-java-project
-download
 lerna-debug.log
 .nyc_output
 coverage
