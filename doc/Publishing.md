@@ -20,13 +20,18 @@ This command will rebuild all packages, test them, publish to npm and bump versi
 
 ## Tagging the published version
 
+    git commit -m "publish v${published.version}" -s
+    git push origin HEAD
     git tag v${published.version}
     git push origin v${published.version}
 
 The version picked during package publishing should be used as `${published.version}`.
-The first command creates a new tag, the second transfers it to a remote.
+
+First two commands commit updated versions, last two create a new tag and transfer it to a remote.
 
 For example, if you picked `0.1.0` as a version then you should run:
 
+    git commit -m "publish v0.1.0" -s
+    git push origin HEAD
     git tag v0.1.0
     git push origin v0.1.0

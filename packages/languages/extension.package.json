@@ -1,9 +1,9 @@
 {
   "name": "@theia/languages",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Theia - Languages Extension",
   "dependencies": {
-    "@theia/core": "^0.0.0",
+    "@theia/core": "^0.1.0",
     "vscode-base-languageclient": "^0.0.1-alpha.2",
     "vscode-languageserver": "^3.3.0"
   },

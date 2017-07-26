@@ -1,10 +1,10 @@
 {
   "name": "@theia/editor",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Theia - Editor Extension",
   "dependencies": {
-    "@theia/core": "^0.0.0",
-    "@theia/preferences": "^0.0.0",
+    "@theia/core": "^0.1.0",
+    "@theia/preferences": "^0.1.0",
     "vscode-languageserver-types": "^3.3.0"
   },
   "publishConfig": {
