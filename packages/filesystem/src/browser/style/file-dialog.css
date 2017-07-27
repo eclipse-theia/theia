@@ -1,0 +1,39 @@
+/*
+ * Copyright (C) 2017 TypeFox and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+ .dialogContent .theia-FileDialog {
+     height: 500px;
+     width: 500px;
+     border: var(--theia-border-width) solid var(--theia-border-color1);
+ }
+
+ .dialogContent .theia-NavigationPanel {
+     display: flex;
+     flex-direction: row;
+     justify-content: center;
+     align-items: center;
+     margin-top: 0px;
+ }
+
+ .dialogContent .theia-LocationList {
+     width: 250px;
+ }
+
+ .dialogContent .theia-NavigationPanel > * {
+     margin-right: 4px;
+}
+
+.dialogContent .theia-ControlPanel {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-bottom: 0px;
+}
+
+.dialogContent .theia-ControlPanel > * {
+    margin-left: 4px;
+}

@@ -6,3 +6,10 @@ lib
 .idea
 .metadata
 jdt.ls-java-project
+lerna-debug.log
+.nyc_output
+coverage
+packages/*/package.json
+examples/*/package.json
+examples/*/src-gen
+.browser_modules

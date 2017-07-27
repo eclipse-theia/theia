@@ -1,3 +1,12 @@
+// @ts-check 
+const http = require('http');
+const path = require('path');
+
+const port = 3000;
+const host = 'localhost';
+
+let server;
+
 exports.config = {
 
     //
@@ -72,10 +81,10 @@ exports.config = {
     //
     // Set a base URL in order to shorten url command calls. If your url parameter starts
     // with "/", then the base url gets prepended.
-    baseUrl: 'http://localhost:8080',
+    baseUrl: `http://${host}:${port}`,
     //
     // Default timeout for all waitFor* commands.
-    waitforTimeout: 10000,
+    waitforTimeout: 300000,
     //
     // Default timeout in milliseconds for request
     // if Selenium Grid doesn't send response
@@ -129,8 +138,7 @@ exports.config = {
         compilers: ['ts:ts-node/register'],
         requires: ['reflect-metadata/Reflect'],
         watch: 'ts',
-        timeout: 10000,
-
+        timeout: 180000,
     },
     //
     // =====
@@ -142,8 +150,18 @@ exports.config = {
     // resolved to continue.
     //
     // Gets executed once before all workers get launched.
-    // onPrepare: function (config, capabilities) {
-    // },
+    onPrepare: function (config, capabilities) {
+        return require('./src-gen/backend/server')(port, host).then(s => {
+            server = s;
+        });
+    },
+    // Gets executed after all workers got shut down and the process is about to exit. It is not
+    // possible to defer the end of the process using a promise.
+    onComplete: function (exitCode) {
+        if (server) {
+            server.close();
+        }
+    }
     //
     // Gets executed just before initialising the webdriver session and test framework. It allows you
     // to manipulate configurations depending on the capability or spec.
@@ -197,9 +215,4 @@ exports.config = {
     // Gets executed right after terminating the webdriver session.
     // afterSession: function (config, capabilities, specs) {
     // },
-    //
-    // Gets executed after all workers got shut down and the process is about to exit. It is not
-    // possible to defer the end of the process using a promise.
-    // onComplete: function(exitCode) {
-    // }
 }

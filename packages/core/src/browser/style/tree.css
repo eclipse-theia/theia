@@ -1,0 +1,41 @@
+.theia-Tree {
+    overflow-y: auto;
+    overflow-x: hidden;
+    color: var(--theia-ui-font-color1);
+    background:var(--theia-layout-color1);
+    font-size: var(--theia-ui-font-size1);
+}
+
+.theia-Tree:focus {
+    outline: 0;
+    box-shadow: none;
+}
+
+.theia-TreeNode {
+    width: 500px;
+}
+
+.theia-TreeNodeCaption {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    user-select: none;
+    padding: 2px;
+}
+
+.theia-ExpansionToggle.theia-mod-collapsed {
+    background: url('../icons/collapse.svg') center center no-repeat;
+}
+
+.theia-ExpansionToggle:not(.theia-mod-collapsed) {
+    background: url('../icons/expand.svg') center center no-repeat;
+}
+
+.theia-Tree:focus .theia-TreeNode.theia-mod-selected {
+    background:var(--theia-accent-color3);
+}
+
+.theia-Tree:not(:focus) .theia-TreeNode.theia-mod-selected {
+    background:var(--md-grey-800);
+}
+

@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "inlineSources": false,
+        "declaration": true,
+        "stripInternal": true,
+        "lib": [
+            "es2016"
+        ],
+        "rootDir": "src",
+        "outDir": "generators",
+        "strictNullChecks": true,
+        "noImplicitAny": false,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "noUnusedLocals": true,
+        "downlevelIteration": true,
+        "typeRoots": [
+            "node_modules/@types"
+        ]
+    },
+    "include": [
+        "src"
+    ]
+}

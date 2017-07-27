@@ -1,0 +1,10 @@
+{
+  "lerna": "2.0.0",
+  "npmClient": "yarn",
+  "packages": [
+    "generator-theia",
+    "packages/*",
+    "examples/*"
+  ],
+  "version": "0.1.0"
+}

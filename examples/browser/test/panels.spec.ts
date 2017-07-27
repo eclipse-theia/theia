@@ -8,6 +8,12 @@ describe('theia main elements loading', () => {
 
     before(() => {
         browser.url(url);
+        if (browser.getTitle() == 'localhost') {
+            browser.waitUntil(function () {
+            console.log('browser not loaded yet, trying again ');
+            return browser.getTitle() == '';
+            }, 300000), 5000;        
+        }
         mainPage = new MainPage(browser);
 
     });
@@ -48,7 +54,7 @@ describe('theia main elements loading', () => {
 
         // Make sure the menu location is directly under the bar tab
         let firstTabX = mainPage.getxBarTabPosition(1);
-        let menuX = mainPage.getxMenuPosition();;
+        let menuX = mainPage.getxMenuPosition();
         assert.equal(firstTabX, menuX);
 
         // Test with the second tab

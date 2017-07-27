@@ -7,26 +7,50 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch App",
-            "program": "${workspaceRoot}/examples/browser/lib/app/app.js",
+            "name": "Launch Electron Backend",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+            "program": "${workspaceRoot}/examples/electron/src-gen/frontend/electron-main.js",
+            "protocol": "legacy",
+            "args": [
+                "--loglevel=debug"
+            ],
             "sourceMaps": true,
             "outFiles": [
+                "${workspaceRoot}/examples/electron/src-gen/frontend/electron-main.js",
+                "${workspaceRoot}/examples/electron/src-gen/backend/main.js",
                 "${workspaceRoot}/examples/browser/lib/**/*.js",
-                "${workspaceRoot}/examples/browser/node_modules/theia/lib/**/*.js"
+                "${workspaceRoot}/packages/*/lib/**/*.js"
             ]
         },
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch App (eclipse.jdt.ls)",
-            "program": "${workspaceRoot}/examples/browser/lib/app/app.js",
+            "name": "Launch Backend",
+            "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
             "args": [
-                "--root-dir=${workspaceRoot}/../eclipse.jdt.ls"
+                "--loglevel=debug"
             ],
             "sourceMaps": true,
             "outFiles": [
+                "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
                 "${workspaceRoot}/examples/browser/lib/**/*.js",
-                "${workspaceRoot}/examples/browser/node_modules/theia/lib/**/*.js"
+                "${workspaceRoot}/packages/*/lib/**/*.js"
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Backend (eclipse.jdt.ls)",
+            "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
+            "args": [
+                "--loglevel=debug",
+                "--root-dir=${workspaceRoot}/../eclipse.jdt.ls/org.eclipse.jdt.ls.core"
+            ],
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
+                "${workspaceRoot}/examples/browser/lib/**/*.js",
+                "${workspaceRoot}/packages/*/lib/**/*.js"
             ]
         },
         {
@@ -42,11 +66,23 @@
                 "--timeout",
                 "999999",
                 "--colors",
-                "${file}"
+                "${file}",
+                "--opts",
+                "${workspaceRoot}/packages/mocha.opts"
             ],
+            "env": {
+                "TS_NODE_PROJECT": "${workspaceRoot}/packages/tsconfig.json"
+            },
             "sourceMaps": true,
             "internalConsoleOptions": "openOnSessionStart",
             "port": 9229
+        },
+        {
+            "name": "Launch Frontend",
+            "type": "chrome",
+            "request": "launch",
+            "url": "http://localhost:8080/",
+            "webRoot": "${workspaceRoot}"
         }
     ]
 }

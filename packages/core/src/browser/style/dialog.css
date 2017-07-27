@@ -1,0 +1,95 @@
+.p-Widget.dialogBlock {
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(1,1,1,0.5);
+    position: fixed;
+    color: var(--theia-ui-font-color1);
+    font-size: var(--theia-ui-font-size1);
+    padding: 2px;
+}
+.p-Widget.dialogBlock .dialogContent {
+    background-color: var(--theia-layout-color1);
+    border: 1px solid var(--theia-border-color1);
+    position: relative;
+    padding: calc(var(--theia-ui-padding)*3);
+    text-align: center;
+}
+.p-Widget.dialogBlock .dialogTitle {
+    text-align: center;
+    font-size: var(--theia-ui-font-size1);
+    padding-bottom: 20px;
+}
+.p-Widget.dialogBlock .dialogClose {
+    pointer-events: auto;
+    position: absolute;
+    right: calc(var(--theia-ui-padding)*2);
+    top: calc(var(--theia-ui-padding)*2);
+    cursor: pointer;
+}
+
+.dialogContent > * {
+    margin: 4px;
+}
+
+.dialogContent :focus {
+  box-shadow: inset 0px 0px 1px 1px var(--theia-accent-color3);
+}
+
+.p-Widget.dialogBlock .dialogButton {
+    border: 1px solid var(--theia-border-color1);
+    color: var(--theia-ui-font-color1);
+    font-size: var(--theia-ui-font-size1);
+    border-radius: 0;
+    background: transparent;
+    outline: none;
+    cursor: pointer;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.p-Widget.dialogBlock select {
+    border: 1px solid var(--theia-border-color1);
+    color: var(--theia-ui-font-color1);
+    font-size: var(--theia-ui-font-size1);
+    border-radius: 0;
+    background: transparent;
+    outline: none;    
+}
+
+.p-Widget.dialogBlock .dialogButton.main {
+    background-color: var(--theia-accent-color3);
+}
+.p-Widget.dialogBlock .dialogButton[disabled] {
+    background-color: var(--theia-disabled-color1);
+    cursor: default;
+}
+
+.p-Widget.dialogBlock.hidden {
+    display: none;
+}
+.p-Widget.dialogBlock.dialogErrorMessage {
+    display: none;
+}
+.p-Widget.dialogBlock.error {
+    color: var(--theia-error-color1);
+}
+.p-Widget.dialogBlock.error.main {
+    color: var(--theia-error-color1);
+    border-color: var(--theia-error-color1);
+}
+.p-Widget.dialogBlock.error > .dialogButton.main {
+    background-color: var(--theia-error-color1);
+    color: var(--theia-ui-font-color1);
+}
+.p-Widget.dialogBlock.error > .dialogErrorMessage {
+    margin-top: calc(var(--theia-ui-padding)*3);
+    font-size: var(--theia-ui-font-size1);
+    display: block;
+}

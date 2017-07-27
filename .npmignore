@@ -1,0 +1,12 @@
+.DS_Store
+node_modules
+build
+*.log
+.idea
+.metadata
+jdt.ls-java-project
+lerna-debug.log
+.nyc_output
+coverage
+.browser_modules
+download

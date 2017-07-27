@@ -1,0 +1,18 @@
+{
+  "name": "@theia/cpp",
+  "version": "0.1.0",
+  "description": "Theia - Cpp Extension",
+  "dependencies": {
+    "@theia/core": "^0.1.0",
+    "@theia/languages": "^0.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/cpp-frontend-module",
+      "backend": "lib/node/cpp-backend-module"
+    }
+  ]
+}

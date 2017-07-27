@@ -20,7 +20,7 @@ export class MainPage {
     }
 
     public isFileNavigatorOpen(): Boolean {
-        if (this.driver.element('#file-navigator').getAttribute('class').split(' ').indexOf('p-mod-hidden') !== -1) {
+        if (this.driver.element('#files').getAttribute('class').split(' ').indexOf('p-mod-hidden') !== -1) {
             return false;
         } else {
             return true;

@@ -1,0 +1,54 @@
+@import url('~@phosphor/widgets/style/index.css');
+
+
+/*-----------------------------------------------------------------------------
+| General
+|----------------------------------------------------------------------------*/
+
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: var(--theia-ui-font-family);
+  background: var(--theia-layout-color3);
+}
+
+.theia-ApplicationShell {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.theia-icon {
+  width: 18px;
+  height: 18px;
+  margin: 5px;
+  margin-left: 8px;
+}
+
+.theia-mod-disabled {
+  opacity: 0.4;
+}
+
+.p-Widget.p-mod-hidden {
+  display: none !important;
+}
+
+/*-----------------------------------------------------------------------------
+| Import children style files
+|----------------------------------------------------------------------------*/
+
+
+@import './dockpanel.css';
+@import './dialog.css';
+@import './menus.css';
+@import './sidepanel.css';
+@import './tabs.css';
+@import './variables-dark.css';
+@import './materialcolors.css';
+@import './scrollbars.css';
+@import './tree.css';
+
