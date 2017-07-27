@@ -7,9 +7,6 @@
     "vscode-base-languageclient": "^0.0.1-alpha.2",
     "vscode-languageserver": "^3.3.0"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "theiaExtensions": [
     {
       "frontend": "lib/browser/languages-frontend-module",

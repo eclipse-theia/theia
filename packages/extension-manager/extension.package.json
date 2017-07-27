@@ -1,0 +1,9 @@
+{
+  "name": "@theia/extension-manager",
+  "version": "0.1.0",
+  "description": "Theia - Extension Manager Extension",
+  "dependencies": {
+    "@theia/core": "^0.1.0",
+    "generator-theia": "^0.1.0"
+  }
+}

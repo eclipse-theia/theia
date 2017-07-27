@@ -10,9 +10,6 @@
     "node-pty": "^0.6.10",
     "xterm": "^2.8.1"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "theiaExtensions": [
     {
       "frontend": "lib/browser/terminal-frontend-module",

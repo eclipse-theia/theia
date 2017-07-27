@@ -18,9 +18,6 @@
   "scripts": {
     "build": "concurrently -n download,compile,lint -c red,blue,green \"gulp download_java_server\" \"yarn run compile\" \"yarn run lint\""
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "theiaExtensions": [
     {
       "frontend": "lib/browser/java-frontend-module",

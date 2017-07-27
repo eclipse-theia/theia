@@ -56,6 +56,7 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
         return {
             ...this.model.pck,
             "keywords": [...keywords],
+            "author": this.model.pck.author || "Project Theia",
             "license": this.model.pck.license || "Apache-2.0",
             "repository": this.model.pck.repository || {
                 "type": "git",
@@ -84,7 +85,10 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
                 "tslint": "^5.5.0",
                 "typescript": "^2.4.1",
                 ...this.model.pck.devDependencies
-            })
+            }),
+            "publishConfig": this.model.pck.publishConfig || {
+                "access": "public"
+            }
         };
     }
 

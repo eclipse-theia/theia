@@ -17,9 +17,6 @@
   "devDependencies": {
     "uuid": "^3.1.0"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "theiaExtensions": [
     {
       "frontend": "lib/browser/filesystem-frontend-module",

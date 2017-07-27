@@ -13,9 +13,6 @@
     "@types/temp": "^0.8.29",
     "temp": "^0.8.3"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "theiaExtensions": [
     {
       "frontend": "lib/browser/preference-frontend-module",
