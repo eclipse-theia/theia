@@ -6,6 +6,9 @@
             "@theia/core/lib/*": [
                 "core/src/*"
             ],
+            "@theia/extension-manager/lib/*": [
+                "extension-manager/src/*"
+            ],
             "@theia/filesystem/lib/*": [
                 "filesystem/src/*"
             ],
