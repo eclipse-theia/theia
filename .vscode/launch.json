@@ -70,6 +70,9 @@
                 "--opts",
                 "${workspaceRoot}/packages/mocha.opts"
             ],
+            "env": {
+                "TS_NODE_PROJECT": "${workspaceRoot}/packages/tsconfig.json"
+            },
             "sourceMaps": true,
             "internalConsoleOptions": "openOnSessionStart",
             "port": 9229
