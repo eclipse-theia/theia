@@ -3,7 +3,6 @@
   "name": "parent",
   "version": "0.0.0",
   "dependencies": {
-    "jsonc-parser": "^1.0.0",
     "node-pty": "^0.6.10"
   },
   "devDependencies": {
