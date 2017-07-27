@@ -68,7 +68,7 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
             ],
             "scripts": {
                 "clean": "yarn run compile:clean",
-                "build": "concurrently -n compile,lint -c blue,green \"yarn run compile\" \"yarn run lint\"",
+                "build": "yarn run compile && yarn run lint",
                 "compile": "tsc -p compile.tsconfig.json",
                 "compile:clean": "rimraf lib",
                 "lint": "tslint -c ../tslint.json --project compile.tsconfig.json",
