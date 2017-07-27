@@ -5,6 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import * as path from 'path';
+export const generatorTheiaPath = path.resolve(__dirname, '..', '..');
 export * from './generator-model';
 export * from './abstract-generator';
 export * from './app-package-generator';

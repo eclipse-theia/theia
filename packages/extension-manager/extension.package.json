@@ -1,9 +1,14 @@
 {
   "name": "@theia/extension-manager",
   "version": "0.1.0",
-  "description": "Theia - Extension Manager Extension",
+  "description": "Theia - Extension Manager",
   "dependencies": {
     "@theia/core": "^0.1.0",
-    "generator-theia": "^0.1.0"
-  }
+    "generator-theia": "^0.1.0",
+    "semver": "^5.4.1"
+  },
+  "devDependencies": {
+    "@types/semver": "^5.3.32"
+  },
+  "theiaExtensions": []
 }

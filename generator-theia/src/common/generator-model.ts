@@ -12,9 +12,14 @@ export interface NodePackage {
     [property: string]: any;
 }
 
-export interface TheiaNodePackage {
+export interface ExtensionPackage extends NodePackage {
     name: string;
-    theiaExtensions?: Extension[];
+    theiaExtensions: Extension[];
+}
+export namespace ExtensionPackage {
+    export function is(pck: NodePackage | undefined): pck is ExtensionPackage {
+        return !!pck && !!pck.name && !!pck.theiaExtensions;
+    }
 }
 
 export interface Extension {
@@ -40,7 +45,7 @@ export interface ExtensionConfig {
 }
 
 export function sortByKey(object: { [key: string]: any }): { [key: string]: any } {
-    return Object.keys(object).sort().reduce((sorted, key) => {
+    return Object.keys(object).sort().reduce((sorted: { [key: string]: any }, key) => {
         sorted[key] = object[key];
         return sorted;
     }, {});
@@ -51,6 +56,7 @@ export const defaultExtensionKeyword = "theia-extension";
 export class Model {
     target: 'web' | 'electron-renderer' | undefined;
     pck: NodePackage = {};
+    targetPck: NodePackage = {};
     config: Config = {
         copyright: '',
         node_modulesPath: "../../node_modules"
@@ -67,39 +73,36 @@ export class Model {
     protected _frontendElectronModules: Map<string, string> | undefined;
     protected _backendModules: Map<string, string> | undefined;
     protected _backendElectronModules: Map<string, string> | undefined;
-    protected readonly extensionPackages = new Map<string, TheiaNodePackage>();
+    protected readonly _extensionPackages = new Map<string, ExtensionPackage>();
 
-    get allExtensions(): string[] {
-        return [...Object.keys(this.pck.localDependencies), ...Object.keys(this.pck.dependencies)];
+    get extensionPackages(): ReadonlyArray<ExtensionPackage> {
+        return Array.from(this._extensionPackages.values());
     }
 
-    readExtensionPackages(read: (extension: string, version: string) => TheiaNodePackage | undefined): void {
+    readExtensionPackages(reader: {
+        read: (extension: string, version: string) => NodePackage | undefined,
+        readLocal: (extension: string, path: string) => NodePackage | undefined
+    }): void {
         if (!this.pck.dependencies) {
             return;
         }
+        const localDependencies = this.config.localDependencies || {};
         // tslint:disable-next-line:forin
         for (const extension in this.pck.dependencies) {
+            if (extension in localDependencies) {
+                const path = localDependencies[extension];
+                this.readExtensionPackage(extension, () => reader.readLocal(extension, path));
+            }
             const version = this.pck.dependencies[extension];
-            this.readExtensionPackage(extension, () => read(extension, version));
+            this.readExtensionPackage(extension, () => reader.read(extension, version));
         }
     }
 
-    readLocalExtensionPackages(read: (extension: string, path: string) => TheiaNodePackage | undefined): void {
-        if (!this.config.localDependencies) {
-            return;
-        }
-        // tslint:disable-next-line:forin
-        for (const extension in this.config.localDependencies) {
-            const path = this.config.localDependencies[extension];
-            this.readExtensionPackage(extension, () => read(extension, path));
-        }
-    }
-
-    protected readExtensionPackage(extension: string, read: () => TheiaNodePackage | undefined): void {
-        if (!this.extensionPackages.has(extension)) {
-            const extensionPackage: TheiaNodePackage | undefined = read();
-            if (extensionPackage) {
-                this.extensionPackages.set(extension, extensionPackage);
+    protected readExtensionPackage(extension: string, read: () => NodePackage | undefined): void {
+        if (!this._extensionPackages.has(extension)) {
+            const pck = read();
+            if (ExtensionPackage.is(pck)) {
+                this._extensionPackages.set(extension, pck);
             }
         }
     }
@@ -135,7 +138,7 @@ export class Model {
     protected computeModules<P extends keyof Extension, S extends keyof Extension = P>(primary: P, secondary?: S): Map<string, string> {
         const result = new Map<string, string>();
         let moduleIndex = 1;
-        for (const extensionPackage of this.extensionPackages.values()) {
+        for (const extensionPackage of this.extensionPackages) {
             const extensions = extensionPackage.theiaExtensions;
             if (extensions) {
                 for (const extension of extensions) {
