@@ -83,6 +83,17 @@
             "request": "launch",
             "url": "http://localhost:8080/",
             "webRoot": "${workspaceRoot}"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Lerna Bootstrap with module hoisting",
+            "program": "${workspaceRoot}/node_modules/.bin/lerna",
+            "args": [
+                "bootstrap",
+                "--hoist"
+            ],
+            "sourceMaps": false
         }
     ]
 }

@@ -11,7 +11,7 @@
     "yo": "^2.0.0"
   },
   "scripts": {
-    "prepare": "yarn run prepare:generator && yarn run prepare:packages",
+    "prepare": "yarn run prepare:generator",
     "prepare:generator": "yarn run bootstrap:generator && yarn run build:generator && yarn run link:generator",
     "bootstrap:generator": "lerna bootstrap --scope generator-theia -- --no-optional",
     "build:generator": "lerna run prepare --scope generator-theia --stream",
