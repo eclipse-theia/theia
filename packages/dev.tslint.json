@@ -1,0 +1,21 @@
+{
+  "defaultSeverity": "warning",
+  "extends": "./tslint.json",
+  "rules": {
+    "no-unused-expression": true,
+    "prefer-const": {
+      "options": [
+        true,
+        {
+          "destructuring": "all"
+        }
+      ],
+      "severity": "error"
+    },
+    "semicolon": [
+      true,
+      "always",
+      "ignore-interfaces"
+    ]
+  }
+}

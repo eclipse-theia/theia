@@ -78,7 +78,7 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
             "devDependencies": sortByKey({
                 "concurrently": "^3.5.0",
                 "rimraf": "^2.6.1",
-                "tslint": "^4.5.1",
+                "tslint": "^5.5.0",
                 "typescript": "^2.4.1",
                 ...this.model.pck.devDependencies
             })

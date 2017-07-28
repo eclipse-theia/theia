@@ -26,7 +26,6 @@
     "chai": "^4.1.0",
     "selenium-standalone": "^6.2.0",
     "typescript": "^2.4.1",
-    "tslint": "^4.5.1",
     "ts-node": "^3.2.0",
     "wdio-mocha-framework": "^0.5.9",
     "wdio-phantomjs-service": "^0.2.2",
