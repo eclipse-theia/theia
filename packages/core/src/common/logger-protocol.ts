@@ -5,12 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { JsonRpcServer } from './messaging/proxy-factory';
+
 export const ILoggerServer = Symbol('ILoggerServer');
 
 export const loggerPath = '/services/logger';
 
-export interface ILoggerServer {
-    setClient(client: ILoggerClient | undefined): void;
+export interface ILoggerServer extends JsonRpcServer<ILoggerClient> {
     setLogLevel(id: number, logLevel: number): Promise<void>;
     getLogLevel(id: number): Promise<number>;
     log(id: number, logLevel: number, message: string, params: any[]): Promise<void>;

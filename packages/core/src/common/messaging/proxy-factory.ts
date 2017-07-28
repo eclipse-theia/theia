@@ -7,7 +7,12 @@
 
 import { MessageConnection } from "vscode-jsonrpc";
 import { Event, Emitter } from "../event";
+import { Disposable } from "../disposable";
 import { ConnectionHandler } from './handler';
+
+export type JsonRpcServer<Client> = Disposable & {
+    setClient(client: Client | undefined): void;
+};
 
 export interface JsonRpcConnectionEventEmitter {
     readonly onDidOpenConnection: Event<void>;

@@ -6,12 +6,12 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Disposable, JsonRpcProxy } from '@theia/core/lib/common';
+import { JsonRpcServer, JsonRpcProxy } from '@theia/core';
 
 export const fileSystemWatcherPath = '/services/fs-watcher';
 
 export const FileSystemWatcherServer = Symbol('FileSystemWatcherServer');
-export interface FileSystemWatcherServer extends Disposable {
+export interface FileSystemWatcherServer extends JsonRpcServer<FileSystemWatcherClient> {
     /**
      * Start file watching for the given param.
      * Resolve when watching is started.
@@ -24,8 +24,6 @@ export interface FileSystemWatcherServer extends Disposable {
      * Resolve when watching is stopped.
      */
     unwatchFileChanges(watcher: number): Promise<void>;
-
-    setClient(client: FileSystemWatcherClient): void;
 }
 
 export interface FileSystemWatcherClient {

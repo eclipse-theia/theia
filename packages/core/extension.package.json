@@ -2,6 +2,8 @@
   "name": "@theia/core",
   "version": "0.1.0",
   "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
+  "main": "lib/common/index.js",
+  "typings": "lib/common/index.d.ts",
   "dependencies": {
     "@phosphor/widgets": "^0.1.7",
     "@types/body-parser": "^1.16.4",
