@@ -6,10 +6,16 @@
  */
 
 import { ContainerModule } from "inversify";
+import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
+import { CppCommandContribution } from './cpp-commands';
+
 import { LanguageClientContribution } from "@theia/languages/lib/browser";
 import { CppClientContribution } from "./cpp-client-contribution";
 
 export default new ContainerModule(bind => {
+    bind(CommandContribution).to(CppCommandContribution).inSingletonScope();
+    bind(MenuContribution).to(CppCommandContribution).inSingletonScope();
+
     bind(CppClientContribution).toSelf().inSingletonScope();
     bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(CppClientContribution));
 });

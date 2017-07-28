@@ -15,9 +15,6 @@ import { EditorManager } from "./editor-manager";
 export const SHOW_REFERENCES: Command = {
     id: 'textEditor.commands.showReferences'
 };
-export const TEST_COMMAND: Command = {
-    id: 'textEditor.commands.test'
-};
 
 @injectable()
 export class EditorCommandHandlers implements CommandContribution {

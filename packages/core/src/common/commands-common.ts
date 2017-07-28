@@ -20,7 +20,6 @@ export namespace CommonCommands {
 
     export const EDIT_UNDO = 'edit_undo';
     export const EDIT_REDO = 'edit_redo';
-    export const SWITCH_SOURCE_HEADER = 'switch_header_source';
 }
 
 @injectable()
@@ -38,13 +37,6 @@ export class CommonMenuContribution implements MenuContribution {
             CommonCommands.EDIT_MENU_UNDO_GROUP], {
                 commandId: CommonCommands.EDIT_REDO
             });
-
-        // registry.registerMenuAction([
-        //     MAIN_MENU_BAR,
-        //     CommonCommands.EDIT_MENU,
-        //     CommonCommands.EDIT_MENU_UNDO_GROUP], {
-        //         commandId: CommonCommands.SWITCH_HEADER_SOURCE
-        //     });
     }
 
 }
@@ -73,10 +65,6 @@ export class CommonCommandContribution implements CommandContribution {
             id: CommonCommands.EDIT_REDO,
             label: 'Redo'
         })
-        // commandRegistry.registerCommand({
-        //     id: CommonCommands.SWITCH_HEADER_SOURCE,
-        //     label: 'Switch header/source file'
-        // })
     }
 
 }
