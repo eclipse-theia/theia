@@ -12,6 +12,7 @@ import { Disposable, DisposableCollection, ILogger, MaybePromise } from '@theia/
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { FileSystemWatcherServer, DidFilesChangedParams, FileChange } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { PreferenceChangedEvent, PreferenceClient, PreferenceServer, PreferenceChange } from '../common';
+import { JsonValidator } from "@theia/core/lib/common"
 import * as jsoncparser from "jsonc-parser"
 
 export const PreferenceUri = Symbol("PreferencePath");
@@ -31,7 +32,8 @@ export class JsonPreferenceServer implements PreferenceServer {
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcherServer) protected readonly watcherServer: FileSystemWatcherServer,
         @inject(ILogger) protected readonly logger: ILogger,
-        @inject(PreferenceUri) preferenceUri: PreferenceUri
+        @inject(PreferenceUri) preferenceUri: PreferenceUri,
+        @inject(JsonValidator) validator: JsonValidator
     ) {
         this.preferenceUri = Promise.resolve(preferenceUri).then(uri => uri.toString());
 
