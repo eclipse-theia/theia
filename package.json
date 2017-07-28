@@ -15,7 +15,7 @@
     "prepare:generator": "yarn run bootstrap:generator && yarn run build:generator && yarn run link:generator",
     "bootstrap:generator": "lerna bootstrap --scope generator-theia -- --no-optional",
     "build:generator": "lerna run prepare --scope generator-theia --stream",
-    "link:generator": "lerna exec --scope generator-theia --stream -- yarn link && yarn link generator-theia",
+    "link:generator": "lerna exec --scope generator-theia --stream -- \"yarn link\" && yarn link generator-theia",
     "prepare:packages": "yarn run bootstrap && yarn run clean && yarn run clean:rebuild && yarn run build",
     "bootstrap": "node scripts/generate.js && lerna bootstrap --concurrency=1 --hoist -- --no-optional",
     "refresh": "lerna clean  --yes && yarn run bootstrap",
