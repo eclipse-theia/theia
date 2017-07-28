@@ -29,8 +29,6 @@ export interface Dependencies {
 }
 
 export interface Config {
-    port: number;
-    host: string;
     copyright: string;
     node_modulesPath: string;
     localDependencies?: Dependencies;
@@ -51,8 +49,6 @@ export class Model {
     target: 'web' | 'electron-renderer' | undefined;
     pck: NodePackage = {}
     config: Config = {
-        port: 3000,
-        host: 'localhost',
         copyright: '',
         node_modulesPath: "../../node_modules"
     }

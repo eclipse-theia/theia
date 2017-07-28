@@ -59,7 +59,13 @@ module.exports = (port, host) => Promise.resolve()${this.compileBackendModuleImp
     protected compileMain(backendModules: Map<string, string>): string {
         return `${this.compileCopyright()}
 // @ts-check
-module.exports = require('./server')(${this.ifWeb(`${this.model.config.port}, '${this.model.config.host}'`)});`;
+
+const { port, hostname } = require('yargs').argv;
+console.info("Starting express on port '" + port + "'.")
+if (hostname) {
+    console.info("Allowed host is '" + hostname + "'.")
+}
+module.exports = require('./server')(port, hostname);`;
     }
 
 }
