@@ -10,6 +10,7 @@ import URI from '@theia/core/lib/common/uri';
 import { FileSystemNode } from "@theia/filesystem/lib/node/node-filesystem"
 import { FileSystemWatcherServer, DidFilesChangedParams, WatchOptions, FileSystemWatcherClient } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { Logger } from '@theia/core/lib/common/logger'
+import { JsonValidator, CombinedSchema } from "@theia/core/lib/common"
 
 
 
@@ -41,7 +42,7 @@ export class JsonPrefHelper {
     }
 
     createJsonPrefServer(preferenceFileUri: URI) {
-        return new JsonPreferenceServer(this.fileSystem, this.fileWatcher, this.logger, Promise.resolve(preferenceFileUri));
+        return new JsonPreferenceServer(this.fileSystem, this.fileWatcher, this.logger, Promise.resolve(preferenceFileUri), new JsonValidatorStub());
     }
 
     private createFileSystemWatcher(): FileSystemWatcherServerstub {
@@ -72,4 +73,16 @@ export class FileSystemWatcherServerstub implements FileSystemWatcherServer {
             this.client.onDidFilesChanged(event);
         }
     }
+}
+
+class JsonValidatorStub implements JsonValidator {
+    constructor() { }
+    getSchema(): CombinedSchema {
+        return { allOf: [] }
+    }
+
+    validateJson(toValidate: string): boolean {
+        return true;
+    }
+
 }

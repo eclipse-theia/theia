@@ -11,32 +11,32 @@ import {
     PreferenceProxy,
     PreferenceService,
 } from '@theia/preferences/lib/common';
+import { JsonSchemaContribution } from '@theia/core/lib/common'
 
-export const EditorConfigSchema = {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Editor configuration Scheme",
-    "type": "object",
-    "properties": {
+export const editorConfigSchema: Object = {
+    $schema: 'http://json-schema.org/draft-04/schema#', // not sure how to make this works...
+    title: "Editor configuration Scheme",
+    type: "object",
+    properties: {
         "editor.tabSize": {
-            "type": "number",
-            "minimum": 1,
-            "description": "Configure the tab size in the monaco editor"
+            type: "number",
+            minimum: 1,
+            description: "Configure the tab size in the editor"
         },
         "editor.lineNumbers": {
-            "enum": [
+            enum: [
                 "on",
                 "off"
             ],
-            "description": "Control the rendering of line numbers"
-
+            description: "Control the rendering of line numbers"
         },
         "editor.renderWhitespace": {
-            "enum": [
+            enum: [
                 "none",
                 "boundary",
                 "all"
             ],
-            "description": "Control the rendering of whitespaces in the editor"
+            description: "Control the rendering of whitespaces in the editor"
         }
     }
 }
@@ -65,4 +65,6 @@ export function bindEditorPreferences(bind: interfaces.Bind): void {
         const preferences = ctx.container.get(PreferenceService);
         return createEditorPreferences(preferences);
     });
+
+    bind(JsonSchemaContribution).toConstantValue(editorConfigSchema)
 }

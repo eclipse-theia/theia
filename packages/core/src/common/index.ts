@@ -22,3 +22,4 @@ export * from './path';
 export * from './logger';
 export * from './messaging';
 export * from './message-service';
+export * from './json-validator';
