@@ -1,0 +1,66 @@
+{
+  "name": "@theia/java",
+  "version": "0.1.0",
+  "description": "Theia - Java Extension",
+  "dependencies": {
+    "@theia/core": "^0.1.0",
+    "@theia/languages": "^0.1.0",
+    "@theia/editor": "^0.1.0",
+    "@theia/monaco": "^0.1.0",
+    "@types/glob": "^5.0.30",
+    "glob": "^7.1.2"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.0.1",
+    "@types/chai-as-promised": "0.0.31",
+    "@types/mocha": "^2.2.41",
+    "chai": "^4.1.0",
+    "chai-as-promised": "^7.1.1",
+    "concurrently": "^3.5.0",
+    "gulp": "^3.9.1",
+    "gulp-decompress": "^2.0.1",
+    "gulp-download": "0.0.1",
+    "mocha": "^3.4.2",
+    "nyc": "^11.0.3",
+    "rimraf": "^2.6.1",
+    "ts-node": "^3.2.0",
+    "tslint": "^4.5.1",
+    "typescript": "^2.4.1"
+  },
+  "scripts": {
+    "clean": "yarn run compile:clean && yarn run test:clean",
+    "build": "concurrently -n download,compile,lint -c red,blue,green \"gulp download_java_server\" \"yarn run compile\" \"yarn run lint\"",
+    "compile": "tsc -p compile.tsconfig.json",
+    "compile:clean": "rimraf lib",
+    "lint": "tslint -c ../tslint.json --project compile.tsconfig.json",
+    "watch": "tsc -w -p compile.tsconfig.json",
+    "test": "nyc mocha --opts ../mocha.opts src/**/*.spec.ts",
+    "test:watch": "mocha -w --opts ../mocha.opts src/**/*.spec.ts",
+    "test:clean": "rimraf .nyc_output && rimraf coverage"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/java-frontend-module",
+      "backend": "lib/node/java-backend-module"
+    }
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "nyc": {
+    "extends": "../nyc.json"
+  }
+}
