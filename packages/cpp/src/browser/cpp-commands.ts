@@ -6,14 +6,15 @@
  */
 
 import { inject, injectable } from "inversify";
-import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
-import { SHOW_REFERENCES } from "@theia/editor/lib/browser";
-import { Workspace } from "@theia/languages/lib/common";
+import { SelectionService } from '@theia/core/lib/common';
+import { CommandContribution, MenuModelRegistry, MenuContribution, CommandRegistry, Command } from '@theia/core/lib/common';
+import URI from "@theia/core/lib/common/uri";
+import { open, OpenerService } from '@theia/core/lib/browser';
+import { CppClientContribution } from "./cpp-client-contribution";
+import { TextDocumentItemRequest } from "./cpp-protocol";
+import { TextDocumentIdentifier } from "@theia/languages/lib/common";
+import { EDITOR_CONTEXT_MENU_ID } from "@theia/editor/lib/browser";
 
-
-
-
-// export const SWITCH_SOURCE_HEADER = 'switch_source_header'
 
 /**
  * Switch between source/header file
@@ -23,24 +24,44 @@ export const SWITCH_SOURCE_HEADER: Command = {
     label: 'Switch between source/header file'
 };
 
+export const FILE_OPEN_PATH = (path: string): Command => <Command>{
+    id: `file:openPath`
+};
 
 @injectable()
-export class CppCommandContribution implements CommandContribution {
+export class CppCommandContribution implements CommandContribution, MenuContribution {
 
     constructor(
-        @inject(Workspace) protected readonly workspace: Workspace
+        // @inject(SelectionService) protected readonly selectionService: SelectionService,
+        @inject(CppClientContribution) protected readonly clientContribution: CppClientContribution,
+        @inject(OpenerService) protected readonly openerService: OpenerService,
+        protected readonly selectionService: SelectionService
+
     ) { }
+
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(SWITCH_SOURCE_HEADER, {
-            execute: (uri: string, position: Position, locations: Location[]) =>
-                commands.executeCommand(SHOW_REFERENCES.id, uri, position, locations)
+            isEnabled: () => true,
+            execute: () => this.switchSourceHeader()
         });
 
-        // commands.registerCommand({
-        //     id: CppCommands.SWITCH_SOURCE_HEADER,
-        //     label: 'Switch between source/header file'
-        // });
     }
 
+    registerMenus(registry: MenuModelRegistry) {
+        registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "1_undo/redo"], {
+            commandId: SWITCH_SOURCE_HEADER.id
+        });
+    }
+
+    protected switchSourceHeader(): void {
+        const docIdentifier = TextDocumentIdentifier.create(this.selectionService.selection.uri.toString());
+        this.clientContribution.languageClient.then((languageClient) => {
+            languageClient.sendRequest(TextDocumentItemRequest.type, docIdentifier).then(sourceUri => {
+                if (sourceUri !== undefined) {
+                    open(this.openerService, new URI(sourceUri.toString()));
+                }
+            });
+        });
+    }
 }

@@ -48,17 +48,6 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             commands.registerHandler(id, handler);
         });
 
-        // [CommonCommands.SWITCH_HEADER_SOURCE].forEach(id => {
-        //     const doExecute = (editor: MonacoEditor, ...args: any[]): any => {
-        //         if (editor) {
-        //             editor.commandService.executeCommand(`file:openPath`, editor.uri.toString());
-        //         }
-        //         return editor.getControl().trigger('keyboard', id, args);
-        //     };
-        //     const handler = this.newClipboardHandler(id, doExecute);
-        //     commands.registerHandler(id, handler);
-        // });
-
         for (const menuItem of MenuRegistry.getMenuItems(MenuId.EditorContext)) {
             const { id, title, iconClass } = menuItem.command;
             commands.registerCommand({

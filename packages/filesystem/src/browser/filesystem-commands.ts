@@ -15,17 +15,11 @@ import { FileSystem, FileStat } from '../common/filesystem';
 import { UriSelection } from '../common/filesystem-selection';
 import { SingleTextInputDialog, ConfirmDialog } from "@theia/core/lib/browser/dialogs";
 import { OpenerService, OpenHandler, open } from "@theia/core/lib/browser";
-// import { CppClientContribution } from "@theia/cpp/lib/browser/cpp-client-contribution";
-// import { TextDocumentItemRequest } from "@theia/cpp/lib/browser/cpp-protocol";
-// import { TextDocumentIdentifier } from "@theia/languages/lib/common";
 
 export namespace FileCommands {
     export const NEW_FILE = 'file:newFile';
     export const NEW_FOLDER = 'file:newFolder';
     export const FILE_OPEN = 'file:open';
-    export const FILE_OPEN_PATH = (path: string): Command => <Command>{
-        id: `file:openPath`
-    };
     export const FILE_OPEN_WITH = (opener: OpenHandler): Command => <Command>{
         id: `file:openWith:${opener.id}`,
         label: opener.label,
@@ -66,8 +60,7 @@ export class FileCommandContribution implements CommandContribution {
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(ClipboardService) protected readonly clipboardService: ClipboardService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
-        @inject(OpenerService) protected readonly openerService: OpenerService,
-        // @inject(CppClientContribution) protected readonly clientContribution: CppClientContribution
+        @inject(OpenerService) protected readonly openerService: OpenerService
     ) { }
 
     registerCommands(registry: CommandRegistry): void {
@@ -98,29 +91,11 @@ export class FileCommandContribution implements CommandContribution {
                 registry.registerCommand(openWithCommand);
                 registry.registerHandler(openWithCommand.id,
                     new FileSystemCommandHandler(this.selectionService, uri => {
-
+                        return opener.open(uri);
                     })
                 );
             }
         });
-
-        // this.openerService.getOpeners().then(openers => {
-        //     for (const opener of openers) {
-        //         const openWithCommand = FileCommands.FILE_OPEN_PATH(this.selectionService.selection);
-        //         registry.registerHandler(openWithCommand.id,
-        //             new FileSystemCommandHandler(this.selectionService, uri => {
-        //                 const docIdentifier = TextDocumentIdentifier.create(uri.toString());
-        //                 return this.clientContribution.languageClient.then(languageClient =>
-        //                     languageClient.sendRequest(TextDocumentItemRequest.type, docIdentifier).then(content =>
-        //                         opener.open(new URI(content))
-        //                     )
-        //                 );
-        //             }));
-        //     }
-        // });
-
-
-
 
         registry.registerHandler(
             FileCommands.FILE_RENAME,

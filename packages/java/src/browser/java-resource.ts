@@ -16,7 +16,7 @@ export class JavaResource implements Resource {
 
     constructor(
         public uri: URI,
-        protected readonly clientContribution: JavaClientContribution,
+        protected readonly clientContribution: JavaClientContribution
     ) { }
 
     readContents(options: { encoding?: string }): Promise<string> {
