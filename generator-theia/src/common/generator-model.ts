@@ -6,11 +6,8 @@
  */
 
 import * as path from 'path';
-
-export interface NodePackage {
-    dependencies?: Dependencies;
-    [property: string]: any;
-}
+import { NodePackage, Dependencies } from './npm';
+export { NodePackage, Dependencies };
 
 export interface ExtensionPackage extends NodePackage {
     name: string;
@@ -27,10 +24,6 @@ export interface Extension {
     frontendElectron?: string;
     backend?: string;
     backendElectron?: string;
-}
-
-export interface Dependencies {
-    [name: string]: string
 }
 
 export interface Config {
@@ -79,10 +72,10 @@ export class Model {
         return Array.from(this._extensionPackages.values());
     }
 
-    readExtensionPackages(reader: {
-        read: (extension: string, version: string) => NodePackage | undefined,
-        readLocal: (extension: string, path: string) => NodePackage | undefined
-    }): void {
+    async readExtensionPackages(reader: {
+        read: (extension: string, version: string) => Promise<NodePackage | undefined>,
+        readLocal: (extension: string, path: string) => Promise<NodePackage | undefined>
+    }): Promise<void> {
         if (!this.pck.dependencies) {
             return;
         }
@@ -91,16 +84,16 @@ export class Model {
         for (const extension in this.pck.dependencies) {
             if (extension in localDependencies) {
                 const path = localDependencies[extension];
-                this.readExtensionPackage(extension, () => reader.readLocal(extension, path));
+                await this.readExtensionPackage(extension, () => reader.readLocal(extension, path));
             }
             const version = this.pck.dependencies[extension];
-            this.readExtensionPackage(extension, () => reader.read(extension, version));
+            await this.readExtensionPackage(extension, () => reader.read(extension, version));
         }
     }
 
-    protected readExtensionPackage(extension: string, read: () => NodePackage | undefined): void {
+    protected async readExtensionPackage(extension: string, read: () => Promise<NodePackage | undefined>): Promise<void> {
         if (!this._extensionPackages.has(extension)) {
-            const pck = read();
+            const pck = await read();
             if (ExtensionPackage.is(pck)) {
                 this._extensionPackages.set(extension, pck);
             }

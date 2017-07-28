@@ -7,12 +7,16 @@
 
 
 import * as semver from 'semver';
-import { AbstractAppGenerator, generatorTheiaPath, ExtensionPackage } from 'generator-theia/generators/common';
+import { AbstractAppGenerator, generatorTheiaPath, ExtensionPackage } from 'generator-theia';
+import * as npm from 'generator-theia/generators/common/npm';
+
 import {
     RawExtension, ResolvedRawExtension, Extension, ResolvedExtension, ExtensionServer, ExtensionClient, SearchParam
 } from '../common/extension-protocol';
 
 export class NodeExtensionServer extends AbstractAppGenerator implements ExtensionServer {
+
+    protected readonly ready: Promise<void>;
 
     constructor(projectPath: string) {
         super([], {
@@ -22,7 +26,7 @@ export class NodeExtensionServer extends AbstractAppGenerator implements Extensi
             resolved: generatorTheiaPath
         });
         this.initializing();
-        this.configuring();
+        this.ready = this.configuring();
     }
 
     dispose(): void {
@@ -57,23 +61,24 @@ export class NodeExtensionServer extends AbstractAppGenerator implements Extensi
         return new Promise(resolve => { });
     }
 
-    list(param?: SearchParam): Promise<Extension[]> {
+    async list(param?: SearchParam): Promise<Extension[]> {
+        await this.ready;
         const extensions = [];
         for (const pck of this.model.extensionPackages) {
-            const extension = this.toExtension(pck);
+            const extension = await this.toExtension(pck);
             extensions.push(extension);
         }
-        return Promise.resolve(extensions);
+        return extensions;
     }
 
-    protected toExtension(pck: ExtensionPackage): Extension {
+    protected async toExtension(pck: ExtensionPackage): Promise<Extension> {
         return {
             name: pck.name,
             version: pck.version || '',
             description: pck.description || '',
             author: this.getAuthor(pck),
             installed: this.isInstalled(pck),
-            outdated: this.isOutdated(pck)
+            outdated: await this.isOutdated(pck)
         };
     }
 
@@ -92,12 +97,12 @@ export class NodeExtensionServer extends AbstractAppGenerator implements Extensi
         return !!targetDependencies && pck.name in targetDependencies;
     }
 
-    protected isOutdated(pck: ExtensionPackage): boolean {
+    protected async isOutdated(pck: ExtensionPackage): Promise<boolean> {
         if (!this.isInstalled(pck)) {
             return false;
         }
         const targetVersion = this.model.targetPck.dependencies![pck.name];
-        const version = this.version(pck.name);
+        const version = await npm.version(pck.name).catch(() => undefined);
         return !!version && semver.gt(version, targetVersion);
     }
 

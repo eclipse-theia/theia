@@ -3,6 +3,9 @@
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {
+            "generator-theia": [
+                "../generator-theia/src/common"
+            ],
             "generator-theia/generators/*": [
                 "../generator-theia/src/*"
             ],

@@ -5,10 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as process from 'process';
-import * as cp from 'child_process';
 import BaseGenerator = require('yeoman-generator');
 
+import * as npm from './npm';
 import { Model } from "./generator-model";
 import { AppPackageGenerator } from "./app-package-generator";
 
@@ -24,10 +23,18 @@ export abstract class AbstractAppGenerator extends BaseGenerator {
         Object.assign(this.model.config, this.config.getAll());
     }
 
-    configuring(): void {
+    configuring(): Promise<void> {
         this.config.save();
-        this.model.readExtensionPackages({
-            read: (extension, version) => this.info(`${extension}@${version}`),
+        return this.model.readExtensionPackages({
+            read: (name, version) =>
+                npm.view({ name, abbreviated: false })
+                    .then(result =>
+                        result.versions[version]
+                    ).catch(reason => {
+                        console.error(reason);
+                        return undefined;
+                    })
+            ,
             readLocal: (extension, path) => {
                 for (const packagePath of ['package.json', 'extension.package.json']) {
                     const extensionPackagePath = this.destinationPath(path, packagePath);
@@ -38,23 +45,6 @@ export abstract class AbstractAppGenerator extends BaseGenerator {
                 return undefined;
             }
         });
-    }
-
-    protected version(pck: string): string | undefined {
-        return this.info(pck, 'version');
-    }
-
-    protected info(pck: string, ...viewArgs: string[]): any | undefined {
-        const raw = ['npm', 'view', pck, '--json', ...viewArgs];
-        const args = process.platform === 'win32' ? ['cmd', '/c', ...raw] : raw;
-        try {
-            return JSON.parse(cp.execSync(args.join(' '), {
-                encoding: 'utf8'
-            }));
-        } catch (e) {
-            console.error(e);
-            return undefined;
-        }
     }
 
     writing(): void {

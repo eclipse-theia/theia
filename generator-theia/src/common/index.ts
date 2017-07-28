@@ -13,3 +13,4 @@ export * from './app-package-generator';
 export * from './abstract-frontend-generator';
 export * from './abstract-backend-generator';
 export * from './abstract-app-generator';
+export * from './npm';

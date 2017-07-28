@@ -3,6 +3,8 @@
   "version": "0.1.1",
   "description": "Theia Generator",
   "license": "Apache-2.0",
+  "main": "generators/common/index.js",
+  "typings": "generators/common/index.d.ts",
   "files": [
     "generators",
     "src"
@@ -18,7 +20,9 @@
     "clean": "rimraf generators"
   },
   "dependencies": {
+    "@types/request": "^2.0.0",
     "@types/yeoman-generator": "^1.0.2",
+    "request": "^2.81.0",
     "yeoman-generator": "^1.1.1"
   },
   "devDependencies": {

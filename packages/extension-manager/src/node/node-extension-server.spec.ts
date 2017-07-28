@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+/* tslint:disable:no-magic-numbers */
 import * as path from 'path';
 import * as assert from 'assert';
 import { NodeExtensionServer } from './node-extension-server';
@@ -12,28 +13,18 @@ import { NodeExtensionServer } from './node-extension-server';
 describe("NodeExtensionServer", () => {
 
     it("list", function () {
-        this.timeout(4000);
-
+        this.timeout(10000);
         const server = new NodeExtensionServer(path.resolve(__dirname, '..', '..', 'testdata', 'list'));
         return server.list().then(extensions => {
-            assert.deepEqual(extensions, [
-                {
-                    "author": "",
-                    "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
-                    "installed": true,
-                    "outdated": true,
-                    "name": "@theia/core",
-                    "version": "0.1.0"
-                },
-                {
-                    "author": "Project Theia",
-                    "description": "Theia - Extension Manager",
-                    "installed": false,
-                    "outdated": false,
-                    "name": "@theia/extension-manager",
-                    "version": "0.1.0"
-                }
-            ]);
+            assert.equal(extensions.length, 2, JSON.stringify(extensions, undefined, 2));
+
+            const extension = extensions.find(ext => ext.name === '@theia/core')!;
+            assert.equal(extension.installed, true);
+            assert.equal(extension.outdated, true);
+
+            const extension2 = extensions.find(ext => ext.name === '@theia/extension-manager')!;
+            assert.equal(extension2.installed, false);
+            assert.equal(extension2.outdated, false);
         });
     });
 
