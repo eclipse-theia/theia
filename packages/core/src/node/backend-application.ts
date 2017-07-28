@@ -46,9 +46,10 @@ export class BackendApplication {
         this.app.use(...handlers);
     }
 
-    start(port: number = 0, hostname: string = 'localhost'): Promise<http.Server> {
+    start(port: number = 0, hostname?: string): Promise<http.Server> {
         return new Promise(resolve => {
-            const server = this.app.listen(port, hostname, () => {
+            let server: http.Server;
+            server = this.app.listen(port, hostname!, () => {
                 this.logger.info(`Theia app listening on port ${server.address().port}.`);
                 resolve(server);
             });
