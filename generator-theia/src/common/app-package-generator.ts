@@ -46,7 +46,7 @@ export class AppPackageGenerator extends AbstractGenerator {
                 "cold:start": "yarn run clean && yarn run start",
                 "build": "yarn run build:frontend && yarn run build:backend",
                 "build:frontend": "webpack",
-                "build:backend": `cp ${this.srcGen()}/frontend/index.html lib`,
+                "build:backend": `shx cp ${this.srcGen()}/frontend/index.html lib`,
                 "watch": "yarn run build:frontend && webpack --watch",
                 ...scripts,
                 ...this.model.pck.scripts
@@ -61,6 +61,7 @@ export class AppPackageGenerator extends AbstractGenerator {
                 "css-loader": "^0.28.1",
                 "file-loader": "^0.11.1",
                 "source-map-loader": "^0.2.1",
+                "shx": "^0.2.2",
                 "url-loader": "^0.5.8",
                 "font-awesome-webpack": "0.0.5-beta.2",
                 "less": "^2.7.2",
