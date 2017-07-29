@@ -267,6 +267,24 @@ Here we're getting the websocket connection, this will be used to create a proxy
         return connection.createProxy<ILoggerServer>("/services/logger", loggerWatcher.getLoggerClient());
 ```
 
+As the second argument, we pass a local object to handle JSON-RPC messages from the remote object.
+Sometimes the local object depends on the proxy and cannot be instantiated before the proxy is instantiated.
+In such cases, the proxy interface should implement `JsonRpcServer` and the local object should be provided as a client.
+
+```ts
+export type JsonRpcServer<Client> = Disposable & {
+    setClient(client: Client | undefined): void;
+};
+
+export interface ILoggerServer extends JsonRpcServery<ILoggerClient> {
+    // ...
+}
+
+const serverProxy = connection.createProxy<ILoggerServer>("/services/logger");
+const client = loggerWatcher.getLoggerClient();
+serverProxy.setClient(client);
+```
+
 So here at the last line we're binding the ILoggerServer interface to a
 JsonRpc proxy.
 
