@@ -11,6 +11,11 @@ import { Disposable } from "../disposable";
 import { ConnectionHandler } from './handler';
 
 export type JsonRpcServer<Client> = Disposable & {
+    /**
+     * If this server is a proxy to a remote server then
+     * a client is used as a local object
+     * to handle JSON-RPC messages from the remote server.
+     */
     setClient(client: Client | undefined): void;
 };
 
@@ -165,6 +170,8 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * Create a Proxy exposing the interface of an object of type T.  This Proxy
      * can be used to do JSON-RPC method calls on the remote target object as
      * if it was local.
+     *
+     * If `T` implements `JsonRpcServer` then a client is used as a target object for a remote target object.
      */
     createProxy(): JsonRpcProxy<T> {
         const result = new Proxy<T>(this as any, this)
