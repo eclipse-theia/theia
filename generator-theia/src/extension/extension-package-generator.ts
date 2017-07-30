@@ -20,7 +20,7 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
     protected compilePackage(): object {
         const pck = this.compileCommonPackage()
         if (!this.model.extensionConfig.testSupport) {
-            return pck
+            return pck;
         }
         return {
             ...pck,
@@ -51,8 +51,11 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
     }
 
     protected compileCommonPackage(): NodePackage {
+        const keywords = new Set(this.model.pck.keywords || []);
+        keywords.add(this.model.extensionConfig.extensionKeyword);
         return {
             ...this.model.pck,
+            "keywords": [...keywords],
             "license": this.model.pck.license || "Apache-2.0",
             "repository": this.model.pck.repository || {
                 "type": "git",
