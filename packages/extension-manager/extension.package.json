@@ -4,11 +4,11 @@
   "description": "Theia - Extension Manager",
   "dependencies": {
     "@theia/core": "^0.1.0",
+    "@types/request": "^2.0.0",
+    "@types/semver": "^5.3.32",
     "generator-theia": "^0.1.0",
+    "request": "^2.81.0",
     "semver": "^5.4.1"
-  },
-  "devDependencies": {
-    "@types/semver": "^5.3.32"
   },
   "theiaExtensions": []
 }

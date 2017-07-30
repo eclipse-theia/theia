@@ -133,6 +133,12 @@
     "@types/express-serve-static-core" "*"
     "@types/serve-static" "*"
 
+"@types/form-data@*":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@types/form-data/-/form-data-2.2.0.tgz#a98aac91dc99857b6af24caef7ca6df302f31565"
+  dependencies:
+    "@types/node" "*"
+
 "@types/fs-extra@^3.0.3":
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/@types/fs-extra/-/fs-extra-3.0.3.tgz#1d66eb670ebf657e57c0fda014df340c19d8aa0c"
@@ -165,6 +171,13 @@
 "@types/node@^7.0.18":
   version "7.0.39"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-7.0.39.tgz#8aced4196387038113f6f9aa4014ab4c51edab3c"
+
+"@types/request@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@types/request/-/request-2.0.0.tgz#7d6fd2a1ef48ad07d0e3333471b8267156d707a4"
+  dependencies:
+    "@types/form-data" "*"
+    "@types/node" "*"
 
 "@types/semver@^5.3.32":
   version "5.3.33"

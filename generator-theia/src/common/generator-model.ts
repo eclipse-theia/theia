@@ -11,11 +11,20 @@ export { NodePackage, Dependencies };
 
 export interface ExtensionPackage extends NodePackage {
     name: string;
-    theiaExtensions: Extension[];
+    theiaExtensions?: Extension[];
 }
 export namespace ExtensionPackage {
-    export function is(pck: NodePackage | undefined): pck is ExtensionPackage {
-        return !!pck && !!pck.name && !!pck.theiaExtensions;
+    export function is(pck: NodePackage | undefined, extensionKeywords?: string[]): pck is ExtensionPackage {
+        if (!pck || !pck.name) {
+            return false;
+        }
+        const keywords = pck.keywords;
+        if (!!keywords && !!extensionKeywords && extensionKeywords.length > 0) {
+            return keywords.some(keyword =>
+                extensionKeywords.indexOf(keyword) !== -1
+            );
+        }
+        return !!pck.theiaExtensions;
     }
 }
 
@@ -29,7 +38,8 @@ export interface Extension {
 export interface Config {
     copyright: string;
     node_modulesPath: string;
-    localDependencies?: Dependencies;
+    extensionKeywords: string[];
+    localDependencies: Dependencies;
 }
 
 export interface ExtensionConfig {
@@ -50,9 +60,14 @@ export class Model {
     target: 'web' | 'electron-renderer' | undefined;
     pck: NodePackage = {};
     targetPck: NodePackage = {};
-    config: Config = {
+    readonly defaultConfig = <Config>{
         copyright: '',
         node_modulesPath: "../../node_modules"
+    };
+    config: Config = {
+        ...this.defaultConfig,
+        extensionKeywords: [defaultExtensionKeyword],
+        localDependencies: {}
     };
     readonly defaultExtensionConfig = <ExtensionConfig>{
         testSupport: true
@@ -79,7 +94,7 @@ export class Model {
         if (!this.pck.dependencies) {
             return;
         }
-        const localDependencies = this.config.localDependencies || {};
+        const localDependencies = this.config.localDependencies;
         // tslint:disable-next-line:forin
         for (const extension in this.pck.dependencies) {
             if (extension in localDependencies) {
@@ -94,7 +109,7 @@ export class Model {
     protected async readExtensionPackage(extension: string, read: () => Promise<NodePackage | undefined>): Promise<void> {
         if (!this._extensionPackages.has(extension)) {
             const pck = await read();
-            if (ExtensionPackage.is(pck)) {
+            if (ExtensionPackage.is(pck, this.config.extensionKeywords)) {
                 this._extensionPackages.set(extension, pck);
             }
         }

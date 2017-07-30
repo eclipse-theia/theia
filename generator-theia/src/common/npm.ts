@@ -8,11 +8,27 @@
 // tslint:disable:no-any no-magic-numbers
 import * as request from 'request';
 
+export interface Author {
+    name: string;
+    email: string;
+}
+
+export interface Maintainer {
+    username: string;
+    email: string;
+}
+
 export interface Dependencies {
     [name: string]: string
 }
 
 export interface NodePackage {
+    name?: string;
+    version?: string;
+    description?: string;
+    author?: string | Author;
+    maintainers?: Maintainer[];
+    keywords?: string[];
     dependencies?: Dependencies;
     [property: string]: any;
 }

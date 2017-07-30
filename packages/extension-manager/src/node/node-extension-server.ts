@@ -5,7 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-
 import * as semver from 'semver';
 import { AbstractAppGenerator, generatorTheiaPath, ExtensionPackage } from 'generator-theia';
 import * as npm from 'generator-theia/generators/common/npm';
@@ -13,15 +12,20 @@ import * as npm from 'generator-theia/generators/common/npm';
 import {
     RawExtension, ResolvedRawExtension, Extension, ResolvedExtension, ExtensionServer, ExtensionClient, SearchParam
 } from '../common/extension-protocol';
+import * as npms from './npms';
 
 export class NodeExtensionServer extends AbstractAppGenerator implements ExtensionServer {
 
     protected readonly ready: Promise<void>;
 
-    constructor(projectPath: string) {
+    constructor(
+        protected readonly configs: {
+            projectPath: string
+        }
+    ) {
         super([], {
             env: {
-                cwd: projectPath
+                cwd: configs.projectPath
             },
             resolved: generatorTheiaPath
         });
@@ -37,8 +41,21 @@ export class NodeExtensionServer extends AbstractAppGenerator implements Extensi
 
     }
 
-    search(param: SearchParam): Promise<RawExtension[]> {
-        return Promise.resolve([]);
+    async search(param: SearchParam): Promise<RawExtension[]> {
+        const query = this.prepareQuery(param.query);
+        const packages = await npms.search(query, param.from, param.size);
+        const extensions = [];
+        for (const pck of packages) {
+            if (ExtensionPackage.is(pck, this.model.config.extensionKeywords)) {
+                const extension = this.toRawExtension(pck);
+                extensions.push(extension);
+            }
+        }
+        return extensions;
+    }
+    protected prepareQuery(query: string): string {
+        const args = query.split(/\s+/).map(v => v.toLowerCase().trim()).filter(v => !!v);
+        return [`keywords:'${this.model.config.extensionKeywords.join(',')}'`, ...args].join(' ');
     }
     resolveRaw(extension: string): Promise<ResolvedRawExtension> {
         return new Promise(resolve => { });
@@ -72,13 +89,19 @@ export class NodeExtensionServer extends AbstractAppGenerator implements Extensi
     }
 
     protected async toExtension(pck: ExtensionPackage): Promise<Extension> {
+        const rawExtension = this.toRawExtension(pck);
+        return Object.assign(rawExtension, {
+            installed: this.isInstalled(pck),
+            outdated: await this.isOutdated(pck)
+        });
+    }
+
+    protected toRawExtension(pck: ExtensionPackage): RawExtension {
         return {
             name: pck.name,
             version: pck.version || '',
             description: pck.description || '',
-            author: this.getAuthor(pck),
-            installed: this.isInstalled(pck),
-            outdated: await this.isOutdated(pck)
+            author: this.getAuthor(pck)
         };
     }
 
@@ -88,6 +111,9 @@ export class NodeExtensionServer extends AbstractAppGenerator implements Extensi
         }
         if (pck.author && pck.author.name) {
             return pck.author.name;
+        }
+        if (!!pck.maintainers && pck.maintainers.length > 0) {
+            return pck.maintainers[0].username;
         }
         return '';
     }

@@ -8,13 +8,38 @@
 /* tslint:disable:no-magic-numbers */
 import * as path from 'path';
 import * as assert from 'assert';
+import { ExtensionServer } from '../common/extension-protocol';
 import { NodeExtensionServer } from './node-extension-server';
 
-describe("NodeExtensionServer", () => {
+let server: ExtensionServer | undefined;
+afterEach(() => {
+    if (server) {
+        server.dispose();
+    }
+});
+
+function createServer(): ExtensionServer {
+    return new NodeExtensionServer({
+        projectPath: path.resolve(__dirname, '..', '..', 'testdata', 'list')
+    });
+}
+
+describe("NodeExtensionServer", function () {
+
+    it("find", () => {
+        this.timeout(10000);
+        server = createServer();
+        return server.search({
+            query: "filesystem scope:theia"
+        }).then(extensions => {
+            assert.equal(extensions.length, 1, JSON.stringify(extensions, undefined, 2));
+            assert.equal(extensions[0].name, '@theia/filesystem');
+        });
+    });
 
     it("list", function () {
         this.timeout(10000);
-        const server = new NodeExtensionServer(path.resolve(__dirname, '..', '..', 'testdata', 'list'));
+        server = createServer();
         return server.list().then(extensions => {
             assert.equal(extensions.length, 2, JSON.stringify(extensions, undefined, 2));
 
