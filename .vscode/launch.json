@@ -91,7 +91,9 @@
             "program": "${workspaceRoot}/node_modules/.bin/lerna",
             "args": [
                 "bootstrap",
-                "--hoist"
+                "--hoist",
+                "--loglevel",
+                "silly"
             ],
             "sourceMaps": false
         }
