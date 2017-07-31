@@ -88,7 +88,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Lerna Bootstrap with module hoisting",
-            "program": "${workspaceRoot}/node_modules/.bin/lerna",
+            "program": "${workspaceRoot}/node_modules/lerna/bin/lerna.js",
             "args": [
                 "bootstrap",
                 "--hoist",
