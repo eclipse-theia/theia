@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { PreferenceServer, PreferenceClient, PreferenceChangedEvent } from './preference-protocol'
+import { PreferenceServer, PreferenceClient, PreferenceChangedEvent } from './preference-protocol';
 
 export class CompoundPreferenceServer implements PreferenceServer {
 
@@ -19,7 +19,7 @@ export class CompoundPreferenceServer implements PreferenceServer {
         for (const server of servers) {
             server.setClient({
                 onDidChangePreference: event => this.onDidChangePreference(event)
-            })
+            });
         }
     }
 

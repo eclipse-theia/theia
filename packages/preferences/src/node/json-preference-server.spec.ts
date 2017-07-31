@@ -9,9 +9,9 @@ import * as chai from 'chai';
 import * as chaiAsPromised from "chai-as-promised";
 import * as fs from 'fs-extra';
 import * as temp from 'temp';
-import { JsonPreferenceServer } from './json-preference-server'
+import { JsonPreferenceServer } from './json-preference-server';
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { JsonPrefHelper } from '../node/test/preference-stubs'
+import { JsonPrefHelper } from '../node/test/preference-stubs';
 import URI from '@theia/core/lib/common/uri';
 
 const expect = chai.expect;
@@ -54,8 +54,8 @@ describe('json-preference-server', () => {
                             done();
                         }
                     }
-                })
-            })
+                });
+            });
 
             const fileContent = '{ "showLineNumbers": true }';
 
@@ -72,7 +72,7 @@ describe('json-preference-server', () => {
                         type: 0
                     }]
                 }
-            )
+            );
 
             return promise;
 

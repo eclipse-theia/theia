@@ -5,10 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export * from '@theia/preferences-api';
-export * from './json-validator'
-export * from './json-schema'
-export * from './json-pref-validator'
-export * from './json-pref-schema'
+export const JsonValidator = Symbol("JsonValidator");
 
-
+export interface JsonValidator {
+    validateJson(toValidate: string): boolean;
+}

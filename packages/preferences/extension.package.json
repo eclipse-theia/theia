@@ -7,7 +7,8 @@
     "@theia/preferences-api": "^0.1.1",
     "@theia/filesystem": "^0.1.1",
     "@theia/workspace": "^0.1.1",
-    "jsonc-parser": "^1.0.0"
+    "jsonc-parser": "^1.0.0",
+    "ajv": "^5.2.2"
   },
   "devDependencies": {
     "@types/temp": "^0.8.29",

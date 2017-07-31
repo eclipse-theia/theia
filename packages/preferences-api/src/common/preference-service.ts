@@ -22,7 +22,7 @@ export class PreferenceService implements Disposable {
 
     protected resolveReady: () => void;
     readonly ready = new Promise<void>(resolve => {
-        this.resolveReady = resolve
+        this.resolveReady = resolve;
     });
 
     constructor(

@@ -5,14 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { JsonPreferenceServer } from '../json-preference-server'
+import { JsonPreferenceServer } from '../json-preference-server';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystemNode } from "@theia/filesystem/lib/node/node-filesystem"
+import { FileSystemNode } from "@theia/filesystem/lib/node/node-filesystem";
 import { FileSystemWatcherServer, DidFilesChangedParams, WatchOptions, FileSystemWatcherClient } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
-import { Logger } from '@theia/core/lib/common/logger'
-import { JsonValidator, CombinedSchema } from "@theia/core/lib/common"
-
-
+import { Logger } from '@theia/core/lib/common/logger';
+import { JsonValidator } from "../../common/json-validator";
+import { CombinedSchema } from "../../common/json-schema"
 
 export class JsonPrefHelper {
     readonly logger: Logger;
@@ -78,7 +77,7 @@ export class FileSystemWatcherServerstub implements FileSystemWatcherServer {
 class JsonValidatorStub implements JsonValidator {
     constructor() { }
     getSchema(): CombinedSchema {
-        return { allOf: [] }
+        return { allOf: [] };
     }
 
     validateJson(toValidate: string): boolean {

@@ -12,8 +12,8 @@ import { Disposable, DisposableCollection, ILogger, MaybePromise } from '@theia/
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { FileSystemWatcherServer, DidFilesChangedParams, FileChange } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { PreferenceChangedEvent, PreferenceClient, PreferenceServer, PreferenceChange } from '../common';
-import { JsonValidator } from "@theia/core/lib/common"
-import * as jsoncparser from "jsonc-parser"
+import { JsonValidator } from "../common/json-validator";
+import * as jsoncparser from "jsonc-parser";
 
 export const PreferenceUri = Symbol("PreferencePath");
 export type PreferenceUri = MaybePromise<URI>;
@@ -33,7 +33,7 @@ export class JsonPreferenceServer implements PreferenceServer {
         @inject(FileSystemWatcherServer) protected readonly watcherServer: FileSystemWatcherServer,
         @inject(ILogger) protected readonly logger: ILogger,
         @inject(PreferenceUri) preferenceUri: PreferenceUri,
-        @inject(JsonValidator) validator: JsonValidator
+        @inject(JsonValidator) protected readonly validator: JsonValidator
     ) {
         this.preferenceUri = Promise.resolve(preferenceUri).then(uri => uri.toString());
 
@@ -45,7 +45,7 @@ export class JsonPreferenceServer implements PreferenceServer {
             watcherServer.watchFileChanges(uri).then(id => {
                 this.toDispose.push(Disposable.create(() =>
                     watcherServer.unwatchFileChanges(id))
-                )
+                );
             })
         );
         this.ready = this.reconcilePreferences();
@@ -58,7 +58,7 @@ export class JsonPreferenceServer implements PreferenceServer {
     protected onDidFilesChanged(params: DidFilesChangedParams): void {
         this.arePreferencesAffected(params.changes).then(() =>
             this.reconcilePreferences()
-        )
+        );
     }
 
     /**
@@ -70,7 +70,7 @@ export class JsonPreferenceServer implements PreferenceServer {
                 if (changes.some(c => c.uri === uri)) {
                     resolve();
                 }
-            })
+            });
         });
     }
 
@@ -88,8 +88,12 @@ export class JsonPreferenceServer implements PreferenceServer {
                 }
                 return this.fileSystem.resolveContent(uri).then(({ stat, content }) => {
                     const strippedContent = jsoncparser.stripComments(content);
-                    return JSON.parse(strippedContent)
-                })
+                    if (this.validator.validateJson(strippedContent)) {
+                        return JSON.parse(strippedContent);
+                    } else {
+                        return undefined;
+                    }
+                });
             }).catch(reason => {
                 if (reason) {
                     this.logger.error(`Failed to read preferences ${uri}:`, reason);
@@ -120,14 +124,12 @@ export class JsonPreferenceServer implements PreferenceServer {
             const newValue = preferences[preferenceName];
             changes.push({
                 preferenceName, newValue
-            })
+            });
         }
         this.fireEvent({ changes });
-
     }
 
     protected fireRemoved(preferences: any): void {
-
 
         const changes: PreferenceChange[] = [];
         // tslint:disable-next-line:forin
@@ -135,7 +137,7 @@ export class JsonPreferenceServer implements PreferenceServer {
             const oldValue = preferences[preferenceName];
             changes.push({
                 preferenceName, oldValue
-            })
+            });
         }
         this.fireEvent({ changes });
     }
@@ -176,8 +178,8 @@ export class JsonPreferenceServer implements PreferenceServer {
 
     has(preferenceName: string): Promise<boolean> {
         return this.ready.then(() => {
-            return !!this.preferences && (preferenceName in this.preferences)
-        })
+            return !!this.preferences && (preferenceName in this.preferences);
+        });
     }
 
     get<T>(preferenceName: string): Promise<T | undefined> {

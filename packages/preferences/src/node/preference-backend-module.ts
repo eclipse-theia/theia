@@ -13,7 +13,10 @@ import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/com
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import { PreferenceService, CompoundPreferenceServer, PreferenceClient, PreferenceServer, preferencesPath } from '../common';
 import { JsonPreferenceServer, PreferenceUri } from './json-preference-server';
-import { PrefJsonValidator } from "@theia/core/lib/common"
+import { PrefJsonValidator } from "../common";
+import { JsonPrefSchema } from "../common/json-pref-schema"
+import { PrefSchema } from "../common/json-pref-validator"
+import { JsonValidator } from "../common/json-validator"
 
 /*
  * Workspace preference server that watches the current workspace
@@ -28,7 +31,14 @@ export const UserPreferenceServer = Symbol('UserPreferenceServer');
 export type UserPreferenceServer = PreferenceServer;
 
 export default new ContainerModule(bind => {
-    bind(PrefJsonValidator).toSelf().inSingletonScope();
+
+    bind(JsonPrefSchema).toSelf().inSingletonScope();
+    bind(PrefSchema).toDynamicValue((ctx) => {
+        const schema = ctx.container.get<JsonPrefSchema>(JsonPrefSchema);
+        return schema.getSchema();
+    })
+
+    bind(JsonValidator).to(PrefJsonValidator);
     bind(JsonPreferenceServer).toSelf();
 
     bind(UserPreferenceServer).toDynamicValue(ctx => {

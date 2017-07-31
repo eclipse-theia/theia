@@ -9,7 +9,7 @@ import { JsonRpcServer } from "@theia/core";
 
 export const preferencesPath = '/services/preferences';
 
-export const PreferenceServer = Symbol("PreferenceServer")
+export const PreferenceServer = Symbol("PreferenceServer");
 export interface PreferenceServer extends JsonRpcServer<PreferenceClient> {
 }
 
