@@ -93,7 +93,8 @@
                 "bootstrap",
                 "--hoist",
                 "--loglevel",
-                "silly"
+                "silly",
+                "concurrency==1"
             ],
             "sourceMaps": false
         }
