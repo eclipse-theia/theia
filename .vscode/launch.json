@@ -94,7 +94,7 @@
                 "--hoist",
                 "--loglevel",
                 "silly",
-                "concurrency==1"
+                "--concurrency=1"
             ],
             "sourceMaps": false
         }
