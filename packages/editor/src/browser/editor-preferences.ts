@@ -11,7 +11,7 @@ import {
     PreferenceProxy,
     PreferenceService,
 } from '@theia/preferences/lib/common';
-import { JsonSchemaContribution } from '@theia/core/lib/common'
+import { JsonSchemaContribution } from '@theia/preferences/lib/common';
 
 export const editorConfigSchema: Object = {
     $schema: 'http://json-schema.org/draft-04/schema#', // not sure how to make this works...
@@ -39,7 +39,7 @@ export const editorConfigSchema: Object = {
             description: "Control the rendering of whitespaces in the editor"
         }
     }
-}
+};
 
 export interface EditorConfiguration {
     'editor.tabSize': number,
@@ -51,7 +51,7 @@ export const defaultEditorConfiguration: EditorConfiguration = {
     'editor.tabSize': 4,
     'editor.lineNumbers': 'on',
     'editor.renderWhitespace': 'none'
-}
+};
 
 export const EditorPreferences = Symbol('EditorPreferences');
 export type EditorPreferences = PreferenceProxy<EditorConfiguration>;
@@ -66,5 +66,5 @@ export function bindEditorPreferences(bind: interfaces.Bind): void {
         return createEditorPreferences(preferences);
     });
 
-    bind(JsonSchemaContribution).toConstantValue(editorConfigSchema)
+    bind(JsonSchemaContribution).toConstantValue(editorConfigSchema);
 }
