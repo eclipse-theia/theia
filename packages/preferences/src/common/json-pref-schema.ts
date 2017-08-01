@@ -5,33 +5,41 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { JsonSchema, CombinedSchema } from "./json-schema";
 import { inject, named } from "inversify";
 import { ContributionProvider, ILogger } from '@theia/core/lib/common';
 import * as ajv from 'ajv';
 
 
-export const JsonSchemaContribution = Symbol("JsonSchemaContribution");
-export interface JsonSchemaContribution {
-    schema: {};
+export const PreferenceContribution = Symbol("PreferenceContribution");
+export interface PreferenceContribution {
+    readonly schema: PreferenceSchema;
 }
 
-export class JsonPrefSchema implements JsonSchema {
-    protected combinedSchema: CombinedSchema = { allOf: [] };
+export interface PreferenceSchema {
+    properties: {
+        [name: string]: object
+    }
+}
+export class PreferenceSchemaFactory {
+    protected readonly combinedSchema: PreferenceSchema;
 
     constructor(
         @inject(ILogger) protected readonly logger: ILogger,
         @inject(ContributionProvider)
-        @named(JsonSchemaContribution)
-        protected readonly schemaContributions: ContributionProvider<JsonSchemaContribution>,
+        @named(PreferenceContribution)
+        protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>,
     ) {
-        let combinedSchemas: Object[] = [];
 
-        schemaContributions.getContributions().forEach(contrib => {
-            combinedSchemas.push(contrib);
+        preferenceContributions.getContributions().forEach(contrib => {
+
+            for (const property in contrib.schema) {
+                if (this.combinedSchema.properties[property]) {
+                    this.logger.error("Preference name collision detected in the schema for property: " + property);
+                } else {
+                    this.combinedSchema.properties[property] = contrib.schema.properties[property];
+                }
+            }
         });
-
-        this.combinedSchema.allOf = combinedSchemas;
 
         try {
             ajv().compile(this.combinedSchema);
@@ -40,7 +48,7 @@ export class JsonPrefSchema implements JsonSchema {
         }
     }
 
-    getSchema(): CombinedSchema {
+    getSchema(): PreferenceSchema {
         return this.combinedSchema;
     }
 }

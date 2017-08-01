@@ -6,9 +6,6 @@
  */
 
 export * from '@theia/preferences-api';
-export * from './json-validator'
-export * from './json-schema'
-export * from './json-pref-validator'
 export * from './json-pref-schema'
 
 

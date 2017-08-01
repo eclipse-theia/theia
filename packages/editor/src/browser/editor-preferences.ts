@@ -11,11 +11,9 @@ import {
     PreferenceProxy,
     PreferenceService,
 } from '@theia/preferences/lib/common';
-import { JsonSchemaContribution } from '@theia/preferences/lib/common';
+import { PreferenceContribution } from '@theia/preferences/lib/common';
 
 export const editorConfigSchema: Object = {
-    $schema: 'http://json-schema.org/draft-04/schema#', // not sure how to make this works...
-    title: "Editor configuration Scheme",
     type: "object",
     properties: {
         "editor.tabSize": {
@@ -66,5 +64,5 @@ export function bindEditorPreferences(bind: interfaces.Bind): void {
         return createEditorPreferences(preferences);
     });
 
-    bind(JsonSchemaContribution).toConstantValue(editorConfigSchema);
+    bind(PreferenceContribution).toConstantValue(editorConfigSchema);
 }

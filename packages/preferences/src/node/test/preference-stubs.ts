@@ -10,8 +10,20 @@ import URI from '@theia/core/lib/common/uri';
 import { FileSystemNode } from "@theia/filesystem/lib/node/node-filesystem";
 import { FileSystemWatcherServer, DidFilesChangedParams, WatchOptions, FileSystemWatcherClient } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { Logger } from '@theia/core/lib/common/logger';
-import { JsonValidator } from "../../common/json-validator";
-import { CombinedSchema } from "../../common/json-schema"
+import { PreferenceSchema } from "../../common/json-pref-schema"
+
+export const testSchema: PreferenceSchema = {
+    properties: {
+        "editor.tabSize": {
+            type: "number",
+            minimum: 1,
+            description: "Configure the tab size in the editor"
+
+        }
+
+    }
+};
+
 
 export class JsonPrefHelper {
     readonly logger: Logger;
@@ -41,7 +53,7 @@ export class JsonPrefHelper {
     }
 
     createJsonPrefServer(preferenceFileUri: URI) {
-        return new JsonPreferenceServer(this.fileSystem, this.fileWatcher, this.logger, Promise.resolve(preferenceFileUri), new JsonValidatorStub());
+        return new JsonPreferenceServer(this.fileSystem, this.fileWatcher, this.logger, Promise.resolve(preferenceFileUri), testSchema);
     }
 
     private createFileSystemWatcher(): FileSystemWatcherServerstub {
@@ -72,16 +84,4 @@ export class FileSystemWatcherServerstub implements FileSystemWatcherServer {
             this.client.onDidFilesChanged(event);
         }
     }
-}
-
-class JsonValidatorStub implements JsonValidator {
-    constructor() { }
-    getSchema(): CombinedSchema {
-        return { allOf: [] };
-    }
-
-    validateJson(toValidate: string): boolean {
-        return true;
-    }
-
 }
