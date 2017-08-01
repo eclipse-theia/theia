@@ -12,10 +12,14 @@ import { Disposable, DisposableCollection, ILogger, MaybePromise } from '@theia/
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { FileSystemWatcherServer, DidFilesChangedParams, FileChange } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { PreferenceChangedEvent, PreferenceClient, PreferenceServer, PreferenceChange } from '../common';
-import { JsonValidator } from "../common/json-validator";
+import { PreferenceSchema } from "../common/json-pref-schema"
 import * as jsoncparser from "jsonc-parser";
+import * as ajv from 'ajv';
+
 
 export const PreferenceUri = Symbol("PreferencePath");
+export const PrefSchema = Symbol("PrefSchema");
+
 export type PreferenceUri = MaybePromise<URI>;
 
 @injectable()
@@ -33,7 +37,7 @@ export class JsonPreferenceServer implements PreferenceServer {
         @inject(FileSystemWatcherServer) protected readonly watcherServer: FileSystemWatcherServer,
         @inject(ILogger) protected readonly logger: ILogger,
         @inject(PreferenceUri) preferenceUri: PreferenceUri,
-        @inject(JsonValidator) protected readonly validator: JsonValidator
+        @inject(PrefSchema) protected readonly schema: PreferenceSchema
     ) {
         this.preferenceUri = Promise.resolve(preferenceUri).then(uri => uri.toString());
 
@@ -88,11 +92,8 @@ export class JsonPreferenceServer implements PreferenceServer {
                 }
                 return this.fileSystem.resolveContent(uri).then(({ stat, content }) => {
                     const strippedContent = jsoncparser.stripComments(content);
-                    if (this.validator.validateJson(strippedContent)) {
-                        return JSON.parse(strippedContent);
-                    } else {
-                        return undefined;
-                    }
+
+                    return JSON.parse(strippedContent);
                 });
             }).catch(reason => {
                 if (reason) {
@@ -105,15 +106,27 @@ export class JsonPreferenceServer implements PreferenceServer {
 
     protected doReconcilePreferences(preferences: any | undefined) {
         if (preferences) {
-            if (this.preferences) {
-                this.fireChanged(this.preferences, preferences);
+            const validatedPreferences = this.validatePreferences(preferences);
+            if (validatedPreferences) {
+                this.fireChanged(this.preferences, validatedPreferences);
             } else {
-                this.fireNew(preferences);
+                this.fireNew(validatedPreferences);
             }
         } else if (this.preferences) {
             this.fireRemoved(this.preferences);
         }
         this.preferences = preferences;
+    }
+
+    protected validatePreferences(preferences: any): any {
+        const validatedPrefs: any = {};
+        for (const preferenceName in preferences) {
+            const value = preferences[preferenceName];
+            if (ajv().validate(this.schema, { preferenceName: value })) {
+                validatedPrefs[preferenceName] = value;
+            }
+        }
+        return validatedPrefs;
     }
 
     protected fireNew(preferences: any): void {
