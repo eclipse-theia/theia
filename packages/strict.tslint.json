@@ -6,13 +6,11 @@
       true,
       "array"
     ],
-    "arrow-return-shorthand": true,
     "await-promise": true,
     "adjacent-overload-signatures": true,
     "align": [
       true
     ],
-    "arrow-parens": true,
     "ban": true,
     "callable-types": true,
     "completed-docs": [
@@ -21,15 +19,12 @@
     "cyclomatic-complexity": [
       true
     ],
-    "eofline": true,
     "file-header": [
       true
     ],
     "import-blacklist": true,
     "import-spacing": true,
     "interface-name": true,
-    "interface-over-type-literal": true,
-    "jsdoc-format": true,
     "label-position": true,
     "linebreak-style": [
       true,
@@ -47,7 +42,6 @@
     "member-access": true,
     "new-parens": true,
     "no-angle-bracket-type-assertion": true,
-    "no-any": true,
     "no-arg": true,
     "no-bitwise": true,
     "no-boolean-literal-compare": true,
@@ -55,16 +49,6 @@
     "no-consecutive-blank-lines": [
       true
     ],
-    "no-console": [
-      true,
-      "debug",
-      "info",
-      "log",
-      "time",
-      "timeEnd",
-      "trace"
-    ],
-    "no-construct": true,
     "no-debugger": true,
     "no-default-export": true,
     "no-duplicate-super": true,
@@ -80,17 +64,14 @@
     "no-internal-module": true,
     "no-invalid-template-strings": true,
     "no-invalid-this": true,
-    "no-magic-numbers": true,
     "no-mergeable-namespace": true,
     "no-missing-visibility-modifiers": true,
     "no-misused-new": true,
     "no-namespace": false,
-    "no-null-keyword": true,
     "no-parameter-properties": false,
     "no-reference": true,
     "no-reference-import": true,
     "no-require-imports": true,
-    "no-shadowed-variable": true,
     "no-sparse-arrays": true,
     "no-string-literal": true,
     "no-string-throw": true,
@@ -110,7 +91,6 @@
     ],
     "object-literal-shorthand": true,
     "object-literal-sort-keys": true,
-    "one-variable-per-declaration": true,
     "only-arrow-functions": [
       true,
       "allow-declarations",
