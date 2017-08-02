@@ -98,10 +98,10 @@ export class Model {
         // tslint:disable-next-line:forin
         for (const extension in this.pck.dependencies) {
             if (extension in localDependencies) {
-                const path = localDependencies[extension];
+                const path = localDependencies[extension]!;
                 await this.readExtensionPackage(extension, () => reader.readLocal(extension, path));
             }
-            const version = this.pck.dependencies[extension];
+            const version = this.pck.dependencies[extension]!;
             await this.readExtensionPackage(extension, () => reader.read(extension, version));
         }
     }

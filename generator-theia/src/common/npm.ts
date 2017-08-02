@@ -19,13 +19,14 @@ export interface Maintainer {
 }
 
 export interface Dependencies {
-    [name: string]: string
+    [name: string]: string | undefined;
 }
 
 export interface NodePackage {
     name?: string;
     version?: string;
     description?: string;
+    publisher?: Maintainer;
     author?: string | Author;
     maintainers?: Maintainer[];
     keywords?: string[];
@@ -56,7 +57,9 @@ export function view(param: ViewParam): Promise<ViewResult> {
     } else {
         url += encodeURIComponent(param.name);
     }
-    const headers = {};
+    const headers: {
+        [header: string]: string
+    } = {};
     if (param.abbreviated === undefined || param.abbreviated) {
         headers['Accept'] = 'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*';
     }

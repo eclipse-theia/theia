@@ -14,6 +14,11 @@ import {
 } from '../common/extension-protocol';
 import * as npms from './npms';
 
+export interface InstallationState {
+    readonly installed: RawExtension[];
+    readonly outdated: RawExtension[];
+}
+
 export class NodeExtensionServer extends AbstractAppGenerator implements ExtensionServer {
 
     protected readonly ready: Promise<void>;
@@ -61,8 +66,16 @@ export class NodeExtensionServer extends AbstractAppGenerator implements Extensi
         return new Promise(resolve => { });
     }
 
-    installed(): Promise<RawExtension[]> {
-        return Promise.resolve([]);
+    /**
+     * Extension packages listed in `theia.package.json` are installed.
+     */
+    async installed(): Promise<RawExtension[]> {
+        const extensions = [];
+        for (const pck of await this.extensionPackages) {
+            const extension = this.toRawExtension(pck);
+            extensions.push(extension);
+        }
+        return extensions;
     }
     install(extension: string): Promise<void> {
         return new Promise(resolve => { });
@@ -71,29 +84,46 @@ export class NodeExtensionServer extends AbstractAppGenerator implements Extensi
         return new Promise(resolve => { });
     }
 
-    outdated(): Promise<RawExtension[]> {
-        return Promise.resolve([]);
+    /**
+     * Extension packages listed in `theia.package.json`
+     * with versions less than the latest published are outdated.
+     */
+    async outdated(): Promise<RawExtension[]> {
+        const installed = await this.installed();
+        const outdated = await Promise.all(
+            installed.map(extension => this.isOutdated(extension.name, extension.version))
+        );
+        return installed.filter((_, index) => outdated[index]);
     }
     update(extension: string): Promise<void> {
         return new Promise(resolve => { });
     }
 
-    async list(param?: SearchParam): Promise<Extension[]> {
-        await this.ready;
-        const extensions = [];
-        for (const pck of this.model.extensionPackages) {
-            const extension = await this.toExtension(pck);
-            extensions.push(extension);
-        }
-        return extensions;
+    protected async installationState(): Promise<InstallationState> {
+        const [installed, outdated] = await Promise.all([this.installed(), this.outdated()]);
+        return { installed, outdated };
+    }
+    protected toExtension(raw: RawExtension, installation: InstallationState): Extension {
+        const outdated = installation.outdated.some(e => e.name === raw.name);
+        const installed = outdated || installation.installed.some(e => e.name === raw.name);
+        return Object.assign(raw, { installed, outdated });
     }
 
-    protected async toExtension(pck: ExtensionPackage): Promise<Extension> {
-        const rawExtension = this.toRawExtension(pck);
-        return Object.assign(rawExtension, {
-            installed: this.isInstalled(pck),
-            outdated: await this.isOutdated(pck)
-        });
+    async list(param?: SearchParam): Promise<Extension[]> {
+        const installation = await this.installationState();
+        const extensions = param ? await this.search(param) : installation.installed;
+        return extensions.map(raw =>
+            this.toExtension(raw, installation)
+        );
+    }
+
+    resolve(extension: string): Promise<ResolvedExtension> {
+        return new Promise(() => { });
+    }
+
+    protected async isOutdated(extension: string, version: string): Promise<boolean> {
+        const latest = await npm.version(extension).catch(() => undefined);
+        return !!latest && semver.gt(latest, version);
     }
 
     protected toRawExtension(pck: ExtensionPackage): RawExtension {
@@ -106,6 +136,9 @@ export class NodeExtensionServer extends AbstractAppGenerator implements Extensi
     }
 
     protected getAuthor(pck: ExtensionPackage): string {
+        if (pck.publisher) {
+            return pck.publisher.username;
+        }
         if (typeof pck.author === 'string') {
             return pck.author;
         }
@@ -118,22 +151,8 @@ export class NodeExtensionServer extends AbstractAppGenerator implements Extensi
         return '';
     }
 
-    protected isInstalled(pck: ExtensionPackage): boolean {
-        const targetDependencies = this.model.targetPck.dependencies;
-        return !!targetDependencies && pck.name in targetDependencies;
-    }
-
-    protected async isOutdated(pck: ExtensionPackage): Promise<boolean> {
-        if (!this.isInstalled(pck)) {
-            return false;
-        }
-        const targetVersion = this.model.targetPck.dependencies![pck.name];
-        const version = await npm.version(pck.name).catch(() => undefined);
-        return !!version && semver.gt(version, targetVersion);
-    }
-
-    resolve(extension: string): Promise<ResolvedExtension> {
-        return new Promise(() => { });
+    protected get extensionPackages(): Promise<ReadonlyArray<ExtensionPackage>> {
+        return this.ready.then(() => this.model.extensionPackages);
     }
 
     needInstall(): Promise<boolean> {
