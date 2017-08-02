@@ -21,7 +21,7 @@ export class VirtualWidget extends BaseWidget {
 
         const child = this.render();
         VirtualRenderer.render(child, this.node);
-        this.onRender.dispose()
+        this.onRender.dispose();
     }
 
     protected render(): h.Child {
