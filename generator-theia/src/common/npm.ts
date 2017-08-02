@@ -70,7 +70,7 @@ export function view(param: ViewParam): Promise<ViewResult> {
             if (err) {
                 reject(err);
             } else if (response.statusCode !== 200) {
-                reject(`${response.statusCode}: ${response.statusMessage}`);
+                reject(new Error(`${response.statusCode}: ${response.statusMessage} for ${url}`));
             } else {
                 const data = JSON.parse(body);
                 resolve(data);

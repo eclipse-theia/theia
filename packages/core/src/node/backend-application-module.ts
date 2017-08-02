@@ -9,7 +9,7 @@ import { bindContributionProvider } from '../common/contribution-provider';
 import { BackendApplication, BackendApplicationContribution } from "./backend-application";
 import { ContainerModule } from "inversify";
 
-export const backendApplicationModule = new ContainerModule((bind) => {
+export const backendApplicationModule = new ContainerModule(bind => {
     bind(BackendApplication).toSelf().inSingletonScope();
     bindContributionProvider(bind, BackendApplicationContribution);
 });

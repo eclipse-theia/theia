@@ -5,30 +5,32 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-/* tslint:disable:no-magic-numbers */
 import * as path from 'path';
+import * as fs from 'fs-extra';
 import * as assert from 'assert';
-import { ExtensionServer } from '../common/extension-protocol';
-import { NodeExtensionServer } from './node-extension-server';
+import { ExtensionClient, ExtensionServer } from '../common/extension-protocol';
+import extensionNodeTestContainer from './test/extension-node-test-container';
 
-let server: ExtensionServer | undefined;
-afterEach(() => {
-    if (server) {
-        server.dispose();
-    }
+let server: ExtensionServer;
+const testProjectPath = path.resolve(__dirname, '..', '..', 'testproject');
+const appProjectPath = path.resolve(__dirname, '..', '..', 'testproject_temp');
+
+beforeEach(function () {
+    fs.removeSync(appProjectPath);
+    fs.copySync(testProjectPath, appProjectPath);
+    server = extensionNodeTestContainer(appProjectPath).get(ExtensionServer);
 });
 
-function createServer(): ExtensionServer {
-    return new NodeExtensionServer({
-        projectPath: path.resolve(__dirname, '..', '..', 'testdata', 'list')
-    });
-}
+afterEach(function () {
+    server.dispose();
+    fs.removeSync(appProjectPath);
+});
 
 describe("NodeExtensionServer", function () {
 
-    it("search", () => {
+    it("search", function () {
         this.timeout(10000);
-        server = createServer();
+
         return server.search({
             query: "filesystem scope:theia"
         }).then(extensions => {
@@ -37,9 +39,8 @@ describe("NodeExtensionServer", function () {
         });
     });
 
-    it("installed", () => {
+    it("installed", function () {
         this.timeout(10000);
-        server = createServer();
 
         return server.installed().then(extensions => {
             assert.equal(extensions.length, 2, JSON.stringify(extensions, undefined, 2));
@@ -47,9 +48,52 @@ describe("NodeExtensionServer", function () {
         });
     });
 
-    it("outdated", () => {
+    it("install", async function () {
         this.timeout(10000);
-        server = createServer();
+
+        const before = await server.installed();
+        assert.equal(false, before.some(e => e.name === '@theia/filesystem'), JSON.stringify(before, undefined, 2));
+
+        const onDidChangePackage = new Promise(resolve => {
+            server.setClient(<ExtensionClient>{
+                onDidChange: function () {
+                    resolve();
+                }
+            });
+        });
+
+        server.install("@theia/filesystem");
+
+        await onDidChangePackage;
+        return server.installed().then(after => {
+            assert.equal(true, after.some(e => e.name === '@theia/filesystem'), JSON.stringify(after, undefined, 2));
+        });
+    });
+
+    it("uninstall", async function () {
+        this.timeout(10000);
+
+        const before = await server.installed();
+        assert.equal(true, before.some(e => e.name === '@theia/extension-manager'), JSON.stringify(before, undefined, 2));
+
+        const onDidChangePackage = new Promise(resolve => {
+            server.setClient(<ExtensionClient>{
+                onDidChange: function () {
+                    resolve();
+                }
+            });
+        });
+
+        server.uninstall("@theia/extension-manager");
+
+        await onDidChangePackage;
+        return server.installed().then(after => {
+            assert.equal(false, after.some(e => e.name === '@theia/extension-manager'), JSON.stringify(after, undefined, 2));
+        });
+    });
+
+    it("outdated", function () {
+        this.timeout(10000);
 
         return server.outdated().then(extensions => {
             assert.equal(extensions.length, 1, JSON.stringify(extensions, undefined, 2));
@@ -57,9 +101,31 @@ describe("NodeExtensionServer", function () {
         });
     });
 
+    it("update", async function () {
+        this.timeout(10000);
+
+        const before = await server.outdated();
+        assert.equal(true, before.some(e => e.name === '@theia/core'), JSON.stringify(before, undefined, 2));
+
+        const onDidChangePackage = new Promise(resolve => {
+            server.setClient(<ExtensionClient>{
+                onDidChange: function () {
+                    resolve();
+                }
+            });
+        });
+
+        server.update("@theia/core");
+
+        await onDidChangePackage;
+        return server.outdated().then(after => {
+            assert.equal(false, after.some(e => e.name === '@theia/core'), JSON.stringify(after, undefined, 2));
+        });
+    });
+
     it("list", function () {
         this.timeout(10000);
-        server = createServer();
+
         return server.list().then(extensions => {
             assert.equal(extensions.length, 2, JSON.stringify(extensions, undefined, 2));
 
@@ -86,7 +152,7 @@ describe("NodeExtensionServer", function () {
 
     it("list with search", function () {
         this.timeout(10000);
-        server = createServer();
+
         return server.list({
             query: "scope:theia"
         }).then(extensions => {

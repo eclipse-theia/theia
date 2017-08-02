@@ -6,42 +6,53 @@
  */
 
 import * as semver from 'semver';
-import { inject, injectable } from 'inversify';
-import { CommonAppGenerator, generatorTheiaPath, ExtensionPackage, ProjectModel } from 'generator-theia';
+import { injectable, inject } from 'inversify';
+import { ExtensionPackage } from 'generator-theia';
 import * as npm from 'generator-theia/generators/common/npm';
-
+import { DisposableCollection } from '@theia/core';
 import {
     RawExtension, ResolvedRawExtension, Extension, ResolvedExtension, ExtensionServer, ExtensionClient, SearchParam
 } from '../common/extension-protocol';
 import * as npms from './npms';
+import { AppProject } from './app-project';
 
 export interface InstallationState {
     readonly installed: RawExtension[];
     readonly outdated: RawExtension[];
 }
 
-export const NodeExtensionServerOptions = Symbol('NodeExtensionServerOptions');
-export interface NodeExtensionServerOptions {
-    projectPath: string;
-}
-
 @injectable()
 export class NodeExtensionServer implements ExtensionServer {
 
+    protected client: ExtensionClient | undefined;
+    protected readonly toDispose = new DisposableCollection();
+
     constructor(
-        @inject(NodeExtensionServerOptions) protected readonly options: NodeExtensionServerOptions
-    ) { }
+        @inject(AppProject) protected readonly appProject: AppProject
+    ) {
+        this.toDispose.push(appProject);
+        this.toDispose.push(appProject.onDidChangePackage(() => this.fireDidChange()));
+    }
 
     dispose(): void {
-        // no-op
+        this.toDispose.dispose();
     }
 
     setClient(client: ExtensionClient | undefined): void {
+        this.client = client;
+    }
+    /**
+     * Fire when `theia.package.json` is changed.
+     */
+    protected fireDidChange(): void {
+        if (this.client) {
+            this.client.onDidChange();
+        }
     }
 
     async search(param: SearchParam): Promise<RawExtension[]> {
-        const model = await this.model;
-        const extensionKeywords = model.config.extensionKeywords;
+        const projectModel = await this.appProject.load();
+        const extensionKeywords = projectModel.config.extensionKeywords;
         const query = this.prepareQuery(param.query, extensionKeywords);
         const packages = await npms.search(query, param.from, param.size);
         const extensions = [];
@@ -64,20 +75,28 @@ export class NodeExtensionServer implements ExtensionServer {
     /**
      * Extension packages listed in `theia.package.json` are installed.
      */
-    async installed(): Promise<RawExtension[]> {
-        const model = await this.model;
-        const extensions = [];
-        for (const pck of model.extensionPackages) {
-            const extension = this.toRawExtension(pck);
-            extensions.push(extension);
-        }
-        return extensions;
+    installed(): Promise<RawExtension[]> {
+        return this.appProject.load().then(projectModel => {
+            const extensions = [];
+            for (const pck of projectModel.extensionPackages) {
+                const extension = this.toRawExtension(pck);
+                extensions.push(extension);
+            }
+            return extensions;
+        });
     }
-    install(extension: string): Promise<void> {
-        return new Promise(resolve => { });
+    async install(extension: string): Promise<void> {
+        const latestVersion = await this.latestVersion(extension);
+        if (latestVersion) {
+            await this.appProject.update(model =>
+                model.setDependency(extension, latestVersion)
+            );
+        }
     }
     uninstall(extension: string): Promise<void> {
-        return new Promise(resolve => { });
+        return this.appProject.update(model =>
+            model.setDependency(extension, undefined)
+        );
     }
 
     /**
@@ -87,12 +106,22 @@ export class NodeExtensionServer implements ExtensionServer {
     async outdated(): Promise<RawExtension[]> {
         const installed = await this.installed();
         const outdated = await Promise.all(
-            installed.map(extension => this.isOutdated(extension.name, extension.version))
+            installed.map(extension => this.validateOutdated(extension.name, extension.version))
         );
-        return installed.filter((_, index) => outdated[index]);
+        return installed.filter((_, index) => !!outdated[index]);
     }
     update(extension: string): Promise<void> {
-        return new Promise(resolve => { });
+        return this.appProject.update(async model => {
+            const pck = model.extensionPackages.find(p => p.name === extension);
+            if (!pck || !pck.version) {
+                return false;
+            }
+            const latestVersion = await this.validateOutdated(pck.name, pck.version);
+            if (!latestVersion) {
+                return false;
+            }
+            return model.setDependency(extension, latestVersion);
+        });
     }
 
     protected async installationState(): Promise<InstallationState> {
@@ -117,9 +146,13 @@ export class NodeExtensionServer implements ExtensionServer {
         return new Promise(() => { });
     }
 
-    protected async isOutdated(extension: string, version: string): Promise<boolean> {
-        const latest = await npm.version(extension).catch(() => undefined);
-        return !!latest && semver.gt(latest, version);
+    protected async validateOutdated(extension: string, version: string): Promise<string | undefined> {
+        const latest = await this.latestVersion(extension);
+        return !!latest && semver.gt(latest, version) ? latest : undefined;
+    }
+
+    protected latestVersion(extension: string): Promise<string | undefined> {
+        return npm.version(extension).catch(() => undefined);
     }
 
     protected toRawExtension(pck: ExtensionPackage): RawExtension {
@@ -145,17 +178,6 @@ export class NodeExtensionServer implements ExtensionServer {
             return pck.maintainers[0].username;
         }
         return '';
-    }
-
-    protected get model(): Promise<ProjectModel> {
-        const generator = new CommonAppGenerator([], {
-            env: {
-                cwd: this.options.projectPath
-            },
-            resolved: generatorTheiaPath
-        });
-        generator.initializing();
-        return generator.configuring().then(() => generator.model);
     }
 
     needInstall(): Promise<boolean> {

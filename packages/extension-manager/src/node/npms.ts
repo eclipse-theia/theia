@@ -29,7 +29,7 @@ export function search(query: string, from?: number, size?: number): Promise<Nod
                 };
                 resolve(result.results.map(v => v.package));
             } else {
-                reject(`${response.statusCode}: ${response.statusMessage}`);
+                reject(new Error(`${response.statusCode}: ${response.statusMessage} for ${url}`));
             }
         });
     });

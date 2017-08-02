@@ -18,7 +18,8 @@ export class CommonAppGenerator extends BaseGenerator {
 
     initializing(): void {
         this.model.targetPck = this.fs.readJSON(this.destinationPath('package.json'), {});
-        this.model.pck = this.fs.readJSON(this.destinationPath('theia.package.json'), {});
+        this.model.pckPath = this.destinationPath('theia.package.json');
+        this.model.pck = this.fs.readJSON(this.model.pckPath, {});
         this.config.defaults(this.model.defaultConfig);
         Object.assign(this.model.config, this.config.getAll());
     }
@@ -39,7 +40,11 @@ export class CommonAppGenerator extends BaseGenerator {
                 for (const packagePath of ['package.json', 'extension.package.json']) {
                     const extensionPackagePath = this.destinationPath(path, packagePath);
                     if (this.fs.exists(extensionPackagePath)) {
-                        return this.fs.readJSON(extensionPackagePath, undefined);
+                        const pck = this.fs.readJSON(extensionPackagePath, undefined);
+                        if (pck && pck.name === extension) {
+                            return pck;
+                        }
+                        return undefined;
                     }
                 }
                 return undefined;

@@ -5,20 +5,27 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { ContainerModule } from "inversify";
+import * as yargs from "yargs";
+import { ContainerModule, interfaces } from "inversify";
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
 import { ExtensionServer, extensionPath } from "../common/extension-protocol";
-import { NodeExtensionServer, NodeExtensionServerOptions } from './node-extension-server';
+import { NodeExtensionServer } from './node-extension-server';
+import { AppProject, AppProjectPath } from './app-project';
 
-export default new ContainerModule(bind => {
-    const options: NodeExtensionServerOptions = {
-        projectPath: process.cwd()
-    };
-    bind(NodeExtensionServerOptions).toConstantValue(options);
+export function bindNodeExtensionServer(bind: interfaces.Bind, appProjectPath: string): void {
+    bind(AppProjectPath).toConstantValue(appProjectPath);
+    bind(AppProject).toSelf().inSingletonScope();
+
     bind(NodeExtensionServer).toSelf().inSingletonScope();
     bind(ExtensionServer).toDynamicValue(ctx =>
         ctx.container.get(NodeExtensionServer)
     ).inSingletonScope();
+}
+
+const argv = yargs.default('appProjectPath', process.cwd()).argv;
+
+export default new ContainerModule(bind => {
+    bindNodeExtensionServer(bind, argv.appProjectPath);
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler(extensionPath, () =>
