@@ -18,7 +18,7 @@
     "prepare:packages": "yarn run bootstrap && yarn run clean && yarn run clean:rebuild && yarn run build",
     "bootstrap": "node scripts/generate.js && lerna bootstrap --scope \"@theia/*\" --hoist -- --no-optional",
     "refresh": "lerna clean --scope \"@theia/*\" --yes && yarn run bootstrap",
-    "clean": "lerna run clean --scope \"@theia/*\" --parallel",
+    "clean": "lerna run clean --scope \"@theia/*\" --stream",
     "build": "lerna run build --scope \"@theia/*\" --stream",
     "test": "yarn run test:theia && yarn run test:electron && yarn run test:browser",
     "test:theia": "lerna run test --scope \"@theia/!(example-)*\" --parallel",
