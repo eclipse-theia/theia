@@ -9,6 +9,9 @@
             "generator-theia/generators/*": [
                 "../generator-theia/src/*"
             ],
+            "@theia/core": [
+                "core/src/common"
+            ],
             "@theia/core/lib/*": [
                 "core/src/*"
             ],
@@ -26,6 +29,9 @@
             ],
             "@theia/navigator/lib/*": [
                 "navigator/src/*"
+            ],
+            "@theia/preferences-api": [
+                "preferences-api/src/common"
             ],
             "@theia/preferences-api/lib/*": [
                 "preferences-api/src/*"

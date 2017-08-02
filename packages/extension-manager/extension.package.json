@@ -3,12 +3,17 @@
   "version": "0.1.0",
   "description": "Theia - Extension Manager",
   "dependencies": {
-    "@theia/core": "^0.1.0",
+    "@theia/core": "^0.1.1",
     "@types/request": "^2.0.0",
     "@types/semver": "^5.3.32",
-    "generator-theia": "^0.1.0",
+    "generator-theia": "^0.1.1",
     "request": "^2.81.0",
     "semver": "^5.4.1"
   },
-  "theiaExtensions": []
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/extension-frontend-module",
+      "backend": "lib/node/extension-backend-module"
+    }
+  ]
 }

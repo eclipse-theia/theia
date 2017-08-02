@@ -7,6 +7,8 @@
 
 import { JsonRpcServer } from "@theia/core";
 
+export const extensionPath = '/services/extensions';
+
 /**
  * The raw extension information from the repository.
  */

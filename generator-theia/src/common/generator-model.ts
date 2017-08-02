@@ -56,7 +56,7 @@ export function sortByKey(object: { [key: string]: any }): { [key: string]: any 
 
 export const defaultExtensionKeyword = "theia-extension";
 
-export class Model {
+export class ProjectModel {
     target: 'web' | 'electron-renderer' | undefined;
     pck: NodePackage = {};
     targetPck: NodePackage = {};

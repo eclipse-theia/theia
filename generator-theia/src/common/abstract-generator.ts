@@ -9,14 +9,14 @@ import * as os from 'os';
 import * as path from 'path';
 import Base = require('yeoman-generator');
 
-import { Model } from "./generator-model";
+import { ProjectModel } from "./generator-model";
 
 export type FileSystem = Base.MemFsEditor;
 
 export abstract class AbstractGenerator {
 
     constructor(
-        protected readonly model: Model
+        protected readonly model: ProjectModel
     ) { }
 
     abstract generate(fs: FileSystem): void;

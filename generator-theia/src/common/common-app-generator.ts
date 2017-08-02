@@ -8,12 +8,12 @@
 import BaseGenerator = require('yeoman-generator');
 
 import * as npm from './npm';
-import { Model } from "./generator-model";
+import { ProjectModel } from "./generator-model";
 import { AppPackageGenerator } from "./app-package-generator";
 
-export abstract class AbstractAppGenerator extends BaseGenerator {
+export class CommonAppGenerator extends BaseGenerator {
 
-    protected readonly model = new Model();
+    readonly model = new ProjectModel();
     protected readonly pck = new AppPackageGenerator(this.model);
 
     initializing(): void {

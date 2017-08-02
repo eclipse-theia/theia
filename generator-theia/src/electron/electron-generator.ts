@@ -5,11 +5,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { AbstractAppGenerator } from "../common";
+import { CommonAppGenerator } from "../common";
 import { ElectronBackendGenerator } from "./electron-backend-generator";
 import { ElectronFrontendGenerator } from "./electron-frontend-generator";
 
-export class TheiaElectronGenerator extends AbstractAppGenerator {
+export class TheiaElectronGenerator extends CommonAppGenerator {
 
     protected readonly backend = new ElectronBackendGenerator(this.model);
     protected readonly frontend = new ElectronFrontendGenerator(this.model);

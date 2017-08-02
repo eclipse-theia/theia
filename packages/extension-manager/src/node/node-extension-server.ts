@@ -6,7 +6,8 @@
  */
 
 import * as semver from 'semver';
-import { AbstractAppGenerator, generatorTheiaPath, ExtensionPackage } from 'generator-theia';
+import { inject, injectable } from 'inversify';
+import { CommonAppGenerator, generatorTheiaPath, ExtensionPackage, ProjectModel } from 'generator-theia';
 import * as npm from 'generator-theia/generators/common/npm';
 
 import {
@@ -19,48 +20,42 @@ export interface InstallationState {
     readonly outdated: RawExtension[];
 }
 
-export class NodeExtensionServer extends AbstractAppGenerator implements ExtensionServer {
+export const NodeExtensionServerOptions = Symbol('NodeExtensionServerOptions');
+export interface NodeExtensionServerOptions {
+    projectPath: string;
+}
 
-    protected readonly ready: Promise<void>;
+@injectable()
+export class NodeExtensionServer implements ExtensionServer {
 
     constructor(
-        protected readonly configs: {
-            projectPath: string
-        }
-    ) {
-        super([], {
-            env: {
-                cwd: configs.projectPath
-            },
-            resolved: generatorTheiaPath
-        });
-        this.initializing();
-        this.ready = this.configuring();
-    }
+        @inject(NodeExtensionServerOptions) protected readonly options: NodeExtensionServerOptions
+    ) { }
 
     dispose(): void {
-
+        // no-op
     }
 
     setClient(client: ExtensionClient | undefined): void {
-
     }
 
     async search(param: SearchParam): Promise<RawExtension[]> {
-        const query = this.prepareQuery(param.query);
+        const model = await this.model;
+        const extensionKeywords = model.config.extensionKeywords;
+        const query = this.prepareQuery(param.query, extensionKeywords);
         const packages = await npms.search(query, param.from, param.size);
         const extensions = [];
         for (const pck of packages) {
-            if (ExtensionPackage.is(pck, this.model.config.extensionKeywords)) {
+            if (ExtensionPackage.is(pck, extensionKeywords)) {
                 const extension = this.toRawExtension(pck);
                 extensions.push(extension);
             }
         }
         return extensions;
     }
-    protected prepareQuery(query: string): string {
+    protected prepareQuery(query: string, extensionKeywords: string[]): string {
         const args = query.split(/\s+/).map(v => v.toLowerCase().trim()).filter(v => !!v);
-        return [`keywords:'${this.model.config.extensionKeywords.join(',')}'`, ...args].join(' ');
+        return [`keywords:'${extensionKeywords.join(',')}'`, ...args].join(' ');
     }
     resolveRaw(extension: string): Promise<ResolvedRawExtension> {
         return new Promise(resolve => { });
@@ -70,8 +65,9 @@ export class NodeExtensionServer extends AbstractAppGenerator implements Extensi
      * Extension packages listed in `theia.package.json` are installed.
      */
     async installed(): Promise<RawExtension[]> {
+        const model = await this.model;
         const extensions = [];
-        for (const pck of await this.extensionPackages) {
+        for (const pck of model.extensionPackages) {
             const extension = this.toRawExtension(pck);
             extensions.push(extension);
         }
@@ -151,8 +147,15 @@ export class NodeExtensionServer extends AbstractAppGenerator implements Extensi
         return '';
     }
 
-    protected get extensionPackages(): Promise<ReadonlyArray<ExtensionPackage>> {
-        return this.ready.then(() => this.model.extensionPackages);
+    protected get model(): Promise<ProjectModel> {
+        const generator = new CommonAppGenerator([], {
+            env: {
+                cwd: this.options.projectPath
+            },
+            resolved: generatorTheiaPath
+        });
+        generator.initializing();
+        return generator.configuring().then(() => generator.model);
     }
 
     needInstall(): Promise<boolean> {
