@@ -5,37 +5,32 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Extension, ExtensionManager } from '../common'
-import { injectable, inject } from 'inversify'
-import { VirtualWidget, Message, VirtualRenderer } from '@theia/core/lib/browser'
-import { h } from "@phosphor/virtualdom/lib"
+import { Extension, ExtensionManager } from '../common';
+import { injectable, inject } from 'inversify';
+import { VirtualWidget, VirtualRenderer } from '@theia/core/lib/browser';
+import { h } from "@phosphor/virtualdom/lib";
 
 @injectable()
 export class ExtensionWidget extends VirtualWidget {
 
-    private extensionStore: Extension[] = [];
+    protected extensionStore: Extension[] = [];
 
-    constructor( @inject(ExtensionManager) private readonly extensionManager: ExtensionManager) {
+    constructor( @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager) {
         super();
         this.id = 'extensions';
         this.title.label = 'Extensions';
         this.addClass('theia-extensions');
 
-        this.fetchExtensions()
+        this.fetchExtensions();
     }
 
     protected fetchExtensions() {
-        this.extensionManager.list('test').then(
-            extensions => {
-                this.extensionStore = extensions;
-                this.update();
-            }
-        )
-
-    }
-
-    protected onUpdateRequest(msg: Message): void {
-        super.onUpdateRequest(msg);
+        this.extensionManager.list({
+            query: 'scope:theia'
+        }).then(extensions => {
+            this.extensionStore = extensions;
+            this.update();
+        });
     }
 
     protected render(): h.Child {
@@ -44,7 +39,6 @@ export class ExtensionWidget extends VirtualWidget {
         },
             this.renderSearchField(),
             this.renderExtensionList());
-
 
         return container;
     }
@@ -72,7 +66,7 @@ export class ExtensionWidget extends VirtualWidget {
         const theList: h.Child[] = [];
         this.extensionStore.forEach(extension => {
             const name = h.div({
-                className: 'extensionName'
+                className: 'extensionName noWrapInfo'
             }, extension.name);
 
             const version = h.div({
@@ -80,29 +74,34 @@ export class ExtensionWidget extends VirtualWidget {
             }, extension.version);
 
             const author = h.div({
-                className: 'extensionAuthor'
+                className: 'extensionAuthor noWrapInfo'
             }, extension.author);
 
+            const description = h.div({
+                className: 'extensionDescription noWrapInfo'
+            }, extension.description)
+
             const leftColumn = this.renderColumn(
-                'left',
+                'extensionInformationContainer',
                 this.renderRow(name, version),
+                this.renderRow(description),
                 this.renderRow(author));
 
             let btnLabel = 'Install';
             if (extension.installed) {
                 if (extension.outdated) {
-                    btnLabel = '';
+                    btnLabel = 'Update';
                 } else {
-                    btnLabel = 'Remove';
+                    btnLabel = 'Uninstall';
                 }
             }
 
             const rightColumn = this.renderColumn(
-                '',
+                'extensionButtonContainer',
                 h.div({
                     className: 'extensionButton' +
-                    (extension.installed ? 'installed' : '') + ' ' +
-                    (extension.outdated ? 'outdated' : '')
+                    (extension.installed ? ' installed' : '') + ' ' +
+                    (extension.outdated ? ' outdated' : '')
                 }, btnLabel)
             );
 
@@ -123,13 +122,13 @@ export class ExtensionWidget extends VirtualWidget {
 
     protected renderRow(...children: h.Child[]): h.Child {
         return h.div({
-            className: 'row'
+            className: 'row flexcontainer'
         }, VirtualRenderer.flatten(children));
     }
 
     protected renderColumn(additionalClass?: string, ...children: h.Child[]): h.Child {
         return h.div({
-            className: 'column' + ' ' + additionalClass
+            className: 'column flexcontainer ' + additionalClass
         }, VirtualRenderer.flatten(children));
     }
 }
