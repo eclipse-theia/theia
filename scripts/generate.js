@@ -8,23 +8,49 @@
 const fs = require('fs');
 const paths = require('path');
 const cp = require('child_process');
+const { EOL } = require('os');
+const colors = require('colors');
 
-function spawn(command, args, options, error, log) {
-    log(`${command} ${args.join(' ')}`);
+const colorWheel = [
+    colors.cyan,
+    colors.magenta,
+    colors.blue,
+    colors.yellow,
+    colors.green
+];
+
+const yo = paths.resolve(__dirname, '..', 'node_modules', '.bin', 'yo');
+
+function spawn(args, options, error, log) {
     if (process.platform !== 'win32') {
-        const p = cp.spawn(command, args, options);
+        const p = cp.spawn(yo, args, options);
+        p.on('error', err => {
+            error(err);
+            process.exit(1);
+        });
+
+        let output = EOL;
+        p.stdout.on('data', data => output += data);
+
+        let erroutput = EOL;
+        p.stderr.on('data', data => erroutput += data);
+
         p.on('exit', code => {
+            if (erroutput.trim()) {
+                error(erroutput);
+            }
+            if (output.trim()) {
+                log(output);
+            }
             if (code !== 0) {
-                process.exit(code)
+                process.exit(code);
             }
         });
-        p.on('error', err => error(err));
-        p.stdout.on('data', data => log(data));
-        p.stderr.on('data', data => error(data));
     } else {
-        const p = cp.spawnSync('cmd', ['/c', command, ...args], options);
+        const p = cp.spawnSync('cmd', ['/c', yo, ...args], options);
         if (p.error) {
             error(p.error);
+            process.exit(1);
         }
         if (p.output) {
             log(p.output);
@@ -35,13 +61,15 @@ function spawn(command, args, options, error, log) {
     }
 }
 
+let colorIndex = 0;
 function generate(name, cwd, prefix, target) {
     if (fs.existsSync(paths.resolve(cwd, prefix + '.package.json'))) {
-        const command = paths.resolve(__dirname, '..', 'node_modules', '.bin', 'yo');
+        const displayName = colorWheel[colorIndex++ % colorWheel.length](`${name}:`);
         const args = ['theia:' + target, '--force'];
-        spawn(command, args, { cwd, env: process.env },
-            msg => console.error(`${name}: ${msg}`),
-            msg => console.log(`${name}: ${msg}`)
+        console.log(displayName, `${paths.basename(yo)} ${args.join(' ')}`);
+        spawn(args, { cwd, env: process.env },
+            msg => console.error(displayName, colors.red(msg)),
+            msg => console.log(displayName, msg)
         );
     }
 }
@@ -51,7 +79,7 @@ function generateAll(path, prefix, target) {
     for (const child of children) {
         const cwd = paths.resolve(path, child);
         generate(child, cwd, prefix, target);
-    }
+    };
 }
 
 generateAll(paths.resolve(__dirname, '../packages'), 'extension', 'extension');
