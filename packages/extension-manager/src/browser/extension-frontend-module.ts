@@ -6,9 +6,11 @@
  */
 
 import { ContainerModule } from "inversify";
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { ExtensionServer, extensionPath } from '../common/extension-protocol';
 import { ExtensionManager } from '../common';
+import { ExtensionContribution } from './extension-contribution';
+import { ExtensionWidget } from './extension-widget';
 
 export default new ContainerModule(bind => {
     bind(ExtensionServer).toDynamicValue(ctx => {
@@ -16,4 +18,7 @@ export default new ContainerModule(bind => {
         return provider.createProxy<ExtensionServer>(extensionPath);
     }).inSingletonScope();
     bind(ExtensionManager).toSelf().inSingletonScope();
+
+    bind(FrontendApplicationContribution).to(ExtensionContribution).inSingletonScope();
+    bind(ExtensionWidget).toSelf().inSingletonScope();
 });
