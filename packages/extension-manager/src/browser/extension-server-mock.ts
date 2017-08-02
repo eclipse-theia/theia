@@ -6,18 +6,19 @@
  */
 
 import {
+    Extension,
     ExtensionClient,
     ExtensionIdentifier,
     ExtensionServer,
     RawExtension,
     ResolvedRawExtension,
+    SearchParam
 } from '../common/extension-protocol';
-import { Extension } from '../common';
 import { injectable } from "inversify";
 
 @injectable()
 export class ExtensionServerMock implements ExtensionServer {
-    find(query: string): Promise<RawExtension[]> {
+    search(param: SearchParam): Promise<RawExtension[]> {
         throw new Error("Method not implemented.");
     }
     resolveRaw(extension: ExtensionIdentifier): Promise<ResolvedRawExtension> {
@@ -38,16 +39,16 @@ export class ExtensionServerMock implements ExtensionServer {
     update(extension: ExtensionIdentifier): void {
         throw new Error("Method not implemented.");
     }
-    list(query?: string | undefined): Promise<Extension[]> {
+    list(param?: SearchParam): Promise<Extension[]> {
         const extensions: Extension[] = [];
-        extensions.push(new Extension({
+        extensions.push({
             installed: false,
             name: 'testExtension',
             outdated: false,
             author: 'jbi',
             description: 'A test for fun!',
             version: '0.0.1'
-        }, this));
+        });
         return new Promise(
             function (resolve, reject) {
                 resolve(extensions);
