@@ -11,4 +11,4 @@ install:
   - cmd: yarn global add yo
 
 build_script:
-  - node --version && npm --version && yarn --version && yo --version && python --version
+  - node --version && npm --version && yarn --version && yo --version && python --version && yarn
