@@ -37,7 +37,7 @@ function spawn(command, args, options, error, log) {
 
 function generate(name, cwd, prefix, target) {
     if (fs.existsSync(paths.resolve(cwd, prefix + '.package.json'))) {
-        const command = 'yo';
+        const command = paths.resolve(__dirname, '..', 'node_modules', '.bin', 'yo');
         const args = ['theia:' + target, '--force'];
         spawn(command, args, { cwd, env: process.env },
             msg => console.error(`${name}: ${msg}`),
