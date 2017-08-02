@@ -22,12 +22,12 @@ export class AppPackageGenerator extends AbstractGenerator {
         const dependendencies = this.isWeb() ? {} : {}
         const scripts = this.isWeb() ? {
             "start": "concurrently -n backend,frontend -c blue,green \"yarn run start:backend\" \"yarn run start:frontend\"",
-            "start:backend": "yarn run build:backend && node ./src-gen/backend/main.js | bunyan",
-            "start:backend:debug": "yarn run build:backend && node ./src-gen/backend/main.js --loglevel=debug | bunyan",
+            "start:backend": "yarn run build:backend && node ./src-gen/backend/main.js --port=3000| bunyan",
+            "start:backend:debug": "yarn run build:backend && node ./src-gen/backend/main.js --port=3000 --loglevel=debug | bunyan",
             "start:frontend": "webpack-dev-server --open",
         } : {
-                "start": "yarn run build:backend && electron ./src-gen/frontend/electron-main.js | bunyan",
-                "start:debug": "yarn run build:backend && electron ./src-gen/frontend/electron-main.js --loglevel=debug | bunyan"
+                "start": "yarn run build:backend && electron ./src-gen/frontend/electron-main.js --hostname=localhost | bunyan",
+                "start:debug": "yarn run build:backend && electron ./src-gen/frontend/electron-main.js --hostname=localhost --loglevel=debug | bunyan"
             }
         const devDependencies = this.isWeb() ? {
             "webpack-dev-server": "^2.5.0"
@@ -46,7 +46,7 @@ export class AppPackageGenerator extends AbstractGenerator {
                 "cold:start": "yarn run clean && yarn run start",
                 "build": "yarn run build:frontend && yarn run build:backend",
                 "build:frontend": "webpack",
-                "build:backend": `cp ${this.srcGen()}/frontend/index.html lib`,
+                "build:backend": `shx cp ${this.srcGen()}/frontend/index.html lib`,
                 "watch": "yarn run build:frontend && webpack --watch",
                 ...scripts,
                 ...this.model.pck.scripts
@@ -61,6 +61,7 @@ export class AppPackageGenerator extends AbstractGenerator {
                 "css-loader": "^0.28.1",
                 "file-loader": "^0.11.1",
                 "source-map-loader": "^0.2.1",
+                "shx": "^0.2.2",
                 "url-loader": "^0.5.8",
                 "font-awesome-webpack": "0.0.5-beta.2",
                 "less": "^2.7.2",
@@ -88,8 +89,7 @@ const monacoJsonLanguagePath = '${this.node_modulesPath()}/monaco-json/release/m
 const monacoHtmlLanguagePath = '${this.node_modulesPath()}/monaco-html/release/min';${this.ifWeb(`
 const requirePath = '${this.node_modulesPath()}/requirejs/require.js';
 
-const host = '${this.model.config.host}';
-const port = ${this.model.config.port};`)}
+const port = require('yargs').argv.port || 3000;`)}
 
 module.exports = {
     entry: path.resolve(__dirname, 'src-gen/frontend/index.js'),
@@ -180,17 +180,17 @@ module.exports = {
         hot: true,
         proxy: {
             '/services/*': {
-                target: 'ws://' + host + ':' + port,
+                target: 'ws://localhost:' + port,
                 ws: true
             },
-            '*': 'http://' + host + ':' + port,
+            '*': 'http://localhost:' + port,
         },
         historyApiFallback: true,
         stats: {
             colors: true,
             warnings: false
         },
-        host: process.env.HOST || host,
+        host: process.env.HOST,
         port: process.env.PORT
     }`)}
 };`

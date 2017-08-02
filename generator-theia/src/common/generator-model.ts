@@ -29,8 +29,6 @@ export interface Dependencies {
 }
 
 export interface Config {
-    port: number;
-    host: string;
     copyright: string;
     node_modulesPath: string;
     localDependencies?: Dependencies;
@@ -38,6 +36,7 @@ export interface Config {
 
 export interface ExtensionConfig {
     testSupport: boolean;
+    extensionKeyword: string;
 }
 
 export function sortByKey(object: { [key: string]: any }): { [key: string]: any } {
@@ -47,18 +46,22 @@ export function sortByKey(object: { [key: string]: any }): { [key: string]: any 
     }, {});
 }
 
+export const defaultExtensionKeyword = "theia-extension";
+
 export class Model {
     target: 'web' | 'electron-renderer' | undefined;
-    pck: NodePackage = {}
+    pck: NodePackage = {};
     config: Config = {
-        port: 3000,
-        host: 'localhost',
         copyright: '',
         node_modulesPath: "../../node_modules"
-    }
-    extensionConfig: ExtensionConfig = {
+    };
+    readonly defaultExtensionConfig = <ExtensionConfig>{
         testSupport: true
-    }
+    };
+    extensionConfig: ExtensionConfig = {
+        ...this.defaultExtensionConfig,
+        extensionKeyword: defaultExtensionKeyword
+    };
 
     protected _frontendModules: Map<string, string> | undefined;
     protected _frontendElectronModules: Map<string, string> | undefined;
@@ -138,7 +141,7 @@ export class Model {
                 for (const extension of extensions) {
                     const modulePath = extension[primary] || (secondary && extension[secondary]);
                     if (typeof modulePath === 'string') {
-                        const extensionPath = path.join(extensionPackage.name, modulePath).split(path.sep).join('/')
+                        const extensionPath = path.join(extensionPackage.name, modulePath).split(path.sep).join('/');
                         result.set(`${primary}_${moduleIndex}`, extensionPath);
                         moduleIndex = moduleIndex + 1;
                     }

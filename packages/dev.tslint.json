@@ -1,0 +1,48 @@
+{
+  "defaultSeverity": "warning",
+  "extends": "./tslint.json",
+  "rules": {
+    "arrow-parens": [
+      true,
+      "ban-single-arg-parens"
+    ],
+    "arrow-return-shorthand": [
+      true,
+      "multiline"
+    ],
+    "curly": [
+      true,
+      "ignore-same-line"
+    ],
+    "eofline": true,
+    "indent": [
+      true,
+      "spaces",
+      4
+    ],
+    "interface-over-type-literal": true,
+    "jsdoc-format": true,
+    "no-any": true,
+    "no-console": true,
+    "no-construct": true,
+    "no-magic-numbers": true,
+    "no-null-keyword": true,
+    "no-shadowed-variable": true,
+    "no-unused-expression": true,
+    "one-variable-per-declaration": true,
+    "prefer-const": {
+      "options": [
+        true,
+        {
+          "destructuring": "all"
+        }
+      ],
+      "severity": "error"
+    },
+    "semicolon": [
+      true,
+      "always",
+      "ignore-interfaces"
+    ]
+  }
+}

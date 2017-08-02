@@ -5,14 +5,12 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Disposable } from "@theia/core/lib/common";
+import { JsonRpcServer } from "@theia/core";
 
 export const preferencesPath = '/services/preferences';
 
 export const PreferenceServer = Symbol("PreferenceServer")
-
-export interface PreferenceServer extends Disposable {
-    setClient(client: PreferenceClient | undefined): void;
+export interface PreferenceServer extends JsonRpcServer<PreferenceClient> {
 }
 
 export interface PreferenceClient {

@@ -49,6 +49,10 @@ export class BunyanLoggerServer implements ILoggerServer {
         }));
     }
 
+    dispose(): void {
+        // no-op
+    }
+
     /* See the bunyan child documentation, this creates a child logger
      * with the added properties of object in param.  */
     child(obj: Object): Promise<number> {

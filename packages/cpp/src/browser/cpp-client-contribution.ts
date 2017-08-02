@@ -20,7 +20,7 @@ export class CppClientContribution extends BaseLanguageClientContribution {
         @inject(Languages) protected readonly languages: Languages,
         @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory
     ) {
-        super(workspace, languages, languageClientFactory);
+        super(workspace, languages, languageClientFactory)
     }
 
     protected get documentSelector() {
@@ -34,5 +34,6 @@ export class CppClientContribution extends BaseLanguageClientContribution {
             '**/*.h', '**/*.hxx', '**/*.hh', '**/*.hpp', '**/*.inc', '**/*.c', '**/*.cxx', '**/*.C', '**/*.c++', '**/*.cc', '**/*.cc', '**/*.cpp'
         ];
     }
+
 
 }
