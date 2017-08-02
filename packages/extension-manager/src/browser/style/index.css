@@ -5,7 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-.theia-extensions {}
+.theia-extensions {
+    min-width: 250px !important;
+}
 
 .flexcontainer {
     display: flex;
@@ -15,7 +17,9 @@
     padding: 10px;
 }
 
-#extensionSearchContainer {}
+#extensionSearchContainer {
+    padding: 0 3%;
+}
 
 #extensionSearchFieldContainer {
     flex: 1;
@@ -23,23 +27,89 @@
 
 #extensionSearchFieldContainer input {
     flex: 1;
+    font-size: var(--theia-ui-font-size2);
+    line-height: var(--theia-content-line-height);
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--theia-border-color1);
+    background: var(--theia-layout-color0);
+    color: var(--theia-ui-font-color0);
 }
 
 #extensionListContainer {
-    background: beige;
     margin-top: 10px;
+    display: flex;
+    flex-direction: column;
 }
 
-.extensionContainer {}
+.extensionContainer {
+    background: var(--theia-layout-color0);
+    margin-top: 5px;
+    padding: 5px;
+    font-size: var(--theia-ui-font-size1);
+    color: var(--theia-ui-font-color0);
+}
 
-.extensionContainer .column {}
+.extensionContainer .column {
+    flex-direction: column;
+}
 
-.extensionContainer .row {}
+.extensionContainer .column.extensionInformationContainer {
+    flex: 4;
+}
 
-.extensionName {}
+.extensionContainer .row {
+    margin: 3px 0;
+}
 
-.extensionVersion {}
+.extensionName {
+    flex: 5;
+    margin-right: 5px;
+    font-weight: bold;
+    font-size: var(--theia-ui-font-size2);
+}
 
-.extensionAuthor {}
+.extensionVersion {
+    flex: 3;
+    align-self: flex-end;
+    text-align: center;
+    font-size: var(--theia-ui-font-size0)
+}
 
-.extensionButton {}
+.extensionDescription {
+    flex: 0.6;
+}
+
+.extensionAuthor {
+    font-size: var(--theia-ui-font-size0)
+}
+
+.noWrapInfo {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.extensionContainer .column.extensionButtonContainer {
+    justify-content: center;
+    min-width: 70px;
+    align-items: center;
+}
+
+.extensionButton {
+    background: var(--theia-success-color2);
+    padding: 5px;
+    border-radius: 3px;
+    color: var(--theia-inverse-ui-font-color1);
+    min-width: 55px;
+    text-align: center;
+}
+
+.extensionButton.installed {
+    background: var(--theia-error-color2);
+}
+
+.extensionButton.installed.outdated {
+    background: var(--theia-success-color2);
+}
+
