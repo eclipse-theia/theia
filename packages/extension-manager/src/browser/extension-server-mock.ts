@@ -13,56 +13,84 @@ import {
     RawExtension,
     ResolvedRawExtension,
     SearchParam
-} from '../common/extension-protocol';
-import { injectable } from "inversify";
+} from '../common/extension-protocol'
+import { injectable } from "inversify"
 
 @injectable()
 export class ExtensionServerMock implements ExtensionServer {
     search(param: SearchParam): Promise<RawExtension[]> {
-        throw new Error("Method not implemented.");
+        throw new Error("Method not implemented.")
     }
+
     resolveRaw(extension: ExtensionIdentifier): Promise<ResolvedRawExtension> {
-        throw new Error("Method not implemented.");
+        throw new Error("Method not implemented.")
     }
+
     installed(): Promise<RawExtension[]> {
-        throw new Error("Method not implemented.");
+        throw new Error("Method not implemented.")
     }
+
     install(extension: ExtensionIdentifier): void {
-        throw new Error("Method not implemented.");
+        console.log("INSTALL", extension)
     }
+
     uninstall(extension: ExtensionIdentifier): void {
-        throw new Error("Method not implemented.");
+        console.log("UNINSTALL", extension)
     }
+
     outdated(): Promise<RawExtension[]> {
-        throw new Error("Method not implemented.");
+        throw new Error("Method not implemented.")
     }
+
     update(extension: ExtensionIdentifier): void {
-        throw new Error("Method not implemented.");
+        console.log("UPDATE", extension)
     }
+
     list(param?: SearchParam): Promise<Extension[]> {
-        const extensions: Extension[] = [];
-        extensions.push({
-            installed: false,
-            name: 'testExtension',
-            outdated: false,
-            author: 'jbi',
-            description: 'A test for fun!',
-            version: '0.0.1'
-        });
+        const extensions: Extension[] = []
+        extensions.push(
+            {
+                installed: false,
+                name: 'testExtension',
+                outdated: false,
+                author: 'jbi',
+                description: 'A test for fun!',
+                version: '0.0.1'
+            },
+            {
+                installed: true,
+                name: 'testExtension2',
+                outdated: false,
+                author: 'jbi',
+                description: 'Another test for fun!',
+                version: '0.0.1'
+            },
+            {
+                installed: true,
+                name: 'testExtension3',
+                outdated: true,
+                author: 'jbi',
+                description: 'A third test for fun!',
+                version: '0.0.1'
+            }
+        )
         return new Promise(
             function (resolve, reject) {
-                resolve(extensions);
+                resolve(extensions)
             }
-        );
+        )
     }
+
     resolve(extension: ExtensionIdentifier): Promise<Extension & ResolvedRawExtension> {
-        throw new Error("Method not implemented.");
+        throw new Error("Method not implemented.")
     }
+
     dispose(): void {
-        throw new Error("Method not implemented.");
+        throw new Error("Method not implemented.")
     }
+
     setClient(client: ExtensionClient | undefined): void {
-        console.log('Method not implemented.');
+        console.log('Method not implemented.')
     }
 
 }
