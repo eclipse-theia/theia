@@ -105,11 +105,15 @@
     text-align: center;
 }
 
+.extensionButton:hover {
+    cursor: pointer;
+}
+
 .extensionButton.installed {
     background: var(--theia-error-color2);
 }
 
 .extensionButton.installed.outdated {
-    background: var(--theia-success-color2);
+    background: var(--theia-accent-color2);
 }
 
