@@ -9,6 +9,7 @@
       "@theia/workspace": "../../packages/workspace",
       "@theia/preferences": "../../packages/preferences",
       "@theia/navigator": "../../packages/navigator",
+      "@theia/extension-manager": "../../packages/extension-manager",
       "@theia/terminal": "../../packages/terminal",
       "@theia/editor": "../../packages/editor",
       "@theia/languages": "../../packages/languages",

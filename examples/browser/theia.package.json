@@ -8,6 +8,7 @@
     "@theia/workspace": "^0.1.1",
     "@theia/preferences": "^0.1.1",
     "@theia/navigator": "^0.1.1",
+    "@theia/extension-manager": "^0.1.1",
     "@theia/terminal": "^0.1.1",
     "@theia/editor": "^0.1.1",
     "@theia/languages": "^0.1.1",
