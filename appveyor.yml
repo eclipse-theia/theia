@@ -10,5 +10,5 @@ install:
   - ps: npm install --global --production windows-build-tools
   - cmd: yarn global add yo
 
-build:
+build_script:
   - node --version && npm --version && yarn --version && yo --version && python --version
