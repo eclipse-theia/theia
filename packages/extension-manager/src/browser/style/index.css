@@ -14,11 +14,13 @@
 }
 
 #extensionManagerContainer {
-    padding: 10px;
+    width: 100%;
+    position: relative;
 }
 
 #extensionSearchContainer {
-    padding: 0 3%;
+    padding: 15px;
+    box-sizing: border-box;
 }
 
 #extensionSearchFieldContainer {
@@ -37,15 +39,15 @@
 }
 
 #extensionListContainer {
-    margin-top: 10px;
-    display: flex;
-    flex-direction: column;
+    width: 100%;
+    padding: 0 15px;
+    box-sizing: border-box;
 }
 
 .extensionContainer {
     background: var(--theia-layout-color0);
-    margin-top: 5px;
-    padding: 5px;
+    margin-bottom: 5px;
+    padding: 3px 7px;
     font-size: var(--theia-ui-font-size1);
     color: var(--theia-ui-font-color0);
 }
@@ -54,12 +56,9 @@
     flex-direction: column;
 }
 
-.extensionContainer .column.extensionInformationContainer {
-    flex: 4;
-}
-
 .extensionContainer .row {
     margin: 3px 0;
+    width: 100%;
 }
 
 .extensionName {
@@ -72,16 +71,18 @@
 .extensionVersion {
     flex: 3;
     align-self: flex-end;
-    text-align: center;
+    text-align: right;
     font-size: var(--theia-ui-font-size0)
 }
 
 .extensionDescription {
-    flex: 0.6;
+    flex: 1;
 }
 
 .extensionAuthor {
-    font-size: var(--theia-ui-font-size0)
+    font-size: var(--theia-ui-font-size0);
+    flex: 5;
+    align-items: center;
 }
 
 .noWrapInfo {
@@ -90,18 +91,18 @@
     text-overflow: ellipsis;
 }
 
-.extensionContainer .column.extensionButtonContainer {
-    justify-content: center;
-    min-width: 70px;
+.extensionButtonContainer {
+    justify-content: flex-end;
     align-items: center;
+    flex: 3;
 }
 
 .extensionButton {
     background: var(--theia-success-color2);
-    padding: 5px;
-    border-radius: 3px;
+    padding: 2px;
+    box-sizing: border-box;
     color: var(--theia-inverse-ui-font-color1);
-    min-width: 55px;
+    width: 55px;
     text-align: center;
 }
 
@@ -116,4 +117,3 @@
 .extensionButton.installed.outdated {
     background: var(--theia-accent-color2);
 }
-

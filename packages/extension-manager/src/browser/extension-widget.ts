@@ -15,7 +15,7 @@ export class ExtensionWidget extends VirtualWidget {
 
     protected extensionStore: Extension[] = []
 
-    constructor(@inject(ExtensionManager) protected readonly extensionManager: ExtensionManager) {
+    constructor( @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager) {
         super()
         this.id = 'extensions'
         this.title.label = 'Extensions'
@@ -23,10 +23,12 @@ export class ExtensionWidget extends VirtualWidget {
     }
 
     protected onActivateRequest() {
-        this.fetchExtensions('')
+        this.fetchExtensions()
     }
 
-    protected fetchExtensions(searchQuery: string) {
+    protected fetchExtensions() {
+        const htmlInputElement = (document.getElementById('extensionSearchField') as HTMLInputElement)
+        const searchQuery = htmlInputElement !== null ? htmlInputElement.value : ''
         this.extensionManager.list({
             query: searchQuery
         }).then(extensions => {
@@ -37,8 +39,8 @@ export class ExtensionWidget extends VirtualWidget {
 
     protected render(): h.Child {
         const container = h.div({
-                id: 'extensionManagerContainer'
-            },
+            id: 'extensionManagerContainer'
+        },
             this.renderSearchField(),
             this.renderExtensionList())
 
@@ -47,11 +49,11 @@ export class ExtensionWidget extends VirtualWidget {
 
     protected renderSearchField(): h.Child {
         const searchField = h.input({
+            id: 'extensionSearchField',
             type: 'text',
             placeholder: 'Search theia extensions',
             onkeyup: event => {
-                const val = (event.srcElement as HTMLInputElement).value
-                this.fetchExtensions(val)
+                this.fetchExtensions()
             }
         })
 
@@ -72,70 +74,74 @@ export class ExtensionWidget extends VirtualWidget {
     protected renderExtensionList(): h.Child {
         const theList: h.Child[] = []
         this.extensionStore.forEach(extension => {
-            const name = h.div({
-                className: 'extensionName noWrapInfo'
-            }, extension.name)
-
-            const version = h.div({
-                className: 'extensionVersion'
-            }, extension.version)
-
-            const author = h.div({
-                className: 'extensionAuthor noWrapInfo'
-            }, extension.author)
-
-            const description = h.div({
-                className: 'extensionDescription noWrapInfo'
-            }, extension.description)
-
-            const leftColumn = this.renderColumn(
-                'extensionInformationContainer',
-                this.renderRow(name, version),
-                this.renderRow(description),
-                this.renderRow(author))
-
-            let btnLabel = 'Install'
-            if (extension.installed) {
-                if (extension.outdated) {
-                    btnLabel = 'Update'
-                } else {
-                    btnLabel = 'Uninstall'
-                }
-            }
-
-            const rightColumn = this.renderColumn(
-                'extensionButtonContainer',
-                h.div({
-                    className: 'extensionButton' +
-                    (extension.installed ? ' installed' : '') + ' ' +
-                    (extension.outdated ? ' outdated' : ''),
-                    onclick: event => {
-                        if (extension.installed) {
-                            if (extension.outdated) {
-                                extension.update()
-                            } else {
-                                extension.uninstall()
-                            }
-                        } else {
-                            extension.install()
-                        }
-                    }
-                }, btnLabel)
-            )
-
-            const container = h.div({
-                className: 'extensionContainer flexcontainer'
-            }, leftColumn, rightColumn)
-
-
+            const container = this.renderExtension(extension)
             theList.push(container)
         })
 
         return h.div({
-                id: 'extensionListContainer',
-                className: 'flexcontainer'
-            },
+            id: 'extensionListContainer'
+        },
             VirtualRenderer.flatten(theList))
+    }
+
+    private renderExtension(extension: Extension) {
+        const name = h.div({
+            className: 'extensionName noWrapInfo'
+        }, extension.name);
+
+        const version = h.div({
+            className: 'extensionVersion'
+        }, extension.version);
+
+        const author = h.div({
+            className: 'extensionAuthor noWrapInfo flexcontainer'
+        }, extension.author);
+
+        const description = h.div({
+            className: 'extensionDescription noWrapInfo'
+        }, extension.description);
+
+        let btnLabel = 'Install';
+        if (extension.installed) {
+            if (extension.outdated) {
+                btnLabel = 'Update';
+            } else {
+                btnLabel = 'Uninstall';
+            }
+        }
+
+        const extensionButton = h.div({
+            className: 'extensionButton' +
+            (extension.installed ? ' installed' : '') + ' ' +
+            (extension.outdated ? ' outdated' : ''),
+            onclick: event => {
+                if (extension.installed) {
+                    if (extension.outdated) {
+                        extension.update();
+                    } else {
+                        extension.uninstall();
+                    }
+                } else {
+                    extension.install();
+                }
+            }
+        }, btnLabel);
+
+        const extensionButtonContainer = h.div({
+            className: 'extensionButtonContainer flexcontainer'
+        }, extensionButton);
+
+        const leftColumn = this.renderColumn(
+            'extensionInformationContainer',
+            this.renderRow(name, version),
+            this.renderRow(description),
+            this.renderRow(author, extensionButtonContainer));
+
+
+        const container = h.div({
+            className: 'extensionContainer'
+        }, leftColumn);
+        return container;
     }
 
     protected renderRow(...children: h.Child[]): h.Child {
