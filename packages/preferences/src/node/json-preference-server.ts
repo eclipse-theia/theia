@@ -12,14 +12,10 @@ import { Disposable, DisposableCollection, ILogger, MaybePromise } from '@theia/
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { FileSystemWatcherServer, DidFilesChangedParams, FileChange } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { PreferenceChangedEvent, PreferenceClient, PreferenceServer, PreferenceChange } from '../common';
-import { PreferenceSchema } from "../common/json-pref-schema"
 import * as jsoncparser from "jsonc-parser";
-import * as ajv from 'ajv';
 
 
 export const PreferenceUri = Symbol("PreferencePath");
-export const PrefSchema = Symbol("PrefSchema");
-
 export type PreferenceUri = MaybePromise<URI>;
 
 @injectable()
@@ -36,8 +32,7 @@ export class JsonPreferenceServer implements PreferenceServer {
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcherServer) protected readonly watcherServer: FileSystemWatcherServer,
         @inject(ILogger) protected readonly logger: ILogger,
-        @inject(PreferenceUri) preferenceUri: PreferenceUri,
-        @inject(PrefSchema) protected readonly schema: PreferenceSchema
+        @inject(PreferenceUri) preferenceUri: PreferenceUri
     ) {
         this.preferenceUri = Promise.resolve(preferenceUri).then(uri => uri.toString());
 
@@ -106,27 +101,15 @@ export class JsonPreferenceServer implements PreferenceServer {
 
     protected doReconcilePreferences(preferences: any | undefined) {
         if (preferences) {
-            const validatedPreferences = this.validatePreferences(preferences);
-            if (validatedPreferences) {
-                this.fireChanged(this.preferences, validatedPreferences);
+            if (this.preferences) {
+                this.fireChanged(this.preferences, preferences);
             } else {
-                this.fireNew(validatedPreferences);
+                this.fireNew(preferences);
             }
         } else if (this.preferences) {
             this.fireRemoved(this.preferences);
         }
         this.preferences = preferences;
-    }
-
-    protected validatePreferences(preferences: any): any {
-        const validatedPrefs: any = {};
-        for (const preferenceName in preferences) {
-            const value = preferences[preferenceName];
-            if (ajv().validate(this.schema, { preferenceName: value })) {
-                validatedPrefs[preferenceName] = value;
-            }
-        }
-        return validatedPrefs;
     }
 
     protected fireNew(preferences: any): void {

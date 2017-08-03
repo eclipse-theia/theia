@@ -7,6 +7,8 @@
 
 import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core/lib/common';
 import { PreferenceService, PreferenceChange } from "./preference-service";
+import { PreferenceSchema } from "./preference-contribution"
+import * as Ajv from "ajv";
 
 export type Configuration = {
     [preferenceName: string]: any
@@ -21,13 +23,35 @@ export type PreferenceEventEmitter<T> = {
     readonly ready: Promise<void>;
 };
 export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T>;
-export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, configuration: T): PreferenceProxy<T> {
+export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, configuration: T, schema: PreferenceSchema): PreferenceProxy<T> {
+    const ajv = new Ajv();
     const toDispose = new DisposableCollection();
     const onPreferenceChangedEmitter = new Emitter<PreferenceChange>();
     toDispose.push(onPreferenceChangedEmitter);
     toDispose.push(preferences.onPreferenceChanged(e => {
         if (e.preferenceName in configuration) {
-            onPreferenceChangedEmitter.fire(e);
+            if (e.newValue) {
+                // Fire the pref if it's valid according to the schema
+                if (ajv.validate(schema, {
+                    properties: {
+                        [e.preferenceName]: e.newValue
+                    }
+                })) {
+                    onPreferenceChangedEmitter.fire(e);
+                } else {
+                    // Fire the default preference
+                    onPreferenceChangedEmitter.fire({
+                        preferenceName: e.preferenceName,
+                        newValue: configuration[e.preferenceName]
+                    });
+                }
+            } else {
+                // Fire the default preference
+                onPreferenceChangedEmitter.fire({
+                    preferenceName: e.preferenceName,
+                    newValue: configuration[e.preferenceName]
+                });
+            }
         }
     }));
     return new Proxy({} as any, {

@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, named } from "inversify";
+import { inject, injectable, named } from "inversify";
 import { ContributionProvider, ILogger } from '@theia/core/lib/common';
 import * as ajv from 'ajv';
 
@@ -15,22 +15,31 @@ export interface PreferenceContribution {
     readonly schema: PreferenceSchema;
 }
 
+export const PreferenceSchema = Symbol("PreferenceSchema");
+
 export interface PreferenceSchema {
     properties: {
         [name: string]: object
     }
 }
-export class PreferenceSchemaFactory {
+
+@injectable()
+export class PreferenceSchemaProvider {
     protected readonly combinedSchema: PreferenceSchema;
 
     constructor(
         @inject(ILogger) protected readonly logger: ILogger,
-        @inject(ContributionProvider)
-        @named(PreferenceContribution)
+        @inject(ContributionProvider) @named(PreferenceContribution)
         protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>,
     ) {
 
-        preferenceContributions.getContributions().forEach(contrib => {
+        this.preferenceContributions.getContributions().forEach(contrib => {
+
+            try {
+                ajv().compile(contrib.schema);
+            } catch (error) {
+                this.logger.error("Invalid json schemas: ", error);
+            }
 
             for (const property in contrib.schema) {
                 if (this.combinedSchema.properties[property]) {
@@ -40,12 +49,6 @@ export class PreferenceSchemaFactory {
                 }
             }
         });
-
-        try {
-            ajv().compile(this.combinedSchema);
-        } catch (error) {
-            this.logger.error("Invalid json schemas: ", error);
-        }
     }
 
     getSchema(): PreferenceSchema {
