@@ -45,11 +45,15 @@
 }
 
 .extensionContainer {
-    background: var(--theia-layout-color0);
+    background: var(--theia-layout-color1);
     margin-bottom: 5px;
     padding: 3px 7px;
     font-size: var(--theia-ui-font-size1);
     color: var(--theia-ui-font-color0);
+}
+
+.extensionContainer:hover {
+    background: var(--theia-layout-color0);
 }
 
 .extensionContainer .column {
@@ -108,6 +112,7 @@
 
 .extensionButton:hover {
     cursor: pointer;
+    background: var(--theia-success-color1);
 }
 
 .extensionButton.installed {
@@ -116,4 +121,12 @@
 
 .extensionButton.installed.outdated {
     background: var(--theia-accent-color2);
+}
+
+.extensionButton.installed:hover {
+    background: var(--theia-error-color1);
+}
+
+.extensionButton.installed.outdated:hover {
+    background: var(--theia-accent-color1);
 }
