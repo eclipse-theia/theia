@@ -10,28 +10,46 @@ import * as fs from 'fs-extra';
 import * as assert from 'assert';
 import { ExtensionClient, ExtensionServer } from '../common/extension-protocol';
 import extensionNodeTestContainer from './test/extension-node-test-container';
+import { AppProject } from './app-project';
 
+let appProject: AppProject;
 let server: ExtensionServer;
 const testProjectPath = path.resolve(__dirname, '..', '..', 'testproject');
 const appProjectPath = path.resolve(__dirname, '..', '..', 'testproject_temp');
 
-beforeEach(function () {
-    fs.removeSync(appProjectPath);
-    fs.copySync(testProjectPath, appProjectPath);
-    server = extensionNodeTestContainer({
-        path: appProjectPath,
-        target: 'browser',
-        npmClient: 'yarn',
-        autoInstall: false
-    }).get(ExtensionServer);
-});
-
-afterEach(function () {
-    server.dispose();
-    fs.removeSync(appProjectPath);
-});
+export function waitForDidChange(): Promise<void> {
+    return new Promise(resolve => {
+        server.setClient(<ExtensionClient>{
+            onDidChange: function () {
+                resolve();
+            }
+        });
+    });
+}
 
 describe("NodeExtensionServer", function () {
+
+    beforeEach(function () {
+        this.timeout(50000);
+        fs.removeSync(appProjectPath);
+        fs.copySync(testProjectPath, appProjectPath);
+        const container = extensionNodeTestContainer({
+            path: appProjectPath,
+            target: 'browser',
+            npmClient: 'yarn',
+            autoInstall: false
+        });
+        server = container.get(ExtensionServer);
+        appProject = container.get(AppProject);
+        return waitForDidChange();
+    });
+
+    afterEach(function () {
+        this.timeout(50000);
+        server.dispose();
+        appProject.dispose();
+        return fs.remove(appProjectPath);
+    });
 
     it("search", function () {
         this.timeout(10000);
@@ -59,13 +77,7 @@ describe("NodeExtensionServer", function () {
         const before = await server.installed();
         assert.equal(false, before.some(e => e.name === '@theia/filesystem'), JSON.stringify(before, undefined, 2));
 
-        const onDidChangePackage = new Promise(resolve => {
-            server.setClient(<ExtensionClient>{
-                onDidChange: function () {
-                    resolve();
-                }
-            });
-        });
+        const onDidChangePackage = waitForDidChange();
 
         server.install("@theia/filesystem");
 
@@ -81,13 +93,7 @@ describe("NodeExtensionServer", function () {
         const before = await server.installed();
         assert.equal(true, before.some(e => e.name === '@theia/extension-manager'), JSON.stringify(before, undefined, 2));
 
-        const onDidChangePackage = new Promise(resolve => {
-            server.setClient(<ExtensionClient>{
-                onDidChange: function () {
-                    resolve();
-                }
-            });
-        });
+        const onDidChangePackage = waitForDidChange();
 
         server.uninstall("@theia/extension-manager");
 
@@ -112,13 +118,7 @@ describe("NodeExtensionServer", function () {
         const before = await server.outdated();
         assert.equal(true, before.some(e => e.name === '@theia/core'), JSON.stringify(before, undefined, 2));
 
-        const onDidChangePackage = new Promise(resolve => {
-            server.setClient(<ExtensionClient>{
-                onDidChange: function () {
-                    resolve();
-                }
-            });
-        });
+        const onDidChangePackage = waitForDidChange();
 
         server.update("@theia/core");
 

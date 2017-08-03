@@ -80,4 +80,8 @@ export abstract class AbstractGenerator {
         return this.isElectron() ? value : defaultValue;
     }
 
+    protected ifMonaco(value: string, defaultValue: string = '') {
+        return this.model.extensionPackages.some(e => e.name === '@theia/monaco') ? value : defaultValue;
+    }
+
 }

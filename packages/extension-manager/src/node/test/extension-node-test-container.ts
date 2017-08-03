@@ -7,17 +7,19 @@
 
 import { Container } from "inversify";
 import { bindLogger } from "@theia/core/lib/node/logger-backend-module";
+import { ConsoleLoggerServer } from "@theia/core/lib/common/console-logger-server";
+import { ILoggerServer } from "@theia/core/lib/common/logger-protocol";
 import { bindFileSystem, bindFileSystemWatcherServer } from "@theia/filesystem/lib/node/filesystem-backend-module";
-import { bindNodeExtensionServer } from '../extension-backend-module';
-import { AppProjectOptions } from '../app-project';
+import { bindNodeExtensionServer, AppProjectArgs } from '../extension-backend-module';
 
-export const extensionNodeTestContainer = (options: AppProjectOptions) => {
+export const extensionNodeTestContainer = (args: AppProjectArgs) => {
     const container = new Container();
     const bind = container.bind.bind(container);
     bindLogger(bind);
+    container.rebind(ILoggerServer).to(ConsoleLoggerServer).inSingletonScope();
     bindFileSystem(bind);
     bindFileSystemWatcherServer(bind);
-    bindNodeExtensionServer(bind, options);
+    bindNodeExtensionServer(bind, args);
     return container;
 };
 export default extensionNodeTestContainer;

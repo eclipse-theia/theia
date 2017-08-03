@@ -45,13 +45,13 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
         const paths = this.toPaths(uri);
         this.logger.info(`Starting watching:`, paths);
         return new Promise<number>(resolve => {
-            if (options.ignored.length > 0) {
+            if (options.ignored && options.ignored.length > 0) {
                 this.logger.debug(log =>
                     log('Files ignored for watching', options.ignored)
                 );
             }
             const watcher = watch(paths, {
-                ignoreInitial: true,
+                ignoreInitial: options.ignoreInitial === undefined || options.ignoreInitial,
                 ignored: options.ignored
             });
             watcher.once('ready', () => {

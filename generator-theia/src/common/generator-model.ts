@@ -12,6 +12,7 @@ export { NodePackage, Dependencies };
 export interface ExtensionPackage extends NodePackage {
     name: string;
     theiaExtensions?: Extension[];
+    localPath?: string;
 }
 export namespace ExtensionPackage {
     export function is(pck: NodePackage | undefined, extensionKeywords?: string[]): pck is ExtensionPackage {
@@ -26,6 +27,58 @@ export namespace ExtensionPackage {
         }
         return !!pck.theiaExtensions;
     }
+}
+
+export class ExtensionPackageDiff {
+    protected readonly _toAdd = new Map<string, string>();
+    protected readonly _toRemove = new Set<string>();
+    protected readonly _toLink = new Map<string, string>();
+    protected readonly _toUnlink = new Set<string>();
+    protected readonly all = [this._toAdd, this._toRemove, this._toLink, this._toUnlink];
+
+    get empty(): boolean {
+        for (const collection of this.all) {
+            if (collection.size !== 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+    get toAdd(): ReadonlyMap<string, string> {
+        return this._toAdd;
+    }
+    get toRemove(): ReadonlySet<string> {
+        return this._toRemove;
+    }
+    get toLink(): ReadonlyMap<string, string> {
+        return this._toLink;
+    }
+    get toUnlink(): ReadonlySet<string> {
+        return this._toUnlink;
+    }
+
+    add(name: string, version: string): void {
+        this.delete(name);
+        this._toAdd.set(name, version);
+    }
+    remove(name: string): void {
+        this.delete(name);
+        this._toRemove.add(name);
+    }
+    link(name: string, localPath: string): void {
+        this.delete(name);
+        this._toLink.set(name, localPath);
+    }
+    unlink(name: string): void {
+        this.delete(name);
+        this._toUnlink.add(name);
+    }
+    protected delete(name: string): void {
+        for (const collection of this.all) {
+            collection.delete(name);
+        }
+    }
+
 }
 
 export interface Extension {
@@ -63,7 +116,7 @@ export class ProjectModel {
     targetPck: NodePackage = {};
     readonly defaultConfig = <Config>{
         copyright: '',
-        node_modulesPath: "../../node_modules"
+        node_modulesPath: "node_modules"
     };
     config: Config = {
         ...this.defaultConfig,
@@ -99,18 +152,19 @@ export class ProjectModel {
         // tslint:disable-next-line:forin
         for (const extension in this.pck.dependencies) {
             if (extension in localDependencies) {
-                const path = localDependencies[extension]!;
-                await this.readExtensionPackage(extension, () => reader.readLocal(extension, path));
+                const localPath = localDependencies[extension]!;
+                await this.readExtensionPackage(extension, () => reader.readLocal(extension, localPath), localPath);
             }
             const version = this.pck.dependencies[extension]!;
             await this.readExtensionPackage(extension, () => reader.read(extension, version));
         }
     }
 
-    protected async readExtensionPackage(extension: string, read: () => Promise<NodePackage | undefined>): Promise<void> {
+    protected async readExtensionPackage(extension: string, read: () => Promise<NodePackage | undefined>, localPath?: string): Promise<void> {
         if (!this._extensionPackages.has(extension)) {
             const pck = await read();
             if (ExtensionPackage.is(pck, this.config.extensionKeywords)) {
+                pck.localPath = localPath;
                 this._extensionPackages.set(extension, pck);
             }
         }
@@ -176,6 +230,41 @@ export class ProjectModel {
         }
         this.pck.dependencies = dependencies;
         return true;
+    }
+
+    protected _diff: ExtensionPackageDiff | undefined;
+    get diff(): ExtensionPackageDiff {
+        if (!this._diff) {
+            this._diff = this.computDiff();
+        }
+        return this._diff;
+    }
+    protected computDiff(): ExtensionPackageDiff {
+        const installedDependencies = (this.targetPck.dependencies || {});
+        const extensionPackages = this.extensionPackages;
+        const diff = new ExtensionPackageDiff();
+        for (const extensionPackage of extensionPackages) {
+            if (extensionPackage.name in installedDependencies) {
+                continue;
+            }
+            if (extensionPackage.localPath) {
+                diff.link(extensionPackage.name, extensionPackage.localPath);
+            } else {
+                diff.add(extensionPackage.name, extensionPackage.version!);
+            }
+        }
+
+        for (const name in installedDependencies) {
+            if (extensionPackages.some(p => p.name === name)) {
+                continue;
+            }
+            if (name in this.config.localDependencies) {
+                diff.unlink(name);
+            } else {
+                diff.remove(name);
+            }
+        }
+        return diff;
     }
 
 }

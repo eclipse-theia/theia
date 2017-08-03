@@ -20,7 +20,8 @@ function is(userAgent: string, platform: string): boolean {
 export const isWindows = is('Windows', 'win32');
 export const isOSX = is('Mac', 'darwin');
 
-export function cmd(command: string, ...args: string[]): [string, string[]] {
+export type CMD = [string, string[]];
+export function cmd(command: string, ...args: string[]): CMD {
     return [
         isWindows ? 'cmd' : command,
         isWindows ? ['/c', command, ...args] : args

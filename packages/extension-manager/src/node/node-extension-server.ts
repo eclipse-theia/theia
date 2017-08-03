@@ -30,7 +30,6 @@ export class NodeExtensionServer implements ExtensionServer {
     constructor(
         @inject(AppProject) protected readonly appProject: AppProject
     ) {
-        this.toDispose.push(appProject);
         this.toDispose.push(appProject.onDidChangePackage(() =>
             this.notification('onDidChange')()
         ));
@@ -142,7 +141,7 @@ export class NodeExtensionServer implements ExtensionServer {
 
     async list(param?: SearchParam): Promise<Extension[]> {
         const installation = await this.installationState();
-        const extensions = param ? await this.search(param) : installation.installed;
+        const extensions = param && param.query ? await this.search(param) : installation.installed;
         return extensions.map(raw =>
             this.toExtension(raw, installation)
         );
@@ -190,7 +189,9 @@ export class NodeExtensionServer implements ExtensionServer {
         return this.appProject.needInstall();
     }
     scheduleInstall(): Promise<void> {
-        return this.appProject.install();
+        return this.appProject.scheduleInstall({
+            force: true
+        });
     }
 
 }

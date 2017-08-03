@@ -5,32 +5,46 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as yargs from "yargs";
+import * as yargs from 'yargs';
 import { ContainerModule, interfaces } from "inversify";
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
-import { ExtensionServer, extensionPath } from "../common/extension-protocol";
+import { ExtensionServer, ExtensionClient, extensionPath } from "../common/extension-protocol";
 import { NodeExtensionServer } from './node-extension-server';
 import { AppProject, AppProjectOptions } from './app-project';
+import { NpmClient, NpmClientOptions } from './npm-client';
+import { AppProjectInstallerOptions, AppProjectInstaller, AppProjectInstallerFactory } from './app-project-installer';
 
-export function bindNodeExtensionServer(bind: interfaces.Bind, options: AppProjectOptions): void {
-    bind(AppProjectOptions).toConstantValue(options);
+export type AppProjectArgs = AppProjectOptions & NpmClientOptions;
+export function bindNodeExtensionServer(bind: interfaces.Bind, args: AppProjectArgs): void {
+    bind(NpmClientOptions).toConstantValue(args);
+    bind(NpmClient).toSelf().inSingletonScope();
+
+    bind(AppProjectInstallerFactory).toFactory(context =>
+        (options: AppProjectInstallerOptions) => {
+            const child = context.container.createChild();
+            child.bind(AppProjectInstaller).toSelf().inSingletonScope();
+            child.bind(AppProjectInstallerOptions).toConstantValue(options);
+            return child.get(AppProjectInstaller);
+        }
+    );
+
+    bind(AppProjectOptions).toConstantValue(args);
     bind(AppProject).toSelf().inSingletonScope();
 
-    bind(NodeExtensionServer).toSelf().inSingletonScope();
+    bind(NodeExtensionServer).toSelf();
     bind(ExtensionServer).toDynamicValue(ctx =>
         ctx.container.get(NodeExtensionServer)
-    ).inSingletonScope();
+    );
 }
 
 const appProjectPath = 'app-project-path';
 const appTarget = 'app-target';
 const appNpmClient = 'app-npm-client';
-const appAutoBuild = 'app-auto-build';
+const appNoAutoInstall = 'app-no-auto-install';
 const argv = yargs
     .default(appProjectPath, process.cwd())
     .default(appTarget, 'browser')
     .default(appNpmClient, 'yarn')
-    .default(appAutoBuild, true)
     .argv;
 
 export default new ContainerModule(bind => {
@@ -38,12 +52,15 @@ export default new ContainerModule(bind => {
         path: argv[appProjectPath],
         target: argv[appTarget],
         npmClient: argv[appNpmClient],
-        autoInstall: argv[appAutoBuild]
+        autoInstall: !argv[appNoAutoInstall]
     });
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(extensionPath, () =>
-            ctx.container.get(ExtensionServer)
-        )
+        new JsonRpcConnectionHandler<ExtensionClient>(extensionPath, client => {
+            const server = ctx.container.get<ExtensionServer>(ExtensionServer);
+            server.setClient(client);
+            client.onDidCloseConnection(() => server.dispose());
+            return server;
+        })
     ).inSingletonScope();
 });
