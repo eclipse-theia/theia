@@ -32,6 +32,7 @@
     "wdio-selenium-standalone-service": "0.0.8",
     "wdio-spec-reporter": "^0.1.0",
     "webdriverio": "^4.6.2",
-    "electron-mocha": "^3.5.0"
+    "electron-mocha": "^3.5.0",
+    "spectron": "^3.7.2"
   }
 }
