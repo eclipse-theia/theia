@@ -10,6 +10,8 @@ import {
     createPreferenceProxy,
     PreferenceProxy,
     PreferenceService,
+    PreferenceSchema,
+    PreferenceContribution
 } from '@theia/preferences-api';
 
 export interface FileSystemConfiguration {
@@ -22,11 +24,21 @@ export const defaultFileSystemConfiguration: FileSystemConfiguration = {
         "**/node_modules/**": true
     }
 }
+export const fsSchema: PreferenceSchema = {
+    properties: {
+        "files.watcherExclude": {
+            type: "number",
+            minimum: 1,
+            description: "Configure the tab size in the editor"
+        }
+    }
+};
+
 export const FileSystemPreferences = Symbol('FileSystemPreferences');
 export type FileSystemPreferences = PreferenceProxy<FileSystemConfiguration>;
 
 export function createFileSystemPreferences(preferences: PreferenceService): FileSystemPreferences {
-    return createPreferenceProxy(preferences, defaultFileSystemConfiguration);
+    return createPreferenceProxy(preferences, defaultFileSystemConfiguration, fsSchema);
 }
 
 export function bindFileSystemPreferences(bind: interfaces.Bind): void {
@@ -35,4 +47,7 @@ export function bindFileSystemPreferences(bind: interfaces.Bind): void {
         const preferences = ctx.container.get(PreferenceService);
         return createFileSystemPreferences(preferences);
     });
+
+    bind(PreferenceContribution).toConstantValue(({ schema: fsSchema }));
+
 }

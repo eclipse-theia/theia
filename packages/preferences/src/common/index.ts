@@ -6,6 +6,5 @@
  */
 
 export * from '@theia/preferences-api';
-export * from './json-pref-schema'
 
 

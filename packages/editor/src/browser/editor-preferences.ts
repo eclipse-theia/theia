@@ -10,11 +10,11 @@ import {
     createPreferenceProxy,
     PreferenceProxy,
     PreferenceService,
+    PreferenceContribution,
+    PreferenceSchema
 } from '@theia/preferences/lib/common';
-import { PreferenceContribution } from '@theia/preferences/lib/common';
 
-export const editorConfigSchema: Object = {
-    type: "object",
+export const editorConfigSchema: PreferenceSchema = {
     properties: {
         "editor.tabSize": {
             type: "number",
@@ -55,7 +55,7 @@ export const EditorPreferences = Symbol('EditorPreferences');
 export type EditorPreferences = PreferenceProxy<EditorConfiguration>;
 
 export function createEditorPreferences(preferences: PreferenceService): EditorPreferences {
-    return createPreferenceProxy(preferences, defaultEditorConfiguration);
+    return createPreferenceProxy(preferences, defaultEditorConfiguration, editorConfigSchema);
 }
 
 export function bindEditorPreferences(bind: interfaces.Bind): void {
@@ -64,5 +64,5 @@ export function bindEditorPreferences(bind: interfaces.Bind): void {
         return createEditorPreferences(preferences);
     });
 
-    bind(PreferenceContribution).toConstantValue(editorConfigSchema);
+    bind(PreferenceContribution).toConstantValue(({ schema: editorConfigSchema }));
 }

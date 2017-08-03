@@ -12,8 +12,7 @@ import { FileUri } from '@theia/core/lib/node';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import { PreferenceService, CompoundPreferenceServer, PreferenceClient, PreferenceServer, preferencesPath } from '../common';
-import { JsonPreferenceServer, PreferenceUri, PrefSchema } from './json-preference-server';
-import { PreferenceSchemaFactory } from "../common/json-pref-schema"
+import { JsonPreferenceServer, PreferenceUri } from './json-preference-server';
 
 /*
  * Workspace preference server that watches the current workspace
@@ -28,12 +27,6 @@ export const UserPreferenceServer = Symbol('UserPreferenceServer');
 export type UserPreferenceServer = PreferenceServer;
 
 export default new ContainerModule(bind => {
-
-    bind(PreferenceSchemaFactory).toSelf().inSingletonScope();
-    bind(PrefSchema).toDynamicValue((ctx) => {
-        const factory = ctx.container.get<PreferenceSchemaFactory>(PreferenceSchemaFactory);
-        return factory.getSchema();
-    })
 
     bind(JsonPreferenceServer).toSelf();
 
