@@ -1,12 +1,13 @@
 environment:
   matrix:
-    - nodejs_version: "8"
+    - nodejs_version: "7"
 
 platform:
   - x64
 
 install:
   - cinst yarn
+  - cmd: npm i npm@latest-4 -g
   - ps: npm install --global --production windows-build-tools
   - cmd: yarn global add yo
 
