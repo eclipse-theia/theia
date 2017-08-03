@@ -7,6 +7,7 @@
 // @ts-check
 const fs = require('fs-extra');
 const path = require('path');
+const cp = require('child_process');
 const { target, modules } = require('yargs').array('modules').argv;
 
 const nodeModulesPath = path.join(process.cwd(), 'node_modules');
@@ -14,36 +15,41 @@ const browserModulesPath = path.join(process.cwd(), '.browser_modules');
 const modulesToProcess = modules || ['node-pty']
 
 if (target === 'electron' && !fs.existsSync(browserModulesPath)) {
-    const dependencies = {}
+    const dependencies = {};
     for (const module of modulesToProcess) {
-        console.log("Processing "+module)
-        const src = path.join(nodeModulesPath, module)
+        console.log("Processing " + module);
+        const src = path.join(nodeModulesPath, module);
         const dest = path.join(browserModulesPath, module);
         const packJson = fs.readJsonSync(path.join(src, 'package.json'))
         dependencies[module] = packJson.version;
         fs.copySync(src, dest);
     }
-    const packFile = path.join(process.cwd(),"package.json");
+    const packFile = path.join(process.cwd(), "package.json");
     const packageText = fs.readFileSync(packFile);
-    const pack  = fs.readJsonSync(packFile);
+    const pack = fs.readJsonSync(packFile);
     try {
         Object.assign(pack.dependencies, dependencies)
         fs.writeFileSync(packFile, JSON.stringify(pack, null, "  "));
-        require(path.join(process.cwd(),'node_modules','.bin','electron-rebuild'));
+        const electronRebuildPath = path.join(process.cwd(), 'node_modules', '.bin', 'electron-rebuild');
+        if (process.platform === 'win32') {
+            cp.spawnSync('cmd', ['/c', electronRebuildPath]);
+        } else {
+            require(path.join(process.cwd(), 'node_modules', '.bin', 'electron-rebuild'));
+        }
     } finally {
         setTimeout(() => {
             fs.writeFile(packFile, packageText);
-        }, 100)
+        }, 100);
     }
 } else if (target === 'browser' && fs.existsSync(browserModulesPath)) {
     for (const moduleName of fs.readdirSync(browserModulesPath)) {
-        console.log("Reverting "+moduleName)
-        const src = path.join(browserModulesPath, moduleName)
+        console.log("Reverting " + moduleName);
+        const src = path.join(browserModulesPath, moduleName);
         const dest = path.join(nodeModulesPath, moduleName);
-        fs.removeSync(dest)
+        fs.removeSync(dest);
         fs.copySync(src, dest);
     }
     fs.removeSync(browserModulesPath);
 } else {
-    console.log('native node modules are already rebuilt for ' + target)
+    console.log('native node modules are already rebuilt for ' + target);
 }
