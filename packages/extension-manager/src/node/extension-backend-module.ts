@@ -10,10 +10,10 @@ import { ContainerModule, interfaces } from "inversify";
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
 import { ExtensionServer, extensionPath } from "../common/extension-protocol";
 import { NodeExtensionServer } from './node-extension-server';
-import { AppProject, AppProjectPath } from './app-project';
+import { AppProject, AppProjectOptions } from './app-project';
 
-export function bindNodeExtensionServer(bind: interfaces.Bind, appProjectPath: string): void {
-    bind(AppProjectPath).toConstantValue(appProjectPath);
+export function bindNodeExtensionServer(bind: interfaces.Bind, options: AppProjectOptions): void {
+    bind(AppProjectOptions).toConstantValue(options);
     bind(AppProject).toSelf().inSingletonScope();
 
     bind(NodeExtensionServer).toSelf().inSingletonScope();
@@ -22,10 +22,24 @@ export function bindNodeExtensionServer(bind: interfaces.Bind, appProjectPath: s
     ).inSingletonScope();
 }
 
-const argv = yargs.default('appProjectPath', process.cwd()).argv;
+const appProjectPath = 'app-project-path';
+const appTarget = 'app-target';
+const appNpmClient = 'app-npm-client';
+const appAutoBuild = 'app-auto-build';
+const argv = yargs
+    .default(appProjectPath, process.cwd())
+    .default(appTarget, 'browser')
+    .default(appNpmClient, 'yarn')
+    .default(appAutoBuild, true)
+    .argv;
 
 export default new ContainerModule(bind => {
-    bindNodeExtensionServer(bind, argv.appProjectPath);
+    bindNodeExtensionServer(bind, {
+        path: argv[appProjectPath],
+        target: argv[appTarget],
+        npmClient: argv[appNpmClient],
+        autoInstall: argv[appAutoBuild]
+    });
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler(extensionPath, () =>

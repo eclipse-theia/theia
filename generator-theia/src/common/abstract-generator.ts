@@ -34,11 +34,11 @@ export abstract class AbstractGenerator {
     }
 
     protected compileFrontendModuleImports(modules: Map<string, string>): string {
-        return this.compileModuleImports(modules, 'require')
+        return this.compileModuleImports(modules, 'require');
     }
 
     protected compileBackendModuleImports(modules: Map<string, string>): string {
-        return this.compileModuleImports(modules, 'require')
+        return this.compileModuleImports(modules, 'require');
     }
 
     protected compileModuleImports(modules: Map<string, string>, fn: 'import' | 'require'): string {

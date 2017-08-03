@@ -9,13 +9,15 @@ import { Container } from "inversify";
 import { bindLogger } from "@theia/core/lib/node/logger-backend-module";
 import { bindFileSystem, bindFileSystemWatcherServer } from "@theia/filesystem/lib/node/filesystem-backend-module";
 import { bindNodeExtensionServer } from '../extension-backend-module';
+import { AppProjectOptions } from '../app-project';
 
-export default (appProjectPath: string) => {
+export const extensionNodeTestContainer = (options: AppProjectOptions) => {
     const container = new Container();
     const bind = container.bind.bind(container);
     bindLogger(bind);
     bindFileSystem(bind);
     bindFileSystemWatcherServer(bind);
-    bindNodeExtensionServer(bind, appProjectPath);
+    bindNodeExtensionServer(bind, options);
     return container;
 };
+export default extensionNodeTestContainer;

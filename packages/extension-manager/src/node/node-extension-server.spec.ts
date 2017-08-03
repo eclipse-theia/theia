@@ -18,7 +18,12 @@ const appProjectPath = path.resolve(__dirname, '..', '..', 'testproject_temp');
 beforeEach(function () {
     fs.removeSync(appProjectPath);
     fs.copySync(testProjectPath, appProjectPath);
-    server = extensionNodeTestContainer(appProjectPath).get(ExtensionServer);
+    server = extensionNodeTestContainer({
+        path: appProjectPath,
+        target: 'browser',
+        npmClient: 'yarn',
+        autoInstall: false
+    }).get(ExtensionServer);
 });
 
 afterEach(function () {

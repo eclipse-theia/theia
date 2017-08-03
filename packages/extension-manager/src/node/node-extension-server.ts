@@ -31,7 +31,15 @@ export class NodeExtensionServer implements ExtensionServer {
         @inject(AppProject) protected readonly appProject: AppProject
     ) {
         this.toDispose.push(appProject);
-        this.toDispose.push(appProject.onDidChangePackage(() => this.fireDidChange()));
+        this.toDispose.push(appProject.onDidChangePackage(() =>
+            this.notification('onDidChange')()
+        ));
+        this.toDispose.push(appProject.onWillInstall(() =>
+            this.notification('onWillStartInstallation')()
+        ));
+        this.toDispose.push(appProject.onDidInstall(failed =>
+            this.notification('onDidStopInstallation')({ failed })
+        ));
     }
 
     dispose(): void {
@@ -41,13 +49,11 @@ export class NodeExtensionServer implements ExtensionServer {
     setClient(client: ExtensionClient | undefined): void {
         this.client = client;
     }
-    /**
-     * Fire when `theia.package.json` is changed.
-     */
-    protected fireDidChange(): void {
+    protected notification<T extends keyof ExtensionClient>(notification: T): ExtensionClient[T] {
         if (this.client) {
-            this.client.onDidChange();
+            return this.client[notification];
         }
+        return () => { };
     }
 
     async search(param: SearchParam): Promise<RawExtension[]> {
@@ -181,10 +187,10 @@ export class NodeExtensionServer implements ExtensionServer {
     }
 
     needInstall(): Promise<boolean> {
-        return new Promise(resolve => { });
+        return this.appProject.needInstall();
     }
     scheduleInstall(): Promise<void> {
-        return new Promise(resolve => { });
+        return this.appProject.install();
     }
 
 }
