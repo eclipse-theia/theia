@@ -5,36 +5,46 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Extension, ExtensionManager } from '../common'
-import { injectable, inject } from 'inversify'
-import { VirtualWidget, VirtualRenderer } from '@theia/core/lib/browser'
-import { h } from "@phosphor/virtualdom/lib"
+import { Extension, ExtensionManager } from '../common';
+import { injectable, inject } from 'inversify';
+import { VirtualWidget, VirtualRenderer } from '@theia/core/lib/browser';
+import { h } from "@phosphor/virtualdom/lib";
+import { DisposableCollection, Disposable } from "@theia/core";
+import { ExtensionDetailWidgetService } from './extension-detail-widget-service';
 
 @injectable()
 export class ExtensionWidget extends VirtualWidget {
 
-    protected extensionStore: Extension[] = []
+    protected extensionStore: Extension[] = [];
+    protected readonly updateTimeAfterTyping = 300;
+    protected readonly toDisposeOnTypeSearchQuery = new DisposableCollection();
 
-    constructor( @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager) {
-        super()
-        this.id = 'extensions'
-        this.title.label = 'Extensions'
-        this.addClass('theia-extensions')
+    constructor(
+        @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager,
+        @inject(ExtensionDetailWidgetService) protected readonly detailWidgetService: ExtensionDetailWidgetService) {
+        super();
+        this.id = 'extensions';
+        this.title.label = 'Extensions';
+        this.addClass('theia-extensions');
+
+        extensionManager.onDidChange(event => {
+            this.fetchExtensions();
+        });
     }
 
     protected onActivateRequest() {
-        this.fetchExtensions()
+        this.fetchExtensions();
     }
 
     protected fetchExtensions() {
-        const htmlInputElement = (document.getElementById('extensionSearchField') as HTMLInputElement)
-        const searchQuery = htmlInputElement !== null ? htmlInputElement.value : ''
+        const htmlInputElement = (document.getElementById('extensionSearchField') as HTMLInputElement);
+        const searchQuery = htmlInputElement ? htmlInputElement.value : '';
         this.extensionManager.list({
             query: searchQuery
         }).then(extensions => {
-            this.extensionStore = extensions
-            this.update()
-        })
+            this.extensionStore = extensions;
+            this.update();
+        });
     }
 
     protected render(): h.Child {
@@ -42,9 +52,9 @@ export class ExtensionWidget extends VirtualWidget {
             id: 'extensionManagerContainer'
         },
             this.renderSearchField(),
-            this.renderExtensionList())
+            this.renderExtensionList());
 
-        return container
+        return container;
     }
 
     protected renderSearchField(): h.Child {
@@ -53,35 +63,36 @@ export class ExtensionWidget extends VirtualWidget {
             type: 'text',
             placeholder: 'Search theia extensions',
             onkeyup: event => {
-                this.fetchExtensions()
+                this.toDisposeOnTypeSearchQuery.dispose();
+                const timer = setTimeout(() => this.fetchExtensions(), this.updateTimeAfterTyping);
+                this.toDisposeOnTypeSearchQuery.push(Disposable.create(() => clearTimeout(timer)));
             }
-        })
+        });
 
         const innerContainer = h.div({
             id: 'extensionSearchFieldContainer',
             className: 'flexcontainer'
-        }, [searchField])
+        }, [searchField]);
 
         const container = h.div({
             id: 'extensionSearchContainer',
             className: 'flexcontainer'
-        }, [innerContainer])
+        }, [innerContainer]);
 
-
-        return container
+        return container;
     }
 
     protected renderExtensionList(): h.Child {
-        const theList: h.Child[] = []
+        const theList: h.Child[] = [];
         this.extensionStore.forEach(extension => {
-            const container = this.renderExtension(extension)
-            theList.push(container)
-        })
+            const container = this.renderExtension(extension);
+            theList.push(container);
+        });
 
         return h.div({
             id: 'extensionListContainer'
         },
-            VirtualRenderer.flatten(theList))
+            VirtualRenderer.flatten(theList));
     }
 
     private renderExtension(extension: Extension) {
@@ -137,9 +148,13 @@ export class ExtensionWidget extends VirtualWidget {
             this.renderRow(description),
             this.renderRow(author, extensionButtonContainer));
 
-
         const container = h.div({
-            className: 'extensionContainer'
+            className: 'extensionContainer',
+            onclick: event => {
+                extension.resolve().then(rawExt => {
+                    this.detailWidgetService.openOrFocusDetailWidget(rawExt);
+                });
+            }
         }, leftColumn);
         return container;
     }
@@ -147,12 +162,12 @@ export class ExtensionWidget extends VirtualWidget {
     protected renderRow(...children: h.Child[]): h.Child {
         return h.div({
             className: 'row flexcontainer'
-        }, VirtualRenderer.flatten(children))
+        }, VirtualRenderer.flatten(children));
     }
 
     protected renderColumn(additionalClass?: string, ...children: h.Child[]): h.Child {
         return h.div({
             className: 'column flexcontainer ' + additionalClass
-        }, VirtualRenderer.flatten(children))
+        }, VirtualRenderer.flatten(children));
     }
 }

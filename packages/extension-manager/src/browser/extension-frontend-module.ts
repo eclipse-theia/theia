@@ -13,9 +13,10 @@ import { ExtensionServer, extensionPath } from '../common/extension-protocol';
 import { ExtensionManager } from '../common';
 import { ExtensionContribution } from './extension-contribution';
 import { ExtensionWidget } from './extension-widget';
+import { ExtensionDetailWidgetService } from './extension-detail-widget-service';
 // import { ExtensionServerMock } from './extension-server-mock';
 
-import "../../src/browser/style/index.css";
+import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
     // bind(ExtensionServer).to(ExtensionServerMock).inSingletonScope();
@@ -26,5 +27,6 @@ export default new ContainerModule(bind => {
     bind(ExtensionManager).toSelf().inSingletonScope();
 
     bind(FrontendApplicationContribution).to(ExtensionContribution).inSingletonScope();
+    bind(ExtensionDetailWidgetService).toSelf().inSingletonScope();
     bind(ExtensionWidget).toSelf().inSingletonScope();
 });
