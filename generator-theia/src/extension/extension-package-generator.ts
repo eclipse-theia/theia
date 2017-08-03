@@ -29,7 +29,7 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
             },
             "scripts": {
                 ...pck.scripts,
-                "clean": "yarn run compile:clean && yarn run test:clean",
+                "clean": "concurrently -n compile,lint -c blue,green \"yarn run compile\" \"yarn run lint\"",
                 "test": "nyc mocha --opts ../mocha.opts src/**/*.spec.ts",
                 "test:watch": "mocha -w --opts ../mocha.opts src/**/*.spec.ts",
                 "test:clean": "rimraf .nyc_output && rimraf coverage",

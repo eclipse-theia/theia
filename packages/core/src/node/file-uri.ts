@@ -9,6 +9,7 @@ import Uri from "vscode-uri";
 import URI from "../common/uri";
 
 const trueCasePathSync: (fsPath: string) => string = require("true-case-path");
+console.log(trueCasePathSync);
 
 export namespace FileUri {
 
@@ -26,7 +27,7 @@ export namespace FileUri {
      * @param uri the file URI that has to be resolved to a platform specific FS path.
      */
     export function fsPath(uri: URI): string {
-        return trueCasePathSync((uri as any).codeUri.fsPath);
+        return (uri as any).codeUri.fsPath;
     }
 
 }
