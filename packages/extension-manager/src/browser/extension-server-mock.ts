@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -8,13 +9,12 @@
 import {
     Extension,
     ExtensionClient,
-    ExtensionIdentifier,
     ExtensionServer,
     RawExtension,
     ResolvedRawExtension,
     SearchParam
-} from '../common/extension-protocol'
-import { injectable } from "inversify"
+} from '../common/extension-protocol';
+import { injectable } from "inversify";
 
 @injectable()
 export class ExtensionServerMock implements ExtensionServer {
@@ -22,7 +22,7 @@ export class ExtensionServerMock implements ExtensionServer {
         throw new Error("Method not implemented.")
     }
 
-    resolveRaw(extension: ExtensionIdentifier): Promise<ResolvedRawExtension> {
+    resolveRaw(extension: string): Promise<ResolvedRawExtension> {
         throw new Error("Method not implemented.")
     }
 
@@ -30,20 +30,20 @@ export class ExtensionServerMock implements ExtensionServer {
         throw new Error("Method not implemented.")
     }
 
-    install(extension: ExtensionIdentifier): void {
-        console.log("INSTALL", extension)
+    install(extension: string): Promise<void> {
+        throw new Error("Method not implemented.")
     }
 
-    uninstall(extension: ExtensionIdentifier): void {
-        console.log("UNINSTALL", extension)
+    uninstall(extension: string): Promise<void> {
+        throw new Error("Method not implemented.")
     }
 
     outdated(): Promise<RawExtension[]> {
         throw new Error("Method not implemented.")
     }
 
-    update(extension: ExtensionIdentifier): void {
-        console.log("UPDATE", extension)
+    update(extension: string): Promise<void> {
+        throw new Error("Method not implemented.")
     }
 
     list(param?: SearchParam): Promise<Extension[]> {
@@ -81,8 +81,12 @@ export class ExtensionServerMock implements ExtensionServer {
         )
     }
 
-    resolve(extension: ExtensionIdentifier): Promise<Extension & ResolvedRawExtension> {
-        throw new Error("Method not implemented.")
+    resolve(extension: string): Promise<Extension & ResolvedRawExtension> {
+        console.log("RESOLVE");
+        return new Promise(function (resolve, reject) {
+
+            resolve();
+        });
     }
 
     dispose(): void {
@@ -91,6 +95,13 @@ export class ExtensionServerMock implements ExtensionServer {
 
     setClient(client: ExtensionClient | undefined): void {
         console.log('Method not implemented.')
+    }
+
+    needInstall(): Promise<boolean> {
+        throw new Error("Method not implemented.");
+    }
+    scheduleInstall(): Promise<void> {
+        throw new Error("Method not implemented.");
     }
 
 }
