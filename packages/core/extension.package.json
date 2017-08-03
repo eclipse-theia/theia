@@ -20,7 +20,6 @@
     "reconnecting-websocket": "^3.0.7",
     "reflect-metadata": "^0.1.10",
     "requirejs": "^2.3.3",
-    "true-case-path": "^1.0.2",
     "vscode-uri": "^1.0.1",
     "vscode-ws-jsonrpc": "0.0.1-alpha.4",
     "ws": "^3.0.0",

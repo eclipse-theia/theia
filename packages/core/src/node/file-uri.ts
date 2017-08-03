@@ -8,9 +8,6 @@
 import Uri from "vscode-uri";
 import URI from "../common/uri";
 
-const trueCasePathSync: (fsPath: string) => string = require("true-case-path");
-console.log(trueCasePathSync);
-
 export namespace FileUri {
 
     /**
