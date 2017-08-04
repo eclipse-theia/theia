@@ -13,14 +13,14 @@ import { ExtensionWidget } from "./extension-widget"
 @injectable()
 export class ExtensionContribution implements FrontendApplicationContribution {
 
-    constructor(@inject(ExtensionWidget) protected readonly extensionWidget: ExtensionWidget) {
+    constructor( @inject(ExtensionWidget) protected readonly extensionWidget: ExtensionWidget) {
 
     }
 
     onStart(app: FrontendApplication): void {
         app.shell.addToLeftArea(this.extensionWidget, {
             rank: 2
-        })
+        });
     }
 
 }
