@@ -10,6 +10,7 @@
 .theia-extension-detail .extensionHeaderContainer {
     flex-direction: column;
     background: var(--theia-layout-color0);
+    padding: 15px 22px;
 }
 
 .theia-extension-detail .extensionTitleContainer {
@@ -23,6 +24,7 @@
 
 .theia-extension-detail .extensionName {
     margin-bottom: 10px;
+    margin-top: 0px;
 }
 
 .theia-extension-detail .extensionVersion {}
@@ -39,7 +41,9 @@
     margin-bottom: 10px;
 }
 
-.theia-extension-detail .extensionButtonContainer {}
+.theia-extension-detail .extensionButtonContainer .extensionButton {
+    margin-right: 10px;
+}
 
 .theia-extension-detail .extensionDocContainer {}
 

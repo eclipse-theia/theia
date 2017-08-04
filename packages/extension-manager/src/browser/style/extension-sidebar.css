@@ -9,11 +9,6 @@
     min-width: 250px !important;
 }
 
-#extensionManagerContainer {
-    width: 100%;
-    position: relative;
-}
-
 #extensionSearchContainer {
     padding: 15px;
     box-sizing: border-box;
@@ -38,6 +33,8 @@
     width: 100%;
     padding: 0 15px;
     box-sizing: border-box;
+    height: calc(100% - 57px);
+    overflow-y: auto;
 }
 
 .theia-extensions .extensionHeaderContainer {

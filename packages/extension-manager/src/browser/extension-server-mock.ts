@@ -18,6 +18,8 @@ import { injectable } from "inversify";
 
 @injectable()
 export class ExtensionServerMock implements ExtensionServer {
+    protected manager: ExtensionClient;
+
     search(param: SearchParam): Promise<RawExtension[]> {
         throw new Error("Method not implemented.")
     }
@@ -31,11 +33,17 @@ export class ExtensionServerMock implements ExtensionServer {
     }
 
     install(extension: string): Promise<void> {
-        throw new Error("Method not implemented.")
+        setTimeout(() => {
+            this.manager.onDidChange()
+        }, 2000);
+        return new Promise(() => { console.log("install promise"); });
     }
 
     uninstall(extension: string): Promise<void> {
-        throw new Error("Method not implemented.")
+        setTimeout(() => {
+            this.manager.onDidChange()
+        }, 2000);
+        return new Promise(() => { console.log("uninstall promise"); });
     }
 
     outdated(): Promise<RawExtension[]> {
@@ -43,7 +51,10 @@ export class ExtensionServerMock implements ExtensionServer {
     }
 
     update(extension: string): Promise<void> {
-        throw new Error("Method not implemented.")
+        setTimeout(() => {
+            this.manager.onDidChange()
+        }, 2000);
+        return new Promise(() => { console.log("update promise"); });
     }
 
     list(param?: SearchParam): Promise<Extension[]> {
@@ -82,9 +93,7 @@ export class ExtensionServerMock implements ExtensionServer {
     }
 
     resolve(extension: string): Promise<Extension & ResolvedRawExtension> {
-        console.log("RESOLVE");
         return new Promise(function (resolve, reject) {
-
             resolve();
         });
     }
@@ -94,7 +103,7 @@ export class ExtensionServerMock implements ExtensionServer {
     }
 
     setClient(client: ExtensionClient | undefined): void {
-        console.log('Method not implemented.')
+        this.manager = client;
     }
 
     needInstall(): Promise<boolean> {
