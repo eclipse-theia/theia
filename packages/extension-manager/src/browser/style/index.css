@@ -5,6 +5,18 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+.fa-spinner {
+    color: var(--theia-ui-font-color0);
+}
+
+.spinnerContainer {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .flexcontainer {
     display: flex;
 }
@@ -37,6 +49,15 @@
     width: 55px;
     text-align: center;
     font-size: var(--theia-ui-font-size1);
+}
+
+.extensionButton.working {
+    background: none;
+}
+
+.extensionButton.working:hover {
+    background: none;
+    cursor: default;
 }
 
 .extensionButton:hover {

@@ -8,16 +8,20 @@
 import { Extension, ExtensionManager } from '../common';
 import { injectable, inject } from 'inversify';
 import { VirtualWidget, VirtualRenderer } from '@theia/core/lib/browser';
-import { h } from "@phosphor/virtualdom/lib";
+import { h, VirtualNode } from "@phosphor/virtualdom/lib";
 import { DisposableCollection, Disposable } from "@theia/core";
 import { ExtensionDetailWidgetService } from './extension-detail-widget-service';
 
 @injectable()
 export class ExtensionWidget extends VirtualWidget {
 
+    // TODO instead of doing this here we should have a extension cache in extensionmanager and hold such states in every extension
+    protected busyextensions: Array<string> = [];
+
     protected extensionStore: Extension[] = [];
     protected readonly updateTimeAfterTyping = 300;
     protected readonly toDisposeOnTypeSearchQuery = new DisposableCollection();
+    protected ready = false;
 
     constructor(
         @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager,
@@ -28,6 +32,8 @@ export class ExtensionWidget extends VirtualWidget {
         this.addClass('theia-extensions');
 
         extensionManager.onDidChange(event => {
+            this.busyextensions = [];
+
             this.fetchExtensions();
         });
 
@@ -35,6 +41,7 @@ export class ExtensionWidget extends VirtualWidget {
     }
 
     protected onActivateRequest() {
+        this.update();
         this.fetchExtensions();
     }
 
@@ -45,21 +52,21 @@ export class ExtensionWidget extends VirtualWidget {
             query: searchQuery
         }).then(extensions => {
             this.extensionStore = extensions;
+            this.ready = true;
             this.update();
         });
     }
 
     protected render(): h.Child {
-        const container = h.div({
-            id: 'extensionManagerContainer'
-        },
-            this.renderSearchField(),
-            this.renderExtensionList());
-
-        return container;
+        if (this.ready) {
+            return [this.renderSearchField(), this.renderExtensionList()];
+        } else {
+            const spinner = h.div({ className: 'fa fa-spinner fa-pulse fa-3x fa-fw' }, '');
+            return h.div({ className: 'spinnerContainer' }, spinner);
+        }
     }
 
-    protected renderSearchField(): h.Child {
+    protected renderSearchField(): VirtualNode {
         const searchField = h.input({
             id: 'extensionSearchField',
             type: 'text',
@@ -84,7 +91,7 @@ export class ExtensionWidget extends VirtualWidget {
         return container;
     }
 
-    protected renderExtensionList(): h.Child {
+    protected renderExtensionList(): VirtualNode {
         const theList: h.Child[] = [];
         this.extensionStore.forEach(extension => {
             const container = this.renderExtension(extension);
@@ -129,6 +136,7 @@ export class ExtensionWidget extends VirtualWidget {
             onclick: event => {
                 extension.resolve().then(rawExt => {
                     this.detailWidgetService.openOrFocusDetailWidget(rawExt);
+                    return false;
                 });
             }
         }, leftColumn);
@@ -157,21 +165,39 @@ export class ExtensionWidget extends VirtualWidget {
             }
         }
 
-        return h.div({
+        let content;
+        let busy: boolean = false;
+
+        if (this.busyextensions.indexOf(extension.name) === -1) {
+            content = btnLabel;
+        } else {
+            busy = true;
+            content = h.i({ className: 'fa fa-spinner fa-pulse fa-fw' });
+        }
+
+        const btn = h.div({
             className: 'extensionButton' +
-            (extension.installed ? ' installed' : '') + ' ' +
-            (extension.outdated ? ' outdated' : ''),
+            (busy ? ' working' : '') + ' ' +
+            (extension.installed && !busy ? ' installed' : '') + ' ' +
+            (extension.outdated && !busy ? ' outdated' : ''),
             onclick: event => {
-                if (extension.installed) {
-                    if (extension.outdated) {
-                        extension.update();
+                if (this.busyextensions.indexOf(extension.name) === -1) {
+                    if (extension.installed) {
+                        if (extension.outdated) {
+                            extension.update();
+                        } else {
+                            extension.uninstall();
+                        }
                     } else {
-                        extension.uninstall();
+                        extension.install();
                     }
-                } else {
-                    extension.install();
+                    this.busyextensions.push(extension.name);
+                    this.update();
+                    event.stopPropagation();
                 }
             }
-        }, btnLabel);
+        }, content);
+
+        return btn;
     }
 }

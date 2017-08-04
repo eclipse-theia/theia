@@ -22,7 +22,6 @@ export class ExtensionDetailWidget extends VirtualWidget {
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        // this.node.focus();
         this.update();
     }
 
