@@ -1,3 +1,5 @@
+shallow_clone: true
+
 environment:
   matrix:
     - nodejs_version: "7"
@@ -7,6 +9,7 @@ platform:
 
 install:
   - cinst yarn
+  - cinst googlechrome
   - cmd: npm i npm@latest-4 -g
   - ps: npm install --global --production windows-build-tools
   - cmd: yarn global add yo
