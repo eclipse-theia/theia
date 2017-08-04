@@ -30,6 +30,8 @@ export class ExtensionWidget extends VirtualWidget {
         extensionManager.onDidChange(event => {
             this.fetchExtensions();
         });
+
+        this.fetchExtensions();
     }
 
     protected onActivateRequest() {
@@ -112,35 +114,9 @@ export class ExtensionWidget extends VirtualWidget {
             className: 'extensionDescription noWrapInfo'
         }, extension.description);
 
-        let btnLabel = 'Install';
-        if (extension.installed) {
-            if (extension.outdated) {
-                btnLabel = 'Update';
-            } else {
-                btnLabel = 'Uninstall';
-            }
-        }
-
-        const extensionButton = h.div({
-            className: 'extensionButton' +
-            (extension.installed ? ' installed' : '') + ' ' +
-            (extension.outdated ? ' outdated' : ''),
-            onclick: event => {
-                if (extension.installed) {
-                    if (extension.outdated) {
-                        extension.update();
-                    } else {
-                        extension.uninstall();
-                    }
-                } else {
-                    extension.install();
-                }
-            }
-        }, btnLabel);
-
         const extensionButtonContainer = h.div({
             className: 'extensionButtonContainer flexcontainer'
-        }, extensionButton);
+        }, this.createButton(extension));
 
         const leftColumn = this.renderColumn(
             'extensionInformationContainer',
@@ -149,7 +125,7 @@ export class ExtensionWidget extends VirtualWidget {
             this.renderRow(author, extensionButtonContainer));
 
         const container = h.div({
-            className: 'extensionContainer',
+            className: 'extensionHeaderContainer',
             onclick: event => {
                 extension.resolve().then(rawExt => {
                     this.detailWidgetService.openOrFocusDetailWidget(rawExt);
@@ -169,5 +145,33 @@ export class ExtensionWidget extends VirtualWidget {
         return h.div({
             className: 'column flexcontainer ' + additionalClass
         }, VirtualRenderer.flatten(children));
+    }
+
+    protected createButton(extension: Extension): h.Child {
+        let btnLabel = 'Install';
+        if (extension.installed) {
+            if (extension.outdated) {
+                btnLabel = 'Update';
+            } else {
+                btnLabel = 'Uninstall';
+            }
+        }
+
+        return h.div({
+            className: 'extensionButton' +
+            (extension.installed ? ' installed' : '') + ' ' +
+            (extension.outdated ? ' outdated' : ''),
+            onclick: event => {
+                if (extension.installed) {
+                    if (extension.outdated) {
+                        extension.update();
+                    } else {
+                        extension.uninstall();
+                    }
+                } else {
+                    extension.install();
+                }
+            }
+        }, btnLabel);
     }
 }
