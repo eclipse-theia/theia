@@ -5,10 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify"
-import { FrontendApplication } from "@theia/core/lib/browser"
-import { ResolvedExtension } from "../common/extension-protocol"
-import { ExtensionDetailWidget } from './extension-detail-widget'
+import { injectable, inject } from "inversify";
+import { FrontendApplication } from "@theia/core/lib/browser";
+import { ResolvedExtension } from "../common/extension-protocol";
+import { ExtensionDetailWidget } from './extension-detail-widget';
 
 @injectable()
 export class ExtensionDetailWidgetService {
@@ -21,18 +21,18 @@ export class ExtensionDetailWidgetService {
     }
 
     openOrFocusDetailWidget(rawExt: ResolvedExtension) {
-        const widget = this.extensionDetailWidgetStore.get(rawExt.name);
+        let widget = this.extensionDetailWidgetStore.get(rawExt.name);
 
         if (!widget) {
-            const newWidget = new ExtensionDetailWidget("extensionDetailWidget" + this.counter, rawExt);
-            newWidget.title.closable = true;
-            newWidget.title.label = rawExt.name;
-            this.extensionDetailWidgetStore.set(rawExt.name, newWidget);
-            this.app.shell.addToMainArea(newWidget);
-            this.app.shell.activateMain(newWidget.id);
-        } else {
-            // this.app.shell.activateMain(newWidget.id);
+            widget = new ExtensionDetailWidget("extensionDetailWidget" + this.counter++, rawExt);
+            this.extensionDetailWidgetStore.set(rawExt.name, widget);
+            widget.disposed.connect(() => {
+                if (widget) {
+                    this.extensionDetailWidgetStore.delete(rawExt.name);
+                }
+            });
+            this.app.shell.addToMainArea(widget);
         }
+        this.app.shell.activateMain(widget.id);
     }
-
 }
