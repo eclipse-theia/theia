@@ -118,7 +118,7 @@ exports.config = {
     services: ['selenium-standalone'],
 
     seleniumArgs: {
-        seleniumArgs: ["-port", "4441"],
+        seleniumArgs: ["-port", "4444"],
         javaArgs: ["-Xmx1024m", "-Djna.nosys=true"]
     },
     //
