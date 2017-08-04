@@ -13,6 +13,7 @@ import { FileSystem } from '@theia/filesystem/lib/common';
 import { FileSystemWatcherServer, DidFilesChangedParams, FileChange } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { PreferenceChangedEvent, PreferenceClient, PreferenceServer, PreferenceChange } from '../common';
 import * as jsoncparser from "jsonc-parser";
+import { ParseError } from "jsonc-parser";
 
 
 export const PreferenceUri = Symbol("PreferencePath");
@@ -87,8 +88,15 @@ export class JsonPreferenceServer implements PreferenceServer {
                 }
                 return this.fileSystem.resolveContent(uri).then(({ stat, content }) => {
                     const strippedContent = jsoncparser.stripComments(content);
+                    const errors: ParseError[] = [];
+                    const preferences = jsoncparser.parse(strippedContent, errors);
+                    if (errors.length) {
+                        for (const error in errors) {
+                            this.logger.error("JSON parsing error", error);
+                        }
+                    }
 
-                    return JSON.parse(strippedContent);
+                    return preferences;
                 });
             }).catch(reason => {
                 if (reason) {

@@ -14,6 +14,18 @@ import {
     PreferenceContribution
 } from '@theia/preferences-api';
 
+export const filesystemPreferenceSchema: PreferenceSchema = {
+    "type": "object",
+    "properties": {
+        "files.watcherExclude": {
+            "description": "List of paths to exclude from the filesystem watcher",
+            "additionalProperties": {
+                "type": "boolean"
+            }
+        }
+    }
+};
+
 export interface FileSystemConfiguration {
     'files.watcherExclude': { [globPattern: string]: boolean }
 }
@@ -24,21 +36,13 @@ export const defaultFileSystemConfiguration: FileSystemConfiguration = {
         "**/node_modules/**": true
     }
 }
-export const fsSchema: PreferenceSchema = {
-    properties: {
-        "files.watcherExclude": {
-            type: "number",
-            minimum: 1,
-            description: "Configure the tab size in the editor"
-        }
-    }
-};
+
 
 export const FileSystemPreferences = Symbol('FileSystemPreferences');
 export type FileSystemPreferences = PreferenceProxy<FileSystemConfiguration>;
 
 export function createFileSystemPreferences(preferences: PreferenceService): FileSystemPreferences {
-    return createPreferenceProxy(preferences, defaultFileSystemConfiguration, fsSchema);
+    return createPreferenceProxy(preferences, defaultFileSystemConfiguration, filesystemPreferenceSchema);
 }
 
 export function bindFileSystemPreferences(bind: interfaces.Bind): void {
@@ -48,6 +52,6 @@ export function bindFileSystemPreferences(bind: interfaces.Bind): void {
         return createFileSystemPreferences(preferences);
     });
 
-    bind(PreferenceContribution).toConstantValue(({ schema: fsSchema }));
+    bind(PreferenceContribution).toConstantValue(({ schema: filesystemPreferenceSchema }));
 
 }

@@ -24,7 +24,6 @@ export type PreferenceEventEmitter<T> = {
 };
 export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T>;
 export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, configuration: T, schema: PreferenceSchema): PreferenceProxy<T> {
-    const ajv = new Ajv();
     const toDispose = new DisposableCollection();
     const onPreferenceChangedEmitter = new Emitter<PreferenceChange>();
     toDispose.push(onPreferenceChangedEmitter);
@@ -32,10 +31,8 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
         if (e.preferenceName in configuration) {
             if (e.newValue) {
                 // Fire the pref if it's valid according to the schema
-                if (ajv.validate(schema, {
-                    properties: {
-                        [e.preferenceName]: e.newValue
-                    }
+                if (validatePreference(schema, {
+                    [e.preferenceName]: e.newValue
                 })) {
                     onPreferenceChangedEmitter.fire(e);
                 } else {
@@ -46,18 +43,21 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
                     });
                 }
             } else {
-                // Fire the default preference
-                onPreferenceChangedEmitter.fire({
-                    preferenceName: e.preferenceName,
-                    newValue: configuration[e.preferenceName]
-                });
+                onPreferenceChangedEmitter.fire(e);
             }
         }
     }));
     return new Proxy({} as any, {
         get: (_, p: string) => {
             if (p in configuration) {
-                return preferences.get(p, configuration[p]);
+                const preference = preferences.get(p, configuration[p]);
+                if (validatePreference(schema, {
+                    [p]: preference
+                })) {
+                    return preference;
+                } else {
+                    return configuration[p];
+                }
             }
             if (p === 'onPreferenceChanged') {
                 return onPreferenceChangedEmitter.event;
@@ -71,4 +71,9 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
             throw new Error('unexpected property: ' + p);
         }
     })
+}
+
+export function validatePreference(schema: PreferenceSchema, preference: Object) {
+    const ajv = new Ajv();
+    return ajv.validate(schema, preference);
 }

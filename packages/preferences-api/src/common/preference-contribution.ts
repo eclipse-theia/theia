@@ -18,6 +18,7 @@ export interface PreferenceContribution {
 export const PreferenceSchema = Symbol("PreferenceSchema");
 
 export interface PreferenceSchema {
+    [name: string]: Object,
     properties: {
         [name: string]: object
     }
