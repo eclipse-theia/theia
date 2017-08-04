@@ -2,11 +2,13 @@ Theia has a preference service which allows modules to get preference values, co
 
 Preferences can be saved in the root of the workspace under `.theia/settings.json` or under `$HOME/.theia/settings.json` on Linux systems. For Windows systems, the user settings will by default be in the `%USERPROFILE%/.theia/settings.json` (something like `C:\Users\epatpol\.theia/settings.json`)
 
-As of right now the files must contain a valid a JSON containing the names and values of preferences i.e (note that the following preference names are not official and only used as an example)
+As of right now the files must contain a valid a JSON containing the names and values of preferences (note that the following preference names are not official and only used as an example). You can also add comments to the settings.json file if needed i.e
 
 ```json
 {
+    // Enable/Disable the line numbers in the monaco editor
 	"monaco.lineNumbers": "off",
+    // Tab width in the editor
 	"monaco.tabWidth": 4,
 	"fs.watcherExcludes": "path/to/file"
 }
@@ -16,41 +18,46 @@ Let's take the filesystem as an example of a module using the preference service
 
 ## Contributing default preferences as a module with inversify
 
-To contribute some preference values, a module must bind the following PreferenceContribution to a value:
+To contribute some preference values. A module must contribute a valid json schema that will be used to validate the preferences. A module must bind the following PreferenceContribution to a value like this:
 
 ```typescript
-export interface Preference {
-    /**
-     * name of preference (unique or resolved to unique later)
-     */
-    name: string
-    defaultValue?: any
-    description?: string
+export interface PreferenceSchema {
+    [name: string]: Object,
+    properties: {
+        [name: string]: object
+    }
 }
 
 export interface PreferenceContribution {
-    readonly preferences: Preference[];
+    readonly schema: PreferenceSchema;
 }
 ```
 
 For instance, the filesystem binds it like so : 
 ```typescript
-bind(PreferenceContribution).toConstantValue({
-    preferences: [{
-        name: 'files.watcherExclude',
-        defaultValue: defaultFileSystemConfiguration['files.watcherExclude'],
-        description: "Configure glob patterns of file paths to exclude from file watching."
-    }]
-});
-
-export const defaultFileSystemConfiguration: FileSystemConfiguration = {
-    'files.watcherExclude': {
-        "**/.git/objects/**": true,
-        "**/.git/subtree-cache/**": true,
-        "**/node_modules/**": true
+export const filesystemPreferenceSchema: PreferenceSchema = {
+    "type": "object",
+    "properties": {
+        "files.watcherExclude": {
+            "description": "List of paths to exclude from the filesystem watcher",
+            "additionalProperties": {
+                "type": "boolean"
+            }
+        }
     }
-}
+};
+
+bind(PreferenceContribution).toConstantValue(
+{ 
+    schema: filesystemPreferenceSchema 
+});
 ```
+
+Here are some useful links for contributing a validation schema:
+
+* [JSON schema spec](http://json-schema.org/documentation.html)
+* [Online JSON validator](https://jsonlint.com/)
+* [Online JSON schema validator](http://www.jsonschemavalidator.net/)
 
 ## Listening for a preference change via a configuration
 
@@ -77,37 +84,19 @@ export interface PreferenceChangedEvent {
 }
 ```
 
-Although this can be used directly in the needed class, the filesystem provides a proxy preference service specific to the filesystem preferences (which uses the preference service in the background). This allows for quicker search for the preference (as you search for the preference in the filesystem preference service, and not all preferences via the more generic preference service). It's also more efficient as only the modules watching for specific preferences related to a module will be notified. To do so, there is a proxy interface for the filesystem configuration that is bound like so using the preference proxy interface:
+Although this can be used directly in the needed class, the filesystem provides a proxy preference service specific to the filesystem preferences (which uses the preference service in the background). This allows for faster and more efficient searching for the preference (as it searches for the preference in the filesystem preference service, and not on all preferences via the more generic preference service). It's also more efficient in the sense that only the modules watching for specific preferences related to a module will be notified. To do so, there is a proxy interface for the filesystem configuration that is bound like so using the preference proxy interface:
 
 ```typescript
-export type PreferenceProxy<T> = Readonly<Deferred<T>> & Disposable & PreferenceEventEmitter<T>;
+export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T>;
 export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, configuration: T): PreferenceProxy<T> {
-    const toDispose = new DisposableCollection();
-    const onPreferenceChangedEmitter = new Emitter<PreferenceChangedEvent>();
-    toDispose.push(onPreferenceChangedEmitter);
-    toDispose.push(preferences.onPreferenceChanged(e => {
-        if (e.preferenceName in configuration) {
-            onPreferenceChangedEmitter.fire(e);
-        }
-    }));
-    return new Proxy({} as any, {
-        get: (_, p: string) => {
-            if (p in configuration) {
-                return preferences.get(p, configuration[p]);
-            }
-            if (p === 'onPreferenceChanged') {
-                return onPreferenceChangedEmitter.event;
-            }
-            if (p === 'dispose') {
-                return () => toDispose.dispose();
-            }
-            throw new Error('unexpected property: ' + p);
-        }
-    })
+    /* Register a client to the preference server
+    When a preference is received, it is validated against the schema and then fired if valid, otherwise the default value is provided.
+
+    This proxy is also in charge of calling the configured preference service when the proxy object is called i.e editorPrefs['preferenceName']
+
+    It basically forwards methods to the real object, i.e dispose/ready etc.
 }
 ```
-As seen above, the proxy will only fire events to the listeners that listen to that specific module configuration. This way, not all filesystem preferences users have to listen to all the preference changes, but only those that affect that module. As said above, a module could also choose to listen to all preference changes, but it's more efficient to only inject the specific proxies needed for one's preferences.
-
 To use that proxy, simply bind it to a new type X = PreferenceProxy<CONFIGURATION_INTERFACE> and then bind(X) to a proxy using the method above.
 
 ```typescript
@@ -119,26 +108,36 @@ export const FileSystemPreferences = Symbol('FileSystemPreferences');
 export type FileSystemPreferences = PreferenceProxy<FileSystemConfiguration>;
 
 export function createFileSystemPreferences(preferences: PreferenceService): FileSystemPreferences {
-    return createPreferenceProxy(preferences, defaultFileSystemConfiguration);
+    return createPreferenceProxy(preferences, defaultFileSystemConfiguration, filesystemPreferenceSchema);
 }
 
 export function bindFileSystemPreferences(bind: interfaces.Bind): void {
+
     bind(FileSystemPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get(PreferenceService);
         return createFileSystemPreferences(preferences);
     });
 
-    bind(PreferenceContribution).toConstantValue({
-        preferences: [{
-            name: 'files.watcherExclude',
-            defaultValue: defaultFileSystemConfiguration['files.watcherExclude'],
-            description: "Configure glob patterns of file paths to exclude from file watching."
-        }]
-    });
+    bind(PreferenceContribution).toConstantValue({ schema: filesystemPreferenceSchema });
+
 }
 ```
 
-Finally, to use the filesystem configuration in your module. Simply inject it where you need it (in the filesystem watcher in this example):
+Finally, to use the filesystem configuration in your module. Simply inject it where you need it. You can then access the preference like so (filesystem example) :
+
+```typescript
+const patterns = this.preferences['files.watcherExclude'];
+```
+
+and you can also register for preference change like so:
+
+```typescript
+this.toDispose.push(preferences.onPreferenceChanged(e => {
+    if (e.preferenceName === 'files.watcherExclude') {
+        this.toRestartAll.dispose();
+    }
+}));
+```
 
 
 ```typescript
@@ -164,10 +163,9 @@ In the case of the preference file being modified, the flow would then be:
 
 ## Fetching the value of a preference
 
-In the case of the filesystem, one would use the same proxied config as above to access the preferences. Please note that the preference service uses a cache that must be filled on startup (and modified with every pref change coming from the different scoped servers). Before using (getting) a preference, use the `ready` promise to make sure that the service is ready:
+In the case of the filesystem, one would use the same proxied config as above to access the preferences.
 
 ```typescript
-this.prefService.ready.then(()=> {
     if (this.prefService['preferenceName']) {
     ...
     }
@@ -181,7 +179,5 @@ this.prefService.ready.then(()=> {
 This works because, as we have seen it above, the proxy will simply call prefService.get('preferenceName').
 
 ## TODO/FIXME for preferences
-* Add comments to different settings.json (use the same parser from vscode that strips comments)
-* Add validation with json schemas
 * Add scopes with server priority in CompoundPreferenceServer
 * Add autocomplete/description when modifying the settings.json from within theia

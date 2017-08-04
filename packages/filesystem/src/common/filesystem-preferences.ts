@@ -37,7 +37,6 @@ export const defaultFileSystemConfiguration: FileSystemConfiguration = {
     }
 }
 
-
 export const FileSystemPreferences = Symbol('FileSystemPreferences');
 export type FileSystemPreferences = PreferenceProxy<FileSystemConfiguration>;
 
@@ -52,6 +51,6 @@ export function bindFileSystemPreferences(bind: interfaces.Bind): void {
         return createFileSystemPreferences(preferences);
     });
 
-    bind(PreferenceContribution).toConstantValue(({ schema: filesystemPreferenceSchema }));
+    bind(PreferenceContribution).toConstantValue({ schema: filesystemPreferenceSchema });
 
 }
