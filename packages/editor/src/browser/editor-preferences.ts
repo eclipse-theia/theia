@@ -14,27 +14,28 @@ import {
     PreferenceSchema
 } from '@theia/preferences/lib/common';
 
-export const editorConfigSchema: PreferenceSchema = {
-    properties: {
+export const editorPreferenceSchema: PreferenceSchema = {
+    "type": "object",
+    "properties": {
         "editor.tabSize": {
-            type: "number",
-            minimum: 1,
-            description: "Configure the tab size in the editor"
+            "type": "number",
+            "minimum": 1,
+            "description": "Configure the tab size in the editor"
         },
         "editor.lineNumbers": {
-            enum: [
+            "enum": [
                 "on",
                 "off"
             ],
-            description: "Control the rendering of line numbers"
+            "description": "Control the rendering of line numbers"
         },
         "editor.renderWhitespace": {
-            enum: [
+            "enum": [
                 "none",
                 "boundary",
                 "all"
             ],
-            description: "Control the rendering of whitespaces in the editor"
+            "description": "Control the rendering of whitespaces in the editor"
         }
     }
 };
@@ -55,7 +56,7 @@ export const EditorPreferences = Symbol('EditorPreferences');
 export type EditorPreferences = PreferenceProxy<EditorConfiguration>;
 
 export function createEditorPreferences(preferences: PreferenceService): EditorPreferences {
-    return createPreferenceProxy(preferences, defaultEditorConfiguration, editorConfigSchema);
+    return createPreferenceProxy(preferences, defaultEditorConfiguration, editorPreferenceSchema);
 }
 
 export function bindEditorPreferences(bind: interfaces.Bind): void {
@@ -64,5 +65,5 @@ export function bindEditorPreferences(bind: interfaces.Bind): void {
         return createEditorPreferences(preferences);
     });
 
-    bind(PreferenceContribution).toConstantValue(({ schema: editorConfigSchema }));
+    bind(PreferenceContribution).toConstantValue(({ schema: editorPreferenceSchema }));
 }
