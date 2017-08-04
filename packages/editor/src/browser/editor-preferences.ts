@@ -65,5 +65,5 @@ export function bindEditorPreferences(bind: interfaces.Bind): void {
         return createEditorPreferences(preferences);
     });
 
-    bind(PreferenceContribution).toConstantValue(({ schema: editorPreferenceSchema }));
+    bind(PreferenceContribution).toConstantValue({ schema: editorPreferenceSchema });
 }
