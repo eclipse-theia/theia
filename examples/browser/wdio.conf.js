@@ -3,11 +3,14 @@ const http = require('http');
 const path = require('path');
 
 const port = 3000;
-const host = 'localhost';
+const host = '127.0.0.1';
 
 let server;
 
 exports.config = {
+
+    host: '0.0.0.0',
+    port: 4444,
 
     //
     // ==================
