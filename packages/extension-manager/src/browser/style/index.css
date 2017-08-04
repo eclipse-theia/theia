@@ -5,88 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-.theia-extensions {
-    min-width: 250px !important;
-}
-
 .flexcontainer {
     display: flex;
-}
-
-#extensionManagerContainer {
-    width: 100%;
-    position: relative;
-}
-
-#extensionSearchContainer {
-    padding: 15px;
-    box-sizing: border-box;
-}
-
-#extensionSearchFieldContainer {
-    flex: 1;
-}
-
-#extensionSearchFieldContainer input {
-    flex: 1;
-    font-size: var(--theia-ui-font-size2);
-    line-height: var(--theia-content-line-height);
-    border-width: 1px;
-    border-style: solid;
-    border-color: var(--theia-border-color1);
-    background: var(--theia-layout-color0);
-    color: var(--theia-ui-font-color0);
-}
-
-#extensionListContainer {
-    width: 100%;
-    padding: 0 15px;
-    box-sizing: border-box;
-}
-
-.extensionContainer {
-    background: var(--theia-layout-color1);
-    margin-bottom: 5px;
-    padding: 3px 7px;
-    font-size: var(--theia-ui-font-size1);
-    color: var(--theia-ui-font-color0);
-}
-
-.extensionContainer:hover {
-    background: var(--theia-layout-color0);
-}
-
-.extensionContainer .column {
-    flex-direction: column;
-}
-
-.extensionContainer .row {
-    margin: 3px 0;
-    width: 100%;
-}
-
-.extensionName {
-    flex: 5;
-    margin-right: 5px;
-    font-weight: bold;
-    font-size: var(--theia-ui-font-size2);
-}
-
-.extensionVersion {
-    flex: 3;
-    align-self: flex-end;
-    text-align: right;
-    font-size: var(--theia-ui-font-size0)
-}
-
-.extensionDescription {
-    flex: 1;
-}
-
-.extensionAuthor {
-    font-size: var(--theia-ui-font-size0);
-    flex: 5;
-    align-items: center;
 }
 
 .noWrapInfo {
@@ -95,10 +15,18 @@
     text-overflow: ellipsis;
 }
 
-.extensionButtonContainer {
-    justify-content: flex-end;
-    align-items: center;
-    flex: 3;
+.row {
+    width: 100%;
+}
+
+.column {
+    flex-direction: column;
+}
+
+.extensionHeaderContainer {
+    background: var(--theia-layout-color1);
+    margin-bottom: 5px;
+    color: var(--theia-ui-font-color0);
 }
 
 .extensionButton {
@@ -108,6 +36,7 @@
     color: var(--theia-inverse-ui-font-color1);
     width: 55px;
     text-align: center;
+    font-size: var(--theia-ui-font-size1);
 }
 
 .extensionButton:hover {
@@ -119,7 +48,7 @@
     background: var(--theia-error-color2);
 }
 
-.extensionButton.installed.outdated {
+.extensionButton.outdated {
     background: var(--theia-accent-color2);
 }
 
@@ -127,6 +56,9 @@
     background: var(--theia-error-color1);
 }
 
-.extensionButton.installed.outdated:hover {
+.extensionButton.outdated:hover {
     background: var(--theia-accent-color1);
 }
+
+@import './extension-sidebar.css';
+@import './extension-detail.css';
