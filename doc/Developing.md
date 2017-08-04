@@ -145,9 +145,8 @@ To build and run the electron example:
 
     yarn run test
 
-If you would like to check the generated code coverage report
+By default this will generate the code coverage for the tests in a HTML format, which can be easily viewed with your browser (chrome/firefox/edge/safari etc.) by opening `index.html`
 
-    firefox coverage/index.html
 
 ## Troubleshooting
 
