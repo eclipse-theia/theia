@@ -11,8 +11,17 @@ const cp = require('child_process');
 const lernaPath = path.resolve(__dirname, '..', 'node_modules', '.bin', 'lerna');
 
 if (process.platform === 'win32') {
-    process.argv.push(...['--concurrency==1']);
-    cp.spawnSync('cmd', ['/c', lernaPath, ...process.argv.slice(2)], { stdio: [0, 1, 2] });
+    console.log('Parallel lerna execution is disabled on Windows. Falling back to sequential execution with the \'--concurrency==1\' flag.');
+    const args = process.argv.slice(2);
+    if (0 > args.indexOf('--concurrency==1')) {
+        args.push('--concurrency==1');
+    }
+    const parallelIndex = args.indexOf('--parallel');
+    if (parallelIndex !== -1) {
+        args[parallelIndex] = '--stream';
+    }
+    console.log('Running lerna as: ' + args.join(' '));
+    cp.spawnSync('cmd', ['/c', lernaPath, ...args], { shell: true, stdio: [0, 1, 2] });
 } else {
     require(lernaPath);
 }
