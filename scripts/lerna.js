@@ -21,7 +21,12 @@ if (process.platform === 'win32') {
         args[parallelIndex] = '--stream';
     }
     console.log('Running lerna as: ' + args.join(' '));
-    cp.spawnSync('cmd', ['/c', lernaPath, ...args], { shell: true, stdio: [0, 1, 2] });
+    cp.spawnSync('cmd', ['/c', lernaPath, ...args], {
+        cwd: process.cwd(),
+        env: process.env,
+        stdio: 'pipe',
+        encoding: 'utf-8'
+    });
 } else {
     require(lernaPath);
 }
