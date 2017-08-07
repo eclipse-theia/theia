@@ -1,0 +1,24 @@
+shallow_clone: true
+
+branches:
+  only:
+  - master
+
+platform:
+  - x64
+
+install:
+  - cinst yarn
+  - ps: npm install --global --production windows-build-tools
+  # Open the firewall ports for selenium.
+  - netsh advfirewall firewall add rule name="SeleniumIn" dir=in action=allow protocol=TCP localport=4444
+  - netsh advfirewall firewall add rule name="SeleniumOut" dir=out action=allow protocol=TCP localport=4444
+
+before_build:
+  - node --version && npm --version && yarn --version && python --version
+
+build_script:
+  - yarn
+
+test_script:
+  - yarn run test
