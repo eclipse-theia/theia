@@ -13,7 +13,7 @@ const lernaPath = path.resolve(__dirname, '..', 'node_modules', '.bin', 'lerna')
 
 if (process.platform === 'win32') {
     process.argv.push(...['--concurrency==1']);
-    cp.spawnSync('cmd', ['/c', lernaPath, ...process.argv.slice(2)]);
+    cp.spawnSync('cmd', ['/c', lernaPath, ...process.argv.slice(2)], { stdio: [0, 1, 2] });
 } else {
     require(lernaPath);
 }
