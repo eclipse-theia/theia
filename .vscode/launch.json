@@ -15,6 +15,9 @@
                 "--loglevel=debug",
                 "--hostname=localhost"
             ],
+            "env": {
+                "NODE_ENV": "development"
+            },
             "sourceMaps": true,
             "outFiles": [
                 "${workspaceRoot}/examples/electron/src-gen/frontend/electron-main.js",
@@ -22,7 +25,8 @@
                 "${workspaceRoot}/examples/browser/lib/**/*.js",
                 "${workspaceRoot}/packages/*/lib/**/*.js"
             ],
-            "smartStep": true
+            "smartStep": true,
+            "internalConsoleOptions": "openOnSessionStart"
         },
         {
             "type": "node",
@@ -35,13 +39,17 @@
                 "--app-project-path=${workspaceRoot}/examples/browser"
                 //, "--app-no-auto-install"
             ],
+            "env": {
+                "NODE_ENV": "development"
+            },
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
+                "${workspaceRoot}/examples/browser/src-gen/backend/*.js",
                 "${workspaceRoot}/examples/browser/lib/**/*.js",
                 "${workspaceRoot}/packages/*/lib/**/*.js"
             ],
-            "smartStep": true
+            "smartStep": true,
+            "internalConsoleOptions": "openOnSessionStart"
         },
         {
             "type": "node",
@@ -53,28 +61,28 @@
                 "--root-dir=${workspaceRoot}/../eclipse.jdt.ls/org.eclipse.jdt.ls.core",
                 "--port=3000"
             ],
+            "env": {
+                "NODE_ENV": "development"
+            },
             "sourceMaps": true,
             "outFiles": [
-                "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
+                "${workspaceRoot}/examples/browser/src-gen/backend/*.js",
                 "${workspaceRoot}/examples/browser/lib/**/*.js",
                 "${workspaceRoot}/packages/*/lib/**/*.js"
             ],
-            "smartStep": true
+            "smartStep": true,
+            "internalConsoleOptions": "openOnSessionStart"
         },
         {
             "type": "node",
-            "runtimeArgs": [
-                "--inspect"
-            ],
             "request": "launch",
             "protocol": "inspector",
             "name": "Run Mocha Test",
             "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
             "args": [
-                "--timeout",
-                "999999",
-                "--colors",
                 "${file}",
+                "--no-timeouts",
+                "--colors",
                 "--opts",
                 "${workspaceRoot}/packages/mocha.opts"
             ],
@@ -82,9 +90,20 @@
                 "TS_NODE_PROJECT": "${workspaceRoot}/packages/tsconfig.json"
             },
             "sourceMaps": true,
-            "internalConsoleOptions": "openOnSessionStart",
-            "port": 9229,
-            "smartStep": true
+            "smartStep": true,
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "node",
+            "request": "attach",
+            "name": "Attach by Process ID",
+            "processId": "${command:PickProcess}",
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/packages/*/lib/**/*.js"
+            ],
+            "smartStep": true,
+            "internalConsoleOptions": "openOnSessionStart"
         },
         {
             "name": "Launch Frontend",

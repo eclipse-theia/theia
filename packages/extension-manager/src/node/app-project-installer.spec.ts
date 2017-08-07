@@ -8,6 +8,7 @@
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as assert from 'assert';
+import { DidStopInstallationParam } from "../common/extension-protocol";
 import extensionNodeTestContainer from './test/extension-node-test-container';
 import { AppProject } from './app-project';
 
@@ -21,10 +22,10 @@ export async function assertInstallation(expectation: {
     unlinked?: string[]
 }): Promise<void> {
     const waitForWillInstall = new Promise<void>(resolve => appProject.onWillInstall(resolve));
-    const waitForDidInstall = new Promise<boolean>(resolve => appProject.onDidInstall(resolve));
+    const waitForDidInstall = new Promise<DidStopInstallationParam>(resolve => appProject.onDidInstall(resolve));
 
     await waitForWillInstall;
-    const failed = await waitForDidInstall;
+    const result = await waitForDidInstall;
 
     const pck = fs.readJsonSync(path.resolve(appProjectPath, 'package.json'));
     const installed = Object.keys(pck.dependencies);
@@ -53,7 +54,7 @@ export async function assertInstallation(expectation: {
         }
     }
     assert.equal(true, fs.existsSync(path.resolve(appProjectPath, 'lib', 'bundle.js')), 'the bundle is not generated');
-    assert.equal(false, failed, 'the installation is failed');
+    assert.equal(false, result.failed, 'the installation is failed');
 }
 
 describe("AppProjectInstaller", function () {
@@ -73,34 +74,6 @@ describe("AppProjectInstaller", function () {
         this.timeout(50000);
         appProject.dispose();
         return fs.remove(appProjectPath);
-    });
-
-    it("install", async function () {
-        this.timeout(1800000);
-
-        fs.writeJSON(path.resolve(appProjectPath, '.yo-rc.json'), {});
-        fs.writeJSON(path.resolve(appProjectPath, 'theia.package.json'), {
-            "private": true,
-            "dependencies": {
-                "@theia/core": "0.1.1",
-                "@theia/filesystem": "0.1.1"
-            }
-        });
-
-        await assertInstallation({
-            added: ['@theia/core', '@theia/filesystem']
-        });
-
-        fs.writeJSON(path.resolve(appProjectPath, 'theia.package.json'), {
-            "private": true,
-            "dependencies": {
-                "@theia/core": "0.1.1"
-            }
-        });
-        await assertInstallation({
-            added: ['@theia/core'],
-            removed: ['@theia/filesystem']
-        });
     });
 
     it("install local", async function () {
@@ -135,6 +108,34 @@ describe("AppProjectInstaller", function () {
         await assertInstallation({
             linked: ['@theia/core'],
             unlinked: ['@theia/filesystem']
+        });
+    });
+
+    it("install", async function () {
+        this.timeout(1800000);
+
+        fs.writeJSON(path.resolve(appProjectPath, '.yo-rc.json'), {});
+        fs.writeJSON(path.resolve(appProjectPath, 'theia.package.json'), {
+            "private": true,
+            "dependencies": {
+                "@theia/core": "0.1.1",
+                "@theia/filesystem": "0.1.1"
+            }
+        });
+
+        await assertInstallation({
+            added: ['@theia/core', '@theia/filesystem']
+        });
+
+        fs.writeJSON(path.resolve(appProjectPath, 'theia.package.json'), {
+            "private": true,
+            "dependencies": {
+                "@theia/core": "0.1.1"
+            }
+        });
+        await assertInstallation({
+            added: ['@theia/core'],
+            removed: ['@theia/filesystem']
         });
     });
 

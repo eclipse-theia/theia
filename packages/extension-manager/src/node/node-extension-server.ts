@@ -36,8 +36,8 @@ export class NodeExtensionServer implements ExtensionServer {
         this.toDispose.push(appProject.onWillInstall(() =>
             this.notification('onWillStartInstallation')()
         ));
-        this.toDispose.push(appProject.onDidInstall(failed =>
-            this.notification('onDidStopInstallation')({ failed })
+        this.toDispose.push(appProject.onDidInstall(params =>
+            this.notification('onDidStopInstallation')(params)
         ));
     }
 

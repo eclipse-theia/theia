@@ -13,9 +13,11 @@ import {
     MaybePromise, Disposable, DisposableCollection, Event, Emitter, ILogger,
     CancellationTokenSource, CancellationToken, isCancelled
 } from "@theia/core";
-import { FileUri } from "@theia/core/lib/node";
+import { FileUri, ServerProcess } from "@theia/core/lib/node";
+
 import { FileSystem } from "@theia/filesystem/lib/common";
 import { FileSystemWatcherServer, DidFilesChangedParams } from "@theia/filesystem/lib/common/filesystem-watcher-protocol";
+import { DidStopInstallationParam } from '../common/extension-protocol';
 import { AppProjectInstallerFactory, AppProjectInstaller } from './app-project-installer';
 
 @injectable()
@@ -36,14 +38,15 @@ export class AppProject implements Disposable {
     protected readonly toDispose = new DisposableCollection();
     protected readonly onChangePackageEmitter = new Emitter<void>();
     protected readonly onWillInstallEmitter = new Emitter<void>();
-    protected readonly onDidInstallEmitter = new Emitter<boolean>();
+    protected readonly onDidInstallEmitter = new Emitter<DidStopInstallationParam>();
 
     constructor(
         @inject(AppProjectOptions) readonly options: AppProjectOptions,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcherServer) protected readonly fileSystemWatcher: FileSystemWatcherServer,
         @inject(ILogger) protected readonly logger: ILogger,
-        @inject(AppProjectInstallerFactory) protected readonly installerFactory: AppProjectInstallerFactory
+        @inject(AppProjectInstallerFactory) protected readonly installerFactory: AppProjectInstallerFactory,
+        @inject(ServerProcess) protected readonly serverProcess: ServerProcess
     ) {
         logger.debug('AppProjectOptions', options);
         this.packageUri = this.load().then(model =>
@@ -123,11 +126,11 @@ export class AppProject implements Disposable {
         this.onWillInstallEmitter.fire(undefined);
     }
 
-    get onDidInstall(): Event<boolean> {
+    get onDidInstall(): Event<DidStopInstallationParam> {
         return this.onDidInstallEmitter.event;
     }
-    protected fireDidInstall(failed: boolean): void {
-        this.onDidInstallEmitter.fire(failed);
+    protected fireDidInstall(params: DidStopInstallationParam = { failed: false }): void {
+        this.onDidInstallEmitter.fire(params);
     }
 
     async autoInstall(): Promise<void> {
@@ -173,15 +176,18 @@ export class AppProject implements Disposable {
             }
 
             this.logger.info('The app installation is finished');
-            this.fireDidInstall(false);
             this.installing = false;
+            this.fireDidInstall();
+            this.serverProcess.master.restart();
         } catch (err) {
             if (isCancelled(err)) {
                 this.logger.info('The app installation is cancelled');
                 return;
             }
             this.logger.info('The app installation is failed', err);
-            this.fireDidInstall(true);
+            this.fireDidInstall({
+                failed: true
+            });
             this.installing = false;
         } finally {
             this.installationTokenSource = undefined;

@@ -6,9 +6,11 @@
  */
 
 import { Container } from "inversify";
-import { bindLogger } from "@theia/core/lib/node/logger-backend-module";
 import { ConsoleLoggerServer } from "@theia/core/lib/common/console-logger-server";
 import { ILoggerServer } from "@theia/core/lib/common/logger-protocol";
+import { stubRemoteMasterProcessFactory } from "@theia/core/lib/node";
+import { bindServerProcess } from "@theia/core/lib/node/backend-application-module";
+import { bindLogger } from "@theia/core/lib/node/logger-backend-module";
 import { bindFileSystem, bindFileSystemWatcherServer } from "@theia/filesystem/lib/node/filesystem-backend-module";
 import { bindNodeExtensionServer, AppProjectArgs } from '../extension-backend-module';
 
@@ -16,6 +18,7 @@ export const extensionNodeTestContainer = (args: AppProjectArgs) => {
     const container = new Container();
     const bind = container.bind.bind(container);
     bindLogger(bind);
+    bindServerProcess(bind, stubRemoteMasterProcessFactory);
     container.rebind(ILoggerServer).to(ConsoleLoggerServer).inSingletonScope();
     bindFileSystem(bind);
     bindFileSystemWatcherServer(bind);
