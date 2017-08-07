@@ -34,7 +34,7 @@ if (target === 'electron' && !fs.existsSync(browserModulesPath)) {
         if (process.platform === 'win32') {
             cp.spawnSync('cmd', ['/c', electronRebuildPath]);
         } else {
-            require(path.join(process.cwd(), 'node_modules', '.bin', 'electron-rebuild'));
+            require(electronRebuildPath);
         }
     } finally {
         setTimeout(() => {
