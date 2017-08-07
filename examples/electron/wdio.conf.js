@@ -107,10 +107,10 @@ exports.config = {
     // your test setup with almost no effort. Unlike plugins, they don't add new
     // commands. Instead, they hook themselves up into the test process.
     services: ['selenium-standalone'],
+
     seleniumArgs: {
-        seleniumArgs: [
-            '-Djna.nosys=true'
-        ]
+        seleniumArgs: ["-port", "4444"],
+        javaArgs: ["-Xmx1024m", "-Djna.nosys=true"]
     },
 
     //
