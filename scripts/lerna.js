@@ -13,7 +13,7 @@ const lernaPath = path.resolve(__dirname, '..', 'node_modules', '.bin', 'lerna')
 if (process.platform === 'win32') {
     console.log('Parallel lerna execution is disabled on Windows. Falling back to sequential execution with the \'--concurrency==1\' flag.');
     const args = process.argv.slice(2);
-    if (0 > args.indexOf('--concurrency==1')) {
+    if (args.indexOf('--concurrency==1') === -1) {
         args.push('--concurrency==1');
     }
     const parallelIndex = args.indexOf('--parallel');

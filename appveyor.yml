@@ -1,26 +1,19 @@
 shallow_clone: true
 
-environment:
-  matrix:
-    - nodejs_version: "7"
+branches:
+  only:
+  - master
 
 platform:
   - x64
 
 install:
   - cinst yarn
-  - cinst googlechrome
-  - cmd: npm i npm@latest-4 -g
   - ps: npm install --global --production windows-build-tools
   - cmd: yarn global add yo
-  # installing selenium-standalone
-  - npm install -g selenium-standalone
-  - selenium-standalone install
-  # opening firewall ports
+  # Open the firewall ports for selenium.
   - netsh advfirewall firewall add rule name="SeleniumIn" dir=in action=allow protocol=TCP localport=4444
   - netsh advfirewall firewall add rule name="SeleniumOut" dir=out action=allow protocol=TCP localport=4444
-  # running selenium-standalone as background job
-  - ps: Start-Process selenium-standalone 'start','--','-Djna.nosys=true'
 
 before_build:
   - node --version && npm --version && yarn --version && yo --version && python --version
