@@ -3,7 +3,7 @@ const http = require('http');
 const path = require('path');
 
 const port = 3000;
-const host = '127.0.0.1';
+const host = 'localhost';
 
 let server;
 
