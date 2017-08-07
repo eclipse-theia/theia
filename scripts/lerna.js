@@ -24,7 +24,7 @@ if (process.platform === 'win32') {
     cp.spawnSync('cmd', ['/c', lernaPath, ...args], {
         cwd: process.cwd(),
         env: process.env,
-        stdio: 'pipe',
+        stdio: [0, 1, 2],
         encoding: 'utf-8'
     });
 } else {
