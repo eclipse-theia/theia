@@ -10,9 +10,12 @@ platform:
 install:
   - cinst yarn
   - ps: npm install --global --production windows-build-tools
+  - npm install -g selenium-standalone
+  - selenium-standalone install
   # Open the firewall ports for selenium.
   - netsh advfirewall firewall add rule name="SeleniumIn" dir=in action=allow protocol=TCP localport=4444
   - netsh advfirewall firewall add rule name="SeleniumOut" dir=out action=allow protocol=TCP localport=4444
+  - ps: Start-Process selenium-standalone 'start','--','-Djna.nosys=true'
 
 before_build:
   - node --version && npm --version && yarn --version && python --version
