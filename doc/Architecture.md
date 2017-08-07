@@ -105,7 +105,7 @@ when needed.
 
 The `OpenerService`, for instance, defines a contribution point to allow others
 registering `OpenHandler`s. You can have a look at the code
-[here](../src/application/browser/opener-service.ts).
+[here](../packages/core/src/browser/opener-service.ts).
 
 Theia comes with an extensive list of contribution points already. A good way
 to see what contribution points exist is to do a find references on
