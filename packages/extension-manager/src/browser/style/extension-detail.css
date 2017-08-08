@@ -45,6 +45,10 @@
     margin-right: 10px;
 }
 
-.theia-extension-detail .extensionDocContainer {}
+.theia-extension-detail .extensionDocContainer {
+    padding: 15px 22px;
+}
 
-.theia-extension-detail .extensionDocumentation {}
+.theia-extension-detail .extensionDocumentation {
+    color: var(--theia-ui-font-color0);
+}

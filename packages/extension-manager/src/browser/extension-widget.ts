@@ -8,23 +8,19 @@
 import { Extension, ExtensionManager } from '../common';
 import { injectable, inject } from 'inversify';
 import { VirtualWidget, VirtualRenderer } from '@theia/core/lib/browser';
-import { h, VirtualNode } from "@phosphor/virtualdom/lib";
-import { DisposableCollection, Disposable } from "@theia/core";
+import { h, VirtualNode } from '@phosphor/virtualdom/lib';
+import { DisposableCollection, Disposable } from '@theia/core';
 import { ExtensionDetailWidgetService } from './extension-detail-widget-service';
 
 @injectable()
 export class ExtensionWidget extends VirtualWidget {
 
-    // TODO instead of doing this here we should have a extension cache in extensionmanager and hold such states in every extension
-    protected busyextensions: Array<string> = [];
-
     protected extensionStore: Extension[] = [];
-    protected readonly updateTimeAfterTyping = 300;
+    protected readonly updateTimeAfterTyping = 50;
     protected readonly toDisposeOnTypeSearchQuery = new DisposableCollection();
     protected ready = false;
 
-    constructor(
-        @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager,
+    constructor( @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager,
         @inject(ExtensionDetailWidgetService) protected readonly detailWidgetService: ExtensionDetailWidgetService) {
         super();
         this.id = 'extensions';
@@ -32,8 +28,6 @@ export class ExtensionWidget extends VirtualWidget {
         this.addClass('theia-extensions');
 
         extensionManager.onDidChange(event => {
-            this.busyextensions = [];
-
             this.fetchExtensions();
         });
 
@@ -165,23 +159,15 @@ export class ExtensionWidget extends VirtualWidget {
             }
         }
 
-        let content;
-        let busy: boolean = false;
-
-        if (this.busyextensions.indexOf(extension.name) === -1) {
-            content = btnLabel;
-        } else {
-            busy = true;
-            content = h.i({ className: 'fa fa-spinner fa-pulse fa-fw' });
-        }
+        const content = extension.busy ? h.i({ className: 'fa fa-spinner fa-pulse fa-fw' }) : btnLabel;
 
         const btn = h.div({
             className: 'extensionButton' +
-            (busy ? ' working' : '') + ' ' +
-            (extension.installed && !busy ? ' installed' : '') + ' ' +
-            (extension.outdated && !busy ? ' outdated' : ''),
+            (extension.busy ? ' working' : '') + ' ' +
+            (extension.installed && !extension.busy ? ' installed' : '') + ' ' +
+            (extension.outdated && !extension.busy ? ' outdated' : ''),
             onclick: event => {
-                if (this.busyextensions.indexOf(extension.name) === -1) {
+                if (!extension.busy) {
                     if (extension.installed) {
                         if (extension.outdated) {
                             extension.update();
@@ -191,7 +177,7 @@ export class ExtensionWidget extends VirtualWidget {
                     } else {
                         extension.install();
                     }
-                    this.busyextensions.push(extension.name);
+                    extension.busy = true;
                     this.update();
                     event.stopPropagation();
                 }
