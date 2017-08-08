@@ -9,6 +9,7 @@ platform:
 
 install:
   - cinst yarn
+  - cinst googlechrome
   - ps: npm install --global --production windows-build-tools
 
 before_build:
