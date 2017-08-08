@@ -1,0 +1,31 @@
+shallow_clone: true
+
+branches:
+  only:
+  - master
+
+platform:
+  - x64
+
+install:
+  - cinst yarn
+  - ps: npm install --global --production windows-build-tools
+  - netsh advfirewall firewall add rule name="SeleniumIn" dir=in action=allow protocol=TCP localport=4444
+  - netsh advfirewall firewall add rule name="SeleniumOut" dir=out action=allow protocol=TCP localport=4444
+
+before_build:
+  - node --version && npm --version && yarn --version && python --version
+
+build_script:
+  - yarn
+
+test_script:
+  - yarn run test
+
+notifications:
+  - provider: Webhook
+    url: https://webhooks.gitter.im/e/0c92dcdcf861a4c491cc
+    method: POST
+    on_build_success: false
+    on_build_failure: true
+    on_build_status_changed: true

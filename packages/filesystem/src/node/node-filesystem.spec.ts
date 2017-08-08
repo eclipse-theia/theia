@@ -19,9 +19,16 @@ import { FileSystemWatcher, FileChange, FileChangeType, createFileSystemPreferen
 import { FileSystemNode } from "./node-filesystem";
 import { ChokidarFileSystemWatcherServer } from './chokidar-filesystem-watcher';
 
+function tmpdirPath() {
+    const path = os.tmpdir();
+    if (path.charAt(1) === ':' && process.platform === 'win32') {
+        return `${path.charAt(0).toLowerCase()}${path.slice(1)}`;
+    }
+    return path;
+}
 const expect = chai.expect;
 const uuidV1 = require('uuid/v1');
-const TEST_ROOT = FileUri.create(os.tmpdir()).resolve("node-fs-root");
+const TEST_ROOT = FileUri.create(tmpdirPath()).resolve("node-fs-root");
 
 describe("NodeFileSystem", () => {
 
