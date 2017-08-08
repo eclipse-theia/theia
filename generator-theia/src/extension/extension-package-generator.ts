@@ -30,8 +30,8 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
             "scripts": {
                 ...pck.scripts,
                 "clean": "yarn run compile:clean && yarn run test:clean",
-                "test": "nyc mocha --opts ../mocha.opts src/**/*.spec.ts",
-                "test:watch": "mocha -w --opts ../mocha.opts src/**/*.spec.ts",
+                "test": "nyc mocha --opts ../mocha.opts \"./src/**/*.spec.ts\"",
+                "test:watch": "mocha -w --opts ../mocha.opts \"./src/**/*.spec.ts\"",
                 "test:clean": "rimraf .nyc_output && rimraf coverage",
                 ...this.model.pck.scripts
             },
