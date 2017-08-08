@@ -5,6 +5,8 @@
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
   "dependencies": {
+    "@theia/core": "^0.1.1",
+    "@theia/filesystem": "^0.1.1",
     "dugite-extra": "0.0.1-alpha.1"
   },
   "publishConfig": {
