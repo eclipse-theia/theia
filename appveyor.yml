@@ -23,8 +23,9 @@ test_script:
   - yarn run test
 
 notifications:
-  provider: Webhook
+  - provider: Webhook
     url: https://webhooks.gitter.im/e/0c92dcdcf861a4c491cc
+    method: POST
     on_build_success: false
     on_build_failure: true
     on_build_status_changed: true
