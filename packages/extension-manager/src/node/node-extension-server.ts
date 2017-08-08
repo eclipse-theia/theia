@@ -7,11 +7,11 @@
 
 import * as semver from 'semver';
 import { injectable, inject } from 'inversify';
-import { ExtensionPackage } from 'generator-theia';
+import { ExtensionPackage, view } from 'generator-theia';
 import * as npm from 'generator-theia/generators/common/npm';
 import { DisposableCollection } from '@theia/core';
 import {
-    RawExtension, ResolvedRawExtension, Extension, ResolvedExtension, ExtensionServer, ExtensionClient, SearchParam
+    RawExtension, ResolvedRawExtension, ResolvedExtension, Extension, ExtensionServer, ExtensionClient, SearchParam
 } from '../common/extension-protocol';
 import * as npms from './npms';
 import { AppProject } from './app-project';
@@ -27,9 +27,9 @@ export class NodeExtensionServer implements ExtensionServer {
     protected client: ExtensionClient | undefined;
     protected readonly toDispose = new DisposableCollection();
 
-    constructor(
-        @inject(AppProject) protected readonly appProject: AppProject
-    ) {
+    protected readonly busyExtensions = new Set<string>();
+
+    constructor( @inject(AppProject) protected readonly appProject: AppProject) {
         this.toDispose.push(appProject.onDidChangePackage(() =>
             this.notification('onDidChange')()
         ));
@@ -48,11 +48,13 @@ export class NodeExtensionServer implements ExtensionServer {
     setClient(client: ExtensionClient | undefined): void {
         this.client = client;
     }
+
     protected notification<T extends keyof ExtensionClient>(notification: T): ExtensionClient[T] {
         if (this.client) {
             return this.client[notification];
         }
-        return () => { };
+        return () => {
+        };
     }
 
     async search(param: SearchParam): Promise<RawExtension[]> {
@@ -69,12 +71,15 @@ export class NodeExtensionServer implements ExtensionServer {
         }
         return extensions;
     }
+
     protected prepareQuery(query: string, extensionKeywords: string[]): string {
         const args = query.split(/\s+/).map(v => v.toLowerCase().trim()).filter(v => !!v);
         return [`keywords:'${extensionKeywords.join(',')}'`, ...args].join(' ');
     }
+
     resolveRaw(extension: string): Promise<ResolvedRawExtension> {
-        return new Promise(resolve => { });
+        return new Promise(resolve => {
+        });
     }
 
     /**
@@ -90,18 +95,20 @@ export class NodeExtensionServer implements ExtensionServer {
             return extensions;
         });
     }
+
     async install(extension: string): Promise<void> {
+        this.setExtensionsBusyFlag(extension, true);
         const latestVersion = await this.latestVersion(extension);
         if (latestVersion) {
-            await this.appProject.update(model =>
-                model.setDependency(extension, latestVersion)
-            );
+            await this.appProject.update(model => model.setDependency(extension, latestVersion));
         }
+        this.setExtensionsBusyFlag(extension, false);
     }
-    uninstall(extension: string): Promise<void> {
-        return this.appProject.update(model =>
-            model.setDependency(extension, undefined)
-        );
+
+    async uninstall(extension: string): Promise<void> {
+        this.setExtensionsBusyFlag(extension, true);
+        await this.appProject.update(model => model.setDependency(extension, undefined));
+        this.setExtensionsBusyFlag(extension, false);
     }
 
     /**
@@ -115,8 +122,10 @@ export class NodeExtensionServer implements ExtensionServer {
         );
         return installed.filter((_, index) => !!outdated[index]);
     }
-    update(extension: string): Promise<void> {
-        return this.appProject.update(async model => {
+
+    async update(extension: string): Promise<void> {
+        this.setExtensionsBusyFlag(extension, true);
+        await this.appProject.update(async model => {
             const pck = model.extensionPackages.find(p => p.name === extension);
             if (!pck || !pck.version) {
                 return false;
@@ -127,16 +136,30 @@ export class NodeExtensionServer implements ExtensionServer {
             }
             return model.setDependency(extension, latestVersion);
         });
+        this.setExtensionsBusyFlag(extension, false);
+    }
+
+    protected setExtensionsBusyFlag(extension: string, busy: boolean): void {
+        if (busy) {
+            this.busyExtensions.add(extension);
+        } else {
+            this.busyExtensions.delete(extension);
+        }
+        if (this.client) {
+            this.client.onDidChange();
+        }
     }
 
     protected async installationState(): Promise<InstallationState> {
         const [installed, outdated] = await Promise.all([this.installed(), this.outdated()]);
         return { installed, outdated };
     }
+
     protected toExtension(raw: RawExtension, installation: InstallationState): Extension {
+        const busy = this.busyExtensions.has(raw.name);
         const outdated = installation.outdated.some(e => e.name === raw.name);
         const installed = outdated || installation.installed.some(e => e.name === raw.name);
-        return Object.assign(raw, { installed, outdated });
+        return Object.assign(raw, { busy, installed, outdated });
     }
 
     async list(param?: SearchParam): Promise<Extension[]> {
@@ -147,8 +170,32 @@ export class NodeExtensionServer implements ExtensionServer {
         );
     }
 
-    resolve(extension: string): Promise<ResolvedExtension> {
-        return new Promise(() => { });
+    async resolve(extension: string): Promise<ResolvedExtension> {
+        const viewResult = await view({ name: extension, abbreviated: false });
+        const latest = viewResult['dist-tags'].latest;
+        const pkg = (viewResult.versions[latest] as ExtensionPackage);
+        const installedExtension = await this.extensionIsInstalled(pkg.name);
+        const author = this.getAuthor(pkg);
+
+        const resolvedExtension = {
+            busy: this.busyExtensions.has(pkg.name),
+            installed: installedExtension !== undefined,
+            outdated: installedExtension !== undefined ? !!latest && semver.gt(latest, installedExtension.version) : false,
+            name: pkg.name,
+            version: (installedExtension !== undefined ? installedExtension.version : latest),
+            description: pkg.description ? pkg.description : '',
+            author: author,
+            documentation: (viewResult['readme'] as string)
+        };
+
+        return resolvedExtension;
+    }
+
+    protected async extensionIsInstalled(name: string): Promise<RawExtension | undefined> {
+        return await this.installed().then(installed => {
+            const installedVersion = installed.find(ext => name === ext.name);
+            return installedVersion;
+        });
     }
 
     protected async validateOutdated(extension: string, version: string): Promise<string | undefined> {
@@ -188,6 +235,7 @@ export class NodeExtensionServer implements ExtensionServer {
     needInstall(): Promise<boolean> {
         return this.appProject.needInstall();
     }
+
     scheduleInstall(): Promise<void> {
         return this.appProject.scheduleInstall({
             force: true

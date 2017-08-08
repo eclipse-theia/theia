@@ -20,6 +20,8 @@ import * as protocol from './extension-protocol';
  */
 export class Extension extends protocol.Extension {
 
+    busy: boolean = false;
+
     constructor(
         extension: protocol.Extension,
         protected readonly server: protocol.ExtensionServer

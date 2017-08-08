@@ -45,10 +45,11 @@ export interface ViewParam {
 export interface ViewResult {
     'dist-tags': {
         [tag: string]: string
-    },
+    }
     'versions': {
         [version: string]: NodePackage
     }
+    [key: string]: any
 }
 export function view(param: ViewParam): Promise<ViewResult> {
     let url = 'https://registry.npmjs.org/';
