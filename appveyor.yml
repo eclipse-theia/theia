@@ -9,8 +9,9 @@ platform:
 
 install:
   - cinst yarn
-  - cinst googlechrome
   - ps: npm install --global --production windows-build-tools
+  - netsh advfirewall firewall add rule name="SeleniumIn" dir=in action=allow protocol=TCP localport=4445
+  - netsh advfirewall firewall add rule name="SeleniumOut" dir=out action=allow protocol=TCP localport=4445
 
 before_build:
   - node --version && npm --version && yarn --version && python --version
