@@ -22,16 +22,15 @@
   },
   "devDependencies": {
     "@types/chai": "^4.0.1",
-    "@types/webdriverio": "^4.7.0",
+    "@types/webdriverio": "^4.8.3",
     "chai": "^4.1.0",
-    "selenium-standalone": "^6.2.0",
+    "selenium-standalone": "^6.6.0",
     "typescript": "^2.4.1",
     "ts-node": "^3.2.0",
-    "wdio-mocha-framework": "^0.5.9",
-    "wdio-phantomjs-service": "^0.2.2",
-    "wdio-selenium-standalone-service": "0.0.8",
+    "wdio-mocha-framework": "^0.5.10",
+    "wdio-selenium-standalone-service": "0.0.9",
     "wdio-spec-reporter": "^0.1.0",
-    "webdriverio": "^4.6.2",
+    "webdriverio": "^4.8.0",
     "electron-mocha": "^3.5.0"
   }
 }

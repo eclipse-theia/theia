@@ -117,7 +117,7 @@ exports.config = {
     // commands. Instead, they hook themselves up into the test process.
     services: ['selenium-standalone'],
     seleniumArgs: {
-        seleniumArgs: ["-port", "4445"],
+        seleniumArgs: ["-port", "4444"],
         javaArgs: ["-Xmx1024m", "-Djna.nosys=true"]
     },
     //

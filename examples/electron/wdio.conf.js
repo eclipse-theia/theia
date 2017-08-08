@@ -107,11 +107,6 @@ exports.config = {
     // your test setup with almost no effort. Unlike plugins, they don't add new
     // commands. Instead, they hook themselves up into the test process.
     services: ['selenium-standalone'],
-    seleniumArgs: {
-        javaArgs: [
-            '-Djna.nosys=true'
-        ]
-    },
 
     //
     // Framework you want to run your specs with.
