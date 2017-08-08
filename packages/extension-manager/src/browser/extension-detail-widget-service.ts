@@ -5,10 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
-import { FrontendApplication } from "@theia/core/lib/browser";
-import { ResolvedExtension } from "../common/extension-protocol";
+import { injectable, inject } from 'inversify';
+import { FrontendApplication } from '@theia/core/lib/browser';
 import { ExtensionDetailWidget } from './extension-detail-widget';
+import { ResolvedExtension } from '../common/extension-manager';
 
 @injectable()
 export class ExtensionDetailWidgetService {
@@ -16,7 +16,7 @@ export class ExtensionDetailWidgetService {
     protected extensionDetailWidgetStore = new Map<string, ExtensionDetailWidget>();
     protected counter = 0;
 
-    constructor( @inject(FrontendApplication) protected readonly app: FrontendApplication) {
+    constructor(@inject(FrontendApplication) protected readonly app: FrontendApplication) {
 
     }
 
@@ -24,7 +24,7 @@ export class ExtensionDetailWidgetService {
         let widget = this.extensionDetailWidgetStore.get(rawExt.name);
 
         if (!widget) {
-            widget = new ExtensionDetailWidget("extensionDetailWidget" + this.counter++, rawExt);
+            widget = new ExtensionDetailWidget('extensionDetailWidget' + this.counter++, rawExt);
             this.extensionDetailWidgetStore.set(rawExt.name, widget);
             widget.disposed.connect(() => {
                 if (widget) {

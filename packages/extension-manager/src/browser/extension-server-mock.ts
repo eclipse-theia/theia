@@ -61,6 +61,7 @@ export class ExtensionServerMock implements ExtensionServer {
         const extensions: Extension[] = []
         extensions.push(
             {
+                busy: false,
                 installed: false,
                 name: 'testExtension',
                 outdated: false,
@@ -69,6 +70,7 @@ export class ExtensionServerMock implements ExtensionServer {
                 version: '0.0.1'
             },
             {
+                busy: false,
                 installed: true,
                 name: 'testExtension2',
                 outdated: false,
@@ -77,6 +79,7 @@ export class ExtensionServerMock implements ExtensionServer {
                 version: '0.0.1'
             },
             {
+                busy: false,
                 installed: true,
                 name: 'testExtension3',
                 outdated: true,
@@ -86,14 +89,14 @@ export class ExtensionServerMock implements ExtensionServer {
             }
         )
         return new Promise(
-            function (resolve, reject) {
+            function(resolve, reject) {
                 resolve(extensions)
             }
         )
     }
 
     resolve(extension: string): Promise<Extension & ResolvedRawExtension> {
-        return new Promise(function (resolve, reject) {
+        return new Promise(function(resolve, reject) {
             resolve();
         });
     }
@@ -103,7 +106,9 @@ export class ExtensionServerMock implements ExtensionServer {
     }
 
     setClient(client: ExtensionClient | undefined): void {
-        this.manager = client;
+        if (client !== undefined) {
+            this.manager = client;
+        }
     }
 
     needInstall(): Promise<boolean> {
