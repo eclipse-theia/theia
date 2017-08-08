@@ -1,0 +1,13 @@
+{
+  "name": "@theia/git",
+  "version": "0.1.1",
+  "description": "Theia - Git Integration",
+  "main": "lib/common/index.js",
+  "typings": "lib/common/index.d.ts",
+  "dependencies": {
+    "dugite-extra": "0.0.1-alpha.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
