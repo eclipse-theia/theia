@@ -11,7 +11,7 @@ import { injectable, inject } from 'inversify';
 import { DisposableCollection } from '@theia/core';
 import { PublishedNodePackage, ExtensionPackage } from '@theia/application-package';
 import {
-    RawExtension, ResolvedRawExtension, Extension, ResolvedExtension, ExtensionServer, ExtensionClient, SearchParam
+    RawExtension, ResolvedRawExtension, ResolvedExtension, Extension, ExtensionServer, ExtensionClient, SearchParam
 } from '../common/extension-protocol';
 import * as npms from './npms';
 import { ApplicationProject } from './application-project';
@@ -49,11 +49,13 @@ export class NodeExtensionServer implements ExtensionServer {
     setClient(client: ExtensionClient | undefined): void {
         this.client = client;
     }
+
     protected notification<T extends keyof ExtensionClient>(notification: T): ExtensionClient[T] {
         if (this.client) {
             return this.client[notification];
         }
-        return () => { };
+        return () => {
+        };
     }
 
     async search(param: SearchParam): Promise<RawExtension[]> {
@@ -88,6 +90,7 @@ export class NodeExtensionServer implements ExtensionServer {
         const manager = this.project.createPackageManager();
         return manager.pck.extensionPackages.map(pck => this.toRawExtension(pck));
     }
+
     async install(extension: string): Promise<void> {
         this.setBusy(extension, true);
         try {

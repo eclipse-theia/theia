@@ -34,6 +34,10 @@ export class ResolvedRawExtension extends RawExtension {
  */
 export class Extension extends RawExtension {
     /**
+     * Test whether the extension is busy with installing, updating or uninstalling.
+     */
+    readonly busy: boolean;
+    /**
      * Test whether the extension is installed.
      */
     readonly installed: boolean;
