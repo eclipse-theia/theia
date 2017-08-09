@@ -14,8 +14,8 @@ import { AppProject } from './app-project';
 
 let appProject: AppProject;
 let server: ExtensionServer;
-const testProjectPath = path.resolve(__dirname, '..', '..', 'testproject');
-const appProjectPath = path.resolve(__dirname, '..', '..', 'testproject_temp');
+const testProjectPath = path.resolve(__dirname, '..', '..', 'test-resources', 'testproject');
+const appProjectPath = path.resolve(__dirname, '..', '..', 'test-resources', 'testproject_temp');
 
 export function waitForDidChange(): Promise<void> {
     return new Promise(resolve => {
@@ -48,7 +48,7 @@ describe("NodeExtensionServer", function () {
         this.timeout(50000);
         server.dispose();
         appProject.dispose();
-        return fs.remove(appProjectPath);
+        fs.removeSync(appProjectPath);
     });
 
     it("search", function () {

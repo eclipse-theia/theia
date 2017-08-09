@@ -13,7 +13,7 @@ import extensionNodeTestContainer from './test/extension-node-test-container';
 import { AppProject } from './app-project';
 
 let appProject: AppProject;
-const appProjectPath = path.resolve(__dirname, '..', '..', 'testproject_temp');
+const appProjectPath = path.resolve(__dirname, '..', '..', 'test-resources', 'testproject_temp');
 
 export async function assertInstallation(expectation: {
     added?: string[],
@@ -73,7 +73,7 @@ describe("AppProjectInstaller", function () {
     afterEach(function () {
         this.timeout(50000);
         appProject.dispose();
-        return fs.remove(appProjectPath);
+        fs.removeSync(appProjectPath);
     });
 
     it("install local", async function () {
@@ -82,10 +82,10 @@ describe("AppProjectInstaller", function () {
         fs.writeJSON(path.resolve(appProjectPath, '.yo-rc.json'), {
             "generator-theia": {
                 "localDependencies": {
-                    "@theia/core": "../../core",
-                    "@theia/filesystem": "../../filesystem"
+                    "@theia/core": "../../../core",
+                    "@theia/filesystem": "../../../filesystem"
                 },
-                "node_modulesPath": "../../../node_modules"
+                "node_modulesPath": "../../../../node_modules"
             }
         });
         fs.writeJSON(path.resolve(appProjectPath, 'theia.package.json'), {
