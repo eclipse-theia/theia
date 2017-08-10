@@ -5,15 +5,55 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+// tslint:disable:no-console
 import * as path from 'path';
-import { NodePackage, Dependencies } from './npm';
+import * as fs from 'fs-extra';
+import * as semver from 'semver';
+import { NodePackage, Dependencies, view, ViewResult } from './npm';
 export { NodePackage, Dependencies };
 
-export interface ExtensionPackage extends NodePackage {
+export class ExtensionPackage extends NodePackage {
     name: string;
     version: string;
     theiaExtensions?: Extension[];
     localPath?: string;
+    installed: boolean = false;
+
+    getReadme(): string {
+        if (this.readme) {
+            return this.readme;
+        }
+        if (this.localPath) {
+            const readmePath = path.resolve(this.localPath, 'README.md');
+            if (fs.existsSync(readmePath)) {
+                return fs.readFileSync(readmePath, { encoding: 'utf8' });
+            }
+        }
+        return '';
+    }
+
+    getAuthor(): string {
+        if (this.publisher) {
+            return this.publisher.username;
+        }
+        if (typeof this.author === 'string') {
+            return this.author;
+        }
+        if (this.author && this.author.name) {
+            return this.author.name;
+        }
+        if (!!this.maintainers && this.maintainers.length > 0) {
+            return this.maintainers[0].username;
+        }
+        return '';
+    }
+
+    isOutdated(): boolean {
+        if (!this.installed) {
+            return false;
+        }
+        return !!this.latestVersion && semver.gt(this.latestVersion, this.version);
+    }
 }
 export namespace ExtensionPackage {
     export function is(pck: NodePackage | undefined, extensionKeywords?: string[]): pck is ExtensionPackage {
@@ -110,6 +150,13 @@ export function sortByKey(object: { [key: string]: any }): { [key: string]: any 
 
 export const defaultExtensionKeyword = "theia-extension";
 
+export function npmView(name: string): Promise<ViewResult | undefined> {
+    return view({ name, abbreviated: false }).catch(reason => {
+        console.error(reason);
+        return undefined;
+    });
+}
+
 export class ProjectModel {
     target: 'web' | 'electron-renderer' | undefined;
     pck: NodePackage = {};
@@ -142,10 +189,7 @@ export class ProjectModel {
         return Array.from(this._extensionPackages.values());
     }
 
-    async readExtensionPackages(reader: {
-        read: (extension: string, version: string) => Promise<NodePackage | undefined>,
-        readLocal: (extension: string, path: string) => Promise<NodePackage | undefined>
-    }): Promise<void> {
+    async readExtensionPackages(reader: (extension: string, path: string) => Promise<NodePackage | undefined>): Promise<void> {
         if (!this.pck.dependencies) {
             return;
         }
@@ -154,21 +198,51 @@ export class ProjectModel {
         for (const extension in this.pck.dependencies) {
             if (extension in localDependencies) {
                 const localPath = localDependencies[extension]!;
-                await this.readExtensionPackage(extension, () => reader.readLocal(extension, localPath), localPath);
+                await this.readExtensionPackage(extension, async () => {
+                    const raw = await reader(extension, localPath);
+                    if (!ExtensionPackage.is(raw, this.config.extensionKeywords)) {
+                        return undefined;
+                    }
+                    raw.localPath = localPath;
+                    return new ExtensionPackage(raw);
+                }, localPath);
             }
             const version = this.pck.dependencies[extension]!;
-            await this.readExtensionPackage(extension, () => reader.read(extension, version));
+            await this.readExtensionPackage(extension, () => this.findExtensionPackage(extension, version));
         }
     }
 
-    protected async readExtensionPackage(extension: string, read: () => Promise<NodePackage | undefined>, localPath?: string): Promise<void> {
+    protected async readExtensionPackage(extension: string, read: () => Promise<ExtensionPackage | undefined>, localPath?: string): Promise<void> {
         if (!this._extensionPackages.has(extension)) {
-            const pck = await read();
-            if (ExtensionPackage.is(pck, this.config.extensionKeywords)) {
-                pck.localPath = localPath;
-                this._extensionPackages.set(extension, pck);
+            const extensionPackage = await read();
+            if (extensionPackage) {
+                extensionPackage.installed = true;
+                this._extensionPackages.set(extension, extensionPackage);
             }
         }
+    }
+
+    getExtensionPackage(extension: string): ExtensionPackage | undefined {
+        return this.extensionPackages.find(pck => pck.name === extension);
+    }
+
+    async findExtensionPackage(extension: string, version?: string): Promise<ExtensionPackage | undefined> {
+        const extensionPackage = this.getExtensionPackage(extension);
+        if (extensionPackage) {
+            return extensionPackage;
+        }
+        const result = await npmView(extension);
+        if (!result) {
+            return undefined;
+        }
+        const latestVersion = result['dist-tags']['latest'];
+        const raw = result.versions[version || latestVersion];
+        if (!ExtensionPackage.is(raw, this.config.extensionKeywords)) {
+            return undefined;
+        }
+        raw.readme = result.readme;
+        raw.latestVersion = latestVersion;
+        return new ExtensionPackage(raw);
     }
 
     get frontendModules(): Map<string, string> {

@@ -22,7 +22,7 @@ export interface Dependencies {
     [name: string]: string | undefined;
 }
 
-export interface NodePackage {
+export class NodePackage {
     name?: string;
     version?: string;
     description?: string;
@@ -34,6 +34,10 @@ export interface NodePackage {
     readme?: string;
     latestVersion?: string;
     [property: string]: any;
+
+    constructor(raw: NodePackage) {
+        Object.assign(this, raw);
+    }
 }
 
 export interface ViewParam {

@@ -79,7 +79,7 @@ describe("NodeExtensionServer", function () {
 
         const onDidChangePackage = waitForDidChange();
 
-        server.install("@theia/filesystem");
+        await server.install("@theia/filesystem");
 
         await onDidChangePackage;
         return server.installed().then(after => {
@@ -95,7 +95,7 @@ describe("NodeExtensionServer", function () {
 
         const onDidChangePackage = waitForDidChange();
 
-        server.uninstall("@theia/extension-manager");
+        await server.uninstall("@theia/extension-manager");
 
         await onDidChangePackage;
         return server.installed().then(after => {
@@ -120,7 +120,7 @@ describe("NodeExtensionServer", function () {
 
         const onDidChangePackage = waitForDidChange();
 
-        server.update("@theia/core");
+        await server.update("@theia/core");
 
         await onDidChangePackage;
         return server.outdated().then(after => {
