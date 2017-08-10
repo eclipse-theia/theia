@@ -7,6 +7,10 @@ Theia is a framework to build IDEs, so you can't really "run" Theia itself.
 However, you can run the example applications included in its repository.  One
 is a browser-based IDE and the other is the electron-based equivalent.
 
+The following instructions are for Linux and macOS.
+
+For Windows instructions [click here](#building-on-windows).
+
 ## Prerequisites
 * [Yarn package manager](https://yarnpkg.com/en/docs/install)
 * git
@@ -151,6 +155,35 @@ To build and run the electron example:
 
 By default this will generate the code coverage for the tests in a HTML format, which can be easily viewed with your browser (chrome/firefox/edge/safari etc.) by opening `index.html`
 
+
+## Building on Windows
+
+Run cmd.exe as an administrator and install `choco` by copy-pasting the command to your console:
+```
+@"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))" && SET "PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin"
+```
+
+Install `yarn` via `choco`. The `yarn` installation ensures that you will have Node.js and npm too:
+```
+choco install yarn
+```
+
+Install `git` via `choco`.
+```
+choco install git
+```
+
+Install Windows-Build-Tools.
+Run PowerShell as an administrator and copy-paste the below command:
+```
+npm --add-python-to-path install --global --production windows-build-tools
+```
+
+Clone, build and run Theia.
+Using Git Bash as administrator:
+```
+git clone https://github.com/theia-ide/theia.git && cd theia && yarn && cd examples/browser && yarn run start
+```
 
 ## Troubleshooting
 
