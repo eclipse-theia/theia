@@ -122,6 +122,10 @@ Note that we should be able to debug both frontend and backend in one window but
 [this issue](https://github.com/Microsoft/vscode/issues/28817) when trying
 that. tl;dr Some breakpoints don't hit.
 
+## Testing
+
+See the [testing](Testing.md) documentation.
+
 ## tl;dr
 
 To build and run the browser example:

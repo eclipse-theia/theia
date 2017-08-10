@@ -10,3 +10,6 @@ lerna-debug.log
 coverage
 .browser_modules
 download
+*ui-spec.ts
+*slow-spec.ts
+test-resources
