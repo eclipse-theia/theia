@@ -12,8 +12,10 @@
   "devDependencies": {
     "@types/fs-extra": "^4.0.0",
     "@types/klaw-sync": "^1.1.2",
+    "@types/temp": "^0.8.29",
     "fs-extra": "^4.0.1",
-    "klaw-sync": "^3.0.0"
+    "klaw-sync": "^3.0.0",
+    "temp": "^0.8.3"
   },
   "publishConfig": {
     "access": "public"
