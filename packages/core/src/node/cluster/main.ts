@@ -5,14 +5,17 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { MasterProcess } from './master-process';
+import * as cluster from 'cluster';
+
 // tslint:disable:no-console
 if (process.env.NODE_ENV === "development") {
     // https://github.com/Microsoft/vscode/issues/3201
-    process.execArgv[0] = process.execArgv[0].replace('-brk', '');
+    process.execArgv = process.execArgv.reduce((result, arg) => {
+        result.push(arg.replace('-brk', ''));
+        return result;
+    }, [] as string[]);
 }
-
-import { MasterProcess } from './master-process';
-import * as cluster from 'cluster';
 
 export default (serverPath: string) => {
     if (cluster.isMaster) {

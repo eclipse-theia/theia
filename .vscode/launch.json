@@ -36,8 +36,8 @@
             "args": [
                 "--loglevel=debug",
                 "--port=3000",
-                "--app-project-path=${workspaceRoot}/examples/browser"
-                //, "--app-no-auto-install"
+                "--app-project-path=${workspaceRoot}/examples/browser",
+                "--app-no-auto-install"
             ],
             "env": {
                 "NODE_ENV": "development"

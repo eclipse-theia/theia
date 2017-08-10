@@ -13,6 +13,7 @@ import { ServerProcess, RemoteMasterProcessFactory, clusterRemoteMasterProcessFa
 export function bindServerProcess(bind: interfaces.Bind, masterFactory: RemoteMasterProcessFactory): void {
     bind(RemoteMasterProcessFactory).toConstantValue(masterFactory);
     bind(ServerProcess).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(ServerProcess)).inSingletonScope();
 }
 
 export const backendApplicationModule = new ContainerModule(bind => {

@@ -32,7 +32,7 @@ export class NpmClient {
             }) : Disposable.NULL;
 
             npmProcess.stdout.on('data', data =>
-                this.logger.debug(data.toString())
+                this.logger.info(data.toString())
             );
             npmProcess.stderr.on('data', data =>
                 this.logger.error(data.toString())
@@ -42,14 +42,14 @@ export class NpmClient {
                 disposable.dispose();
 
                 if (code !== 0) {
-                    reject(new Error(`Failed ${command}, code: ${code}, signal: ${signal}`));
+                    reject(new Error(`Failed ${command} ${args}, code: ${code}, signal: ${signal}`));
                 } else {
                     resolve();
                 }
             });
             npmProcess.once('error', err => {
                 disposable.dispose();
-                reject(new Error(`Failed ${command}, the error: ${err}`));
+                reject(new Error(`Failed ${command} ${args}, the error: ${err}`));
             });
         });
     }

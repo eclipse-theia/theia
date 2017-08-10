@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import * as os from 'os';
 import { injectable, inject } from 'inversify';
 import { CommonAppGenerator, generatorTheiaPath, ProjectModel } from 'generator-theia';
 import { TheiaBrowserGenerator } from 'generator-theia/generators/browser/browser-generator';
@@ -144,53 +145,41 @@ export class AppProject implements Disposable {
         return installer.needInstall();
     }
 
-    protected installationTokenSource: CancellationTokenSource | undefined;
-    protected readonly toDisposeOnScheduleInstall = new DisposableCollection();
-    scheduleInstall(params: InstallParams = { force: false }): Promise<void> {
-        this.toDisposeOnScheduleInstall.dispose();
+    protected installed: Promise<void> = Promise.resolve();
+    protected installationTokenSource = new CancellationTokenSource();
+    async scheduleInstall(params: InstallParams = { force: false }): Promise<void> {
         if (this.installationTokenSource) {
             this.installationTokenSource.cancel();
-            return new Promise(resolve => {
-                const timeout = setTimeout(() => resolve(this.scheduleInstall(params)), 100);
-                this.toDisposeOnScheduleInstall.push(Disposable.create(() => clearTimeout(timeout)));
-            });
         }
         this.installationTokenSource = new CancellationTokenSource();
-        return this.install(params, this.installationTokenSource.token);
+        const token = this.installationTokenSource.token;
+        this.installed = this.installed.then(() => this.install(params, token));
+        await this.installed;
     }
 
-    protected installing: boolean = false;
-    protected async install(params: InstallParams, token: CancellationToken): Promise<void> {
-        try {
-            if (!this.installing) {
+    protected async install(params: InstallParams, token?: CancellationToken): Promise<void> {
+        const installer = await this.installer(token);
+        if (params.force || installer.needInstall()) {
+            try {
                 this.fireWillInstall();
                 this.logger.info('Intalling the app...');
-                this.installing = true;
-            }
-
-            const installer = await this.installer(token);
-            if (params.force) {
-                await installer.forceInstall();
-            } else {
                 await installer.install();
-            }
 
-            this.logger.info('The app installation is finished');
-            this.installing = false;
-            this.fireDidInstall();
-            this.serverProcess.master.restart();
-        } catch (err) {
-            if (isCancelled(err)) {
-                this.logger.info('The app installation is cancelled');
-                return;
+                this.logger.info('The app installation is finished');
+                this.fireDidInstall();
+                this.serverProcess.restart();
+            } catch (err) {
+                if (isCancelled(err)) {
+                    this.logger.info('The app installation is cancelled');
+                    return;
+                }
+                this.logger.info('The app installation is failed' + os.EOL, err);
+                this.fireDidInstall({
+                    failed: true
+                });
             }
-            this.logger.info('The app installation is failed', err);
-            this.fireDidInstall({
-                failed: true
-            });
-            this.installing = false;
-        } finally {
-            this.installationTokenSource = undefined;
+        } else {
+            this.logger.info('Nothing to install');
         }
     }
 
