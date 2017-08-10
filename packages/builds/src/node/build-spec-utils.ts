@@ -1,5 +1,5 @@
-import * as Stream from "stream";
-import * as Events from "events";
+import * as stream from "stream";
+import * as events from "events";
 
 // note: copied/renamed from mi-spec-utils.ts
 // these can be useful for probably other components.
@@ -8,7 +8,7 @@ import * as Events from "events";
 export namespace BuildUtils {
 
     /* FIXME merge common code with debug-test-utils */
-    export function waitForNamedEvent(eventHandler: Events.EventEmitter, name: string) {
+    export function waitForNamedEvent(eventHandler: events.EventEmitter, name: string) {
         return new Promise((resolve, reject) => {
             // tslint:disable-next-line:no-any
             eventHandler.on(name, (obj: any) => {
@@ -17,16 +17,18 @@ export namespace BuildUtils {
         });
     }
 
-    export function waitForNamedEventCount(eventHandler: Events.EventEmitter, name: string, count: number) {
+    export function waitForNamedEventCount(eventHandler: events.EventEmitter, name: string, count: number) {
         let hits: number = 0;
         const events: Object[] = [];
 
         return new Promise((resolve, reject) => {
             // tslint:disable-next-line:no-any
             eventHandler.on(name, (obj: any) => {
+                // console.log('waitForNamedEventCount() received ' + name + ' ;');
                 hits++;
                 events.push(obj);
                 if (hits === count) {
+                    // console.log('waitForNamedEventCount(): resolving... ');
                     resolve(events);
                 }
             });
@@ -34,7 +36,7 @@ export namespace BuildUtils {
     }
 
     /** Captures build output and returns it once build done */
-    export function waitForBuildLogDone(eventHandler: Events.EventEmitter) {
+    export function waitForBuildLogDone(eventHandler: events.EventEmitter) {
         let buff: String = '';
 
         return new Promise<String>((resolve, reject) => {
@@ -49,11 +51,11 @@ export namespace BuildUtils {
     }
 
     export function startWithInput(str: string,
-        start: (inStream: Stream.Readable, outStream: Stream.PassThrough) => void): void {
+        start: (inStream: stream.Readable, outStream: stream.PassThrough) => void): void {
 
         /* Setup in out stream for start */
-        const inStream = new Stream.Readable;
-        const outStream = new Stream.PassThrough();
+        const inStream = new stream.Readable;
+        const outStream = new stream.PassThrough();
 
         inStream.push(str);
         inStream.push(undefined);

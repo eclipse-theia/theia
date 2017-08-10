@@ -5,19 +5,33 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as Events from "events";
+import * as events from "events";
 import * as path from "path";
 import { injectable, decorate } from "inversify";
+import * as readline from "readline";
 
 export const IErrorParser = Symbol("IErrorParser");
 
-export interface IErrorParser extends Events.EventEmitter {
+export interface IErrorParser extends events.EventEmitter {
     /**
-     * starts the parsing, returns a list of errors/warnings found in the input stream,
-     * that match given the error matcher.
+     * starts the parsing, returns a list of errors/warnings found in the input,
+     * matching the given the error matcher.
+     * This class also emits the error/warnings it finds, as they are found. Here
+     * are the emitted events:
+     *
+     * 'done': The parsing of provided stream is done.
+     * 'entry-found': Emitted for each entry found, matching the IErrorMatcher, along with the entry (IParsedError)
+     * 'internal-parser-error': An internal error occured, along with the error message. Parsing is over.
      */
     parse(errorMatcher: IErrorMatcher, inputStream: NodeJS.ReadableStream): Promise<IParsedError[]>
 }
+
+export enum FileLocationKind {
+    ABSOLUTE,
+    RELATIVE
+}
+
+// the following interfaces shamelessly heavily inspired by corresponding vscode ones
 
 /**
  * A parsed error or warning
@@ -41,8 +55,15 @@ export interface IErrorMatcher {
     "label": string,
     /** maps to the build command type? e.g. "typescript", "gcc/g++", ... */
     "owner": string,
-    /** paths generated are absolute or relative? values: 'absolute' or 'relative' */
-    "fileLocation": string,
+    /**
+     * Whether the file path's in the log are expected to be absolute or relative.
+     * values: 'absolute' or 'relative'
+     */
+    "fileLocation": FileLocationKind,
+    /**
+     * for fileLocation === RELATIVE, this is to be used as the base path
+     */
+    "filePrefix"?: string,
     /** Regexp that matches errors/warnings */
     "pattern": IErrorPattern
 }
@@ -51,89 +72,95 @@ export interface IErrorPattern {
     "patternName": string,
     /** regexp that catches error */
     "regexp": string,
-    /** in regexp match, group that represents the file */
-    "fileGroup": number,
-    /** in regexp match, group that represents the location */
-    "locationGroup": number,
-    /** in regexp match, group that represents the severity: "error", "warning" */
-    "severityGroup": number,
-    /** in regexp match, group that represents the error code, if present */
-    "codeGroup": number,
-    /** in regexp match, group that represents the error message */
-    "messageGroup": number
+    /** in regexp match, group that contains the file */
+    "file": number,
+    /** in regexp match, group that contains the location */
+    "location": number,
+    /** in regexp match, group that contains the severity: "error", "warning" */
+    "severity"?: number,
+    /** in regexp match, group that contains the error code, if present */
+    "code"?: number,
+    /** in regexp match, group that contains the error message */
+    "message": number
 }
 
 
 /**
  * Class to parse build logs, to find instances of errors and warnings.
  */
-decorate(injectable(), Events.EventEmitter);
+decorate(injectable(), events.EventEmitter);
 @injectable()
-export class ErrorParser extends Events.EventEmitter implements IErrorParser {
+export class ErrorParser extends events.EventEmitter implements IErrorParser {
 
     public parse(errorMatcher: IErrorMatcher, stream: NodeJS.ReadableStream): Promise<IParsedError[]> {
         return new Promise<IParsedError[]>((resolve, reject) => {
             try {
-                const errors: IParsedError[] = [];
+                const matchedErrors: IParsedError[] = [];
+                const lineReader = readline.createInterface({
+                    input: stream
+                });
 
-                // a log chunk has arrived
-                stream.on('data', (chunk: Buffer) => {
-                    this.doParse(chunk, errorMatcher).forEach(entry => {
-                        errors.push(entry);
-                    });
+                // parse log line-by-line
+                lineReader.on('line', (line: string) => {
+                    this.doParse(line, errorMatcher);
                 });
 
                 stream.on('error', (err: String) => {
+                    // fire event
+                    this.emit('internal-parser-error', err);
                     reject(err);
                 });
 
                 // finished parsing log, emit "done" event
                 stream.on('end', () => {
                     this.emit('done', {});
-                    resolve(errors);
+                    resolve(matchedErrors);
+                });
+
+                this.on('entry-found', (entry: IParsedError) => {
+                    matchedErrors.push(entry);
                 });
 
             } catch (err) {
+                // fire event
+                this.emit('internal-parser-error', err);
                 reject('Problem reading stream');
             }
         });
     }
 
-    private doParse(buffer: Buffer, errorMatcher: IErrorMatcher): IParsedError[] {
-        const parsedEntries: IParsedError[] = [];
-
+    private doParse(line: string, errorMatcher: IErrorMatcher): void {
         const regex: RegExp = new RegExp(errorMatcher.pattern.regexp, 'gm');
         let match = undefined;
 
         let fileAndPath = undefined;
-        while (match = regex.exec(buffer.toString())) {
-            // translate path from relative to absolute, if required
-            if (errorMatcher.fileLocation === "relative") {
-                // Using __dirname below works for the tests, since they're co-located
-                // with this code,  but for a real build log we will need to know
-                // the directory where the build is happening. I think we can get
-                // that path from the terminal we use to build?
-                //
-                // note: this could get complicated with e.g. a C/C++ build where the
-                // makefile performs changes of directory as it goes...
-                fileAndPath = path.resolve(__dirname, match[errorMatcher.pattern.fileGroup]);
+
+        if (match = regex.exec(line)) {
+            if (errorMatcher.fileLocation === FileLocationKind.RELATIVE) {
+                if (errorMatcher.filePrefix) {
+                    fileAndPath = path.resolve(errorMatcher.filePrefix, match[errorMatcher.pattern.file]);
+                } else {
+                    fileAndPath = path.resolve(__dirname, match[errorMatcher.pattern.file]);
+                }
             } else {
-                fileAndPath = path.resolve(match[errorMatcher.pattern.fileGroup]);
+                fileAndPath = path.resolve(match[errorMatcher.pattern.file]);
             }
             const parsedEntry: IParsedError = {
-                severity: match[errorMatcher.pattern.severityGroup],
+                severity: (typeof errorMatcher.pattern.location === "number") ? match[<number>errorMatcher.pattern.severity] : "",
                 file: fileAndPath,
-                location: match[errorMatcher.pattern.locationGroup],
-                message: match[errorMatcher.pattern.messageGroup],
-                code: match[errorMatcher.pattern.codeGroup]
+                location: match[errorMatcher.pattern.location],
+                message: match[errorMatcher.pattern.message],
+                code: (typeof errorMatcher.pattern.code === "number") ? match[errorMatcher.pattern.code] : ""
             };
 
-            // emit new entry immediately
-            this.emit('error-found', parsedEntry);
+            // default severity is error
+            if (parsedEntry.severity === undefined) {
+                parsedEntry.severity = 'error';
+            }
 
-            parsedEntries.push(parsedEntry);
+            // emit new entry immediately
+            this.emit('entry-found', parsedEntry);
         }
-        return parsedEntries;
     }
 
 }
