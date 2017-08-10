@@ -29,9 +29,14 @@ export class CommonAppGenerator extends BaseGenerator {
         return this.model.readExtensionPackages({
             read: (name, version) =>
                 npm.view({ name, abbreviated: false })
-                    .then(result =>
-                        result.versions[version]
-                    ).catch(reason => {
+                    .then(result => {
+                        const pck = result.versions[version];
+                        if (pck) {
+                            pck.readme = result.readme;
+                            pck.latestVersion = result['dist-tags']['latest'];
+                        }
+                        return pck;
+                    }).catch(reason => {
                         console.error(reason);
                         return undefined;
                     })

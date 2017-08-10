@@ -15,6 +15,9 @@ import {
 } from '../common/extension-protocol';
 import * as npms from './npms';
 import { AppProject } from './app-project';
+import * as showdown from 'showdown';
+import * as sanitize from 'sanitize-html';
+import * as fs from 'fs';
 
 export interface InstallationState {
     readonly installed: RawExtension[];
@@ -29,7 +32,7 @@ export class NodeExtensionServer implements ExtensionServer {
 
     protected readonly busyExtensions = new Set<string>();
 
-    constructor( @inject(AppProject) protected readonly appProject: AppProject) {
+    constructor(@inject(AppProject) protected readonly appProject: AppProject) {
         this.toDispose.push(appProject.onDidChangePackage(() =>
             this.notification('onDidChange')()
         ));
@@ -152,14 +155,14 @@ export class NodeExtensionServer implements ExtensionServer {
 
     protected async installationState(): Promise<InstallationState> {
         const [installed, outdated] = await Promise.all([this.installed(), this.outdated()]);
-        return { installed, outdated };
+        return {installed, outdated};
     }
 
     protected toExtension(raw: RawExtension, installation: InstallationState): Extension {
         const busy = this.busyExtensions.has(raw.name);
         const outdated = installation.outdated.some(e => e.name === raw.name);
         const installed = outdated || installation.installed.some(e => e.name === raw.name);
-        return Object.assign(raw, { busy, installed, outdated });
+        return Object.assign(raw, {busy, installed, outdated});
     }
 
     async list(param?: SearchParam): Promise<Extension[]> {
@@ -171,31 +174,53 @@ export class NodeExtensionServer implements ExtensionServer {
     }
 
     async resolve(extension: string): Promise<ResolvedExtension> {
-        const viewResult = await view({ name: extension, abbreviated: false });
-        const latest = viewResult['dist-tags'].latest;
-        const pkg = (viewResult.versions[latest] as ExtensionPackage);
-        const installedExtension = await this.extensionIsInstalled(pkg.name);
-        const author = this.getAuthor(pkg);
+        const projectModel = await this.appProject.load();
+
+        let installed = false;
+        let outdated = false;
+        const busy = this.busyExtensions.has(extension);
+        let version: string;
+        let readme: string | undefined;
+        let extensionPackage = projectModel.extensionPackages.find(pck => pck.name === extension);
+        if (extensionPackage) {
+            readme = extensionPackage.readme;
+            if (!readme && !!extensionPackage.localPath) {
+                readme = fs.readFileSync(extensionPackage.localPath + '/README.md', {encoding: 'utf8'});
+            }
+            installed = true;
+            const latestVersion = extensionPackage.latestVersion;
+            version = extensionPackage.version;
+            outdated = !!latestVersion && semver.gt(latestVersion, version);
+        } else {
+            const viewResult = await view({name: extension, abbreviated: false});
+            version = viewResult['dist-tags'].latest;
+            extensionPackage = (viewResult.versions[version] as ExtensionPackage);
+            readme = (viewResult['readme'] as string);
+        }
+
+        const author = this.getAuthor(extensionPackage);
+        const markdownConverter = new showdown.Converter({
+            noHeaderId: true,
+            strikethrough: true
+        });
+        const readmeHtml = markdownConverter.makeHtml(readme || '');
+        const readmeSanitized = !!readme ? sanitize(readmeHtml, {
+            allowedTags: sanitize.defaults.allowedTags.concat(['h1', 'h2', 'img'])
+        }) : '';
 
         const resolvedExtension = {
-            busy: this.busyExtensions.has(pkg.name),
-            installed: installedExtension !== undefined,
-            outdated: installedExtension !== undefined ? !!latest && semver.gt(latest, installedExtension.version) : false,
-            name: pkg.name,
-            version: (installedExtension !== undefined ? installedExtension.version : latest),
-            description: pkg.description ? pkg.description : '',
-            author: author,
-            documentation: (viewResult['readme'] as string)
-        };
+                busy,
+                installed,
+                outdated,
+                name: extensionPackage.name,
+                version,
+                description: extensionPackage.description || '',
+                author,
+                documentation: readmeSanitized
+            }
+        ;
 
         return resolvedExtension;
-    }
-
-    protected async extensionIsInstalled(name: string): Promise<RawExtension | undefined> {
-        return await this.installed().then(installed => {
-            const installedVersion = installed.find(ext => name === ext.name);
-            return installedVersion;
-        });
     }
 
     protected async validateOutdated(extension: string, version: string): Promise<string | undefined> {

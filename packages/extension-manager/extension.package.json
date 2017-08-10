@@ -9,7 +9,11 @@
     "@types/semver": "^5.3.32",
     "generator-theia": "^0.1.1",
     "request": "^2.81.0",
-    "semver": "^5.4.1"
+    "semver": "^5.4.1",
+    "showdown": "^1.7.2",
+    "@types/showdown": "^1.4.32",
+    "sanitize-html": "^1.14.1",
+    "@types/sanitize-html": "^1.13.31"
   },
   "theiaExtensions": [{
     "frontend": "lib/browser/extension-frontend-module",

@@ -11,6 +11,7 @@ export { NodePackage, Dependencies };
 
 export interface ExtensionPackage extends NodePackage {
     name: string;
+    version: string;
     theiaExtensions?: Extension[];
     localPath?: string;
 }

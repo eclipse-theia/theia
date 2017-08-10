@@ -31,6 +31,8 @@ export interface NodePackage {
     maintainers?: Maintainer[];
     keywords?: string[];
     dependencies?: Dependencies;
+    readme?: string;
+    latestVersion?: string;
     [property: string]: any;
 }
 
@@ -48,7 +50,8 @@ export interface ViewResult {
     }
     'versions': {
         [version: string]: NodePackage
-    }
+    },
+    'readme': string;
     [key: string]: any
 }
 export function view(param: ViewParam): Promise<ViewResult> {
