@@ -9,6 +9,12 @@
     "@theia/filesystem": "^0.1.1",
     "dugite-extra": "0.0.1-alpha.1"
   },
+  "devDependencies": {
+    "@types/fs-extra": "^4.0.0",
+    "@types/klaw-sync": "^1.1.2",
+    "fs-extra": "^4.0.1",
+    "klaw-sync": "^3.0.0"
+  },
   "publishConfig": {
     "access": "public"
   }

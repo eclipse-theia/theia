@@ -13,9 +13,18 @@ const git = new DugiteGit();
 
 describe('dugite-git', async () => {
 
-    it('status 01', async () => {
+    it('status 01 - missing', async () => {
         try {
             await git.status({ localUri: 'missing' });
+        } catch (error) {
+            expect(error.message).to.be.equal('Unable to find path to repository on disk.');
+        }
+    });
+
+    it('status 02 - untouched', async () => {
+        try {
+            const result = await git.status({ localUri: '' });
+            console.log(result);
         } catch (error) {
             expect(error.message).to.be.equal('Unable to find path to repository on disk.');
         }
