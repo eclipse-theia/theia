@@ -21,7 +21,7 @@ const expect = chai.expect;
 
 // tsc error pattern
 // const tscErrorPattern: IErrorPattern = {
-//     "patternName": "gnu-c-cpp compiler",
+//     "patternName": "tsc",
 //     "regexp": '(.*)\s\(([\d,]+)\):\s(.*)\((\d+)\)',
 //     "fileGroup": 1,
 //     "locationGroup": 2,
@@ -127,9 +127,11 @@ describe("error-parser", () => {
             const readStream: NodeJS.ReadableStream = fs.createReadStream(__dirname + logName);
             const promise = parser.parse(gccLinkerErrorMatcher, readStream);
 
+            // TODO: Fix on windows:
+            // "file": "C:\\tmp\\gdb-8.0\\zlib\\inflate.c"
             return expect(promise).to.eventually.deep.equal(
                 [{
-                    "file": "/tmp/gdb-8.0/zlib/inflate.c",
+                    "file": path.resolve("/tmp/gdb-8.0/zlib/inflate.c"),
                     "location": "118",
                     "message": "undefined reference to `SPATULE'",
                     "severity": undefined,
@@ -149,26 +151,26 @@ describe("error-parser", () => {
         });
 
 
-        // it('verify we can parse tsc error', () => {
-        //     const tscError: string = "src/node/error-parser.spec.ts (31,4): Cannot find name 'z'. (2304)\n";
-        //     const mockedStream: NodeJS.ReadableStream = new stream.Readable();
-        //     mockedStream{'_read' } = function () { };
+        it('verify we can parse tsc error', () => {
+            // const tscError: string = "src/node/error-parser.spec.ts (31,4): Cannot find name 'z'. (2304)\n";
+            // const mockedStream: NodeJS.ReadableStream = new stream.Readable();
+            // mockedStream{'_read' } = function () { };
 
-        //     const promise = parser.parse(tscErrorMatcher, mockedStream);
-        //     mockedStream.emit('data', tscError);
-        //     mockedStream.emit('end');
+            // const promise = parser.parse(tscErrorMatcher, mockedStream);
+            // mockedStream.emit('data', tscError);
+            // mockedStream.emit('end');
 
-        //     return expect(promise).to.eventually.deep.equal(
-        //         [{
-        //             "file": "",
-        //             "location": "",
-        //             "message": "",
-        //             "severity": "",
-        //             "code": ""
-        //         }
-        //         ]
-        //     );
-        // });
+            // return expect(promise).to.eventually.deep.equal(
+            //     [{
+            //         "file": "",
+            //         "location": "",
+            //         "message": "",
+            //         "severity": "",
+            //         "code": ""
+            //     }
+            //     ]
+            // );
+        });
     });
 
     describe('parse large gcc build log', () => {

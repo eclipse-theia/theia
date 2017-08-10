@@ -13,8 +13,8 @@ export const IErrorParser = Symbol("IErrorParser");
 
 export interface IErrorParser extends Events.EventEmitter {
     /**
-     * starts the parsing, returns a list of errors/warnings found in the input stream,
-     * that match given the error matcher.
+     * starts the parsing, returns a list of errors/warnings found in the input,
+     * matching the given the error matcher.
      */
     parse(errorMatcher: IErrorMatcher, inputStream: NodeJS.ReadableStream): Promise<IParsedError[]>
 }
