@@ -30,28 +30,35 @@ export class ExtensionDetailWidget extends VirtualWidget {
         this.dispose();
     }
 
+    protected onUpdateRequest(msg: Message): void {
+        super.onUpdateRequest(msg);
+
+        const el = document.getElementById(this.id + "Doc");
+        if (el !== null) {
+            el.innerHTML = this.resolvedExtension.documentation;
+        }
+    }
+
     protected render(): h.Child {
-        const d = h.div;
-        const c = (cn: string) => ({ className: cn });
         const r = this.resolvedExtension;
 
-        const name = h.h2(c('extensionName'), r.name);
-        const extversion = d(c('extensionVersion'), r.version);
-        const author = d(c('extensionAuthor'), r.author);
-        const titleInfo = d(c('extensionSubtitle flexcontainer'), author, extversion);
-        const titleContainer = d(c('extensionTitleContainer flexcontainer'),
+        const name = h.h2({ className: 'extensionName' }, r.name);
+        const extversion = h.div({ className: 'extensionVersion' }, r.version);
+        const author = h.div({ className: 'extensionAuthor' }, r.author);
+        const titleInfo = h.div({ className: 'extensionSubtitle flexcontainer' }, author, extversion);
+        const titleContainer = h.div({ className: 'extensionTitleContainer flexcontainer' },
             name, titleInfo);
 
-        const description = d(c('extensionDescription'), r.description);
+        const description = h.div({ className: 'extensionDescription' }, r.description);
 
-        const buttonContainer = d(c('extensionButtonContainer flexcontainer'),
+        const buttonContainer = h.div({ className: 'extensionButtonContainer flexcontainer' },
             VirtualRenderer.flatten(this.createButtons(this.resolvedExtension)));
 
-        const headerContainer = d(c('extensionHeaderContainer flexcontainer'),
+        const headerContainer = h.div({ className: 'extensionHeaderContainer flexcontainer' },
             titleContainer, description, buttonContainer);
 
-        const documentation = d(c('extensionDocumentation'), r.documentation);
-        const docContainer = d(c('extensionDocContainer flexcontainer'), documentation);
+        const documentation = h.div({ className: 'extensionDocumentation', id: this.id + "Doc" }, '');
+        const docContainer = h.div({ className: 'extensionDocContainer flexcontainer' }, documentation);
 
         return [headerContainer, docContainer];
     }
