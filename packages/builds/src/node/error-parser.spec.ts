@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { IErrorParser, IErrorMatcher, IErrorPattern } from "./error-parser";
+import { IErrorParser, IErrorMatcher, IErrorPattern, FileLocationKind } from "./error-parser";
 import * as fs from 'fs';
 import * as stream from 'stream';
 import * as chai from "chai";
@@ -13,6 +13,7 @@ import "mocha";
 import * as chaiAsPromised from "chai-as-promised";
 import { BuildUtils } from "./build-spec-utils";
 import * as path from "path";
+// import { Path } from "../../../core/src/common/path";
 
 import { testContainer } from "./inversify.spec-config";
 
@@ -20,39 +21,39 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 // tsc error pattern
-// const tscErrorPattern: IErrorPattern = {
-//     "patternName": "tsc",
-//     "regexp": '(.*)\s\(([\d,]+)\):\s(.*)\((\d+)\)',
-//     "fileGroup": 1,
-//     "locationGroup": 2,
-//     "severityGroup": 99,
-//     "codeGroup": 4,
-//     "messageGroup": 3
-// };
-// const tscErrorMatcher: IErrorMatcher = {
-//     "name": "TypeScript compiler",
-//     "label": "TypeScript errors",
-//     "owner": "tsc",
-//     "fileLocation": "relative",
-//     "pattern": tscErrorPattern
-// };
+const tscErrorPattern: IErrorPattern = {
+    "patternName": "tsc",
+    "regexp": '(.*)\\s\\(([\\d,]+)\\):\\s(.*)\\((\\d+)\\)',
+    "file": 1,
+    "location": 2,
+    "severity": 99,
+    "code": 4,
+    "message": 3
+};
+const tscErrorMatcher: IErrorMatcher = {
+    "name": "TypeScript compiler",
+    "label": "TypeScript errors",
+    "owner": "tsc",
+    "fileLocation": FileLocationKind.RELATIVE,
+    "pattern": tscErrorPattern
+};
 
 
 // gcc/g++ compiler
 const gccErrorPattern: IErrorPattern = {
     "patternName": "gnu-c-cpp compiler",
     "regexp": '(.*?):(\\d+:\\d+):?\\s*([Ee]rror|ERROR|[Ww]arning): (.*)',
-    "fileGroup": 1,
-    "locationGroup": 2,
-    "severityGroup": 3,
-    "codeGroup": 99,
-    "messageGroup": 4
+    "file": 1,
+    "location": 2,
+    "severity": 3,
+    "code": 99,
+    "message": 4
 };
 const gccErrorMatcher: IErrorMatcher = {
     "name": "gnu-c-cpp compiler",
     "label": "gcc/g++ errors",
     "owner": "gnu-c-cpp",
-    "fileLocation": "relative",
+    "fileLocation": FileLocationKind.RELATIVE,
     "pattern": gccErrorPattern
 };
 
@@ -60,17 +61,17 @@ const gccErrorMatcher: IErrorMatcher = {
 const gccLinkerErrorPattern: IErrorPattern = {
     "patternName": "gnu-c-cpp linker",
     "regexp": '(.*):(\\d+):\\s(.*\\s[tof]+\\s`.*\')',
-    "fileGroup": 1,
-    "locationGroup": 2,
-    "severityGroup": 99,
-    "codeGroup": 99,
-    "messageGroup": 3
+    "file": 1,
+    "location": 2,
+    "severity": 99,
+    "code": 99,
+    "message": 3
 };
 const gccLinkerErrorMatcher: IErrorMatcher = {
     "name": "gnu-c-cpp linker",
     "label": "gcc/g++ errors",
     "owner": "gnu-c-cpp",
-    "fileLocation": "absolute",
+    "fileLocation": FileLocationKind.ABSOLUTE,
     "pattern": gccLinkerErrorPattern
 };
 
@@ -83,8 +84,8 @@ describe("error-parser", () => {
 
     describe('parse simple gcc error log', () => {
         it('verify compiler errors and warning are found', () => {
-            const logName: String = '/test-resources/' + 'error.txt';
-            const readStream: NodeJS.ReadableStream = fs.createReadStream(__dirname + logName);
+            const logName = '/test-resources/' + 'error.txt';
+            const readStream = fs.createReadStream(__dirname + logName);
             const promise = parser.parse(gccErrorMatcher, readStream);
             const expectedFileName = path.resolve(__dirname, 'regex.c');
 
@@ -123,18 +124,16 @@ describe("error-parser", () => {
         });
 
         it('verify linker error is found', () => {
-            const logName: String = '/test-resources/' + 'linker.txt';
-            const readStream: NodeJS.ReadableStream = fs.createReadStream(__dirname + logName);
+            const logName = '/test-resources/' + 'linker.txt';
+            const readStream = fs.createReadStream(__dirname + logName);
             const promise = parser.parse(gccLinkerErrorMatcher, readStream);
 
-            // TODO: Fix on windows:
-            // "file": "C:\\tmp\\gdb-8.0\\zlib\\inflate.c"
             return expect(promise).to.eventually.deep.equal(
                 [{
                     "file": path.resolve("/tmp/gdb-8.0/zlib/inflate.c"),
                     "location": "118",
                     "message": "undefined reference to `SPATULE'",
-                    "severity": undefined,
+                    "severity": 'error',
                     "code": undefined
                 }
                 ]
@@ -142,41 +141,19 @@ describe("error-parser", () => {
         });
 
         it('verify we handle parser input stream emiting "error"', () => {
-            const mockedStream: NodeJS.ReadableStream = new stream.Readable();
+            const mockedStream = new stream.Readable();
             const promise = parser.parse(gccLinkerErrorMatcher, mockedStream);
             const errorMessage = 'this is a test error';
             mockedStream.emit('error', errorMessage);
 
             return expect(promise).to.eventually.be.rejectedWith(errorMessage);
         });
-
-
-        it('verify we can parse tsc error', () => {
-            // const tscError: string = "src/node/error-parser.spec.ts (31,4): Cannot find name 'z'. (2304)\n";
-            // const mockedStream: NodeJS.ReadableStream = new stream.Readable();
-            // mockedStream{'_read' } = function () { };
-
-            // const promise = parser.parse(tscErrorMatcher, mockedStream);
-            // mockedStream.emit('data', tscError);
-            // mockedStream.emit('end');
-
-            // return expect(promise).to.eventually.deep.equal(
-            //     [{
-            //         "file": "",
-            //         "location": "",
-            //         "message": "",
-            //         "severity": "",
-            //         "code": ""
-            //     }
-            //     ]
-            // );
-        });
     });
 
     describe('parse large gcc build log', () => {
         it('verify compiler error is found', () => {
-            const logName: String = '/test-resources/' + 'largeOutput.txt';
-            const readStream: NodeJS.ReadableStream = fs.createReadStream(__dirname + logName);
+            const logName = '/test-resources/' + 'largeOutput.txt';
+            const readStream = fs.createReadStream(__dirname + logName);
             const promise = parser.parse(gccErrorMatcher, readStream);
             const expectedFileName = path.resolve(__dirname, 'remote-utils.c');
 
@@ -193,9 +170,8 @@ describe("error-parser", () => {
         });
     });
 
-
     describe('parse gcc build log, catch entries as they are parsed', () => {
-        const logName: String = '/test-resources/' + 'error.txt';
+        const logName = '/test-resources/' + 'error.txt';
         let readStream: NodeJS.ReadableStream;
         const expectedFileName = path.resolve(__dirname, 'regex.c');
 
@@ -254,6 +230,29 @@ describe("error-parser", () => {
 
         });
 
+    });
+
+    describe('parse other types of logs', () => {
+        it('verify we can parse tsc error', () => {
+            const tscError = "src/node/error-parser.spec.ts (31,4): Cannot find name 'z'. (2304)";
+            const mockedStream = new stream.Readable();
+            const expectedFileName = path.resolve('./src/node/error-parser.spec.ts');
+
+            const promise = parser.parse(tscErrorMatcher, mockedStream);
+            mockedStream.emit('data', tscError);
+            mockedStream.emit('end');
+
+            return expect(promise).to.eventually.deep.equal(
+                [{
+                    "code": "2304",
+                    "file": expectedFileName,
+                    "location": "31,4",
+                    "message": "Cannot find name 'z'. ",
+                    "severity": 'error'
+                }
+                ]
+            );
+        });
     });
 
 });
