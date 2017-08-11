@@ -15,7 +15,7 @@ import { ExtensionDetailWidgetService } from './extension-detail-widget-service'
 @injectable()
 export class ExtensionWidget extends VirtualWidget {
 
-    protected extensionStore: Extension[] = [];
+    protected extensionStore: Map<string, Extension> = new Map();
     protected readonly updateTimeAfterTyping = 50;
     protected readonly toDisposeOnTypeSearchQuery = new DisposableCollection();
     protected ready = false;
@@ -29,6 +29,14 @@ export class ExtensionWidget extends VirtualWidget {
 
         extensionManager.onDidChange(event => {
             this.fetchExtensions();
+        });
+
+        detailWidgetService.onExtensionBusyFlagSet(ext => {
+            const extension = this.extensionStore.get(ext.name);
+            if (extension) {
+                extension.busy = ext.busy;
+            }
+            this.update();
         });
 
         this.fetchExtensions();
@@ -45,7 +53,10 @@ export class ExtensionWidget extends VirtualWidget {
         this.extensionManager.list({
             query: searchQuery
         }).then(extensions => {
-            this.extensionStore = extensions;
+            this.extensionStore.clear();
+            extensions.forEach(ext => {
+                this.extensionStore.set(ext.name, ext);
+            });
             this.ready = true;
             this.update();
         });
@@ -177,6 +188,7 @@ export class ExtensionWidget extends VirtualWidget {
                     } else {
                         extension.install();
                     }
+                    this.detailWidgetService.setExtensionBusyFlag(extension);
                     this.update();
                     event.stopPropagation();
                 }

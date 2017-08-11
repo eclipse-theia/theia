@@ -36,7 +36,7 @@ export class Extension extends RawExtension {
     /**
      * Test whether the extension is busy with installing, updating or uninstalling.
      */
-    readonly busy: boolean;
+    busy: boolean;
     /**
      * Test whether the extension is installed.
      */

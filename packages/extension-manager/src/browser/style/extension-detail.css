@@ -5,21 +5,27 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-.theia-extension-detail {}
+.theia-extension-detail {
+    display: flex;
+    flex-direction: column;
+}
 
 .theia-extension-detail .extensionHeaderContainer {
-    flex-direction: column;
     background: var(--theia-layout-color0);
     padding: 15px 22px;
 }
 
 .theia-extension-detail .extensionTitleContainer {
-    flex-direction: column;
     margin-bottom: 10px;
+}
+
+.theia-extension-detail .extensionButtonRow {
+    display: flex;
 }
 
 .theia-extension-detail .extensionSubtitle {
     font-size: var(--theia-ui-font-size3);
+    display: flex;
 }
 
 .theia-extension-detail .extensionName {
@@ -47,8 +53,33 @@
 
 .theia-extension-detail .extensionDocContainer {
     padding: 15px 22px;
+    overflow-y: auto;
 }
 
 .theia-extension-detail .extensionDocumentation {
     color: var(--theia-ui-font-color0);
+    height: 100%;
 }
+
+.theia-extension-detail img {
+    max-width: 100%;
+}
+
+.theia-extension-detail a {
+    font-weight: bold;
+    color: var(--theia-accent-color0);
+}
+
+.theia-extension-detail code {
+    font-size: var(--theia-code-font-size);
+    line-height: var(--theia-code-line-height);
+    padding: var(--theia-code-padding);
+    font-family: var(--theia-code-font-family);
+}
+
+.theia-extension-detail pre code {
+    background: var(--theia-layout-color0);
+    display: block;
+    padding: 10px;
+}
+
