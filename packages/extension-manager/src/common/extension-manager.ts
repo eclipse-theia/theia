@@ -20,8 +20,6 @@ import * as protocol from './extension-protocol';
  */
 export class Extension extends protocol.Extension {
 
-    busy: boolean = false;
-
     constructor(
         extension: protocol.Extension,
         protected readonly server: protocol.ExtensionServer
@@ -45,6 +43,7 @@ export class Extension extends protocol.Extension {
      * Intall the latest version of this extension.
      */
     install(): void {
+        Object.assign(this, { busy: true });
         this.server.install(this.name);
     }
 
@@ -52,6 +51,7 @@ export class Extension extends protocol.Extension {
      * Uninstall the extension.
      */
     uninstall(): void {
+        Object.assign(this, { busy: true });
         this.server.uninstall(this.name);
     }
 
@@ -59,6 +59,7 @@ export class Extension extends protocol.Extension {
      * Update the extension to the latest version.
      */
     update(): void {
+        Object.assign(this, { busy: true });
         this.server.update(this.name);
     }
 
@@ -76,13 +77,14 @@ export type ResolvedExtension = Extension & protocol.ResolvedExtension;
  * - listen to changes of:
  *   - installed extension;
  *   - and the installation process.
+ 
  */
 @injectable()
 export class ExtensionManager implements Disposable {
 
     protected readonly onChangedEmitter = new Emitter<void>();
     protected readonly onWillStartInstallationEmitter = new Emitter<void>();
-    protected readonly onDidStopInstallationEmitter = new Emitter<void>();
+    protected readonly onDidStopInstallationEmitter = new Emitter<protocol.DidStopInstallationParam>();
     protected readonly toDispose = new DisposableCollection();
 
     constructor(
@@ -95,7 +97,7 @@ export class ExtensionManager implements Disposable {
         this.server.setClient({
             onDidChange: () => this.fireDidChange(),
             onWillStartInstallation: () => this.fireWillStartInstallation(),
-            onDidStopInstallation: () => this.fireDidStopInstallation(),
+            onDidStopInstallation: params => this.fireDidStopInstallation(params),
         });
     }
 
@@ -141,12 +143,12 @@ export class ExtensionManager implements Disposable {
     /**
      * Notiy when the installation process has been finished.
      */
-    get onDidStopInstallation(): Event<void> {
+    get onDidStopInstallation(): Event<protocol.DidStopInstallationParam> {
         return this.onDidStopInstallationEmitter.event;
     }
 
-    protected fireDidStopInstallation(): void {
-        this.onDidStopInstallationEmitter.fire(undefined);
+    protected fireDidStopInstallation(params: protocol.DidStopInstallationParam): void {
+        this.onDidStopInstallationEmitter.fire(params);
     }
 
 }

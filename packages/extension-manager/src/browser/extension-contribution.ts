@@ -5,16 +5,27 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-
-import { FrontendApplication, FrontendApplicationContribution } from "@theia/core/lib/browser"
-import { injectable, inject } from "inversify"
-import { ExtensionWidget } from "./extension-widget"
+import { injectable, inject } from "inversify";
+import { MessageService } from "@theia/core";
+import { FrontendApplication, FrontendApplicationContribution } from "@theia/core/lib/browser";
+import { ExtensionWidget } from "./extension-widget";
+import { ExtensionManager } from '../common';
 
 @injectable()
 export class ExtensionContribution implements FrontendApplicationContribution {
 
-    constructor( @inject(ExtensionWidget) protected readonly extensionWidget: ExtensionWidget) {
-
+    constructor(
+        @inject(ExtensionWidget) protected readonly extensionWidget: ExtensionWidget,
+        @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager,
+        @inject(MessageService) protected readonly messageService: MessageService,
+    ) {
+        this.extensionManager.onDidStopInstallation(params => {
+            if (!params.failed) {
+                this.messageService.info('Reload to complete the installation.').then(() =>
+                    window.location.reload()
+                );
+            }
+        });
     }
 
     onStart(app: FrontendApplication): void {
