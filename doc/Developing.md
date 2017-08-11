@@ -8,7 +8,7 @@ However, you can run the example applications included in its repository.  One
 is a browser-based IDE and the other is the electron-based equivalent.
 
 ## Prerequisites
-* https://yarnpkg.com/en/docs/install
+* [Yarn package manager](https://yarnpkg.com/en/docs/install)
 * git
 
 So far it has been confirmed that there are some problems and errors using nodejs 8.0+ with Theia. As of now, nodejs 7.10.0 is confirmed to be working well and is the currently recommended versions.
