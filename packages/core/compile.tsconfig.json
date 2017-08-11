@@ -2,7 +2,13 @@
   "extends": "../base.tsconfig",
   "compilerOptions": {
     "rootDir": "src",
-    "outDir": "lib"
+    "outDir": "lib",
+    "baseUrl": ".",
+    "paths": {
+      "humane-js": [
+        "src/typings/humane-js"
+      ]
+    }
   },
   "include": [
     "src"

@@ -5,11 +5,24 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { bindContributionProvider } from '../common/contribution-provider';
-import { BackendApplication, BackendApplicationContribution } from "./backend-application";
 import { ContainerModule } from "inversify";
+import { bindContributionProvider, ConnectionHandler, JsonRpcConnectionHandler, MessageService } from '../common';
+import { MessageClient, DispatchingMessageClient, messageServicePath } from '../common/message-service-protocol';
+import { BackendApplication, BackendApplicationContribution } from "./backend-application";
 
-export const backendApplicationModule = new ContainerModule((bind) => {
+export const backendApplicationModule = new ContainerModule(bind => {
     bind(BackendApplication).toSelf().inSingletonScope();
     bindContributionProvider(bind, BackendApplicationContribution);
+
+    bind(DispatchingMessageClient).toSelf().inSingletonScope();
+    bind(MessageClient).toDynamicValue(ctx => ctx.container.get(DispatchingMessageClient)).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler<MessageClient>(messageServicePath, client => {
+            const dispatching = ctx.container.get<DispatchingMessageClient>(DispatchingMessageClient);
+            dispatching.clients.add(client);
+            client.onDidCloseConnection(() => dispatching.clients.delete(client));
+            return dispatching;
+        })
+    ).inSingletonScope();
+    bind(MessageService).toSelf().inSingletonScope();
 });

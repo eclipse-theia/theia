@@ -21,8 +21,8 @@ export interface WebSocketOptions {
 @injectable()
 export class WebSocketConnectionProvider {
 
-    static createProxy<T extends object>(container: interfaces.Container, path: string): JsonRpcProxy<T> {
-        return container.get(WebSocketConnectionProvider).createProxy<T>(path);
+    static createProxy<T extends object>(container: interfaces.Container, path: string, target?: object): JsonRpcProxy<T> {
+        return container.get(WebSocketConnectionProvider).createProxy<T>(path, target);
     }
 
     /**
