@@ -177,7 +177,6 @@ export class ExtensionWidget extends VirtualWidget {
                     } else {
                         extension.install();
                     }
-                    extension.busy = true;
                     this.update();
                     event.stopPropagation();
                 }
