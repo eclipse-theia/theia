@@ -15,6 +15,9 @@
             "@theia/core/lib/*": [
                 "core/src/*"
             ],
+            "humane-js": [
+                "core/src/typings/humane-js"
+            ],
             "@theia/extension-manager/lib/*": [
                 "extension-manager/src/*"
             ],

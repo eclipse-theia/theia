@@ -16,6 +16,7 @@
     "electron": "^1.6.11",
     "express": "^4.15.3",
     "font-awesome": "^4.7.0",
+    "humane-js": "^3.2.2",
     "inversify": "^4.2.0",
     "reconnecting-websocket": "^3.0.7",
     "reflect-metadata": "^0.1.10",
