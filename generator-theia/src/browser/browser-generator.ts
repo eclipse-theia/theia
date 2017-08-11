@@ -5,11 +5,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { AbstractAppGenerator } from "../common";
+import { CommonAppGenerator } from "../common";
 import { BrowserBackendGenerator } from "./browser-backend-generator";
 import { BrowserFrontendGenerator } from "./browser-frontend-generator";
 
-export class TheiaBrowserGenerator extends AbstractAppGenerator {
+export class TheiaBrowserGenerator extends CommonAppGenerator {
 
     protected readonly backend = new BrowserBackendGenerator(this.model);
     protected readonly frontend = new BrowserFrontendGenerator(this.model);
@@ -19,8 +19,8 @@ export class TheiaBrowserGenerator extends AbstractAppGenerator {
         super.initializing();
     }
 
-    configuring(): void {
-        super.configuring();
+    configuring(): Promise<void> {
+        return super.configuring();
     }
 
     writing(): void {

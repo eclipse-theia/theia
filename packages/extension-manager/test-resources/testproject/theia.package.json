@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "dependencies": {
+    "@theia/core": "0.1.0",
+    "@theia/extension-manager": "0.1.0"
+  }
+}

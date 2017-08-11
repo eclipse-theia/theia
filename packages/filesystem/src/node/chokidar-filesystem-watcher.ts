@@ -43,20 +43,20 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
     watchFileChanges(uri: string, options: WatchOptions = { ignored: [] }): Promise<number> {
         const watcherId = this.watcherSequence++;
         const paths = this.toPaths(uri);
-        this.logger.info(`Starting watching:`, paths)
+        this.logger.info(`Starting watching:`, paths);
         return new Promise<number>(resolve => {
-            if (options.ignored.length > 0) {
+            if (options.ignored && options.ignored.length > 0) {
                 this.logger.debug(log =>
                     log('Files ignored for watching', options.ignored)
                 );
             }
             const watcher = watch(paths, {
-                ignoreInitial: true,
+                ignoreInitial: options.ignoreInitial === undefined || options.ignoreInitial,
                 ignored: options.ignored
             });
             watcher.once('ready', () => {
-                this.logger.info(`Started watching:`, paths)
-                resolve(watcherId)
+                this.logger.info(`Started watching:`, paths);
+                resolve(watcherId);
             });
             watcher.on('error', error =>
                 this.logger.error(`Watching error:`, error)

@@ -3,8 +3,20 @@
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {
+            "generator-theia": [
+                "../generator-theia/src/common"
+            ],
+            "generator-theia/generators/*": [
+                "../generator-theia/src/*"
+            ],
+            "@theia/core": [
+                "core/src/common"
+            ],
             "@theia/core/lib/*": [
                 "core/src/*"
+            ],
+            "@theia/extension-manager/lib/*": [
+                "extension-manager/src/*"
             ],
             "@theia/filesystem/lib/*": [
                 "filesystem/src/*"
@@ -17,6 +29,9 @@
             ],
             "@theia/navigator/lib/*": [
                 "navigator/src/*"
+            ],
+            "@theia/preferences-api": [
+                "preferences-api/src/common"
             ],
             "@theia/preferences-api/lib/*": [
                 "preferences-api/src/*"

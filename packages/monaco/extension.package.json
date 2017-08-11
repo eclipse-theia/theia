@@ -16,9 +16,6 @@
     "monaco-typescript": "^2.2.0",
     "monaco-languageclient": "^0.0.1-alpha.6"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "theiaExtensions": [
     {
       "frontend": "lib/browser/monaco-browser-module",

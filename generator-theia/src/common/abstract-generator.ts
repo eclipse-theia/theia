@@ -9,14 +9,14 @@ import * as os from 'os';
 import * as path from 'path';
 import Base = require('yeoman-generator');
 
-import { Model } from "./generator-model";
+import { ProjectModel } from "./generator-model";
 
 export type FileSystem = Base.MemFsEditor;
 
 export abstract class AbstractGenerator {
 
     constructor(
-        protected readonly model: Model
+        protected readonly model: ProjectModel
     ) { }
 
     abstract generate(fs: FileSystem): void;
@@ -34,11 +34,11 @@ export abstract class AbstractGenerator {
     }
 
     protected compileFrontendModuleImports(modules: Map<string, string>): string {
-        return this.compileModuleImports(modules, 'require')
+        return this.compileModuleImports(modules, 'require');
     }
 
     protected compileBackendModuleImports(modules: Map<string, string>): string {
-        return this.compileModuleImports(modules, 'require')
+        return this.compileModuleImports(modules, 'require');
     }
 
     protected compileModuleImports(modules: Map<string, string>, fn: 'import' | 'require'): string {
@@ -78,6 +78,10 @@ export abstract class AbstractGenerator {
 
     protected ifElectron(value: string, defaultValue: string = '') {
         return this.isElectron() ? value : defaultValue;
+    }
+
+    protected ifMonaco(value: string, defaultValue: string = '') {
+        return this.model.extensionPackages.some(e => e.name === '@theia/monaco') ? value : defaultValue;
     }
 
 }

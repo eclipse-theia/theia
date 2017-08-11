@@ -2,6 +2,7 @@
   "defaultSeverity": "warning",
   "extends": "./dev.tslint.json",
   "rules": {
+    "no-magic-numbers": true,
     "array-type": [
       true,
       "array"

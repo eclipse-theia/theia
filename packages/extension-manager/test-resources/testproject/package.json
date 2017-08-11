@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "dependencies": {
+    "@theia/core": "0.0.0"
+  }
+}

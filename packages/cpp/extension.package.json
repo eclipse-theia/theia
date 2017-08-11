@@ -9,9 +9,6 @@
     "@theia/monaco": "^0.1.1",
     "@theia/filesystem": "^0.1.1"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "theiaExtensions": [
     {
       "frontend": "lib/browser/cpp-frontend-module",

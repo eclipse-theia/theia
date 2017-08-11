@@ -7,9 +7,6 @@
     "@theia/filesystem": "^0.1.1",
     "@theia/workspace": "^0.1.1"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "theiaExtensions": [
     {
       "frontend": "lib/browser/navigator-frontend-module"

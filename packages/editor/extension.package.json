@@ -7,9 +7,6 @@
     "@theia/preferences": "^0.1.1",
     "vscode-languageserver-types": "^3.3.0"
   },
-  "publishConfig": {
-    "access": "public"
-  },
   "theiaExtensions": [
     {
       "frontend": "lib/browser/editor-frontend-module"

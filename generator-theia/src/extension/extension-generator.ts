@@ -6,11 +6,11 @@
  */
 
 import BaseGenerator = require('yeoman-generator');
-import { Model } from "../common";
+import { ProjectModel } from "../common";
 import { ExtensionPackageGenerator } from "./extension-package-generator";
 export class TheiaExtensionGenerator extends BaseGenerator {
 
-    protected readonly model = new Model();
+    protected readonly model = new ProjectModel();
     protected readonly pck = new ExtensionPackageGenerator(this.model);
 
     initializing(): void {
