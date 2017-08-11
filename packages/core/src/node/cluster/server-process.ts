@@ -14,7 +14,6 @@ import { BackendApplicationContribution } from '../backend-application';
 
 export const RemoteMasterProcessFactory = Symbol('RemoteMasterProcessFactory');
 export type RemoteMasterProcessFactory = (serverProcess: IServerProcess) => IMasterProcess;
-export const clusterRemoteMasterProcessFactory: RemoteMasterProcessFactory = serverProcess => createRemoteMaster(cluster.worker, serverProcess);
 export const stubRemoteMasterProcessFactory: RemoteMasterProcessFactory = serverProcess => {
     let ready = false;
     return {
@@ -28,6 +27,8 @@ export const stubRemoteMasterProcessFactory: RemoteMasterProcessFactory = server
         }
     };
 };
+export const clusterRemoteMasterProcessFactory: RemoteMasterProcessFactory = serverProcess =>
+    cluster.isWorker ? createRemoteMaster(cluster.worker, serverProcess) : stubRemoteMasterProcessFactory(serverProcess);
 
 @injectable()
 export class ServerProcess implements BackendApplicationContribution {

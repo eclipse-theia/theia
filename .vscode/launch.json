@@ -13,7 +13,8 @@
             "protocol": "legacy",
             "args": [
                 "--loglevel=debug",
-                "--hostname=localhost"
+                "--hostname=localhost",
+                "--no-cluster"
             ],
             "env": {
                 "NODE_ENV": "development"
@@ -36,6 +37,7 @@
             "args": [
                 "--loglevel=debug",
                 "--port=3000",
+                "--no-cluster",
                 "--app-project-path=${workspaceRoot}/examples/browser",
                 "--app-no-auto-install"
             ],
@@ -59,7 +61,8 @@
             "args": [
                 "--loglevel=debug",
                 "--root-dir=${workspaceRoot}/../eclipse.jdt.ls/org.eclipse.jdt.ls.core",
-                "--port=3000"
+                "--port=3000",
+                "--no-cluster"
             ],
             "env": {
                 "NODE_ENV": "development"
