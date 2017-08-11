@@ -22,7 +22,7 @@ export interface Dependencies {
     [name: string]: string | undefined;
 }
 
-export interface NodePackage {
+export class NodePackage {
     name?: string;
     version?: string;
     description?: string;
@@ -31,7 +31,13 @@ export interface NodePackage {
     maintainers?: Maintainer[];
     keywords?: string[];
     dependencies?: Dependencies;
+    readme?: string;
+    latestVersion?: string;
     [property: string]: any;
+
+    constructor(raw: NodePackage) {
+        Object.assign(this, raw);
+    }
 }
 
 export interface ViewParam {
@@ -45,10 +51,12 @@ export interface ViewParam {
 export interface ViewResult {
     'dist-tags': {
         [tag: string]: string
-    },
+    }
     'versions': {
         [version: string]: NodePackage
-    }
+    },
+    'readme': string;
+    [key: string]: any
 }
 export function view(param: ViewParam): Promise<ViewResult> {
     let url = 'https://registry.npmjs.org/';

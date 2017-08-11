@@ -85,7 +85,7 @@ if (cluster.isMaster) {
             });
 
             const server = new ServerProcess(clusterRemoteMasterProcessFactory);
-            server.master.restart();
+            server.restart();
             return waitForRestart;
         });
 

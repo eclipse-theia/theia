@@ -45,7 +45,6 @@ export class MasterProcess implements IMasterProcess {
         }
         this.state.rejectInitialized(new Error('The express server worker is going to be killed.'));
         const worker = this.state.worker;
-        this.state = undefined;
         console.log(`Stopping the express server worker ${worker.id}...`);
         if (worker.isConnected()) {
             console.log(`Disconnecting the express server worker ${worker.id}...`);
@@ -63,6 +62,7 @@ export class MasterProcess implements IMasterProcess {
             );
             console.log(`The express server worker ${worker.id} has been killed.`);
         }
+        this.state = undefined;
         console.log(`The express server worker ${worker.id} has been stopped.`);
     }
 

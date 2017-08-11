@@ -21,8 +21,10 @@
   },
   "dependencies": {
     "@types/request": "^2.0.0",
+    "@types/semver": "^5.3.32",
     "@types/yeoman-generator": "^1.0.2",
     "request": "^2.81.0",
+    "semver": "^5.4.1",
     "yeoman-generator": "^1.1.1"
   },
   "devDependencies": {

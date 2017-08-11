@@ -33,7 +33,9 @@ export class FileNavigatorContribution implements FrontendApplicationContributio
     }
 
     onStart(app: FrontendApplication): void {
-        app.shell.addToLeftArea(this.fileNavigator);
+        app.shell.addToLeftArea(this.fileNavigator, {
+            rank: 1
+        });
     }
 
 }

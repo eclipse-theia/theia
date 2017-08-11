@@ -37,16 +37,8 @@ export class AppProjectInstaller {
     }
 
     async install(): Promise<void> {
-        if (this.needInstall()) {
-            await this.forceInstall();
-        } else {
-            this.logger.info('Nothing to install');
-        }
-    }
-
-    async forceInstall(): Promise<void> {
         const diff = this.diff();
-        this.logger.debug('The diff to install: ', JSON.stringify({
+        this.logger.info('The diff to install: ', JSON.stringify({
             toAdd: [...diff.toAdd],
             toRemove: [...diff.toRemove.values()],
             toLink: [...diff.toLink],
@@ -55,14 +47,14 @@ export class AppProjectInstaller {
 
         try {
             checkCancelled(this.options.token);
-            this.logger.info('Generating the app...');
-            await this.generate();
-            this.logger.info('The app generation is finished');
-
-            checkCancelled(this.options.token);
             this.logger.info('Installing app extensions...');
             await this.installExtensions();
             this.logger.info('App extensions are installed');
+
+            checkCancelled(this.options.token);
+            this.logger.info('Generating the app...');
+            await this.generate();
+            this.logger.info('The app generation is finished');
 
             checkCancelled(this.options.token);
             this.logger.info('Building the app...');
@@ -103,7 +95,9 @@ export class AppProjectInstaller {
             const destPackagePath = path.resolve(nodeModulesPath, name);
 
             checkCancelled(this.options.token);
-            await fs.unlink(destPackagePath);
+            try {
+                await fs.unlink(destPackagePath);
+            } catch (e) { }
         }
         for (const name of diff.toRemove) {
             const destPackagePath = path.resolve(nodeModulesPath, name);

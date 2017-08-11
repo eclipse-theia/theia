@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { ContainerModule } from "inversify"
+import { ContainerModule } from "inversify";
 import {
     bindContributionProvider,
     SelectionService,
@@ -15,19 +15,23 @@ import {
     MenuModelRegistry, MenuContribution,
     KeybindingContextRegistry, KeybindingRegistry,
     KeybindingContext,
-    KeybindingContribution
-} from "../common"
-import { FrontendApplication, FrontendApplicationContribution } from './frontend-application'
+    KeybindingContribution,
+    MessageService
+} from "../common";
+import { MessageClient, messageServicePath } from '../common/message-service-protocol';
+import { FrontendApplication, FrontendApplicationContribution } from './frontend-application';
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
+import { HumaneMessageClient } from './humane-message-client';
+import { WebSocketConnectionProvider } from './messaging';
 
 import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
 
 export const frontendApplicationModule = new ContainerModule(bind => {
-    bind(FrontendApplication).toSelf().inSingletonScope()
-    bindContributionProvider(bind, FrontendApplicationContribution)
+    bind(FrontendApplication).toSelf().inSingletonScope();
+    bindContributionProvider(bind, FrontendApplicationContribution);
 
-    bindContributionProvider(bind, OpenHandler)
+    bindContributionProvider(bind, OpenHandler);
     bind(DefaultOpenerService).toSelf().inSingletonScope();
     bind(OpenerService).toDynamicValue(context => context.container.get(DefaultOpenerService));
 
@@ -35,7 +39,7 @@ export const frontendApplicationModule = new ContainerModule(bind => {
     bind(ResourceProvider).toProvider(context =>
         uri => context.container.get(DefaultResourceProvider).get(uri)
     );
-    bindContributionProvider(bind, ResourceResolver)
+    bindContributionProvider(bind, ResourceResolver);
 
     bind(SelectionService).toSelf().inSingletonScope();
     bind(CommandRegistry).toSelf().inSingletonScope();
@@ -43,13 +47,21 @@ export const frontendApplicationModule = new ContainerModule(bind => {
     bind(CommandContribution).to(CommonCommandContribution).inSingletonScope();
     bindContributionProvider(bind, CommandContribution);
 
-    bind(MenuContribution).to(CommonMenuContribution)
+    bind(MenuContribution).to(CommonMenuContribution);
     bind(MenuModelRegistry).toSelf().inSingletonScope();
-    bindContributionProvider(bind, MenuContribution)
+    bindContributionProvider(bind, MenuContribution);
 
-    bind(KeybindingRegistry).toSelf().inSingletonScope()
-    bindContributionProvider(bind, KeybindingContribution)
+    bind(KeybindingRegistry).toSelf().inSingletonScope();
+    bindContributionProvider(bind, KeybindingContribution);
 
-    bind(KeybindingContextRegistry).toSelf().inSingletonScope()
-    bindContributionProvider(bind, KeybindingContext)
+    bind(KeybindingContextRegistry).toSelf().inSingletonScope();
+    bindContributionProvider(bind, KeybindingContext);
+
+    bind(HumaneMessageClient).toSelf().inSingletonScope();
+    bind(MessageClient).toDynamicValue(ctx => {
+        const messageService = ctx.container.get(HumaneMessageClient);
+        WebSocketConnectionProvider.createProxy(ctx.container, messageServicePath, messageService);
+        return messageService;
+    }).inSingletonScope();
+    bind(MessageService).toSelf().inSingletonScope();
 });

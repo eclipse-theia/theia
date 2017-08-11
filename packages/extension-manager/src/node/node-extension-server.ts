@@ -5,13 +5,14 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as semver from 'semver';
+import * as showdown from 'showdown';
+import * as sanitize from 'sanitize-html';
 import { injectable, inject } from 'inversify';
 import { ExtensionPackage } from 'generator-theia';
 import * as npm from 'generator-theia/generators/common/npm';
 import { DisposableCollection } from '@theia/core';
 import {
-    RawExtension, ResolvedRawExtension, Extension, ResolvedExtension, ExtensionServer, ExtensionClient, SearchParam
+    RawExtension, ResolvedRawExtension, ResolvedExtension, Extension, ExtensionServer, ExtensionClient, SearchParam
 } from '../common/extension-protocol';
 import * as npms from './npms';
 import { AppProject } from './app-project';
@@ -27,9 +28,9 @@ export class NodeExtensionServer implements ExtensionServer {
     protected client: ExtensionClient | undefined;
     protected readonly toDispose = new DisposableCollection();
 
-    constructor(
-        @inject(AppProject) protected readonly appProject: AppProject
-    ) {
+    protected readonly busyExtensions = new Set<string>();
+
+    constructor( @inject(AppProject) protected readonly appProject: AppProject) {
         this.toDispose.push(appProject.onDidChangePackage(() =>
             this.notification('onDidChange')()
         ));
@@ -48,11 +49,13 @@ export class NodeExtensionServer implements ExtensionServer {
     setClient(client: ExtensionClient | undefined): void {
         this.client = client;
     }
+
     protected notification<T extends keyof ExtensionClient>(notification: T): ExtensionClient[T] {
         if (this.client) {
             return this.client[notification];
         }
-        return () => { };
+        return () => {
+        };
     }
 
     async search(param: SearchParam): Promise<RawExtension[]> {
@@ -61,47 +64,55 @@ export class NodeExtensionServer implements ExtensionServer {
         const query = this.prepareQuery(param.query, extensionKeywords);
         const packages = await npms.search(query, param.from, param.size);
         const extensions = [];
-        for (const pck of packages) {
-            if (ExtensionPackage.is(pck, extensionKeywords)) {
-                const extension = this.toRawExtension(pck);
+        for (const raw of packages) {
+            if (ExtensionPackage.is(raw, extensionKeywords)) {
+                const extensionPackage = new ExtensionPackage(raw);
+                const extension = this.toRawExtension(extensionPackage);
                 extensions.push(extension);
             }
         }
         return extensions;
     }
+
     protected prepareQuery(query: string, extensionKeywords: string[]): string {
         const args = query.split(/\s+/).map(v => v.toLowerCase().trim()).filter(v => !!v);
         return [`keywords:'${extensionKeywords.join(',')}'`, ...args].join(' ');
     }
-    resolveRaw(extension: string): Promise<ResolvedRawExtension> {
-        return new Promise(resolve => { });
+
+    async resolveRaw(extension: string): Promise<ResolvedRawExtension> {
+        const projectModel = await this.appProject.load();
+        const extensionPackage = await projectModel.findExtensionPackage(extension);
+        if (!extensionPackage) {
+            throw new Error('The extension package is not found for ' + extension);
+        }
+        return this.toResolvedRawExtension(extensionPackage);
     }
 
     /**
      * Extension packages listed in `theia.package.json` are installed.
      */
-    installed(): Promise<RawExtension[]> {
-        return this.appProject.load().then(projectModel => {
-            const extensions = [];
-            for (const pck of projectModel.extensionPackages) {
-                const extension = this.toRawExtension(pck);
-                extensions.push(extension);
-            }
-            return extensions;
-        });
+    async installed(): Promise<RawExtension[]> {
+        const projectModel = await this.appProject.load();
+        return projectModel.extensionPackages.map(pck => this.toRawExtension(pck));
     }
+
     async install(extension: string): Promise<void> {
+        this.setBusy(extension, true);
         const latestVersion = await this.latestVersion(extension);
         if (latestVersion) {
             await this.appProject.update(model =>
                 model.setDependency(extension, latestVersion)
             );
         }
+        this.setBusy(extension, false);
     }
-    uninstall(extension: string): Promise<void> {
-        return this.appProject.update(model =>
+
+    async uninstall(extension: string): Promise<void> {
+        this.setBusy(extension, true);
+        await this.appProject.update(model =>
             model.setDependency(extension, undefined)
         );
+        this.setBusy(extension, false);
     }
 
     /**
@@ -109,85 +120,123 @@ export class NodeExtensionServer implements ExtensionServer {
      * with versions less than the latest published are outdated.
      */
     async outdated(): Promise<RawExtension[]> {
-        const installed = await this.installed();
-        const outdated = await Promise.all(
-            installed.map(extension => this.validateOutdated(extension.name, extension.version))
-        );
-        return installed.filter((_, index) => !!outdated[index]);
-    }
-    update(extension: string): Promise<void> {
-        return this.appProject.update(async model => {
-            const pck = model.extensionPackages.find(p => p.name === extension);
-            if (!pck || !pck.version) {
-                return false;
-            }
-            const latestVersion = await this.validateOutdated(pck.name, pck.version);
-            if (!latestVersion) {
-                return false;
-            }
-            return model.setDependency(extension, latestVersion);
-        });
+        const projectModel = await this.appProject.load();
+        return projectModel.extensionPackages.filter(pck =>
+            pck.isOutdated()
+        ).map(pck => this.toRawExtension(pck));
     }
 
-    protected async installationState(): Promise<InstallationState> {
-        const [installed, outdated] = await Promise.all([this.installed(), this.outdated()]);
-        return { installed, outdated };
-    }
-    protected toExtension(raw: RawExtension, installation: InstallationState): Extension {
-        const outdated = installation.outdated.some(e => e.name === raw.name);
-        const installed = outdated || installation.installed.some(e => e.name === raw.name);
-        return Object.assign(raw, { installed, outdated });
+    async update(extension: string): Promise<void> {
+        this.setBusy(extension, true);
+        await this.appProject.update(async model => {
+            const extensionPackage = model.getExtensionPackage(extension);
+            if (!extensionPackage || !extensionPackage.version) {
+                return false;
+            }
+            if (!extensionPackage.isOutdated()) {
+                return false;
+            }
+            return model.setDependency(extension, extensionPackage.latestVersion);
+        });
+        this.setBusy(extension, false);
     }
 
     async list(param?: SearchParam): Promise<Extension[]> {
-        const installation = await this.installationState();
-        const extensions = param && param.query ? await this.search(param) : installation.installed;
-        return extensions.map(raw =>
-            this.toExtension(raw, installation)
-        );
+        const projectModel = await this.appProject.load();
+        if (param && param.query) {
+            const found = await this.search(param);
+            return found.map(raw => {
+                const extensionPackage = projectModel.getExtensionPackage(raw.name);
+                if (extensionPackage) {
+                    return this.toExtension(extensionPackage);
+                }
+                return Object.assign(raw, {
+                    busy: this.isBusy(raw.name),
+                    installed: false,
+                    outdated: false
+                });
+            });
+        }
+        return projectModel.extensionPackages.map(pck => this.toExtension(pck));
     }
 
-    resolve(extension: string): Promise<ResolvedExtension> {
-        return new Promise(() => { });
+    async resolve(extension: string): Promise<ResolvedExtension> {
+        const projectModel = await this.appProject.load();
+        const extensionPackage = await projectModel.findExtensionPackage(extension);
+        if (!extensionPackage) {
+            throw new Error('The extension package is not found for ' + extension);
+        }
+        return this.toResolvedExtension(extensionPackage);
     }
 
-    protected async validateOutdated(extension: string, version: string): Promise<string | undefined> {
-        const latest = await this.latestVersion(extension);
-        return !!latest && semver.gt(latest, version) ? latest : undefined;
+    protected toResolvedExtension(extensionPackage: ExtensionPackage): ResolvedExtension {
+        const resolvedRawExtension = this.toResolvedRawExtension(extensionPackage);
+        return Object.assign(resolvedRawExtension, {
+            installed: extensionPackage.installed,
+            outdated: extensionPackage.isOutdated(),
+            busy: this.isBusy(extensionPackage.name)
+        });
+    }
+
+    protected toResolvedRawExtension(extensionPackage: ExtensionPackage): ResolvedRawExtension {
+        const rawExtension = this.toRawExtension(extensionPackage);
+        const documentation = this.compileDocumentation(extensionPackage);
+        return Object.assign(rawExtension, {
+            documentation
+        });
+    }
+
+    protected compileDocumentation(extensionPackage: ExtensionPackage): string {
+        const markdownConverter = new showdown.Converter({
+            noHeaderId: true,
+            strikethrough: true
+        });
+        const readme = extensionPackage.getReadme();
+        const readmeHtml = markdownConverter.makeHtml(readme);
+        return sanitize(readmeHtml, {
+            allowedTags: sanitize.defaults.allowedTags.concat(['h1', 'h2', 'img'])
+        });
+    }
+
+    protected toExtension(extensionPackage: ExtensionPackage): Extension {
+        const rawExtension = this.toRawExtension(extensionPackage);
+        return Object.assign(rawExtension, {
+            installed: extensionPackage.installed,
+            outdated: extensionPackage.isOutdated(),
+            busy: this.isBusy(extensionPackage.name)
+        });
+    }
+
+    protected toRawExtension(extensionPackage: ExtensionPackage): RawExtension {
+        return {
+            name: extensionPackage.name,
+            version: extensionPackage.version || '',
+            description: extensionPackage.description || '',
+            author: extensionPackage.getAuthor()
+        };
+    }
+
+    protected isBusy(extension: string): boolean {
+        return this.busyExtensions.has(extension);
+    }
+
+    protected setBusy(extension: string, busy: boolean): void {
+        if (busy) {
+            this.busyExtensions.add(extension);
+        } else {
+            this.busyExtensions.delete(extension);
+        }
+        this.notification('onDidChange')();
     }
 
     protected latestVersion(extension: string): Promise<string | undefined> {
         return npm.version(extension).catch(() => undefined);
     }
 
-    protected toRawExtension(pck: ExtensionPackage): RawExtension {
-        return {
-            name: pck.name,
-            version: pck.version || '',
-            description: pck.description || '',
-            author: this.getAuthor(pck)
-        };
-    }
-
-    protected getAuthor(pck: ExtensionPackage): string {
-        if (pck.publisher) {
-            return pck.publisher.username;
-        }
-        if (typeof pck.author === 'string') {
-            return pck.author;
-        }
-        if (pck.author && pck.author.name) {
-            return pck.author.name;
-        }
-        if (!!pck.maintainers && pck.maintainers.length > 0) {
-            return pck.maintainers[0].username;
-        }
-        return '';
-    }
-
     needInstall(): Promise<boolean> {
         return this.appProject.needInstall();
     }
+
     scheduleInstall(): Promise<void> {
         return this.appProject.scheduleInstall({
             force: true
