@@ -8,31 +8,61 @@
 import { injectable, inject } from 'inversify';
 import { FrontendApplication } from '@theia/core/lib/browser';
 import { ExtensionDetailWidget } from './extension-detail-widget';
-import { ResolvedExtension } from '../common/extension-manager';
+import { Extension, ExtensionManager, ResolvedExtension } from '../common/extension-manager';
+import { Event, Disposable, DisposableCollection, Emitter } from '@theia/core';
 
 @injectable()
-export class ExtensionDetailWidgetService {
-
+export class ExtensionDetailWidgetService implements Disposable {
+    protected readonly onExtensionBusyFlagSetEmitter = new Emitter<Extension>();
+    protected readonly toDispose = new DisposableCollection();
     protected extensionDetailWidgetStore = new Map<string, ExtensionDetailWidget>();
     protected counter = 0;
 
-    constructor(@inject(FrontendApplication) protected readonly app: FrontendApplication) {
+    constructor(@inject(FrontendApplication) protected readonly app: FrontendApplication,
+                @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager) {
 
+        this.toDispose.push(this.onExtensionBusyFlagSetEmitter);
+
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     openOrFocusDetailWidget(rawExt: ResolvedExtension) {
         let widget = this.extensionDetailWidgetStore.get(rawExt.name);
 
         if (!widget) {
-            widget = new ExtensionDetailWidget('extensionDetailWidget' + this.counter++, rawExt);
+            widget = new ExtensionDetailWidget('extensionDetailWidget' + this.counter++, rawExt, this.extensionManager, this);
             this.extensionDetailWidgetStore.set(rawExt.name, widget);
             widget.disposed.connect(() => {
                 if (widget) {
                     this.extensionDetailWidgetStore.delete(rawExt.name);
+                    widget.dispose();
                 }
             });
+
             this.app.shell.addToMainArea(widget);
         }
         this.app.shell.activateMain(widget.id);
     }
+
+    setExtensionBusyFlag(extension: Extension) {
+        const extensionWidget = this.extensionDetailWidgetStore.get(extension.name);
+        if (extensionWidget) {
+            extensionWidget.setBusyFlagAndUpdate(extension.busy);
+        }
+    }
+
+    /**
+     * Notify when the busy flag of a extension has been set.
+     */
+    get onExtensionBusyFlagSet(): Event<Extension> {
+        return this.onExtensionBusyFlagSetEmitter.event;
+    }
+
+    fireExtensionBusyFlagSet(extension: Extension): void {
+        this.onExtensionBusyFlagSetEmitter.fire(extension);
+    }
+
 }

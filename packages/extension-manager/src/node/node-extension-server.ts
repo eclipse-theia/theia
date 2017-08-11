@@ -212,7 +212,8 @@ export class NodeExtensionServer implements ExtensionServer {
     protected async compileDocumentation(extensionPackage: ExtensionPackage): Promise<string> {
         const markdownConverter = new showdown.Converter({
             noHeaderId: true,
-            strikethrough: true
+            strikethrough: true,
+            headerLevelStart: 2
         });
         const readme = await extensionPackage.getReadme();
         const readmeHtml = markdownConverter.makeHtml(readme);
