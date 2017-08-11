@@ -30,7 +30,7 @@ export class NodeExtensionServer implements ExtensionServer {
 
     protected readonly busyExtensions = new Set<string>();
 
-    constructor( @inject(AppProject) protected readonly appProject: AppProject) {
+    constructor(@inject(AppProject) protected readonly appProject: AppProject) {
         this.toDispose.push(appProject.onDidChangePackage(() =>
             this.notification('onDidChange')()
         ));
@@ -146,17 +146,17 @@ export class NodeExtensionServer implements ExtensionServer {
         const projectModel = await this.appProject.load();
 
         if (param && param.query) {
-        const found = await this.search(param);
-        return found.map(raw => {
-        const extensionPackage = projectModel.getExtensionPackage(raw.name );
-        if (extensionPackage) {
-            return this.toExtension( extensionPackage);
-            }
+            const found = await this.search(param);
+            return found.map(raw => {
+                const extensionPackage = projectModel.getExtensionPackage(raw.name);
+                if (extensionPackage) {
+                    return this.toExtension(extensionPackage);
+                }
                 return Object.assign(raw, {
-            busy: this.isBusy(raw.name),
-            installed : false,
-            outdated : false
-            });
+                    busy: this.isBusy(raw.name),
+                    installed: false,
+                    outdated: false
+                });
             });
         }
         return projectModel.extensionPackages.map(pck => this.toExtension(pck));
@@ -191,7 +191,8 @@ export class NodeExtensionServer implements ExtensionServer {
     protected compileDocumentation(extensionPackage: ExtensionPackage): string {
         const markdownConverter = new showdown.Converter({
             noHeaderId: true,
-            strikethrough: true
+            strikethrough: true,
+            headerLevelStart: 2
         });
         const readme = extensionPackage.getReadme();
         const readmeHtml = markdownConverter.makeHtml(readme);
@@ -200,22 +201,23 @@ export class NodeExtensionServer implements ExtensionServer {
         });
     }
 
-    protected toExtension(extensionPackage: ExtensionPackage): Extension {    const rawExtension = this.toRawExtension(extensionPackage);
-                return Object.assign(rawExtension,{
-                installed: extensionPackage.installed,
-                outdated: extensionPackage.isOutdated(),
+    protected toExtension(extensionPackage: ExtensionPackage): Extension {
+        const rawExtension = this.toRawExtension(extensionPackage);
+        return Object.assign(rawExtension, {
+            installed: extensionPackage.installed,
+            outdated: extensionPackage.isOutdated(),
             busy: this.isBusy(extensionPackage.name)
         });
     }
 
     protected toRawExtension(extensionPackage: ExtensionPackage): RawExtension {
         return {
-                name: extensionPackage.name,
-                version: extensionPackage.version || '',
-                description: extensionPackage.description || '',
-                author: extensionPackage.getAuthor()
-            };
-        }
+            name: extensionPackage.name,
+            version: extensionPackage.version || '',
+            description: extensionPackage.description || '',
+            author: extensionPackage.getAuthor()
+        };
+    }
 
     protected isBusy(extension: string): boolean {
         return this.busyExtensions.has(extension);

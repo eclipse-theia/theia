@@ -43,7 +43,7 @@ export class Extension extends protocol.Extension {
      * Intall the latest version of this extension.
      */
     install(): void {
-        Object.assign(this, { busy: true });
+        this.busy = true;
         this.server.install(this.name);
     }
 
@@ -51,7 +51,7 @@ export class Extension extends protocol.Extension {
      * Uninstall the extension.
      */
     uninstall(): void {
-        Object.assign(this, { busy: true });
+        this.busy = true;
         this.server.uninstall(this.name);
     }
 
@@ -59,7 +59,7 @@ export class Extension extends protocol.Extension {
      * Update the extension to the latest version.
      */
     update(): void {
-        Object.assign(this, { busy: true });
+        this.busy = true;
         this.server.update(this.name);
     }
 
@@ -150,5 +150,6 @@ export class ExtensionManager implements Disposable {
     protected fireDidStopInstallation(params: protocol.DidStopInstallationParam): void {
         this.onDidStopInstallationEmitter.fire(params);
     }
+
 
 }
