@@ -5,7 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { WorkingDirectoryStatus } from './model';
+import { Disposable } from '@theia/core/lib/common';
+import { Repository, WorkingDirectoryStatus } from './model';
 
 export interface Git {
 
@@ -14,32 +15,10 @@ export interface Git {
      */
     status(repository: Repository): Promise<WorkingDirectoryStatus>;
 
-}
-
-/**
- * Bare minimum representation of a local Git clone.
- */
-export interface Repository {
-
     /**
-     * The remote URL of the local clone.
+     * Attaches a status change listener onto the given Git repository. One has the dispose the returned `disposable`
+     * to unsubscribe from the status change event.
      */
-    readonly remoteUrl?: string;
-
-    /**
-     * The FS URI of the local clone.
-     */
-    readonly localUri: string;
-
-}
-
-export namespace Repository {
-
-    /**
-     * `true` if the argument is a type of a [Repository](#Repository), otherwise `false`.
-     */
-    export function is(repository: any | undefined): repository is Repository {
-        return repository && typeof (<Repository>repository).localUri === 'string';
-    }
+    onStatusChange(repository: Repository, callback: (status: WorkingDirectoryStatus) => void): Promise<Disposable>;
 
 }
