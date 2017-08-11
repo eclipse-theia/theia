@@ -6,6 +6,9 @@
             "@theia/core/lib/*": [
                 "core/src/*"
             ],
+            "humane-js": [
+                "core/src/typings/humane-js"
+            ],
             "@theia/filesystem/lib/*": [
                 "filesystem/src/*"
             ],
