@@ -83,14 +83,12 @@ export class DugiteGit implements Git {
                 const stagedFilesPromise = this.getStagedFiles(repositoryPath);
                 const statusResult = await statusPromise;
                 const stagedFilesResult = await stagedFilesPromise;
-                console.log('staged files: ', stagedFilesResult);
                 const filesToCommit = [];
                 for (const f of statusResult.workingDirectory.files) {
                     if (stagedFilesResult.indexOf(f.path) !== -1) {
                         filesToCommit.push(f);
                     }
                 }
-                console.log('files to commit: ', filesToCommit);
                 const commitResult = await createCommit(repositoryPath, message, filesToCommit);
                 return resolve(commitResult);
             } catch (error) {
