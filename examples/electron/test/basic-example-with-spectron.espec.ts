@@ -31,14 +31,14 @@ const app = new Application({
     args: [appPath],
     startTimeout: timeout,
     waitTimeout: timeout,
-    requireName: 'electronRequire'
+    // requireName: 'electronRequire'
 });
 
 describe('Test specs with spectron', function () {
     this.timeout(60000);
 
     beforeEach(function () {
-        require("../src-gen/backend/main"); // start the express server
+        // require("../src-gen/backend/main"); // start the express server
         return app.start();
     });
 
@@ -47,16 +47,16 @@ describe('Test specs with spectron', function () {
             return app.stop();
         }
     })
-
-    it('Test - 1 : opens a window', function () {
-        return app.client
-            .getWindowCount().should.eventually.equal(2);
-    });
-
+    /*
+        it('Test - 1 : opens a window', function () {
+            return app.client
+                .getWindowCount().should.eventually.equal(2);
+        });
+    */
     it('Test - 2 : From example to check if browserWindow api works with Spectron', function () {
-        return app.client
-            .getWindowCount().should.eventually.equal(2)
-        // .browserWindow.isMinimized().should.eventually.be.false
+        return app.client.waitUntilWindowLoaded()
+            //    .getWindowCount().should.eventually.equal(2)
+            .browserWindow.isMinimized().should.eventually.be.false
         // .browserWindow.isDevToolsOpened().should.eventually.be.false
         // .browserWindow.isVisible().should.eventually.be.true
         // .browserWindow.isFocused().should.eventually.be.true
