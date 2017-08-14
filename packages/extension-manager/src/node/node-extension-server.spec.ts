@@ -24,7 +24,7 @@ const appProjectPath = path.resolve(__dirname, '..', '..', 'test-resources', 'te
 export function waitForDidChange(): Promise<void> {
     return new Promise(resolve => {
         server.setClient(<ExtensionClient>{
-            onDidChange: () => resolve()
+            onDidChange: change => resolve()
         });
     });
 }
