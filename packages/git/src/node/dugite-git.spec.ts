@@ -45,9 +45,9 @@ describe('dugite-git', async () => {
         });
 
         it('clean', async () => {
-            const result = await git.status({ localUri: repositoryLocation });
-            expect(result).to.be.not.undefined;
-            expect(result.changes).to.be.empty;
+            const status = await git.status({ localUri: repositoryLocation });
+            expect(status).to.be.not.undefined;
+            expect(status.changes).to.be.empty;
         });
 
         it('new', async () => {
@@ -55,11 +55,11 @@ describe('dugite-git', async () => {
             fs.writeFileSync(newFilePath, 'X');
             expect(fs.existsSync(newFilePath)).to.be.true;
 
-            const result = await git.status({ localUri: repositoryLocation });
-            expect(result).to.be.not.undefined;
-            expect(result.changes).to.be.not.empty;
-            expect(result.changes[0].status).to.be.equal(FileStatus.New);
-            expect(FileUri.fsPath(result.changes[0].uri)).to.be.equal(newFilePath);
+            const status = await git.status({ localUri: repositoryLocation });
+            expect(status).to.be.not.undefined;
+            expect(status.changes).to.be.not.empty;
+            expect(status.changes[0].status).to.be.equal(FileStatus.New);
+            expect(FileUri.fsPath(status.changes[0].uri)).to.be.equal(newFilePath);
         });
 
         it('deleted', async () => {
@@ -67,11 +67,11 @@ describe('dugite-git', async () => {
             fs.unlinkSync(deletedFilePath);
             expect(fs.existsSync(deletedFilePath)).to.be.false;
 
-            const result = await git.status({ localUri: repositoryLocation });
-            expect(result).to.be.not.undefined;
-            expect(result.changes).to.be.not.empty;
-            expect(result.changes[0].status).to.be.equal(FileStatus.Deleted);
-            expect(FileUri.fsPath(result.changes[0].uri)).to.be.equal(deletedFilePath);
+            const status = await git.status({ localUri: repositoryLocation });
+            expect(status).to.be.not.undefined;
+            expect(status.changes).to.be.not.empty;
+            expect(status.changes[0].status).to.be.equal(FileStatus.Deleted);
+            expect(FileUri.fsPath(status.changes[0].uri)).to.be.equal(deletedFilePath);
         });
 
         it('modified', async () => {
@@ -79,11 +79,11 @@ describe('dugite-git', async () => {
             fs.writeFileSync(modifiedFilePath, 'A');
             expect(fs.readFileSync(modifiedFilePath, 'utf-8')).to.be.equal('A');
 
-            const result = await git.status({ localUri: repositoryLocation });
-            expect(result).to.be.not.undefined;
-            expect(result.changes).to.be.not.empty;
-            expect(result.changes[0].status).to.be.equal(FileStatus.Modified);
-            expect(FileUri.fsPath(result.changes[0].uri)).to.be.equal(modifiedFilePath);
+            const status = await git.status({ localUri: repositoryLocation });
+            expect(status).to.be.not.undefined;
+            expect(status.changes).to.be.not.empty;
+            expect(status.changes[0].status).to.be.equal(FileStatus.Modified);
+            expect(FileUri.fsPath(status.changes[0].uri)).to.be.equal(modifiedFilePath);
         });
 
         it('renamed', async () => {
@@ -95,18 +95,18 @@ describe('dugite-git', async () => {
             expect(fs.existsSync(oldFilePath)).to.be.false;
             expect(fs.existsSync(newFilePath)).to.be.true;
 
-            const result = await git.status({ localUri: repositoryLocation });
-            expect(result).to.be.not.undefined;
-            expect(result.changes).to.be.not.empty;
-            expect(result.changes[0].status).to.be.equal(FileStatus.Deleted);
-            expect(FileUri.fsPath(result.changes[0].uri)).to.be.equal(oldFilePath);
-            expect(result.changes[1].status).to.be.equal(FileStatus.New);
-            expect(FileUri.fsPath(result.changes[1].uri)).to.be.equal(newFilePath);
+            const status = await git.status({ localUri: repositoryLocation });
+            expect(status).to.be.not.undefined;
+            expect(status.changes).to.be.not.empty;
+            expect(status.changes[0].status).to.be.equal(FileStatus.Deleted);
+            expect(FileUri.fsPath(status.changes[0].uri)).to.be.equal(oldFilePath);
+            expect(status.changes[1].status).to.be.equal(FileStatus.New);
+            expect(FileUri.fsPath(status.changes[1].uri)).to.be.equal(newFilePath);
         });
 
     });
 
-    describe('onStatusChange', async () => {
+    describe('on', async () => {
 
         let repositoryLocation: string;
 
@@ -129,6 +129,91 @@ describe('dugite-git', async () => {
                 fs.writeFileSync(newFilePath, 'X');
                 expect(fs.readFileSync(newFilePath, 'utf-8')).to.be.equal('X');
             });
+        });
+
+    });
+
+
+    describe('stage', async () => {
+
+        let repositoryLocation: string;
+
+        beforeEach(async () => {
+            repositoryLocation = setupRepository('git_repo_01', track.mkdirSync());
+        });
+
+        it('clean', async () => {
+            const repository = { localUri: repositoryLocation };
+            const result = await git.stagedFiles(repository);
+
+            expect(result).to.be.empty;
+        });
+
+        it('new', async () => {
+            const newFilePath = path.join(repositoryLocation, 'X.txt');
+            fs.writeFileSync(newFilePath, 'X');
+            expect(fs.existsSync(newFilePath)).to.be.true;
+
+            const repository = { localUri: repositoryLocation };
+            await git.stage(repository, FileUri.create(newFilePath).toString());
+            const result = await git.stagedFiles(repository);
+
+            expect(result.length).to.be.equal(1);
+            expect(FileUri.fsPath(result[0].uri)).to.be.equal(newFilePath);
+            expect(result[0].status).to.be.equal(FileStatus.New);
+        });
+
+        it('deleted', async () => {
+            const deletedFilePath = path.join(repositoryLocation, 'A.txt');
+            fs.unlinkSync(deletedFilePath);
+            expect(fs.existsSync(deletedFilePath)).to.be.false;
+
+            const repository = { localUri: repositoryLocation };
+            await git.stage(repository, FileUri.create(deletedFilePath).toString());
+            const result = await git.stagedFiles(repository);
+
+            expect(result.length).to.be.equal(1);
+            expect(FileUri.fsPath(result[0].uri)).to.be.equal(deletedFilePath);
+            expect(result[0].status).to.be.equal(FileStatus.Deleted);
+        });
+
+        it('modified', async () => {
+            const filePath = path.join(repositoryLocation, 'A.txt');
+            fs.writeFileSync(filePath, 'X');
+            expect(fs.readFileSync(filePath, 'utf-8')).to.be.equal('X');
+
+            const repository = { localUri: repositoryLocation };
+            await git.stage(repository, FileUri.create(filePath).toString());
+            const result = await git.stagedFiles(repository);
+
+            expect(result.length).to.be.equal(1);
+            expect(FileUri.fsPath(result[0].uri)).to.be.equal(filePath);
+            expect(result[0].status).to.be.equal(FileStatus.Modified);
+        });
+
+        it('renamed', async () => {
+            const oldFilePath = path.join(repositoryLocation, 'A.txt');
+            const newFilePath = path.join(repositoryLocation, 'X.txt');
+            expect(fs.existsSync(oldFilePath)).to.be.true;
+            expect(fs.existsSync(newFilePath)).to.be.false;
+            fs.renameSync(oldFilePath, newFilePath);
+            expect(fs.existsSync(oldFilePath)).to.be.false;
+            expect(fs.existsSync(newFilePath)).to.be.true;
+
+            const repository = { localUri: repositoryLocation };
+            await git.stage(repository, [FileUri.create(oldFilePath).toString(), FileUri.create(newFilePath).toString()]);
+            const result = await git.stagedFiles(repository);
+
+            expect(result.length).to.be.equal(1);
+            const fileChange = result[0];
+            expect(fileChange.oldUri).to.be.not.undefined;
+            expect(FileUri.fsPath(fileChange.uri)).to.be.equal(newFilePath);
+            if (!fileChange.oldUri) {
+                throw new Error(`Expected the old URI to be defined after renaming.`);
+            } else {
+                expect(FileUri.fsPath(fileChange.oldUri)).to.be.equal(oldFilePath);
+                expect(result[0].status).to.be.equal(FileStatus.Renamed);
+            }
         });
 
     });

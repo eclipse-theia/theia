@@ -5,11 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as path from 'path';
+import * as Path from 'path';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { status } from 'dugite-extra/lib/command';
+import { createCommit, status } from 'dugite-extra/lib/command/';
+import { stageFiles } from 'dugite-extra/lib/command/update-index';
 import { Git } from '../common/git';
+import { git } from 'dugite-extra/lib/util/git';
 import { Repository, WorkingDirectoryStatus, FileChange } from '../common/model';
 import { IStatusResult, IAheadBehind, WorkingDirectoryStatus as DugiteStatus, FileChange as DugiteFileChange } from 'dugite-extra/lib/model';
 
@@ -31,8 +33,70 @@ export class DugiteGit implements Git {
     }
 
     status(repository: Repository): Promise<WorkingDirectoryStatus> {
-        const path = FileUri.fsPath(new URI(repository.localUri));
-        return status(path).then(result => mapStatus(result, repository));
+        const repositoryPath = FileUri.fsPath(new URI(repository.localUri))
+        return status(repositoryPath).then(result => mapStatus(result, repository));
+    }
+
+    stage(repository: Repository, file: string | string[]): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const repositoryPath = FileUri.fsPath(new URI(repository.localUri));
+                const result = await status(repositoryPath);
+                const filesToStage = [];
+                const files = (Array.isArray(file) ? file : [file]).map(f => new URI(f)).map(FileUri.fsPath);
+                for (const f of result.workingDirectory.files) {
+                    const path = Path.join(repositoryPath, f.path);
+                    // TODO handle deleted and moved files.
+                    const index = files.indexOf(path);
+                    if (index !== -1) {
+                        files.splice(index, 1);
+                        filesToStage.push(f);
+                    }
+                }
+                if (files.length !== 0) {
+                    return reject(new Error(`The following files cannot be staged because those do not exist in the working directory as changed files: ${files}`));
+                }
+                await stageFiles(repositoryPath, filesToStage);
+                return resolve();
+            } catch (error) {
+                return reject(error);
+            }
+        });
+    }
+
+    stagedFiles(repository: Repository): Promise<FileChange[]> {
+        return new Promise(async (resolve, reject) => {
+            const repositoryPath = FileUri.fsPath(new URI(repository.localUri));
+            const statusPromise = status(repositoryPath);
+            const stagedFileNamesPromise = this.getStagedFiles(repositoryPath);
+            const statusResult = await statusPromise;
+            const stagedFileNames = await stagedFileNamesPromise;
+            return resolve(statusResult.workingDirectory.files.filter(f => stagedFileNames.indexOf(f.path) !== -1).map(f => mapFileChange(f, repository)));
+        });
+    }
+
+    commit(repository: Repository, message: string): Promise<boolean> {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const repositoryPath = FileUri.fsPath(new URI(repository.localUri));
+                const statusPromise = status(repositoryPath);
+                const stagedFilesPromise = this.getStagedFiles(repositoryPath);
+                const statusResult = await statusPromise;
+                const stagedFilesResult = await stagedFilesPromise;
+                console.log('staged files: ', stagedFilesResult);
+                const filesToCommit = [];
+                for (const f of statusResult.workingDirectory.files) {
+                    if (stagedFilesResult.indexOf(f.path) !== -1) {
+                        filesToCommit.push(f);
+                    }
+                }
+                console.log('files to commit: ', filesToCommit);
+                const commitResult = await createCommit(repositoryPath, message, filesToCommit);
+                return resolve(commitResult);
+            } catch (error) {
+                return reject(error);
+            }
+        });
     }
 
     on(event: "statusChange", repository: Repository, listener: (status: WorkingDirectoryStatus) => void): Promise<void> {
@@ -87,6 +151,16 @@ export class DugiteGit implements Git {
         });
     }
 
+    private getStagedFiles(repositoryPath: string): Promise<string[]> {
+        return new Promise(async (resolve, reject) => {
+            const result = await git(['diff', '--name-only', '--cached'], repositoryPath, 'diff');
+            if (result.exitCode !== 0) {
+                return reject(new Error(result.stderr));
+            }
+            return resolve(result.stdout.split('\n'))
+        });
+    }
+
 }
 
 function mapStatus(toMap: IStatusResult, repository: Repository): WorkingDirectoryStatus {
@@ -110,8 +184,8 @@ function mapFileChanges(toMap: DugiteStatus, repository: Repository): FileChange
 
 function mapFileChange(toMap: DugiteFileChange, repository: Repository): FileChange {
     return {
-        uri: FileUri.create(path.join(repository.localUri, toMap.path)),
+        uri: FileUri.create(Path.join(repository.localUri, toMap.path)),
         status: toMap.status,
-        oldUri: toMap.oldPath ? FileUri.create(toMap.oldPath) : undefined
+        oldUri: toMap.oldPath ? FileUri.create(Path.join(repository.localUri, toMap.oldPath)) : undefined
     };
 }
