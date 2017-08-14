@@ -26,8 +26,17 @@ export interface Git {
     stage(repository: Repository, file: string | string[]): Promise<void>;
 
     /**
+     * Removes the given file or files among the staged files in the working clone. The invocation will be rejected if
+     * any files (given with their file URIs) is not among the staged files.
+     *
+     * @param repository the repository to where the staged files have to be removed from/
+     * @param file one or multiple file URIs to unstage in the working clone.
+     */
+    unstage(repository: Repository, file: string | string[]): Promise<void>;
+
+    /**
      * Resolves to a list a file changes, representing all the staged files in the working directory.
-     * 
+     *
      * @param repository the repository to get all staged files from.
      */
     stagedFiles(repository: Repository): Promise<FileChange[]>;
@@ -42,9 +51,9 @@ export interface Git {
 
     /**
      * Registers a working directory status changes listener for the given Git repository.
-     * 
+     *
      * If multiple identical `listener` instances are registered on the same `Repository` with the same parameters,
-     * the duplicate instances are discarded. They do not cause the `listener` to be called twice, and they do not 
+     * the duplicate instances are discarded. They do not cause the `listener` to be called twice, and they do not
      * need to be removed manually with the `off('statusChange' repository, listener)` method.
      *
      * @param event the string representation of the event to listen for.
