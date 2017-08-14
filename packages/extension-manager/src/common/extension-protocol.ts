@@ -36,7 +36,7 @@ export class Extension extends RawExtension {
     /**
      * Test whether the extension is busy with installing, updating or uninstalling.
      */
-    busy: boolean;
+    readonly busy: boolean;
     /**
      * Test whether the extension is installed.
      */
@@ -144,6 +144,8 @@ export interface DidStopInstallationParam {
     readonly failed: boolean;
 }
 
+export type ExtensionChange = Pick<Extension, 'name'> & Partial<Extension>;
+
 export const ExtensionClient = Symbol('ExtensionClient');
 /**
  * The extension client allows listening to changes of:
@@ -154,7 +156,7 @@ export interface ExtensionClient {
     /**
      * Notify when extensions are installed, uninsalled or updated.
      */
-    onDidChange(): void;
+    onDidChange(change: ExtensionChange): void;
     /**
      * Notiy when the installation process is going to be started.
      */

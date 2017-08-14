@@ -5,42 +5,31 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Extension, ExtensionManager, ResolvedExtension } from '../common/extension-manager';
+import { Extension, ResolvedExtension } from '../common/extension-manager';
 import { Message } from '@phosphor/messaging/lib';
 import { VirtualWidget, VirtualRenderer } from '@theia/core/lib/browser';
 import { h } from '@phosphor/virtualdom/lib';
-import { ExtensionDetailWidgetService } from './extension-detail-widget-service';
 
 export class ExtensionDetailWidget extends VirtualWidget {
 
-    protected busy = false;
-
     constructor(id: string,
-                protected resolvedExtension: ResolvedExtension,
-                protected extensionManager: ExtensionManager,
-                protected extensionDetailService: ExtensionDetailWidgetService) {
+                protected resolvedExtension: ResolvedExtension) {
         super();
         this.id = id;
         this.addClass('theia-extension-detail');
         this.title.closable = true;
         this.title.label = resolvedExtension.name;
 
-        extensionManager.onDidChange(() => {
-            resolvedExtension.resolve().then(rex => {
-                this.busy = rex.busy;
-                this.update();
-            });
+        resolvedExtension.resolve().then(rex => {
+            this.update();
         });
-    }
 
-    protected onActivateRequest(msg: Message): void {
-        super.onActivateRequest(msg);
-        this.setBusyFlagAndUpdate(this.resolvedExtension.busy);
-    }
 
-    protected onCloseRequest(msg: Message): void {
-        super.onCloseRequest(msg);
-        this.dispose();
+        resolvedExtension.onDidChange(change => {
+            if (change.name === this.resolvedExtension.name) {
+                this.update();
+            }
+        });
     }
 
     protected onUpdateRequest(msg: Message): void {
@@ -86,23 +75,20 @@ export class ExtensionDetailWidget extends VirtualWidget {
         }
 
         const faEl = h.i({className: 'fa fa-spinner fa-pulse fa-fw'});
-        const content = this.busy ? faEl : btnLabel;
+        const content = extension.busy ? faEl : btnLabel;
 
         buttonArr.push(h.div({
             className: 'extensionButton' +
-            (this.busy ? ' working' : '') + ' ' +
-            (extension.installed && !this.busy ? ' installed' : '') + ' ' +
-            (extension.outdated && !this.busy ? ' outdated' : ''),
+            (extension.busy ? ' working' : '') + ' ' +
+            (extension.installed && !extension.busy ? ' installed' : '') + ' ' +
+            (extension.outdated && !extension.busy ? ' outdated' : ''),
             onclick: event => {
-                if (!this.busy) {
-                    extension.busy = true;
-                    this.extensionDetailService.fireExtensionBusyFlagSet(extension);
+                if (!extension.busy) {
                     if (extension.installed) {
                         extension.uninstall();
                     } else {
                         extension.install();
                     }
-                    this.setBusyFlagAndUpdate(true);
                     event.stopPropagation();
                 }
             }
@@ -110,21 +96,15 @@ export class ExtensionDetailWidget extends VirtualWidget {
 
         if (extension.outdated) {
             buttonArr.push(h.div({
-                className: (this.busy ? ' working' : '') + ' ' + 'extensionButton' + (extension.outdated && !this.busy ? ' outdated' : ''),
+                className: (extension.busy ? ' working' : '') + ' ' + 'extensionButton' + (extension.outdated && !extension.busy ? ' outdated' : ''),
                 onclick: event => {
-                    if (!this.busy) {
-                        extension.busy = true;
-                        this.extensionDetailService.fireExtensionBusyFlagSet(extension);
+                    if (!extension.busy) {
                         extension.update();
                     }
                 }
-            }, this.busy ? faEl : 'Update'));
+            }, extension.busy ? faEl : 'Update'));
         }
         return buttonArr;
     }
 
-    setBusyFlagAndUpdate(busy: boolean) {
-        this.busy = busy;
-        this.update();
-    }
 }
