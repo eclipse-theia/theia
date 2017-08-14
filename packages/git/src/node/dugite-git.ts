@@ -7,7 +7,6 @@
 
 import * as path from 'path';
 import URI from '@theia/core/lib/common/uri';
-import { Disposable } from '@theia/core/lib/common';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { status } from 'dugite-extra/lib/command';
 import { Git } from '../common/git';
@@ -19,20 +18,16 @@ import { IStatusResult, IAheadBehind, WorkingDirectoryStatus as DugiteStatus, Fi
  */
 export class DugiteGit implements Git {
 
-    private static LISTENER_ID = 0;
-
     private pollInterval: number;
     private readonly pollers: Map<Repository, NodeJS.Timer>;
-    private readonly listeners: Map<Repository, { disposable: Disposable, callback: (status: WorkingDirectoryStatus) => void }[]>;
+    private readonly listeners: Map<Repository, ((status: WorkingDirectoryStatus) => void)[]>;
     private readonly lastStatus: Map<Repository, WorkingDirectoryStatus>;
-    private readonly listenerMapping: Map<number, { disposable: Disposable, callback: (status: WorkingDirectoryStatus) => void }>;
 
     constructor() {
         this.pollInterval = 1000; // TODO use preferences for polling time.
         this.pollers = new Map();
         this.listeners = new Map();
         this.lastStatus = new Map();
-        this.listenerMapping = new Map();
     }
 
     status(repository: Repository): Promise<WorkingDirectoryStatus> {
@@ -40,13 +35,16 @@ export class DugiteGit implements Git {
         return status(path).then(result => mapStatus(result, repository));
     }
 
-    onStatusChange(repository: Repository, callback: (status: WorkingDirectoryStatus) => void): Promise<Disposable> {
+    on(event: "statusChange", repository: Repository, listener: (status: WorkingDirectoryStatus) => void): Promise<void> {
         return new Promise((resolve, reject) => {
             const key = [...this.listeners.keys()].find(r => Repository.equals(repository, r)) || repository;
-            let collection = this.listeners.get(key);
-            if (!collection) {
-                collection = [];
-                this.listeners.set(key, collection);
+            let listeners = this.listeners.get(key);
+            if (!listeners) {
+                listeners = [];
+                this.listeners.set(key, listeners);
+            }
+            if (listeners.indexOf(listener) !== -1) {
+                return resolve();
             }
             if (!this.pollers.has(key)) {
                 const poller = setInterval(async () => {
@@ -55,45 +53,38 @@ export class DugiteGit implements Git {
                     // Send the change event, only if the status has changed.
                     if (!WorkingDirectoryStatus.equals(oldStatus, newStatus)) {
                         this.lastStatus.set(key, newStatus);
-                        collection!.map(entry => entry.callback).forEach(callback => callback(newStatus));
+                        listeners!.forEach(listener => listener(newStatus));
                     }
                 }, this.pollInterval);
                 this.pollers.set(key, poller);
             }
-            const listenerId = ++DugiteGit.LISTENER_ID;
-            const _git = this;
-            const disposable = {
-                dispose() {
-                    _git.dispose(listenerId, key);
-                }
-            }
-            const entry = { disposable, callback };
-            collection!.push(entry);
-            this.listenerMapping.set(listenerId, entry);
-            return resolve(disposable);
+            listeners.push(listener);
+            return resolve();
         });
     }
 
-    private dispose(listenerId: number, repository: Repository) {
-        const entry = this.listenerMapping.get(listenerId);
-        if (entry) {
-            const listeners = this.listeners.get(repository);
-            if (listeners) {
-                const index = listeners.indexOf(entry);
-                if (index !== -1) {
-                    listeners.splice(index, 1);
-                    if (listeners.length === 0) {
-                        this.listeners.delete(repository);
-                        const poller = this.pollers.get(repository);
-                        if (poller) {
-                            clearTimeout(poller);
-                        }
-                        this.pollers.delete(repository);
-                        this.lastStatus.delete(repository);
+    off(event: "statusChange", repository: Repository, listener: (status: WorkingDirectoryStatus) => void): Promise<void> {
+        return new Promise((resolve, reject) => {
+            const key = [...this.listeners.keys()].find(r => Repository.equals(repository, r)) || repository;
+            const listeners = this.listeners.get(key);
+            if (!listeners) {
+                return resolve();
+            }
+            const index = listeners.indexOf(listener);
+            if (index !== -1) {
+                listeners.splice(index, 1);
+                if (listeners.length === 0) {
+                    this.listeners.delete(repository);
+                    const poller = this.pollers.get(repository);
+                    if (poller) {
+                        clearTimeout(poller);
                     }
+                    this.pollers.delete(repository);
+                    this.lastStatus.delete(repository);
                 }
             }
-        }
+            return resolve();
+        });
     }
 
 }
