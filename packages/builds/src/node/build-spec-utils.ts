@@ -24,9 +24,11 @@ export namespace BuildUtils {
         return new Promise((resolve, reject) => {
             // tslint:disable-next-line:no-any
             eventHandler.on(name, (obj: any) => {
+                // console.log('waitForNamedEventCount() received ' + name + ' ;');
                 hits++;
                 events.push(obj);
                 if (hits === count) {
+                    // console.log('waitForNamedEventCount(): resolving... ');
                     resolve(events);
                 }
             });

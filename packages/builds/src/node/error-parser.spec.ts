@@ -13,7 +13,6 @@ import "mocha";
 import * as chaiAsPromised from "chai-as-promised";
 import { BuildUtils } from "./build-spec-utils";
 import * as path from "path";
-// import { Path } from "../../../core/src/common/path";
 
 import { testContainer } from "./inversify.spec-config";
 
@@ -34,6 +33,7 @@ const tscErrorMatcher: IErrorMatcher = {
     "name": "TypeScript compiler",
     "label": "TypeScript errors",
     "owner": "tsc",
+    // "fileLocation": [FileLocationKind.RELATIVE, '/this/is/a/base/path'],
     "fileLocation": FileLocationKind.RELATIVE,
     "pattern": tscErrorPattern
 };
@@ -142,11 +142,29 @@ describe("error-parser", () => {
 
         it('verify we handle parser input stream emiting "error"', () => {
             const mockedStream = new stream.Readable();
+            mockedStream._read = function noop() { };
+
             const promise = parser.parse(gccLinkerErrorMatcher, mockedStream);
             const errorMessage = 'this is a test error';
             mockedStream.emit('error', errorMessage);
 
             return expect(promise).to.eventually.be.rejectedWith(errorMessage);
+        });
+
+        it('verify parser emits error when input stream emiting "error"', () => {
+            const mockedStream = new stream.Readable();
+            mockedStream._read = function noop() { };
+
+            const promise = parser.parse(gccLinkerErrorMatcher, mockedStream);
+            const errorMessage = 'this is a test error';
+
+            const promise2 = BuildUtils.waitForNamedEventCount(parser, 'internal-parser-error', 1);
+            mockedStream.emit('error', errorMessage);
+
+            // "handle" promise rejection
+            promise.then(() => { }).catch(() => { });
+
+            return expect(promise2).to.eventually.deep.equal([errorMessage]);
         });
     });
 
@@ -179,11 +197,11 @@ describe("error-parser", () => {
             readStream = fs.createReadStream(__dirname + logName);
         });
 
-        it('verify parser emits "error-found" events as entries are parsed', () => {
+        it('verify parser emits "entry-found" events as entries are parsed', () => {
             parser.parse(gccErrorMatcher, readStream);
 
             // we expect 4 errors/warnings to be found
-            const promise = BuildUtils.waitForNamedEventCount(parser, 'error-found', 4);
+            const promise = BuildUtils.waitForNamedEventCount(parser, 'entry-found', 4);
 
             return expect(promise).to.eventually.be.deep.equal(
                 [

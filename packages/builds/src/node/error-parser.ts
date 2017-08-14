@@ -8,14 +8,20 @@
 import * as events from "events";
 import * as path from "path";
 import { injectable, decorate } from "inversify";
-
 import * as readline from "readline";
+
 export const IErrorParser = Symbol("IErrorParser");
 
 export interface IErrorParser extends events.EventEmitter {
     /**
      * starts the parsing, returns a list of errors/warnings found in the input,
      * matching the given the error matcher.
+     * This class also emits the error/warnings it finds, as they are found. Here
+     * are the emitted events:
+     *
+     * 'done': The parsing of provided stream is done.
+     * 'entry-found': Emitted for each entry matching the IErrorMatcher was found, along with the entry (IParsedError)
+     * 'internal-parser-error': 
      */
     parse(errorMatcher: IErrorMatcher, inputStream: NodeJS.ReadableStream): Promise<IParsedError[]>
 }
@@ -96,10 +102,10 @@ export class ErrorParser extends events.EventEmitter implements IErrorParser {
                 });
 
                 stream.on('error', (err: String) => {
+                    // fire event
+                    this.emit('internal-parser-error', err);
+
                     reject(err);
-
-                    // TODO: fire event
-
                 });
 
                 // finished parsing log, emit "done" event
@@ -108,14 +114,15 @@ export class ErrorParser extends events.EventEmitter implements IErrorParser {
                     resolve(errors);
                 });
 
-                this.on('error-found', (entry: IParsedError) => {
+                this.on('entry-found', (entry: IParsedError) => {
                     errors.push(entry);
                 });
 
             } catch (err) {
-                reject('Problem reading stream');
+                // fire event
+                this.emit('internal-parser-error', err);
 
-                // TODO: fire event
+                reject('Problem reading stream');
             }
         });
     }
@@ -153,7 +160,7 @@ export class ErrorParser extends events.EventEmitter implements IErrorParser {
             }
 
             // emit new entry immediately
-            this.emit('error-found', parsedEntry);
+            this.emit('entry-found', parsedEntry);
         }
     }
 
