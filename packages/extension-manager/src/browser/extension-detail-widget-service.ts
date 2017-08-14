@@ -33,7 +33,7 @@ export class ExtensionDetailWidgetService implements Disposable {
         let widget = this.extensionDetailWidgetStore.get(rawExt.name);
 
         if (!widget) {
-            widget = new ExtensionDetailWidget('extensionDetailWidget' + this.counter++, rawExt, this.extensionManager);
+            widget = new ExtensionDetailWidget('extensionDetailWidget' + this.counter++, rawExt);
             this.extensionDetailWidgetStore.set(rawExt.name, widget);
             widget.disposed.connect(() => {
                 if (widget) {
