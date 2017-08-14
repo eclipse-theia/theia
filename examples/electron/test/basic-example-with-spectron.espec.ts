@@ -64,11 +64,11 @@ describe('Test specs with spectron', function () {
         // .browserWindow.getBounds().should.eventually.have.property('height').and.be.above(0)
     })
 
-    // it('Test - 3 :Files panel is showing', () => {
-    //     if (app.client.element('#file-navigator').getAttribute('class').split(' ').indexOf('p-mod-hidden') !== -1) {
-    //         return false;
-    //     } else {
-    //         return true;
-    //     }
-    // });
+    it('Test - 3 :Files panel is showing', () => {
+        if (app.client.element('#file-navigator').getAttribute('class').split(' ').indexOf('p-mod-hidden') !== -1) {
+            return false;
+        } else {
+            return true;
+        }
+    });
 });
