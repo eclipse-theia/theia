@@ -1,3 +1,4 @@
+import { WorkingDirectoryStatus } from '../../lib/common';
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -13,7 +14,6 @@ import { FileStatus } from '../common';
 import { DugiteGit } from './dugite-git';
 import { setupRepository } from './test/fixture-helper';
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { DisposableCollection } from '@theia/core/lib/common';
 
 const expect = chai.expect;
 const track = temp.track();
@@ -109,26 +109,23 @@ describe('dugite-git', async () => {
     describe('onStatusChange', async () => {
 
         let repositoryLocation: string;
-        let disposables: DisposableCollection;
 
         beforeEach(async () => {
             repositoryLocation = setupRepository('git_repo_01', track.mkdirSync());
-            disposables = new DisposableCollection();
-        });
-
-        afterEach(async () => {
-            disposables.dispose();
         });
 
         it('modified', function (done) {
             this.timeout(5000);
             const newFilePath = path.join(repositoryLocation, 'A.txt');
             const repository = { localUri: repositoryLocation };
-            git.onStatusChange(repository, (status) => {
-                expect(status.changes.filter((file) => file.status === FileStatus.Modified).map(file => FileUri.fsPath(file.uri))).to.contain(newFilePath);
-                done();
-            }).then(listener => {
-                disposables.push(listener);
+            const listener = (status: WorkingDirectoryStatus) => {
+                git.off('statusChange', repository, listener).then(() => {
+                    expect(status.changes.length).to.be.equal(1);
+                    expect(status.changes.filter((file) => file.status === FileStatus.Modified).map(file => FileUri.fsPath(file.uri))).to.contain(newFilePath);
+                    done();
+                });
+            }
+            git.on('statusChange', repository, listener).then(() => {
                 fs.writeFileSync(newFilePath, 'X');
                 expect(fs.readFileSync(newFilePath, 'utf-8')).to.be.equal('X');
             });
