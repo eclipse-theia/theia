@@ -64,6 +64,32 @@ export class DugiteGit implements Git {
         });
     }
 
+    unstage(repository: Repository, file: string | string[]): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const repositoryPath = FileUri.fsPath(new URI(repository.localUri));
+                const result = await this.getStagedFiles(repositoryPath);
+                const filesToUnstage = [];
+                const files = (Array.isArray(file) ? file : [file]).map(f => new URI(f)).map(FileUri.fsPath).map(f => Path.relative(repositoryPath, f));
+                for (const f of result) {
+                    // TODO handle deleted and moved files.
+                    const index = files.indexOf(f);
+                    if (index !== -1) {
+                        files.splice(index, 1);
+                        filesToUnstage.push(f);
+                    }
+                }
+                if (files.length !== 0) {
+                    return reject(new Error(`The following files cannot be unstaged because those do not exist in the working directory as changed files: ${files}`));
+                }
+                await this.unstageFiles(repositoryPath, filesToUnstage);
+                return resolve();
+            } catch (error) {
+                return reject(error);
+            }
+        });
+    }
+
     stagedFiles(repository: Repository): Promise<FileChange[]> {
         return new Promise(async (resolve, reject) => {
             const repositoryPath = FileUri.fsPath(new URI(repository.localUri));
@@ -155,7 +181,21 @@ export class DugiteGit implements Git {
             if (result.exitCode !== 0) {
                 return reject(new Error(result.stderr));
             }
-            return resolve(result.stdout.split('\n'));
+            return resolve(result.stdout.split('\n').filter(s => s.length > 0));
+        });
+    }
+
+    private unstageFiles(repositoryPath: string, filePath: string | string[]): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            const stagedFiles = await this.getStagedFiles(repositoryPath);
+
+            const result = await git(['reset', 'HEAD'], repositoryPath, 'diff', {
+                stdin: stagedFiles.join('\0')
+            });
+            if (result.exitCode !== 0) {
+                return reject(new Error(result.stderr));
+            }
+            return resolve();
         });
     }
 

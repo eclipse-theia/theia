@@ -1,4 +1,3 @@
-import { WorkingDirectoryStatus } from '../../lib/common';
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -10,7 +9,7 @@ import * as fs from 'fs';
 import * as chai from 'chai';
 import * as path from 'path';
 import * as temp from 'temp';
-import { FileStatus } from '../common';
+import { FileStatus, WorkingDirectoryStatus } from '../common';
 import { DugiteGit } from './dugite-git';
 import { setupRepository } from './test/fixture-helper';
 import { FileUri } from '@theia/core/lib/node/file-uri';
@@ -106,7 +105,7 @@ describe('dugite-git', async () => {
 
     });
 
-    describe('on', async () => {
+    describe('statusChange', async () => {
 
         let repositoryLocation: string;
 
@@ -213,6 +212,19 @@ describe('dugite-git', async () => {
             } else {
                 expect(FileUri.fsPath(fileChange.oldUri)).to.be.equal(oldFilePath);
                 expect(result[0].status).to.be.equal(FileStatus.Renamed);
+            }
+        });
+
+        it('rejected', async () => {
+            const filePath = path.join(repositoryLocation, 'X.txt');
+            expect(fs.existsSync(filePath)).to.be.false;
+
+            const repository = { localUri: repositoryLocation };
+            try {
+                await git.stage(repository, FileUri.create(filePath).toString());
+                throw new Error('Expected an error when staging a file which does not exist in the working directory.');
+            } catch (error) {
+                expect(error.message).to.be.equal(`The following files cannot be staged because those do not exist in the working directory as changed files: ${filePath}`);
             }
         });
 
