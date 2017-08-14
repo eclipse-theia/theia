@@ -11,7 +11,7 @@ export interface Git {
 
     /**
      * Returns with the working directory status of the given Git repository.
-     * 
+     *
      * @param the repository to get the working directory status from.
      */
     status(repository: Repository): Promise<WorkingDirectoryStatus>;
@@ -19,7 +19,7 @@ export interface Git {
     /**
      * Stages the given file or files in the working clone. The invocation will be rejected if
      * any files (given with their file URIs) is not among the changed files.
-     * 
+     *
      * @param repository the repository to stage the files.
      * @param file one or multiple file URIs to stage in the working clone.
      */
@@ -34,7 +34,7 @@ export interface Git {
 
     /**
      * Commits the changes of all staged files in the working directory.
-     * 
+     *
      * @param repository the repository where the staged changes has to be committed.
      * @param message the mandatory commit message.
      */
@@ -46,7 +46,7 @@ export interface Git {
      * If multiple identical `listener` instances are registered on the same `Repository` with the same parameters,
      * the duplicate instances are discarded. They do not cause the `listener` to be called twice, and they do not 
      * need to be removed manually with the `off('statusChange' repository, listener)` method.
-     * 
+     *
      * @param event the string representation of the event to listen for.
      * @param repository the repository to listen on working directory changes.
      * @param listener the object which receives a working directory change notification.

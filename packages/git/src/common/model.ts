@@ -149,7 +149,7 @@ export namespace Repository {
     /**
      * `true` if the arguments are equal. More precisely; when both the local and the remote repository URLs
      * are equal.
-     * 
+     *
      * @param left the repository to compare with the other.
      * @param right the other repository.
      */

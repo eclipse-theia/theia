@@ -155,7 +155,7 @@ export class DugiteGit implements Git {
             if (result.exitCode !== 0) {
                 return reject(new Error(result.stderr));
             }
-            return resolve(result.stdout.split('\n'))
+            return resolve(result.stdout.split('\n'));
         });
     }
 
