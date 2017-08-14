@@ -5,14 +5,40 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Repository, WorkingDirectoryStatus } from './model';
+import { FileChange, Repository, WorkingDirectoryStatus } from './model';
 
 export interface Git {
 
     /**
      * Returns with the working directory status of the given Git repository.
+     * 
+     * @param the repository to get the working directory status from.
      */
     status(repository: Repository): Promise<WorkingDirectoryStatus>;
+
+    /**
+     * Stages the given file or files in the working clone. The invocation will be rejected if
+     * any files (given with their file URIs) is not among the changed files.
+     * 
+     * @param repository the repository to stage the files.
+     * @param file one or multiple file URIs to stage in the working clone.
+     */
+    stage(repository: Repository, file: string | string[]): Promise<void>;
+
+    /**
+     * Resolves to a list a file changes, representing all the staged files in the working directory.
+     * 
+     * @param repository the repository to get all staged files from.
+     */
+    stagedFiles(repository: Repository): Promise<FileChange[]>;
+
+    /**
+     * Commits the changes of all staged files in the working directory.
+     * 
+     * @param repository the repository where the staged changes has to be committed.
+     * @param message the mandatory commit message.
+     */
+    commit(repository: Repository, message: string): Promise<boolean>;
 
     /**
      * Registers a working directory status changes listener for the given Git repository.
