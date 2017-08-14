@@ -256,20 +256,42 @@ describe("error-parser", () => {
     });
 
     describe('parse other types of logs', () => {
-        it('verify we can parse tsc error', () => {
-            const tscErrorLine = "src/node/error-parser.spec.ts (31,4): Cannot find name 'z'. (2304)";
-            const mockedStream = new stream.Readable();
+        const tscErrorLine = "src/node/error-parser.spec.ts (31,4): Cannot find name 'z'. (2304)";
+        let mockedStream: stream.Readable;
+
+        beforeEach(() => {
+            mockedStream = new stream.Readable();
+        });
+
+        it('verify parsed tsc error with a provided filePrefix results in file having expected absolute path', () => {
             const promise = parser.parse(tscErrorMatcher, mockedStream);
 
             mockedStream.emit('data', tscErrorLine);
             mockedStream.emit('end');
 
-            const expectedFileName = path.resolve(TSC_BASE_PATH, 'src/node/error-parser.spec.ts');
+            return expect(promise).to.eventually.deep.equal(
+                [{
+                    "code": "2304",
+                    "file": path.resolve(TSC_BASE_PATH, 'src/node/error-parser.spec.ts'),
+                    "location": "31,4",
+                    "message": "Cannot find name 'z'. ",
+                    "severity": 'error'
+                }
+                ]
+            );
+        });
+
+        it('verify parsed tsc error without a provided filePrefix results in file having a relative path', () => {
+            tscErrorMatcher.filePrefix = '';
+            const promise = parser.parse(tscErrorMatcher, mockedStream);
+
+            mockedStream.emit('data', tscErrorLine);
+            mockedStream.emit('end');
 
             return expect(promise).to.eventually.deep.equal(
                 [{
                     "code": "2304",
-                    "file": expectedFileName,
+                    "file": path.resolve('src/node/error-parser.spec.ts'),
                     "location": "31,4",
                     "message": "Cannot find name 'z'. ",
                     "severity": 'error'

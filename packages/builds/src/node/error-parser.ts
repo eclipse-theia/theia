@@ -140,7 +140,9 @@ export class ErrorParser extends events.EventEmitter implements IErrorParser {
                 if (errorMatcher.filePrefix) {
                     fileAndPath = path.resolve(errorMatcher.filePrefix, match[errorMatcher.pattern.file]);
                 } else {
-                    fileAndPath = path.resolve(__dirname, match[errorMatcher.pattern.file]);
+                    // we seem to be missing information to transform the relative path
+                    // into an absolute one. Let's report the relative path for now
+                    fileAndPath = path.resolve(match[errorMatcher.pattern.file]);
                 }
             } else {
                 fileAndPath = path.resolve(match[errorMatcher.pattern.file]);
