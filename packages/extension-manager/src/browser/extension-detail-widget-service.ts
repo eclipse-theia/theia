@@ -9,7 +9,7 @@ import { injectable, inject } from 'inversify';
 import { FrontendApplication } from '@theia/core/lib/browser';
 import { ExtensionDetailWidget } from './extension-detail-widget';
 import { Extension, ExtensionManager, ResolvedExtension } from '../common/extension-manager';
-import { Event, Disposable, DisposableCollection, Emitter } from '@theia/core';
+import { Disposable, DisposableCollection, Emitter } from '@theia/core';
 
 @injectable()
 export class ExtensionDetailWidgetService implements Disposable {
@@ -33,7 +33,7 @@ export class ExtensionDetailWidgetService implements Disposable {
         let widget = this.extensionDetailWidgetStore.get(rawExt.name);
 
         if (!widget) {
-            widget = new ExtensionDetailWidget('extensionDetailWidget' + this.counter++, rawExt, this.extensionManager, this);
+            widget = new ExtensionDetailWidget('extensionDetailWidget' + this.counter++, rawExt, this.extensionManager);
             this.extensionDetailWidgetStore.set(rawExt.name, widget);
             widget.disposed.connect(() => {
                 if (widget) {
@@ -46,23 +46,4 @@ export class ExtensionDetailWidgetService implements Disposable {
         }
         this.app.shell.activateMain(widget.id);
     }
-
-    setExtensionBusyFlag(extension: Extension) {
-        const extensionWidget = this.extensionDetailWidgetStore.get(extension.name);
-        if (extensionWidget) {
-            extensionWidget.setBusyFlagAndUpdate(extension.busy);
-        }
-    }
-
-    /**
-     * Notify when the busy flag of a extension has been set.
-     */
-    get onExtensionBusyFlagSet(): Event<Extension> {
-        return this.onExtensionBusyFlagSetEmitter.event;
-    }
-
-    fireExtensionBusyFlagSet(extension: Extension): void {
-        this.onExtensionBusyFlagSetEmitter.fire(extension);
-    }
-
 }

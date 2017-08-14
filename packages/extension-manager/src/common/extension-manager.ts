@@ -5,9 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable } from "inversify";
-import { Event, Emitter, Disposable, DisposableCollection } from "@theia/core";
+import { inject, injectable } from 'inversify';
+import { Event, Emitter, Disposable, DisposableCollection } from '@theia/core';
 import * as protocol from './extension-protocol';
+import { ExtensionChange } from './extension-protocol';
 
 /**
  * The extension allows to:
@@ -20,12 +21,23 @@ import * as protocol from './extension-protocol';
  */
 export class Extension extends protocol.Extension {
 
-    constructor(
-        extension: protocol.Extension,
-        protected readonly server: protocol.ExtensionServer
-    ) {
+    protected readonly onDidChangedEmitter = new Emitter<ExtensionChange>();
+
+    constructor(extension: protocol.Extension,
+                protected readonly server: protocol.ExtensionServer,
+                protected readonly manager: ExtensionManager) {
         super();
         Object.assign(this, extension);
+        manager.onDidChange(change => {
+            if (change.name === this.name) {
+                Object.assign(this, change);
+                this.onDidChangedEmitter.fire(change);
+            }
+        });
+    }
+
+    get onDidChange(): Event<ExtensionChange> {
+        return this.onDidChangedEmitter.event;
     }
 
     /**
@@ -43,7 +55,6 @@ export class Extension extends protocol.Extension {
      * Intall the latest version of this extension.
      */
     install(): void {
-        this.busy = true;
         this.server.install(this.name);
     }
 
@@ -51,7 +62,6 @@ export class Extension extends protocol.Extension {
      * Uninstall the extension.
      */
     uninstall(): void {
-        this.busy = true;
         this.server.uninstall(this.name);
     }
 
@@ -59,7 +69,6 @@ export class Extension extends protocol.Extension {
      * Update the extension to the latest version.
      */
     update(): void {
-        this.busy = true;
         this.server.update(this.name);
     }
 
@@ -77,25 +86,23 @@ export type ResolvedExtension = Extension & protocol.ResolvedExtension;
  * - listen to changes of:
  *   - installed extension;
  *   - and the installation process.
- 
+
  */
 @injectable()
 export class ExtensionManager implements Disposable {
 
-    protected readonly onChangedEmitter = new Emitter<void>();
+    protected readonly onChangedEmitter = new Emitter<protocol.ExtensionChange>();
     protected readonly onWillStartInstallationEmitter = new Emitter<void>();
     protected readonly onDidStopInstallationEmitter = new Emitter<protocol.DidStopInstallationParam>();
     protected readonly toDispose = new DisposableCollection();
 
-    constructor(
-        @inject(protocol.ExtensionServer) protected readonly server: protocol.ExtensionServer
-    ) {
+    constructor(@inject(protocol.ExtensionServer) protected readonly server: protocol.ExtensionServer) {
         this.toDispose.push(server);
         this.toDispose.push(this.onChangedEmitter);
         this.toDispose.push(this.onWillStartInstallationEmitter);
         this.toDispose.push(this.onDidStopInstallationEmitter);
         this.server.setClient({
-            onDidChange: () => this.fireDidChange(),
+            onDidChange: change => this.fireDidChange(change),
             onWillStartInstallation: () => this.fireWillStartInstallation(),
             onDidStopInstallation: params => this.fireDidStopInstallation(params),
         });
@@ -113,7 +120,7 @@ export class ExtensionManager implements Disposable {
     list(param?: protocol.SearchParam): Promise<Extension[]> {
         return this.server.list(param).then(extensions =>
             extensions.map(extension =>
-                new Extension(extension, this.server)
+                new Extension(extension, this.server, this)
             )
         );
     }
@@ -121,12 +128,12 @@ export class ExtensionManager implements Disposable {
     /**
      * Notify when extensions are installed, uninsalled or updated.
      */
-    get onDidChange(): Event<void> {
+    get onDidChange(): Event<protocol.ExtensionChange> {
         return this.onChangedEmitter.event;
     }
 
-    protected fireDidChange(): void {
-        this.onChangedEmitter.fire(undefined);
+    protected fireDidChange(change: protocol.ExtensionChange): void {
+        this.onChangedEmitter.fire(change);
     }
 
     /**

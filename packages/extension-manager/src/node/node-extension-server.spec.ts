@@ -8,7 +8,7 @@
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as assert from 'assert';
-import { ExtensionClient, ExtensionServer } from '../common/extension-protocol';
+import { ExtensionChange, ExtensionClient, ExtensionServer } from '../common/extension-protocol';
 import extensionNodeTestContainer from './test/extension-node-test-container';
 import { AppProject } from './app-project';
 
@@ -20,7 +20,7 @@ const appProjectPath = path.resolve(__dirname, '..', '..', 'test-resources', 'te
 export function waitForDidChange(): Promise<void> {
     return new Promise(resolve => {
         server.setClient(<ExtensionClient>{
-            onDidChange: function () {
+            onDidChange: function (extensionChange: ExtensionChange) {
                 resolve();
             }
         });

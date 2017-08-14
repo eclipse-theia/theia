@@ -12,7 +12,7 @@ import { ExtensionPackage } from 'generator-theia';
 import * as npm from 'generator-theia/generators/common/npm';
 import { DisposableCollection } from '@theia/core';
 import {
-    RawExtension, ResolvedRawExtension, ResolvedExtension, Extension, ExtensionServer, ExtensionClient, SearchParam
+    RawExtension, ResolvedRawExtension, ResolvedExtension, Extension, ExtensionServer, ExtensionClient, SearchParam, ExtensionChange
 } from '../common/extension-protocol';
 import * as npms from './npms';
 import { AppProject } from './app-project';
@@ -30,10 +30,7 @@ export class NodeExtensionServer implements ExtensionServer {
 
     protected readonly busyExtensions = new Set<string>();
 
-    constructor(@inject(AppProject) protected readonly appProject: AppProject) {
-        this.toDispose.push(appProject.onDidChangePackage(() =>
-            this.notification('onDidChange')()
-        ));
+    constructor( @inject(AppProject) protected readonly appProject: AppProject) {
         this.toDispose.push(appProject.onWillInstall(() =>
             this.notification('onWillStartInstallation')()
         ));
@@ -100,18 +97,33 @@ export class NodeExtensionServer implements ExtensionServer {
         this.setBusy(extension, true);
         const latestVersion = await this.latestVersion(extension);
         if (latestVersion) {
-            await this.appProject.update(model =>
-                model.setDependency(extension, latestVersion)
-            );
+            await this.appProject.update(model => {
+                if (model.setDependency(extension, latestVersion)) {
+                    this.notifyDidChange({
+                        name: extension,
+                        installed: true
+                    });
+                    return true;
+                }
+                return false;
+            });
         }
         this.setBusy(extension, false);
     }
 
     async uninstall(extension: string): Promise<void> {
         this.setBusy(extension, true);
-        await this.appProject.update(model =>
-            model.setDependency(extension, undefined)
-        );
+        await this.appProject.update(model => {
+            if (model.setDependency(extension, undefined)) {
+                this.notifyDidChange({
+                    name: extension,
+                    installed: false,
+                    outdated: false
+                });
+                return true;
+            }
+            return false;
+        });
         this.setBusy(extension, false);
     }
 
@@ -136,10 +148,16 @@ export class NodeExtensionServer implements ExtensionServer {
             if (!extensionPackage.isOutdated()) {
                 return false;
             }
-            return model.setDependency(extension, extensionPackage.latestVersion);
+            if (model.setDependency(extension, extensionPackage.latestVersion)) {
+                this.notifyDidChange({
+                    name: extension,
+                    outdated: false
+                });
+                return true;
+            }
+            return false;
         });
         this.setBusy(extension, false);
-
     }
 
     async list(param?: SearchParam): Promise<Extension[]> {
@@ -229,7 +247,14 @@ export class NodeExtensionServer implements ExtensionServer {
         } else {
             this.busyExtensions.delete(extension);
         }
-        this.notification('onDidChange')();
+        this.notifyDidChange({
+            name: extension,
+            busy
+        });
+    }
+
+    protected notifyDidChange(change: ExtensionChange): void {
+        this.notification('onDidChange')(change);
     }
 
     protected latestVersion(extension: string): Promise<string | undefined> {

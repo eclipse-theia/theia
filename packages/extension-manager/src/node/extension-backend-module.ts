@@ -6,9 +6,12 @@
  */
 
 import * as yargs from 'yargs';
-import { ContainerModule, interfaces } from "inversify";
+import { ContainerModule, interfaces } from 'inversify';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
-import { ExtensionServer, ExtensionClient, extensionPath } from "../common/extension-protocol";
+import {
+    ExtensionServer, ExtensionClient, extensionPath, ExtensionChange,
+    DidStopInstallationParam
+} from '../common/extension-protocol';
 import { NodeExtensionServer } from './node-extension-server';
 import { AppProject, AppProjectOptions } from './app-project';
 import { NpmClient, NpmClientOptions } from './npm-client';
@@ -31,10 +34,10 @@ export function bindNodeExtensionServer(bind: interfaces.Bind, args: AppProjectA
     bind(AppProjectOptions).toConstantValue(args);
     bind(AppProject).toSelf().inSingletonScope();
 
-    bind(NodeExtensionServer).toSelf();
+    bind(NodeExtensionServer).toSelf().inSingletonScope();
     bind(ExtensionServer).toDynamicValue(ctx =>
         ctx.container.get(NodeExtensionServer)
-    );
+    ).inSingletonScope();
 }
 
 const appProjectPath = 'app-project-path';
@@ -55,12 +58,36 @@ export default new ContainerModule(bind => {
         autoInstall: !argv[appNoAutoInstall]
     });
 
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<ExtensionClient>(extensionPath, client => {
+    const clients = new Set<ExtensionClient>();
+
+    const dispatchingClient: ExtensionClient = {
+        onDidChange: (extensionChange: ExtensionChange) => {
+            clients.forEach(client => {
+                client.onDidChange(extensionChange);
+            });
+        },
+        onDidStopInstallation: (params: DidStopInstallationParam) => {
+            clients.forEach(client => {
+                client.onDidStopInstallation(params);
+            });
+        },
+        onWillStartInstallation: () => {
+            clients.forEach(client => {
+                client.onWillStartInstallation();
+            });
+        }
+    };
+
+    bind(ConnectionHandler).toDynamicValue(ctx => {
             const server = ctx.container.get<ExtensionServer>(ExtensionServer);
-            server.setClient(client);
-            client.onDidCloseConnection(() => server.dispose());
-            return server;
-        })
+            server.setClient(dispatchingClient);
+            return new JsonRpcConnectionHandler<ExtensionClient>(extensionPath, client => {
+                clients.add(client);
+                client.onDidCloseConnection(() => {
+                    clients.delete(client);
+                });
+                return server;
+            });
+        }
     ).inSingletonScope();
 });
