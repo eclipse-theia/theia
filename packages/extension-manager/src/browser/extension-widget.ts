@@ -15,9 +15,10 @@ import { ExtensionDetailWidgetService } from './extension-detail-widget-service'
 @injectable()
 export class ExtensionWidget extends VirtualWidget {
 
-    protected extensionStore: Map<string, Extension> = new Map();
+    protected extensionStore: Extension[] = [];
     protected readonly updateTimeAfterTyping = 50;
     protected readonly toDisposeOnTypeSearchQuery = new DisposableCollection();
+    protected readonly toDisposedOnFetch = new DisposableCollection();
     protected ready = false;
 
     constructor( @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager,
@@ -26,18 +27,6 @@ export class ExtensionWidget extends VirtualWidget {
         this.id = 'extensions';
         this.title.label = 'Extensions';
         this.addClass('theia-extensions');
-
-        extensionManager.onDidChange(event => {
-            this.fetchExtensions();
-        });
-
-        detailWidgetService.onExtensionBusyFlagSet(ext => {
-            const extension = this.extensionStore.get(ext.name);
-            if (extension) {
-                extension.busy = ext.busy;
-            }
-            this.update();
-        });
 
         this.fetchExtensions();
     }
@@ -48,14 +37,17 @@ export class ExtensionWidget extends VirtualWidget {
     }
 
     protected fetchExtensions() {
+        this.toDisposedOnFetch.dispose();
         const htmlInputElement = (document.getElementById('extensionSearchField') as HTMLInputElement);
         const searchQuery = htmlInputElement ? htmlInputElement.value : '';
         this.extensionManager.list({
             query: searchQuery
         }).then(extensions => {
-            this.extensionStore.clear();
+            this.extensionStore = extensions;
             extensions.forEach(ext => {
-                this.extensionStore.set(ext.name, ext);
+                this.toDisposedOnFetch.push(ext.onDidChange(() => {
+                    this.update();
+                }));
             });
             this.ready = true;
             this.update();
@@ -188,7 +180,6 @@ export class ExtensionWidget extends VirtualWidget {
                     } else {
                         extension.install();
                     }
-                    this.detailWidgetService.setExtensionBusyFlag(extension);
                     this.update();
                     event.stopPropagation();
                 }
