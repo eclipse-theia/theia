@@ -22,7 +22,7 @@
     "reflect-metadata": "^0.1.10",
     "requirejs": "^2.3.3",
     "vscode-uri": "^1.0.1",
-    "vscode-ws-jsonrpc": "0.0.1-alpha.4",
+    "vscode-ws-jsonrpc": "0.0.1-alpha.5",
     "ws": "^3.0.0",
     "yargs": "^8.0.2"
   },
