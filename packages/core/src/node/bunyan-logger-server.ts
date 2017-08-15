@@ -29,14 +29,10 @@ export class BunyanLoggerServer implements ILoggerServer {
     /* Default log level.  */
     private logLevel: number = LogLevel.INFO;
 
-    /* Root logger id, this is a workaround to a bug with 0 in jsonrpc.  */
-    private readonly rootLoggerId = 1;
+    /* Root logger id.  */
+    private readonly rootLoggerId = 0;
 
     constructor() {
-        /* This is a workaround to a bug in json-rpc sending 0 is actually
-         * sending null rather than the number 0. In effect this starts
-         * the loggers indexes at 1. */
-        this.loggers.push({} as any);
 
         let logLevel = yargs.argv.loglevel;
         if (['trace', 'debug', 'info', 'warn', 'error', 'fatal'].indexOf(logLevel) < 0) {
