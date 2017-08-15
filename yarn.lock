@@ -120,6 +120,10 @@
   dependencies:
     "@types/node" "*"
 
+"@types/cldrjs@*":
+  version "0.4.19"
+  resolved "https://registry.yarnpkg.com/@types/cldrjs/-/cldrjs-0.4.19.tgz#fbb5c0641096818f4ac641039ac31aa62962b957"
+
 "@types/express-serve-static-core@*":
   version "4.0.49"
   resolved "https://registry.yarnpkg.com/@types/express-serve-static-core/-/express-serve-static-core-4.0.49.tgz#3438d68d26e39db934ba941f18e3862a1beeb722"
@@ -145,6 +149,12 @@
   dependencies:
     "@types/minimatch" "*"
     "@types/node" "*"
+
+"@types/globalize@0.0.30":
+  version "0.0.30"
+  resolved "https://registry.yarnpkg.com/@types/globalize/-/globalize-0.0.30.tgz#3c3c572e80e3167b123c923b88068aa43a895277"
+  dependencies:
+    "@types/cldrjs" "*"
 
 "@types/mime@*":
   version "1.3.1"
@@ -1031,6 +1041,44 @@ clap@^1.0.9:
   resolved "https://registry.yarnpkg.com/clap/-/clap-1.2.0.tgz#59c90fe3e137104746ff19469a27a634ff68c857"
   dependencies:
     chalk "^1.1.3"
+
+cldr-data-downloader@0.3.x:
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/cldr-data-downloader/-/cldr-data-downloader-0.3.2.tgz#8d0c98346d16486252fdc9afa36a46542fe4652f"
+  dependencies:
+    adm-zip "0.4.4"
+    mkdirp "0.5.0"
+    nopt "3.0.x"
+    npmconf "2.0.9"
+    progress "1.1.8"
+    q "1.0.1"
+    request "~2.74.0"
+    request-progress "0.3.1"
+
+cldr-data@>=25, cldr-data@^31.0.2:
+  version "31.0.2"
+  resolved "https://registry.yarnpkg.com/cldr-data/-/cldr-data-31.0.2.tgz#cffccc06eac7700e95c63c5d1ea61c2543d4086d"
+  dependencies:
+    cldr-data-downloader "0.3.x"
+    glob "5.x.x"
+
+cldr@^4.5.0:
+  version "4.5.0"
+  resolved "https://registry.yarnpkg.com/cldr/-/cldr-4.5.0.tgz#938ab343c074d1bdaf6c1dd0c31c8bce1abe6ba4"
+  dependencies:
+    memoizeasync "1.0.0"
+    passerror "1.1.1"
+    pegjs "0.9.0"
+    seq "0.3.5"
+    uglify-js "1.3.3"
+    underscore "1.3.3"
+    unicoderegexp "0.4.1"
+    xmldom "0.1.27"
+    xpath "0.0.24"
+
+cldrjs@^0.4.6:
+  version "0.4.8"
+  resolved "https://registry.yarnpkg.com/cldrjs/-/cldrjs-0.4.8.tgz#3b994c464d2a32b5aca7c5de17a60a87e45dc4f9"
 
 clean-stack@^1.0.0:
   version "1.3.0"
@@ -2920,6 +2968,29 @@ global@^4.3.2:
     min-document "^2.19.0"
     process "~0.5.1"
 
+globalize-compiler@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/globalize-compiler/-/globalize-compiler-1.0.0.tgz#ac540f6d449ec95af18bd4777dd04816c9c18fdf"
+  dependencies:
+    escodegen "^1.6.1"
+    esprima "^2.3.0"
+    nopt "^3.0.3"
+
+globalize-webpack-plugin@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/globalize-webpack-plugin/-/globalize-webpack-plugin-1.1.1.tgz#50739e465fd9057732f9bcbbedae10f3a872484a"
+  dependencies:
+    cldr-data ">=25"
+    globalize-compiler "^1.0.0"
+    iana-tz-data ">=2017.0.0"
+    skip-amd-webpack-plugin "0.1.x"
+
+globalize@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/globalize/-/globalize-1.3.0.tgz#c56524b8acfd2ce38d0c97ddfdceb38f644b3392"
+  dependencies:
+    cldrjs "^0.4.6"
+
 globals@^9.0.0:
   version "9.18.0"
   resolved "https://registry.yarnpkg.com/globals/-/globals-9.18.0.tgz#aa3896b3e69b487f17e31ed2143d69a8e30c2d8a"
@@ -3288,6 +3359,10 @@ humanize-string@^1.0.0:
   resolved "https://registry.yarnpkg.com/humanize-string/-/humanize-string-1.0.1.tgz#fce2d6c545efc25dea1f23235182c98da0180b42"
   dependencies:
     decamelize "^1.0.0"
+
+iana-tz-data@>=2017.0.0:
+  version "2017.1.0"
+  resolved "https://registry.yarnpkg.com/iana-tz-data/-/iana-tz-data-2017.1.0.tgz#1eda4bfb9a09293499465066341743240e10d7ec"
 
 iconv-lite@0.4.15:
   version "0.4.15"
