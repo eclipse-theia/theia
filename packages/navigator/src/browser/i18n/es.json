@@ -1,0 +1,14 @@
+{
+	"es": {
+		"navigator": {
+			"browser": {
+				"menu": {
+					"OpenWith": "Abrir con"
+				},
+				"widget": {
+					"Files": "Archivos"
+				}
+			}
+		}
+	}
+}

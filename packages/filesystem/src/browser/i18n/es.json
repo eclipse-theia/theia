@@ -1,0 +1,14 @@
+{
+	"es": {
+		"filesystem": {
+			"browser": {
+				"File": "Archivo",
+				"New File": "Archivo Nuevo",
+				"New Folder": "Nueva Carpeta",
+				"Open": "Abierto...",
+				"Rename": "Rebautizar",
+				"Delete": "Borrar"
+			}
+		}
+	}
+}

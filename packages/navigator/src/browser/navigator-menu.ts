@@ -10,6 +10,15 @@ import { MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import { OpenerService } from '@theia/core/lib/browser';
 import { FileCommands } from '@theia/filesystem/lib/browser/filesystem-commands';
 
+const enjson = require('./i18n/en.json');
+const esjson = require('./i18n/es.json');
+const frjson = require('./i18n/fr.json');
+const Globalize = require("globalize");
+
+// Load potential languages
+Globalize.loadMessages(enjson);
+Globalize.loadMessages(esjson);
+Globalize.loadMessages(frjson);
 export const NAVIGATOR_CONTEXT_MENU = 'navigator-context-menu';
 
 export const OPEN_MENU_GROUP = '1_open';
@@ -29,7 +38,7 @@ export class NavigatorMenuContribution implements MenuContribution {
         registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, OPEN_MENU_GROUP], {
             commandId: FileCommands.FILE_OPEN
         });
-        registry.registerSubmenu([NAVIGATOR_CONTEXT_MENU, OPEN_MENU_GROUP], OPEN_WITH_MENU, 'Open With');
+        registry.registerSubmenu([NAVIGATOR_CONTEXT_MENU, OPEN_MENU_GROUP], OPEN_WITH_MENU, Globalize.formatMessage("navigator/browser/menu/OpenWith"));
         this.openerService.getOpeners().then(openers => {
             for (const opener of openers) {
                 const openWithCommand = FileCommands.FILE_OPEN_WITH(opener);

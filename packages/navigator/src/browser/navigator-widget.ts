@@ -10,12 +10,22 @@ import { ContextMenuRenderer, TreeProps } from "@theia/core/lib/browser";
 import { FileTreeWidget } from "@theia/filesystem/lib/browser";
 import { FileNavigatorModel } from "./navigator-model";
 
+const enjson = require('./i18n/en.json');
+const esjson = require('./i18n/es.json');
+const frjson = require('./i18n/fr.json');
+const Globalize = require("globalize");
+
+// Load potential languages
+Globalize.loadMessages(enjson);
+Globalize.loadMessages(esjson);
+Globalize.loadMessages(frjson);
+
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
 export const DIR_NODE_CLASS = 'theia-DirNode';
 export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 
 export const ID = 'files';
-export const LABEL = 'Files';
+export const LABEL = Globalize.formatMessage("navigator/browser/widget/Files");
 export const CLASS = 'theia-Files';
 
 @injectable()

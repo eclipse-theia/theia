@@ -15,6 +15,15 @@ import { FileSystem, FileStat } from '../common/filesystem';
 import { UriSelection } from '../common/filesystem-selection';
 import { SingleTextInputDialog, ConfirmDialog } from "@theia/core/lib/browser/dialogs";
 import { OpenerService, OpenHandler, open } from "@theia/core/lib/browser";
+const enjson = require('./i18n/en.json');
+const esjson = require('./i18n/es.json');
+const frjson = require('./i18n/fr.json');
+const Globalize = require("globalize");
+
+// Load potential languages
+Globalize.loadMessages(enjson);
+Globalize.loadMessages(esjson);
+Globalize.loadMessages(frjson);
 
 export namespace FileCommands {
     export const NEW_FILE = 'file:newFile';
@@ -43,7 +52,7 @@ export class FileMenuContribution implements MenuContribution {
 
     registerMenus(registry: MenuModelRegistry) {
         // Explicitly register the Edit Submenu
-        registry.registerSubmenu([MAIN_MENU_BAR], FileMenus.FILE[1], "File");
+        registry.registerSubmenu([MAIN_MENU_BAR], FileMenus.FILE[1], Globalize.formatMessage("filesystem/browser/File"));
 
         registry.registerMenuAction(FileMenus.NEW_GROUP, {
             commandId: FileCommands.NEW_FILE
@@ -66,23 +75,23 @@ export class FileCommandContribution implements CommandContribution {
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand({
             id: FileCommands.NEW_FILE,
-            label: 'New File'
+            label: Globalize.formatMessage("filesystem/browser/New File")
         });
         registry.registerCommand({
             id: FileCommands.NEW_FOLDER,
-            label: 'New Folder'
+            label: Globalize.formatMessage("filesystem/browser/New Folder")
         });
         registry.registerCommand({
             id: FileCommands.FILE_OPEN,
-            label: 'Open'
+            label: Globalize.formatMessage("filesystem/browser/Open")
         });
         registry.registerCommand({
             id: FileCommands.FILE_RENAME,
-            label: 'Rename'
+            label: Globalize.formatMessage("filesystem/browser/Rename")
         });
         registry.registerCommand({
             id: FileCommands.FILE_DELETE,
-            label: 'Delete'
+            label: Globalize.formatMessage("filesystem/browser/Delete")
         });
 
         this.openerService.getOpeners().then(openers => {

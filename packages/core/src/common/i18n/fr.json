@@ -1,0 +1,14 @@
+{
+	"fr": {
+		"core": {
+			"common": {
+				"Edit": "Modifier",
+				"Cut": "Couper",
+				"Copy": "Copier",
+				"Paste": "Coller",
+				"Undo": "Annuler",
+				"Redo": "Refaire"
+			}
+		}
+	}
+}

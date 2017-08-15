@@ -12,7 +12,7 @@ The following instructions are for Linux and macOS.
 For Windows instructions [click here](#building-on-windows).
 
 ## Prerequisites
-* [Yarn package manager](https://yarnpkg.com/en/docs/install)
+* https://yarnpkg.com/en/docs/install
 * git
 
 So far it has been confirmed that there are some problems and errors using nodejs 8.0+ with Theia. As of now, nodejs 7.10.0 is confirmed to be working well and is the currently recommended versions.

@@ -6,18 +6,28 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry} from "@theia/core/lib/common";
+import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { DirNode, FileDialogFactory, FileMenus, FileStatNode } from '@theia/filesystem/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from './workspace-service';
 
+const enjson = require('./i18n/en.json');
+const esjson = require('./i18n/es.json');
+const frjson = require('./i18n/fr.json');
+const Globalize = require("globalize");
+
+// Load potential languages
+Globalize.loadMessages(enjson);
+Globalize.loadMessages(esjson);
+Globalize.loadMessages(frjson);
+
 export namespace WorkspaceCommands {
     export const OPEN: Command = {
         id: 'workspace:open',
-        label: 'Open...'
-    }
+        label: Globalize.formatMessage("workspace/browser/Open")
+    };
 }
 
 @injectable()

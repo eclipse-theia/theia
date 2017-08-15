@@ -38,5 +38,8 @@
       "frontend": "lib/browser/clipboard/browser-clipboard-module",
       "frontendElectron": "lib/electron-browser/clipboard/electron-clipboard-module"
     }
-  ]
+  ],
+  "scripts": {
+    "build": "gulp copy_json_files && npm run compile && npm run lint"
+  }
 }

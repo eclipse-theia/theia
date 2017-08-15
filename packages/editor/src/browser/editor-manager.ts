@@ -12,6 +12,15 @@ import { OpenHandler, FrontendApplication } from "@theia/core/lib/browser";
 import { EditorWidget } from "./editor-widget";
 import { EditorRegistry } from "./editor-registry";
 import { TextEditorProvider, Range, Position } from "./editor";
+const enjson = require('./i18n/en.json');
+const esjson = require('./i18n/es.json');
+const frjson = require('./i18n/fr.json');
+const Globalize = require("globalize");
+
+// Load potential languages
+Globalize.loadMessages(enjson);
+Globalize.loadMessages(esjson);
+Globalize.loadMessages(frjson);
 
 export const EditorManager = Symbol("EditorManager");
 
@@ -56,7 +65,7 @@ export interface EditorInput {
 export class EditorManagerImpl implements EditorManager {
 
     readonly id = "code-editor-opener";
-    readonly label = "Code Editor";
+    readonly label = Globalize.formatMessage("editor/browser/CodeEditor");
 
     protected readonly currentObserver: EditorManagerImpl.Observer;
     protected readonly activeObserver: EditorManagerImpl.Observer;
