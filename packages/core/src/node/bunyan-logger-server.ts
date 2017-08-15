@@ -7,9 +7,10 @@
 
 import * as bunyan from 'bunyan';
 import * as yargs from 'yargs';
-import { injectable } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { LogLevel } from '../common/logger';
 import { ILoggerServer, ILoggerClient } from '../common/logger-protocol';
+import { LoggerServerOptions } from '../common/logger-protocol';
 
 yargs.usage(`Usage main.js [--loglevel='trace','debug','info','warn','error','fatal']`)
     .default('loglevel', 'info')
@@ -32,17 +33,10 @@ export class BunyanLoggerServer implements ILoggerServer {
     /* Root logger id.  */
     private readonly rootLoggerId = 0;
 
-    constructor() {
-
-        let logLevel = yargs.argv.loglevel;
-        if (['trace', 'debug', 'info', 'warn', 'error', 'fatal'].indexOf(logLevel) < 0) {
-            logLevel = 'info';
-        }
-
-        this.loggers.push(bunyan.createLogger({
-            name: 'Theia',
-            level: logLevel
-        }));
+    constructor( @inject(LoggerServerOptions) options: object) {
+        this.loggers.push(bunyan.createLogger(
+            <bunyan.LoggerOptions>options
+        ));
     }
 
     dispose(): void {

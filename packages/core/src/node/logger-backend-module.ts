@@ -8,14 +8,26 @@
 import { ContainerModule, Container } from 'inversify';
 import { ConnectionHandler, JsonRpcConnectionHandler } from "../common/messaging";
 import { ILogger, LoggerFactory, LoggerOptions, Logger } from '../common/logger';
-import { ILoggerServer, ILoggerClient, loggerPath } from '../common/logger-protocol';
+import { ILoggerServer, ILoggerClient, loggerPath, LoggerServerOptions } from '../common/logger-protocol';
 import { BunyanLoggerServer } from './bunyan-logger-server';
 import { LoggerWatcher } from '../common/logger-watcher';
+import * as yargs from 'yargs';
 
 export const loggerBackendModule = new ContainerModule(bind => {
     bind(ILogger).to(Logger).inSingletonScope();
     bind(LoggerWatcher).toSelf().inSingletonScope();
     bind(ILoggerServer).to(BunyanLoggerServer).inSingletonScope();
+    bind(LoggerServerOptions).toDynamicValue(ctx => {
+        let logLevel = yargs.argv.loglevel;
+        if (['trace', 'debug', 'info', 'warn', 'error', 'fatal'].indexOf(logLevel) < 0) {
+            logLevel = 'info';
+        }
+        return {
+            name: "Theia",
+            level: logLevel
+        };
+    }
+    ).inSingletonScope();
     bind(LoggerFactory).toFactory(ctx =>
         (options?: any) => {
             const child = new Container({ defaultScope: 'Singleton' });
