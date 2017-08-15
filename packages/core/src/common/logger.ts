@@ -198,8 +198,8 @@ export class Logger implements ILogger {
     /* Log level for the logger.  */
     protected _logLevel: Promise<number>;
 
-    /* Root logger has id 1.  */
-    protected readonly rootLoggerId = 1;
+    /* Root logger has id 0.  */
+    protected readonly rootLoggerId = 0;
 
     /* Default id is the root logger id.  */
     protected id: Promise<number> = Promise.resolve(this.rootLoggerId);
