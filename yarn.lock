@@ -7358,11 +7358,11 @@ vscode-uri@^1.0.0, vscode-uri@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/vscode-uri/-/vscode-uri-1.0.1.tgz#11a86befeac3c4aa3ec08623651a3c81a6d0bbc8"
 
-vscode-ws-jsonrpc@0.0.1-alpha.4:
-  version "0.0.1-alpha.4"
-  resolved "https://registry.yarnpkg.com/vscode-ws-jsonrpc/-/vscode-ws-jsonrpc-0.0.1-alpha.4.tgz#3c4cdc5d34e5ffa741dfb9b3596a7ddc45e519c9"
+vscode-ws-jsonrpc@0.0.1-alpha.5:
+  version "0.0.1-alpha.5"
+  resolved "https://registry.yarnpkg.com/vscode-ws-jsonrpc/-/vscode-ws-jsonrpc-0.0.1-alpha.5.tgz#1ca66667940b5b19730a6a1d6150be506a808c61"
   dependencies:
-    vscode-jsonrpc "^3.2.0"
+    vscode-jsonrpc "^3.3.0"
 
 walk@2.3.x:
   version "2.3.9"
