@@ -23,7 +23,7 @@ export interface FileSystem extends Disposable {
     getFileStat(uri: string): Promise<FileStat>;
 
     /**
-     *Finds out if a file identified by the resource exists.
+     * Finds out if a file identified by the resource exists.
      */
     exists(uri: string): Promise<boolean>;
 

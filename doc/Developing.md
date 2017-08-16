@@ -140,6 +140,8 @@ To build and run the browser example:
     && cd examples/browser \
     && yarn run start
 
+Start your browser on http://localhost:3000.
+
 To build and run the electron example:
 
     git clone https://github.com/theia-ide/theia \
