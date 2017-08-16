@@ -53,78 +53,78 @@ describe('ExtensionManager', () => {
         });
     });
 
-    // This is a testcase which is just relevant if the cpp extension is already installed.
-    describe('Uninstall', () => {
-        it('should uninstall cpp extension if it is installed', () => {
+
+    describe('Search, install and uninstall the cpp extension', () => {
+        before(() => {
             if (extensionManager.isExtensionItemVisible('#extensionListContainer', testExtensionName)) {
                 if (extensionManager.findExtensionButtonByState(testExtensionName, '#extensionListContainer', 'installed').value !== null) {
                     extensionManager.clickUninstall(testExtensionName);
                     browser.waitUntil(() => extensionManager.findExtensionButtonByState(testExtensionName, '#extensionListContainer', 'working').value === null, 5000);
+                }
+            }
+        });
+
+        it('should be initially uninstalled', () => {
+            assert.isTrue(extensionManager.findExtensionButtonByState(testExtensionName, '#extensionListContainer', 'installed').value === null, ' cpp should be not installed');
+        });
+
+        describe('Search', () => {
+            it('should show cpp extension after type in "cpp"', () => {
+                extensionManager.searchFor('cpp');
+                assert.equal(extensionManager.countExtensionListElements(), 1);
+                assert.isTrue(extensionManager.isExtensionItemVisible('#extensionListContainer', testExtensionName));
+            });
+        });
+
+        describe('CPP Detail view', () => {
+            it('should be opened after click on the cpp extension item.', () => {
+                extensionManager.clickExtensionItem(testExtensionName);
+                browser.waitUntil(
+                    () => {
+                        return browser.elements('div.theia-extension-detail > div.extensionHeaderContainer > div.extensionTitleContainer')
+                            .element('h2=' + testExtensionName).value !== null;
+                    },
+                    6000,
+                    'cpp detail view should be existent', 1000);
+                assert.isTrue(extensionManager.isExtensionItemVisible('.theia-extension-detail', testExtensionName), 'cpp detail should be visible in DOM');
+            });
+
+            it('cpp detail view should be visible', () => {
+                const cppWidgetVisible =
+                    browser.element('.extensionName=@theia/cpp')
+                        .element('../../..').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1;
+                assert.isTrue(cppWidgetVisible, 'cpp detail should be not hidden');
+                const naviWidgetInvisible =
+                    browser.element('.extensionName=@theia/navigator')
+                        .element('../../..').getAttribute('class').split(' ').indexOf('p-mod-hidden') !== -1;
+                assert.isTrue(naviWidgetInvisible, 'navigator detail should be hidden');
+            });
+        });
+
+        describe('Install', () => {
+            it('should install cpp extension', () => {
+                extensionManager.clickInstallInDetailView(testExtensionName);
+                browser.waitUntil(() => extensionManager.findExtensionButtonByState(
+                    testExtensionName, '#extensionListContainer', 'working').value === null, 300000, 'after installing button should not be in working state anymore');
+                assert.isTrue(extensionManager.findExtensionButtonByState(testExtensionName, '#extensionListContainer', 'installed').value !== null, 'should be installed');
+            });
+
+            it('cpp should be still visible in list after search query was reset', () => {
+                extensionManager.resetSearchField();
+                assert.isTrue(extensionManager.countExtensionListElements() > 1);
+                assert.isTrue(extensionManager.isExtensionItemVisible('#extensionListContainer', testExtensionName));
+            });
+        });
+
+        describe('Uninstall', () => {
+            it('should uninstall cpp extension if it was uninstalled before test', () => {
+                if (cppWasUninstalled) {
+                    extensionManager.clickUninstall(testExtensionName);
+                    browser.waitUntil(() => extensionManager.findExtensionButtonByState(
+                        testExtensionName, '#extensionListContainer', 'working').value === null, 300000, 'after uninstalling button should not be in working state anymore');
                     assert.isTrue(extensionManager.findExtensionButtonByState(testExtensionName, '#extensionListContainer', 'installed').value === null, 'should be not installed');
                 }
-            } else {
-                cppWasUninstalled = true;
-            }
+            });
         });
     });
-
-    describe('Search', () => {
-        it('should show cpp extension after type in "cpp"', () => {
-            extensionManager.searchFor('cpp');
-            assert.equal(extensionManager.countExtensionListElements(), 1);
-            assert.isTrue(extensionManager.isExtensionItemVisible('#extensionListContainer', testExtensionName));
-        });
-    });
-
-    describe('CPP Detail view', () => {
-        it('should be opened after click on the cpp extension item.', () => {
-            extensionManager.clickExtensionItem(testExtensionName);
-            browser.waitUntil(
-                () => {
-                    return browser.elements('div.theia-extension-detail > div.extensionHeaderContainer > div.extensionTitleContainer')
-                        .element('h2=' + testExtensionName).value !== null;
-                },
-                6000,
-                'cpp detail view should be existent', 1000);
-            assert.isTrue(extensionManager.isExtensionItemVisible('.theia-extension-detail', testExtensionName), 'cpp detail should be visible in DOM');
-        });
-
-        it('cpp detail view should be visible', () => {
-            const cppWidgetVisible =
-                browser.element('.extensionName=@theia/cpp')
-                    .element('../../..').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1;
-            assert.isTrue(cppWidgetVisible, 'cpp detail should be not hidden');
-            const naviWidgetInvisible =
-                browser.element('.extensionName=@theia/navigator')
-                    .element('../../..').getAttribute('class').split(' ').indexOf('p-mod-hidden') !== -1;
-            assert.isTrue(naviWidgetInvisible, 'navigator detail should be hidden');
-        });
-    });
-
-    describe('Install', () => {
-        it('should install cpp extension', () => {
-            extensionManager.clickInstallInDetailView(testExtensionName);
-            browser.waitUntil(() => extensionManager.findExtensionButtonByState(
-                testExtensionName, '#extensionListContainer', 'working').value === null, 300000, 'after installing button should not be in working state anymore');
-            assert.isTrue(extensionManager.findExtensionButtonByState(testExtensionName, '#extensionListContainer', 'installed').value !== null, 'should be installed');
-        });
-
-        it('cpp should be still visible in list after search query was reset', () => {
-            extensionManager.resetSearchField();
-            assert.isTrue(extensionManager.countExtensionListElements() > 1);
-            assert.isTrue(extensionManager.isExtensionItemVisible('#extensionListContainer', testExtensionName));
-        });
-    });
-
-    describe('Uninstall (again)', () => {
-        it('should uninstall cpp extension if it was uninstalled before test', () => {
-            if (cppWasUninstalled) {
-                extensionManager.clickUninstall(testExtensionName);
-                browser.waitUntil(() => extensionManager.findExtensionButtonByState(
-                    testExtensionName, '#extensionListContainer', 'working').value === null, 300000, 'after uninstalling button should not be in working state anymore');
-                assert.isTrue(extensionManager.findExtensionButtonByState(testExtensionName, '#extensionListContainer', 'installed').value === null, 'should be not installed');
-            }
-        });
-    });
-
 });
