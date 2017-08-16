@@ -20,16 +20,13 @@ export class ExtensionDetailWidget extends VirtualWidget {
         this.title.closable = true;
         this.title.label = resolvedExtension.name;
 
-        resolvedExtension.resolve().then(rex => {
-            this.update();
-        });
-
-
         resolvedExtension.onDidChange(change => {
             if (change.name === this.resolvedExtension.name) {
                 this.update();
             }
         });
+
+        this.update();
     }
 
     protected onUpdateRequest(msg: Message): void {

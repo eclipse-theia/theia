@@ -36,6 +36,11 @@ export class MainPage {
         }
     }
 
+    public isSidebarTabCurrentlyOpen(tabNumber: Number) {
+        return this.driver.element(`ul.p-TabBar-content > .p-TabBar-tab:nth-child(${tabNumber})`).getAttribute('class')
+                .split(' ').indexOf('p-mod-current') !== -1;
+    }
+
     public waitForLoadingPanels(): void {
         this.driver.waitForExist('#theia-top-panel');
         this.driver.waitForExist('#theia-main-content-panel');
