@@ -21,13 +21,11 @@ export class AppPackageGenerator extends AbstractGenerator {
     protected compilePackage(): NodePackage {
         const dependencies = this.isWeb() ? {} : {}
         const scripts = this.isWeb() ? {
-            "start": "concurrently -n backend,frontend -c blue,green \"yarn run start:backend\" \"yarn run start:frontend\"",
-            "start:backend": "yarn run build:backend && node ./src-gen/backend/main.js --port=3000| bunyan",
-            "start:backend:debug": "yarn run build:backend && node ./src-gen/backend/main.js --port=3000 --loglevel=debug | bunyan",
-            "start:frontend": "webpack-dev-server --open",
+            "start": "yarn run build && node ./src-gen/backend/main.js --port=3000| bunyan",
+            "start:debug": "yarn run build && node ./src-gen/backend/main.js --port=3000 --loglevel=debug | bunyan",
         } : {
-                "start": "yarn run build:backend && electron ./src-gen/frontend/electron-main.js --hostname=localhost | bunyan",
-                "start:debug": "yarn run build:backend && electron ./src-gen/frontend/electron-main.js --hostname=localhost --loglevel=debug | bunyan"
+                "start": "yarn run build && electron ./src-gen/frontend/electron-main.js --hostname=localhost | bunyan",
+                "start:debug": "yarn run build && electron ./src-gen/frontend/electron-main.js --hostname=localhost --loglevel=debug | bunyan"
             }
         const devDependencies = this.isWeb() ? {
             "webpack-dev-server": "^2.5.0"
@@ -43,11 +41,8 @@ export class AppPackageGenerator extends AbstractGenerator {
             }),
             "scripts": sortByKey({
                 "clean": "rimraf lib",
-                "cold:start": "yarn run clean && yarn run start",
-                "build": "yarn run build:frontend && yarn run build:backend",
-                "build:frontend": "webpack",
-                "build:backend": `shx cp ${this.srcGen()}/frontend/index.html lib`,
-                "watch": "yarn run build:frontend && webpack --watch",
+                "build": `webpack && shx cp ${this.srcGen()}/frontend/index.html lib`,
+                "watch": "yarn run build && webpack --watch",
                 ...scripts,
                 ...this.model.pck.scripts
             }),
