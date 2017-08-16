@@ -17,13 +17,12 @@ describe('theia main elements loading', () => {
         mainPage = new MainPage(browser);
 
     });
-
-    it('theia panels are loaded', () => {
-
-        mainPage.waitForLoadingPanels();
-        assert.isTrue(mainPage.isMainContentPanelLoaded());
-    });
-
+    /*
+        it('theia panels are loaded', () => {
+            mainPage.waitForLoadingPanels();
+            assert.isTrue(mainPage.isMainContentPanelLoaded());
+        });
+    */
     it('files panel is showing', () => {
         mainPage.waitForLoadingPanels();
 
