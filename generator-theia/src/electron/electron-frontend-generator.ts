@@ -39,7 +39,6 @@ electron.app.on('ready', function () {
     const mainWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
     require("../backend/main").then(server => {
         mainWindow.loadURL(\`file://\${path.join(__dirname, '../../lib/index.html')}?port=\${server.address().port}\`);
-        mainWindow.webContents.openDevTools();
     }).catch(() => {
         electron.app.exit(1);
     });
