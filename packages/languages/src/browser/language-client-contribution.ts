@@ -67,7 +67,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
     }
 
     protected onReady(languageClient: ILanguageClient): void {
-        this._languageClient = languageClient
+        this._languageClient = languageClient;
         this.resolveReady(this._languageClient);
         this.waitForReady();
     }

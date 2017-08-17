@@ -28,7 +28,7 @@ export class BrowserMainMenuFactory {
         menuBar.id = 'theia:menubar';
         const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
         const phosphorCommands = this.createPhosporCommands(menuModel);
-        for (let menu of menuModel.children) {
+        for (const menu of menuModel.children) {
             if (menu instanceof CompositeMenuNode) {
                 const menuWidget = new DynamicMenuWidget(menu, { commands: phosphorCommands });
                 menuBar.addMenu(menuWidget);
@@ -50,27 +50,28 @@ export class BrowserMainMenuFactory {
         const commandRegistry = this.commandRegistry;
         const keybindingRegistry = this.keybindingRegistry;
         function initCommands(current: CompositeMenuNode): void {
-            for (let menu of current.children) {
+            for (const menu of current.children) {
                 if (menu instanceof ActionMenuNode) {
                     const command = commandRegistry.getCommand(menu.action.commandId);
                     if (command) {
+                        // tslint:disable-next-line:arrow-return-shorthand
                         const getHandler = (commandId: string) => {
                             return commandRegistry.getActiveHandler(commandId) || {
                                 execute: () => { },
                                 isEnabled: () => { return false; },
                                 isVisible: () => { return true; }
-                            }
-                        }
+                            };
+                        };
                         commands.addCommand(command.id, {
                             execute: (e: any) => getHandler(command.id).execute(),
                             label: menu.label,
                             icon: command.iconClass,
                             isEnabled: (e: any) => {
-                                let handler = getHandler(command.id)
+                                const handler = getHandler(command.id)
                                 return !handler.isEnabled || handler.isEnabled()
                             },
                             isVisible: (e: any) => {
-                                let handler = getHandler(command.id)
+                                const handler = getHandler(command.id)
                                 return !handler.isVisible || handler.isVisible()
                             }
                         });
@@ -99,7 +100,7 @@ export class BrowserMainMenuFactory {
 class DynamicMenuBarWidget extends MenuBarWidget {
 
     constructor() {
-        super()
+        super();
         // HACK we need to hook in on private method _openChildMenu. Don't do this at home!
         DynamicMenuBarWidget.prototype['_openChildMenu'] = () => {
             if (this.activeMenu instanceof DynamicMenuWidget) {
@@ -128,7 +129,7 @@ class DynamicMenuWidget extends MenuWidget {
     }
 
     private updateSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: PhosphorCommandRegistry): void {
-        for (let item of menu.children) {
+        for (const item of menu.children) {
             if (item instanceof CompositeMenuNode) {
                 if (item.label) {
                     parent.addItem({
