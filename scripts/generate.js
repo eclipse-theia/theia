@@ -19,7 +19,7 @@ const colorWheel = [
     colors.green
 ];
 
-const yo = paths.resolve(__dirname, '..', 'node_modules', '.bin', 'yo');
+const yo = paths.resolve(process.cwd(), 'node_modules', '.bin', 'yo');
 
 function spawn(args, options, error, log) {
     if (process.platform !== 'win32') {
