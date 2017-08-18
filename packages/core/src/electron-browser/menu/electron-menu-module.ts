@@ -8,10 +8,21 @@
 import { ContainerModule } from 'inversify';
 import { FrontendApplicationContribution, ContextMenuRenderer } from '../../browser';
 import { ElectronMenuContribution, ElectronMainMenuFactory } from "./electron-menu-plugin";
+import { KeybindingContribution, CommandContribution, KeybindingContext } from "../../common";
+import { ElectronKeybindingContribution } from "./electron-keybindings"
+import { ElectronCommandHandlers } from "./electron-commands";
+
 import { ElectronContextMenuRenderer } from "./electron-context-menu-renderer";
 
 export default new ContainerModule(bind => {
     bind(ElectronMainMenuFactory).toSelf().inSingletonScope();
     bind(ContextMenuRenderer).to(ElectronContextMenuRenderer).inSingletonScope();
     bind(FrontendApplicationContribution).to(ElectronMenuContribution).inSingletonScope();
+    bind(KeybindingContext).toConstantValue({
+        id: "theia.context",
+        isEnabled: true
+    });
+
+    bind(KeybindingContribution).to(ElectronKeybindingContribution).inSingletonScope();
+    bind(CommandContribution).to(ElectronCommandHandlers).inSingletonScope();
 });
