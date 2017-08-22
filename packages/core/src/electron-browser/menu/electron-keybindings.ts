@@ -14,7 +14,7 @@ export class ElectronKeybindingContribution implements KeybindingContribution {
     registerKeyBindings(registry: KeybindingRegistry): void {
         [
             {
-                commandId: 'theia.electron.open.dev.tools',
+                commandId: 'theia.electron.toggle.dev.tools',
                 keyCode: KeyCode.createKeyCode({ first: Key.KEY_I, modifiers: [Modifier.M1, Modifier.M2] })
             }
         ].forEach(binding => {

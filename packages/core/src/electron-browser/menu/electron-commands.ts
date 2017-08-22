@@ -13,10 +13,10 @@ import * as electron from "electron"
 export class ElectronCommandHandlers implements CommandContribution {
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand({
-            id: 'theia.electron.open.dev.tools',
-            label: 'Open Electron Developer Tools'
+            id: 'theia.electron.toggle.dev.tools',
+            label: 'Toggle Electron Developer Tools'
         });
-        registry.registerHandler('theia.electron.open.dev.tools', {
+        registry.registerHandler('theia.electron.toggle.dev.tools', {
             execute: (): any => {
                 const webContent = electron.remote.getCurrentWebContents();
                 if (!webContent.isDevToolsOpened()) {
