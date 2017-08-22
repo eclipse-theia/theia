@@ -14,7 +14,7 @@ export namespace ElectronMenus {
 }
 
 @injectable()
-export class ElectronHelpMenuContribution implements MenuContribution {
+export class CoreMenuContribution implements MenuContribution {
 
     registerMenus(registry: MenuModelRegistry) {
         // Explicitly register the Help Submenu
