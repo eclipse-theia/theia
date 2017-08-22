@@ -9,16 +9,16 @@ import { interfaces } from 'inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService } from '@theia/preferences-api';
 
 export interface GitConfiguration {
+
+    /**
+     * The time-interval (in milliseconds) to poll for the status changes in the local working directory.
+     */
     'git.pollInterval': number
+
 }
 
 const DefaultGitConfiguration: GitConfiguration = {
-
-    /**
-     * Interval (in milliseconds) to poll the status changes in the local working directory.
-     */
     'git.pollInterval': 1000
-
 };
 
 export const GitPreferences = Symbol('GitPreferences');
