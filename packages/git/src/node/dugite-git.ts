@@ -1,21 +1,24 @@
 /*
- * Copyright (C) 2017 TypeFox and others.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+* Copyright (C) 2017 TypeFox and others.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+*/
 
 import * as Path from 'path';
+import { Git } from '../common/git';
 import URI from '@theia/core/lib/common/uri';
+import { injectable, inject } from "inversify";
 import { FileUri } from '@theia/core/lib/node/file-uri';
+import { GitPreferences } from '../common/git-preferences';
 import { getStatus } from 'dugite-extra/lib/command/status';
 import { Repository, RepositoryWithRemote, WorkingDirectoryStatus, FileChange, FileStatus } from '../common/model';
-import { Git } from '../common/git';
 import { IStatusResult, IAheadBehind, AppFileStatus, WorkingDirectoryStatus as DugiteStatus, FileChange as DugiteFileChange } from 'dugite-extra/lib/model/status';
 
 /**
  * `dugite-extra` based Git implementation.
  */
+@injectable()
 export class DugiteGit implements Git {
 
     private pollInterval: number;
@@ -23,8 +26,10 @@ export class DugiteGit implements Git {
     private readonly listeners: Map<Repository, ((status: WorkingDirectoryStatus) => void)[]>;
     private readonly lastStatus: Map<Repository, WorkingDirectoryStatus>;
 
-    constructor() {
-        this.pollInterval = 1000; // TODO use preferences for polling time.
+    constructor(
+        @inject(GitPreferences) private preferences: GitPreferences
+    ) {
+        this.pollInterval = this.preferences['git.pollInterval'];
         this.pollers = new Map();
         this.listeners = new Map();
         this.lastStatus = new Map();
