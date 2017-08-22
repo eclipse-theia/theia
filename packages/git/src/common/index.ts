@@ -7,4 +7,3 @@
 
 export * from './git';
 export * from './model';
-export * from './credential-store';

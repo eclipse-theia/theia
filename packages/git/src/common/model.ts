@@ -5,8 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import URI from '@theia/core/lib/common/uri';
-
 export interface WorkingDirectoryStatus {
 
     /**
@@ -89,17 +87,22 @@ export interface FileChange {
     /**
      * The current URI of the changed file resource.
      */
-    readonly uri: URI;
+    readonly uri: string
 
     /**
      * The previous URI of the changed URI. Can be absent if the file is new, or just changed and so on.
      */
-    readonly oldUri?: URI;
+    readonly oldUri?: string;
 
     /**
      * The file status.
      */
     readonly status: FileStatus;
+
+    /**
+     * `true` if the file is staged, otherwise `false`.
+     */
+    readonly staged: boolean;
 }
 
 export namespace FileChange {
@@ -109,16 +112,22 @@ export namespace FileChange {
      */
     export function equals(left: FileChange, right: FileChange): boolean {
         return left.status === right.status
+            && left.staged === right.staged
             && left.uri.toString() === right.uri.toString()
             && (left.oldUri ? left.oldUri.toString() : '') === (right.oldUri ? right.oldUri.toString() : '');
     }
 
     export function compare(left: FileChange, right: FileChange): number {
-        const concat = (fc: FileChange) => `${fc.status}${fc.uri.toString()}${fc.oldUri ? fc.oldUri.toString() : ''}`;
+        const concat = (fc: FileChange) => `${fc.status}${fc.uri.toString()}${fc.oldUri ? fc.oldUri.toString() : ''}${fc.staged}`;
         return concat(left).localeCompare(concat(right));
     }
 
 }
+
+/**
+ * The path to a local repository as an URI.
+ */
+export type RepositoryPath = string | Repository;
 
 /**
  * Bare minimum representation of a local Git clone.
@@ -129,6 +138,13 @@ export interface Repository {
      * The FS URI of the local clone.
      */
     readonly localUri: string;
+
+}
+
+/**
+ * Repository with the `remote` URL information.
+ */
+export interface RepositoryWithRemote extends Repository {
 
     /**
      * The remote URL of the local clone.
@@ -147,6 +163,13 @@ export namespace Repository {
     }
 
     /**
+     * `true` if the argument is a type of a [RepositoryWithRemote](#RepositoryWithRemote), otherwise `false`.
+     */
+    export function isRemote(repository: any | undefined): repository is RepositoryWithRemote {
+        return repository && typeof (<RepositoryWithRemote>repository).remoteUrl === 'string';
+    }
+
+    /**
      * `true` if the arguments are equal. More precisely; when both the local and the remote repository URLs
      * are equal.
      *
@@ -154,7 +177,11 @@ export namespace Repository {
      * @param right the other repository.
      */
     export function equals(left: Repository, right: Repository): boolean {
-        return left.localUri === right.localUri && left.remoteUrl === right.remoteUrl;
+        return left.localUri === right.localUri && (isRemote(left) ? left.remoteUrl : undefined) === (isRemote(right) ? right.remoteUrl : undefined);
     }
 
+}
+
+export interface Account {
+    userNameOrEmail: string;
 }
