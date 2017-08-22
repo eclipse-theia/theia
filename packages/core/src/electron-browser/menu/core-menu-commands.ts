@@ -10,7 +10,7 @@ import { CommandContribution, CommandRegistry } from "../../common"
 import * as electron from "electron"
 
 @injectable()
-export class ElectronCommandHandlers implements CommandContribution {
+export class MenuCommandHandlers implements CommandContribution {
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand({
             id: 'theia.electron.toggle.dev.tools',

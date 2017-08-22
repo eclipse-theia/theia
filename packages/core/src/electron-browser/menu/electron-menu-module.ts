@@ -9,9 +9,9 @@ import { ContainerModule } from 'inversify';
 import { FrontendApplicationContribution, ContextMenuRenderer } from '../../browser';
 import { ElectronMenuContribution, ElectronMainMenuFactory } from "./electron-menu-plugin";
 import { KeybindingContribution, CommandContribution, KeybindingContext, MenuContribution } from "../../common";
-import { ElectronKeybindingContribution } from "./electron-keybindings";
-import { ElectronCommandHandlers } from "./electron-commands";
-import { ElectronHelpMenuContribution } from "./electron-menu"
+import { ElectronKeybindingContribution } from "./core-keybindings";
+import { MenuCommandHandlers } from "./core-menu-commands";
+import { CoreMenuContribution } from "./core-menu-contribution"
 import { ElectronContextMenuRenderer } from "./electron-context-menu-renderer";
 
 export default new ContainerModule(bind => {
@@ -24,6 +24,6 @@ export default new ContainerModule(bind => {
     });
 
     bind(KeybindingContribution).to(ElectronKeybindingContribution).inSingletonScope();
-    bind(CommandContribution).to(ElectronCommandHandlers).inSingletonScope();
-    bind(MenuContribution).to(ElectronHelpMenuContribution).inSingletonScope();
+    bind(CommandContribution).to(MenuCommandHandlers).inSingletonScope();
+    bind(MenuContribution).to(CoreMenuContribution).inSingletonScope();
 });
