@@ -5,8 +5,17 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { FileChange, Repository, WorkingDirectoryStatus } from './model';
+import { Account, Repository, RepositoryWithRemote, WorkingDirectoryStatus } from './model';
 
+/**
+ * Provides basic functionality for Git.
+ *
+ * TODOs:
+ *  - static factory method for cloning. clone(localUri: string, remoteUrl: string): Promise<Repository>
+ *  - register/remove repositories that are currently outside of the workspace but user wants to track the changes.
+ *  - replace with HEAD (aka discard) should be supported by the `checkout` method.
+ *  - get file content from HEAD as a string that can be reused by the diff-editor later. (first iteration)
+ */
 export interface Git {
 
     /**
@@ -21,55 +30,123 @@ export interface Git {
      * any files (given with their file URIs) is not among the changed files.
      *
      * @param repository the repository to stage the files.
-     * @param file one or multiple file URIs to stage in the working clone.
+     * @param uri one or multiple file URIs to stage in the working clone. If not omitted, all the changes will be staged.
      */
-    stage(repository: Repository, file: string | string[]): Promise<void>;
+    add(repository: Repository, uri?: string | string[]): Promise<void>;
 
     /**
      * Removes the given file or files among the staged files in the working clone. The invocation will be rejected if
      * any files (given with their file URIs) is not among the staged files.
      *
      * @param repository the repository to where the staged files have to be removed from/
-     * @param file one or multiple file URIs to unstage in the working clone.
+     * @param uri one or multiple file URIs to unstage in the working clone. If not omitted, all the changes will be unstaged.
      */
-    unstage(repository: Repository, file: string | string[]): Promise<void>;
+    rm(repository: Repository, uri?: string | string[]): Promise<void>;
 
     /**
-     * Resolves to a list a file changes, representing all the staged files in the working directory.
+     * Returns with the name of the branches from the repository. Will be rejected if the repository does not exist.
+     * This method will be resolved to a `string` if the `type === 'current`. If the repository has a detached `HEAD`,
+     * instead of returning with `(no branch)` it resolves to `undefined`. Otherwise, it will be resolved to an array of
+     * branch names.
      *
-     * @param repository the repository to get all staged files from.
+     * @param the repository to get the active branch from.
+     * @param type the type of the query to run. The default type is `current`.
      */
-    stagedFiles(repository: Repository): Promise<FileChange[]>;
+    branch(repository: Repository, type?: 'current' | 'local' | 'remote' | 'all'): Promise<undefined | string | string[]>;
+
+    /**
+     * Creates a new branch in the repository.
+     *
+     * @param repository the repository where the new branch has to be created.
+     * @param name the name of the new branch.
+     * @param startPoint the commit SH that the new branch should be based on, or `undefined` if the branch should be created based off of the current state of `HEAD`.
+     */
+    createBranch(repository: Repository, name: string, startPoint?: string): Promise<void>;
+
+    /**
+     * Renames an existing branch in the repository.
+     *
+     * @param repository the repository where the renaming has to be performed.
+     * @param name the current name of the branch to rename.
+     * @param newName the desired name of the branch.
+     */
+    renameBranch(repository: Repository, name: string, newName: string): Promise<void>;
+
+    /**
+     * Deletes an existing branch in the repository.
+     *
+     * @param repository the repository where the branch has to be deleted.
+     * @param name the name of the existing branch to delete.
+     */
+    deleteBranch(repository: Repository, name: string): Promise<void>;
+
+    /**
+     * Switches to a branch in the repository.
+     *
+     * @param repository the repository to which the branch has to be switched to.
+     * @param localName if specified, the remote branch will be pulled in with this, desired, name. Ignored when the branch already exists locally.
+     * @param name the name of the repository to switch to.
+     */
+    checkout(repository: Repository, name: string, localName?: string): Promise<void>;
 
     /**
      * Commits the changes of all staged files in the working directory.
      *
      * @param repository the repository where the staged changes has to be committed.
-     * @param message the mandatory commit message.
+     * @param message the optional commit message.
      */
-    commit(repository: Repository, message: string): Promise<boolean>;
+    commit(repository: Repository, message?: string): Promise<void>;
 
     /**
-     * Registers a working directory status changes listener for the given Git repository.
+     * Fetches branches and/or tags (collectively, `refs`) from the repository, along with the objects necessary to complete their histories.
+     * The remotely-tracked branches will be updated too.
      *
-     * If multiple identical `listener` instances are registered on the same `Repository` with the same parameters,
-     * the duplicate instances are discarded. They do not cause the `listener` to be called twice, and they do not
-     * need to be removed manually with the `off('statusChange' repository, listener)` method.
-     *
-     * @param event the string representation of the event to listen for.
-     * @param repository the repository to listen on working directory changes.
-     * @param listener the object which receives a working directory change notification.
+     * @param repository the repository to fetch from.
+     * @param account the account when authentication is required by the `remote` when fetching.
      */
-    on(event: 'statusChange', repository: Repository, listener: (status: WorkingDirectoryStatus) => void): Promise<void>;
+    fetch(repository: RepositoryWithRemote, account?: Account): Promise<void>;
 
     /**
-     * Counterpart of the `on('statusChange' repository, listener)` method. Removes the given working directory status change listener
-     * from the given repository. Has no side effect if the `listener` was not yet registered previously.
+     * Updates the remote `refs` using local `refs`, while sending objects necessary to complete the given `refs` by pushing
+     * all committed changed from the local Git repository to the `remote` one.
      *
-     * @param event the string representation of the event to remove the listener from.
-     * @param repository the repository to stop listening on working directory changes.
-     * @param listener the object which should be unsubscribed from the working directory change events.
+     * @param repository the remote repository to push to.
+     * @param account the account that is used for the authentication on the `remote` when performing the `git pull`.
      */
-    off(event: 'statusChange', repository: Repository, listener: (status: WorkingDirectoryStatus) => void): Promise<void>;
+    push(repository: RepositoryWithRemote, account: Account): Promise<void>;
+
+    /**
+     * Fetches from and integrates with another remote repository. It incorporates changes from a remote repository into the current branch.
+     * In its default mode, `git pull` is shorthand for `git fetch` followed by `git merge FETCH_HEAD`.
+     *
+     * @param repository the remote repository to pull from.
+     * @param account the account when authenticating the user on the `remote`.
+     */
+    pull(repository: RepositoryWithRemote, account?: Account): Promise<void>;
+
+    /**
+     * Resets the current `HEAD` of the entire working directory to the specified state.
+     *
+     * @param repository the repository which state has to be reset.
+     * @param mode the reset mode. The followings are supported: `hard`, `sort`, or `mixed`. Those correspond to the consecutive `--hard`, `--soft`, and `--mixed`.
+     * @param ref the reference to reset to. By default, resets to `HEAD`.
+     */
+    reset(repository: Repository, mode: 'hard' | 'soft' | 'mixed', ref?: string): Promise<void>;
+
+    /**
+     * Merges the given branch into the currently active branch.
+     *
+     * @param repository the repository to merge from.
+     * @param name the name of the branch to merge into the current one.
+     */
+    merge(repository: Repository, name: string): Promise<void>;
+
+    /**
+     * Reapplies commits on top of another base tip to the current branch.
+     *
+     * @param repository the repository to get the commits from.
+     * @param name the name of the branch to retrieve the commits and reapplies on the current branch tip.
+     */
+    rebase(repository: Repository, name: string): Promise<void>;
 
 }

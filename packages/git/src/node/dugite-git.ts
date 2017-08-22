@@ -8,12 +8,10 @@
 import * as Path from 'path';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { createCommit, status } from 'dugite-extra/lib/command/';
-import { stageFiles } from 'dugite-extra/lib/command/update-index';
+import { getStatus } from 'dugite-extra/lib/command/status';
+import { Repository, RepositoryWithRemote, WorkingDirectoryStatus, FileChange, FileStatus } from '../common/model';
 import { Git } from '../common/git';
-import { git } from 'dugite-extra/lib/util/git';
-import { Repository, WorkingDirectoryStatus, FileChange } from '../common/model';
-import { IStatusResult, IAheadBehind, WorkingDirectoryStatus as DugiteStatus, FileChange as DugiteFileChange } from 'dugite-extra/lib/model';
+import { IStatusResult, IAheadBehind, AppFileStatus, WorkingDirectoryStatus as DugiteStatus, FileChange as DugiteFileChange } from 'dugite-extra/lib/model/status';
 
 /**
  * `dugite-extra` based Git implementation.
@@ -32,198 +30,124 @@ export class DugiteGit implements Git {
         this.lastStatus = new Map();
     }
 
-    status(repository: Repository): Promise<WorkingDirectoryStatus> {
-        const repositoryPath = FileUri.fsPath(new URI(repository.localUri))
-        return status(repositoryPath).then(result => mapStatus(result, repository));
+    async status(repository: Repository): Promise<WorkingDirectoryStatus> {
+        const repositoryPath = await getFsPath(repository);
+        const dugiteStatus = await getStatus(repositoryPath);
+        return mapStatus(dugiteStatus, repository);
     }
 
-    stage(repository: Repository, file: string | string[]): Promise<void> {
-        return new Promise(async (resolve, reject) => {
-            try {
-                const repositoryPath = FileUri.fsPath(new URI(repository.localUri));
-                const result = await status(repositoryPath);
-                const filesToStage = [];
-                const files = (Array.isArray(file) ? file : [file]).map(f => new URI(f)).map(FileUri.fsPath);
-                for (const f of result.workingDirectory.files) {
-                    const path = Path.join(repositoryPath, f.path);
-                    // TODO handle deleted and moved files.
-                    const index = files.indexOf(path);
-                    if (index !== -1) {
-                        files.splice(index, 1);
-                        filesToStage.push(f);
-                    }
-                }
-                if (files.length !== 0) {
-                    return reject(new Error(`The following files cannot be staged because those do not exist in the working directory as changed files: ${files}`));
-                }
-                await stageFiles(repositoryPath, filesToStage);
-                return resolve();
-            } catch (error) {
-                return reject(error);
-            }
-        });
+    async add(repository: Repository, uri?: string | string[]): Promise<void> {
+        throw new Error("Method not implemented.");
     }
 
-    unstage(repository: Repository, file: string | string[]): Promise<void> {
-        return new Promise(async (resolve, reject) => {
-            try {
-                const repositoryPath = FileUri.fsPath(new URI(repository.localUri));
-                const result = await this.getStagedFiles(repositoryPath);
-                const filesToUnstage = [];
-                const files = (Array.isArray(file) ? file : [file]).map(f => new URI(f)).map(FileUri.fsPath).map(f => Path.relative(repositoryPath, f));
-                for (const f of result) {
-                    // TODO handle deleted and moved files.
-                    const index = files.indexOf(f);
-                    if (index !== -1) {
-                        files.splice(index, 1);
-                        filesToUnstage.push(f);
-                    }
-                }
-                if (files.length !== 0) {
-                    return reject(new Error(`The following files cannot be unstaged because those do not exist in the working directory as changed files: ${files}`));
-                }
-                await this.unstageFiles(repositoryPath, filesToUnstage);
-                return resolve();
-            } catch (error) {
-                return reject(error);
-            }
-        });
+    async rm(repository: Repository, uri?: string | string[]): Promise<void> {
+        throw new Error("Method not implemented.");
     }
 
-    stagedFiles(repository: Repository): Promise<FileChange[]> {
-        return new Promise(async (resolve, reject) => {
-            const repositoryPath = FileUri.fsPath(new URI(repository.localUri));
-            const statusPromise = status(repositoryPath);
-            const stagedFileNamesPromise = this.getStagedFiles(repositoryPath);
-            const statusResult = await statusPromise;
-            const stagedFileNames = await stagedFileNamesPromise;
-            return resolve(statusResult.workingDirectory.files.filter(f => stagedFileNames.indexOf(f.path) !== -1).map(f => mapFileChange(f, repository)));
-        });
+    async branch(repository: Repository, type?: "current" | "local" | "remote" | "all"): Promise<undefined | string | string[]> {
+        throw new Error("Method not implemented.");
     }
 
-    commit(repository: Repository, message: string): Promise<boolean> {
-        return new Promise(async (resolve, reject) => {
-            try {
-                const repositoryPath = FileUri.fsPath(new URI(repository.localUri));
-                const statusPromise = status(repositoryPath);
-                const stagedFilesPromise = this.getStagedFiles(repositoryPath);
-                const statusResult = await statusPromise;
-                const stagedFilesResult = await stagedFilesPromise;
-                const filesToCommit = [];
-                for (const f of statusResult.workingDirectory.files) {
-                    if (stagedFilesResult.indexOf(f.path) !== -1) {
-                        filesToCommit.push(f);
-                    }
-                }
-                const commitResult = await createCommit(repositoryPath, message, filesToCommit);
-                return resolve(commitResult);
-            } catch (error) {
-                return reject(error);
-            }
-        });
+    async createBranch(repository: Repository, name: string, startPoint?: string): Promise<void> {
+        throw new Error("Method not implemented.");
     }
 
-    on(event: "statusChange", repository: Repository, listener: (status: WorkingDirectoryStatus) => void): Promise<void> {
-        return new Promise((resolve, reject) => {
-            const key = [...this.listeners.keys()].find(r => Repository.equals(repository, r)) || repository;
-            let listeners = this.listeners.get(key);
-            if (!listeners) {
-                listeners = [];
-                this.listeners.set(key, listeners);
-            }
-            if (listeners.indexOf(listener) !== -1) {
-                return resolve();
-            }
-            if (!this.pollers.has(key)) {
-                const poller = setInterval(async () => {
-                    const newStatus = await this.status(key);
-                    const oldStatus = this.lastStatus.get(key);
-                    // Send the change event, only if the status has changed.
-                    if (!WorkingDirectoryStatus.equals(oldStatus, newStatus)) {
-                        this.lastStatus.set(key, newStatus);
-                        listeners!.forEach(listener => listener(newStatus));
-                    }
-                }, this.pollInterval);
-                this.pollers.set(key, poller);
-            }
-            listeners.push(listener);
-            return resolve();
-        });
+    async renameBranch(repository: Repository, name: string, newName: string): Promise<void> {
+        throw new Error("Method not implemented.");
     }
 
-    off(event: "statusChange", repository: Repository, listener: (status: WorkingDirectoryStatus) => void): Promise<void> {
-        return new Promise((resolve, reject) => {
-            const key = [...this.listeners.keys()].find(r => Repository.equals(repository, r)) || repository;
-            const listeners = this.listeners.get(key);
-            if (!listeners) {
-                return resolve();
-            }
-            const index = listeners.indexOf(listener);
-            if (index !== -1) {
-                listeners.splice(index, 1);
-                if (listeners.length === 0) {
-                    this.listeners.delete(repository);
-                    const poller = this.pollers.get(repository);
-                    if (poller) {
-                        clearTimeout(poller);
-                    }
-                    this.pollers.delete(repository);
-                    this.lastStatus.delete(repository);
-                }
-            }
-            return resolve();
-        });
+    async deleteBranch(repository: Repository, name: string): Promise<void> {
+        throw new Error("Method not implemented.");
     }
 
-    private getStagedFiles(repositoryPath: string): Promise<string[]> {
-        return new Promise(async (resolve, reject) => {
-            const result = await git(['diff', '--name-only', '--cached'], repositoryPath, 'diff');
-            if (result.exitCode !== 0) {
-                return reject(new Error(result.stderr));
-            }
-            return resolve(result.stdout.split('\n').filter(s => s.length > 0));
-        });
+    async checkout(repository: Repository, name: string, localName?: string): Promise<void> {
+        throw new Error("Method not implemented.");
     }
 
-    private unstageFiles(repositoryPath: string, filePath: string | string[]): Promise<void> {
-        return new Promise(async (resolve, reject) => {
-            const stagedFiles = await this.getStagedFiles(repositoryPath);
+    async commit(repository: Repository, message?: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
 
-            const result = await git(['reset', 'HEAD'], repositoryPath, 'diff', {
-                stdin: stagedFiles.join('\0')
-            });
-            if (result.exitCode !== 0) {
-                return reject(new Error(result.stderr));
-            }
-            return resolve();
-        });
+    async fetch(repository: RepositoryWithRemote): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+
+    async push(repository: RepositoryWithRemote): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+
+    async pull(repository: RepositoryWithRemote): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+
+    async reset(repository: Repository, mode: "hard" | "soft" | "mixed", ref?: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+
+    async merge(repository: Repository, name: string): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+
+    async rebase(repository: Repository, name: string): Promise<void> {
+        throw new Error("Method not implemented.");
     }
 
 }
 
-function mapStatus(toMap: IStatusResult, repository: Repository): WorkingDirectoryStatus {
+async function mapStatus(toMap: IStatusResult, repository: Repository): Promise<WorkingDirectoryStatus> {
+    const aheadBehindPromise = mapAheadBehind(toMap.branchAheadBehind);
+    const changesPromise = mapFileChanges(toMap.workingDirectory, repository);
+    const aheadBehind = await aheadBehindPromise;
+    const changes = await changesPromise;
     return {
         exists: toMap.exists,
         branch: toMap.currentBranch,
         upstreamBranch: toMap.currentUpstreamBranch,
-        aheadBehind: mapAheadBehind(toMap.branchAheadBehind),
-        changes: mapFileChanges(toMap.workingDirectory, repository),
+        aheadBehind,
+        changes,
         currentHead: toMap.currentTip
     };
 }
 
-function mapAheadBehind(toMap: IAheadBehind | undefined): { ahead: number, behind: number } | undefined {
+async function mapAheadBehind(toMap: IAheadBehind | undefined): Promise<{ ahead: number, behind: number } | undefined> {
     return toMap ? { ...toMap } : undefined;
 }
 
-function mapFileChanges(toMap: DugiteStatus, repository: Repository): FileChange[] {
-    return toMap.files.map(file => mapFileChange(file, repository));
+async function mapFileChanges(toMap: DugiteStatus, repository: Repository): Promise<FileChange[]> {
+    return Promise.all(toMap.files.map(file => mapFileChange(file, repository)));
 }
 
-function mapFileChange(toMap: DugiteFileChange, repository: Repository): FileChange {
+async function mapFileChange(toMap: DugiteFileChange, repository: Repository): Promise<FileChange> {
+    const uriPromise = getUri(Path.join(repository.localUri, toMap.path));
+    const statusPromise = mapFileStatus(toMap.status);
+    const oldUriPromise = toMap.oldPath ? await getUri(Path.join(repository.localUri, toMap.oldPath)) : undefined;
+    const uri = await uriPromise;
+    const status = await statusPromise;
+    const oldUri = await oldUriPromise;
     return {
-        uri: FileUri.create(Path.join(repository.localUri, toMap.path)),
-        status: toMap.status,
-        oldUri: toMap.oldPath ? FileUri.create(Path.join(repository.localUri, toMap.oldPath)) : undefined
+        uri,
+        status,
+        oldUri,
+        staged: toMap.staged
     };
+}
+
+async function mapFileStatus(toMap: AppFileStatus): Promise<FileStatus> {
+    switch (toMap) {
+        case AppFileStatus.Conflicted: return FileStatus.Conflicted;
+        case AppFileStatus.Copied: return FileStatus.Copied;
+        case AppFileStatus.Deleted: return FileStatus.Deleted;
+        case AppFileStatus.Modified: return FileStatus.Modified;
+        case AppFileStatus.New: return FileStatus.New;
+        case AppFileStatus.Renamed: return FileStatus.Renamed;
+        default: throw new Error(`Unexpected application file status: ${toMap}`);
+    }
+}
+
+async function getFsPath(repository: Repository): Promise<string> {
+    return FileUri.fsPath(new URI(repository.localUri));
+}
+
+async function getUri(path: string): Promise<string> {
+    return FileUri.create(path).toString();
 }
