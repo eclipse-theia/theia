@@ -7,7 +7,9 @@
   "dependencies": {
     "@theia/core": "^0.1.1",
     "@theia/filesystem": "^0.1.1",
-    "dugite-extra": "0.0.1-alpha.2"
+    "@theia/preferences-api": "^0.1.1",
+    "dugite-extra": "0.0.1-alpha.2",
+    "inversify": "^4.2.0"
   },
   "devDependencies": {
     "@types/fs-extra": "^4.0.0",

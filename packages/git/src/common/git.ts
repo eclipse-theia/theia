@@ -8,6 +8,16 @@
 import { Account, Repository, RepositoryWithRemote, WorkingDirectoryStatus } from './model';
 
 /**
+ * The WS endpoint path to the Git.
+ */
+export const GitPath = '/services/git';
+
+/**
+ * Git symbol for DI.
+ */
+export const Git = Symbol('Git');
+
+/**
  * Provides basic functionality for Git.
  *
  * TODOs:
