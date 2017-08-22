@@ -53,6 +53,10 @@ export class BackendApplication {
                 this.logger.info(`Theia app listening on port ${server.address().port}.`);
                 resolve(server);
             });
+
+            /* Allow any number of websocket servers.  */
+            server.setMaxListeners(0);
+
             for (const contrib of this.contributionsProvider.getContributions()) {
                 if (contrib.onStart) {
                     contrib.onStart(server);
