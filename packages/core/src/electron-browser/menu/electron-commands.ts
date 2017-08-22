@@ -11,10 +11,6 @@ import * as electron from "electron"
 
 @injectable()
 export class ElectronCommandHandlers implements CommandContribution {
-
-    constructor(
-    ) { }
-
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand({
             id: 'theia.electron.open.dev.tools',
