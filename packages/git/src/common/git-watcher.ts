@@ -147,6 +147,11 @@ export class ReconnectingGitWatcherServer implements GitWatcherServer {
     }
 }
 
+/**
+ * Unique WS endpoint path to the Git watcher service.
+ */
+export const GitWatcherPath = '/services/git-watcher';
+
 @injectable()
 export class GitWatcher implements GitWatcherClient, Disposable {
 

@@ -6,7 +6,7 @@
  */
 
 import { Git, GitPath } from '../common/git';
-import { GitWatcher, GitWatcherClient, GitWatcherServer } from '../common/git-watcher';
+import { GitWatcher, GitWatcherPath, GitWatcherClient, GitWatcherServer } from '../common/git-watcher';
 import { DugiteGit } from './dugite-git';
 import { DugiteGitWatcherServer } from './dugite-git-watcher';
 import { ContainerModule } from 'inversify';
@@ -22,7 +22,7 @@ export default new ContainerModule(bind => {
     bind(GitWatcherServer).toDynamicValue(context => context.container.get(DugiteGitWatcherServer));
     bind(GitWatcher).toSelf();
     bind(ConnectionHandler).toDynamicValue(context =>
-        new JsonRpcConnectionHandler<GitWatcherClient>(GitPath, client => {
+        new JsonRpcConnectionHandler<GitWatcherClient>(GitWatcherPath, client => {
             const server = context.container.get<GitWatcherServer>(GitWatcherServer);
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());

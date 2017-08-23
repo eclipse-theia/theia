@@ -12,11 +12,11 @@ import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { GitCommandHandlers } from './git-command';
 import { GitKeybindingContext, GitKeybindingContribution } from './git-keybinding';
 import { CommandContribution, KeybindingContribution, KeybindingContext } from "@theia/core/lib/common";
-import { GitWatcher, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common/git-watcher';
+import { GitWatcher, GitWatcherPath, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common/git-watcher';
 
 export default new ContainerModule(bind => {
     bindGitPreferences(bind);
-    bind(GitWatcherServerProxy).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitPath)).inSingletonScope();
+    bind(GitWatcherServerProxy).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitWatcherPath)).inSingletonScope();
     bind(GitWatcherServer).to(ReconnectingGitWatcherServer).inSingletonScope();
     bind(GitWatcher).toSelf().inSingletonScope();
     bind(Git).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitPath)).inSingletonScope();
