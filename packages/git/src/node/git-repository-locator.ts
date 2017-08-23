@@ -21,21 +21,35 @@ export async function locateRepositories(path: string): Promise<Repository[]> {
     return new Promise<Repository[]>(async (resolve, reject) => {
         const repositories: Repository[] = [];
         const emitter = finder(abs(path));
-        emitter.on('directory', (dir: string, stat: fs.Stats, stop: () => void) => {
+        emitter.on('directory', async (dir: string, stat: fs.Stats, stop: () => void) => {
             const base = Path.basename(dir);
             if (base === '.git') {
-                const localUri = FileUri.create(dir).toString();
+                const segments = await splitPath(dir);
+                // Pop the last `.git` segment plus the preceeding path separator.
+                segments.pop();
+                segments.pop();
+                const localUri = FileUri.create(segments.join('')).toString();
                 repositories.push({ localUri });
                 stop();
             }
         });
-        emitter.on('done', () => {
+        emitter.on('end', async () => {
             resolve(repositories);
         });
-        emitter.on('error', (error: Error) => {
+        emitter.on('error', async (error: Error) => {
+            console.error(`Error ocurred while recursively discovering Git in ${path}.`, error);
             reject(error);
         });
     });
+}
+
+async function splitPath(path: string): Promise<string[]> {
+    const parts = path.split(/(\/|\\)/);
+    if (!parts.length) {
+        return parts;
+    }
+    // When the `path` starts with a slash, the the first part is empty string.
+    return !parts[0].length ? parts.slice(1) : parts;
 }
 
 // function getOrigin(repository, cb) {
