@@ -23,8 +23,12 @@ export namespace FileUri {
      *
      * @param uri the file URI that has to be resolved to a platform specific FS path.
      */
-    export function fsPath(uri: URI): string {
-        return (uri as any).codeUri.fsPath;
+    export function fsPath(uri: URI | string): string {
+        if (typeof uri === 'string') {
+            return fsPath(new URI(uri));
+        } else {
+            return (uri as any).codeUri.fsPath;
+        }
     }
 
 }

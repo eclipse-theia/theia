@@ -12,6 +12,7 @@ import { injectable, inject } from "inversify";
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { GitPreferences } from '../common/git-preferences';
 import { getStatus } from 'dugite-extra/lib/command/status';
+import { stage, unstage } from 'dugite-extra/lib/command/stage';
 import { locateRepositories } from './git-repository-locator';
 import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol';
 import { Repository, RepositoryWithRemote, WorkingDirectoryStatus, FileChange, FileStatus } from '../common/model';
@@ -49,12 +50,14 @@ export class DugiteGit implements Git {
         return mapStatus(dugiteStatus, repository);
     }
 
-    async add(repository: Repository, uri?: string | string[]): Promise<void> {
-        throw new Error("Method not implemented.");
+    async add(repository: Repository, uri: string | string[]): Promise<void> {
+        const paths = (Array.isArray(uri) ? uri : [uri]).map(FileUri.fsPath);
+        return stage(repository.localUri, paths);
     }
 
-    async rm(repository: Repository, uri?: string | string[]): Promise<void> {
-        throw new Error("Method not implemented.");
+    async rm(repository: Repository, uri: string | string[]): Promise<void> {
+        const paths = (Array.isArray(uri) ? uri : [uri]).map(FileUri.fsPath);
+        return unstage(repository.localUri, paths);
     }
 
     async branch(repository: Repository, type?: "current" | "local" | "remote" | "all"): Promise<undefined | string | string[]> {

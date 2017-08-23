@@ -45,18 +45,18 @@ export interface Git {
      * any files (given with their file URIs) is not among the changed files.
      *
      * @param repository the repository to stage the files.
-     * @param uri one or multiple file URIs to stage in the working clone. If not omitted, all the changes will be staged.
+     * @param uri one or multiple file URIs to stage in the working clone.
      */
-    add(repository: Repository, uri?: string | string[]): Promise<void>;
+    add(repository: Repository, uri: string | string[]): Promise<void>;
 
     /**
      * Removes the given file or files among the staged files in the working clone. The invocation will be rejected if
      * any files (given with their file URIs) is not among the staged files.
      *
      * @param repository the repository to where the staged files have to be removed from/
-     * @param uri one or multiple file URIs to unstage in the working clone. If not omitted, all the changes will be unstaged.
+     * @param uri one or multiple file URIs to unstage in the working clone.
      */
-    rm(repository: Repository, uri?: string | string[]): Promise<void>;
+    rm(repository: Repository, uri: string | string[]): Promise<void>;
 
     /**
      * Returns with the name of the branches from the repository. Will be rejected if the repository does not exist.
