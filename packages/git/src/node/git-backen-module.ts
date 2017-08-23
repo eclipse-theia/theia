@@ -12,5 +12,6 @@ import { bindGitPreferences } from '../common/git-preferences';
 
 export default new ContainerModule(bind => {
     bindGitPreferences(bind);
+    bind(DugiteGit).toSelf().inSingletonScope();
     bind(Git).toDynamicValue(ctx => ctx.container.get(DugiteGit)).inSingletonScope();
 });
