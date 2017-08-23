@@ -47,15 +47,14 @@ export class GitCommandHandlers implements CommandContribution {
         });
         registry.registerHandler('git.repositories', {
             execute: (): any => {
-                throw new Error('here')
-                // this.git.repositories().then(repositories => {
-                //     if (!repositories) {
-                //         console.info('No repositories were found.');
-                //     } else {
-                //         repositories.forEach(r => console.info(r));
-                //     }
-                // });
-                // return undefined;
+                this.git.repositories().then(repositories => {
+                    if (!repositories) {
+                        console.info('No repositories were found.');
+                    } else {
+                        repositories.forEach(r => console.info(r));
+                    }
+                });
+                return undefined;
             },
             isEnabled: () => true
         });
