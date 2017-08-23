@@ -11,8 +11,10 @@ import { CppCommandContribution } from './cpp-commands';
 
 import { LanguageClientContribution } from "@theia/languages/lib/browser";
 import { CppClientContribution } from "./cpp-client-contribution";
+import { bindCppPreferences } from "../common";
 
 export default new ContainerModule(bind => {
+    bindCppPreferences(bind);
     bind(CommandContribution).to(CppCommandContribution).inSingletonScope();
     bind(MenuContribution).to(CppCommandContribution).inSingletonScope();
 
