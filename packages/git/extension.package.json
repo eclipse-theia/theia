@@ -24,5 +24,11 @@
   },
   "publishConfig": {
     "access": "public"
-  }
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/git-frontend-module",
+      "backend": "lib/node/git-backend-module"
+    }
+  ]
 }

@@ -6,10 +6,13 @@
  */
 
 import { Git, GitPath } from '../common/git';
-import { GitWatcher, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common/git-watcher';
 import { ContainerModule } from 'inversify';
 import { bindGitPreferences } from '../common/git-preferences';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { GitCommandHandlers } from './git-command';
+import { GitKeybindingContext, GitKeybindingContribution } from './git-keybinding';
+import { CommandContribution, KeybindingContribution, KeybindingContext } from "@theia/core/lib/common";
+import { GitWatcher, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common/git-watcher';
 
 export default new ContainerModule(bind => {
     bindGitPreferences(bind);
@@ -17,4 +20,9 @@ export default new ContainerModule(bind => {
     bind(GitWatcherServer).to(ReconnectingGitWatcherServer).inSingletonScope();
     bind(GitWatcher).toSelf().inSingletonScope();
     bind(Git).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitPath)).inSingletonScope();
+
+    bind(CommandContribution).to(GitCommandHandlers);
+    bind(GitKeybindingContext).toSelf().inSingletonScope();
+    bind(KeybindingContext).toDynamicValue(context => context.container.get(GitKeybindingContext));
+    bind(KeybindingContribution).to(GitKeybindingContribution);
 });

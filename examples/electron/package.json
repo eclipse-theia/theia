@@ -10,6 +10,7 @@
     "@theia/navigator": "^0.1.1",
     "@theia/process": "^0.1.1",
     "@theia/terminal": "^0.1.1",
+    "@theia/git": "^0.1.1",
     "@theia/editor": "^0.1.1",
     "@theia/languages": "^0.1.1",
     "@theia/monaco": "^0.1.1",
