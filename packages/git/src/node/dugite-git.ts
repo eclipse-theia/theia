@@ -7,6 +7,7 @@
 
 import * as Path from 'path';
 import { Git } from '../common/git';
+import { git } from 'dugite-extra/lib/core/git';
 import { injectable, inject } from "inversify";
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { getStatus } from 'dugite-extra/lib/command/status';
@@ -27,8 +28,22 @@ export class DugiteGit implements Git {
     }
 
     async repositories(): Promise<Repository[]> {
-        const path = await getFsPath(await this.workspace.getRoot());
-        return locateRepositories(path);
+        const workspaceRoot = await this.workspace.getRoot();
+        const path = await getFsPath(workspaceRoot);
+        const repositories = await locateRepositories(path);
+        if (!repositories.length) {
+            try {
+                const result = await git(['rev-parse', '--show-toplevel'], await getFsPath(workspaceRoot), 'rev-parse');
+                const out = result.stdout;
+                if (out.length) {
+                    const localUri = FileUri.fsPath(out.trim());
+                    repositories.push({ localUri });
+                }
+            } catch (error) {
+                // We are not in a Git repository.
+            }
+        }
+        return repositories;
     }
 
     async status(repository: Repository): Promise<WorkingDirectoryStatus> {
