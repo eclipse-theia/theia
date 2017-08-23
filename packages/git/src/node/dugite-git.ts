@@ -7,10 +7,8 @@
 
 import * as Path from 'path';
 import { Git } from '../common/git';
-import URI from '@theia/core/lib/common/uri';
 import { injectable, inject } from "inversify";
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { GitPreferences } from '../common/git-preferences';
 import { getStatus } from 'dugite-extra/lib/command/status';
 import { stage, unstage } from 'dugite-extra/lib/command/stage';
 import { locateRepositories } from './git-repository-locator';
@@ -24,19 +22,8 @@ import { IStatusResult, IAheadBehind, AppFileStatus, WorkingDirectoryStatus as D
 @injectable()
 export class DugiteGit implements Git {
 
-    private pollInterval: number;
-    private readonly pollers: Map<Repository, NodeJS.Timer>;
-    private readonly listeners: Map<Repository, ((status: WorkingDirectoryStatus) => void)[]>;
-    private readonly lastStatus: Map<Repository, WorkingDirectoryStatus>;
-
     constructor(
-        @inject(GitPreferences) private readonly preferences: GitPreferences,
-        @inject(WorkspaceServer) private readonly workspace: WorkspaceServer
-    ) {
-        this.pollInterval = this.preferences['git.pollInterval'];
-        this.pollers = new Map();
-        this.listeners = new Map();
-        this.lastStatus = new Map();
+        @inject(WorkspaceServer) private readonly workspace: WorkspaceServer) {
     }
 
     async repositories(): Promise<Repository[]> {
