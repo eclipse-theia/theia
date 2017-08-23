@@ -117,6 +117,9 @@ export namespace FileChange {
             && (left.oldUri ? left.oldUri.toString() : '') === (right.oldUri ? right.oldUri.toString() : '');
     }
 
+    /**
+     * Determines whether the files change arguments are equivalent or not.
+     */
     export function compare(left: FileChange, right: FileChange): number {
         const concat = (fc: FileChange) => `${fc.status}${fc.uri.toString()}${fc.oldUri ? fc.oldUri.toString() : ''}${fc.staged}`;
         return concat(left).localeCompare(concat(right));
@@ -178,6 +181,15 @@ export namespace Repository {
      */
     export function equals(left: Repository, right: Repository): boolean {
         return left.localUri === right.localUri && (isRemote(left) ? left.remoteUrl : undefined) === (isRemote(right) ? right.remoteUrl : undefined);
+    }
+
+    /**
+     * Tries to find the equivalent repository among the given ones, if no matching result is available, returns with the `toFind` argument.
+     * @param repositories the repositories to look for the equivalent.
+     * @param toFind the repository to find.
+     */
+    export function findEquivalent(repositories: IterableIterator<Repository> | Repository[], toFind: Repository): Repository {
+        return (Array.isArray(repositories) ? repositories : [...repositories]).find(r => equals(r, toFind)) || toFind;
     }
 
 }
