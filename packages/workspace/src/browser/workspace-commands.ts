@@ -11,12 +11,13 @@ import { ClipboardService, SelectionService } from '@theia/core/lib/common';
 import { Command, CommandContribution, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { CommonCommands } from "@theia/core/lib/common/commands-common";
-import { FileSystem, FileStat } from '../common/filesystem';
-import { UriSelection } from '../common/filesystem-selection';
+import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
+import { UriSelection } from '@theia/filesystem/lib/common/filesystem-selection';
 import { SingleTextInputDialog, ConfirmDialog } from "@theia/core/lib/browser/dialogs";
 import { OpenerService, OpenHandler, open } from "@theia/core/lib/browser";
+import { WorkspaceServer } from '../common/workspace-protocol';
 
-export namespace FileCommands {
+export namespace WorkspaceCommands {
     export const NEW_FILE = 'file:newFile';
     export const NEW_FOLDER = 'file:newFolder';
     export const FILE_OPEN = 'file:open';
@@ -25,9 +26,9 @@ export namespace FileCommands {
         label: opener.label,
         iconClass: opener.iconClass
     };
-    export const FILE_CUT = CommonCommands.EDIT_CUT
-    export const FILE_COPY = CommonCommands.EDIT_COPY
-    export const FILE_PASTE = CommonCommands.EDIT_PASTE
+    export const FILE_CUT = CommonCommands.EDIT_CUT;
+    export const FILE_COPY = CommonCommands.EDIT_COPY;
+    export const FILE_PASTE = CommonCommands.EDIT_PASTE;
     export const FILE_RENAME = 'file:fileRename';
     export const FILE_DELETE = 'file:fileDelete';
 }
@@ -46,18 +47,19 @@ export class FileMenuContribution implements MenuContribution {
         registry.registerSubmenu([MAIN_MENU_BAR], FileMenus.FILE[1], "File");
 
         registry.registerMenuAction(FileMenus.NEW_GROUP, {
-            commandId: FileCommands.NEW_FILE
+            commandId: WorkspaceCommands.NEW_FILE
         });
         registry.registerMenuAction(FileMenus.NEW_GROUP, {
-            commandId: FileCommands.NEW_FOLDER
+            commandId: WorkspaceCommands.NEW_FOLDER
         });
     }
 }
 
 @injectable()
-export class FileCommandContribution implements CommandContribution {
+export class WorkspaceCommandContribution implements CommandContribution {
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(WorkspaceServer) protected readonly workspaceServer: WorkspaceServer,
         @inject(ClipboardService) protected readonly clipboardService: ClipboardService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(OpenerService) protected readonly openerService: OpenerService
@@ -65,40 +67,38 @@ export class FileCommandContribution implements CommandContribution {
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand({
-            id: FileCommands.NEW_FILE,
+            id: WorkspaceCommands.NEW_FILE,
             label: 'New File'
         });
         registry.registerCommand({
-            id: FileCommands.NEW_FOLDER,
+            id: WorkspaceCommands.NEW_FOLDER,
             label: 'New Folder'
         });
         registry.registerCommand({
-            id: FileCommands.FILE_OPEN,
+            id: WorkspaceCommands.FILE_OPEN,
             label: 'Open'
         });
         registry.registerCommand({
-            id: FileCommands.FILE_RENAME,
+            id: WorkspaceCommands.FILE_RENAME,
             label: 'Rename'
         });
         registry.registerCommand({
-            id: FileCommands.FILE_DELETE,
+            id: WorkspaceCommands.FILE_DELETE,
             label: 'Delete'
         });
 
         this.openerService.getOpeners().then(openers => {
             for (const opener of openers) {
-                const openWithCommand = FileCommands.FILE_OPEN_WITH(opener);
+                const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
                 registry.registerCommand(openWithCommand);
                 registry.registerHandler(openWithCommand.id,
-                    new FileSystemCommandHandler(this.selectionService, uri => {
-                        return opener.open(uri);
-                    })
+                    new FileSystemCommandHandler(this.selectionService, uri => opener.open(uri))
                 );
             }
         });
 
         registry.registerHandler(
-            FileCommands.FILE_RENAME,
+            WorkspaceCommands.FILE_RENAME,
             new FileSystemCommandHandler(this.selectionService, uri =>
                 this.getParent(uri).then(parent => {
                     const dialog = new SingleTextInputDialog({
@@ -108,24 +108,24 @@ export class FileCommandContribution implements CommandContribution {
                     });
                     dialog.open().then(name =>
                         this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString())
-                    )
+                    );
                 })
             )
         );
 
         registry.registerHandler(
-            FileCommands.FILE_COPY,
+            WorkspaceCommands.FILE_COPY,
             new FileSystemCommandHandler(this.selectionService, uri => {
                 this.clipboardService.setData({
                     text: uri.toString()
-                })
-                return Promise.resolve()
+                });
+                return Promise.resolve();
             })
         );
 
         registry.registerHandler(
-            FileCommands.FILE_PASTE,
-            new FileSystemCommandHandler(this.selectionService, uri =>
+            WorkspaceCommands.FILE_PASTE,
+            new WorkspaceRootAwareCommandHandler(this.workspaceServer, this.selectionService, uri =>
                 this.getDirectory(uri).then(stat => {
                     const data: string = this.clipboardService.getData('text');
                     const copyPath = new URI(data);
@@ -136,8 +136,8 @@ export class FileCommandContribution implements CommandContribution {
         );
 
         registry.registerHandler(
-            FileCommands.NEW_FILE,
-            new FileSystemCommandHandler(this.selectionService, uri =>
+            WorkspaceCommands.NEW_FILE,
+            new WorkspaceRootAwareCommandHandler(this.workspaceServer, this.selectionService, uri =>
                 this.getDirectory(uri).then(parent => {
                     const parentUri = new URI(parent.uri);
                     const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled', '.txt');
@@ -145,20 +145,20 @@ export class FileCommandContribution implements CommandContribution {
                         title: `New File`,
                         initialValue: vacantChildUri.path.base,
                         validate: name => this.validateFileName(name, parent)
-                    })
+                    });
                     dialog.open().then(name => {
                         const fileUri = parentUri.resolve(name);
                         this.fileSystem.createFile(fileUri.toString()).then(() => {
-                            open(this.openerService, fileUri)
+                            open(this.openerService, fileUri);
                         });
-                    })
+                    });
                 })
             )
         );
 
         registry.registerHandler(
-            FileCommands.NEW_FOLDER,
-            new FileSystemCommandHandler(this.selectionService, uri =>
+            WorkspaceCommands.NEW_FOLDER,
+            new WorkspaceRootAwareCommandHandler(this.workspaceServer, this.selectionService, uri =>
                 this.getDirectory(uri).then(parent => {
                     const parentUri = new URI(parent.uri);
                     const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled');
@@ -175,20 +175,18 @@ export class FileCommandContribution implements CommandContribution {
         )
 
         registry.registerHandler(
-            FileCommands.FILE_DELETE,
+            WorkspaceCommands.FILE_DELETE,
             new FileSystemCommandHandler(this.selectionService, uri => {
                 const dialog = new ConfirmDialog({
                     title: 'Delete File',
                     msg: `Do you really want to delete '${uri.path.base}'?`
                 });
-                return dialog.open().then(() => {
-                    return this.fileSystem.delete(uri.toString())
-                });
+                return dialog.open().then(() => this.fileSystem.delete(uri.toString()));
             })
         )
 
         registry.registerHandler(
-            FileCommands.FILE_OPEN,
+            WorkspaceCommands.FILE_OPEN,
             new FileSystemCommandHandler(this.selectionService,
                 uri => open(this.openerService, uri)
             )
@@ -242,25 +240,25 @@ export class FileCommandContribution implements CommandContribution {
 export class FileSystemCommandHandler implements CommandHandler {
     constructor(
         protected readonly selectionService: SelectionService,
-        protected readonly doExecute: (uri: URI) => any,
+        protected readonly doExecute: (uri: URI) => object | undefined,
         protected readonly testEnabled?: (uri: URI) => boolean
     ) { }
 
-    protected get uri(): URI | undefined {
+    protected getUri(): URI | undefined {
         return UriSelection.getUri(this.selectionService.selection);
     }
 
-    execute(): any {
-        const uri = this.uri;
+    execute(): object | undefined {
+        const uri = this.getUri();
         return uri ? this.doExecute(uri) : undefined;
     }
 
     isVisible(): boolean {
-        return !!this.uri;
+        return !!this.getUri();
     }
 
     isEnabled(): boolean {
-        const uri = this.uri;
+        const uri = this.getUri();
         if (uri) {
             if (this.testEnabled) {
                 return this.testEnabled(uri);
@@ -270,4 +268,24 @@ export class FileSystemCommandHandler implements CommandHandler {
         return false;
     }
 
+}
+
+class WorkspaceRootAwareCommandHandler extends FileSystemCommandHandler {
+
+    protected rootUri: URI;
+
+    constructor(
+        protected readonly workspaceServer: WorkspaceServer,
+        protected readonly selectionService: SelectionService,
+        protected readonly doExecute: (uri: URI) => object | undefined,
+        protected readonly testEnabled?: (uri: URI) => boolean
+    ) {
+        super(selectionService, doExecute, testEnabled);
+        workspaceServer.getRoot().then(root => {
+            this.rootUri = new URI(root);
+        });
+    }
+    protected getUri(): URI | undefined {
+        return UriSelection.getUri(this.selectionService.selection) || this.rootUri;
+    }
 }

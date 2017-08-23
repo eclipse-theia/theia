@@ -48,8 +48,18 @@ export class MenuModelRegistry {
 
     registerSubmenu(menuPath: string[], id: string, label: string): Disposable {
         const parent = this.findGroup(menuPath);
-        const groupNode = new CompositeMenuNode(id, label);
-        return parent.addNode(groupNode);
+        let groupNode = this.findSubMenu(parent, id);
+        if (!groupNode) {
+            groupNode = new CompositeMenuNode(id, label);
+            return parent.addNode(groupNode);
+        } else {
+            if (!groupNode.label) {
+                groupNode.label = label;
+            } else if (groupNode.label !== label) {
+                throw new Error("The group '" + menuPath.join('/') + "' already has a different label.");
+            }
+            return { dispose: () => { } };
+        }
     }
 
     protected findGroup(menuPath: string[]): CompositeMenuNode {
@@ -92,7 +102,7 @@ export class CompositeMenuNode implements MenuNode {
     protected readonly _children: MenuNode[] = [];
     constructor(
         public readonly id: string,
-        public readonly label?: string
+        public label?: string
     ) { }
 
     get children(): ReadonlyArray<MenuNode> {

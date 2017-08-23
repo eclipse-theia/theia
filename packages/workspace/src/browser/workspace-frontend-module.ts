@@ -12,6 +12,7 @@ import { FileDialogFactory, createFileDialog, FileDialogProps } from '@theia/fil
 import { WorkspaceServer, workspacePath } from '../common';
 import { WorkspaceFrontendContribution } from "./workspace-frontend-contribution";
 import { WorkspaceService } from './workspace-service';
+import { WorkspaceCommandContribution, FileMenuContribution } from './workspace-commands';
 
 export default new ContainerModule(bind => {
     bind(WorkspaceService).toSelf().inSingletonScope();
@@ -31,4 +32,6 @@ export default new ContainerModule(bind => {
         (props: FileDialogProps) =>
             createFileDialog(ctx.container, props)
     );
+    bind(CommandContribution).to(WorkspaceCommandContribution).inSingletonScope();
+    bind(MenuContribution).to(FileMenuContribution).inSingletonScope();
 });
