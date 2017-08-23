@@ -82,7 +82,7 @@ export class CommandRegistry implements CommandService {
         handlers.push(handler);
         return {
             dispose: () => {
-                let idx = handlers.indexOf(handler);
+                const idx = handlers.indexOf(handler);
                 if (idx >= 0) {
                     handlers.splice(idx, 1);
                 }
@@ -111,9 +111,9 @@ export class CommandRegistry implements CommandService {
     }
 
     get commands(): Command[] {
-        let commands: Command[] = []
-        for (let id of this.commandIds) {
-            let cmd = this.getCommand(id);
+        const commands: Command[] = []
+        for (const id of this.commandIds) {
+            const cmd = this.getCommand(id);
             if (cmd) {
                 commands.push(cmd);
             }

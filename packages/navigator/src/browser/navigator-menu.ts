@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import { MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import { OpenerService } from '@theia/core/lib/browser';
-import { FileCommands } from '@theia/filesystem/lib/browser/filesystem-commands';
+import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 
 export const NAVIGATOR_CONTEXT_MENU = 'navigator-context-menu';
 
@@ -27,12 +27,12 @@ export class NavigatorMenuContribution implements MenuContribution {
 
     registerMenus(registry: MenuModelRegistry) {
         registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, OPEN_MENU_GROUP], {
-            commandId: FileCommands.FILE_OPEN
+            commandId: WorkspaceCommands.FILE_OPEN
         });
         registry.registerSubmenu([NAVIGATOR_CONTEXT_MENU, OPEN_MENU_GROUP], OPEN_WITH_MENU, 'Open With');
         this.openerService.getOpeners().then(openers => {
             for (const opener of openers) {
-                const openWithCommand = FileCommands.FILE_OPEN_WITH(opener);
+                const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
                 registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, OPEN_MENU_GROUP, OPEN_WITH_MENU], {
                     commandId: openWithCommand.id
                 });
@@ -42,22 +42,22 @@ export class NavigatorMenuContribution implements MenuContribution {
         //     commandId: Commands.FILE_CUT
         // });
         registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, CUT_MENU_GROUP], {
-            commandId: FileCommands.FILE_COPY
+            commandId: WorkspaceCommands.FILE_COPY
         });
         registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, CUT_MENU_GROUP], {
-            commandId: FileCommands.FILE_PASTE
+            commandId: WorkspaceCommands.FILE_PASTE
         });
         registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, MOVE_MENU_GROUP], {
-            commandId: FileCommands.FILE_RENAME
+            commandId: WorkspaceCommands.FILE_RENAME
         });
         registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, MOVE_MENU_GROUP], {
-            commandId: FileCommands.FILE_DELETE
+            commandId: WorkspaceCommands.FILE_DELETE
         });
         registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, NEW_MENU_GROUP], {
-            commandId: FileCommands.NEW_FILE
+            commandId: WorkspaceCommands.NEW_FILE
         });
         registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, NEW_MENU_GROUP], {
-            commandId: FileCommands.NEW_FOLDER
+            commandId: WorkspaceCommands.NEW_FOLDER
         });
     }
 }

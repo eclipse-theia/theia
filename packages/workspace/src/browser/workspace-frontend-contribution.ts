@@ -6,12 +6,13 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry} from "@theia/core/lib/common";
+import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
 import { open, OpenerService } from '@theia/core/lib/browser';
-import { DirNode, FileDialogFactory, FileMenus, FileStatNode } from '@theia/filesystem/lib/browser';
+import { DirNode, FileDialogFactory, FileStatNode } from '@theia/filesystem/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from './workspace-service';
+import { FileMenus } from './workspace-commands';
 
 export namespace WorkspaceCommands {
     export const OPEN: Command = {

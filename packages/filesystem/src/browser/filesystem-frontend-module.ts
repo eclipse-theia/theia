@@ -6,14 +6,14 @@
  */
 
 import { ContainerModule } from 'inversify';
-import { CommandContribution, MenuContribution, ResourceResolver } from '@theia/core/lib/common';
+import { ResourceResolver } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { FileSystem, FileSystemWatcher, FileResourceResolver, fileSystemPath, bindFileSystemPreferences } from "../common";
 import {
     fileSystemWatcherPath, FileSystemWatcherServer,
     FileSystemWatcherServerProxy, ReconnectingFileSystemWatcherServer
 } from '../common/filesystem-watcher-protocol';
-import { FileCommandContribution, FileMenuContribution } from './filesystem-commands';
+
 
 import "../../src/browser/style/index.css";
 
@@ -32,8 +32,5 @@ export default new ContainerModule(bind => {
 
     bind(FileResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(FileResourceResolver));
-
-    bind(CommandContribution).to(FileCommandContribution).inSingletonScope();
-    bind(MenuContribution).to(FileMenuContribution).inSingletonScope();
 });
 
