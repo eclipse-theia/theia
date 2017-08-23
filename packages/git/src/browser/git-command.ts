@@ -25,7 +25,6 @@ export class GitCommandHandlers implements CommandContribution {
         });
         registry.registerHandler('git.status', {
             execute: (): any => {
-                console.info('STATUS');
                 this.git.repositories().then(repositories => {
                     const [first,] = repositories;
                     if (first) {
