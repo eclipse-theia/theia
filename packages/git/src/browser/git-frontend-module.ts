@@ -6,11 +6,15 @@
  */
 
 import { Git, GitPath } from '../common/git';
+import { GitWatcher, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common/git-watcher';
 import { ContainerModule } from 'inversify';
 import { bindGitPreferences } from '../common/git-preferences';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 
 export default new ContainerModule(bind => {
     bindGitPreferences(bind);
+    bind(GitWatcherServerProxy).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitPath)).inSingletonScope();
+    bind(GitWatcherServer).to(ReconnectingGitWatcherServer).inSingletonScope();
+    bind(GitWatcher).toSelf().inSingletonScope();
     bind(Git).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitPath)).inSingletonScope();
 });

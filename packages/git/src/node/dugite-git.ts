@@ -162,7 +162,7 @@ async function mapFileStatus(toMap: AppFileStatus): Promise<FileStatus> {
 
 async function getFsPath(repository: Repository | string): Promise<string> {
     const uri = typeof repository === 'string' ? repository : repository.localUri;
-    return FileUri.fsPath(new URI(uri));
+    return FileUri.fsPath(uri);
 }
 
 async function getUri(path: string): Promise<string> {
