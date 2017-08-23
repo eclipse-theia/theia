@@ -18,7 +18,7 @@ export default new ContainerModule(bind => {
     bind(DugiteGit).toSelf().inSingletonScope();
     bind(Git).toDynamicValue(ctx => ctx.container.get(DugiteGit)).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(context => new JsonRpcConnectionHandler(GitPath, () => context.container.get(Git))).inSingletonScope();
-    bind(DugiteGitWatcherServer);
+    bind(DugiteGitWatcherServer).toSelf();
     bind(GitWatcherServer).toDynamicValue(context => context.container.get(DugiteGitWatcherServer));
     bind(GitWatcher).toSelf();
     bind(ConnectionHandler).toDynamicValue(context =>
