@@ -5,8 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
-import { BaseLanguageClientContribution, Workspace, Languages, LanguageClientFactory } from '@theia/languages/lib/browser';
+import { injectable } from "inversify";
+import { BaseLanguageClientContribution } from '@theia/languages/lib/browser';
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME } from '../common';
 
 @injectable()
@@ -14,14 +14,6 @@ export class CppClientContribution extends BaseLanguageClientContribution {
 
     readonly id = CPP_LANGUAGE_ID;
     readonly name = CPP_LANGUAGE_NAME;
-
-    constructor(
-        @inject(Workspace) protected readonly workspace: Workspace,
-        @inject(Languages) protected readonly languages: Languages,
-        @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory
-    ) {
-        super(workspace, languages, languageClientFactory)
-    }
 
     protected get documentSelector() {
         return [

@@ -7,7 +7,8 @@
     "@theia/languages": "^0.1.1",
     "@theia/editor": "^0.1.1",
     "@theia/monaco": "^0.1.1",
-    "@theia/filesystem": "^0.1.1"
+    "@theia/filesystem": "^0.1.1",
+    "@theia/preferences": "^0.1.1"
   },
   "publishConfig": {
     "access": "public"

@@ -5,9 +5,12 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable } from "inversify";
+import { injectable, inject } from "inversify";
 import { BaseLanguageServerContribution, IConnection } from "@theia/languages/lib/node";
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME } from '../common';
+import { CppPreferences } from "../common";
+import { Message, isRequestMessage } from 'vscode-ws-jsonrpc';
+import { InitializeParams, InitializeRequest } from 'vscode-languageserver/lib/protocol';
 
 @injectable()
 export class CppContribution extends BaseLanguageServerContribution {
@@ -15,10 +18,34 @@ export class CppContribution extends BaseLanguageServerContribution {
     readonly id = CPP_LANGUAGE_ID;
     readonly name = CPP_LANGUAGE_NAME;
 
-    start(clientConnection: IConnection): void {
+
+    constructor(
+        @inject(CppPreferences) protected readonly cppPreferences: CppPreferences
+    ) {
+        super();
+    }
+
+
+
+    protected map(message: Message): Message {
+        if (isRequestMessage(message)) {
+            if (message.method === InitializeRequest.type.method) {
+                const initializeParams = message.params as InitializeParams;
+                initializeParams.processId = process.pid;
+            }
+        }
+        return message;
+    }
+
+    protected forward(clientConnection: IConnection, serverConnection: IConnection): void {
+        super.forward(clientConnection, serverConnection);
+    }
+
+    public start(clientConnection: IConnection): void {
         // TODO: clangd has to be on PATH, this should be a preference.
+        console.log(this.cppPreferences["cpp.clangdCompileCommandsPath"]);
         const command = 'clangd';
-        const args: string[] = [];
+        const args: string[] = [this.cppPreferences["cpp.clangdCompileCommandsPath"]];
         const serverConnection = this.createProcessStreamConnection(command, args);
         this.forward(clientConnection, serverConnection);
     }
