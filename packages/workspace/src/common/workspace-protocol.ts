@@ -12,12 +12,15 @@ export const workspacePath = '/services/workspace';
  */
 export const WorkspaceServer = Symbol('WorkspaceServer');
 export interface WorkspaceServer {
+
     /**
-     * Return the current workspace root.
+     * Return the current workspace root URI.
      */
     getRoot(): Promise<string>;
+
     /**
      * Select a given URI as a workspace root.
      */
     setRoot(uri: string): Promise<void>;
+
 }

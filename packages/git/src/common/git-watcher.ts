@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import { JsonRpcServer, JsonRpcProxy } from '@theia/core';
 import { Repository, WorkingDirectoryStatus } from './model';
-import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection, Emitter } from '@theia/core/lib/common';
 
 /**
  * An event representing a Git change.
@@ -41,6 +41,18 @@ export interface GitStatusChangeEvent extends GitEvent {
      * The previous working directory state, if any.
      */
     readonly oldStatus?: WorkingDirectoryStatus;
+
+}
+
+export namespace GitStatusChangeEvent {
+
+    /**
+     * `true` if the argument is a `GitStatusEvent`, otherwise `false`.
+     * @param event the argument to check whether it is a Git status change event or not.
+     */
+    export function is(event: any | undefined): event is GitStatusChangeEvent {
+        return (<GitStatusChangeEvent>event).status !== undefined;
+    }
 
 }
 

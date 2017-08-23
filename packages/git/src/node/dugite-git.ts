@@ -12,6 +12,8 @@ import { injectable, inject } from "inversify";
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { GitPreferences } from '../common/git-preferences';
 import { getStatus } from 'dugite-extra/lib/command/status';
+import { locateRepositories } from './git-repository-locator';
+import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol';
 import { Repository, RepositoryWithRemote, WorkingDirectoryStatus, FileChange, FileStatus } from '../common/model';
 import { IStatusResult, IAheadBehind, AppFileStatus, WorkingDirectoryStatus as DugiteStatus, FileChange as DugiteFileChange } from 'dugite-extra/lib/model/status';
 
@@ -27,12 +29,18 @@ export class DugiteGit implements Git {
     private readonly lastStatus: Map<Repository, WorkingDirectoryStatus>;
 
     constructor(
-        @inject(GitPreferences) private preferences: GitPreferences
+        @inject(GitPreferences) private readonly preferences: GitPreferences,
+        @inject(WorkspaceServer) private readonly workspace: WorkspaceServer
     ) {
         this.pollInterval = this.preferences['git.pollInterval'];
         this.pollers = new Map();
         this.listeners = new Map();
         this.lastStatus = new Map();
+    }
+
+    async repositories(): Promise<Repository[]> {
+        const path = await getFsPath(await this.workspace.getRoot());
+        return locateRepositories(path);
     }
 
     async status(repository: Repository): Promise<WorkingDirectoryStatus> {
@@ -149,8 +157,9 @@ async function mapFileStatus(toMap: AppFileStatus): Promise<FileStatus> {
     }
 }
 
-async function getFsPath(repository: Repository): Promise<string> {
-    return FileUri.fsPath(new URI(repository.localUri));
+async function getFsPath(repository: Repository | string): Promise<string> {
+    const uri = typeof repository === 'string' ? repository : repository.localUri;
+    return FileUri.fsPath(new URI(uri));
 }
 
 async function getUri(path: string): Promise<string> {

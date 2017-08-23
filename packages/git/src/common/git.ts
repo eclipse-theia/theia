@@ -29,6 +29,11 @@ export const Git = Symbol('Git');
 export interface Git {
 
     /**
+     * Resolves to an array of repositories discovered in the workspace.
+     */
+    repositories(): Promise<Repository[]>;
+
+    /**
      * Returns with the working directory status of the given Git repository.
      *
      * @param the repository to get the working directory status from.
