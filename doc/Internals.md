@@ -347,7 +347,7 @@ container.load(frontendLanguagesModule);
 
 ## Complete example
 
-If you wish to see the complete implementation of what I refered too in
+If you wish to see the complete implementation of what I referred too in
 this documentation see [this commit](https://github.com/theia-ide/theia/commit/99d191f19bd2a3e93098470ca1bb7b320ab344a1).
 
 # Contribution Providers
@@ -425,7 +425,7 @@ So first what is an `Emitter`?
 
 An Emitter is an event handler container,
 it allows for event handlers to be registered on it and triggered with an
-event of type X in this case an ILogLevelChanedEvent.
+event of type X in this case an ILogLevelChangedEvent.
 
 So here we just create an `Emitter` that will have events of type ILogLevelChangedEvent;
 
@@ -458,7 +458,7 @@ so you can call:
 
 This registers the anonymous function passed as param on this emitter.
 
-Next we will need to trigger this event handler by firering an event:
+Next we will need to trigger this event handler by firing an event:
 
 ``` typescript
  onLogLevelChanged(event: ILogLevelChangedEvent) {
