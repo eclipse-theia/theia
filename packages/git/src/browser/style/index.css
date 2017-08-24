@@ -1,0 +1,128 @@
+/*
+ * Copyright (C) 2017 TypeFox and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+#gitContainer {
+    color: var(--theia-ui-font-color0);
+    padding: 5px;
+    box-sizing: border-box;
+}
+
+.flexcontainer {
+    display: flex;
+}
+
+.noWrapInfo {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.row {
+    width: 100%;
+}
+
+#gitContainer .gitItem {
+    margin: 3px 0;
+    padding: 3px 0;
+    font-size: var(--theia-ui-font-size1);
+    display: flex;
+    justify-content: space-between;
+}
+
+#gitContainer .gitItem:hover {
+    background-color: var(--theia-layout-color0);
+    cursor: pointer;
+}
+
+#gitContainer .gitItem .path {
+    color: var(--theia-ui-font-color2);
+    font-size: var(--theia-ui-font-size0);
+}
+
+#gitContainer .gitItem .itemButtonsContainer {
+    display: flex;
+    justify-content: flex-end;
+    margin-left: 3px;
+}
+
+#gitContainer .gitItem .itemButtonsContainer .status {
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: var(--theia-ui-font-size1);
+}
+
+#gitContainer .gitItem .itemButtonsContainer .status.new {
+    background-color: var(--theia-disabled-color0);
+}
+
+#gitContainer .gitItem .itemButtonsContainer .status.new.staged {
+    background-color: var(--theia-success-color0);
+}
+
+#gitContainer .gitItem .itemButtonsContainer .status.modified {
+    background-color: var(--theia-brand-color0);
+}
+
+#gitContainer .gitItem .itemButtonsContainer .status.deleted {
+    background-color: var(--theia-warn-color0);
+}
+
+#gitContainer .gitItem .itemButtonsContainer .status.renamed {
+    background-color: var(--theia-success-color3);
+}
+
+#gitContainer .gitItem .itemButtonsContainer .status.conflicted {
+    background-color: var(--theia-error-color0);
+}
+
+#gitContainer .gitItem .itemButtonsContainer .status.copied {
+    background-color: var(--theia-accent-color3);
+}
+
+#gitContainer .gitItem .itemButtonsContainer .buttons {
+    display: none;
+    margin: 0 3px;
+}
+
+#gitContainer .gitItem .itemButtonsContainer .buttons .button {
+    margin: 0 3px;
+}
+
+#gitContainer .gitItem:hover .itemButtonsContainer .buttons {
+    display: flex;
+}
+
+#gitContainer .changesHeader {
+    font-weight: bold;
+}
+
+#gitContainer .changesContainer {
+    margin: 5px 0;
+}
+
+#gitContainer #messageInput {
+    position: relative;
+}
+
+#gitContainer #messageInput input {
+    flex: 1;
+    font-size: var(--theia-ui-font-size2);
+    line-height: var(--theia-content-line-height);
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--theia-border-color1);
+    background: var(--theia-layout-color0);
+    color: var(--theia-ui-font-color0);
+}
+
+.numberOfChanges {
+
+}
+
+.status {
+
+}
