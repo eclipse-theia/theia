@@ -188,8 +188,23 @@ export namespace Repository {
      * @param repositories the repositories to look for the equivalent.
      * @param toFind the repository to find.
      */
-    export function findEquivalent(repositories: IterableIterator<Repository> | Repository[], toFind: Repository): Repository {
+    export function findEquivalentOrThis(repositories: IterableIterator<Repository> | Repository[], toFind: Repository): Repository {
         return (Array.isArray(repositories) ? repositories : [...repositories]).find(r => equals(r, toFind)) || toFind;
+    }
+
+    /**
+     * Returns with the index of the element of the `repositories` argument that is equivalent with the `toFind` argument.
+     * In this context, two repositories considered to be equivalent, if their local URIs are the same.
+     * @param repositories a bunch of repositories to search when looking for the desired one.
+     * @param toFind the one to find among the `repositories`.
+     */
+    export function indexOfEquivalent(repositories: Repository[], toFind: Repository): number {
+        const index = repositories.indexOf(toFind);
+        if (index !== -1) {
+            return index;
+        }
+        const equivalent = repositories.find(r => equals(r, toFind));
+        return equivalent ? repositories.indexOf(equivalent) : -1;
     }
 
 }

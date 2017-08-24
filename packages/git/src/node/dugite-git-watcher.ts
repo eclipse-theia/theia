@@ -10,7 +10,7 @@ import { Git } from '../common/git';
 import { Repository, WorkingDirectoryStatus } from '../common/model';
 import { GitPreferences } from '../common/git-preferences';
 import { GitWatcherServer, GitWatcherClient, GitStatusChangeEvent } from '../common/git-watcher';
-// import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol';
+import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 
 @injectable()
 export class DugiteGitWatcherServer implements GitWatcherServer {
@@ -23,7 +23,7 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
     constructor(
         @inject(Git) private readonly git: Git,
         @inject(GitPreferences) private readonly preferences: GitPreferences,
-        // @inject(WorkspaceServer) private readonly workspace: WorkspaceServer
+        @inject(FileSystemWatcherServer) private readonly filesystemWatcher: FileSystemWatcherServer
     ) {
         this.watchers = new Map();
         this.status = new Map();
@@ -32,6 +32,7 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
     async watchGitChanges(repository?: Repository): Promise<number> {
         const watcher = this.watcherSequence++;
         if (!repository) {
+            this.filesystemWatcher.setClient({ onDidFilesChanged: p => console.log(p) });
             throw new Error('Global watchers are not yet implemented.');
         } else {
             const interval = this.preferences['git.pollInterval']; // TODO refresh timers on preference change.
@@ -60,7 +61,7 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
     }
 
     dispose(): void {
-        [...this.watchers.values()].forEach(timer => clearInterval(timer));
+        [...this.watchers.values()].forEach(clearInterval);
     }
 
     setClient(client?: GitWatcherClient): void {
