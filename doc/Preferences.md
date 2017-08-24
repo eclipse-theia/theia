@@ -4,7 +4,7 @@ Preferences can be saved in the root of the workspace under `.theia/settings.jso
 
 As of right now the files must contain a valid a JSON containing the names and values of preferences (note that the following preference names are not official and only used as an example). You can also add comments to the settings.json file if needed i.e
 
-```json
+```
 {
     // Enable/Disable the line numbers in the monaco editor
 	"monaco.lineNumbers": "off",
