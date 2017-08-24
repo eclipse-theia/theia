@@ -20,6 +20,7 @@ addons:
     packages:
     - g++-4.8
     - oracle-java8-set-default
+    - libsecret-1-dev
     chrome: stable
 before_script:
   - export DISPLAY=:99.0; sh -e /etc/init.d/xvfb start ;
