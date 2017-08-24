@@ -14,5 +14,8 @@
     {
       "frontend": "lib/browser/navigator-frontend-module"
     }
-  ]
+  ],
+  "scripts": {
+    "build": "gulp copy_json_files && npm run compile && npm run lint"
+  }
 }

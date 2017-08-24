@@ -11,10 +11,20 @@ import { FrontendApplication, Endpoint } from '@theia/core/lib/browser';
 import { FileMenus } from '@theia/filesystem/lib/browser/filesystem-commands';
 import { TerminalWidgetFactory, TerminalWidgetOptions } from './terminal-widget';
 
+const enjson = require('./i18n/en.json');
+const esjson = require('./i18n/es.json');
+const frjson = require('./i18n/fr.json');
+const Globalize = require("globalize");
+
+// Load potential languages
+Globalize.loadMessages(enjson);
+Globalize.loadMessages(esjson);
+Globalize.loadMessages(frjson);
+
 export namespace TerminalCommands {
     export const NEW: Command = {
         id: 'terminal:new',
-        label: 'New Terminal'
+        label: Globalize.formatMessage("terminal/browser/New Terminal")
     }
 }
 

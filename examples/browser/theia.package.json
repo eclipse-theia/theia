@@ -14,7 +14,9 @@
     "@theia/monaco": "^0.1.1",
     "@theia/java": "^0.1.1",
     "@theia/python": "^0.1.1",
-    "@theia/cpp": "^0.1.1"
+    "@theia/cpp": "^0.1.1",
+    "cldr-data": "^31.0.2",
+    "globalize": "^1.3.0"
   },
   "scripts": {
     "clean": "rimraf lib && rimraf errorShots",
@@ -22,8 +24,10 @@
   },
   "devDependencies": {
     "@types/chai": "^4.0.1",
+    "@types/globalize": "0.0.30",
     "@types/webdriverio": "^4.7.0",
     "chai": "^4.1.0",
+    "globalize-webpack-plugin": "^1.1.1",
     "selenium-standalone": "^6.2.0",
     "typescript": "^2.4.1",
     "ts-node": "^3.2.0",

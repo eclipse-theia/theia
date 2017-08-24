@@ -1,0 +1,14 @@
+{
+	"es": {
+		"core": {
+			"common": {
+				"Edit": "Editar",
+				"Cut": "Cortar",
+				"Copy": "Dupdo",
+				"Paste": "Pegar",
+				"Undo": "Deshacer",
+				"Redo": "Rehacer"
+			}
+		}
+	}
+}

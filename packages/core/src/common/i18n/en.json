@@ -1,0 +1,14 @@
+{
+	"en": {
+		"core": {
+			"common": {
+				"Edit": "Edit",
+				"Cut": "Cut",
+				"Copy": "Copy",
+				"Paste": "Paste",
+				"Undo": "Undo",
+				"Redo": "Redo"
+			}
+		}
+	}
+}

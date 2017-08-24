@@ -25,5 +25,8 @@
       "frontend": "lib/browser/filesystem-frontend-module",
       "backend": "lib/node/filesystem-backend-module"
     }
-  ]
+  ],
+  "scripts": {
+    "build": "gulp copy_json_files && npm run compile && npm run lint"
+  }
 }
