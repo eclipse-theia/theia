@@ -6,6 +6,7 @@ you already know the basics about Theia's architecture as described in:
 * [Contribution Providers](#contribution-providers).
 * [Events](#events).
 * [Preferences](Preferences.md)
+* [Commands And Keybindings](Commands_Keybindings.md)
 
 
 # <a name="backendfrontend"></a>How create a backend service and connect to it over JSON-RPC
