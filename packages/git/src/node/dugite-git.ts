@@ -30,18 +30,12 @@ export class DugiteGit implements Git {
     async repositories(): Promise<Repository[]> {
         const workspaceRoot = await this.workspace.getRoot();
         const path = await getFsPath(workspaceRoot);
-        const repositories = await locateRepositories(path);
-        if (!repositories.length) {
-            try {
-                const result = await git(['rev-parse', '--show-toplevel'], await getFsPath(workspaceRoot), 'rev-parse');
-                const out = result.stdout;
-                if (out.length) {
-                    const localUri = FileUri.fsPath(out.trim());
-                    repositories.push({ localUri });
-                }
-            } catch (error) {
-                // We are not in a Git repository.
-            }
+        const repositoriesPromise = locateRepositories(path);
+        const containerRepositoryPromise = this.getContainerRepository(path);
+        const repositories = await repositoriesPromise;
+        const containerRepository = await containerRepositoryPromise;
+        if (containerRepository) {
+            repositories.unshift(containerRepository);
         }
         return repositories;
     }
@@ -108,6 +102,20 @@ export class DugiteGit implements Git {
 
     async rebase(repository: Repository, name: string): Promise<void> {
         throw new Error("Method not implemented.");
+    }
+
+    private async getContainerRepository(path: string): Promise<Repository | undefined> {
+        try {
+            const result = await git(['rev-parse', '--show-toplevel'], path, 'rev-parse');
+            const out = result.stdout;
+            if (out.length) {
+                const localUri = FileUri.fsPath(out.trim());
+                return { localUri };
+            }
+        } catch (error) {
+            // We are not in a Git repository.
+        }
+        return undefined;
     }
 
 }
