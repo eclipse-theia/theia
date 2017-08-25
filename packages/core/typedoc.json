@@ -1,0 +1,30 @@
+{
+  "ignoreCompilerErrors": true,
+  "mode": "file",
+  "out": "./docs/api",
+  "declaration": true,
+  "excludeExternals": true,
+  "noImplicitAny": true,
+  "noEmitOnError": false,
+  "noImplicitThis": true,
+  "noUnusedLocals": true,
+  "strictNullChecks": true,
+  "experimentalDecorators": true,
+  "emitDecoratorMetadata": true,
+  "downlevelIteration": true,
+  "module": "commonjs",
+  "moduleResolution": "node",
+  "target": "es5",
+  "sourceMap": true,
+  "lib": [
+    "lib.es6.d.ts"
+  ],
+  "baseUrl": "../",
+  "compilerOptions": {
+    "paths": {
+      "humane-js": [
+        "src/typings/humane-js"
+      ]
+    }
+  }
+}
