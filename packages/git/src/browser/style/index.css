@@ -15,6 +15,10 @@
     display: flex;
 }
 
+.evenlySpreaded {
+    justify-content: space-between;
+}
+
 .noWrapInfo {
     white-space: nowrap;
     overflow: hidden;
@@ -23,6 +27,7 @@
 
 .row {
     width: 100%;
+    margin-bottom: 5px;
 }
 
 #gitContainer .gitItem {
@@ -83,12 +88,18 @@
     background-color: var(--theia-accent-color3);
 }
 
-#gitContainer .gitItem .itemButtonsContainer .buttons {
-    display: none;
+#gitContainer .buttons {
+    display: flex;
     margin: 0 3px;
 }
 
-#gitContainer .gitItem .itemButtonsContainer .buttons .button {
+#gitContainer .buttons .button {
+    margin: 0 3px;
+    cursor: pointer;
+}
+
+#gitContainer .gitItem .itemButtonsContainer .buttons {
+    display: none;
     margin: 0 3px;
 }
 
@@ -104,11 +115,13 @@
     margin: 5px 0;
 }
 
-#gitContainer #messageInput {
+#gitContainer #messageInputContainer {
     position: relative;
 }
 
-#gitContainer #messageInput input {
+#gitContainer #repositoryListContainer #repositoryList,
+#gitContainer #messageInputContainer input,
+#gitContainer #messageTextareaContainer textarea {
     flex: 1;
     font-size: var(--theia-ui-font-size2);
     line-height: var(--theia-content-line-height);
@@ -119,10 +132,19 @@
     color: var(--theia-ui-font-color0);
 }
 
+#gitContainer #repositoryListContainer {
+    display: flex;
+    margin-bottom: 5px;
+}
+
+#gitContainer #commandBar {
+    margin-bottom: 5px;
+}
+
 .numberOfChanges {
 
 }
 
-.status {
-
+.warn {
+    background-color: var(--theia-error-color2) !important;
 }

@@ -12,84 +12,136 @@ import { Git } from '../common/git';
 import URI from '@theia/core/lib/common/uri';
 import { h } from '@phosphor/virtualdom/lib';
 import { FileChange, FileStatus, Repository } from '../common/model';
+import { GitWatcher } from '../common/git-watcher';
 
 @injectable()
 export class GitWidget extends VirtualWidget {
 
-    protected localUri = new URI('/Users/jbicker/github/theia').toString();
-    protected repository: Repository = { localUri: this.localUri };
+    protected localUri: string;
+    protected repository: Repository;
 
+    protected repositories: Repository[] = [];
     protected stagedChanges: FileChange[] = [];
     protected unstagedChanges: FileChange[] = [];
+    protected message: string = '';
 
-    constructor( @inject(Git) private git: Git) {
+    constructor( @inject(Git) private git: Git, @inject(GitWatcher) gitWatcher: GitWatcher) {
         super();
         this.id = 'gitContainer';
         this.title.label = 'Git';
         this.addClass('theia-git');
+
+        this.initialize();
     }
 
+    // todo we dont need this anymore after we have a watcher properly implemented. for now it is just convenience to reinitialize the view
     protected onActivateRequest() {
-        this.createChangeLists();
+        this.initialize();
     }
 
-    protected createChangeLists(): void {
+    async initialize(): Promise<void> {
+        this.message = '';
+        this.repositories = await this.git.repositories();
+        if (!this.localUri) {
+            this.repository = this.repositories[0];
+        } else {
+            this.repository = { localUri: this.localUri };
+        }
         this.stagedChanges = [];
         this.unstagedChanges = [];
-        this.git.status(this.repository).then(status => {
-            status.changes.forEach(change => {
-                if (change.staged) {
-                    this.stagedChanges.push(change);
-                } else {
-                    this.unstagedChanges.push(change);
-                }
-            });
-            this.update();
+        const status = await this.git.status(this.repository);
+        status.changes.forEach(change => {
+            if (change.staged) {
+                this.stagedChanges.push(change);
+            } else {
+                this.unstagedChanges.push(change);
+            }
         });
+        this.update();
     }
 
     protected render(): h.Child {
-        console.log('RENDER IT');
-
         const repoList = this.renderRepoList();
         const commandBar = this.renderCommandBar();
         const messageInput = this.renderMessageInput();
-        const stagedChanges = this.renderStagedChanges();
-        const unstagedChanges = this.renderUnstagedChanges();
+        const messageTextarea = this.renderMessageTextarea();
+        const stagedChanges = this.renderStagedChanges() || '';
+        const unstagedChanges = this.renderUnstagedChanges() || '';
 
-        return h.div({ id: 'gitContainer' }, repoList, commandBar, messageInput, stagedChanges, unstagedChanges);
+        return h.div({ id: 'gitContainer' }, repoList, commandBar, messageInput, messageTextarea, stagedChanges, unstagedChanges);
     }
 
     protected renderRepoList(): h.Child {
-        return h.div({ id: 'repositories' }, 'Repo. Nothing here yet');
+        const repoOptionElements: h.Child[] = [];
+        this.repositories.forEach(repo => {
+            const uri = new URI(repo.localUri);
+            repoOptionElements.push(h.option({ value: uri.path.toString() }, uri.displayName));
+        });
+
+        const selectElement = h.select({
+            id: 'repositoryList',
+            onchange: event => {
+                this.localUri = (event.target as HTMLSelectElement).value;
+                this.initialize();
+            }
+        }, VirtualRenderer.flatten(repoOptionElements));
+        return h.div({ id: 'repositoryListContainer' }, selectElement);
     }
 
     protected renderCommandBar(): h.Child {
-
-        return h.div({ id: 'commandBar' }, 'Commands. Nothing here yet');
+        const commit = h.div({
+            className: 'button',
+            onclick: event => {
+                if (this.message !== '') {
+                    console.log('commit', this.message);
+                    this.git.commit(this.repository, this.message);
+                } else {
+                    // document.getElementById('messageInput').className += ' warn';
+                    // document.getElementById('messageInput').focus();
+                }
+            }
+        }, h.i({ className: 'fa fa-check' }));
+        const refresh = h.div({ className: 'button' }, h.i({ className: 'fa fa-refresh' }));
+        const btnContainer = h.div({ className: 'flexcontainer buttons' }, commit, refresh);
+        const leftContainer = h.div({});
+        return h.div({ id: 'commandBar', className: 'flexcontainer evenlySpreaded' }, leftContainer, btnContainer);
     }
 
     protected renderMessageInput(): h.Child {
-        const input = h.input({ placeholder: 'Commit message' });
-        return h.div({ id: 'messageInput', className: 'flexcontainer' }, input);
+        const input = h.input({
+            id: 'messageInput',
+            placeholder: 'Commit message', onkeyup: event => {
+                this.message = (event.target as HTMLInputElement).value;
+            },
+            value: this.message
+        });
+        return h.div({ id: 'messageInputContainer', className: 'flexcontainer row' }, input);
+    }
+
+    protected renderMessageTextarea(): h.Child {
+        const textarea = h.textarea({ placeholder: 'Extended commit text' });
+        return h.div({ id: 'messageTextareaContainer', className: 'flexcontainer row' }, textarea);
     }
 
     protected renderGitItemButtons(change: FileChange): h.Child {
         const btns: h.Child[] = [];
         if (change.staged) {
             btns.push(h.div({
-                className: 'button', onclick: event => {
+                className: 'button',
+                onclick: event => {
                     this.git.rm(this.repository, change.uri);
                 }
             }, h.i({ className: 'fa fa-minus' })));
         } else {
             btns.push(h.div({
-                className: 'button', onclick: event => {
+                className: 'button',
+                onclick: event => {
                 }
             }, h.i({ className: 'fa fa-undo' })));
             btns.push(h.div({
-                className: 'button', onclick: event => {
-                    this.git.add(this.repository, change.uri)
+                className: 'button',
+                onclick: event => {
+                    this.git.add(this.repository, change.uri);
                 }
             }, h.i({ className: 'fa fa-plus' })));
         }
@@ -113,25 +165,33 @@ export class GitWidget extends VirtualWidget {
         return stagedChangesHeaderDiv;
     }
 
-    protected renderStagedChanges(): h.Child {
+    protected renderStagedChanges(): h.Child | undefined {
         const stagedChangeDivs: h.Child[] = [];
-        this.stagedChanges.forEach(change => {
-            stagedChangeDivs.push(this.renderGitItem(change));
-        });
-        return h.div({
-            id: 'stagedChanges',
-            className: 'changesContainer'
-        }, this.renderChangesHeader('Staged changes'), VirtualRenderer.flatten(stagedChangeDivs));
+        if (this.stagedChanges.length > 0) {
+            this.stagedChanges.forEach(change => {
+                stagedChangeDivs.push(this.renderGitItem(change));
+            });
+            return h.div({
+                id: 'stagedChanges',
+                className: 'changesContainer'
+            }, h.div({ className: 'changesHeader' }, 'Staged changes'), VirtualRenderer.flatten(stagedChangeDivs));
+        } else {
+            return undefined;
+        }
     }
 
     protected renderUnstagedChanges(): h.Child {
         const unstagedChangeDivs: h.Child[] = [];
-        this.unstagedChanges.forEach(change => {
-            unstagedChangeDivs.push(this.renderGitItem(change));
-        });
-        return h.div({
-            id: 'unstagedChanges',
-            className: 'changesContainer'
-        }, this.renderChangesHeader('Changes'), VirtualRenderer.flatten(unstagedChangeDivs));
+        if (this.unstagedChanges.length > 0) {
+            this.unstagedChanges.forEach(change => {
+                unstagedChangeDivs.push(this.renderGitItem(change));
+            });
+            return h.div({
+                id: 'unstagedChanges',
+                className: 'changesContainer'
+            }, h.div({ className: 'changesHeader' }, 'Changes'), VirtualRenderer.flatten(unstagedChangeDivs));
+        }
+
+        return '';
     }
 }
