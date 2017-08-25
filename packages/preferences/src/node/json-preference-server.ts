@@ -91,7 +91,7 @@ export class JsonPreferenceServer implements PreferenceServer {
                     const errors: ParseError[] = [];
                     const preferences = jsoncparser.parse(strippedContent, errors);
                     if (errors.length) {
-                        for (const error in errors) {
+                        for (const error of errors) {
                             this.logger.error("JSON parsing error", error);
                         }
                     }
