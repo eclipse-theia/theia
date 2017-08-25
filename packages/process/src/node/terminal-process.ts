@@ -46,7 +46,9 @@ export class TerminalProcess extends Process {
             options.args,
             options.options);
 
-        this.terminal.on('exit', this.emitOnExit.bind(this));
+        this.terminal.on('exit', (code: number, signal?: number) => {
+            this.emitOnExit(code, signal ? signal.toString() : undefined);
+        });
 
         this.terminal.on('data', (data: string) => {
             ringBuffer.enq(data);
