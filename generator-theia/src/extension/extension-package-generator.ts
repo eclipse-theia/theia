@@ -18,7 +18,11 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
     }
 
     protected compilePackage(): object {
-        const pck = this.compileCommonPackage()
+        const pck = this.compileCommonPackage();
+        return this.mixinTestPackage(pck);
+    }
+
+    protected mixinTestPackage(pck: NodePackage): NodePackage {
         if (!this.model.extensionConfig.testSupport) {
             return pck;
         }
@@ -29,8 +33,7 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
             },
             "scripts": {
                 ...pck.scripts,
-                "clean": "yarn run compile:clean && yarn run test:clean",
-                "docs": "typedoc --options typedoc.json src",
+                "clean": pck.scripts['clean'] + ' && yarn run test:clean',
                 "test": "nyc mocha --opts ../mocha.opts \"./src/**/*.spec.ts\"",
                 "test:watch": "mocha -w --opts ../mocha.opts \"./src/**/*.spec.ts\"",
                 "test:clean": "rimraf .nyc_output && rimraf coverage",
@@ -46,7 +49,6 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
                 "mocha": "^3.4.2",
                 "nyc": "^11.0.3",
                 "ts-node": "^3.2.0",
-                "typedoc": "^0.8",
                 ...this.model.pck.devDependencies
             })
         };
@@ -72,12 +74,14 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
                 "src"
             ],
             "scripts": {
-                "clean": "yarn run compile:clean",
+                "clean": "yarn run compile:clean && yarn run docs:clean",
                 "build": "concurrently -n compile,lint -c blue,green \"yarn run compile\" \"yarn run lint\"",
                 "compile": "tsc -p compile.tsconfig.json",
                 "compile:clean": "rimraf lib",
                 "lint": "tslint -c ../tslint.json --project compile.tsconfig.json",
                 "watch": "tsc -w -p compile.tsconfig.json",
+                "docs": "typedoc --tsconfig compile.tsconfig.json --options ../typedoc.json",
+                "docs:clean": "rimraf docs/api",
                 ...this.model.pck.scripts
             },
             "devDependencies": sortByKey({
@@ -85,6 +89,7 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
                 "rimraf": "^2.6.1",
                 "tslint": "^5.5.0",
                 "typescript": "^2.4.1",
+                "typedoc": "^0.8",
                 ...this.model.pck.devDependencies
             })
         };

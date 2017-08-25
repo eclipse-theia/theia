@@ -1,0 +1,6 @@
+{
+  "ignoreCompilerErrors": true,
+  "mode": "file",
+  "out": "docs/api",
+  "excludeExternals": true
+}

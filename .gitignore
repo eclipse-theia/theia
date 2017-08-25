@@ -13,3 +13,4 @@ packages/*/package.json
 examples/*/package.json
 examples/*/src-gen
 .browser_modules
+**/docs/api
