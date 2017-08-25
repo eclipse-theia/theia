@@ -29,7 +29,8 @@
         "packages/process/coverage/lcov.info",
         "packages/python/coverage/lcov.info",
         "packages/terminal/coverage/lcov.info",
-        "packages/workspace/coverage/lcov.info"
+        "packages/workspace/coverage/lcov.info",
+        "packages/task/coverage/lcov.info"
     ],
     "lcov.watch": [
         {
