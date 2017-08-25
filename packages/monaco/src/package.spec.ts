@@ -5,13 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-/* note: this bogus test file is required so that
-   we are able to run mocha unit tests on this
-   package, wihout having any actual unit tests in it.
-   This way a coverage report will be genarated,
-   showing 0% coverage, instead of no report.
-   This file can be removed once we have real unit
-   tests in place. */
+/*  Note: This bogus test file is required so that we are able to run mocha unit tests on this package, without having any
+    actual unit tests in it. This way a coverage report showing 0% coverage will be generated instead of no report. This
+    file can be removed once we have real unit tests in place. */
 
 describe("monaco package", () => {
 
