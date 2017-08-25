@@ -30,6 +30,7 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
             "scripts": {
                 ...pck.scripts,
                 "clean": "yarn run compile:clean && yarn run test:clean",
+                "docs": "typedoc --options typedoc.json src",
                 "test": "nyc mocha --opts ../mocha.opts \"./src/**/*.spec.ts\"",
                 "test:watch": "mocha -w --opts ../mocha.opts \"./src/**/*.spec.ts\"",
                 "test:clean": "rimraf .nyc_output && rimraf coverage",
@@ -45,6 +46,7 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
                 "mocha": "^3.4.2",
                 "nyc": "^11.0.3",
                 "ts-node": "^3.2.0",
+                "typedoc": "^0.8",
                 ...this.model.pck.devDependencies
             })
         };
@@ -100,5 +102,4 @@ export class ExtensionPackageGenerator extends AbstractGenerator {
             ]
         }
     }
-
 }

@@ -21,6 +21,7 @@
     "refresh": "node scripts/lerna clean --scope \"@theia/*\" --yes && yarn run bootstrap",
     "clean": "node scripts/lerna run clean --scope \"@theia/*\" --parallel",
     "build": "node scripts/lerna run build --scope \"@theia/*\" --stream",
+    "docs": "rimraf docs/api && lerna run docs",
     "test": "yarn run test:theia && yarn run test:electron && yarn run test:browser",
     "test:theia": "node scripts/lerna run test --scope \"@theia/!(example-)*\" --parallel",
     "test:browser": "yarn run rebuild:browser && node scripts/lerna run test --scope \"@theia/example-browser\"",
