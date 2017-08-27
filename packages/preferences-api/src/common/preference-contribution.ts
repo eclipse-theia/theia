@@ -7,8 +7,6 @@
 
 import { inject, injectable, named } from "inversify";
 import { ContributionProvider, ILogger } from '@theia/core/lib/common';
-import * as ajv from 'ajv';
-
 
 export const PreferenceContribution = Symbol("PreferenceContribution");
 export interface PreferenceContribution {
@@ -33,15 +31,7 @@ export class PreferenceSchemaProvider {
         @inject(ContributionProvider) @named(PreferenceContribution)
         protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>,
     ) {
-
         this.preferenceContributions.getContributions().forEach(contrib => {
-
-            try {
-                ajv().compile(contrib.schema);
-            } catch (error) {
-                this.logger.error("Invalid json schemas: ", error);
-            }
-
             for (const property in contrib.schema) {
                 if (this.combinedSchema.properties[property]) {
                     this.logger.error("Preference name collision detected in the schema for property: " + property);

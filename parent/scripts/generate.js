@@ -82,6 +82,6 @@ function generateAll(path, prefix, target) {
     };
 }
 
-generateAll(paths.resolve(__dirname, '../packages'), 'extension', 'extension');
-generate('browser', paths.resolve(__dirname, '../examples/browser'), 'theia', 'browser');
-generate('electron', paths.resolve(__dirname, '../examples/electron'), 'theia', 'electron');
+generateAll(paths.resolve(__dirname, '../../packages'), 'extension', 'extension');
+generate('browser', paths.resolve(__dirname, '../../examples/browser'), 'theia', 'browser');
+generate('electron', paths.resolve(__dirname, '../../examples/electron'), 'theia', 'electron');

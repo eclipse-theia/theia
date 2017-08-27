@@ -1,3 +1,4 @@
+import 'mocha';
 import "webdriverio"
 import { assert } from "chai"
 import { MainPage } from "./pages/main-page"

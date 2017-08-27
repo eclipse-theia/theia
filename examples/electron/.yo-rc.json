@@ -17,6 +17,6 @@
       "@theia/python": "../../packages/python",
       "@theia/cpp": "../../packages/cpp"
     },
-    "node_modulesPath": "../../node_modules"
+    "node_modulesPath": "../../parent/node_modules"
   }
 }

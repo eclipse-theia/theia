@@ -8,7 +8,7 @@ git:
 cache:
   yarn: true
   directories:
-  - node_modules
+  - parent/node_modules
   - generator-theia/node_modules
 branches:
   only:
@@ -32,6 +32,7 @@ before_install:
 - curl -o- -L https://yarnpkg.com/install.sh | bash
 - export PATH=$HOME/.yarn/bin:$PATH
 - "google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 http://localhost &"
+- cd parent
 install: yarn
 script: yarn test
 notifications:
@@ -49,6 +50,7 @@ jobs:
     script: skip
     before_deploy:
       - printf "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}\n" >> ~/.npmrc
+      - cd parent
       - yarn
     deploy:
       provider: script

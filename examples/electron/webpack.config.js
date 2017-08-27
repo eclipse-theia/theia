@@ -13,12 +13,12 @@ const CircularDependencyPlugin = require('circular-dependency-plugin');
 
 const outputPath = path.resolve(__dirname, 'lib');
 
-const monacoEditorPath = '../../node_modules/monaco-editor-core/min/vs';
-const monacoLanguagesPath = '../../node_modules/monaco-languages/release';
-const monacoCssLanguagePath = '../../node_modules/monaco-css/release/min';
-const monacoTsLanguagePath = '../../node_modules/monaco-typescript/release';
-const monacoJsonLanguagePath = '../../node_modules/monaco-json/release/min';
-const monacoHtmlLanguagePath = '../../node_modules/monaco-html/release/min';
+const monacoEditorPath = '../../parent/node_modules/monaco-editor-core/min/vs';
+const monacoLanguagesPath = '../../parent/node_modules/monaco-languages/release';
+const monacoCssLanguagePath = '../../parent/node_modules/monaco-css/release/min';
+const monacoTsLanguagePath = '../../parent/node_modules/monaco-typescript/release';
+const monacoJsonLanguagePath = '../../parent/node_modules/monaco-json/release/min';
+const monacoHtmlLanguagePath = '../../parent/node_modules/monaco-html/release/min';
 
 module.exports = {
     entry: path.resolve(__dirname, 'src-gen/frontend/index.js'),

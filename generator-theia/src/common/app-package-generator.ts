@@ -56,6 +56,7 @@ export class AppPackageGenerator extends AbstractGenerator {
                 "css-loader": "^0.28.1",
                 "file-loader": "^0.11.1",
                 "source-map-loader": "^0.2.1",
+                "style-loader": "^0.18.2",
                 "shx": "^0.2.2",
                 "url-loader": "^0.5.8",
                 "font-awesome-webpack": "0.0.5-beta.2",
