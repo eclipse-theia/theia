@@ -7,6 +7,7 @@
     "@theia/cpp": "^0.1.1",
     "@theia/editor": "^0.1.1",
     "@theia/filesystem": "^0.1.1",
+    "@theia/go": "^0.1.1",
     "@theia/java": "^0.1.1",
     "@theia/languages": "^0.1.1",
     "@theia/monaco": "^0.1.1",
