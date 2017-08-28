@@ -6,7 +6,18 @@
  */
 
 import { inject, injectable } from "inversify"
-import { CommandContribution, Command, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
+import {
+    CommandContribution,
+    KeybindingContribution,
+    KeyCode,
+    Key,
+    Modifier,
+    KeybindingRegistry,
+    Command,
+    CommandRegistry,
+    MenuContribution,
+    MenuModelRegistry
+} from '@theia/core/lib/common';
 import { FrontendApplication, Endpoint } from '@theia/core/lib/browser';
 import { FileMenus } from '@theia/workspace/lib/browser/workspace-commands';
 import { TerminalWidgetFactory, TerminalWidgetOptions } from './terminal-widget';
@@ -19,7 +30,7 @@ export namespace TerminalCommands {
 }
 
 @injectable()
-export class TerminalFrontendContribution implements CommandContribution, MenuContribution {
+export class TerminalFrontendContribution implements CommandContribution, MenuContribution, KeybindingContribution {
 
     protected terminalNum = 0;
 
@@ -38,6 +49,17 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(FileMenus.OPEN_GROUP, {
             commandId: TerminalCommands.NEW.id
+        });
+    }
+
+    registerKeyBindings(keybindings: KeybindingRegistry): void {
+        [
+            {
+                commandId: TerminalCommands.NEW.id,
+                keyCode: KeyCode.createKeyCode({ first: Key.BACKQUOTE, modifiers: [Modifier.M1] })
+            },
+        ].forEach(binding => {
+            keybindings.registerKeyBinding(binding);
         });
     }
 
