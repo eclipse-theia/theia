@@ -15,6 +15,7 @@ install:
 
 before_build:
   - node --version && npm --version && yarn --version && python --version
+  - cd parent
 
 build_script:
   - yarn

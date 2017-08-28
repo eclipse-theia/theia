@@ -1,3 +1,4 @@
+import 'mocha';
 import "webdriverio"
 import { assert } from "chai"
 import { MainPage } from "./pages/main-page"
@@ -10,9 +11,9 @@ describe('theia main elements loading', () => {
         browser.url(url);
         if (browser.getTitle() == 'localhost') {
             browser.waitUntil(function () {
-            console.log('browser not loaded yet, trying again ');
-            return browser.getTitle() == '';
-            }, 300000), 5000;        
+                console.log('browser not loaded yet, trying again ');
+                return browser.getTitle() == '';
+            }, 300000), 5000;
         }
         mainPage = new MainPage(browser);
 

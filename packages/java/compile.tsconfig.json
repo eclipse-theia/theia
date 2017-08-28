@@ -8,6 +8,6 @@
     "src"
   ],
   "files": [
-    "../../node_modules/monaco-editor-core/monaco.d.ts"
+    "../../parent/node_modules/monaco-editor-core/monaco.d.ts"
   ]
 }

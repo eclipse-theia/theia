@@ -1,4 +1,4 @@
-/// <reference path='../../../../../node_modules/monaco-editor-core/monaco.d.ts'/>
+/// <reference path='../../../../../parent/node_modules/monaco-editor-core/monaco.d.ts'/>
 
 declare module monaco.instantiation {
     export interface IInstantiationService {

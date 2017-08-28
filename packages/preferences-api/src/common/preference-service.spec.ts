@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import 'mocha';
 import { PreferenceService } from './preference-service';
 import { PreferenceServer, PreferenceClient, PreferenceChangedEvent, PreferenceChange } from './'
 import * as chai from 'chai';

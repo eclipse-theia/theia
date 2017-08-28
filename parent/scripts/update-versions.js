@@ -36,6 +36,6 @@ function updateAll(path, prefix) {
     }
 }
 
-updateAll(paths.resolve(__dirname, '../packages'), 'extension');
-update('browser', paths.resolve(__dirname, '../examples/browser'), 'theia');
-update('electron', paths.resolve(__dirname, '../examples/electron'), 'theia');
+updateAll(paths.resolve(__dirname, '../../packages'), 'extension');
+update('browser', paths.resolve(__dirname, '../../examples/browser'), 'theia');
+update('electron', paths.resolve(__dirname, '../../examples/electron'), 'theia');
