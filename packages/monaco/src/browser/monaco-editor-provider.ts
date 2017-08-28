@@ -9,8 +9,7 @@ import { injectable, inject } from 'inversify';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import URI from "@theia/core/lib/common/uri";
 import { DisposableCollection } from '@theia/core/lib/common';
-import { EditorPreferences } from "@theia/editor/lib/browser";
-import { PreferenceChange } from "@theia/preferences/lib/common";
+import { EditorPreferences, EditorPreferenceChange } from "@theia/editor/lib/browser";
 import { MonacoEditor } from "./monaco-editor";
 import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditorService } from "./monaco-editor-service";
@@ -18,11 +17,10 @@ import { MonacoModelResolver } from "./monaco-model-resolver";
 import { MonacoContextMenuService } from "./monaco-context-menu";
 import { MonacoWorkspace } from "./monaco-workspace";
 import { MonacoCommandServiceFactory } from "./monaco-command-service";
+import { MonacoQuickOpenService } from './monaco-quick-open-service';
 
 @injectable()
 export class MonacoEditorProvider {
-
-    toDispose = new DisposableCollection();
 
     constructor(
         @inject(MonacoEditorService) protected readonly editorService: MonacoEditorService,
@@ -33,6 +31,7 @@ export class MonacoEditorProvider {
         @inject(MonacoWorkspace) protected readonly workspace: MonacoWorkspace,
         @inject(MonacoCommandServiceFactory) protected readonly commandServiceFactory: MonacoCommandServiceFactory,
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
+        @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService
     ) { }
 
     get(uri: URI): Promise<MonacoEditor> {
@@ -59,17 +58,15 @@ export class MonacoEditorProvider {
                 }
             );
 
-            this.toDispose.push(this.editorPreferences.onPreferenceChanged(e => {
-                this.handlePreferenceEvent(e, editor);
-            }))
-
-            editor.onDispose(() => {
-                this.toDispose.dispose();
-                reference.dispose()
-            });
+            const toDispose = new DisposableCollection();
+            toDispose.push(reference);
+            toDispose.push(this.editorPreferences.onPreferenceChanged(e => this.updateOptions(e, editor)));
+            editor.onDispose(() => toDispose.dispose());
 
             const standaloneCommandService = new monaco.services.StandaloneCommandService(editor.instantiationService);
             commandService.setDelegate(standaloneCommandService);
+
+            this.installQuickOpenService(editor);
 
             return editor;
         });
@@ -91,25 +88,62 @@ export class MonacoEditorProvider {
             theme: 'vs-dark',
             glyphMargin: true,
             readOnly: model.readOnly
+        };
+    }
+
+    protected readonly modelOptions: {
+        [name: string]: (keyof monaco.editor.ITextModelUpdateOptions | undefined)
+    } = {
+        'editor.tabSize': 'tabSize'
+    };
+
+    protected readonly editorOptions: {
+        [name: string]: (keyof monaco.editor.IEditorOptions | undefined)
+    } = {
+        'editor.lineNumbers': 'lineNumbers',
+        'editor.renderWhitespace': 'renderWhitespace'
+    };
+
+    protected updateOptions(change: EditorPreferenceChange, editor: MonacoEditor): void {
+        const modelOption = this.modelOptions[change.preferenceName];
+        if (modelOption) {
+            const options: monaco.editor.ITextModelUpdateOptions = {};
+            // tslint:disable-next-line:no-any
+            options[modelOption] = change.newValue as any;
+            editor.getControl().getModel().updateOptions(options);
+        }
+
+        const editorOption = this.editorOptions[change.preferenceName];
+        if (editorOption) {
+            const options: monaco.editor.IEditorOptions = {};
+            options[editorOption] = change.newValue;
+            editor.getControl().updateOptions(options);
         }
     }
 
+    protected installQuickOpenService(editor: MonacoEditor): void {
+        const control = editor.getControl();
+        const quickOpenController = control._contributions['editor.controller.quickOpenController'];
+        let lastKnownEditorSelection: monaco.Selection | undefined;
+        quickOpenController.run = options => {
+            const widget = this.quickOpenService.open({
+                ...options,
+                onClose: canceled => {
+                    quickOpenController.clearDecorations();
 
-    protected handlePreferenceEvent(e: PreferenceChange, editor: MonacoEditor) {
-        switch (e.preferenceName) {
-            case ('editor.tabSize'): {
-                editor.getControl().getModel().updateOptions({ tabSize: <number>e.newValue });
-                break;
+                    if (canceled && lastKnownEditorSelection) {
+                        control.setSelection(lastKnownEditorSelection);
+                        control.revealRangeInCenterIfOutsideViewport(lastKnownEditorSelection);
+                    }
+                    lastKnownEditorSelection = undefined;
+                    editor.focus();
+                }
+            });
+            if (!lastKnownEditorSelection) {
+                lastKnownEditorSelection = control.getSelection();
             }
-            case ('editor.lineNumbers'): {
-                editor.getControl().updateOptions({ lineNumbers: <'on' | 'off'>e.newValue })
-                break;
-            }
-            case ('editor.renderWhitespace'): {
-                editor.getControl().updateOptions({ renderWhitespace: <'none' | 'boundary' | 'all'>e.newValue })
-                break;
-            }
-        }
-
+            widget.show('');
+        };
     }
+
 }

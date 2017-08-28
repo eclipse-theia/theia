@@ -10,6 +10,9 @@ declare module monaco.editor {
     export interface ICommonCodeEditor {
         readonly _commandService: monaco.commands.ICommandService;
         readonly _instantiationService: monaco.instantiation.IInstantiationService;
+        readonly _contributions: {
+            'editor.controller.quickOpenController': monaco.quickOpen.QuickOpenController
+        }
         readonly cursor: ICursor;
     }
 
@@ -210,7 +213,7 @@ declare module monaco.keybindings {
         readonly shiftKey: boolean;
         readonly altKey: boolean;
         readonly metaKey: boolean;
-    
+
         readonly keyLabel: string;
         readonly keyAriaLabel: string;
 
@@ -238,12 +241,12 @@ declare module monaco.keybindings {
          * Is the user settings label reflecting the label?
          */
         public abstract isWYSIWYG(): boolean;
-    
+
         /**
          * Is the binding a chord?
          */
         public abstract isChord(): boolean;
-    
+
         /**
          * Returns the firstPart, chordPart that should be used for dispatching.
          */
@@ -393,7 +396,7 @@ declare module monaco.quickOpen {
         extraClasses?: string[];
         italic?: boolean;
         matches?: monaco.filters.IMatch[];
-    }    
+    }
     export class QuickOpenEntry {
         constructor(highlights?: IHighlight[]);
         getLabel(): string;
@@ -434,12 +437,24 @@ declare module monaco.quickOpen {
         run(entry: QuickOpenEntry, mode: Mode, context: IEntryRunContext): boolean;
     }
 
+    export interface IQuickOpenControllerOpts {
+        readonly inputAriaLabel: string;
+        getModel(lookFor: string): QuickOpenModel;
+        getAutoFocus(lookFor: string): IAutoFocus;
+    }
+    export interface QuickOpenController extends IDisposable {
+        getId(): string;
+        run(opts: IQuickOpenControllerOpts): void;
+        decorateLine(range: Range, editor: monaco.editor.ICodeEditor): void;
+        clearDecorations(): void;
+    }
+
 }
 
 declare module monaco.filters {
     export interface IMatch {
         start: number;
         end: number;
-    }    
+    }
     export function matchesFuzzy(word: string, wordToMatchAgainst: string, enableSeparateSubstringMatching?: boolean): IMatch[] | undefined;
 }
