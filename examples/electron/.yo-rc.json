@@ -15,7 +15,8 @@
       "@theia/monaco": "../../packages/monaco",
       "@theia/java": "../../packages/java",
       "@theia/python": "../../packages/python",
-      "@theia/cpp": "../../packages/cpp"
+      "@theia/cpp": "../../packages/cpp",
+      "@theia/go": "../../packages/go"
     },
     "node_modulesPath": "../../node_modules"
   }
