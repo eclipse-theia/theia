@@ -11,7 +11,8 @@ import {
     PreferenceProxy,
     PreferenceService,
     PreferenceContribution,
-    PreferenceSchema
+    PreferenceSchema,
+    PreferenceChangeEvent
 } from '@theia/preferences/lib/common';
 
 export const editorPreferenceSchema: PreferenceSchema = {
@@ -45,6 +46,7 @@ export interface EditorConfiguration {
     'editor.lineNumbers': 'on' | 'off'
     'editor.renderWhitespace': 'none' | 'boundary' | 'all'
 }
+export type EditorPreferenceChange = PreferenceChangeEvent<EditorConfiguration>;
 
 export const defaultEditorConfiguration: EditorConfiguration = {
     'editor.tabSize': 4,

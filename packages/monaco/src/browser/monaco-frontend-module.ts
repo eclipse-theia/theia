@@ -22,6 +22,7 @@ import { MonacoContextMenuService } from "./monaco-context-menu";
 import { MonacoCommandService, MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoQuickCommandFrontendContribution } from './monaco-quick-command-contribution';
 import { MonacoQuickCommandService } from './monaco-quick-command-service';
+import { MonacoQuickOpenService } from './monaco-quick-open-service';
 
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
@@ -52,6 +53,7 @@ export default new ContainerModule(bind => {
     bind(MenuContribution).to(MonacoEditorMenuContribution).inSingletonScope();
     bind(KeybindingContribution).to(MonacoKeybindingContribution).inSingletonScope();
 
+    bind(MonacoQuickOpenService).toSelf().inSingletonScope();
     bind(MonacoQuickCommandService).toSelf().inSingletonScope();
     bind(MonacoQuickCommandFrontendContribution).toSelf().inSingletonScope();
     [CommandContribution, KeybindingContribution].forEach(serviceIdentifier =>
