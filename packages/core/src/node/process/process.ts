@@ -8,6 +8,7 @@
 import { injectable } from "inversify";
 import { ILogger } from '../../common/logger';
 import * as child from 'child_process';
+import * as stream from 'stream';
 import { Emitter, Event } from '../../common/event';
 import { Disposable } from '../../common/disposable';
 
@@ -22,6 +23,7 @@ export abstract class Process implements Disposable {
     abstract readonly type: 'Raw' | 'Terminal';
     abstract pid: number;
     killed = false;
+    abstract output: stream.Readable;
     protected abstract process: child.ChildProcess | undefined;
     protected abstract terminal: any;
     protected readonly exitEmitter = new Emitter<IProcessExitEvent>();

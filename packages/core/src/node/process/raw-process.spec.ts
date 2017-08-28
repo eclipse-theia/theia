@@ -8,6 +8,7 @@ import * as chai from 'chai';
 import 'mocha';
 import * as chaiAsPromised from 'chai-as-promised'
 import * as process from 'process';
+import * as stream from 'stream';
 import { testContainer } from './inversify.spec-config';
 import { RawProcessFactory } from './raw-process';
 
@@ -64,5 +65,49 @@ describe('RawProcess', function () {
             rawProcess.onExit(event => resolve());
         });
         return expect(p).to.be.eventually.fulfilled;
+    });
+
+    it('test pipe stdout stream', function () {
+        const args = ['--version'];
+        const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
+
+        const outStream = new stream.PassThrough();
+
+        const p = new Promise<String>((resolve, reject) => {
+            let version = '';
+            outStream.on('data', data => {
+                version += data.toString();
+            });
+            outStream.on('end', () => {
+                resolve(version.trim());
+                rawProcess.dispose();
+            });
+        });
+
+        rawProcess.output.pipe(outStream);
+
+        return expect(p).to.be.eventually.equal(process.version);
+    });
+
+    it('test pipe stderr stream', function () {
+        const args = ['invalidarg'];
+        const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
+
+        const outStream = new stream.PassThrough();
+
+        const p = new Promise<String>((resolve, reject) => {
+            let version = '';
+            outStream.on('data', data => {
+                version += data.toString();
+            });
+            outStream.on('end', () => {
+                resolve(version.trim());
+                rawProcess.dispose();
+            });
+        });
+
+        rawProcess.errorOutput.pipe(outStream);
+
+        return expect(p).to.be.eventually.have.string('Error');
     });
 });
