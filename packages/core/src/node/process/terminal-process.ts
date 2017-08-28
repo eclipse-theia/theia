@@ -6,6 +6,7 @@
  */
 
 import { injectable, inject } from 'inversify';
+import * as stream from 'stream';
 import { ILogger } from '../../common/logger';
 import { Process } from './process';
 
@@ -21,12 +22,27 @@ export interface TerminalProcessOptions {
 export const TerminalProcessFactory = Symbol("TerminalProcessFactory");
 export type TerminalProcessFactory = (options: TerminalProcessOptions) => TerminalProcess;
 
+/* Use this instead of the node-pty stream, since the node-pty stream is already resumed.  */
+export class TerminalReadableStream extends stream.Readable {
+    constructor(protected readonly terminal: any, opts?: any) {
+        super(opts);
+        this.terminal.on('data', (data: any) => {
+            this.push(data);
+        });
+    }
+    /* This needs to be implemented as per node's API doc, even if it's empty.  */
+    _read(size: number) {
+    }
+}
+
 @injectable()
 export class TerminalProcess extends Process {
 
     readonly type: 'Raw' | 'Terminal' = 'Terminal';
+    output: TerminalReadableStream;
     protected process = undefined;
     protected terminal: any;
+    protected terminalReadStream: TerminalReadableStream;
 
     constructor(
         @inject(TerminalProcessOptions) options: TerminalProcessOptions,
@@ -43,6 +59,7 @@ export class TerminalProcess extends Process {
             options.options);
 
         this.terminal.on('exit', this.emitOnExit.bind(this));
+        this.output = new TerminalReadableStream(this.terminal);
     }
 
     get pid() {

@@ -9,6 +9,7 @@ import { injectable, inject } from 'inversify';
 import { ILogger } from '../../common/logger';
 import { Process } from './process';
 import * as child from 'child_process';
+import * as stream from 'stream';
 
 export const RawProcessOptions = Symbol("RawProcessOptions");
 export interface RawProcessOptions {
@@ -24,6 +25,8 @@ export type RawProcessFactory = (options: RawProcessOptions) => RawProcess;
 export class RawProcess extends Process {
 
     readonly type: 'Raw' | 'Terminal' = 'Raw';
+    output: stream.Readable;
+    errorOutput: stream.Readable;
     protected process: child.ChildProcess;
     protected terminal = undefined;
 
@@ -43,6 +46,9 @@ export class RawProcess extends Process {
 
         this.process.on('error', this.emitOnError.bind(this));
         this.process.on('exit', this.emitOnExit.bind(this));
+
+        this.output = this.process.stdout;
+        this.errorOutput = this.process.stderr;
     }
 
     get pid() {

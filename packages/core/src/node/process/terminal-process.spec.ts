@@ -8,6 +8,7 @@ import * as chai from 'chai';
 import 'mocha';
 import * as chaiAsPromised from 'chai-as-promised'
 import * as process from 'process';
+import * as stream from 'stream';
 import { testContainer } from './inversify.spec-config';
 import { TerminalProcessFactory } from './terminal-process';
 import { isWindows } from "../../common";
@@ -80,5 +81,30 @@ describe('TerminalProcess', function () {
             terminalProcess.onExit(event => resolve());
         });
         return expect(p).to.be.eventually.fulfilled;
+    });
+
+    it('test pipe stream', function () {
+        const args = ['--version'];
+        const terminalProcess = terminalProcessFactory({ command: process.execPath, 'args': args, options: {} });
+
+        const outStream = new stream.PassThrough();
+
+        const p = new Promise<String>((resolve, reject) => {
+            let version = '';
+            outStream.on('data', data => {
+                version += data.toString();
+            });
+            /* node-pty is not sending 'end' on the stream as it quits
+            only 'exit' is sent on the terminal process.  */
+            terminalProcess.onExit(() => {
+                resolve(version.trim())
+                terminalProcess.dispose();
+            });
+        });
+
+        terminalProcess.output.pipe(outStream);
+
+        /* Avoid using equal since terminal characters can be inserted at the end.  */
+        return expect(p).to.eventually.have.string(process.version);
     });
 });
