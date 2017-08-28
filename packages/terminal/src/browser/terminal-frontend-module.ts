@@ -6,7 +6,7 @@
  */
 
 import { ContainerModule, Container } from 'inversify'
-import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
+import { CommandContribution, MenuContribution, KeybindingContribution } from '@theia/core/lib/common';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalWidget, TerminalWidgetFactory, TerminalWidgetOptions } from './terminal-widget';
 
@@ -25,7 +25,7 @@ export default new ContainerModule(bind => {
     );
 
     bind(TerminalFrontendContribution).toSelf().inSingletonScope();
-    for (const identifier of [CommandContribution, MenuContribution]) {
+    for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution]) {
         bind(identifier).toDynamicValue(ctx =>
             ctx.container.get(TerminalFrontendContribution)
         ).inSingletonScope();
