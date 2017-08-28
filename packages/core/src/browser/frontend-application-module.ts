@@ -23,6 +23,7 @@ import { FrontendApplication, FrontendApplicationContribution } from './frontend
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 import { HumaneMessageClient } from './humane-message-client';
 import { WebSocketConnectionProvider } from './messaging';
+import { CoreContribution } from './core-commands'
 
 import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
@@ -64,4 +65,7 @@ export const frontendApplicationModule = new ContainerModule(bind => {
         return messageService;
     }).inSingletonScope();
     bind(MessageService).toSelf().inSingletonScope();
+
+    bind(CommandContribution).to(CoreContribution).inSingletonScope();
+    bind(KeybindingContribution).to(CoreContribution).inSingletonScope();
 });
