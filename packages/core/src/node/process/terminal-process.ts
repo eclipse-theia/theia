@@ -69,5 +69,13 @@ export class TerminalProcess extends Process {
     kill(signal?: string) {
         this.terminal.kill(signal);
     }
+
+    resize(cols: number, rows: number): void {
+        this.terminal.resize(cols, rows);
+    }
+
+    write(data: string): void {
+        this.terminal.write(data);
+    }
 }
 
