@@ -6,50 +6,53 @@
  */
 
 import * as http from 'http';
-import * as pty from 'node-pty';
 import * as express from 'express';
 import * as bodyParser from 'body-parser';
-import { injectable } from 'inversify';
+import * as stream from 'stream';
+import { injectable, inject } from 'inversify';
 import URI from "@theia/core/lib/common/uri";
-import { isWindows } from "@theia/core/lib/common";
+import { ILogger } from "@theia/core/lib/common";
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { openSocket } from '@theia/core/lib/node';
+import { ShellProcess, ShellProcessFactory } from './shell-process'
 
 @injectable()
 export class TerminalBackendContribution implements BackendApplicationContribution {
-    private terminals: Map<number, any> = new Map()
+    private terminals: Map<number, ShellProcess> = new Map()
 
-    private getShellExecutablePath(): string {
-        if (isWindows) {
-            return 'cmd.exe';
-        } else {
-            return process.env.SHELL!;
-        }
+    constructor( @inject(ShellProcessFactory) protected readonly shellFactory: ShellProcessFactory,
+        @inject(ILogger) protected readonly logger: ILogger) {
     }
 
     configure(app: express.Application): void {
         app.post('/services/terminals', bodyParser.json({ type: 'application/json' }), (req, res) => {
             const cols = parseInt(req.query.cols, 10);
             const rows = parseInt(req.query.rows, 10);
-            const term = pty.spawn(this.getShellExecutablePath(), [], {
-                name: 'xterm-color',
-                cols: cols || 80,
-                rows: rows || 24,
-                cwd: process.cwd(),
-                env: process.env as any
-            });
+            let term: ShellProcess;
+            try {
+                term = this.shellFactory({ 'cols': cols, 'rows': rows });
 
-            const root: { uri?: string } | undefined = req.body;
-            if (root && root.uri) {
-                const uri = new URI(root.uri);
-                term.write(`cd ${uri.path} && `);
-                term.write("source ~/.profile\n");
+                term.onError(error => {
+                    this.logger.error(`Terminal pid: ${term.pid} error: ${error}, closing it.`);
+                    this.closeTerminal(term);
+                });
+
+                const root: { uri?: string } | undefined = req.body;
+                if (root && root.uri) {
+                    const uri = new URI(root.uri);
+                    term.write(`cd ${uri.path} && `);
+                    term.write("source ~/.profile\n");
+                }
+
+                const pid = term.pid;
+                this.terminals.set(pid, term);
+                res.send(pid.toString());
+                res.end();
+            } catch (error) {
+                this.logger.error(`Error while creating terminal: ${error}`);
+                res.send(-1);
+                res.end();
             }
-
-            const pid = (term as any).pid;
-            this.terminals.set(pid, term);
-            res.send(pid.toString());
-            res.end();
         });
 
         app.post('/services/terminals/:pid/size', (req, res) => {
@@ -81,21 +84,29 @@ export class TerminalBackendContribution implements BackendApplicationContributi
                 return;
             }
 
-            term.on('data', (data: any) => {
+            const termStream = new stream.PassThrough();
+
+            termStream.on('data', (data: any) => {
                 try {
-                    ws.send(data)
+                    ws.send(data.toString());
                 } catch (ex) {
                     console.error(ex)
                 }
-            })
+            });
+
+            term.output.pipe(termStream);
 
             ws.on('message', (msg: any) => {
                 term.write(msg)
             })
             ws.on('close', (msg: any) => {
-                term.kill()
-                this.terminals.delete(pid)
+                this.closeTerminal(term);
             })
         })
+    }
+
+    protected closeTerminal(term: ShellProcess) {
+        this.terminals.delete(term.pid);
+        term.dispose();
     }
 }

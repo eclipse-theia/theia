@@ -6,7 +6,7 @@
  */
 
 import { inject, injectable } from "inversify";
-import { Disposable } from '@theia/core/lib/common';
+import { Disposable, ILogger } from '@theia/core/lib/common';
 import { Widget, BaseWidget, Message, WebSocketConnectionProvider, Endpoint } from '@theia/core/lib/browser';
 import { WorkspaceService } from "@theia/workspace/lib/browser";
 import * as Xterm from 'xterm';
@@ -39,7 +39,8 @@ export class TerminalWidget extends BaseWidget {
     constructor(
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider,
-        @inject(TerminalWidgetOptions) options: TerminalWidgetOptions
+        @inject(TerminalWidgetOptions) options: TerminalWidgetOptions,
+        @inject(ILogger) protected readonly logger: ILogger
     ) {
         super();
         this.endpoint = options.endpoint;
@@ -97,6 +98,14 @@ export class TerminalWidget extends BaseWidget {
             body: JSON.stringify({ uri: root.uri })
         });
         this.pid = await res.text();
+
+        /* An error has occured in the backend.  */
+        if (this.pid === '-1') {
+            this.pid = undefined;
+            this.logger.error("Error creating terminal widget, see the backend error log for more information.  ");
+            return;
+        }
+
         const socket = this.createWebSocket(this.pid);
         socket.onopen = () => {
             (this.term as any).attach(socket);
