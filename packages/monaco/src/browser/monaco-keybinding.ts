@@ -160,11 +160,10 @@ const MONACO_KEY_CODE_MAP: { [keyCode: number]: number } = {};
 export class MonacoKeybindingContribution implements KeybindingContribution {
 
     registerKeyBindings(registry: KeybindingRegistry): void {
-
         const ids = MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command.id);
         const accelerator = (kb: IKeybindingItem): Accelerator => {
             const keyCode = kb.keybinding;
-            let keys: string[] = [];
+            const keys: string[] = [];
             if (keyCode & KeyMod.WinCtrl) {
                 keys.push('Accel');
             }
@@ -208,18 +207,15 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
 
         const bindings: Keybinding[] = KeybindingsRegistry.getDefaultKeybindings()
             .filter(kb => ids.indexOf(kb.command) >= 0)
-            .map(kb => {
-                return {
-                    commandId: kb.command,
-                    keyCode: keyCode(kb),
-                    accelerator: accelerator(kb),
-                }
-            });
+            .map(kb => ({
+                commandId: kb.command,
+                keyCode: keyCode(kb),
+                accelerator: accelerator(kb),
+            }));
 
         bindings.forEach(binding => {
             registry.registerKeyBinding(binding);
-        })
-
+        });
     }
 
 }

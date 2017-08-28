@@ -20,6 +20,8 @@ import { MonacoEditorService } from "./monaco-editor-service";
 import { MonacoModelResolver } from "./monaco-model-resolver";
 import { MonacoContextMenuService } from "./monaco-context-menu";
 import { MonacoCommandService, MonacoCommandServiceFactory } from './monaco-command-service';
+import { MonacoQuickCommandFrontendContribution } from './monaco-quick-command-contribution';
+import { MonacoQuickCommandService } from './monaco-quick-command-service';
 
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
@@ -49,4 +51,10 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).to(MonacoEditorCommandHandlers).inSingletonScope();
     bind(MenuContribution).to(MonacoEditorMenuContribution).inSingletonScope();
     bind(KeybindingContribution).to(MonacoKeybindingContribution).inSingletonScope();
+
+    bind(MonacoQuickCommandService).toSelf().inSingletonScope();
+    bind(MonacoQuickCommandFrontendContribution).toSelf().inSingletonScope();
+    [CommandContribution, KeybindingContribution].forEach(serviceIdentifier =>
+        bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(MonacoQuickCommandFrontendContribution)).inSingletonScope()
+    );
 });

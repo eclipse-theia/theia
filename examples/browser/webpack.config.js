@@ -13,7 +13,7 @@ const CircularDependencyPlugin = require('circular-dependency-plugin');
 
 const outputPath = path.resolve(__dirname, 'lib');
 
-const monacoEditorPath = '../../node_modules/monaco-editor-core/min/vs';
+const monacoEditorPath = '../../node_modules/monaco-editor-core/dev/vs';
 const monacoLanguagesPath = '../../node_modules/monaco-languages/release';
 const monacoCssLanguagePath = '../../node_modules/monaco-css/release/min';
 const monacoTsLanguagePath = '../../node_modules/monaco-typescript/release';
