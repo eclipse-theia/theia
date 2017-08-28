@@ -7,55 +7,40 @@
 
 import { injectable, inject } from 'inversify';
 import { Command, CommandRegistry, KeybindingRegistry } from '@theia/core';
+import { MonacoQuickOpenService } from './monaco-quick-open-service';
 
 @injectable()
-export class MonacoQuickCommandService {
+export class MonacoQuickCommandService implements monaco.quickOpen.IQuickOpenControllerOpts {
 
-    protected readonly container: HTMLElement;
-    protected widget: monaco.quickOpen.QuickOpenWidget | undefined;
+    readonly inputAriaLabel: 'Type the name of a command you want to execute';
 
     constructor(
         @inject(CommandRegistry) protected readonly commands: CommandRegistry,
-        @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry
-    ) {
-        const overlayWidgets = document.createElement('div');
-        overlayWidgets.classList.add('overlayWidgets');
-        document.body.appendChild(overlayWidgets);
+        @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry,
+        @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService
+    ) { }
 
-        const container = document.createElement('quick-open-container');
-        container.style.position = 'absolute';
-        container.style.top = '0px';
-        container.style.right = '50%';
-        overlayWidgets.appendChild(container);
-        this.container = container;
+    show(): void {
+        this.quickOpenService.open(this).show('');
     }
 
-    show(prefix: string = ''): void {
-        if (this.widget) {
-            this.widget.dispose();
-        }
-        const widget = this.widget = new monaco.quickOpen.QuickOpenWidget(this.container, {
-            onOk: () => { /*no-op*/ },
-            onCancel: () => { /*no-op*/ },
-            onType: (lookFor: string) => {
-                const entries = this.commands.commands.reduce((result, command) => {
-                    const entry = this.createEntry(command, lookFor);
-                    if (entry) {
-                        result.push(entry);
-                    }
-                    return result;
-                }, [] as CommandQuickOpenEntry[]);
-                entries.sort((a, b) => monaco.quickOpen.QuickOpenEntry.compare(a, b, lookFor));
-                const model = new monaco.quickOpen.QuickOpenModel(entries);
-                widget.setInput(model, {
-                    autoFocusFirstEntry: true,
-                    autoFocusPrefixMatch: lookFor
-                });
-            },
-            onFocusLost: () => false
-        }, { inputPlaceHolder: "Type the name of a command you want to execute" });
-        this.widget.create();
-        this.widget.show(prefix);
+    getModel(lookFor: string): monaco.quickOpen.QuickOpenModel {
+        const entries = this.commands.commands.reduce((result, command) => {
+            const entry = this.createEntry(command, lookFor);
+            if (entry) {
+                result.push(entry);
+            }
+            return result;
+        }, [] as CommandQuickOpenEntry[]);
+        entries.sort((a, b) => monaco.quickOpen.QuickOpenEntry.compare(a, b, lookFor));
+        return new monaco.quickOpen.QuickOpenModel(entries);
+    }
+
+    getAutoFocus(lookFor: string): monaco.quickOpen.IAutoFocus {
+        return {
+            autoFocusFirstEntry: true,
+            autoFocusPrefixMatch: lookFor
+        };
     }
 
     protected createEntry(command: Command, lookFor: string): CommandQuickOpenEntry | undefined {

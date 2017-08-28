@@ -13,12 +13,13 @@ import * as Ajv from "ajv";
 export type Configuration = {
     [preferenceName: string]: any
 }
+export interface PreferenceChangeEvent<T> {
+    readonly preferenceName: keyof T
+    readonly newValue?: T[keyof T]
+    readonly oldValue?: T[keyof T]
+}
 export type PreferenceEventEmitter<T> = {
-    readonly onPreferenceChanged: Event<{
-        readonly preferenceName: keyof T
-        readonly newValue?: T[keyof T]
-        readonly oldValue?: T[keyof T]
-    }>;
+    readonly onPreferenceChanged: Event<PreferenceChangeEvent<T>>;
 
     readonly ready: Promise<void>;
 };
