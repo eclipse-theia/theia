@@ -284,7 +284,7 @@ declare module monaco.quickOpen {
     export interface IQuickOpenCallbacks {
         onOk: () => void;
         onCancel: () => void;
-        onType: (lookFor: string) => void;
+        onType: (lookFor?: string) => void;
         onShow?: () => void;
         onHide?: (reason: HideReason) => void;
         onFocusLost?: () => boolean /* veto close */;

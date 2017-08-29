@@ -20,8 +20,8 @@ export class MonacoQuickCommandService implements monaco.quickOpen.IQuickOpenCon
         @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService
     ) { }
 
-    show(): void {
-        this.quickOpenService.open(this).show('');
+    open(): void {
+        this.quickOpenService.open(this);
     }
 
     getModel(lookFor: string): monaco.quickOpen.QuickOpenModel {

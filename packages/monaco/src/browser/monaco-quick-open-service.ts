@@ -8,6 +8,7 @@
 import { injectable } from 'inversify';
 
 export interface QuickOpenOptions extends monaco.quickOpen.IQuickOpenControllerOpts {
+    readonly prefix?: string;
     onClose?(canceled: boolean): void;
 }
 
@@ -31,21 +32,20 @@ export class MonacoQuickOpenService {
         this.container = container;
     }
 
-    open(options: QuickOpenOptions): monaco.quickOpen.QuickOpenWidget {
-        if (this.widget) {
-            this.widget.dispose();
+    open(options: QuickOpenOptions): void {
+        if (!this.widget) {
+            const onClose = options.onClose || (() => { /*no-op*/ });
+            const widget = this.widget = new monaco.quickOpen.QuickOpenWidget(this.container, {
+                onOk: () => onClose(false),
+                onCancel: () => onClose(true),
+                onType: (lookFor?: string) => {
+                    widget.setInput(options.getModel(lookFor || ''), options.getAutoFocus(lookFor || ''));
+                },
+                onFocusLost: () => false
+            }, { inputAriaLabel: options.inputAriaLabel });
+            widget.create();
         }
-        const onClose = options.onClose || (() => { /*no-op*/ });
-        const widget = this.widget = new monaco.quickOpen.QuickOpenWidget(this.container, {
-            onOk: () => onClose(false),
-            onCancel: () => onClose(true),
-            onType: (lookFor: string) => {
-                widget.setInput(options.getModel(lookFor), options.getAutoFocus(lookFor));
-            },
-            onFocusLost: () => false
-        }, { inputAriaLabel: options.inputAriaLabel });
-        this.widget.create();
-        return widget;
+        this.widget.show(options.prefix || '');
     }
 
 }
