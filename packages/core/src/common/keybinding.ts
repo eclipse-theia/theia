@@ -128,10 +128,15 @@ export class KeybindingRegistry {
     }
 
     /**
+     * The `checkAvailability` flag with `false` could come handy when we do not want to check whether the command is currently active or not.
+     * For instance, when building the main menu, it could easily happen that the command is not yet active (no active editors and so on)
+     * but still, we have to build the key accelerator.
+     *
      * @param commandId the unique ID of the command for we the associated ke binding are looking for.
+     * @param checkAvailability if `false` then the availability of the command will not be checked. Default is `true`
      */
-    getKeybindingForCommand(commandId: string): Keybinding | undefined {
-        return (this.commands[commandId] || []).find(binding => this.isValid(binding));
+    getKeybindingForCommand(commandId: string, checkAvailability: boolean = true): Keybinding | undefined {
+        return (this.commands[commandId] || []).find(binding => this.isValid(binding, checkAvailability));
     }
 
     /**
@@ -141,12 +146,16 @@ export class KeybindingRegistry {
         return (this.keybindings[keyCode.keystroke] || []).find(binding => this.isValid(binding));
     }
 
-    private isValid(binding: Keybinding): boolean {
-        let cmd = this.commandRegistry.getCommand(binding.commandId);
+    private isValid(binding: Keybinding, checkAvailability: boolean = true): boolean {
+        const cmd = this.commandRegistry.getCommand(binding.commandId);
         if (cmd) {
-            let handler = this.commandRegistry.getActiveHandler(cmd.id);
-            // TODO? isActive()
-            if (handler && (!handler.isVisible || handler.isVisible())) {
+            if (checkAvailability) {
+                const handler = this.commandRegistry.getActiveHandler(cmd.id);
+                // TODO? isActive()
+                if (handler && (!handler.isVisible || handler.isVisible())) {
+                    return true;
+                }
+            } else {
                 return true;
             }
         }

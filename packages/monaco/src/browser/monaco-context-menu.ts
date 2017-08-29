@@ -10,8 +10,8 @@ import { EDITOR_CONTEXT_MENU_ID } from "@theia/editor/lib/browser";
 import { ContextMenuRenderer, toAnchor } from "@theia/core/lib/browser";
 import IContextMenuService = monaco.editor.IContextMenuService;
 import IContextMenuDelegate = monaco.editor.IContextMenuDelegate;
-import { Menu } from "@phosphor/widgets"
-import { CommandRegistry } from "@phosphor/commands"
+import { Menu } from "@phosphor/widgets";
+import { CommandRegistry } from "@phosphor/commands";
 
 @injectable()
 export class MonacoContextMenuService implements IContextMenuService {
@@ -27,7 +27,7 @@ export class MonacoContextMenuService implements IContextMenuService {
             this.contextMenuRenderer.render(EDITOR_CONTEXT_MENU_ID, anchor);
         } else {
             delegate.getActions().then(actions => {
-                const commands = new CommandRegistry()
+                const commands = new CommandRegistry();
                 const menu = new Menu({
                     commands
                 });
@@ -47,7 +47,7 @@ export class MonacoContextMenuService implements IContextMenuService {
                     });
                 }
                 menu.open(anchor.x, anchor.y);
-            })
+            });
         }
     }
 

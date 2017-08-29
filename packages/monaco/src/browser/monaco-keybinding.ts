@@ -10,6 +10,7 @@ import { isOSX } from '@theia/core/lib/common/os';
 import { isFirefox, isIE, isWebKit } from '@theia/core/lib/browser';
 import { Keybinding, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/common/keybinding';
 import { Accelerator, Key, KeyCode, Keystroke, Modifier } from '@theia/core/lib/common/keys';
+import { MonacoSelectionCommands } from './monaco-command';
 import MenuRegistry = monaco.actions.MenuRegistry;
 import MenuId = monaco.actions.MenuId;
 import KeybindingsRegistry = monaco.keybindings.KeybindingsRegistry;
@@ -162,9 +163,10 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
     registerKeyBindings(registry: KeybindingRegistry): void {
 
         const ids = MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command.id);
+        ids.push(...MonacoSelectionCommands.ACTIONS.map(({ id }) => id));
         const accelerator = (kb: IKeybindingItem): Accelerator => {
             const keyCode = kb.keybinding;
-            let keys: string[] = [];
+            const keys: string[] = [];
             if (keyCode & KeyMod.WinCtrl) {
                 keys.push('Accel');
             }
@@ -186,7 +188,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             const sequence: Keystroke = {
                 first: Key.getKey(MONACO_KEY_CODE_MAP[keyCode & 255]),
                 modifiers: []
-            }
+            };
             // CTRL + COMMAND
             if ((keyCode & KeyMod.CtrlCmd) || (keyCode & KeyMod.WinCtrl)) {
                 sequence.modifiers!.push(Modifier.M1);
@@ -204,21 +206,22 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
                 sequence.modifiers!.push(Modifier.M4);
             }
             return KeyCode.createKeyCode(sequence);
-        }
+        };
+
+        const a = KeybindingsRegistry.getDefaultKeybindings();
+        console.log(a);
 
         const bindings: Keybinding[] = KeybindingsRegistry.getDefaultKeybindings()
             .filter(kb => ids.indexOf(kb.command) >= 0)
-            .map(kb => {
-                return {
-                    commandId: kb.command,
-                    keyCode: keyCode(kb),
-                    accelerator: accelerator(kb),
-                }
-            });
+            .map(kb => ({
+                commandId: kb.command,
+                keyCode: keyCode(kb),
+                accelerator: accelerator(kb),
+            }));
 
         bindings.forEach(binding => {
             registry.registerKeyBinding(binding);
-        })
+        });
 
     }
 
