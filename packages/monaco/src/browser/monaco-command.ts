@@ -8,8 +8,9 @@
 import { injectable, inject } from "inversify";
 import { ProtocolToMonacoConverter } from "monaco-languageclient/lib";
 import {
-    CommandHandler, CommandContribution, CommandRegistry, CommonCommands, SelectionService
+    CommandHandler, CommandContribution, CommandRegistry, SelectionService
 } from '@theia/core/lib/common';
+import { CommonCommands } from '@theia/core/lib/browser';
 import { EditorManager, TextEditorSelection, SHOW_REFERENCES } from '@theia/editor/lib/browser';
 import { Position, Location } from "@theia/languages/lib/common"
 import { getCurrent, MonacoEditor } from './monaco-editor';

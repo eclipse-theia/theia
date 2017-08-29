@@ -9,7 +9,6 @@ export * from './types';
 export * from './disposable';
 export * from './event';
 export * from './command';
-export * from './commands-common';
 export * from './menu';
 export * from './keys';
 export * from './keybinding';
