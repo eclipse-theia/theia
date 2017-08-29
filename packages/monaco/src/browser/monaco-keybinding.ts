@@ -206,7 +206,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         }
 
         const bindings: Keybinding[] = KeybindingsRegistry.getDefaultKeybindings()
-            .filter(kb => ids.indexOf(kb.command) >= 0)
+            .filter(kb => ids.indexOf(kb.command) >= 0 && this.filterKeybinding(kb))
             .map(kb => ({
                 commandId: kb.command,
                 keyCode: keyCode(kb),
@@ -216,6 +216,10 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         bindings.forEach(binding => {
             registry.registerKeyBinding(binding);
         });
+    }
+
+    protected filterKeybinding(keybinding: IKeybindingItem): boolean {
+        return keybinding.command !== 'editor.action.quickCommand';
     }
 
 }
