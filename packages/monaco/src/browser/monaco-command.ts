@@ -21,7 +21,7 @@ import MenuRegistry = monaco.actions.MenuRegistry;
 import MenuId = monaco.actions.MenuId;
 
 /**
- * Editor commands for the `Selection` menu contribution.
+ * Editor commands (and actions) for the `Selection` menu contribution.
  */
 export namespace MonacoSelectionCommands {
 
@@ -47,6 +47,7 @@ export namespace MonacoSelectionCommands {
     export const SELECTION_ADD_PREVIOUS_OCCURRENCE = 'editor.action.addSelectionToPreviousFindMatch';
     export const SELECTION_SELECT_ALL_OCCURRENCES = 'editor.action.selectHighlights';
 
+    // If you are wondering where the accelerators come from for the menus, see the `monaco-keybinding` module.
     export const ACTIONS: { id: string, label: string, delegateId?: string }[] = [
         { id: SELECTION_SELECT_ALL, label: 'Select All', delegateId: 'editor.action.selectAll' },
         { id: SELECTION_EXPAND_SELECTION, label: 'Expand Selection' },
@@ -103,7 +104,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
         });
 
         // VSCode registers some commands as core commands and not as @editorAction. These have to be treated differently.
-        [...MonacoSelectionCommands.ACTIONS].forEach(action => {
+        MonacoSelectionCommands.ACTIONS.forEach(action => {
             if (action.delegateId) {
                 const { id, delegateId } = action;
                 commands.registerHandler(id, {
@@ -115,7 +116,8 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
                                 editor.commandService.executeCommand(delegateId!);
                             }
                         }
-                    }
+                    },
+                    isEnabled: () => !!getCurrent(this.editorManager)
                 });
             }
         });

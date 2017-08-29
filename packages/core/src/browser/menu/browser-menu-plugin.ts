@@ -8,10 +8,7 @@
 import { injectable, inject } from "inversify";
 import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget } from "@phosphor/widgets";
 import { CommandRegistry as PhosphorCommandRegistry } from "@phosphor/commands";
-import {
-    CommandRegistry, KeybindingRegistry,
-    ActionMenuNode, CompositeMenuNode, MenuModelRegistry, MAIN_MENU_BAR
-} from "../../common";
+import { CommandRegistry, KeybindingRegistry, ActionMenuNode, CompositeMenuNode, MenuModelRegistry, MAIN_MENU_BAR } from "../../common";
 import { FrontendApplicationContribution, FrontendApplication } from "../frontend-application";
 
 @injectable()
@@ -58,8 +55,8 @@ export class BrowserMainMenuFactory {
                         const getHandler = (commandId: string) => {
                             return commandRegistry.getActiveHandler(commandId) || {
                                 execute: () => { },
-                                isEnabled: () => { return false; },
-                                isVisible: () => { return true; }
+                                isEnabled: () => false,
+                                isVisible: () => true
                             };
                         };
                         commands.addCommand(command.id, {
@@ -67,16 +64,16 @@ export class BrowserMainMenuFactory {
                             label: menu.label,
                             icon: command.iconClass,
                             isEnabled: (e: any) => {
-                                const handler = getHandler(command.id)
-                                return !handler.isEnabled || handler.isEnabled()
+                                const handler = getHandler(command.id);
+                                return !handler.isEnabled || handler.isEnabled();
                             },
                             isVisible: (e: any) => {
-                                const handler = getHandler(command.id)
-                                return !handler.isVisible || handler.isVisible()
+                                const handler = getHandler(command.id);
+                                return !handler.isVisible || handler.isVisible();
                             }
                         });
 
-                        const binding = keybindingRegistry.getKeybindingForCommand(command.id);
+                        const binding = keybindingRegistry.getKeybindingForCommand(command.id, false);
                         if (binding) {
                             const keys = binding.accelerator || [];
                             commands.addKeyBinding({
@@ -104,9 +101,9 @@ class DynamicMenuBarWidget extends MenuBarWidget {
         // HACK we need to hook in on private method _openChildMenu. Don't do this at home!
         DynamicMenuBarWidget.prototype['_openChildMenu'] = () => {
             if (this.activeMenu instanceof DynamicMenuWidget) {
-                this.activeMenu.aboutToShow()
+                this.activeMenu.aboutToShow();
             }
-            super['_openChildMenu']()
+            super['_openChildMenu']();
         }
     }
 }
