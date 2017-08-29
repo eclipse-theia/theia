@@ -51,7 +51,7 @@ export class MonacoModelResolver implements ITextModelResolverService {
             object: model,
             dispose: () =>
                 removeReference.dispose()
-        }
+        };
         removeReference = references.push(reference);
         return reference;
     }
@@ -81,6 +81,6 @@ export class MonacoModelResolver implements ITextModelResolverService {
             dispose(): void {
                 // no-op
             }
-        }
+        };
     }
 }
