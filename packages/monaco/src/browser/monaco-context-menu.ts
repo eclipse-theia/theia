@@ -22,7 +22,7 @@ export class MonacoContextMenuService implements IContextMenuService {
     showContextMenu(delegate: IContextMenuDelegate): void {
         const anchor = toAnchor(delegate.getAnchor());
         // If it is the general context menu, we want to delegate to our menu registry entirely and ignore the actually passed actions.
-        // Unfortunately checking the existence of certain properties seems to be the best way to tell, what kind of contect menu is requested.
+        // Unfortunately checking the existence of certain properties seems to be the best way to tell, what kind of context menu is requested.
         if (delegate.hasOwnProperty("getKeyBinding")) {
             this.contextMenuRenderer.render(EDITOR_CONTEXT_MENU_ID, anchor);
         } else {

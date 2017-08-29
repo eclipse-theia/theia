@@ -21,8 +21,8 @@ export namespace CommonCommands {
     export const EDIT_COPY = 'edit_copy';
     export const EDIT_PASTE = 'edit_paste';
 
-    export const EDIT_UNDO = 'edit_undo';
-    export const EDIT_REDO = 'edit_redo';
+    export const EDIT_UNDO = 'undo';
+    export const EDIT_REDO = 'redo';
 
     export const TAB_NEXT: Command = {
         id: 'tab:next',

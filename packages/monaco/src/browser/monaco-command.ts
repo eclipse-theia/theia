@@ -43,7 +43,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
 
         [CommonCommands.EDIT_UNDO, CommonCommands.EDIT_REDO].forEach(id => {
             const doExecute = (editor: MonacoEditor, ...args: any[]): any => {
-                return editor.getControl().trigger('keyboard', id, args);
+                return editor.getControl().cursor.trigger('keyboard', id, args);
             };
             const handler = this.newClipboardHandler(id, doExecute);
             commands.registerHandler(id, handler);

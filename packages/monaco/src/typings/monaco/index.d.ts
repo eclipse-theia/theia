@@ -10,6 +10,11 @@ declare module monaco.editor {
     export interface ICommonCodeEditor {
         readonly _commandService: monaco.commands.ICommandService;
         readonly _instantiationService: monaco.instantiation.IInstantiationService;
+        readonly cursor: ICursor;
+    }
+
+    export interface ICursor {
+        trigger(source: string, handlerId: string, payload: any): void;
     }
 
     export interface IEditorOverrideServices {
