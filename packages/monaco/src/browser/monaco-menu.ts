@@ -6,7 +6,8 @@
  */
 
 import { injectable } from "inversify";
-import { MenuContribution, MenuModelRegistry, CommonCommands } from "@theia/core/lib/common";
+import { MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
+import { CommonCommands } from '@theia/core/lib/browser';
 import { EDITOR_CONTEXT_MENU_ID } from "@theia/editor/lib/browser";
 import MenuRegistry = monaco.actions.MenuRegistry;
 import MenuId = monaco.actions.MenuId;

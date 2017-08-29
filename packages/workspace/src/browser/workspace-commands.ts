@@ -10,7 +10,7 @@ import URI from "@theia/core/lib/common/uri";
 import { ClipboardService, SelectionService } from '@theia/core/lib/common';
 import { Command, CommandContribution, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
-import { CommonCommands } from "@theia/core/lib/common/commands-common";
+import { CommonCommands } from "@theia/core/lib/browser/common-frontend-contribution";
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { UriSelection } from '@theia/filesystem/lib/common/filesystem-selection';
 import { SingleTextInputDialog, ConfirmDialog } from "@theia/core/lib/browser/dialogs";

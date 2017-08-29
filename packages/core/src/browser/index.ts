@@ -15,3 +15,4 @@ export * from './dialogs';
 export * from './tree';
 export * from './messaging';
 export * from './endpoint';
+export * from './common-frontend-contribution';

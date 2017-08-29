@@ -10,7 +10,6 @@ import {
     bindContributionProvider,
     SelectionService,
     ResourceProvider, ResourceResolver, DefaultResourceProvider,
-    CommonCommandContribution, CommonMenuContribution,
     CommandContribution, CommandRegistry, CommandService,
     MenuModelRegistry, MenuContribution,
     KeybindingContextRegistry, KeybindingRegistry,
@@ -23,7 +22,7 @@ import { FrontendApplication, FrontendApplicationContribution } from './frontend
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 import { HumaneMessageClient } from './humane-message-client';
 import { WebSocketConnectionProvider } from './messaging';
-import { CoreContribution } from './core-commands'
+import { CommonFrontendContribution } from './common-frontend-contribution';
 
 import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
@@ -45,10 +44,8 @@ export const frontendApplicationModule = new ContainerModule(bind => {
     bind(SelectionService).toSelf().inSingletonScope();
     bind(CommandRegistry).toSelf().inSingletonScope();
     bind(CommandService).toDynamicValue(context => context.container.get(CommandRegistry));
-    bind(CommandContribution).to(CommonCommandContribution).inSingletonScope();
     bindContributionProvider(bind, CommandContribution);
 
-    bind(MenuContribution).to(CommonMenuContribution);
     bind(MenuModelRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, MenuContribution);
 
@@ -66,6 +63,8 @@ export const frontendApplicationModule = new ContainerModule(bind => {
     }).inSingletonScope();
     bind(MessageService).toSelf().inSingletonScope();
 
-    bind(CommandContribution).to(CoreContribution).inSingletonScope();
-    bind(KeybindingContribution).to(CoreContribution).inSingletonScope();
+    bind(CommonFrontendContribution).toSelf().inSingletonScope();
+    [CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>
+        bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(CommonFrontendContribution)).inSingletonScope()
+    );
 });
