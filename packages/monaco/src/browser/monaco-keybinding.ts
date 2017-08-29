@@ -7,6 +7,7 @@
 
 import { injectable } from 'inversify';
 import { isOSX } from '@theia/core/lib/common/os';
+import { CommonCommands } from '@theia/core/lib/common/commands-common';
 import { isFirefox, isIE, isWebKit } from '@theia/core/lib/browser';
 import { Keybinding, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/common/keybinding';
 import { Accelerator, Key, KeyCode, Keystroke, Modifier } from '@theia/core/lib/common/keys';
@@ -164,6 +165,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
 
         const ids = MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command.id);
         ids.push(...MonacoSelectionCommands.ACTIONS.map(({ id }) => id));
+        ids.push(CommonCommands.EDIT_FIND, CommonCommands.EDIT_REDO, CommonCommands.EDIT_UNDO, CommonCommands.EDIT_REPLACE);
         const accelerator = (kb: IKeybindingItem): Accelerator => {
             const keyCode = kb.keybinding;
             const keys: string[] = [];
@@ -208,9 +210,6 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             return KeyCode.createKeyCode(sequence);
         };
 
-        const a = KeybindingsRegistry.getDefaultKeybindings();
-        console.log(a);
-
         const bindings: Keybinding[] = KeybindingsRegistry.getDefaultKeybindings()
             .filter(kb => ids.indexOf(kb.command) >= 0)
             .map(kb => ({
@@ -218,6 +217,13 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
                 keyCode: keyCode(kb),
                 accelerator: accelerator(kb),
             }));
+
+        // And we need to manually register `Select All` as it is not an editor action just like everything else.
+        bindings.push({
+            commandId: MonacoSelectionCommands.SELECTION_SELECT_ALL,
+            keyCode: KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M1] }),
+            accelerator: ['Accel A']
+        });
 
         bindings.forEach(binding => {
             registry.registerKeyBinding(binding);
