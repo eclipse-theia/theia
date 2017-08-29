@@ -31,7 +31,7 @@ export namespace MonacoSelectionCommands {
     export const SELECTION_MENU_COPY_MOVE_GROUP = '2_copy_move_group';
     export const SELECTION_MENU_CURSOR_GROUP = '3_cursor_group';
 
-    export const SELECTION_SELECT_ALL = 'editor.action.selectAll';
+    export const SELECTION_SELECT_ALL = 'editor.action.select.all';
     export const SELECTION_EXPAND_SELECTION = 'editor.action.smartSelect.grow';
     export const SELECTION_SHRINK_SELECTION = 'editor.action.smartSelect.shrink';
 
@@ -40,7 +40,6 @@ export namespace MonacoSelectionCommands {
     export const SELECTION_MOVE_LINE_UP = 'editor.action.moveLinesUpAction';
     export const SELECTION_MOVE_LINE_DOWN = 'editor.action.moveLinesDownAction';
 
-    export const SELECTION_SWITCH_TO_MULTI_CURSOR = 'workbench.action.toggleMultiCursorModifier';
     export const SELECTION_ADD_CURSOR_ABOVE = 'editor.action.insertCursorAbove';
     export const SELECTION_ADD_CURSOR_BELOW = 'editor.action.insertCursorBelow';
     export const SELECTION_ADD_CURSOR_TO_LINE_END = 'editor.action.insertCursorAtEndOfEachLineSelected';
@@ -48,8 +47,8 @@ export namespace MonacoSelectionCommands {
     export const SELECTION_ADD_PREVIOUS_OCCURRENCE = 'editor.action.addSelectionToPreviousFindMatch';
     export const SELECTION_SELECT_ALL_OCCURRENCES = 'editor.action.selectHighlights';
 
-    export const ACTIONS: { id: string, label: string }[] = [
-        { id: SELECTION_SELECT_ALL, label: 'Select All' },
+    export const ACTIONS: { id: string, label: string, delegateId?: string }[] = [
+        { id: SELECTION_SELECT_ALL, label: 'Select All', delegateId: 'editor.action.selectAll' },
         { id: SELECTION_EXPAND_SELECTION, label: 'Expand Selection' },
         { id: SELECTION_SHRINK_SELECTION, label: 'Shrink Selection' },
 
@@ -58,7 +57,6 @@ export namespace MonacoSelectionCommands {
         { id: SELECTION_MOVE_LINE_UP, label: 'Move Line Up' },
         { id: SELECTION_MOVE_LINE_DOWN, label: 'Move Line Down' },
 
-        { id: SELECTION_SWITCH_TO_MULTI_CURSOR, label: SELECTION_SWITCH_TO_MULTI_CURSOR },
         { id: SELECTION_ADD_CURSOR_ABOVE, label: 'Add Cursor Above' },
         { id: SELECTION_ADD_CURSOR_BELOW, label: 'Add Cursor Below' },
         { id: SELECTION_ADD_CURSOR_TO_LINE_END, label: 'Add Cursors to Line Ends' },
@@ -100,8 +98,26 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             commands.registerHandler(id, handler);
         });
 
-        [CommonCommands.EDIT_FIND, CommonCommands.EDIT_REPLACE, ...MonacoSelectionCommands.ACTIONS.map(({ id }) => id)].forEach(id => {
-            commands.registerHandler(id, new EditorCommandHandler(id, this.editorManager, this.selectionService));
+        [CommonCommands.EDIT_FIND, CommonCommands.EDIT_REPLACE, ...MonacoSelectionCommands.ACTIONS.filter(action => !action.delegateId).map(({ id }) => id)].forEach(id => {
+            commands.registerHandler(id, this.newHandler(id));
+        });
+
+        // VSCode registers some commands as core commands and not as @editorAction. These have to be treated differently.
+        [...MonacoSelectionCommands.ACTIONS].forEach(action => {
+            if (action.delegateId) {
+                const { id, delegateId } = action;
+                commands.registerHandler(id, {
+                    execute: () => {
+                        const editor = getCurrent(this.editorManager);
+                        if (editor) {
+                            if (editor) {
+                                editor.focus();
+                                editor.commandService.executeCommand(delegateId!);
+                            }
+                        }
+                    }
+                });
+            }
         });
 
         for (const menuItem of MenuRegistry.getMenuItems(MenuId.EditorContext)) {
@@ -120,6 +136,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
                 label
             });
         });
+
     }
 
     protected newHandler(id: string): CommandHandler {
@@ -144,20 +161,19 @@ export class EditorCommandHandler implements CommandHandler {
     execute(): Promise<any> {
         const editor = getCurrent(this.editorManager);
         if (editor) {
+            editor.focus();
             return Promise.resolve(editor.runAction(this.id));
         }
         return Promise.resolve();
     }
 
     isVisible(): boolean {
-        const r = TextEditorSelection.is(this.selectionService.selection);
-        return r;
+        return TextEditorSelection.is(this.selectionService.selection);
     }
 
     isEnabled(): boolean {
         const editor = getCurrent(this.editorManager);
-        const r = !!editor && editor.isActionSupported(this.id);
-        return r;
+        return !!editor && editor.isActionSupported(this.id);
     }
 
 }
