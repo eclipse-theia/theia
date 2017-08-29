@@ -40,14 +40,14 @@ export namespace KeybindingContexts {
         isEnabled(arg?: Keybinding): boolean {
             return true;
         }
-    }
+    };
 
     export const DEFAULT_CONTEXT: Context<Keybinding> = {
         id: 'default.keybinding.context',
         isEnabled(arg?: Keybinding): boolean {
             return false;
         }
-    }
+    };
 }
 
 
