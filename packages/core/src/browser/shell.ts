@@ -332,6 +332,18 @@ export class ApplicationShell extends Widget {
         });
     }
 
+    /**
+     * Checks to see if a tab is currently selected
+     */
+    hasSelectedTab(): boolean {
+        const current = this._currentTabBar();
+        if (current) {
+            return current.currentIndex !== -1;
+        } else {
+            return false;
+        }
+    }
+
     /*
      * Return the TabBar that has the currently active Widget or undefined.
      */
