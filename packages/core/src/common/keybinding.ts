@@ -10,6 +10,7 @@ import { Context } from './context';
 import { CommandRegistry } from './command';
 import { KeyCode, Accelerator } from './keys';
 import { ContributionProvider } from './contribution-provider';
+import { ILogger } from "./logger";
 
 export interface Keybinding {
     readonly commandId: string;
@@ -31,7 +32,7 @@ export interface KeybindingContribution {
     registerKeyBindings(keybindings: KeybindingRegistry): void;
 }
 
-export const KeybindingContext = Symbol("KeybindingContextExtension")
+export const KeybindingContext = Symbol("KeybindingContextExtension");
 export interface KeybindingContext extends Context<Keybinding> { }
 export namespace KeybindingContexts {
 
@@ -62,7 +63,7 @@ export class KeybindingContextRegistry {
         this.registerContext(KeybindingContexts.DEFAULT_CONTEXT)
     }
 
-    initialize() {
+    initialize(): void {
         this.contextProvider.getContributions().forEach(context => this.registerContext(context));
     }
 
@@ -70,17 +71,15 @@ export class KeybindingContextRegistry {
      * Registers the keybinding context arguments into the application. Fails when an already registered
      * context is being registered.
      *
-     * @param context the keybinding contexts to register into the application.
+     * @param contexts the keybinding contexts to register into the application.
      */
-    registerContext(...context: KeybindingContext[]) {
-        if (context.length > 0) {
-            context.forEach(context => {
-                const { id } = context;
-                if (this.contexts[id]) {
-                    throw new Error(`A keybinding context with ID ${id} is already registered.`);
-                }
-                this.contexts[id] = context;
-            })
+    registerContext(...contexts: KeybindingContext[]) {
+        for (const context of contexts) {
+            const { id } = context;
+            if (this.contexts[id]) {
+                throw new Error(`A keybinding context with ID ${id} is already registered.`);
+            }
+            this.contexts[id] = context;
         }
     }
 
@@ -100,7 +99,8 @@ export class KeybindingRegistry {
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
         @inject(KeybindingContextRegistry) protected readonly contextRegistry: KeybindingContextRegistry,
         @inject(ContributionProvider) @named(KeybindingContribution)
-        protected readonly contributions: ContributionProvider<KeybindingContribution>
+        protected readonly contributions: ContributionProvider<KeybindingContribution>,
+        @inject(ILogger) protected readonly logger: ILogger
     ) { }
 
     onStart(): void {
@@ -121,6 +121,14 @@ export class KeybindingRegistry {
      * @param binding
      */
     registerKeyBinding(binding: Keybinding) {
+        const existing = this.keybindings[binding.keyCode.keystroke];
+        if (existing) {
+            const collided = existing.filter(b => b.context === binding.context);
+            if (collided.length > 0) {
+                this.logger.warn(`Collided keybinding is ignored; `, binding, ' collided with ', collided.join(', '));
+                return;
+            }
+        }
         const { keyCode, commandId } = binding;
         const bindings = this.keybindings[keyCode.keystroke] || [];
         bindings.push(binding);
