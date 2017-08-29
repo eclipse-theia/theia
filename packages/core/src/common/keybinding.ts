@@ -6,7 +6,6 @@
  */
 
 import { Context } from './context';
-import { Disposable } from './disposable';
 import { CommandRegistry } from './command';
 import { injectable, inject, named } from 'inversify';
 import { KeyCode, Accelerator } from './keys';
@@ -41,14 +40,14 @@ export namespace KeybindingContexts {
         isEnabled(arg?: Keybinding): boolean {
             return true;
         }
-    }
+    };
 
     export const DEFAULT_CONTEXT: Context<Keybinding> = {
         id: 'default.keybinding.context',
         isEnabled(arg?: Keybinding): boolean {
             return false;
         }
-    }
+    };
 }
 
 
@@ -100,10 +99,8 @@ export class KeybindingRegistry {
     constructor(
         @inject(CommandRegistry) protected commandRegistry: CommandRegistry,
         @inject(KeybindingContextRegistry) protected contextRegistry: KeybindingContextRegistry,
-        @inject(ContributionProvider) @named(KeybindingContribution) protected contributions: ContributionProvider<KeybindingContribution>) {
-
-        new KeyEventEmitter(commandRegistry, this);
-    }
+        @inject(ContributionProvider) @named(KeybindingContribution) protected contributions: ContributionProvider<KeybindingContribution>
+    ) { }
 
     onStart(): void {
         for (const contribution of this.contributions.getContributions()) {
@@ -142,9 +139,9 @@ export class KeybindingRegistry {
     }
 
     private isValid(binding: Keybinding): boolean {
-        let cmd = this.commandRegistry.getCommand(binding.commandId);
+        const cmd = this.commandRegistry.getCommand(binding.commandId);
         if (cmd) {
-            let handler = this.commandRegistry.getActiveHandler(cmd.id);
+            const handler = this.commandRegistry.getActiveHandler(cmd.id);
             // TODO? isActive()
             if (handler && (!handler.isVisible || handler.isVisible())) {
                 return true;
@@ -153,44 +150,23 @@ export class KeybindingRegistry {
         return false;
     }
 
-}
-
-export class KeyEventEmitter implements Disposable {
-
-    private listener: EventListenerOrEventListenerObject;
-
-    constructor(
-        private commandRegistry: CommandRegistry,
-        private keybindingRegistry: KeybindingRegistry) {
-
-        this.listener = (event: any) => this.handleEvent(event);
-        window.addEventListener('keydown', this.listener, false);
-    }
-
-    dispose() {
-        window.removeEventListener('keydown', this.listener);
-    }
-
-    private handleEvent(event: KeyboardEvent): void {
-        if (!event.defaultPrevented) {
-            this.handleKey(KeyCode.createKeyCode(event), event);
+    run(event: KeyboardEvent): void {
+        if (event.defaultPrevented) {
+            return;
         }
-    }
-
-    private handleKey(keyCode: KeyCode, event: KeyboardEvent): boolean {
-        const binding = this.keybindingRegistry.getKeybindingForKeyCode(keyCode);
-        if (binding) {
-            const context = binding.context || KeybindingContexts.NOOP_CONTEXT;
-            if (context && context.isEnabled(binding)) {
-                const handler = this.commandRegistry.getActiveHandler(binding.commandId);
-                if (handler) {
-                    event.preventDefault();
-                    handler.execute();
-                    return true;
-                }
+        const keyCode = KeyCode.createKeyCode(event);
+        const binding = this.getKeybindingForKeyCode(keyCode);
+        if (!binding) {
+            return;
+        }
+        const context = binding.context || KeybindingContexts.NOOP_CONTEXT;
+        if (context && context.isEnabled(binding)) {
+            const handler = this.commandRegistry.getActiveHandler(binding.commandId);
+            if (handler) {
+                event.preventDefault();
+                handler.execute();
             }
         }
-        return false;
     }
 
 }
