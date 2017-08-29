@@ -77,12 +77,12 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             label: 'Redo'
         });
         commandRegistry.registerCommand(CommonCommands.TAB_NEXT, {
-            isEnabled: () => true,
+            isEnabled: () => this.app.shell.hasSelectedTab(),
             execute: () => this.app.shell.activateNextTab()
         });
 
         commandRegistry.registerCommand(CommonCommands.TAB_PREVIOUS, {
-            isEnabled: () => true,
+            isEnabled: () => this.app.shell.hasSelectedTab(),
             execute: () => this.app.shell.activatePreviousTab()
         });
     }
