@@ -66,7 +66,7 @@ export namespace MonacoCommands {
     ];
     for (const menuItem of MenuRegistry.getMenuItems(MenuId.EditorContext)) {
         const { id, title, iconClass } = menuItem.command;
-        if (!COMMON_ACTIONS[id]) {
+        if (!COMMON_ACTIONS[id] && id !== 'editor.action.quickCommand') {
             const label = title;
             ACTIONS.push({ id, label, iconClass });
         }
