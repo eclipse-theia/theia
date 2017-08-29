@@ -124,25 +124,20 @@ export class MonacoEditorProvider {
     protected installQuickOpenService(editor: MonacoEditor): void {
         const control = editor.getControl();
         const quickOpenController = control._contributions['editor.controller.quickOpenController'];
-        let lastKnownEditorSelection: monaco.Selection | undefined;
         quickOpenController.run = options => {
-            const widget = this.quickOpenService.open({
+            const selection = control.getSelection();
+            this.quickOpenService.open({
                 ...options,
                 onClose: canceled => {
                     quickOpenController.clearDecorations();
 
-                    if (canceled && lastKnownEditorSelection) {
-                        control.setSelection(lastKnownEditorSelection);
-                        control.revealRangeInCenterIfOutsideViewport(lastKnownEditorSelection);
+                    if (canceled && selection) {
+                        control.setSelection(selection);
+                        control.revealRangeInCenterIfOutsideViewport(selection);
                     }
-                    lastKnownEditorSelection = undefined;
                     editor.focus();
                 }
             });
-            if (!lastKnownEditorSelection) {
-                lastKnownEditorSelection = control.getSelection();
-            }
-            widget.show('');
         };
     }
 
