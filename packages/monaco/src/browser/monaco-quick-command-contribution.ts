@@ -22,7 +22,7 @@ export class MonacoQuickCommandFrontendContribution implements CommandContributi
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickCommand, {
-            execute: () => this.quickCommnadService.show()
+            execute: () => this.quickCommnadService.open()
         });
     }
 
