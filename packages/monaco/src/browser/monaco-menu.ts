@@ -45,19 +45,22 @@ export class MonacoEditorMenuContribution implements MenuContribution {
             MAIN_MENU_BAR,
             MonacoSelectionCommands.SELECTION_MENU,
             MonacoSelectionCommands.SELECTION_MENU_SELECTION_GROUP], {
-                commandId: MonacoSelectionCommands.SELECTION_SELECT_ALL
+                commandId: MonacoSelectionCommands.SELECTION_SELECT_ALL,
+                order: '0'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
             MonacoSelectionCommands.SELECTION_MENU,
             MonacoSelectionCommands.SELECTION_MENU_SELECTION_GROUP], {
-                commandId: MonacoSelectionCommands.SELECTION_EXPAND_SELECTION
+                commandId: MonacoSelectionCommands.SELECTION_EXPAND_SELECTION,
+                order: '2'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
             MonacoSelectionCommands.SELECTION_MENU,
             MonacoSelectionCommands.SELECTION_MENU_SELECTION_GROUP], {
-                commandId: MonacoSelectionCommands.SELECTION_SHRINK_SELECTION
+                commandId: MonacoSelectionCommands.SELECTION_SHRINK_SELECTION,
+                order: '3'
             });
 
         // Copy and move group
@@ -65,25 +68,29 @@ export class MonacoEditorMenuContribution implements MenuContribution {
             MAIN_MENU_BAR,
             MonacoSelectionCommands.SELECTION_MENU,
             MonacoSelectionCommands.SELECTION_MENU_COPY_MOVE_GROUP], {
-                commandId: MonacoSelectionCommands.SELECTION_COPY_LINE_UP
+                commandId: MonacoSelectionCommands.SELECTION_COPY_LINE_UP,
+                order: '0'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
             MonacoSelectionCommands.SELECTION_MENU,
             MonacoSelectionCommands.SELECTION_MENU_COPY_MOVE_GROUP], {
-                commandId: MonacoSelectionCommands.SELECTION_COPY_LINE_DOWN
+                commandId: MonacoSelectionCommands.SELECTION_COPY_LINE_DOWN,
+                order: '1'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
             MonacoSelectionCommands.SELECTION_MENU,
             MonacoSelectionCommands.SELECTION_MENU_COPY_MOVE_GROUP], {
-                commandId: MonacoSelectionCommands.SELECTION_MOVE_LINE_UP
+                commandId: MonacoSelectionCommands.SELECTION_MOVE_LINE_UP,
+                order: '2'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
             MonacoSelectionCommands.SELECTION_MENU,
             MonacoSelectionCommands.SELECTION_MENU_COPY_MOVE_GROUP], {
-                commandId: MonacoSelectionCommands.SELECTION_MOVE_LINE_DOWN
+                commandId: MonacoSelectionCommands.SELECTION_MOVE_LINE_DOWN,
+                order: '3'
             });
 
         // Cursor group
@@ -91,43 +98,43 @@ export class MonacoEditorMenuContribution implements MenuContribution {
             MAIN_MENU_BAR,
             MonacoSelectionCommands.SELECTION_MENU,
             MonacoSelectionCommands.SELECTION_MENU_CURSOR_GROUP], {
-                commandId: MonacoSelectionCommands.SELECTION_SWITCH_TO_MULTI_CURSOR
+                commandId: MonacoSelectionCommands.SELECTION_ADD_CURSOR_ABOVE,
+                order: '0'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
             MonacoSelectionCommands.SELECTION_MENU,
             MonacoSelectionCommands.SELECTION_MENU_CURSOR_GROUP], {
-                commandId: MonacoSelectionCommands.SELECTION_ADD_CURSOR_ABOVE
+                commandId: MonacoSelectionCommands.SELECTION_ADD_CURSOR_BELOW,
+                order: '1'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
             MonacoSelectionCommands.SELECTION_MENU,
             MonacoSelectionCommands.SELECTION_MENU_CURSOR_GROUP], {
-                commandId: MonacoSelectionCommands.SELECTION_ADD_CURSOR_BELOW
+                commandId: MonacoSelectionCommands.SELECTION_ADD_CURSOR_TO_LINE_END,
+                order: '2'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
             MonacoSelectionCommands.SELECTION_MENU,
             MonacoSelectionCommands.SELECTION_MENU_CURSOR_GROUP], {
-                commandId: MonacoSelectionCommands.SELECTION_ADD_CURSOR_TO_LINE_END
+                commandId: MonacoSelectionCommands.SELECTION_ADD_NEXT_OCCURRENCE,
+                order: '3'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
             MonacoSelectionCommands.SELECTION_MENU,
             MonacoSelectionCommands.SELECTION_MENU_CURSOR_GROUP], {
-                commandId: MonacoSelectionCommands.SELECTION_ADD_NEXT_OCCURRENCE
+                commandId: MonacoSelectionCommands.SELECTION_ADD_PREVIOUS_OCCURRENCE,
+                order: '4'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
             MonacoSelectionCommands.SELECTION_MENU,
             MonacoSelectionCommands.SELECTION_MENU_CURSOR_GROUP], {
-                commandId: MonacoSelectionCommands.SELECTION_ADD_PREVIOUS_OCCURRENCE
-            });
-        registry.registerMenuAction([
-            MAIN_MENU_BAR,
-            MonacoSelectionCommands.SELECTION_MENU,
-            MonacoSelectionCommands.SELECTION_MENU_CURSOR_GROUP], {
-                commandId: MonacoSelectionCommands.SELECTION_SELECT_ALL_OCCURRENCES
+                commandId: MonacoSelectionCommands.SELECTION_SELECT_ALL_OCCURRENCES,
+                order: '5'
             });
     }
 }

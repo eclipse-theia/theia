@@ -10,6 +10,7 @@ import { CommandContribution, CommandRegistry } from './command';
 import { injectable } from "inversify";
 
 export namespace CommonCommands {
+
     export const EDIT_MENU = "2_edit";
     export const EDIT_MENU_UNDO_GROUP = "1_undo/redo";
     export const EDIT_MENU_FIND_REPLACE_GROUP = "2_find/replace";
@@ -24,6 +25,7 @@ export namespace CommonCommands {
 
     export const EDIT_FIND = 'actions.find';
     export const EDIT_REPLACE = 'editor.action.startFindReplaceAction';
+
 }
 
 @injectable()
@@ -38,26 +40,31 @@ export class CommonMenuContribution implements MenuContribution {
             MAIN_MENU_BAR,
             CommonCommands.EDIT_MENU,
             CommonCommands.EDIT_MENU_UNDO_GROUP], {
-                commandId: CommonCommands.EDIT_UNDO
+                commandId: CommonCommands.EDIT_UNDO,
+                order: '0'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
             CommonCommands.EDIT_MENU,
             CommonCommands.EDIT_MENU_UNDO_GROUP], {
-                commandId: CommonCommands.EDIT_REDO
+                commandId: CommonCommands.EDIT_REDO,
+                order: '1'
             });
+
         // Find/Replace
         registry.registerMenuAction([
             MAIN_MENU_BAR,
             CommonCommands.EDIT_MENU,
             CommonCommands.EDIT_MENU_FIND_REPLACE_GROUP], {
-                commandId: CommonCommands.EDIT_FIND
+                commandId: CommonCommands.EDIT_FIND,
+                order: '0'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
             CommonCommands.EDIT_MENU,
             CommonCommands.EDIT_MENU_FIND_REPLACE_GROUP], {
-                commandId: CommonCommands.EDIT_REPLACE
+                commandId: CommonCommands.EDIT_REPLACE,
+                order: '1'
             });
     }
 
