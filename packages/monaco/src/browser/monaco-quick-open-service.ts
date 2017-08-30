@@ -15,11 +15,20 @@ export interface QuickOpenOptions extends monaco.quickOpen.IQuickOpenControllerO
 @injectable()
 export class MonacoQuickOpenService {
 
-    protected readonly container: HTMLElement;
-    protected widget: monaco.quickOpen.QuickOpenWidget | undefined;
+    protected _widget: monaco.quickOpen.QuickOpenWidget | undefined;
+    protected options: QuickOpenOptions | undefined;
 
-    constructor(
-    ) {
+    constructor() { }
+
+    open(options: QuickOpenOptions): void {
+        this.options = options;
+        this.widget.show(options.prefix || '');
+    }
+
+    protected get widget(): monaco.quickOpen.QuickOpenWidget {
+        if (this._widget) {
+            return this._widget;
+        }
         const overlayWidgets = document.createElement('div');
         overlayWidgets.classList.add('quick-open-overlay');
         document.body.appendChild(overlayWidgets);
@@ -29,23 +38,28 @@ export class MonacoQuickOpenService {
         container.style.top = '0px';
         container.style.right = '50%';
         overlayWidgets.appendChild(container);
-        this.container = container;
+
+        this._widget = new monaco.quickOpen.QuickOpenWidget(container, {
+            onOk: () => this.onClose(false),
+            onCancel: () => this.onClose(true),
+            onType: lookFor => this.onType(lookFor || ''),
+            onFocusLost: () => false
+        }, {});
+        this._widget.create();
+        return this._widget;
     }
 
-    open(options: QuickOpenOptions): void {
-        if (!this.widget) {
-            const onClose = options.onClose || (() => { /*no-op*/ });
-            const widget = this.widget = new monaco.quickOpen.QuickOpenWidget(this.container, {
-                onOk: () => onClose(false),
-                onCancel: () => onClose(true),
-                onType: (lookFor?: string) => {
-                    widget.setInput(options.getModel(lookFor || ''), options.getAutoFocus(lookFor || ''));
-                },
-                onFocusLost: () => false
-            }, { inputAriaLabel: options.inputAriaLabel });
-            widget.create();
+    protected onClose(cancelled: boolean): void {
+        if (this.options && this.options.onClose) {
+            this.options.onClose(cancelled);
         }
-        this.widget.show(options.prefix || '');
+    }
+
+    protected onType(lookFor: string): void {
+        const options = this.options;
+        if (this.widget && options) {
+            this.widget.setInput(options.getModel(lookFor), options.getAutoFocus(lookFor), options.inputAriaLabel);
+        }
     }
 
 }
