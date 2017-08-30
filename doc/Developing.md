@@ -19,6 +19,27 @@ So far it has been confirmed that there are some problems and errors using nodej
 
 [nvm](https://github.com/creationix/nvm) is recommended to easily switch between node versions.
 
+## tl;dr
+
+To build and run the browser example:
+
+    git clone https://github.com/theia-ide/theia \
+    && cd theia \
+    && yarn --unsafe-perm \
+    && cd examples/browser \
+    && yarn run start
+
+Start your browser on http://localhost:3000.
+
+To build and run the electron example:
+
+    git clone https://github.com/theia-ide/theia \
+    && cd theia \
+    && yarn --unsafe-perm \
+    && yarn run rebuild:electron \
+    && cd examples/electron \
+    && yarn run start
+
 ## Clone the repository
 
     git clone https://github.com/theia-ide/theia
@@ -129,27 +150,6 @@ that. tl;dr Some breakpoints don't hit.
 ## Testing
 
 See the [testing](Testing.md) documentation.
-
-## tl;dr
-
-To build and run the browser example:
-
-    git clone https://github.com/theia-ide/theia \
-    && cd theia \
-    && yarn --unsafe-perm \
-    && cd examples/browser \
-    && yarn run start
-
-Start your browser on http://localhost:3000.
-
-To build and run the electron example:
-
-    git clone https://github.com/theia-ide/theia \
-    && cd theia \
-    && yarn --unsafe-perm \
-    && yarn run rebuild:electron \
-    && cd examples/electron \
-    && yarn run start
 
 ## Code coverage
 
