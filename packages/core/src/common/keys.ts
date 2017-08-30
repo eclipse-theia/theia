@@ -28,10 +28,45 @@ export declare type Keystroke = { first: Key, modifiers?: Modifier[] };
  */
 export class KeyCode {
 
+    public readonly key: string;
+    public readonly label: string;
+    public readonly ctrl: boolean;
+    public readonly shift: boolean;
+    public readonly alt: boolean;
+    public readonly meta: boolean;
+
     // TODO: support chrods properly. Currently, second sequence is ignored.
     private constructor(public readonly keystroke: string) {
         // const chord = ((secondSequence & 0x0000ffff) << 16) >>> 0;
         // (firstSequence | chord) >>> 0;
+        const parts = keystroke.split('+');
+        this.key = parts[0];
+        if (isOSX) {
+            this.meta = parts.some(part => part === Modifier.M1);
+            this.shift = parts.some(part => part === Modifier.M2);
+            this.alt = parts.some(part => part === Modifier.M3);
+            this.ctrl = parts.some(part => part === Modifier.M4);
+        } else {
+            this.meta = false;
+            this.ctrl = parts.some(part => part === Modifier.M1);
+            this.shift = parts.some(part => part === Modifier.M2);
+            this.alt = parts.some(part => part === Modifier.M3);
+        }
+        const labelParts: string[] = [];
+        if (this.ctrl) {
+            labelParts.push('Control');
+        }
+        if (this.shift) {
+            labelParts.push('Shift');
+        }
+        if (this.alt) {
+            labelParts.push('Alt');
+        }
+        if (this.meta) {
+            labelParts.push('Command');
+        }
+        labelParts.push(this.key);
+        this.label = labelParts.join('+');
     }
 
     public static createKeyCode(event: KeyboardEvent | Keystroke): KeyCode {
@@ -94,19 +129,19 @@ export enum Modifier {
     /**
      * M1 is the COMMAND key on MacOS X, and the CTRL key on most other platforms.
      */
-    M1 = <any>"M1",
+    M1 = "M1",
     /**
      * M2 is the SHIFT key.
      */
-    M2 = <any>"M2",
+    M2 = "M2",
     /**
      * M3 is the Option key on MacOS X, and the ALT key on most other platforms.
      */
-    M3 = <any>"M3",
+    M3 = "M3",
     /**
      * M4 is the CTRL key on MacOS X, and is undefined on other platforms.
      */
-    M4 = <any>"M4"
+    M4 = "M4"
 }
 
 export declare type Key = { code: string, keyCode: number };

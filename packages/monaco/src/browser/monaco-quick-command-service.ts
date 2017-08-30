@@ -77,6 +77,24 @@ export class CommandQuickOpenEntry extends monaco.quickOpen.QuickOpenEntry {
         return super.isHidden() || !this.commands.getActiveHandler(this.command.id);
     }
 
+    getKeybinding(): monaco.keybindings.ResolvedKeybinding | undefined {
+        const keybinding = this.keybindings.getKeybindingForCommand(this.command.id);
+        if (!keybinding) {
+            return undefined;
+        }
+        return {
+            getAriaLabel: () => keybinding.keyCode.label,
+            getParts: () => [new monaco.keybindings.ResolvedKeybindingPart(
+                keybinding.keyCode.ctrl,
+                keybinding.keyCode.shift,
+                keybinding.keyCode.alt,
+                keybinding.keyCode.meta,
+                keybinding.keyCode.key,
+                keybinding.keyCode.key
+            ), undefined]
+        };
+    }
+
     run(mode: monaco.quickOpen.Mode): boolean {
         if (mode !== monaco.quickOpen.Mode.OPEN) {
             return false;

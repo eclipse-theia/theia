@@ -216,41 +216,14 @@ declare module monaco.keybindings {
     }
     export abstract class ResolvedKeybinding {
         /**
-         * This prints the binding in a format suitable for displaying in the UI.
-         */
-        public abstract getLabel(): string;
-        /**
          * This prints the binding in a format suitable for ARIA.
          */
         public abstract getAriaLabel(): string;
         /**
-         * This prints the binding in a format suitable for electron's accelerators.
-         * See https://github.com/electron/electron/blob/master/docs/api/accelerator.md
-         */
-        public abstract getElectronAccelerator(): string;
-        /**
-         * This prints the binding in a format suitable for user settings.
-         */
-        public abstract getUserSettingsLabel(): string;
-        /**
-         * Is the user settings label reflecting the label?
-         */
-        public abstract isWYSIWYG(): boolean;
-
-        /**
-         * Is the binding a chord?
-         */
-        public abstract isChord(): boolean;
-
-        /**
-         * Returns the firstPart, chordPart that should be used for dispatching.
-         */
-        public abstract getDispatchParts(): [string, string];
-        /**
          * Returns the firstPart, chordPart of the keybinding.
          * For simple keybindings, the second element will be null.
          */
-        public abstract getParts(): [ResolvedKeybindingPart, ResolvedKeybindingPart];
+        public abstract getParts(): [ResolvedKeybindingPart, ResolvedKeybindingPart | undefined];
     }
 
 }
@@ -394,14 +367,14 @@ declare module monaco.quickOpen {
     }
     export class QuickOpenEntry {
         constructor(highlights?: IHighlight[]);
-        getLabel(): string;
-        getLabelOptions(): IIconLabelOptions;
-        getAriaLabel(): string;
-        getDetail(): string;
-        getIcon(): string;
-        getDescription(): string;
-        getKeybinding(): monaco.keybindings.ResolvedKeybinding;
-        getResource(): Uri;
+        getLabel(): string | undefined;
+        getLabelOptions(): IIconLabelOptions | undefined;
+        getAriaLabel(): string | undefined;
+        getDetail(): string | undefined;
+        getIcon(): string | undefined;
+        getDescription(): string | undefined;
+        getKeybinding(): monaco.keybindings.ResolvedKeybinding | undefined;
+        getResource(): Uri | undefined;
         isHidden(): boolean;
         setHidden(hidden: boolean): void;
         setHighlights(labelHighlights: IHighlight[], descriptionHighlights?: IHighlight[], detailHighlights?: IHighlight[]): void;
