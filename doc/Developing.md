@@ -34,6 +34,7 @@ For Windows instructions [click here](#building-on-windows).
  * [**Troubleshooting**](#troubleshooting)
 	 * [Linux](#linux)
 	 * [Windows](#windows)
+	 * [Root privileges errors](#root-privileges-errors)
 
 ## Prerequisites
 * [Yarn package manager](https://yarnpkg.com/en/docs/install)
@@ -49,7 +50,7 @@ To build and run the browser example:
 
     git clone https://github.com/theia-ide/theia \
     && cd theia \
-    && yarn --unsafe-perm \
+    && yarn \
     && cd examples/browser \
     && yarn run start
 
@@ -59,7 +60,7 @@ To build and run the electron example:
 
     git clone https://github.com/theia-ide/theia \
     && cd theia \
-    && yarn --unsafe-perm \
+    && yarn \
     && yarn run rebuild:electron \
     && cd examples/electron \
     && yarn run start
@@ -235,3 +236,11 @@ Theia uses native modules and also requires Python 2.x to be installed on the sy
 
 [all-in-one packages]: https://github.com/felixrieseberg/windows-build-tools
 [bug]: https://github.com/theia-ide/theia/issues
+
+### Root privileges errors
+When trying to install with root privileges, you might encounter errors such as `cannot run in wd`.
+
+Several options are available to you:
+
+* Install without root privileges
+* Use the `--unsafe-perm` flag: `yarn --unsafe-perm`
