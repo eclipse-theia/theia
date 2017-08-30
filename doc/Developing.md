@@ -12,28 +12,28 @@ The following instructions are for Linux and macOS.
 For Windows instructions [click here](#building-on-windows).
 
 # Table of Contents
- * **Prerequisites**
- * **tl;dr**
- * **Clone the repository**
- * **Build core, extensions and examples packages**
- * **Run the browser-based example application**
- * **Run the electron-based example application**
- * **Rebuilding**
- * **Watching**
-	 * core and extension packages
-	 * the examples
- * **Debugging**
-	 * Debug the browser example's backend
-	 * Debug the browser example's frontend
-	 * Debug the browser example's frontend and backend at the same time
-	 * Debug the electron example
-	 * Issues
- * **Testing**
- * **Code coverage**
- * **Building on Windows**
- * **Troubleshooting**
-	 * Linux
-	 * Windows
+ * [**Prerequisites**](#prerequisites)
+ * [**tl;dr**](#tldr)
+ * [**Clone the repository**](#clone-the-repository)
+ * [**Build core, extensions and examples packages**](#build-core-extensions-and-examples-packages)
+ * [**Run the browser-based example application**](#run-the-browser-based-example-application)
+ * [**Run the electron-based example application**](#run-the-electron-based-example-application)
+ * [**Rebuilding**](#rebuilding)
+ * [**Watching**](#watching)
+	 * [core and extension packages](#core-and-extension-packages)
+	 * [the examples](#the-examples)
+ * [**Debugging**](#debugging)
+	 * [Debug the browser example's backend](#debug-the-browser-examples-backend)
+	 * [Debug the browser example's frontend](#debug-the-browser-examples-frontend)
+	 * [Debug the browser example's frontend and backend at the same time](#debug-the-browser-examples-frontend-and-backend-at-the-same-time)
+	 * [Debug the electron example](#debug-the-electron-example)
+	 * [Issues](#issues)
+ * [**Testing**](#testing)
+ * [**Code coverage**](#code-coverage)
+ * [**Building on Windows**](#building-on-windows)
+ * [**Troubleshooting**](#troubleshooting)
+	 * [Linux](#linux)
+	 * [Windows](#windows)
 
 ## Prerequisites
 * [Yarn package manager](https://yarnpkg.com/en/docs/install)
