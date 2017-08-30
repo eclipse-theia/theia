@@ -11,6 +11,30 @@ The following instructions are for Linux and macOS.
 
 For Windows instructions [click here](#building-on-windows).
 
+# Table of Contents
+ * **Prerequisites**
+ * **tl;dr**
+ * **Clone the repository**
+ * **Build core, extensions and examples packages**
+ * **Run the browser-based example application**
+ * **Run the electron-based example application**
+ * **Rebuilding**
+ * **Watching**
+	 * core and extension packages
+	 * the examples
+ * **Debugging**
+	 * Debug the browser example's backend
+	 * Debug the browser example's frontend
+	 * Debug the browser example's frontend and backend at the same time
+	 * Debug the electron example
+	 * Issues
+ * **Testing**
+ * **Code coverage**
+ * **Building on Windows**
+ * **Troubleshooting**
+	 * Linux
+	 * Windows
+
 ## Prerequisites
 * [Yarn package manager](https://yarnpkg.com/en/docs/install)
 * git
