@@ -71,7 +71,7 @@ export class CommandRegistry implements CommandService {
             dispose: () => {
                 delete this._commands[command.id];
             }
-        }
+        };
     }
 
     registerHandler(commandId: string, handler: CommandHandler): Disposable {
@@ -87,13 +87,13 @@ export class CommandRegistry implements CommandService {
                     handlers.splice(idx, 1);
                 }
             }
-        }
+        };
     }
 
     executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined> {
         const handler = this.getActiveHandler(command, ...args);
         if (handler) {
-            return Promise.resolve(handler.execute(...args))
+            return Promise.resolve(handler.execute(...args));
         }
         return Promise.reject(`command '${command}' cannot be executed`);
     }
@@ -110,8 +110,16 @@ export class CommandRegistry implements CommandService {
         return undefined;
     }
 
+    /**
+     * Unlike #getActiveHandler, this method does not check whether the handler for the given command is enabled or not.
+     */
+    getHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
+        const handlers = this._handlers[commandId] || [];
+        return handlers[0];
+    }
+
     get commands(): Command[] {
-        const commands: Command[] = []
+        const commands: Command[] = [];
         for (const id of this.commandIds) {
             const cmd = this.getCommand(id);
             if (cmd) {

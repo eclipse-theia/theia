@@ -104,7 +104,7 @@ class DynamicMenuBarWidget extends MenuBarWidget {
                 this.activeMenu.aboutToShow();
             }
             super['_openChildMenu']();
-        }
+        };
     }
 }
 /**
@@ -113,16 +113,16 @@ class DynamicMenuBarWidget extends MenuBarWidget {
 class DynamicMenuWidget extends MenuWidget {
 
     constructor(protected menu: CompositeMenuNode, protected options: MenuWidget.IOptions) {
-        super(options)
+        super(options);
         if (menu.label) {
             this.title.label = menu.label;
         }
-        this.updateSubMenus(this, this.menu, this.options.commands)
+        this.updateSubMenus(this, this.menu, this.options.commands);
     }
 
     public aboutToShow(): void {
-        this.clearItems()
-        this.updateSubMenus(this, this.menu, this.options.commands)
+        this.clearItems();
+        this.updateSubMenus(this, this.menu, this.options.commands);
     }
 
     private updateSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: PhosphorCommandRegistry): void {

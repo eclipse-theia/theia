@@ -183,7 +183,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             }
             keys.push(KeyCodeUtils.toString(keyCode & 255));
             return [keys.join(' ')];
-        }
+        };
 
         const keyCode = (kb: IKeybindingItem): KeyCode => {
             const keyCode = kb.keybinding;

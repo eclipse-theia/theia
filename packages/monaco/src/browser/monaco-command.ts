@@ -124,11 +124,16 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
 
         for (const menuItem of MenuRegistry.getMenuItems(MenuId.EditorContext)) {
             const { id, title, iconClass } = menuItem.command;
-            commands.registerCommand({
-                id,
-                iconClass,
-                label: title
-            }, this.newHandler(id));
+            if ([CommonCommands.EDIT_CUT, CommonCommands.EDIT_COPY, CommonCommands.EDIT_PASTE].indexOf(id) === -1) {
+                commands.registerCommand({
+                    id,
+                    iconClass,
+                    label: title
+                }, this.newHandler(id));
+            } else {
+                // The command is already defined for Cut/Copy/Paste in the core, we need only the handler for the editor.
+                commands.registerHandler(id, this.newHandler(id));
+            }
         }
 
         MonacoSelectionCommands.ACTIONS.forEach(entry => {
