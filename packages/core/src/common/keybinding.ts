@@ -6,7 +6,6 @@
  */
 
 import { injectable, inject, named } from 'inversify';
-import { Context } from './context';
 import { CommandRegistry } from './command';
 import { KeyCode, Accelerator } from './keys';
 import { ContributionProvider } from './contribution-provider';
@@ -25,7 +24,7 @@ export interface Keybinding {
      * Sugar for showing the keybindings in the menus.
      */
     readonly accelerator?: Accelerator;
-};
+}
 
 export const KeybindingContribution = Symbol("KeybindingContribution");
 export interface KeybindingContribution {
@@ -33,21 +32,24 @@ export interface KeybindingContribution {
 }
 
 export const KeybindingContext = Symbol("KeybindingContextExtension");
-export interface KeybindingContext extends Context<Keybinding> { }
+export interface KeybindingContext {
+    /**
+     * The unique ID of the current context.
+     */
+    readonly id: string;
+
+    isEnabled(arg?: Keybinding): boolean;
+}
 export namespace KeybindingContexts {
 
-    export const NOOP_CONTEXT: Context<Keybinding> = {
+    export const NOOP_CONTEXT: KeybindingContext = {
         id: 'noop.keybinding.context',
-        isEnabled(arg?: Keybinding): boolean {
-            return true;
-        }
+        isEnabled: () => true
     };
 
-    export const DEFAULT_CONTEXT: Context<Keybinding> = {
+    export const DEFAULT_CONTEXT: KeybindingContext = {
         id: 'default.keybinding.context',
-        isEnabled(arg?: Keybinding): boolean {
-            return false;
-        }
+        isEnabled: () => false
     };
 }
 
@@ -55,12 +57,14 @@ export namespace KeybindingContexts {
 @injectable()
 export class KeybindingContextRegistry {
 
-    contexts: { [id: string]: KeybindingContext } = {};
-    contextHierarchy: { [id: string]: KeybindingContext };
+    protected readonly contexts: { [id: string]: KeybindingContext } = {};
 
-    constructor( @inject(ContributionProvider) @named(KeybindingContext) private contextProvider: ContributionProvider<KeybindingContext>) {
-        this.registerContext(KeybindingContexts.NOOP_CONTEXT)
-        this.registerContext(KeybindingContexts.DEFAULT_CONTEXT)
+    constructor(
+        @inject(ContributionProvider) @named(KeybindingContext)
+        protected readonly contextProvider: ContributionProvider<KeybindingContext>
+    ) {
+        this.registerContext(KeybindingContexts.NOOP_CONTEXT);
+        this.registerContext(KeybindingContexts.DEFAULT_CONTEXT);
     }
 
     initialize(): void {
