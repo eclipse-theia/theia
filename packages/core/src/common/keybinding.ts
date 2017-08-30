@@ -180,6 +180,7 @@ export class KeybindingRegistry {
             const handler = this.commandRegistry.getActiveHandler(binding.commandId);
             if (handler) {
                 event.preventDefault();
+                event.stopPropagation();
                 handler.execute();
             }
         }
