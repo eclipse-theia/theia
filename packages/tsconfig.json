@@ -3,6 +3,9 @@
     "compilerOptions": {
         "baseUrl": ".",
         "paths": {
+            "@theia/core": [
+                "core/src/common"
+            ],
             "@theia/core/lib/*": [
                 "core/src/*"
             ],
