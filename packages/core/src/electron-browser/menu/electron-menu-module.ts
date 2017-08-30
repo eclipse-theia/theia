@@ -11,7 +11,7 @@ import { ElectronMenuContribution, ElectronMainMenuFactory } from "./electron-me
 import { KeybindingContribution, CommandContribution, KeybindingContext, MenuContribution } from "../../common";
 import { ElectronKeybindingContribution } from "./core-keybindings";
 import { MenuCommandHandlers } from "./core-menu-commands";
-import { CoreMenuContribution } from "./core-menu-contribution"
+import { CoreMenuContribution } from "./core-menu-contribution";
 import { ElectronContextMenuRenderer } from "./electron-context-menu-renderer";
 
 export default new ContainerModule(bind => {

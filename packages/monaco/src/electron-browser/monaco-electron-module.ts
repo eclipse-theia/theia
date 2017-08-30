@@ -22,7 +22,7 @@ export default loadVsRequire(global)
         s.module = undefined;
         // workaround monaco-typescript not understanding the environment
         s.process.browser = true;
-        return loadMonaco(vsRequire)
+        return loadMonaco(vsRequire);
     })
     .then(() => import('../browser/monaco-frontend-module'))
     .then(module => module.default);

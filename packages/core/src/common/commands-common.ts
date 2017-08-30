@@ -13,12 +13,12 @@ export namespace CommonCommands {
 
     export const EDIT_MENU = "2_edit";
     export const EDIT_MENU_UNDO_GROUP = "1_undo/redo";
-    export const EDIT_MENU_FIND_REPLACE_GROUP = "2_find/replace";
-    export const EDIT_MENU_COPYPASTE_GROUP = "2_copy";
+    export const EDIT_MENU_CUT_COPY_PASTE_GROUP = "2_cut/copy/paste";
+    export const EDIT_MENU_FIND_REPLACE_GROUP = "3_find/replace";
 
-    export const EDIT_CUT = 'edit_cut';
-    export const EDIT_COPY = 'edit_copy';
-    export const EDIT_PASTE = 'edit_paste';
+    export const EDIT_CUT = 'editor.action.clipboardCutAction';
+    export const EDIT_COPY = 'editor.action.clipboardCopyAction';
+    export const EDIT_PASTE = 'editor.action.clipboardPasteAction';
 
     export const EDIT_UNDO = 'undo';
     export const EDIT_REDO = 'redo';

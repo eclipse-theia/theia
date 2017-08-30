@@ -7,10 +7,7 @@
 
 import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
-import {
-    isOSX, CommandRegistry,
-    ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry
-} from '../../common';
+import { isOSX, CommandRegistry, ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry } from '../../common';
 import { FrontendApplication, FrontendApplicationContribution } from '../../browser';
 
 @injectable()
@@ -38,7 +35,7 @@ export class ElectronMainMenuFactory {
     }
 
     protected fillMenuTemplate(items: Electron.MenuItemConstructorOptions[], menuModel: CompositeMenuNode): Electron.MenuItemConstructorOptions[] {
-        for (let menu of menuModel.children) {
+        for (const menu of menuModel.children) {
             if (menu instanceof CompositeMenuNode) {
                 if (menu.label) {
                     // should we create a submenu?
@@ -50,7 +47,7 @@ export class ElectronMainMenuFactory {
                     // or just a separator?
                     items.push({
                         type: 'separator'
-                    })
+                    });
                     // followed by the elements
                     this.fillMenuTemplate(items, menu);
                 }
@@ -59,10 +56,10 @@ export class ElectronMainMenuFactory {
                 if (!command) {
                     throw new Error(`Unknown command id: ${menu.action.commandId}.`);
                 }
-                const handler = this.commandRegistry.getActiveHandler(command.id) || {
+                const handler = this.commandRegistry.getHandler(command.id) || {
                     execute: () => { },
-                    isEnabled: () => { return false; },
-                    isVisible: () => { return true; }
+                    isEnabled: () => false,
+                    isVisible: () => true
                 };
                 let enabled = true;
                 if (handler.isEnabled) {
@@ -76,8 +73,8 @@ export class ElectronMainMenuFactory {
                     items.push({
                         label: menu.label,
                         icon: menu.icon,
-                        enabled: enabled,
-                        visible: visible,
+                        enabled: true,
+                        visible: true,
                         click: () => handler.execute()
                     });
                 }
