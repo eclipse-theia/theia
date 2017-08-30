@@ -5,7 +5,7 @@
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
   "dependencies": {
-    "@phosphor/widgets": "^0.1.7",
+    "@phosphor/widgets": "^1.5.0",
     "@types/body-parser": "^1.16.4",
     "@types/bunyan": "^1.8.0",
     "@types/express": "^4.0.36",
@@ -29,8 +29,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "theiaExtensions": [
-    {
+  "theiaExtensions": [{
       "frontend": "lib/browser/menu/browser-menu-module",
       "frontendElectron": "lib/electron-browser/menu/electron-menu-module"
     },

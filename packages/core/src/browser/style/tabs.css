@@ -21,23 +21,19 @@
   font-size: var(--theia-ui-font-size1);
 }
 
-
-.p-DockPanel-tabBar.p-mod-horizontal {
+.p-TabBar[data-orientation='horizontal'] {
   min-height: calc(var(--theia-private-horizontal-tab-height) + 2 * var(--theia-border-width));
 }
-
 
 .p-DockPanel-tabBar.p-mod-vertical {
   min-width: 80px;
 }
 
-
-.p-DockPanel-tabBar > .p-TabBar-content {
+.p-DockPanel-tabBar>.p-TabBar-content {
   align-items: flex-end;
   min-width: 0;
   min-height: 0;
 }
-
 
 .p-DockPanel-tabBar .p-TabBar-tab {
   flex: 0 1 var(--theia-private-horizontal-tab-width);
@@ -53,17 +49,17 @@
   overflow: visible;
 }
 
-
 .p-DockPanel-tabBar .p-TabBar-tab:hover:not(.p-mod-current) {
   background: var(--theia-layout-color1);
 }
-
 
 .p-DockPanel-tabBar .p-TabBar-tab:first-child {
   margin-left: 0;
 }
 
+
 /* This is a current tab of a tab bar in the dock panel: each tab bar has 1. */
+
 .p-DockPanel-tabBar .p-TabBar-tab.p-mod-current {
   background: var(--theia-layout-color0);
   color: var(--theia-ui-font-color0);
@@ -73,6 +69,7 @@
 
 
 /* This is the main application level active tab: only 1 exists. */
+
 .p-DockPanel-tabBar .p-TabBar-tab.theia-mod-active:before {
   position: absolute;
   top: calc(-1 * var(--theia-border-width));
@@ -85,15 +82,14 @@
 
 
 /* This is the left tab bar current tab: only 1 exists. */
+
 .p-TabBar-tab.p-mod-current {
   background: var(--theia-layout-color0);
 }
 
-
 .p-TabBar-tab.p-mod-current:hover {
   background: var(--theia-layout-color1);
 }
-
 
 .p-DockPanel-tabBar .p-TabBar.p-mod-left .p-TabBar-tab,
 .p-DockPanel-tabBar .p-TabBar.p-mod-right .p-TabBar-tab {
@@ -102,22 +98,18 @@
   line-height: 40px;
 }
 
-
 .p-DockPanel-tabBar .p-TabBar.p-mod-left .p-TabBar-tab {
   border-right: none;
 }
-
 
 .p-DockPanel-tabBar .p-TabBar.p-mod-right .p-TabBar-tab {
   border-left: none;
 }
 
-
 .p-DockPanel-tabBar .p-TabBar.p-mod-left .p-TabBar-tab:first-child,
 .p-DockPanel-tabBar .p-TabBar.p-mod-right .p-TabBar-tab:first-child {
   margin-top: 0;
 }
-
 
 .p-DockPanel-tabBar .p-TabBar.p-mod-left .p-TabBar-tab.p-mod-current,
 .p-DockPanel-tabBar .p-TabBar.p-mod-right .p-TabBar-tab.p-mod-current {
@@ -125,11 +117,9 @@
   max-width: 80px;
 }
 
-
 .p-DockPanel-tabBar .p-TabBar.p-mod-right .p-TabBar-tab.p-mod-current {
   transform: translateX(-1px);
 }
-
 
 .p-DockPanel-tabBar .p-TabBar-tabIcon,
 .p-DockPanel-tabBar .p-TabBar-tabLabel,
@@ -137,16 +127,16 @@
   display: inline-block;
 }
 
-
 .p-DockPanel-tabBar .p-TabBar-tabIcon {
   width: 14px;
   margin-top: 2px;
 }
+
 .p-TabBar-WindowTabLabel {
   margin-top: 4px;
 }
 
-.p-DockPanel-tabBar .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon {
+.p-DockPanel-tabBar .p-TabBar-tab.p-mod-closable>.p-TabBar-tabCloseIcon {
   margin-left: 4px;
   padding-top: 8px;
   background-size: 16px;
@@ -157,12 +147,10 @@
   background-repeat: no-repeat;
 }
 
-
-.p-DockPanel-tabBar .p-TabBar-tab.p-mod-closable.theia-mod-dirty > .p-TabBar-tabCloseIcon {
+.p-DockPanel-tabBar .p-TabBar-tab.p-mod-closable.theia-mod-dirty>.p-TabBar-tabCloseIcon {
   background-size: 10px;
   background-image: url(../icons/circle.svg);
 }
-
 
 .p-TabBar-tab.p-mod-drag-image {
   background: var(--theia-layout-color1);
