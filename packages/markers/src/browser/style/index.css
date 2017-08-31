@@ -1,0 +1,84 @@
+/*
+* Copyright (C) 2017 TypeFox and others.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+*/
+
+.theia-marker-container {
+    font-size: var(--theia-ui-font-size1);
+    color: var(--theia-ui-font-color0);
+}
+
+.theia-marker-container .theia-TreeNode {
+    width: 100%;
+}
+
+.theia-marker-container .theia-ExpansionToggle {
+    min-width: 16px;
+}
+
+.theia-marker-container .noMarkers {
+    margin: 5px;
+}
+
+.theia-marker-container .markerNode,
+.theia-marker-container .markerFileNode {
+    display: flex;
+}
+
+.theia-marker-container .markerNode {
+    width: calc(100% - 32px);
+}
+
+.theia-marker-container .markerNode div,
+.theia-marker-container .markerFileNode div {
+    margin-right: 5px;
+}
+
+.theia-marker-container .markerFileNode .path {
+    font-size: var(--theia-ui-font-size0);
+    color: var(--theia-ui-font-color2);
+    align-self: flex-end;
+    white-space: nowrap;
+}
+
+.theia-marker-container .error {
+    color: var(--theia-error-color0);
+}
+
+.theia-marker-container .warning {
+    color: var(--theia-warn-color0);
+}
+
+.theia-marker-container .information {
+    color: var(--theia-info-color0);
+}
+
+.theia-marker-container .hint {
+    color: var(--theia-success-color0);
+}
+
+.theia-marker-container .markerNode .position,
+.theia-marker-container .markerNode .owner {
+    color: var(--theia-ui-font-color2);
+}
+
+.theia-marker-container .markerNode .position {
+    margin-left: 5px;
+}
+
+.theia-marker-container .markerNode .message {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.theia-marker-container .markerFileNode .counter {
+    background-color: var(--theia-ui-font-color2);
+    border-radius: 7px;
+    padding: 1px 4px;
+    text-align: center;
+    align-self: center;
+    font-size: var(--theia-ui-font-size0);
+}

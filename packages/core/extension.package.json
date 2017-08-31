@@ -24,15 +24,14 @@
     "vscode-uri": "^1.0.1",
     "vscode-ws-jsonrpc": "0.0.1-alpha.5",
     "ws": "^3.0.0",
-    "yargs": "^8.0.2"
+    "yargs": "^8.0.2",
+    "vscode-languageserver-types": "^3.3.0"
   },
   "publishConfig": {
     "access": "public"
   },
-  "theiaExtensions": [
-    {
-      "frontend": "lib/browser/menu/browser-menu-module",
-      "frontendElectron": "lib/electron-browser/menu/electron-menu-module"
-    }
-  ]
+  "theiaExtensions": [{
+    "frontend": "lib/browser/menu/browser-menu-module",
+    "frontendElectron": "lib/electron-browser/menu/electron-menu-module"
+  }]
 }

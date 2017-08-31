@@ -121,8 +121,13 @@
     "@types/node" "*"
 
 "@types/express-serve-static-core@*":
+<<<<<<< HEAD
   version "4.0.52"
   resolved "https://registry.yarnpkg.com/@types/express-serve-static-core/-/express-serve-static-core-4.0.52.tgz#77ab67fffc402ff6e480c87c71d799ba79880223"
+=======
+  version "4.0.50"
+  resolved "https://registry.yarnpkg.com/@types/express-serve-static-core/-/express-serve-static-core-4.0.50.tgz#c5a139b5d29d2305aae6d982f69cef36120beacf"
+>>>>>>> [Marker] File opener and context menu
   dependencies:
     "@types/node" "*"
 
@@ -140,8 +145,13 @@
     "@types/node" "*"
 
 "@types/fs-extra@^4.0.0":
+<<<<<<< HEAD
   version "4.0.2"
   resolved "https://registry.yarnpkg.com/@types/fs-extra/-/fs-extra-4.0.2.tgz#7b9b1bbf85962cbe029b5a83c9b530d7c75af3ba"
+=======
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/@types/fs-extra/-/fs-extra-4.0.1.tgz#d59830d4927d2618a840e44b2076fd85408e6889"
+>>>>>>> [Marker] File opener and context menu
   dependencies:
     "@types/node" "*"
 
@@ -181,12 +191,21 @@
   resolved "https://registry.yarnpkg.com/@types/minimatch/-/minimatch-2.0.29.tgz#5002e14f75e2d71e564281df0431c8c1b4a2a36a"
 
 "@types/mocha@^2.2.41":
+<<<<<<< HEAD
   version "2.2.43"
   resolved "https://registry.yarnpkg.com/@types/mocha/-/mocha-2.2.43.tgz#03c54589c43ad048cbcbfd63999b55d0424eec27"
 
 "@types/node@*", "@types/node@^8.0.24":
   version "8.0.28"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-8.0.28.tgz#86206716f8d9251cf41692e384264cbd7058ad60"
+=======
+  version "2.2.42"
+  resolved "https://registry.yarnpkg.com/@types/mocha/-/mocha-2.2.42.tgz#ab769f51d37646b6fe8d4a086a98c285b1fab3f5"
+
+"@types/node@*", "@types/node@^8.0.24":
+  version "8.0.26"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-8.0.26.tgz#4d58be925306fd22b1141085535a0268b8beb189"
+>>>>>>> [Marker] File opener and context menu
 
 "@types/serve-static@*":
   version "1.7.32"
@@ -948,8 +967,13 @@ caniuse-api@^1.5.2:
     lodash.uniq "^4.5.0"
 
 caniuse-db@^1.0.30000529, caniuse-db@^1.0.30000634, caniuse-db@^1.0.30000639:
+<<<<<<< HEAD
   version "1.0.30000727"
   resolved "https://registry.yarnpkg.com/caniuse-db/-/caniuse-db-1.0.30000727.tgz#4e22593089b0f35c1b2adcfc28234493a21a4b2e"
+=======
+  version "1.0.30000726"
+  resolved "https://registry.yarnpkg.com/caniuse-db/-/caniuse-db-1.0.30000726.tgz#9bb742f8d026a62df873bc03c06843d2255b60d7"
+>>>>>>> [Marker] File opener and context menu
 
 capture-stack-trace@^1.0.0:
   version "1.0.0"
@@ -1008,6 +1032,14 @@ chalk@^1.0.0, chalk@^1.1.1, chalk@^1.1.3:
     supports-color "^2.0.0"
 
 chalk@^2.0.0, chalk@^2.0.1, chalk@^2.1.0:
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/chalk/-/chalk-2.1.0.tgz#ac5becf14fa21b99c6c92ca7a7d7cfd5b17e743e"
+  dependencies:
+    ansi-styles "^3.1.0"
+    escape-string-regexp "^1.0.5"
+    supports-color "^4.0.0"
+
+chalk@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/chalk/-/chalk-2.1.0.tgz#ac5becf14fa21b99c6c92ca7a7d7cfd5b17e743e"
   dependencies:
@@ -1857,8 +1889,13 @@ dedent@^0.7.0:
   resolved "https://registry.yarnpkg.com/dedent/-/dedent-0.7.0.tgz#2495ddbaf6eb874abb0e1be9df22d2e5a544326c"
 
 deep-eql@^3.0.0:
+<<<<<<< HEAD
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/deep-eql/-/deep-eql-3.0.1.tgz#dfc9404400ad1c8fe023e7da1df1c147c4b444df"
+=======
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/deep-eql/-/deep-eql-3.0.0.tgz#b9162a49cf4b54d911425975ac95d03e56448471"
+>>>>>>> [Marker] File opener and context menu
   dependencies:
     type-detect "^4.0.0"
 
@@ -1920,7 +1957,11 @@ delegates@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/delegates/-/delegates-1.0.0.tgz#84c6e159b81904fdca59a0ef44cd870d31250f9a"
 
+<<<<<<< HEAD
 depd@1.1.1, depd@~1.1.1:
+=======
+depd@1.1.1, depd@~1.1.0, depd@~1.1.1:
+>>>>>>> [Marker] File opener and context menu
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/depd/-/depd-1.1.1.tgz#5783b4e1c459f06fa5ca27f991f3d06e7a310359"
 
@@ -1963,9 +2004,19 @@ diff@3.2.0:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/diff/-/diff-3.2.0.tgz#c9ce393a4b7cbd0b058a725c93df299027868ff9"
 
+<<<<<<< HEAD
 diff@^3.1.0, diff@^3.2.0:
   version "3.3.1"
   resolved "https://registry.yarnpkg.com/diff/-/diff-3.3.1.tgz#aa8567a6eed03c531fc89d3f711cd0e5259dec75"
+=======
+diff@^3.1.0:
+  version "3.3.1"
+  resolved "https://registry.yarnpkg.com/diff/-/diff-3.3.1.tgz#aa8567a6eed03c531fc89d3f711cd0e5259dec75"
+
+diff@^3.2.0:
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/diff/-/diff-3.3.0.tgz#056695150d7aa93237ca7e378ac3b1682b7963b9"
+>>>>>>> [Marker] File opener and context menu
 
 diffie-hellman@^5.0.0:
   version "5.0.2"
@@ -2107,8 +2158,13 @@ electron-rebuild@^1.5.11:
     yargs "^7.0.2"
 
 electron-to-chromium@^1.2.7:
+<<<<<<< HEAD
   version "1.3.21"
   resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.21.tgz#a967ebdcfe8ed0083fc244d1894022a8e8113ea2"
+=======
+  version "1.3.20"
+  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.3.20.tgz#2eedd5ccbae7ddc557f68ad1fce9c172e915e4e5"
+>>>>>>> [Marker] File opener and context menu
 
 electron-window@^0.8.0:
   version "0.8.1"
@@ -2401,9 +2457,15 @@ extract-zip@^1.0.3, extract-zip@~1.6.5:
     mkdirp "0.5.0"
     yauzl "2.4.1"
 
+<<<<<<< HEAD
 extsprintf@1.3.0, extsprintf@^1.2.0:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/extsprintf/-/extsprintf-1.3.0.tgz#96918440e3041a7a414f8c52e3c574eb3c3e1e05"
+=======
+extsprintf@1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/extsprintf/-/extsprintf-1.0.2.tgz#e1080e0658e300b06294990cc70e1502235fd550"
+>>>>>>> [Marker] File opener and context menu
 
 fancy-log@^1.1.0:
   version "1.3.0"
@@ -2687,7 +2749,11 @@ fs-extra@^3.0.1:
     jsonfile "^3.0.0"
     universalify "^0.1.0"
 
+<<<<<<< HEAD
 fs-extra@^4.0.0, fs-extra@^4.0.1:
+=======
+fs-extra@^4.0.0:
+>>>>>>> [Marker] File opener and context menu
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-4.0.1.tgz#7fc0c6c8957f983f57f306a24e5b9ddd8d0dd880"
   dependencies:
@@ -2743,7 +2809,11 @@ fullname@^3.2.0:
     passwd-user "^2.1.0"
     rc "^1.1.6"
 
+<<<<<<< HEAD
 function-bind@^1.0.2, function-bind@^1.1.0, function-bind@^1.1.1, function-bind@~1.1.0:
+=======
+function-bind@^1.0.2, function-bind@^1.1.0:
+>>>>>>> [Marker] File opener and context menu
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/function-bind/-/function-bind-1.1.1.tgz#a56899d3ea3c9bab874bb9773b7c5ede92f4895d"
 
@@ -3310,7 +3380,11 @@ http-deceiver@^1.2.7:
   version "1.2.7"
   resolved "https://registry.yarnpkg.com/http-deceiver/-/http-deceiver-1.2.7.tgz#fa7168944ab9a519d337cb0bec7284dc3e723d87"
 
+<<<<<<< HEAD
 http-errors@1.6.2, http-errors@~1.6.1, http-errors@~1.6.2:
+=======
+http-errors@~1.6.1, http-errors@~1.6.2:
+>>>>>>> [Marker] File opener and context menu
   version "1.6.2"
   resolved "https://registry.yarnpkg.com/http-errors/-/http-errors-1.6.2.tgz#0a002cc85707192a7e7946ceedc11155f60ec736"
   dependencies:
@@ -4533,8 +4607,25 @@ miller-rabin@^4.0.0:
 "mime-db@>= 1.29.0 < 2", mime-db@~1.30.0:
   version "1.30.0"
   resolved "https://registry.yarnpkg.com/mime-db/-/mime-db-1.30.0.tgz#74c643da2dd9d6a45399963465b26d5ca7d71f01"
+<<<<<<< HEAD
 
 mime-types@^2.1.12, mime-types@~2.1.15, mime-types@~2.1.16, mime-types@~2.1.7:
+  version "2.1.17"
+  resolved "https://registry.yarnpkg.com/mime-types/-/mime-types-2.1.17.tgz#09d7a393f03e995a79f8af857b70a9e0ab16557a"
+=======
+
+mime-db@~1.29.0:
+  version "1.29.0"
+  resolved "https://registry.yarnpkg.com/mime-db/-/mime-db-1.29.0.tgz#48d26d235589651704ac5916ca06001914266878"
+
+mime-types@^2.1.12, mime-types@~2.1.7:
+  version "2.1.16"
+  resolved "https://registry.yarnpkg.com/mime-types/-/mime-types-2.1.16.tgz#2b858a52e5ecd516db897ac2be87487830698e23"
+>>>>>>> [Marker] File opener and context menu
+  dependencies:
+    mime-db "~1.30.0"
+
+mime-types@~2.1.15, mime-types@~2.1.16:
   version "2.1.17"
   resolved "https://registry.yarnpkg.com/mime-types/-/mime-types-2.1.17.tgz#09d7a393f03e995a79f8af857b70a9e0ab16557a"
   dependencies:
@@ -4636,7 +4727,11 @@ moment@^2.10.6, moment@^2.6.0:
   version "2.18.1"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.18.1.tgz#c36193dd3ce1c2eed2adb7c802dbbc77a81b1c0f"
 
+<<<<<<< HEAD
 monaco-css@^1.3.3:
+=======
+monaco-css@^1.3.2:
+>>>>>>> [Marker] File opener and context menu
   version "1.3.3"
   resolved "https://registry.yarnpkg.com/monaco-css/-/monaco-css-1.3.3.tgz#1463973676102cf00d931bcf1296b05177fa5b8b"
 
@@ -4648,11 +4743,19 @@ monaco-editor@^0.10.0:
   version "0.10.0"
   resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.10.0.tgz#6604932585fe9c1f993f000a503d0d20fbe5896a"
 
+<<<<<<< HEAD
 monaco-html@^1.3.2:
   version "1.3.2"
   resolved "https://registry.yarnpkg.com/monaco-html/-/monaco-html-1.3.2.tgz#588f0bd795f3b3ed2bf256c5f8f2d2bf6b13be82"
 
 monaco-json@^1.3.2:
+=======
+monaco-html@^1.3.1:
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/monaco-html/-/monaco-html-1.3.2.tgz#588f0bd795f3b3ed2bf256c5f8f2d2bf6b13be82"
+
+monaco-json@^1.3.1:
+>>>>>>> [Marker] File opener and context menu
   version "1.3.2"
   resolved "https://registry.yarnpkg.com/monaco-json/-/monaco-json-1.3.2.tgz#92ecca1ef4090e9db48fb0bac2af02e32882a955"
 
@@ -4724,7 +4827,15 @@ mv@^2.1.1, mv@~2:
     ncp "~2.0.0"
     rimraf "~2.4.0"
 
+<<<<<<< HEAD
 nan@^2.3.0, nan@^2.3.3, nan@^2.6.2:
+=======
+nan@2.5.0:
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.5.0.tgz#aa8f1e34531d807e9e27755b234b4a6ec0c152a8"
+
+nan@^2.3.0, nan@^2.3.3:
+>>>>>>> [Marker] File opener and context menu
   version "2.7.0"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.7.0.tgz#d95bf721ec877e08db276ed3fc6eb78f9083ad46"
 
@@ -5798,6 +5909,10 @@ qs@6.5.0:
   version "6.5.0"
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.5.0.tgz#8d04954d364def3efc55b5a0793e1e2c8b1e6e49"
 
+qs@6.5.0:
+  version "6.5.0"
+  resolved "https://registry.yarnpkg.com/qs/-/qs-6.5.0.tgz#8d04954d364def3efc55b5a0793e1e2c8b1e6e49"
+
 qs@~6.3.0:
   version "6.3.2"
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.3.2.tgz#e75bd5f6e268122a2a0e0bda630b2550c166502c"
@@ -6546,8 +6661,13 @@ source-map-resolve@^0.3.0:
     urix "~0.1.0"
 
 source-map-support@^0.4.0:
+<<<<<<< HEAD
   version "0.4.18"
   resolved "https://registry.yarnpkg.com/source-map-support/-/source-map-support-0.4.18.tgz#0286a6de8be42641338594e97ccea75f0a2c585f"
+=======
+  version "0.4.17"
+  resolved "https://registry.yarnpkg.com/source-map-support/-/source-map-support-0.4.17.tgz#6f2150553e6375375d0ccb3180502b78c18ba430"
+>>>>>>> [Marker] File opener and context menu
   dependencies:
     source-map "^0.5.6"
 
@@ -6567,9 +6687,19 @@ source-map@^0.4.4:
   dependencies:
     amdefine ">=0.0.4"
 
+<<<<<<< HEAD
 source-map@^0.5.3, source-map@^0.5.6, source-map@^0.5.7, source-map@~0.5.1, source-map@~0.5.3:
   version "0.5.7"
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.5.7.tgz#8a039d2d1021d22d1ea14c80d8ea468ba2ef3fcc"
+=======
+source-map@^0.5.3, source-map@^0.5.6, source-map@^0.5.7, source-map@~0.5.3:
+  version "0.5.7"
+  resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.5.7.tgz#8a039d2d1021d22d1ea14c80d8ea468ba2ef3fcc"
+
+source-map@~0.5.1:
+  version "0.5.6"
+  resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.5.6.tgz#75ce38f52bf0733c5a7f0c118d81334a2bb5f412"
+>>>>>>> [Marker] File opener and context menu
 
 sparkles@^1.0.0:
   version "1.0.0"
@@ -6861,7 +6991,19 @@ supports-color@^3.1.0, supports-color@^3.1.1, supports-color@^3.1.2, supports-co
   dependencies:
     has-flag "^1.0.0"
 
+<<<<<<< HEAD
 supports-color@^4.0.0, supports-color@^4.4.0:
+  version "4.4.0"
+  resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-4.4.0.tgz#883f7ddabc165142b2a61427f3352ded195d1a3e"
+=======
+supports-color@^4.0.0:
+  version "4.2.1"
+  resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-4.2.1.tgz#65a4bb2631e90e02420dba5554c375a4754bb836"
+>>>>>>> [Marker] File opener and context menu
+  dependencies:
+    has-flag "^2.0.0"
+
+supports-color@^4.4.0:
   version "4.4.0"
   resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-4.4.0.tgz#883f7ddabc165142b2a61427f3352ded195d1a3e"
   dependencies:
@@ -7562,7 +7704,11 @@ vm-browserify@0.0.4:
   dependencies:
     indexof "0.0.1"
 
+<<<<<<< HEAD
 vscode-base-languageclient@^0.0.1-alpha.2, vscode-base-languageclient@^0.0.1-alpha.3:
+=======
+vscode-base-languageclient@^0.0.1-alpha.2:
+>>>>>>> [Marker] File opener and context menu
   version "0.0.1-alpha.3"
   resolved "https://registry.yarnpkg.com/vscode-base-languageclient/-/vscode-base-languageclient-0.0.1-alpha.3.tgz#9b68a8e28a5c84c4e1298b69bedd356ed2e663be"
   dependencies:
