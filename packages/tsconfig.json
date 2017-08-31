@@ -59,6 +59,9 @@
             ],
             "@theia/process/lib*": [
                 "process/src/*"
+            ],
+            "@theia/markers/lib/*": [
+                "markers/src/*"
             ]
         }
     },

@@ -16,7 +16,7 @@ import { NAVIGATOR_CONTEXT_MENU } from "./navigator-menu";
 export const FILE_NAVIGATOR_PROPS = <TreeProps>{
     ...defaultTreeProps,
     contextMenuPath: NAVIGATOR_CONTEXT_MENU
-}
+};
 
 export function createFileNavigatorContainer(parent: interfaces.Container): Container {
     const child = createFileTreeContainer(parent);
