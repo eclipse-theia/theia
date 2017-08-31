@@ -23,11 +23,12 @@ import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-servi
 import { HumaneMessageClient } from './humane-message-client';
 import { WebSocketConnectionProvider } from './messaging';
 import { CommonFrontendContribution } from './common-frontend-contribution';
+import { QuickCommandService, QuickCommandFrontendContribution } from './quick-open';
 
 import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
 
-export const frontendApplicationModule = new ContainerModule(bind => {
+export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplication).toSelf().inSingletonScope();
     bindContributionProvider(bind, FrontendApplicationContribution);
 
@@ -66,5 +67,13 @@ export const frontendApplicationModule = new ContainerModule(bind => {
     bind(CommonFrontendContribution).toSelf().inSingletonScope();
     [CommandContribution, KeybindingContribution, MenuContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(CommonFrontendContribution)).inSingletonScope()
+    );
+
+    if (!isBound(QuickCommandService)) {
+        bind(QuickCommandService).toSelf().inSingletonScope();
+    }
+    bind(QuickCommandFrontendContribution).toSelf().inSingletonScope();
+    [CommandContribution, KeybindingContribution].forEach(serviceIdentifier =>
+        bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(QuickCommandFrontendContribution)).inSingletonScope()
     );
 });

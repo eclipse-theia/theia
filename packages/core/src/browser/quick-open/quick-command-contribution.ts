@@ -6,19 +6,19 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Command, CommandContribution, CommandRegistry, Key, KeyCode, KeybindingContribution, KeybindingRegistry } from '@theia/core';
-import { MonacoQuickCommandService } from './monaco-quick-command-service';
+import { QuickCommandService } from './quick-command-service';
+import { Command, CommandRegistry, CommandContribution, Key, KeyCode, KeybindingRegistry, KeybindingContribution } from '../../common';
 
 export const quickCommand: Command = {
-    id: 'core.quickCommand',
+    id: 'quickCommand',
     label: 'Quick Command'
 };
 
 @injectable()
-export class MonacoQuickCommandFrontendContribution implements CommandContribution, KeybindingContribution {
+export class QuickCommandFrontendContribution implements CommandContribution, KeybindingContribution {
 
-    @inject(MonacoQuickCommandService)
-    protected readonly quickCommnadService: MonacoQuickCommandService;
+    @inject(QuickCommandService)
+    protected readonly quickCommnadService: QuickCommandService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickCommand, {
