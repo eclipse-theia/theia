@@ -126,7 +126,7 @@ export class MonacoEditorProvider {
         const quickOpenController = control._contributions['editor.controller.quickOpenController'];
         quickOpenController.run = options => {
             const selection = control.getSelection();
-            this.quickOpenService.open({
+            this.quickOpenService.internalOpen({
                 ...options,
                 onClose: canceled => {
                     quickOpenController.clearDecorations();

@@ -7,6 +7,7 @@
 
 import { ContainerModule, decorate, injectable } from "inversify";
 import { MenuContribution, CommandContribution, KeybindingContribution } from "@theia/core/lib/common";
+import { QuickOpenService } from "@theia/core/lib/browser";
 import { Languages, Workspace } from "@theia/languages/lib/common";
 import { TextEditorProvider } from "@theia/editor/lib/browser";
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
@@ -21,8 +22,6 @@ import { MonacoModelResolver } from "./monaco-model-resolver";
 import { MonacoContextMenuService } from "./monaco-context-menu";
 import { MonacoCommandService, MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoCommandRegistry } from './monaco-command-registry';
-import { MonacoQuickCommandFrontendContribution } from './monaco-quick-command-contribution';
-import { MonacoQuickCommandService } from './monaco-quick-command-service';
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
 
 decorate(injectable(), MonacoToProtocolConverter);
@@ -30,7 +29,7 @@ decorate(injectable(), ProtocolToMonacoConverter);
 
 import '../../src/browser/style/index.css';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoToProtocolConverter).toSelf().inSingletonScope();
     bind(ProtocolToMonacoConverter).toSelf().inSingletonScope();
 
@@ -56,9 +55,7 @@ export default new ContainerModule(bind => {
     bind(KeybindingContribution).to(MonacoKeybindingContribution).inSingletonScope();
 
     bind(MonacoQuickOpenService).toSelf().inSingletonScope();
-    bind(MonacoQuickCommandService).toSelf().inSingletonScope();
-    bind(MonacoQuickCommandFrontendContribution).toSelf().inSingletonScope();
-    [CommandContribution, KeybindingContribution].forEach(serviceIdentifier =>
-        bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(MonacoQuickCommandFrontendContribution)).inSingletonScope()
-    );
+    (isBound(QuickOpenService) ? rebind : bind)(QuickOpenService).toDynamicValue(ctx =>
+        ctx.container.get(MonacoQuickOpenService)
+    ).inSingletonScope();
 });
