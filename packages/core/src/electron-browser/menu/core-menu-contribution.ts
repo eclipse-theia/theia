@@ -6,7 +6,8 @@
  */
 
 import { injectable } from "inversify";
-import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR, CommonCommands } from "../../common";
+import { CommonCommands } from "../../browser";
+import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR } from "../../common";
 
 export namespace ElectronMenus {
     export const HELP = [MAIN_MENU_BAR, "4_help"];

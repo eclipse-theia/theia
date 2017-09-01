@@ -6,12 +6,8 @@
  */
 
 import { injectable } from "inversify";
-<<<<<<< HEAD
-import { MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
-import { CommonCommands } from '@theia/core/lib/browser';
-=======
-import { MenuContribution, MenuModelRegistry, CommonCommands, MAIN_MENU_BAR } from "@theia/core/lib/common";
->>>>>>> 9748b0e... GH-210: Registered `selection` commands, handlers and menu items.
+import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR } from "@theia/core/lib/common";
+import { CommonCommands } from "@theia/core/lib/browser";
 import { EDITOR_CONTEXT_MENU_ID } from "@theia/editor/lib/browser";
 import { MonacoSelectionCommands } from "./monaco-command";
 import MenuRegistry = monaco.actions.MenuRegistry;
