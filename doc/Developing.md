@@ -4,7 +4,7 @@ the world of Theia development.  Are you in a hurry?  See the [Quick Start](#qui
 # How to build Theia and the example applications
 Theia is a framework to build IDEs, so you can't really "run" Theia itself.
 However, you can run the example applications included in its repository.  One
-is a browser-based IDE and the other is the electron-based equivalent.
+is a browser-based IDE and the other is the Electron-based equivalent.
 
 The following instructions are for Linux and macOS.
 
@@ -15,7 +15,7 @@ For Windows instructions [click here](#building-on-windows).
  * [**Clone the repository**](#clone-the-repository)
  * [**Build core, extensions and examples packages**](#build-core-extensions-and-examples-packages)
  * [**Run the browser-based example application**](#run-the-browser-based-example-application)
- * [**Run the electron-based example application**](#run-the-electron-based-example-application)
+ * [**Run the Electron-based example application**](#run-the-electron-based-example-application)
  * [**Rebuilding**](#rebuilding)
  * [**Watching**](#watching)
 	 * [core and extension packages](#core-and-extension-packages)
@@ -24,7 +24,7 @@ For Windows instructions [click here](#building-on-windows).
 	 * [Debug the browser example's backend](#debug-the-browser-examples-backend)
 	 * [Debug the browser example's frontend](#debug-the-browser-examples-frontend)
 	 * [Debug the browser example's frontend and backend at the same time](#debug-the-browser-examples-frontend-and-backend-at-the-same-time)
-	 * [Debug the electron example](#debug-the-electron-example)
+	 * [Debug the Electron example](#debug-the-electron-example)
 	 * [Issues](#issues)
  * [**Testing**](#testing)
  * [**Code coverage**](#code-coverage)
@@ -38,9 +38,9 @@ For Windows instructions [click here](#building-on-windows).
 * [Yarn package manager](https://yarnpkg.com/en/docs/install)
 * git
 
-So far it has been confirmed that there are some problems and errors using nodejs 8.0+ with Theia. As of now, nodejs 7.10.0 is confirmed to be working well and is the currently recommended versions.
+So far it has been confirmed that there are some problems and errors using Node.js 8.0+ with Theia. As of now, Node.js 7.10.0 is confirmed to be working well and is the currently recommended versions.
 
-[nvm](https://github.com/creationix/nvm) is recommended to easily switch between node versions.
+[nvm](https://github.com/creationix/nvm) is recommended to easily switch between Node.js versions.
 
 ## Quick Start
 
@@ -54,7 +54,7 @@ To build and run the browser example:
 
 Start your browser on http://localhost:3000.
 
-To build and run the electron example:
+To build and run the Electron example:
 
     git clone https://github.com/theia-ide/theia \
     && cd theia \
@@ -82,8 +82,8 @@ You can download dependencies and build it using:
 
 This command does a few things:
 
- - downloads node package dependencies
- - generate package.json for node packages
+ - downloads Node.js package dependencies
+ - generate package.json for Node.js packages
  - link core, extensions and examples packages
  - build core, extensions and examples packages
 
@@ -96,19 +96,19 @@ We can start the application from the examples/browser directory with:
 This command starts the backend application, a small web server and a browser
 tab with the frontend.
 
-If you rebuild native node packages for electron then 
+If you rebuild native Node.js packages for Electron then 
 rollback these changes before starting the browser example
 by running from the root directory:
 
     yarn run rebuild:browser
 
-## Run the electron-based example application
+## Run the Electron-based example application
 
 From the root directory run:
 
     yarn run rebuild:electron
 
-This command rebuilds native node packages against the version of node used by electron.
+This command rebuilds native Node.js packages against the version of Node.js used by Electron.
 
 It can also be started from the examples/electron directory with:
 
@@ -135,7 +135,7 @@ To rebuild each time a change is detected in frontend or backend you can run:
 
 ## Debugging
 
-To debug an example using VSCode:
+To debug an example using VS Code:
 
 ### Debug the browser example's backend
 
@@ -150,18 +150,18 @@ To debug an example using VSCode:
 ### Debug the browser example's frontend and backend at the same time
 
 - create a symlink to theia directory `ln -s theia theia-frontend`
-- Open one vscode in theia directory.
-- Open another vscode in theia-frontend directory.
-- In one vscode window: start the debug tab and run the `Launch Backend` configuration.
-- In the other vscode window: start the debug tab and run the `Launch Frontend`
+- Open one VS Code in theia directory.
+- Open another VS Code in theia-frontend directory.
+- In one VS Code window: start the debug tab and run the `Launch Backend` configuration.
+- In the other VS Code window: start the debug tab and run the `Launch Frontend`
   configuration.
 
-### Debug the electron example
+### Debug the Electron example
 
 This one you can build as usual with `yarn run build` and then use Chrome's
 dev tools to debug.
 
-There's an issue debugging with vscode it seems electron runs at 100% and
+There's an issue debugging with VS Code it seems Electron runs at 100% and
 debugging doesn't work.
 
 ### Issues
@@ -178,7 +178,7 @@ See the [testing](Testing.md) documentation.
 
     yarn run test
 
-By default this will generate the code coverage for the tests in a HTML format, which can be easily viewed with your browser (chrome/firefox/edge/safari etc.) by opening `packages/<package name>/coverage/index.html`
+By default this will generate the code coverage for the tests in a HTML format, which can be easily viewed with your browser (Chrome/Firefox/Edge/Safari etc.) by opening `packages/<package name>/coverage/index.html`
 
 ## Building on Windows
 
