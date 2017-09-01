@@ -6,6 +6,7 @@
  */
 
 import { injectable, inject } from 'inversify';
+import { ProcessManager } from './process-manager';
 import { ILogger } from '../../common/logger';
 import { Process } from './process';
 import * as child from 'child_process';
@@ -32,8 +33,9 @@ export class RawProcess extends Process {
 
     constructor(
         @inject(RawProcessOptions) options: RawProcessOptions,
+        @inject(ProcessManager) processManager: ProcessManager,
         @inject(ILogger) logger: ILogger) {
-        super(logger);
+        super(processManager, logger);
 
         this.logger.debug(`Starting raw process : ${options.command},`
             + ` with args : ${options.args}, `
