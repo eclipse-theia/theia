@@ -3,13 +3,17 @@
     // Hover to view descriptions of existing attributes.
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
-    "configurations": [{
+    "configurations": [
+        {
             "type": "node",
             "request": "launch",
             "name": "Launch Electron Backend",
             "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+            "windows": {
+                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+            },
             "program": "${workspaceRoot}/examples/electron/src-gen/frontend/electron-main.js",
-            "protocol": "legacy",
+            "protocol": "inspector",
             "args": [
                 "--loglevel=debug",
                 "--hostname=localhost"

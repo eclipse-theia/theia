@@ -5,9 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable } from "inversify"
-import { CommandContribution, CommandRegistry } from "../../common"
-import * as electron from "electron"
+import * as electron from "electron";
+import { injectable } from "inversify";
+import { CommandContribution, CommandRegistry } from "../../common";
 
 @injectable()
 export class MenuCommandHandlers implements CommandContribution {
@@ -24,9 +24,8 @@ export class MenuCommandHandlers implements CommandContribution {
                 } else {
                     webContent.closeDevTools();
                 }
-                return null;
+                return undefined;
             }
         });
-
     }
 }
