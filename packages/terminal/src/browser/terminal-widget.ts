@@ -26,6 +26,8 @@ export interface TerminalWidgetOptions {
     caption: string,
     label: string
     destroyTermOnClose: boolean
+    /* attach to this existing terminal id */
+    attachId?: number
 }
 
 export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOptions> {
@@ -93,45 +95,35 @@ export class TerminalWidget extends BaseWidget {
         (this.term as any).fit();
     }
 
-    public async start(): Promise<void> {
+    /**
+     * Create a new shell terminal in the back-end and attach it to a
+     * new terminal widget.
+     * If id is provided attach to the terminal for this id.
+     */
+    public async start(id?: number): Promise<void> {
         this.registerResize();
-        const root = await this.workspaceService.root;
-        this.terminalId = await this.shellTerminalServer.create(
-            { rootURI: root.uri, cols: this.cols, rows: this.rows });
+
+        if (id === undefined) {
+            const root = await this.workspaceService.root;
+            this.terminalId = await this.shellTerminalServer.create(
+                { rootURI: root.uri, cols: this.cols, rows: this.rows });
+        } else {
+            this.terminalId = await this.shellTerminalServer.attach(id);
+        }
 
         /* An error has occurred in the backend.  */
-        if (this.terminalId === -1) {
+        if (this.terminalId === -1 || this.terminalId === undefined) {
             this.terminalId = undefined;
-            this.logger.error("Error creating terminal widget, see the backend error log for more information.  ");
+            if (id === undefined) {
+                this.logger.error("Error creating terminal widget, see the backend error log for more information.  ");
+            } else {
+                this.logger.error(`Error attaching to terminal id ${id}, see the backend error log for more information.  `);
+            }
             return;
         }
 
-        this.terminalWatcher.onTerminalError((event: IBaseTerminalErrorEvent) => {
-            if (event.terminalId === this.terminalId) {
-                this.title.label = "<terminal error>";
-            }
-        });
-
-        this.terminalWatcher.onTerminalExit((event: IBaseTerminalExitEvent) => {
-            if (event.terminalId === this.terminalId) {
-                this.title.label = "<terminated>";
-            }
-        });
-
-        const socket = this.createWebSocket(this.terminalId.toString());
-        socket.onopen = () => {
-            (this.term as any).attach(socket);
-            (this.term as any)._initialized = true;
-        };
-        socket.onclose = () => {
-            this.title.label = `<terminated>`;
-        };
-        socket.onerror = (err) => {
-            console.error(err);
-        };
-        this.toDispose.push(Disposable.create(() =>
-            socket.close()
-        ));
+        this.connectSocket(this.terminalId);
+        this.monitorTerminal(this.terminalId);
     }
 
     protected createWebSocket(pid: string): WebSocket {
@@ -152,6 +144,37 @@ export class TerminalWidget extends BaseWidget {
         this.resizeTimer = setTimeout(() => {
             this.doResize()
         }, 500)
+    }
+
+    protected monitorTerminal(id: number) {
+        this.toDispose.push(this.terminalWatcher.onTerminalError((event: IBaseTerminalErrorEvent) => {
+            if (event.terminalId === id) {
+                this.title.label = "<terminal error>";
+            }
+        }));
+
+        this.toDispose.push(this.terminalWatcher.onTerminalExit((event: IBaseTerminalExitEvent) => {
+            if (event.terminalId === id) {
+                this.title.label = "<terminated>";
+            }
+        }));
+    }
+
+    protected connectSocket(id: number) {
+        const socket = this.createWebSocket(id.toString());
+        socket.onopen = () => {
+            (this.term as any).attach(socket);
+            (this.term as any)._initialized = true;
+        };
+        socket.onclose = () => {
+            this.title.label = `<terminated>`;
+        };
+        socket.onerror = err => {
+            console.error(err);
+        };
+        this.toDispose.push(Disposable.create(() =>
+            socket.close()
+        ));
     }
 
     private doResize() {
