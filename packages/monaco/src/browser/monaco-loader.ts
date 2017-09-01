@@ -42,19 +42,23 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/platform/keybinding/common/keybindingResolver',
                 'vs/base/common/keyCodes',
                 'vs/editor/browser/standalone/simpleServices',
+                'vs/editor/browser/standalone/standaloneServices',
                 'vs/base/parts/quickopen/common/quickOpen',
                 'vs/base/parts/quickopen/browser/quickOpenWidget',
                 'vs/base/parts/quickopen/browser/quickOpenModel',
-                'vs/base/common/filters'
+                'vs/base/common/filters',
+                'vs/platform/theme/common/styler'
             ], (basic: any, css: any, ts: any, html: any, json: any, commands: any, actions: any, registry: any, resolver: any,
-                keyCodes: any, simpleServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any, filters: any) => {
+                keyCodes: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
+                filters: any, styler: any) => {
                     const global: any = self;
                     global.monaco.commands = commands;
                     global.monaco.actions = actions;
                     global.monaco.keybindings = Object.assign({}, registry, resolver, keyCodes);
-                    global.monaco.services = simpleServices;
+                    global.monaco.services = Object.assign({}, simpleServices, standaloneServices);
                     global.monaco.quickOpen = Object.assign({}, quickOpen, quickOpenWidget, quickOpenModel);
                     global.monaco.filters = filters;
+                    global.monaco.theme = styler;
                     resolve();
                 });
         });

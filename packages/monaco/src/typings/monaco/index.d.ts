@@ -235,6 +235,25 @@ declare module monaco.services {
         executeCommand<T>(commandId: string, ...args: any[]): monaco.Promise<T>;
         executeCommand(commandId: string, ...args: any[]): monaco.Promise<any>;
     }
+
+    export class LazyStaticService<T> {
+        get(overrides?: monaco.editor.IEditorOverrideServices): T;
+    }
+
+    export interface IStandaloneThemeService extends monaco.theme.IThemeService { }
+
+    export module StaticServices {
+        export const standaloneThemeService: LazyStaticService<IStandaloneThemeService>;
+    }
+}
+
+declare module monaco.theme {
+    export interface ITheme { }
+    export interface IThemeService {
+        onThemeChange: monaco.IEvent<ITheme>;
+    }
+    export interface IThemable { }
+    export function attachQuickOpenStyler(widget: IThemable, themeService: IThemeService): monaco.IDisposable;
 }
 
 declare module monaco.quickOpen {
