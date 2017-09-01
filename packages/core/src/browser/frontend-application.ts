@@ -65,8 +65,8 @@ export class FrontendApplication {
 
     protected attachShell(): void {
         Widget.attach(this.shell, this.host);
-        const listener = () => this.shell.update();
-        window.addEventListener('resize', listener);
+        window.addEventListener('resize', () => this.shell.update());
+        document.addEventListener('keydown', event => this.keybindings.run(event), true);
     }
 
     protected get host(): HTMLElement {
