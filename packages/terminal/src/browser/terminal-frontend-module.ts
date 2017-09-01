@@ -9,12 +9,16 @@ import { ContainerModule, Container } from 'inversify'
 import { CommandContribution, MenuContribution, KeybindingContribution } from '@theia/core/lib/common';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalWidget, TerminalWidgetFactory, TerminalWidgetOptions } from './terminal-widget';
+import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
+import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
+import { TerminalWatcher } from '../common/terminal-watcher';
 
 import '../../src/browser/terminal.css';
 import 'xterm/dist/xterm.css';
 
 export default new ContainerModule(bind => {
     bind(TerminalWidget).toSelf().inTransientScope();
+    bind(TerminalWatcher).toSelf().inSingletonScope();
     bind(TerminalWidgetFactory).toFactory(ctx =>
         (options: TerminalWidgetOptions) => {
             const child = new Container({ defaultScope: 'Singleton' });
@@ -30,4 +34,10 @@ export default new ContainerModule(bind => {
             ctx.container.get(TerminalFrontendContribution)
         ).inSingletonScope();
     }
+
+    bind(ITerminalServer).toDynamicValue(ctx => {
+        const connection = ctx.container.get(WebSocketConnectionProvider);
+        const terminalWatcher = ctx.container.get(TerminalWatcher);
+        return connection.createProxy<ITerminalServer>(terminalPath, terminalWatcher.getTerminalClient());
+    }).inSingletonScope();
 });
