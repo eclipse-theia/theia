@@ -73,7 +73,8 @@ export class BrowserMainMenuFactory {
                             }
                         });
 
-                        const binding = keybindingRegistry.getKeybindingForCommand(command.id, false);
+                        const options = { active: false };
+                        const binding = keybindingRegistry.getKeybindingForCommand(command.id, options);
                         if (binding) {
                             const keys = binding.accelerator || [];
                             commands.addKeyBinding({
