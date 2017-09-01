@@ -13,6 +13,7 @@ For Windows instructions [click here](#building-on-windows).
  * [**Prerequisites**](#prerequisites)
  * [**Quick Start**](#quick-start)
  * [**Clone the repository**](#clone-the-repository)
+ * [**The repository structure**](#the-repository-structure)
  * [**Build core, extensions and examples packages**](#build-core-extensions-and-examples-packages)
  * [**Run the browser-based example application**](#run-the-browser-based-example-application)
  * [**Run the Electron-based example application**](#run-the-electron-based-example-application)
@@ -73,15 +74,15 @@ variable in your shell:
 
     THEIA=$PWD/theia
 
-## Repository structure
+## The repository structure
 
 Theia repository has multiple folders:
 
- * `generator-theia` is [yo generator](http://yeoman.io/) for Theia-based apps
- * `packages` folder contains core package and extensions to it
- * `examples` folder contains example apps using these packages, both Electron-based and browser-based
- * `doc` folder provides documentation about how Theia works and [how to get started](#quick-start) with it
- * the root folder is wiring everything together with [Lerna](https://lernajs.io/)
+ - `generator-theia` is [yo generator](http://yeoman.io/) for Theia-based apps
+ - `packages` folder contains the core package and extensions to it
+ - `examples` folder contains example apps using these packages, both Electron-based and browser-based
+ - `doc` folder provides documentation about how Theia works
+ - the root folder is wiring everything together with [Lerna](https://lernajs.io/)
 
 ## Build core, extensions and examples packages
 
@@ -131,7 +132,7 @@ In the root directory run:
     yarn run build
 ## Watching
 
-### core and extension packages
+### the core and extension packages
 
 To rebuild each time a change is detected run:
 
