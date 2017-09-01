@@ -46,9 +46,9 @@ before_install:
 install: yarn
 script: 
   - if [ ${TRAVIS_OS_NAME} = "linux" ]; then 
-      yarn test ;
+      travis_retry yarn test ;
     else
-      yarn test:theia ;
+      travis_retry yarn test:theia ;
     fi
 notifications:
   webhooks:
