@@ -7,7 +7,7 @@
 
 import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
-import { isOSX, CommandRegistry, ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry } from '../../common';
+import { isOSX, CommandRegistry, ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry, CommandHandler } from '../../common';
 import { FrontendApplication, FrontendApplicationContribution } from '../../browser';
 
 @injectable()
@@ -52,35 +52,32 @@ export class ElectronMainMenuFactory {
                     this.fillMenuTemplate(items, menu);
                 }
             } else if (menu instanceof ActionMenuNode) {
-                const command = this.commandRegistry.getCommand(menu.action.commandId);
-                if (!command) {
-                    throw new Error(`Unknown command id: ${menu.action.commandId}.`);
+                // That is only a sanity check at application startup.
+                if (!this.commandRegistry.getCommand(menu.action.commandId)) {
+                    throw new Error(`Unknown command with ID: ${menu.action.commandId}.`);
                 }
-                const handler = this.commandRegistry.getHandler(command.id) || {
-                    execute: () => { },
-                    isEnabled: () => false,
-                    isVisible: () => true
-                };
-                let enabled = true;
-                if (handler.isEnabled) {
-                    enabled = handler.isEnabled();
-                }
-                let visible = true;
-                if (handler.isVisible) {
-                    visible = handler.isVisible();
-                }
-                if (command) {
-                    items.push({
-                        label: menu.label,
-                        icon: menu.icon,
-                        enabled: true,
-                        visible: true,
-                        click: () => handler.execute()
-                    });
-                }
+                items.push({
+                    label: menu.label,
+                    icon: menu.icon,
+                    enabled: true, // https://github.com/theia-ide/theia/issues/446
+                    visible: true,
+                    click: () => this.onClick(menu.action.commandId)
+                });
             }
         }
         return items;
+    }
+
+    protected findHandler(commandId: string): CommandHandler | undefined {
+        const command = this.commandRegistry.getCommand(commandId);
+        return command ? this.commandRegistry.getActiveHandler(command!.id) : undefined;
+    }
+
+    protected onClick(commandId: string): void {
+        const handler = this.findHandler(commandId);
+        if (handler) {
+            handler.execute();
+        }
     }
 
     protected createOSXMenu(): Electron.MenuItemConstructorOptions {
