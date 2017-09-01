@@ -12,6 +12,7 @@ import { TerminalWidget, TerminalWidgetFactory, TerminalWidgetOptions } from './
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
+import { IShellTerminalServer, shellTerminalPath } from '../common/shell-terminal-protocol';
 
 import '../../src/browser/terminal.css';
 import 'xterm/dist/xterm.css';
@@ -39,5 +40,11 @@ export default new ContainerModule(bind => {
         const connection = ctx.container.get(WebSocketConnectionProvider);
         const terminalWatcher = ctx.container.get(TerminalWatcher);
         return connection.createProxy<ITerminalServer>(terminalPath, terminalWatcher.getTerminalClient());
+    }).inSingletonScope();
+
+    bind(IShellTerminalServer).toDynamicValue(ctx => {
+        const connection = ctx.container.get(WebSocketConnectionProvider);
+        const terminalWatcher = ctx.container.get(TerminalWatcher);
+        return connection.createProxy<ITerminalServer>(shellTerminalPath, terminalWatcher.getTerminalClient());
     }).inSingletonScope();
 });

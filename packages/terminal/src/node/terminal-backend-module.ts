@@ -14,10 +14,13 @@ import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { IBaseTerminalClient } from '../common/base-terminal-protocol';
 import { TerminalServer } from './terminal-server';
 import { ILogger } from '@theia/core/lib/common/logger';
+import { IShellTerminalServer, shellTerminalPath } from '../common/shell-terminal-protocol';
+import { ShellTerminalServer } from '../node/shell-terminal-server';
 
 export default new ContainerModule(bind => {
     bind(BackendApplicationContribution).to(TerminalBackendContribution);
     bind(ITerminalServer).to(TerminalServer).inSingletonScope();
+    bind(IShellTerminalServer).to(ShellTerminalServer).inSingletonScope();
     bind(ShellProcess).toSelf().inTransientScope();
     bind(ShellProcessFactory).toFactory(ctx =>
         (options: ShellProcessOptions) => {
@@ -37,6 +40,14 @@ export default new ContainerModule(bind => {
             const terminalServer = ctx.container.get<ITerminalServer>(ITerminalServer);
             terminalServer.setClient(client);
             return terminalServer;
+        })
+    ).inSingletonScope();
+
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler<IBaseTerminalClient>(shellTerminalPath, client => {
+            const shellTerminalServer = ctx.container.get<ITerminalServer>(IShellTerminalServer);
+            shellTerminalServer.setClient(client);
+            return shellTerminalServer;
         })
     ).inSingletonScope();
 });
