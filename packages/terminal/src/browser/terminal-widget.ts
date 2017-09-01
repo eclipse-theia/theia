@@ -9,6 +9,10 @@ import { inject, injectable } from "inversify";
 import { Disposable, ILogger } from '@theia/core/lib/common';
 import { Widget, BaseWidget, Message, WebSocketConnectionProvider, Endpoint } from '@theia/core/lib/browser';
 import { WorkspaceService } from "@theia/workspace/lib/browser";
+import { IShellTerminalServer } from '../common/shell-terminal-protocol';
+import { ITerminalServer } from '../common/terminal-protocol';
+import { IBaseTerminalErrorEvent, IBaseTerminalExitEvent } from '../common/base-terminal-protocol';
+import { TerminalWatcher } from '../common/terminal-watcher';
 import * as Xterm from 'xterm';
 import 'xterm/lib/addons/fit/fit';
 import 'xterm/lib/addons/attach/attach';
@@ -30,7 +34,7 @@ export interface TerminalWidgetOptions {
 @injectable()
 export class TerminalWidget extends BaseWidget {
 
-    private pid: string | undefined
+    private terminalId: number | undefined
     private term: Xterm
     private cols: number = 80
     private rows: number = 40
@@ -40,6 +44,8 @@ export class TerminalWidget extends BaseWidget {
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider,
         @inject(TerminalWidgetOptions) options: TerminalWidgetOptions,
+        @inject(IShellTerminalServer) protected readonly shellTerminalServer: ITerminalServer,
+        @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher,
         @inject(ILogger) protected readonly logger: ILogger
     ) {
         super();
@@ -72,41 +78,46 @@ export class TerminalWidget extends BaseWidget {
     }
 
     protected registerResize(): void {
-        let initialGeometry = (this.term as any).proposeGeometry()
+        const initialGeometry = (this.term as any).proposeGeometry()
         this.cols = initialGeometry.cols;
         this.rows = initialGeometry.rows;
 
         this.term.on('resize', size => {
-            if (!this.pid) {
+            if (!this.terminalId) {
                 return;
             }
             this.cols = size.cols
             this.rows = size.rows
-            let url = this.endpoint.getRestUrl().toString() + "/" + this.pid + '/size?cols=' + this.cols + '&rows=' + this.rows;
-            fetch(url, { method: 'POST' })
+            this.shellTerminalServer.resize(this.terminalId, this.cols, this.rows);
         });
         (this.term as any).fit()
     }
 
     public async start(): Promise<void> {
         const root = await this.workspaceService.root;
-        const res = await fetch(this.endpoint.getRestUrl().toString() + '?cols=' + this.cols + '&rows=' + this.rows, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ uri: root.uri })
-        });
-        this.pid = await res.text();
+        this.terminalId = await this.shellTerminalServer.create(
+            { rootURI: root.uri, cols: this.cols, rows: this.rows });
 
         /* An error has occured in the backend.  */
-        if (this.pid === '-1') {
-            this.pid = undefined;
+        if (this.terminalId === -1) {
+            this.terminalId = undefined;
             this.logger.error("Error creating terminal widget, see the backend error log for more information.  ");
             return;
         }
 
-        const socket = this.createWebSocket(this.pid);
+        this.terminalWatcher.onTerminalError((event: IBaseTerminalErrorEvent) => {
+            if (event.terminalId === this.terminalId) {
+                this.title.label = "<terminal error>";
+            }
+        });
+
+        this.terminalWatcher.onTerminalExit((event: IBaseTerminalExitEvent) => {
+            if (event.terminalId === this.terminalId) {
+                this.title.label = "<terminated>";
+            }
+        });
+
+        const socket = this.createWebSocket(this.terminalId.toString());
         socket.onopen = () => {
             (this.term as any).attach(socket);
             (this.term as any)._initialized = true;
