@@ -8,11 +8,16 @@
 import { ContainerModule, Container } from 'inversify';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { TerminalBackendContribution } from "./terminal-backend-contribution";
+import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common/messaging";
 import { ShellProcess, ShellProcessFactory, ShellProcessOptions } from './shell-process';
+import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
+import { IBaseTerminalClient } from '../common/base-terminal-protocol';
+import { TerminalServer } from './terminal-server';
 import { ILogger } from '@theia/core/lib/common/logger';
 
 export default new ContainerModule(bind => {
     bind(BackendApplicationContribution).to(TerminalBackendContribution);
+    bind(ITerminalServer).to(TerminalServer).inSingletonScope();
     bind(ShellProcess).toSelf().inTransientScope();
     bind(ShellProcessFactory).toFactory(ctx =>
         (options: ShellProcessOptions) => {
@@ -26,4 +31,12 @@ export default new ContainerModule(bind => {
             return child.get(ShellProcess);
         }
     );
+
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler<IBaseTerminalClient>(terminalPath, client => {
+            const terminalServer = ctx.container.get<ITerminalServer>(ITerminalServer);
+            terminalServer.setClient(client);
+            return terminalServer;
+        })
+    ).inSingletonScope();
 });
