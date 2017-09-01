@@ -36,22 +36,9 @@ export class KeyCode {
 
     public static createKeyCode(event: KeyboardEvent | Keystroke): KeyCode {
         if (event instanceof KeyboardEvent) {
-            const e: any = event;
+            const code = KeyCode.toCode(event);
 
             const sequence: string[] = [];
-            let code: string | undefined = undefined;
-            if (e.code) {
-                code = e.code;
-            } else if (e.keyIdentifier) {
-                code = e.keyIdentifier;
-            } else if (e.keyCode) {
-                code = Key.getKey(e.keyCode).code;
-            } else if (e.which) {
-                code = Key.getKey(e.which).code;
-            }
-            if (!code) {
-                throw new Error(`Cannot get key code from the keyboard event: ${event}.`);
-            }
             if (!Key.isModifier(code)) {
                 sequence.push(code);
             }
@@ -82,6 +69,30 @@ export class KeyCode {
                 .concat((event.modifiers || []).sort().map(modifier => `${modifier}`))
                 .join('+'));
         }
+    }
+
+    public static toCode(event: KeyboardEvent): string {
+        if (event.keyCode) {
+            const key = Key.getKey(event.keyCode);
+            if (key) {
+                return key.code;
+            }
+        }
+        if (event.code) {
+            return event.code;
+        }
+        // tslint:disable-next-line:no-any
+        const e = event as any;
+        if (e.keyIdentifier) {
+            return e.keyIdentifier;
+        }
+        if (event.which) {
+            const key = Key.getKey(event.which);
+            if (key) {
+                return key.code;
+            }
+        }
+        throw new Error(`Cannot get key code from the keyboard event: ${event}.`);
     }
 
     equals(event: KeyboardEvent | KeyCode): boolean {
