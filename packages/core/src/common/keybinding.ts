@@ -128,34 +128,44 @@ export class KeybindingRegistry {
     }
 
     /**
-     * The `checkAvailability` flag with `false` could come handy when we do not want to check whether the command is currently active or not.
+     * The `active` flag with `false` could come handy when we do not want to check whether the command is currently active or not.
      * For instance, when building the main menu, it could easily happen that the command is not yet active (no active editors and so on)
      * but still, we have to build the key accelerator.
      *
      * @param commandId the unique ID of the command for we the associated ke binding are looking for.
-     * @param checkAvailability if `false` then the availability of the command will not be checked. Default is `true`
+     * @param options if `active` is false` then the availability of the command will not be checked. Default is `true`
      */
-    getKeybindingForCommand(commandId: string, checkAvailability: boolean = true): Keybinding | undefined {
-        return (this.commands[commandId] || []).find(binding => this.isValid(binding, checkAvailability));
+    getKeybindingForCommand(commandId: string, options: { active: boolean } = ({ active: true })): Keybinding | undefined {
+        const bindings = this.commands[commandId];
+        if (!bindings) {
+            return undefined;
+        }
+        if (!options.active) {
+            return bindings[0];
+        }
+        return bindings.find(this.isActive);
     }
 
     /**
      * @param keyCode the key code of the binding we are searching.
      */
-    getKeybindingForKeyCode(keyCode: KeyCode): Keybinding | undefined {
-        return (this.keybindings[keyCode.keystroke] || []).find(binding => this.isValid(binding));
+    getKeybindingForKeyCode(keyCode: KeyCode, options: { active: boolean } = ({ active: true })): Keybinding | undefined {
+        const bindings = this.keybindings[keyCode.keystroke];
+        if (!bindings) {
+            return undefined;
+        }
+        if (!options.active) {
+            return bindings[0];
+        }
+        return bindings.find(this.isActive);
     }
 
-    private isValid(binding: Keybinding, checkAvailability: boolean = true): boolean {
+    private isActive(binding: Keybinding): boolean {
         const cmd = this.commandRegistry.getCommand(binding.commandId);
         if (cmd) {
-            if (checkAvailability) {
-                const handler = this.commandRegistry.getActiveHandler(cmd.id);
-                // TODO? isActive()
-                if (handler && (!handler.isVisible || handler.isVisible())) {
-                    return true;
-                }
-            } else {
+            const handler = this.commandRegistry.getActiveHandler(cmd.id);
+            // TODO? isActive()
+            if (handler && (!handler.isVisible || handler.isVisible())) {
                 return true;
             }
         }
