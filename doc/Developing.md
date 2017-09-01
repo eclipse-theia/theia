@@ -1,8 +1,7 @@
 This file contains tips to help you take (and understand) your first steps in
-the world of Theia development.  Are you in a hurry?  See the [tl;dr](#tldr).
+the world of Theia development.  Are you in a hurry?  See the [tl;dr](#quick-start).
 
 # How to build Theia and the example applications
-
 Theia is a framework to build IDEs, so you can't really "run" Theia itself.
 However, you can run the example applications included in its repository.  One
 is a browser-based IDE and the other is the electron-based equivalent.
@@ -11,9 +10,8 @@ The following instructions are for Linux and macOS.
 
 For Windows instructions [click here](#building-on-windows).
 
-# Table of Contents
  * [**Prerequisites**](#prerequisites)
- * [**tl;dr**](#tldr)
+ * [**Quick Start**](#quick-start)
  * [**Clone the repository**](#clone-the-repository)
  * [**Build core, extensions and examples packages**](#build-core-extensions-and-examples-packages)
  * [**Run the browser-based example application**](#run-the-browser-based-example-application)
@@ -44,7 +42,7 @@ So far it has been confirmed that there are some problems and errors using nodej
 
 [nvm](https://github.com/creationix/nvm) is recommended to easily switch between node versions.
 
-## tl;dr
+## Quick Start
 
 To build and run the browser example:
 
