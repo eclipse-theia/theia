@@ -8,10 +8,12 @@
 import { ContainerModule, Container } from 'inversify';
 import { RawProcess, RawProcessOptions, RawProcessFactory } from './raw-process';
 import { TerminalProcess, TerminalProcessOptions, TerminalProcessFactory } from './terminal-process';
+import { ProcessManager } from "./process-manager";
 import { ILogger } from '../../common/logger';
 
 export const processBackendModule = new ContainerModule(bind => {
     bind(RawProcess).toSelf().inTransientScope();
+    bind(ProcessManager).toSelf().inSingletonScope();
     bind(RawProcessFactory).toFactory(ctx =>
         (options: RawProcessOptions) => {
             const child = new Container({ defaultScope: 'Singleton' });

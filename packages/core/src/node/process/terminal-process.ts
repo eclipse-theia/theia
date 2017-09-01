@@ -9,6 +9,7 @@ import { injectable, inject } from 'inversify';
 import * as stream from 'stream';
 import { ILogger } from '../../common/logger';
 import { Process } from './process';
+import { ProcessManager } from './process-manager';
 
 const pty = require("node-pty");
 
@@ -46,8 +47,9 @@ export class TerminalProcess extends Process {
 
     constructor(
         @inject(TerminalProcessOptions) options: TerminalProcessOptions,
+        @inject(ProcessManager) processManager: ProcessManager,
         @inject(ILogger) logger: ILogger) {
-        super(logger);
+        super(processManager, logger);
 
         this.logger.debug(`Starting terminal process: ${options.command},`
             + ` with args : ${options.args}, `

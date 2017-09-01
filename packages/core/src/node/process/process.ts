@@ -5,7 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable } from "inversify";
+import { injectable, inject } from "inversify";
+import { ProcessManager } from './process-manager';
 import { ILogger } from '../../common/logger';
 import * as child from 'child_process';
 import * as stream from 'stream';
@@ -20,6 +21,7 @@ export interface IProcessExitEvent {
 @injectable()
 export abstract class Process implements Disposable {
 
+    readonly id: number;
     abstract readonly type: 'Raw' | 'Terminal';
     abstract pid: number;
     killed = false;
@@ -29,7 +31,10 @@ export abstract class Process implements Disposable {
     protected readonly exitEmitter = new Emitter<IProcessExitEvent>();
     protected readonly errorEmitter = new Emitter<Error>();
 
-    constructor(protected readonly logger: ILogger) {
+    constructor(
+        @inject(ProcessManager) protected readonly processManager: ProcessManager,
+        protected readonly logger: ILogger) {
+        this.id = this.processManager.register(this);
         this.exitEmitter.event(this.handleOnExit.bind(this));
         this.errorEmitter.event(this.handleOnError.bind(this));
     }
@@ -47,6 +52,8 @@ export abstract class Process implements Disposable {
     }
 
     dispose() {
+        this.processManager.delete(this);
+
         if (this.killed === false) {
             const p = new Promise<void>(resolve => {
                 this.kill();
