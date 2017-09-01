@@ -143,7 +143,7 @@ export class KeybindingRegistry {
         if (!options.active) {
             return bindings[0];
         }
-        return bindings.find(this.isActive);
+        return bindings.find(this.isActive.bind(this));
     }
 
     /**
@@ -157,7 +157,7 @@ export class KeybindingRegistry {
         if (!options.active) {
             return bindings[0];
         }
-        return bindings.find(this.isActive);
+        return bindings.find(this.isActive.bind(this));
     }
 
     private isActive(binding: Keybinding): boolean {
