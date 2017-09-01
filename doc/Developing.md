@@ -73,6 +73,16 @@ variable in your shell:
 
     THEIA=$PWD/theia
 
+## Repository structure
+
+Theia repository has multiple folders:
+
+ * `generator-theia` is [yo generator](http://yeoman.io/) for Theia-based apps
+ * `packages` folder contains core package and extensions to it
+ * `examples` folder contains example apps using these packages, both Electron-based and browser-based
+ * `doc` folder provides documentation about how Theia works and [how to get started](#quick-start) with it
+ * the root folder is wiring everything together with [Lerna](https://lernajs.io/)
+
 ## Build core, extensions and examples packages
 
 You can download dependencies and build it using:
