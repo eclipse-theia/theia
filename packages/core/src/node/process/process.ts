@@ -24,12 +24,12 @@ export abstract class Process implements Disposable {
     readonly id: number;
     abstract readonly type: 'Raw' | 'Terminal';
     abstract pid: number;
-    killed = false;
     abstract output: stream.Readable;
     protected abstract process: child.ChildProcess | undefined;
     protected abstract terminal: any;
     protected readonly exitEmitter = new Emitter<IProcessExitEvent>();
     protected readonly errorEmitter = new Emitter<Error>();
+    protected _killed = false;
 
     constructor(
         @inject(ProcessManager) protected readonly processManager: ProcessManager,
@@ -40,6 +40,14 @@ export abstract class Process implements Disposable {
     }
 
     abstract kill(signal?: string): void;
+
+    get killed() {
+        return this._killed;
+    }
+
+    set killed(killed: boolean) {
+        /* readonly public property */
+    }
 
     get onExit(): Event<IProcessExitEvent> {
         return this.exitEmitter.event;
@@ -74,14 +82,13 @@ export abstract class Process implements Disposable {
     }
 
     protected handleOnExit(event: IProcessExitEvent) {
-        this.killed = true;
+        this._killed = true;
         let logMsg = `Process ${this.pid} has exited with code ${event.code}`;
 
         if (event.signal !== undefined) {
             logMsg += `, signal : ${event.signal}.`;
         }
         this.logger.info(logMsg);
-
     }
 
     protected emitOnError(err: Error) {
@@ -89,7 +96,7 @@ export abstract class Process implements Disposable {
     }
 
     protected handleOnError(error: Error) {
-        this.killed = true;
+        this._killed = true;
         this.logger.error(error.toString());
     }
 }
