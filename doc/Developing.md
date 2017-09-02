@@ -36,10 +36,9 @@ For Windows instructions [click here](#building-on-windows).
 	 * [Root privileges errors](#root-privileges-errors)
 
 ## Prerequisites
+* Node.js v6.0 or higher
 * [Yarn package manager](https://yarnpkg.com/en/docs/install)
 * git
-
-So far it has been confirmed that there are some problems and errors using Node.js 8.0+ with Theia. As of now, Node.js 7.10.0 is confirmed to be working well and is the currently recommended versions.
 
 [nvm](https://github.com/creationix/nvm) is recommended to easily switch between Node.js versions.
 
