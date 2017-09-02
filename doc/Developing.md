@@ -82,6 +82,7 @@ Theia repository has multiple folders:
  - `packages` folder contains the core package and extensions to it
  - `examples` folder contains example apps using these packages, both Electron-based and browser-based
  - `doc` folder provides documentation about how Theia works
+ - `scripts` folder contains JavaScript scripts used by npm scripts when installing
  - the root folder is wiring everything together with [Lerna](https://lernajs.io/)
 
 ## Build core, extensions and examples packages
