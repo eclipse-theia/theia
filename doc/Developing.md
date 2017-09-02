@@ -93,10 +93,14 @@ You can download dependencies and build it using:
 
 This command does a few things:
 
- - downloads Node.js package dependencies
- - generate package.json for Node.js packages
- - link core, extensions and examples packages
- - build core, extensions and examples packages
+ - downloads Node.js package dependencies (Lerna and yo)
+ - executes the `prepare` script that uses:
+ 	- `lerna` to build `generator-theia` and link it in `/node_modules`
+ 	- `generator-theia` to generate package.json for Node.js packages (core, extensions, and examples)
+ 	- `lerna` to link these packages
+ 	- `lerna` to run `clean` and `build` scripts on extensions and examples
+
+To learn more and understand precisely what's going on, please read `/package.json`.
 
 ## Run the browser-based example application
 
