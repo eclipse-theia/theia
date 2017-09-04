@@ -20,14 +20,14 @@ For Windows instructions [click here](#building-on-windows).
  - [**Run the Electron-based example application**](#run-the-electron-based-example-application)
  - [**Rebuilding**](#rebuilding)
  - [**Watching**](#watching)
-     - [core and extension packages](#core-and-extension-packages)
-     - [the examples](#the-examples)
+     - [Watch the core and extension packages](#watch-the-core-and-extension-packages)
+     - [Watch the examples](#watch-the-examples)
  - [**Debugging**](#debugging)
      - [Debug the browser example's backend](#debug-the-browser-examples-backend)
      - [Debug the browser example's frontend](#debug-the-browser-examples-frontend)
      - [Debug the browser example's frontend and backend at the same time](#debug-the-browser-examples-frontend-and-backend-at-the-same-time)
-     - [Debug the Electron example](#debug-the-electron-example)
-     - [Issues](#issues)
+     - [Debug the Electron example's backend](#debug-the-electron-examples-backend)
+     - [Debug the Electron example's frontend](#debug-the-electron-examples-frontend)
  - [**Testing**](#testing)
  - [**Code coverage**](#code-coverage)
  - [**Building on Windows**](#building-on-windows)
@@ -105,17 +105,15 @@ This command does a few things:
      - `lerna` to link these packages
      - `lerna` to run `clean` and `build` scripts on extensions and examples
 
-To learn more and understand precisely what's going on, please read
-`/package.json`.
+To learn more and understand precisely what's going on, please look at scripts in [package.json](../package.json).
 
 ## Run the browser-based example application
 
-We can start the application from the examples/browser directory with:
+We can start the application from the [examples/browser](../examples/browser) directory with:
 
     yarn run start
 
-This command starts the backend application, a small web server, and a browser
-tab with the frontend.
+This command starts the backend application listening on port `3000`. The frontend application should be available on http://localhost:3000.
 
 If you rebuild native Node.js packages for Electron then rollback these changes
 before starting the browser example by running from the root directory:
@@ -131,7 +129,7 @@ From the root directory run:
 This command rebuilds native Node.js packages against the version of Node.js
 used by Electron.
 
-It can also be started from the examples/electron directory with:
+It can also be started from the [examples/electron](../examples/electron) directory with:
 
     yarn run start
 
@@ -143,13 +141,13 @@ In the root directory run:
 
 ## Watching
 
-### the core and extension packages
+### Watch the core and extension packages
 
 To rebuild each time a change is detected run:
 
     yarn run watch
 
-### the examples
+### Watch the examples
 
 To rebuild each time a change is detected in frontend or backend you can run:
 
@@ -157,41 +155,36 @@ To rebuild each time a change is detected in frontend or backend you can run:
 
 ## Debugging
 
-To debug an example using VS Code:
-
 ### Debug the browser example's backend
 
- - Start the debug tab and run the `Launch Backend` configuration.
+ - In VS Code: start the debug tab and run the `Launch Backend` configuration.
 
 ### Debug the browser example's frontend
 
- - Start the frontend using `yarn run start:frontend`
- - In a browser: open http://localhost:8080/ and use the dev tools for debugging
+ - Start the backend by using `yarn run start`.
+ - In a browser: Open http://localhost:3000/ and use the dev tools for debugging.
  - In VS Code: start the debug tab and run the `Launch Frontend` configuration.
 
 ### Debug the browser example's frontend and backend at the same time
 
- - Create a symlink to theia directory `ln -s theia theia-frontend`
+ - Create a symlink to theia directory `ln -s theia theia-frontend`.
  - Open one VS Code in theia directory.
  - Open another VS Code in theia-frontend directory.
  - In one VS Code window: start the debug tab and run the `Launch Backend`
  configuration.
  - In the other VS Code window: start the debug tab and run the `Launch Frontend`
  configuration.
+ 
+Note that some breakpoints don't hit because of [this issue](https://github.com/Microsoft/vscode/issues/28817).
 
-### Debug the Electron example
+### Debug the Electron example's backend
 
-This one you can build as usual with `yarn run build` and then use Chrome's
-dev tools to debug.
+ - In VS Code: Start the debug tab and run the `Launch Electron Backend` configuration.
 
-There's an issue debugging with VS Code it seems Electron runs at 100% and
-debugging doesn't work.
+### Debug the Electron example's frontend
 
-### Issues
-
-Note that we should be able to debug both frontend and backend in one window
-but I've [this issue](https://github.com/Microsoft/vscode/issues/28817) when
-trying that. tl;dr Some breakpoints don't hit.
+ - Start the backend by using `yarn run start`.
+ - In Electron: Help -> Toggle Electron Developer Tools.
 
 ## Testing
 
