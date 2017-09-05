@@ -7,13 +7,10 @@
 
 import { injectable } from 'inversify';
 import { isOSX } from '@theia/core/lib/common/os';
-import { CommonCommands } from '@theia/core/lib/common/commands-common';
 import { isFirefox, isIE, isWebKit } from '@theia/core/lib/browser';
-import { Keybinding, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/common/keybinding';
+import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/common/keybinding';
 import { Accelerator, Key, KeyCode, Keystroke, Modifier } from '@theia/core/lib/common/keys';
-import { MonacoSelectionCommands } from './monaco-command';
-import MenuRegistry = monaco.actions.MenuRegistry;
-import MenuId = monaco.actions.MenuId;
+import { MonacoCommands } from './monaco-command';
 import KeybindingsRegistry = monaco.keybindings.KeybindingsRegistry;
 import KeyCodeUtils = monaco.keybindings.KeyCodeUtils;
 import IKeybindingItem = monaco.keybindings.IKeybindingItem;
@@ -162,73 +159,70 @@ const MONACO_KEY_CODE_MAP: { [keyCode: number]: number } = {};
 export class MonacoKeybindingContribution implements KeybindingContribution {
 
     registerKeyBindings(registry: KeybindingRegistry): void {
-
-        const ids = MenuRegistry.getMenuItems(MenuId.EditorContext).map(item => item.command.id);
-        ids.push(...MonacoSelectionCommands.ACTIONS.map(({ id }) => id));
-        ids.push(CommonCommands.EDIT_FIND, CommonCommands.EDIT_REDO, CommonCommands.EDIT_UNDO, CommonCommands.EDIT_REPLACE);
-        const accelerator = (kb: IKeybindingItem): Accelerator => {
-            const keyCode = kb.keybinding;
-            const keys: string[] = [];
-            if (keyCode & KeyMod.WinCtrl) {
-                keys.push('Accel');
+        for (const keybinding of KeybindingsRegistry.getDefaultKeybindings()) {
+            if (this.shouldRegister(keybinding)) {
+                registry.registerKeyBinding({
+                    commandId: keybinding.command,
+                    keyCode: this.keyCode(keybinding),
+                    accelerator: this.accelerator(keybinding)
+                });
             }
-            if (keyCode & KeyMod.Alt) {
-                keys.push('Alt');
-            }
-            if (keyCode & KeyMod.CtrlCmd) {
-                keys.push('Accel');
-            }
-            if (keyCode & KeyMod.Shift) {
-                keys.push('Shift');
-            }
-            keys.push(KeyCodeUtils.toString(keyCode & 255));
-            return [keys.join(' ')];
-        };
-
-        const keyCode = (kb: IKeybindingItem): KeyCode => {
-            const keyCode = kb.keybinding;
-            const sequence: Keystroke = {
-                first: Key.getKey(MONACO_KEY_CODE_MAP[keyCode & 255]),
-                modifiers: []
-            };
-            // CTRL + COMMAND
-            if ((keyCode & KeyMod.CtrlCmd) || (keyCode & KeyMod.WinCtrl)) {
-                sequence.modifiers!.push(Modifier.M1);
-            }
-            // SHIFT
-            if (keyCode & KeyMod.Shift) {
-                sequence.modifiers!.push(Modifier.M2);
-            }
-            // ALT
-            if (keyCode & KeyMod.Alt) {
-                sequence.modifiers!.push(Modifier.M3);
-            }
-            // MacOS X CTRL
-            if (isOSX && keyCode & KeyMod.WinCtrl) {
-                sequence.modifiers!.push(Modifier.M4);
-            }
-            return KeyCode.createKeyCode(sequence);
-        };
-
-        const bindings: Keybinding[] = KeybindingsRegistry.getDefaultKeybindings()
-            .filter(kb => ids.indexOf(kb.command) >= 0)
-            .map(kb => ({
-                commandId: kb.command,
-                keyCode: keyCode(kb),
-                accelerator: accelerator(kb),
-            }));
+        }
 
         // And we need to manually register `Select All` as it is not an editor action just like everything else.
-        bindings.push({
-            commandId: MonacoSelectionCommands.SELECTION_SELECT_ALL,
+        registry.registerKeyBinding({
+            commandId: MonacoCommands.SELECTION_SELECT_ALL,
             keyCode: KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M1] }),
             accelerator: ['Accel A']
         });
+    }
 
-        bindings.forEach(binding => {
-            registry.registerKeyBinding(binding);
-        });
+    protected shouldRegister(keybinding: IKeybindingItem): boolean {
+        return MonacoCommands.ACTIONS.some(cmd => cmd.id === keybinding.command);
+    }
 
+    protected keyCode(keybinding: IKeybindingItem): KeyCode {
+        const keyCode = keybinding.keybinding;
+        const sequence: Keystroke = {
+            first: Key.getKey(MONACO_KEY_CODE_MAP[keyCode & 255]),
+            modifiers: []
+        };
+        // CTRL + COMMAND
+        if ((keyCode & KeyMod.CtrlCmd) || (keyCode & KeyMod.WinCtrl)) {
+            sequence.modifiers!.push(Modifier.M1);
+        }
+        // SHIFT
+        if (keyCode & KeyMod.Shift) {
+            sequence.modifiers!.push(Modifier.M2);
+        }
+        // ALT
+        if (keyCode & KeyMod.Alt) {
+            sequence.modifiers!.push(Modifier.M3);
+        }
+        // MacOS X CTRL
+        if (isOSX && keyCode & KeyMod.WinCtrl) {
+            sequence.modifiers!.push(Modifier.M4);
+        }
+        return KeyCode.createKeyCode(sequence);
+    }
+
+    protected accelerator(keybinding: IKeybindingItem): Accelerator {
+        const keyCode = keybinding.keybinding;
+        const keys: string[] = [];
+        if (keyCode & KeyMod.WinCtrl) {
+            keys.push('Accel');
+        }
+        if (keyCode & KeyMod.Alt) {
+            keys.push('Alt');
+        }
+        if (keyCode & KeyMod.CtrlCmd) {
+            keys.push('Accel');
+        }
+        if (keyCode & KeyMod.Shift) {
+            keys.push('Shift');
+        }
+        keys.push(KeyCodeUtils.toString(keyCode & 255));
+        return [keys.join(' ')];
     }
 
 }

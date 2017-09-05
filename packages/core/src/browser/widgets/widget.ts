@@ -59,6 +59,10 @@ export class BaseWidget extends Widget {
         this.toDisposeOnDetach.push(addKeyListener(element, keybinding, action, ...additionalEventTypes));
     }
 
+    protected addClipboardListener<K extends 'cut' | 'copy' | 'paste'>(element: HTMLElement, type: K, listener: EventListenerOrEventListenerObject<K>): void {
+        this.toDisposeOnDetach.push(addClipboardListener(element, type, listener));
+    }
+
 }
 
 export function setEnabled(element: HTMLElement, enabled: boolean): void {
@@ -78,6 +82,11 @@ export function createIconButton(...classNames: string[]): HTMLSpanElement {
 export type EventListener<K extends keyof HTMLElementEventMap> = (this: HTMLElement, event: HTMLElementEventMap[K]) => any;
 export interface EventListenerObject<K extends keyof HTMLElementEventMap> {
     handleEvent(evt: HTMLElementEventMap[K]): void;
+}
+export namespace EventListenerObject {
+    export function is<K extends keyof HTMLElementEventMap>(listener: any | undefined): listener is EventListenerObject<K> {
+        return !!listener && 'handleEvent' in listener;
+    }
 }
 export type EventListenerOrEventListenerObject<K extends keyof HTMLElementEventMap> = EventListener<K> | EventListenerObject<K>;
 export function addEventListener<K extends keyof HTMLElementEventMap>(
@@ -107,4 +116,21 @@ export function addKeyListener<K extends keyof HTMLElementEventMap>(element: HTM
         }));
     }
     return toDispose;
+}
+
+export function addClipboardListener<K extends 'cut' | 'copy' | 'paste'>(element: HTMLElement, type: K, listener: EventListenerOrEventListenerObject<K>): Disposable {
+    const documentListener = (e: ClipboardEvent) => {
+        const activeElement = document.activeElement;
+        if (activeElement && element.contains(activeElement)) {
+            if (EventListenerObject.is(listener)) {
+                listener.handleEvent(e);
+            } else {
+                listener.bind(element)(e);
+            }
+        }
+    };
+    document.addEventListener(type, documentListener);
+    return Disposable.create(() =>
+        document.removeEventListener(type, documentListener)
+    );
 }

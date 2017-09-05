@@ -17,3 +17,4 @@ export const isWebKit = (userAgent.indexOf('AppleWebKit') >= 0);
 export const isChrome = (userAgent.indexOf('Chrome') >= 0);
 export const isSafari = (userAgent.indexOf('Chrome') === -1) && (userAgent.indexOf('Safari') >= 0);
 export const isIPad = (userAgent.indexOf('iPad') >= 0);
+export const isNative = typeof (window as any).process !== 'undefined';

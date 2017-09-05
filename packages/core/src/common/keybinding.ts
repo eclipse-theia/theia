@@ -109,6 +109,12 @@ export class KeybindingRegistry {
         }
     }
 
+    registerKeybindings(...bindings: Keybinding[]): void {
+        for (const binding of bindings) {
+            this.registerKeyBinding(binding);
+        }
+    }
+
     /**
      * Adds a keybinding to the registry.
      *
@@ -159,15 +165,8 @@ export class KeybindingRegistry {
     }
 
     protected isActive(binding: Keybinding): boolean {
-        const cmd = this.commandRegistry.getCommand(binding.commandId);
-        if (cmd) {
-            const handler = this.commandRegistry.getActiveHandler(cmd.id);
-            // TODO? isActive()
-            if (handler && (!handler.isVisible || handler.isVisible())) {
-                return true;
-            }
-        }
-        return false;
+        const command = this.commandRegistry.getCommand(binding.commandId);
+        return !!command && !!this.commandRegistry.getActiveHandler(command.id);
     }
 
     /**

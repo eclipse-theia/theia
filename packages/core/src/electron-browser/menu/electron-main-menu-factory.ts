@@ -7,8 +7,7 @@
 
 import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
-import { isOSX, CommandRegistry, ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry, CommandHandler } from '../../common';
-import { FrontendApplication, FrontendApplicationContribution } from '../../browser';
+import { CommandRegistry, isOSX, ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry, CommandHandler } from '../../common';
 
 @injectable()
 export class ElectronMainMenuFactory {
@@ -114,31 +113,6 @@ export class ElectronMainMenuFactory {
                 }
             ]
         };
-    }
-
-}
-
-@injectable()
-export class ElectronMenuContribution implements FrontendApplicationContribution {
-
-    constructor(
-        @inject(ElectronMainMenuFactory) protected readonly factory: ElectronMainMenuFactory
-    ) { }
-
-    onStart(app: FrontendApplication): void {
-        const itr = app.shell.children();
-        let child = itr.next();
-        while (child) {
-            // Top panel for the menu contribution is not required for Electron.
-            // TODO: Make sure this is the case on Windows too.
-            if (child.id === 'theia-top-panel') {
-                child.setHidden(true);
-                child = undefined;
-            } else {
-                child = itr.next();
-            }
-        }
-        electron.remote.Menu.setApplicationMenu(this.factory.createMenuBar());
     }
 
 }

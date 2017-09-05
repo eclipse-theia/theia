@@ -7,7 +7,7 @@
 
 import { inject, injectable } from "inversify";
 import { ContextMenuRenderer, Anchor } from "../../browser";
-import { ElectronMainMenuFactory } from "./electron-menu-plugin";
+import { ElectronMainMenuFactory } from "./electron-main-menu-factory";
 
 @injectable()
 export class ElectronContextMenuRenderer implements ContextMenuRenderer {
