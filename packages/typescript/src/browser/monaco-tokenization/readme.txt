@@ -1,0 +1,1 @@
+files in this folder are copied from https://github.com/Microsoft/monaco-typescript/tree/v2.3.0 and only slightly modified (imports)

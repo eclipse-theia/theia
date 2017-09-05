@@ -1,0 +1,20 @@
+{
+  "name": "@theia/typescript",
+  "version": "0.1.1",
+  "description": "Theia - Typescript Extension",
+  "dependencies": {
+    "@theia/core": "^0.1.1",
+    "@theia/languages": "^0.1.1",
+    "javascript-typescript-langserver": "^2.2.1",
+    "monaco-typescript": "^2.2.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/typescript-frontend-module",
+      "backend": "lib/node/typescript-backend-module"
+    }
+  ]
+}

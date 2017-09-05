@@ -16,7 +16,6 @@ const outputPath = path.resolve(__dirname, 'lib');
 const monacoEditorPath = '../../node_modules/monaco-editor-core/dev/vs';
 const monacoLanguagesPath = '../../node_modules/monaco-languages/release';
 const monacoCssLanguagePath = '../../node_modules/monaco-css/release/min';
-const monacoTsLanguagePath = '../../node_modules/monaco-typescript/release';
 const monacoJsonLanguagePath = '../../node_modules/monaco-json/release/min';
 const monacoHtmlLanguagePath = '../../node_modules/monaco-html/release/min';
 const requirePath = '../../node_modules/requirejs/require.js';
@@ -84,10 +83,6 @@ module.exports = {
             {
                 from: monacoCssLanguagePath,
                 to: 'vs/language/css'
-            },
-            {
-                from: monacoTsLanguagePath,
-                to: 'vs/language/typescript'
             },
             {
                 from: monacoJsonLanguagePath,

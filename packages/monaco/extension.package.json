@@ -13,7 +13,6 @@
     "monaco-html": "^1.3.2",
     "monaco-json": "^1.3.2",
     "monaco-languages": "^0.9.0",
-    "monaco-typescript": "^2.3.0",
     "monaco-languageclient": "^0.2.0"
   },
   "publishConfig": {
