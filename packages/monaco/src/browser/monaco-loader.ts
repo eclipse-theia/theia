@@ -33,7 +33,6 @@ export function loadMonaco(vsRequire: any): Promise<void> {
             vsRequire([
                 'vs/basic-languages/src/monaco.contribution',
                 'vs/language/css/monaco.contribution',
-                'vs/language/typescript/src/monaco.contribution',
                 'vs/language/html/monaco.contribution',
                 'vs/language/json/monaco.contribution',
                 'vs/platform/commands/common/commands',
@@ -46,7 +45,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/base/parts/quickopen/browser/quickOpenWidget',
                 'vs/base/parts/quickopen/browser/quickOpenModel',
                 'vs/base/common/filters'
-            ], (basic: any, css: any, ts: any, html: any, json: any, commands: any, actions: any, registry: any, resolver: any,
+            ], (basic: any, css: any, html: any, json: any, commands: any, actions: any, registry: any, resolver: any,
                 keyCodes: any, simpleServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any, filters: any) => {
                     const global: any = self;
                     global.monaco.commands = commands;

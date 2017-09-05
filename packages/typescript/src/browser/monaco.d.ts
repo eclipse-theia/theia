@@ -1,0 +1,1 @@
+/// <reference path="../../../monaco/src/typings/monaco/index.d.ts"/>
