@@ -6,6 +6,8 @@
  */
 
 import { injectable, inject } from "inversify";
+import { Message } from "@phosphor/messaging";
+import URI from "@theia/core/lib/common/uri";
 import { ContextMenuRenderer, TreeProps } from "@theia/core/lib/browser";
 import { FileTreeWidget } from "@theia/filesystem/lib/browser";
 import { FileNavigatorModel } from "./navigator-model";
@@ -30,6 +32,33 @@ export class FileNavigatorWidget extends FileTreeWidget {
         this.id = ID;
         this.title.label = LABEL;
         this.addClass(CLASS);
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        this.addClipboardListener(this.node, 'copy', e => this.handleCopy(e));
+        this.addClipboardListener(this.node, 'paste', e => this.handlePaste(e));
+    }
+
+    protected handleCopy(event: ClipboardEvent): void {
+        const node = this.model.selectedFileStatNode;
+        if (!node) {
+            return;
+        }
+        const uri = node.uri.toString();
+        event.clipboardData.setData('text/plain', uri);
+        event.preventDefault();
+    }
+
+    protected handlePaste(event: ClipboardEvent): void {
+        const raw = event.clipboardData.getData('text/plain');
+        if (!raw) {
+            return;
+        }
+        const uri = new URI(raw);
+        if (this.model.copy(uri)) {
+            event.preventDefault();
+        }
     }
 
 }

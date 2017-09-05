@@ -6,24 +6,22 @@
  */
 
 import { ContainerModule } from 'inversify';
-import { FrontendApplicationContribution, ContextMenuRenderer } from '../../browser';
-import { ElectronMenuContribution, ElectronMainMenuFactory } from "./electron-menu-plugin";
 import { KeybindingContribution, CommandContribution, KeybindingContext, MenuContribution } from "../../common";
-import { ElectronKeybindingContribution } from "./core-keybindings";
-import { MenuCommandHandlers } from "./core-menu-commands";
-import { CoreMenuContribution } from "./core-menu-contribution";
+import { FrontendApplicationContribution, ContextMenuRenderer } from '../../browser';
+import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { ElectronContextMenuRenderer } from "./electron-context-menu-renderer";
+import { ElectronMenuContribution } from "./electron-menu-contribution";
 
 export default new ContainerModule(bind => {
     bind(ElectronMainMenuFactory).toSelf().inSingletonScope();
     bind(ContextMenuRenderer).to(ElectronContextMenuRenderer).inSingletonScope();
-    bind(FrontendApplicationContribution).to(ElectronMenuContribution).inSingletonScope();
     bind(KeybindingContext).toConstantValue({
         id: "theia.context",
         isEnabled: true
     });
 
-    bind(KeybindingContribution).to(ElectronKeybindingContribution).inSingletonScope();
-    bind(CommandContribution).to(MenuCommandHandlers).inSingletonScope();
-    bind(MenuContribution).to(CoreMenuContribution).inSingletonScope();
+    bind(ElectronMenuContribution).toSelf().inSingletonScope();
+    for (const serviceIdentifier of [FrontendApplicationContribution, KeybindingContribution, CommandContribution, MenuContribution]) {
+        bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(ElectronMenuContribution)).inSingletonScope();
+    }
 });

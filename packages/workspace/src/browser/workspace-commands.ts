@@ -7,7 +7,7 @@
 
 import { inject, injectable } from 'inversify';
 import URI from "@theia/core/lib/common/uri";
-import { ClipboardService, SelectionService } from '@theia/core/lib/common';
+import { SelectionService } from '@theia/core/lib/common';
 import { Command, CommandContribution, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { CommonCommands } from "@theia/core/lib/browser/common-frontend-contribution";
@@ -26,9 +26,9 @@ export namespace WorkspaceCommands {
         label: opener.label,
         iconClass: opener.iconClass
     };
-    export const FILE_CUT = CommonCommands.EDIT_CUT;
-    export const FILE_COPY = CommonCommands.EDIT_COPY;
-    export const FILE_PASTE = CommonCommands.EDIT_PASTE;
+    export const FILE_CUT = CommonCommands.CUT.id;
+    export const FILE_COPY = CommonCommands.COPY.id;
+    export const FILE_PASTE = CommonCommands.PASTE.id;
     export const FILE_RENAME = 'file:fileRename';
     export const FILE_DELETE = 'file:fileDelete';
 }
@@ -60,7 +60,6 @@ export class WorkspaceCommandContribution implements CommandContribution {
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(WorkspaceServer) protected readonly workspaceServer: WorkspaceServer,
-        @inject(ClipboardService) protected readonly clipboardService: ClipboardService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(OpenerService) protected readonly openerService: OpenerService
     ) { }
@@ -111,28 +110,6 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     );
                 })
             )
-        );
-
-        registry.registerHandler(
-            WorkspaceCommands.FILE_COPY,
-            new FileSystemCommandHandler(this.selectionService, uri => {
-                this.clipboardService.setData({
-                    text: uri.toString()
-                });
-                return Promise.resolve();
-            })
-        );
-
-        registry.registerHandler(
-            WorkspaceCommands.FILE_PASTE,
-            new WorkspaceRootAwareCommandHandler(this.workspaceServer, this.selectionService, uri =>
-                this.getDirectory(uri).then(stat => {
-                    const data: string = this.clipboardService.getData('text');
-                    const copyPath = new URI(data);
-                    const targetUri = uri.resolve(copyPath.path.base);
-                    return this.fileSystem.copy(copyPath.toString(), targetUri.toString());
-                }),
-                uri => !this.clipboardService.isEmpty && !!this.clipboardService.getData('text'))
         );
 
         registry.registerHandler(

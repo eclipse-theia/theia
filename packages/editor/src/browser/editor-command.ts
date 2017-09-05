@@ -24,6 +24,7 @@ export class EditorCommandHandlers implements CommandContribution {
     ) { }
 
     registerCommands(registry: CommandRegistry): void {
+        registry.registerCommand(SHOW_REFERENCES);
         registry.registerCommand({
             id: 'editor.close',
             label: 'Close Active Editor'

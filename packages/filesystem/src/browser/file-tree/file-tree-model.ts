@@ -91,4 +91,17 @@ export class FileTreeModel extends TreeModel implements LocationService {
         return nodes;
     }
 
+    copy(uri: URI): boolean {
+        if (uri.scheme !== 'file') {
+            return false;
+        }
+        const node = this.selectedFileStatNode;
+        if (!node) {
+            return false;
+        }
+        const targetUri = node.uri.resolve(uri.path.base);
+        this.fileSystem.copy(uri.toString(), targetUri.toString());
+        return true;
+    }
+
 }
