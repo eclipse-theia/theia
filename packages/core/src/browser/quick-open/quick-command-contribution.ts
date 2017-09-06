@@ -7,7 +7,7 @@
 
 import { injectable, inject } from 'inversify';
 import { QuickCommandService } from './quick-command-service';
-import { Command, CommandRegistry, CommandContribution, Key, KeyCode, KeybindingRegistry, KeybindingContribution } from '../../common';
+import { Command, CommandRegistry, CommandContribution, Key, Modifier, KeyCode, KeybindingRegistry, KeybindingContribution } from '../../common';
 
 export const quickCommand: Command = {
     id: 'quickCommand',
@@ -18,11 +18,11 @@ export const quickCommand: Command = {
 export class QuickCommandFrontendContribution implements CommandContribution, KeybindingContribution {
 
     @inject(QuickCommandService)
-    protected readonly quickCommnadService: QuickCommandService;
+    protected readonly quickCommandService: QuickCommandService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickCommand, {
-            execute: () => this.quickCommnadService.open()
+            execute: () => this.quickCommandService.open()
         });
     }
 
@@ -30,6 +30,10 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
         keybindings.registerKeyBinding({
             commandId: quickCommand.id,
             keyCode: KeyCode.createKeyCode({ first: Key.F1 })
+        });
+        keybindings.registerKeyBinding({
+            commandId: quickCommand.id,
+            keyCode: KeyCode.createKeyCode({ first: Key.KEY_P, modifiers: [Modifier.M1, Modifier.M2] })
         });
     }
 

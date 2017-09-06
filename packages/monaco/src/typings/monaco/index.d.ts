@@ -248,6 +248,7 @@ declare module monaco.quickOpen {
         constructor(container: HTMLElement, callbacks: IQuickOpenCallbacks, options: IQuickOpenOptions, usageLogger?: IQuickOpenUsageLogger);
         dispose(): void;
         create(): HTMLElement;
+        setPlaceHolder(placeHolder: string): void;
         setInput(input: IModel<any>, autoFocus: IAutoFocus, ariaLabel?: string): void;
         layout(dimension: monaco.editor.IDimension): void;
         show(prefix: string, options?: IShowOptions): void;

@@ -7,7 +7,7 @@
 
 import { inject, injectable } from "inversify";
 import { Command, CommandRegistry, Keybinding, KeybindingRegistry } from '../../common';
-import { QuickOpenModel, QuickOpenItem, QuickOpenAutoFocus } from './quick-open-model';
+import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from './quick-open-model';
 import { QuickOpenService } from "./quick-open-service";
 
 @injectable()
@@ -21,8 +21,9 @@ export class QuickCommandService implements QuickOpenModel {
 
     open(): void {
         this.quickOpenService.open(this, {
-            inputTooltip: 'Type the name of a command you want to execute',
-            fuzzyMatchLabel: true
+            placeholder: 'Type the name of a command you want to execute',
+            fuzzyMatchLabel: true,
+            fuzzySort: true
         });
     }
 
@@ -34,13 +35,6 @@ export class QuickCommandService implements QuickOpenModel {
             }
         }
         return items;
-    }
-
-    public getAutoFocus(lookFor: string): QuickOpenAutoFocus {
-        return {
-            autoFocusFirstEntry: true,
-            autoFocusPrefixMatch: lookFor
-        };
     }
 
 }
@@ -66,7 +60,10 @@ export class CommandQuickOpenItem extends QuickOpenItem {
         return this.keybindings.getKeybindingForCommand(this.command.id);
     }
 
-    run(): boolean {
+    run(mode: QuickOpenMode): boolean {
+        if (mode !== QuickOpenMode.OPEN) {
+            return false;
+        }
         this.commands.executeCommand(this.command.id);
         return true;
     }

@@ -6,9 +6,9 @@
  */
 
 import { injectable } from 'inversify';
-import { QuickOpenService, QuickOpenModel, QuickOpenOptions, QuickOpenItem, QuickOpenGroupItem } from "@theia/core/lib/browser";
+import { QuickOpenService, QuickOpenModel, QuickOpenOptions, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode } from "@theia/core/lib/browser";
 
-export interface InternalMonacoQuickOpenOptions extends monaco.quickOpen.IQuickOpenControllerOpts {
+export interface InternalMonacoQuickOpenModel extends monaco.quickOpen.IQuickOpenControllerOpts {
     readonly prefix?: string;
     onClose?(canceled: boolean): void;
 }
@@ -17,15 +17,17 @@ export interface InternalMonacoQuickOpenOptions extends monaco.quickOpen.IQuickO
 export class MonacoQuickOpenService extends QuickOpenService {
 
     protected _widget: monaco.quickOpen.QuickOpenWidget | undefined;
-    protected options: InternalMonacoQuickOpenOptions | undefined;
+    protected model: InternalMonacoQuickOpenModel | undefined;
 
     open(model: QuickOpenModel, options?: QuickOpenOptions): void {
-        this.internalOpen(new MonacoQuickOpenOptions(model, options));
+        this.internalOpen(new MonacoQuickOpenModel(model, options));
     }
 
-    internalOpen(options: InternalMonacoQuickOpenOptions): void {
-        this.options = options;
-        this.widget.show(this.options.prefix || '');
+    internalOpen(model: InternalMonacoQuickOpenModel): void {
+        this.model = model;
+        const widget = this.widget;
+        widget.show(this.model.prefix || '');
+        widget.setPlaceHolder(model.inputAriaLabel);
     }
 
     protected get widget(): monaco.quickOpen.QuickOpenWidget {
@@ -53,13 +55,13 @@ export class MonacoQuickOpenService extends QuickOpenService {
     }
 
     protected onClose(cancelled: boolean): void {
-        if (this.options && this.options.onClose) {
-            this.options.onClose(cancelled);
+        if (this.model && this.model.onClose) {
+            this.model.onClose(cancelled);
         }
     }
 
     protected onType(lookFor: string): void {
-        const options = this.options;
+        const options = this.model;
         if (this.widget && options) {
             this.widget.setInput(options.getModel(lookFor), options.getAutoFocus(lookFor), options.inputAriaLabel);
         }
@@ -67,16 +69,16 @@ export class MonacoQuickOpenService extends QuickOpenService {
 
 }
 
-export class MonacoQuickOpenOptions implements InternalMonacoQuickOpenOptions {
+export class MonacoQuickOpenModel implements InternalMonacoQuickOpenModel {
 
-    public readonly options: QuickOpenOptions.Resolved;
+    protected readonly options: QuickOpenOptions.Resolved;
 
     constructor(
-        public readonly model: QuickOpenModel,
+        protected readonly model: QuickOpenModel,
         options?: QuickOpenOptions
     ) {
         this.model = model;
-        this.options = QuickOpenOptions.resolveFuzzy(options);
+        this.options = QuickOpenOptions.resolve(options);
     }
 
     get prefix(): string {
@@ -84,7 +86,7 @@ export class MonacoQuickOpenOptions implements InternalMonacoQuickOpenOptions {
     }
 
     get inputAriaLabel(): string {
-        return this.options.inputTooltip;
+        return this.options.placeholder;
     }
 
     onClose(cancelled: boolean): void {
@@ -127,7 +129,10 @@ export class MonacoQuickOpenOptions implements InternalMonacoQuickOpenOptions {
     }
 
     getAutoFocus(lookFor: string): monaco.quickOpen.IAutoFocus {
-        return this.model.getAutoFocus(lookFor);
+        return {
+            autoFocusFirstEntry: true,
+            autoFocusPrefixMatch: lookFor
+        };
     }
 
 }
@@ -189,7 +194,13 @@ export class QuickOpenEntry extends monaco.quickOpen.QuickOpenEntry {
 
     run(mode: monaco.quickOpen.Mode): boolean {
         if (mode === monaco.quickOpen.Mode.OPEN) {
-            return this.item.run();
+            return this.item.run(QuickOpenMode.OPEN);
+        }
+        if (mode === monaco.quickOpen.Mode.OPEN_IN_BACKGROUND) {
+            return this.item.run(QuickOpenMode.OPEN_IN_BACKGROUND);
+        }
+        if (mode === monaco.quickOpen.Mode.PREVIEW) {
+            return this.item.run(QuickOpenMode.PREVIEW);
         }
         return false;
     }

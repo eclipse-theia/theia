@@ -55,7 +55,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(KeybindingContribution).to(MonacoKeybindingContribution).inSingletonScope();
 
     bind(MonacoQuickOpenService).toSelf().inSingletonScope();
-    (isBound(QuickOpenService) ? rebind : bind)(QuickOpenService).toDynamicValue(ctx =>
+    rebind(QuickOpenService).toDynamicValue(ctx =>
         ctx.container.get(MonacoQuickOpenService)
     ).inSingletonScope();
 });
