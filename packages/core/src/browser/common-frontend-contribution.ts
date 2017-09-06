@@ -14,50 +14,54 @@ import { MessageService } from '../common/message-service';
 import { FrontendApplication } from './frontend-application';
 import * as browser from './browser';
 
-export namespace CommonCommands {
+export namespace CommonMenus {
 
     export const EDIT_MENU = "2_edit";
     export const EDIT_MENU_UNDO_GROUP = "1_undo/redo";
     export const EDIT_MENU_CUT_COPY_PASTE_GROUP = "2_cut/copy/paste";
     export const EDIT_MENU_FIND_REPLACE_GROUP = "3_find/replace";
 
+}
+
+export namespace CommonCommands {
+
     export const CUT: Command = {
-        id: 'theia.cut',
+        id: 'core.cut',
         label: 'Cut'
     };
     export const COPY: Command = {
-        id: 'theia.copy',
+        id: 'core.copy',
         label: 'Copy'
     };
     export const PASTE: Command = {
-        id: 'theia.paste',
+        id: 'core.paste',
         label: 'Paste'
     };
 
     export const UNDO: Command = {
-        id: 'theia.undo',
+        id: 'core.undo',
         label: 'Undo'
     };
     export const REDO: Command = {
-        id: 'theia.redo',
+        id: 'core.redo',
         label: 'Redo'
     };
 
     export const FIND: Command = {
-        id: 'theia.find',
+        id: 'core.find',
         label: 'Find'
     };
     export const REPLACE: Command = {
-        id: 'theia.replace',
+        id: 'core.replace',
         label: 'Replace'
     };
 
     export const NEXT_TAB: Command = {
-        id: 'theia.nextTab',
+        id: 'core.nextTab',
         label: 'Switch to next tab'
     };
     export const PREVIOUS_TAB: Command = {
-        id: 'theia.previousTab',
+        id: 'core.previousTab',
         label: 'Switch to previous tab'
     };
 
@@ -80,20 +84,20 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
 
     registerMenus(registry: MenuModelRegistry): void {
         // Explicitly register the Edit Submenu
-        registry.registerSubmenu([MAIN_MENU_BAR], CommonCommands.EDIT_MENU, "Edit");
+        registry.registerSubmenu([MAIN_MENU_BAR], CommonMenus.EDIT_MENU, "Edit");
 
         // Undo/Redo
         registry.registerMenuAction([
             MAIN_MENU_BAR,
-            CommonCommands.EDIT_MENU,
-            CommonCommands.EDIT_MENU_UNDO_GROUP], {
+            CommonMenus.EDIT_MENU,
+            CommonMenus.EDIT_MENU_UNDO_GROUP], {
                 commandId: CommonCommands.UNDO.id,
                 order: '0'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
-            CommonCommands.EDIT_MENU,
-            CommonCommands.EDIT_MENU_UNDO_GROUP], {
+            CommonMenus.EDIT_MENU,
+            CommonMenus.EDIT_MENU_UNDO_GROUP], {
                 commandId: CommonCommands.REDO.id,
                 order: '1'
             });
@@ -101,15 +105,15 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         // Find/Replace
         registry.registerMenuAction([
             MAIN_MENU_BAR,
-            CommonCommands.EDIT_MENU,
-            CommonCommands.EDIT_MENU_FIND_REPLACE_GROUP], {
+            CommonMenus.EDIT_MENU,
+            CommonMenus.EDIT_MENU_FIND_REPLACE_GROUP], {
                 commandId: CommonCommands.FIND.id,
                 order: '0'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
-            CommonCommands.EDIT_MENU,
-            CommonCommands.EDIT_MENU_FIND_REPLACE_GROUP], {
+            CommonMenus.EDIT_MENU,
+            CommonMenus.EDIT_MENU_FIND_REPLACE_GROUP], {
                 commandId: CommonCommands.REPLACE.id,
                 order: '1'
             });
@@ -117,22 +121,22 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         // Cut/Copy/Paste
         registry.registerMenuAction([
             MAIN_MENU_BAR,
-            CommonCommands.EDIT_MENU,
-            CommonCommands.EDIT_MENU_CUT_COPY_PASTE_GROUP], {
+            CommonMenus.EDIT_MENU,
+            CommonMenus.EDIT_MENU_CUT_COPY_PASTE_GROUP], {
                 commandId: CommonCommands.CUT.id,
                 order: '0'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
-            CommonCommands.EDIT_MENU,
-            CommonCommands.EDIT_MENU_CUT_COPY_PASTE_GROUP], {
+            CommonMenus.EDIT_MENU,
+            CommonMenus.EDIT_MENU_CUT_COPY_PASTE_GROUP], {
                 commandId: CommonCommands.COPY.id,
                 order: '1'
             });
         registry.registerMenuAction([
             MAIN_MENU_BAR,
-            CommonCommands.EDIT_MENU,
-            CommonCommands.EDIT_MENU_CUT_COPY_PASTE_GROUP], {
+            CommonMenus.EDIT_MENU,
+            CommonMenus.EDIT_MENU_CUT_COPY_PASTE_GROUP], {
                 commandId: CommonCommands.PASTE.id,
                 order: '2'
             });
@@ -144,7 +148,7 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 if (supportCut) {
                     document.execCommand('cut');
                 } else {
-                    this.messageService.warn('Please use the browser cut command or shortcut.');
+                    this.messageService.warn("Please use the browser's cut command or shortcut.");
                 }
             }
         });
@@ -153,7 +157,7 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 if (supportCopy) {
                     document.execCommand('copy');
                 } else {
-                    this.messageService.warn('Please use the browser copy command or shortcut.');
+                    this.messageService.warn("Please use the browser's copy command or shortcut.");
                 }
             }
         });
@@ -162,7 +166,7 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 if (supportPaste) {
                     document.execCommand('paste');
                 } else {
-                    this.messageService.warn('Please use the browser paste command or shortcut.');
+                    this.messageService.warn("Please use the browser's paste command or shortcut.");
                 }
             }
         });

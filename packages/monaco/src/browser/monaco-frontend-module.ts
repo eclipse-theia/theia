@@ -20,6 +20,7 @@ import { MonacoEditorService } from "./monaco-editor-service";
 import { MonacoModelResolver } from "./monaco-model-resolver";
 import { MonacoContextMenuService } from "./monaco-context-menu";
 import { MonacoCommandService, MonacoCommandServiceFactory } from './monaco-command-service';
+import { MonacoCommandRegistry } from './monaco-command-registry';
 
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
@@ -46,6 +47,7 @@ export default new ContainerModule(bind => {
         uri => context.container.get(MonacoEditorProvider).get(uri)
     );
 
+    bind(MonacoCommandRegistry).toSelf().inSingletonScope();
     bind(CommandContribution).to(MonacoEditorCommandHandlers).inSingletonScope();
     bind(MenuContribution).to(MonacoEditorMenuContribution).inSingletonScope();
     bind(KeybindingContribution).to(MonacoKeybindingContribution).inSingletonScope();

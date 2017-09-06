@@ -7,11 +7,12 @@
 
 import { injectable, inject } from "inversify";
 import { ProtocolToMonacoConverter } from "monaco-languageclient/lib";
-import { Command, CommandHandler, CommandContribution, CommandRegistry, SelectionService } from '@theia/core';
+import { Command, CommandContribution } from '@theia/core';
 import { Position, Location } from "@theia/languages/lib/common";
 import { CommonCommands } from '@theia/core/lib/browser';
-import { EditorManager, TextEditorSelection, SHOW_REFERENCES } from '@theia/editor/lib/browser';
-import { getCurrent, MonacoEditor } from './monaco-editor';
+import { SHOW_REFERENCES } from '@theia/editor/lib/browser';
+import { MonacoEditor } from './monaco-editor';
+import { MonacoCommandRegistry, MonacoEditorCommandHandler } from './monaco-command-registry';
 import MenuRegistry = monaco.actions.MenuRegistry;
 import MenuId = monaco.actions.MenuId;
 
@@ -28,12 +29,6 @@ export namespace MonacoCommands {
     COMMON_ACTIONS[REDO] = CommonCommands.REDO.id;
     COMMON_ACTIONS['actions.find'] = CommonCommands.FIND.id;
     COMMON_ACTIONS['editor.action.startFindReplaceAction'] = CommonCommands.REPLACE.id;
-
-    export const SELECTION_MENU = '3_selection';
-
-    export const SELECTION_MENU_SELECTION_GROUP = '1_selection_group';
-    export const SELECTION_MENU_COPY_MOVE_GROUP = '2_copy_move_group';
-    export const SELECTION_MENU_CURSOR_GROUP = '3_cursor_group';
 
     export const SELECTION_SELECT_ALL = 'editor.action.select.all';
     export const SELECTION_EXPAND_SELECTION = 'editor.action.smartSelect.grow';
@@ -79,47 +74,38 @@ export namespace MonacoCommands {
 
 }
 
-export interface MonacoEditorCommandHandler {
-    execute(editor: MonacoEditor, ...args: any[]): any;
-    isEnabled?(editor: MonacoEditor, ...args: any[]): boolean;
-}
 @injectable()
 export class MonacoEditorCommandHandlers implements CommandContribution {
 
     constructor(
-        @inject(EditorManager) protected readonly editorManager: EditorManager,
-        @inject(SelectionService) protected readonly selectionService: SelectionService,
+        @inject(MonacoCommandRegistry) protected readonly registry: MonacoCommandRegistry,
         @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter
     ) { }
 
-    registerCommands(commands: CommandRegistry): void {
-        const registry = this.newRegistry(commands);
-        this.registerCommonCommandHandlers(registry);
-        this.registerEditorCommandHandlers(registry);
-        this.registerMonacoActionCommands(registry);
+    registerCommands(): void {
+        this.registerCommonCommandHandlers();
+        this.registerEditorCommandHandlers();
+        this.registerMonacoActionCommands();
     }
 
-    protected registerCommonCommandHandlers(registry: MonacoCommandRegistry): void {
+    protected registerCommonCommandHandlers(): void {
         // tslint:disable-next-line:forin
         for (const action in MonacoCommands.COMMON_ACTIONS) {
             const command = MonacoCommands.COMMON_ACTIONS[action];
             const handler = this.newCommonActionHandler(action);
-            registry.registerHandler(command, handler);
+            this.registry.registerHandler(command, handler);
         }
     }
-
     protected newCommonActionHandler(action: string): MonacoEditorCommandHandler {
         return this.isCommonKeyboardAction(action) ? this.newKeyboardHandler(action) : this.newActionHandler(action);
     }
-
     protected isCommonKeyboardAction(action: string): boolean {
         return MonacoCommands.COMMON_KEYBOARD_ACTIONS.has(action);
     }
 
-    protected registerEditorCommandHandlers(registry: MonacoCommandRegistry): void {
-        registry.registerHandler(SHOW_REFERENCES.id, this.newShowReferenceHandler());
+    protected registerEditorCommandHandlers(): void {
+        this.registry.registerHandler(SHOW_REFERENCES.id, this.newShowReferenceHandler());
     }
-
     protected newShowReferenceHandler(): MonacoEditorCommandHandler {
         return {
             execute: (editor: MonacoEditor, uri: string, position: Position, locations: Location[]) => {
@@ -133,13 +119,12 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
         };
     }
 
-    protected registerMonacoActionCommands(registry: MonacoCommandRegistry): void {
+    protected registerMonacoActionCommands(): void {
         for (const action of MonacoCommands.ACTIONS) {
             const handler = this.newMonacoActionHandler(action);
-            registry.registerCommand(action, handler);
+            this.registry.registerCommand(action, handler);
         }
     }
-
     protected newMonacoActionHandler(action: MonacoCommand): MonacoEditorCommandHandler {
         const delegate = action.delegate;
         return delegate ? this.newCommandHandler(delegate) : this.newActionHandler(action.id);
@@ -150,13 +135,11 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             execute: (editor, ...args) => editor.getControl().cursor.trigger('keyboard', action, args)
         };
     }
-
     protected newCommandHandler(action: string): MonacoEditorCommandHandler {
         return {
             execute: (editor, ...args) => editor.commandService.executeCommand(action, ...args)
         };
     }
-
     protected newActionHandler(action: string): MonacoEditorCommandHandler {
         return {
             execute: editor => editor.runAction(action),
@@ -164,53 +147,4 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
         };
     }
 
-    protected newRegistry(commands: CommandRegistry): MonacoCommandRegistry {
-        return new MonacoCommandRegistry(commands, this.editorManager, this.selectionService);
-    }
-
 }
-
-export class MonacoCommandRegistry {
-
-    constructor(
-        protected readonly commands: CommandRegistry,
-        protected readonly editorManager: EditorManager,
-        protected readonly selectionService: SelectionService
-    ) { }
-
-    registerCommand(command: Command, handler: MonacoEditorCommandHandler): void {
-        this.commands.registerCommand(command, this.newHandler(handler));
-    }
-
-    registerHandler(command: string, handler: MonacoEditorCommandHandler): void {
-        this.commands.registerHandler(command, this.newHandler(handler));
-    }
-
-    protected newHandler(monacoHandler: MonacoEditorCommandHandler): CommandHandler {
-        return {
-            execute: (...args) => this.execute(monacoHandler, ...args),
-            isEnabled: (...args) => this.isEnabled(monacoHandler, ...args),
-            isVisible: (...args) => this.isVisble(monacoHandler, ...args)
-        };
-    }
-
-    protected execute(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): any {
-        const editor = getCurrent(this.editorManager);
-        if (editor) {
-            editor.focus();
-            return Promise.resolve(monacoHandler.execute(editor, ...args));
-        }
-        return Promise.resolve();
-    }
-
-    protected isEnabled(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): boolean {
-        const editor = getCurrent(this.editorManager);
-        return !!editor && (!monacoHandler.isEnabled || monacoHandler.isEnabled(editor, ...args));
-    }
-
-    protected isVisble(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): boolean {
-        return TextEditorSelection.is(this.selectionService.selection);
-    }
-
-}
-

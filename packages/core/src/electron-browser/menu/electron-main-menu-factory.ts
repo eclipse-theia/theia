@@ -7,7 +7,7 @@
 
 import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
-import { CommandRegistry, isOSX, ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry, CommandHandler } from '../../common';
+import { CommandRegistry, isOSX, ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry } from '../../common';
 
 @injectable()
 export class ElectronMainMenuFactory {
@@ -60,23 +60,15 @@ export class ElectronMainMenuFactory {
                     icon: menu.icon,
                     enabled: true, // https://github.com/theia-ide/theia/issues/446
                     visible: true,
-                    click: () => this.onClick(menu.action.commandId)
+                    click: () => this.execute(menu.action.commandId)
                 });
             }
         }
         return items;
     }
 
-    protected findHandler(commandId: string): CommandHandler | undefined {
-        const command = this.commandRegistry.getCommand(commandId);
-        return command ? this.commandRegistry.getActiveHandler(command!.id) : undefined;
-    }
-
-    protected onClick(commandId: string): void {
-        const handler = this.findHandler(commandId);
-        if (handler) {
-            handler.execute();
-        }
+    protected execute(command: string): void {
+        this.commandRegistry.executeCommand(command).catch(() => { /* no-op */ });
     }
 
     protected createOSXMenu(): Electron.MenuItemConstructorOptions {

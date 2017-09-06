@@ -5,12 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { isOSX } from '@theia/core/lib/common/os';
 import { isFirefox, isIE, isWebKit } from '@theia/core/lib/browser';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/common/keybinding';
 import { Accelerator, Key, KeyCode, Keystroke, Modifier } from '@theia/core/lib/common/keys';
 import { MonacoCommands } from './monaco-command';
+import { MonacoCommandRegistry } from './monaco-command-registry';
 import KeybindingsRegistry = monaco.keybindings.KeybindingsRegistry;
 import KeyCodeUtils = monaco.keybindings.KeyCodeUtils;
 import IKeybindingItem = monaco.keybindings.IKeybindingItem;
@@ -158,27 +159,31 @@ const MONACO_KEY_CODE_MAP: { [keyCode: number]: number } = {};
 @injectable()
 export class MonacoKeybindingContribution implements KeybindingContribution {
 
+    constructor(
+        @inject(MonacoCommandRegistry) protected readonly commands: MonacoCommandRegistry
+    ) { }
+
     registerKeyBindings(registry: KeybindingRegistry): void {
         for (const keybinding of KeybindingsRegistry.getDefaultKeybindings()) {
-            if (this.shouldRegister(keybinding)) {
+            const commandId = this.commands.validate(keybinding.command);
+            if (commandId) {
                 registry.registerKeyBinding({
-                    commandId: keybinding.command,
+                    commandId,
                     keyCode: this.keyCode(keybinding),
                     accelerator: this.accelerator(keybinding)
                 });
             }
         }
 
-        // And we need to manually register `Select All` as it is not an editor action just like everything else.
-        registry.registerKeyBinding({
-            commandId: MonacoCommands.SELECTION_SELECT_ALL,
-            keyCode: KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M1] }),
-            accelerator: ['Accel A']
-        });
-    }
-
-    protected shouldRegister(keybinding: IKeybindingItem): boolean {
-        return MonacoCommands.ACTIONS.some(cmd => cmd.id === keybinding.command);
+        // `Select All` is not an editor action just like everything else.
+        const selectAllCommand = this.commands.validate(MonacoCommands.SELECTION_SELECT_ALL);
+        if (selectAllCommand) {
+            registry.registerKeyBinding({
+                commandId: selectAllCommand,
+                keyCode: KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M1] }),
+                accelerator: ['Accel A']
+            });
+        }
     }
 
     protected keyCode(keybinding: IKeybindingItem): KeyCode {
