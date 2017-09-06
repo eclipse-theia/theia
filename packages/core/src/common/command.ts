@@ -110,14 +110,6 @@ export class CommandRegistry implements CommandService {
         return undefined;
     }
 
-    /**
-     * Unlike #getActiveHandler, this method does not check whether the handler for the given command is enabled or not.
-     */
-    getHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
-        const handlers = this._handlers[commandId] || [];
-        return handlers[0];
-    }
-
     get commands(): Command[] {
         const commands: Command[] = [];
         for (const id of this.commandIds) {
