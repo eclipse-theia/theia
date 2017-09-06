@@ -16,7 +16,7 @@
     background-color: var(--theia-layout-color1) !important;
 }
 
-.terminal .xterm-rows {
+.terminal-container {
     padding-top: calc(var(--theia-code-padding)*3) !important;
     padding-left: calc(var(--theia-code-padding)*3) !important;
 }
