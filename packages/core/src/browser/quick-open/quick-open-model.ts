@@ -8,39 +8,15 @@
 import URI from "../../common/uri";
 import { Keybinding } from '../../common/keybinding';
 
-export interface QuickOpenAutoFocus {
-    /**
-     * The index of the element to focus in the result list.
-     */
-    autoFocusIndex?: number;
-
-    /**
-     * If set to true, will automatically select the first entry from the result list.
-     */
-    autoFocusFirstEntry?: boolean;
-
-    /**
-     * If set to true, will automatically select the second entry from the result list.
-     */
-    autoFocusSecondEntry?: boolean;
-
-    /**
-     * If set to true, will automatically select the last entry from the result list.
-     */
-    autoFocusLastEntry?: boolean;
-
-    /**
-     * If set to true, will automatically select any entry whose label starts with the search
-     * value. Since some entries to the top might match the query but not on the prefix, this
-     * allows to select the most accurate match (matching the prefix) while still showing other
-     * elements.
-     */
-    autoFocusPrefixMatch?: string;
-}
-
 export interface Highlight {
     start: number
     end: number
+}
+
+export enum QuickOpenMode {
+    PREVIEW,
+    OPEN,
+    OPEN_IN_BACKGROUND
 }
 
 export class QuickOpenItem {
@@ -77,7 +53,7 @@ export class QuickOpenItem {
     getKeybinding(): Keybinding | undefined {
         return undefined;
     }
-    run(): boolean {
+    run(mode: QuickOpenMode): boolean {
         return false;
     }
 }
@@ -93,5 +69,4 @@ export class QuickOpenGroupItem extends QuickOpenItem {
 
 export interface QuickOpenModel {
     getItems(lookFor: string): QuickOpenItem[];
-    getAutoFocus(lookFor: string): QuickOpenAutoFocus;
 }
