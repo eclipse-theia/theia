@@ -7,11 +7,9 @@
 
 import { injectable, inject } from "inversify";
 import { ProcessManager } from './process-manager';
-import { ILogger } from '../../common/logger';
+import { ILogger, Emitter, Event, Disposable } from '@theia/core/lib/common';
 import * as child from 'child_process';
 import * as stream from 'stream';
-import { Emitter, Event } from '../../common/event';
-import { Disposable } from '../../common/disposable';
 
 export interface IProcessExitEvent {
     code: number,

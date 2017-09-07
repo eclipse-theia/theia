@@ -8,8 +8,7 @@
 import { injectable, inject } from 'inversify';
 import * as process from 'process';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { TerminalProcess, TerminalProcessOptions } from '@theia/core/lib/node/process/terminal-process';
-import { ProcessManager } from '@theia/core/lib/node/process/process-manager';
+import { TerminalProcess, TerminalProcessOptions, ProcessManager } from '@theia/process/lib/node';
 import { isWindows } from "@theia/core/lib/common";
 
 export const ShellProcessFactory = Symbol("ShellProcessFactory");

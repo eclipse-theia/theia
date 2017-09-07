@@ -7,7 +7,7 @@
 
 import { injectable, inject } from 'inversify';
 import { ProcessManager } from './process-manager';
-import { ILogger } from '../../common/logger';
+import { ILogger } from '@theia/core/lib/common';
 import { Process } from './process';
 import * as child from 'child_process';
 import * as stream from 'stream';

@@ -9,8 +9,8 @@ import { inject, injectable } from 'inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { IShellTerminalServerOptions } from '../common/shell-terminal-protocol';
 import { BaseTerminalServer } from '../node/base-terminal-server';
-import { ShellProcessFactory } from '../node/shell-process'
-import { ProcessManager } from '@theia/core/lib/node/process/process-manager';
+import { ShellProcessFactory } from '../node/shell-process';
+import { ProcessManager } from '@theia/process/lib/node';
 
 @injectable()
 export class ShellTerminalServer extends BaseTerminalServer {

@@ -5,9 +5,9 @@
   "dependencies": {
     "@theia/core": "^0.1.1",
     "@theia/filesystem": "^0.1.1",
+    "@theia/process": "^0.1.1",
     "@theia/workspace": "^0.1.1",
     "@types/xterm": "^2.0.3",
-    "node-pty": "^0.6.10",
     "xterm": "^2.8.1"
   },
   "publishConfig": {

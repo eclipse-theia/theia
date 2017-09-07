@@ -1,0 +1,17 @@
+{
+  "name": "@theia/process",
+  "version": "0.1.1",
+  "description": "Theia process support.",
+  "dependencies": {
+    "@theia/core": "0.1.1",
+    "node-pty": "^0.6.10"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "backend": "lib/node/process-backend-module"
+    }
+  ]
+}

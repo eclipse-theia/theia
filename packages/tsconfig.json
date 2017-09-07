@@ -56,6 +56,9 @@
             ],
             "@theia/go/lib/*": [
                 "go/src/*"
+            ],
+            "@theia/process/lib*": [
+                "process/src/*"
             ]
         }
     },

@@ -12,8 +12,7 @@ import {
     ITerminalServerOptions
 } from '../common/terminal-protocol';
 import { BaseTerminalServer } from './base-terminal-server';
-import { TerminalProcessFactory } from '@theia/core/lib/node/process/terminal-process';
-import { ProcessManager } from '@theia/core/lib/node/process/process-manager';
+import { TerminalProcessFactory, ProcessManager } from '@theia/process/lib/node';
 
 @injectable()
 export class TerminalServer extends BaseTerminalServer implements ITerminalServer {

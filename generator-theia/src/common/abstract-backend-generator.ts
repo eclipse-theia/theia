@@ -26,13 +26,11 @@ const { BackendApplication } = require('@theia/core/lib/node');
 const { backendApplicationModule } = require('@theia/core/lib/node/backend-application-module');
 const { messagingBackendModule } = require('@theia/core/lib/node/messaging/messaging-backend-module');
 const { loggerBackendModule } = require('@theia/core/lib/node/logger-backend-module');
-const { processBackendModule } = require('@theia/core/lib/node/process/process-backend-module');
 
 const container = new Container();
 container.load(backendApplicationModule);
 container.load(messagingBackendModule);
 container.load(loggerBackendModule);
-container.load(processBackendModule);
 
 function load(raw) {
     return Promise.resolve(raw.default).then(module =>
