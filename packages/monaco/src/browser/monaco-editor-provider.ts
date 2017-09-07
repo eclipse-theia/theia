@@ -19,6 +19,8 @@ import { MonacoWorkspace } from "./monaco-workspace";
 import { MonacoCommandServiceFactory } from "./monaco-command-service";
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
 
+monaco.editor.setTheme('vs-dark');
+
 @injectable()
 export class MonacoEditorProvider {
 
@@ -38,9 +40,7 @@ export class MonacoEditorProvider {
         const referencePromise = this.monacoModelResolver.createModelReference(uri);
         const prefPromise = this.editorPreferences.ready;
 
-        return Promise.all([referencePromise, prefPromise]).then((values) => {
-            const reference = values[0];
-
+        return Promise.all([referencePromise, prefPromise]).then(([reference]) => {
             const commandService = this.commandServiceFactory();
 
             const node = document.createElement('div');
@@ -81,11 +81,10 @@ export class MonacoEditorProvider {
     protected getEditorOptions(model: MonacoEditorModel): MonacoEditor.IOptions | undefined {
         return {
             model: model.textEditorModel,
-            wordWrap: false,
+            wordWrap: 'off',
             folding: true,
             lineNumbers: this.editorPreferences["editor.lineNumbers"],
             renderWhitespace: this.editorPreferences["editor.renderWhitespace"],
-            theme: 'vs-dark',
             glyphMargin: true,
             readOnly: model.readOnly
         };

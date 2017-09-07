@@ -50,8 +50,21 @@ export class MonacoQuickOpenService extends QuickOpenService {
             onType: lookFor => this.onType(lookFor || ''),
             onFocusLost: () => false
         }, {});
+        this.attachQuickOpenStyler();
         this._widget.create();
         return this._widget;
+    }
+
+    protected attachQuickOpenStyler(): void {
+        if (!this._widget) {
+            return;
+        }
+        const themeService = monaco.services.StaticServices.standaloneThemeService.get();
+        const detach = monaco.theme.attachQuickOpenStyler(this._widget, themeService);
+        themeService.onThemeChange(() => {
+            detach.dispose();
+            this.attachQuickOpenStyler();
+        });
     }
 
     protected onClose(cancelled: boolean): void {

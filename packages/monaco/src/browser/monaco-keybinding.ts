@@ -14,8 +14,6 @@ import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import KeybindingsRegistry = monaco.keybindings.KeybindingsRegistry;
 import KeyCodeUtils = monaco.keybindings.KeyCodeUtils;
-import IKeybindingItem = monaco.keybindings.IKeybindingItem;
-import KeyMod = monaco.KeyMod;
 
 const MONACO_KEY_CODE_MAP: { [keyCode: number]: number } = {};
 (() => {
@@ -164,14 +162,20 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
     ) { }
 
     registerKeyBindings(registry: KeybindingRegistry): void {
-        for (const keybinding of KeybindingsRegistry.getDefaultKeybindings()) {
-            const commandId = this.commands.validate(keybinding.command);
+        for (const item of KeybindingsRegistry.getDefaultKeybindings()) {
+            const commandId = this.commands.validate(item.command);
             if (commandId) {
-                registry.registerKeyBinding({
-                    commandId,
-                    keyCode: this.keyCode(keybinding),
-                    accelerator: this.accelerator(keybinding)
-                });
+                const raw = item.keybinding;
+                if (raw.type === monaco.keybindings.KeybindingType.Simple) {
+                    const keybinding = raw as monaco.keybindings.SimpleKeybinding;
+                    registry.registerKeyBinding({
+                        commandId,
+                        keyCode: this.keyCode(keybinding),
+                        accelerator: this.accelerator(keybinding)
+                    });
+                } else {
+                    // FIXME support chord keybindings properly, KeyCode does not allow it right now
+                }
             }
         }
 
@@ -186,44 +190,40 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         }
     }
 
-    protected keyCode(keybinding: IKeybindingItem): KeyCode {
-        const keyCode = keybinding.keybinding;
+    protected keyCode(keybinding: monaco.keybindings.SimpleKeybinding): KeyCode {
+        const keyCode = keybinding.keyCode;
         const sequence: Keystroke = {
             first: Key.getKey(MONACO_KEY_CODE_MAP[keyCode & 255]),
             modifiers: []
         };
-        // CTRL + COMMAND
-        if ((keyCode & KeyMod.CtrlCmd) || (keyCode & KeyMod.WinCtrl)) {
+        if (keybinding.ctrlKey) {
             sequence.modifiers!.push(Modifier.M1);
         }
-        // SHIFT
-        if (keyCode & KeyMod.Shift) {
+        if (keybinding.shiftKey) {
             sequence.modifiers!.push(Modifier.M2);
         }
-        // ALT
-        if (keyCode & KeyMod.Alt) {
+        if (keybinding.altKey) {
             sequence.modifiers!.push(Modifier.M3);
         }
-        // MacOS X CTRL
-        if (isOSX && keyCode & KeyMod.WinCtrl) {
+        if (keybinding.metaKey) {
             sequence.modifiers!.push(Modifier.M4);
         }
         return KeyCode.createKeyCode(sequence);
     }
 
-    protected accelerator(keybinding: IKeybindingItem): Accelerator {
-        const keyCode = keybinding.keybinding;
+    protected accelerator(keybinding: monaco.keybindings.SimpleKeybinding): Accelerator {
+        const keyCode = keybinding.keyCode;
         const keys: string[] = [];
-        if (keyCode & KeyMod.WinCtrl) {
+        if (keybinding.metaKey) {
             keys.push('Accel');
         }
-        if (keyCode & KeyMod.Alt) {
+        if (keybinding.altKey) {
             keys.push('Alt');
         }
-        if (keyCode & KeyMod.CtrlCmd) {
+        if (keybinding.ctrlKey) {
             keys.push('Accel');
         }
-        if (keyCode & KeyMod.Shift) {
+        if (keybinding.shiftKey) {
             keys.push('Shift');
         }
         keys.push(KeyCodeUtils.toString(keyCode & 255));
