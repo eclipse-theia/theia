@@ -144,18 +144,6 @@ export interface Repository {
 
 }
 
-/**
- * Repository with the `remote` URL information.
- */
-export interface RepositoryWithRemote extends Repository {
-
-    /**
-     * The remote URL of the local clone.
-     */
-    readonly remoteUrl?: string;
-
-}
-
 export namespace Repository {
 
     /**
@@ -166,21 +154,13 @@ export namespace Repository {
     }
 
     /**
-     * `true` if the argument is a type of a [RepositoryWithRemote](#RepositoryWithRemote), otherwise `false`.
-     */
-    export function isRemote(repository: any | undefined): repository is RepositoryWithRemote {
-        return repository && typeof (<RepositoryWithRemote>repository).remoteUrl === 'string';
-    }
-
-    /**
-     * `true` if the arguments are equal. More precisely; when both the local and the remote repository URLs
-     * are equal.
+     * `true` if the arguments are equal. More precisely; when the local URIs are equal.
      *
      * @param left the repository to compare with the other.
      * @param right the other repository.
      */
     export function equals(left: Repository, right: Repository): boolean {
-        return left.localUri === right.localUri && (isRemote(left) ? left.remoteUrl : undefined) === (isRemote(right) ? right.remoteUrl : undefined);
+        return left.localUri === right.localUri;
     }
 
     /**
