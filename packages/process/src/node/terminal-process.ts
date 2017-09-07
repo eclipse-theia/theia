@@ -7,7 +7,7 @@
 
 import { injectable, inject } from 'inversify';
 import * as stream from 'stream';
-import { ILogger } from '../../common/logger';
+import { ILogger } from '@theia/core/lib/common';
 import { Process } from './process';
 import { ProcessManager } from './process-manager';
 
@@ -80,4 +80,3 @@ export class TerminalProcess extends Process {
         this.terminal.write(data);
     }
 }
-

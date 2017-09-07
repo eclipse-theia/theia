@@ -5,10 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 import { Container } from 'inversify';
-import { loggerBackendModule } from '../logger-backend-module';
-import { processBackendModule } from './process-backend-module';
+import { loggerBackendModule } from '@theia/core/lib/node/logger-backend-module';
+import processBackendModule from './process-backend-module';
 
-let testContainer = new Container();
+const testContainer = new Container();
 
 testContainer.load(loggerBackendModule);
 testContainer.load(processBackendModule);

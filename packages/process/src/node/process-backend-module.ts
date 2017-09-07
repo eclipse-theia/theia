@@ -9,9 +9,9 @@ import { ContainerModule, Container } from 'inversify';
 import { RawProcess, RawProcessOptions, RawProcessFactory } from './raw-process';
 import { TerminalProcess, TerminalProcessOptions, TerminalProcessFactory } from './terminal-process';
 import { ProcessManager } from "./process-manager";
-import { ILogger } from '../../common/logger';
+import { ILogger } from '@theia/core/lib/common';
 
-export const processBackendModule = new ContainerModule(bind => {
+export default new ContainerModule(bind => {
     bind(RawProcess).toSelf().inTransientScope();
     bind(ProcessManager).toSelf().inSingletonScope();
     bind(RawProcessFactory).toFactory(ctx =>
@@ -41,4 +41,3 @@ export const processBackendModule = new ContainerModule(bind => {
         }
     );
 });
-

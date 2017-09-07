@@ -10,8 +10,7 @@ import * as stream from 'stream';
 import { injectable, inject } from 'inversify';
 import URI from "@theia/core/lib/common/uri";
 import { ILogger } from "@theia/core/lib/common";
-import { TerminalProcess } from "@theia/core/lib/node/process/terminal-process";
-import { ProcessManager } from "@theia/core/lib/node/process/process-manager";
+import { TerminalProcess, ProcessManager } from "@theia/process/lib/node";
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { openSocket } from '@theia/core/lib/node';
 

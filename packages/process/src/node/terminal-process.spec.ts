@@ -11,7 +11,7 @@ import * as process from 'process';
 import * as stream from 'stream';
 import { testContainer } from './inversify.spec-config';
 import { TerminalProcessFactory } from './terminal-process';
-import { isWindows } from "../../common";
+import { isWindows } from "@theia/core/lib/common";
 
 chai.use(chaiAsPromised);
 

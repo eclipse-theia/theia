@@ -8,8 +8,7 @@
 import { inject, injectable } from 'inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { IBaseTerminalServer, IBaseTerminalServerOptions, IBaseTerminalClient } from '../common/base-terminal-protocol';
-import { TerminalProcess } from '@theia/core/lib/node/process/terminal-process';
-import { ProcessManager } from '@theia/core/lib/node/process/process-manager';
+import { TerminalProcess, ProcessManager } from '@theia/process/lib/node';
 import URI from "@theia/core/lib/common/uri";
 
 @injectable()
