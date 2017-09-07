@@ -53,7 +53,7 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
         @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter,
         @inject(EditorManager) protected readonly editorManager: EditorManager
     ) {
-        super(m2p);
+        super(p2m, m2p);
         workspaceService.root.then(rootStat => {
             this._rootUri = rootStat.uri;
             this.resolveReady();

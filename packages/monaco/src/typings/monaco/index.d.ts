@@ -190,8 +190,32 @@ declare module monaco.actions {
 
 declare module monaco.keybindings {
 
+    export const enum KeybindingType {
+        Simple = 1,
+        Chord = 2
+    }
+
+    export class SimpleKeybinding {
+        public readonly type: KeybindingType;
+
+        public readonly ctrlKey: boolean;
+        public readonly shiftKey: boolean;
+        public readonly altKey: boolean;
+        public readonly metaKey: boolean;
+        public readonly keyCode: KeyCode;
+    }
+
+    export class ChordKeybinding {
+        public readonly type: KeybindingType;
+
+        public readonly firstPart: SimpleKeybinding;
+        public readonly chordPart: SimpleKeybinding;
+    }
+
+    export type Keybinding = SimpleKeybinding | ChordKeybinding;
+
     export interface IKeybindingItem {
-        keybinding: number;
+        keybinding: Keybinding;
         command: string;
     }
 
@@ -240,6 +264,25 @@ declare module monaco.services {
         executeCommand<T>(commandId: string, ...args: any[]): monaco.Promise<T>;
         executeCommand(commandId: string, ...args: any[]): monaco.Promise<any>;
     }
+
+    export class LazyStaticService<T> {
+        get(overrides?: monaco.editor.IEditorOverrideServices): T;
+    }
+
+    export interface IStandaloneThemeService extends monaco.theme.IThemeService { }
+
+    export module StaticServices {
+        export const standaloneThemeService: LazyStaticService<IStandaloneThemeService>;
+    }
+}
+
+declare module monaco.theme {
+    export interface ITheme { }
+    export interface IThemeService {
+        onThemeChange: monaco.IEvent<ITheme>;
+    }
+    export interface IThemable { }
+    export function attachQuickOpenStyler(widget: IThemable, themeService: IThemeService): monaco.IDisposable;
 }
 
 declare module monaco.quickOpen {
@@ -395,6 +438,7 @@ declare module monaco.quickOpen {
         setGroupLabel(groupLabel: string): void;
         showBorder(): boolean;
         setShowBorder(showBorder: boolean): void;
+        getEntry(): QuickOpenEntry | undefined;
     }
     export class QuickOpenModel implements IModel<QuickOpenEntry>, IDataSource<QuickOpenEntry>, IFilter<QuickOpenEntry>, IRunner<QuickOpenEntry> {
         constructor(entries?: QuickOpenEntry[] /*, actionProvider?: IActionProvider */);

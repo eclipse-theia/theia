@@ -4576,42 +4576,42 @@ moment@^2.10.6, moment@^2.6.0:
   version "2.18.1"
   resolved "https://registry.yarnpkg.com/moment/-/moment-2.18.1.tgz#c36193dd3ce1c2eed2adb7c802dbbc77a81b1c0f"
 
-monaco-css@^1.3.2:
+monaco-css@^1.3.3:
+  version "1.3.3"
+  resolved "https://registry.yarnpkg.com/monaco-css/-/monaco-css-1.3.3.tgz#1463973676102cf00d931bcf1296b05177fa5b8b"
+
+monaco-editor-core@^0.10.0:
+  version "0.10.0"
+  resolved "https://registry.yarnpkg.com/monaco-editor-core/-/monaco-editor-core-0.10.0.tgz#5bc2b99dbf71859b96455620142205e0ac8816a2"
+
+monaco-editor@^0.10.0:
+  version "0.10.0"
+  resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.10.0.tgz#6604932585fe9c1f993f000a503d0d20fbe5896a"
+
+monaco-html@^1.3.2:
   version "1.3.2"
-  resolved "https://registry.yarnpkg.com/monaco-css/-/monaco-css-1.3.2.tgz#2c0ff0e9a22838102d2df053ab92ad885cc97cdb"
+  resolved "https://registry.yarnpkg.com/monaco-html/-/monaco-html-1.3.2.tgz#588f0bd795f3b3ed2bf256c5f8f2d2bf6b13be82"
 
-monaco-editor-core@^0.8.2:
-  version "0.8.2"
-  resolved "https://registry.yarnpkg.com/monaco-editor-core/-/monaco-editor-core-0.8.2.tgz#ad3b2275aa4a42a5abf467ad2cd7765852722824"
+monaco-json@^1.3.2:
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/monaco-json/-/monaco-json-1.3.2.tgz#92ecca1ef4090e9db48fb0bac2af02e32882a955"
 
-monaco-editor@^0.8.3:
-  version "0.8.3"
-  resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.8.3.tgz#523bdf2d1524db2c2dfc3cae0a7b6edc48d6dea6"
-
-monaco-html@^1.3.1:
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/monaco-html/-/monaco-html-1.3.1.tgz#632264f49826ad76c6fa987437b445a84dcc825d"
-
-monaco-json@^1.3.1:
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/monaco-json/-/monaco-json-1.3.1.tgz#9649e2750c94561d28e76666c8e9e8e379de181e"
-
-monaco-languageclient@^0.0.1-alpha.6:
-  version "0.0.1-alpha.6"
-  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.0.1-alpha.6.tgz#d572a40d6e506e74deee0984c333e8e0f6fac24b"
+monaco-languageclient@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.2.0.tgz#df2f4ff61500c515808afdf1bce8e1f6baba4973"
   dependencies:
     glob-to-regexp "^0.3.0"
-    monaco-editor "^0.8.3"
-    monaco-editor-core "^0.8.2"
+    monaco-editor "^0.10.0"
+    monaco-editor-core "^0.10.0"
     vscode-base-languageclient "^0.0.1-alpha.2"
 
-monaco-languages@^0.8.0:
-  version "0.8.0"
-  resolved "https://registry.yarnpkg.com/monaco-languages/-/monaco-languages-0.8.0.tgz#e01a2d96ed68b957c5bdf953e66cc1e3d3d3927e"
+monaco-languages@^0.9.0:
+  version "0.9.0"
+  resolved "https://registry.yarnpkg.com/monaco-languages/-/monaco-languages-0.9.0.tgz#03ea9c52031b79837e7a389d4fc6211da3f758fd"
 
-monaco-typescript@^2.2.0:
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/monaco-typescript/-/monaco-typescript-2.2.0.tgz#3165a017b1eff506f757b71f9c0bc16595a4437d"
+monaco-typescript@^2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/monaco-typescript/-/monaco-typescript-2.3.0.tgz#ee2e1f6eaad3febb841feb8a4ab90d4abab44b4f"
 
 mount-point@^1.0.0:
   version "1.2.0"
@@ -7430,6 +7430,14 @@ vm-browserify@0.0.4:
 vscode-base-languageclient@^0.0.1-alpha.2:
   version "0.0.1-alpha.2"
   resolved "https://registry.yarnpkg.com/vscode-base-languageclient/-/vscode-base-languageclient-0.0.1-alpha.2.tgz#bebb020b5350e2ef8bbc042ab9e3894124c5c038"
+  dependencies:
+    vscode-jsonrpc "^3.2.0"
+    vscode-languageserver-types "^3.2.0"
+    vscode-uri "^1.0.0"
+
+vscode-base-languageclient@^0.0.1-alpha.3:
+  version "0.0.1-alpha.3"
+  resolved "https://registry.yarnpkg.com/vscode-base-languageclient/-/vscode-base-languageclient-0.0.1-alpha.3.tgz#9b68a8e28a5c84c4e1298b69bedd356ed2e663be"
   dependencies:
     vscode-jsonrpc "^3.2.0"
     vscode-languageserver-types "^3.2.0"

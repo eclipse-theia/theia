@@ -64,9 +64,16 @@ export namespace MonacoCommands {
         { id: SELECTION_ADD_PREVIOUS_OCCURRENCE, label: 'Add Previous Occurrence' },
         { id: SELECTION_SELECT_ALL_OCCURRENCES, label: 'Select All Occurrences' }
     ];
+    export const EXCLUDE_ACTIONS = new Set([
+        ...Object.keys(COMMON_ACTIONS),
+        'editor.action.quickCommand',
+        'editor.action.clipboardCutAction',
+        'editor.action.clipboardCopyAction',
+        'editor.action.clipboardPasteAction',
+    ]);
     for (const menuItem of MenuRegistry.getMenuItems(MenuId.EditorContext)) {
         const { id, title, iconClass } = menuItem.command;
-        if (!COMMON_ACTIONS[id] && id !== 'editor.action.quickCommand') {
+        if (!EXCLUDE_ACTIONS.has(id)) {
             const label = title;
             ACTIONS.push({ id, label, iconClass });
         }
