@@ -368,13 +368,13 @@ export interface Git {
 
     /**
      * Retrieves and shows the content of a resource from the repository at a given reference, commit, or tree.
-     * Resolves to a promise that will produce a Buffer instance containing the contents of the file or an error if the file does not exists in the given revision.
+     * Resolves to a promise that will produce a string containing the contents of the file or an error if the file does not exists in the given revision.
      *
      * @param repository the repository to get the file content from.
      * @param uri the URI of the file who's content has to be retrieved and shown.
      * @param options the options for further refining the `git show`.
      */
-    show(repository: Repository, uri: string, options?: Git.Options.Show): Promise<Buffer>;
+    show(repository: Repository, uri: string, options?: Git.Options.Show): Promise<String>;
 
 }
 
