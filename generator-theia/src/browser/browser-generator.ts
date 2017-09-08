@@ -19,8 +19,8 @@ export class TheiaBrowserGenerator extends AbstractAppGenerator {
         super.initializing();
     }
 
-    configuring(): void {
-        super.configuring();
+    configuring(): Promise<void> {
+        return super.configuring();
     }
 
     writing(): void {
