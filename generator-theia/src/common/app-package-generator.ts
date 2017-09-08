@@ -19,7 +19,6 @@ export class AppPackageGenerator extends AbstractGenerator {
     }
 
     protected compilePackage(): NodePackage {
-        const dependencies = this.isWeb() ? {} : {};
         const scripts = this.isWeb() ? {
             "start": "yarn run build && node ./src-gen/backend/main.js --port=3000| bunyan",
             "start:debug": "yarn run build && node ./src-gen/backend/main.js --port=3000 --loglevel=debug | bunyan",
@@ -40,7 +39,6 @@ export class AppPackageGenerator extends AbstractGenerator {
         return {
             ...this.model.pck,
             "dependencies": sortByKey({
-                ...dependencies,
                 ...this.model.pck.dependencies,
                 ...extensionDependencies
             }),

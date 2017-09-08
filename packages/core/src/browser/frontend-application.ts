@@ -56,7 +56,10 @@ export class FrontendApplication {
         }
         this._shell = this.createShell();
         this.startContributions();
-        this.attachShell();
+
+        this.ensureLoaded().then(() =>
+            this.attachShell()
+        );
     }
 
     protected createShell(): ApplicationShell {
@@ -64,17 +67,23 @@ export class FrontendApplication {
     }
 
     protected attachShell(): void {
-        Widget.attach(this.shell, this.host);
+        const host = this.getHost();
+        Widget.attach(this.shell, host);
         window.addEventListener('resize', () => this.shell.update());
         document.addEventListener('keydown', event => this.keybindings.run(event), true);
     }
 
-    protected get host(): HTMLElement {
-        return this.getHost();
-    }
-
     protected getHost(): HTMLElement {
         return document.body;
+    }
+
+    protected ensureLoaded(): Promise<void> {
+        if (document.body) {
+            return Promise.resolve();
+        }
+        return new Promise<void>(resolve =>
+            window.onload = () => resolve()
+        );
     }
 
     protected startContributions(): void {
