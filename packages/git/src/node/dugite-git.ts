@@ -6,12 +6,15 @@
 */
 
 import * as Path from 'path';
-import { Git } from '../common/git';
+import { Git, GitUtils } from '../common/git';
 import { git } from 'dugite-extra/lib/core/git';
 import { injectable, inject } from "inversify";
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { getStatus } from 'dugite-extra/lib/command/status';
-// import { createBranch, deleteBranch, renameBranch } from 'dugite-extra/lib/command/branch';
+import { clone } from 'dugite-extra/lib/command/clone';
+import { createCommit } from 'dugite-extra/lib/command/commit';
+import { getTextContents, getBlobContents } from 'dugite-extra/lib/command/show';
+import { createBranch, deleteBranch, renameBranch, listBranch } from 'dugite-extra/lib/command/branch';
 import { stage, unstage } from 'dugite-extra/lib/command/stage';
 import { locateRepositories } from './git-repository-locator';
 import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol';
@@ -28,9 +31,12 @@ export class DugiteGit implements Git {
         @inject(WorkspaceServer) private readonly workspace: WorkspaceServer) {
     }
 
-    async clone(remoteUrl: string, options?: Git.Options.Clone | undefined): Promise<Repository> {
-        throw new Error("Method not implemented.");
+    async clone(remoteUrl: string, options?: Git.Options.Clone): Promise<Repository> {
+        const localUri = options && options.localUri ? options.localUri : await this.workspace.getRoot();
+        await clone(remoteUrl, localUri);
+        return { localUri };
     }
+
     async repositories(): Promise<Repository[]> {
         const workspaceRoot = await this.workspace.getRoot();
         const path = await getFsPath(workspaceRoot);
@@ -64,9 +70,27 @@ export class DugiteGit implements Git {
         options: Git.Options.Branch.List |
             Git.Options.Branch.Create |
             Git.Options.Branch.Rename |
-            Git.Options.Branch.Delete): Promise<string | void | string[] | undefined> {
+            Git.Options.Branch.Delete): Promise<void | undefined | string | string[]> {
 
-        throw new Error('implement me');
+        const { localUri } = repository;
+        if (GitUtils.isList(options)) {
+            const branches = await listBranch(localUri, options.type);
+            if (Array.isArray(branches)) {
+                return branches.map(b => b.name);
+            } else {
+                return branches ? branches.name : undefined;
+            }
+        } else {
+            if (GitUtils.isCreate(options)) {
+                return createBranch(localUri, options.toCreate, { startPoint: options.startPoint });
+            } else if (GitUtils.isRename(options)) {
+                return renameBranch(localUri, options.newName, options.newName, { force: !!options.force });
+            } else if (GitUtils.isDelete(options)) {
+                return deleteBranch(localUri, options.toDelete, { force: !!options.force, remote: !!options.remote });
+            } else {
+                throw new Error(`Unknown git branch options: ${options}.`);
+            }
+        }
     }
 
     async checkout(repository: Repository, options: Git.Options.Checkout.Branch | Git.Options.Checkout.WorkingTreeFile): Promise<void> {
@@ -74,7 +98,7 @@ export class DugiteGit implements Git {
     }
 
     async commit(repository: Repository, message?: string): Promise<void> {
-        throw new Error("Method not implemented.");
+        return createCommit(repository.localUri, message || '');
     }
 
     async fetch(repository: Repository): Promise<void> {
@@ -101,8 +125,14 @@ export class DugiteGit implements Git {
         throw new Error("Method not implemented.");
     }
 
-    async show(repository: Repository, uri: string, options?: Git.Options.Show | undefined): Promise<Buffer> {
-        throw new Error("Method not implemented.");
+    async show(repository: Repository, uri: string, options?: Git.Options.Show): Promise<string> {
+        const encoding = options ? options.encoding || 'utf8' : 'utf8';
+        const commitish = options ? options.commitish || 'HEAD' : 'HEAD';
+        const path = await getFsPath(uri);
+        if (encoding === 'binary') {
+            return (await getBlobContents(repository.localUri, commitish, path)).toString();
+        }
+        return (await getTextContents(repository.localUri, commitish, path)).toString();
     }
 
     private async getContainerRepository(path: string): Promise<Repository | undefined> {
