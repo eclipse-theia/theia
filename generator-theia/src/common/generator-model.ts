@@ -53,7 +53,7 @@ export class Model {
     pck: NodePackage = {};
     config: Config = {
         copyright: '',
-        node_modulesPath: "../../node_modules"
+        node_modulesPath: "./node_modules"
     };
     readonly defaultExtensionConfig = <ExtensionConfig>{
         testSupport: true
@@ -70,7 +70,7 @@ export class Model {
     protected readonly extensionPackages = new Map<string, TheiaNodePackage>();
 
     get allExtensions(): string[] {
-        return [...Object.keys(this.pck.localDependencies), ...Object.keys(this.pck.dependencies)];
+        return this.pck.dependencies ? Object.keys(this.pck.dependencies) : [];
     }
 
     readExtensionPackages(read: (extension: string, version: string) => TheiaNodePackage | undefined): void {
