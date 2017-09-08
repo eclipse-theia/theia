@@ -15,7 +15,7 @@ import { WorkspaceService } from "@theia/workspace/lib/browser";
 import { EditorManager } from "@theia/editor/lib/browser"
 import * as lang from "@theia/languages/lib/common";
 import { Emitter, Event, TextDocument, TextDocumentWillSaveEvent, TextEdit } from "@theia/languages/lib/common";
-import { MonacoModelResolver } from "./monaco-model-resolver";
+import { MonacoTextModelService } from "./monaco-model-resolver";
 import { WillSaveModelEvent } from "./monaco-editor-model";
 import URI from "@theia/core/lib/common/uri";
 
@@ -48,7 +48,7 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(FileSystemWatcher) protected readonly fileSystemWatcher: FileSystemWatcher,
-        @inject(MonacoModelResolver) protected readonly monacoModelResolver: MonacoModelResolver,
+        @inject(MonacoTextModelService) protected readonly textModelService: MonacoTextModelService,
         @inject(MonacoToProtocolConverter) protected readonly m2p: MonacoToProtocolConverter,
         @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter,
         @inject(EditorManager) protected readonly editorManager: EditorManager
@@ -59,7 +59,7 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
             this.resolveReady();
         });
         monaco.editor.onDidCreateModel(model => {
-            this.monacoModelResolver.createModelReference(model.uri).then(reference => {
+            this.textModelService.createModelReference(model.uri).then(reference => {
                 reference.object.onDidSaveModel(model =>
                     this.onDidSaveModel(model)
                 );
@@ -146,7 +146,7 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
         const workspaceEdit = this.p2m.asWorkspaceEdit(changes);
         const promises = [];
         for (const edit of workspaceEdit.edits) {
-            promises.push(this.monacoModelResolver.createModelReference(edit.resource).then(reference => {
+            promises.push(this.textModelService.createModelReference(edit.resource).then(reference => {
                 const model = reference.object.textEditorModel;
                 // start a fresh operation
                 model.pushStackElement();

@@ -13,7 +13,7 @@ import { EditorPreferences, EditorPreferenceChange } from "@theia/editor/lib/bro
 import { MonacoEditor } from "./monaco-editor";
 import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditorService } from "./monaco-editor-service";
-import { MonacoModelResolver } from "./monaco-model-resolver";
+import { MonacoTextModelService } from "./monaco-model-resolver";
 import { MonacoContextMenuService } from "./monaco-context-menu";
 import { MonacoWorkspace } from "./monaco-workspace";
 import { MonacoCommandServiceFactory } from "./monaco-command-service";
@@ -28,7 +28,7 @@ export class MonacoEditorProvider {
 
     constructor(
         @inject(MonacoEditorService) protected readonly editorService: MonacoEditorService,
-        @inject(MonacoModelResolver) protected readonly monacoModelResolver: MonacoModelResolver,
+        @inject(MonacoTextModelService) protected readonly textModelService: MonacoTextModelService,
         @inject(MonacoContextMenuService) protected readonly contextMenuService: MonacoContextMenuService,
         @inject(MonacoToProtocolConverter) protected readonly m2p: MonacoToProtocolConverter,
         @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter,
@@ -39,7 +39,7 @@ export class MonacoEditorProvider {
     ) { }
 
     get(uri: URI): Promise<MonacoEditor> {
-        const referencePromise = this.monacoModelResolver.createModelReference(uri);
+        const referencePromise = this.textModelService.createModelReference(uri);
         const prefPromise = this.editorPreferences.ready;
 
         return Promise.all([referencePromise, prefPromise]).then(([reference]) => {
@@ -51,11 +51,12 @@ export class MonacoEditorProvider {
 
             textEditorModel.updateOptions(this.getModelOptions());
 
+            const { editorService, textModelService, contextMenuService } = this;
             const editor = new MonacoEditor(
                 uri, node, this.m2p, this.p2m, this.workspace, this.getEditorOptions(model), {
-                    editorService: this.editorService,
-                    textModelResolverService: this.monacoModelResolver,
-                    contextMenuService: this.contextMenuService,
+                    editorService,
+                    textModelService,
+                    contextMenuService,
                     commandService
                 }
             );

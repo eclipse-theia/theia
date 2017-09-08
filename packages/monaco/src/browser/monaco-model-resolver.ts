@@ -9,32 +9,26 @@ import { inject, injectable } from 'inversify';
 import { DisposableCollection, Disposable, ResourceProvider } from "@theia/core/lib/common";
 import { MonacoEditorModel } from "./monaco-editor-model";
 import URI from "@theia/core/lib/common/uri";
-import ITextModelResolverService = monaco.editor.ITextModelResolverService;
-import ITextModelContentProvider = monaco.editor.ITextModelContentProvider;
-import ITextEditorModel = monaco.editor.ITextEditorModel;
-import IReference = monaco.editor.IReference;
-import IDisposable = monaco.IDisposable;
-import Uri = monaco.Uri;
 
 @injectable()
-export class MonacoModelResolver implements ITextModelResolverService {
+export class MonacoTextModelService implements monaco.editor.ITextModelService {
 
     protected readonly models = new Map<string, monaco.Promise<MonacoEditorModel>>();
-    protected readonly references = new Map<ITextEditorModel, DisposableCollection>();
+    protected readonly references = new Map<monaco.editor.ITextEditorModel, DisposableCollection>();
 
     constructor(
         @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider
     ) {
     }
 
-    createModelReference(raw: Uri | URI): monaco.Promise<IReference<MonacoEditorModel>> {
+    createModelReference(raw: monaco.Uri | URI): monaco.Promise<monaco.editor.IReference<MonacoEditorModel>> {
         const uri = raw instanceof URI ? raw : new URI(raw.toString());
         return this.getOrCreateModel(uri).then(model =>
             this.newReference(model)
         );
     }
 
-    protected newReference(model: MonacoEditorModel): IReference<MonacoEditorModel> {
+    protected newReference(model: MonacoEditorModel): monaco.editor.IReference<MonacoEditorModel> {
         let references = this.references.get(model);
         if (references === undefined) {
             references = new DisposableCollection();
@@ -47,7 +41,7 @@ export class MonacoModelResolver implements ITextModelResolverService {
         }
 
         let removeReference: Disposable;
-        const reference: IReference<MonacoEditorModel> = {
+        const reference: monaco.editor.IReference<MonacoEditorModel> = {
             object: model,
             dispose: () =>
                 removeReference.dispose()
@@ -76,7 +70,7 @@ export class MonacoModelResolver implements ITextModelResolverService {
         );
     }
 
-    registerTextModelContentProvider(scheme: string, provider: ITextModelContentProvider): IDisposable {
+    registerTextModelContentProvider(scheme: string, provider: monaco.editor.ITextModelContentProvider): monaco.IDisposable {
         return {
             dispose(): void {
                 // no-op
