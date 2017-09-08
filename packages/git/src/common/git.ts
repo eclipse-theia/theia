@@ -282,7 +282,7 @@ export interface Git {
      * @param repository the repository to where the staged files have to be removed from/
      * @param uri one or multiple file URIs to unstage in the working clone.
      */
-    rm(repository: Repository, uri: string | string[], ): Promise<void>;
+    rm(repository: Repository, uri: string | string[]): Promise<void>;
 
     /**
      * Lists, creates, renames or deletes a branch.
@@ -389,7 +389,6 @@ export namespace GitUtils {
     export function isRename(any: any | undefined): any is Git.Options.Branch.Rename {
         return (<Git.Options.Branch.Rename>any).newName !== undefined;
     }
-
 
     /**
      * `true` if the argument is an option for deleting an existing branch in the repository.
