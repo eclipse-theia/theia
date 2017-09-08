@@ -9,7 +9,7 @@ import * as net from 'net';
 import * as cp from 'child_process';
 import { injectable } from "inversify";
 import { Message, isRequestMessage } from 'vscode-ws-jsonrpc';
-import { InitializeParams, InitializeRequest } from 'vscode-languageserver/lib/protocol';
+import { InitializeParams, InitializeRequest } from 'vscode-languageserver-protocol';
 import {
     createProcessSocketConnection,
     createProcessStreamConnection,
