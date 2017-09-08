@@ -11,6 +11,7 @@ In the generator-theia directory:
 In the example root directory:
 - `yo theia:browser` to generate the browser app
 - `yo theia:electron` to generate the electron app
+- `yo theia:extension` to generate the the stub for an extension package
 
 Overwrite all existing files if any.
 
@@ -44,4 +45,44 @@ An extension module should have a default export of `ContainerModule | Promise<
 
 A node package should contain `theia.package.json` listing node packages providing extensions as dependencies.
 Theia generator based on `theia.package.json` generates `package.json` as well as other artifacts corresponding to the env.
+
+## Configuring the generator
+
+The generator can be configured in the file `.yo-rc.json`. It is generated once in the directory from where you run `yo` if it doesn't exist. 
+
+### Working with local packages
+
+If you are referring to local packages (which are not fetched from npm), e.g. in a `lerna` setup, list them as `localDependencies`, e.g.
+
+```
+{
+  "generator-theia": {
+    "localDependencies": {
+      "@theia/core": "../theia/packages/core"
+    }
+  }
+}
+```
+
+### Lookup path for node_modules
+
+If you are referring to local packages (which are not fetched from npm), e.g. in a `lerna` setup, you can override the relative path to the `node_modules` where they are located, e.g.
+
+```
+{
+  "generator-theia": {
+    "node_modules": "../node_modules"
+  }
+}
+```
+
+### Setting a copyright header
+
+```
+{
+  "generator-theia": {
+    "copyright": "/*\n * Copyright (C) 2017 TypeFox and others.\n *\n */"
+  }
+}
+```
 
