@@ -28,8 +28,7 @@ export declare type Keystroke = { first: Key, modifiers?: Modifier[] };
  */
 export class KeyCode {
 
-    public readonly key: string;
-    public readonly label: string;
+    public readonly key: Key;
     public readonly ctrl: boolean;
     public readonly shift: boolean;
     public readonly alt: boolean;
@@ -40,7 +39,7 @@ export class KeyCode {
         // const chord = ((secondSequence & 0x0000ffff) << 16) >>> 0;
         // (firstSequence | chord) >>> 0;
         const parts = keystroke.split('+');
-        this.key = parts[0];
+        this.key = Key.getKey(parts[0]);
         if (isOSX) {
             this.meta = parts.some(part => part === Modifier.M1);
             this.shift = parts.some(part => part === Modifier.M2);
@@ -52,21 +51,6 @@ export class KeyCode {
             this.shift = parts.some(part => part === Modifier.M2);
             this.alt = parts.some(part => part === Modifier.M3);
         }
-        const labelParts: string[] = [];
-        if (this.ctrl) {
-            labelParts.push('Control');
-        }
-        if (this.shift) {
-            labelParts.push('Shift');
-        }
-        if (this.alt) {
-            labelParts.push('Alt');
-        }
-        if (this.meta) {
-            labelParts.push('Command');
-        }
-        labelParts.push(this.key);
-        this.label = labelParts.join('+');
     }
 
     public static createKeyCode(event: KeyboardEvent | Keystroke): KeyCode {
