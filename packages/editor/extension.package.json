@@ -5,7 +5,7 @@
   "dependencies": {
     "@theia/core": "^0.1.1",
     "@theia/preferences": "^0.1.1",
-    "vscode-languageserver-types": "^3.3.0"
+    "vscode-languageserver-types": "^3.4.0"
   },
   "publishConfig": {
     "access": "public"
