@@ -7,7 +7,7 @@
 
 import Base = require('yeoman-generator');
 import { AbstractGenerator, sortByKey } from '../common';
-import { NodePackage } from "./generator-model";
+import { NodePackage, Dependencies } from "./generator-model";
 
 export class AppPackageGenerator extends AbstractGenerator {
 
@@ -19,25 +19,30 @@ export class AppPackageGenerator extends AbstractGenerator {
     }
 
     protected compilePackage(): NodePackage {
-        const dependencies = this.isWeb() ? {} : {}
+        const dependencies = this.isWeb() ? {} : {};
         const scripts = this.isWeb() ? {
             "start": "yarn run build && node ./src-gen/backend/main.js --port=3000| bunyan",
             "start:debug": "yarn run build && node ./src-gen/backend/main.js --port=3000 --loglevel=debug | bunyan",
         } : {
                 "start": "yarn run build && electron ./src-gen/frontend/electron-main.js --hostname=localhost | bunyan",
                 "start:debug": "yarn run build && electron ./src-gen/frontend/electron-main.js --hostname=localhost --loglevel=debug | bunyan"
-            }
+            };
         const devDependencies = this.isWeb() ? {
             "webpack-dev-server": "^2.5.0"
         } : {
                 "electron": "^1.6.11",
                 "electron-rebuild": "^1.5.11"
-            }
+            };
+        const extensionDependencies: Dependencies = {};
+        for (const extensionPackage of this.model.extensionPackages) {
+            extensionDependencies[extensionPackage.name] = extensionPackage.version;
+        }
         return {
             ...this.model.pck,
             "dependencies": sortByKey({
                 ...dependencies,
-                ...this.model.pck.dependencies
+                ...this.model.pck.dependencies,
+                ...extensionDependencies
             }),
             "scripts": sortByKey({
                 "clean": "rimraf lib",
