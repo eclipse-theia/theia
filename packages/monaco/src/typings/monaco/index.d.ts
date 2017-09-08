@@ -22,7 +22,7 @@ declare module monaco.editor {
 
     export interface IEditorOverrideServices {
         editorService?: IEditorService;
-        textModelResolverService?: ITextModelResolverService;
+        textModelService?: ITextModelService;
         contextMenuService?: IContextMenuService;
         commandService?: monaco.commands.ICommandService;
     }
@@ -69,7 +69,7 @@ declare module monaco.editor {
         readonly object: T;
     }
 
-    export interface ITextModelResolverService {
+    export interface ITextModelService {
         /**
          * Provided a resource URI, it will return a model reference
          * which should be disposed once not needed anymore.

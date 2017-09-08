@@ -18,7 +18,7 @@ import { MonacoKeybindingContribution } from "./monaco-keybinding";
 import { MonacoLanguages } from "./monaco-languages";
 import { MonacoWorkspace } from "./monaco-workspace";
 import { MonacoEditorService } from "./monaco-editor-service";
-import { MonacoModelResolver } from "./monaco-model-resolver";
+import { MonacoTextModelService } from "./monaco-model-resolver";
 import { MonacoContextMenuService } from "./monaco-context-menu";
 import { MonacoCommandService, MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoCommandRegistry } from './monaco-command-registry';
@@ -40,7 +40,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(Workspace).toDynamicValue(ctx => ctx.container.get(MonacoWorkspace));
 
     bind(MonacoEditorService).toSelf().inSingletonScope();
-    bind(MonacoModelResolver).toSelf().inSingletonScope();
+    bind(MonacoTextModelService).toSelf().inSingletonScope();
     bind(MonacoContextMenuService).toSelf().inSingletonScope();
     bind(MonacoEditorProvider).toSelf().inSingletonScope();
     bind(MonacoCommandService).toSelf().inTransientScope();
