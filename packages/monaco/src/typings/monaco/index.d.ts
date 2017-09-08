@@ -188,6 +188,15 @@ declare module monaco.actions {
 
 }
 
+declare module monaco.platform {
+    export const enum OperatingSystem {
+        Windows = 1,
+        Macintosh = 2,
+        Linux = 3
+    }
+    export const OS: OperatingSystem;
+}
+
 declare module monaco.keybindings {
 
     export const enum KeybindingType {
@@ -203,6 +212,8 @@ declare module monaco.keybindings {
         public readonly altKey: boolean;
         public readonly metaKey: boolean;
         public readonly keyCode: KeyCode;
+
+        constructor(ctrlKey: boolean, shiftKey: boolean, altKey: boolean, metaKey: boolean, keyCode: KeyCode);
     }
 
     export class ChordKeybinding {
@@ -210,6 +221,8 @@ declare module monaco.keybindings {
 
         public readonly firstPart: SimpleKeybinding;
         public readonly chordPart: SimpleKeybinding;
+
+        constructor(firstPart: SimpleKeybinding, chordPart: SimpleKeybinding);
     }
 
     export type Keybinding = SimpleKeybinding | ChordKeybinding;
@@ -253,6 +266,13 @@ declare module monaco.keybindings {
          * For simple keybindings, the second element will be null.
          */
         public abstract getParts(): [ResolvedKeybindingPart, ResolvedKeybindingPart | undefined];
+    }
+
+    export class USLayoutResolvedKeybinding extends ResolvedKeybinding {
+        constructor(actual: Keybinding, OS: monaco.platform.OperatingSystem);
+
+        public getAriaLabel(): string;
+        public getParts(): [ResolvedKeybindingPart, ResolvedKeybindingPart | undefined];
     }
 
 }

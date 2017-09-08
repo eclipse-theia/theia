@@ -19,7 +19,9 @@ import { MonacoWorkspace } from "./monaco-workspace";
 import { MonacoCommandServiceFactory } from "./monaco-command-service";
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
 
-monaco.editor.setTheme('vs-dark');
+const monacoTheme = 'vs-dark';
+monaco.editor.setTheme(monacoTheme);
+document.body.classList.add(monacoTheme);
 
 @injectable()
 export class MonacoEditorProvider {

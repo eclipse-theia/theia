@@ -16,8 +16,22 @@ export interface InternalMonacoQuickOpenModel extends monaco.quickOpen.IQuickOpe
 @injectable()
 export class MonacoQuickOpenService extends QuickOpenService {
 
+    protected readonly container: HTMLElement;
     protected _widget: monaco.quickOpen.QuickOpenWidget | undefined;
     protected model: InternalMonacoQuickOpenModel | undefined;
+
+    constructor() {
+        super();
+        const overlayWidgets = document.createElement('div');
+        overlayWidgets.classList.add('quick-open-overlay');
+        document.body.appendChild(overlayWidgets);
+
+        const container = this.container = document.createElement('quick-open-container');
+        container.style.position = 'absolute';
+        container.style.top = '0px';
+        container.style.right = '50%';
+        overlayWidgets.appendChild(container);
+    }
 
     open(model: QuickOpenModel, options?: QuickOpenOptions): void {
         this.internalOpen(new MonacoQuickOpenModel(model, options));
@@ -34,17 +48,8 @@ export class MonacoQuickOpenService extends QuickOpenService {
         if (this._widget) {
             return this._widget;
         }
-        const overlayWidgets = document.createElement('div');
-        overlayWidgets.classList.add('quick-open-overlay');
-        document.body.appendChild(overlayWidgets);
 
-        const container = document.createElement('quick-open-container');
-        container.style.position = 'absolute';
-        container.style.top = '0px';
-        container.style.right = '50%';
-        overlayWidgets.appendChild(container);
-
-        this._widget = new monaco.quickOpen.QuickOpenWidget(container, {
+        this._widget = new monaco.quickOpen.QuickOpenWidget(this.container, {
             onOk: () => this.onClose(false),
             onCancel: () => this.onClose(true),
             onType: lookFor => this.onType(lookFor || ''),
@@ -192,17 +197,14 @@ export class QuickOpenEntry extends monaco.quickOpen.QuickOpenEntry {
         if (!keybinding) {
             return undefined;
         }
-        return {
-            getAriaLabel: () => keybinding.keyCode.label,
-            getParts: () => [new monaco.keybindings.ResolvedKeybindingPart(
-                keybinding.keyCode.ctrl,
-                keybinding.keyCode.shift,
-                keybinding.keyCode.alt,
-                keybinding.keyCode.meta,
-                keybinding.keyCode.key,
-                keybinding.keyCode.key
-            ), undefined]
-        };
+        const simple = new monaco.keybindings.SimpleKeybinding(
+            keybinding.keyCode.ctrl,
+            keybinding.keyCode.shift,
+            keybinding.keyCode.alt,
+            keybinding.keyCode.meta,
+            keybinding.keyCode.key.keyCode
+        );
+        return new monaco.keybindings.USLayoutResolvedKeybinding(simple, monaco.platform.OS);
     }
 
     run(mode: monaco.quickOpen.Mode): boolean {

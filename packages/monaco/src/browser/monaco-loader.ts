@@ -40,6 +40,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/platform/actions/common/actions',
                 'vs/platform/keybinding/common/keybindingsRegistry',
                 'vs/platform/keybinding/common/keybindingResolver',
+                'vs/platform/keybinding/common/usLayoutResolvedKeybinding',
                 'vs/base/common/keyCodes',
                 'vs/editor/standalone/browser/simpleServices',
                 'vs/editor/standalone/browser/standaloneServices',
@@ -47,18 +48,20 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/base/parts/quickopen/browser/quickOpenWidget',
                 'vs/base/parts/quickopen/browser/quickOpenModel',
                 'vs/base/common/filters',
-                'vs/platform/theme/common/styler'
-            ], (basic: any, css: any, ts: any, html: any, json: any, commands: any, actions: any, registry: any, resolver: any,
+                'vs/platform/theme/common/styler',
+                'vs/base/common/platform'
+            ], (basic: any, css: any, ts: any, html: any, json: any, commands: any, actions: any, registry: any, resolver: any, resolvedKeybinding: any,
                 keyCodes: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
-                filters: any, styler: any) => {
+                filters: any, styler: any, platform: any) => {
                     const global: any = self;
                     global.monaco.commands = commands;
                     global.monaco.actions = actions;
-                    global.monaco.keybindings = Object.assign({}, registry, resolver, keyCodes);
+                    global.monaco.keybindings = Object.assign({}, registry, resolver, resolvedKeybinding, keyCodes);
                     global.monaco.services = Object.assign({}, simpleServices, standaloneServices);
                     global.monaco.quickOpen = Object.assign({}, quickOpen, quickOpenWidget, quickOpenModel);
                     global.monaco.filters = filters;
                     global.monaco.theme = styler;
+                    global.monaco.platform = platform;
                     resolve();
                 });
         });
