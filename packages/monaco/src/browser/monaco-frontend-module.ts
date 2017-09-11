@@ -18,7 +18,7 @@ import { MonacoKeybindingContribution } from "./monaco-keybinding";
 import { MonacoLanguages } from "./monaco-languages";
 import { MonacoWorkspace } from "./monaco-workspace";
 import { MonacoEditorService } from "./monaco-editor-service";
-import { MonacoTextModelService } from "./monaco-model-resolver";
+import { MonacoTextModelService } from "./monaco-text-model-service";
 import { MonacoContextMenuService } from "./monaco-context-menu";
 import { MonacoCommandService, MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoCommandRegistry } from './monaco-command-registry';
