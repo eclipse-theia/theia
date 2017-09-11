@@ -7,9 +7,16 @@
 
 import { ContainerModule } from "inversify";
 import { LanguageClientContribution } from "@theia/languages/lib/browser";
-import { TypescriptClientContribution } from "./typescript-client-contribution";
+import { TypeScriptClientContribution, JavaScriptClientContribution } from "./typescript-client-contribution";
+import { registerTypeScript, registerJavaScript } from './typescript-language-config';
 
 export default new ContainerModule(bind => {
-    bind(TypescriptClientContribution).toSelf().inSingletonScope();
-    bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(TypescriptClientContribution));
+    registerTypeScript();
+    registerJavaScript();
+
+    bind(TypeScriptClientContribution).toSelf().inSingletonScope();
+    bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(TypeScriptClientContribution));
+
+    bind(JavaScriptClientContribution).toSelf().inSingletonScope();
+    bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(JavaScriptClientContribution));
 });
