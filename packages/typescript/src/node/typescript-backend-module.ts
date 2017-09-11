@@ -7,8 +7,9 @@
 
 import { ContainerModule } from "inversify";
 import { LanguageServerContribution } from "@theia/languages/lib/node";
-import { TypescriptContribution } from './typescript-contribution';
+import { JavaScriptContribution, TypeScriptContribution } from './typescript-contribution';
 
 export default new ContainerModule(bind => {
-    bind(LanguageServerContribution).to(TypescriptContribution).inSingletonScope();
+    bind(LanguageServerContribution).to(TypeScriptContribution).inSingletonScope();
+    bind(LanguageServerContribution).to(JavaScriptContribution).inSingletonScope();
 });

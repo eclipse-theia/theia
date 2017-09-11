@@ -5,8 +5,8 @@
   "dependencies": {
     "@theia/core": "^0.1.1",
     "@theia/languages": "^0.1.1",
-    "javascript-typescript-langserver": "^2.2.1",
-    "monaco-typescript": "^2.2.0"
+    "monaco-typescript": "^2.2.0",
+    "ts-language-server": "^0.0.18"
   },
   "publishConfig": {
     "access": "public"

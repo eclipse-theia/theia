@@ -8,10 +8,10 @@
 import { injectable, inject } from "inversify";
 import { BaseLanguageClientContribution, Workspace, Languages, LanguageClientFactory } from '@theia/languages/lib/browser';
 import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME } from '../common';
-import { registerTypeScript } from './typescript-language-config';
+import { JAVASCRIPT_LANGUAGE_ID, JAVASCRIPT_LANGUAGE_NAME } from '../common/index';
 
 @injectable()
-export class TypescriptClientContribution extends BaseLanguageClientContribution {
+export class TypeScriptClientContribution extends BaseLanguageClientContribution {
 
     readonly id = TYPESCRIPT_LANGUAGE_ID;
     readonly name = TYPESCRIPT_LANGUAGE_NAME;
@@ -22,13 +22,34 @@ export class TypescriptClientContribution extends BaseLanguageClientContribution
         @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory
     ) {
         super(workspace, languages, languageClientFactory);
-        registerTypeScript();
     }
 
     protected get globPatterns() {
         return [
             '**/*.ts',
-            '**/*.tsx',
+            '**/*.tsx'
+        ];
+    }
+
+}
+@injectable()
+export class JavaScriptClientContribution extends BaseLanguageClientContribution {
+
+    readonly id = JAVASCRIPT_LANGUAGE_ID;
+    readonly name = JAVASCRIPT_LANGUAGE_NAME;
+
+    constructor(
+        @inject(Workspace) protected readonly workspace: Workspace,
+        @inject(Languages) protected readonly languages: Languages,
+        @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory
+    ) {
+        super(workspace, languages, languageClientFactory);
+    }
+
+    protected get globPatterns() {
+        return [
+            '**/*.js',
+            '**/*.jsx',
         ];
     }
 

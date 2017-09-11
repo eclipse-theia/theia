@@ -6,4 +6,7 @@
  */
 
 export const TYPESCRIPT_LANGUAGE_ID = 'typescript';
-export const TYPESCRIPT_LANGUAGE_NAME = 'Typescript';
+export const TYPESCRIPT_LANGUAGE_NAME = 'TypeScript';
+
+export const JAVASCRIPT_LANGUAGE_ID = 'javascript';
+export const JAVASCRIPT_LANGUAGE_NAME = 'JavaScript';

@@ -6,7 +6,7 @@
 // some parts are copied from https://github.com/Microsoft/monaco-typescript/blob/v2.3.0/src/mode.ts
 
 
-import { TYPESCRIPT_LANGUAGE_ID } from "../common";
+import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME, JAVASCRIPT_LANGUAGE_ID, JAVASCRIPT_LANGUAGE_NAME } from "../common";
 import { createTokenizationSupport, Language } from "./monaco-tokenization/tokenization";
 
 const genericEditConfiguration: monaco.languages.LanguageConfiguration = {
@@ -61,10 +61,24 @@ export function registerTypeScript() {
     monaco.languages.register({
         id: TYPESCRIPT_LANGUAGE_ID,
         extensions: ['.ts', '.tsx'],
-        aliases: ['TypeScript', 'ts', 'typescript'],
+        aliases: [TYPESCRIPT_LANGUAGE_NAME, 'ts', 'typescript'],
         mimetypes: ['text/typescript']
     });
+    monaco.languages.onLanguage(TYPESCRIPT_LANGUAGE_ID, () => {
+        monaco.languages.setLanguageConfiguration(TYPESCRIPT_LANGUAGE_ID, genericEditConfiguration);
+        monaco.languages.setTokensProvider(TYPESCRIPT_LANGUAGE_ID, createTokenizationSupport(Language.TypeScript));
+    });
+}
 
-    monaco.languages.setLanguageConfiguration(TYPESCRIPT_LANGUAGE_ID, genericEditConfiguration);
-    monaco.languages.setTokensProvider(TYPESCRIPT_LANGUAGE_ID, createTokenizationSupport(Language.TypeScript));
+export function registerJavaScript() {
+    monaco.languages.register({
+        id: JAVASCRIPT_LANGUAGE_ID,
+        extensions: ['.js', '.jsx'],
+        aliases: [JAVASCRIPT_LANGUAGE_NAME, 'js', 'javascript'],
+        mimetypes: ['text/javascript']
+    });
+    monaco.languages.onLanguage(JAVASCRIPT_LANGUAGE_ID, () => {
+        monaco.languages.setLanguageConfiguration(JAVASCRIPT_LANGUAGE_ID, genericEditConfiguration);
+        monaco.languages.setTokensProvider(JAVASCRIPT_LANGUAGE_ID, createTokenizationSupport(Language.EcmaScript5));
+    });
 }
