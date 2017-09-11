@@ -16,7 +16,8 @@
     "@theia/java": "^0.1.1",
     "@theia/python": "^0.1.1",
     "@theia/cpp": "^0.1.1",
-    "@theia/go": "^0.1.1"
+    "@theia/go": "^0.1.1",
+    "@theia/typescript": "^0.1.1"
   },
   "scripts": {
     "clean": "rimraf lib && rimraf errorShots",
