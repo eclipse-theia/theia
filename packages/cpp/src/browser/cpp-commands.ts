@@ -12,7 +12,7 @@ import URI from "@theia/core/lib/common/uri";
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { CppClientContribution } from "./cpp-client-contribution";
 import { TextDocumentItemRequest } from "./cpp-protocol";
-import { TextDocumentIdentifier } from "@theia/languages/lib/common";
+import { TextDocumentIdentifier, Workspace, TextEdit } from "@theia/languages/lib/common";
 import { EDITOR_CONTEXT_MENU_ID } from "@theia/editor/lib/browser";
 
 
@@ -22,6 +22,10 @@ import { EDITOR_CONTEXT_MENU_ID } from "@theia/editor/lib/browser";
 export const SWITCH_SOURCE_HEADER: Command = {
     id: 'switch_source_header',
     label: 'Switch between source/header file'
+};
+
+export const APPLY_FIX: Command = {
+    id: 'clangd.applyFix'
 };
 
 export const FILE_OPEN_PATH = (path: string): Command => <Command>{
@@ -35,6 +39,7 @@ export class CppCommandContribution implements CommandContribution, MenuContribu
         // @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(CppClientContribution) protected readonly clientContribution: CppClientContribution,
         @inject(OpenerService) protected readonly openerService: OpenerService,
+        @inject(Workspace) protected readonly workspace: Workspace,
         protected readonly selectionService: SelectionService
 
     ) { }
@@ -44,6 +49,11 @@ export class CppCommandContribution implements CommandContribution, MenuContribu
         commands.registerCommand(SWITCH_SOURCE_HEADER, {
             isEnabled: () => true,
             execute: () => this.switchSourceHeader()
+        });
+
+        commands.registerCommand(APPLY_FIX, {
+            execute: (uri: string, edits: TextEdit[]) =>
+                !!this.workspace.applyEdit && this.workspace.applyEdit({ changes: { [uri]: edits } })
         });
 
     }
