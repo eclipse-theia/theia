@@ -15,7 +15,7 @@ import { WorkspaceService } from "@theia/workspace/lib/browser";
 import { EditorManager } from "@theia/editor/lib/browser"
 import * as lang from "@theia/languages/lib/common";
 import { Emitter, Event, TextDocument, TextDocumentWillSaveEvent, TextEdit } from "@theia/languages/lib/common";
-import { MonacoTextModelService } from "./monaco-model-resolver";
+import { MonacoTextModelService } from "./monaco-text-model-service";
 import { WillSaveModelEvent } from "./monaco-editor-model";
 import URI from "@theia/core/lib/common/uri";
 

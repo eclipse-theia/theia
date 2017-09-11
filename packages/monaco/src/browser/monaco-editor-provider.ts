@@ -13,7 +13,7 @@ import { EditorPreferences, EditorPreferenceChange } from "@theia/editor/lib/bro
 import { MonacoEditor } from "./monaco-editor";
 import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditorService } from "./monaco-editor-service";
-import { MonacoTextModelService } from "./monaco-model-resolver";
+import { MonacoTextModelService } from "./monaco-text-model-service";
 import { MonacoContextMenuService } from "./monaco-context-menu";
 import { MonacoWorkspace } from "./monaco-workspace";
 import { MonacoCommandServiceFactory } from "./monaco-command-service";
