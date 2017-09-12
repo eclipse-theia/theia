@@ -89,85 +89,81 @@ export class WorkspaceCommandContribution implements CommandContribution {
         this.openerService.getOpeners().then(openers => {
             for (const opener of openers) {
                 const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
-                registry.registerCommand(openWithCommand);
-                registry.registerHandler(openWithCommand.id,
-                    new FileSystemCommandHandler(this.selectionService, uri => opener.open(uri))
-                );
+                registry.registerCommand(openWithCommand, this.newFileHandler({
+                    execute: uri => opener.open(uri),
+                    isEnabled: uri => opener.canHandle(uri) !== 0,
+                    isVisible: uri => opener.canHandle(uri) !== 0
+                }));
             }
         });
 
-        registry.registerHandler(
-            WorkspaceCommands.FILE_RENAME,
-            new FileSystemCommandHandler(this.selectionService, uri =>
-                this.getParent(uri).then(parent => {
-                    const dialog = new SingleTextInputDialog({
-                        title: 'Rename File',
-                        initialValue: uri.path.base,
-                        validate: name => this.validateFileName(name, parent)
-                    });
-                    dialog.open().then(name =>
-                        this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString())
-                    );
-                })
-            )
-        );
+        registry.registerHandler(WorkspaceCommands.FILE_RENAME, this.newFileHandler({
+            execute: uri => this.getParent(uri).then(parent => {
+                const dialog = new SingleTextInputDialog({
+                    title: 'Rename File',
+                    initialValue: uri.path.base,
+                    validate: name => this.validateFileName(name, parent)
+                });
+                dialog.open().then(name =>
+                    this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString())
+                );
+            })
+        }));
 
-        registry.registerHandler(
-            WorkspaceCommands.NEW_FILE,
-            new WorkspaceRootAwareCommandHandler(this.workspaceServer, this.selectionService, uri =>
-                this.getDirectory(uri).then(parent => {
-                    const parentUri = new URI(parent.uri);
-                    const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled', '.txt');
-                    const dialog = new SingleTextInputDialog({
-                        title: `New File`,
-                        initialValue: vacantChildUri.path.base,
-                        validate: name => this.validateFileName(name, parent)
+        registry.registerHandler(WorkspaceCommands.NEW_FILE, this.newWorkspaceHandler({
+            execute: uri => this.getDirectory(uri).then(parent => {
+                const parentUri = new URI(parent.uri);
+                const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled', '.txt');
+                const dialog = new SingleTextInputDialog({
+                    title: `New File`,
+                    initialValue: vacantChildUri.path.base,
+                    validate: name => this.validateFileName(name, parent)
+                });
+                dialog.open().then(name => {
+                    const fileUri = parentUri.resolve(name);
+                    this.fileSystem.createFile(fileUri.toString()).then(() => {
+                        open(this.openerService, fileUri);
                     });
-                    dialog.open().then(name => {
-                        const fileUri = parentUri.resolve(name);
-                        this.fileSystem.createFile(fileUri.toString()).then(() => {
-                            open(this.openerService, fileUri);
-                        });
-                    });
-                })
-            )
-        );
+                });
+            })
+        }));
 
-        registry.registerHandler(
-            WorkspaceCommands.NEW_FOLDER,
-            new WorkspaceRootAwareCommandHandler(this.workspaceServer, this.selectionService, uri =>
-                this.getDirectory(uri).then(parent => {
-                    const parentUri = new URI(parent.uri);
-                    const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled');
-                    const dialog = new SingleTextInputDialog({
-                        title: `New Folder`,
-                        initialValue: vacantChildUri.path.base,
-                        validate: name => this.validateFileName(name, parent)
-                    });
-                    dialog.open().then(name =>
-                        this.fileSystem.createFolder(parentUri.resolve(name).toString())
-                    );
-                })
-            )
-        )
+        registry.registerHandler(WorkspaceCommands.NEW_FOLDER, this.newWorkspaceHandler({
+            execute: uri => this.getDirectory(uri).then(parent => {
+                const parentUri = new URI(parent.uri);
+                const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled');
+                const dialog = new SingleTextInputDialog({
+                    title: `New Folder`,
+                    initialValue: vacantChildUri.path.base,
+                    validate: name => this.validateFileName(name, parent)
+                });
+                dialog.open().then(name =>
+                    this.fileSystem.createFolder(parentUri.resolve(name).toString())
+                );
+            })
+        }));
 
-        registry.registerHandler(
-            WorkspaceCommands.FILE_DELETE,
-            new FileSystemCommandHandler(this.selectionService, uri => {
+        registry.registerHandler(WorkspaceCommands.FILE_DELETE, this.newFileHandler({
+            execute: uri => {
                 const dialog = new ConfirmDialog({
                     title: 'Delete File',
                     msg: `Do you really want to delete '${uri.path.base}'?`
                 });
                 return dialog.open().then(() => this.fileSystem.delete(uri.toString()));
-            })
-        )
+            }
+        }));
 
-        registry.registerHandler(
-            WorkspaceCommands.FILE_OPEN,
-            new FileSystemCommandHandler(this.selectionService,
-                uri => open(this.openerService, uri)
-            )
-        );
+        registry.registerHandler(WorkspaceCommands.FILE_OPEN, this.newFileHandler({
+            execute: uri => open(this.openerService, uri)
+        }));
+    }
+
+    protected newFileHandler(handler: UriCommandHandler): FileSystemCommandHandler {
+        return new FileSystemCommandHandler(this.selectionService, handler);
+    }
+
+    protected newWorkspaceHandler(handler: UriCommandHandler): WorkspaceRootAwareCommandHandler {
+        return new WorkspaceRootAwareCommandHandler(this.workspaceServer, this.selectionService, handler);
     }
 
     /**
@@ -214,31 +210,42 @@ export class WorkspaceCommandContribution implements CommandContribution {
     }
 }
 
+export interface UriCommandHandler {
+    execute(uri: URI, ...args: any[]): any;
+    isEnabled?(uri: URI, ...args: any[]): boolean;
+    isVisible?(uri: URI, ...args: any[]): boolean;
+}
 export class FileSystemCommandHandler implements CommandHandler {
     constructor(
         protected readonly selectionService: SelectionService,
-        protected readonly doExecute: (uri: URI) => object | undefined,
-        protected readonly testEnabled?: (uri: URI) => boolean
+        protected readonly handler: UriCommandHandler
     ) { }
 
     protected getUri(): URI | undefined {
         return UriSelection.getUri(this.selectionService.selection);
     }
 
-    execute(): object | undefined {
+    execute(...args: any[]): object | undefined {
         const uri = this.getUri();
-        return uri ? this.doExecute(uri) : undefined;
+        return uri ? this.handler.execute(uri, ...args) : undefined;
     }
 
-    isVisible(): boolean {
-        return !!this.getUri();
-    }
-
-    isEnabled(): boolean {
+    isVisible(...args: any[]): boolean {
         const uri = this.getUri();
         if (uri) {
-            if (this.testEnabled) {
-                return this.testEnabled(uri);
+            if (this.handler.isVisible) {
+                return this.handler.isVisible(uri, ...args);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    isEnabled(...args: any[]): boolean {
+        const uri = this.getUri();
+        if (uri) {
+            if (this.handler.isEnabled) {
+                return this.handler.isEnabled(uri, ...args);
             }
             return true;
         }
@@ -247,17 +254,16 @@ export class FileSystemCommandHandler implements CommandHandler {
 
 }
 
-class WorkspaceRootAwareCommandHandler extends FileSystemCommandHandler {
+export class WorkspaceRootAwareCommandHandler extends FileSystemCommandHandler {
 
     protected rootUri: URI;
 
     constructor(
         protected readonly workspaceServer: WorkspaceServer,
         protected readonly selectionService: SelectionService,
-        protected readonly doExecute: (uri: URI) => object | undefined,
-        protected readonly testEnabled?: (uri: URI) => boolean
+        protected readonly handler: UriCommandHandler
     ) {
-        super(selectionService, doExecute, testEnabled);
+        super(selectionService, handler);
         workspaceServer.getRoot().then(root => {
             this.rootUri = new URI(root);
         });
