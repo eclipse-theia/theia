@@ -18,6 +18,26 @@ export namespace GIT_COMMANDS {
         id: 'git.repositories',
         label: 'Print All Repositories'
     };
+    export const FETCH = {
+        id: 'git.fetch',
+        label: 'Fetch'
+    };
+    export const PULL = {
+        id: 'git.pull',
+        label: 'Pull'
+    };
+    export const MERGE = {
+        id: 'git.merge',
+        label: 'Merge'
+    };
+    export const COMMIT = {
+        id: 'git.commit',
+        label: 'Commit'
+    };
+    export const PUSH = {
+        id: 'git.push',
+        label: 'Push'
+    };
 }
 
 @injectable()
@@ -58,6 +78,46 @@ export class GitCommandHandlers implements CommandContribution {
                     }
                 });
                 return undefined;
+            },
+            isEnabled: () => true
+        });
+
+        registry.registerCommand(GIT_COMMANDS.FETCH);
+        registry.registerHandler(GIT_COMMANDS.FETCH.id, {
+            execute: (): any => {
+                this.git.fetch();
+            },
+            isEnabled: () => true
+        });
+
+        registry.registerCommand(GIT_COMMANDS.COMMIT);
+        registry.registerHandler(GIT_COMMANDS.COMMIT.id, {
+            execute: (): any => {
+                console.log('COMMIT');
+            },
+            isEnabled: () => true
+        });
+
+        registry.registerCommand(GIT_COMMANDS.PULL);
+        registry.registerHandler(GIT_COMMANDS.PULL.id, {
+            execute: (): any => {
+                console.log('PULL');
+            },
+            isEnabled: () => true
+        });
+
+        registry.registerCommand(GIT_COMMANDS.MERGE);
+        registry.registerHandler(GIT_COMMANDS.MERGE.id, {
+            execute: (): any => {
+                console.log('MERGE');
+            },
+            isEnabled: () => true
+        });
+
+        registry.registerCommand(GIT_COMMANDS.PUSH);
+        registry.registerHandler(GIT_COMMANDS.PUSH.id, {
+            execute: (): any => {
+                console.log('PUSH');
             },
             isEnabled: () => true
         });
