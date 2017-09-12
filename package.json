@@ -2,9 +2,6 @@
   "private": true,
   "name": "parent",
   "version": "0.0.0",
-  "dependencies": {
-    "node-pty": "^0.6.10"
-  },
   "devDependencies": {
     "colors": "^1.1.2",
     "lerna": "^2.1.2",
@@ -27,8 +24,8 @@
     "test:browser": "yarn run rebuild:browser && node scripts/lerna run test --scope \"@theia/example-browser\"",
     "test:electron": "yarn run rebuild:electron && node scripts/lerna run test --scope \"@theia/example-electron\"",
     "clean:rebuild": "rimraf .browser_modules",
-    "rebuild:browser": "node scripts/rebuild --target=browser",
-    "rebuild:electron": "node scripts/rebuild --target=electron",
+    "rebuild:browser": "node generator-theia/bin/rebuild --target=browser",
+    "rebuild:electron": "node generator-theia/bin/rebuild --target=electron",
     "rebuild:electron:debug": "DEBUG=electron-rebuild && yarn run rebuild:electron",
     "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel",
     "publish": "yarn && yarn test && yarn run publish:latest && node scripts/update-versions",
