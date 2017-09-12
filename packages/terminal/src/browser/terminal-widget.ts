@@ -83,7 +83,7 @@ export class TerminalWidget extends BaseWidget {
         this.rows = initialGeometry.rows;
 
         this.term.on('resize', size => {
-            if (!this.terminalId) {
+            if (this.terminalId === undefined) {
                 return;
             }
             this.cols = size.cols
