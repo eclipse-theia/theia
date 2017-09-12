@@ -1,18 +1,20 @@
 /*
- * Copyright (C) 2017 TypeFox and others.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+* Copyright (C) 2017 TypeFox and others.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+*/
 
 
-import { VirtualRenderer, VirtualWidget } from '@theia/core/lib/browser';
+import { VirtualRenderer, VirtualWidget, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { injectable, inject } from 'inversify';
 import { Git } from '../common/git';
 import URI from '@theia/core/lib/common/uri';
+import { GIT_CONTEXT_MENU } from './git-context-menu';
 import { h } from '@phosphor/virtualdom/lib';
 import { FileChange, FileStatus, Repository } from '../common/model';
 import { GitWatcher } from '../common/git-watcher';
+import { MessageService } from '@theia/core';
 
 @injectable()
 export class GitWidget extends VirtualWidget {
@@ -25,9 +27,12 @@ export class GitWidget extends VirtualWidget {
     protected unstagedChanges: FileChange[] = [];
     protected message: string = '';
 
-    constructor( @inject(Git) private git: Git, @inject(GitWatcher) gitWatcher: GitWatcher) {
+    constructor(
+        @inject(Git) private git: Git, @inject(GitWatcher) gitWatcher: GitWatcher,
+        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
+        @inject(MessageService) protected readonly messageService: MessageService) {
         super();
-        this.id = 'gitContainer';
+        this.id = 'theia-gitContainer';
         this.title.label = 'Git';
         this.addClass('theia-git');
 
@@ -61,14 +66,13 @@ export class GitWidget extends VirtualWidget {
     }
 
     protected render(): h.Child {
-        const repoList = this.renderRepoList();
         const commandBar = this.renderCommandBar();
         const messageInput = this.renderMessageInput();
         const messageTextarea = this.renderMessageTextarea();
         const stagedChanges = this.renderStagedChanges() || '';
         const unstagedChanges = this.renderUnstagedChanges() || '';
 
-        return h.div({ id: 'gitContainer' }, repoList, commandBar, messageInput, messageTextarea, stagedChanges, unstagedChanges);
+        return h.div({ id: 'gitContainer' }, commandBar, messageInput, messageTextarea, stagedChanges, unstagedChanges);
     }
 
     protected renderRepoList(): h.Child {
@@ -78,14 +82,13 @@ export class GitWidget extends VirtualWidget {
             repoOptionElements.push(h.option({ value: uri.path.toString() }, uri.displayName));
         });
 
-        const selectElement = h.select({
+        return h.select({
             id: 'repositoryList',
             onchange: event => {
                 this.localUri = (event.target as HTMLSelectElement).value;
                 this.initialize();
             }
         }, VirtualRenderer.flatten(repoOptionElements));
-        return h.div({ id: 'repositoryListContainer' }, selectElement);
     }
 
     protected renderCommandBar(): h.Child {
@@ -93,23 +96,38 @@ export class GitWidget extends VirtualWidget {
             className: 'button',
             onclick: event => {
                 if (this.message !== '') {
-                    console.log('commit', this.message);
                     this.git.commit(this.repository, this.message);
                 } else {
-                    // document.getElementById('messageInput').className += ' warn';
-                    // document.getElementById('messageInput').focus();
+                    const messageInput = document.getElementById('messageInput');
+                    if (messageInput) {
+                        messageInput.className += ' warn';
+                        messageInput.focus();
+                    }
+                    this.messageService.error('Please provide a commit message!');
                 }
             }
         }, h.i({ className: 'fa fa-check' }));
         const refresh = h.div({ className: 'button' }, h.i({ className: 'fa fa-refresh' }));
-        const btnContainer = h.div({ className: 'flexcontainer buttons' }, commit, refresh);
-        const leftContainer = h.div({});
-        return h.div({ id: 'commandBar', className: 'flexcontainer evenlySpreaded' }, leftContainer, btnContainer);
+        const commands = h.div({
+            className: 'button',
+            onclick: e => {
+                this.contextMenuRenderer.render(GIT_CONTEXT_MENU, e);
+            }
+        }, h.i({ className: 'fa fa-ellipsis-h' }));
+        const btnContainer = h.div({ className: 'flexcontainer buttons' }, commit, refresh, commands);
+        const repositoryListContainer = h.div({ id: 'repositoryListContainer' }, this.renderRepoList());
+        return h.div({ id: 'commandBar', className: 'flexcontainer evenlySpreaded' }, repositoryListContainer, btnContainer);
     }
 
     protected renderMessageInput(): h.Child {
         const input = h.input({
             id: 'messageInput',
+            oninput: e => {
+                const inputElement = (e.target as HTMLInputElement);
+                if (inputElement.value !== '') {
+                    inputElement.className = '';
+                }
+            },
             placeholder: 'Commit message', onkeyup: event => {
                 this.message = (event.target as HTMLInputElement).value;
             },

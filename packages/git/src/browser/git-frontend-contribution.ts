@@ -23,5 +23,7 @@ export class GitFrontendContribution implements FrontendApplicationContribution 
         });
     }
 
+
+
 }
 
