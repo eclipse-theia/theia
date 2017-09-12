@@ -3,6 +3,8 @@
 [![Gitter](https://img.shields.io/badge/chat-on%20gitter-blue.svg)](https://gitter.im/theia-ide/theia)
 [![Build Status](https://travis-ci.org/theia-ide/theia.svg?branch=master)](https://travis-ci.org/theia-ide/theia)
 [![Build status](https://ci.appveyor.com/api/projects/status/02s4d40orokl3njl/branch/master?svg=true)](https://ci.appveyor.com/project/kittaakos/theia/branch/master)
+[![Open questions](https://img.shields.io/badge/Open-questions-pink.svg?style=flat-square)](https://github.com/theia-ide/theia/labels/question)
+[![Open bugs](https://img.shields.io/badge/Open-bugs-red.svg?style=flat-square)](https://github.com/theia-ide/theia/labels/bug)
 
 Theia is a cloud & desktop IDE framework implemented in TypeScript.
 
@@ -22,6 +24,10 @@ A [`1.0 BETA`version of Theia](https://github.com/theia-ide/theia/milestone/3) i
  - Launching and Debugging Processes
  - Shell With Flexible Layouts and Side Panels
  - Electron & Browser Support
+ - File Navigator
+ - Monaco-based Editor
+ - Terminal integration
+ - Git integration
  - Language Support for TypeScript, C/C++, Java, Python, Go, [YANG](https://tools.ietf.org/html/rfc6020)
  - Diagramming Support through [Sprotty](https://github.com/theia-ide/sprotty)
  - [many more features](https://github.com/theia-ide/theia/milestone/3)
