@@ -7,7 +7,7 @@
 
 import Base = require('yeoman-generator');
 import { AbstractGenerator, sortByKey } from '../common';
-import { NodePackage, Dependencies } from "./generator-model";
+import { NodePackage } from "./generator-model";
 
 export class AppPackageGenerator extends AbstractGenerator {
 
@@ -32,15 +32,10 @@ export class AppPackageGenerator extends AbstractGenerator {
                 "electron": "^1.6.11",
                 "electron-rebuild": "^1.5.11"
             };
-        const extensionDependencies: Dependencies = {};
-        for (const extensionPackage of this.model.extensionPackages) {
-            extensionDependencies[extensionPackage.name] = extensionPackage.version;
-        }
         return {
             ...this.model.pck,
             "dependencies": sortByKey({
-                ...this.model.pck.dependencies,
-                ...extensionDependencies
+                ...this.model.pck.dependencies
             }),
             "scripts": sortByKey({
                 "clean": "rimraf lib",

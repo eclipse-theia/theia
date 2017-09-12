@@ -148,25 +148,20 @@ export class Model {
         const localDependencies = this.config.localDependencies;
         // tslint:disable-next-line:forin
         for (const extension in this.pck.dependencies) {
-            if (extension in localDependencies) {
-                const localPath = localDependencies[extension]!;
-                await this.readExtensionPackage(extension, async () => {
-                    const raw = await reader(extension, localPath);
-                    if (!ExtensionPackage.is(raw, this.config.extensionKeywords)) {
-                        return undefined;
-                    }
+            const version = this.pck.dependencies[extension]!;
+            const localPath = localDependencies ? localDependencies[extension] || version : version;
+            await this.readExtensionPackage(extension, async () => {
+                const raw = await reader(extension, localPath);
+                if (ExtensionPackage.is(raw, this.config.extensionKeywords)) {
                     raw.localPath = localPath;
                     return new ExtensionPackage(raw);
-                }, localPath);
-            }
-            const version = this.pck.dependencies[extension]!;
-            await this.readExtensionPackage(extension, () => {
+                }
                 const extensionPackage = this.findExtensionPackage(extension, version);
                 if (!extensionPackage) {
                     console.error(`failed to find ${extension}@${version} on npm`);
                 }
                 return extensionPackage;
-            });
+            }, localPath);
         }
     }
 
