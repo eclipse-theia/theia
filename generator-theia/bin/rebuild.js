@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -12,23 +13,25 @@ const { target, modules } = require('yargs').array('modules').argv;
 
 const nodeModulesPath = path.join(process.cwd(), 'node_modules');
 const browserModulesPath = path.join(process.cwd(), '.browser_modules');
-const modulesToProcess = modules || ['node-pty']
+const modulesToProcess = modules || ['node-pty'];
 
 if (target === 'electron' && !fs.existsSync(browserModulesPath)) {
     const dependencies = {};
     for (const module of modulesToProcess) {
         console.log("Processing " + module);
         const src = path.join(nodeModulesPath, module);
-        const dest = path.join(browserModulesPath, module);
-        const packJson = fs.readJsonSync(path.join(src, 'package.json'))
-        dependencies[module] = packJson.version;
-        fs.copySync(src, dest);
+        if (fs.existsSync(src)) {
+            const dest = path.join(browserModulesPath, module);
+            const packJson = fs.readJsonSync(path.join(src, 'package.json'))
+            dependencies[module] = packJson.version;
+            fs.copySync(src, dest);
+        }
     }
     const packFile = path.join(process.cwd(), "package.json");
     const packageText = fs.readFileSync(packFile);
     const pack = fs.readJsonSync(packFile);
     try {
-        Object.assign(pack.dependencies, dependencies)
+        pack.dependencies = Object.assign({}, pack.dependencies, dependencies);
         fs.writeFileSync(packFile, JSON.stringify(pack, null, "  "));
         const electronRebuildPath = path.join(process.cwd(), 'node_modules', '.bin', 'electron-rebuild');
         if (process.platform === 'win32') {
