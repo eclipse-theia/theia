@@ -4,19 +4,19 @@
   "version": "0.1.1",
   "dependencies": {
     "@theia/core": "^0.1.1",
-    "@theia/cpp": "^0.1.1",
-    "@theia/editor": "^0.1.1",
     "@theia/filesystem": "^0.1.1",
-    "@theia/go": "^0.1.1",
-    "@theia/java": "^0.1.1",
-    "@theia/languages": "^0.1.1",
-    "@theia/monaco": "^0.1.1",
+    "@theia/workspace": "^0.1.1",
+    "@theia/preferences": "^0.1.1",
     "@theia/navigator": "^0.1.1",
     "@theia/process": "^0.1.1",
-    "@theia/preferences": "^0.1.1",
-    "@theia/python": "^0.1.1",
     "@theia/terminal": "^0.1.1",
-    "@theia/workspace": "^0.1.1"
+    "@theia/editor": "^0.1.1",
+    "@theia/languages": "^0.1.1",
+    "@theia/monaco": "^0.1.1",
+    "@theia/java": "^0.1.1",
+    "@theia/python": "^0.1.1",
+    "@theia/cpp": "^0.1.1",
+    "@theia/go": "^0.1.1"
   },
   "scripts": {
     "test": "electron-mocha --timeout 60000 --require ts-node/register \"./test/**/*.espec.ts\"",
