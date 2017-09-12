@@ -7,7 +7,7 @@
   },
   "devDependencies": {
     "colors": "^1.1.2",
-    "lerna": "^2.0.0",
+    "lerna": "^2.1.2",
     "yo": "^2.0.0"
   },
   "scripts": {
@@ -32,7 +32,7 @@
     "rebuild:electron:debug": "DEBUG=electron-rebuild && yarn run rebuild:electron",
     "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel",
     "publish": "yarn && yarn test && yarn run publish:latest && node scripts/update-versions",
-    "publish:latest": "lerna publish --registry=https://registry.npmjs.org/ --skip-git",
-    "publish:next": "lerna publish --registry=https://registry.npmjs.org/ --canary=next --npm-tag=next --force-publish --skip-git --yes"
+    "publish:latest": "lerna publish --registry=https://registry.npmjs.org/ --exact --skip-git",
+    "publish:next": "lerna publish --registry=https://registry.npmjs.org/ --exact --canary=next --npm-tag=next --force-publish --skip-git --yes"
   }
 }
