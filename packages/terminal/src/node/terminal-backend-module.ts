@@ -29,7 +29,7 @@ export default new ContainerModule(bind => {
 
             const logger = ctx.container.get<ILogger>(ILogger);
             const loggerChild = logger.child({ 'module': 'terminal-backend' });
-            child.bind(ShellProcessOptions).toConstantValue({});
+            child.bind(ShellProcessOptions).toConstantValue(options);
             child.bind(ILogger).toConstantValue(loggerChild);
             return child.get(ShellProcess);
         }
