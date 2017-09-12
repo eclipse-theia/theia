@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -10,6 +9,17 @@ import { Git } from '../common/git';
 import { injectable, inject } from "inversify";
 import { CommandContribution, CommandRegistry } from "@theia/core/lib/common";
 
+export namespace GIT_COMMANDS {
+    export const STATUS = {
+        id: 'git.status',
+        label: 'Print Git Status'
+    };
+    export const REPOSITORIES = {
+        id: 'git.repositories',
+        label: 'Print All Repositories'
+    };
+}
+
 @injectable()
 export class GitCommandHandlers implements CommandContribution {
 
@@ -19,11 +29,8 @@ export class GitCommandHandlers implements CommandContribution {
 
     registerCommands(registry: CommandRegistry): void {
 
-        registry.registerCommand({
-            id: 'git.status',
-            label: 'Print Git Status'
-        });
-        registry.registerHandler('git.status', {
+        registry.registerCommand(GIT_COMMANDS.STATUS);
+        registry.registerHandler(GIT_COMMANDS.STATUS.id, {
             execute: (): any => {
                 this.git.repositories().then(repositories => {
                     const first = repositories.shift();
@@ -40,11 +47,8 @@ export class GitCommandHandlers implements CommandContribution {
             isEnabled: () => true
         });
 
-        registry.registerCommand({
-            id: 'git.repositories',
-            label: 'Print All Repositories'
-        });
-        registry.registerHandler('git.repositories', {
+        registry.registerCommand(GIT_COMMANDS.REPOSITORIES);
+        registry.registerHandler(GIT_COMMANDS.REPOSITORIES.id, {
             execute: (): any => {
                 this.git.repositories().then(repositories => {
                     if (!repositories) {

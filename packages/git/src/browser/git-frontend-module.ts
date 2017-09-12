@@ -11,10 +11,11 @@ import { bindGitPreferences } from '../common/git-preferences';
 import { WebSocketConnectionProvider, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { GitCommandHandlers } from './git-command';
 import { GitKeybindingContext, GitKeybindingContribution } from './git-keybinding';
-import { CommandContribution, KeybindingContribution, KeybindingContext } from "@theia/core/lib/common";
+import { CommandContribution, KeybindingContribution, KeybindingContext, MenuContribution } from "@theia/core/lib/common";
 import { GitWatcher, GitWatcherPath, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common/git-watcher';
 import { GitFrontendContribution } from './git-frontend-contribution';
 import { GitWidget } from './git-widget';
+import { GitContextMenu } from './git-context-menu';
 
 import '../../src/browser/style/index.css';
 
@@ -26,6 +27,7 @@ export default new ContainerModule(bind => {
     bind(Git).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitPath)).inSingletonScope();
 
     bind(CommandContribution).to(GitCommandHandlers);
+    bind(MenuContribution).to(GitContextMenu);
     bind(GitKeybindingContext).toSelf().inSingletonScope();
     bind(KeybindingContext).toDynamicValue(context => context.container.get(GitKeybindingContext));
     bind(KeybindingContribution).to(GitKeybindingContribution);
