@@ -6,15 +6,15 @@
 */
 
 
-import { VirtualRenderer, VirtualWidget, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { injectable, inject } from 'inversify';
 import { Git } from '../common/git';
-import URI from '@theia/core/lib/common/uri';
 import { GIT_CONTEXT_MENU } from './git-context-menu';
-import { h } from '@phosphor/virtualdom/lib';
 import { FileChange, FileStatus, Repository } from '../common/model';
 import { GitWatcher } from '../common/git-watcher';
 import { MessageService } from '@theia/core';
+import URI from '@theia/core/lib/common/uri';
+import { VirtualRenderer, VirtualWidget, ContextMenuRenderer } from '@theia/core/lib/browser';
+import { h } from '@phosphor/virtualdom/lib';
 
 @injectable()
 export class GitWidget extends VirtualWidget {
@@ -25,12 +25,13 @@ export class GitWidget extends VirtualWidget {
     protected repositories: Repository[] = [];
     protected stagedChanges: FileChange[] = [];
     protected unstagedChanges: FileChange[] = [];
+    protected mergeChanges: FileChange[] = [];
     protected message: string = '';
     protected additionalMessage: string = '';
 
     constructor(
-        @inject(Git) private git: Git,
-        @inject(GitWatcher) gitWatcher: GitWatcher,
+        @inject(Git) protected readonly git: Git,
+        @inject(GitWatcher) protected readonly gitWatcher: GitWatcher,
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
         @inject(MessageService) protected readonly messageService: MessageService) {
         super();
@@ -57,12 +58,17 @@ export class GitWidget extends VirtualWidget {
         }
         this.stagedChanges = [];
         this.unstagedChanges = [];
+        this.mergeChanges = [];
         const status = await this.git.status(this.repository);
         status.changes.forEach(change => {
-            if (change.staged) {
-                this.stagedChanges.push(change);
+            if (FileStatus[FileStatus.Conflicted.valueOf()] !== FileStatus[change.status]) {
+                if (change.staged) {
+                    this.stagedChanges.push(change);
+                } else {
+                    this.unstagedChanges.push(change);
+                }
             } else {
-                this.unstagedChanges.push(change);
+                this.mergeChanges.push(change);
             }
         });
         this.update();
@@ -72,10 +78,11 @@ export class GitWidget extends VirtualWidget {
         const commandBar = this.renderCommandBar();
         const messageInput = this.renderMessageInput();
         const messageTextarea = this.renderMessageTextarea();
+        const mergeChanges = this.renderMergeChanges() || '';
         const stagedChanges = this.renderStagedChanges() || '';
         const unstagedChanges = this.renderUnstagedChanges() || '';
 
-        return h.div({ id: 'gitContainer' }, commandBar, messageInput, messageTextarea, stagedChanges, unstagedChanges);
+        return h.div({ id: 'gitContainer' }, commandBar, messageInput, messageTextarea, mergeChanges, stagedChanges, unstagedChanges);
     }
 
     protected renderRepoList(): h.Child {
@@ -99,7 +106,10 @@ export class GitWidget extends VirtualWidget {
             className: 'button',
             onclick: event => {
                 if (this.message !== '') {
-                    this.git.commit(this.repository, this.message + "\n" + this.additionalMessage);
+                    this.git.commit(this.repository, this.message + "\n\n" + this.additionalMessage)
+                        .then(() => {
+                            this.initialize();
+                        });
                 } else {
                     const messageInput = document.getElementById('messageInput');
                     if (messageInput) {
@@ -154,7 +164,8 @@ export class GitWidget extends VirtualWidget {
             placeholder: 'Extended commit text',
             oninput: event => {
                 this.additionalMessage = (event.target as HTMLTextAreaElement).value;
-            }
+            },
+            value: this.additionalMessage
         });
         return h.div({ id: 'messageTextareaContainer', className: 'flexcontainer row' }, textarea);
     }
@@ -165,7 +176,10 @@ export class GitWidget extends VirtualWidget {
             btns.push(h.div({
                 className: 'button',
                 onclick: event => {
-                    this.git.rm(this.repository, change.uri);
+                    this.git.rm(this.repository, change.uri)
+                        .then(() => {
+                            this.initialize();
+                        });
                 }
             }, h.i({ className: 'fa fa-minus' })));
         } else {
@@ -177,7 +191,10 @@ export class GitWidget extends VirtualWidget {
             btns.push(h.div({
                 className: 'button',
                 onclick: event => {
-                    this.git.add(this.repository, change.uri);
+                    this.git.add(this.repository, change.uri)
+                        .then(() => {
+                            this.initialize();
+                        });
                 }
             }, h.i({ className: 'fa fa-plus' })));
         }
@@ -199,6 +216,21 @@ export class GitWidget extends VirtualWidget {
     protected renderChangesHeader(title: string): h.Child {
         const stagedChangesHeaderDiv = h.div({ className: 'changesHeader' }, title);
         return stagedChangesHeaderDiv;
+    }
+
+    protected renderMergeChanges(): h.Child | undefined {
+        const mergeChangeDivs: h.Child[] = [];
+        if (this.mergeChanges.length > 0) {
+            this.mergeChanges.forEach(change => {
+                mergeChangeDivs.push(this.renderGitItem(change));
+            });
+            return h.div({
+                id: 'mergeChanges',
+                className: 'changesContainer'
+            }, h.div({ className: 'changesHeader' }, 'Merge changes'), VirtualRenderer.flatten(mergeChangeDivs));
+        } else {
+            return undefined;
+        }
     }
 
     protected renderStagedChanges(): h.Child | undefined {

@@ -24,9 +24,6 @@ export class GitContextMenu implements MenuContribution {
             commandId: GIT_COMMANDS.PULL.id
         });
         menus.registerMenuAction([GIT_CONTEXT_MENU], {
-            commandId: GIT_COMMANDS.COMMIT.id
-        });
-        menus.registerMenuAction([GIT_CONTEXT_MENU], {
             commandId: GIT_COMMANDS.PUSH.id
         });
         menus.registerMenuAction([GIT_CONTEXT_MENU], {
