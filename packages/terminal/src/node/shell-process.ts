@@ -10,6 +10,7 @@ import * as process from 'process';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { TerminalProcess, TerminalProcessOptions, ProcessManager } from '@theia/process/lib/node';
 import { isWindows } from "@theia/core/lib/common";
+import URI from "@theia/core/lib/common/uri";
 
 export const ShellProcessFactory = Symbol("ShellProcessFactory");
 export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess;
@@ -17,8 +18,18 @@ export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess
 export const ShellProcessOptions = Symbol("ShellProcessOptions");
 export interface ShellProcessOptions {
     shell?: string,
+    rootURI?: string,
     cols?: number,
     rows?: number
+}
+
+function getRootPath(rootURI?: string): string {
+    if (rootURI) {
+        const uri = new URI(rootURI);
+        return uri.path.toString();
+    } else {
+        return process.cwd();
+    }
 }
 
 @injectable()
@@ -39,7 +50,7 @@ export class ShellProcess extends TerminalProcess {
                 name: 'xterm-color',
                 cols: options.cols || ShellProcess.defaultCols,
                 rows: options.rows || ShellProcess.defaultRows,
-                cwd: process.cwd(),
+                cwd: getRootPath(options.rootURI),
                 env: process.env as any
             }
         }, processManager, logger);

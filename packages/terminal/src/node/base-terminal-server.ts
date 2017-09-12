@@ -9,7 +9,6 @@ import { inject, injectable } from 'inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { IBaseTerminalServer, IBaseTerminalServerOptions, IBaseTerminalClient } from '../common/base-terminal-protocol';
 import { TerminalProcess, ProcessManager } from '@theia/process/lib/node';
-import URI from "@theia/core/lib/common/uri";
 
 @injectable()
 export abstract class BaseTerminalServer implements IBaseTerminalServer {
@@ -39,14 +38,6 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
     /* Set the client to receive notifications on.  */
     setClient(client: IBaseTerminalClient | undefined) {
         this.client = client;
-    }
-
-    setRootURI(term: TerminalProcess, rootURI: string) {
-
-        const uri = new URI(rootURI);
-        term.write(`cd ${uri.path} && `);
-        term.write("source ~/.profile\n");
-
     }
 
     protected postCreate(term: TerminalProcess) {
