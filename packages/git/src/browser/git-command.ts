@@ -1,3 +1,4 @@
+import { Repository } from '../../lib/common';
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -29,10 +30,6 @@ export namespace GIT_COMMANDS {
     export const MERGE = {
         id: 'git.merge',
         label: 'Merge'
-    };
-    export const COMMIT = {
-        id: 'git.commit',
-        label: 'Commit'
     };
     export const PUSH = {
         id: 'git.push',
@@ -85,15 +82,7 @@ export class GitCommandHandlers implements CommandContribution {
         registry.registerCommand(GIT_COMMANDS.FETCH);
         registry.registerHandler(GIT_COMMANDS.FETCH.id, {
             execute: (): any => {
-                this.git.fetch();
-            },
-            isEnabled: () => true
-        });
-
-        registry.registerCommand(GIT_COMMANDS.COMMIT);
-        registry.registerHandler(GIT_COMMANDS.COMMIT.id, {
-            execute: (): any => {
-                console.log('COMMIT');
+                // this.git.fetch();
             },
             isEnabled: () => true
         });
