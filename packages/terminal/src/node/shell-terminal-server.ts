@@ -25,13 +25,7 @@ export class ShellTerminalServer extends BaseTerminalServer {
     create(options: IShellTerminalServerOptions): Promise<number> {
         try {
             const term = this.shellFactory(options);
-
-            if (options.rootURI) {
-                this.setRootURI(term, options.rootURI);
-            }
-
             this.postCreate(term);
-
             return Promise.resolve(term.id);
         } catch (error) {
             this.logger.error(`Error while creating terminal: ${error}`);
