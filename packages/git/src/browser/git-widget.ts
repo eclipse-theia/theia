@@ -26,9 +26,11 @@ export class GitWidget extends VirtualWidget {
     protected stagedChanges: FileChange[] = [];
     protected unstagedChanges: FileChange[] = [];
     protected message: string = '';
+    protected additionalMessage: string = '';
 
     constructor(
-        @inject(Git) private git: Git, @inject(GitWatcher) gitWatcher: GitWatcher,
+        @inject(Git) private git: Git,
+        @inject(GitWatcher) gitWatcher: GitWatcher,
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
         @inject(MessageService) protected readonly messageService: MessageService) {
         super();
@@ -46,6 +48,7 @@ export class GitWidget extends VirtualWidget {
 
     async initialize(): Promise<void> {
         this.message = '';
+        this.additionalMessage = '';
         this.repositories = await this.git.repositories();
         if (!this.localUri) {
             this.repository = this.repositories[0];
@@ -96,7 +99,7 @@ export class GitWidget extends VirtualWidget {
             className: 'button',
             onclick: event => {
                 if (this.message !== '') {
-                    this.git.commit(this.repository, this.message);
+                    this.git.commit(this.repository, this.message + "\n" + this.additionalMessage);
                 } else {
                     const messageInput = document.getElementById('messageInput');
                     if (messageInput) {
@@ -107,11 +110,22 @@ export class GitWidget extends VirtualWidget {
                 }
             }
         }, h.i({ className: 'fa fa-check' }));
-        const refresh = h.div({ className: 'button' }, h.i({ className: 'fa fa-refresh' }));
-        const commands = h.div({
+        const refresh = h.div({
             className: 'button',
             onclick: e => {
-                this.contextMenuRenderer.render(GIT_CONTEXT_MENU, e);
+                this.initialize();
+            }
+        }, h.i({ className: 'fa fa-refresh' }));
+        const commands = h.div({
+            className: 'button',
+            onclick: event => {
+                const el = (event.target as HTMLElement).parentElement;
+                if (el) {
+                    this.contextMenuRenderer.render(GIT_CONTEXT_MENU, {
+                        x: el.getBoundingClientRect().left,
+                        y: el.getBoundingClientRect().top + el.offsetHeight
+                    });
+                }
             }
         }, h.i({ className: 'fa fa-ellipsis-h' }));
         const btnContainer = h.div({ className: 'flexcontainer buttons' }, commit, refresh, commands);
@@ -122,22 +136,26 @@ export class GitWidget extends VirtualWidget {
     protected renderMessageInput(): h.Child {
         const input = h.input({
             id: 'messageInput',
-            oninput: e => {
-                const inputElement = (e.target as HTMLInputElement);
+            oninput: event => {
+                const inputElement = (event.target as HTMLInputElement);
                 if (inputElement.value !== '') {
                     inputElement.className = '';
                 }
-            },
-            placeholder: 'Commit message', onkeyup: event => {
                 this.message = (event.target as HTMLInputElement).value;
             },
+            placeholder: 'Commit message',
             value: this.message
         });
         return h.div({ id: 'messageInputContainer', className: 'flexcontainer row' }, input);
     }
 
     protected renderMessageTextarea(): h.Child {
-        const textarea = h.textarea({ placeholder: 'Extended commit text' });
+        const textarea = h.textarea({
+            placeholder: 'Extended commit text',
+            oninput: event => {
+                this.additionalMessage = (event.target as HTMLTextAreaElement).value;
+            }
+        });
         return h.div({ id: 'messageTextareaContainer', className: 'flexcontainer row' }, textarea);
     }
 
