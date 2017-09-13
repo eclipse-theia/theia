@@ -36,7 +36,7 @@ describe('git', async () => {
 
     describe('status', async () => {
 
-        it('modifying a staged file should result in two changes', async function () {
+        it('modifying a staged file should result in two changes', async () => {
 
             // Init repository.
             const root = await createTestRepository(track.mkdirSync('status-test'));
@@ -66,11 +66,10 @@ describe('git', async () => {
             expect(fs.readFileSync(filePath, { encoding: 'utf8' })).to.be.equal('yet another new content');
 
             // We expect two changes; one is staged, the other is in the working directory.
-            this.skip();
-            // status = await git.status(repository);
-            // expect(status.changes).to.be.have.lengthOf(2);
-            // expect(status.changes[0].uri).to.be.equal(fileUri);
-            // expect(status.changes[0].staged).to.be.true;
+            status = await git.status(repository);
+            expect(status.changes).to.be.have.lengthOf(2);
+            expect(status.changes.map(f => f.uri)).to.be.deep.equal([fileUri, fileUri]);
+            expect(status.changes.map(f => f.staged).sort()).to.be.deep.equal([false, true]);
 
         });
 

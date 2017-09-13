@@ -1,4 +1,3 @@
-import { Repository } from '../../lib/common';
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
