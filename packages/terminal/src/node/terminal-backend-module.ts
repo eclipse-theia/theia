@@ -47,7 +47,7 @@ export default new ContainerModule(bind => {
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<IBaseTerminalClient>(shellTerminalPath, client => {
-            const shellTerminalServer = ctx.container.get<ITerminalServer>(IShellTerminalServer);
+            const shellTerminalServer = ctx.container.get<IShellTerminalServer>(IShellTerminalServer);
             shellTerminalServer.setClient(client);
             return shellTerminalServer;
         })
