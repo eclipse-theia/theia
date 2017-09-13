@@ -42,55 +42,44 @@ export class BrowserMainMenuFactory {
         return contextMenu;
     }
 
-    private createPhosporCommands(menu: CompositeMenuNode): PhosphorCommandRegistry {
+    protected createPhosporCommands(menu: CompositeMenuNode): PhosphorCommandRegistry {
         const commands = new PhosphorCommandRegistry();
-        const commandRegistry = this.commandRegistry;
-        const keybindingRegistry = this.keybindingRegistry;
-        function initCommands(current: CompositeMenuNode): void {
-            for (const menu of current.children) {
-                if (menu instanceof ActionMenuNode) {
-                    const command = commandRegistry.getCommand(menu.action.commandId);
-                    if (command) {
-                        // tslint:disable-next-line:arrow-return-shorthand
-                        const getHandler = (commandId: string) => {
-                            return commandRegistry.getActiveHandler(commandId) || {
-                                execute: () => { },
-                                isEnabled: () => false,
-                                isVisible: () => true
-                            };
-                        };
-                        commands.addCommand(command.id, {
-                            execute: (e: any) => getHandler(command.id).execute(),
-                            label: menu.label,
-                            icon: command.iconClass,
-                            isEnabled: (e: any) => {
-                                const handler = getHandler(command.id);
-                                return !handler.isEnabled || handler.isEnabled();
-                            },
-                            isVisible: (e: any) => {
-                                const handler = getHandler(command.id);
-                                return !handler.isVisible || handler.isVisible();
-                            }
-                        });
+        this.addPhosphorCommands(commands, menu);
+        return commands;
+    }
 
-                        const options = { active: false };
-                        const binding = keybindingRegistry.getKeybindingForCommand(command.id, options);
-                        if (binding) {
-                            const keys = binding.accelerator || [];
-                            commands.addKeyBinding({
-                                command: command.id,
-                                keys,
-                                selector: '.p-Widget' // We have the Phosphor.JS dependency anyway.
-                            });
-                        }
-                    }
-                } else if (menu instanceof CompositeMenuNode) {
-                    initCommands(menu);
-                }
+    protected addPhosphorCommands(commands: PhosphorCommandRegistry, menu: CompositeMenuNode): void {
+        for (const child of menu.children) {
+            if (child instanceof ActionMenuNode) {
+                this.addPhosphorCommand(commands, child);
+            } else if (child instanceof CompositeMenuNode) {
+                this.addPhosphorCommands(commands, child);
             }
         }
-        initCommands(menu);
-        return commands;
+    }
+
+    protected addPhosphorCommand(commands: PhosphorCommandRegistry, menu: ActionMenuNode): void {
+        const command = this.commandRegistry.getCommand(menu.action.commandId);
+        if (!command) {
+            return;
+        }
+        commands.addCommand(command.id, {
+            execute: () => this.commandRegistry.executeCommand(command.id),
+            label: menu.label,
+            icon: command.iconClass,
+            isEnabled: () => this.commandRegistry.isEnabled(command.id),
+            isVisible: () => this.commandRegistry.isVisible(command.id)
+        });
+
+        const binding = this.keybindingRegistry.getKeybindingForCommand(command.id, { active: false });
+        if (binding) {
+            const keys = binding.accelerator || [];
+            commands.addKeyBinding({
+                command: command.id,
+                keys,
+                selector: '.p-Widget' // We have the Phosphor.JS dependency anyway.
+            });
+        }
     }
 
 
