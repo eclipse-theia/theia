@@ -58,20 +58,21 @@ export abstract class Process implements Disposable {
     }
 
     dispose() {
-        this.processManager.delete(this);
+
+        const cleanup = () => {
+            this.processManager.delete(this);
+            this.exitEmitter.dispose();
+            this.errorEmitter.dispose();
+        };
 
         if (this.killed === false) {
             const p = new Promise<void>(resolve => {
                 this.kill();
                 this.exitEmitter.event(event => resolve());
             });
-            p.then(() => {
-                this.exitEmitter.dispose();
-                this.errorEmitter.dispose();
-            });
+            p.then(cleanup);
         } else {
-            this.exitEmitter.dispose();
-            this.errorEmitter.dispose();
+            cleanup();
         }
     }
 
