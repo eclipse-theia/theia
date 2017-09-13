@@ -58,12 +58,12 @@ export class DugiteGit implements Git {
 
     async add(repository: Repository, uri: string | string[]): Promise<void> {
         const paths = (Array.isArray(uri) ? uri : [uri]).map(FileUri.fsPath);
-        return stage(repository.localUri, paths);
+        return stage(FileUri.fsPath(repository.localUri), paths);
     }
 
     async rm(repository: Repository, uri: string | string[]): Promise<void> {
         const paths = (Array.isArray(uri) ? uri : [uri]).map(FileUri.fsPath);
-        return unstage(repository.localUri, paths);
+        return unstage(FileUri.fsPath(repository.localUri), paths);
     }
 
     async branch(repository: Repository,
@@ -136,15 +136,13 @@ export class DugiteGit implements Git {
     }
 
     private async getContainerRepository(path: string): Promise<Repository | undefined> {
-        try {
-            const result = await git(['rev-parse', '--show-toplevel'], path, 'rev-parse');
-            const out = result.stdout;
-            if (out.length) {
-                const localUri = FileUri.fsPath(out.trim());
-                return { localUri };
-            }
-        } catch (error) {
-            // We are not in a Git repository.
+        // Do not log an error if we are not contained in a Git repository. Treat exit code 128 as a success too.
+        const options = { successExitCodes: new Set([0, 128]) };
+        const result = await git(['rev-parse', '--show-toplevel'], path, 'rev-parse', options);
+        const out = result.stdout;
+        if (out.length) {
+            const localUri = FileUri.fsPath(out.trim());
+            return { localUri };
         }
         return undefined;
     }
@@ -152,8 +150,9 @@ export class DugiteGit implements Git {
 }
 
 async function mapStatus(toMap: IStatusResult, repository: Repository): Promise<WorkingDirectoryStatus> {
+    const repositoryFsPath = await getFsPath(repository);
     const aheadBehindPromise = mapAheadBehind(toMap.branchAheadBehind);
-    const changesPromise = mapFileChanges(toMap.workingDirectory, repository);
+    const changesPromise = mapFileChanges(toMap.workingDirectory, repositoryFsPath);
     const aheadBehind = await aheadBehindPromise;
     const changes = await changesPromise;
     return {
@@ -170,14 +169,14 @@ async function mapAheadBehind(toMap: IAheadBehind | undefined): Promise<{ ahead:
     return toMap ? { ...toMap } : undefined;
 }
 
-async function mapFileChanges(toMap: DugiteStatus, repository: Repository): Promise<FileChange[]> {
-    return Promise.all(toMap.files.map(file => mapFileChange(file, repository)));
+async function mapFileChanges(toMap: DugiteStatus, repositoryFsPath: string): Promise<FileChange[]> {
+    return Promise.all(toMap.files.map(file => mapFileChange(file, repositoryFsPath)));
 }
 
-async function mapFileChange(toMap: DugiteFileChange, repository: Repository): Promise<FileChange> {
-    const uriPromise = getUri(Path.join(repository.localUri, toMap.path));
+async function mapFileChange(toMap: DugiteFileChange, repositoryFsPath: string): Promise<FileChange> {
+    const uriPromise = getUri(Path.join(repositoryFsPath, toMap.path));
     const statusPromise = mapFileStatus(toMap.status);
-    const oldUriPromise = toMap.oldPath ? await getUri(Path.join(repository.localUri, toMap.oldPath)) : undefined;
+    const oldUriPromise = toMap.oldPath ? await getUri(Path.join(repositoryFsPath, toMap.oldPath)) : undefined;
     const uri = await uriPromise;
     const status = await statusPromise;
     const oldUri = await oldUriPromise;
