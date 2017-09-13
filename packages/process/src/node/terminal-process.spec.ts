@@ -27,15 +27,12 @@ describe('TerminalProcess', function () {
 
     it('test error on non existent path', function () {
 
-        /* FIXME need to pass empty options because of issue #115 in node-pty
-        this should be fixed in next release of node-pty */
-
         /* Strangly linux returns exited with code 1 when using a non existant path but windows throws an error.
         This would need to be investigated more.  */
         if (isWindows) {
-            return expect(() => terminalProcessFactory({ command: '/non-existent', options: {} })).to.throw();
+            return expect(() => terminalProcessFactory({ command: '/non-existent' })).to.throw();
         } else {
-            const terminalProcess = terminalProcessFactory({ command: '/non-existant', options: {} });
+            const terminalProcess = terminalProcessFactory({ command: '/non-existant' });
             const p = new Promise(resolve => {
                 terminalProcess.onExit(event => {
                     if (event.code > 0) { resolve(); }
@@ -49,23 +46,17 @@ describe('TerminalProcess', function () {
 
     it('test exit', function () {
         const args = ['--version'];
-        const terminalProcess = terminalProcessFactory({ command: process.execPath, 'args': args, options: {} });
+        const terminalProcess = terminalProcessFactory({ command: process.execPath, 'args': args });
         const p = new Promise((resolve, reject) => {
             terminalProcess.onError(error => {
                 reject();
                 terminalProcess.dispose();
             });
             terminalProcess.onExit(event => {
-                /* FIXME windows has not exit code  because of issue #75 in node-pty
-                this should be fixed in next release of node-pty */
-                if (isWindows) {
+                if (event.code === 0) {
                     resolve();
                 } else {
-                    if (event.code === 0) {
-                        resolve();
-                    } else {
-                        reject();
-                    }
+                    reject();
                 }
                 terminalProcess.dispose();
             });
@@ -75,7 +66,7 @@ describe('TerminalProcess', function () {
     });
 
     it('test dispose', function () {
-        const terminalProcess = terminalProcessFactory({ command: process.execPath, options: {} });
+        const terminalProcess = terminalProcessFactory({ command: process.execPath });
         const p = new Promise((resolve, reject) => {
             terminalProcess.dispose();
             terminalProcess.onExit(event => resolve());
@@ -85,7 +76,7 @@ describe('TerminalProcess', function () {
 
     it('test pipe stream', function () {
         const args = ['--version'];
-        const terminalProcess = terminalProcessFactory({ command: process.execPath, 'args': args, options: {} });
+        const terminalProcess = terminalProcessFactory({ command: process.execPath, 'args': args });
 
         const outStream = new stream.PassThrough();
 
