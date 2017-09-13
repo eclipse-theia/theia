@@ -19,6 +19,9 @@ export class JavaResource implements Resource {
         protected readonly clientContribution: JavaClientContribution
     ) { }
 
+    dispose(): void {
+    }
+
     readContents(options: { encoding?: string }): Promise<string> {
         const uri = this.uri.toString();
         return this.clientContribution.languageClient.then(languageClient =>

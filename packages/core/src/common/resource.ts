@@ -8,12 +8,15 @@
 import { injectable, inject, named } from "inversify";
 import URI from "../common/uri";
 import { ContributionProvider } from './contribution-provider';
+import { Event } from "./event";
+import { Disposable } from "./disposable";
 import { MaybePromise } from "./types";
 
-export interface Resource {
+export interface Resource extends Disposable {
     readonly uri: URI;
     readContents(options?: { encoding?: string }): Promise<string>;
     saveContents?(content: string, options?: { encoding?: string }): Promise<void>;
+    readonly onDidChangeContents?: Event<void>;
 }
 
 export const ResourceResolver = Symbol('ResourceResolver');

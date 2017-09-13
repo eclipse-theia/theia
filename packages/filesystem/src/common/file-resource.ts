@@ -6,17 +6,33 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Resource, ResourceResolver, MaybePromise } from "@theia/core/lib/common";
+import { Resource, ResourceResolver, MaybePromise, Emitter, Event, DisposableCollection } from "@theia/core";
 import URI from "@theia/core/lib/common/uri";
 import { FileSystem, FileStat } from "./filesystem";
+import { FileSystemWatcher } from "./filesystem-watcher";
 
 export class FileResource implements Resource {
+
+    protected readonly toDispose = new DisposableCollection();
+    protected readonly onDidChangeContentsEmitter = new Emitter<void>();
 
     constructor(
         readonly uri: URI,
         protected stat: FileStat,
-        protected readonly fileSystem: FileSystem
-    ) { }
+        protected readonly fileSystem: FileSystem,
+        protected readonly fileSystemWatcher: FileSystemWatcher
+    ) {
+        this.toDispose.push(this.onDidChangeContentsEmitter);
+        this.toDispose.push(this.fileSystemWatcher.onFilesChanged(changes => {
+            if (changes.some(e => e.uri.toString() === uri.toString())) {
+                this.onDidChangeContentsEmitter.fire(undefined);
+            }
+        }));
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
+    }
 
     readContents(options?: { encoding?: string }): Promise<string> {
         return this.fileSystem.resolveContent(this.uri.toString(), options).then(result => {
@@ -31,13 +47,18 @@ export class FileResource implements Resource {
         });
     }
 
+    get onDidChangeContents(): Event<void> {
+        return this.onDidChangeContentsEmitter.event;
+    }
+
 }
 
 @injectable()
 export class FileResourceResolver implements ResourceResolver {
 
     constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem
+        @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(FileSystemWatcher) protected readonly fileSystemWatcher: FileSystemWatcher
     ) { }
 
     resolve(uri: URI): MaybePromise<FileResource> {
@@ -46,7 +67,7 @@ export class FileResourceResolver implements ResourceResolver {
         }
         return this.fileSystem.getFileStat(uri.toString()).then(fileStat => {
             if (!fileStat.isDirectory) {
-                return new FileResource(uri, fileStat, this.fileSystem);
+                return new FileResource(uri, fileStat, this.fileSystem, this.fileSystemWatcher);
             }
             throw new Error('The given uri is a directory: ' + uri);
         });
