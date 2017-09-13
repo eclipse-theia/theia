@@ -90,12 +90,32 @@ export class CommandRegistry implements CommandService {
         };
     }
 
+    isEnabled(command: string, ...args: any[]): boolean {
+        return this.getActiveHandler(command, ...args) !== undefined;
+    }
+
+    isVisible(command: string, ...args: any[]): boolean {
+        return this.getVisibleHandler(command, ...args) !== undefined;
+    }
+
     executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined> {
         const handler = this.getActiveHandler(command, ...args);
         if (handler) {
             return Promise.resolve(handler.execute(...args));
         }
         return Promise.reject(`command '${command}' cannot be executed`);
+    }
+
+    getVisibleHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
+        const handlers = this._handlers[commandId];
+        if (handlers) {
+            for (const handler of handlers) {
+                if (!handler.isVisible || handler.isVisible(...args)) {
+                    return handler;
+                }
+            }
+        }
+        return undefined;
     }
 
     getActiveHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
