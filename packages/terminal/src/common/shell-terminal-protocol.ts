@@ -5,8 +5,12 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { IBaseTerminalServerOptions } from './base-terminal-protocol';
+import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol';
+
 export const IShellTerminalServer = Symbol('IShellTerminalServer');
+
+export interface IShellTerminalServer extends IBaseTerminalServer {
+}
 
 export const shellTerminalPath = '/services/shell-terminal';
 
