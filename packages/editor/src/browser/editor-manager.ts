@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import URI from "@theia/core/lib/common/uri";
-import { Emitter, Event, RecursivePartial, ResourceProvider, SelectionService } from '@theia/core/lib/common';
+import { Emitter, Event, RecursivePartial, SelectionService } from '@theia/core/lib/common';
 import { OpenHandler, FrontendApplication } from "@theia/core/lib/browser";
 import { EditorWidget } from "./editor-widget";
 import { EditorRegistry } from "./editor-registry";
@@ -65,7 +65,6 @@ export class EditorManagerImpl implements EditorManager {
         @inject(EditorRegistry) protected readonly editorRegistry: EditorRegistry,
         @inject(TextEditorProvider) protected readonly editorProvider: TextEditorProvider,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
-        @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
         @inject(FrontendApplication) protected readonly app: FrontendApplication
     ) {
         this.currentObserver = new EditorManagerImpl.Observer('current', app);
@@ -96,11 +95,8 @@ export class EditorManagerImpl implements EditorManager {
         return this.activeObserver.onEditorChanged();
     }
 
-    canHandle(uri: URI, input?: EditorInput): Promise<number> {
-        return this.resourceProvider(uri).then(
-            () => 100,
-            () => 0
-        );
+    canHandle(uri: URI, input?: EditorInput): number {
+        return 100;
     }
 
     open(uri: URI, input?: EditorInput): Promise<EditorWidget> {

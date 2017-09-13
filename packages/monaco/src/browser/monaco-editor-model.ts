@@ -34,6 +34,7 @@ export class MonacoEditorModel implements ITextEditorModel {
     protected readonly onWillSaveModelEmitter = new Emitter<WillSaveModelEvent>();
 
     constructor(protected readonly resource: Resource) {
+        this.toDispose.push(resource);
         this.toDispose.push(this.toDisposeOnAutoSave);
         this.toDispose.push(this.onDidSaveModelEmitter);
         this.toDispose.push(this.onWillSaveModelEmitter);
