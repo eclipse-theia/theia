@@ -93,6 +93,8 @@ export class TerminalWidget extends BaseWidget {
         (this.term as any).fit()
     }
 
+    // Create a new shell terminal in the back-end and attach it to a
+    // new terminal widget
     public async start(): Promise<void> {
         const root = await this.workspaceService.root;
         this.terminalId = await this.shellTerminalServer.create(
@@ -105,32 +107,23 @@ export class TerminalWidget extends BaseWidget {
             return;
         }
 
-        this.terminalWatcher.onTerminalError((event: IBaseTerminalErrorEvent) => {
-            if (event.terminalId === this.terminalId) {
-                this.title.label = "<terminal error>";
-            }
-        });
+        this.monitorTerminal(this.terminalId);
+    }
 
-        this.terminalWatcher.onTerminalExit((event: IBaseTerminalExitEvent) => {
-            if (event.terminalId === this.terminalId) {
-                this.title.label = "<terminated>";
-            }
-        });
+    // Attach a terminal widget to an already-running shell terminal
+    public async attach(id: number): Promise<void> {
+        this.terminalId = id;
+        let success: boolean;
+        success = await this.shellTerminalServer.attach(id);
 
-        const socket = this.createWebSocket(this.terminalId.toString());
-        socket.onopen = () => {
-            (this.term as any).attach(socket);
-            (this.term as any)._initialized = true;
-        };
-        socket.onclose = () => {
-            this.title.label = `<terminated>`;
-        };
-        socket.onerror = (err) => {
-            console.error(err);
-        };
-        this.toDispose.push(Disposable.create(() =>
-            socket.close()
-        ));
+        /* An error has occured in the backend.  */
+        if (!success) {
+            this.terminalId = undefined;
+            this.logger.error("Error attaching to terminal, see the backend error log for more information.  ");
+            return;
+        }
+
+        this.monitorTerminal(id);
     }
 
     protected createWebSocket(pid: string): WebSocket {
@@ -151,6 +144,35 @@ export class TerminalWidget extends BaseWidget {
         this.resizeTimer = setTimeout(() => {
             this.doResize()
         }, 500)
+    }
+
+    private monitorTerminal(id: number) {
+        this.terminalWatcher.onTerminalError((event: IBaseTerminalErrorEvent) => {
+            if (event.terminalId === id) {
+                this.title.label = "<terminal error>";
+            }
+        });
+
+        this.terminalWatcher.onTerminalExit((event: IBaseTerminalExitEvent) => {
+            if (event.terminalId === id) {
+                this.title.label = "<terminated>";
+            }
+        });
+
+        const socket = this.createWebSocket(id.toString());
+        socket.onopen = () => {
+            (this.term as any).attach(socket);
+            (this.term as any)._initialized = true;
+        };
+        socket.onclose = () => {
+            this.title.label = `<terminated>`;
+        };
+        socket.onerror = err => {
+            console.error(err);
+        };
+        this.toDispose.push(Disposable.create(() =>
+            socket.close()
+        ));
     }
 
     private doResize() {
