@@ -16,12 +16,14 @@ import { TerminalServer } from './terminal-server';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { IShellTerminalServer, shellTerminalPath } from '../common/shell-terminal-protocol';
 import { ShellTerminalServer } from '../node/shell-terminal-server';
+import { TerminalWatcher } from '../common/terminal-watcher';
 
 export default new ContainerModule(bind => {
     bind(BackendApplicationContribution).to(TerminalBackendContribution);
     bind(ITerminalServer).to(TerminalServer).inSingletonScope();
     bind(IShellTerminalServer).to(ShellTerminalServer).inSingletonScope();
     bind(ShellProcess).toSelf().inTransientScope();
+    bind(TerminalWatcher).toSelf().inSingletonScope();
     bind(ShellProcessFactory).toFactory(ctx =>
         (options: ShellProcessOptions) => {
             const child = new Container({ defaultScope: 'Singleton' });
