@@ -58,6 +58,8 @@ export class RawProcess extends Process {
     }
 
     kill(signal?: string) {
-        this.process.kill(signal);
+        if (this.killed === false) {
+            this.process.kill(signal);
+        }
     }
 }

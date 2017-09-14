@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import { ProcessManager } from './process-manager';
-import { ILogger, Emitter, Event, Disposable } from '@theia/core/lib/common';
+import { ILogger, Emitter, Event } from '@theia/core/lib/common';
 import * as child from 'child_process';
 import * as stream from 'stream';
 
@@ -17,7 +17,7 @@ export interface IProcessExitEvent {
 }
 
 @injectable()
-export abstract class Process implements Disposable {
+export abstract class Process {
 
     readonly id: number;
     abstract readonly type: 'Raw' | 'Terminal';
@@ -33,8 +33,6 @@ export abstract class Process implements Disposable {
         @inject(ProcessManager) protected readonly processManager: ProcessManager,
         protected readonly logger: ILogger) {
         this.id = this.processManager.register(this);
-        this.exitEmitter.event(this.handleOnExit.bind(this));
-        this.errorEmitter.event(this.handleOnError.bind(this));
     }
 
     abstract kill(signal?: string): void;
@@ -57,27 +55,10 @@ export abstract class Process implements Disposable {
 
     }
 
-    dispose() {
-
-        const cleanup = () => {
-            this.processManager.delete(this);
-            this.exitEmitter.dispose();
-            this.errorEmitter.dispose();
-        };
-
-        if (this.killed === false) {
-            const p = new Promise<void>(resolve => {
-                this.kill();
-                this.exitEmitter.event(event => resolve());
-            });
-            p.then(cleanup);
-        } else {
-            cleanup();
-        }
-    }
-
     protected emitOnExit(code: number, signal?: string) {
-        this.exitEmitter.fire({ 'code': code, 'signal': signal });
+        const exitEvent = { 'code': code, 'signal': signal };
+        this.handleOnExit(exitEvent);
+        this.exitEmitter.fire(exitEvent);
     }
 
     protected handleOnExit(event: IProcessExitEvent) {
@@ -91,6 +72,7 @@ export abstract class Process implements Disposable {
     }
 
     protected emitOnError(err: Error) {
+        this.handleOnError(err);
         this.errorEmitter.fire(err);
     }
 

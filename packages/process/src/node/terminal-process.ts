@@ -69,7 +69,9 @@ export class TerminalProcess extends Process {
     }
 
     kill(signal?: string) {
-        this.terminal.kill(signal);
+        if (this.killed === false) {
+            this.terminal.kill(signal);
+        }
     }
 
     resize(cols: number, rows: number): void {

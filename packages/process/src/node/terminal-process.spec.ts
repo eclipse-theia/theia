@@ -36,7 +36,6 @@ describe('TerminalProcess', function () {
             const p = new Promise(resolve => {
                 terminalProcess.onExit(event => {
                     if (event.code > 0) { resolve(); }
-                    terminalProcess.dispose();
                 });
             });
 
@@ -50,7 +49,6 @@ describe('TerminalProcess', function () {
         const p = new Promise((resolve, reject) => {
             terminalProcess.onError(error => {
                 reject();
-                terminalProcess.dispose();
             });
             terminalProcess.onExit(event => {
                 if (event.code === 0) {
@@ -58,19 +56,9 @@ describe('TerminalProcess', function () {
                 } else {
                     reject();
                 }
-                terminalProcess.dispose();
             });
         });
 
-        return expect(p).to.be.eventually.fulfilled;
-    });
-
-    it('test dispose', function () {
-        const terminalProcess = terminalProcessFactory({ command: process.execPath });
-        const p = new Promise((resolve, reject) => {
-            terminalProcess.dispose();
-            terminalProcess.onExit(event => resolve());
-        });
         return expect(p).to.be.eventually.fulfilled;
     });
 
@@ -89,7 +77,6 @@ describe('TerminalProcess', function () {
             only 'exit' is sent on the terminal process.  */
             terminalProcess.onExit(() => {
                 resolve(version.trim())
-                terminalProcess.dispose();
             });
         });
 

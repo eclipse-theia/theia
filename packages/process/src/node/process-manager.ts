@@ -6,12 +6,14 @@
  */
 import { injectable } from 'inversify';
 import { Process } from './process';
+import { Emitter, Event } from '@theia/core/lib/common';
 
 @injectable()
 export class ProcessManager {
 
     protected readonly processes: Map<number, Process> = new Map();
     protected id: number = 0;
+    protected readonly deleteEmitter = new Emitter<number>();
 
     register(process: Process): number {
         const id = this.id;
@@ -25,6 +27,12 @@ export class ProcessManager {
     }
 
     delete(process: Process): void {
+        process.kill();
         this.processes.delete(process.id);
+        this.deleteEmitter.fire(process.id);
+    }
+
+    get onDelete(): Event<number> {
+        return this.deleteEmitter.event;
     }
 }

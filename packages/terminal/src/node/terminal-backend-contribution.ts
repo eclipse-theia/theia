@@ -32,7 +32,7 @@ export class TerminalBackendContribution implements BackendApplicationContributi
         }, (ws, request) => {
             const uri = new URI(request.url!)
             const id = parseInt(uri.path.base, 10)
-            const term = this.processManager.get(id);
+            let term = this.processManager.get(id);
             if (!term) {
                 return;
             }
@@ -55,7 +55,10 @@ export class TerminalBackendContribution implements BackendApplicationContributi
                 }
             });
             ws.on('close', (msg: any) => {
-                term.dispose();
+                if (term !== undefined) {
+                    this.processManager.delete(term);
+                    term = undefined;
+                }
             });
         });
     }

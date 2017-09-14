@@ -29,7 +29,6 @@ describe('RawProcess', function () {
         const p = new Promise(resolve => {
             rawProcess.onError(error => {
                 resolve();
-                rawProcess.dispose();
             });
         });
 
@@ -42,7 +41,6 @@ describe('RawProcess', function () {
         const p = new Promise((resolve, reject) => {
             rawProcess.onError(error => {
                 reject();
-                rawProcess.dispose();
             });
 
             rawProcess.onExit(event => {
@@ -51,19 +49,9 @@ describe('RawProcess', function () {
                 } else {
                     resolve();
                 }
-                rawProcess.dispose();
             });
         });
 
-        return expect(p).to.be.eventually.fulfilled;
-    });
-
-    it('test dispose', function () {
-        const rawProcess = rawProcessFactory({ command: process.execPath });
-        const p = new Promise((resolve, reject) => {
-            rawProcess.dispose();
-            rawProcess.onExit(event => resolve());
-        });
         return expect(p).to.be.eventually.fulfilled;
     });
 
@@ -80,7 +68,6 @@ describe('RawProcess', function () {
             });
             outStream.on('end', () => {
                 resolve(version.trim());
-                rawProcess.dispose();
             });
         });
 
@@ -102,7 +89,6 @@ describe('RawProcess', function () {
             });
             outStream.on('end', () => {
                 resolve(version.trim());
-                rawProcess.dispose();
             });
         });
 
