@@ -139,6 +139,7 @@ export class EditorManagerImpl implements EditorManager {
                 editor.cursor = selection;
                 editor.revealPosition(selection);
             } else if (Range.is(selection)) {
+                editor.cursor = selection.end;
                 editor.selection = selection;
                 editor.revealRange(selection);
             }

@@ -7,10 +7,10 @@
 
 import { injectable, inject, decorate } from "inversify";
 import { MonacoLanguages as BaseMonacoLanguages, ProtocolToMonacoConverter, MonacoToProtocolConverter } from "monaco-languageclient";
-import { DisposableCollection } from '@theia/core/lib/common';
 import { Languages, DiagnosticCollection } from "@theia/languages/lib/common";
-import { MarkerManager } from "@theia/markers/lib/browser";
-import { Diagnostic } from "@theia/languages/lib/browser";
+import { ProblemManager } from "@theia/markers/lib/browser/problem/problem-marker";
+import URI from '@theia/core/lib/common/uri';
+
 
 decorate(injectable(), BaseMonacoLanguages);
 decorate(inject(ProtocolToMonacoConverter), BaseMonacoLanguages, 0);
@@ -22,7 +22,7 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
     constructor(
         @inject(ProtocolToMonacoConverter) p2m: ProtocolToMonacoConverter,
         @inject(MonacoToProtocolConverter) m2p: MonacoToProtocolConverter,
-        @inject(MarkerManager) protected readonly markerManager: MarkerManager
+        @inject(ProblemManager) protected readonly problemManager: ProblemManager
     ) {
         super(p2m, m2p);
     }
@@ -31,16 +31,19 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
         // FIXME: Monaco model markers should be created based on Theia problem markers
         const monacoCollection = super.createDiagnosticCollection(name);
         const owner = name || 'default';
-        const collection = this.markerManager.createCollection<Diagnostic>(owner, 'problem');
-        const toDispose = new DisposableCollection();
-        toDispose.push(collection);
-        toDispose.push(monacoCollection);
+        const uris: string[] = [];
         return {
             set: (uri, diagnostics) => {
-                monacoCollection.set(uri, diagnostics);
-                collection.setMarkers(uri, diagnostics);
+                monacoCollection.set(uri, diagnostics)
+                this.problemManager.setMarkers(new URI(uri), owner, diagnostics);
+                uris.push(uri);
             },
-            dispose: () => toDispose.dispose()
+            dispose: () => {
+                monacoCollection.dispose();
+                for (const uri of uris) {
+                    this.problemManager.setMarkers(new URI(uri), owner, []);
+                }
+            }
         };
     }
 }

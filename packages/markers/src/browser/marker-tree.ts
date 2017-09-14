@@ -5,7 +5,7 @@
 * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 */
 
-import { injectable, inject } from "inversify";
+import { injectable } from "inversify";
 import { Tree, ICompositeTreeNode, ITreeNode, ISelectableTreeNode, IExpandableTreeNode } from "@theia/core/lib/browser";
 import { MarkerManager, Marker } from './marker-manager';
 import { UriSelection } from "@theia/filesystem/lib/common";
@@ -17,11 +17,11 @@ export interface MarkerOptions {
 }
 
 @injectable()
-export class MarkerTree extends Tree {
+export abstract class MarkerTree<T extends object> extends Tree {
 
     constructor(
-        @inject(MarkerManager) protected readonly markerManager: MarkerManager,
-        @inject(MarkerOptions) protected readonly markerOptions: MarkerOptions
+        protected readonly markerManager: MarkerManager<T>,
+        protected readonly markerOptions: MarkerOptions
     ) {
         super();
 
@@ -49,49 +49,55 @@ export class MarkerTree extends Tree {
     getMarkerInfoNodes(parent: MarkerRootNode): Promise<MarkerInfoNode[]> {
         const uriNodes: MarkerInfoNode[] = [];
         if (this.root && MarkerRootNode.is(this.root)) {
-            this.markerManager.forEachMarkerInfoByKind(this.root.kind, markerInfo => {
-                const uri = new URI(markerInfo.uri);
-                const id = 'markerInfo-' + markerInfo.uri;
-                const cachedMarkerInfo = this.getNode(id);
-                if (cachedMarkerInfo && MarkerInfoNode.is(cachedMarkerInfo)) {
-                    cachedMarkerInfo.numberOfMarkers = markerInfo.counter;
-                    uriNodes.push(cachedMarkerInfo);
-                } else {
-                    uriNodes.push({
-                        children: [],
-                        expanded: false,
-                        uri,
-                        id,
-                        name: uri.displayName,
-                        parent,
-                        selected: false,
-                        numberOfMarkers: markerInfo.counter
-                    });
+            for (const uriString of this.markerManager.getUris()) {
+                const id = 'markerInfo-' + uriString;
+                const uri = new URI(uriString);
+                const numberOfMarkers = this.markerManager.findMarkers({ uri }).length;
+                if (numberOfMarkers > 0) {
+                    const cachedMarkerInfo = this.getNode(id);
+                    if (cachedMarkerInfo && MarkerInfoNode.is(cachedMarkerInfo)) {
+                        cachedMarkerInfo.numberOfMarkers = numberOfMarkers;
+                        uriNodes.push(cachedMarkerInfo);
+                    } else {
+                        uriNodes.push({
+                            children: [],
+                            expanded: true,
+                            uri,
+                            id,
+                            name: uri.displayName,
+                            parent,
+                            selected: false,
+                            numberOfMarkers
+                        });
+                    }
                 }
-            });
+            }
         }
         return Promise.resolve(uriNodes);
     }
 
     getMarkerNodes(parent: MarkerInfoNode): Promise<MarkerNode[]> {
         const markerNodes: MarkerNode[] = [];
-        this.markerManager.forEachMarkerByUriAndKind(parent.uri.toString(), parent.parent.kind, marker => {
+        const markers = this.markerManager.findMarkers({ uri: parent.uri });
+        for (let i = 0; i < markers.length; i++) {
+            const marker = markers[i];
             const uri = new URI(marker.uri);
-            const cachedMarkerNode = this.getNode(marker.id);
+            const id = uri.toString() + "_" + i;
+            const cachedMarkerNode = this.getNode(id);
             if (MarkerNode.is(cachedMarkerNode)) {
                 cachedMarkerNode.marker = marker;
                 markerNodes.push(cachedMarkerNode);
             } else {
                 markerNodes.push({
-                    id: marker.id,
-                    name: marker.kind,
+                    id,
+                    name: 'marker',
                     parent,
                     selected: false,
                     uri,
                     marker
                 });
             }
-        });
+        }
         return Promise.resolve(markerNodes);
     }
 }

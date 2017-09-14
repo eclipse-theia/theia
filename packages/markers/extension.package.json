@@ -9,7 +9,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "theiaExtensions": [{
-    "frontend": "lib/browser/problem/problem-frontend-module"
-  }]
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/problem/problem-frontend-module"
+    }
+  ]
 }
