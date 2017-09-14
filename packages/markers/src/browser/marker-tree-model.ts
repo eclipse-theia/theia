@@ -15,12 +15,12 @@ export class MarkerTreeServices extends TreeServices {
 }
 
 @injectable()
-export class MarkerTreeModel extends TreeModel {
+export class MarkerTreeModel<T extends object> extends TreeModel {
 
     protected readonly openerService: OpenerService;
 
     constructor(
-        @inject(MarkerTree) protected readonly tree: MarkerTree,
+        @inject(MarkerTree) protected readonly tree: MarkerTree<T>,
         @inject(MarkerTreeServices) readonly services: MarkerTreeServices
     ) {
         super(tree, services);

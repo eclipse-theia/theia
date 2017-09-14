@@ -6,20 +6,19 @@
 */
 
 import { injectable, inject } from 'inversify';
-import { ProblemMarker } from './problem-marker';
+import { ProblemMarker, ProblemManager } from './problem-marker';
 import { ProblemTreeModel } from './problem-tree-model';
-import { MarkerManager } from '../marker-manager';
 import { MarkerInfoNode, MarkerNode } from '../marker-tree';
 import { TreeWidget, TreeProps, ContextMenuRenderer, ITreeNode, NodeProps, ITreeModel, ISelectableTreeNode } from "@theia/core/lib/browser";
 import { h } from "@phosphor/virtualdom/lib";
-import { DiagnosticSeverity } from "vscode-languageserver-types";
+import { DiagnosticSeverity } from 'vscode-languageserver-types';
 import { Message } from '@phosphor/messaging';
 
 @injectable()
 export class ProblemWidget extends TreeWidget {
 
     constructor(
-        @inject(MarkerManager) protected readonly markerManager: MarkerManager,
+        @inject(ProblemManager) protected readonly problemManager: ProblemManager,
         @inject(TreeProps) readonly treeProps: TreeProps,
         @inject(ProblemTreeModel) readonly model: ProblemTreeModel,
         @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer

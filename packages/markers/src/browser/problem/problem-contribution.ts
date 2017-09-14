@@ -12,14 +12,14 @@ import {
     MenuContribution, KeybindingContribution, KeybindingRegistry,
     KeyCode, Key, Modifier, CommandRegistry, MAIN_MENU_BAR
 } from '@theia/core/lib/common';
-import { CommonCommands, FrontendApplication } from '@theia/core/lib/browser';
+import { FrontendApplication } from '@theia/core/lib/browser';
 
 export const MARKER_CONTEXT_MENU = 'marker-context-menu';
 
 export namespace ProblemCommands {
     export const OPEN: Command = {
         id: 'markers:open',
-        label: 'Markers'
+        label: 'Open Problem View'
     };
 }
 
@@ -27,7 +27,7 @@ export namespace ProblemCommands {
 export class ProblemContribution implements CommandContribution, MenuContribution, KeybindingContribution {
 
     constructor(
-        @inject(ProblemWidget) protected readonly markerWidget: ProblemWidget,
+        @inject("Factory<ProblemWidget>") protected readonly markerWidgetFactory: () => ProblemWidget,
         @inject(FrontendApplication) protected readonly app: FrontendApplication) {
     }
 
@@ -43,23 +43,22 @@ export class ProblemContribution implements CommandContribution, MenuContributio
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(ProblemCommands.OPEN, {
             isEnabled: () => true,
-            execute: () => this.openMarkerView()
+            execute: () => this.openProblemsView()
         });
     }
 
-    protected openMarkerView(): void {
-        this.app.shell.addToMainArea(this.markerWidget);
-        this.app.shell.activateMain(this.markerWidget.id);
+    protected openProblemsView(): void {
+        const markerWidget = this.markerWidgetFactory();
+        if (!markerWidget.isAttached) {
+            this.app.shell.addToMainArea(markerWidget);
+        }
+        this.app.shell.activateMain(markerWidget.id);
     }
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerSubmenu([MAIN_MENU_BAR], 'view', 'View');
         menus.registerMenuAction([MAIN_MENU_BAR, 'view'], {
             commandId: ProblemCommands.OPEN.id
-        });
-
-        menus.registerMenuAction([MARKER_CONTEXT_MENU], {
-            commandId: CommonCommands.COPY.id
         });
     }
 }
