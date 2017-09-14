@@ -14,7 +14,7 @@ import { LoggerWatcher } from '../common/logger-watcher';
 import * as yargs from 'yargs';
 
 export const loggerBackendModule = new ContainerModule(bind => {
-    bind(ILogger).to(Logger).inSingletonScope();
+    bind(ILogger).to(Logger).inSingletonScope().whenTargetIsDefault();
     bind(LoggerWatcher).toSelf().inSingletonScope();
     bind(ILoggerServer).to(BunyanLoggerServer).inSingletonScope();
     bind(LoggerServerOptions).toDynamicValue(ctx => {

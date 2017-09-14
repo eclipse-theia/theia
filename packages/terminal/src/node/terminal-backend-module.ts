@@ -24,15 +24,17 @@ export default new ContainerModule(bind => {
     bind(IShellTerminalServer).to(ShellTerminalServer).inSingletonScope();
     bind(ShellProcess).toSelf().inTransientScope();
     bind(TerminalWatcher).toSelf().inSingletonScope();
+
+    bind(ILogger).toDynamicValue(ctx => {
+        const logger = ctx.container.get<ILogger>(ILogger);
+        return logger.child({ 'module': 'terminal' });
+    }).inSingletonScope().whenTargetNamed("terminal");
+
     bind(ShellProcessFactory).toFactory(ctx =>
         (options: ShellProcessOptions) => {
             const child = new Container({ defaultScope: 'Singleton' });
             child.parent = ctx.container;
-
-            const logger = ctx.container.get<ILogger>(ILogger);
-            const loggerChild = logger.child({ 'module': 'terminal-backend' });
             child.bind(ShellProcessOptions).toConstantValue(options);
-            child.bind(ILogger).toConstantValue(loggerChild);
             return child.get(ShellProcess);
         }
     );
