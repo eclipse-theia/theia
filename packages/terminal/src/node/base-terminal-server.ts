@@ -6,17 +6,26 @@
  */
 
 import { inject, injectable } from 'inversify';
-import { ILogger } from '@theia/core/lib/common/logger';
+import { ILogger, DisposableCollection } from '@theia/core/lib/common';
 import { IBaseTerminalServer, IBaseTerminalServerOptions, IBaseTerminalClient } from '../common/base-terminal-protocol';
 import { TerminalProcess, ProcessManager } from '@theia/process/lib/node';
 
 @injectable()
 export abstract class BaseTerminalServer implements IBaseTerminalServer {
     protected client: IBaseTerminalClient | undefined = undefined;
+    protected terminalToDispose = new Map<number, DisposableCollection>();
 
     constructor(
         @inject(ProcessManager) protected readonly processManager: ProcessManager,
         @inject(ILogger) protected readonly logger: ILogger) {
+
+        processManager.onDelete(id => {
+            const toDispose = this.terminalToDispose.get(id);
+            if (toDispose !== undefined) {
+                toDispose.dispose();
+                this.terminalToDispose.delete(id);
+            }
+        });
     }
 
     abstract create(options: IBaseTerminalServerOptions): Promise<number>;
@@ -41,7 +50,9 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
     }
 
     protected postCreate(term: TerminalProcess) {
-        term.onError(error => {
+        const toDispose = new DisposableCollection();
+
+        toDispose.push(term.onError(error => {
             this.logger.error(`Terminal pid: ${term.pid} error: ${error}, closing it.`);
 
             if (this.client !== undefined) {
@@ -51,10 +62,9 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
                         'error': error
                     });
             }
-            term.dispose();
-        });
+        }));
 
-        term.onExit(event => {
+        toDispose.push(term.onExit(event => {
             if (this.client !== undefined) {
                 this.client.onTerminalExitChanged(
                     {
@@ -63,8 +73,9 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
                         'signal': event.signal
                     });
             }
-            term.dispose();
-        });
+        }));
+
+        this.terminalToDispose.set(term.id, toDispose);
     }
 
 }
