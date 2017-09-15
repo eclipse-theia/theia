@@ -22,7 +22,10 @@ yargs.usage(`Usage main.js [--loglevel='trace','debug','info','warn','error','fa
 export class BunyanLoggerServer implements ILoggerServer {
 
     /* Root logger and all child logger array.  */
-    private loggers: bunyan[] = [];
+    private loggers = new Map<number, bunyan>();
+
+    /* Id counter for the childs.  */
+    private currentId = 0;
 
     /* Logger client to send notifications to.  */
     private client: ILoggerClient | undefined = undefined;
@@ -34,7 +37,7 @@ export class BunyanLoggerServer implements ILoggerServer {
     private readonly rootLoggerId = 0;
 
     constructor( @inject(LoggerServerOptions) options: object) {
-        this.loggers.push(bunyan.createLogger(
+        this.loggers.set(this.currentId++, bunyan.createLogger(
             <bunyan.LoggerOptions>options
         ));
     }
@@ -46,8 +49,15 @@ export class BunyanLoggerServer implements ILoggerServer {
     /* See the bunyan child documentation, this creates a child logger
      * with the added properties of object in param.  */
     child(obj: Object): Promise<number> {
-        this.loggers.push(this.loggers[this.rootLoggerId].child(obj));
-        return Promise.resolve(this.loggers.length - 1);
+        const rootLogger = this.loggers.get(this.rootLoggerId);
+        if (rootLogger !== undefined) {
+            const id = this.currentId;
+            this.loggers.set(id, rootLogger.child(obj));
+            this.currentId++;
+            return Promise.resolve(id);
+        } else {
+            throw new Error('No root logger');
+        }
     }
 
     /* Set the client to receive notifications on.  */
@@ -58,8 +68,12 @@ export class BunyanLoggerServer implements ILoggerServer {
     /* Set the log level for a logger.  */
     setLogLevel(id: number, logLevel: number): Promise<void> {
         const oldLogLevel = this.logLevel;
+        const logger = this.loggers.get(id);
+        if (logger === undefined) {
+            throw new Error(`No logger for id: ${id}`);
+        }
 
-        this.loggers[id].level(this.toBunyanLevel(logLevel));
+        logger.level(this.toBunyanLevel(logLevel));
         this.logLevel = logLevel;
 
         /* Only notify about the root logger level changes.  */
@@ -71,34 +85,44 @@ export class BunyanLoggerServer implements ILoggerServer {
 
     /* Get the log level for a logger.  */
     getLogLevel(id: number): Promise<number> {
+        const logger = this.loggers.get(id);
+        if (logger === undefined) {
+            throw new Error(`No logger for id: ${id}`);
+        }
+
         return Promise.resolve(
-            this.toLogLevel(this.loggers[id].level())
+            this.toLogLevel(logger.level())
         );
     }
 
     /* Log a message to a logger.  */
     log(id: number, logLevel: number, message: string, params: any[]): Promise<void> {
+        const logger = this.loggers.get(id);
+        if (logger === undefined) {
+            throw new Error(`No logger for id: ${id}`);
+        }
+
         switch (logLevel) {
             case LogLevel.TRACE:
-                this.loggers[id].trace(message, params);
+                logger.trace(message, params);
                 break;
             case LogLevel.DEBUG:
-                this.loggers[id].debug(message, params);
+                logger.debug(message, params);
                 break;
             case LogLevel.INFO:
-                this.loggers[id].info(message, params);
+                logger.info(message, params);
                 break;
             case LogLevel.WARN:
-                this.loggers[id].warn(message, params);
+                logger.warn(message, params);
                 break;
             case LogLevel.ERROR:
-                this.loggers[id].error(message, params);
+                logger.error(message, params);
                 break;
             case LogLevel.FATAL:
-                this.loggers[id].fatal(message, params);
+                logger.fatal(message, params);
                 break;
             default:
-                this.loggers[id].info(message, params);
+                logger.info(message, params);
                 break;
         }
         return Promise.resolve();
