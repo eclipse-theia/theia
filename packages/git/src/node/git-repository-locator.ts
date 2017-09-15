@@ -29,7 +29,9 @@ export async function locateRepositories(path: string): Promise<Repository[]> {
                 segments.pop();
                 segments.pop();
                 const localUri = FileUri.create(segments.join('')).toString();
-                repositories.push({ localUri });
+                if (!localUri.endsWith(path)) {
+                    repositories.push({ localUri });
+                }
                 stop();
             }
         });
