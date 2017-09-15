@@ -9,9 +9,11 @@
 import { injectable, inject } from 'inversify';
 import { Git } from '../common/git';
 import { GIT_CONTEXT_MENU } from './git-context-menu';
-import { FileChange, FileStatus, Repository } from '../common/model';
+import { FileChange, FileStatus } from '../common/model';
 import { GitWatcher } from '../common/git-watcher';
-import { MessageService } from '@theia/core';
+import { GIT_RESOURCE_SCHEME } from './git-resource';
+import { GitUiRepositories, GitUiRepository } from './git-repositories';
+import { MessageService, ResourceProvider } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { VirtualRenderer, VirtualWidget, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { h } from '@phosphor/virtualdom/lib';
@@ -19,10 +21,9 @@ import { h } from '@phosphor/virtualdom/lib';
 @injectable()
 export class GitWidget extends VirtualWidget {
 
-    protected localUri: string;
-    protected repository: Repository;
+    protected repository: GitUiRepository;
 
-    protected repositories: Repository[] = [];
+    protected repositories: GitUiRepository[] = [];
     protected stagedChanges: FileChange[] = [];
     protected unstagedChanges: FileChange[] = [];
     protected mergeChanges: FileChange[] = [];
@@ -31,8 +32,10 @@ export class GitWidget extends VirtualWidget {
 
     constructor(
         @inject(Git) protected readonly git: Git,
+        @inject(GitUiRepositories) protected readonly gitUiRepositories: GitUiRepositories,
         @inject(GitWatcher) protected readonly gitWatcher: GitWatcher,
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
+        @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
         @inject(MessageService) protected readonly messageService: MessageService) {
         super();
         this.id = 'theia-gitContainer';
@@ -50,16 +53,12 @@ export class GitWidget extends VirtualWidget {
     async initialize(): Promise<void> {
         this.message = '';
         this.additionalMessage = '';
-        this.repositories = await this.git.repositories();
-        if (!this.localUri) {
-            this.repository = this.repositories[0];
-        } else {
-            this.repository = { localUri: this.localUri };
-        }
+        this.repositories = await this.gitUiRepositories.all();
+        this.repository = this.gitUiRepositories.selected;
         this.stagedChanges = [];
         this.unstagedChanges = [];
         this.mergeChanges = [];
-        const status = await this.git.status(this.repository);
+        const status = await this.git.status(this.repository.repository);
         status.changes.forEach(change => {
             if (FileStatus[FileStatus.Conflicted.valueOf()] !== FileStatus[change.status]) {
                 if (change.staged) {
@@ -88,14 +87,14 @@ export class GitWidget extends VirtualWidget {
     protected renderRepoList(): h.Child {
         const repoOptionElements: h.Child[] = [];
         this.repositories.forEach(repo => {
-            const uri = new URI(repo.localUri);
-            repoOptionElements.push(h.option({ value: uri.path.toString() }, uri.displayName));
+            const uri = new URI(repo.repository.localUri);
+            repoOptionElements.push(h.option({ value: uri.toString() }, uri.displayName));
         });
 
         return h.select({
             id: 'repositoryList',
             onchange: event => {
-                this.localUri = (event.target as HTMLSelectElement).value;
+                this.gitUiRepositories.select((event.target as HTMLSelectElement).value);
                 this.initialize();
             }
         }, VirtualRenderer.flatten(repoOptionElements));
@@ -106,7 +105,7 @@ export class GitWidget extends VirtualWidget {
             className: 'button',
             onclick: event => {
                 if (this.message !== '') {
-                    this.git.commit(this.repository, this.message + "\n\n" + this.additionalMessage)
+                    this.git.commit(this.gitUiRepositories.selected.repository, this.message + "\n\n" + this.additionalMessage)
                         .then(() => {
                             this.initialize();
                         });
@@ -176,7 +175,7 @@ export class GitWidget extends VirtualWidget {
             btns.push(h.div({
                 className: 'button',
                 onclick: event => {
-                    this.git.rm(this.repository, change.uri)
+                    this.git.rm(this.gitUiRepositories.selected.repository, change.uri)
                         .then(() => {
                             this.initialize();
                         });
@@ -191,7 +190,7 @@ export class GitWidget extends VirtualWidget {
             btns.push(h.div({
                 className: 'button',
                 onclick: event => {
-                    this.git.add(this.repository, change.uri)
+                    this.git.add(this.gitUiRepositories.selected.repository, change.uri)
                         .then(() => {
                             this.initialize();
                         });
@@ -205,7 +204,16 @@ export class GitWidget extends VirtualWidget {
         const uri: URI = new URI(change.uri);
         const nameSpan = h.span({ className: 'name' }, uri.displayName + ' ');
         const pathSpan = h.span({ className: 'path' }, uri.path.dir.toString());
-        const nameAndPathDiv = h.div({ className: 'noWrapInfo' }, nameSpan, pathSpan);
+        const nameAndPathDiv = h.div({
+            className: 'noWrapInfo',
+            onclick: () => {
+                const rawUri = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD');
+                const ressource = this.resourceProvider(rawUri);
+                ressource
+                    .then(r => r.readContents())
+                    .then(content => console.log(content));
+            }
+        }, nameSpan, pathSpan);
         const buttonsDiv = this.renderGitItemButtons(change);
         const staged = change.staged ? 'staged ' : '';
         const statusDiv = h.div({ className: 'status ' + staged + FileStatus[change.status].toLowerCase() }, FileStatus[change.status].charAt(0));

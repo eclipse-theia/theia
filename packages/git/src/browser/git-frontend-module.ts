@@ -1,9 +1,9 @@
 /*
- * Copyright (C) 2017 TypeFox and others.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+* Copyright (C) 2017 TypeFox and others.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+*/
 
 import { Git, GitPath } from '../common/git';
 import { ContainerModule } from 'inversify';
@@ -11,11 +11,13 @@ import { bindGitPreferences } from '../common/git-preferences';
 import { WebSocketConnectionProvider, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { GitCommandHandlers } from './git-command';
 import { GitKeybindingContext, GitKeybindingContribution } from './git-keybinding';
-import { CommandContribution, KeybindingContribution, KeybindingContext, MenuContribution } from "@theia/core/lib/common";
+import { CommandContribution, KeybindingContribution, KeybindingContext, MenuContribution, ResourceResolver } from "@theia/core/lib/common";
 import { GitWatcher, GitWatcherPath, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common/git-watcher';
 import { GitFrontendContribution } from './git-frontend-contribution';
 import { GitWidget } from './git-widget';
+import { GitResourceResolver } from './git-resource';
 import { GitContextMenu } from './git-context-menu';
+import { GitUiRepositories } from './git-repositories';
 
 import '../../src/browser/style/index.css';
 
@@ -34,4 +36,9 @@ export default new ContainerModule(bind => {
 
     bind(FrontendApplicationContribution).to(GitFrontendContribution);
     bind(GitWidget).toSelf().inSingletonScope();
+
+    bind(GitResourceResolver).toSelf().inSingletonScope();
+    bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(GitResourceResolver));
+
+    bind(GitUiRepositories).toSelf().inSingletonScope();
 });
