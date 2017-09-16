@@ -7,6 +7,7 @@
 
 import { injectable } from 'inversify';
 import { QuickOpenService, QuickOpenModel, QuickOpenOptions, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode } from "@theia/core/lib/browser";
+import { KEY_CODE_MAP } from './monaco-keycode-map';
 
 export interface InternalMonacoQuickOpenModel extends monaco.quickOpen.IQuickOpenControllerOpts {
     readonly prefix?: string;
@@ -202,7 +203,7 @@ export class QuickOpenEntry extends monaco.quickOpen.QuickOpenEntry {
             keybinding.keyCode.shift,
             keybinding.keyCode.alt,
             keybinding.keyCode.meta,
-            keybinding.keyCode.key.keyCode
+            KEY_CODE_MAP[keybinding.keyCode.key.keyCode]
         );
         return new monaco.keybindings.USLayoutResolvedKeybinding(simple, monaco.platform.OS);
     }
