@@ -8,32 +8,40 @@
 import { injectable, inject, named } from "inversify";
 import { SelectionService } from "@theia/core/lib/common";
 import { FrontendApplicationContribution, FrontendApplication } from "@theia/core/lib/browser";
-import { FileSystem } from "@theia/filesystem/lib/common";
 import { DirNode } from "@theia/filesystem/lib/browser";
 import { WorkspaceService } from "@theia/workspace/lib/browser";
-import { FileNavigatorWidget, ID } from "./navigator-widget";
+import { FileNavigatorWidget, FILE_NAVIGATOR_ID } from './navigator-widget';
+import { StorageService } from '@theia/core/lib/browser/storage-service';
+import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser/widget-manager';
+import { Widget } from '@phosphor/widgets';
 
 @injectable()
-export class FileNavigatorContribution implements FrontendApplicationContribution {
+export class FileNavigatorContribution implements FrontendApplicationContribution, WidgetFactory {
 
-    protected readonly onReady: Promise<void>;
+    id = 'navigator';
 
     constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
-        @inject(FileNavigatorWidget) @named(ID) protected readonly fileNavigator: FileNavigatorWidget
+        @inject(FileNavigatorWidget) @named(FILE_NAVIGATOR_ID) protected readonly fileNavigator: FileNavigatorWidget,
+        @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
+        @inject(StorageService) protected storageService: StorageService
     ) {
         this.fileNavigator.model.onSelectionChanged(selection =>
             this.selectionService.selection = selection
         );
-        this.onReady = this.workspaceService.root.then(fileStat => {
+        this.workspaceService.root.then(fileStat => {
             this.fileNavigator.model.root = DirNode.createRoot(fileStat);
         });
     }
 
     onStart(app: FrontendApplication): void {
-        app.shell.addToLeftArea(this.fileNavigator);
+        this.widgetManager.getOrCreateWidget('navigator').then(navigator => {
+            app.shell.addToLeftArea(navigator);
+        });
     }
 
+    async createWidget(): Promise<Widget> {
+        return this.fileNavigator;
+    }
 }

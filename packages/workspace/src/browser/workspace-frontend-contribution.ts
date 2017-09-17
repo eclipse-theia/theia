@@ -13,6 +13,7 @@ import { DirNode, FileDialogFactory, FileStatNode } from '@theia/filesystem/lib/
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from './workspace-service';
 import { FileMenus } from './workspace-commands';
+import { StorageService } from '@theia/core/lib/browser/storage-service';
 
 export namespace WorkspaceCommands {
     export const OPEN: Command = {
@@ -28,7 +29,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileDialogFactory) protected readonly fileDialogFactory: FileDialogFactory,
         @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
+        @inject(StorageService) protected readonly workspaceStorage: StorageService
     ) { }
 
     registerCommands(commands: CommandRegistry): void {

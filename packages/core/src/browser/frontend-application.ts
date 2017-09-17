@@ -5,7 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import 'reflect-metadata';
 import { inject, injectable, named } from 'inversify';
 import { ContributionProvider, CommandRegistry, KeybindingRegistry, MenuModelRegistry } from '../common';
 import { ApplicationShell } from './shell';

@@ -20,7 +20,7 @@ export class EditorWidget extends BaseWidget {
     }
 
     protected onActivateRequest(msg: Message): void {
-        super.onActivateRequest(msg)
+        super.onActivateRequest(msg);
         this.editor.focus();
         this.selectionService.selection = this.editor;
     }
@@ -28,7 +28,7 @@ export class EditorWidget extends BaseWidget {
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
         if (this.isVisible) {
-            this.editor.refresh()
+            this.editor.refresh();
         }
     }
 

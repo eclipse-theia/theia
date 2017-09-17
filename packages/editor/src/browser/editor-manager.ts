@@ -10,8 +10,9 @@ import URI from "@theia/core/lib/common/uri";
 import { Emitter, Event, RecursivePartial, SelectionService } from '@theia/core/lib/common';
 import { OpenHandler, FrontendApplication } from "@theia/core/lib/browser";
 import { EditorWidget } from "./editor-widget";
-import { EditorRegistry } from "./editor-registry";
 import { TextEditorProvider, Range, Position } from "./editor";
+import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser/widget-manager';
+import { Widget } from '@phosphor/widgets';
 
 export const EditorManager = Symbol("EditorManager");
 
@@ -20,10 +21,6 @@ export interface EditorManager extends OpenHandler {
      * All opened editors.
      */
     readonly editors: EditorWidget[];
-    /**
-     * Emit when editors changed.
-     */
-    readonly onEditorsChanged: Event<void>;
     /**
      * Open an editor for the given uri and input.
      * Reject if the given input is not an editor input or an editor cannot be opened.
@@ -53,7 +50,7 @@ export interface EditorInput {
 }
 
 @injectable()
-export class EditorManagerImpl implements EditorManager {
+export class EditorManagerImpl implements EditorManager, WidgetFactory {
 
     readonly id = "code-editor-opener";
     readonly label = "Code Editor";
@@ -62,21 +59,17 @@ export class EditorManagerImpl implements EditorManager {
     protected readonly activeObserver: EditorManagerImpl.Observer;
 
     constructor(
-        @inject(EditorRegistry) protected readonly editorRegistry: EditorRegistry,
         @inject(TextEditorProvider) protected readonly editorProvider: TextEditorProvider,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
-        @inject(FrontendApplication) protected readonly app: FrontendApplication
+        @inject(FrontendApplication) protected readonly app: FrontendApplication,
+        @inject(WidgetManager) protected readonly widgetManager: WidgetManager
     ) {
         this.currentObserver = new EditorManagerImpl.Observer('current', app);
         this.activeObserver = new EditorManagerImpl.Observer('active', app);
     }
 
     get editors() {
-        return this.editorRegistry.getOpenedEditors();
-    }
-
-    get onEditorsChanged() {
-        return this.editorRegistry.onEditorsChanged();
+        return this.widgetManager.getWidgets(this.id) as EditorWidget[];
     }
 
     get currentEditor() {
@@ -100,28 +93,29 @@ export class EditorManagerImpl implements EditorManager {
     }
 
     open(uri: URI, input?: EditorInput): Promise<EditorWidget> {
-        return this.getOrCreateEditor(uri).then(editor => {
+        return this.widgetManager.getOrCreateWidget<EditorWidget>(this.id, uri.toString()).then(editor => {
+            if (!editor.isAttached) {
+                this.app.shell.addToMainArea(editor);
+            }
             this.revealIfVisible(editor, input);
             this.revealSelection(editor, input);
             return editor;
         });
     }
 
-    protected getOrCreateEditor(uri: URI): Promise<EditorWidget> {
-        const editor = this.editorRegistry.getEditor(uri);
-        if (editor) {
-            return editor;
-        }
+    // don't call directly, but use WidgetManager
+    createWidget(uriAsString: string): Promise<Widget> {
+        const uri = new URI(uriAsString);
+        return this.createEditor(uri);
+    }
+
+    protected createEditor(uri: URI): Promise<EditorWidget> {
         return this.editorProvider(uri).then(textEditor => {
-            const editor = new EditorWidget(textEditor, this.selectionService);
-            editor.title.closable = true;
-            editor.title.label = uri.path.base;
-            this.editorRegistry.addEditor(uri, editor);
-            editor.disposed.connect(() =>
-                this.editorRegistry.removeEditor(uri)
-            );
-            this.app.shell.addToMainArea(editor);
-            return editor;
+            const newEditor = new EditorWidget(textEditor, this.selectionService);
+            newEditor.id = this.id + ":" + uri.toString();
+            newEditor.title.closable = true;
+            newEditor.title.label = uri.path.base;
+            return newEditor;
         });
     }
 

@@ -68,9 +68,9 @@ export class MonacoEditor implements TextEditor, IEditorReference {
 
     protected readonly toDispose = new DisposableCollection();
 
-    protected readonly autoSizing: boolean
-    protected readonly minHeight: number
-    protected readonly editor: IStandaloneCodeEditor
+    protected readonly autoSizing: boolean;
+    protected readonly minHeight: number;
+    protected readonly editor: IStandaloneCodeEditor;
 
     protected readonly onCursorPositionChangedEmitter = new Emitter<Position>();
     protected readonly onSelectionChangedEmitter = new Emitter<Range>();
@@ -109,7 +109,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
 
         // increase the z-index for the focussed element hierarchy within the dockpanel
         this.toDispose.push(this.editor.onDidFocusEditor(() => {
-            const z = '1'
+            const z = '1';
             // already increased? -> do nothing
             if (this.editor.getDomNode().style.zIndex === z) {
                 return;
@@ -118,7 +118,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
             this.increaseZIndex(this.editor.getDomNode(), z, toDisposeOnBlur)
             toDisposeOnBlur.push(this.editor.onDidBlurEditor(() =>
                 toDisposeOnBlur.dispose()
-            ))
+            ));
         }));
     }
 
@@ -186,12 +186,12 @@ export class MonacoEditor implements TextEditor, IEditorReference {
     }
 
     protected increaseZIndex(element: HTMLElement, z: string, toDisposeOnBlur: DisposableCollection) {
-        let parent = element.parentElement
+        const parent = element.parentElement;
         if (parent && !element.classList.contains('p-DockPanel')) {
             const oldIndex = element.style.zIndex;
             toDisposeOnBlur.push(Disposable.create(() =>
                 element.style.zIndex = oldIndex
-            ))
+            ));
             element.style.zIndex = z;
             this.increaseZIndex(parent, z, toDisposeOnBlur)
         }

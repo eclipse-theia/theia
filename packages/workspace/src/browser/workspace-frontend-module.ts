@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { ContainerModule } from "inversify";
+import { ContainerModule, interfaces } from 'inversify';
 import { CommandContribution, MenuContribution } from "@theia/core/lib/common";
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { FileDialogFactory, createFileDialog, FileDialogProps } from '@theia/filesystem/lib/browser';
@@ -13,8 +13,10 @@ import { WorkspaceServer, workspacePath } from '../common';
 import { WorkspaceFrontendContribution } from "./workspace-frontend-contribution";
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceCommandContribution, FileMenuContribution } from './workspace-commands';
+import { WorkspaceStorageService } from './workspace-storage-service';
+import { StorageService } from '@theia/core/lib/browser/storage-service';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bind(WorkspaceService).toSelf().inSingletonScope();
     bind(WorkspaceServer).toDynamicValue(ctx => {
         const provider = ctx.container.get(WebSocketConnectionProvider);
@@ -34,4 +36,6 @@ export default new ContainerModule(bind => {
     );
     bind(CommandContribution).to(WorkspaceCommandContribution).inSingletonScope();
     bind(MenuContribution).to(FileMenuContribution).inSingletonScope();
+
+    rebind(StorageService).to(WorkspaceStorageService).inSingletonScope();
 });

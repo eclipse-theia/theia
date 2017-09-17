@@ -17,18 +17,20 @@ import * as Xterm from 'xterm';
 import 'xterm/lib/addons/fit/fit';
 import 'xterm/lib/addons/attach/attach';
 
-export const TerminalWidgetFactory = Symbol('TerminalWidgetFactory');
-export interface TerminalWidgetFactory {
-    (options: TerminalWidgetOptions): TerminalWidget;
-}
+export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
 export const TerminalWidgetOptions = Symbol("TerminalWidgetOptions");
 export interface TerminalWidgetOptions {
-    endpoint: Endpoint,
+    endpoint: Endpoint.Options,
     id: string,
     caption: string,
     label: string
     destroyTermOnClose: boolean
+}
+
+export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOptions> {
+    /* a unique string per terminal */
+    created: string
 }
 
 @injectable()
@@ -49,7 +51,7 @@ export class TerminalWidget extends BaseWidget {
         @inject(ILogger) protected readonly logger: ILogger
     ) {
         super();
-        this.endpoint = options.endpoint;
+        this.endpoint = new Endpoint(options.endpoint);
         this.id = options.id;
         this.title.caption = options.caption;
         this.title.label = options.label;
@@ -86,11 +88,11 @@ export class TerminalWidget extends BaseWidget {
             if (this.terminalId === undefined) {
                 return;
             }
-            this.cols = size.cols
-            this.rows = size.rows
+            this.cols = size.cols;
+            this.rows = size.rows;
             this.shellTerminalServer.resize(this.terminalId, this.cols, this.rows);
         });
-        (this.term as any).fit()
+        (this.term as any).fit();
     }
 
     public async start(): Promise<void> {
@@ -154,7 +156,7 @@ export class TerminalWidget extends BaseWidget {
     }
 
     private doResize() {
-        let geo = (this.term as any).proposeGeometry()
+        const geo = (this.term as any).proposeGeometry()
         this.cols = geo.cols
         this.rows = geo.rows - 1 // subtract one row for margin
         this.term.resize(this.cols, this.rows)

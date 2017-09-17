@@ -12,16 +12,18 @@ import {
 } from "@theia/core/lib/common";
 import { OpenHandler } from '@theia/core/lib/browser';
 import { EditorManagerImpl, EditorManager } from './editor-manager';
-import { EditorRegistry } from './editor-registry';
 import { EditorCommandHandlers } from "./editor-command";
 import { EditorKeybindingContribution, EditorKeybindingContext } from "./editor-keybinding";
 import { bindEditorPreferences } from './editor-preferences'
+import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 
 export default new ContainerModule(bind => {
     bindEditorPreferences(bind);
 
-    bind(EditorRegistry).toSelf().inSingletonScope();
-    bind(EditorManager).to(EditorManagerImpl).inSingletonScope();
+    bind(EditorManagerImpl).toSelf().inSingletonScope();
+    bind(EditorManager).toDynamicValue(c => c.container.get(EditorManagerImpl));
+    bind(WidgetFactory).toDynamicValue(c => c.container.get(EditorManagerImpl));
+
     bind(OpenHandler).toDynamicValue(context => context.container.get(EditorManager));
 
     bind(CommandContribution).to(EditorCommandHandlers);
