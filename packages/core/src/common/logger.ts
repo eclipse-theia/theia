@@ -9,22 +9,22 @@ import { inject, injectable, optional } from 'inversify';
 import { LoggerWatcher } from './logger-watcher';
 import { ILoggerServer } from './logger-protocol';
 
-export namespace LogLevel {
-    export const FATAL = 60;
-    export const ERROR = 50;
-    export const WARN = 40;
-    export const INFO = 30;
-    export const DEBUG = 20;
-    export const TRACE = 10;
+export enum LogLevel {
+    FATAL = 60,
+    ERROR = 50,
+    WARN = 40,
+    INFO = 30,
+    DEBUG = 20,
+    TRACE = 10
 }
 
 export type Log = (message: string, ...params: any[]) => void;
 export type Loggable = (log: Log) => void;
 
-export const LoggerFactory = Symbol('LoggerFactory')
+export const LoggerFactory = Symbol('LoggerFactory');
 export type LoggerFactory = (options?: object) => ILogger;
 
-export const LoggerOptions = Symbol('LoggerOptions')
+export const LoggerOptions = Symbol('LoggerOptions');
 
 export const ILogger = Symbol('ILogger');
 
@@ -193,59 +193,17 @@ export interface ILogger {
 }
 
 @injectable()
-export class Logger implements ILogger {
+export abstract class AbstractLogger implements ILogger {
 
-    /* Log level for the logger.  */
     protected _logLevel: Promise<number>;
 
-    /* Root logger has id 0.  */
-    protected readonly rootLoggerId = 0;
-
-    /* Default id is the root logger id.  */
-    protected id: Promise<number> = Promise.resolve(this.rootLoggerId);
-
-    /**
-     * Build a new Logger.
-     *
-     * @param options - The options to build the logger with, see the
-     * bunyan child method documentation for more information.
-     */
-    constructor(
-        @inject(ILoggerServer) protected readonly server: ILoggerServer,
-        @inject(LoggerWatcher) protected readonly loggerWatcher: LoggerWatcher,
-        @inject(LoggerFactory) protected readonly factory: LoggerFactory,
-        @inject(LoggerOptions) @optional() options: object | undefined) {
-
-        /* Creating a child logger.  */
-        if (options !== undefined) {
-            this.id = server.child(options);
-        }
-
-        /* Fetch the log level so it's cached in the frontend.  */
-        this._logLevel = this.id.then(id => this.server.getLogLevel(id));
-
-        /* Update the root logger log level if it changes in the backend. */
-        loggerWatcher.onLogLevelChanged(event => {
-            this.id.then(id => {
-                if (id === this.rootLoggerId) {
-                    this._logLevel = Promise.resolve(event.newLogLevel);
-                }
-            });
-        });
-    }
+    protected abstract getLog(logLevel: number): Promise<Log>;
 
     setLogLevel(logLevel: number): Promise<void> {
-        return new Promise<void>((resolve) => {
-            this.id.then(id => {
-                this._logLevel.then(oldLevel => {
-                    this.server.setLogLevel(id, logLevel).then(() => {
-                        this._logLevel = Promise.resolve(logLevel);
-                        resolve();
-                    });
-                });
-            });
-        });
+        this._logLevel = Promise.resolve(logLevel);
+        return Promise.resolve(undefined);
     }
+
     getLogLevel(): Promise<number> {
         return this._logLevel;
     }
@@ -255,6 +213,7 @@ export class Logger implements ILogger {
             logLevel >= level
         );
     }
+
     ifEnabled(logLevel: number): Promise<void> {
         return new Promise<void>(resolve =>
             this.isEnabled(logLevel).then(enabled => {
@@ -264,6 +223,7 @@ export class Logger implements ILogger {
             })
         );
     }
+
     log(logLevel: number, arg2: string | Loggable, ...params: any[]): void {
         this.getLog(logLevel).then(log => {
             if (typeof arg2 === 'string') {
@@ -274,14 +234,6 @@ export class Logger implements ILogger {
                 loggable(log);
             }
         });
-    }
-    protected getLog(logLevel: number): Promise<Log> {
-        return this.ifEnabled(logLevel).then(() =>
-            this.id.then(id =>
-                (message: string, params: any[]) =>
-                    this.server.log(id, logLevel, message, params)
-            )
-        );
     }
 
     isTrace(): Promise<boolean> {
@@ -342,6 +294,72 @@ export class Logger implements ILogger {
     }
     fatal(arg: string | Loggable, ...params: any[]): void {
         this.log(LogLevel.FATAL, arg, params);
+    }
+
+    child(obj: object): ILogger {
+        return this;
+    }
+}
+
+@injectable()
+export class Logger extends AbstractLogger implements ILogger {
+
+    /* Root logger has id 0.  */
+    protected readonly rootLoggerId = 0;
+
+    /* Default id is the root logger id.  */
+    protected id: Promise<number> = Promise.resolve(this.rootLoggerId);
+
+    /**
+     * Build a new Logger.
+     *
+     * @param options - The options to build the logger with, see the
+     * bunyan child method documentation for more information.
+     */
+    constructor(
+        @inject(ILoggerServer) protected readonly server: ILoggerServer,
+        @inject(LoggerWatcher) protected readonly loggerWatcher: LoggerWatcher,
+        @inject(LoggerFactory) protected readonly factory: LoggerFactory,
+        @inject(LoggerOptions) @optional() options: object | undefined) {
+        super();
+        /* Creating a child logger.  */
+        if (options !== undefined) {
+            this.id = server.child(options);
+        }
+
+        /* Fetch the log level so it's cached in the frontend.  */
+        this._logLevel = this.id.then(id => this.server.getLogLevel(id));
+
+        /* Update the root logger log level if it changes in the backend. */
+        loggerWatcher.onLogLevelChanged(event => {
+            this.id.then(id => {
+                if (id === this.rootLoggerId) {
+                    this._logLevel = Promise.resolve(event.newLogLevel);
+                }
+            });
+        });
+    }
+
+    setLogLevel(logLevel: number): Promise<void> {
+        return new Promise<void>((resolve) => {
+            this.id.then(id => {
+                this._logLevel.then(oldLevel => {
+                    this.server.setLogLevel(id, logLevel).then(() => {
+                        this._logLevel = Promise.resolve(logLevel);
+                        resolve();
+                    });
+                });
+            });
+        });
+    }
+
+    protected getLog(logLevel: number): Promise<Log> {
+        return this.ifEnabled(logLevel).then(() =>
+            this.id.then(id =>
+                (message: string, params: any[]) =>
+                    this.server.log(id, logLevel, message, params)
+            )
+        );
     }
 
     child(obj: object): ILogger {
