@@ -38,6 +38,7 @@ export abstract class AbstractFrontendGenerator extends AbstractGenerator {
     protected compileIndexJs(frontendModules: Map<string, string>): string {
         return `${this.compileCopyright()}
 // @ts-check
+require('reflect-metadata');
 const { Container } = require('inversify');
 const { FrontendApplication } = require('@theia/core/lib/browser');
 const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');

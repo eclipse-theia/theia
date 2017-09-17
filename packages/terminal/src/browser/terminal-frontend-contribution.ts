@@ -18,9 +18,10 @@ import {
     MenuContribution,
     MenuModelRegistry
 } from '@theia/core/lib/common';
-import { FrontendApplication, Endpoint } from '@theia/core/lib/browser';
+import { FrontendApplication } from '@theia/core/lib/browser';
 import { FileMenus } from '@theia/workspace/lib/browser/workspace-commands';
-import { TerminalWidgetFactory, TerminalWidgetOptions } from './terminal-widget';
+import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from './terminal-widget';
+import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 
 export namespace TerminalCommands {
     export const NEW: Command = {
@@ -32,11 +33,9 @@ export namespace TerminalCommands {
 @injectable()
 export class TerminalFrontendContribution implements CommandContribution, MenuContribution, KeybindingContribution {
 
-    protected terminalNum = 0;
-
     constructor(
         @inject(FrontendApplication) protected readonly app: FrontendApplication,
-        @inject(TerminalWidgetFactory) protected readonly terminalWidgetFactory: TerminalWidgetFactory
+        @inject(WidgetManager) protected readonly widgetManager: WidgetManager
     ) { }
 
     registerCommands(commands: CommandRegistry): void {
@@ -63,17 +62,11 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
         });
     }
 
-    protected newTerminal(): void {
-        const newTerminal = this.terminalWidgetFactory(<TerminalWidgetOptions>{
-            endpoint: new Endpoint({ path: '/services/terminals' }),
-            id: 'terminal-' + this.terminalNum,
-            caption: 'Terminal ' + this.terminalNum,
-            label: 'Terminal ' + this.terminalNum,
-            destroyTermOnClose: true
+    protected async newTerminal(): Promise<void> {
+        const newTerminal = await this.widgetManager.getOrCreateWidget(TERMINAL_WIDGET_FACTORY_ID, <TerminalWidgetFactoryOptions>{
+            created: new Date().toString()
         });
-        this.terminalNum++;
 
-        newTerminal.start();
         this.app.shell.addToMainArea(newTerminal);
         this.app.shell.activateMain(newTerminal.id);
     }

@@ -24,9 +24,13 @@ import { HumaneMessageClient } from './humane-message-client';
 import { WebSocketConnectionProvider } from './messaging';
 import { CommonFrontendContribution } from './common-frontend-contribution';
 import { QuickOpenService, QuickCommandService, QuickCommandFrontendContribution } from './quick-open';
+import { LocalStorageService, StorageService } from './storage-service';
+import { WidgetFactory, WidgetManager } from './widget-manager';
+import { ShellLayoutRestorer } from './shell-layout-restorer';
 
 import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
+
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplication).toSelf().inSingletonScope();
@@ -35,6 +39,10 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bindContributionProvider(bind, OpenHandler);
     bind(DefaultOpenerService).toSelf().inSingletonScope();
     bind(OpenerService).toDynamicValue(context => context.container.get(DefaultOpenerService));
+
+    bindContributionProvider(bind, WidgetFactory);
+    bind(WidgetManager).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).to(ShellLayoutRestorer).inSingletonScope();
 
     bind(DefaultResourceProvider).toSelf().inSingletonScope();
     bind(ResourceProvider).toProvider(context =>
@@ -75,4 +83,6 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     [CommandContribution, KeybindingContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(QuickCommandFrontendContribution)).inSingletonScope()
     );
+
+    bind(StorageService).to(LocalStorageService).inSingletonScope();
 });

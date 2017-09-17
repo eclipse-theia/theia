@@ -14,6 +14,9 @@ import { h } from "@phosphor/virtualdom/lib";
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
 import { Message } from '@phosphor/messaging';
 
+
+export const PROBLEM_WIDGET_FACTORY_ID = 'problems';
+
 @injectable()
 export class ProblemWidget extends TreeWidget {
 

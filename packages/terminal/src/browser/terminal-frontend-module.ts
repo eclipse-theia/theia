@@ -8,7 +8,8 @@
 import { ContainerModule, Container } from 'inversify'
 import { CommandContribution, MenuContribution, KeybindingContribution } from '@theia/core/lib/common';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
-import { TerminalWidget, TerminalWidgetFactory, TerminalWidgetOptions } from './terminal-widget';
+import { TerminalWidget, TerminalWidgetOptions, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget';
+import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
@@ -20,14 +21,27 @@ import 'xterm/dist/xterm.css';
 export default new ContainerModule(bind => {
     bind(TerminalWidget).toSelf().inTransientScope();
     bind(TerminalWatcher).toSelf().inSingletonScope();
-    bind(TerminalWidgetFactory).toFactory(ctx =>
-        (options: TerminalWidgetOptions) => {
+
+    let terminalNum = 0;
+    bind(WidgetFactory).toDynamicValue(ctx => ({
+        id: TERMINAL_WIDGET_FACTORY_ID,
+        createWidget: (options: TerminalWidgetOptions) => {
             const child = new Container({ defaultScope: 'Singleton' });
             child.parent = ctx.container;
-            child.bind(TerminalWidgetOptions).toConstantValue(options);
-            return child.get(TerminalWidget);
+            const counter = terminalNum++;
+            child.bind(TerminalWidgetOptions).toConstantValue({
+                endpoint: { path: '/services/terminals' },
+                id: 'terminal-' + counter,
+                caption: 'Terminal ' + counter,
+                label: 'Terminal ' + counter,
+                destroyTermOnClose: true,
+                ...options
+            });
+            const result = child.get(TerminalWidget);
+            result.start();
+            return result;
         }
-    );
+    }));
 
     bind(TerminalFrontendContribution).toSelf().inSingletonScope();
     for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution]) {

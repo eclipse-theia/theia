@@ -5,12 +5,13 @@
 * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 */
 
-import { ContainerModule, interfaces } from 'inversify';
-import { ProblemWidget } from './problem-widget';
+import { ContainerModule } from 'inversify';
+import { ProblemWidget, PROBLEM_WIDGET_FACTORY_ID } from './problem-widget';
 import { ProblemContribution } from './problem-contribution';
 import { createProblemWidget } from './problem-container';
 import { CommandContribution, MenuContribution, KeybindingContribution } from "@theia/core/lib/common";
 import { ProblemManager } from './problem-marker';
+import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 
 import '../../../src/browser/style/index.css';
 
@@ -21,16 +22,10 @@ export default new ContainerModule(bind => {
         createProblemWidget(ctx.container)
     );
 
-    let activeProblemView: ProblemWidget;
-    bind<interfaces.Factory<ProblemWidget>>("Factory<ProblemWidget>").toFactory<ProblemWidget>(
-        (context: interfaces.Context) =>
-            () => {
-                if (!activeProblemView || activeProblemView.isDisposed) {
-                    activeProblemView = context.container.get<ProblemWidget>(ProblemWidget);
-                }
-                return activeProblemView;
-            });
-
+    bind(WidgetFactory).toDynamicValue(context => ({
+        id: PROBLEM_WIDGET_FACTORY_ID,
+        createWidget: () => context.container.get<ProblemWidget>(ProblemWidget)
+    }));
     bind(ProblemContribution).toSelf().inSingletonScope();
     for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution]) {
         bind(identifier).toDynamicValue(ctx =>
