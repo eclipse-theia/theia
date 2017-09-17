@@ -24,7 +24,7 @@ export class MonacoContextMenuService implements IContextMenuService {
         // If it is the general context menu, we want to delegate to our menu registry entirely and ignore the actually passed actions.
         // Unfortunately checking the existence of certain properties seems to be the best way to tell, what kind of context menu is requested.
         if (delegate.hasOwnProperty("getKeyBinding")) {
-            this.contextMenuRenderer.render(EDITOR_CONTEXT_MENU_ID, anchor);
+            this.contextMenuRenderer.render(EDITOR_CONTEXT_MENU_ID, anchor, () => delegate.onHide(false));
         } else {
             delegate.getActions().then(actions => {
                 const commands = new CommandRegistry();
@@ -46,6 +46,7 @@ export class MonacoContextMenuService implements IContextMenuService {
                         command: commandId
                     });
                 }
+                menu.aboutToClose.connect(() => delegate.onHide(false));
                 menu.open(anchor.x, anchor.y);
             });
         }

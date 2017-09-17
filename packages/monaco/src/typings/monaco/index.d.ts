@@ -116,6 +116,11 @@ declare module monaco.editor {
          * Returns the actions for the menu
          */
         getActions(): monaco.Promise<IAction[]>
+
+        /**
+         * Needs to be called with the context menu closes again.
+         */
+        onHide(wasCancelled: boolean): void
     }
 
     export interface IAction {

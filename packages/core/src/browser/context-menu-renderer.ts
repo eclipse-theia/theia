@@ -13,5 +13,5 @@ export function toAnchor(anchor: HTMLElement | { x: number, y: number }): Anchor
 
 export const ContextMenuRenderer = Symbol("ContextMenuRenderer");
 export interface ContextMenuRenderer {
-    render(path: string, anchor: Anchor): void;
+    render(path: string, anchor: Anchor, onHide?: () => void): void;
 }
