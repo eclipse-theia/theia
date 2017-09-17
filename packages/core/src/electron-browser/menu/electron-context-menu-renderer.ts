@@ -15,9 +15,12 @@ export class ElectronContextMenuRenderer implements ContextMenuRenderer {
     constructor( @inject(ElectronMainMenuFactory) private menuFactory: ElectronMainMenuFactory) {
     }
 
-    render(path: string, anchor: Anchor): void {
+    render(path: string, anchor: Anchor, onHide?: () => void): void {
         const menu = this.menuFactory.createContextMenu(path);
         menu.popup();
+        if (onHide) {
+            onHide();
+        }
     }
 
 }
