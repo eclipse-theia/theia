@@ -1,0 +1,47 @@
+{
+  "name": "@theia/navigator",
+  "version": "0.1.1",
+  "description": "Theia - Navigator Extension",
+  "dependencies": {
+    "@theia/core": "^0.1.1",
+    "@theia/filesystem": "^0.1.1",
+    "@theia/workspace": "^0.1.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/navigator-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^0.1.1"
+  },
+  "nyc": {
+    "extends": "../nyc.json"
+  }
+}

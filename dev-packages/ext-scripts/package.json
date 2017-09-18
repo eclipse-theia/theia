@@ -1,0 +1,30 @@
+{
+  "private": true,
+  "name": "@theia/ext-scripts",
+  "version": "0.1.1",
+  "description": "NPM scripts for Theia packages.",
+  "files": [
+    "theiaext"
+  ],
+  "bin": {
+    "theiaext": "theiaext"
+  },
+  "scripts": {
+    "clean": "echo 'skip'",
+    "build": "echo 'skip'",
+    "watch": "echo 'skip'",
+    "test": "echo 'skip'",
+    "docs": "echo 'skip'",
+    "ext:clean": "theiaext compile:clean && theiaext docs:clean && theiaext test:clean",
+    "ext:build": "concurrently -n compile,lint -c blue,green \"theiaext compile\" \"theiaext lint\"",
+    "ext:compile": "tsc -p compile.tsconfig.json",
+    "ext:compile:clean": "rimraf lib",
+    "ext:lint": "tslint -c ../tslint.json --project compile.tsconfig.json",
+    "ext:watch": "tsc -w -p compile.tsconfig.json",
+    "ext:docs": "typedoc --tsconfig compile.tsconfig.json --options ../typedoc.json",
+    "ext:docs:clean": "rimraf docs/api",
+    "ext:test": "nyc mocha --opts ../mocha.opts \"./src/**/*.*spec.ts\"",
+    "ext:test:watch": "mocha -w --opts ../mocha.opts \"./src/**/*.*spec.ts\"",
+    "ext:test:clean": "rimraf .nyc_output && rimraf coverage"
+  }
+}

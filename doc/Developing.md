@@ -79,14 +79,16 @@ variable in your shell:
 
 Theia repository has multiple folders:
 
- - `generator-theia` is [yo generator](http://yeoman.io/) for Theia-based apps
- - `packages` folder contains the core package and extensions to it
- - `examples` folder contains example apps using these packages, both
- Electron-based and browser-based
+ - `packages` folder contains runtime packages, as the core package and extensions to it
+ - `dev-packages` folder contains devtime packages
+    - [generator-theia](../dev-packages/generator-theia/README.md) is a generator of Theia applications
+    - [@theia/cli](../dev-packages/cli/README.md) is a command line tool to manage Theia applications
+    - [@theia/ext-scripts](../dev-packages/ext-scripts/README.md) is a command line tool to share scripts between Theia runtime packages
+ - `examples` folder contains example applications, both Electron-based and browser-based
  - `doc` folder provides documentation about how Theia works
  - `scripts` folder contains JavaScript scripts used by npm scripts when
 installing
- - the root folder is wiring everything together with [Lerna](https://lernajs.io/)
+- the root folder lists dev dependencies and wires everything together with [Lerna](https://lernajs.io/)
 
 ## Build core, extensions and examples packages
 
@@ -95,16 +97,7 @@ You can download dependencies and build it using:
     cd $THEIA
     yarn
 
-This command does a few things:
-
- - downloads Node.js package dependencies (Lerna and yo)
- - executes the `prepare` script that uses:
-     - `lerna` to build `generator-theia` and link it in `/node_modules`
-     - `generator-theia` to generate package.json for Node.js packages (core,
- extensions, and examples)
-     - `lerna` to link these packages
-     - `lerna` to run `clean` and `build` scripts on extensions and examples
-
+This command downloads dev dependencies, links and builds all packages.
 To learn more and understand precisely what's going on, please look at scripts in [package.json](../package.json).
 
 ## Run the browser-based example application

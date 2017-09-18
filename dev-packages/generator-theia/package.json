@@ -1,0 +1,31 @@
+{
+  "name": "generator-theia",
+  "version": "0.1.1",
+  "description": "Theia Generator",
+  "license": "Apache-2.0",
+  "files": [
+    "generators",
+    "src"
+  ],
+  "keywords": [
+    "theia",
+    "yeoman-generator"
+  ],
+  "scripts": {
+    "clean": "rimraf generators",
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "dependencies": {
+    "@types/fs-extra": "^4.0.2",
+    "@types/request": "^2.0.0",
+    "@types/semver": "^5.3.32",
+    "@types/yargs": "^8.0.2",
+    "@types/yeoman-generator": "^1.0.2",
+    "fs-extra": "^4.0.2",
+    "request": "^2.81.0",
+    "semver": "^5.4.1",
+    "yargs": "^9.0.1",
+    "yeoman-generator": "^1.1.1"
+  }
+}

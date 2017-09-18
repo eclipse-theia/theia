@@ -1,0 +1,51 @@
+{
+  "name": "@theia/terminal",
+  "version": "0.1.1",
+  "description": "Theia - Terminal Extension",
+  "dependencies": {
+    "@theia/core": "^0.1.1",
+    "@theia/filesystem": "^0.1.1",
+    "@theia/process": "^0.1.1",
+    "@theia/workspace": "^0.1.1",
+    "@types/xterm": "^2.0.3",
+    "xterm": "^2.8.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/terminal-frontend-module",
+      "backend": "lib/node/terminal-backend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^0.1.1"
+  },
+  "nyc": {
+    "extends": "../nyc.json"
+  }
+}

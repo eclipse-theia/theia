@@ -1,0 +1,55 @@
+{
+  "name": "@theia/filesystem",
+  "version": "0.1.1",
+  "description": "Theia - FileSystem Extension",
+  "dependencies": {
+    "@theia/core": "^0.1.1",
+    "@theia/preferences-api": "^0.1.1",
+    "@types/chokidar": "^1.7.0",
+    "@types/fs-extra": "^4.0.2",
+    "@types/touch": "0.0.1",
+    "chokidar": "^1.7.0",
+    "fs-extra": "^4.0.2",
+    "mv": "^2.1.1",
+    "touch": "^3.1.0",
+    "trash": "^4.0.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/filesystem-frontend-module",
+      "backend": "lib/node/filesystem-backend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^0.1.1"
+  },
+  "nyc": {
+    "extends": "../nyc.json"
+  }
+}
