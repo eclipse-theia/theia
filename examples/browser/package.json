@@ -1,0 +1,40 @@
+{
+  "private": true,
+  "name": "@theia/example-browser",
+  "version": "0.1.1",
+  "dependencies": {
+    "@theia/core": "^0.1.1",
+    "@theia/filesystem": "^0.1.1",
+    "@theia/workspace": "^0.1.1",
+    "@theia/preferences": "^0.1.1",
+    "@theia/navigator": "^0.1.1",
+    "@theia/process": "^0.1.1",
+    "@theia/terminal": "^0.1.1",
+    "@theia/editor": "^0.1.1",
+    "@theia/languages": "^0.1.1",
+    "@theia/markers": "^0.1.1",
+    "@theia/monaco": "^0.1.1",
+    "@theia/java": "^0.1.1",
+    "@theia/python": "^0.1.1",
+    "@theia/cpp": "^0.1.1",
+    "@theia/go": "^0.1.1",
+    "@theia/typescript": "^0.1.1"
+  },
+  "scripts": {
+    "clean": "theia clean && rimraf errorShots",
+    "build": "yo theia:browser -f && theia build",
+    "watch": "theia build --watch",
+    "start": "theia browser",
+    "start:debug": "theia browser --loglevel=debug",
+    "test": "wdio",
+    "coverage:compile": "webpack --config coverage-webpack.config.js && shx cp src-gen/frontend/index.html lib",
+    "coverage:remap": "remap-istanbul -i coverage/coverage.json -o coverage/coverage-final.json --exclude 'frontend/index.js' && rimraf coverage/coverage.json",
+    "coverage:report:html": "istanbul report --root coverage --format html",
+    "coverage:report:lcov": "istanbul report --root coverage --format lcov",
+    "coverage": "yarn coverage:compile && yarn test && yarn coverage:remap && yarn coverage:report:lcov && yarn coverage:report:html"
+  },
+  "devDependencies": {
+    "@theia/cli": "^0.1.1",
+    "generator-theia": "^0.1.1"
+  }
+}

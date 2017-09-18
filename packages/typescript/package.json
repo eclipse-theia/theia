@@ -1,0 +1,50 @@
+{
+  "name": "@theia/typescript",
+  "version": "0.1.1",
+  "description": "Theia - Typescript Extension",
+  "dependencies": {
+    "@theia/core": "^0.1.1",
+    "@theia/languages": "^0.1.1",
+    "@theia/monaco": "^0.1.1",
+    "monaco-typescript": "^2.2.0",
+    "ts-language-server": "^0.0.18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/typescript-frontend-module",
+      "backend": "lib/node/typescript-backend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^0.1.1"
+  },
+  "nyc": {
+    "extends": "../nyc.json"
+  }
+}

@@ -2,7 +2,7 @@
   "lerna": "2.1.2",
   "npmClient": "yarn",
   "packages": [
-    "generator-theia",
+    "dev-packages/*",
     "packages/*",
     "examples/*"
   ],

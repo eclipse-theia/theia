@@ -1,0 +1,54 @@
+{
+  "name": "@theia/java",
+  "version": "0.1.1",
+  "description": "Theia - Java Extension",
+  "dependencies": {
+    "@theia/core": "^0.1.1",
+    "@theia/languages": "^0.1.1",
+    "@theia/editor": "^0.1.1",
+    "@theia/monaco": "^0.1.1",
+    "@types/glob": "^5.0.30",
+    "glob": "^7.1.2"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-decompress": "^2.0.1",
+    "gulp-download": "0.0.1",
+    "@theia/ext-scripts": "^0.1.1"
+  },
+  "scripts": {
+    "clean": "theiaext clean",
+    "build": "concurrently -n download,build -c red,blue \"gulp download_java_server\" \"theiaext build\"",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/java-frontend-module",
+      "backend": "lib/node/java-backend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "nyc": {
+    "extends": "../nyc.json"
+  }
+}
