@@ -7,13 +7,13 @@
 
 import { inject, injectable } from "inversify";
 import { SelectionService } from '@theia/core/lib/common';
-import { CommandContribution, MenuModelRegistry, MenuContribution, CommandRegistry, Command } from '@theia/core/lib/common';
+import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
 import URI from "@theia/core/lib/common/uri";
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { CppClientContribution } from "./cpp-client-contribution";
 import { TextDocumentItemRequest } from "./cpp-protocol";
 import { TextDocumentIdentifier } from "@theia/languages/lib/common";
-import { EDITOR_CONTEXT_MENU_ID } from "@theia/editor/lib/browser";
+import { EditorManager } from "@theia/editor/lib/browser";
 
 /**
  * Switch between source/header file
@@ -28,28 +28,25 @@ export const FILE_OPEN_PATH = (path: string): Command => <Command>{
 };
 
 @injectable()
-export class CppCommandContribution implements CommandContribution, MenuContribution {
+export class CppCommandContribution implements CommandContribution {
 
     constructor(
         @inject(CppClientContribution) protected readonly clientContribution: CppClientContribution,
         @inject(OpenerService) protected readonly openerService: OpenerService,
+        @inject(EditorManager) private editorService: EditorManager,
         protected readonly selectionService: SelectionService
 
     ) { }
 
-
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(SWITCH_SOURCE_HEADER, {
-            isEnabled: () => true,
-            execute: () => this.switchSourceHeader()
+            isEnabled: () => (this.editorService && !!this.editorService.activeEditor &&
+                (this.editorService.activeEditor.editor.document.uri.endsWith(".cpp") || this.editorService.activeEditor.editor.document.uri.endsWith(".h"))),
+            execute: () => {
+                this.switchSourceHeader();
+            }
         });
 
-    }
-
-    registerMenus(registry: MenuModelRegistry) {
-        registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, "1_undo/redo"], {
-            commandId: SWITCH_SOURCE_HEADER.id
-        });
     }
 
     protected switchSourceHeader(): void {

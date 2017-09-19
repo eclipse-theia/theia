@@ -20,16 +20,26 @@ export const CppConfigSchema: PreferenceSchema = {
         "cpp.clangdCompileCommandsPath": {
             "type": "string",
             "description": "clangd path for compile_commands.json"
+        },
+        "cpp.clangdPath": {
+            "type": "string",
+            "description": "Literal command to start Clangd with. Can contain any relative or absolute path to clangd executable."
+        },
+        "cpp.clangdCommandArgs": {
+            "type": "string",
+            "description": "Literal command to start Clangd with. Can contain any relative or absolute path to clangd executable."
         }
     }
 }
 
 export interface CppConfiguration {
-    'cpp.clangdCompileCommandsPath': string
+    'cpp.clangdCompileCommandsPath': string,
+    'cpp.clangdPath': string
 }
 
 export const defaultCppConfiguration: CppConfiguration = {
-    'cpp.clangdCompileCommandsPath': "-compileCommands=/home/ewilenr/theiaEclipse/eclipse/git/llvm/build"
+    'cpp.clangdCompileCommandsPath': "-compile-commands-dir=/home/ewilenr/theiaEclipse/eclipse/git/llvm/build",
+    'cpp.clangdPath': "/home/ewilenr/theiaEclipse/eclipse/git/llvm/build/bin/compile_commands.json"
 }
 
 export const CppPreferences = Symbol('CppPreferences');
