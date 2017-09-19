@@ -10,7 +10,7 @@ import { BaseLanguageServerContribution, IConnection } from "@theia/languages/li
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME } from '../common';
 import { CppPreferences } from "../common";
 import { Message, isRequestMessage } from 'vscode-ws-jsonrpc';
-import { InitializeParams, InitializeRequest } from 'vscode-languageserver/lib/protocol';
+import { InitializeParams, InitializeRequest } from 'vscode-languageserver-protocol';
 
 @injectable()
 export class CppContribution extends BaseLanguageServerContribution {
@@ -42,10 +42,16 @@ export class CppContribution extends BaseLanguageServerContribution {
     }
 
     public start(clientConnection: IConnection): void {
-        // TODO: clangd has to be on PATH, this should be a preference.
-        console.log(this.cppPreferences["cpp.clangdCompileCommandsPath"]);
-        const command = 'clangd';
-        const args: string[] = [this.cppPreferences["cpp.clangdCompileCommandsPath"]];
+        let command: any = '';
+        let args: string[] = [];
+        if (this.cppPreferences["cpp.clangdPath"] === "") {
+            command = (this.cppPreferences["cpp.clangdPath"] + '/clangd');
+            args = [];
+        } else {
+            command = 'clangd';
+            args = []; // [this.cppPreferences["cpp.clangdCompileCommandsPath"]];
+        }
+
         const serverConnection = this.createProcessStreamConnection(command, args);
         this.forward(clientConnection, serverConnection);
     }
