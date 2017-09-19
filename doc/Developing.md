@@ -37,7 +37,7 @@ For Windows instructions [click here](#building-on-windows).
      - [Root privileges errors](#root-privileges-errors)
 
 ## Prerequisites
- - Node.js v6.0 or higher
+ - Node.js v8.0 or higher
  - [Yarn package manager](https://yarnpkg.com/en/docs/install)
  - git
 
