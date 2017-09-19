@@ -8,7 +8,8 @@
     "@theia/preferences-api": "^0.2.1",
     "@theia/workspace": "^0.2.1",
     "ajv": "^5.2.2",
-    "jsonc-parser": "^1.0.0"
+    "jsonc-parser": "^1.0.0",
+    "@types/temp": "^0.8.29"
   },
   "publishConfig": {
     "access": "public"
@@ -17,6 +18,10 @@
     {
       "frontend": "lib/browser/preference-frontend-module",
       "backend": "lib/node/preference-backend-module"
+    },
+    {
+      "frontend": "lib/browser/keybinding-frontend-module",
+      "backend": "lib/node/keybinding-backend-module"
     }
   ],
   "keywords": [

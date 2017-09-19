@@ -26,6 +26,13 @@ export interface Keybinding {
     readonly accelerator?: Accelerator;
 }
 
+export interface RawKeybinding {
+    command: string;
+    keybinding: string;
+    context?: string;
+    args?: string[];
+}
+
 export const KeybindingContribution = Symbol("KeybindingContribution");
 export interface KeybindingContribution {
     registerKeyBindings(keybindings: KeybindingRegistry): void;
@@ -95,8 +102,10 @@ export class KeybindingContextRegistry {
 @injectable()
 export class KeybindingRegistry {
 
-    protected readonly keybindings: { [index: string]: Keybinding[] } = {};
-    protected readonly commands: { [commandId: string]: Keybinding[] } = {};
+    protected keybindings: { [index: string]: Keybinding[] } = {};
+    protected defaultKeyBindings: { [index: string]: Keybinding[] };
+    protected commands: { [commandId: string]: Keybinding[] } = {};
+    protected defaultCommands: { [commandId: string]: Keybinding[] } = {};
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
@@ -139,6 +148,18 @@ export class KeybindingRegistry {
 
         const commands = this.commands[commandId] || [];
         commands.push(binding);
+        this.commands[commandId] = bindings;
+    }
+
+    unregisterKeybinding(bindingToRemove: Keybinding) {
+        const { keyCode, commandId } = bindingToRemove;
+        let bindings = this.keybindings[keyCode.keystroke] || [];
+
+        bindings = bindings.filter(binding => binding !== bindingToRemove);
+        this.keybindings[keyCode.keystroke] = bindings;
+
+        let commands = this.commands[commandId] || [];
+        commands = commands.filter(command => command !== bindingToRemove);
         this.commands[commandId] = bindings;
     }
 
@@ -203,4 +224,53 @@ export class KeybindingRegistry {
         }
     }
 
+    setKeymap(rawKeyBindings: RawKeybinding[]) {
+        /* Only assign the default keybindings once, so that they do not get overridden with further iterations */
+        if (!this.defaultKeyBindings && !this.defaultCommands) {
+            this.defaultKeyBindings = Object.assign({}, this.keybindings);
+            this.defaultCommands = Object.assign({}, this.commands);
+        }
+        let invalidKeyMap: boolean = false;
+        for (const rawKeyBinding of rawKeyBindings) {
+            if (this.commandRegistry.getCommand(rawKeyBinding.command)) {
+                // TODO check if valid context? valid keybinding?
+                // Create Keycode from string?
+                // Create new Keybinding and assign it
+                // If one keybinding is wrong, reset to the default ones.
+
+                const code = KeyCode.parseKeystroke(rawKeyBinding.keybinding);
+                if (code) {
+
+                    const oldBinding = this.getKeybindingForCommand(rawKeyBinding.command, { active: false });
+                    if (oldBinding) {
+                        this.unregisterKeybinding(oldBinding);
+                    }
+
+                    let context: KeybindingContext | undefined;
+                    if (rawKeyBinding.context) {
+                        context = this.contextRegistry.getContext(rawKeyBinding.context);
+                    }
+
+                    this.registerKeyBinding({
+                        commandId: rawKeyBinding.command,
+                        keyCode: code,
+                        context: context ? context : undefined
+                    });
+
+                } else {
+                    invalidKeyMap = true;
+                    break;
+                }
+            } else {
+                invalidKeyMap = true;
+                break;
+            }
+        }
+
+        if (invalidKeyMap) {
+            this.keybindings = Object.assign({}, this.defaultKeyBindings);
+            this.commands = Object.assign({}, this.defaultCommands);
+
+        }
+    }
 }

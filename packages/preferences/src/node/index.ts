@@ -6,3 +6,4 @@
  */
 
 export * from './preference-backend-module';
+export * from './keybinding-backend-module';

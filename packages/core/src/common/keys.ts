@@ -35,7 +35,7 @@ export class KeyCode {
     public readonly meta: boolean;
 
     // TODO: support chrods properly. Currently, second sequence is ignored.
-    private constructor(public readonly keystroke: string) {
+    public constructor(public readonly keystroke: string) {
         // const chord = ((secondSequence & 0x0000ffff) << 16) >>> 0;
         // (firstSequence | chord) >>> 0;
         const parts = keystroke.split('+');
@@ -51,6 +51,58 @@ export class KeyCode {
             this.shift = parts.some(part => part === Modifier.M2);
             this.alt = parts.some(part => part === Modifier.M3);
         }
+    }
+
+    /**
+     * Validates a string representation of a keybinding
+     * @param keybinding Keybinding in the format 'Ctrl+KeyA'
+     */
+    isKeybindingValid(keybinding: string): boolean {
+        const keys = keybinding.split('+');
+
+        // Check to see if only unique elements are in the keyCode i.e 'Ctrl+T' is valid but 'Ctrl+T+T' isn't
+        const valueArr = keys.map(function (item) { return item; });
+        const isDuplicate = valueArr.some(function (item, idx) {
+            return valueArr.indexOf(item) !== idx;
+        });
+        if (isDuplicate) {
+            return false;
+        }
+
+        // Check to see if all keys are valid keycodes i.e 'Ctrl+T' is valid but 'Ctl+TT' isn't
+        // replaceable by isKey?
+        for (const keyString of keys) {
+            const key = CODE_TO_KEY[keyString];
+            if (key === undefined) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Parses a Keystroke object from a string.
+     * @param keybinding String representation of a keybinding
+     */
+    public static parseKeystroke(keybinding: string): KeyCode | undefined {
+
+        const sequence: string[] = [];
+        const keys = keybinding.split('+');
+        for (const keyString of keys) {
+            const key = CODE_TO_KEY[keyString];
+            if (Key.isKey(key)) {
+                if (Key.isModifier(key.code)) {
+                    sequence.push(MODIFIERS.filter(item => item.code === key.code)[0].code);
+                } else {
+                    sequence.push(key.code);
+                }
+            } else {
+                return undefined;
+            }
+        }
+
+        return new KeyCode(sequence.join('+'));
     }
 
     public static createKeyCode(event: KeyboardEvent | Keystroke): KeyCode {
@@ -148,7 +200,7 @@ const MODIFIERS: Key[] = [];
 export namespace Key {
 
     export function isKey(arg: any): arg is Key {
-        return (<Key>arg).code !== undefined && (<Key>arg).keyCode !== undefined;
+        return arg && (<Key>arg).code !== undefined && (<Key>arg).keyCode !== undefined;
     }
 
     export function getKey(arg: string | number) {
