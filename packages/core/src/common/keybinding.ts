@@ -226,7 +226,7 @@ export class KeybindingRegistry {
 
     setKeymap(rawKeyBindings: RawKeybinding[]) {
         /* Only assign the default keybindings once, so that they do not get overridden with further iterations */
-        if (!this.defaultKeyBindings && !this.defaultCommands) {
+        if (!this.defaultKeyBindings || !this.defaultCommands) {
             this.defaultKeyBindings = Object.assign({}, this.keybindings);
             this.defaultCommands = Object.assign({}, this.commands);
         }

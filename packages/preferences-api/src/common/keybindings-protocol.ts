@@ -14,7 +14,7 @@ export interface KeybindingServer extends JsonRpcServer<KeybindingClient> {
 }
 
 export interface KeybindingClient {
-    onDidChangeKeymap(keymap: RawKeybinding[]): void;
+    onDidChangeKeymap(keymap: KeymapChangeEvent): void;
 }
 
 export interface RawKeybinding {
@@ -22,6 +22,10 @@ export interface RawKeybinding {
     keybinding: string;
     context?: string;
     args?: string[];
+}
+
+export interface KeymapChangeEvent {
+    changes: RawKeybinding[]
 }
 
 // export interface JsonChange {

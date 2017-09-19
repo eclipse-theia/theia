@@ -9,7 +9,7 @@ import { injectable, inject } from 'inversify';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { Disposable, DisposableCollection, ILogger, } from '@theia/core/lib/common';
 import { FileSystemWatcherServer, DidFilesChangedParams, FileChange } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
-import { KeybindingServer, KeybindingClient, RawKeybinding } from '@theia/preferences-api/lib/common';
+import { KeybindingServer, KeybindingClient, RawKeybinding, KeymapChangeEvent } from '@theia/preferences-api/lib/common';
 import * as jsoncparser from "jsonc-parser";
 import URI from "@theia/core/lib/common/uri";
 import { ParseError } from "jsonc-parser";
@@ -96,13 +96,25 @@ export class CustomKeybindingServer implements KeybindingServer {
 
     protected handleKeybindingChanges(keybindings: any | undefined): void {
 
-        this.fireEvent(keybindings);
-        this.keybindings = keybindings;
+        const rawBindings: RawKeybinding[] = [];
+        // const event: KeymapChangeEvent = {changes}
+
+        for (const keybinding of keybindings) {
+            rawBindings.push({
+                command: keybinding.command,
+                keybinding: keybinding.keybinding,
+                context: keybinding.context,
+                args: keybinding.args
+            });
+        }
+
+        this.fireEvent({ changes: rawBindings });
+        this.keybindings = rawBindings;
     }
 
-    protected fireEvent(event: RawKeybinding[]) {
+    protected fireEvent(event: KeymapChangeEvent) {
         this.logger.debug(log =>
-            log('onDidChangePreference:', event)
+            log('onDidChangeKeymap:', event)
         );
         if (this.client) {
             this.client.onDidChangeKeymap(event);

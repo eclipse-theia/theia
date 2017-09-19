@@ -11,6 +11,7 @@ import { FileUri } from '@theia/core/lib/node';
 import { keybindingsPath, KeybindingClient } from '../common/';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common';
 import { CustomKeybindingServer, KeybindingURI } from './custom-keybinding-server';
+import { KeybindingServer } from '../common';
 import { CustomKeybindingService } from '../common';
 
 /*
@@ -21,13 +22,15 @@ export default new ContainerModule(bind => {
 
     const homeUri = FileUri.create(os.homedir());
 
-    bind(CustomKeybindingServer).toSelf().inSingletonScope();
-
     bind(KeybindingURI).toConstantValue(homeUri.withPath(homeUri.path.join('.theia', 'keybindings.json')));
+
+    bind(CustomKeybindingServer).toSelf();
+
+    bind(KeybindingServer).to(CustomKeybindingServer);
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<KeybindingClient>(keybindingsPath, client => {
-            const server = ctx.container.get<CustomKeybindingServer>(CustomKeybindingServer);
+            const server = ctx.container.get<KeybindingServer>(KeybindingServer);
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;

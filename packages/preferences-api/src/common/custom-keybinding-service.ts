@@ -8,17 +8,13 @@
 import { inject, injectable } from 'inversify';
 import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
 import { Disposable, DisposableCollection, CommandRegistry, KeybindingRegistry, ILogger } from '@theia/core/lib/common';
-import { RawKeybinding, KeybindingServer } from './keybindings-protocol';
+import { RawKeybinding, KeybindingServer, KeymapChangeEvent } from './keybindings-protocol';
 import * as Ajv from "ajv";
-
-export {
-    RawKeybinding
-};
 
 export const keybindingSchema = {
     // "type": "array",
     // "items": {
-    "type": "object",
+    "type": "array",
     "properties": {
         "keybinding": {
             "type": "string"
@@ -40,6 +36,10 @@ export const keybindingSchema = {
     ],
     "additionalProperties": false
     // }
+};
+
+export {
+    RawKeybinding
 };
 
 @injectable()
@@ -71,21 +71,12 @@ export class CustomKeybindingService implements Disposable, FrontendApplicationC
         this.ready = true;
     }
 
-    protected onDidChangeKeymap(rawKeyBindings: RawKeybinding[]): void {
-
-        // for (const rawKeyBinding of rawKeyBindings) {
-        //     if (this.ajv.validate(keybindingSchema, rawKeyBinding)) {
-        //         if (!this.keyBindingRegistry.setKeymap(rawKeyBinding)) {
-        //             this.logger.warn("Invalid custom keymap:", rawKeyBinding);
-        //         }
-        //     }
-        // }
-
-        if (this.ajv.validate(keybindingSchema, rawKeyBindings)) {
-            if (this.ready) {
-                this.keyBindingRegistry.setKeymap(rawKeyBindings);
+    protected onDidChangeKeymap(keymapChangeEvent: KeymapChangeEvent): void {
+        if (this.ready) {
+            const changes = keymapChangeEvent.changes;
+            if (this.ajv.validate(keybindingSchema, changes)) {
+                this.keyBindingRegistry.setKeymap(keymapChangeEvent.changes);
             }
         }
-
     }
 }
