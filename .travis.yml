@@ -1,5 +1,5 @@
 language: node_js
-os: linux
+node_js: '8'
 git:
   depth: 1
 cache:
@@ -42,12 +42,10 @@ jobs:
   allow_failures:
     - os: osx
   include:
-  - stage: test
-    node_js: '6'
-  - stage: test
-    node_js: '8'
+  - state: test
+    os: linux
   - stage: deploy
-    node_js: '6'
+    os: linux
     before_script: skip
     script: skip
     install: skip
@@ -60,8 +58,7 @@ jobs:
       on:
         branch: master
       skip_cleanup: true
-  - stage: slow test
-    node_js: '8'
+  - stage: OSx test
     os: osx
     env: CXX=c++
     before_script: skip
