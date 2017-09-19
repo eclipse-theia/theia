@@ -28,6 +28,9 @@
 #    Note that you may get an "Error forwarding request." error after clicking
 #    on the 3000 link. Please wait a few seconds before trying again as Theia
 #    may not have completely finished starting up yet.
+#
+# Note: If you want Java language support you will need to extend this image yourself
+# by adding a JDK to the image and making sure it is accessible via the system PATH.
 
 FROM node:8
 RUN useradd --create-home theia
