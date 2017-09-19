@@ -12,8 +12,6 @@ import { RawKeybinding, KeybindingServer, KeymapChangeEvent } from './keybinding
 import * as Ajv from "ajv";
 
 export const keybindingSchema = {
-    // "type": "array",
-    // "items": {
     "type": "array",
     "properties": {
         "keybinding": {
@@ -35,7 +33,6 @@ export const keybindingSchema = {
         "context"
     ],
     "additionalProperties": false
-    // }
 };
 
 export {

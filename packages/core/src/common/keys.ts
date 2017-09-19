@@ -54,34 +54,6 @@ export class KeyCode {
     }
 
     /**
-     * Validates a string representation of a keybinding
-     * @param keybinding Keybinding in the format 'Ctrl+KeyA'
-     */
-    isKeybindingValid(keybinding: string): boolean {
-        const keys = keybinding.split('+');
-
-        // Check to see if only unique elements are in the keyCode i.e 'Ctrl+T' is valid but 'Ctrl+T+T' isn't
-        const valueArr = keys.map(function (item) { return item; });
-        const isDuplicate = valueArr.some(function (item, idx) {
-            return valueArr.indexOf(item) !== idx;
-        });
-        if (isDuplicate) {
-            return false;
-        }
-
-        // Check to see if all keys are valid keycodes i.e 'Ctrl+T' is valid but 'Ctl+TT' isn't
-        // replaceable by isKey?
-        for (const keyString of keys) {
-            const key = CODE_TO_KEY[keyString];
-            if (key === undefined) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
      * Parses a Keystroke object from a string.
      * @param keybinding String representation of a keybinding
      */

@@ -97,7 +97,6 @@ export class CustomKeybindingServer implements KeybindingServer {
     protected handleKeybindingChanges(keybindings: any | undefined): void {
 
         const rawBindings: RawKeybinding[] = [];
-        // const event: KeymapChangeEvent = {changes}
 
         for (const keybinding of keybindings) {
             rawBindings.push({
