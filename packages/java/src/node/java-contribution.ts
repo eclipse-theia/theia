@@ -65,15 +65,14 @@ export class JavaContribution extends BaseLanguageServerContribution {
             const outSocket = this.accept(outServer);
 
             this.logInfo('logs at ' + path.resolve(workspacePath, '.metadata', '.log'));
+            const env = Object.create(process.env);
+            env.STDIN_HOST = inServer.address().address;
+            env.STDIN_PORT = inServer.address().port;
+            env.STDOUT_HOST = outServer.address().address;
+            env.STDOUT_PORT = outServer.address().port;
             this.createProcessSocketConnection(inSocket, outSocket, command, args, {
-                env: {
-                    'STDIN_HOST': inServer.address().address,
-                    'STDIN_PORT': inServer.address().port,
-                    'STDOUT_HOST': outServer.address().address,
-                    'STDOUT_PORT': outServer.address().port
-                }
+                env: env
             }).then(serverConnection => this.forward(clientConnection, serverConnection));
         });
     }
-
 }
