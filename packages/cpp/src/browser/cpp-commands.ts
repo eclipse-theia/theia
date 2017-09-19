@@ -15,7 +15,6 @@ import { TextDocumentItemRequest } from "./cpp-protocol";
 import { TextDocumentIdentifier } from "@theia/languages/lib/common";
 import { EDITOR_CONTEXT_MENU_ID } from "@theia/editor/lib/browser";
 
-
 /**
  * Switch between source/header file
  */
@@ -32,7 +31,6 @@ export const FILE_OPEN_PATH = (path: string): Command => <Command>{
 export class CppCommandContribution implements CommandContribution, MenuContribution {
 
     constructor(
-        // @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(CppClientContribution) protected readonly clientContribution: CppClientContribution,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         protected readonly selectionService: SelectionService
