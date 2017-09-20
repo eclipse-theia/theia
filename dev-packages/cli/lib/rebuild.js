@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -6,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 // @ts-check
+
 const fs = require('fs-extra');
 const path = require('path');
 const cp = require('child_process');

@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -9,6 +8,10 @@
 
 const path = require('path');
 const fs = require('fs-extra');
+const cp = require('child_process');
+
+const cwd = process.cwd();
+const env = process.env;
 
 function promisify(p) {
     return new Promise((resolve, reject) => {
@@ -16,25 +19,24 @@ function promisify(p) {
         p.on('close', resolve);
     })
 }
-function bin(command) {
-    return path.join(__dirname, '..', 'node_modules', '.bin', command);
+function run(command, args = []) {
+    const commandPath = path.resolve(__dirname, '..', 'node_modules', '.bin', command);
+    if (process.platform === 'win32') {
+        return cp.spawn(commandPath + '.cmd', args, { cwd, env });
+    }
+    return cp.spawn(commandPath, args, { cwd, env });
 }
-function run(command, args = [], options = {
-    stdio: [0, 1, 2, 'ipc']
-}) {
-    const modulePath = bin(command);
-    return cp.spawn(modulePath, args, options);
-}
-function runAsync(command, args, options) {
-    return promisify(run(command, args, options));
+function shell(command, args) {
+    const commandProcess = run(command, args);
+    commandProcess.stdout.pipe(process.stdout);
+    commandProcess.stderr.pipe(process.stderr);
+    return promisify(commandProcess);
 }
 async function bunyan(childProcess, args = []) {
-    const bunyan = run('bunyan', [], {
-        stdio: ['pipe', 1, 2, 'ipc']
-    });
-    childProcess.stdout.pipe(bunyan.stdin);
-    childProcess.stderr.pipe(bunyan.stdin);
-    return promisify(bunyan);
+    const bunyanProcess = run('bunyan');
+    childProcess.stdout.pipe(bunyanProcess.stdin);
+    childProcess.stderr.pipe(bunyanProcess.stdin);
+    return promisify(bunyanProcess);
 }
 
 function restArgs(arg) {
@@ -59,7 +61,7 @@ function backend(...paths) {
 }
 
 async function clean() {
-    await runAsync('rimraf', ['lib']);
+    await shell('rimraf', ['lib']);
 }
 async function copy() {
     fs.ensureDirSync(lib());
@@ -67,7 +69,7 @@ async function copy() {
 }
 async function build() {
     await copy();
-    await runAsync('webpack', restArgs('build'));
+    await shell('webpack', restArgs('build'));
 }
 async function electron() {
     await build();
@@ -77,9 +79,7 @@ async function electron() {
         args.push('--hostname=localhost');
     }
 
-    await bunyan(run('electron', [frontend('electron-main.js'), ...args], {
-        stdio: [0, 'pipe', 'pipe', 'ipc']
-    }));
+    await bunyan(run('electron', [frontend('electron-main.js'), ...args]));
 }
 async function browser() {
     await build();
@@ -94,7 +94,6 @@ async function browser() {
     }));
 }
 
-const cp = require('child_process');
 require('yargs')
     .command({
         command: 'clean',
