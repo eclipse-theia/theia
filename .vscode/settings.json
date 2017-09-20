@@ -23,6 +23,8 @@
         "packages/languages/coverage/lcov.info",
         "packages/monaco/coverage/lcov.info",
         "packages/navigator/coverage/lcov.info",
+        "packages/custom-keybindings-api/coverage/lcov.info",
+        "packages/custom-keybindings/coverage/lcov.info",
         "packages/preferences-api/coverage/lcov.info",
         "packages/preferences/coverage/lcov.info",
         "packages/process/coverage/lcov.info",

@@ -1,0 +1,77 @@
+{
+    "extends": "./base.tsconfig",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@theia/core": [
+                "core/src/common"
+            ],
+            "@theia/core/lib/*": [
+                "core/src/*"
+            ],
+            "humane-js": [
+                "core/src/typings/humane-js"
+            ],
+            "@theia/filesystem/lib/*": [
+                "filesystem/src/*"
+            ],
+            "mv": [
+                "filesystem/src/typings/mv"
+            ],
+            "trash": [
+                "filesystem/src/typings/trash"
+            ],
+            "@theia/navigator/lib/*": [
+                "navigator/src/*"
+            ],
+            "@theia/custom-keybindings-api/lib/*": [
+                "custom-keybindings-api/src/*"
+            ],
+            "@theia/custom-keybindings/lib/*": [
+                "custom-keybindings/src/*"
+            ],
+            "@theia/preferences-api/lib/*": [
+                "preferences-api/src/*"
+            ],
+            "@theia/preferences/lib/*": [
+                "preferences/src/*"
+            ],
+            "@theia/workspace/lib/*": [
+                "workspace/src/*"
+            ],
+            "@theia/terminal/lib/*": [
+                "terminal/src/*"
+            ],
+            "@theia/languages/lib/*": [
+                "languages/src/*"
+            ],
+            "@theia/editor/lib/*": [
+                "editor/src/*"
+            ],
+            "@theia/monaco/lib/*": [
+                "monaco/src/*"
+            ],
+            "@theia/cpp/lib/*": [
+                "cpp/src/*"
+            ],
+            "@theia/java/lib/*": [
+                "java/src/*"
+            ],
+            "@theia/python/lib/*": [
+                "python/src/*"
+            ],
+            "@theia/go/lib/*": [
+                "go/src/*"
+            ],
+            "@theia/process/lib*": [
+                "process/src/*"
+            ],
+            "@theia/markers/lib/*": [
+                "markers/src/*"
+            ]
+        }
+    },
+    "include": [
+        "*/src"
+    ]
+}

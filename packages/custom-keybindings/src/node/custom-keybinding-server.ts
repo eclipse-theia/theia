@@ -9,7 +9,7 @@ import { injectable, inject } from 'inversify';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { Disposable, DisposableCollection, ILogger, } from '@theia/core/lib/common';
 import { FileSystemWatcherServer, DidFilesChangedParams, FileChange } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
-import { KeybindingServer, KeybindingClient, RawKeybinding, KeymapChangeEvent } from '@theia/preferences-api/lib/common';
+import { KeybindingServer, KeybindingClient, RawKeybinding, KeymapChangeEvent } from '@theia/custom-keybindings-api/lib/common';
 import * as jsoncparser from "jsonc-parser";
 import URI from "@theia/core/lib/common/uri";
 import { ParseError } from "jsonc-parser";
