@@ -15,16 +15,11 @@
   },
   "homepage": "https://github.com/theia-ide/theia",
   "files": [
-    "bin"
+    "bin",
+    "lib"
   ],
   "bin": {
-    "theia": "./bin/theia.js",
-    "yo": "./node_modules/.bin/yo",
-    "rimraf": "./node_modules/.bin/rimraf",
-    "bunyan": "./node_modules/.bin/bunyan",
-    "webpack": "./node_modules/.bin/webpack",
-    "electron": "./node_modules/.bin/electron",
-    "electron-rebuild": "./node_modules/.bin/electron-rebuild"
+    "theia": "./bin/theia"
   },
   "scripts": {
     "clean": "echo 'skip'",
