@@ -64,8 +64,11 @@ export class CustomKeybindingServer implements KeybindingServer {
     }
 
     protected reconcileKeybindings(): void {
-        this.readKeybindings().then(keybindings =>
-            this.handleKeybindingChanges(keybindings)
+        this.readKeybindings().then(keybindings => {
+            if (keybindings) {
+                this.handleKeybindingChanges(keybindings)
+            }
+        }
         );
     }
 
