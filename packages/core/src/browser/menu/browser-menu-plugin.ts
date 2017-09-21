@@ -96,6 +96,7 @@ class DynamicMenuBarWidget extends MenuBarWidget {
             super['_openChildMenu']();
         };
     }
+
 }
 /**
  * A menu widget that would recompute its items on update
@@ -113,6 +114,17 @@ class DynamicMenuWidget extends MenuWidget {
     public aboutToShow(): void {
         this.clearItems();
         this.updateSubMenus(this, this.menu, this.options.commands);
+    }
+
+    public open(x: number, y: number, options?: MenuWidget.IOpenOptions): void {
+        // we want to restore the focus after the menu closes.
+        const previouslyActive = window.document.activeElement as HTMLElement;
+        const cb = () => {
+            previouslyActive.focus();
+            this.aboutToClose.disconnect(cb);
+        };
+        this.aboutToClose.connect(cb);
+        super.open(x, y, options);
     }
 
     private updateSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: PhosphorCommandRegistry): void {

@@ -18,13 +18,9 @@ export class BrowserContextMenuRenderer implements ContextMenuRenderer {
     render(path: string, anchor: Anchor, onHide?: () => void): void {
         const contextMenu = this.menuFactory.createContextMenu(path);
         const { x, y } = anchor instanceof MouseEvent ? { x: anchor.clientX, y: anchor.clientY } : anchor;
-        const previouslyActive = window.document.activeElement as HTMLElement;
-        contextMenu.aboutToClose.connect(() => {
-            previouslyActive.focus();
-            if (onHide) {
-                onHide();
-            }
-        });
+        if (onHide) {
+            contextMenu.aboutToClose.connect(() => onHide());
+        }
         contextMenu.open(x, y);
     }
 
