@@ -36,13 +36,19 @@ after(() => {
 });
 
 describe('Keybinding JSON watcher', () => {
-    before(() => {
+    beforeEach(() => {
         const rootUri = FileUri.create(track.mkdirSync());
         keybindingURI = rootUri.resolve(kbPath);
         const logger = createLogger();
-        server = new CustomKeybindingServer(createFileSystem(), new ChokidarFileSystemWatcherServer(logger), createLogger(), keybindingURI);
         fs.mkdirSync(FileUri.fsPath(rootUri.resolve('.theia')));
-        fs.writeFileSync(FileUri.fsPath(keybindingURI), '{ "showLineNumbers": false }');
+        fs.writeFileSync(FileUri.fsPath(keybindingURI), `[{
+                 command: "testCommand",
+                 keybinding:"testKeyBinding",
+                 context: "testContext",
+                 args: ["testArg1","testArg2"]
+             }]`);
+        server = new CustomKeybindingServer(createFileSystem(), new ChokidarFileSystemWatcherServer(logger), createLogger(), keybindingURI);
+
     });
 
     it("Keybinding server registers a client and sends an event for a json change", done => {
@@ -52,41 +58,12 @@ describe('Keybinding JSON watcher', () => {
             }
         });
 
-        const fileContent = '{ "showLineNumbers": true }';
-        fs.writeFileSync(FileUri.fsPath(keybindingURI), fileContent);
-    });
-
-
-    it("Keybinding server registers a client and sends", done => {
-        server.setClient({
-            onDidChangeKeymap(event) {
-                done();
-            }
-        });
-
         const fileContent = `[{
-    command: "testCommand",
-    keybinding:"testKeyBinding",
-    context: "testContext",
-    args: ["testArg1","testArg2"]
-},{
-    command: "testCommand2",
-    keybinding:"testKeyBinding2",
-    context: "testContext2",
-    args: ["testArg12","testArg22"]
-},
-{
-    command: "testCommand",
-    keybinding:"testKeyBinding",
-    context: "testContext",
-    args: ["testArg1","testArg2"]
-},
-{
-    command: "testCommand",
-    keybinding:"testKeyBinding",
-    context: "testContext",
-    args: ["testArg1","testArg2"]
-},]`;
+            command: "testCommand",
+            keybinding:"testKeyBinding",
+            context: "testContext",
+            args: ["testArg1","testArg2"]
+        }]`;
         fs.writeFileSync(FileUri.fsPath(keybindingURI), fileContent);
     });
 });
