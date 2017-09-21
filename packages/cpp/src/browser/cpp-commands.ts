@@ -24,6 +24,8 @@ import { SwitchSourceHeaderRequest } from "./cpp-protocol";
 import { TextDocumentIdentifier } from "@theia/languages/lib/common";
 import { EditorCommands, EditorManager } from "@theia/editor/lib/browser";
 import { HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
+import { ExecuteCommandRequest, ExecuteCommandParams } from "vscode-languageserver-protocol";
+import { CppPreferences } from "./cpp-preferences";
 
 /**
  * Switch between source/header file
@@ -40,6 +42,26 @@ export const SHOW_CLANGD_REFERENCES: Command = {
     id: 'clangd.references'
 };
 
+export const DUMP_INCLUSIONS: Command = {
+    id: 'clangd.dumpinclusions',
+    label: 'C/C++: Dump file inclusions (Debug)'
+};
+
+export const DUMP_INCLUDED_BY: Command = {
+    id: 'clangd.dumpincludedby',
+    label: 'C/C++: Dump files including this file (Debug)'
+};
+
+export const REINDEX: Command = {
+    id: 'clangd.reindex',
+    label: 'C/C++: Reindex workspace (Debug)'
+};
+
+export const PRINT_STATS: Command = {
+    id: 'clangd.printstats',
+    label: 'C/C++: Print Index Statistics (Debug)'
+};
+
 export const FILE_OPEN_PATH = (path: string): Command => <Command>{
     id: `file:openPath`
 };
@@ -54,6 +76,9 @@ export function editorContainsCppFiles(editorManager: EditorManager | undefined)
 
 @injectable()
 export class CppCommandContribution implements CommandContribution {
+
+    @inject(CppPreferences)
+    private readonly cppPreferences: CppPreferences;
 
     constructor(
         @inject(CppLanguageClientContribution) protected readonly clientContribution: CppLanguageClientContribution,
@@ -72,20 +97,68 @@ export class CppCommandContribution implements CommandContribution {
             execute: (doc: TextDocumentIdentifier, pos: Position, locs: Location[]) =>
                 commands.executeCommand(EditorCommands.SHOW_REFERENCES.id, doc.uri, pos, locs)
         });
+        commands.registerCommand(REINDEX, {
+            isEnabled: () => this.cppPreferences["cpp.experimentalCommands"],
+            execute: () => this.reindex()
+        });
+        commands.registerCommand(DUMP_INCLUSIONS, {
+            isEnabled: () => this.cppPreferences["cpp.experimentalCommands"] && editorContainsCppFiles(this.editorService),
+            execute: () => this.dumpInclusions()
+        });
+        commands.registerCommand(DUMP_INCLUDED_BY, {
+            isEnabled: () => this.cppPreferences["cpp.experimentalCommands"] && editorContainsCppFiles(this.editorService),
+            execute: () => this.dumpIncludedBy()
+        });
+        commands.registerCommand(PRINT_STATS, {
+            isEnabled: () => this.cppPreferences["cpp.experimentalCommands"],
+            execute: () => this.printStats()
+        });
     }
 
-    protected switchSourceHeader(): void {
+    protected async switchSourceHeader(): Promise<void> {
         const uri = UriSelection.getUri(this.selectionService.selection);
         if (!uri) {
             return;
         }
         const docIdentifier = TextDocumentIdentifier.create(uri.toString());
-        this.clientContribution.languageClient.then(languageClient => {
-            languageClient.sendRequest(SwitchSourceHeaderRequest.type, docIdentifier).then(sourceUri => {
-                if (sourceUri !== undefined) {
-                    open(this.openerService, new URI(sourceUri.toString()));
-                }
-            });
-        });
+        const languageClient = await this.clientContribution.languageClient;
+        const sourceUri: string | undefined = await languageClient.sendRequest(SwitchSourceHeaderRequest.type, docIdentifier);
+        if (sourceUri !== undefined) {
+            open(this.openerService, new URI(sourceUri.toString()));
+        }
+    }
+
+    private async dumpInclusions(): Promise<void> {
+        const uri = UriSelection.getUri(this.selectionService.selection);
+        if (!uri) {
+            return;
+        }
+        const docIdentifier = TextDocumentIdentifier.create(uri.toString());
+        const params: ExecuteCommandParams = { command: DUMP_INCLUSIONS.id, arguments: [docIdentifier] };
+        const languageClient = await this.clientContribution.languageClient;
+        languageClient.sendRequest(ExecuteCommandRequest.type, params);
+    }
+
+    private async dumpIncludedBy(): Promise<void> {
+        const uri = UriSelection.getUri(this.selectionService.selection);
+        if (!uri) {
+            return;
+        }
+        const docIdentifier = TextDocumentIdentifier.create(uri.toString());
+        const params: ExecuteCommandParams = { command: DUMP_INCLUDED_BY.id, arguments: [docIdentifier] };
+        const languageClient = await this.clientContribution.languageClient;
+        languageClient.sendRequest(ExecuteCommandRequest.type, params);
+    }
+
+    private async reindex(): Promise<void> {
+        const params: ExecuteCommandParams = { command: REINDEX.id };
+        const languageClient = await this.clientContribution.languageClient;
+        languageClient.sendRequest(ExecuteCommandRequest.type, params);
+    }
+
+    private async printStats(): Promise<void> {
+        const params: ExecuteCommandParams = { command: PRINT_STATS.id };
+        const languageClient = await this.clientContribution.languageClient;
+        languageClient.sendRequest(ExecuteCommandRequest.type, params);
     }
 }
