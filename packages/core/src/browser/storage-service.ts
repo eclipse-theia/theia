@@ -24,6 +24,7 @@ export interface StorageService {
      * returns the data stored for the given key or the provided default value if nothing is stored for the given key.
      */
     getData<T>(key: string, defaultValue: T): Promise<T>;
+    getData<T>(key: string): Promise<T | undefined>;
 }
 
 interface LocalStorage {
@@ -50,10 +51,10 @@ export class LocalStorageService implements StorageService {
         } else {
             delete this.storage[this.prefix(key)];
         }
-        return Promise.resolve(undefined);
+        return Promise.resolve();
     }
 
-    getData<T>(key: string, defaultValue: T): Promise<T> {
+    getData<T>(key: string, defaultValue?: T): Promise<T | undefined> {
         const result = this.storage[this.prefix(key)];
         if (result === undefined) {
             return Promise.resolve(defaultValue);

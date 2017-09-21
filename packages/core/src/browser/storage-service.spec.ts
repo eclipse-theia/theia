@@ -6,7 +6,7 @@
  */
 
 import { LocalStorageService, StorageService } from './storage-service';
-import * as assert from 'assert';
+import { expect } from 'chai';
 import { TestLogger } from '../common/test/test-logger';
 
 let storageService: StorageService;
@@ -21,24 +21,24 @@ describe("storage-service", () => {
         storageService.setData('foo', {
             test: 'foo'
         });
-        assert(await storageService.getData('bar', 'bar') === 'bar');
-        assert((await storageService.getData('foo', {
+        expect(await storageService.getData('bar', 'bar')).equals('bar');
+        expect((await storageService.getData('foo', {
             test: 'bar'
-        })).test === 'foo');
+        })).test).equals('foo');
     });
 
     it("removes data", async () => {
         storageService.setData('foo', {
             test: 'foo'
         });
-        assert((await storageService.getData('foo', {
+        expect((await storageService.getData('foo', {
             test: 'bar'
-        })).test === 'foo');
+        })).test).equals('foo');
 
         storageService.setData('foo', undefined);
-        assert((await storageService.getData('foo', {
+        expect((await storageService.getData('foo', {
             test: 'bar'
-        })).test === 'bar');
+        })).test).equals('bar');
     });
 
 });
