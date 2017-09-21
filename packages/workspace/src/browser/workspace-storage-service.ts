@@ -34,17 +34,17 @@ export class WorkspaceStorageService implements StorageService {
         if (!this.root) {
             await this.rootPromise;
         }
-        const fullKey = this.getKey(key);
+        const fullKey = this.prefixWorkspaceURI(key);
         return this.storageService.setData(fullKey, data);
     }
 
-    async getData<T>(key: string, defaultValue: T): Promise<T> {
+    async getData<T>(key: string, defaultValue?: T): Promise<T | undefined> {
         await this.rootPromise;
-        const fullKey = this.getKey(key);
+        const fullKey = this.prefixWorkspaceURI(key);
         return this.storageService.getData(fullKey, defaultValue);
     }
 
-    protected getKey(originalKey: string): string {
+    protected prefixWorkspaceURI(originalKey: string): string {
         return this.root.uri + ":" + originalKey;
     }
 }

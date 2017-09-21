@@ -6,7 +6,7 @@
  */
 
 
-import * as assert from 'assert';
+import { expect } from 'chai';
 import { TestLogger } from '../common/test/test-logger';
 import { WidgetManager, WidgetFactory } from './widget-manager';
 import { Widget } from '@phosphor/widgets';
@@ -51,9 +51,8 @@ describe("widget-manager", () => {
     it("creates and caches widgets", async () => {
         const wA = await widgetManager.getOrCreateWidget('test', 'widgetA');
         const wB = await widgetManager.getOrCreateWidget('test', 'widgetB');
-        assert.notStrictEqual(wA, wB);
-        assert.strictEqual(wA, await widgetManager.getOrCreateWidget('test', 'widgetA'));
+        expect(wA).not.equals(wB);
+        expect(wA).equals(await widgetManager.getOrCreateWidget('test', 'widgetA'));
     });
 
 });
-
