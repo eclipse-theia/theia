@@ -41,6 +41,10 @@ module.exports = {
                 loader: 'url-loader?limit=10000&mimetype=image/svg+xml'
             },
             {
+                test: /node_modules.+xterm.+\.map$/,
+                loader: 'ignore-loader'
+            },
+            {
                 test: /\.js$/,
                 enforce: 'pre',
                 loader: 'source-map-loader'
