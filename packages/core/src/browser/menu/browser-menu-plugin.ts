@@ -74,9 +74,9 @@ export class BrowserMainMenuFactory {
             isVisible: () => this.commandRegistry.isVisible(command.id)
         });
 
-        const binding = this.keybindingRegistry.getKeybindingForCommand(command.id, { active: false });
-        if (binding) {
-            const keys = binding.accelerator || [];
+        const bindings = this.keybindingRegistry.getKeybindingsForCommand(command.id, { active: false });
+        if (bindings) {
+            const keys = bindings[0].accelerator || [];
             commands.addKeyBinding({
                 command: command.id,
                 keys,

@@ -8,10 +8,10 @@
 import { inject, injectable } from 'inversify';
 import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
 import { Disposable, DisposableCollection, CommandRegistry, KeybindingRegistry, ILogger } from '@theia/core/lib/common';
-import { RawKeybinding, KeybindingServer, KeymapChangeEvent } from './keybindings-protocol';
-import * as Ajv from "ajv";
+import { RawKeybinding, KeymapsServer, KeymapChangeEvent } from './keymaps-protocol';
+import * as ajv from 'ajv';
 
-export const keybindingSchema = {
+export const keymapsSchema = {
     "type": "array",
     "properties": {
         "keybinding": {
@@ -40,15 +40,15 @@ export {
 };
 
 @injectable()
-export class CustomKeybindingService implements Disposable, FrontendApplicationContribution {
+export class KeymapsService implements Disposable, FrontendApplicationContribution {
 
     protected readonly toDispose = new DisposableCollection();
-    protected readonly ajv = new Ajv();
+    protected readonly ajv = new ajv();
     protected ready = false;
     protected resolveReady: () => void;
 
     constructor(
-        @inject(KeybindingServer) protected readonly server: KeybindingServer,
+        @inject(KeymapsServer) protected readonly server: KeymapsServer,
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
         @inject(KeybindingRegistry) protected readonly keyBindingRegistry: KeybindingRegistry,
         @inject(ILogger) protected readonly logger: ILogger
@@ -70,7 +70,7 @@ export class CustomKeybindingService implements Disposable, FrontendApplicationC
     protected onDidChangeKeymap(keymapChangeEvent: KeymapChangeEvent): void {
         if (this.ready) {
             const changes = keymapChangeEvent.changes;
-            if (this.ajv.validate(keybindingSchema, changes)) {
+            if (this.ajv.validate(keymapsSchema, changes)) {
                 this.keyBindingRegistry.setKeymap(keymapChangeEvent.changes);
             }
         }

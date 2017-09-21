@@ -24,11 +24,8 @@
             "@theia/navigator/lib/*": [
                 "navigator/src/*"
             ],
-            "@theia/custom-keybindings-api/lib/*": [
-                "custom-keybindings-api/src/*"
-            ],
-            "@theia/custom-keybindings/lib/*": [
-                "custom-keybindings/src/*"
+            "@theia/keymaps/lib/*": [
+                "keymaps/src/*"
             ],
             "@theia/preferences-api/lib/*": [
                 "preferences-api/src/*"

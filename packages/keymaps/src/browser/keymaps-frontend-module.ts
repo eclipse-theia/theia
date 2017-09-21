@@ -7,14 +7,14 @@
 
 import { ContainerModule, } from 'inversify';
 import { WebSocketConnectionProvider, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { KeybindingServer, CustomKeybindingService, keybindingsPath } from "../common";
+import { KeymapsServer, keybindingsPath } from "../common/keymaps-protocol";
+import { KeymapsService } from "../common/keymaps-service"
 
 export default new ContainerModule(bind => {
-    // bind(CustomKeybindingService).toSelf().inSingletonScope();
 
-    bind(FrontendApplicationContribution).to(CustomKeybindingService).inSingletonScope();
+    bind(FrontendApplicationContribution).to(KeymapsService).inSingletonScope();
 
-    bind(KeybindingServer).toDynamicValue(ctx =>
+    bind(KeymapsServer).toDynamicValue(ctx =>
         ctx.container.get(WebSocketConnectionProvider).createProxy(keybindingsPath)
     ).inSingletonScope();
 });

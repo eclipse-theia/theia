@@ -9,9 +9,9 @@ import * as chai from 'chai';
 import * as chaiAsPromised from "chai-as-promised";
 import * as fs from 'fs-extra';
 import * as temp from 'temp';
-import { CustomKeybindingServer } from './custom-keybinding-server';
+import { CustomKeymapsServer } from './keymaps-server';
 import { ChokidarFileSystemWatcherServer } from '@theia/filesystem/lib/node/chokidar-filesystem-watcher';
-import { FileSystemNode } from '@theia/filesystem/lib/node/node-filesystem'
+import { FileSystemNode } from '@theia/filesystem/lib/node/node-filesystem';
 import { FileSystem } from "@theia/filesystem/lib/common";
 import { Logger, ILogger } from "@theia/core/lib/common";
 
@@ -20,11 +20,10 @@ import URI from '@theia/core/lib/common/uri';
 
 const kbPath = '.theia/keybindings.json';
 let keybindingURI: URI;
-let server: CustomKeybindingServer;
+let server: CustomKeymapsServer;
 const track = temp.track();
 
 before(() => {
-    chai.should();
     chai.use(chaiAsPromised);
     chai.config.showDiff = true;
     chai.config.includeStack = true;
@@ -47,7 +46,7 @@ describe('Keybinding JSON watcher', () => {
                  context: "testContext",
                  args: ["testArg1","testArg2"]
              }]`);
-        server = new CustomKeybindingServer(createFileSystem(), new ChokidarFileSystemWatcherServer(logger), createLogger(), keybindingURI);
+        server = new CustomKeymapsServer(createFileSystem(), new ChokidarFileSystemWatcherServer(logger), createLogger(), keybindingURI);
 
     });
 

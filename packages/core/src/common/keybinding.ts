@@ -148,19 +148,21 @@ export class KeybindingRegistry {
 
         const commands = this.commands[commandId] || [];
         commands.push(binding);
-        this.commands[commandId] = bindings;
+        this.commands[commandId] = commands;
     }
 
-    unregisterKeybinding(bindingToRemove: Keybinding) {
-        const { keyCode, commandId } = bindingToRemove;
-        let bindings = this.keybindings[keyCode.keystroke] || [];
+    unregisterKeybindings(bindingsToRemove: Keybinding[]) {
+        for (const bindingToRemove of bindingsToRemove) {
+            const { keyCode, commandId } = bindingToRemove;
+            let bindings = this.keybindings[keyCode.keystroke] || [];
 
-        bindings = bindings.filter(binding => binding !== bindingToRemove);
-        this.keybindings[keyCode.keystroke] = bindings;
+            bindings = bindings.filter(binding => binding !== bindingToRemove);
+            this.keybindings[keyCode.keystroke] = bindings;
 
-        let commands = this.commands[commandId] || [];
-        commands = commands.filter(command => command !== bindingToRemove);
-        this.commands[commandId] = bindings;
+            let commands = this.commands[commandId] || [];
+            commands = commands.filter(command => command !== bindingToRemove);
+            this.commands[commandId] = commands;
+        }
     }
 
     /**
@@ -171,15 +173,18 @@ export class KeybindingRegistry {
      * @param commandId the unique ID of the command for we the associated ke binding are looking for.
      * @param options if `active` is false` then the availability of the command will not be checked. Default is `true`
      */
-    getKeybindingForCommand(commandId: string, options: { active: boolean } = ({ active: true })): Keybinding | undefined {
+    getKeybindingsForCommand(commandId: string, options: { active: boolean } = ({ active: true })): Keybinding[] | undefined {
         const bindings = this.commands[commandId];
-        if (!bindings) {
+        if (!bindings || bindings.length === 0) {
             return undefined;
         }
         if (!options.active) {
-            return bindings[0];
+            return bindings;
         }
-        return bindings.find(this.isActive.bind(this));
+
+        return bindings.filter(filter => {
+            this.isActive.bind(filter);
+        });
     }
 
     /**
@@ -241,9 +246,9 @@ export class KeybindingRegistry {
                 const code = KeyCode.parseKeystroke(rawKeyBinding.keybinding);
                 if (code) {
 
-                    const oldBinding = this.getKeybindingForCommand(rawKeyBinding.command, { active: false });
-                    if (oldBinding) {
-                        this.unregisterKeybinding(oldBinding);
+                    const oldBindings = this.getKeybindingsForCommand(rawKeyBinding.command, { active: false });
+                    if (oldBindings) {
+                        this.unregisterKeybindings(oldBindings);
                     }
 
                     let context: KeybindingContext | undefined;
@@ -270,7 +275,6 @@ export class KeybindingRegistry {
         if (invalidKeyMap) {
             this.keybindings = Object.assign({}, this.defaultKeyBindings);
             this.commands = Object.assign({}, this.defaultCommands);
-
         }
     }
 }

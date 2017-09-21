@@ -9,7 +9,7 @@ import { injectable, inject } from 'inversify';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { Disposable, DisposableCollection, ILogger, } from '@theia/core/lib/common';
 import { FileSystemWatcherServer, DidFilesChangedParams, FileChange } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
-import { KeybindingServer, KeybindingClient, RawKeybinding, KeymapChangeEvent } from '@theia/custom-keybindings-api/lib/common';
+import { KeymapsServer, KeybindingClient, KeymapChangeEvent, RawKeybinding } from '../common/keymaps-protocol'
 import * as jsoncparser from "jsonc-parser";
 import URI from "@theia/core/lib/common/uri";
 import { ParseError } from "jsonc-parser";
@@ -17,7 +17,7 @@ import { ParseError } from "jsonc-parser";
 export const KeybindingURI = Symbol("KeybindingURI");
 
 @injectable()
-export class CustomKeybindingServer implements KeybindingServer {
+export class CustomKeymapsServer implements KeymapsServer {
 
     protected client: KeybindingClient | undefined;
     protected keybindings: { [key: string]: any } | undefined;

@@ -5,38 +5,30 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as os from 'os';
-import { ContainerModule } from 'inversify';
 import { FileUri } from '@theia/core/lib/node';
-import { keybindingsPath, KeybindingClient } from '../common/';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common';
-import { CustomKeybindingServer, KeybindingURI } from './custom-keybinding-server';
-import { KeybindingServer } from '../common';
-import { CustomKeybindingService } from '../common';
-
-/*
- * User preference server that watches the home directory of the user
- */
+import { CustomKeymapsServer, KeybindingURI } from './keymaps-server';
+import { KeymapsServer, keybindingsPath, KeybindingClient } from '../common/keymaps-protocol';
+import { KeymapsService } from '../common/keymaps-service';
+import { ContainerModule } from 'inversify';
+import * as os from 'os';
 
 export default new ContainerModule(bind => {
 
     const homeUri = FileUri.create(os.homedir());
 
-    bind(KeybindingURI).toConstantValue(homeUri.withPath(homeUri.path.join('.theia', 'keybindings.json')));
-
-    bind(CustomKeybindingServer).toSelf();
-
-    bind(KeybindingServer).to(CustomKeybindingServer);
-
+    bind(KeybindingURI).toConstantValue(homeUri.withPath(homeUri.path.join('.theia', 'keymaps.json')));
+    bind(CustomKeymapsServer).toSelf();
+    bind(KeymapsServer).to(CustomKeymapsServer);
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<KeybindingClient>(keybindingsPath, client => {
-            const server = ctx.container.get<KeybindingServer>(KeybindingServer);
+            const server = ctx.container.get<KeymapsServer>(KeymapsServer);
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;
         })
     ).inSingletonScope();
 
-    bind(CustomKeybindingService).toSelf();
+    bind(KeymapsService).toSelf();
 
 });

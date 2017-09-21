@@ -5,4 +5,5 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export * from './keybinding-frontend-module';
+export * from './keymaps-service';
+export * from './keymaps-protocol';

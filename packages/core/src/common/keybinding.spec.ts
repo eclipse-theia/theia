@@ -13,15 +13,10 @@ import { KeyCode, } from './keys';
 import { CommandRegistry, CommandContribution, Command } from './command';
 
 const expect = chai.expect;
-chai.should();
 chai.config.showDiff = true;
 chai.config.includeStack = true;
 
 let keybindingRegistry: KeybindingRegistry;
-
-after(() => {
-
-});
 
 describe('keybindings', () => {
     beforeEach(() => {
@@ -30,19 +25,19 @@ describe('keybindings', () => {
     });
 
     it("should register the default keybindings", () => {
-        const keybinding = keybindingRegistry.getKeybindingForCommand('test.command', { active: false });
+        const keybinding = keybindingRegistry.getKeybindingsForCommand('test.command', { active: false });
         expect(keybinding).is.not.undefined;
 
-        const keybinding2 = keybindingRegistry.getKeybindingForCommand('undefined.command', { active: false });
+        const keybinding2 = keybindingRegistry.getKeybindingsForCommand('undefined.command', { active: false });
         expect(keybinding2).is.undefined;
     });
 
     it("should unregister a keybinding", () => {
-        let binding = keybindingRegistry.getKeybindingForCommand('test.command', { active: false });
+        let binding = keybindingRegistry.getKeybindingsForCommand('test.command', { active: false });
         expect(binding).is.not.undefined;
         if (binding) {
-            keybindingRegistry.unregisterKeybinding(binding);
-            binding = keybindingRegistry.getKeybindingForCommand('test.command', { active: false });
+            keybindingRegistry.unregisterKeybindings(binding);
+            binding = keybindingRegistry.getKeybindingsForCommand('test.command', { active: false });
             expect(binding).is.undefined;
         }
     });
@@ -55,9 +50,9 @@ describe('keybindings', () => {
 
         keybindingRegistry.setKeymap(rawKeybindings);
 
-        const binding = keybindingRegistry.getKeybindingForCommand('test.command', { active: false });
-        if (binding) {
-            expect(binding.keyCode.keystroke).to.be.equal("ControlLeft+KeyC");
+        const bindings = keybindingRegistry.getKeybindingsForCommand('test.command', { active: false });
+        if (bindings) {
+            expect(bindings[0].keyCode.keystroke).to.be.equal("ControlLeft+KeyC");
         }
 
     });
@@ -70,9 +65,24 @@ describe('keybindings', () => {
 
         keybindingRegistry.setKeymap(rawKeybindings);
 
-        const binding = keybindingRegistry.getKeybindingForCommand('test.command', { active: false });
-        if (binding) {
-            expect(binding.keyCode.keystroke).to.be.equal("ControlLeft+KeyA");
+        const bindings = keybindingRegistry.getKeybindingsForCommand('test.command', { active: false });
+        if (bindings) {
+            expect(bindings[0].keyCode.keystroke).to.be.equal("ControlLeft+KeyA");
+        }
+    });
+
+    it("should remove all keybindings from a command that has multiple keybindings", () => {
+        const rawKeybindings: RawKeybinding[] = [{
+            command: "test.command2",
+            keybinding: "F3"
+        }];
+
+        keybindingRegistry.setKeymap(rawKeybindings);
+
+        const bindings = keybindingRegistry.getKeybindingsForCommand('test.command2', { active: false });
+        if (bindings) {
+            expect(bindings.length).to.be.equal(1);
+            expect(bindings[0].keyCode.keystroke).to.be.equal("F3");
         }
     });
 
@@ -82,13 +92,13 @@ describe('keybindings', () => {
             keybinding: "ControlLeft+KeyC"
         }];
         // Get default binding
-        const keystroke = keybindingRegistry.getKeybindingForCommand('test.command', { active: false });
+        const keystroke = keybindingRegistry.getKeybindingsForCommand('test.command', { active: false });
 
         // Set correct new binding
         keybindingRegistry.setKeymap(rawKeybindings);
-        const binding = keybindingRegistry.getKeybindingForCommand('test.command', { active: false });
-        if (binding) {
-            expect(binding.keyCode.keystroke).to.be.equal("ControlLeft+KeyC");
+        const bindings = keybindingRegistry.getKeybindingsForCommand('test.command', { active: false });
+        if (bindings) {
+            expect(bindings[0].keyCode.keystroke).to.be.equal("ControlLeft+KeyC");
         }
 
         // Set invalid binding
@@ -97,10 +107,10 @@ describe('keybindings', () => {
             keybinding: "ControlLeft+Invalid"
         }];
         keybindingRegistry.setKeymap(rawKeybindings);
-        const defaultBinding = keybindingRegistry.getKeybindingForCommand('test.command', { active: false });
-        if (defaultBinding) {
+        const defaultBindings = keybindingRegistry.getKeybindingsForCommand('test.command', { active: false });
+        if (defaultBindings) {
             if (keystroke) {
-                expect(defaultBinding.keyCode.keystroke).to.be.equal(keystroke.keyCode.keystroke);
+                expect(defaultBindings[0].keyCode.keystroke).to.be.equal(keystroke[0].keyCode.keystroke);
             }
         }
     });
@@ -134,16 +144,22 @@ function createKeybindingContextRegistry(): KeybindingContextRegistry {
     return registry;
 }
 
+const TEST_COMMAND: Command = {
+    id: 'test.command'
+};
+
+const TEST_COMMAND2: Command = {
+    id: 'test.command2'
+};
+
 function createCommandRegistry(): CommandRegistry {
 
-    const TEST_COMMAND: Command = {
-        id: 'test.command'
-    };
     const commandProviderStub = {
         getContributions(): CommandContribution[] {
             return [{
                 registerCommands(commands: CommandRegistry): void {
                     commands.registerCommand(TEST_COMMAND);
+                    commands.registerCommand(TEST_COMMAND2);
                 }
             }]
         }
@@ -161,7 +177,7 @@ function createKeybindingContributionProvider(): ContributionProvider<Keybinding
                 registerKeyBindings(keybindings: KeybindingRegistry): void {
                     [
                         {
-                            commandId: 'test.command',
+                            commandId: TEST_COMMAND.id,
                             context: {
                                 id: 'testContext',
                                 isEnabled(arg?: Keybinding): boolean {
@@ -169,6 +185,28 @@ function createKeybindingContributionProvider(): ContributionProvider<Keybinding
                                 }
                             },
                             keyCode: new KeyCode('ControlLeft+KeyA')
+
+                        },
+                        {
+                            commandId: TEST_COMMAND2.id,
+                            context: {
+                                id: 'testContext',
+                                isEnabled(arg?: Keybinding): boolean {
+                                    return true;
+                                }
+                            },
+                            keyCode: new KeyCode('F1')
+
+                        },
+                        {
+                            commandId: TEST_COMMAND2.id,
+                            context: {
+                                id: 'testContext',
+                                isEnabled(arg?: Keybinding): boolean {
+                                    return true;
+                                }
+                            },
+                            keyCode: new KeyCode('F2')
 
                         },
                     ].forEach(binding => {

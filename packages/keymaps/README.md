@@ -1,4 +1,4 @@
-# Theia - Custom Keybindings API
+# Theia - Keymaps Extension
 
 See [here](https://github.com/theia-ide/theia) for a detailed documentation.
 

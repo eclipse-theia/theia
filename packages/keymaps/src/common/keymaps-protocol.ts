@@ -7,10 +7,9 @@
 
 import { JsonRpcServer } from "@theia/core";
 
-export const keybindingsPath = '/services/keybindings';
-
-export const KeybindingServer = Symbol("KeybindingServer");
-export interface KeybindingServer extends JsonRpcServer<KeybindingClient> {
+export const keybindingsPath = '/services/keymaps';
+export const KeymapsServer = Symbol("KeymapsServer");
+export interface KeymapsServer extends JsonRpcServer<KeybindingClient> {
 }
 
 export interface KeybindingClient {
@@ -27,9 +26,3 @@ export interface RawKeybinding {
 export interface KeymapChangeEvent {
     changes: RawKeybinding[]
 }
-
-// export interface JsonChange {
-//     readonly property: string;
-//     readonly newValue?: any;
-//     readonly oldValue?: any;
-// }

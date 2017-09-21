@@ -1,10 +1,9 @@
 {
-  "name": "@theia/custom-keybindings",
+  "name": "@theia/keymaps",
   "version": "0.2.0",
-  "description": "Theia - Custom Keybindings Extension",
+  "description": "Theia - Custom Keymaps Extension",
   "dependencies": {
     "@theia/core": "^0.2.0",
-    "@theia/custom-keybindings-api": "^0.2.0",
     "@theia/filesystem": "^0.2.0",
     "@theia/workspace": "^0.2.0",
     "jsonc-parser": "^1.0.0",
@@ -20,8 +19,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/keybinding-frontend-module",
-      "backend": "lib/node/keybinding-backend-module"
+      "frontend": "lib/browser/keymaps-frontend-module",
+      "backend": "lib/node/keymaps-backend-module"
     }
   ],
   "keywords": [
