@@ -9,6 +9,7 @@ import { Marker, MarkerManager } from '../marker-manager';
 import { Diagnostic } from "vscode-languageserver-types";
 import { injectable, inject } from 'inversify';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
+import { FileSystemWatcher } from '@theia/filesystem/lib/common';
 
 export interface ProblemMarker extends Marker<Diagnostic> {
     kind: 'problem';
@@ -27,8 +28,10 @@ export class ProblemManager extends MarkerManager<Diagnostic> {
         return 'problem';
     }
 
-    constructor( @inject(StorageService) storageService: StorageService) {
-        super(storageService);
+    constructor(
+        @inject(StorageService) storageService: StorageService,
+        @inject(FileSystemWatcher) protected fileWatcher?: FileSystemWatcher) {
+        super(storageService, fileWatcher);
     }
 
 }

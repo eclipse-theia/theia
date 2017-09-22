@@ -18,7 +18,7 @@ let store: StorageService;
 
 before(async () => {
     store = new LocalStorageService(new TestLogger());
-    manager = new ProblemManager(store);
+    manager = new ProblemManager(store, undefined);
     await manager.initialized;
     manager.setMarkers(new URI('file:/foo/bar.txt'), 'me', [
         {
