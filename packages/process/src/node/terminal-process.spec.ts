@@ -23,6 +23,7 @@ const expect = chai.expect;
 
 describe('TerminalProcess', function () {
 
+    this.timeout(5000);
     const terminalProcessFactory = testContainer.get<TerminalProcessFactory>(TerminalProcessFactory);
 
     it('test error on non existent path', function () {

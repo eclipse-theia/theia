@@ -22,6 +22,7 @@ const expect = chai.expect;
 
 describe('RawProcess', function () {
 
+    this.timeout(5000);
     const rawProcessFactory = testContainer.get<RawProcessFactory>(RawProcessFactory);
 
     it('test error on non existent path', function () {
