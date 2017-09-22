@@ -30,14 +30,14 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         @inject(MonacoCommandRegistry) protected readonly commands: MonacoCommandRegistry
     ) { }
 
-    registerKeyBindings(registry: KeybindingRegistry): void {
+    registerDefaultKeyBindings(registry: KeybindingRegistry): void {
         for (const item of KeybindingsRegistry.getDefaultKeybindings()) {
             const commandId = this.commands.validate(item.command);
             if (commandId) {
                 const raw = item.keybinding;
                 if (raw.type === monaco.keybindings.KeybindingType.Simple) {
                     const keybinding = raw as monaco.keybindings.SimpleKeybinding;
-                    registry.registerKeyBinding({
+                    registry.registerDefaultKeyBinding({
                         commandId,
                         keyCode: this.keyCode(keybinding),
                         accelerator: this.accelerator(keybinding)
@@ -51,7 +51,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         // `Select All` is not an editor action just like everything else.
         const selectAllCommand = this.commands.validate(MonacoCommands.SELECTION_SELECT_ALL);
         if (selectAllCommand) {
-            registry.registerKeyBinding({
+            registry.registerDefaultKeyBinding({
                 commandId: selectAllCommand,
                 keyCode: KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M1] }),
                 accelerator: ['Accel A']

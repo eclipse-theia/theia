@@ -172,7 +172,7 @@ const MODIFIERS: Key[] = [];
 export namespace Key {
 
     export function isKey(arg: any): arg is Key {
-        return arg && (<Key>arg).code !== undefined && (<Key>arg).keyCode !== undefined;
+        return !!arg && ('code' in arg) && ('keyCode' in arg);
     }
 
     export function getKey(arg: string | number) {

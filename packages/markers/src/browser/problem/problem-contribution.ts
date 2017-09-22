@@ -30,8 +30,8 @@ export class ProblemContribution implements CommandContribution, MenuContributio
         @inject(FrontendApplication) protected readonly app: FrontendApplication) {
     }
 
-    registerKeyBindings(keybindings: KeybindingRegistry): void {
-        keybindings.registerKeyBinding({
+    registerDefaultKeyBindings(keybindings: KeybindingRegistry): void {
+        keybindings.registerDefaultKeyBinding({
             commandId: ProblemCommands.OPEN.id,
             keyCode: KeyCode.createKeyCode({
                 first: Key.KEY_M, modifiers: [Modifier.M2, Modifier.M1]

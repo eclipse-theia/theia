@@ -20,16 +20,12 @@ export const keymapsSchema = {
         "command": {
             "type": "string"
         },
-        "args": {
-            "type": "array"
-        },
         "context": {
             "type": "string"
         },
     },
     "required": ["command", "keybinding"],
     "optional": [
-        "args",
         "context"
     ],
     "additionalProperties": false

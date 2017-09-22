@@ -30,12 +30,11 @@ export interface RawKeybinding {
     command: string;
     keybinding: string;
     context?: string;
-    args?: string[];
 }
 
 export const KeybindingContribution = Symbol("KeybindingContribution");
 export interface KeybindingContribution {
-    registerKeyBindings(keybindings: KeybindingRegistry): void;
+    registerDefaultKeyBindings(keybindings: KeybindingRegistry): void;
 }
 
 export const KeybindingContext = Symbol("KeybindingContextExtension");
@@ -58,6 +57,88 @@ export namespace KeybindingContexts {
         id: 'default.keybinding.context',
         isEnabled: () => false
     };
+}
+
+export class KeybindingIndex {
+    private bindings: Keybinding[] = [];
+
+    constructor(private parent?: KeybindingIndex) { }
+
+    getKeybindingsForCommand(command: string): Keybinding[] {
+        const result: Keybinding[] = [];
+
+        if (this.parent) {
+            for (const parentBinding of this.parent.getKeybindingsForCommand(command)) {
+                if (!this.isShadowed(parentBinding)) {
+                    result.push(parentBinding);
+                }
+            }
+        }
+
+        for (const binding of this.bindings) {
+            if (binding.commandId === command) {
+                result.push(binding);
+            }
+        }
+        return result;
+    }
+
+    getKeybindingsForKeystroke(keystroke: string): Keybinding[] {
+        const result: Keybinding[] = [];
+
+        if (this.parent) {
+            for (const parentBinding of this.parent.getKeybindingsForKeystroke(keystroke)) {
+                if (!this.isShadowed(parentBinding)) {
+                    result.push(parentBinding);
+                }
+            }
+        }
+
+        for (const binding of this.bindings) {
+            if (binding.keyCode.keystroke === keystroke) {
+                result.push(binding);
+            }
+        }
+        return result;
+    }
+
+    protected isShadowed(fromParent: Keybinding): boolean {
+        for (const binding of this.bindings) {
+            if (fromParent.commandId === binding.commandId
+                || fromParent.keyCode.keystroke === binding.keyCode.keystroke) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    setParentKeyBinding(keybinding: Keybinding): void {
+        if (this.parent) {
+            this.parent.setKeyBinding(keybinding);
+        }
+    }
+
+    setParentKeyBindings(keybindings: Keybinding[]) {
+        if (this.parent) {
+            for (const keybinding of keybindings) {
+                this.parent.setKeyBinding(keybinding);
+            }
+        }
+    }
+
+    setKeyBinding(keybinding: Keybinding): void {
+        this.bindings.push(keybinding);
+    }
+
+    setKeyBindings(keybindings: Keybinding[]) {
+        keybindings.forEach(keybinding => {
+            this.setKeyBinding(keybinding);
+        });
+    }
+
+    clearBindings() {
+        this.bindings = [];
+    }
 }
 
 @injectable()
@@ -102,10 +183,8 @@ export class KeybindingContextRegistry {
 @injectable()
 export class KeybindingRegistry {
 
-    protected keybindings: { [index: string]: Keybinding[] } = {};
-    protected defaultKeyBindings: { [index: string]: Keybinding[] };
-    protected commands: { [commandId: string]: Keybinding[] } = {};
-    protected defaultCommands: { [commandId: string]: Keybinding[] } = {};
+    protected defaultKeybindingIndex: KeybindingIndex = new KeybindingIndex();
+    protected keymapsIndex: KeybindingIndex = new KeybindingIndex(this.defaultKeybindingIndex);
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
@@ -117,55 +196,52 @@ export class KeybindingRegistry {
 
     onStart(): void {
         for (const contribution of this.contributions.getContributions()) {
-            contribution.registerKeyBindings(this);
+            contribution.registerDefaultKeyBindings(this);
         }
     }
 
-    registerKeybindings(...bindings: Keybinding[]): void {
+    registerDefaultKeybindings(...bindings: Keybinding[]): void {
         for (const binding of bindings) {
-            this.registerKeyBinding(binding);
+            this.registerDefaultKeyBinding(binding);
         }
     }
 
     /**
-     * Adds a keybinding to the registry.
+     * Register a default keybinding to the registry.
      *
      * @param binding
      */
-    registerKeyBinding(binding: Keybinding) {
-        const existing = this.keybindings[binding.keyCode.keystroke];
-        if (existing) {
-            const collided = existing.filter(b => b.context === binding.context);
+    registerDefaultKeyBinding(binding: Keybinding) {
+        const existingBindings = this.keymapsIndex.getKeybindingsForKeystroke(binding.keyCode.keystroke);
+        if (existingBindings.length > 0) {
+            const collided = existingBindings.filter(b => b.context === binding.context);
             if (collided.length > 0) {
                 this.logger.warn(`Collided keybinding is ignored; `, JSON.stringify(binding), ' collided with ', collided.map(b => JSON.stringify(b)).join(', '));
                 return;
             }
         }
-        const { keyCode, commandId } = binding;
-        const bindings = this.keybindings[keyCode.keystroke] || [];
-        bindings.push(binding);
-        this.keybindings[keyCode.keystroke] = bindings;
-
-        const commands = this.commands[commandId] || [];
-        commands.push(binding);
-        this.commands[commandId] = commands;
-    }
-
-    unregisterKeybindings(bindingsToRemove: Keybinding[]) {
-        for (const bindingToRemove of bindingsToRemove) {
-            const { keyCode, commandId } = bindingToRemove;
-            let bindings = this.keybindings[keyCode.keystroke] || [];
-
-            bindings = bindings.filter(binding => binding !== bindingToRemove);
-            this.keybindings[keyCode.keystroke] = bindings;
-
-            let commands = this.commands[commandId] || [];
-            commands = commands.filter(command => command !== bindingToRemove);
-            this.commands[commandId] = commands;
-        }
+        this.keymapsIndex.setParentKeyBinding(binding);
     }
 
     /**
+     * Override a keybinding.
+     *
+     * @param binding
+     */
+    overrideKeyBinding(binding: Keybinding) {
+        const existingBindings = this.keymapsIndex.getKeybindingsForKeystroke(binding.keyCode.keystroke);
+        if (existingBindings.length > 0) {
+            const collided = existingBindings.filter(b => b.context === binding.context);
+            if (collided.length > 0) {
+                this.logger.warn(`Collided keybinding is ignored; `, binding, ' collided with ', collided.join(', '));
+                return;
+            }
+        }
+
+        this.keymapsIndex.setKeyBinding(binding);
+    }
+
+    /**g
      * The `active` flag with `false` could come handy when we do not want to check whether the command is currently active or not.
      * For instance, when building the main menu, it could easily happen that the command is not yet active (no active editors and so on)
      * but still, we have to build the key accelerator.
@@ -174,25 +250,23 @@ export class KeybindingRegistry {
      * @param options if `active` is false` then the availability of the command will not be checked. Default is `true`
      */
     getKeybindingsForCommand(commandId: string, options: { active: boolean } = ({ active: true })): Keybinding[] | undefined {
-        const bindings = this.commands[commandId];
-        if (!bindings || bindings.length === 0) {
+        const bindings = this.keymapsIndex.getKeybindingsForCommand(commandId);
+        if (bindings.length === 0) {
             return undefined;
         }
         if (!options.active) {
             return bindings;
         }
 
-        return bindings.filter(filter => {
-            this.isActive.bind(filter);
-        });
+        return bindings.filter(this.isActive.bind(this));
     }
 
     /**
      * @param keyCode the key code of the binding we are searching.
      */
     getKeybindingForKeyCode(keyCode: KeyCode, options: { active: boolean } = ({ active: true })): Keybinding | undefined {
-        const bindings = this.keybindings[keyCode.keystroke];
-        if (!bindings) {
+        const bindings = this.keymapsIndex.getKeybindingsForKeystroke(keyCode.keystroke);
+        if (!bindings || bindings.length === 0) {
             return undefined;
         }
         if (!options.active) {
@@ -218,6 +292,16 @@ export class KeybindingRegistry {
         if (!binding) {
             return;
         }
+        const bindingsForThisCommand = this.getKeybindingsForCommand(binding.commandId);
+        if (!bindingsForThisCommand) {
+            return;
+        }
+        if (bindingsForThisCommand.findIndex(test =>
+            test === binding
+        ) === -1) {
+            return;
+        }
+
         const context = binding.context || KeybindingContexts.NOOP_CONTEXT;
         if (context && context.isEnabled(binding)) {
             const handler = this.commandRegistry.getActiveHandler(binding.commandId);
@@ -231,11 +315,7 @@ export class KeybindingRegistry {
 
     setKeymap(rawKeyBindings: RawKeybinding[]) {
         /* Only assign the default keybindings once, so that they do not get overridden with further iterations */
-        if (!this.defaultKeyBindings || !this.defaultCommands) {
-            this.defaultKeyBindings = Object.assign({}, this.keybindings);
-            this.defaultCommands = Object.assign({}, this.commands);
-        }
-        let invalidKeyMap: boolean = false;
+        this.keymapsIndex.clearBindings();
         for (const rawKeyBinding of rawKeyBindings) {
             if (this.commandRegistry.getCommand(rawKeyBinding.command)) {
                 // TODO check if valid context? valid keybinding?
@@ -245,36 +325,25 @@ export class KeybindingRegistry {
 
                 const code = KeyCode.parseKeystroke(rawKeyBinding.keybinding);
                 if (code) {
-
-                    const oldBindings = this.getKeybindingsForCommand(rawKeyBinding.command, { active: false });
-                    if (oldBindings) {
-                        this.unregisterKeybindings(oldBindings);
-                    }
-
                     let context: KeybindingContext | undefined;
                     if (rawKeyBinding.context) {
                         context = this.contextRegistry.getContext(rawKeyBinding.context);
                     }
 
-                    this.registerKeyBinding({
+                    this.overrideKeyBinding({
                         commandId: rawKeyBinding.command,
                         keyCode: code,
                         context: context ? context : undefined
                     });
 
                 } else {
-                    invalidKeyMap = true;
+                    this.keymapsIndex.clearBindings();
                     break;
                 }
             } else {
-                invalidKeyMap = true;
+                this.keymapsIndex.clearBindings();
                 break;
             }
-        }
-
-        if (invalidKeyMap) {
-            this.keybindings = Object.assign({}, this.defaultKeyBindings);
-            this.commands = Object.assign({}, this.defaultCommands);
         }
     }
 }

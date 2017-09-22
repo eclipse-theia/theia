@@ -42,8 +42,8 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
         commands.registerCommand(this.command, this);
     }
 
-    registerKeyBindings(keybindings: KeybindingRegistry): void {
-        keybindings.registerKeyBinding({
+    registerDefaultKeyBindings(keybindings: KeybindingRegistry): void {
+        keybindings.registerDefaultKeyBinding({
             commandId: this.command.id,
             keyCode: KeyCode.createKeyCode({ first: Key.KEY_O, modifiers: [Modifier.M1] }),
             accelerator: ['Accel O']
