@@ -33,10 +33,7 @@
     "webdriverio": "^4.6.2"
   },
   "scripts": {
-    "prepare": "yarn run bootstrap && yarn run clean && yarn run rebuild:clean && yarn run build",
-    "refresh": "yarn run bootstrap:clean && yarn run bootstrap",
-    "bootstrap": "node scripts/lerna bootstrap --hoist -- --no-optional",
-    "bootstrap:clean": "node scripts/lerna clean --scope \"@theia/*\" --yes",
+    "prepare": "yarn run clean && yarn run rebuild:clean && yarn run build",
     "clean": "node scripts/lerna run clean --parallel",
     "build": "node scripts/lerna run build --stream",
     "docs": "node scripts/lerna run docs --scope \"@theia/!(example-)*\" --stream",
@@ -52,5 +49,10 @@
     "publish": "yarn && yarn test && yarn run publish:latest",
     "publish:latest": "lerna publish --registry=https://registry.npmjs.org/ --exact --skip-git",
     "publish:next": "lerna publish --registry=https://registry.npmjs.org/ --exact --canary=next --npm-tag=next --force-publish --skip-git --yes"
-  }
+  },
+  "workspaces": [
+    "dev-packages/*",
+    "packages/*",
+    "examples/*"
+  ]
 }
