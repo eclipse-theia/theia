@@ -23,7 +23,7 @@ export class ShellLayoutRestorer implements FrontendApplicationContribution {
         @inject(StorageService) protected storageService: StorageService) { }
 
     onStart(app: FrontendApplication): void {
-        this.storageService.getData(this.storageKey, undefined).then((serializedLayoutData: string | undefined) => {
+        this.storageService.getData<string>(this.storageKey).then(serializedLayoutData => {
             let promise = Promise.resolve<void>(undefined);
             if (serializedLayoutData !== undefined) {
                 promise = this.inflate(serializedLayoutData).then(layoutData => {

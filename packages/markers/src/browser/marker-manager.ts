@@ -6,9 +6,10 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Disposable, Event, Emitter } from "@theia/core/lib/common";
+import { Event, Emitter } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
 import { StorageService } from '@theia/core/lib/browser/storage-service';
+import { FileSystemWatcher, FileChangeType } from '@theia/filesystem/lib/common';
 
 /*
  * A marker represents meta information for a given uri
@@ -43,19 +44,14 @@ export interface SearchFilter<D> {
     dataFilter?: (data: D) => boolean
 }
 
-export class MarkerCollection<T> implements Disposable {
+export class MarkerCollection<T> {
 
     protected readonly owner2Markers = new Map<string, Readonly<Marker<T>>[]>();
 
     constructor(
         public readonly uri: URI,
-        public readonly kind: string,
-        protected readonly onDispose: () => void
+        public readonly kind: string
     ) { }
-
-    dispose(): void {
-        this.onDispose();
-    }
 
     getOwners(): string[] {
         return Array.from(this.owner2Markers.keys());
@@ -129,11 +125,26 @@ export abstract class MarkerManager<D extends object> {
 
     protected readonly uri2MarkerCollection = new Map<string, MarkerCollection<D>>();
     protected readonly onDidChangeMarkersEmitter = new Emitter<void>();
+    readonly initialized: Promise<void>;
 
-    initialized: Promise<void>;
-
-    constructor( @inject(StorageService) protected storageService: StorageService) {
+    constructor(
+        @inject(StorageService) protected storageService: StorageService,
+        @inject(FileSystemWatcher) protected fileWatcher?: FileSystemWatcher) {
         this.initialized = this.loadMarkersFromStorage();
+        if (fileWatcher) {
+            fileWatcher.onFilesChanged(changes => {
+                for (const change of changes) {
+                    if (change.type === FileChangeType.DELETED) {
+                        const uriString = change.uri.toString();
+                        const collection = this.uri2MarkerCollection.get(uriString);
+                        if (collection !== undefined) {
+                            this.uri2MarkerCollection.delete(uriString);
+                            this.fireOnDidChangeMarkers();
+                        }
+                    }
+                }
+            });
+        }
     }
 
     protected getStorageKey(): string | undefined {
@@ -206,7 +217,7 @@ export abstract class MarkerManager<D extends object> {
         if (this.uri2MarkerCollection.has(uriString)) {
             collection = this.uri2MarkerCollection.get(uriString)!;
         } else {
-            collection = new MarkerCollection<D>(uri, this.getKind(), () => this.uri2MarkerCollection.delete(uriString));
+            collection = new MarkerCollection<D>(uri, this.getKind());
             this.uri2MarkerCollection.set(uriString, collection);
         }
         return collection;

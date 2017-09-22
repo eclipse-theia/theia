@@ -9,6 +9,7 @@ import { inject, injectable, named } from 'inversify';
 import { ContributionProvider, CommandRegistry, KeybindingRegistry, MenuModelRegistry } from '../common';
 import { ApplicationShell } from './shell';
 import { Widget } from "./widgets";
+import { ILogger } from '../common';
 
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.
@@ -21,13 +22,12 @@ export interface FrontendApplicationContribution {
      */
     onStart?(app: FrontendApplication): void;
 
-
     /**
      * Called when an application is stopped or unloaded.
      *
      * Note that this is implemented using `window.unload` which doesn't allow any asynchronous code anymore. I.e. this is the last tick.
      */
-    onStop?(app: FrontendApplication): void
+    onStop?(app: FrontendApplication): void;
 }
 
 @injectable()
@@ -39,6 +39,7 @@ export class FrontendApplication {
         @inject(CommandRegistry) protected readonly commands: CommandRegistry,
         @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry,
         @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry,
+        @inject(ILogger) protected readonly logger: ILogger,
         @inject(ContributionProvider) @named(FrontendApplicationContribution)
         protected readonly contributions: ContributionProvider<FrontendApplicationContribution>
     ) { }
@@ -105,14 +106,22 @@ export class FrontendApplication {
         this.menus.onStart();
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.onStart) {
-                contribution.onStart(this);
+                try {
+                    contribution.onStart(this);
+                } catch (err) {
+                    this.logger.error(err.toString());
+                }
             }
         }
 
         window.onunload = () => {
             for (const contribution of this.contributions.getContributions()) {
                 if (contribution.onStop) {
-                    contribution.onStop(this);
+                    try {
+                        contribution.onStop(this);
+                    } catch (err) {
+                        this.logger.error(err.toString());
+                    }
                 }
             }
         }
