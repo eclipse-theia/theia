@@ -5,29 +5,24 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { ElementExt } from "@phosphor/domutils";
-import URI from "@theia/core/lib/common/uri";
-import { DisposableCollection, Disposable, Emitter, Event } from "@theia/core/lib/common";
+import { MonacoWorkspace } from './monaco-workspace';
 import {
-    Dimension,
-    EditorManager,
-    EditorWidget,
-    Position,
-    Range,
+    TextEditor,
     TextDocument,
-    TextEditor
-} from '@theia/editor/lib/browser';
-import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
-import { MonacoWorkspace } from "./monaco-workspace";
-
-import IEditorConstructionOptions = monaco.editor.IEditorConstructionOptions;
-import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
-import IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor;
-import IBoxSizing = ElementExt.IBoxSizing;
+    Dimension,
+    Range,
+    Position
+} from "@theia/editor/lib/browser";
+import { Event, DisposableCollection, Disposable, Emitter } from '@theia/core/lib/common';
 import IEditorReference = monaco.editor.IEditorReference;
+import IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor;
+import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
+import URI from "@theia/core/lib/common/uri";
+import { ElementExt } from "@phosphor/domutils";
+import IBoxSizing = ElementExt.IBoxSizing;
 
-export namespace MonacoEditor {
-    export interface ICommonOptions {
+export namespace MonacoCommonEditor {
+    export interface IOptions {
         /**
          * Whether an editor should be auto resized on a content change.
          *
@@ -43,111 +38,51 @@ export namespace MonacoEditor {
          */
         minHeight?: number;
     }
-
-    export interface IOptions extends ICommonOptions, IEditorConstructionOptions { }
 }
 
-export function getAll(manager: EditorManager): MonacoEditor[] {
-    return manager.editors.map(e => get(e)).filter(e => !!e) as MonacoEditor[];
-}
-
-export function getCurrent(manager: EditorManager): MonacoEditor | undefined {
-    return get(manager.currentEditor);
-}
-
-export function getActive(manager: EditorManager): MonacoEditor | undefined {
-    return get(manager.activeEditor);
-}
-
-export function get(editorWidget: EditorWidget | undefined) {
-    if (editorWidget && editorWidget.editor instanceof MonacoEditor) {
-        return editorWidget.editor;
-    }
-    return undefined;
-}
-
-export class MonacoEditor implements TextEditor, IEditorReference {
-
+export abstract class MonacoCommonEditor implements TextEditor, IEditorReference {
     protected readonly toDispose = new DisposableCollection();
+    protected readonly onSelectionChangedEmitter = new Emitter<Range>();
+    protected readonly onCursorPositionChangedEmitter = new Emitter<Position>();
+    protected readonly onFocusChangedEmitter = new Emitter<boolean>();
+
+    protected abstract editor: IStandaloneCodeEditor;
+
+    node: HTMLElement;
+    uri: URI;
 
     protected readonly autoSizing: boolean;
     protected readonly minHeight: number;
-    protected editor: IStandaloneCodeEditor;
-
-    protected readonly onCursorPositionChangedEmitter = new Emitter<Position>();
-    protected readonly onSelectionChangedEmitter = new Emitter<Range>();
-    protected readonly onFocusChangedEmitter = new Emitter<boolean>();
-    protected readonly onDocumentContentChangedEmitter = new Emitter<TextDocument>();
 
     constructor(
-        readonly uri: URI,
-        readonly node: HTMLElement,
         protected readonly m2p: MonacoToProtocolConverter,
         protected readonly p2m: ProtocolToMonacoConverter,
         protected readonly workspace: MonacoWorkspace,
-        options?: MonacoEditor.ICommonOptions,
-        override?: IEditorOverrideServices,
+        options?: MonacoCommonEditor.IOptions
     ) {
         this.autoSizing = options && options.autoSizing !== undefined ? options.autoSizing : false;
         this.minHeight = options && options.minHeight !== undefined ? options.minHeight : -1;
-        this.create(options, override);
-
-        this.addHandlers(this.editor);
-    }
-
-    protected create(options?: MonacoEditor.ICommonOptions, override?: monaco.editor.IEditorOverrideServices) {
-        this.toDispose.push(this.editor = monaco.editor.create(this.node, {
-            ...options,
-            fixedOverflowWidgets: true
-        }, override));
-    }
-
-    protected addHandlers(codeEditor: IStandaloneCodeEditor) {
-        this.toDispose.push(codeEditor.onDidChangeConfiguration(e => this.refresh()));
-        this.toDispose.push(codeEditor.onDidChangeModel(e => this.refresh()));
-        this.toDispose.push(codeEditor.onDidChangeModelContent(() => this.refresh()));
-        this.toDispose.push(codeEditor.onDidChangeCursorPosition(() =>
-            this.onCursorPositionChangedEmitter.fire(this.cursor)
-        ));
-        this.toDispose.push(codeEditor.onDidChangeCursorSelection(e => {
-            this.onSelectionChangedEmitter.fire(this.selection);
-        }));
-        this.toDispose.push(codeEditor.onDidFocusEditor(() => {
-            this.onFocusChangedEmitter.fire(this.isFocused());
-        }));
-        this.toDispose.push(codeEditor.onDidBlurEditor(() =>
-            this.onFocusChangedEmitter.fire(this.isFocused())
-        ));
-
-        this.addOnDidFocusHandler(codeEditor);
-    }
-
-    protected addOnDidFocusHandler(codeEditor: IStandaloneCodeEditor) {
-        // increase the z-index for the focussed element hierarchy within the dockpanel
-        this.toDispose.push(this.editor.onDidFocusEditor(() => {
-            const z = '1';
-            // already increased? -> do nothing
-            if (this.editor.getDomNode().style.zIndex === z) {
-                return;
-            }
-            const toDisposeOnBlur = new DisposableCollection();
-            this.increaseZIndex(this.editor.getDomNode(), z, toDisposeOnBlur);
-            toDisposeOnBlur.push(this.editor.onDidBlurEditor(() =>
-                toDisposeOnBlur.dispose()
-            ));
-        }));
     }
 
     get onDispose() {
         return this.toDispose.onDispose;
     }
 
-    get document(): TextDocument {
-        return this.workspace.getTextDocument(this.uri.toString())!;
+    get onCursorPositionChanged(): Event<Position> {
+        return this.onCursorPositionChangedEmitter.event;
     }
 
-    get onDocumentContentChanged(): Event<TextDocument> {
-        return this.onDocumentContentChangedEmitter.event;
+    blur(): void {
+        const node = this.editor.getDomNode();
+        const textarea = node.querySelector('textarea') as HTMLElement;
+        textarea.blur();
+    }
+    isFocused(): boolean {
+        return this.editor.isFocused();
+    }
+
+    get onFocusChanged(): Event<boolean> {
+        return this.onFocusChangedEmitter.event;
     }
 
     get cursor(): Position {
@@ -158,10 +93,6 @@ export class MonacoEditor implements TextEditor, IEditorReference {
     set cursor(cursor: Position) {
         const position = this.p2m.asPosition(cursor);
         this.editor.setPosition(position);
-    }
-
-    get onCursorPositionChanged(): Event<Position> {
-        return this.onCursorPositionChangedEmitter.event;
     }
 
     get selection(): Range {
@@ -191,18 +122,27 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         this.editor.focus();
     }
 
-    blur(): void {
-        const node = this.editor.getDomNode();
-        const textarea = node.querySelector('textarea') as HTMLElement;
-        textarea.blur();
+    refresh(): void {
+        this.autoresize();
+    }
+    resizeToFit(): void {
+        this.autoresize();
     }
 
-    isFocused(): boolean {
-        return this.editor.isFocused();
+    setSize(size: Dimension): void {
+        this.resize(size);
     }
 
-    get onFocusChanged(): Event<boolean> {
-        return this.onFocusChangedEmitter.event;
+    dispose() {
+        this.toDispose.dispose();
+    }
+
+    get document(): TextDocument {
+        return this.workspace.getTextDocument(this.uri.toString())!;
+    }
+
+    getControl() {
+        return this.editor;
     }
 
     protected increaseZIndex(element: HTMLElement, z: string, toDisposeOnBlur: DisposableCollection) {
@@ -217,36 +157,9 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         }
     }
 
-    dispose() {
-        this.toDispose.dispose();
-    }
-
-    getControl() {
-        return this.editor;
-    }
-
-    refresh(): void {
-        this.autoresize();
-    }
-
-    resizeToFit(): void {
-        this.autoresize();
-    }
-
-    setSize(dimension: Dimension): void {
-        this.resize(dimension);
-    }
-
     protected autoresize() {
         if (this.autoSizing) {
             this.resize(null);
-        }
-    }
-
-    protected resize(dimension: Dimension | null): void {
-        if (this.node) {
-            const layoutSize = this.computeLayoutSize(this.node, dimension);
-            this.editor.layout(layoutSize);
         }
     }
 
@@ -269,6 +182,13 @@ export class MonacoEditor implements TextEditor, IEditorReference {
 
     protected getWidth(hostNode: HTMLElement, boxSizing: IBoxSizing): number {
         return hostNode.offsetWidth - boxSizing.horizontalSum;
+    }
+
+    protected resize(dimension: Dimension | null): void {
+        if (this.node) {
+            const layoutSize = this.computeLayoutSize(this.node, dimension);
+            this.editor.layout(layoutSize);
+        }
     }
 
     protected getHeight(hostNode: HTMLElement, boxSizing: IBoxSizing): number {

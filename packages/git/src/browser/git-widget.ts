@@ -15,8 +15,9 @@ import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { GitUiRepositories, GitUiRepository } from './git-repositories';
 import { MessageService, ResourceProvider } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { VirtualRenderer, VirtualWidget, ContextMenuRenderer } from '@theia/core/lib/browser';
+import { VirtualRenderer, VirtualWidget, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
 import { h } from '@phosphor/virtualdom/lib';
+import { DiffUriHelper } from '@theia/editor/lib/browser/editor-utility';
 
 @injectable()
 export class GitWidget extends VirtualWidget {
@@ -34,6 +35,7 @@ export class GitWidget extends VirtualWidget {
         @inject(Git) protected readonly git: Git,
         @inject(GitUiRepositories) protected readonly gitUiRepositories: GitUiRepositories,
         @inject(GitWatcher) protected readonly gitWatcher: GitWatcher,
+        @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
         @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
         @inject(MessageService) protected readonly messageService: MessageService) {
@@ -207,11 +209,30 @@ export class GitWidget extends VirtualWidget {
         const nameAndPathDiv = h.div({
             className: 'noWrapInfo',
             onclick: () => {
-                const rawUri = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD');
-                const ressource = this.resourceProvider(rawUri);
-                ressource
-                    .then(r => r.readContents())
-                    .then(content => console.log(content));
+                // try {
+                //     const rawHeadUri = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD');
+                //     const headRessource = this.resourceProvider(rawHeadUri);
+                //     headRessource
+                //         .then(r => r.readContents())
+                //         .then(content => console.log(content));
+
+                // } catch (e) {
+                //     // do nothing
+                // }
+                // try {
+                //     const rawUri = uri.withScheme('file');
+                //     const ressource = this.resourceProvider(rawUri);
+                //     ressource
+                //         .then(r => r.readContents())
+                //         .then(content => {
+                //             console.log(content);
+                //         });
+                // } catch (e) {
+                //     // do nothing
+                // }
+                const rawHeadUri = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD');
+                const diffUri = DiffUriHelper.encode(uri, rawHeadUri);
+                open(this.openerService, diffUri);
             }
         }, nameSpan, pathSpan);
         const buttonsDiv = this.renderGitItemButtons(change);

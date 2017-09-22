@@ -14,7 +14,7 @@ import { OpenHandler } from '@theia/core/lib/browser';
 import { EditorManagerImpl, EditorManager } from './editor-manager';
 import { EditorCommandHandlers } from "./editor-command";
 import { EditorKeybindingContribution, EditorKeybindingContext } from "./editor-keybinding";
-import { bindEditorPreferences } from './editor-preferences'
+import { bindEditorPreferences } from './editor-preferences';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 
 export default new ContainerModule(bind => {
