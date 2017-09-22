@@ -2,7 +2,6 @@
 node_modules
 build
 lib
-!dev-packages/cli/lib
 *.log
 .idea
 .metadata
@@ -11,5 +10,6 @@ lerna-debug.log
 .nyc_output
 coverage
 examples/*/src-gen
+examples/*/webpack.config.js
 .browser_modules
 **/docs/api

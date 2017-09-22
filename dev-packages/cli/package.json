@@ -22,13 +22,17 @@
     "theia": "./bin/theia"
   },
   "scripts": {
-    "clean": "echo 'skip'",
-    "build": "echo 'skip'",
-    "watch": "echo 'skip'",
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "rimraf lib",
+    "build": "tsc",
+    "watch": "tsc -w",
     "test": "echo 'skip'",
     "docs": "echo 'skip'"
   },
   "dependencies": {
+    "@types/request": "^2.0.3",
+    "@types/semver": "^5.4.0",
+    "@types/yargs": "^8.0.2",
     "bunyan": "^1.8.10",
     "circular-dependency-plugin": "^2.0.0",
     "copy-webpack-plugin": "^4.0.1",
@@ -37,14 +41,15 @@
     "electron-rebuild": "^1.5.11",
     "file-loader": "^0.11.1",
     "font-awesome-webpack": "0.0.5-beta.2",
-    "generator-theia": "^0.1.1",
     "ignore-loader": "^0.1.2",
     "less": "^2.7.2",
+    "request": "^2.82.0",
     "rimraf": "^2.6.1",
+    "semver": "^5.4.1",
     "source-map-loader": "^0.2.1",
+    "source-map-support": "^0.4.18",
     "url-loader": "^0.5.8",
     "webpack": "^2.2.1",
-    "yargs": "^9.0.1",
-    "yo": "^2.0.0"
+    "yargs": "^9.0.1"
   }
 }

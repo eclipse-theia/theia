@@ -21,8 +21,9 @@
     "@theia/typescript": "^0.1.1"
   },
   "scripts": {
+    "prepare": "yarn run clean && yarn run build",
     "clean": "theia clean && rimraf errorShots",
-    "build": "yo theia:browser -f && theia build",
+    "build": "theia generate --target=browser && theia build",
     "watch": "theia build --watch",
     "start": "theia browser",
     "start:debug": "theia browser --loglevel=debug",
@@ -34,7 +35,6 @@
     "coverage": "yarn coverage:compile && yarn test && yarn coverage:remap && yarn coverage:report:lcov && yarn coverage:report:html"
   },
   "devDependencies": {
-    "@theia/cli": "^0.1.1",
-    "generator-theia": "^0.1.1"
+    "@theia/cli": "^0.1.1"
   }
 }

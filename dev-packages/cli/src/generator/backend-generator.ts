@@ -5,18 +5,18 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { AbstractGenerator, FileSystem } from "../common";
+import { AbstractGenerator } from "./abstract-generator";
 
-export abstract class AbstractBackendGenerator extends AbstractGenerator {
+export class BackendGenerator extends AbstractGenerator {
 
-    protected doGenerate(fs: FileSystem, backendModules: Map<string, string>): void {
-        fs.write(this.backend('server.js'), this.compileServer(backendModules));
-        fs.write(this.backend('main.js'), this.compileMain(backendModules));
+    generate(): void {
+        const backendModules = this.model.targetBackendModules;
+        this.write(this.model.backend('server.js'), this.compileServer(backendModules));
+        this.write(this.model.backend('main.js'), this.compileMain(backendModules));
     }
 
     protected compileServer(backendModules: Map<string, string>): string {
-        return `${this.compileCopyright()}
-// @ts-check
+        return `// @ts-check
 require('reflect-metadata');
 const path = require('path');
 const express = require('express');
@@ -57,8 +57,7 @@ module.exports = (port, host) => Promise.resolve()${this.compileBackendModuleImp
     }
 
     protected compileMain(backendModules: Map<string, string>): string {
-        return `${this.compileCopyright()}
-// @ts-check
+        return `// @ts-check
 
 const { port, hostname } = require('yargs').argv;
 console.info("Starting express on port '" + port + "'.")

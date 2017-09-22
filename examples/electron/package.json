@@ -21,8 +21,9 @@
     "@theia/markers": "^0.1.1"
   },
   "scripts": {
+    "prepare": "yarn run clean && yarn run build",
     "clean": "theia clean",
-    "build": "yo theia:electron -f && theia build",
+    "build": "theia generate --target=electron && theia build",
     "watch": "theia build --watch",
     "start": "theia electron",
     "start:debug": "theia electron --loglevel=debug",
@@ -30,7 +31,6 @@
     "test:ui": "wdio wdio.conf.js"
   },
   "devDependencies": {
-    "@theia/cli": "^0.1.1",
-    "generator-theia": "^0.1.1"
+    "@theia/cli": "^0.1.1"
   }
 }
