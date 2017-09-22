@@ -31,6 +31,7 @@
     "@types/webdriverio": "^4.7.0",
     "chai": "^4.1.0",
     "chai-as-promised": "^7.1.1",
+    "ignore-loader": "^0.1.2",
     "mocha": "^3.4.2",
     "selenium-standalone": "^6.2.0",
     "typescript": "^2.4.1",
