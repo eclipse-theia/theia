@@ -19,6 +19,8 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 
 describe('ShellServer', function () {
+
+    this.timeout(5000);
     const shellTerminalServer = testContainer.get<IShellTerminalServer>(IShellTerminalServer);
 
     it('test shell terminal create', function () {

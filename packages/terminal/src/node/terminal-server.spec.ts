@@ -23,6 +23,7 @@ const expect = chai.expect;
 
 describe('TermninalServer', function () {
 
+    this.timeout(5000);
     const terminalServer = testContainer.get<ITerminalServer>(ITerminalServer);
     const terminalWatcher = testContainer.get<TerminalWatcher>(TerminalWatcher);
 
