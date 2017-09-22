@@ -6,7 +6,6 @@
 */
 
 import { injectable, inject } from 'inversify';
-import { PROBLEM_WIDGET_FACTORY_ID } from './problem-widget';
 import {
     MenuModelRegistry, Command, CommandContribution,
     MenuContribution, KeybindingContribution, KeybindingRegistry,
@@ -14,12 +13,11 @@ import {
 } from '@theia/core/lib/common';
 import { FrontendApplication } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
-
-export const MARKER_CONTEXT_MENU = 'marker-context-menu';
+import { PROBLEM_KIND } from './problem-marker';
 
 export namespace ProblemCommands {
     export const OPEN: Command = {
-        id: 'markers:open',
+        id: 'problems:open',
         label: 'Open Problem View'
     };
 }
@@ -49,7 +47,7 @@ export class ProblemContribution implements CommandContribution, MenuContributio
     }
 
     protected async openProblemsView(): Promise<void> {
-        const markerWidget = await this.widgetFactory.getOrCreateWidget(PROBLEM_WIDGET_FACTORY_ID);
+        const markerWidget = await this.widgetFactory.getOrCreateWidget(PROBLEM_KIND);
         if (!markerWidget.isAttached) {
             this.app.shell.addToMainArea(markerWidget);
         }

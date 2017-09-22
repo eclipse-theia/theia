@@ -6,11 +6,11 @@
 */
 
 import { ContainerModule } from 'inversify';
-import { ProblemWidget, PROBLEM_WIDGET_FACTORY_ID } from './problem-widget';
+import { ProblemWidget } from './problem-widget';
 import { ProblemContribution } from './problem-contribution';
 import { createProblemWidget } from './problem-container';
 import { CommandContribution, MenuContribution, KeybindingContribution } from "@theia/core/lib/common";
-import { ProblemManager } from './problem-marker';
+import { ProblemManager, PROBLEM_KIND } from './problem-marker';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 
 import '../../../src/browser/style/index.css';
@@ -23,7 +23,7 @@ export default new ContainerModule(bind => {
     );
 
     bind(WidgetFactory).toDynamicValue(context => ({
-        id: PROBLEM_WIDGET_FACTORY_ID,
+        id: PROBLEM_KIND,
         createWidget: () => context.container.get<ProblemWidget>(ProblemWidget)
     }));
     bind(ProblemContribution).toSelf().inSingletonScope();
