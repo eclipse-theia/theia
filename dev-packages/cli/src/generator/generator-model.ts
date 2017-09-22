@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as path from 'path';
+import * as paths from 'path';
 import * as fs from 'fs-extra';
 import * as semver from 'semver';
 import { NodePackage, Dependencies, view, ViewResult } from './npm';
@@ -15,18 +15,15 @@ export class ExtensionPackage extends NodePackage {
     name: string;
     version: string;
     theiaExtensions?: Extension[];
-    localPath?: string;
     installed: boolean = false;
 
     getReadme(): string {
         if (this.readme) {
             return this.readme;
         }
-        if (this.localPath) {
-            const readmePath = path.resolve(this.localPath, 'README.md');
-            if (fs.existsSync(readmePath)) {
-                return fs.readFileSync(readmePath, { encoding: 'utf8' });
-            }
+        const readmePath = require.resolve(name + '/README.md');
+        if (fs.existsSync(readmePath)) {
+            return fs.readFileSync(readmePath, { encoding: 'utf8' });
         }
         return '';
     }
@@ -55,15 +52,9 @@ export class ExtensionPackage extends NodePackage {
     }
 }
 export namespace ExtensionPackage {
-    export function is(pck: NodePackage | undefined, extensionKeywords?: string[]): pck is ExtensionPackage {
+    export function is(pck: NodePackage | undefined): pck is ExtensionPackage {
         if (!pck || !pck.name) {
             return false;
-        }
-        const keywords = pck.keywords;
-        if (!!keywords && !!extensionKeywords && extensionKeywords.length > 0) {
-            return keywords.some(keyword =>
-                extensionKeywords.indexOf(keyword) !== -1
-            );
         }
         return !!pck.theiaExtensions;
     }
@@ -83,26 +74,14 @@ export interface Extension {
     backendElectron?: string;
 }
 
-export interface Config {
-    copyright: string;
-    node_modulesPath: string;
-    extensionKeywords: string[];
-    localDependencies: Dependencies;
-}
-
-export interface ExtensionConfig {
-    testSupport: boolean;
-    extensionKeyword: string;
-}
-
 export function sortByKey(object: { [key: string]: any }): { [key: string]: any } {
     return Object.keys(object).sort().reduce((sorted, key) => {
         sorted[key] = object[key];
         return sorted;
-    }, {});
+    }, {} as { [key: string]: any });
 }
 
-export const defaultExtensionKeyword = "theia-extension";
+export const extensionKeyword = "theia-extension";
 
 export function npmView(name: string): Promise<ViewResult | undefined> {
     return view({ name, abbreviated: false }).catch(reason => {
@@ -111,18 +90,20 @@ export function npmView(name: string): Promise<ViewResult | undefined> {
     });
 }
 
-export class Model {
-    target: 'web' | 'electron-renderer' | undefined;
-    pck: NodePackage = {};
-    readonly defaultConfig = <Config>{
-        copyright: '',
-        node_modulesPath: "./node_modules"
-    };
-    config: Config = {
-        ...this.defaultConfig,
-        extensionKeywords: [defaultExtensionKeyword],
-        localDependencies: {}
-    };
+export type ProjectTarget = 'browser' | 'electron';
+export class ProjectOptions {
+    readonly projectPath: string;
+    readonly target: ProjectTarget;
+}
+export class Model extends ProjectOptions {
+    readonly pck: NodePackage;
+    readonly ready: Promise<void>;
+    constructor(options: ProjectOptions) {
+        super();
+        Object.assign(this, options);
+        this.pck = require(this.path('package.json')) || {};
+        this.ready = this.readExtensionPackages();
+    }
 
     protected _frontendModules: Map<string, string> | undefined;
     protected _frontendElectronModules: Map<string, string> | undefined;
@@ -130,42 +111,26 @@ export class Model {
     protected _backendElectronModules: Map<string, string> | undefined;
     protected readonly _extensionPackages = new Map<string, ExtensionPackage>();
 
-    get extensionPackages(): ReadonlyArray<ExtensionPackage> {
-        return Array.from(this._extensionPackages.values());
-    }
-
-    async readExtensionPackages(reader: (extension: string, path: string) => Promise<NodePackage | undefined>): Promise<void> {
+    protected async readExtensionPackages(): Promise<void> {
         if (!this.pck.dependencies) {
             return;
         }
-        const localDependencies = this.config.localDependencies;
         // tslint:disable-next-line:forin
         for (const extension in this.pck.dependencies) {
-            const version = this.pck.dependencies[extension]!;
-            const localPath = localDependencies ? localDependencies[extension] || version : version;
-            await this.readExtensionPackage(extension, async () => {
-                const raw = await reader(extension, localPath);
-                if (ExtensionPackage.is(raw, this.config.extensionKeywords)) {
-                    raw.localPath = localPath;
-                    return new ExtensionPackage(raw);
+            if (!this._extensionPackages.has(extension)) {
+                const extensionPackage = require(extension + '/package.json');
+                if (ExtensionPackage.is(extensionPackage)) {
+                    extensionPackage.installed = true;
+                    this._extensionPackages.set(extension, extensionPackage);
+                } else {
+                    console.error(`failed to find ${extension}`);
                 }
-                const extensionPackage = this.findExtensionPackage(extension, version);
-                if (!extensionPackage) {
-                    console.error(`failed to find ${extension}@${version} on npm`);
-                }
-                return extensionPackage;
-            }, localPath);
+            }
         }
     }
 
-    protected async readExtensionPackage(extension: string, read: () => Promise<ExtensionPackage | undefined>, localPath?: string): Promise<void> {
-        if (!this._extensionPackages.has(extension)) {
-            const extensionPackage = await read();
-            if (extensionPackage) {
-                extensionPackage.installed = true;
-                this._extensionPackages.set(extension, extensionPackage);
-            }
-        }
+    get extensionPackages(): ReadonlyArray<ExtensionPackage> {
+        return Array.from(this._extensionPackages.values());
     }
 
     getExtensionPackage(extension: string): ExtensionPackage | undefined {
@@ -184,7 +149,7 @@ export class Model {
         const latestVersion = result['dist-tags']['latest'];
         const version = !rawVersion ? latestVersion : result['dist-tags'][rawVersion] || rawVersion;
         const raw = result.versions[version];
-        if (!ExtensionPackage.is(raw, this.config.extensionKeywords)) {
+        if (!ExtensionPackage.is(raw)) {
             return undefined;
         }
         raw.readme = result.readme;
@@ -229,7 +194,7 @@ export class Model {
                 for (const extension of extensions) {
                     const modulePath = extension[primary] || (secondary && extension[secondary]);
                     if (typeof modulePath === 'string') {
-                        const extensionPath = path.join(extensionPackage.name, modulePath).split(path.sep).join('/');
+                        const extensionPath = paths.join(extensionPackage.name, modulePath).split(paths.sep).join('/');
                         result.set(`${primary}_${moduleIndex}`, extensionPath);
                         moduleIndex = moduleIndex + 1;
                     }
@@ -237,6 +202,54 @@ export class Model {
             }
         }
         return result;
+    }
+
+    relative(path: string): string {
+        return paths.relative(this.projectPath, path);
+    }
+
+    path(...segments: string[]): string {
+        return paths.resolve(this.projectPath, ...segments);
+    }
+
+    srcGen(...segments: string[]): string {
+        return this.path('src-gen', ...segments);
+    }
+
+    backend(...segments: string[]): string {
+        return this.srcGen('backend', ...segments);
+    }
+
+    frontend(...segments: string[]): string {
+        return this.srcGen('frontend', ...segments);
+    }
+
+    isBrowser(): boolean {
+        return this.target === 'browser';
+    }
+
+    isElectron(): boolean {
+        return this.target === 'electron';
+    }
+
+    ifBrowser<T>(value: T): T | undefined;
+    ifBrowser<T>(value: T, defaultValue: T): T;
+    ifBrowser<T>(value: T, defaultValue?: T): T | undefined {
+        return this.isBrowser() ? value : defaultValue;
+    }
+
+    ifElectron<T>(value: T): T | undefined;
+    ifElectron<T>(value: T, defaultValue: T): T;
+    ifElectron<T>(value: T, defaultValue?: T): T | undefined {
+        return this.isElectron() ? value : defaultValue;
+    }
+
+    get targetBackendModules(): Map<string, string> {
+        return this.ifBrowser(this.backendModules, this.backendElectronModules);
+    }
+
+    get targetFrontendModules(): Map<string, string> {
+        return this.ifBrowser(this.frontendModules, this.frontendElectronModules);
     }
 
 }

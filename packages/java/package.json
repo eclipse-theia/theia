@@ -17,6 +17,7 @@
     "@theia/ext-scripts": "^0.1.1"
   },
   "scripts": {
+    "prepare": "yarn run clean && yarn run build",
     "clean": "theiaext clean",
     "build": "concurrently -n download,build -c red,blue \"gulp download_java_server\" \"theiaext build\"",
     "watch": "theiaext watch",

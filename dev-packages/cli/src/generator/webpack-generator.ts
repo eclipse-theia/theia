@@ -5,7 +5,21 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-// @ts-check
+import * as paths from 'path';
+import { AbstractGenerator } from './abstract-generator';
+
+export class WebpackGenerator extends AbstractGenerator {
+
+    generate(): void {
+        this.write(this.model.path('webpack.config.js'), this.compileWebpackConfig());
+    }
+
+    protected resolve(moduleName: string, path: string): string {
+        return this.model.relative(paths.resolve(require.resolve(moduleName + '/package.json'), '../' + path)).split(paths.sep).join('/');
+    }
+
+    protected compileWebpackConfig(): string {
+        return `// @ts-check
 const path = require('path');
 const webpack = require('webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
@@ -13,15 +27,14 @@ const CircularDependencyPlugin = require('circular-dependency-plugin');
 
 const outputPath = path.resolve(__dirname, 'lib');
 
-const monacoEditorPath = '../../node_modules/monaco-editor-core/dev/vs';
-const monacoLanguagesPath = '../../node_modules/monaco-languages/release';
-const monacoCssLanguagePath = '../../node_modules/monaco-css/release/min';
-const monacoJsonLanguagePath = '../../node_modules/monaco-json/release/min';
-const monacoHtmlLanguagePath = '../../node_modules/monaco-html/release/min';
-const requirePath = '../../node_modules/requirejs/require.js';
+const development = process.env.NODE_ENV === 'development';
 
-const host = 'localhost';
-const port = 3000;
+const monacoEditorPath = development ? '${this.resolve('monaco-editor-core', 'dev/vs')}' : '${this.resolve('monaco-editor-core', 'min/vs')}';
+const monacoLanguagesPath = '${this.resolve('monaco-languages', 'release')}';
+const monacoCssLanguagePath = development ? '${this.resolve('monaco-css', 'release/dev')}' : '${this.resolve('monaco-css', 'release/min')}';
+const monacoJsonLanguagePath = development ? '${this.resolve('monaco-json', 'release/dev')}' : '${this.resolve('monaco-json', 'release/min')}';
+const monacoHtmlLanguagePath = development ? '${this.resolve('monaco-html', 'release/dev')}' : '${this.resolve('monaco-html', 'release/min')}';${this.ifBrowser(`
+const requirePath = '${this.resolve('requirejs', 'require.js')}';`)}
 
 module.exports = {
     entry: path.resolve(__dirname, 'src-gen/frontend/index.js'),
@@ -29,21 +42,23 @@ module.exports = {
         filename: 'bundle.js',
         path: outputPath
     },
-    target: 'web',
-    node: {
+    target: '${this.ifBrowser('web', 'electron-renderer')}',
+    node: {${this.ifElectron(`
+        __dirname: false,
+        __filename: false`, `
         fs: 'empty',
         child_process: 'empty',
         net: 'empty',
-        crypto: 'empty'
+        crypto: 'empty'`)}
     },
     module: {
         rules: [
             {
-                test: /\.css$/,
+                test: /\\.css$/,
                 loader: 'style-loader!css-loader'
             },
             {
-                test: /\.(ttf|eot|svg)(\?v=\d+\.\d+\.\d+)?$/,
+                test: /\\.(ttf|eot|svg)(\\?v=\\d+\\.\\d+\\.\\d+)?$/,
                 loader: 'url-loader?limit=10000&mimetype=image/svg+xml'
             },
             {
@@ -51,12 +66,12 @@ module.exports = {
                 loader: 'ignore-loader'
             },
             {
-                test: /\.js$/,
+                test: /\\.js$/,
                 enforce: 'pre',
                 loader: 'source-map-loader'
             },
             {
-                test: /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+                test: /\\.woff(2)?(\\?v=[0-9]\\.[0-9]\\.[0-9])?$/,
                 loader: "url-loader?limit=10000&mimetype=application/font-woff"
             }
         ],
@@ -71,11 +86,11 @@ module.exports = {
     devtool: 'source-map',
     plugins: [
         new webpack.HotModuleReplacementPlugin(),
-        new CopyWebpackPlugin([
+        new CopyWebpackPlugin([${this.ifBrowser(`
             {
                 from: requirePath,
                 to: '.'
-            },
+            },`)}
             {
                 from: monacoEditorPath,
                 to: 'vs'
@@ -98,29 +113,14 @@ module.exports = {
             }
         ]),
         new CircularDependencyPlugin({
-            exclude: /(node_modules|examples)\/./,
+            exclude: /(node_modules|examples)\\/./,
             failOnError: false // https://github.com/nodejs/readable-stream/issues/280#issuecomment-297076462
         })
     ],
     stats: {
         warnings: true
-    },
-    devServer: {
-        inline: true,
-        hot: true,
-        proxy: {
-            '/services/*': {
-                target: 'ws://' + host + ':' + port,
-                ws: true
-            },
-            '*': 'http://' + host + ':' + port,
-        },
-        historyApiFallback: true,
-        stats: {
-            colors: true,
-            warnings: false
-        },
-        host: process.env.HOST || host,
-        port: process.env.PORT
     }
-};
+};`;
+    }
+
+}

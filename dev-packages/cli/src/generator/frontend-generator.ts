@@ -5,20 +5,25 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { AbstractGenerator, FileSystem } from "../common";
+import { AbstractGenerator } from "./abstract-generator";
 
-export abstract class AbstractFrontendGenerator extends AbstractGenerator {
+export class FrontendGenerator extends AbstractGenerator {
 
-    protected doGenerate(fs: FileSystem, frontendModules: Map<string, string>): void {
-        fs.write(this.frontend('index.html'), this.compileIndexHtml(frontendModules))
-        fs.write(this.frontend('index.js'), this.compileIndexJs(frontendModules));
+    generate(): void {
+        const frontendModules = this.model.targetFrontendModules;
+        this.write(this.model.frontend('index.html'), this.compileIndexHtml(frontendModules))
+        this.write(this.model.frontend('index.js'), this.compileIndexJs(frontendModules));
+        if (this.model.isElectron()) {
+            this.write(this.model.frontend('electron-main.js'), this.compileElectronMain());
+        }
     }
 
     protected compileIndexHtml(frontendModules: Map<string, string>): string {
         return `<!DOCTYPE html>
 <html>
 
-<head>${this.compileIndexHead(frontendModules)}
+<head>${this.compileIndexHead(frontendModules)}${this.ifBrowser(`
+  <script type="text/javascript" src="./require.js" charset="utf-8"></script>`)}
   <script type="text/javascript" src="./bundle.js" charset="utf-8"></script>
 </head>
 
@@ -36,8 +41,7 @@ export abstract class AbstractFrontendGenerator extends AbstractGenerator {
     }
 
     protected compileIndexJs(frontendModules: Map<string, string>): string {
-        return `${this.compileCopyright()}
-// @ts-check
+        return `// @ts-check
 require('reflect-metadata');
 const { Container } = require('inversify');
 const { FrontendApplication } = require('@theia/core/lib/browser');
@@ -68,6 +72,36 @@ module.exports = Promise.resolve()${this.compileFrontendModuleImports(frontendMo
             console.error(reason);
         }
     });`;
+    }
+
+    protected compileElectronMain(): string {
+        return `// @ts-check
+// Workaround for https://github.com/electron/electron/issues/9225. Chrome has an issue where
+// in certain locales (e.g. PL), image metrics are wrongly computed. We explicitly set the
+// LC_NUMERIC to prevent this from happening (selects the numeric formatting category of the
+// C locale, http://en.cppreference.com/w/cpp/locale/LC_categories).
+if (process.env.LC_ALL) {
+    process.env.LC_ALL = 'C';
+}
+process.env.LC_NUMERIC = 'C';
+const electron = require('electron');
+const path = require('path');
+electron.app.on('window-all-closed', function () {
+    if (process.platform !== 'darwin') {
+        electron.app.quit();
+    }
+});
+electron.app.on('ready', function () {
+    const mainWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
+    require("../backend/main").then(server => {
+        mainWindow.loadURL(\`file://\${path.join(__dirname, '../../lib/index.html')}?port=\${server.address().port}\`);
+    }).catch(() => {
+        electron.app.exit(1);
+    });
+    mainWindow.on('closed', function () {
+        electron.app.exit(0);
+    });
+});`;
     }
 
 }

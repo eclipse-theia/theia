@@ -10,6 +10,7 @@
     "theiaext": "theiaext"
   },
   "scripts": {
+    "prepare": "echo 'skip'",
     "clean": "echo 'skip'",
     "build": "echo 'skip'",
     "watch": "echo 'skip'",

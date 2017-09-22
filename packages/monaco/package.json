@@ -42,6 +42,7 @@
     "src"
   ],
   "scripts": {
+    "prepare": "yarn run clean && yarn run build",
     "clean": "theiaext clean",
     "build": "theiaext build",
     "watch": "theiaext watch",

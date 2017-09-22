@@ -81,7 +81,6 @@ Theia repository has multiple folders:
 
  - `packages` folder contains runtime packages, as the core package and extensions to it
  - `dev-packages` folder contains devtime packages
-    - [generator-theia](../dev-packages/generator-theia/README.md) is a generator of Theia applications
     - [@theia/cli](../dev-packages/cli/README.md) is a command line tool to manage Theia applications
     - [@theia/ext-scripts](../dev-packages/ext-scripts/README.md) is a command line tool to share scripts between Theia runtime packages
  - `examples` folder contains example applications, both Electron-based and browser-based
