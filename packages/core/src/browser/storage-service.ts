@@ -8,7 +8,6 @@
 import { inject, injectable } from 'inversify';
 import { ILogger } from '../common/logger';
 
-
 export const StorageService = Symbol('IStorageService');
 /**
  * The storage service provides an interface to some data storage that allows extensions to keep state among sessions.

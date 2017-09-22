@@ -22,7 +22,6 @@ let compoundPrefServer: CompoundPreferenceServer;
 let preferenceFileUri: any;
 let helper = new JsonPrefHelper();
 
-
 before(() => {
     chai.should();
     chai.use(chaiAsPromised);

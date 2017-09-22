@@ -46,4 +46,3 @@ export const loggerBackendModule = new ContainerModule(bind => {
         })
     ).inSingletonScope();
 });
-

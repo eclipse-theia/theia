@@ -15,7 +15,6 @@ import { PreferenceChangedEvent, PreferenceClient, PreferenceServer, PreferenceC
 import * as jsoncparser from "jsonc-parser";
 import { ParseError } from "jsonc-parser";
 
-
 export const PreferenceUri = Symbol("PreferencePath");
 export type PreferenceUri = MaybePromise<URI>;
 

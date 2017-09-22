@@ -53,7 +53,6 @@ export namespace KeybindingContexts {
     };
 }
 
-
 @injectable()
 export class KeybindingContextRegistry {
 

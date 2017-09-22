@@ -35,5 +35,4 @@ export class GoClientContribution extends BaseLanguageClientContribution {
         ];
     }
 
-
 }

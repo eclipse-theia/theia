@@ -94,7 +94,6 @@ describe('Proxy-Factory', () => {
     })
 });
 
-
 function getSetup() {
     let client = new TestClient()
     let server = new TestServer()

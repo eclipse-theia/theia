@@ -11,7 +11,6 @@ import URI from "@theia/core/lib/common/uri";
 import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
 import { TestLogger } from '@theia/core/lib/common/test/test-logger';
 
-
 const expect = chai.expect;
 let manager: ProblemManager;
 let store: StorageService;

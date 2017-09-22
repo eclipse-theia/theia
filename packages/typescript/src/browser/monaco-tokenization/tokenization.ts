@@ -161,7 +161,6 @@ jsTokenTypeTable[ts.TokenClass.NumberLiteral] = 'number.js';
 jsTokenTypeTable[ts.TokenClass.RegExpLiteral] = 'regexp.js';
 jsTokenTypeTable[ts.TokenClass.StringLiteral] = 'string.js';
 
-
 function checkSheBang(deltaOffset: number, line: string, appendFn: (startIndex: number, type: string) => void): boolean {
 	if (line.indexOf('#!') === 0) {
 		appendFn(deltaOffset, 'comment.shebang');

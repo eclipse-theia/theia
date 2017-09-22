@@ -82,7 +82,6 @@ export class BrowserMainMenuFactory {
         }
     }
 
-
 }
 class DynamicMenuBarWidget extends MenuBarWidget {
 

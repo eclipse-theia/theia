@@ -14,7 +14,6 @@ import {
     FileSystemWatcherServerProxy, ReconnectingFileSystemWatcherServer
 } from '../common/filesystem-watcher-protocol';
 
-
 import "../../src/browser/style/index.css";
 
 export default new ContainerModule(bind => {
@@ -33,4 +32,3 @@ export default new ContainerModule(bind => {
     bind(FileResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(FileResourceResolver));
 });
-

@@ -109,7 +109,6 @@ before(() => {
 describe('preference-service  (simplified api)', () => {
     let valNumber: number | undefined, valBoolean: boolean | undefined, valString: string | undefined;
 
-
     it('should get the has() from the server', () => {
         let hasValue = prefService.has("prefExists");
         expect(hasValue).to.be.true;

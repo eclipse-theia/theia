@@ -18,4 +18,3 @@ function isInDebugMode(): boolean {
     return false;
 }
 export const DEBUG_MODE = isInDebugMode();
-

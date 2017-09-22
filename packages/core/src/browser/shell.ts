@@ -21,7 +21,6 @@ import {
     Widget
 } from "@phosphor/widgets";
 
-
 /**
  * The class name added to AppShell instances.
  */
@@ -498,7 +497,6 @@ export class ApplicationShell extends Widget {
     private _activeChanged = new Signal<this, ApplicationShell.IChangedArgs>(this);
 }
 
-
 /**
  * The namespace for `ApplicationShell` class statics.
  */
@@ -527,7 +525,6 @@ namespace ApplicationShell {
     export
         type IChangedArgs = FocusTracker.IChangedArgs<Widget>;
 }
-
 
 namespace Private {
     /**

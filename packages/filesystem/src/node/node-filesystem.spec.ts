@@ -796,7 +796,6 @@ describe("NodeFileSystem", () => {
             }
         });
 
-
         const preferences = new PreferenceService(new PreferenceServerStub());
         const fileSystemPreferences = createFileSystemPreferences(preferences);
         const server = new ChokidarFileSystemWatcherServer(logger);

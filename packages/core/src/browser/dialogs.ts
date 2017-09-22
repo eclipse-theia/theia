@@ -165,7 +165,6 @@ export class ConfirmDialogProps extends DialogProps {
     readonly ok?: string;
 }
 
-
 export class ConfirmDialog extends AbstractDialog<void> {
 
     constructor(
