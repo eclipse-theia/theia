@@ -165,7 +165,7 @@ exports.config = {
         if (server) {
             server.close();
         }
-    }
+    },
     //
     // Gets executed just before initialising the webdriver session and test framework. It allows you
     // to manipulate configurations depending on the capability or spec.
@@ -208,8 +208,17 @@ exports.config = {
     // },
     //
     // Hook that gets executed after the suite has ended
-    // afterSuite: function (suite) {
-    // },
+    afterSuite: function (suite) {
+        require("webdriverio");
+        var fs = require("fs");
+        let result = browser.execute("return window.__coverage__;")
+        try {
+            fs.mkdirSync('coverage');
+            fs.writeFileSync('coverage/coverage.json', JSON.stringify(result.value));
+        } catch (err) {
+            console.log(`Error writing coverage ${err}`);
+        };
+    },
     //
     // Gets executed after all tests are done. You still have access to all global variables from
     // the test.
