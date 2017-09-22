@@ -43,4 +43,3 @@ export class QuickOpenService {
         // no-op
     }
 }
-

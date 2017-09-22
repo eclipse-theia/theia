@@ -5,7 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-
 import { expect } from 'chai';
 import { TestLogger } from '../common/test/test-logger';
 import { WidgetManager, WidgetFactory } from './widget-manager';

@@ -5,7 +5,6 @@
 
 // some parts are copied from https://github.com/Microsoft/monaco-typescript/blob/v2.3.0/src/mode.ts
 
-
 import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME, JAVASCRIPT_LANGUAGE_ID, JAVASCRIPT_LANGUAGE_NAME } from "../common";
 import { createTokenizationSupport, Language } from "./monaco-tokenization/tokenization";
 

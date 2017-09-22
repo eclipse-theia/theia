@@ -27,5 +27,4 @@ export class CppClientContribution extends BaseLanguageClientContribution {
         ];
     }
 
-
 }

@@ -48,7 +48,6 @@ export class JsonPrefHelper {
     }
 }
 
-
 export class FileSystemWatcherServerstub implements FileSystemWatcherServer {
     protected client: FileSystemWatcherClient;
     watchFileChanges(uri: string, options?: WatchOptions): Promise<number> {

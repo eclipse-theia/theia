@@ -32,7 +32,6 @@ export class TypeScriptContribution extends AbstractTypeScriptContribution {
 
 }
 
-
 @injectable()
 export class JavaScriptContribution extends AbstractTypeScriptContribution {
 

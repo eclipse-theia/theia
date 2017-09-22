@@ -70,7 +70,6 @@ export class TerminalWidget extends BaseWidget {
             theme: 'dark'
         });
 
-
         this.term.open(this.node);
         this.term.on('title', (title: string) => {
             this.title.label = title;

@@ -11,7 +11,6 @@ import { Languages, DiagnosticCollection } from "@theia/languages/lib/common";
 import { ProblemManager } from "@theia/markers/lib/browser/problem/problem-marker";
 import URI from '@theia/core/lib/common/uri';
 
-
 decorate(injectable(), BaseMonacoLanguages);
 decorate(inject(ProtocolToMonacoConverter), BaseMonacoLanguages, 0);
 decorate(inject(MonacoToProtocolConverter), BaseMonacoLanguages, 1);

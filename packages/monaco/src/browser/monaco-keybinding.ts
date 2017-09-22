@@ -23,7 +23,6 @@ function monaco2BrowserKeyCode(keyCode: monaco.KeyCode): number {
     return -1;
 }
 
-
 @injectable()
 export class MonacoKeybindingContribution implements KeybindingContribution {
 

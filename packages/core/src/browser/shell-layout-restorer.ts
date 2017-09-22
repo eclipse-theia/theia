@@ -12,7 +12,6 @@ import { LayoutData } from './shell';
 import { Widget } from '@phosphor/widgets';
 import { ILogger } from '../common/logger';
 
-
 @injectable()
 export class ShellLayoutRestorer implements FrontendApplicationContribution {
     private storageKey = 'layout';

@@ -18,14 +18,11 @@ export class CppContribution extends BaseLanguageServerContribution {
     readonly id = CPP_LANGUAGE_ID;
     readonly name = CPP_LANGUAGE_NAME;
 
-
     constructor(
         @inject(CppPreferences) protected readonly cppPreferences: CppPreferences
     ) {
         super();
     }
-
-
 
     protected map(message: Message): Message {
         if (isRequestMessage(message)) {
