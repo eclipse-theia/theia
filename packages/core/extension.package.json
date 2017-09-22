@@ -13,7 +13,7 @@
     "@types/yargs": "^8.0.1",
     "body-parser": "^1.17.2",
     "bunyan": "^1.8.10",
-    "electron": "^1.6.11",
+    "electron": "1.7.6",
     "express": "^4.15.3",
     "font-awesome": "^4.7.0",
     "humane-js": "^3.2.2",
