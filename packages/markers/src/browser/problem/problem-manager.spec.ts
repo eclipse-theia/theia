@@ -8,13 +8,18 @@
 import * as chai from 'chai';
 import { ProblemManager } from './problem-marker';
 import URI from "@theia/core/lib/common/uri";
+import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
+import { TestLogger } from '@theia/core/lib/common/test/test-logger';
 
 
 const expect = chai.expect;
 let manager: ProblemManager;
+let store: StorageService;
 
-before(() => {
-    manager = new ProblemManager();
+before(async () => {
+    store = new LocalStorageService(new TestLogger());
+    manager = new ProblemManager(store);
+    await manager.initialized;
     manager.setMarkers(new URI('file:/foo/bar.txt'), 'me', [
         {
             range: {
@@ -74,14 +79,14 @@ before(() => {
     ]);
 });
 
-describe('marker-manager', () => {
-    it('replaces markers', () => {
+describe('problem-manager', () => {
+    it('replaces markers', async () => {
         let events = 0;
         manager.onDidChangeMarkers(() => {
             events++;
         });
         expect(events).equal(0);
-        const previous = manager.setMarkers(new URI('file:/foo/bar.txt'), 'me', [
+        const previous = await manager.setMarkers(new URI('file:/foo/bar.txt'), 'me', [
             {
                 range: {
                     start: {
@@ -131,5 +136,11 @@ describe('marker-manager', () => {
         expect(manager.findMarkers({
             dataFilter: data => data.range.end.character > 1
         }).length).equal(1);
+    });
+
+    it('should persist markers', async () => {
+        const newManager = new ProblemManager(store);
+        await newManager.initialized;
+        expect(newManager.findMarkers().length).eq(4);
     });
 });
