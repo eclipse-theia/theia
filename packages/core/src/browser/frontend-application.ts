@@ -15,10 +15,19 @@ import { Widget } from "./widgets";
  */
 export const FrontendApplicationContribution = Symbol("FrontendApplicationContribution");
 export interface FrontendApplicationContribution {
+
     /**
-     * Callback
+     * Called when the application is started.
      */
-    onStart(app: FrontendApplication): void;
+    onStart?(app: FrontendApplication): void;
+
+
+    /**
+     * Called when an application is stopped or unloaded.
+     *
+     * Note that this is implemented using `window.unload` which doesn't allow any asynchronous code anymore. I.e. this is the last tick.
+     */
+    onStop?(app: FrontendApplication): void
 }
 
 @injectable()
@@ -95,7 +104,17 @@ export class FrontendApplication {
         this.keybindings.onStart();
         this.menus.onStart();
         for (const contribution of this.contributions.getContributions()) {
-            contribution.onStart(this);
+            if (contribution.onStart) {
+                contribution.onStart(this);
+            }
+        }
+
+        window.onunload = () => {
+            for (const contribution of this.contributions.getContributions()) {
+                if (contribution.onStop) {
+                    contribution.onStop(this);
+                }
+            }
         }
     }
 

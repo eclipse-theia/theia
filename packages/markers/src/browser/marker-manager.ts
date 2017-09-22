@@ -5,9 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable } from "inversify";
+import { injectable, inject } from 'inversify';
 import { Disposable, Event, Emitter } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
+import { StorageService } from '@theia/core/lib/browser/storage-service';
 
 /*
  * A marker represents meta information for a given uri
@@ -49,12 +50,15 @@ export class MarkerCollection<T> implements Disposable {
     constructor(
         public readonly uri: URI,
         public readonly kind: string,
-        protected readonly onDispose: () => void,
-        protected readonly onChange: () => void
+        protected readonly onDispose: () => void
     ) { }
 
     dispose(): void {
         this.onDispose();
+    }
+
+    getOwners(): string[] {
+        return Array.from(this.owner2Markers.keys());
     }
 
     getMarkers(owner: string): Readonly<Marker<T>>[] {
@@ -68,7 +72,6 @@ export class MarkerCollection<T> implements Disposable {
         } else {
             this.owner2Markers.delete(owner);
         }
-        this.onChange();
         return before || [];
     }
 
@@ -109,6 +112,16 @@ export class MarkerCollection<T> implements Disposable {
 
 }
 
+interface Uri2MarkerEntry {
+    uri: string
+    markers: Owner2MarkerEntry[]
+}
+
+interface Owner2MarkerEntry {
+    owner: string
+    markerData: object[];
+}
+
 @injectable()
 export abstract class MarkerManager<D extends object> {
 
@@ -116,6 +129,53 @@ export abstract class MarkerManager<D extends object> {
 
     protected readonly uri2MarkerCollection = new Map<string, MarkerCollection<D>>();
     protected readonly onDidChangeMarkersEmitter = new Emitter<void>();
+
+    initialized: Promise<void>;
+
+    constructor( @inject(StorageService) protected storageService: StorageService) {
+        this.initialized = this.loadMarkersFromStorage();
+    }
+
+    protected getStorageKey(): string | undefined {
+        return 'marker-' + this.getKind();
+    }
+
+    protected async loadMarkersFromStorage(): Promise<void> {
+        const key = this.getStorageKey();
+        if (key) {
+            const entries = await this.storageService.getData<Uri2MarkerEntry[]>(key, [])
+            for (const entry of entries) {
+                for (const ownerEntry of entry.markers) {
+                    this.internalSetMarkers(new URI(entry.uri), ownerEntry.owner, ownerEntry.markerData as D[]);
+                }
+            }
+            this.onDidChangeMarkers(() => this.saveMarkersToStorage());
+        }
+    }
+
+    protected saveMarkersToStorage() {
+        const key = this.getStorageKey();
+        if (key) {
+            const result: Uri2MarkerEntry[] = [];
+            for (const [uri, collection] of this.uri2MarkerCollection.entries()) {
+                const ownerEntries: Owner2MarkerEntry[] = [];
+                for (const owner of collection.getOwners()) {
+                    const marker = collection.getMarkers(owner);
+                    if (marker) {
+                        ownerEntries.push({
+                            owner,
+                            markerData: Array.from(marker.map(m => m.data))
+                        });
+                    }
+                }
+                result.push({
+                    uri,
+                    markers: ownerEntries
+                });
+            }
+            this.storageService.setData<Uri2MarkerEntry[]>(key, result);
+        }
+    }
 
     get onDidChangeMarkers(): Event<void> {
         return this.onDidChangeMarkersEmitter.event;
@@ -128,9 +188,16 @@ export abstract class MarkerManager<D extends object> {
     /*
      * replaces the current markers for the given uri and owner with the given data.
      */
-    setMarkers(uri: URI, owner: string, data: D[]): Marker<D>[] {
+    async setMarkers(uri: URI, owner: string, data: D[]): Promise<Marker<D>[]> {
+        await this.initialized;
+        return this.internalSetMarkers(uri, owner, data);
+    }
+
+    protected internalSetMarkers(uri: URI, owner: string, data: D[]): Marker<D>[] {
         const collection = this.getCollection(uri);
-        return collection.setMarkers(owner, data);
+        const result = collection.setMarkers(owner, data);
+        this.fireOnDidChangeMarkers();
+        return result;
     }
 
     protected getCollection(uri: URI): MarkerCollection<D> {
@@ -139,7 +206,7 @@ export abstract class MarkerManager<D extends object> {
         if (this.uri2MarkerCollection.has(uriString)) {
             collection = this.uri2MarkerCollection.get(uriString)!;
         } else {
-            collection = new MarkerCollection<D>(uri, this.getKind(), () => this.uri2MarkerCollection.delete(uriString), () => this.fireOnDidChangeMarkers());
+            collection = new MarkerCollection<D>(uri, this.getKind(), () => this.uri2MarkerCollection.delete(uriString));
             this.uri2MarkerCollection.set(uriString, collection);
         }
         return collection;

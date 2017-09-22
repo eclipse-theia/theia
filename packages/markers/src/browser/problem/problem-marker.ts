@@ -7,7 +7,8 @@
 
 import { Marker, MarkerManager } from '../marker-manager';
 import { Diagnostic } from "vscode-languageserver-types";
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
+import { StorageService } from '@theia/core/lib/browser/storage-service';
 
 export interface ProblemMarker extends Marker<Diagnostic> {
     kind: 'problem';
@@ -19,12 +20,15 @@ export namespace ProblemMarker {
     }
 }
 
-
 @injectable()
 export class ProblemManager extends MarkerManager<Diagnostic> {
 
     public getKind() {
         return 'problem';
+    }
+
+    constructor( @inject(StorageService) storageService: StorageService) {
+        super(storageService);
     }
 
 }

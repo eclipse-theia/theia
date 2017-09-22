@@ -15,32 +15,32 @@ import { ILogger } from '../common/logger';
 
 @injectable()
 export class ShellLayoutRestorer implements FrontendApplicationContribution {
+    private storageKey = 'layout';
+
     constructor(
         @inject(WidgetManager) protected widgetManager: WidgetManager,
         @inject(ILogger) protected logger: ILogger,
         @inject(StorageService) protected storageService: StorageService) { }
 
     onStart(app: FrontendApplication): void {
-        const storageKey = 'layout';
-        this.storageService.getData(storageKey, undefined).then((serializedLayoutData: string | undefined) => {
+        this.storageService.getData(this.storageKey, undefined).then((serializedLayoutData: string | undefined) => {
             let promise = Promise.resolve<void>(undefined);
             if (serializedLayoutData !== undefined) {
                 promise = this.inflate(serializedLayoutData).then(layoutData => {
                     app.shell.setLayoutData(layoutData);
                 });
             }
-            promise.then(() => {
-                window.onunload = (() => {
-                    try {
-                        const layoutData = app.shell.getLayoutData();
-                        this.storageService.setData(storageKey, this.deflate(layoutData));
-                    } catch (error) {
-                        this.storageService.setData(storageKey, undefined);
-                        this.logger.error(`Error during serialization of layout data: ${error}`);
-                    }
-                });
-            });
         });
+    }
+
+    onStop(app: FrontendApplication): void {
+        try {
+            const layoutData = app.shell.getLayoutData();
+            this.storageService.setData(this.storageKey, this.deflate(layoutData));
+        } catch (error) {
+            this.storageService.setData(this.storageKey, undefined);
+            this.logger.error(`Error during serialization of layout data: ${error}`);
+        }
     }
 
     protected isWidgetsProperty(property: string) {
