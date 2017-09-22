@@ -1812,6 +1812,12 @@ defaults@^1.0.0, defaults@^1.0.3:
   dependencies:
     clone "^1.0.2"
 
+deffy@^2.2.2:
+  version "2.2.2"
+  resolved "https://registry.yarnpkg.com/deffy/-/deffy-2.2.2.tgz#088f40913cb47078653fa6f697c206e03471d523"
+  dependencies:
+    typpy "^2.0.0"
+
 define-properties@^1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/define-properties/-/define-properties-1.1.2.tgz#83a73f2fea569898fb737193c8f873caf6d45c94"
@@ -1903,6 +1909,26 @@ dtrace-provider@~0.8:
   resolved "https://registry.yarnpkg.com/dtrace-provider/-/dtrace-provider-0.8.5.tgz#98ebba221afac46e1c39fd36858d8f9367524b92"
   dependencies:
     nan "^2.3.3"
+
+dugite-extra@0.0.1-alpha.9:
+  version "0.0.1-alpha.9"
+  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.0.1-alpha.9.tgz#1febe6f0c841cba3e6ecd13b4145804e528cd8fb"
+  dependencies:
+    byline "^5.0.0"
+    dugite "1.42.0"
+    find-git-exec "0.0.1-alpha.2"
+
+dugite@1.42.0:
+  version "1.42.0"
+  resolved "https://registry.yarnpkg.com/dugite/-/dugite-1.42.0.tgz#1d79b35741656006674fabbbf6b32b7e04bdf35c"
+  dependencies:
+    checksum "^0.1.1"
+    mkdirp "^0.5.1"
+    os-tmpdir "^1.0.1"
+    progress "^2.0.0"
+    request "^2.79.0"
+    rimraf "^2.5.4"
+    tar "^2.2.1"
 
 duplexer2@0.0.2:
   version "0.0.2"
@@ -2316,6 +2342,12 @@ find-cache-dir@^0.1.1:
     commondir "^1.0.1"
     mkdirp "^0.5.1"
     pkg-dir "^1.0.0"
+
+find-git-exec@0.0.1-alpha.2:
+  version "0.0.1-alpha.2"
+  resolved "https://registry.yarnpkg.com/find-git-exec/-/find-git-exec-0.0.1-alpha.2.tgz#02c266b3be6e411c19aa5fd6f813c96a73286fac"
+  dependencies:
+    "@types/node" "^8.0.26"
 
 find-index@^0.1.1:
   version "0.1.1"
@@ -6635,9 +6667,11 @@ typescript@^2.5.2:
   version "2.5.2"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.5.2.tgz#038a95f7d9bbb420b1bf35ba31d4c5c1dd3ffe34"
 
-uglify-js@1.x:
-  version "1.3.5"
-  resolved "https://registry.yarnpkg.com/uglify-js/-/uglify-js-1.3.5.tgz#4b5bfff9186effbaa888e4c9e94bd9fc4c94929d"
+typpy@^2.0.0, typpy@^2.3.4:
+  version "2.3.9"
+  resolved "https://registry.yarnpkg.com/typpy/-/typpy-2.3.9.tgz#28664fda5ea71dd718724f89d00060af1f09c38e"
+  dependencies:
+    function.name "^1.0.3"
 
 uglify-js@^2.6, uglify-js@^2.8.27:
   version "2.8.29"
@@ -6655,6 +6689,13 @@ uglify-to-browserify@~1.0.0:
 uid-number@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/uid-number/-/uid-number-0.0.6.tgz#0ea10e8035e8eb5b8e4449f06da1c730663baa81"
+
+ul@^5.0.0:
+  version "5.2.13"
+  resolved "https://registry.yarnpkg.com/ul/-/ul-5.2.13.tgz#9ff0504ea35ca1f74c0bf59e6480def009bad7b5"
+  dependencies:
+    deffy "^2.2.2"
+    typpy "^2.3.4"
 
 ultron@~1.1.0:
   version "1.1.0"

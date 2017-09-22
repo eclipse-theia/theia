@@ -6,6 +6,7 @@
   "typings": "lib/common/index.d.ts",
   "dependencies": {
     "@theia/core": "^0.1.1",
+    "@theia/editor": "^0.1.1",
     "@theia/filesystem": "^0.1.1",
     "@theia/preferences-api": "^0.1.1",
     "@theia/workspace": "^0.1.1",
@@ -23,10 +24,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "theiaExtensions": [
-    {
-      "frontend": "lib/browser/git-frontend-module",
-      "backend": "lib/node/git-backend-module"
-    }
-  ]
+  "theiaExtensions": [{
+    "frontend": "lib/browser/git-frontend-module",
+    "backend": "lib/node/git-backend-module"
+  }]
 }

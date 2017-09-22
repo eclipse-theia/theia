@@ -7,18 +7,25 @@
 
 import { injectable, inject } from "inversify";
 import { Git, Repository } from '../common';
-import { Resource, ResourceResolver } from "@theia/core";
+import { Resource, ResourceResolver, DisposableCollection } from "@theia/core";
 import URI from "@theia/core/lib/common/uri";
 
 export const GIT_RESOURCE_SCHEME = 'gitrev';
 
 export class GitResource implements Resource {
+
+    protected readonly toDispose = new DisposableCollection();
+
     constructor(readonly uri: URI, protected readonly repository: Repository, protected readonly git: Git) { }
 
     readContents(options?: { encoding?: string | undefined; } | undefined): Promise<string> {
         return this.git.show(this.repository, this.uri.toString(), Object.assign({
             commitish: this.uri.query
         }, options)).then(content => content.toString());
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 }
 

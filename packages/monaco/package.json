@@ -19,12 +19,10 @@
   "publishConfig": {
     "access": "public"
   },
-  "theiaExtensions": [
-    {
-      "frontend": "lib/browser/monaco-browser-module",
-      "frontendElectron": "lib/electron-browser/monaco-electron-module"
-    }
-  ],
+  "theiaExtensions": [{
+    "frontend": "lib/browser/monaco-browser-module",
+    "frontendElectron": "lib/electron-browser/monaco-electron-module"
+  }],
   "keywords": [
     "theia-extension"
   ],

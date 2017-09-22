@@ -5,19 +5,24 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from 'inversify';
-import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
-import URI from "@theia/core/lib/common/uri";
 import { DisposableCollection } from '@theia/core/lib/common';
-import { EditorPreferences, EditorPreferenceChange } from "@theia/editor/lib/browser";
-import { MonacoEditor } from "./monaco-editor";
+import URI from '@theia/core/lib/common/uri';
+import { EditorPreferenceChange, EditorPreferences } from '@theia/editor/lib/browser';
+import { DiffUriHelper } from '@theia/editor/lib/browser/editor-utility';
+import { inject, injectable } from 'inversify';
+import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
+
+import { MonacoCommandServiceFactory } from './monaco-command-service';
+import { MonacoContextMenuService } from './monaco-context-menu';
+import { MonacoDiffEditor } from './monaco-diff-editor';
+import { MonacoEditor } from './monaco-editor';
 import { MonacoEditorModel } from './monaco-editor-model';
-import { MonacoEditorService } from "./monaco-editor-service";
-import { MonacoTextModelService } from "./monaco-text-model-service";
-import { MonacoContextMenuService } from "./monaco-context-menu";
-import { MonacoWorkspace } from "./monaco-workspace";
-import { MonacoCommandServiceFactory } from "./monaco-command-service";
+import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
+import { MonacoTextModelService } from './monaco-text-model-service';
+import { MonacoWorkspace } from './monaco-workspace';
+
+import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 
 const monacoTheme = 'vs-dark';
 monaco.editor.setTheme(monacoTheme);
@@ -38,41 +43,73 @@ export class MonacoEditorProvider {
         @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService
     ) { }
 
-    get(uri: URI): Promise<MonacoEditor> {
-        const referencePromise = this.textModelService.createModelReference(uri);
-        const prefPromise = this.editorPreferences.ready;
+    protected async createReference(uri: URI, toDispose: DisposableCollection): Promise<MonacoEditorModel> {
+        await this.editorPreferences.ready;
 
-        return Promise.all([referencePromise, prefPromise]).then(([reference]) => {
-            const commandService = this.commandServiceFactory();
+        const reference = await this.textModelService.createModelReference(uri);
+        toDispose.push(reference);
 
-            const node = document.createElement('div');
-            const model = reference.object;
-            const textEditorModel = model.textEditorModel;
+        const model = reference.object;
+        const textEditorModel = model.textEditorModel;
+        textEditorModel.updateOptions(this.getModelOptions());
 
-            textEditorModel.updateOptions(this.getModelOptions());
+        return model;
+    }
 
-            const { editorService, textModelService, contextMenuService } = this;
-            const editor = new MonacoEditor(
-                uri, node, this.m2p, this.p2m, this.workspace, this.getEditorOptions(model), {
-                    editorService,
-                    textModelService,
-                    contextMenuService,
-                    commandService
-                }
-            );
+    protected createEditor(create: (n: HTMLDivElement, o: IEditorOverrideServices) => MonacoEditor, toDispose: DisposableCollection): MonacoEditor {
+        const node = document.createElement('div');
+        const commandService = this.commandServiceFactory();
+        const { editorService, textModelService, contextMenuService } = this;
+        const override = {
+            editorService,
+            textModelService,
+            contextMenuService,
+            commandService
+        };
 
-            const toDispose = new DisposableCollection();
-            toDispose.push(reference);
-            toDispose.push(this.editorPreferences.onPreferenceChanged(e => this.updateOptions(e, editor)));
-            editor.onDispose(() => toDispose.dispose());
+        const editor = create(node, override);
 
-            const standaloneCommandService = new monaco.services.StandaloneCommandService(editor.instantiationService);
-            commandService.setDelegate(standaloneCommandService);
+        toDispose.push(this.editorPreferences.onPreferenceChanged(e => this.updateOptions(e, editor)));
+        editor.onDispose(() => toDispose.dispose());
+        const standaloneCommandService = new monaco.services.StandaloneCommandService(editor.instantiationService);
+        commandService.setDelegate(standaloneCommandService);
+        this.installQuickOpenService(editor);
 
-            this.installQuickOpenService(editor);
+        return editor;
+    }
 
-            return editor;
-        });
+    async get(uri: URI): Promise<MonacoEditor> {
+        let editor: MonacoEditor;
+        const toDispose = new DisposableCollection();
+
+        if (!DiffUriHelper.isDiffUri(uri)) {
+            const model = await this.createReference(uri, toDispose);
+
+            editor = this.createEditor((node, override) => new MonacoEditor(
+                uri, node, this.m2p, this.p2m, this.workspace, this.getEditorOptions(model), override
+            ), toDispose);
+
+        } else {
+            const diffUri = DiffUriHelper.decode(uri);
+
+            const originalModel = await this.createReference(new URI(diffUri.original), toDispose);
+            const modifiedModel = await this.createReference(new URI(diffUri.modified), toDispose);
+
+            editor = this.createEditor((node, override) => new MonacoDiffEditor(
+                node,
+                this.m2p,
+                this.p2m,
+                this.workspace,
+                {
+                    original: originalModel.textEditorModel,
+                    modified: modifiedModel.textEditorModel
+                },
+                this.getDiffEditorOptions(),
+                override
+            ), toDispose);
+        }
+
+        return Promise.resolve(editor);
     }
 
     protected getModelOptions(): monaco.editor.ITextModelUpdateOptions {
@@ -91,6 +128,10 @@ export class MonacoEditorProvider {
             glyphMargin: true,
             readOnly: model.readOnly
         };
+    }
+
+    protected getDiffEditorOptions(): MonacoDiffEditor.IOptions {
+        return {};
     }
 
     protected readonly modelOptions: {
@@ -123,7 +164,7 @@ export class MonacoEditorProvider {
         }
     }
 
-    protected installQuickOpenService(editor: MonacoEditor): void {
+    protected installQuickOpenService(editor: MonacoEditor | MonacoDiffEditor): void {
         const control = editor.getControl();
         const quickOpenController = control._contributions['editor.controller.quickOpenController'];
         quickOpenController.run = options => {
