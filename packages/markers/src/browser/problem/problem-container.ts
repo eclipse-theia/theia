@@ -9,16 +9,16 @@ import { interfaces, Container } from "inversify";
 import { MarkerOptions } from '../marker-tree';
 import { ProblemWidget } from './problem-widget';
 import { ProblemTreeModel, ProblemTree } from './problem-tree-model';
-import { MARKER_CONTEXT_MENU } from './problem-contribution';
 import { TreeWidget, TreeProps, defaultTreeProps, ITreeModel, createTreeContainer, TreeModel, Tree, ITree } from "@theia/core/lib/browser";
 import { MarkerTreeServices } from '../marker-tree-model';
+import { PROBLEM_KIND } from './problem-marker';
 
-export const MARKER_TREE_PROPS = <TreeProps>{
+export const PROBLEM_TREE_PROPS = <TreeProps>{
     ...defaultTreeProps,
-    contextMenuPath: MARKER_CONTEXT_MENU
+    contextMenuPath: PROBLEM_KIND
 };
 
-export const MARKER_OPTIONS = <MarkerOptions>{
+export const PROBLEM_OPTIONS = <MarkerOptions>{
     kind: 'problem'
 };
 
@@ -38,8 +38,8 @@ export function createProblemTreeContainer(parent: interfaces.Container): Contai
 
     child.bind(MarkerTreeServices).toSelf();
 
-    child.rebind(TreeProps).toConstantValue(MARKER_TREE_PROPS);
-    child.bind(MarkerOptions).toConstantValue(MARKER_OPTIONS);
+    child.rebind(TreeProps).toConstantValue(PROBLEM_TREE_PROPS);
+    child.bind(MarkerOptions).toConstantValue(PROBLEM_OPTIONS);
     return child;
 }
 
