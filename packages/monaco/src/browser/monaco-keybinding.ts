@@ -7,7 +7,7 @@
 
 import { injectable, inject } from 'inversify';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/common/keybinding';
-import { Accelerator, Key, KeyCode, Keystroke, Modifier } from '@theia/core/lib/common/keys';
+import { Accelerator, Key, TheiaKeyCodeUtils, KeyCode, Keystroke, Modifier } from '@theia/core/lib/common/keys';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
@@ -53,7 +53,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         if (selectAllCommand) {
             registry.registerDefaultKeyBinding({
                 commandId: selectAllCommand,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M1] }),
+                keyCode: TheiaKeyCodeUtils.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M1] }),
                 accelerator: ['Accel A']
             });
         }
@@ -77,7 +77,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         if (keybinding.metaKey) {
             sequence.modifiers!.push(Modifier.M4);
         }
-        return KeyCode.createKeyCode(sequence);
+        return TheiaKeyCodeUtils.createKeyCode(sequence);
     }
 
     protected accelerator(keybinding: monaco.keybindings.SimpleKeybinding): Accelerator {

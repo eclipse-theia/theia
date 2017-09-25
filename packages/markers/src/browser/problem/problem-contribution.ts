@@ -9,7 +9,7 @@ import { injectable, inject } from 'inversify';
 import {
     MenuModelRegistry, Command, CommandContribution,
     MenuContribution, KeybindingContribution, KeybindingRegistry,
-    KeyCode, Key, Modifier, CommandRegistry
+    TheiaKeyCodeUtils, Key, Modifier, CommandRegistry
 } from '@theia/core/lib/common';
 import { FrontendApplication, CommonMenus } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
@@ -33,7 +33,7 @@ export class ProblemContribution implements CommandContribution, MenuContributio
     registerDefaultKeyBindings(keybindings: KeybindingRegistry): void {
         keybindings.registerDefaultKeyBinding({
             commandId: ProblemCommands.OPEN.id,
-            keyCode: KeyCode.createKeyCode({
+            keyCode: TheiaKeyCodeUtils.createKeyCode({
                 first: Key.KEY_M, modifiers: [Modifier.M2, Modifier.M1]
             })
         });

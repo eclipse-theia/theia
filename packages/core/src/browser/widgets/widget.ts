@@ -8,7 +8,7 @@
 import { injectable, decorate, unmanaged } from "inversify";
 import { Widget } from "@phosphor/widgets";
 import { Message } from "@phosphor/messaging";
-import { Disposable, DisposableCollection, Key, KeyCode } from '../../common';
+import { Disposable, DisposableCollection, Key, TheiaKeyCodeUtils } from '../../common';
 
 decorate(injectable(), Widget);
 decorate(unmanaged(), Widget, 0);
@@ -100,9 +100,9 @@ export function addEventListener<K extends keyof HTMLElementEventMap>(
 
 export function addKeyListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, keybinding: Key, action: () => void, ...additionalEventTypes: K[]): Disposable {
     const toDispose = new DisposableCollection();
-    const keyCode = KeyCode.createKeyCode({ first: keybinding });
+    const keyCode = TheiaKeyCodeUtils.createKeyCode({ first: keybinding });
     toDispose.push(addEventListener(element, 'keydown', e => {
-        if (KeyCode.createKeyCode(e).equals(keyCode)) {
+        if (TheiaKeyCodeUtils.createKeyCode(e) === keyCode) {
             action();
             e.stopPropagation();
             e.preventDefault();

@@ -11,7 +11,7 @@ import { QuickOpenService, QuickOpenModel, QuickOpenItem, OpenerService, QuickOp
 import { WorkspaceSymbolParams, SymbolInformation } from 'vscode-base-languageclient/lib/base';
 import { CancellationTokenSource, CommandRegistry, CommandHandler, Command, SelectionService } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { CommandContribution, KeybindingContribution, KeybindingRegistry, KeyCode, Key, Modifier } from '@theia/core/lib/common';
+import { CommandContribution, KeybindingContribution, KeybindingRegistry, TheiaKeyCodeUtils, Key, Modifier } from '@theia/core/lib/common';
 import { Range } from 'vscode-languageserver-types';
 
 @injectable()
@@ -45,7 +45,7 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
     registerDefaultKeyBindings(keybindings: KeybindingRegistry): void {
         keybindings.registerDefaultKeyBinding({
             commandId: this.command.id,
-            keyCode: KeyCode.createKeyCode({ first: Key.KEY_O, modifiers: [Modifier.M1] }),
+            keyCode: TheiaKeyCodeUtils.createKeyCode({ first: Key.KEY_O, modifiers: [Modifier.M1] }),
             accelerator: ['Accel O']
         });
     }

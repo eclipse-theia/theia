@@ -7,7 +7,7 @@
 
 import { injectable, inject } from 'inversify';
 import { QuickCommandService } from './quick-command-service';
-import { Command, CommandRegistry, CommandContribution, Key, Modifier, KeyCode, KeybindingRegistry, KeybindingContribution } from '../../common';
+import { Command, CommandRegistry, CommandContribution, Key, Modifier, TheiaKeyCodeUtils, KeybindingRegistry, KeybindingContribution } from '../../common';
 
 export const quickCommand: Command = {
     id: 'quickCommand',
@@ -29,11 +29,11 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
     registerDefaultKeyBindings(keybindings: KeybindingRegistry): void {
         keybindings.registerDefaultKeyBinding({
             commandId: quickCommand.id,
-            keyCode: KeyCode.createKeyCode({ first: Key.F1 })
+            keyCode: TheiaKeyCodeUtils.createKeyCode({ first: Key.F1 })
         });
         keybindings.registerDefaultKeyBinding({
             commandId: quickCommand.id,
-            keyCode: KeyCode.createKeyCode({ first: Key.KEY_P, modifiers: [Modifier.M1, Modifier.M2] })
+            keyCode: TheiaKeyCodeUtils.createKeyCode({ first: Key.KEY_P, modifiers: [Modifier.M1, Modifier.M2] })
         });
     }
 

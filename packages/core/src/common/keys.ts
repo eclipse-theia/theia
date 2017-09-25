@@ -12,7 +12,7 @@ export declare type Accelerator = string[];
 export const AcceleratorProvider = Symbol("AcceleratorProvider");
 
 export interface AcceleratorProvider {
-    getAccelerator(keyCode: KeyCode): Accelerator
+    getAccelerator(keyCode: TheiaKeyCodeUtils): Accelerator
 }
 
 /**
@@ -23,95 +23,155 @@ export interface AcceleratorProvider {
  */
 export declare type Keystroke = { first: Key, modifiers?: Modifier[] };
 
+export interface KeyCode {
+    key: Key;
+    ctrl: boolean;
+    shift: boolean;
+    alt: boolean;
+    meta: boolean;
+}
+
 /**
  * Representation of a platform independent key code.
  */
-export class KeyCode {
-
-    public readonly key: Key;
-    public readonly ctrl: boolean;
-    public readonly shift: boolean;
-    public readonly alt: boolean;
-    public readonly meta: boolean;
-
+export class TheiaKeyCodeUtils {
     // TODO: support chrods properly. Currently, second sequence is ignored.
-    public constructor(public readonly keystroke: string) {
-        // const chord = ((secondSequence & 0x0000ffff) << 16) >>> 0;
-        // (firstSequence | chord) >>> 0;
-        const parts = keystroke.split('+');
-        this.key = Key.getKey(parts[0]);
-        if (isOSX) {
-            this.meta = parts.some(part => part === Modifier.M1);
-            this.shift = parts.some(part => part === Modifier.M2);
-            this.alt = parts.some(part => part === Modifier.M3);
-            this.ctrl = parts.some(part => part === Modifier.M4);
-        } else {
-            this.meta = false;
-            this.ctrl = parts.some(part => part === Modifier.M1);
-            this.shift = parts.some(part => part === Modifier.M2);
-            this.alt = parts.some(part => part === Modifier.M3);
-        }
-    }
-
     /**
      * Parses a Keystroke object from a string.
      * @param keybinding String representation of a keybinding
      */
     public static parseKeystroke(keybinding: string): KeyCode | undefined {
 
-        const sequence: string[] = [];
+        const keycode: KeyCode = {
+            key: { code: "", keyCode: 0 },
+
+            ctrl: false,
+            shift: false,
+            alt: false,
+            meta: false
+        };
+
         const keys = keybinding.split('+');
         for (const keyString of keys) {
-            const key = CODE_TO_KEY[keyString];
+            const key = EASY_TO_KEY[keyString];
+
+            if (keyString === 'meta') {
+                if (keycode.meta === true) {
+                    return undefined; // meta+meta+ (2 times ctrl)
+                } else {
+                    keycode.meta = true;
+                }
+            }
             if (Key.isKey(key)) {
                 if (Key.isModifier(key.code)) {
-                    sequence.push(MODIFIERS.filter(item => item.code === key.code)[0].code);
+                    if (key.keyCode === EasyKey.CONTROL.keyCode) {
+                        if (keycode.ctrl === true) {
+                            return undefined; // ctrl+ctrl+ (2 times ctrl)
+                        } else {
+                            keycode.ctrl = true;
+                        }
+                    } else if (key.keyCode === EasyKey.SHIFT.keyCode) {
+                        if (keycode.shift === true) {
+                            return undefined; // shift+shift+ (2 times ctrl)
+                        } else {
+                            keycode.shift = true;
+                        }
+                    } else if (key.keyCode === EasyKey.ALT.keyCode) {
+                        if (keycode.alt === true) {
+                            return undefined; // alt+alt+ (2 times ctrl)
+                        } else {
+                            keycode.alt = true;
+                        }
+                    }
                 } else {
-                    sequence.push(key.code);
+                    if (keycode.key.code === "") {
+                        keycode.key = key;
+
+                        // There are two keys i.e Ctrl+A+B
+                    } else {
+                        return undefined;
+                    }
                 }
             } else {
                 return undefined;
             }
         }
 
-        return new KeyCode(sequence.join('+'));
+        return keycode;
     }
 
     public static createKeyCode(event: KeyboardEvent | Keystroke): KeyCode {
-        if (event instanceof KeyboardEvent) {
-            const code = KeyCode.toCode(event);
+        const keycode: KeyCode = {
+            key: { code: "", keyCode: 0 },
 
-            const sequence: string[] = [];
+            ctrl: false,
+            shift: false,
+            alt: false,
+            meta: false
+        };
+
+        if (event instanceof KeyboardEvent) {
+            const code = TheiaKeyCodeUtils.toCode(event);
+
             if (!Key.isModifier(code)) {
-                sequence.push(code);
+                keycode.key = CODE_TO_KEY[code];
             }
 
-            // CTRL + COMMAND (M1)
-            if ((isOSX && event.metaKey) || event.ctrlKey) {
-                sequence.push(`${Modifier.M1}`);
+            if (isOSX) {
+                // META key on OS X
+                if (event.metaKey) {
+                    keycode.meta = true;
+                }
+
+                // CTRL on OS X (M4)
+                if (!event.metaKey && event.ctrlKey) {
+                    keycode.ctrl = true;
+                }
+            } else {
+                // CTRL on Windows/Linux
+                if (event.ctrlKey) {
+                    keycode.ctrl = true;
+                }
             }
 
             // SHIFT (M2)
             if (event.shiftKey) {
-                sequence.push(`${Modifier.M2}`);
+                keycode.shift = true;
             }
 
             // ALT (M3)
             if (event.altKey) {
-                sequence.push(`${Modifier.M3}`);
+                keycode.alt = true;
             }
 
-            // CTRL on MacOS X (M4)
-            if (isOSX && !event.metaKey && event.ctrlKey) {
-                sequence.push(`${Modifier.M4}`);
-            }
-
-            return new KeyCode(sequence.join('+'));
+            return keycode;
         } else {
-            return new KeyCode([event.first.code]
-                .concat((event.modifiers || []).sort().map(modifier => `${modifier}`))
-                .join('+'));
+            keycode.key = Key.getKey(event.first.code);
+            if (event.modifiers) {
+                for (const mod of event.modifiers) {
+                    if (isOSX) {
+                        if (mod === Modifier.M1) {
+                            keycode.meta = true;
+                        } else if (mod === Modifier.M2) {
+                            keycode.shift = true;
+                        } else if (mod === Modifier.M3) {
+                            keycode.alt = true;
+                        } else if (mod === Modifier.M4) {
+                            keycode.ctrl = true;
+                        }
+                    } else {
+                        if (mod === Modifier.M1) {
+                            keycode.ctrl = true;
+                        } else if (mod === Modifier.M2) {
+                            keycode.shift = true;
+                        } else if (mod === Modifier.M3) {
+                            keycode.alt = true;
+                        }
+                    }
+                }
+            }
         }
+        return keycode;
     }
 
     public static toCode(event: KeyboardEvent): string {
@@ -138,8 +198,13 @@ export class KeyCode {
         throw new Error(`Cannot get key code from the keyboard event: ${event}.`);
     }
 
-    equals(event: KeyboardEvent | KeyCode): boolean {
-        return (event instanceof KeyCode ? event : KeyCode.createKeyCode(event)).keystroke === this.keystroke;
+    public static equals(keycode1: KeyCode, keycode2: KeyCode): boolean {
+        return keycode1.alt === keycode2.alt &&
+            keycode1.ctrl === keycode2.ctrl &&
+            keycode1.key.code === keycode2.key.code &&
+            keycode1.key.keyCode === keycode2.key.keyCode &&
+            keycode1.meta === keycode2.meta &&
+            keycode1.shift === keycode2.shift;
     }
 
 }
@@ -164,10 +229,110 @@ export enum Modifier {
 }
 
 export declare type Key = { code: string, keyCode: number };
+export declare type EasyKey = { keyCode: number, easyString: string };
 
 const CODE_TO_KEY: { [code: string]: Key } = {};
 const KEY_CODE_TO_KEY: { [keyCode: number]: Key } = {};
+const KEY_CODE_TO_EASY: { [keyCode: number]: EasyKey } = {};
+const EASY_TO_KEY: { [code: string]: Key } = {}; // From 'ctrl' to Key structure
 const MODIFIERS: Key[] = [];
+
+export namespace EasyKey {
+    export const ENTER: EasyKey = { keyCode: 13, easyString: 'enter' };
+    export const SPACE: EasyKey = { keyCode: 32, easyString: 'space' };
+    export const TAB: EasyKey = { keyCode: 9, easyString: 'tab' };
+    export const DELETE: EasyKey = { keyCode: 46, easyString: 'delete' };
+    export const END: EasyKey = { keyCode: 35, easyString: 'end' };
+    export const HOME: EasyKey = { keyCode: 36, easyString: 'home' };
+    export const INSERT: EasyKey = { keyCode: 45, easyString: 'insert' };
+    export const PAGE_DOWN: EasyKey = { keyCode: 34, easyString: 'pagedown' };
+    export const PAGE_UP: EasyKey = { keyCode: 33, easyString: 'pageup' };
+    export const ARROW_DOWN: EasyKey = { keyCode: 40, easyString: 'down' };
+    export const ARROW_LEFT: EasyKey = { keyCode: 37, easyString: 'left' };
+    export const ARROW_RIGHT: EasyKey = { keyCode: 39, easyString: 'right' };
+    export const ARROW_UP: EasyKey = { keyCode: 38, easyString: 'up' };
+    export const ESCAPE: EasyKey = { keyCode: 27, easyString: 'escape' };
+
+    export const ALT: EasyKey = { keyCode: 18, easyString: 'alt' };
+    export const CAPS_LOCK: EasyKey = { keyCode: 20, easyString: 'capslock' };
+    export const CONTROL: EasyKey = { keyCode: 17, easyString: 'ctrl' };
+    export const OS: EasyKey = { keyCode: 91, easyString: 'super' };
+    export const SHIFT: EasyKey = { keyCode: 16, easyString: 'shift' };
+
+    export const DIGIT1: EasyKey = { keyCode: 49, easyString: '1' };
+    export const DIGIT2: EasyKey = { keyCode: 50, easyString: '2' };
+    export const DIGIT3: EasyKey = { keyCode: 51, easyString: '3' };
+    export const DIGIT4: EasyKey = { keyCode: 52, easyString: '4' };
+    export const DIGIT5: EasyKey = { keyCode: 53, easyString: '5' };
+    export const DIGIT6: EasyKey = { keyCode: 54, easyString: '6' };
+    export const DIGIT7: EasyKey = { keyCode: 55, easyString: '7' };
+    export const DIGIT8: EasyKey = { keyCode: 56, easyString: '8' };
+    export const DIGIT9: EasyKey = { keyCode: 57, easyString: '9' };
+    export const DIGIT0: EasyKey = { keyCode: 48, easyString: '0' };
+
+    export const KEY_A: EasyKey = { keyCode: 65, easyString: 'a' };
+    export const KEY_B: EasyKey = { keyCode: 66, easyString: 'b' };
+    export const KEY_C: EasyKey = { keyCode: 67, easyString: 'c' };
+    export const KEY_D: EasyKey = { keyCode: 68, easyString: 'd' };
+    export const KEY_E: EasyKey = { keyCode: 69, easyString: 'e' };
+    export const KEY_F: EasyKey = { keyCode: 70, easyString: 'f' };
+    export const KEY_G: EasyKey = { keyCode: 71, easyString: 'g' };
+    export const KEY_H: EasyKey = { keyCode: 72, easyString: 'h' };
+    export const KEY_I: EasyKey = { keyCode: 73, easyString: 'i' };
+    export const KEY_J: EasyKey = { keyCode: 74, easyString: 'j' };
+    export const KEY_K: EasyKey = { keyCode: 75, easyString: 'k' };
+    export const KEY_L: EasyKey = { keyCode: 76, easyString: 'l' };
+    export const KEY_M: EasyKey = { keyCode: 77, easyString: 'm' };
+    export const KEY_N: EasyKey = { keyCode: 78, easyString: 'n' };
+    export const KEY_O: EasyKey = { keyCode: 79, easyString: 'o' };
+    export const KEY_P: EasyKey = { keyCode: 80, easyString: 'p' };
+    export const KEY_Q: EasyKey = { keyCode: 81, easyString: 'q' };
+    export const KEY_R: EasyKey = { keyCode: 82, easyString: 'r' };
+    export const KEY_S: EasyKey = { keyCode: 83, easyString: 's' };
+    export const KEY_T: EasyKey = { keyCode: 84, easyString: 't' };
+    export const KEY_U: EasyKey = { keyCode: 85, easyString: 'u' };
+    export const KEY_V: EasyKey = { keyCode: 86, easyString: 'v' };
+    export const KEY_W: EasyKey = { keyCode: 87, easyString: 'w' };
+    export const KEY_X: EasyKey = { keyCode: 88, easyString: 'x' };
+    export const KEY_Y: EasyKey = { keyCode: 89, easyString: 'y' };
+    export const KEY_Z: EasyKey = { keyCode: 90, easyString: 'z' };
+
+    export const F1: EasyKey = { keyCode: 112, easyString: 'f1' };
+    export const F2: EasyKey = { keyCode: 113, easyString: 'f2' };
+    export const F3: EasyKey = { keyCode: 114, easyString: 'f3' };
+    export const F4: EasyKey = { keyCode: 115, easyString: 'f4' };
+    export const F5: EasyKey = { keyCode: 116, easyString: 'f5' };
+    export const F6: EasyKey = { keyCode: 117, easyString: 'f6' };
+    export const F7: EasyKey = { keyCode: 118, easyString: 'f7' };
+    export const F8: EasyKey = { keyCode: 119, easyString: 'f8' };
+    export const F9: EasyKey = { keyCode: 120, easyString: 'f9' };
+    export const F10: EasyKey = { keyCode: 121, easyString: 'f10' };
+    export const F11: EasyKey = { keyCode: 122, easyString: 'f11' };
+    export const F12: EasyKey = { keyCode: 123, easyString: 'f12' };
+    export const F13: EasyKey = { keyCode: 124, easyString: 'f13' };
+    export const F14: EasyKey = { keyCode: 125, easyString: 'f14' };
+    export const F15: EasyKey = { keyCode: 126, easyString: 'f15' };
+    export const F16: EasyKey = { keyCode: 127, easyString: 'f16' };
+    export const F17: EasyKey = { keyCode: 128, easyString: 'f17' };
+    export const F18: EasyKey = { keyCode: 129, easyString: 'f18' };
+    export const F19: EasyKey = { keyCode: 130, easyString: 'f19' };
+    export const F20: EasyKey = { keyCode: 131, easyString: 'f20' };
+    export const F21: EasyKey = { keyCode: 132, easyString: 'f21' };
+    export const F22: EasyKey = { keyCode: 133, easyString: 'f22' };
+    export const F23: EasyKey = { keyCode: 134, easyString: 'f23' };
+    export const F24: EasyKey = { keyCode: 135, easyString: 'f24' };
+
+    export const COMMA: EasyKey = { keyCode: 188, easyString: ',' };
+    export const PERIOD: EasyKey = { keyCode: 190, easyString: '.' };
+    export const SEMICOLON: EasyKey = { keyCode: 186, easyString: ';' };
+    export const QUOTE: EasyKey = { keyCode: 222, easyString: '\'' };
+    export const BRACKET_LEFT: EasyKey = { keyCode: 219, easyString: '[' };
+    export const BRACKET_RIGHT: EasyKey = { keyCode: 221, easyString: ']' };
+    export const BACKQUOTE: EasyKey = { keyCode: 192, easyString: '\`' };
+    export const BACKSLASH: EasyKey = { keyCode: 220, easyString: '\\' };
+    export const MINUS: EasyKey = { keyCode: 189, easyString: '-' };
+    export const EQUAL: EasyKey = { keyCode: 187, easyString: '=' };
+}
 
 export namespace Key {
 
@@ -304,4 +469,9 @@ export namespace Key {
         KEY_CODE_TO_KEY[key.keyCode] = key;
     });
     MODIFIERS.push(...[Key.ALT_LEFT, Key.ALT_RIGHT, Key.CONTROL_LEFT, Key.CONTROL_RIGHT, Key.O_S_LEFT, Key.O_S_RIGHT, Key.SHIFT_LEFT, Key.SHIFT_RIGHT]);
+
+    Object.keys(EasyKey).map(prop => Reflect.get(EasyKey, prop)).forEach(easykey => {
+        EASY_TO_KEY[easykey.easyString] = KEY_CODE_TO_KEY[easykey.keyCode];
+        KEY_CODE_TO_EASY[easykey.code] = easykey;
+    });
 })();

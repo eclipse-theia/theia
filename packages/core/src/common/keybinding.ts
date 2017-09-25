@@ -7,7 +7,7 @@
 
 import { injectable, inject, named } from 'inversify';
 import { CommandRegistry } from './command';
-import { KeyCode, Accelerator } from './keys';
+import { KeyCode, Accelerator, TheiaKeyCodeUtils } from './keys';
 import { ContributionProvider } from './contribution-provider';
 import { ILogger } from "./logger";
 
@@ -83,11 +83,11 @@ export class KeybindingIndex {
         return result;
     }
 
-    getKeybindingsForKeystroke(keystroke: string): Keybinding[] {
+    getKeyBindingsForKeyCode(keyCode: KeyCode): Keybinding[] {
         const result: Keybinding[] = [];
 
         if (this.parent) {
-            for (const parentBinding of this.parent.getKeybindingsForKeystroke(keystroke)) {
+            for (const parentBinding of this.parent.getKeyBindingsForKeyCode(keyCode)) {
                 if (!this.isShadowed(parentBinding)) {
                     result.push(parentBinding);
                 }
@@ -95,7 +95,7 @@ export class KeybindingIndex {
         }
 
         for (const binding of this.bindings) {
-            if (binding.keyCode.keystroke === keystroke) {
+            if (TheiaKeyCodeUtils.equals(binding.keyCode, keyCode)) {
                 result.push(binding);
             }
         }
@@ -105,7 +105,7 @@ export class KeybindingIndex {
     protected isShadowed(fromParent: Keybinding): boolean {
         for (const binding of this.bindings) {
             if (fromParent.commandId === binding.commandId
-                || fromParent.keyCode.keystroke === binding.keyCode.keystroke) {
+                || TheiaKeyCodeUtils.equals(fromParent.keyCode, binding.keyCode)) {
                 return true;
             }
         }
@@ -212,7 +212,7 @@ export class KeybindingRegistry {
      * @param binding
      */
     registerDefaultKeyBinding(binding: Keybinding) {
-        const existingBindings = this.keymapsIndex.getKeybindingsForKeystroke(binding.keyCode.keystroke);
+        const existingBindings = this.keymapsIndex.getKeyBindingsForKeyCode(binding.keyCode);
         if (existingBindings.length > 0) {
             const collided = existingBindings.filter(b => b.context === binding.context);
             if (collided.length > 0) {
@@ -229,7 +229,7 @@ export class KeybindingRegistry {
      * @param binding
      */
     overrideKeyBinding(binding: Keybinding) {
-        const existingBindings = this.keymapsIndex.getKeybindingsForKeystroke(binding.keyCode.keystroke);
+        const existingBindings = this.keymapsIndex.getKeyBindingsForKeyCode(binding.keyCode);
         if (existingBindings.length > 0) {
             const collided = existingBindings.filter(b => b.context === binding.context);
             if (collided.length > 0) {
@@ -265,7 +265,7 @@ export class KeybindingRegistry {
      * @param keyCode the key code of the binding we are searching.
      */
     getKeybindingForKeyCode(keyCode: KeyCode, options: { active: boolean } = ({ active: true })): Keybinding | undefined {
-        const bindings = this.keymapsIndex.getKeybindingsForKeystroke(keyCode.keystroke);
+        const bindings = this.keymapsIndex.getKeyBindingsForKeyCode(keyCode);
         if (!bindings || bindings.length === 0) {
             return undefined;
         }
@@ -287,7 +287,7 @@ export class KeybindingRegistry {
         if (event.defaultPrevented) {
             return;
         }
-        const keyCode = KeyCode.createKeyCode(event);
+        const keyCode = TheiaKeyCodeUtils.createKeyCode(event);
         const binding = this.getKeybindingForKeyCode(keyCode);
         if (!binding) {
             return;
@@ -323,7 +323,7 @@ export class KeybindingRegistry {
                 // Create new Keybinding and assign it
                 // If one keybinding is wrong, reset to the default ones.
 
-                const code = KeyCode.parseKeystroke(rawKeyBinding.keybinding);
+                const code = TheiaKeyCodeUtils.parseKeystroke(rawKeyBinding.keybinding);
                 if (code) {
                     let context: KeybindingContext | undefined;
                     if (rawKeyBinding.context) {

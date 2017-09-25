@@ -9,7 +9,7 @@ import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
 import {
     Command, CommandContribution, CommandRegistry,
-    KeybindingContribution, KeybindingRegistry, KeyCode, Key, Modifier,
+    KeybindingContribution, KeybindingRegistry, TheiaKeyCodeUtils, Key, Modifier,
     MenuModelRegistry, MenuContribution
 } from '../../common';
 import { FrontendApplication, FrontendApplicationContribution, CommonMenus } from '../../browser';
@@ -125,25 +125,25 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
     registerDefaultKeyBindings(registry: KeybindingRegistry): void {
         registry.registerDefaultKeyBinding({
             commandId: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id,
-            keyCode: KeyCode.createKeyCode({ first: Key.KEY_I, modifiers: [Modifier.M1, Modifier.M2] })
+            keyCode: TheiaKeyCodeUtils.createKeyCode({ first: Key.KEY_I, modifiers: [Modifier.M1, Modifier.M2] })
         });
 
         registry.registerDefaultKeyBinding({
             commandId: ElectronCommands.RELOAD.id,
-            keyCode: KeyCode.createKeyCode({ first: Key.KEY_R, modifiers: [Modifier.M1] })
+            keyCode: TheiaKeyCodeUtils.createKeyCode({ first: Key.KEY_R, modifiers: [Modifier.M1] })
         });
 
         registry.registerDefaultKeyBinding({
             commandId: ElectronCommands.ZOOM_IN.id,
-            keyCode: KeyCode.createKeyCode({ first: Key.EQUAL, modifiers: [Modifier.M1] })
+            keyCode: TheiaKeyCodeUtils.createKeyCode({ first: Key.EQUAL, modifiers: [Modifier.M1] })
         });
         registry.registerDefaultKeyBinding({
             commandId: ElectronCommands.ZOOM_OUT.id,
-            keyCode: KeyCode.createKeyCode({ first: Key.MINUS, modifiers: [Modifier.M1] })
+            keyCode: TheiaKeyCodeUtils.createKeyCode({ first: Key.MINUS, modifiers: [Modifier.M1] })
         });
         registry.registerDefaultKeyBinding({
             commandId: ElectronCommands.RESET_ZOOM.id,
-            keyCode: KeyCode.createKeyCode({ first: Key.DIGIT0, modifiers: [Modifier.M1] })
+            keyCode: TheiaKeyCodeUtils.createKeyCode({ first: Key.DIGIT0, modifiers: [Modifier.M1] })
         });
     }
 
