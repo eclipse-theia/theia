@@ -7,15 +7,10 @@
 import { Git, Repository } from '../common';
 import { injectable, inject } from "inversify";
 
-export interface GitUiRepository {
-    repository: Repository;
-    selected: boolean;
-}
-
 @injectable()
-export class GitUiRepositories {
+export class GitRepositoryProvider {
 
-    protected gitUiRepos: GitUiRepository[] = [];
+    protected selectedRepository: Repository;
 
     constructor(
         @inject(Git) protected readonly git: Git
@@ -23,44 +18,22 @@ export class GitUiRepositories {
 
     }
 
-    async all(): Promise<GitUiRepository[]> {
-        const repos = await this.git.repositories();
-        const uiRepos: GitUiRepository[] = [];
-
-        repos.forEach(repo => {
-            const uiRepo = this.gitUiRepos.find(r => r.repository.localUri === repo.localUri);
-            if (uiRepo) {
-                uiRepos.push(uiRepo);
-            } else {
-                uiRepos.push({
-                    repository: repo,
-                    selected: false
-                });
-            }
-        });
-        this.gitUiRepos = uiRepos;
-        return Promise.resolve(this.gitUiRepos);
-    }
-
-    get selected(): GitUiRepository {
-        const repo = this.gitUiRepos.find(r => r.selected);
-        if (repo) {
-            return repo;
+    async getSelected(): Promise<Repository> {
+        if (this.selectedRepository) {
+            return this.selectedRepository;
         } else {
-            this.gitUiRepos[0].selected = true;
-            return this.gitUiRepos[0];
+            return this.git.repositories().then(r => r[0]);
         }
     }
 
     select(localUri: string): void {
-        this.gitUiRepos.forEach(repo => {
-            if (repo.repository.localUri === localUri) {
-                repo.selected = true;
-            } else {
-                repo.selected = false;
+        this.git.repositories().then(repos => {
+            for (const repo of repos) {
+                if (repo.localUri === localUri) {
+                    this.selectedRepository = repo;
+                    return;
+                }
             }
-        })
+        });
     }
-
-
 }

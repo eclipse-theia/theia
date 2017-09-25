@@ -7,14 +7,13 @@
 
 import { injectable, inject } from "inversify";
 import { Git, Repository } from '../common';
-import { Resource, ResourceResolver, DisposableCollection } from "@theia/core";
+import { Resource, ResourceResolver } from "@theia/core";
 import URI from "@theia/core/lib/common/uri";
+import { FileUri } from "@theia/core/lib/node/file-uri";
 
 export const GIT_RESOURCE_SCHEME = 'gitrev';
 
 export class GitResource implements Resource {
-
-    protected readonly toDispose = new DisposableCollection();
 
     constructor(readonly uri: URI, protected readonly repository: Repository, protected readonly git: Git) { }
 
@@ -24,9 +23,7 @@ export class GitResource implements Resource {
         }, options)).then(content => content.toString());
     }
 
-    dispose(): void {
-        this.toDispose.dispose();
-    }
+    dispose(): void { }
 }
 
 @injectable()
@@ -51,24 +48,23 @@ export class GitResourceResolver implements ResourceResolver {
 
     async getResources(uri: URI): Promise<GitResource> {
         const repository = await this.getRepository(uri);
-        return Promise.resolve(new GitResource(uri, repository, this.git));
+        return new GitResource(uri, repository, this.git);
     }
 
     async getRepository(uri: URI): Promise<Repository> {
         const uriWoS = uri.withoutScheme();
-        const dir = uriWoS.path.dir;
-        const dirStr = dir.toString();
+        const dirStr = FileUri.fsPath(uriWoS);
         let localUri: URI;
         let localUriStr: string;
         if (this.repos.length === 0) {
             this.repos = await this.git.repositories();
         }
-        for (let idx = 0; idx < this.repos.length; idx++) {
-            localUri = new URI(this.repos[idx].localUri);
+        for (const repo of this.repos) {
+            localUri = new URI(repo.localUri);
             // make sure that localUri of repo has no scheme.
             localUriStr = localUri.withoutScheme().toString();
             if (dirStr.toString().endsWith(localUriStr)) {
-                return Promise.resolve({ localUri: localUriStr });
+                return { localUri: localUriStr };
             }
         }
         return this.getRepository(uri.parent);

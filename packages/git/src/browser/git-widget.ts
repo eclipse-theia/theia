@@ -9,10 +9,10 @@
 import { injectable, inject } from 'inversify';
 import { Git } from '../common/git';
 import { GIT_CONTEXT_MENU } from './git-context-menu';
-import { FileChange, FileStatus } from '../common/model';
+import { FileChange, FileStatus, Repository } from '../common/model';
 import { GitWatcher } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
-import { GitUiRepositories, GitUiRepository } from './git-repositories';
+import { GitRepositoryProvider } from './git-repositories';
 import { MessageService, ResourceProvider } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { VirtualRenderer, VirtualWidget, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
@@ -22,9 +22,9 @@ import { DiffUriHelper } from '@theia/editor/lib/browser/editor-utility';
 @injectable()
 export class GitWidget extends VirtualWidget {
 
-    protected repository: GitUiRepository;
+    protected repository: Repository;
 
-    protected repositories: GitUiRepository[] = [];
+    protected repositories: Repository[] = [];
     protected stagedChanges: FileChange[] = [];
     protected unstagedChanges: FileChange[] = [];
     protected mergeChanges: FileChange[] = [];
@@ -33,7 +33,7 @@ export class GitWidget extends VirtualWidget {
 
     constructor(
         @inject(Git) protected readonly git: Git,
-        @inject(GitUiRepositories) protected readonly gitUiRepositories: GitUiRepositories,
+        @inject(GitRepositoryProvider) protected readonly gitRepositoryProvider: GitRepositoryProvider,
         @inject(GitWatcher) protected readonly gitWatcher: GitWatcher,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
@@ -55,12 +55,12 @@ export class GitWidget extends VirtualWidget {
     async initialize(): Promise<void> {
         this.message = '';
         this.additionalMessage = '';
-        this.repositories = await this.gitUiRepositories.all();
-        this.repository = this.gitUiRepositories.selected;
+        this.repositories = await this.git.repositories();
+        this.repository = await this.gitRepositoryProvider.getSelected();
         this.stagedChanges = [];
         this.unstagedChanges = [];
         this.mergeChanges = [];
-        const status = await this.git.status(this.repository.repository);
+        const status = await this.git.status(this.repository);
         status.changes.forEach(change => {
             if (FileStatus[FileStatus.Conflicted.valueOf()] !== FileStatus[change.status]) {
                 if (change.staged) {
@@ -89,14 +89,14 @@ export class GitWidget extends VirtualWidget {
     protected renderRepoList(): h.Child {
         const repoOptionElements: h.Child[] = [];
         this.repositories.forEach(repo => {
-            const uri = new URI(repo.repository.localUri);
+            const uri = new URI(repo.localUri);
             repoOptionElements.push(h.option({ value: uri.toString() }, uri.displayName));
         });
 
         return h.select({
             id: 'repositoryList',
             onchange: event => {
-                this.gitUiRepositories.select((event.target as HTMLSelectElement).value);
+                this.gitRepositoryProvider.select((event.target as HTMLSelectElement).value);
                 this.initialize();
             }
         }, VirtualRenderer.flatten(repoOptionElements));
@@ -105,9 +105,10 @@ export class GitWidget extends VirtualWidget {
     protected renderCommandBar(): h.Child {
         const commit = h.div({
             className: 'button',
-            onclick: event => {
+            onclick: async event => {
                 if (this.message !== '') {
-                    this.git.commit(this.gitUiRepositories.selected.repository, this.message + "\n\n" + this.additionalMessage)
+                    const repo = await this.gitRepositoryProvider.getSelected();
+                    this.git.commit(repo, this.message + "\n\n" + this.additionalMessage)
                         .then(() => {
                             this.initialize();
                         });
@@ -176,8 +177,9 @@ export class GitWidget extends VirtualWidget {
         if (change.staged) {
             btns.push(h.div({
                 className: 'button',
-                onclick: event => {
-                    this.git.rm(this.gitUiRepositories.selected.repository, change.uri)
+                onclick: async event => {
+                    const repo = await this.gitRepositoryProvider.getSelected();
+                    this.git.rm(repo, change.uri)
                         .then(() => {
                             this.initialize();
                         });
@@ -191,8 +193,9 @@ export class GitWidget extends VirtualWidget {
             }, h.i({ className: 'fa fa-undo' })));
             btns.push(h.div({
                 className: 'button',
-                onclick: event => {
-                    this.git.add(this.gitUiRepositories.selected.repository, change.uri)
+                onclick: async event => {
+                    const repo = await this.gitRepositoryProvider.getSelected();
+                    this.git.add(repo, change.uri)
                         .then(() => {
                             this.initialize();
                         });
@@ -203,36 +206,41 @@ export class GitWidget extends VirtualWidget {
     }
 
     protected renderGitItem(change: FileChange): h.Child {
-        const uri: URI = new URI(change.uri);
-        const nameSpan = h.span({ className: 'name' }, uri.displayName + ' ');
-        const pathSpan = h.span({ className: 'path' }, uri.path.dir.toString());
+        const changeUri: URI = new URI(change.uri);
+        const nameSpan = h.span({ className: 'name' }, changeUri.displayName + ' ');
+        const pathSpan = h.span({ className: 'path' }, changeUri.path.dir.toString());
         const nameAndPathDiv = h.div({
             className: 'noWrapInfo',
             onclick: () => {
-                // try {
-                //     const rawHeadUri = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD');
-                //     const headRessource = this.resourceProvider(rawHeadUri);
-                //     headRessource
-                //         .then(r => r.readContents())
-                //         .then(content => console.log(content));
-
-                // } catch (e) {
-                //     // do nothing
-                // }
-                // try {
-                //     const rawUri = uri.withScheme('file');
-                //     const ressource = this.resourceProvider(rawUri);
-                //     ressource
-                //         .then(r => r.readContents())
-                //         .then(content => {
-                //             console.log(content);
-                //         });
-                // } catch (e) {
-                //     // do nothing
-                // }
-                const rawHeadUri = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD');
-                const diffUri = DiffUriHelper.encode(uri, rawHeadUri);
-                open(this.openerService, diffUri);
+                let uri: URI;
+                if (change.status !== FileStatus.New) {
+                    if (change.staged) {
+                        uri = DiffUriHelper.encode(
+                            changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
+                            changeUri.withScheme(GIT_RESOURCE_SCHEME),
+                            changeUri.displayName + ' (Index)');
+                    } else if (this.stagedChanges.find(c => c.uri === change.uri)) {
+                        uri = DiffUriHelper.encode(
+                            changeUri.withScheme(GIT_RESOURCE_SCHEME),
+                            changeUri,
+                            changeUri.displayName + ' (Working tree)');
+                    } else {
+                        uri = DiffUriHelper.encode(
+                            changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
+                            changeUri,
+                            changeUri.displayName + ' (Working tree)');
+                    }
+                } else if (change.staged) {
+                    uri = changeUri.withScheme(GIT_RESOURCE_SCHEME);
+                } else if (this.stagedChanges.find(c => c.uri === change.uri)) {
+                    uri = DiffUriHelper.encode(
+                        changeUri.withScheme(GIT_RESOURCE_SCHEME),
+                        changeUri,
+                        changeUri.displayName + ' (Working tree)');
+                } else {
+                    uri = changeUri;
+                }
+                open(this.openerService, uri);
             }
         }, nameSpan, pathSpan);
         const buttonsDiv = this.renderGitItemButtons(change);

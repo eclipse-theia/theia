@@ -19,7 +19,7 @@ export namespace DiffUris {
 
 export namespace DiffUriHelper {
 
-    export function encode(original: URI, modified: URI): URI {
+    export function encode(original: URI, modified: URI, name?: string): URI {
         const diffUris: DiffUris = {
             original: original.toString(),
             modified: modified.toString()
@@ -27,7 +27,7 @@ export namespace DiffUriHelper {
 
         const diffUriStr = encodeURI(JSON.stringify(diffUris));
 
-        return new URI(original.displayName).withScheme('diff').withFragment(diffUriStr);
+        return new URI(name || original.displayName).withScheme('diff').withFragment(diffUriStr);
     }
 
     export function decode(uri: URI): DiffUris {

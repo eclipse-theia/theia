@@ -127,7 +127,7 @@ export class DugiteGit implements Git {
 
     async show(repository: Repository, uri: string, options?: Git.Options.Show): Promise<string> {
         const encoding = options ? options.encoding || 'utf8' : 'utf8';
-        const commitish = options ? options.commitish || 'HEAD' : 'HEAD';
+        const commitish = options ? options.commitish || '' : '';
         const path = await getFsPath(uri);
         if (encoding === 'binary') {
             return (await getBlobContents(repository.localUri, commitish, path)).toString();
