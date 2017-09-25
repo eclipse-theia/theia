@@ -228,7 +228,7 @@ export abstract class AbstractLogger implements ILogger {
         this.getLog(logLevel).then(log => {
             if (typeof arg2 === 'string') {
                 const message = arg2;
-                log(message, params);
+                log(message, ...params);
             } else {
                 const loggable = arg2;
                 loggable(log);
@@ -243,7 +243,7 @@ export abstract class AbstractLogger implements ILogger {
         return this.ifEnabled(LogLevel.TRACE);
     }
     trace(arg: string | Loggable, ...params: any[]): void {
-        this.log(LogLevel.TRACE, arg, params);
+        this.log(LogLevel.TRACE, arg, ...params);
     }
 
     isDebug(): Promise<boolean> {
@@ -253,7 +253,7 @@ export abstract class AbstractLogger implements ILogger {
         return this.ifEnabled(LogLevel.DEBUG);
     }
     debug(arg: string | Loggable, ...params: any[]): void {
-        this.log(LogLevel.DEBUG, arg, params);
+        this.log(LogLevel.DEBUG, arg, ...params);
     }
 
     isInfo(): Promise<boolean> {
@@ -263,7 +263,7 @@ export abstract class AbstractLogger implements ILogger {
         return this.ifEnabled(LogLevel.INFO);
     }
     info(arg: string | Loggable, ...params: any[]): void {
-        this.log(LogLevel.INFO, arg, params);
+        this.log(LogLevel.INFO, arg, ...params);
     }
 
     isWarn(): Promise<boolean> {
@@ -273,7 +273,7 @@ export abstract class AbstractLogger implements ILogger {
         return this.ifEnabled(LogLevel.WARN);
     }
     warn(arg: string | Loggable, ...params: any[]): void {
-        this.log(LogLevel.WARN, arg, params);
+        this.log(LogLevel.WARN, arg, ...params);
     }
 
     isError(): Promise<boolean> {
@@ -283,7 +283,7 @@ export abstract class AbstractLogger implements ILogger {
         return this.ifEnabled(LogLevel.ERROR);
     }
     error(arg: string | Loggable, ...params: any[]): void {
-        this.log(LogLevel.ERROR, arg, params);
+        this.log(LogLevel.ERROR, arg, ...params);
     }
 
     isFatal(): Promise<boolean> {
@@ -293,7 +293,7 @@ export abstract class AbstractLogger implements ILogger {
         return this.ifEnabled(LogLevel.FATAL);
     }
     fatal(arg: string | Loggable, ...params: any[]): void {
-        this.log(LogLevel.FATAL, arg, params);
+        this.log(LogLevel.FATAL, arg, ...params);
     }
 
     child(obj: object): ILogger {
@@ -356,7 +356,7 @@ export class Logger extends AbstractLogger implements ILogger {
     protected getLog(logLevel: number): Promise<Log> {
         return this.ifEnabled(logLevel).then(() =>
             this.id.then(id =>
-                (message: string, params: any[]) =>
+                (message: string, ...params: any[]) =>
                     this.server.log(id, logLevel, message, params)
             )
         );

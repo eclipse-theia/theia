@@ -9,12 +9,12 @@ import { AbstractGenerator } from "./abstract-generator";
 
 export class FrontendGenerator extends AbstractGenerator {
 
-    generate(): void {
-        const frontendModules = this.model.targetFrontendModules;
-        this.write(this.model.frontend('index.html'), this.compileIndexHtml(frontendModules))
-        this.write(this.model.frontend('index.js'), this.compileIndexJs(frontendModules));
-        if (this.model.isElectron()) {
-            this.write(this.model.frontend('electron-main.js'), this.compileElectronMain());
+    async generate(): Promise<void> {
+        const frontendModules = this.pck.targetFrontendModules;
+        await this.write(this.pck.frontend('index.html'), this.compileIndexHtml(frontendModules));
+        await this.write(this.pck.frontend('index.js'), this.compileIndexJs(frontendModules));
+        if (this.pck.isElectron()) {
+            await this.write(this.pck.frontend('electron-main.js'), this.compileElectronMain());
         }
     }
 

@@ -1,0 +1,84 @@
+{
+  "extends": "./packages/base.tsconfig",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@theia/application-package": [
+        "dev-packages/application-package/src"
+      ],
+      "@theia/application-package/lib/*": [
+        "dev-packages/application-package/src/*"
+      ],
+      "@theia/core": [
+        "packages/core/src/common"
+      ],
+      "@theia/core/lib/*": [
+        "packages/core/src/*"
+      ],
+      "humane-js": [
+        "packages/core/src/typings/humane-js"
+      ],
+      "@theia/extension-manager/lib/*": [
+        "packages/extension-manager/src/*"
+      ],
+      "@theia/filesystem/lib/*": [
+        "packages/filesystem/src/*"
+      ],
+      "mv": [
+        "packages/filesystem/src/typings/mv"
+      ],
+      "trash": [
+        "packages/filesystem/src/typings/trash"
+      ],
+      "@theia/navigator/lib/*": [
+        "packages/navigator/src/*"
+      ],
+      "@theia/preferences-api": [
+        "packages/preferences-api/src/common"
+      ],
+      "@theia/preferences-api/lib/*": [
+        "packages/preferences-api/src/*"
+      ],
+      "@theia/preferences/lib/*": [
+        "packages/preferences/src/*"
+      ],
+      "@theia/workspace/lib/*": [
+        "packages/workspace/src/*"
+      ],
+      "@theia/terminal/lib/*": [
+        "packages/terminal/src/*"
+      ],
+      "@theia/languages/lib/*": [
+        "packages/languages/src/*"
+      ],
+      "@theia/editor/lib/*": [
+        "packages/editor/src/*"
+      ],
+      "@theia/monaco/lib/*": [
+        "packages/monaco/src/*"
+      ],
+      "@theia/cpp/lib/*": [
+        "packages/cpp/src/*"
+      ],
+      "@theia/java/lib/*": [
+        "packages/java/src/*"
+      ],
+      "@theia/python/lib/*": [
+        "packages/python/src/*"
+      ],
+      "@theia/go/lib/*": [
+        "packages/go/src/*"
+      ],
+      "@theia/process/lib*": [
+        "packages/process/src/*"
+      ],
+      "@theia/markers/lib/*": [
+        "packages/markers/src/*"
+      ]
+    }
+  },
+  "include": [
+    "dev-packages/*/src",
+    "packages/*/src"
+  ]
+}
