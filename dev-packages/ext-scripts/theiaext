@@ -23,7 +23,11 @@ function getExtScript() {
 
 function run(script) {
     return new Promise((resolve, reject) => {
+        let env = process.env;
+        /* Use the root .bin since deps .bin is not hoisted */
+        env.PATH = process.cwd() + '/../../node_modules/.bin:' + process.env.PATH;
         const scriptProcess = cp.exec(script, {
+            'env': env,
             cwd: process.cwd()
         });
         scriptProcess.stdout.pipe(process.stdout);
