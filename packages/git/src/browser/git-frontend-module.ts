@@ -17,7 +17,7 @@ import { GitFrontendContribution } from './git-frontend-contribution';
 import { GitWidget } from './git-widget';
 import { GitResourceResolver } from './git-resource';
 import { GitContextMenu } from './git-context-menu';
-import { GitUiRepositories } from './git-repositories';
+import { GitRepositoryProvider } from './git-repositories';
 
 import '../../src/browser/style/index.css';
 
@@ -40,5 +40,5 @@ export default new ContainerModule(bind => {
     bind(GitResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(GitResourceResolver));
 
-    bind(GitUiRepositories).toSelf().inSingletonScope();
+    bind(GitRepositoryProvider).toSelf().inSingletonScope();
 });

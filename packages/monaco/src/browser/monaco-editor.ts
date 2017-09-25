@@ -85,7 +85,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         protected readonly m2p: MonacoToProtocolConverter,
         protected readonly p2m: ProtocolToMonacoConverter,
         protected readonly workspace: MonacoWorkspace,
-        options?: MonacoEditor.ICommonOptions,
+        options?: MonacoEditor.IOptions,
         override?: IEditorOverrideServices,
     ) {
         this.autoSizing = options && options.autoSizing !== undefined ? options.autoSizing : false;
@@ -95,7 +95,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         this.addHandlers(this.editor);
     }
 
-    protected create(options?: MonacoEditor.ICommonOptions, override?: monaco.editor.IEditorOverrideServices) {
+    protected create(options?: MonacoEditor.IOptions, override?: monaco.editor.IEditorOverrideServices) {
         this.toDispose.push(this.editor = monaco.editor.create(this.node, {
             ...options,
             fixedOverflowWidgets: true

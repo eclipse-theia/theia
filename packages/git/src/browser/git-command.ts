@@ -5,19 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Git } from '../common/git';
 import { injectable, inject } from "inversify";
-import { CommandContribution, CommandRegistry } from "@theia/core/lib/common";
+import { CommandContribution, CommandRegistry, ILogger } from "@theia/core/lib/common";
 
 export namespace GIT_COMMANDS {
-    export const STATUS = {
-        id: 'git.status',
-        label: 'Print Git Status'
-    };
-    export const REPOSITORIES = {
-        id: 'git.repositories',
-        label: 'Print All Repositories'
-    };
     export const FETCH = {
         id: 'git.fetch',
         label: 'Fetch'
@@ -40,48 +31,14 @@ export namespace GIT_COMMANDS {
 export class GitCommandHandlers implements CommandContribution {
 
     constructor(
-        @inject(Git) private git: Git
+        @inject(ILogger) protected readonly logger: ILogger
     ) { }
 
     registerCommands(registry: CommandRegistry): void {
-
-        registry.registerCommand(GIT_COMMANDS.STATUS);
-        registry.registerHandler(GIT_COMMANDS.STATUS.id, {
-            execute: (): any => {
-                this.git.repositories().then(repositories => {
-                    const first = repositories.shift();
-                    if (first) {
-                        this.git.status(first).then(status => {
-                            console.info(status);
-                        });
-                    } else {
-                        console.info('No repositories were found.');
-                    }
-                });
-                return undefined;
-            },
-            isEnabled: () => true
-        });
-
-        registry.registerCommand(GIT_COMMANDS.REPOSITORIES);
-        registry.registerHandler(GIT_COMMANDS.REPOSITORIES.id, {
-            execute: (): any => {
-                this.git.repositories().then(repositories => {
-                    if (!repositories) {
-                        console.info('No repositories were found.');
-                    } else {
-                        repositories.forEach(r => console.info(r));
-                    }
-                });
-                return undefined;
-            },
-            isEnabled: () => true
-        });
-
         registry.registerCommand(GIT_COMMANDS.FETCH);
         registry.registerHandler(GIT_COMMANDS.FETCH.id, {
             execute: (): any => {
-                // this.git.fetch();
+                this.logger.info('FETCH');
             },
             isEnabled: () => true
         });
@@ -89,7 +46,7 @@ export class GitCommandHandlers implements CommandContribution {
         registry.registerCommand(GIT_COMMANDS.PULL);
         registry.registerHandler(GIT_COMMANDS.PULL.id, {
             execute: (): any => {
-                console.log('PULL');
+                this.logger.info('PULL');
             },
             isEnabled: () => true
         });
@@ -97,7 +54,7 @@ export class GitCommandHandlers implements CommandContribution {
         registry.registerCommand(GIT_COMMANDS.MERGE);
         registry.registerHandler(GIT_COMMANDS.MERGE.id, {
             execute: (): any => {
-                console.log('MERGE');
+                this.logger.info('MERGE');
             },
             isEnabled: () => true
         });
@@ -105,7 +62,7 @@ export class GitCommandHandlers implements CommandContribution {
         registry.registerCommand(GIT_COMMANDS.PUSH);
         registry.registerHandler(GIT_COMMANDS.PUSH.id, {
             execute: (): any => {
-                console.log('PUSH');
+                this.logger.info('PUSH');
             },
             isEnabled: () => true
         });
