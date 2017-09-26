@@ -1,71 +1,64 @@
-import { Client } from "webdriverio"
+import { Client } from "webdriverio";
 
 export class MainPage {
 
-    private driver: Client<any>;
-    public constructor(driver: Client<any>) {
-        this.driver = driver;
+    constructor(private driver: Client<any>) {
     }
 
-    public clickMenuTab(tabNumber: Number): void {
+    clickMenuTab(tabNumber: number) {
         this.driver.click(`ul.p-MenuBar-content > .p-MenuBar-item:nth-child(${tabNumber})`);
     }
 
-    public hoverMenuTab(tabNumber: Number): void {
+    hoverMenuTab(tabNumber: number) {
         this.driver.moveToObject(`ul.p-MenuBar-content > .p-MenuBar-item:nth-child(${tabNumber})`);
     }
 
-    public clickFilesSideTab(): void {
-        this.driver.click('.p-TabBar-tab')
+    /**
+     * Selects one of the side tabs.
+     * @param index the (0 based) index of the tab. If not present, the first tab (with 0 index) will be selected.
+     */
+    clickSideTab(index: number = 0) {
+        this.driver.click(`ul.p-TabBar-content > .p-TabBar-tab:nth-child(${index})`);
     }
 
-    public isFileNavigatorOpen(): Boolean {
-        if (this.driver.element('#files').getAttribute('class').split(' ').indexOf('p-mod-hidden') !== -1) {
-            return false;
-        } else {
-            return true;
-        }
+    clickFilesSideTab() {
+        this.clickSideTab(1);
     }
 
-    public isTabActive(tabNumber: Number) {
-        if (this.driver.element(`ul.p-MenuBar-content > .p-MenuBar-item:nth-child(${tabNumber})`).getAttribute('class')
-            .split(' ').indexOf('p-mod-active') !== -1) {
-            return true;
-        } else {
-            return false;
-        }
+    isFileNavigatorOpen(): Boolean {
+        return this.isSideTabActive(1);
     }
 
-    public waitForLoadingPanels(): void {
+    isSideTabActive(index: number = 0): Boolean {
+        return this.driver.element(`.p-TabBar-content > .p-TabBar-tab:nth-child(${index})`).getAttribute('class').split(' ').indexOf('p-mod-current') === 1;
+    }
+
+    isTabActive(tabNumber: number) {
+        return this.driver.element(`ul.p-MenuBar-content > .p-MenuBar-item:nth-child(${tabNumber})`).getAttribute('class').split(' ').indexOf('p-mod-active') !== -1;
+    }
+
+    waitForLoadingPanels() {
         this.driver.waitForExist('#theia-top-panel');
         this.driver.waitForExist('#theia-main-content-panel');
     }
 
-    public isMainContentPanelLoaded(): Boolean {
-        if (this.driver.element('#theia-main-content-panel').state === 'success') {
-            return true;
-        } else {
-            return false;
-        }
+    isMainContentPanelLoaded(): boolean {
+        return this.driver.element('#theia-main-content-panel').state === 'success';
     }
 
-    public isSubMenuShowing(): Boolean {
-        if (this.driver.element('p-Widget.p-Menu.p-MenuBar-menu').state === 'failure') {
-            return false;
-        } else {
-            return true;
-        }
+    isSubMenuShowing(): boolean {
+        return this.driver.element('p-Widget.p-Menu.p-MenuBar-menu').state !== 'failure';
     }
 
-    public waitForLoadingMenu(): void {
+    waitForLoadingMenu() {
         browser.waitForExist('.p-Widget.p-Menu.p-MenuBar-menu');
     }
 
-    public getxBarTabPosition(tabNumber: Number): Number {
-        return browser.getLocation(`ul.p-MenuBar-content > .p-MenuBar-item:nth-child(${tabNumber}`, 'x')
+    getxBarTabPosition(tabNumber: number): number {
+        return browser.getLocation(`ul.p-MenuBar-content > .p-MenuBar-item:nth-child(${tabNumber}`, 'x');
     }
 
-    public getxMenuPosition(): Number {
-        return this.driver.getLocation('.p-Widget.p-Menu.p-MenuBar-menu', 'x')
+    getxMenuPosition(): number {
+        return this.driver.getLocation('.p-Widget.p-Menu.p-MenuBar-menu', 'x');
     }
 }
