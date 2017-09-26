@@ -49,8 +49,10 @@ describe('git', async () => {
             await initRepository(path.join(root, 'BASE', 'C'));
             const git = await createGit(path.join(root, 'BASE'));
             const repositories = await git.repositories();
-            expect(repositories.map(r => path.basename(FileUri.fsPath(r.localUri)))).to.deep.equal(['BASE', 'A', 'B', 'C']);
-            console.log('dsfddsdsdsf');
+            const repositoryNames = repositories.map(r => path.basename(FileUri.fsPath(r.localUri)));
+            expect(repositoryNames.shift()).to.equal('BASE'); // The first must be the container repository.
+            expect(repositoryNames.sort()).to.deep.equal(['A', 'B', 'C']);
+
         });
 
     });

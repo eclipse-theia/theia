@@ -21,9 +21,9 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
     private readonly status: Map<Repository, WorkingDirectoryStatus | undefined>;
 
     constructor(
-        @inject(Git) private readonly git: Git,
-        @inject(GitPreferences) private readonly preferences: GitPreferences,
-        @inject(FileSystemWatcherServer) private readonly filesystemWatcher: FileSystemWatcherServer
+        @inject(Git) protected readonly git: Git,
+        @inject(GitPreferences) protected readonly preferences: GitPreferences,
+        @inject(FileSystemWatcherServer) protected readonly filesystemWatcher: FileSystemWatcherServer
     ) {
         this.watchers = new Map();
         this.status = new Map();
