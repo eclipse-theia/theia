@@ -66,6 +66,11 @@ module.exports = {
                 loader: 'ignore-loader'
             },
             {
+                // see https://github.com/theia-ide/theia/issues/556
+                test: /source-map-support/,
+                loader: 'ignore-loader'
+            },
+            {
                 test: /\\.js$/,
                 enforce: 'pre',
                 loader: 'source-map-loader'
