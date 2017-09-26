@@ -56,17 +56,21 @@ export class GitResourceResolver implements ResourceResolver {
         const dirStr = FileUri.fsPath(uriWoS);
         let localUri: URI;
         let localUriStr: string;
+        let sortedRepos: Repository[] = [];
         if (this.repos.length === 0) {
             this.repos = await this.git.repositories();
         }
-        for (const repo of this.repos) {
+        if (this.repos.length > 1) {
+            sortedRepos = this.repos.sort((a, b) => b.localUri.length - a.localUri.length);
+        }
+        for (const repo of sortedRepos) {
             localUri = new URI(repo.localUri);
             // make sure that localUri of repo has no scheme.
             localUriStr = localUri.withoutScheme().toString();
-            if (dirStr.toString().endsWith(localUriStr)) {
+            if (dirStr.toString().startsWith(localUriStr)) {
                 return { localUri: localUriStr };
             }
         }
-        return this.getRepository(uri.parent);
+        return this.repos[0];
     }
 }
