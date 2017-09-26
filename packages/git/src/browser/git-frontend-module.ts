@@ -17,7 +17,7 @@ import { GitFrontendContribution } from './git-frontend-contribution';
 import { GitWidget } from './git-widget';
 import { GitResourceResolver } from './git-resource';
 import { GitContextMenu } from './git-context-menu';
-import { GitRepositoryProvider } from './git-repositories';
+import { GitRepositoryProvider } from './git-repository-provider';
 
 import '../../src/browser/style/index.css';
 

@@ -12,7 +12,7 @@ import { GIT_CONTEXT_MENU } from './git-context-menu';
 import { FileChange, FileStatus, Repository } from '../common/model';
 import { GitWatcher } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
-import { GitRepositoryProvider } from './git-repositories';
+import { GitRepositoryProvider } from './git-repository-provider';
 import { MessageService, ResourceProvider } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { VirtualRenderer, VirtualWidget, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
