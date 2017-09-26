@@ -1,4 +1,3 @@
-import { Repository } from '../../lib/common';
 /*
 * Copyright (C) 2017 TypeFox and others.
 *
@@ -7,7 +6,7 @@ import { Repository } from '../../lib/common';
 */
 
 import { injectable, inject } from "inversify";
-import { Git } from '../common';
+import { Git, Repository } from '../common';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { CommandContribution, CommandRegistry, ILogger } from "@theia/core/lib/common";
 
