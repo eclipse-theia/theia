@@ -6,24 +6,25 @@
  */
 
 import { injectable, inject } from "inversify";
-import { GitWidget } from './git-widget';
 import { FrontendApplication, FrontendApplicationContribution } from "@theia/core/lib/browser";
+import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
+
+export const GIT_WIDGET_FACTORY_ID = 'git';
 
 @injectable()
 export class GitFrontendContribution implements FrontendApplicationContribution {
 
     constructor(
-        @inject(GitWidget) protected readonly gitWidget: GitWidget,
-    ) {
-    }
+        @inject(WidgetManager) protected readonly widgetManager: WidgetManager
+    ) { }
 
     onStart(app: FrontendApplication): void {
-        app.shell.addToLeftArea(this.gitWidget, {
-            rank: 3
+        this.widgetManager.getOrCreateWidget(GIT_WIDGET_FACTORY_ID).then(widget => {
+            app.shell.addToLeftArea(widget, {
+                rank: 3
+            });
         });
     }
-
-
 
 }
 

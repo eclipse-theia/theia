@@ -8,12 +8,12 @@
 import { Git, GitPath } from '../common/git';
 import { ContainerModule } from 'inversify';
 import { bindGitPreferences } from '../common/git-preferences';
-import { WebSocketConnectionProvider, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { GitCommandHandlers } from './git-command';
 import { GitKeybindingContext, GitKeybindingContribution } from './git-keybinding';
 import { CommandContribution, KeybindingContribution, KeybindingContext, MenuContribution, ResourceResolver } from "@theia/core/lib/common";
 import { GitWatcher, GitWatcherPath, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common/git-watcher';
-import { GitFrontendContribution } from './git-frontend-contribution';
+import { GitFrontendContribution, GIT_WIDGET_FACTORY_ID } from './git-frontend-contribution';
 import { GitWidget } from './git-widget';
 import { GitResourceResolver } from './git-resource';
 import { GitContextMenu } from './git-context-menu';
@@ -35,7 +35,11 @@ export default new ContainerModule(bind => {
     bind(KeybindingContribution).to(GitKeybindingContribution);
 
     bind(FrontendApplicationContribution).to(GitFrontendContribution);
-    bind(GitWidget).toSelf().inSingletonScope();
+    bind(GitWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(context => ({
+        id: GIT_WIDGET_FACTORY_ID,
+        createWidget: () => context.container.get<GitWidget>(GitWidget)
+    }));
 
     bind(GitResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(GitResourceResolver));
