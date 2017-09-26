@@ -18,7 +18,7 @@ import { createBranch, deleteBranch, renameBranch, listBranch } from 'dugite-ext
 import { stage, unstage } from 'dugite-extra/lib/command/stage';
 import { locateRepositories } from './git-repository-locator';
 import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol';
-import { Repository, WorkingDirectoryStatus, FileChange, FileStatus } from '../common/model';
+import { Repository, WorkingDirectoryStatus, GitFileChange, GitFileStatus } from '../common/model';
 import { IStatusResult, IAheadBehind, AppFileStatus, WorkingDirectoryStatus as DugiteStatus, FileChange as DugiteFileChange } from 'dugite-extra/lib/model/status';
 
 /**
@@ -28,7 +28,7 @@ import { IStatusResult, IAheadBehind, AppFileStatus, WorkingDirectoryStatus as D
 export class DugiteGit implements Git {
 
     constructor(
-        @inject(WorkspaceServer) private readonly workspace: WorkspaceServer) {
+        @inject(WorkspaceServer) protected readonly workspace: WorkspaceServer) {
     }
 
     async clone(remoteUrl: string, options?: Git.Options.Clone): Promise<Repository> {
@@ -127,12 +127,19 @@ export class DugiteGit implements Git {
 
     async show(repository: Repository, uri: string, options?: Git.Options.Show): Promise<string> {
         const encoding = options ? options.encoding || 'utf8' : 'utf8';
-        const commitish = options ? options.commitish || '' : '';
+        const commitish = this.getCommitish(options);
         const path = await getFsPath(uri);
         if (encoding === 'binary') {
             return (await getBlobContents(repository.localUri, commitish, path)).toString();
         }
         return (await getTextContents(repository.localUri, commitish, path)).toString();
+    }
+
+    private getCommitish(options?: Git.Options.Show): string {
+        if (options && options.commitish) {
+            return 'index' === options.commitish ? '' : options.commitish;
+        }
+        return '';
     }
 
     private async getContainerRepository(path: string): Promise<Repository | undefined> {
@@ -169,11 +176,11 @@ async function mapAheadBehind(toMap: IAheadBehind | undefined): Promise<{ ahead:
     return toMap ? { ...toMap } : undefined;
 }
 
-async function mapFileChanges(toMap: DugiteStatus, repositoryFsPath: string): Promise<FileChange[]> {
+async function mapFileChanges(toMap: DugiteStatus, repositoryFsPath: string): Promise<GitFileChange[]> {
     return Promise.all(toMap.files.map(file => mapFileChange(file, repositoryFsPath)));
 }
 
-async function mapFileChange(toMap: DugiteFileChange, repositoryFsPath: string): Promise<FileChange> {
+async function mapFileChange(toMap: DugiteFileChange, repositoryFsPath: string): Promise<GitFileChange> {
     const uriPromise = getUri(Path.join(repositoryFsPath, toMap.path));
     const statusPromise = mapFileStatus(toMap.status);
     const oldUriPromise = toMap.oldPath ? await getUri(Path.join(repositoryFsPath, toMap.oldPath)) : undefined;
@@ -188,14 +195,14 @@ async function mapFileChange(toMap: DugiteFileChange, repositoryFsPath: string):
     };
 }
 
-async function mapFileStatus(toMap: AppFileStatus): Promise<FileStatus> {
+async function mapFileStatus(toMap: AppFileStatus): Promise<GitFileStatus> {
     switch (toMap) {
-        case AppFileStatus.Conflicted: return FileStatus.Conflicted;
-        case AppFileStatus.Copied: return FileStatus.Copied;
-        case AppFileStatus.Deleted: return FileStatus.Deleted;
-        case AppFileStatus.Modified: return FileStatus.Modified;
-        case AppFileStatus.New: return FileStatus.New;
-        case AppFileStatus.Renamed: return FileStatus.Renamed;
+        case AppFileStatus.Conflicted: return GitFileStatus.Conflicted;
+        case AppFileStatus.Copied: return GitFileStatus.Copied;
+        case AppFileStatus.Deleted: return GitFileStatus.Deleted;
+        case AppFileStatus.Modified: return GitFileStatus.Modified;
+        case AppFileStatus.New: return GitFileStatus.New;
+        case AppFileStatus.Renamed: return GitFileStatus.Renamed;
         default: throw new Error(`Unexpected application file status: ${toMap}`);
     }
 }

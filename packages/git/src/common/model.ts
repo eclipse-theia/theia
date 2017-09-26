@@ -15,7 +15,7 @@ export interface WorkingDirectoryStatus {
     /**
      * An array of changed files.
      */
-    readonly changes: FileChange[];
+    readonly changes: GitFileChange[];
 
     /**
      * The optional name of the branch. Can be absent.
@@ -52,7 +52,7 @@ export namespace WorkingDirectoryStatus {
                 && (left.aheadBehind ? left.aheadBehind.ahead : -1) === (right.aheadBehind ? right.aheadBehind.ahead : -1)
                 && (left.aheadBehind ? left.aheadBehind.behind : -1) === (right.aheadBehind ? right.aheadBehind.behind : -1)
                 && left.changes.length === right.changes.length
-                && left.changes.sort(FileChange.compare).join(' ') === right.changes.sort(FileChange.compare).join(' ');
+                && left.changes.sort(GitFileChange.compare).join(' ') === right.changes.sort(GitFileChange.compare).join(' ');
         } else {
             return left === right;
         }
@@ -70,7 +70,7 @@ export namespace WorkingDirectoryStatus {
 /**
  * Enumeration of states that a file resource can have in the working directory.
  */
-export enum FileStatus {
+export enum GitFileStatus {
     'New',
     'Modified',
     'Deleted',
@@ -82,7 +82,7 @@ export enum FileStatus {
 /**
  * Representation of an individual file change in the working directory.
  */
-export interface FileChange {
+export interface GitFileChange {
 
     /**
      * The current URI of the changed file resource.
@@ -97,7 +97,7 @@ export interface FileChange {
     /**
      * The file status.
      */
-    readonly status: FileStatus;
+    readonly status: GitFileStatus;
 
     /**
      * `true` if the file is staged, otherwise `false`.
@@ -105,12 +105,12 @@ export interface FileChange {
     readonly staged: boolean;
 }
 
-export namespace FileChange {
+export namespace GitFileChange {
 
     /**
      * `true` if the file status and the URIs are the same, otherwise `false`.
      */
-    export function equals(left: FileChange, right: FileChange): boolean {
+    export function equals(left: GitFileChange, right: GitFileChange): boolean {
         return left.status === right.status
             && left.staged === right.staged
             && left.uri.toString() === right.uri.toString()
@@ -120,8 +120,8 @@ export namespace FileChange {
     /**
      * Determines whether the files change arguments are equivalent or not.
      */
-    export function compare(left: FileChange, right: FileChange): number {
-        const concat = (fc: FileChange) => `${fc.status}${fc.uri.toString()}${fc.oldUri ? fc.oldUri.toString() : ''}${fc.staged}`;
+    export function compare(left: GitFileChange, right: GitFileChange): number {
+        const concat = (fc: GitFileChange) => `${fc.status}${fc.uri.toString()}${fc.oldUri ? fc.oldUri.toString() : ''}${fc.staged}`;
         return concat(left).localeCompare(concat(right));
     }
 
@@ -187,8 +187,4 @@ export namespace Repository {
         return equivalent ? repositories.indexOf(equivalent) : -1;
     }
 
-}
-
-export interface Account {
-    userNameOrEmail: string;
 }

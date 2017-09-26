@@ -119,7 +119,7 @@ export namespace Git {
              * The desired destination path (given as a URI) for the cloned repository.
              * If the path does not exist it will be created. Cloning into an existing
              * directory is only allowed if the directory is empty. If not specified,
-             * the the workspace root will be used as the destination.
+             * then the workspace root will be used as the destination.
              */
             readonly localUri?: string;
 
@@ -225,7 +225,7 @@ export namespace Git {
             /**
              * A commit SHA or some other identifier that ultimately dereferences to a commit/tree.
              * `HEAD` is the local `HEAD`, and `index` is the the staged. If not specified,
-             * then `HEAD` will be used instead. But this can be `HEAD~2` or `ed14ef1~1` where `ed14ef1` is a commit hash.
+             * then `index` will be used instead. But this can be `HEAD~2` or `ed14ef1~1` where `ed14ef1` is a commit hash.
              */
             readonly commitish?: 'index' | string;
 
@@ -234,8 +234,6 @@ export namespace Git {
     }
 
 }
-
-
 
 /**
  * Provides basic functionality for Git.

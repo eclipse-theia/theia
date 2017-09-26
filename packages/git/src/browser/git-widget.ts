@@ -9,7 +9,7 @@
 import { injectable, inject } from 'inversify';
 import { Git } from '../common/git';
 import { GIT_CONTEXT_MENU } from './git-context-menu';
-import { FileChange, FileStatus, Repository } from '../common/model';
+import { GitFileChange, GitFileStatus, Repository } from '../common/model';
 import { GitWatcher } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { GitRepositoryProvider } from './git-repository-provider';
@@ -25,9 +25,9 @@ export class GitWidget extends VirtualWidget {
     protected repository: Repository;
 
     protected repositories: Repository[] = [];
-    protected stagedChanges: FileChange[] = [];
-    protected unstagedChanges: FileChange[] = [];
-    protected mergeChanges: FileChange[] = [];
+    protected stagedChanges: GitFileChange[] = [];
+    protected unstagedChanges: GitFileChange[] = [];
+    protected mergeChanges: GitFileChange[] = [];
     protected message: string = '';
     protected additionalMessage: string = '';
 
@@ -62,7 +62,7 @@ export class GitWidget extends VirtualWidget {
         this.mergeChanges = [];
         const status = await this.git.status(this.repository);
         status.changes.forEach(change => {
-            if (FileStatus[FileStatus.Conflicted.valueOf()] !== FileStatus[change.status]) {
+            if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
                 if (change.staged) {
                     this.stagedChanges.push(change);
                 } else {
@@ -172,7 +172,7 @@ export class GitWidget extends VirtualWidget {
         return h.div({ id: 'messageTextareaContainer', className: 'flexcontainer row' }, textarea);
     }
 
-    protected renderGitItemButtons(change: FileChange): h.Child {
+    protected renderGitItemButtons(change: GitFileChange): h.Child {
         const btns: h.Child[] = [];
         if (change.staged) {
             btns.push(h.div({
@@ -205,7 +205,7 @@ export class GitWidget extends VirtualWidget {
         return h.div({ className: 'buttons' }, VirtualRenderer.flatten(btns));
     }
 
-    protected renderGitItem(change: FileChange): h.Child {
+    protected renderGitItem(change: GitFileChange): h.Child {
         const changeUri: URI = new URI(change.uri);
         const nameSpan = h.span({ className: 'name' }, changeUri.displayName + ' ');
         const pathSpan = h.span({ className: 'path' }, changeUri.path.dir.toString());
@@ -213,7 +213,7 @@ export class GitWidget extends VirtualWidget {
             className: 'noWrapInfo',
             onclick: () => {
                 let uri: URI;
-                if (change.status !== FileStatus.New) {
+                if (change.status !== GitFileStatus.New) {
                     if (change.staged) {
                         uri = DiffUriHelper.encode(
                             changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
@@ -245,7 +245,7 @@ export class GitWidget extends VirtualWidget {
         }, nameSpan, pathSpan);
         const buttonsDiv = this.renderGitItemButtons(change);
         const staged = change.staged ? 'staged ' : '';
-        const statusDiv = h.div({ className: 'status ' + staged + FileStatus[change.status].toLowerCase() }, FileStatus[change.status].charAt(0));
+        const statusDiv = h.div({ className: 'status ' + staged + GitFileStatus[change.status].toLowerCase() }, GitFileStatus[change.status].charAt(0));
         const itemBtnsAndStatusDiv = h.div({ className: 'itemButtonsContainer' }, buttonsDiv, statusDiv);
         return h.div({ className: 'gitItem' }, nameAndPathDiv, itemBtnsAndStatusDiv);
     }
