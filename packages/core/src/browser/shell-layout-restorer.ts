@@ -69,17 +69,19 @@ export class ShellLayoutRestorer implements FrontendApplicationContribution {
      * creates layoutdata from string representation
      */
     protected inflate(layoutData: string): Promise<LayoutData> {
-        const pending: Promise<Widget>[] = [];
+        const pending: Promise<void>[] = [];
         const result = JSON.parse(layoutData, (property: string, value) => {
             if (this.isWidgetsProperty(property)) {
                 const widgets: Widget[] = [];
                 for (const desc of (value as WidgetConstructionOptions[])) {
-                    const promise = this.widgetManager.getOrCreateWidget(desc.factoryId, desc.options);
-                    promise.then(widget => {
-                        if (widget) {
-                            widgets.push(widget);
-                        }
-                    });
+                    const promise = this.widgetManager.getOrCreateWidget(desc.factoryId, desc.options)
+                        .then(widget => {
+                            if (widget) {
+                                widgets.push(widget);
+                            }
+                        }).catch(err => {
+                            this.logger.warn(`Couldn't restore widget for ${desc}. Error : ${err} `);
+                        });
                     pending.push(promise);
                 }
                 return widgets;
