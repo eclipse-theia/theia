@@ -69,7 +69,9 @@ export class GitWidget extends VirtualWidget {
                     this.unstagedChanges.push(change);
                 }
             } else {
-                this.mergeChanges.push(change);
+                if (!change.staged) {
+                    this.mergeChanges.push(change);
+                }
             }
         });
         this.update();
