@@ -52,6 +52,7 @@ export class WidgetManager {
 
     private _cachedfactories: Map<string, WidgetFactory>;
     private widgets = new Map<string, Widget>();
+    private widgetPromises = new Map<string, Promise<Widget>>();
 
     constructor(
         @inject(ContributionProvider) @named(WidgetFactory) protected readonly factoryProvider: ContributionProvider<WidgetFactory>,
@@ -73,15 +74,17 @@ export class WidgetManager {
      */
     async getOrCreateWidget<T extends Widget>(factoryId: string, options?: any): Promise<T> {
         const key = this.toKey({ factoryId, options });
-        const existingWidget = this.widgets.get(key);
+        const existingWidget = this.widgetPromises.get(key);
         if (existingWidget) {
-            return existingWidget as T;
+            return existingWidget as Promise<T>;
         }
         const factory = this.factories.get(factoryId);
         if (!factory) {
             throw Error("No widget factory '" + factoryId + "' has been registered.");
         }
-        const widget = await factory.createWidget(options);
+        const widgetPromise = factory.createWidget(options);
+        this.widgetPromises.set(key, widgetPromise);
+        const widget = await widgetPromise;
         this.widgets.set(key, widget);
         widget.disposed.connect(() => {
             this.widgets.delete(key);
