@@ -54,6 +54,9 @@
             "@theia/python/lib/*": [
                 "python/src/*"
             ],
+            "@theia/git/lib/*": [
+                "git/src/*"
+            ],
             "@theia/go/lib/*": [
                 "go/src/*"
             ],
