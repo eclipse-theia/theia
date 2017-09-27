@@ -55,6 +55,7 @@ export class TerminalWidget extends BaseWidget {
         this.id = options.id;
         this.title.caption = options.caption;
         this.title.label = options.label;
+        this.title.iconClass = "fa fa-terminal";
 
         if (options.destroyTermOnClose === true) {
             this.toDispose.push(Disposable.create(() =>

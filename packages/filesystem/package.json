@@ -12,7 +12,8 @@
     "fs-extra": "^4.0.2",
     "mv": "^2.1.1",
     "touch": "^3.1.0",
-    "trash": "^4.0.1"
+    "trash": "^4.0.1",
+    "file-icons-js": "^1.0.3"
   },
   "publishConfig": {
     "access": "public"

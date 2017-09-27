@@ -5,5 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-@import './file-dialog.css';
-@import './file-icons.css';
+declare module "file-icons-js" {
+    function getClass(filePath: string): string;
+}
