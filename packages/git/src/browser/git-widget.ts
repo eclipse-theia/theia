@@ -193,10 +193,8 @@ export class GitWidget extends VirtualWidget {
                 title: 'Discard Changes',
                 onclick: async event => {
                     const repo = await this.gitRepositoryProvider.getSelected();
-                    this.git.checkout(repo, {
-                        branch: this.status.branch,
-                        paths: change.uri
-                    });
+                    const options: Git.Options.Checkout.WorkingTreeFile = { paths: change.uri };
+                    this.git.checkout(repo, options);
                 }
             }, h.i({ className: 'fa fa-undo' })));
             btns.push(h.a({
