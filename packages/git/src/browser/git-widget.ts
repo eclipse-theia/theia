@@ -43,8 +43,7 @@ export class GitWidget extends VirtualWidget {
         this.id = 'theia-gitContainer';
         this.title.label = 'Git';
         this.addClass('theia-git');
-
-        this.initialize();
+        this.update();
     }
 
     // todo we dont need this anymore after we have a watcher properly implemented. for now it is just convenience to reinitialize the view
@@ -57,10 +56,10 @@ export class GitWidget extends VirtualWidget {
         this.additionalMessage = '';
         this.repositories = await this.git.repositories();
         this.repository = await this.gitRepositoryProvider.getSelected();
+        const status = await this.git.status(this.repository);
         this.stagedChanges = [];
         this.unstagedChanges = [];
         this.mergeChanges = [];
-        const status = await this.git.status(this.repository);
         status.changes.forEach(change => {
             if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
                 if (change.staged) {
