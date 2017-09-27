@@ -27,8 +27,8 @@
 }
 
 #theia-gitContainer .gitItem {
-    margin: 3px 0;
-    padding: 3px 0;
+    margin: 1px 0;
+    padding: 2px 0;
     font-size: var(--theia-ui-font-size1);
     display: flex;
     justify-content: space-between;
@@ -42,6 +42,7 @@
 #theia-gitContainer .gitItem .path {
     color: var(--theia-ui-font-color2);
     font-size: var(--theia-ui-font-size0);
+    margin-left: 3px;
 }
 
 #theia-gitContainer .gitItem .itemButtonsContainer {
@@ -51,9 +52,9 @@
 }
 
 #theia-gitContainer .gitItem .itemButtonsContainer .status {
-    padding: 2px 5px;
-    border-radius: 3px;
-    font-size: var(--theia-ui-font-size1);
+    padding: 2px 4px;
+    border-radius: 6px;
+    font-size: var(--theia-ui-font-size0);
 }
 
 #theia-gitContainer .gitItem .itemButtonsContainer .status.new {
@@ -94,7 +95,7 @@
     cursor: pointer;
     display: flex;
     align-items: center;
-    padding: 3px;
+    padding: 0 3px;
 }
 
 #theia-gitContainer .buttons .button:hover {
@@ -126,8 +127,9 @@
 #theia-gitContainer #messageInputContainer input,
 #theia-gitContainer #messageTextareaContainer textarea {
     flex: 1;
-    font-size: var(--theia-ui-font-size2);
     line-height: var(--theia-content-line-height);
+    font-size: var(--theia-ui-font-size1);
+    padding-left: 8px;
     border-width: 1px;
     border-style: solid;
     border-color: var(--theia-border-color1);
