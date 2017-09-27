@@ -113,10 +113,11 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
 
     protected createEditor(uri: URI): Promise<EditorWidget> {
         return this.editorProvider(uri).then(textEditor => {
-            const newEditor = new EditorWidget(textEditor, this.selectionService, this.iconProvider);
+            const newEditor = new EditorWidget(textEditor, this.selectionService);
             newEditor.id = this.id + ":" + uri.toString();
             newEditor.title.closable = true;
             newEditor.title.label = uri.path.base;
+            newEditor.title.iconClass = this.iconProvider.getFileIconForURI(textEditor.uri);
             return newEditor;
         });
     }

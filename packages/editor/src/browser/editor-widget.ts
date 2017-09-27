@@ -8,17 +8,14 @@
 import { SelectionService } from '@theia/core/lib/common';
 import { Widget, BaseWidget, Message } from '@theia/core/lib/browser';
 import { TextEditor } from "./editor";
-import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
 
 export class EditorWidget extends BaseWidget {
 
     constructor(
         readonly editor: TextEditor,
-        readonly selectionService: SelectionService,
-        readonly iconProvider: FileIconProvider
+        readonly selectionService: SelectionService
     ) {
         super(editor);
-        this.title.iconClass = iconProvider.getFileIconForURI(this.editor.uri);
         this.toDispose.push(this.editor);
     }
 
