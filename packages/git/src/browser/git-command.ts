@@ -70,7 +70,7 @@ export class GitCommandHandlers implements CommandContribution {
                     })
                     .then(branch => {
                         if (branch && typeof branch === 'string') {
-                            this.git.merge(repo, branch);
+                            this.git.merge(repo, { branch });
                         }
                     });
             },
