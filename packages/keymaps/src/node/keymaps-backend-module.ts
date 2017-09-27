@@ -5,19 +5,21 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { FileUri } from '@theia/core/lib/node';
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common';
 import { CustomKeymapsServer, KeybindingURI } from './keymaps-server';
-import { KeymapsServer, keybindingsPath, KeybindingClient } from '../common/keymaps-protocol';
+import { KeymapsServer, keybindingsPath, KeybindingClient/* , keymapsUri */ } from '../common/keymaps-protocol';
 import { KeymapsService } from '../common/keymaps-service';
 import { ContainerModule } from 'inversify';
+import { FileUri } from '@theia/core/lib/node';
+import URI from "@theia/core/lib/common/uri";
 import * as os from 'os';
 
 export default new ContainerModule(bind => {
 
     const homeUri = FileUri.create(os.homedir());
+    const keymapsUri: URI = homeUri.withPath(homeUri.path.join('.theia', 'keymaps.json'));
 
-    bind(KeybindingURI).toConstantValue(homeUri.withPath(homeUri.path.join('.theia', 'keymaps.json')));
+    bind(KeybindingURI).toConstantValue(keymapsUri);
     bind(CustomKeymapsServer).toSelf();
     bind(KeymapsServer).to(CustomKeymapsServer);
     bind(ConnectionHandler).toDynamicValue(ctx =>

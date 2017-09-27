@@ -8,9 +8,18 @@
 import { ContainerModule, } from 'inversify';
 import { WebSocketConnectionProvider, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { KeymapsServer, keybindingsPath } from "../common/keymaps-protocol";
-import { KeymapsService } from "../common/keymaps-service"
+import { KeymapsService } from "../common/keymaps-service";
+import { KeymapsFrontendContribution } from "./keymaps-frontend-contribution";
+import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 
 export default new ContainerModule(bind => {
+
+    bind(KeymapsFrontendContribution).toSelf().inSingletonScope();
+    for (const identifier of [CommandContribution, MenuContribution]) {
+        bind(identifier).toDynamicValue(ctx =>
+            ctx.container.get(KeymapsFrontendContribution)
+        ).inSingletonScope();
+    }
 
     bind(FrontendApplicationContribution).to(KeymapsService).inSingletonScope();
 

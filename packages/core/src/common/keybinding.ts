@@ -177,7 +177,6 @@ export class KeybindingContextRegistry {
     getContext(contextId: string): KeybindingContext | undefined {
         return this.contexts[contextId];
     }
-
 }
 
 @injectable()

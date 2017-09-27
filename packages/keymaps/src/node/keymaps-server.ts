@@ -9,7 +9,7 @@ import { injectable, inject } from 'inversify';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { Disposable, DisposableCollection, ILogger, } from '@theia/core/lib/common';
 import { FileSystemWatcherServer, DidFilesChangedParams, FileChange } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
-import { KeymapsServer, KeybindingClient, KeymapChangeEvent, RawKeybinding } from '../common/keymaps-protocol'
+import { KeymapsServer, KeybindingClient, KeymapChangeEvent, RawKeybinding } from '../common/keymaps-protocol';
 import * as jsoncparser from "jsonc-parser";
 import URI from "@theia/core/lib/common/uri";
 import { ParseError } from "jsonc-parser";
@@ -126,4 +126,9 @@ export class CustomKeymapsServer implements KeymapsServer {
     setClient(client: KeybindingClient | undefined) {
         this.client = client;
     }
+
+    getUri(): Promise<string> {
+        return Promise.resolve(this.fileUri.toString());
+    }
+
 }

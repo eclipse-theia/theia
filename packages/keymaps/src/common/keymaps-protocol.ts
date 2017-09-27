@@ -6,10 +6,10 @@
  */
 
 import { JsonRpcServer } from "@theia/core";
-
 export const keybindingsPath = '/services/keymaps';
 export const KeymapsServer = Symbol("KeymapsServer");
 export interface KeymapsServer extends JsonRpcServer<KeybindingClient> {
+    getUri(): Promise<string>;
 }
 
 export interface KeybindingClient {
