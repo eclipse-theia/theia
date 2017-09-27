@@ -254,10 +254,10 @@ errors while building, testing or running the application then;
  operating systems. Hence we are more than happy to receive any Windows-related
  feedbacks, bug reports.
 
-If you have accidentally installed the wrong yarn version, you have to remove it, then install it.
+If you have accidentally installed the wrong `yarn` version, you have to remove it, then reinstall it.
 
  - Run PowerShell as an administrator.
- - Run: choco uninstall yarn -y.
+ - Run: choco uninstall yarn -y
  - Run: choco install yarn --version 1.0.2 -y
 
 [all-in-one packages]: https://github.com/felixrieseberg/windows-build-tools
