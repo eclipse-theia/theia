@@ -45,9 +45,9 @@ export class DugiteGit implements Git {
 
     async repositories(): Promise<Repository[]> {
         const workspaceRoot = await this.workspace.getRoot();
-        const path = this.getFsPath(workspaceRoot);
-        const repositoriesPromise = locateRepositories(path);
-        const containerRepositoryPromise = this.getContainerRepository(path);
+        const workspaceRootPath = this.getFsPath(workspaceRoot);
+        const repositoriesPromise = locateRepositories(workspaceRootPath);
+        const containerRepositoryPromise = this.getContainerRepository(workspaceRootPath);
         const repositories = await repositoriesPromise;
         const containerRepository = await containerRepositoryPromise;
         if (containerRepository) {
@@ -127,7 +127,7 @@ export class DugiteGit implements Git {
         const repositoryPath = this.getFsPath(repository);
         const r = await this.getDefaultRemote(repositoryPath, options ? options.remote : undefined);
         if (r === undefined) {
-            this.fail(repository, `No remote repository specified. Please, specify either a URL or a remote name from which new revisions should be fetched.`);
+            this.fail(repository, `No configured push destination.`);
         }
         const localBranch = await this.getCurrentBranch(repositoryPath, options ? options.localBranch : undefined);
         const remoteBranch = options ? options.remoteBranch : undefined;
@@ -157,11 +157,12 @@ export class DugiteGit implements Git {
     async show(repository: Repository, uri: string, options?: Git.Options.Show): Promise<string> {
         const encoding = options ? options.encoding || 'utf8' : 'utf8';
         const commitish = this.getCommitish(options);
+        const repositoryPath = this.getFsPath(repository);
         const path = this.getFsPath(uri);
         if (encoding === 'binary') {
-            return (await getBlobContents(repository.localUri, commitish, path)).toString();
+            return (await getBlobContents(repositoryPath, commitish, path)).toString();
         }
-        return (await getTextContents(repository.localUri, commitish, path)).toString();
+        return (await getTextContents(repositoryPath, commitish, path)).toString();
     }
 
     private getCommitish(options?: Git.Options.Show): string {
@@ -173,10 +174,10 @@ export class DugiteGit implements Git {
 
     // TODO: akitta what about symlinks? What if the workspace root is a symlink?
     // Maybe, we should use `--show-cdup` here instead of `--show-toplevel` because `show-toplevel` dereferences symlinks.
-    private async getContainerRepository(path: string): Promise<Repository | undefined> {
+    private async getContainerRepository(repositoryPath: string): Promise<Repository | undefined> {
         // Do not log an error if we are not contained in a Git repository. Treat exit code 128 as a success too.
         const options = { successExitCodes: new Set([0, 128]) };
-        const result = await git(['rev-parse', '--show-toplevel'], path, 'rev-parse', options);
+        const result = await git(['rev-parse', '--show-toplevel'], repositoryPath, 'rev-parse', options);
         const out = result.stdout;
         if (out && out.length !== 0) {
             const localUri = FileUri.create(out.trim()).toString();
@@ -185,9 +186,9 @@ export class DugiteGit implements Git {
         return undefined;
     }
 
-    private async getDefaultRemote(path: string, remote?: string): Promise<string | undefined> {
+    private async getDefaultRemote(repositoryPath: string, remote?: string): Promise<string | undefined> {
         if (remote === undefined) {
-            const result = await git(['remote'], path, 'remote');
+            const result = await git(['remote'], repositoryPath, 'remote');
             const out = result.stdout || '';
             return (out.trim().match(/\S+/g) || []).shift();
         }
