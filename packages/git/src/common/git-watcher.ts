@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import { JsonRpcServer, JsonRpcProxy } from '@theia/core';
 import { Repository, WorkingDirectoryStatus } from './model';
-import { Disposable, DisposableCollection, Emitter } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 
 /**
  * An event representing a Git change.
@@ -172,6 +172,10 @@ export class GitWatcher implements GitWatcherClient, Disposable {
 
     dispose(): void {
         this.toDispose.dispose();
+    }
+
+    get onGitEvent(): Event<GitEvent> {
+        return this.onGitEventEmitter.event;
     }
 
     async onGitChanged(event: GitEvent): Promise<void> {
