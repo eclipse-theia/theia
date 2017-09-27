@@ -88,6 +88,7 @@ export class WidgetManager {
         this.widgets.set(key, widget);
         widget.disposed.connect(() => {
             this.widgets.delete(key);
+            this.widgetPromises.delete(key);
         });
         return widget as T;
     }
