@@ -4,20 +4,16 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-
+import { Container, ContainerModule } from 'inversify';
 import { expect } from 'chai';
-import { TestLogger } from '../common/test/test-logger';
 import { WidgetManager, WidgetFactory } from './widget-manager';
 import { Widget } from '@phosphor/widgets';
-import { LocalStorageService, StorageService } from './storage-service';
 import { Signal } from '@phosphor/signaling';
+import { ILogger } from '../common/logger';
+import { MockLogger } from '../common/test/mock-logger';
+import { bindContributionProvider } from '../common';
 
-let widgetManager: WidgetManager;
-
-let storage: StorageService;
-let widgetFactory: TestFactory;
-
-class TestFactory implements WidgetFactory {
+class TestWidgetFactory implements WidgetFactory {
 
     invocations = 0;
     id = 'test';
@@ -33,16 +29,20 @@ class TestFactory implements WidgetFactory {
     }
 }
 
+let widgetManager: WidgetManager;
+
 before(() => {
-    widgetFactory = new TestFactory();
-    storage = new LocalStorageService(new TestLogger());
-    widgetManager = new WidgetManager({
-        getContributions() {
-            return [
-                widgetFactory
-            ];
-        }
-    }, new TestLogger());
+    const testContainer = new Container();
+
+    const module = new ContainerModule((bind, unbind, isBound, rebind) => {
+        bind(ILogger).to(MockLogger);
+        bindContributionProvider(bind, WidgetFactory);
+        bind(WidgetFactory).toConstantValue(new TestWidgetFactory());
+        bind(WidgetManager).toSelf().inSingletonScope();
+    });
+    testContainer.load(module);
+
+    widgetManager = testContainer.get(WidgetManager);
 });
 
 describe("widget-manager", () => {
