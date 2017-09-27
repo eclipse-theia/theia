@@ -231,6 +231,55 @@ export namespace Git {
 
         }
 
+        /**
+         * Options for the `git fetch` command.
+         */
+        export interface Fetch {
+
+            /**
+             * The name of the remote to fetch from. If not given, then the default remote will be used. Defaults to the `origin`.
+             */
+            readonly remote?: string;
+
+        }
+
+        /**
+         * Further refinements for the `git push` command.
+         */
+        export interface Push {
+
+            /**
+             * The name of the remote to push to. If not given, then the default remote will be used. It is the `origin` by default.
+             */
+            readonly remote?: string;
+
+            /**
+             * The name of the local branch to push. If not given, then the currently active branch will be used instead.
+             */
+            readonly localBranch?: string;
+
+            /**
+             * The name of the remote branch to push to. If not given then teh changes will be pushed to the remote branch associated with the
+             * local branch.
+             *
+             * `git push <remote> <localBranch>:<remoteBranch>`
+             */
+            readonly remoteBranch?: string;
+
+        }
+
+        /**
+         * Options for the `git pull` command.
+         */
+        export interface Pull {
+
+            /**
+             * The name of the remote to pull from. If not given, then the default remote will be used. Defaults to the `origin`.
+             */
+            readonly remote?: string;
+
+        }
+
     }
 
 }
@@ -320,24 +369,27 @@ export interface Git {
      * The remotely-tracked branches will be updated too.
      *
      * @param repository the repository to fetch from.
+     * @param options optional options for `git fetch` refinement.
      */
-    fetch(repository: Repository): Promise<void>;
+    fetch(repository: Repository, options?: Git.Options.Fetch): Promise<void>;
 
     /**
      * Updates the `refs` using local `refs`, while sending objects necessary to complete the given `refs` by pushing
      * all committed changed from the local Git repository to the `remote` one.
      *
      * @param repository the repository to push to.
+     * @param options optional refinements for the `git push` command.
      */
-    push(repository: Repository): Promise<void>;
+    push(repository: Repository, options?: Git.Options.Push): Promise<void>;
 
     /**
      * Fetches from and integrates with another repository. It incorporates changes from a repository into the current branch.
      * In its default mode, `git pull` is shorthand for `git fetch` followed by `git merge FETCH_HEAD`.
      *
      * @param repository the repository to pull from.
+     * @param options optional refinements for the `git pull` command.
      */
-    pull(repository: Repository): Promise<void>;
+    pull(repository: Repository, options?: Git.Options.Pull): Promise<void>;
 
     /**
      * Resets the current `HEAD` of the entire working directory to the specified state.

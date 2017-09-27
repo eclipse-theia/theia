@@ -13,6 +13,9 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
 import { getStatus } from 'dugite-extra/lib/command/status';
 import { clone } from 'dugite-extra/lib/command/clone';
 import { createCommit } from 'dugite-extra/lib/command/commit';
+import { fetch } from 'dugite-extra/lib/command/fetch';
+import { push } from 'dugite-extra/lib/command/push';
+import { pull } from 'dugite-extra/lib/command/pull';
 import { getTextContents, getBlobContents } from 'dugite-extra/lib/command/show';
 import { createBranch, deleteBranch, renameBranch, listBranch } from 'dugite-extra/lib/command/branch';
 import { stage, unstage } from 'dugite-extra/lib/command/stage';
@@ -72,9 +75,9 @@ export class DugiteGit implements Git {
             Git.Options.Branch.Rename |
             Git.Options.Branch.Delete): Promise<void | undefined | string | string[]> {
 
-        const { localUri } = repository;
+        const repositoryPath = await getFsPath(repository);
         if (GitUtils.isList(options)) {
-            const branches = await listBranch(localUri, options.type);
+            const branches = await listBranch(repositoryPath, options.type);
             if (Array.isArray(branches)) {
                 return branches.map(b => b.name);
             } else {
@@ -82,13 +85,13 @@ export class DugiteGit implements Git {
             }
         } else {
             if (GitUtils.isCreate(options)) {
-                return createBranch(localUri, options.toCreate, { startPoint: options.startPoint });
+                return createBranch(repositoryPath, options.toCreate, { startPoint: options.startPoint });
             } else if (GitUtils.isRename(options)) {
-                return renameBranch(localUri, options.newName, options.newName, { force: !!options.force });
+                return renameBranch(repositoryPath, options.newName, options.newName, { force: !!options.force });
             } else if (GitUtils.isDelete(options)) {
-                return deleteBranch(localUri, options.toDelete, { force: !!options.force, remote: !!options.remote });
+                return deleteBranch(repositoryPath, options.toDelete, { force: !!options.force, remote: !!options.remote });
             } else {
-                throw new Error(`Unknown git branch options: ${options}.`);
+                this.fail(repository, `Unknown git branch options: ${options}.`);
             }
         }
     }
@@ -101,16 +104,33 @@ export class DugiteGit implements Git {
         return createCommit(repository.localUri, message || '');
     }
 
-    async fetch(repository: Repository): Promise<void> {
-        throw new Error("Method not implemented.");
+    async fetch(repository: Repository, options?: Git.Options.Fetch): Promise<void> {
+        const repositoryPath = await getFsPath(repository);
+        const r = await this.getDefaultRemote(repositoryPath, options ? options.remote : undefined);
+        if (r === undefined) {
+            this.fail(repository, `No remote repository specified. Please, specify either a URL or a remote name from which new revisions should be fetched.`);
+        }
+        await fetch(repositoryPath, r!);
     }
 
-    async push(repository: Repository): Promise<void> {
-        throw new Error("Method not implemented.");
+    async push(repository: Repository, options?: Git.Options.Push): Promise<void> {
+        const repositoryPath = await getFsPath(repository);
+        const r = await this.getDefaultRemote(repositoryPath, options ? options.remote : undefined);
+        if (r === undefined) {
+            this.fail(repository, `No remote repository specified. Please, specify either a URL or a remote name from which new revisions should be fetched.`);
+        }
+        const localBranch = await this.getCurrentBranch(repositoryPath, options ? options.localBranch : undefined);
+        const remoteBranch = options ? options.remoteBranch : undefined;
+        await push(repositoryPath, r!, localBranch, remoteBranch);
     }
 
-    async pull(repository: Repository): Promise<void> {
-        throw new Error("Method not implemented.");
+    async pull(repository: Repository, options?: Git.Options.Pull): Promise<void> {
+        const repositoryPath = await getFsPath(repository);
+        const r = await this.getDefaultRemote(repositoryPath, options ? options.remote : undefined);
+        if (r === undefined) {
+            this.fail(repository, `No remote repository specified. Please, specify either a URL or a remote name from which new revisions should be fetched.`);
+        }
+        await pull(repositoryPath, r!);
     }
 
     async reset(repository: Repository, mode: "hard" | "soft" | "mixed", ref?: string): Promise<void> {
@@ -142,16 +162,47 @@ export class DugiteGit implements Git {
         return '';
     }
 
+    // TODO: kittaakos what about symlinks? What if the workspace root is a symlink?
+    // Maybe, we should use `--show-cdup` here instead of `--show-toplevel` because show-toplevel dereferences symlinks.
     private async getContainerRepository(path: string): Promise<Repository | undefined> {
         // Do not log an error if we are not contained in a Git repository. Treat exit code 128 as a success too.
         const options = { successExitCodes: new Set([0, 128]) };
         const result = await git(['rev-parse', '--show-toplevel'], path, 'rev-parse', options);
         const out = result.stdout;
-        if (out.length) {
+        if (out.length !== 0) {
             const localUri = FileUri.fsPath(out.trim());
             return { localUri };
         }
         return undefined;
+    }
+
+    private async getDefaultRemote(path: string, remote?: string): Promise<string | undefined> {
+        if (remote === undefined) {
+            const result = await git(['remote'], path, 'remote');
+            const out = result.stdout || '';
+            return (out.trim().match(/\S+/g) || []).shift();
+        }
+        return remote;
+    }
+
+    private async getCurrentBranch(repositoryPath: string, localBranch?: string): Promise<string> {
+        if (localBranch !== undefined) {
+            return localBranch;
+        }
+        const branch = await listBranch(repositoryPath, 'current');
+        if (branch === undefined) {
+            return this.fail(repositoryPath, `No current branch.`);
+        }
+        if (Array.isArray(branch)) {
+            return this.fail(repositoryPath, `Implementation error. Listing branch with the 'current' flag must return with single value. Was: ${branch}`);
+        }
+        return branch.name;
+    }
+
+    private fail<T>(repository: Repository | string, message?: string): T {
+        const p = typeof repository === 'string' ? repository : repository.localUri;
+        const m = message ? `${message} ` : '';
+        throw new Error(`${m}[${p}]`);
     }
 
 }
