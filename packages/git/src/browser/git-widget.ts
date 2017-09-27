@@ -205,10 +205,26 @@ export class GitWidget extends VirtualWidget {
         return h.div({ className: 'buttons' }, VirtualRenderer.flatten(btns));
     }
 
+    protected getStatusChar(status: GitFileStatus, staged: boolean): string {
+        switch (status) {
+            case 0:
+            case 3:
+            case 5: return staged ? 'A' : 'U';
+            case 1: return 'M';
+            case 2: return 'D';
+            case 4: return 'C';
+        }
+        return '';
+    }
+
+    protected getRepositoryRelativePath(absPath: string) {
+        return absPath.replace(this.repository.localUri + '/', '');
+    }
+
     protected renderGitItem(change: GitFileChange): h.Child {
         const changeUri: URI = new URI(change.uri);
         const nameSpan = h.span({ className: 'name' }, changeUri.displayName + ' ');
-        const pathSpan = h.span({ className: 'path' }, changeUri.path.dir.toString());
+        const pathSpan = h.span({ className: 'path' }, this.getRepositoryRelativePath(changeUri.path.dir.toString()));
         const nameAndPathDiv = h.div({
             className: 'noWrapInfo',
             onclick: () => {
@@ -245,7 +261,7 @@ export class GitWidget extends VirtualWidget {
         }, nameSpan, pathSpan);
         const buttonsDiv = this.renderGitItemButtons(change);
         const staged = change.staged ? 'staged ' : '';
-        const statusDiv = h.div({ className: 'status ' + staged + GitFileStatus[change.status].toLowerCase() }, GitFileStatus[change.status].charAt(0));
+        const statusDiv = h.div({ className: 'status ' + staged + GitFileStatus[change.status].toLowerCase() }, this.getStatusChar(change.status, change.staged));
         const itemBtnsAndStatusDiv = h.div({ className: 'itemButtonsContainer' }, buttonsDiv, statusDiv);
         return h.div({ className: 'gitItem' }, nameAndPathDiv, itemBtnsAndStatusDiv);
     }
@@ -264,7 +280,7 @@ export class GitWidget extends VirtualWidget {
             return h.div({
                 id: 'mergeChanges',
                 className: 'changesContainer'
-            }, h.div({ className: 'changesHeader' }, 'Merge changes'), VirtualRenderer.flatten(mergeChangeDivs));
+            }, h.div({ className: 'changesHeader' }, 'MERGE CHANGES'), VirtualRenderer.flatten(mergeChangeDivs));
         } else {
             return undefined;
         }
@@ -279,7 +295,7 @@ export class GitWidget extends VirtualWidget {
             return h.div({
                 id: 'stagedChanges',
                 className: 'changesContainer'
-            }, h.div({ className: 'changesHeader' }, 'Staged changes'), VirtualRenderer.flatten(stagedChangeDivs));
+            }, h.div({ className: 'changesHeader' }, 'STAGED CHANGES'), VirtualRenderer.flatten(stagedChangeDivs));
         } else {
             return undefined;
         }
@@ -294,7 +310,7 @@ export class GitWidget extends VirtualWidget {
             return h.div({
                 id: 'unstagedChanges',
                 className: 'changesContainer'
-            }, h.div({ className: 'changesHeader' }, 'Changes'), VirtualRenderer.flatten(unstagedChangeDivs));
+            }, h.div({ className: 'changesHeader' }, 'CHANGES'), VirtualRenderer.flatten(unstagedChangeDivs));
         }
 
         return '';
