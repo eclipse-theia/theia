@@ -5,19 +5,29 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { Container } from 'inversify';
 import * as chai from 'chai';
 import { ProblemManager } from './problem-marker';
 import URI from "@theia/core/lib/common/uri";
 import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
-import { TestLogger } from '@theia/core/lib/common/test/test-logger';
+import { ILogger } from '@theia/core/lib/common/logger';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { FileSystemWatcher } from '@theia/filesystem/lib/common';
 
 const expect = chai.expect;
 let manager: ProblemManager;
-let store: StorageService;
+let testContainer: Container;
 
 before(async () => {
-    store = new LocalStorageService(new TestLogger());
-    manager = new ProblemManager(store, undefined);
+    testContainer = new Container();
+    testContainer.bind(ILogger).to(MockLogger);
+    testContainer.bind(StorageService).to(LocalStorageService).inSingletonScope();
+    testContainer.bind(LocalStorageService).toSelf().inSingletonScope();
+    // tslint:disable-next-line:no-any
+    testContainer.bind(FileSystemWatcher).toConstantValue(<any>undefined);
+    testContainer.bind(ProblemManager).toSelf();
+
+    manager = testContainer.get(ProblemManager);
     await manager.initialized;
     manager.setMarkers(new URI('file:/foo/bar.txt'), 'me', [
         {
@@ -138,7 +148,7 @@ describe('problem-manager', () => {
     });
 
     it('should persist markers', async () => {
-        const newManager = new ProblemManager(store);
+        const newManager = testContainer.get(ProblemManager);
         await newManager.initialized;
         expect(newManager.findMarkers().length).eq(4);
     });

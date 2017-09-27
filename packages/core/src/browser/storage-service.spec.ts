@@ -5,14 +5,30 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { Container } from 'inversify';
 import { LocalStorageService, StorageService } from './storage-service';
 import { expect } from 'chai';
-import { TestLogger } from '../common/test/test-logger';
+import { ILogger } from '../common/logger';
+import { MockLogger } from '../common/test/mock-logger';
+import * as sinon from 'sinon';
 
 let storageService: StorageService;
 
 before(() => {
-    storageService = new LocalStorageService(new TestLogger());
+    const testContainer = new Container();
+    testContainer.bind(ILogger).toDynamicValue(ctx => {
+        const logger = new MockLogger();
+        /* Note this is not really needed but here we could just use the
+        MockLogger since it does what we need but this is there as a demo of
+        sinon for other uses-cases. We can remove this once this technique is
+        more generally used. */
+        sinon.stub(logger, 'warn').callsFake(() => { });
+        return logger;
+    });
+    testContainer.bind(StorageService).to(LocalStorageService).inSingletonScope();
+    testContainer.bind(LocalStorageService).toSelf().inSingletonScope();
+
+    storageService = testContainer.get(StorageService);
 });
 
 describe("storage-service", () => {
