@@ -47,7 +47,6 @@ export class GitWidget extends VirtualWidget {
         this.update();
     }
 
-    // todo we dont need this anymore after we have a watcher properly implemented. for now it is just convenience to reinitialize the view
     protected onActivateRequest() {
         this.initialize();
     }
@@ -228,7 +227,7 @@ export class GitWidget extends VirtualWidget {
     }
 
     protected getRepositoryRelativePath(absPath: string) {
-        return absPath.replace(this.repository.localUri + '/', '');
+        return absPath.replace(new URI(this.repository.localUri).withoutScheme() + '/', '');
     }
 
     protected renderGitItem(change: GitFileChange): h.Child {
