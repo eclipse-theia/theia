@@ -13,6 +13,7 @@ import { EditorWidget } from "./editor-widget";
 import { TextEditorProvider, Range, Position } from "./editor";
 import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { Widget } from '@phosphor/widgets';
+import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
 
 export const EditorManager = Symbol("EditorManager");
 
@@ -62,7 +63,8 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
         @inject(TextEditorProvider) protected readonly editorProvider: TextEditorProvider,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(FrontendApplication) protected readonly app: FrontendApplication,
-        @inject(WidgetManager) protected readonly widgetManager: WidgetManager
+        @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
+        @inject(FileIconProvider) protected readonly iconProvider: FileIconProvider
     ) {
         this.currentObserver = new EditorManagerImpl.Observer('current', app);
         this.activeObserver = new EditorManagerImpl.Observer('active', app);
@@ -111,7 +113,7 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
 
     protected createEditor(uri: URI): Promise<EditorWidget> {
         return this.editorProvider(uri).then(textEditor => {
-            const newEditor = new EditorWidget(textEditor, this.selectionService);
+            const newEditor = new EditorWidget(textEditor, this.selectionService, this.iconProvider);
             newEditor.id = this.id + ":" + uri.toString();
             newEditor.title.closable = true;
             newEditor.title.label = uri.path.base;

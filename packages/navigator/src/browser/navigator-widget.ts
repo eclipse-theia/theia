@@ -11,6 +11,7 @@ import URI from "@theia/core/lib/common/uri";
 import { ContextMenuRenderer, TreeProps } from "@theia/core/lib/browser";
 import { FileTreeWidget } from "@theia/filesystem/lib/browser";
 import { FileNavigatorModel } from "./navigator-model";
+import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
 
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
 export const DIR_NODE_CLASS = 'theia-DirNode';
@@ -26,9 +27,10 @@ export class FileNavigatorWidget extends FileTreeWidget {
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
         @inject(FileNavigatorModel) readonly model: FileNavigatorModel,
-        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
+        @inject(FileIconProvider) iconProvider: FileIconProvider
     ) {
-        super(props, model, contextMenuRenderer);
+        super(props, model, contextMenuRenderer, iconProvider);
         this.id = FILE_NAVIGATOR_ID;
         this.title.label = LABEL;
         this.addClass(CLASS);
