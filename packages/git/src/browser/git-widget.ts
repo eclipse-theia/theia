@@ -18,6 +18,7 @@ import URI from '@theia/core/lib/common/uri';
 import { VirtualRenderer, VirtualWidget, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
 import { h } from '@phosphor/virtualdom/lib';
 import { DiffUriHelper } from '@theia/editor/lib/browser/editor-utility';
+import { WorkingDirectoryStatus } from '../../lib/common/model';
 
 @injectable()
 export class GitWidget extends VirtualWidget {
@@ -30,6 +31,7 @@ export class GitWidget extends VirtualWidget {
     protected mergeChanges: GitFileChange[] = [];
     protected message: string = '';
     protected additionalMessage: string = '';
+    protected status: WorkingDirectoryStatus;
 
     constructor(
         @inject(Git) protected readonly git: Git,
@@ -56,11 +58,11 @@ export class GitWidget extends VirtualWidget {
         this.additionalMessage = '';
         this.repositories = await this.git.repositories();
         this.repository = await this.gitRepositoryProvider.getSelected();
-        const status = await this.git.status(this.repository);
+        this.status = await this.git.status(this.repository);
         this.stagedChanges = [];
         this.unstagedChanges = [];
         this.mergeChanges = [];
-        status.changes.forEach(change => {
+        this.status.changes.forEach(change => {
             if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
                 if (change.staged) {
                     this.stagedChanges.push(change);
@@ -176,8 +178,9 @@ export class GitWidget extends VirtualWidget {
     protected renderGitItemButtons(change: GitFileChange): h.Child {
         const btns: h.Child[] = [];
         if (change.staged) {
-            btns.push(h.div({
+            btns.push(h.a({
                 className: 'button',
+                title: 'Unstage Changes',
                 onclick: async event => {
                     const repo = await this.gitRepositoryProvider.getSelected();
                     this.git.rm(repo, change.uri)
@@ -187,13 +190,20 @@ export class GitWidget extends VirtualWidget {
                 }
             }, h.i({ className: 'fa fa-minus' })));
         } else {
-            btns.push(h.div({
+            btns.push(h.a({
                 className: 'button',
-                onclick: event => {
+                title: 'Discard Changes',
+                onclick: async event => {
+                    const repo = await this.gitRepositoryProvider.getSelected();
+                    this.git.checkout(repo, {
+                        branch: this.status.branch,
+                        paths: change.uri
+                    });
                 }
             }, h.i({ className: 'fa fa-undo' })));
-            btns.push(h.div({
+            btns.push(h.a({
                 className: 'button',
+                title: 'Stage Changes',
                 onclick: async event => {
                     const repo = await this.gitRepositoryProvider.getSelected();
                     this.git.add(repo, change.uri)
