@@ -9,19 +9,22 @@ import * as Path from 'path';
 import { Git, GitUtils } from '../common/git';
 import { git } from 'dugite-extra/lib/core/git';
 import { injectable, inject } from "inversify";
-import { FileUri } from '@theia/core/lib/node/file-uri';
-import { getStatus } from 'dugite-extra/lib/command/status';
-import { clone } from 'dugite-extra/lib/command/clone';
-import { createCommit } from 'dugite-extra/lib/command/commit';
-import { fetch } from 'dugite-extra/lib/command/fetch';
 import { push } from 'dugite-extra/lib/command/push';
 import { pull } from 'dugite-extra/lib/command/pull';
-import { getTextContents, getBlobContents } from 'dugite-extra/lib/command/show';
-import { createBranch, deleteBranch, renameBranch, listBranch } from 'dugite-extra/lib/command/branch';
-import { stage, unstage } from 'dugite-extra/lib/command/stage';
+import { FileUri } from '@theia/core/lib/node/file-uri';
+import { clone } from 'dugite-extra/lib/command/clone';
+import { fetch } from 'dugite-extra/lib/command/fetch';
+import { merge } from 'dugite-extra/lib/command/merge';
+import { getStatus } from 'dugite-extra/lib/command/status';
 import { locateRepositories } from './git-repository-locator';
+import { createCommit } from 'dugite-extra/lib/command/commit';
+import { stage, unstage } from 'dugite-extra/lib/command/stage';
+import { reset, GitResetMode } from 'dugite-extra/lib/command/reset';
 import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol';
+import { getTextContents, getBlobContents } from 'dugite-extra/lib/command/show';
+import { checkoutBranch, checkoutPaths } from 'dugite-extra/lib/command/checkout';
 import { Repository, WorkingDirectoryStatus, GitFileChange, GitFileStatus } from '../common/model';
+import { createBranch, deleteBranch, renameBranch, listBranch } from 'dugite-extra/lib/command/branch';
 import { IStatusResult, IAheadBehind, AppFileStatus, WorkingDirectoryStatus as DugiteStatus, FileChange as DugiteFileChange } from 'dugite-extra/lib/model/status';
 
 /**
@@ -36,13 +39,13 @@ export class DugiteGit implements Git {
 
     async clone(remoteUrl: string, options?: Git.Options.Clone): Promise<Repository> {
         const localUri = options && options.localUri ? options.localUri : await this.workspace.getRoot();
-        await clone(remoteUrl, localUri);
+        await clone(remoteUrl, this.getFsPath(localUri));
         return { localUri };
     }
 
     async repositories(): Promise<Repository[]> {
         const workspaceRoot = await this.workspace.getRoot();
-        const path = await getFsPath(workspaceRoot);
+        const path = this.getFsPath(workspaceRoot);
         const repositoriesPromise = locateRepositories(path);
         const containerRepositoryPromise = this.getContainerRepository(path);
         const repositories = await repositoriesPromise;
@@ -54,9 +57,9 @@ export class DugiteGit implements Git {
     }
 
     async status(repository: Repository): Promise<WorkingDirectoryStatus> {
-        const repositoryPath = await getFsPath(repository);
+        const repositoryPath = this.getFsPath(repository);
         const dugiteStatus = await getStatus(repositoryPath);
-        return mapStatus(dugiteStatus, repository);
+        return this.mapStatus(dugiteStatus, repository);
     }
 
     async add(repository: Repository, uri: string | string[]): Promise<void> {
@@ -75,8 +78,8 @@ export class DugiteGit implements Git {
             Git.Options.Branch.Rename |
             Git.Options.Branch.Delete): Promise<void | undefined | string | string[]> {
 
-        const repositoryPath = await getFsPath(repository);
-        if (GitUtils.isList(options)) {
+        const repositoryPath = this.getFsPath(repository);
+        if (GitUtils.isBranchList(options)) {
             const branches = await listBranch(repositoryPath, options.type);
             if (Array.isArray(branches)) {
                 return branches.map(b => b.name);
@@ -84,20 +87,27 @@ export class DugiteGit implements Git {
                 return branches ? branches.name : undefined;
             }
         } else {
-            if (GitUtils.isCreate(options)) {
+            if (GitUtils.isBranchCreate(options)) {
                 return createBranch(repositoryPath, options.toCreate, { startPoint: options.startPoint });
-            } else if (GitUtils.isRename(options)) {
+            } else if (GitUtils.isBranchRename(options)) {
                 return renameBranch(repositoryPath, options.newName, options.newName, { force: !!options.force });
-            } else if (GitUtils.isDelete(options)) {
+            } else if (GitUtils.isBranchDelete(options)) {
                 return deleteBranch(repositoryPath, options.toDelete, { force: !!options.force, remote: !!options.remote });
             } else {
-                this.fail(repository, `Unknown git branch options: ${options}.`);
+                return this.fail(repository, `Unexpected git branch options: ${options}.`);
             }
         }
     }
 
     async checkout(repository: Repository, options: Git.Options.Checkout.Branch | Git.Options.Checkout.WorkingTreeFile): Promise<void> {
-        throw new Error("Method not implemented.");
+        const repositoryPath = this.getFsPath(repository);
+        if (GitUtils.isBranchCheckout(options)) {
+            await checkoutBranch(repositoryPath, options.branch);
+        } else if (GitUtils.isWorkingTreeFileCheckout(options)) {
+            await checkoutPaths(repositoryPath, Array.isArray(options.paths) ? options.paths : [options.paths]);
+        } else {
+            this.fail(repository, `Unexpected git checkout options: ${options}.`);
+        }
     }
 
     async commit(repository: Repository, message?: string): Promise<void> {
@@ -105,7 +115,7 @@ export class DugiteGit implements Git {
     }
 
     async fetch(repository: Repository, options?: Git.Options.Fetch): Promise<void> {
-        const repositoryPath = await getFsPath(repository);
+        const repositoryPath = this.getFsPath(repository);
         const r = await this.getDefaultRemote(repositoryPath, options ? options.remote : undefined);
         if (r === undefined) {
             this.fail(repository, `No remote repository specified. Please, specify either a URL or a remote name from which new revisions should be fetched.`);
@@ -114,7 +124,7 @@ export class DugiteGit implements Git {
     }
 
     async push(repository: Repository, options?: Git.Options.Push): Promise<void> {
-        const repositoryPath = await getFsPath(repository);
+        const repositoryPath = this.getFsPath(repository);
         const r = await this.getDefaultRemote(repositoryPath, options ? options.remote : undefined);
         if (r === undefined) {
             this.fail(repository, `No remote repository specified. Please, specify either a URL or a remote name from which new revisions should be fetched.`);
@@ -125,7 +135,7 @@ export class DugiteGit implements Git {
     }
 
     async pull(repository: Repository, options?: Git.Options.Pull): Promise<void> {
-        const repositoryPath = await getFsPath(repository);
+        const repositoryPath = this.getFsPath(repository);
         const r = await this.getDefaultRemote(repositoryPath, options ? options.remote : undefined);
         if (r === undefined) {
             this.fail(repository, `No remote repository specified. Please, specify either a URL or a remote name from which new revisions should be fetched.`);
@@ -133,22 +143,21 @@ export class DugiteGit implements Git {
         await pull(repositoryPath, r!);
     }
 
-    async reset(repository: Repository, mode: "hard" | "soft" | "mixed", ref?: string): Promise<void> {
-        throw new Error("Method not implemented.");
+    async reset(repository: Repository, options: Git.Options.Reset): Promise<void> {
+        const repositoryPath = this.getFsPath(repository);
+        const mode = this.getResetMode(options.mode);
+        await reset(repositoryPath, mode, options.mode ? options.mode : 'HEAD');
     }
 
-    async merge(repository: Repository, name: string): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
-
-    async rebase(repository: Repository, name: string): Promise<void> {
-        throw new Error("Method not implemented.");
+    async merge(repository: Repository, options: Git.Options.Merge): Promise<void> {
+        const repositoryPath = this.getFsPath(repository);
+        await merge(repositoryPath, options.branch);
     }
 
     async show(repository: Repository, uri: string, options?: Git.Options.Show): Promise<string> {
         const encoding = options ? options.encoding || 'utf8' : 'utf8';
         const commitish = this.getCommitish(options);
-        const path = await getFsPath(uri);
+        const path = this.getFsPath(uri);
         if (encoding === 'binary') {
             return (await getBlobContents(repository.localUri, commitish, path)).toString();
         }
@@ -162,15 +171,15 @@ export class DugiteGit implements Git {
         return '';
     }
 
-    // TODO: kittaakos what about symlinks? What if the workspace root is a symlink?
-    // Maybe, we should use `--show-cdup` here instead of `--show-toplevel` because show-toplevel dereferences symlinks.
+    // TODO: akitta what about symlinks? What if the workspace root is a symlink?
+    // Maybe, we should use `--show-cdup` here instead of `--show-toplevel` because `show-toplevel` dereferences symlinks.
     private async getContainerRepository(path: string): Promise<Repository | undefined> {
         // Do not log an error if we are not contained in a Git repository. Treat exit code 128 as a success too.
         const options = { successExitCodes: new Set([0, 128]) };
         const result = await git(['rev-parse', '--show-toplevel'], path, 'rev-parse', options);
         const out = result.stdout;
-        if (out.length !== 0) {
-            const localUri = FileUri.fsPath(out.trim());
+        if (out && out.length !== 0) {
+            const localUri = FileUri.create(out.trim()).toString();
             return { localUri };
         }
         return undefined;
@@ -199,70 +208,79 @@ export class DugiteGit implements Git {
         return branch.name;
     }
 
+    private getResetMode(mode: 'hard' | 'soft' | 'mixed') {
+        switch (mode) {
+            case 'hard': return GitResetMode.Hard;
+            case 'soft': return GitResetMode.Soft;
+            case 'mixed': return GitResetMode.Mixed;
+            default: throw new Error(`Unexpected Git reset mode: ${mode}.`);
+        }
+    }
+
+    private async mapStatus(toMap: IStatusResult, repository: Repository): Promise<WorkingDirectoryStatus> {
+        const repositoryPath = this.getFsPath(repository);
+        const aheadBehindPromise = this.mapAheadBehind(toMap.branchAheadBehind);
+        const changesPromise = this.mapFileChanges(toMap.workingDirectory, repositoryPath);
+        const aheadBehind = await aheadBehindPromise;
+        const changes = await changesPromise;
+        return {
+            exists: toMap.exists,
+            branch: toMap.currentBranch,
+            upstreamBranch: toMap.currentUpstreamBranch,
+            aheadBehind,
+            changes,
+            currentHead: toMap.currentTip
+        };
+    }
+
+    private async mapAheadBehind(toMap: IAheadBehind | undefined): Promise<{ ahead: number, behind: number } | undefined> {
+        return toMap ? { ...toMap } : undefined;
+    }
+
+    private async mapFileChanges(toMap: DugiteStatus, repositoryPath: string): Promise<GitFileChange[]> {
+        return Promise.all(toMap.files.map(file => this.mapFileChange(file, repositoryPath)));
+    }
+
+    private async mapFileChange(toMap: DugiteFileChange, repositoryPath: string): Promise<GitFileChange> {
+        const uriPromise = this.getUri(Path.join(repositoryPath, toMap.path));
+        const statusPromise = this.mapFileStatus(toMap.status);
+        const oldUriPromise = toMap.oldPath ? this.getUri(Path.join(repositoryPath, toMap.oldPath)) : undefined;
+        const uri = await uriPromise;
+        const status = await statusPromise;
+        const oldUri = await oldUriPromise;
+        return {
+            uri,
+            status,
+            oldUri,
+            staged: toMap.staged
+        };
+    }
+
+    private mapFileStatus(toMap: AppFileStatus): GitFileStatus {
+        switch (toMap) {
+            case AppFileStatus.Conflicted: return GitFileStatus.Conflicted;
+            case AppFileStatus.Copied: return GitFileStatus.Copied;
+            case AppFileStatus.Deleted: return GitFileStatus.Deleted;
+            case AppFileStatus.Modified: return GitFileStatus.Modified;
+            case AppFileStatus.New: return GitFileStatus.New;
+            case AppFileStatus.Renamed: return GitFileStatus.Renamed;
+            default: throw new Error(`Unexpected application file status: ${toMap}`);
+        }
+    }
+
+    private getFsPath(repository: Repository | string): string {
+        const uri = typeof repository === 'string' ? repository : repository.localUri;
+        return FileUri.fsPath(uri);
+    }
+
+    private getUri(path: string): string {
+        return FileUri.create(path).toString();
+    }
+
     private fail<T>(repository: Repository | string, message?: string): T {
         const p = typeof repository === 'string' ? repository : repository.localUri;
         const m = message ? `${message} ` : '';
         throw new Error(`${m}[${p}]`);
     }
 
-}
-
-async function mapStatus(toMap: IStatusResult, repository: Repository): Promise<WorkingDirectoryStatus> {
-    const repositoryFsPath = await getFsPath(repository);
-    const aheadBehindPromise = mapAheadBehind(toMap.branchAheadBehind);
-    const changesPromise = mapFileChanges(toMap.workingDirectory, repositoryFsPath);
-    const aheadBehind = await aheadBehindPromise;
-    const changes = await changesPromise;
-    return {
-        exists: toMap.exists,
-        branch: toMap.currentBranch,
-        upstreamBranch: toMap.currentUpstreamBranch,
-        aheadBehind,
-        changes,
-        currentHead: toMap.currentTip
-    };
-}
-
-async function mapAheadBehind(toMap: IAheadBehind | undefined): Promise<{ ahead: number, behind: number } | undefined> {
-    return toMap ? { ...toMap } : undefined;
-}
-
-async function mapFileChanges(toMap: DugiteStatus, repositoryFsPath: string): Promise<GitFileChange[]> {
-    return Promise.all(toMap.files.map(file => mapFileChange(file, repositoryFsPath)));
-}
-
-async function mapFileChange(toMap: DugiteFileChange, repositoryFsPath: string): Promise<GitFileChange> {
-    const uriPromise = getUri(Path.join(repositoryFsPath, toMap.path));
-    const statusPromise = mapFileStatus(toMap.status);
-    const oldUriPromise = toMap.oldPath ? await getUri(Path.join(repositoryFsPath, toMap.oldPath)) : undefined;
-    const uri = await uriPromise;
-    const status = await statusPromise;
-    const oldUri = await oldUriPromise;
-    return {
-        uri,
-        status,
-        oldUri,
-        staged: toMap.staged
-    };
-}
-
-async function mapFileStatus(toMap: AppFileStatus): Promise<GitFileStatus> {
-    switch (toMap) {
-        case AppFileStatus.Conflicted: return GitFileStatus.Conflicted;
-        case AppFileStatus.Copied: return GitFileStatus.Copied;
-        case AppFileStatus.Deleted: return GitFileStatus.Deleted;
-        case AppFileStatus.Modified: return GitFileStatus.Modified;
-        case AppFileStatus.New: return GitFileStatus.New;
-        case AppFileStatus.Renamed: return GitFileStatus.Renamed;
-        default: throw new Error(`Unexpected application file status: ${toMap}`);
-    }
-}
-
-async function getFsPath(repository: Repository | string): Promise<string> {
-    const uri = typeof repository === 'string' ? repository : repository.localUri;
-    return FileUri.fsPath(uri);
-}
-
-async function getUri(path: string): Promise<string> {
-    return FileUri.create(path).toString();
 }

@@ -280,6 +280,40 @@ export namespace Git {
 
         }
 
+        /**
+         * Additional technical rectifications for the `git reset` command.
+         */
+        export interface Reset {
+
+            /**
+             * The `git reset` mode. The followings are supported:
+             *  - `hard`,
+             *  - `sort`, or
+             *  - `mixed`.
+             *
+             * Those correspond to the consecutive `--hard`, `--soft`, and `--mixed` Git options.
+             */
+            readonly mode: 'hard' | 'soft' | 'mixed';
+
+            /**
+             * The reference to reset to. By default, resets to `HEAD`.
+             */
+            readonly ref?: string;
+
+        }
+
+        /**
+         * Additional options for the `git merge` command.
+         */
+        export interface Merge {
+
+            /**
+             * The name of the branch that should be merged into the current branch.
+             */
+            readonly branch: string;
+
+        }
+
     }
 
 }
@@ -395,26 +429,17 @@ export interface Git {
      * Resets the current `HEAD` of the entire working directory to the specified state.
      *
      * @param repository the repository which state has to be reset.
-     * @param mode the reset mode. The followings are supported: `hard`, `sort`, or `mixed`. Those correspond to the consecutive `--hard`, `--soft`, and `--mixed` Git options.
-     * @param ref the reference to reset to. By default, resets to `HEAD`.
+     * @param options further clarifying the `git reset` command.
      */
-    reset(repository: Repository, mode: 'hard' | 'soft' | 'mixed', ref?: string): Promise<void>;
+    reset(repository: Repository, options: Git.Options.Reset): Promise<void>;
 
     /**
      * Merges the given branch into the currently active branch.
      *
      * @param repository the repository to merge from.
-     * @param name the name of the branch to merge into the current one.
+     * @param options `git merge` command refinements.
      */
-    merge(repository: Repository, name: string): Promise<void>;
-
-    /**
-     * Reapplies commits on top of another base tip to the current branch.
-     *
-     * @param repository the repository to get the commits from.
-     * @param name the name of the branch to retrieve the commits and reapplies on the current branch tip.
-     */
-    rebase(repository: Repository, name: string): Promise<void>;
+    merge(repository: Repository, options: Git.Options.Merge): Promise<void>;
 
     /**
      * Retrieves and shows the content of a resource from the repository at a given reference, commit, or tree.
@@ -436,29 +461,43 @@ export namespace GitUtils {
     /**
      * `true` if the argument is an option for renaming an existing branch in the repository.
      */
-    export function isRename(any: any | undefined): any is Git.Options.Branch.Rename {
-        return (<Git.Options.Branch.Rename>any).newName !== undefined;
+    export function isBranchRename(arg: any | undefined): arg is Git.Options.Branch.Rename {
+        return !!arg && ('newName' in arg);
     }
 
     /**
      * `true` if the argument is an option for deleting an existing branch in the repository.
      */
-    export function isDelete(any: any | undefined): any is Git.Options.Branch.Delete {
-        return (<Git.Options.Branch.Delete>any).toDelete !== undefined;
+    export function isBranchDelete(arg: any | undefined): arg is Git.Options.Branch.Delete {
+        return !!arg && ('toDelete' in arg);
     }
 
     /**
      * `true` if the argument is an option for creating a new branch in the repository.
      */
-    export function isCreate(any: any | undefined): any is Git.Options.Branch.Create {
-        return (<Git.Options.Branch.Create>any).toCreate !== undefined;
+    export function isBranchCreate(arg: any | undefined): arg is Git.Options.Branch.Create {
+        return !!arg && ('toCreate' in arg);
     }
 
     /**
      * `true` if the argument is an option for listing the branches in a repository.
      */
-    export function isList(any: any | undefined): any is Git.Options.Branch.List {
-        return (<Git.Options.Branch.List>any).type !== undefined;
+    export function isBranchList(arg: any | undefined): arg is Git.Options.Branch.List {
+        return !!arg && ('type' in arg);
+    }
+
+    /**
+     * `true` if the argument is an option for checking out a new local branch.
+     */
+    export function isBranchCheckout(arg: any | undefined): arg is Git.Options.Checkout.Branch {
+        return !!arg && ('branch' in arg);
+    }
+
+    /**
+     * `true` if the argument is an option for checking out a working tree file.
+     */
+    export function isWorkingTreeFileCheckout(arg: any | undefined): arg is Git.Options.Checkout.WorkingTreeFile {
+        return !!arg && ('paths' in arg);
     }
 
 }
