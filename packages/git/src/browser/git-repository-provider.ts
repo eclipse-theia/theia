@@ -22,7 +22,7 @@ export class GitRepositoryProvider {
         if (this.selectedRepository) {
             return this.selectedRepository;
         } else {
-            return this.git.repositories().then(r => r[0]);
+            return this.git.repositories().then(r => this.selectedRepository = r[0]);
         }
     }
 
