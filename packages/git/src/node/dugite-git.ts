@@ -104,7 +104,9 @@ export class DugiteGit implements Git {
         if (GitUtils.isBranchCheckout(options)) {
             await checkoutBranch(repositoryPath, options.branch);
         } else if (GitUtils.isWorkingTreeFileCheckout(options)) {
-            await checkoutPaths(repositoryPath, Array.isArray(options.paths) ? options.paths : [options.paths]);
+            // TODO this repository root relative mapping should be in `dugite-extra`.
+            const paths = (Array.isArray(options.paths) ? options.paths : [options.paths]).map(FileUri.fsPath).map(path => Path.relative(repositoryPath, path));
+            await checkoutPaths(repositoryPath, paths);
         } else {
             this.fail(repository, `Unexpected git checkout options: ${options}.`);
         }
