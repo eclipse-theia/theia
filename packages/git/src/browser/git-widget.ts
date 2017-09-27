@@ -263,11 +263,11 @@ export class GitWidget extends VirtualWidget {
         const staged = change.staged ? 'staged ' : '';
         const statusDiv = h.div({ className: 'status ' + staged + GitFileStatus[change.status].toLowerCase() }, this.getStatusChar(change.status, change.staged));
         const itemBtnsAndStatusDiv = h.div({ className: 'itemButtonsContainer' }, buttonsDiv, statusDiv);
-        return h.div({ className: 'gitItem' }, nameAndPathDiv, itemBtnsAndStatusDiv);
+        return h.div({ className: 'gitItem noselect' }, nameAndPathDiv, itemBtnsAndStatusDiv);
     }
 
     protected renderChangesHeader(title: string): h.Child {
-        const stagedChangesHeaderDiv = h.div({ className: 'changesHeader' }, title);
+        const stagedChangesHeaderDiv = h.div({ className: 'header' }, title);
         return stagedChangesHeaderDiv;
     }
 
@@ -280,7 +280,7 @@ export class GitWidget extends VirtualWidget {
             return h.div({
                 id: 'mergeChanges',
                 className: 'changesContainer'
-            }, h.div({ className: 'changesHeader' }, 'MERGE CHANGES'), VirtualRenderer.flatten(mergeChangeDivs));
+            }, h.div({ className: 'theia-header' }, 'Merge Changes'), VirtualRenderer.flatten(mergeChangeDivs));
         } else {
             return undefined;
         }
@@ -295,7 +295,7 @@ export class GitWidget extends VirtualWidget {
             return h.div({
                 id: 'stagedChanges',
                 className: 'changesContainer'
-            }, h.div({ className: 'changesHeader' }, 'STAGED CHANGES'), VirtualRenderer.flatten(stagedChangeDivs));
+            }, h.div({ className: 'theia-header' }, 'Staged Changes'), VirtualRenderer.flatten(stagedChangeDivs));
         } else {
             return undefined;
         }
@@ -310,7 +310,7 @@ export class GitWidget extends VirtualWidget {
             return h.div({
                 id: 'unstagedChanges',
                 className: 'changesContainer'
-            }, h.div({ className: 'changesHeader' }, 'CHANGES'), VirtualRenderer.flatten(unstagedChangeDivs));
+            }, h.div({ className: 'theia-header' }, 'Changed'), VirtualRenderer.flatten(unstagedChangeDivs));
         }
 
         return '';
