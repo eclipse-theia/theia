@@ -14,6 +14,7 @@ import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { IShellTerminalServer, shellTerminalPath } from '../common/shell-terminal-protocol';
+import { FrontendApplication } from '@theia/core/lib/browser';
 
 import '../../src/browser/terminal.css';
 import 'xterm/dist/xterm.css';
@@ -38,7 +39,12 @@ export default new ContainerModule(bind => {
                 ...options
             });
             const result = child.get(TerminalWidget);
+            const app = ctx.container.get(FrontendApplication);
+
+            app.shell.addToMainArea(result);
+            app.shell.activateMain(result.id);
             result.start();
+
             return result;
         }
     }));

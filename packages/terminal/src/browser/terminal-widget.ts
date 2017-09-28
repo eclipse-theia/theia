@@ -75,8 +75,6 @@ export class TerminalWidget extends BaseWidget {
         this.term.on('title', (title: string) => {
             this.title.label = title;
         });
-
-        this.registerResize();
     }
 
     protected registerResize(): void {
@@ -96,6 +94,7 @@ export class TerminalWidget extends BaseWidget {
     }
 
     public async start(): Promise<void> {
+        this.registerResize();
         const root = await this.workspaceService.root;
         this.terminalId = await this.shellTerminalServer.create(
             { rootURI: root.uri, cols: this.cols, rows: this.rows });
