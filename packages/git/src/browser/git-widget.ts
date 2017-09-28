@@ -5,15 +5,14 @@
 * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 */
 
-
 import { injectable, inject } from 'inversify';
 import { Git } from '../common/git';
 import { GIT_CONTEXT_MENU } from './git-context-menu';
 import { GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus } from '../common/model';
-import { GitWatcher } from '../common/git-watcher';
+import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { GitRepositoryProvider } from './git-repository-provider';
-import { MessageService, ResourceProvider } from '@theia/core';
+import { MessageService, ResourceProvider, Disposable } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { VirtualRenderer, VirtualWidget, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
 import { h } from '@phosphor/virtualdom/lib';
@@ -32,6 +31,7 @@ export class GitWidget extends VirtualWidget {
     protected messageInputHighlighted: boolean = false;
     protected additionalMessage: string = '';
     protected status: WorkingDirectoryStatus;
+    protected watcherDisposable: Disposable;
 
     constructor(
         @inject(Git) protected readonly git: Git,
@@ -44,6 +44,7 @@ export class GitWidget extends VirtualWidget {
         super();
         this.id = 'theia-gitContainer';
         this.title.label = 'Git';
+
         this.addClass('theia-git');
         this.update();
     }
@@ -55,11 +56,21 @@ export class GitWidget extends VirtualWidget {
     async initialize(): Promise<void> {
         this.repositories = await this.git.repositories();
         this.repository = await this.gitRepositoryProvider.getSelected();
-        this.status = await this.git.status(this.repository);
+        this.gitWatcher.dispose();
+        this.watcherDisposable = await this.gitWatcher.watchGitChanges(this.repository);
+        this.gitWatcher.onGitEvent(async gitEvent => {
+            if (GitStatusChangeEvent.is(gitEvent)) {
+                this.status = gitEvent.status;
+                this.updateView(gitEvent.status);
+            }
+        });
+    }
+
+    protected updateView(status: WorkingDirectoryStatus) {
         this.stagedChanges = [];
         this.unstagedChanges = [];
         this.mergeChanges = [];
-        this.status.changes.forEach(change => {
+        status.changes.forEach(change => {
             if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
                 if (change.staged) {
                     this.stagedChanges.push(change);
@@ -95,9 +106,11 @@ export class GitWidget extends VirtualWidget {
 
         return h.select({
             id: 'repositoryList',
-            onchange: event => {
-                this.gitRepositoryProvider.select((event.target as HTMLSelectElement).value);
-                this.initialize();
+            onchange: async event => {
+                await this.gitRepositoryProvider.select((event.target as HTMLSelectElement).value);
+                this.repository = await this.gitRepositoryProvider.getSelected();
+                const status = await this.git.status(this.repository);
+                this.updateView(status);
             }
         }, VirtualRenderer.flatten(repoOptionElements));
     }
@@ -112,10 +125,11 @@ export class GitWidget extends VirtualWidget {
                     const extendedMessageInput = document.getElementById('git-extendedMessageInput') as HTMLInputElement;
                     const repo = await this.gitRepositoryProvider.getSelected();
                     this.git.commit(repo, this.message + "\n\n" + this.additionalMessage)
-                        .then(() => {
+                        .then(async () => {
                             messageInput.value = '';
                             extendedMessageInput.value = '';
-                            this.initialize();
+                            const status = await this.git.status(this.repository);
+                            this.updateView(status);
                         });
                 } else {
                     if (messageInput) {
@@ -189,7 +203,9 @@ export class GitWidget extends VirtualWidget {
                     const repo = await this.gitRepositoryProvider.getSelected();
                     this.git.rm(repo, change.uri)
                         .then(() => {
-                            this.initialize();
+                            this.git.status(this.repository).then(status => {
+                                this.updateView(status);
+                            });
                         });
                 }
             }, h.i({ className: 'fa fa-minus' })));
@@ -200,7 +216,12 @@ export class GitWidget extends VirtualWidget {
                 onclick: async event => {
                     const repo = await this.gitRepositoryProvider.getSelected();
                     const options: Git.Options.Checkout.WorkingTreeFile = { paths: change.uri };
-                    this.git.checkout(repo, options);
+                    this.git.checkout(repo, options)
+                        .then(() => {
+                            this.git.status(this.repository).then(status => {
+                                this.updateView(status);
+                            });
+                        });
                 }
             }, h.i({ className: 'fa fa-undo' })));
             btns.push(h.a({
@@ -210,7 +231,9 @@ export class GitWidget extends VirtualWidget {
                     const repo = await this.gitRepositoryProvider.getSelected();
                     this.git.add(repo, change.uri)
                         .then(() => {
-                            this.initialize();
+                            this.git.status(this.repository).then(status => {
+                                this.updateView(status);
+                            });
                         });
                 }
             }, h.i({ className: 'fa fa-plus' })));
