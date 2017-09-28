@@ -12,11 +12,13 @@ import { GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus } from
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { GitRepositoryProvider } from './git-repository-provider';
-import { MessageService, ResourceProvider, Disposable } from '@theia/core';
+import { MessageService, ResourceProvider, Disposable, CommandService } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { VirtualRenderer, VirtualWidget, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
 import { h } from '@phosphor/virtualdom/lib';
 import { DiffUriHelper } from '@theia/editor/lib/browser/editor-utility';
+import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
+import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 
 @injectable()
 export class GitWidget extends VirtualWidget {
@@ -40,7 +42,9 @@ export class GitWidget extends VirtualWidget {
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
         @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
-        @inject(MessageService) protected readonly messageService: MessageService) {
+        @inject(MessageService) protected readonly messageService: MessageService,
+        @inject(FileIconProvider) protected readonly iconProvider: FileIconProvider,
+        @inject(CommandService) protected readonly commandService: CommandService) {
         super();
         this.id = 'theia-gitContainer';
         this.title.label = 'Git';
@@ -201,12 +205,7 @@ export class GitWidget extends VirtualWidget {
                 title: 'Unstage Changes',
                 onclick: async event => {
                     const repo = await this.gitRepositoryProvider.getSelected();
-                    this.git.rm(repo, change.uri)
-                        .then(() => {
-                            this.git.status(this.repository).then(status => {
-                                this.updateView(status);
-                            });
-                        });
+                    this.git.rm(repo, change.uri);
                 }
             }, h.i({ className: 'fa fa-minus' })));
         } else {
@@ -216,12 +215,11 @@ export class GitWidget extends VirtualWidget {
                 onclick: async event => {
                     const repo = await this.gitRepositoryProvider.getSelected();
                     const options: Git.Options.Checkout.WorkingTreeFile = { paths: change.uri };
-                    this.git.checkout(repo, options)
-                        .then(() => {
-                            this.git.status(this.repository).then(status => {
-                                this.updateView(status);
-                            });
-                        });
+                    if (change.status === GitFileStatus.New) {
+                        this.commandService.executeCommand(WorkspaceCommands.FILE_DELETE, new URI(change.uri));
+                    } else {
+                        this.git.checkout(repo, options);
+                    }
                 }
             }, h.i({ className: 'fa fa-undo' })));
             btns.push(h.a({
@@ -229,12 +227,7 @@ export class GitWidget extends VirtualWidget {
                 title: 'Stage Changes',
                 onclick: async event => {
                     const repo = await this.gitRepositoryProvider.getSelected();
-                    this.git.add(repo, change.uri)
-                        .then(() => {
-                            this.git.status(this.repository).then(status => {
-                                this.updateView(status);
-                            });
-                        });
+                    this.git.add(repo, change.uri);
                 }
             }, h.i({ className: 'fa fa-plus' })));
         }
@@ -259,6 +252,8 @@ export class GitWidget extends VirtualWidget {
 
     protected renderGitItem(change: GitFileChange): h.Child {
         const changeUri: URI = new URI(change.uri);
+        const fileIcon = this.iconProvider.getFileIconForURI(changeUri);
+        const iconSpan = h.span({ className: fileIcon });
         const nameSpan = h.span({ className: 'name' }, changeUri.displayName + ' ');
         const pathSpan = h.span({ className: 'path' }, this.getRepositoryRelativePath(changeUri.path.dir.toString()));
         const nameAndPathDiv = h.div({
@@ -294,7 +289,7 @@ export class GitWidget extends VirtualWidget {
                 }
                 open(this.openerService, uri);
             }
-        }, nameSpan, pathSpan);
+        }, iconSpan, nameSpan, pathSpan);
         const buttonsDiv = this.renderGitItemButtons(change);
         const staged = change.staged ? 'staged ' : '';
         const statusDiv = h.div({ className: 'status ' + staged + GitFileStatus[change.status].toLowerCase() }, this.getStatusChar(change.status, change.staged));
