@@ -18,6 +18,14 @@ export enum LogLevel {
     TRACE = 10
 }
 
+/* This is to be initialized from container composition root.
+It can be used outside of the inversify context.  */
+export let logger: ILogger;
+
+export function setRootLogger(alogger: ILogger) {
+    logger = alogger;
+}
+
 export type Log = (message: string, ...params: any[]) => void;
 export type Loggable = (log: Log) => void;
 

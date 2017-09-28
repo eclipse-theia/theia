@@ -18,6 +18,11 @@ export const FrontendApplicationContribution = Symbol("FrontendApplicationContri
 export interface FrontendApplicationContribution {
 
     /**
+     * Called on application startup before onStart is called.
+     */
+    initialize?(): void;
+
+    /**
      * Called when the application is started.
      */
     onStart?(app: FrontendApplication): void;
@@ -96,6 +101,17 @@ export class FrontendApplication {
     }
 
     protected startContributions(): void {
+
+        for (const contribution of this.contributions.getContributions()) {
+            if (contribution.initialize) {
+                try {
+                    contribution.initialize();
+                } catch (err) {
+                    this.logger.error(err.toString());
+                }
+            }
+        }
+
         /**
          * FIXME:
          * - decouple commands & menus

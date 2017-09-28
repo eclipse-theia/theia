@@ -7,11 +7,19 @@
 
 import { ContainerModule, Container } from 'inversify';
 import { ILoggerServer, loggerPath } from '../common/logger-protocol';
-import { ILogger, Logger, LoggerFactory, LoggerOptions } from '../common/logger';
+import { ILogger, Logger, LoggerFactory, LoggerOptions, setRootLogger } from '../common/logger';
 import { LoggerWatcher } from '../common/logger-watcher';
 import { WebSocketConnectionProvider } from './messaging';
+import { FrontendApplicationContribution } from './frontend-application';
 
 export const loggerFrontendModule = new ContainerModule(bind => {
+    bind(FrontendApplicationContribution).toDynamicValue(ctx =>
+        ({
+            initialize() {
+                setRootLogger(ctx.container.get<ILogger>(ILogger));
+            }
+        }));
+
     bind(ILogger).to(Logger).inSingletonScope();
     bind(LoggerWatcher).toSelf().inSingletonScope();
     bind(ILoggerServer).toDynamicValue(ctx => {
