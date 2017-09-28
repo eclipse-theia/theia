@@ -29,6 +29,7 @@ export class GitWidget extends VirtualWidget {
     protected unstagedChanges: GitFileChange[] = [];
     protected mergeChanges: GitFileChange[] = [];
     protected message: string = '';
+    protected messageInputHighlighted: boolean = false;
     protected additionalMessage: string = '';
     protected status: WorkingDirectoryStatus;
 
@@ -52,8 +53,6 @@ export class GitWidget extends VirtualWidget {
     }
 
     async initialize(): Promise<void> {
-        this.message = '';
-        this.additionalMessage = '';
         this.repositories = await this.git.repositories();
         this.repository = await this.gitRepositoryProvider.getSelected();
         this.status = await this.git.status(this.repository);
@@ -107,16 +106,21 @@ export class GitWidget extends VirtualWidget {
         const commit = h.div({
             className: 'button',
             onclick: async event => {
+                // need to access the element, because phopsphor is not updating `value`but only `setAttribute('value', ....)` which only sets the defautl value.
+                const messageInput = document.getElementById('git-messageInput') as HTMLInputElement;
                 if (this.message !== '') {
+                    const extendedMessageInput = document.getElementById('git-extendedMessageInput') as HTMLInputElement;
                     const repo = await this.gitRepositoryProvider.getSelected();
                     this.git.commit(repo, this.message + "\n\n" + this.additionalMessage)
                         .then(() => {
+                            messageInput.value = '';
+                            extendedMessageInput.value = '';
                             this.initialize();
                         });
                 } else {
-                    const messageInput = document.getElementById('messageInput');
                     if (messageInput) {
-                        messageInput.className += ' warn';
+                        this.messageInputHighlighted = true;
+                        this.update();
                         messageInput.focus();
                     }
                     this.messageService.error('Please provide a commit message!');
@@ -148,14 +152,15 @@ export class GitWidget extends VirtualWidget {
 
     protected renderMessageInput(): h.Child {
         const input = h.input({
-            id: 'messageInput',
+            id: 'git-messageInput',
             oninput: event => {
                 const inputElement = (event.target as HTMLInputElement);
                 if (inputElement.value !== '') {
-                    inputElement.className = '';
+                    this.messageInputHighlighted = false;
                 }
                 this.message = (event.target as HTMLInputElement).value;
             },
+            className: this.messageInputHighlighted ? 'warn' : '',
             placeholder: 'Commit message',
             value: this.message
         });
@@ -164,6 +169,7 @@ export class GitWidget extends VirtualWidget {
 
     protected renderMessageTextarea(): h.Child {
         const textarea = h.textarea({
+            id: 'git-extendedMessageInput',
             placeholder: 'Extended commit text',
             oninput: event => {
                 this.additionalMessage = (event.target as HTMLTextAreaElement).value;
