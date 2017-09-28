@@ -64,12 +64,12 @@ export class DugiteGit implements Git {
 
     async add(repository: Repository, uri: string | string[]): Promise<void> {
         const paths = (Array.isArray(uri) ? uri : [uri]).map(FileUri.fsPath);
-        return stage(FileUri.fsPath(repository.localUri), paths);
+        return stage(this.getFsPath(repository), paths);
     }
 
     async rm(repository: Repository, uri: string | string[]): Promise<void> {
         const paths = (Array.isArray(uri) ? uri : [uri]).map(FileUri.fsPath);
-        return unstage(FileUri.fsPath(repository.localUri), paths);
+        return unstage(this.getFsPath(repository), paths);
     }
 
     async branch(repository: Repository,
@@ -113,7 +113,7 @@ export class DugiteGit implements Git {
     }
 
     async commit(repository: Repository, message?: string): Promise<void> {
-        return createCommit(repository.localUri, message || '');
+        return createCommit(this.getFsPath(repository), message || '');
     }
 
     async fetch(repository: Repository, options?: Git.Options.Fetch): Promise<void> {
