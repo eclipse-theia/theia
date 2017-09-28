@@ -26,7 +26,7 @@ export class GitRepositoryProvider {
         }
     }
 
-    select(localUri: string): void {
+    async select(localUri: string): Promise<void> {
         this.git.repositories().then(repos => {
             for (const repo of repos) {
                 if (repo.localUri === localUri) {
