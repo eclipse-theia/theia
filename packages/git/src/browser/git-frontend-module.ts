@@ -10,8 +10,7 @@ import { ContainerModule } from 'inversify';
 import { bindGitPreferences } from '../common/git-preferences';
 import { WebSocketConnectionProvider, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { GitCommandHandlers } from './git-command';
-import { GitKeybindingContext, GitKeybindingContribution } from './git-keybinding';
-import { CommandContribution, KeybindingContribution, KeybindingContext, MenuContribution, ResourceResolver } from "@theia/core/lib/common";
+import { CommandContribution, MenuContribution, ResourceResolver } from "@theia/core/lib/common";
 import { GitWatcher, GitWatcherPath, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common/git-watcher';
 import { GitFrontendContribution, GIT_WIDGET_FACTORY_ID } from './git-frontend-contribution';
 import { GitWidget } from './git-widget';
@@ -30,9 +29,6 @@ export default new ContainerModule(bind => {
 
     bind(CommandContribution).to(GitCommandHandlers);
     bind(MenuContribution).to(GitContextMenu);
-    bind(GitKeybindingContext).toSelf().inSingletonScope();
-    bind(KeybindingContext).toDynamicValue(context => context.container.get(GitKeybindingContext));
-    bind(KeybindingContribution).to(GitKeybindingContribution);
 
     bind(FrontendApplicationContribution).to(GitFrontendContribution);
     bind(GitWidget).toSelf();
