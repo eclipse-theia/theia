@@ -63,12 +63,9 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
     }
 
     protected async newTerminal(): Promise<void> {
-        const newTerminal = await this.widgetManager.getOrCreateWidget(TERMINAL_WIDGET_FACTORY_ID, <TerminalWidgetFactoryOptions>{
+        await this.widgetManager.getOrCreateWidget(TERMINAL_WIDGET_FACTORY_ID, <TerminalWidgetFactoryOptions>{
             created: new Date().toString()
         });
-
-        this.app.shell.addToMainArea(newTerminal);
-        this.app.shell.activateMain(newTerminal.id);
     }
 
 }
