@@ -221,17 +221,20 @@ export class FileSystemCommandHandler implements CommandHandler {
         protected readonly handler: UriCommandHandler
     ) { }
 
-    protected getUri(): URI | undefined {
+    protected getUri(...args: any[]): URI | undefined {
+        if (args && args[0] instanceof URI) {
+            return args[0];
+        }
         return UriSelection.getUri(this.selectionService.selection);
     }
 
     execute(...args: any[]): object | undefined {
-        const uri = this.getUri();
+        const uri = this.getUri(...args);
         return uri ? this.handler.execute(uri, ...args) : undefined;
     }
 
     isVisible(...args: any[]): boolean {
-        const uri = this.getUri();
+        const uri = this.getUri(...args);
         if (uri) {
             if (this.handler.isVisible) {
                 return this.handler.isVisible(uri, ...args);
@@ -242,7 +245,7 @@ export class FileSystemCommandHandler implements CommandHandler {
     }
 
     isEnabled(...args: any[]): boolean {
-        const uri = this.getUri();
+        const uri = this.getUri(...args);
         if (uri) {
             if (this.handler.isEnabled) {
                 return this.handler.isEnabled(uri, ...args);
