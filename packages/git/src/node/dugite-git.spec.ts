@@ -20,7 +20,7 @@ describe('git', async () => {
 
         it('should discover all nested repositories', async () => {
 
-            const root = track.mkdirSync('discovery-test');
+            const root = track.mkdirSync('discovery-test-1');
             fs.mkdirSync(path.join(root, 'A'));
             fs.mkdirSync(path.join(root, 'B'));
             fs.mkdirSync(path.join(root, 'C'));
@@ -33,9 +33,9 @@ describe('git', async () => {
 
         });
 
-        it('should discover all nested repositories and the root repository', async () => {
+        it('should discover all nested repositories and the root repository which is at the workspace root', async () => {
 
-            const root = track.mkdirSync('discovery-test');
+            const root = track.mkdirSync('discovery-test-2');
             fs.mkdirSync(path.join(root, 'BASE'));
             fs.mkdirSync(path.join(root, 'BASE', 'A'));
             fs.mkdirSync(path.join(root, 'BASE', 'B'));
@@ -45,6 +45,24 @@ describe('git', async () => {
             await initRepository(path.join(root, 'BASE', 'B'));
             await initRepository(path.join(root, 'BASE', 'C'));
             const git = await createGit(path.join(root, 'BASE'));
+            const repositories = await git.repositories();
+            expect(repositories.map(r => path.basename(FileUri.fsPath(r.localUri))).sort()).to.deep.equal(['A', 'B', 'BASE', 'C']);
+
+        });
+
+        it('should discover all nested repositories and the container repository', async () => {
+
+            const root = track.mkdirSync('discovery-test-3');
+            fs.mkdirSync(path.join(root, 'BASE'));
+            fs.mkdirSync(path.join(root, 'BASE', 'WS_ROOT'));
+            fs.mkdirSync(path.join(root, 'BASE', 'WS_ROOT', 'A'));
+            fs.mkdirSync(path.join(root, 'BASE', 'WS_ROOT', 'B'));
+            fs.mkdirSync(path.join(root, 'BASE', 'WS_ROOT', 'C'));
+            await initRepository(path.join(root, 'BASE'));
+            await initRepository(path.join(root, 'BASE', 'WS_ROOT', 'A'));
+            await initRepository(path.join(root, 'BASE', 'WS_ROOT', 'B'));
+            await initRepository(path.join(root, 'BASE', 'WS_ROOT', 'C'));
+            const git = await createGit(path.join(root, 'BASE', 'WS_ROOT'));
             const repositories = await git.repositories();
             const repositoryNames = repositories.map(r => path.basename(FileUri.fsPath(r.localUri)));
             expect(repositoryNames.shift()).to.equal('BASE'); // The first must be the container repository.
