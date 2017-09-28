@@ -29,28 +29,23 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
         this.status = new Map();
     }
 
-    async watchGitChanges(repository?: Repository): Promise<number> {
+    async watchGitChanges(repository: Repository): Promise<number> {
         const watcher = this.watcherSequence++;
-        if (!repository) {
-            this.filesystemWatcher.setClient({ onDidFilesChanged: p => console.log(p) });
-            throw new Error('Global watchers are not yet implemented.');
-        } else {
-            const interval = this.preferences['git.pollInterval']; // TODO refresh timers on preference change.
-            const timer = setInterval(async () => {
-                const status = await this.git.status(repository);
-                const oldStatus = this.status.get(repository);
-                if (this.client && !WorkingDirectoryStatus.equals(status, oldStatus)) {
-                    this.status.set(repository, status);
-                    const event: GitStatusChangeEvent = {
-                        source: repository,
-                        status,
-                        oldStatus
-                    };
-                    this.client.onGitChanged(event);
-                }
-            }, interval);
-            this.watchers.set(watcher, timer);
-        }
+        const interval = this.preferences['git.pollInterval']; // TODO refresh timers on preference change.
+        const timer = setInterval(async () => {
+            const status = await this.git.status(repository);
+            const oldStatus = this.status.get(repository);
+            if (this.client && !WorkingDirectoryStatus.equals(status, oldStatus)) {
+                this.status.set(repository, status);
+                const event: GitStatusChangeEvent = {
+                    source: repository,
+                    status,
+                    oldStatus
+                };
+                this.client.onGitChanged(event);
+            }
+        }, interval);
+        this.watchers.set(watcher, timer);
         return watcher;
     }
 

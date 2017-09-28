@@ -11,26 +11,14 @@ import { Repository, WorkingDirectoryStatus } from './model';
 import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 
 /**
- * An event representing a Git change.
+ * An event representing a `Git` status change in one of the watched local working directory.
  */
-export interface GitEvent {
+export interface GitStatusChangeEvent {
 
     /**
      * The source `Git` repository where the event belongs to.
      */
     readonly source: Repository;
-
-    /**
-     * The old `Git` source. Might be missing.
-     */
-    readonly oldSource?: Repository;
-
-}
-
-/**
- * An event representing a `Git` status change in one of the watched local working directory.
- */
-export interface GitStatusChangeEvent extends GitEvent {
 
     /**
      * The new working directory state.
@@ -51,7 +39,7 @@ export namespace GitStatusChangeEvent {
      * @param event the argument to check whether it is a Git status change event or not.
      */
     export function is(event: any | undefined): event is GitStatusChangeEvent {
-        return (<GitStatusChangeEvent>event).status !== undefined;
+        return !!event && ('source' in event) && ('status' in event);
     }
 
 }
@@ -62,9 +50,9 @@ export namespace GitStatusChangeEvent {
 export interface GitWatcherClient {
 
     /**
-     * Invoked with the event that encapsulates the change.
+     * Invoked with the event that encapsulates the status change in the repository.
      */
-    onGitChanged(event: GitEvent): Promise<void>;
+    onGitChanged(event: GitStatusChangeEvent): Promise<void>;
 
 }
 
@@ -79,12 +67,9 @@ export const GitWatcherServer = Symbol('GitWatcherServer');
 export interface GitWatcherServer extends JsonRpcServer<GitWatcherClient> {
 
     /**
-     * Watches status changes in the repository if the repository is defined, if the `repository` argument is absent,
-     * then it watches changes among the repositories. For instance, if a new repository is cloned in the workspace,
-     * then a new `GitEvent` with `source` to the new repository, and `undefined` for `oldSource` will be fired to indicate,
-     * that a new repository change can be tracked by the client.
+     * Watches status changes in the given repository.
      */
-    watchGitChanges(repository?: Repository): Promise<number>;
+    watchGitChanges(repository: Repository): Promise<number>;
 
     /**
      * De-registers any previously added watchers identified by the unique `watcher` argument. If the watcher cannot be found
@@ -101,7 +86,7 @@ export type GitWatcherServerProxy = JsonRpcProxy<GitWatcherServer>;
 export class ReconnectingGitWatcherServer implements GitWatcherServer {
 
     private watcherSequence = 1;
-    private readonly watchParams = new Map<number, Repository | undefined>();
+    private readonly watchParams = new Map<number, Repository>();
     private readonly localToRemoteWatcher = new Map<number, number>();
 
     constructor(
@@ -110,7 +95,7 @@ export class ReconnectingGitWatcherServer implements GitWatcherServer {
         this.proxy.onDidOpenConnection(() => this.reconnect());
     }
 
-    async watchGitChanges(repository?: Repository): Promise<number> {
+    async watchGitChanges(repository: Repository): Promise<number> {
         const watcher = this.watcherSequence++;
         this.watchParams.set(watcher, repository);
         return this.doWatchGitChanges([watcher, repository]);
@@ -139,7 +124,7 @@ export class ReconnectingGitWatcherServer implements GitWatcherServer {
         [...this.watchParams.entries()].forEach(entry => this.doWatchGitChanges(entry));
     }
 
-    private async doWatchGitChanges(entry: [number, Repository | undefined]): Promise<number> {
+    private async doWatchGitChanges(entry: [number, Repository]): Promise<number> {
         const [watcher, repository] = entry;
         const remote = await this.proxy.watchGitChanges(repository);
         this.localToRemoteWatcher.set(watcher, remote);
@@ -156,33 +141,31 @@ export const GitWatcherPath = '/services/git-watcher';
 export class GitWatcher implements GitWatcherClient, Disposable {
 
     private readonly toDispose: DisposableCollection;
-    private readonly onGitEventEmitter: Emitter<GitEvent>;
+    private readonly onGitEventEmitter: Emitter<GitStatusChangeEvent>;
 
     constructor(
         @inject(GitWatcherServer) private readonly server: GitWatcherServer
     ) {
         this.toDispose = new DisposableCollection();
-        this.onGitEventEmitter = new Emitter<GitEvent>();
+        this.onGitEventEmitter = new Emitter<GitStatusChangeEvent>();
 
         this.toDispose.push(this.onGitEventEmitter);
-        this.server.setClient({
-            onGitChanged: e => this.onGitChanged(e)
-        });
+        this.server.setClient({ onGitChanged: e => this.onGitChanged(e) });
     }
 
     dispose(): void {
         this.toDispose.dispose();
     }
 
-    get onGitEvent(): Event<GitEvent> {
+    get onGitEvent(): Event<GitStatusChangeEvent> {
         return this.onGitEventEmitter.event;
     }
 
-    async onGitChanged(event: GitEvent): Promise<void> {
+    async onGitChanged(event: GitStatusChangeEvent): Promise<void> {
         this.onGitEventEmitter.fire(event);
     }
 
-    async watchGitChanges(repository?: Repository): Promise<Disposable> {
+    async watchGitChanges(repository: Repository): Promise<Disposable> {
         const watcher = await this.server.watchGitChanges(repository);
         const toDispose = new DisposableCollection();
         toDispose.push(Disposable.create(() => this.server.unwatchGitChanges(watcher)));
