@@ -7,13 +7,22 @@
 
 import { ContainerModule, Container } from 'inversify';
 import { ConnectionHandler, JsonRpcConnectionHandler } from "../common/messaging";
-import { ILogger, LoggerFactory, LoggerOptions, Logger } from '../common/logger';
+import { ILogger, LoggerFactory, LoggerOptions, Logger, setRootLogger } from '../common/logger';
 import { ILoggerServer, ILoggerClient, loggerPath, LoggerServerOptions } from '../common/logger-protocol';
 import { BunyanLoggerServer } from './bunyan-logger-server';
 import { LoggerWatcher } from '../common/logger-watcher';
+import { BackendApplicationContribution } from './backend-application';
+
 import * as yargs from 'yargs';
 
 export const loggerBackendModule = new ContainerModule(bind => {
+    bind(BackendApplicationContribution).toDynamicValue(ctx =>
+        ({
+            initialize() {
+                setRootLogger(ctx.container.get<ILogger>(ILogger));
+            }
+        }));
+
     bind(ILogger).to(Logger).inSingletonScope().whenTargetIsDefault();
     bind(LoggerWatcher).toSelf().inSingletonScope();
     bind(ILoggerServer).to(BunyanLoggerServer).inSingletonScope();

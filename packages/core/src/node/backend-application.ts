@@ -12,6 +12,7 @@ import { ILogger, ContributionProvider } from '../common';
 
 export const BackendApplicationContribution = Symbol("BackendApplicationContribution");
 export interface BackendApplicationContribution {
+    initialize?(): void;
     configure?(app: express.Application): void;
     onStart?(server: http.Server): void;
 }
@@ -37,6 +38,13 @@ export class BackendApplication {
                 }
             }
         });
+
+        for (const contribution of this.contributionsProvider.getContributions()) {
+            if (contribution.initialize) {
+                contribution.initialize();
+            }
+        }
+
         for (const contribution of this.contributionsProvider.getContributions()) {
             if (contribution.configure) {
                 contribution.configure(this.app);
