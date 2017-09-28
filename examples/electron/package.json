@@ -21,10 +21,10 @@
     "@theia/markers": "^0.1.1"
   },
   "scripts": {
-    "prepare": "yarn run clean && yarn run build",
-    "clean": "theia clean",
-    "build": "theia generate --target=electron && theia build",
-    "watch": "theia build --watch",
+    "prepare": "yarn run clean && yarn build",
+    "clean": "theia rm:electron",
+    "build": "theia build:electron",
+    "watch": "yarn build --watch",
     "start": "theia electron",
     "start:debug": "theia electron --loglevel=debug",
     "test": "electron-mocha --timeout 60000 --require ts-node/register \"./test/**/*.espec.ts\"",

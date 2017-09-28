@@ -9,10 +9,10 @@ import { AbstractGenerator } from "./abstract-generator";
 
 export class BackendGenerator extends AbstractGenerator {
 
-    generate(): void {
-        const backendModules = this.model.targetBackendModules;
-        this.write(this.model.backend('server.js'), this.compileServer(backendModules));
-        this.write(this.model.backend('main.js'), this.compileMain(backendModules));
+    async generate(): Promise<void> {
+        const backendModules = this.pck.targetBackendModules;
+        await this.write(this.pck.backend('server.js'), this.compileServer(backendModules));
+        await this.write(this.pck.backend('main.js'), this.compileMain(backendModules));
     }
 
     protected compileServer(backendModules: Map<string, string>): string {
@@ -57,14 +57,10 @@ module.exports = (port, host) => Promise.resolve()${this.compileBackendModuleImp
     }
 
     protected compileMain(backendModules: Map<string, string>): string {
-        return `// @ts-check
-
-const { port, hostname } = require('yargs').argv;
-console.info("Starting express on port '" + port + "'.")
-if (hostname) {
-    console.info("Allowed host is '" + hostname + "'.")
-}
-module.exports = require('./server')(port, hostname);`;
+        return ` // @ts-check
+const serverPath = require('path').resolve(__dirname, 'server');
+require('@theia/core/lib/node/cluster/main').default(serverPath);
+`;
     }
 
 }
