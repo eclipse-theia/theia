@@ -173,6 +173,12 @@ export namespace Git {
 
             /**
              * Options for checking out files from the working tree.
+             *
+             *  - When trying to revert a resource to the state of the index, set `paths`.
+             *  - When trying to revert the state of a resource to the repository `HEAD`, then set `paths` and `treeish` to `HEAD`.
+             *  - If you would like to check out the state of a file from the `HEAD` of a branch, set `treeish` to `nameOfTheBranch`.
+             *  - And if you would like to check out a historical revision of a branch, set `treeish` to `nameOfTheBranch~2` which will be
+             *      two commits before the most recent one on the desired branch.
              */
             export interface WorkingTreeFile {
 
@@ -203,7 +209,8 @@ export namespace Git {
                 readonly merge?: boolean;
 
                 /**
-                 * Tree to checkout from. If not specified, the index will be used.
+                 * Tree to checkout from. If not specified, the index will be used. `git checkout -- ./fileName.ext`.
+                 * If you want to get the state from the repository ,use `HEAD` which will be equivalent with `git checkout HEAD -- ./fileName.ext`.
                  */
                 readonly treeish?: string;
 
@@ -320,10 +327,6 @@ export namespace Git {
 
 /**
  * Provides basic functionality for Git.
- *
- * TODOs:
- *  - register/remove repositories that are currently outside of the workspace but user wants to track the changes.
- *  - Wrap all other than `Repository` arguments into Option?
  */
 export interface Git {
 
