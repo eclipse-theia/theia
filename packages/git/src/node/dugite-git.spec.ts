@@ -4,6 +4,7 @@ import * as fs from 'fs-extra';
 import { expect } from 'chai';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { DugiteGit } from './dugite-git';
+import { WorkingDirectoryStatus } from '../common/model';
 import { initRepository, createTestRepository } from 'dugite-extra/lib/command/test-helper';
 import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol';
 
@@ -31,10 +32,6 @@ describe('git', async () => {
             expect(repositories.map(r => path.basename(FileUri.fsPath(r.localUri))).sort()).to.deep.equal(['A', 'B', 'C']);
 
         });
-
-    });
-
-    describe('repositories in repository', async () => {
 
         it('should discover all nested repositories and the root repository', async () => {
 
@@ -93,6 +90,56 @@ describe('git', async () => {
             expect(status.changes).to.be.have.lengthOf(2);
             expect(status.changes.map(f => f.uri)).to.be.deep.equal([fileUri, fileUri]);
             expect(status.changes.map(f => f.staged).sort()).to.be.deep.equal([false, true]);
+
+        });
+
+    });
+
+    describe('WorkingDirectoryStatus#equals', async () => {
+
+        it('staged change should matter', async () => {
+
+            const left: WorkingDirectoryStatus = JSON.parse(`
+            {
+                "exists":true,
+                "branch":"GH-165",
+                "upstreamBranch":"origin/GH-165",
+                "aheadBehind":{
+                   "ahead":0,
+                   "behind":0
+                },
+                "changes":[
+                   {
+                      "uri":"bar.foo",
+                      "status":0,
+                      "staged":false
+                   }
+                ],
+                "currentHead":"a274d43dbfba5d1ff9d52db42dc90c6f03071656"
+             }
+            `);
+
+            const right: WorkingDirectoryStatus = JSON.parse(`
+            {
+                "exists":true,
+                "branch":"GH-165",
+                "upstreamBranch":"origin/GH-165",
+                "aheadBehind":{
+                   "ahead":0,
+                   "behind":0
+                },
+                "changes":[
+                   {
+                      "uri":"bar.foo",
+                      "status":0,
+                      "staged":true
+                   }
+                ],
+                "currentHead":"a274d43dbfba5d1ff9d52db42dc90c6f03071656"
+             }
+            `);
+
+            expect(WorkingDirectoryStatus.equals(left, right)).to.be.false;
 
         });
 

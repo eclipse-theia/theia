@@ -52,17 +52,10 @@ export namespace WorkingDirectoryStatus {
                 && (left.aheadBehind ? left.aheadBehind.ahead : -1) === (right.aheadBehind ? right.aheadBehind.ahead : -1)
                 && (left.aheadBehind ? left.aheadBehind.behind : -1) === (right.aheadBehind ? right.aheadBehind.behind : -1)
                 && left.changes.length === right.changes.length
-                && left.changes.sort(GitFileChange.compare).join(' ') === right.changes.sort(GitFileChange.compare).join(' ');
+                && JSON.stringify(left) === JSON.stringify(right);
         } else {
             return left === right;
         }
-    }
-
-    /**
-     * `true` if the status has no file changes and neither behind nor ahead from the remote branch.
-     */
-    export function isEmpty(status: WorkingDirectoryStatus): boolean {
-        return status.changes.length === 0 && (!status.aheadBehind || (status.aheadBehind.ahead === 0 && status.aheadBehind.behind === 0));
     }
 
 }
@@ -105,33 +98,6 @@ export interface GitFileChange {
     readonly staged: boolean;
 }
 
-export namespace GitFileChange {
-
-    /**
-     * `true` if the file status and the URIs are the same, otherwise `false`.
-     */
-    export function equals(left: GitFileChange, right: GitFileChange): boolean {
-        return left.status === right.status
-            && left.staged === right.staged
-            && left.uri.toString() === right.uri.toString()
-            && (left.oldUri ? left.oldUri.toString() : '') === (right.oldUri ? right.oldUri.toString() : '');
-    }
-
-    /**
-     * Determines whether the files change arguments are equivalent or not.
-     */
-    export function compare(left: GitFileChange, right: GitFileChange): number {
-        const concat = (fc: GitFileChange) => `${fc.status}${fc.uri.toString()}${fc.oldUri ? fc.oldUri.toString() : ''}${fc.staged}`;
-        return concat(left).localeCompare(concat(right));
-    }
-
-}
-
-/**
- * The path to a local repository as an URI.
- */
-export type RepositoryPath = string | Repository;
-
 /**
  * Bare minimum representation of a local Git clone.
  */
@@ -141,50 +107,5 @@ export interface Repository {
      * The FS URI of the local clone.
      */
     readonly localUri: string;
-
-}
-
-export namespace Repository {
-
-    /**
-     * `true` if the argument is a type of a [Repository](#Repository), otherwise `false`.
-     */
-    export function is(repository: any | undefined): repository is Repository {
-        return repository && typeof (<Repository>repository).localUri === 'string';
-    }
-
-    /**
-     * `true` if the arguments are equal. More precisely; when the local URIs are equal.
-     *
-     * @param left the repository to compare with the other.
-     * @param right the other repository.
-     */
-    export function equals(left: Repository, right: Repository): boolean {
-        return left.localUri === right.localUri;
-    }
-
-    /**
-     * Tries to find the equivalent repository among the given ones, if no matching result is available, returns with the `toFind` argument.
-     * @param repositories the repositories to look for the equivalent.
-     * @param toFind the repository to find.
-     */
-    export function findEquivalentOrThis(repositories: IterableIterator<Repository> | Repository[], toFind: Repository): Repository {
-        return (Array.isArray(repositories) ? repositories : [...repositories]).find(r => equals(r, toFind)) || toFind;
-    }
-
-    /**
-     * Returns with the index of the element of the `repositories` argument that is equivalent with the `toFind` argument.
-     * In this context, two repositories considered to be equivalent, if their local URIs are the same.
-     * @param repositories a bunch of repositories to search when looking for the desired one.
-     * @param toFind the one to find among the `repositories`.
-     */
-    export function indexOfEquivalent(repositories: Repository[], toFind: Repository): number {
-        const index = repositories.indexOf(toFind);
-        if (index !== -1) {
-            return index;
-        }
-        const equivalent = repositories.find(r => equals(r, toFind));
-        return equivalent ? repositories.indexOf(equivalent) : -1;
-    }
 
 }
