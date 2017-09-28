@@ -50,7 +50,8 @@ export class DugiteGit implements Git {
         const containerRepositoryPromise = this.getContainerRepository(workspaceRootPath);
         const repositories = await repositoriesPromise;
         const containerRepository = await containerRepositoryPromise;
-        if (containerRepository) {
+        // Make sure not to add the container to the repositories twice. Can happen when WS root is a git repository.
+        if (containerRepository && repositories.map(r => r.localUri).indexOf(containerRepository.localUri) === -1) {
             repositories.unshift(containerRepository);
         }
         return repositories;
