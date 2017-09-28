@@ -40,7 +40,7 @@ function shell(command: string, args: string[]): Promise<string> {
 }
 async function bunyan(childProcess: cp.ChildProcess): Promise<string> {
     const bunyanPath = resolveBin('bunyan');
-    const bunyanProcess = cp.spawn(bunyanPath, [], { cwd, env, stdio: ['pipe', 1, 2, 'ipc'] });
+    const bunyanProcess = cp.spawn(bunyanPath, [], { cwd, env, stdio: ['pipe', 1, 2] });
     childProcess.stdout.pipe(bunyanProcess.stdin);
     childProcess.stderr.pipe(bunyanProcess.stdin);
     return promisify(bunyanProcess);
