@@ -120,10 +120,11 @@ export class GitWidget extends VirtualWidget {
     }
 
     protected renderCommandBar(): h.Child {
-        const commit = h.div({
+        const commit = h.a({
             className: 'button',
+            title: 'Commit',
             onclick: async event => {
-                // need to access the element, because phopsphor is not updating `value`but only `setAttribute('value', ....)` which only sets the defautl value.
+                // need to access the element, because Phosphor.js is not updating `value`but only `setAttribute('value', ....)` which only sets the default value.
                 const messageInput = document.getElementById('git-messageInput') as HTMLInputElement;
                 if (this.message !== '') {
                     const extendedMessageInput = document.getElementById('git-extendedMessageInput') as HTMLInputElement;
@@ -145,14 +146,16 @@ export class GitWidget extends VirtualWidget {
                 }
             }
         }, h.i({ className: 'fa fa-check' }));
-        const refresh = h.div({
+        const refresh = h.a({
             className: 'button',
+            title: 'Refresh',
             onclick: e => {
                 this.initialize();
             }
         }, h.i({ className: 'fa fa-refresh' }));
-        const commands = h.div({
+        const commands = h.a({
             className: 'button',
+            title: 'More...',
             onclick: event => {
                 const el = (event.target as HTMLElement).parentElement;
                 if (el) {
@@ -198,9 +201,9 @@ export class GitWidget extends VirtualWidget {
     }
 
     protected renderGitItemButtons(change: GitFileChange): h.Child {
-        const btns: h.Child[] = [];
+        const buttons: h.Child[] = [];
         if (change.staged) {
-            btns.push(h.a({
+            buttons.push(h.a({
                 className: 'button',
                 title: 'Unstage Changes',
                 onclick: async event => {
@@ -209,7 +212,7 @@ export class GitWidget extends VirtualWidget {
                 }
             }, h.i({ className: 'fa fa-minus' })));
         } else {
-            btns.push(h.a({
+            buttons.push(h.a({
                 className: 'button',
                 title: 'Discard Changes',
                 onclick: async event => {
@@ -222,7 +225,7 @@ export class GitWidget extends VirtualWidget {
                     }
                 }
             }, h.i({ className: 'fa fa-undo' })));
-            btns.push(h.a({
+            buttons.push(h.a({
                 className: 'button',
                 title: 'Stage Changes',
                 onclick: async event => {
@@ -231,7 +234,7 @@ export class GitWidget extends VirtualWidget {
                 }
             }, h.i({ className: 'fa fa-plus' })));
         }
-        return h.div({ className: 'buttons' }, VirtualRenderer.flatten(btns));
+        return h.div({ className: 'buttons' }, VirtualRenderer.flatten(buttons));
     }
 
     protected getStatusChar(status: GitFileStatus, staged: boolean): string {
