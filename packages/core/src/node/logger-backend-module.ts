@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { ContainerModule, Container } from 'inversify';
+import { ContainerModule, Container, interfaces } from 'inversify';
 import { ConnectionHandler, JsonRpcConnectionHandler } from "../common/messaging";
 import { ILogger, LoggerFactory, LoggerOptions, Logger } from '../common/logger';
 import { ILoggerServer, ILoggerClient, loggerPath, LoggerServerOptions } from '../common/logger-protocol';
@@ -13,7 +13,7 @@ import { BunyanLoggerServer } from './bunyan-logger-server';
 import { LoggerWatcher } from '../common/logger-watcher';
 import * as yargs from 'yargs';
 
-export const loggerBackendModule = new ContainerModule(bind => {
+export function bindLogger(bind: interfaces.Bind): void {
     bind(ILogger).to(Logger).inSingletonScope().whenTargetIsDefault();
     bind(LoggerWatcher).toSelf().inSingletonScope();
     bind(ILoggerServer).to(BunyanLoggerServer).inSingletonScope();
@@ -37,6 +37,10 @@ export const loggerBackendModule = new ContainerModule(bind => {
             return child.get(ILogger);
         }
     );
+}
+
+export const loggerBackendModule = new ContainerModule(bind => {
+    bindLogger(bind);
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<ILoggerClient>(loggerPath, client => {
