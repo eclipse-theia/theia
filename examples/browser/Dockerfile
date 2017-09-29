@@ -29,10 +29,12 @@
 #    on the 3000 link. Please wait a few seconds before trying again as Theia
 #    may not have completely finished starting up yet.
 
-FROM node:7.10
+FROM node:8
 RUN useradd --create-home theia
-USER theia
 WORKDIR /home/theia
+RUN rm -rf /opt/yarn && rm -f /usr/local/bin/yarn && rm -f /usr/local/bin/yarnpkg
+RUN apt-get update && apt-get install -y npm && npm install -g yarn@1.0.2
+USER theia
 RUN git clone --depth 1 https://github.com/theia-ide/theia && \
     cd theia && \
     yarn
