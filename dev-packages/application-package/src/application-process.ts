@@ -6,6 +6,7 @@
  */
 
 import * as path from 'path';
+import * as fs from 'fs-extra';
 import * as cp from 'child_process';
 import { ApplicationPackage } from './application-package';
 
@@ -17,7 +18,8 @@ export class ApplicationProcess {
     };
 
     constructor(
-        protected readonly pck: ApplicationPackage
+        protected readonly pck: ApplicationPackage,
+        protected readonly binProjectPath: string
     ) { }
 
     spawn(command: string, args?: string[], options?: cp.SpawnOptions): cp.ChildProcess {
@@ -27,6 +29,9 @@ export class ApplicationProcess {
         return cp.fork(modulePath, args, Object.assign({}, this.defaultOptions, options));
     }
 
+    canRun(command: string): boolean {
+        return fs.existsSync(this.resolveBin(command));
+    }
     run(command: string, args: string[], options?: cp.SpawnOptions): Promise<void> {
         const commandProcess = this.spawnBin(command, args, options);
         return this.promisify(command, commandProcess);
@@ -36,11 +41,8 @@ export class ApplicationProcess {
         return this.spawn(binPath, args, options);
     }
     protected resolveBin(command: string): string {
-        const commandPath = path.resolve(__dirname, '..', 'node_modules', '.bin', command);
-        if (process.platform === 'win32') {
-            return commandPath + '.cmd';
-        }
-        return commandPath;
+        const commandPath = path.resolve(this.binProjectPath, 'node_modules', '.bin', command);
+        return process.platform === 'win32' ? commandPath + '.cmd' : commandPath;
     }
 
     bunyan(childProcess: cp.ChildProcess): Promise<void> {

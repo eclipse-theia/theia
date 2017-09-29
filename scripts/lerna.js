@@ -6,7 +6,6 @@
  */
 // @ts-check
 const path = require('path');
-const cp = require('child_process');
 
 const lernaPath = path.resolve(__dirname, '..', 'node_modules', 'lerna', 'bin', 'lerna');
 

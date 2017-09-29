@@ -13,17 +13,21 @@ import { ApplicationProcess } from './application-process';
 export class ApplicationPackageManager {
 
     readonly pck: ApplicationPackage;
+    /** application process */
+    readonly process: ApplicationProcess;
+    /** manager process */
+    protected readonly __process: ApplicationProcess;
     protected readonly webpack: WebpackGenerator;
     protected readonly backend: BackendGenerator;
     protected readonly frontend: FrontendGenerator;
-    protected readonly appProcess: ApplicationProcess;
 
     constructor(options: ApplicationPackageOptions) {
         this.pck = new ApplicationPackage(options);
+        this.process = new ApplicationProcess(this.pck, options.projectPath);
+        this.__process = new ApplicationProcess(this.pck, `${__dirname}/..`);
         this.webpack = new WebpackGenerator(this.pck);
         this.backend = new BackendGenerator(this.pck);
         this.frontend = new FrontendGenerator(this.pck);
-        this.appProcess = new ApplicationProcess(this.pck);
     }
 
     protected async remove(path: string): Promise<void> {
@@ -52,7 +56,7 @@ export class ApplicationPackageManager {
     async build(args: string[] = []): Promise<void> {
         await this.generate();
         await this.copy();
-        return this.appProcess.run('webpack', args);
+        return this.__process.run('webpack', args);
     }
 
     async start(args: string[] = []): Promise<void> {
@@ -66,8 +70,8 @@ export class ApplicationPackageManager {
         if (!args.some(arg => arg.startsWith('--hostname='))) {
             args.push('--hostname=localhost');
         }
-        return this.appProcess.bunyan(
-            this.appProcess.spawnBin('electron', [this.pck.frontend('electron-main.js'), ...args], {
+        return this.__process.bunyan(
+            this.__process.spawnBin('electron', [this.pck.frontend('electron-main.js'), ...args], {
                 stdio: [0, 'pipe', 'pipe', 'ipc']
             })
         );
@@ -77,8 +81,8 @@ export class ApplicationPackageManager {
         if (!args.some(arg => arg.startsWith('--port='))) {
             args.push('--port=3000');
         }
-        return this.appProcess.bunyan(
-            this.appProcess.fork(this.pck.backend('main.js'), args, {
+        return this.__process.bunyan(
+            this.__process.fork(this.pck.backend('main.js'), args, {
                 stdio: [0, 'pipe', 'pipe', 'ipc']
             })
         );
