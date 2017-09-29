@@ -57,14 +57,10 @@ module.exports = (port, host) => Promise.resolve()${this.compileBackendModuleImp
     }
 
     protected compileMain(backendModules: Map<string, string>): string {
-        return `// @ts-check
-
-const { port, hostname } = require('yargs').argv;
-console.info("Starting express on port '" + port + "'.")
-if (hostname) {
-    console.info("Allowed host is '" + hostname + "'.")
-}
-module.exports = require('./server')(port, hostname);`;
+        return ` // @ts-check
+const serverPath = require('path').resolve(__dirname, 'server');
+module.exports = require('@theia/core/lib/node/cluster/main').default(serverPath);
+`;
     }
 
 }
