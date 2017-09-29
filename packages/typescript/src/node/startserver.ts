@@ -1,2 +1,3 @@
 // delegate to allow resolving the file in a hoisted scenario
-require("ts-language-server/lib/cli");
+// require("./../../../../../typescript-language-server/lib/typescript-lsp");
+require("typescript-lsp/lib/typescript-lsp")
