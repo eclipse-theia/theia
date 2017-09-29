@@ -5,11 +5,18 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { ContainerModule } from "inversify";
+import { ContainerModule, interfaces } from "inversify";
 import { bindContributionProvider, ConnectionHandler, JsonRpcConnectionHandler, MessageService } from '../common';
 import { MessageClient, DispatchingMessageClient, messageServicePath } from '../common/message-service-protocol';
 import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution } from './backend-application';
 import { CliManager, CliContribution } from './cli';
+import { ServerProcess, RemoteMasterProcessFactory, clusterRemoteMasterProcessFactory } from './cluster';
+
+export function bindServerProcess(bind: interfaces.Bind, masterFactory: RemoteMasterProcessFactory): void {
+    bind(RemoteMasterProcessFactory).toConstantValue(masterFactory);
+    bind(ServerProcess).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(ServerProcess)).inSingletonScope();
+}
 
 export const backendApplicationModule = new ContainerModule(bind => {
     bind(CliManager).toSelf().inSingletonScope();
@@ -20,6 +27,8 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(BackendApplication).toSelf().inSingletonScope();
     bindContributionProvider(bind, BackendApplicationContribution);
+
+    bindServerProcess(bind, clusterRemoteMasterProcessFactory);
 
     bind(DispatchingMessageClient).toSelf().inSingletonScope();
     bind(MessageClient).toDynamicValue(ctx => ctx.container.get(DispatchingMessageClient)).inSingletonScope();

@@ -93,8 +93,8 @@ electron.app.on('window-all-closed', function () {
 });
 electron.app.on('ready', function () {
     const mainWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
-    require("../backend/main").then(server => {
-        mainWindow.loadURL(\`file://\${path.join(__dirname, '../../lib/index.html')}?port=\${server.address().port}\`);
+    require("../backend/main").then(address => {
+        mainWindow.loadURL(\`file://\${path.join(__dirname, '../../lib/index.html')}?port=\${address.port}\`);
     }).catch(() => {
         electron.app.exit(1);
     });
