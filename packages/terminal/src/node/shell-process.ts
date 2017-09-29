@@ -11,6 +11,7 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { TerminalProcess, TerminalProcessOptions, ProcessManager } from '@theia/process/lib/node';
 import { isWindows } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
+import { FileUri } from "@theia/core/lib/node/file-uri";
 
 export const ShellProcessFactory = Symbol("ShellProcessFactory");
 export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess;
@@ -26,7 +27,7 @@ export interface ShellProcessOptions {
 function getRootPath(rootURI?: string): string {
     if (rootURI) {
         const uri = new URI(rootURI);
-        return uri.path.toString();
+        return FileUri.fsPath(uri);
     } else {
         return process.cwd();
     }
