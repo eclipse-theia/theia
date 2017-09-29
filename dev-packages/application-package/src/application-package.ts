@@ -7,7 +7,7 @@
 
 import * as fs from 'fs';
 import * as paths from 'path';
-import { NpmRegistry, NodePackage, PublishedNodePackage } from './npm-registry';
+import { NpmRegistry, NodePackage, PublishedNodePackage, sortByKey } from './npm-registry';
 import { Extension, ExtensionPackage, RawExtensionPackage } from './extension-package';
 
 import writeJsonFile = require('write-json-file');
@@ -213,7 +213,7 @@ export class ApplicationPackage extends ApplicationPackageOptions {
         } else {
             delete dependencies[name];
         }
-        this.pck.dependencies = dependencies;
+        this.pck.dependencies = sortByKey(dependencies);
         return true;
     }
 

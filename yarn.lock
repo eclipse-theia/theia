@@ -199,6 +199,10 @@
     "@types/form-data" "*"
     "@types/node" "*"
 
+"@types/sanitize-html@^1.13.31":
+  version "1.13.31"
+  resolved "https://registry.yarnpkg.com/@types/sanitize-html/-/sanitize-html-1.13.31.tgz#6d10581c302c5678532041ff5502c96121ef176c"
+
 "@types/semver@^5.4.0":
   version "5.4.0"
   resolved "https://registry.yarnpkg.com/@types/semver/-/semver-5.4.0.tgz#f3658535af7f1f502acd6da7daf405ffeb1f7ee4"
@@ -216,6 +220,10 @@
   dependencies:
     "@types/glob" "*"
     "@types/node" "*"
+
+"@types/showdown@^1.7.1":
+  version "1.7.1"
+  resolved "https://registry.yarnpkg.com/@types/showdown/-/showdown-1.7.1.tgz#9ba121fc2b2dcad646040034a5581e82ccecc066"
 
 "@types/sinon@^2.3.5":
   version "2.3.5"
@@ -236,6 +244,10 @@
   resolved "https://registry.yarnpkg.com/@types/webdriverio/-/webdriverio-4.8.5.tgz#75088f262f14feb5710d709edc44da928f93df07"
   dependencies:
     "@types/node" "*"
+
+"@types/write-json-file@^2.2.1":
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/@types/write-json-file/-/write-json-file-2.2.1.tgz#74155aaccbb0d532be21f9d66bebc4ea875a5a62"
 
 "@types/ws@^3.0.2":
   version "3.0.2"
@@ -1878,9 +1890,37 @@ diffie-hellman@^5.0.0:
     miller-rabin "^4.0.0"
     randombytes "^2.0.0"
 
+dom-serializer@0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/dom-serializer/-/dom-serializer-0.1.0.tgz#073c697546ce0780ce23be4a28e293e40bc30c82"
+  dependencies:
+    domelementtype "~1.1.1"
+    entities "~1.1.1"
+
 domain-browser@^1.1.1:
   version "1.1.7"
   resolved "https://registry.yarnpkg.com/domain-browser/-/domain-browser-1.1.7.tgz#867aa4b093faa05f1de08c06f4d7b21fdf8698bc"
+
+domelementtype@1, domelementtype@^1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/domelementtype/-/domelementtype-1.3.0.tgz#b17aed82e8ab59e52dd9c19b1756e0fc187204c2"
+
+domelementtype@~1.1.1:
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/domelementtype/-/domelementtype-1.1.3.tgz#bd28773e2642881aec51544924299c5cd822185b"
+
+domhandler@^2.3.0:
+  version "2.4.1"
+  resolved "https://registry.yarnpkg.com/domhandler/-/domhandler-2.4.1.tgz#892e47000a99be55bbf3774ffea0561d8879c259"
+  dependencies:
+    domelementtype "1"
+
+domutils@^1.5.1:
+  version "1.6.2"
+  resolved "https://registry.yarnpkg.com/domutils/-/domutils-1.6.2.tgz#1958cc0b4c9426e9ed367fb1c8e854891b0fa3ff"
+  dependencies:
+    dom-serializer "0"
+    domelementtype "1"
 
 dot-case@^2.1.0:
   version "2.1.1"
@@ -2020,6 +2060,10 @@ enhanced-resolve@^3.3.0:
     memory-fs "^0.4.0"
     object-assign "^4.0.1"
     tapable "^0.2.7"
+
+entities@^1.1.1, entities@~1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/entities/-/entities-1.1.1.tgz#6e5c2d0a5621b5dadaecef80b90edfb5cd7772f0"
 
 errno@^0.1.1, errno@^0.1.3:
   version "0.1.4"
@@ -3060,6 +3104,17 @@ hosted-git-info@^2.1.4:
 html-comment-regex@^1.1.0:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/html-comment-regex/-/html-comment-regex-1.1.1.tgz#668b93776eaae55ebde8f3ad464b307a4963625e"
+
+htmlparser2@^3.9.0:
+  version "3.9.2"
+  resolved "https://registry.yarnpkg.com/htmlparser2/-/htmlparser2-3.9.2.tgz#1bdf87acca0f3f9e53fa4fcceb0f4b4cbb00b338"
+  dependencies:
+    domelementtype "^1.3.0"
+    domhandler "^2.3.0"
+    domutils "^1.5.1"
+    entities "^1.1.1"
+    inherits "^2.0.1"
+    readable-stream "^2.0.2"
 
 http-errors@1.6.2, http-errors@~1.6.2:
   version "1.6.2"
@@ -5501,6 +5556,10 @@ regex-cache@^0.4.2:
   dependencies:
     is-equal-shallow "^0.1.3"
 
+regexp-quote@0.0.0:
+  version "0.0.0"
+  resolved "https://registry.yarnpkg.com/regexp-quote/-/regexp-quote-0.0.0.tgz#1e0f4650c862dcbfed54fd42b148e9bb1721fcf2"
+
 regexpu-core@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/regexpu-core/-/regexpu-core-1.0.0.tgz#86a763f58ee4d7c2f6b102e4764050de7ed90c6b"
@@ -5772,6 +5831,14 @@ samsam@1.x, samsam@^1.1.3:
   version "1.2.1"
   resolved "https://registry.yarnpkg.com/samsam/-/samsam-1.2.1.tgz#edd39093a3184370cb859243b2bdf255e7d8ea67"
 
+sanitize-html@^1.14.1:
+  version "1.14.1"
+  resolved "https://registry.yarnpkg.com/sanitize-html/-/sanitize-html-1.14.1.tgz#730ffa2249bdf18333effe45b286173c9c5ad0b8"
+  dependencies:
+    htmlparser2 "^3.9.0"
+    regexp-quote "0.0.0"
+    xtend "^4.0.0"
+
 sax@~1.2.1:
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/sax/-/sax-1.2.4.tgz#2816234e2378bddc4e5354fab5caa895df7100d9"
@@ -5895,6 +5962,12 @@ shelljs@^0.7.0:
     glob "^7.0.0"
     interpret "^1.0.0"
     rechoir "^0.6.2"
+
+showdown@^1.7.4:
+  version "1.7.4"
+  resolved "https://registry.yarnpkg.com/showdown/-/showdown-1.7.4.tgz#6bbc9dd2cdb1e5fdd749ecdadc6a47b856594ae0"
+  dependencies:
+    yargs "^8.0.1"
 
 sigmund@~1.0.0:
   version "1.0.1"
@@ -6614,9 +6687,9 @@ typedoc@^0.8:
     typedoc-default-themes "^0.5.0"
     typescript "2.4.1"
 
-typescript-lsp@^0.0.5:
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/typescript-lsp/-/typescript-lsp-0.0.5.tgz#79a2d3099091676e7fd6716092bbdede8edf5b42"
+typescript-lsp@^0.0.7:
+  version "0.0.7"
+  resolved "https://registry.yarnpkg.com/typescript-lsp/-/typescript-lsp-0.0.7.tgz#bcbed117fbb7cd97e867366b96becd742df36412"
   dependencies:
     commander "^2.11.0"
     vscode-languageserver "^3.4.3"
