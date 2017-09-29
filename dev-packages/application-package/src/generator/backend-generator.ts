@@ -9,10 +9,10 @@ import { AbstractGenerator } from "./abstract-generator";
 
 export class BackendGenerator extends AbstractGenerator {
 
-    generate(): void {
-        const backendModules = this.model.targetBackendModules;
-        this.write(this.model.backend('server.js'), this.compileServer(backendModules));
-        this.write(this.model.backend('main.js'), this.compileMain(backendModules));
+    async generate(): Promise<void> {
+        const backendModules = this.pck.targetBackendModules;
+        await this.write(this.pck.backend('server.js'), this.compileServer(backendModules));
+        await this.write(this.pck.backend('main.js'), this.compileMain(backendModules));
     }
 
     protected compileServer(backendModules: Map<string, string>): string {

@@ -5,142 +5,74 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as path from 'path';
-import * as fs from 'fs-extra';
-import * as cp from 'child_process';
+// tslint:disable:no-console
 import * as yargs from 'yargs';
-import { rebuild } from './rebuild';
-import { CommonAppGenerator } from './generator';
+import { ApplicationPackageTarget, ApplicationPackageManager, rebuild } from '@theia/application-package';
 
-const cwd = process.cwd();
-const env = process.env;
-
-function promisify(p: cp.ChildProcess): Promise<string> {
-    return new Promise((resolve, reject) => {
-        p.on('error', reject);
-        p.on('close', resolve);
-    });
-}
-function resolveBin(command: string): string {
-    const commandPath = path.resolve(__dirname, '..', 'node_modules', '.bin', command);
-    if (process.platform === 'win32') {
-        return commandPath + '.cmd';
+process.on('unhandledRejection', (reason, promise) => {
+    throw reason;
+});
+process.on('uncaughtException', error => {
+    if (error) {
+        console.error('Uncaught Exception: ', error.toString());
+        if (error.stack) {
+            console.error(error.stack);
+        }
     }
-    return commandPath;
-}
-function run(command: string, args: string[] = []): cp.ChildProcess {
-    const binPath = resolveBin(command);
-    return cp.spawn(binPath, args, { cwd, env });
-}
-function shell(command: string, args: string[]): Promise<string> {
-    const commandProcess = run(command, args);
-    commandProcess.stdout.pipe(process.stdout);
-    commandProcess.stderr.pipe(process.stderr);
-    return promisify(commandProcess);
-}
-async function bunyan(childProcess: cp.ChildProcess): Promise<string> {
-    const bunyanPath = resolveBin('bunyan');
-    const bunyanProcess = cp.spawn(bunyanPath, [], { cwd, env, stdio: ['pipe', 1, 2] });
-    childProcess.stdout.pipe(bunyanProcess.stdin);
-    childProcess.stderr.pipe(bunyanProcess.stdin);
-    return promisify(bunyanProcess);
-}
+});
 
-function restArgs(arg: string): string[] {
+function commandArgs(arg: string): string[] {
     const restIndex = process.argv.indexOf(arg);
     return restIndex !== -1 ? process.argv.slice(restIndex + 1) : [];
 }
 
-function project(...paths: string[]): string {
-    return path.resolve(process.cwd(), ...paths);
-}
-function lib(...paths: string[]): string {
-    return project('lib', ...paths);
-}
-function srcGen(...paths: string[]): string {
-    return project('src-gen', ...paths);
-}
-function frontend(...paths: string[]): string {
-    return srcGen('frontend', ...paths);
-}
-function backend(...paths: string[]): string {
-    return srcGen('backend', ...paths);
+function manager(target: ApplicationPackageTarget): ApplicationPackageManager {
+    const projectPath = process.cwd();
+    return new ApplicationPackageManager({ target, projectPath });
 }
 
-async function clean(): Promise<void> {
-    await shell('rimraf', ['lib']);
-}
-async function copy(): Promise<void> {
-    fs.ensureDirSync(lib());
-    fs.copySync(frontend('index.html'), lib('index.html'));
-}
-async function generate(): Promise<void> {
-    const { target } = yargs.argv;
-    const generator = new CommonAppGenerator({
-        projectPath: process.cwd(),
-        target
-    });
-    await generator.generate();
-}
-async function build(): Promise<void> {
-    await copy();
-    await shell('webpack', restArgs('build'));
-}
-async function electron(): Promise<void> {
-    await build();
-
-    const args = restArgs('electron');
-    if (!args.some(arg => arg.startsWith('--hostname='))) {
-        args.push('--hostname=localhost');
-    }
-
-    await bunyan(run('electron', [frontend('electron-main.js'), ...args]));
-}
-async function browser(): Promise<void> {
-    await build();
-
-    const args = restArgs('browser');
-    if (!args.some(arg => arg.startsWith('--port='))) {
-        args.push('--port=3000');
-    }
-
-    await bunyan(cp.fork(backend('main.js'), args, {
-        stdio: [0, 'pipe', 'pipe', 'ipc']
-    }));
+const targets: ApplicationPackageTarget[] = ['browser', 'electron'];
+for (const target of targets) {
+    yargs
+        .command({
+            command: target,
+            describe: 'start the ' + target + ' target',
+            handler: () => manager(target).start(commandArgs(target))
+        })
+        .command({
+            command: 'rm:' + target,
+            describe: 'clean for the ' + target + ' target',
+            handler: () => manager(target).clean()
+        })
+        .command({
+            command: 'cp:' + target,
+            handler: () => manager(target).copy()
+        })
+        .command({
+            command: 'gen:' + target,
+            handler: () => manager(target).generate()
+        })
+        .command({
+            command: 'build:' + target,
+            describe: 'webpack for the ' + target + ' target',
+            handler: () => manager(target).build(commandArgs('build:' + target))
+        })
+        .command({
+            command: 'rebuild:' + target,
+            describe: 'rebuild native node modules for the ' + target + ' target',
+            handler: () => {
+                const { modules } = yargs.array('modules').argv;
+                rebuild(target, modules);
+            }
+        });
 }
 
-// tslint:disable-next-line:no-unused-expression
-yargs
-    .command({
-        command: 'clean',
-        handler: clean
-    })
-    .command({
-        command: 'copy',
-        handler: copy
-    })
-    .command({
-        command: 'generate',
-        handler: generate
-    })
-    .command({
-        command: 'build',
-        handler: build
-    })
-    .command({
-        command: 'electron',
-        handler: electron
-    })
-    .command({
-        command: 'browser',
-        handler: browser
-    })
-    .command({
-        command: 'rebuild',
-        handler: () => {
-            const { target, modules } = yargs.array('modules').argv;
-            rebuild(target, modules);
-        }
-    })
-    .demandCommand(1)
-    .argv;
+// see https://github.com/yargs/yargs/issues/287#issuecomment-314463783
+const commands = (yargs as any).getCommandInstance().getCommands();
+const argv = yargs.demandCommand(1).argv;
+const command = argv._[0];
+if (!command || commands.indexOf(command) === -1) {
+    console.log("non-existing or no command specified");
+    yargs.showHelp();
+    process.exit(1);
+}
