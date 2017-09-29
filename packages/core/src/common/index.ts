@@ -8,6 +8,7 @@
 export * from './types';
 export * from './disposable';
 export * from './event';
+export * from './cancellation';
 export * from './command';
 export * from './menu';
 export * from './keys';
