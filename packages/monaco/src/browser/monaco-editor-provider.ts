@@ -164,7 +164,7 @@ export class MonacoEditorProvider {
         }
     }
 
-    protected installQuickOpenService(editor: MonacoEditor | MonacoDiffEditor): void {
+    protected installQuickOpenService(editor: MonacoEditor): void {
         const control = editor.getControl();
         const quickOpenController = control._contributions['editor.controller.quickOpenController'];
         quickOpenController.run = options => {
