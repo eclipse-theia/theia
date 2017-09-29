@@ -13,3 +13,4 @@ examples/*/src-gen
 examples/*/webpack.config.js
 .browser_modules
 **/docs/api
+package-backup.json

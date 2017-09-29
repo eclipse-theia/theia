@@ -63,6 +63,13 @@ export interface ViewResult {
     [key: string]: any
 }
 
+export function sortByKey(object: { [key: string]: any }) {
+    return Object.keys(object).sort().reduce((sorted, key) => {
+        sorted[key] = object[key];
+        return sorted;
+    }, {} as { [key: string]: any });
+}
+
 export class NpmRegistryOptions {
     /**
      * Default: https://registry.npmjs.org/.
