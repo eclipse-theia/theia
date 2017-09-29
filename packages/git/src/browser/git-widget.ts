@@ -111,7 +111,7 @@ export class GitWidget extends VirtualWidget {
         return h.select({
             id: 'repositoryList',
             onchange: async event => {
-                await this.gitRepositoryProvider.select((event.target as HTMLSelectElement).value);
+                this.gitRepositoryProvider.select((event.target as HTMLSelectElement).value);
                 this.repository = await this.gitRepositoryProvider.getSelected();
                 const status = await this.git.status(this.repository);
                 this.updateView(status);
@@ -247,7 +247,8 @@ export class GitWidget extends VirtualWidget {
     }
 
     protected getRepositoryRelativePath(absPath: string) {
-        return absPath.replace(new URI(this.repository.localUri).withoutScheme() + '/', '');
+        const pathToReplace = new URI(this.repository.localUri).withoutScheme().toString();
+        return absPath.replace(pathToReplace, '').replace(/^\//, '');
     }
 
     protected renderGitItem(change: GitFileChange): h.Child {
