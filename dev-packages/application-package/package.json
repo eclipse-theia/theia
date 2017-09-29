@@ -1,0 +1,56 @@
+{
+  "name": "@theia/application-package",
+  "version": "0.1.1",
+  "description": "Theia application package API.",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "bin",
+    "lib",
+    "src"
+  ],
+  "main": "lib/index.js",
+  "typings": "lib/index.d.ts",
+  "scripts": {
+    "prepare": "yarn run clean && yarn build",
+    "clean": "rimraf lib",
+    "build": "tsc -p compile.tsconfig.json",
+    "watch": "yarn build -w",
+    "test": "echo 'skip'",
+    "docs": "echo 'skip'"
+  },
+  "dependencies": {
+    "@types/fs-extra": "^4.0.2",
+    "@types/request": "^2.0.3",
+    "@types/semver": "^5.4.0",
+    "@types/write-json-file": "^2.2.1",
+    "bunyan": "^1.8.10",
+    "circular-dependency-plugin": "^2.0.0",
+    "copy-webpack-plugin": "^4.0.1",
+    "css-loader": "^0.28.1",
+    "electron": "1.7.6",
+    "electron-rebuild": "^1.5.11",
+    "file-loader": "^0.11.1",
+    "font-awesome-webpack": "0.0.5-beta.2",
+    "fs-extra": "^4.0.2",
+    "ignore-loader": "^0.1.2",
+    "less": "^2.7.2",
+    "request": "^2.82.0",
+    "semver": "^5.4.1",
+    "source-map-loader": "^0.2.1",
+    "source-map-support": "^0.4.18",
+    "url-loader": "^0.5.8",
+    "webpack": "^2.2.1",
+    "write-json-file": "^2.2.0"
+  }
+}

@@ -7,12 +7,12 @@
 
 import * as os from 'os';
 import * as fs from 'fs-extra';
-import { Model } from "./generator-model";
+import { ApplicationPackage } from '../application-package';
 
 export abstract class AbstractGenerator {
 
     constructor(
-        protected readonly model: Model
+        protected readonly pck: ApplicationPackage
     ) { }
 
     protected compileFrontendModuleImports(modules: Map<string, string>): string {
@@ -38,16 +38,20 @@ export abstract class AbstractGenerator {
     }
 
     protected ifBrowser(value: string, defaultValue: string = '') {
-        return this.model.ifBrowser(value, defaultValue);
+        return this.pck.ifBrowser(value, defaultValue);
     }
 
     protected ifElectron(value: string, defaultValue: string = '') {
-        return this.model.ifElectron(value, defaultValue);
+        return this.pck.ifElectron(value, defaultValue);
     }
 
-    protected write(path: string, content: string): void {
-        fs.ensureFileSync(path);
-        fs.writeFileSync(path, content);
+    protected async write(path: string, content: string): Promise<void> {
+        await fs.ensureFile(path);
+        await fs.writeFile(path, content);
+    }
+
+    protected ifMonaco(value: () => string, defaultValue: () => string = () => '') {
+        return (this.pck.extensionPackages.some(e => e.name === '@theia/monaco') ? value : defaultValue)();
     }
 
 }
