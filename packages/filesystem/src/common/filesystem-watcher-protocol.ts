@@ -33,8 +33,13 @@ export interface FileSystemWatcherClient {
     onDidFilesChanged(event: DidFilesChangedParams): void;
 }
 
-export interface WatchOptions {
-    ignored: string[];
+export class WatchOptions {
+    readonly ignored?: string[];
+    /**
+     * Test whether the initial state of watched files should be ingored.
+     * Default `true`.
+     */
+    readonly ignoreInitial?: boolean;
 }
 
 export interface DidFilesChangedParams {
