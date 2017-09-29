@@ -6,10 +6,9 @@
  */
 
 import { ContainerModule, } from 'inversify';
-import { WebSocketConnectionProvider, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { KeymapsServer, keybindingsPath } from "../common/keymaps-protocol";
-import { KeymapsService } from "../common/keymaps-service";
-import { KeymapsFrontendContribution } from "./keymaps-frontend-contribution";
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { KeymapsService } from './keymaps-service';
+import { KeymapsFrontendContribution } from './keymaps-frontend-contribution';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 
 export default new ContainerModule(bind => {
@@ -22,8 +21,4 @@ export default new ContainerModule(bind => {
     }
 
     bind(FrontendApplicationContribution).to(KeymapsService).inSingletonScope();
-
-    bind(KeymapsServer).toDynamicValue(ctx =>
-        ctx.container.get(WebSocketConnectionProvider).createProxy(keybindingsPath)
-    ).inSingletonScope();
 });

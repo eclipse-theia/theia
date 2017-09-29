@@ -314,7 +314,7 @@ export class KeybindingRegistry {
 
     setKeymap(rawKeyBindings: RawKeybinding[]) {
         /* Only assign the default keybindings once, so that they do not get overridden with further iterations */
-        this.keymapsIndex.clearBindings();
+        // this.keymapsIndex.clearBindings();
         for (const rawKeyBinding of rawKeyBindings) {
             if (this.commandRegistry.getCommand(rawKeyBinding.command)) {
                 // TODO check if valid context? valid keybinding?
@@ -345,4 +345,9 @@ export class KeybindingRegistry {
             }
         }
     }
+
+    clearKeymaps(): void {
+        this.keymapsIndex.clearBindings();
+    }
+
 }

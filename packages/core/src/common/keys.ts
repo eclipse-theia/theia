@@ -199,12 +199,16 @@ export class TheiaKeyCodeUtils {
     }
 
     public static equals(keycode1: KeyCode, keycode2: KeyCode): boolean {
-        return keycode1.alt === keycode2.alt &&
-            keycode1.ctrl === keycode2.ctrl &&
-            keycode1.key.code === keycode2.key.code &&
-            keycode1.key.keyCode === keycode2.key.keyCode &&
-            keycode1.meta === keycode2.meta &&
-            keycode1.shift === keycode2.shift;
+
+        if (keycode1.key && keycode2.key) {
+            return keycode1.alt === keycode2.alt &&
+                keycode1.ctrl === keycode2.ctrl &&
+                keycode1.meta === keycode2.meta &&
+                keycode1.shift === keycode2.shift && keycode1.key.keyCode === keycode2.key.keyCode &&
+                keycode1.key.code === keycode2.key.code;
+        } else {
+            return false;
+        }
     }
 
 }

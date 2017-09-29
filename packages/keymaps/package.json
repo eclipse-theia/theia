@@ -6,6 +6,7 @@
     "@theia/core": "^0.2.0",
     "@theia/filesystem": "^0.2.0",
     "@theia/workspace": "^0.2.0",
+    "@theia/userstorage": "^0.2.0",
     "jsonc-parser": "^1.0.0",
     "ajv": "^5.2.2"
   },
@@ -19,8 +20,7 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/keymaps-frontend-module",
-      "backend": "lib/node/keymaps-backend-module"
+      "frontend": "lib/browser/keymaps-frontend-module"
     }
   ],
   "keywords": [
