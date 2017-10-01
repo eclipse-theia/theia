@@ -5,12 +5,12 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Extension, ExtensionManager } from '../common';
 import { injectable, inject } from 'inversify';
-import { VirtualWidget, VirtualRenderer } from '@theia/core/lib/browser';
 import { h, VirtualNode } from '@phosphor/virtualdom/lib';
 import { DisposableCollection, Disposable } from '@theia/core';
-import { ExtensionDetailWidgetService } from './extension-detail-widget-service';
+import { VirtualWidget, VirtualRenderer, OpenerService, open } from '@theia/core/lib/browser';
+import { Extension, ExtensionManager } from '../common';
+import { ExtensionUri } from './extension-uri';
 
 @injectable()
 export class ExtensionWidget extends VirtualWidget {
@@ -21,8 +21,10 @@ export class ExtensionWidget extends VirtualWidget {
     protected readonly toDisposedOnFetch = new DisposableCollection();
     protected ready = false;
 
-    constructor( @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager,
-        @inject(ExtensionDetailWidgetService) protected readonly detailWidgetService: ExtensionDetailWidgetService) {
+    constructor(
+        @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager,
+        @inject(OpenerService) protected readonly openerService: OpenerService
+    ) {
         super();
         this.id = 'extensions';
         this.title.label = 'Extensions';
@@ -130,12 +132,7 @@ export class ExtensionWidget extends VirtualWidget {
 
         const container = h.div({
             className: 'extensionHeaderContainer',
-            onclick: event => {
-                extension.resolve().then(rawExt => {
-                    this.detailWidgetService.openOrFocusDetailWidget(rawExt);
-                    return false;
-                });
-            }
+            onclick: () => open(this.openerService, ExtensionUri.toUri(extension.name))
         }, leftColumn);
         return container;
     }

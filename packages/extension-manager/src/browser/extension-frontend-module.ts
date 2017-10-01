@@ -6,12 +6,13 @@
  */
 
 import { ContainerModule } from 'inversify';
-import { FrontendApplicationContribution, WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, WebSocketConnectionProvider, WidgetFactory, OpenHandler } from '@theia/core/lib/browser';
 import { ExtensionServer, extensionPath } from '../common/extension-protocol';
 import { ExtensionManager } from '../common';
 import { ExtensionContribution } from './extension-contribution';
 import { ExtensionWidget } from './extension-widget';
-import { ExtensionDetailWidgetService } from './extension-detail-widget-service';
+import { ExtensionWidgetFactory } from './extension-widget-factory';
+import { ExtensionOpenHandler } from './extension-open-handler';
 
 import '../../src/browser/style/index.css';
 
@@ -23,6 +24,11 @@ export default new ContainerModule(bind => {
     bind(ExtensionManager).toSelf().inSingletonScope();
 
     bind(FrontendApplicationContribution).to(ExtensionContribution).inSingletonScope();
-    bind(ExtensionDetailWidgetService).toSelf().inSingletonScope();
     bind(ExtensionWidget).toSelf().inSingletonScope();
+
+    bind(ExtensionWidgetFactory).toSelf().inSingletonScope();
+    bind(WidgetFactory).toDynamicValue(ctx => ctx.container.get(ExtensionWidgetFactory)).inSingletonScope();
+
+    bind(ExtensionOpenHandler).toSelf().inSingletonScope();
+    bind(OpenHandler).toDynamicValue(ctx => ctx.container.get(ExtensionOpenHandler)).inSingletonScope();
 });
