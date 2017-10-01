@@ -12,24 +12,18 @@ import { h } from '@phosphor/virtualdom/lib';
 
 export class ExtensionDetailWidget extends VirtualWidget {
 
-    constructor(id: string,
-                protected resolvedExtension: ResolvedExtension) {
+    constructor(
+        protected readonly resolvedExtension: ResolvedExtension
+    ) {
         super();
-        this.id = id;
         this.addClass('theia-extension-detail');
-        this.title.closable = true;
-        this.title.label = resolvedExtension.name;
-
-        resolvedExtension.resolve().then(rex => {
-            this.update();
-        });
-
 
         resolvedExtension.onDidChange(change => {
             if (change.name === this.resolvedExtension.name) {
                 this.update();
             }
         });
+        this.update();
     }
 
     protected onUpdateRequest(msg: Message): void {
@@ -44,25 +38,25 @@ export class ExtensionDetailWidget extends VirtualWidget {
     protected render(): h.Child {
         const r = this.resolvedExtension;
 
-        const name = h.h2({className: 'extensionName'}, r.name);
-        const extversion = h.div({className: 'extensionVersion'}, r.version);
-        const author = h.div({className: 'extensionAuthor'}, r.author);
-        const titleInfo = h.div({className: 'extensionSubtitle'}, author, extversion);
-        const titleContainer = h.div({className: 'extensionTitleContainer'},
+        const name = h.h2({ className: 'extensionName' }, r.name);
+        const extversion = h.div({ className: 'extensionVersion' }, r.version);
+        const author = h.div({ className: 'extensionAuthor' }, r.author);
+        const titleInfo = h.div({ className: 'extensionSubtitle' }, author, extversion);
+        const titleContainer = h.div({ className: 'extensionTitleContainer' },
             name, titleInfo);
 
-        const description = h.div({className: 'extensionDescription'}, r.description);
+        const description = h.div({ className: 'extensionDescription' }, r.description);
 
-        const buttonRow = h.div({className: 'extensionButtonRow'},
+        const buttonRow = h.div({ className: 'extensionButtonRow' },
             VirtualRenderer.flatten(this.createButtons(this.resolvedExtension)));
 
-        const buttonContainer = h.div({className: 'extensionButtonContainer'}, buttonRow);
+        const buttonContainer = h.div({ className: 'extensionButtonContainer' }, buttonRow);
 
-        const headerContainer = h.div({className: 'extensionHeaderContainer'},
+        const headerContainer = h.div({ className: 'extensionHeaderContainer' },
             titleContainer, description, buttonContainer);
 
-        const documentation = h.div({className: 'extensionDocumentation', id: this.id + 'Doc'}, '');
-        const docContainer = h.div({className: 'extensionDocContainer flexcontainer'}, documentation);
+        const documentation = h.div({ className: 'extensionDocumentation', id: this.id + 'Doc' }, '');
+        const docContainer = h.div({ className: 'extensionDocContainer flexcontainer' }, documentation);
 
         return [headerContainer, docContainer];
     }
@@ -74,7 +68,7 @@ export class ExtensionDetailWidget extends VirtualWidget {
             btnLabel = 'Uninstall';
         }
 
-        const faEl = h.i({className: 'fa fa-spinner fa-pulse fa-fw'});
+        const faEl = h.i({ className: 'fa fa-spinner fa-pulse fa-fw' });
         const content = extension.busy ? faEl : btnLabel;
 
         buttonArr.push(h.div({

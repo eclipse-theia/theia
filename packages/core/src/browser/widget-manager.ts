@@ -8,7 +8,7 @@
 import { inject, named, injectable } from 'inversify';
 import { Widget } from '@phosphor/widgets';
 import { ContributionProvider } from '../common/contribution-provider';
-import { ILogger } from '../common';
+import { ILogger, MaybePromise } from '../common';
 
 // tslint:disable:no-any
 export const WidgetFactory = Symbol("WidgetFactory");
@@ -26,7 +26,7 @@ export interface WidgetFactory {
      * Creates a widget and attaches it to the shell
      * The options need to be serializable JSON data.
      */
-    createWidget(options?: any): Promise<Widget>;
+    createWidget(options?: any): MaybePromise<Widget>;
 }
 
 /*

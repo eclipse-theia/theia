@@ -9,6 +9,7 @@ jdt.ls-java-project
 lerna-debug.log
 .nyc_output
 coverage
+errorShots
 examples/*/src-gen
 examples/*/webpack.config.js
 .browser_modules

@@ -24,8 +24,8 @@ export class Extension extends protocol.Extension {
     protected readonly onDidChangedEmitter = new Emitter<ExtensionChange>();
 
     constructor(extension: protocol.Extension,
-                protected readonly server: protocol.ExtensionServer,
-                protected readonly manager: ExtensionManager) {
+        protected readonly server: protocol.ExtensionServer,
+        protected readonly manager: ExtensionManager) {
         super();
         Object.assign(this, extension);
         manager.onDidChange(change => {
@@ -96,7 +96,9 @@ export class ExtensionManager implements Disposable {
     protected readonly onDidStopInstallationEmitter = new Emitter<protocol.DidStopInstallationParam>();
     protected readonly toDispose = new DisposableCollection();
 
-    constructor(@inject(protocol.ExtensionServer) protected readonly server: protocol.ExtensionServer) {
+    constructor(
+        @inject(protocol.ExtensionServer) protected readonly server: protocol.ExtensionServer
+    ) {
         this.toDispose.push(server);
         this.toDispose.push(this.onChangedEmitter);
         this.toDispose.push(this.onWillStartInstallationEmitter);
@@ -110,6 +112,15 @@ export class ExtensionManager implements Disposable {
 
     dispose() {
         this.toDispose.dispose();
+    }
+
+    /**
+     * Resolve the detailed extension for the given name.
+     */
+    async resolve(name: string): Promise<ResolvedExtension> {
+        const raw = await this.server.resolve(name);
+        const extension = new Extension(raw, this.server, this);
+        return extension as ResolvedExtension;
     }
 
     /**
