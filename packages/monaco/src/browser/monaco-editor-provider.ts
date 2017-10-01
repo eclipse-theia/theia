@@ -8,7 +8,7 @@
 import { DisposableCollection } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { EditorPreferenceChange, EditorPreferences } from '@theia/editor/lib/browser';
-import { DiffUriHelper } from '@theia/editor/lib/browser/editor-utility';
+import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
 import { inject, injectable } from 'inversify';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 
@@ -82,7 +82,7 @@ export class MonacoEditorProvider {
         let editor: MonacoEditor;
         const toDispose = new DisposableCollection();
 
-        if (!DiffUriHelper.isDiffUri(uri)) {
+        if (!DiffUris.isDiffUri(uri)) {
             const model = await this.createReference(uri, toDispose);
 
             editor = this.createEditor((node, override) => new MonacoEditor(
@@ -90,10 +90,10 @@ export class MonacoEditorProvider {
             ), toDispose);
 
         } else {
-            const diffUri = DiffUriHelper.decode(uri);
+            const [original, modified] = DiffUris.decode(uri);
 
-            const originalModel = await this.createReference(new URI(diffUri.original), toDispose);
-            const modifiedModel = await this.createReference(new URI(diffUri.modified), toDispose);
+            const originalModel = await this.createReference(original, toDispose);
+            const modifiedModel = await this.createReference(modified, toDispose);
 
             editor = this.createEditor((node, override) => new MonacoDiffEditor(
                 node,

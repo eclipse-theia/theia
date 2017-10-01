@@ -16,7 +16,7 @@ import { MessageService, ResourceProvider, Disposable, CommandService } from '@t
 import URI from '@theia/core/lib/common/uri';
 import { VirtualRenderer, VirtualWidget, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
 import { h } from '@phosphor/virtualdom/lib';
-import { DiffUriHelper } from '@theia/editor/lib/browser/editor-utility';
+import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
 import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 
@@ -266,17 +266,17 @@ export class GitWidget extends VirtualWidget {
                 let uri: URI;
                 if (change.status !== GitFileStatus.New) {
                     if (change.staged) {
-                        uri = DiffUriHelper.encode(
+                        uri = DiffUris.encode(
                             changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
                             changeUri.withScheme(GIT_RESOURCE_SCHEME),
                             changeUri.displayName + ' (Index)');
                     } else if (this.stagedChanges.find(c => c.uri === change.uri)) {
-                        uri = DiffUriHelper.encode(
+                        uri = DiffUris.encode(
                             changeUri.withScheme(GIT_RESOURCE_SCHEME),
                             changeUri,
                             changeUri.displayName + ' (Working tree)');
                     } else {
-                        uri = DiffUriHelper.encode(
+                        uri = DiffUris.encode(
                             changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
                             changeUri,
                             changeUri.displayName + ' (Working tree)');
@@ -284,7 +284,7 @@ export class GitWidget extends VirtualWidget {
                 } else if (change.staged) {
                     uri = changeUri.withScheme(GIT_RESOURCE_SCHEME);
                 } else if (this.stagedChanges.find(c => c.uri === change.uri)) {
-                    uri = DiffUriHelper.encode(
+                    uri = DiffUris.encode(
                         changeUri.withScheme(GIT_RESOURCE_SCHEME),
                         changeUri,
                         changeUri.displayName + ' (Working tree)');
