@@ -1,41 +1,36 @@
-# Theia
-[![Gitter](https://img.shields.io/badge/chat-on%20gitter-blue.svg)](https://gitter.im/theia-ide/theia)
-[![Build Status](https://travis-ci.org/theia-ide/theia.svg?branch=master)](https://travis-ci.org/theia-ide/theia)
-[![Build status](https://ci.appveyor.com/api/projects/status/02s4d40orokl3njl/branch/master?svg=true)](https://ci.appveyor.com/project/kittaakos/theia/branch/master)
+# Theia - Extension Manager
 
-Theia is a cloud & desktop IDE framework implemented in TypeScript.
+See [here](https://github.com/theia-ide/theia) for a detailed documentation.
 
-![Theia](https://cloud.githubusercontent.com/assets/372735/25758586/6939d0de-31cf-11e7-998a-e4ce997dd6b8.png)
+## Theia Extension
 
-## Scope
- - Provide the end-user with a full-fledged multi-language IDE  (not just a smart editor)
- - Support equally the paradigm of Cloud IDE and Desktop IDE
- - Provide extenders with a platform on which to build their own products
- - Provide support for multiple languages via the language and debug server protocols
+A Theia extension is a node package declaring `theiaExtensions` property in `package.json`:
 
-## Roadmap
-A [`1.0 BETA`version of Theia](https://github.com/theia-ide/theia/milestone/3) is planned for December 6, 2017. The contributors have committed to deliver a framework for building browser and desktop IDEs with the following features by then:
+```json
+{
+  "theiaExtensions": [{
+      "frontend": "lib/myExtension/browser/myextension-frontend-module",
+      "backend": "lib/myExtension/node/myextension-backend-module",
+    }, {
+      "frontend": "lib/myExtension2/browser/myextension2-browser-module",
+      "frontendElectron": "lib/myExtension2/electron-browser/myextension2-electron-browser-module",
+      "backend": "lib/myExtension2/node/myextension2-node-module",
+      "backendElectron": "lib/myExtension2/electron-main/myextension2-electron-main-module"
+  }]
+}
+```
 
- - Dynamic Extension System
- - Rich Text Editing incl. [Language Server Protocol](https://github.com/Microsoft/language-server-protocol) Support
- - Launching and Debugging Processes
- - Shell With Flexible Layouts and Side Panels
- - Electron & Browser Support
- - Language Support for TypeScript, C/C++, Java, Python, Go, [YANG](https://tools.ietf.org/html/rfc6020)
- - Diagramming Support through [Sprotty](https://github.com/theia-ide/sprotty)
- - [many more features](https://github.com/theia-ide/theia/milestone/3)
+Each extension can consist of the following modules:
+- `frontend` is used in the browser env and as well in the electron if `frontendElectron` is not provided
+- `frontendElectron` is used in the electron env
+- `backend` is used in the node env and as well in the electron env if `backendElectron` is not provided
+- `backendElectron` is used in the electron env
 
-The team is also working on the following Open-Source Products based on Theia:
- - [Yangster](https://github.com/yang-tools/yangster) - A YANG IDE
+An extension module should have a default export of `ContainerModule | Promise<ContainerModule>` type.
 
-## Running the examples
+## Theia Application
 
-You can find more details on how to run the examples [here](doc/Developing.md).
+A Theia application is a node package listing [Theia extensions](#theia-extension) as dependencies and managed with [Theia CLI](../../dev-packages/cli/README.md).
 
-## Using Theia
-
-Use the `next` tag to make sure you get the latest nightly builds of `@theia/core` and extensions.
-E.g.:
-
-    npm install @theia/core@next
-    npm install @theia/filesystem@next
+## License
+[Apache-2.0](https://github.com/theia-ide/theia/blob/master/LICENSE)
