@@ -2,6 +2,18 @@
 
 `theia` is a command line tool to manage Theia applications.
 
+## Getting started
+
+Install `@theia/cli` as a dev dependency in your application.
+
+With yarn:
+
+    yarn add @theia/cli@next --dev
+
+With npm:
+
+    npm install @theia/cli@next --save-dev
+
 ## Browser Commands
 
 - `theia rm:browser` - remove the built output (`lib` folder) and the generated configurations
