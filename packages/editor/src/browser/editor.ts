@@ -22,6 +22,8 @@ export interface TextEditor extends Disposable, TextEditorSelection {
     readonly uri: URI;
     readonly document: TextDocument;
 
+    readonly onDocumentContentChanged: Event<TextDocument>
+
     cursor: Position;
     readonly onCursorPositionChanged: Event<Position>;
 
