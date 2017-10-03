@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import * as fs from 'fs-extra';
 import * as paths from 'path';
 import { readJsonFile, writeJsonFile } from './json-file';
 import { NpmRegistry, NpmRegistryOptions, NodePackage, PublishedNodePackage, sortByKey } from './npm-registry';
@@ -85,7 +86,10 @@ export class ApplicationPackage {
      */
     get extensionPackages(): ReadonlyArray<ExtensionPackage> {
         if (!this._extensionPackages) {
-            const collector = new ExtensionPackageCollector(raw => this.newExtensionPackage(raw));
+            const collector = new ExtensionPackageCollector(
+                raw => this.newExtensionPackage(raw),
+                this.resolveModule
+            );
             this._extensionPackages = collector.collect(this.pck);
         }
         return this._extensionPackages;
@@ -227,9 +231,27 @@ export class ApplicationPackage {
     }
 
     save(): Promise<void> {
-        return writeJsonFile(this.path('package.json'), this.pck, {
+        return writeJsonFile(this.packagePath, this.pck, {
             detectIndent: true
         });
+    }
+
+    protected _moduleResolver: undefined | ApplicationModuleResolver;
+    /**
+     * A node module resolver in the context of the application package.
+     */
+    get resolveModule(): ApplicationModuleResolver {
+        if (!this._moduleResolver) {
+            const loaderPath = this.path('.application-module-loader.js');
+            fs.writeFileSync(loaderPath, 'module.exports = modulePath => require.resolve(modulePath);');
+            this._moduleResolver = require(loaderPath) as ApplicationModuleResolver;
+            fs.removeSync(loaderPath);
+        }
+        return this._moduleResolver!;
+    }
+
+    resolveModulePath(moduleName: string, ...segments: string[]): string {
+        return paths.resolve(this.resolveModule(moduleName + '/package.json'), '..', ...segments);
     }
 
 }

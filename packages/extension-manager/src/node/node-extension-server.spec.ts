@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import * as temp from 'temp';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as assert from 'assert';
@@ -13,13 +14,13 @@ import extensionNodeTestContainer from './test/extension-node-test-container';
 import { ApplicationProject } from './application-project';
 
 process.on('unhandledRejection', (reason, promise) => {
+    console.error(reason);
     throw reason;
 });
 
+let appProjectPath: string;
 let appProject: ApplicationProject;
 let server: ExtensionServer;
-const testProjectPath = path.resolve(__dirname, '..', '..', 'test-resources', 'testproject');
-const appProjectPath = path.resolve(__dirname, '..', '..', 'test-resources', 'testproject_temp');
 
 export function waitForDidChange(): Promise<void> {
     return new Promise(resolve => {
@@ -29,12 +30,21 @@ export function waitForDidChange(): Promise<void> {
     });
 }
 
+const dir = path.resolve(__dirname, '..', '..', 'node-extension-server-test-temp');
+fs.ensureDirSync(dir);
+
 describe("node-extension-server", function () {
 
     beforeEach(function () {
         this.timeout(50000);
-        fs.removeSync(appProjectPath);
-        fs.copySync(testProjectPath, appProjectPath);
+        appProjectPath = temp.mkdirSync({ dir });
+        fs.writeJsonSync(path.resolve(appProjectPath, 'package.json'), {
+            "dependencies": {
+                "@theia/core": "0.1.0",
+                "@theia/extension-manager": "0.1.0"
+            }
+        });
+
         const container = extensionNodeTestContainer({
             projectPath: appProjectPath,
             npmClient: 'yarn',
