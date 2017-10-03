@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import * as temp from 'temp';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as assert from 'assert';
@@ -16,10 +17,9 @@ process.on('unhandledRejection', (reason, promise) => {
     throw reason;
 });
 
+let appProjectPath: string;
 let appProject: ApplicationProject;
 let server: ExtensionServer;
-const testProjectPath = path.resolve(__dirname, '..', '..', 'test-resources', 'testproject');
-const appProjectPath = path.resolve(__dirname, '..', '..', 'test-resources', 'testproject_temp');
 
 export function waitForDidChange(): Promise<void> {
     return new Promise(resolve => {
@@ -33,8 +33,18 @@ describe("node-extension-server", function () {
 
     beforeEach(function () {
         this.timeout(50000);
-        fs.removeSync(appProjectPath);
-        fs.copySync(testProjectPath, appProjectPath);
+
+        appProjectPath = temp.mkdirSync({
+            suffix: '_server_test_temp',
+            dir: path.resolve(__dirname, '..', '..')
+        });
+        fs.writeJsonSync(path.resolve(appProjectPath, 'package.json'), {
+            "dependencies": {
+                "@theia/core": "0.1.0",
+                "@theia/extension-manager": "0.1.0"
+            }
+        });
+
         const container = extensionNodeTestContainer({
             projectPath: appProjectPath,
             target: 'browser',

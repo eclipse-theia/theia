@@ -19,7 +19,7 @@ export class WebpackGenerator extends AbstractGenerator {
     }
 
     protected resolve(moduleName: string, path: string): string {
-        return this.pck.relative(paths.resolve(require.resolve(moduleName + '/package.json'), '../' + path)).split(paths.sep).join('/');
+        return this.pck.resolveModulePath(moduleName, path).split(paths.sep).join('/');
     }
 
     protected compileWebpackConfig(): string {

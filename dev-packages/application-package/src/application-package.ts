@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import * as fs from 'fs-extra';
 import * as paths from 'path';
 import { readJsonFile, writeJsonFile } from './json-file';
 import { NpmRegistry, NodePackage, PublishedNodePackage, sortByKey } from './npm-registry';
@@ -12,6 +13,7 @@ import { Extension, ExtensionPackage, RawExtensionPackage } from './extension-pa
 import { ExtensionPackageCollector } from './extension-package-collector';
 
 export type ApplicationLog = (message?: any, ...optionalParams: any[]) => void;
+export type ApplicationModuleLoader = (modulePath: string) => string;
 export type ApplicationPackageTarget = 'browser' | 'electron';
 export class ApplicationPackageOptions {
     readonly projectPath: string;
@@ -55,7 +57,10 @@ export class ApplicationPackage extends ApplicationPackageOptions {
      */
     get extensionPackages(): ReadonlyArray<ExtensionPackage> {
         if (!this._extensionPackages) {
-            const collector = new ExtensionPackageCollector(raw => this.newExtensionPackage(raw));
+            const collector = new ExtensionPackageCollector(
+                raw => this.newExtensionPackage(raw),
+                this.loadModule
+            );
             this._extensionPackages = collector.collect(this.pck);
         }
         return this._extensionPackages;
@@ -200,6 +205,21 @@ export class ApplicationPackage extends ApplicationPackageOptions {
         return writeJsonFile(this.path('package.json'), this.pck, {
             detectIndent: true
         });
+    }
+
+    protected _moduleLoader: undefined | ApplicationModuleLoader;
+    get loadModule(): ApplicationModuleLoader {
+        if (!this._moduleLoader) {
+            const loaderPath = this.path('.application-module-loader.js');
+            fs.writeFileSync(loaderPath, 'module.exports = modulePath => require.resolve(modulePath);');
+            this._moduleLoader = require(loaderPath) as ApplicationModuleLoader;
+            fs.removeSync(loaderPath);
+        }
+        return this._moduleLoader!;
+    }
+
+    resolveModulePath(moduleName: string, ...segments: string[]): string {
+        return paths.resolve(this.loadModule(moduleName + '/package.json'), '..', ...segments);
     }
 
 }

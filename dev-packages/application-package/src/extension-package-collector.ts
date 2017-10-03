@@ -15,7 +15,8 @@ export class ExtensionPackageCollector {
     protected readonly visited = new Map<string, boolean>();
 
     constructor(
-        protected readonly extensionPackageFactory: (raw: PublishedNodePackage) => ExtensionPackage
+        protected readonly extensionPackageFactory: (raw: PublishedNodePackage) => ExtensionPackage,
+        protected readonly loadModule: (modulePath: string) => string
     ) { }
 
     collect(pck: NodePackage): ReadonlyArray<ExtensionPackage> {
@@ -40,7 +41,7 @@ export class ExtensionPackageCollector {
         }
         this.visited.set(name, true);
 
-        const packagePath = require.resolve(name + '/package.json');
+        const packagePath = this.loadModule(name + '/package.json');
         const pck: NodePackage = readJsonFile(packagePath);
         if (RawExtensionPackage.is(pck)) {
             const version = pck.version;
