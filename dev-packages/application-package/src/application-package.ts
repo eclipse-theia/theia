@@ -5,15 +5,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as fs from 'fs';
 import * as paths from 'path';
+import { readJsonFile, writeJsonFile } from './json-file';
 import { NpmRegistry, NodePackage, PublishedNodePackage, sortByKey } from './npm-registry';
 import { Extension, ExtensionPackage, RawExtensionPackage } from './extension-package';
-
-import writeJsonFile = require('write-json-file');
-function readJsonFile(path: string): any {
-    return JSON.parse(fs.readFileSync(path, { encoding: 'utf-8' }));
-}
+import { ExtensionPackageCollector } from './extension-package-collector';
 
 export type ApplicationLog = (message?: any, ...optionalParams: any[]) => void;
 export type ApplicationPackageTarget = 'browser' | 'electron';
@@ -52,34 +48,17 @@ export class ApplicationPackage extends ApplicationPackageOptions {
     protected _frontendElectronModules: Map<string, string> | undefined;
     protected _backendModules: Map<string, string> | undefined;
     protected _backendElectronModules: Map<string, string> | undefined;
-    protected _extensionPackages: Map<string, ExtensionPackage> | undefined;
+    protected _extensionPackages: ReadonlyArray<ExtensionPackage> | undefined;
 
+    /**
+     * Extension packages in the topological order.
+     */
     get extensionPackages(): ReadonlyArray<ExtensionPackage> {
         if (!this._extensionPackages) {
-            this._extensionPackages = this.readExtensionPackages();
+            const collector = new ExtensionPackageCollector(raw => this.newExtensionPackage(raw));
+            this._extensionPackages = collector.collect(this.pck);
         }
-        return Array.from(this._extensionPackages.values());
-    }
-    protected readExtensionPackages(): Map<string, ExtensionPackage> {
-        const extensionPackages = new Map<string, ExtensionPackage>();
-        if (!this.pck.dependencies) {
-            return extensionPackages;
-        }
-        // tslint:disable-next-line:forin
-        for (const dependency in this.pck.dependencies) {
-            if (!extensionPackages.has(dependency)) {
-                const packagePath = require.resolve(dependency + '/package.json');
-                const dependencyPackage = readJsonFile(packagePath);
-                if (RawExtensionPackage.is(dependencyPackage)) {
-                    const version = dependencyPackage.version;
-                    dependencyPackage.installed = { packagePath, version };
-                    dependencyPackage.version = this.pck.dependencies[dependency]!;
-                    const extensionPackage = this.newExtensionPackage(dependencyPackage);
-                    extensionPackages.set(extensionPackage.name, extensionPackage);
-                }
-            }
-        }
-        return extensionPackages;
+        return this._extensionPackages;
     }
 
     getExtensionPackage(extension: string): ExtensionPackage | undefined {

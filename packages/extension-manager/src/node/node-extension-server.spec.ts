@@ -8,7 +8,7 @@
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as assert from 'assert';
-import { ExtensionClient, ExtensionServer } from '../common/extension-protocol';
+import { ExtensionClient, ExtensionServer, Extension } from '../common/extension-protocol';
 import extensionNodeTestContainer from './test/extension-node-test-container';
 import { ApplicationProject } from './application-project';
 
@@ -67,8 +67,10 @@ describe("node-extension-server", function () {
         this.timeout(10000);
 
         return server.installed().then(extensions => {
-            assert.equal(extensions.length, 2, JSON.stringify(extensions, undefined, 2));
-            assert.deepEqual(['@theia/core', '@theia/extension-manager'], extensions.map(e => e.name));
+            assert.equal(true, extensions.length >= 3, JSON.stringify(extensions, undefined, 2));
+            assert.equal(true, extensions.some(e => e.name === '@theia/core'), JSON.stringify(before, undefined, 2));
+            assert.equal(true, extensions.some(e => e.name === '@theia/filesystem'), JSON.stringify(before, undefined, 2));
+            assert.equal(true, extensions.some(e => e.name === '@theia/extension-manager'), JSON.stringify(before, undefined, 2));
         });
     });
 
@@ -76,15 +78,15 @@ describe("node-extension-server", function () {
         this.timeout(10000);
 
         const before = await server.installed();
-        assert.equal(false, before.some(e => e.name === '@theia/filesystem'), JSON.stringify(before, undefined, 2));
+        assert.equal(false, before.some(e => e.name === '@theia/editor'), JSON.stringify(before, undefined, 2));
 
         const onDidChangePackage = waitForDidChange();
 
-        await server.install("@theia/filesystem");
+        await server.install("@theia/editor");
 
         await onDidChangePackage;
         return server.installed().then(after => {
-            assert.equal(true, after.some(e => e.name === '@theia/filesystem'), JSON.stringify(after, undefined, 2));
+            assert.equal(true, after.some(e => e.name === '@theia/editor'), JSON.stringify(after, undefined, 2));
         });
     });
 
@@ -133,26 +135,17 @@ describe("node-extension-server", function () {
         this.timeout(10000);
 
         return server.list().then(extensions => {
-            assert.equal(extensions.length, 2, JSON.stringify(extensions, undefined, 2));
+            assertExtension({
+                name: '@theia/core',
+                installed: true,
+                outdated: true
+            }, extensions);
 
-            assert.deepEqual([
-                {
-                    name: '@theia/core',
-                    installed: true,
-                    outdated: true
-                },
-                {
-                    name: '@theia/extension-manager',
-                    installed: true,
-                    outdated: false
-                }
-            ], extensions.map(e =>
-                Object.assign({}, {
-                    name: e.name,
-                    installed: e.installed,
-                    outdated: e.outdated
-                })
-            ));
+            assertExtension({
+                name: '@theia/extension-manager',
+                installed: true,
+                outdated: false
+            }, extensions);
         });
     });
 
@@ -162,28 +155,34 @@ describe("node-extension-server", function () {
         return server.list({
             query: "scope:theia"
         }).then(extensions => {
-            const filtered = extensions.filter(e => ['@theia/core', '@theia/filesystem'].indexOf(e.name) !== -1);
-            assert.equal(filtered.length, 2, JSON.stringify(filtered, undefined, 2));
+            const filtered = extensions.filter(e => ['@theia/core', '@theia/editor'].indexOf(e.name) !== -1);
 
-            assert.deepEqual([
-                {
-                    name: '@theia/core',
-                    installed: true,
-                    outdated: true
-                },
-                {
-                    name: '@theia/filesystem',
-                    installed: false,
-                    outdated: false
-                }
-            ], filtered.map(e =>
-                Object.assign({}, {
-                    name: e.name,
-                    installed: e.installed,
-                    outdated: e.outdated
-                })
-            ));
+            assertExtension({
+                name: '@theia/core',
+                installed: true,
+                outdated: true
+            }, filtered);
+
+            assertExtension({
+                name: '@theia/editor',
+                installed: false,
+                outdated: false
+            }, filtered);
         });
     });
 
 });
+
+function assertExtension(expectation: {
+    name: string
+    installed: boolean
+    outdated: boolean
+}, extensions: Extension[]): void {
+    const extension = extensions.find(e => e.name === expectation.name);
+    assert.deepEqual(false, !extension, JSON.stringify(extensions, undefined, 2));
+    assert.deepEqual(expectation, Object.assign({}, {
+        name: extension!.name,
+        installed: extension!.installed,
+        outdated: extension!.outdated
+    }), JSON.stringify(extensions, undefined, 2));
+}
