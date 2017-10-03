@@ -6,6 +6,7 @@
  */
 
 import * as path from 'path';
+import * as temp from 'temp';
 import * as fs from 'fs-extra';
 import * as assert from 'assert';
 import { DidStopInstallationParam } from "../common/extension-protocol";
@@ -16,8 +17,8 @@ process.on('unhandledRejection', (reason, promise) => {
     throw reason;
 });
 
+let appProjectPath: string;
 let appProject: ApplicationProject;
-const appProjectPath = path.resolve(__dirname, '..', '..', 'test-resources', 'testproject_temp');
 
 export async function assertInstallation(expectation: {
     installed?: string[],
@@ -47,8 +48,10 @@ describe("application-project", function () {
 
     beforeEach(function () {
         this.timeout(50000);
-        fs.removeSync(appProjectPath);
-        fs.ensureDirSync(appProjectPath);
+
+        const dir = path.resolve(__dirname, '..', '..', 'application-project-test-temp');
+        fs.ensureDirSync(dir);
+        appProjectPath = temp.mkdirSync({ dir });
         appProject = extensionNodeTestContainer({
             projectPath: appProjectPath,
             npmClient: 'yarn',
