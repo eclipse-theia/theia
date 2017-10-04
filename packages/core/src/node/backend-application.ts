@@ -41,13 +41,21 @@ export class BackendApplication {
 
         for (const contribution of this.contributionsProvider.getContributions()) {
             if (contribution.initialize) {
-                contribution.initialize();
+                try {
+                    contribution.initialize();
+                } catch (err) {
+                    this.logger.error(err.toString());
+                }
             }
         }
 
         for (const contribution of this.contributionsProvider.getContributions()) {
             if (contribution.configure) {
-                contribution.configure(this.app);
+                try {
+                    contribution.configure(this.app);
+                } catch (err) {
+                    this.logger.error(err.toString());
+                }
             }
         }
     }
@@ -69,7 +77,11 @@ export class BackendApplication {
 
             for (const contrib of this.contributionsProvider.getContributions()) {
                 if (contrib.onStart) {
-                    contrib.onStart(server);
+                    try {
+                        contrib.onStart(server);
+                    } catch (err) {
+                        this.logger.error(err.toString());
+                    }
                 }
             }
         });
