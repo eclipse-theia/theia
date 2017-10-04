@@ -33,7 +33,7 @@ A [`1.0 BETA`version of Theia](https://github.com/theia-ide/theia/milestone/3) i
  - [many more features](https://github.com/theia-ide/theia/milestone/3)
 
 The team is also working on the following Open-Source Products based on Theia:
- - [Yangster](https://github.com/yang-tools/yangster) - A YANG IDE
+ - [Yangster](https://github.com/theia-ide/yangster) - A YANG IDE
 
 ## Running the examples
 
