@@ -239,19 +239,19 @@ export class GitWidget extends VirtualWidget {
 
     protected getStatusChar(status: GitFileStatus, staged: boolean): string {
         switch (status) {
-            case 0:
-            case 3:
-            case 5: return staged ? 'A' : 'U';
-            case 1: return 'M';
-            case 2: return 'D';
-            case 4: return 'C';
+            case GitFileStatus.New:
+            case GitFileStatus.Renamed:
+            case GitFileStatus.Copied: return staged ? 'A' : 'U';
+            case GitFileStatus.Modified: return 'M';
+            case GitFileStatus.Deleted: return 'D';
+            case GitFileStatus.Conflicted: return 'C';
         }
         return '';
     }
 
     protected getRepositoryRelativePath(absPath: string) {
-        const pathToReplace = new URI(this.repository.localUri).withoutScheme().toString();
-        return absPath.replace(pathToReplace, '').replace(/^\//, '');
+        const repoPath = new URI(this.repository.localUri).path.toString();
+        return absPath.replace(repoPath, '').replace(/^\//, '');
     }
 
     protected renderGitItem(change: GitFileChange): h.Child {

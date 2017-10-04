@@ -29,24 +29,18 @@ export class GitResource implements Resource {
 @injectable()
 export class GitResourceResolver implements ResourceResolver {
 
-    protected repos: Repository[] = [];
-
     constructor(
         @inject(Git) protected readonly git: Git
-    ) {
-        this.git.repositories().then(r => {
-            this.repos = r;
-        });
-    }
+    ) { }
 
     resolve(uri: URI): Resource | Promise<Resource> {
         if (uri.scheme !== GIT_RESOURCE_SCHEME) {
             throw new Error("The given uri is not a git uri: " + uri);
         }
-        return this.getResources(uri);
+        return this.getResource(uri);
     }
 
-    async getResources(uri: URI): Promise<GitResource> {
+    async getResource(uri: URI): Promise<GitResource> {
         const repository = await this.getRepository(uri);
         return new GitResource(uri, repository, this.git);
     }
@@ -54,23 +48,16 @@ export class GitResourceResolver implements ResourceResolver {
     async getRepository(uri: URI): Promise<Repository> {
         const uriWoS = uri.withoutScheme();
         const dirStr = FileUri.fsPath(uriWoS);
-        let localUri: URI;
-        let localUriStr: string;
-        let sortedRepos: Repository[] = [];
-        if (this.repos.length === 0) {
-            this.repos = await this.git.repositories();
-        }
-        if (this.repos.length > 1) {
-            sortedRepos = this.repos.sort((a, b) => b.localUri.length - a.localUri.length);
-        }
+        const repos = await this.git.repositories();
+        const sortedRepos = repos.sort((a, b) => b.localUri.length - a.localUri.length);
         for (const repo of sortedRepos) {
-            localUri = new URI(repo.localUri);
+            const localUri = new URI(repo.localUri);
             // make sure that localUri of repo has no scheme.
-            localUriStr = localUri.withoutScheme().toString();
+            const localUriStr = localUri.withoutScheme().toString();
             if (dirStr.toString().startsWith(localUriStr)) {
                 return { localUri: localUriStr };
             }
         }
-        return this.repos[0];
+        return repos[0];
     }
 }

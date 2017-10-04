@@ -13,19 +13,19 @@ import { CommandContribution, CommandRegistry, ILogger } from "@theia/core/lib/c
 export namespace GIT_COMMANDS {
     export const FETCH = {
         id: 'git.fetch',
-        label: 'Fetch'
+        label: 'Git: Fetch'
     };
     export const PULL = {
         id: 'git.pull',
-        label: 'Pull'
+        label: 'Git: Pull'
     };
     export const MERGE = {
         id: 'git.merge',
-        label: 'Merge'
+        label: 'Git: Merge'
     };
     export const PUSH = {
         id: 'git.push',
-        label: 'Push'
+        label: 'Git: Push'
     };
 }
 
