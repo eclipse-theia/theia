@@ -68,7 +68,7 @@ export class DugiteGit implements Git {
         return stage(this.getFsPath(repository), paths);
     }
 
-    async rm(repository: Repository, uri: string | string[]): Promise<void> {
+    async unstage(repository: Repository, uri: string | string[]): Promise<void> {
         const paths = (Array.isArray(uri) ? uri : [uri]).map(FileUri.fsPath);
         return unstage(this.getFsPath(repository), paths);
     }
