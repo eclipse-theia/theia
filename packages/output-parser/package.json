@@ -11,7 +11,9 @@
     "access": "public"
   },
   "theiaExtensions": [
-    {}
+    {
+      "backend": "lib/node/output-parser-backend-module"
+    }
   ],
   "keywords": [
     "theia-extension"
