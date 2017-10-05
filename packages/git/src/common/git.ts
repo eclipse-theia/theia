@@ -366,7 +366,7 @@ export interface Git {
      * @param repository the repository to where the staged files have to be removed from/
      * @param uri one or multiple file URIs to unstage in the working clone.
      */
-    rm(repository: Repository, uri: string | string[]): Promise<void>;
+    unstage(repository: Repository, uri: string | string[]): Promise<void>;
 
     /**
      * Lists, creates, renames or deletes a branch.

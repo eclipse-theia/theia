@@ -208,7 +208,7 @@ export class GitWidget extends VirtualWidget {
                 title: 'Unstage Changes',
                 onclick: async event => {
                     const repo = await this.gitRepositoryProvider.getSelected();
-                    this.git.rm(repo, change.uri);
+                    this.git.unstage(repo, change.uri);
                 }
             }, h.i({ className: 'fa fa-minus' })));
         } else {
