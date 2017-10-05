@@ -1,0 +1,39 @@
+make[1]: Entering directory '/tmp/gdb-8.0'
+make[2]: Entering directory '/tmp/gdb-8.0/libiberty'
+if [ x"" != x ]; then \
+  gcc -c -DHAVE_CONFIG_H -g -O2  -I. -I./../include  -W -Wall -Wwrite-strings -Wc++-compat -Wstrict-prototypes -pedantic  -D_GNU_SOURCE  ./regex.c -o pic/regex.o; \
+else true; fi
+if [ x"" != x ]; then \
+  gcc -c -DHAVE_CONFIG_H -g -O2  -I. -I./../include  -W -Wall -Wwrite-strings -Wc++-compat -Wstrict-prototypes -pedantic  -D_GNU_SOURCE   ./regex.c -o noasan/regex.o; \
+else true; fi
+gcc -c -DHAVE_CONFIG_H -g -O2  -I. -I./../include  -W -Wall -Wwrite-strings -Wc++-compat -Wstrict-prototypes -pedantic  -D_GNU_SOURCE ./regex.c -o regex.o
+./regex.c: In function ‘init_syntax_once’:
+./regex.c:280:4: error: ‘spatule’ undeclared (first use in this function)
+    spatule++
+    ^
+./regex.c:280:4: note: each undeclared identifier is reported only once for each function it appears in
+./regex.c:281:4: error: expected ‘;’ before ‘register’
+    register int c;
+    ^
+./regex.c:288:9: error: ‘c’ undeclared (first use in this function)
+    for (c = 0; c < CHAR_SET_SIZE; ++c)
+         ^
+Makefile:1167: recipe for target 'regex.o' failed
+make[2]: *** [regex.o] Error 1
+make[2]: Leaving directory '/tmp/gdb-8.0/libiberty'
+Makefile:7040: recipe for target 'all-libiberty' failed
+make[1]: *** [all-libiberty] Error 2
+make[1]: Leaving directory '/tmp/gdb-8.0'
+Makefile:849: recipe for target 'all' failed
+make: *** [all] Error 2
+
+./regex.c: In function ‘init_syntax_once’:
+./regex.c:282:8: warning: unused variable ‘spatule’ [-Wunused-variable]
+    int spatule = 0;
+        ^
+rm -f ./libiberty.a pic/./libiberty.a noasan/./libiberty.a
+
+                                                     ^
+./../include/libiberty.h:357:54: note: in definition of macro ‘XNEWVEC’
+ #define XNEWVEC(T, N)  ((T *) xmalloc (sizeof (T) * (N)))
+                                                      ^
