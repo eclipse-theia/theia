@@ -36,7 +36,7 @@ export class ExtensionOpenHandler implements OpenHandler {
             name: ExtensionUri.toExtensionName(uri)
         };
         const widget = await this.widgetManager.getOrCreateWidget<ExtensionDetailWidget>(ExtensionUri.scheme, options);
-        this.app.shell.activateMain(widget.id);
+        this.app.shell.addToMainArea(widget);
         return widget;
     }
 
