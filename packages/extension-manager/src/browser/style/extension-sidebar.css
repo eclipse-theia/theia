@@ -7,6 +7,7 @@
 
 .theia-extensions {
     min-width: 250px !important;
+    background-color: var(--theia-layout-color1);
 }
 
 #extensionSearchContainer {
@@ -20,26 +21,26 @@
 
 #extensionSearchFieldContainer input {
     flex: 1;
-    font-size: var(--theia-ui-font-size2);
+    font-size: var(--theia-ui-font-size1);
     line-height: var(--theia-content-line-height);
     border-width: 1px;
     border-style: solid;
     border-color: var(--theia-border-color1);
     background: var(--theia-layout-color0);
     color: var(--theia-ui-font-color0);
+    padding-left: 5px;
 }
 
 #extensionListContainer {
     width: 100%;
-    padding: 0 15px;
     box-sizing: border-box;
     height: calc(100% - 57px);
     overflow-y: auto;
 }
 
 .theia-extensions .extensionHeaderContainer {
-    padding: 3px 7px;
-    font-size: var(--theia-ui-font-size1);
+    padding: 3px 15px;
+    font-size: var(--theia-ui-font-size0);
 }
 
 .theia-extensions .extensionHeaderContainer:hover {
@@ -53,8 +54,8 @@
 .theia-extensions .extensionName {
     flex: 5;
     margin-right: 5px;
-    font-weight: bold;
-    font-size: var(--theia-ui-font-size2);
+    font-size: var(--theia-ui-font-size1);
+    font-weight: 800;
 }
 
 .theia-extensions .extensionVersion {
