@@ -452,7 +452,7 @@ export interface Git {
      * @param uri the URI of the file who's content has to be retrieved and shown.
      * @param options the options for further refining the `git show`.
      */
-    show(repository: Repository, uri: string, options?: Git.Options.Show): Promise<String>;
+    show(repository: Repository, uri: string, options?: Git.Options.Show): Promise<string>;
 
 }
 

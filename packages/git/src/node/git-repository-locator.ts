@@ -19,19 +19,17 @@ const finder: any = require('findit2');
  */
 export function locateRepositories(path: string): Promise<Repository[]> {
     return new Promise<Repository[]>((resolve, reject) => {
-        const repositories: Repository[] = [];
+        const repositoryPaths = new Set();
         const emitter = finder(abs(path));
         emitter.on('directory', (dir: string, stat: fs.Stats, stop: () => void) => {
             const base = Path.basename(dir);
             if (base === '.git') {
-                const localUri = FileUri.create(Path.dirname(dir)).toString();
-                if (!localUri.endsWith(path)) {
-                    repositories.push({ localUri });
-                }
+                const dirName = Path.dirname(dir);
+                repositoryPaths.add(dirName);
                 stop();
             }
         });
-        emitter.on('end', () => resolve(repositories));
+        emitter.on('end', () => resolve([...repositoryPaths].map(p => <Repository>{ localUri: FileUri.create(p).toString() })));
         emitter.on('error', (error: Error) => reject(error));
     });
 }

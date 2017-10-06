@@ -5,16 +5,18 @@
 * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 */
 
+import * as fs from 'fs';
 import * as Path from 'path';
 import { Git, GitUtils } from '../common/git';
 import { git } from 'dugite-extra/lib/core/git';
 import { injectable, inject } from "inversify";
 import { push } from 'dugite-extra/lib/command/push';
 import { pull } from 'dugite-extra/lib/command/pull';
-import { FileUri } from '@theia/core/lib/node/file-uri';
+import { isWindows } from '@theia/core/lib/common/os';
 import { clone } from 'dugite-extra/lib/command/clone';
 import { fetch } from 'dugite-extra/lib/command/fetch';
 import { merge } from 'dugite-extra/lib/command/merge';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 import { getStatus } from 'dugite-extra/lib/command/status';
 import { locateRepositories } from './git-repository-locator';
 import { createCommit } from 'dugite-extra/lib/command/commit';
@@ -35,6 +37,7 @@ export class DugiteGit implements Git {
 
     constructor(
         @inject(WorkspaceServer) protected readonly workspace: WorkspaceServer) {
+        process.env.USE_LOCAL_GIT = 'true';
     }
 
     async clone(remoteUrl: string, options?: Git.Options.Clone): Promise<Repository> {
@@ -51,8 +54,22 @@ export class DugiteGit implements Git {
         const repositories = await repositoriesPromise;
         const containerRepository = await containerRepositoryPromise;
         // Make sure not to add the container to the repositories twice. Can happen when WS root is a git repository.
-        if (containerRepository && repositories.map(r => r.localUri).indexOf(containerRepository.localUri) === -1) {
-            repositories.unshift(containerRepository);
+        if (containerRepository) {
+            // Below URIs point to the same location, but their `toString()` are not the same.
+            // file:///c%3A/Users/KITTAA~1/AppData/Local/Temp/discovery-test-211796-8240-vm7sah.wow0b/BASE',
+            // file:///c%3A/Users/kittaakos/AppData/Local/Temp/discovery-test-211796-8240-vm7sah.wow0b/BASE
+            // Is there a better way to compare NTFS/FAT 8.3 path formats on Windows?
+            let toCompareString = (path: string) => path;
+            if (isWindows) {
+                // We could add another optimization: if any of the path strings contain `~` then run the below logic, otherwise just return with the path.
+                toCompareString = (path: string) => JSON.stringify(fs.statSync(path));
+            }
+            const subRepositoryPaths = repositories.map(r => Path.resolve(this.getFsPath(r.localUri)));
+            const containerRepositoryPath = Path.resolve(this.getFsPath(containerRepository.localUri));
+
+            if (!subRepositoryPaths.some(p => toCompareString(p) === toCompareString(containerRepositoryPath))) {
+                repositories.unshift(containerRepository);
+            }
         }
         return repositories;
     }
