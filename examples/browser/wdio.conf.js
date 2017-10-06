@@ -5,9 +5,15 @@ const path = require('path');
 const port = 3000;
 const host = 'localhost';
 
+const debug = process.env.DEBUG;
+const spec = process.env.SPEC;
+const defaultSpecs = './test/**/*spec.ts';
+
 let server;
 
 exports.config = {
+    debug: debug,
+    execArgv: debug ? ['--inspect=127.0.0.1:5859'] : [],
 
     //
     // ==================
@@ -18,9 +24,7 @@ exports.config = {
     // NPM script (see https://docs.npmjs.com/cli/run-script) then the current working
     // directory is where your package.json resides, so `wdio` will be called from there.
     //
-    specs: [
-        './test/**/*spec.ts'
-    ],
+    specs: spec ? [spec] : defaultSpecs,
     // Patterns to exclude.
     exclude: [
         // 'path/to/excluded/files'
@@ -41,7 +45,7 @@ exports.config = {
     // and 30 processes will get spawned. The property handles how many capabilities
     // from the same test should run tests.
     //
-    maxInstances: 10,
+    maxInstances: debug ? 1 : 10,
     //
     // If you have trouble getting all important capabilities together, check out the
     // Sauce Labs platform configurator - a great tool to configure your capabilities:
@@ -51,7 +55,8 @@ exports.config = {
         // maxInstances can get overwritten per capability. So if you have an in-house Selenium
         // grid with only 5 firefox instances available you can make sure that not more than
         // 5 instances get started at a time.
-        maxInstances: 5,
+        ui: ["tdd"],
+        maxInstances: debug ? 1 : 5,
         //
         browserName: 'chrome'
     }],
@@ -138,11 +143,9 @@ exports.config = {
     // Options to be passed to Mocha.
     // See the full list at http://mochajs.org/
     mochaOpts: {
-        ui: 'bdd',
         compilers: ['ts:ts-node/register'],
         requires: ['reflect-metadata/Reflect'],
-        watch: 'ts',
-        timeout: 180000,
+        timeout: 180000
     },
     //
     // =====
@@ -213,7 +216,9 @@ exports.config = {
         var fs = require("fs");
         let result = browser.execute("return window.__coverage__;")
         try {
-            fs.mkdirSync('coverage');
+            if (!fs.existsSync('coverage')) {
+                fs.mkdirSync('coverage');
+            }
             fs.writeFileSync('coverage/coverage.json', JSON.stringify(result.value));
         } catch (err) {
             console.log(`Error writing coverage ${err}`);
