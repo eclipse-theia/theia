@@ -25,6 +25,12 @@ export default new ContainerModule(bind => {
 
     bind(FrontendApplicationContribution).to(ExtensionContribution).inSingletonScope();
     bind(ExtensionWidget).toSelf().inSingletonScope();
+    bind(WidgetFactory).toDynamicValue(ctx => ({
+        id: 'extensions',
+        createWidget() {
+            return ctx.container.get(ExtensionWidget);
+        }
+    })).inSingletonScope();
 
     bind(ExtensionWidgetFactory).toSelf().inSingletonScope();
     bind(WidgetFactory).toDynamicValue(ctx => ctx.container.get(ExtensionWidgetFactory)).inSingletonScope();

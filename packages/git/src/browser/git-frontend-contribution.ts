@@ -21,7 +21,7 @@ export class GitFrontendContribution implements FrontendApplicationContribution 
     onStart(app: FrontendApplication): void {
         this.widgetManager.getOrCreateWidget(GIT_WIDGET_FACTORY_ID).then(widget => {
             app.shell.addToLeftArea(widget, {
-                rank: 300
+                rank: 200
             });
         });
     }
