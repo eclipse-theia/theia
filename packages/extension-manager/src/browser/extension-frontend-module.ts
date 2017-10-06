@@ -25,6 +25,15 @@ export default new ContainerModule(bind => {
 
     bind(FrontendApplicationContribution).to(ExtensionContribution).inSingletonScope();
     bind(ExtensionWidget).toSelf().inSingletonScope();
+    // tslint:disable-next-line:arrow-return-shorthand
+    bind(WidgetFactory).toDynamicValue(ctx => {
+        return {
+            id: 'extensions',
+            createWidget() {
+                return ctx.container.get(ExtensionWidget);
+            }
+        };
+    }).inSingletonScope();
 
     bind(ExtensionWidgetFactory).toSelf().inSingletonScope();
     bind(WidgetFactory).toDynamicValue(ctx => ctx.container.get(ExtensionWidgetFactory)).inSingletonScope();

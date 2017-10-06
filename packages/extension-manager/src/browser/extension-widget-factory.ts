@@ -31,7 +31,7 @@ export class ExtensionWidgetFactory implements WidgetFactory {
         widget.id = 'extension:' + options.name;
         widget.title.closable = true;
         widget.title.label = options.name;
-        this.app.shell.addToMainArea(widget);
+        widget.title.iconClass = 'fa fa-puzzle-piece';
         return widget;
     }
 

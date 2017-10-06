@@ -8,14 +8,14 @@
 import { injectable, inject } from "inversify";
 import { MessageService } from "@theia/core";
 import { FrontendApplication, FrontendApplicationContribution } from "@theia/core/lib/browser";
-import { ExtensionWidget } from "./extension-widget";
 import { ExtensionManager } from '../common';
+import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 
 @injectable()
 export class ExtensionContribution implements FrontendApplicationContribution {
 
     constructor(
-        @inject(ExtensionWidget) protected readonly extensionWidget: ExtensionWidget,
+        @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
         @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager,
         @inject(MessageService) protected readonly messageService: MessageService,
     ) {
@@ -28,9 +28,10 @@ export class ExtensionContribution implements FrontendApplicationContribution {
         });
     }
 
-    onStart(app: FrontendApplication): void {
-        app.shell.addToLeftArea(this.extensionWidget, {
-            rank: 2
+    async onStart(app: FrontendApplication): Promise<void> {
+        const extensionWidget = await this.widgetManager.getOrCreateWidget('extensions');
+        app.shell.addToLeftArea(extensionWidget, {
+            rank: 200
         });
     }
 

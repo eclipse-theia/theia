@@ -42,13 +42,14 @@
 }
 
 .extensionButton {
-    background: var(--theia-success-color2);
+    background: var(--theia-success-color1);
     padding: 2px;
     box-sizing: border-box;
-    color: var(--theia-inverse-ui-font-color1);
-    width: 55px;
+    color: var(--theia-content-font-color0);
+    width: 65px;
     text-align: center;
-    font-size: var(--theia-ui-font-size1);
+    font-size: var(--theia-ui-font-size0);
+    text-transform: uppercase;
 }
 
 .extensionButton.working {
@@ -62,11 +63,11 @@
 
 .extensionButton:hover {
     cursor: pointer;
-    background: var(--theia-success-color1);
+    background: var(--theia-success-color2);
 }
 
 .extensionButton.installed {
-    background: var(--theia-error-color2);
+    background: var(--theia-error-color1);
 }
 
 .extensionButton.outdated {
@@ -74,7 +75,7 @@
 }
 
 .extensionButton.installed:hover {
-    background: var(--theia-error-color1);
+    background: var(--theia-error-color2);
 }
 
 .extensionButton.outdated:hover {
