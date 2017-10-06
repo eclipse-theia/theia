@@ -4,7 +4,7 @@ import * as fs from 'fs-extra';
 import { expect } from 'chai';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { DugiteGit } from './dugite-git';
-import { WorkingDirectoryStatus } from '../common/model';
+import { WorkingDirectoryStatus, Repository } from '../common/model';
 import { initRepository, createTestRepository } from 'dugite-extra/lib/command/test-helper';
 import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol';
 
@@ -159,6 +159,54 @@ describe('git', async () => {
 
             expect(WorkingDirectoryStatus.equals(left, right)).to.be.false;
 
+        });
+
+    });
+
+    describe('show', async () => {
+
+        let repository: Repository | undefined;
+        let git: DugiteGit | undefined;
+
+        beforeEach(async () => {
+            const root = await createTestRepository(track.mkdirSync('status-test'));
+            const localUri = FileUri.create(root).toString();
+            repository = { localUri };
+            git = await createGit(root);
+        });
+
+        it('modified in working directory', async () => {
+            const repositoryPath = FileUri.fsPath(repository!.localUri);
+            fs.writeFileSync(path.join(repositoryPath, 'A.txt'), 'new content');
+            expect(fs.readFileSync(path.join(repositoryPath, 'A.txt'), { encoding: 'utf8' })).to.be.equal('new content');
+            const content = await git!.show(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString(), { commitish: 'HEAD' });
+            expect(content).to.be.equal('A');
+        });
+
+        it('modified in working directory (nested)', async () => {
+            const repositoryPath = FileUri.fsPath(repository!.localUri);
+            fs.writeFileSync(path.join(repositoryPath, 'folder', 'C.txt'), 'new content');
+            expect(fs.readFileSync(path.join(repositoryPath, 'folder', 'C.txt'), { encoding: 'utf8' })).to.be.equal('new content');
+            const content = await git!.show(repository!, FileUri.create(path.join(repositoryPath, 'folder', 'C.txt')).toString(), { commitish: 'HEAD' });
+            expect(content).to.be.equal('C');
+        });
+
+        it('modified in index', async () => {
+            const repositoryPath = FileUri.fsPath(repository!.localUri);
+            fs.writeFileSync(path.join(repositoryPath, 'A.txt'), 'new content');
+            expect(fs.readFileSync(path.join(repositoryPath, 'A.txt'), { encoding: 'utf8' })).to.be.equal('new content');
+            await git!.add(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString());
+            const content = await git!.show(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString(), { commitish: 'index' });
+            expect(content).to.be.equal('new content');
+        });
+
+        it('modified in index and in working directory', async () => {
+            const repositoryPath = FileUri.fsPath(repository!.localUri);
+            fs.writeFileSync(path.join(repositoryPath, 'A.txt'), 'new content');
+            expect(fs.readFileSync(path.join(repositoryPath, 'A.txt'), { encoding: 'utf8' })).to.be.equal('new content');
+            await git!.add(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString());
+            expect(await git!.show(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString(), { commitish: 'index' })).to.be.equal('new content');
+            expect(await git!.show(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString(), { commitish: 'HEAD' })).to.be.equal('A');
         });
 
     });

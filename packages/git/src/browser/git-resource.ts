@@ -9,7 +9,6 @@ import { injectable, inject } from "inversify";
 import { Git, Repository } from '../common';
 import { Resource, ResourceResolver } from "@theia/core";
 import URI from "@theia/core/lib/common/uri";
-import { FileUri } from "@theia/core/lib/node/file-uri";
 
 export const GIT_RESOURCE_SCHEME = 'gitrev';
 
@@ -17,10 +16,8 @@ export class GitResource implements Resource {
 
     constructor(readonly uri: URI, protected readonly repository: Repository, protected readonly git: Git) { }
 
-    readContents(options?: { encoding?: string | undefined; } | undefined): Promise<string> {
-        return this.git.show(this.repository, this.uri.toString(), Object.assign({
-            commitish: this.uri.query
-        }, options)).then(content => content.toString());
+    async readContents(options?: { encoding?: string | undefined; } | undefined): Promise<string> {
+        return await this.git.show(this.repository, this.uri.toString(), Object.assign({ commitish: this.uri.query }, options));
     }
 
     dispose(): void { }
@@ -35,7 +32,7 @@ export class GitResourceResolver implements ResourceResolver {
 
     resolve(uri: URI): Resource | Promise<Resource> {
         if (uri.scheme !== GIT_RESOURCE_SCHEME) {
-            throw new Error("The given uri is not a git uri: " + uri);
+            throw new Error(`Expected a URI with ${GIT_RESOURCE_SCHEME} scheme. Was: ${uri}.`);
         }
         return this.getResource(uri);
     }
@@ -46,15 +43,17 @@ export class GitResourceResolver implements ResourceResolver {
     }
 
     async getRepository(uri: URI): Promise<Repository> {
-        const uriWoS = uri.withoutScheme();
-        const dirStr = FileUri.fsPath(uriWoS);
+        const uriWithoutScheme = uri.withoutScheme();
         const repos = await this.git.repositories();
+        // We sort by length so that we visit the nested repositories first.
+        // We do not want to get the repository A instead of B if we have:
+        // repository A, another repository B inside A and a resource A/B/C.ext.
         const sortedRepos = repos.sort((a, b) => b.localUri.length - a.localUri.length);
         for (const repo of sortedRepos) {
             const localUri = new URI(repo.localUri);
             // make sure that localUri of repo has no scheme.
             const localUriStr = localUri.withoutScheme().toString();
-            if (dirStr.toString().startsWith(localUriStr)) {
+            if (uriWithoutScheme.toString().startsWith(localUriStr)) {
                 return { localUri: localUriStr };
             }
         }
