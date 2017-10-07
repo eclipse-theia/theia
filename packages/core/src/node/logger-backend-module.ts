@@ -9,11 +9,10 @@ import { ContainerModule, Container } from 'inversify';
 import { ConnectionHandler, JsonRpcConnectionHandler } from "../common/messaging";
 import { ILogger, LoggerFactory, LoggerOptions, Logger, setRootLogger } from '../common/logger';
 import { ILoggerServer, ILoggerClient, loggerPath, LoggerServerOptions } from '../common/logger-protocol';
-import { BunyanLoggerServer } from './bunyan-logger-server';
+import { BunyanLoggerServer, LogLevelCliContribution } from './bunyan-logger-server';
 import { LoggerWatcher } from '../common/logger-watcher';
 import { BackendApplicationContribution } from './backend-application';
-
-import * as yargs from 'yargs';
+import { CliContribution } from './cli';
 
 export const loggerBackendModule = new ContainerModule(bind => {
     bind(BackendApplicationContribution).toDynamicValue(ctx =>
@@ -26,14 +25,13 @@ export const loggerBackendModule = new ContainerModule(bind => {
     bind(ILogger).to(Logger).inSingletonScope().whenTargetIsDefault();
     bind(LoggerWatcher).toSelf().inSingletonScope();
     bind(ILoggerServer).to(BunyanLoggerServer).inSingletonScope();
+    bind(LogLevelCliContribution).toSelf().inSingletonScope();
+    bind(CliContribution).toDynamicValue(ctx => ctx.container.get(LogLevelCliContribution));
     bind(LoggerServerOptions).toDynamicValue(ctx => {
-        let logLevel = yargs.argv.loglevel;
-        if (['trace', 'debug', 'info', 'warn', 'error', 'fatal'].indexOf(logLevel) < 0) {
-            logLevel = 'info';
-        }
+        const contrib = ctx.container.get(LogLevelCliContribution);
         return {
             name: "Theia",
-            level: logLevel
+            level: contrib.logLevel
         };
     }
     ).inSingletonScope();

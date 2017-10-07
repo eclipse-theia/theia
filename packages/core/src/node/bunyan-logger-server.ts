@@ -9,14 +9,28 @@ import * as bunyan from 'bunyan';
 import * as yargs from 'yargs';
 import { inject, injectable } from 'inversify';
 import { LogLevel } from '../common/logger';
-import { ILoggerServer, ILoggerClient } from '../common/logger-protocol';
-import { LoggerServerOptions } from '../common/logger-protocol';
+import { ILoggerServer, ILoggerClient, LoggerServerOptions } from '../common/logger-protocol';
+import { CliContribution } from './cli';
 
-yargs.usage(`Usage main.js [--loglevel='trace','debug','info','warn','error','fatal']`)
-    .default('loglevel', 'info')
-    .describe('loglevel', 'Sets the log level')
-    .help()
-    .argv;
+
+@injectable()
+export class LogLevelCliContribution implements CliContribution {
+
+    logLevel: string;
+
+    configure(conf: yargs.Argv): void {
+        conf.option('logLevel', {
+            description: 'Sets the log level',
+            default: 'info',
+            choices: ['trace', 'debug', 'info', 'warn', 'error', 'fatal']
+        });
+    }
+
+    setArguments(args: yargs.Arguments): void {
+        this.logLevel = args['logLevel'];
+    }
+}
+
 
 @injectable()
 export class BunyanLoggerServer implements ILoggerServer {
