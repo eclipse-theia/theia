@@ -12,7 +12,6 @@ import { git } from 'dugite-extra/lib/core/git';
 import { injectable, inject } from "inversify";
 import { push } from 'dugite-extra/lib/command/push';
 import { pull } from 'dugite-extra/lib/command/pull';
-import { isWindows } from '@theia/core/lib/common/os';
 import { clone } from 'dugite-extra/lib/command/clone';
 import { fetch } from 'dugite-extra/lib/command/fetch';
 import { merge } from 'dugite-extra/lib/command/merge';
@@ -55,15 +54,14 @@ export class DugiteGit implements Git {
         const containerRepository = await containerRepositoryPromise;
         // Make sure not to add the container to the repositories twice. Can happen when WS root is a git repository.
         if (containerRepository) {
-            // Below URIs point to the same location, but their `toString()` are not the same.
+            // Below URIs point to the same location, but their `toString()` are not the same:
+            // On Windows:
             // file:///c%3A/Users/KITTAA~1/AppData/Local/Temp/discovery-test-211796-8240-vm7sah.wow0b/BASE',
             // file:///c%3A/Users/kittaakos/AppData/Local/Temp/discovery-test-211796-8240-vm7sah.wow0b/BASE
-            // Is there a better way to compare NTFS/FAT 8.3 path formats on Windows?
-            let toCompareString = (path: string) => path;
-            if (isWindows) {
-                // We could add another optimization: if any of the path strings contain `~` then run the below logic, otherwise just return with the path.
-                toCompareString = (path: string) => JSON.stringify(fs.statSync(path));
-            }
+            // Similar on OS X:
+            // /private/var/folders/k3/d2fkvv1j16v3_rz93k7f74180000gn/T/discovery-test-211797-35913-7vqenj.5qxk3/BASE
+            // /var/folders/k3/d2fkvv1j16v3_rz93k7f74180000gn/T/discovery-test-211797-35913-7vqenj.5qxk3/BASE
+            const toCompareString = (path: string) => JSON.stringify(fs.statSync(path));
             const subRepositoryPaths = repositories.map(r => Path.resolve(this.getFsPath(r.localUri)));
             const containerRepositoryPath = Path.resolve(this.getFsPath(containerRepository.localUri));
 
