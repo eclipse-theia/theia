@@ -36,7 +36,6 @@ export class DugiteGit implements Git {
 
     constructor(
         @inject(WorkspaceServer) protected readonly workspace: WorkspaceServer) {
-        process.env.USE_LOCAL_GIT = 'true';
     }
 
     async clone(remoteUrl: string, options?: Git.Options.Clone): Promise<Repository> {
