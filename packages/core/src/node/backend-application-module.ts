@@ -8,9 +8,16 @@
 import { ContainerModule } from "inversify";
 import { bindContributionProvider, ConnectionHandler, JsonRpcConnectionHandler, MessageService } from '../common';
 import { MessageClient, DispatchingMessageClient, messageServicePath } from '../common/message-service-protocol';
-import { BackendApplication, BackendApplicationContribution } from "./backend-application";
+import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution } from './backend-application';
+import { CliManager, CliContribution } from './cli';
 
 export const backendApplicationModule = new ContainerModule(bind => {
+    bind(CliManager).toSelf().inSingletonScope();
+    bindContributionProvider(bind, CliContribution);
+
+    bind(BackendApplicationCliContribution).toSelf().inSingletonScope();
+    bind(CliContribution).toDynamicValue(ctx => ctx.container.get(BackendApplicationCliContribution));
+
     bind(BackendApplication).toSelf().inSingletonScope();
     bindContributionProvider(bind, BackendApplicationContribution);
 

@@ -22,10 +22,10 @@
     "reflect-metadata": "^0.1.10",
     "requirejs": "^2.3.3",
     "vscode-uri": "^1.0.1",
+    "vscode-languageserver-types": "^3.4.0",
     "vscode-ws-jsonrpc": "0.0.1-alpha.5",
     "ws": "^3.0.0",
-    "yargs": "^9.0.1",
-    "vscode-languageserver-types": "^3.4.0"
+    "yargs": "^9.0.1"
   },
   "publishConfig": {
     "access": "public"

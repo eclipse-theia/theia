@@ -7,14 +7,34 @@
 
 import * as http from 'http';
 import * as express from 'express';
+import * as yargs from 'yargs';
 import { inject, named, injectable } from "inversify";
 import { ILogger, ContributionProvider } from '../common';
+import { CliContribution } from './cli';
+import { Deferred } from '../common/promise-util';
 
 export const BackendApplicationContribution = Symbol("BackendApplicationContribution");
 export interface BackendApplicationContribution {
     initialize?(): void;
     configure?(app: express.Application): void;
     onStart?(server: http.Server): void;
+}
+
+@injectable()
+export class BackendApplicationCliContribution implements CliContribution {
+
+    port: number;
+    hostname: string | undefined;
+
+    configure(conf: yargs.Argv): void {
+        yargs.option('port', { alias: 'p', description: 'The port the backend server listens on.', default: 0, type: 'number' });
+        yargs.option('hostname', { description: 'The allowed hostname for connections.', type: 'string' });
+    }
+
+    setArguments(args: yargs.Arguments): void {
+        this.port = args.port;
+        this.hostname = args.hostname;
+    }
 }
 
 /**
@@ -28,6 +48,7 @@ export class BackendApplication {
     constructor(
         @inject(ContributionProvider) @named(BackendApplicationContribution)
         protected readonly contributionsProvider: ContributionProvider<BackendApplicationContribution>,
+        @inject(BackendApplicationCliContribution) protected readonly cliParams: BackendApplicationCliContribution,
         @inject(ILogger) protected readonly logger: ILogger
     ) {
         process.on('uncaughtException', error => {
@@ -64,27 +85,29 @@ export class BackendApplication {
         this.app.use(...handlers);
     }
 
-    start(port: number = 0, hostname?: string): Promise<http.Server> {
-        return new Promise(resolve => {
-            let server: http.Server;
-            server = this.app.listen(port, hostname!, () => {
-                this.logger.info(`Theia app listening on port ${server.address().port}.`);
-                resolve(server);
-            });
+    async start(aPort?: number, aHostname?: string): Promise<http.Server> {
+        const deferred = new Deferred<http.Server>();
+        let server: http.Server;
+        const port = aPort !== undefined ? aPort : this.cliParams.port;
+        const hostname = aHostname !== undefined ? aHostname : this.cliParams.hostname;
+        server = this.app.listen(port, hostname!, () => {
+            this.logger.info(`Theia app listening on http://${hostname || 'localhost'}:${server.address().port}.`);
+            deferred.resolve(server);
+        });
 
-            /* Allow any number of websocket servers.  */
-            server.setMaxListeners(0);
+        /* Allow any number of websocket servers.  */
+        server.setMaxListeners(0);
 
-            for (const contrib of this.contributionsProvider.getContributions()) {
-                if (contrib.onStart) {
-                    try {
-                        contrib.onStart(server);
-                    } catch (err) {
-                        this.logger.error(err.toString());
-                    }
+        for (const contrib of this.contributionsProvider.getContributions()) {
+            if (contrib.onStart) {
+                try {
+                    contrib.onStart(server);
+                } catch (err) {
+                    this.logger.error(err.toString());
                 }
             }
-        });
+        }
+        return deferred.promise;
     }
 
 }

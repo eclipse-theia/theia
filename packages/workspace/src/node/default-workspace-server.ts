@@ -8,25 +8,51 @@
 import * as path from 'path';
 import { injectable, inject } from "inversify";
 import { ILogger } from '@theia/core/lib/common';
-import { FileUri } from '@theia/core/lib/node';
 import { WorkspaceServer } from "../common";
+import { CliContribution } from '@theia/core/lib/node/cli';
+import * as yargs from 'yargs';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { FileUri } from '@theia/core/lib/node';
+
+@injectable()
+export class WorkspaceCliContribution implements CliContribution {
+
+    workspaceRoot = new Deferred<string | undefined>();
+
+    configure(conf: yargs.Argv): void {
+        conf.usage("$0 [workspace-directory] [options]");
+        conf.option('root-dir', {
+            description: 'DEPRECATED: Sets the workspace directory.',
+        });
+    }
+
+    setArguments(args: yargs.Arguments): void {
+        let wsPath = args._[2];
+        if (!wsPath) {
+            wsPath = args['root-dir'];
+            if (!wsPath) {
+                this.workspaceRoot.resolve();
+                return;
+            }
+        }
+        if (!path.isAbsolute(wsPath)) {
+            const cwd = process.cwd();
+            wsPath = path.join(cwd, wsPath);
+        }
+        this.workspaceRoot.resolve(wsPath);
+    }
+}
 
 @injectable()
 export class DefaultWorkspaceServer implements WorkspaceServer {
 
-    public static ROOT_DIR_OPTION = '--root-dir=';
-
     protected root: Promise<string>;
 
     constructor(
+        @inject(WorkspaceCliContribution) protected readonly cliParams: WorkspaceCliContribution,
         @inject(ILogger) protected readonly logger: ILogger
     ) {
-        const rootDir = this.getRootDir();
-        if (rootDir) {
-            this.root = Promise.resolve(FileUri.create(rootDir).toString());
-        } else {
-            this.root = Promise.reject(`The directory is unknown, please use '${DefaultWorkspaceServer.ROOT_DIR_OPTION}' option.`);
-        }
+        this.root = this.getRootURI();
     }
 
     setRoot(uri: string): Promise<void> {
@@ -38,18 +64,14 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
         return this.root;
     }
 
-    protected getRootDir(): string {
-        const arg = process.argv.filter(arg => arg.startsWith(DefaultWorkspaceServer.ROOT_DIR_OPTION))[0];
+    protected async getRootURI(): Promise<string> {
+        const arg = await this.cliParams.workspaceRoot.promise;
         const cwd = process.cwd();
         if (!arg) {
-            this.logger.info(`${DefaultWorkspaceServer.ROOT_DIR_OPTION} was not present. Falling back to current working directory: '${cwd}'.`)
-            return cwd;
+            this.logger.info(`No workspace folder provided. Falling back to current working directory: '${cwd}'.`)
+            return FileUri.create(cwd).toString();
         }
-        const rootDir = arg.substring(DefaultWorkspaceServer.ROOT_DIR_OPTION.length);
-        if (path.isAbsolute(rootDir)) {
-            return rootDir;
-        }
-        return path.join(cwd, rootDir);
+        return FileUri.create(arg).toString();
     }
 
 }

@@ -22,7 +22,7 @@ const path = require('path');
 const express = require('express');
 const { Container, injectable } = require('inversify');
 
-const { BackendApplication } = require('@theia/core/lib/node');
+const { BackendApplication, CliManager } = require('@theia/core/lib/node');
 const { backendApplicationModule } = require('@theia/core/lib/node/backend-application-module');
 const { messagingBackendModule } = require('@theia/core/lib/node/messaging/messaging-backend-module');
 const { loggerBackendModule } = require('@theia/core/lib/node/logger-backend-module');
@@ -39,6 +39,8 @@ function load(raw) {
 }
 
 function start(port, host) {
+    const cliManager = container.get(CliManager);
+    cliManager.initializeCli();
     const application = container.get(BackendApplication);
     application.use(express.static(path.join(__dirname, '../../lib'), {
         index: 'index.html'
@@ -58,13 +60,7 @@ module.exports = (port, host) => Promise.resolve()${this.compileBackendModuleImp
 
     protected compileMain(backendModules: Map<string, string>): string {
         return `// @ts-check
-
-const { port, hostname } = require('yargs').argv;
-console.info("Starting express on port '" + port + "'.")
-if (hostname) {
-    console.info("Allowed host is '" + hostname + "'.")
-}
-module.exports = require('./server')(port, hostname);`;
+module.exports = require('./server')();`;
     }
 
 }

@@ -8,9 +8,12 @@
 import { ContainerModule } from "inversify";
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common';
 import { WorkspaceServer, workspacePath } from "../common";
-import { DefaultWorkspaceServer } from "./default-workspace-server";
+import { DefaultWorkspaceServer, WorkspaceCliContribution } from './default-workspace-server';
+import { CliContribution } from '@theia/core/lib/node/cli';
 
 export default new ContainerModule(bind => {
+    bind(WorkspaceCliContribution).toSelf().inSingletonScope();
+    bind(CliContribution).toDynamicValue(ctx => ctx.container.get(WorkspaceCliContribution));
     bind(DefaultWorkspaceServer).toSelf().inSingletonScope();
     bind(WorkspaceServer).toDynamicValue(ctx =>
         ctx.container.get(DefaultWorkspaceServer)
