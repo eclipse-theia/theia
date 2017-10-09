@@ -12,6 +12,7 @@ import { inject, named, injectable } from "inversify";
 import { ILogger, ContributionProvider } from '../common';
 import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
+import { BackendProcess } from './backend-process';
 
 export const BackendApplicationContribution = Symbol("BackendApplicationContribution");
 export interface BackendApplicationContribution {
@@ -20,6 +21,9 @@ export interface BackendApplicationContribution {
     onStart?(server: http.Server): void;
 }
 
+const defaultPort = BackendProcess.electron ? 0 : 3000;
+const defaultHost = BackendProcess.electron ? 'localhost' : undefined;
+
 @injectable()
 export class BackendApplicationCliContribution implements CliContribution {
 
@@ -27,8 +31,8 @@ export class BackendApplicationCliContribution implements CliContribution {
     hostname: string | undefined;
 
     configure(conf: yargs.Argv): void {
-        yargs.option('port', { alias: 'p', description: 'The port the backend server listens on.', default: 0, type: 'number' });
-        yargs.option('hostname', { description: 'The allowed hostname for connections.', type: 'string' });
+        yargs.option('port', { alias: 'p', description: 'The port the backend server listens on.', type: 'number', default: defaultPort });
+        yargs.option('hostname', { description: 'The allowed hostname for connections.', type: 'string', default: defaultHost });
     }
 
     setArguments(args: yargs.Arguments): void {

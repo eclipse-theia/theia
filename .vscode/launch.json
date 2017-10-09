@@ -33,7 +33,8 @@
                 "${workspaceRoot}/dev-packages/*/lib/**/*.js"
             ],
             "smartStep": true,
-            "console": "integratedTerminal"
+            "internalConsoleOptions": "openOnSessionStart",
+            "outputCapture": "std"
         },
         {
             "type": "node",
@@ -58,7 +59,8 @@
                 "${workspaceRoot}/dev-packages/*/lib/**/*.js"
             ],
             "smartStep": true,
-            "console": "integratedTerminal"
+            "internalConsoleOptions": "openOnSessionStart",
+            "outputCapture": "std"
         },
         {
             "type": "node",
@@ -83,7 +85,8 @@
                 "${workspaceRoot}/dev-packages/*/lib/**/*.js"
             ],
             "smartStep": true,
-            "internalConsoleOptions": "openOnSessionStart"
+            "internalConsoleOptions": "openOnSessionStart",
+            "outputCapture": "std"
         },
         {
             "type": "node",
@@ -103,20 +106,8 @@
             },
             "sourceMaps": true,
             "smartStep": true,
-            "console": "integratedTerminal"
-        },
-        {
-            "type": "node",
-            "request": "attach",
-            "name": "Attach by Process ID",
-            "processId": "${command:PickProcess}",
-            "sourceMaps": true,
-            "outFiles": [
-                "${workspaceRoot}/packages/*/lib/**/*.js",
-                "${workspaceRoot}/dev-packages/*/lib/**/*.js"
-            ],
-            "smartStep": true,
-            "internalConsoleOptions": "openOnSessionStart"
+            "internalConsoleOptions": "openOnSessionStart",
+            "outputCapture": "std"
         },
         {
             "name": "Launch Frontend",
