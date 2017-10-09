@@ -46,8 +46,8 @@ export class ShellLayoutRestorer implements FrontendApplicationContribution {
         return property.toLowerCase().endsWith('widgets');
     }
 
-    /*
-     * turns layout data to a string reppresentation
+    /**
+     * Turns the layout data to a string representation.
      */
     protected deflate(data: LayoutData): string {
         return JSON.stringify(data, (property: string, value) => {
@@ -65,8 +65,8 @@ export class ShellLayoutRestorer implements FrontendApplicationContribution {
         });
     }
 
-    /*
-     * creates layoutdata from string representation
+    /**
+     * Creates the layout data from its string representation.
      */
     protected inflate(layoutData: string): Promise<LayoutData> {
         const pending: Promise<void>[] = [];

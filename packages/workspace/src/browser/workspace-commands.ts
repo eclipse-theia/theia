@@ -15,7 +15,7 @@ import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { UriSelection } from '@theia/filesystem/lib/common/filesystem-selection';
 import { SingleTextInputDialog, ConfirmDialog } from "@theia/core/lib/browser/dialogs";
 import { OpenerService, OpenHandler, open } from "@theia/core/lib/browser";
-import { WorkspaceServer } from '../common/workspace-protocol';
+import { WorkspaceService } from './workspace-service';
 
 export namespace WorkspaceCommands {
     export const NEW_FILE = 'file:newFile';
@@ -59,7 +59,7 @@ export class FileMenuContribution implements MenuContribution {
 export class WorkspaceCommandContribution implements CommandContribution {
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(WorkspaceServer) protected readonly workspaceServer: WorkspaceServer,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(OpenerService) protected readonly openerService: OpenerService
     ) { }
@@ -163,7 +163,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
     }
 
     protected newWorkspaceHandler(handler: UriCommandHandler): WorkspaceRootAwareCommandHandler {
-        return new WorkspaceRootAwareCommandHandler(this.workspaceServer, this.selectionService, handler);
+        return new WorkspaceRootAwareCommandHandler(this.workspaceService, this.selectionService, handler);
     }
 
     /**
@@ -262,13 +262,13 @@ export class WorkspaceRootAwareCommandHandler extends FileSystemCommandHandler {
     protected rootUri: URI;
 
     constructor(
-        protected readonly workspaceServer: WorkspaceServer,
+        protected readonly workspaceService: WorkspaceService,
         protected readonly selectionService: SelectionService,
         protected readonly handler: UriCommandHandler
     ) {
         super(selectionService, handler);
-        workspaceServer.getRoot().then(root => {
-            this.rootUri = new URI(root);
+        workspaceService.root.then(root => {
+            this.rootUri = new URI(root.uri);
         });
     }
     protected getUri(): URI | undefined {

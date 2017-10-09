@@ -38,7 +38,7 @@ export class BunyanLoggerServer implements ILoggerServer {
     /* Root logger and all child logger array.  */
     private loggers = new Map<number, bunyan>();
 
-    /* Id counter for the childs.  */
+    /* ID counter for the children.  */
     private currentId = 0;
 
     /* Logger client to send notifications to.  */

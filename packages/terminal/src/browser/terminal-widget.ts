@@ -99,7 +99,7 @@ export class TerminalWidget extends BaseWidget {
         this.terminalId = await this.shellTerminalServer.create(
             { rootURI: root.uri, cols: this.cols, rows: this.rows });
 
-        /* An error has occured in the backend.  */
+        /* An error has occurred in the backend.  */
         if (this.terminalId === -1) {
             this.terminalId = undefined;
             this.logger.error("Error creating terminal widget, see the backend error log for more information.  ");

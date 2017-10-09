@@ -7,6 +7,7 @@ import { DugiteGit } from './dugite-git';
 import { WorkingDirectoryStatus, Repository } from '../common/model';
 import { initRepository, createTestRepository } from 'dugite-extra/lib/command/test-helper';
 import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol';
+import { FileSystemNode } from '@theia/filesystem/lib/node/node-filesystem';
 
 const track = temp.track();
 
@@ -215,13 +216,13 @@ describe('git', async () => {
 
 async function createGit(fsRoot: string = ''): Promise<DugiteGit> {
     const workspace = await createWorkspace(fsRoot);
-    return new DugiteGit(workspace);
+    return new DugiteGit(workspace, new FileSystemNode());
 }
 
 async function createWorkspace(fsRoot: string): Promise<WorkspaceServer> {
     return {
 
-        async getRoot(): Promise<string> {
+        async getRoot(): Promise<string | undefined> {
             return FileUri.create(fsRoot).toString();
         },
 

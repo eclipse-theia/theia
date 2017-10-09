@@ -107,7 +107,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
             connection.onClose(() =>
                 this.onDidCloseConnectionEmitter.fire(undefined)
             );
-            this.onDidOpenConnectionEmitter.fire(undefined)
+            this.onDidOpenConnectionEmitter.fire(undefined);
         });
     }
 
@@ -119,7 +119,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      */
     listen(connection: MessageConnection) {
         if (this.target) {
-            for (let prop in this.target) {
+            for (const prop in this.target) {
                 if (typeof this.target[prop] === 'function') {
                     connection.onRequest(prop, (...args) => this.onRequest(prop, ...args));
                     connection.onNotification(prop, (...args) => this.onNotification(prop, ...args));
@@ -146,12 +146,12 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
     protected onRequest(method: string, ...args: any[]): Promise<any> {
         return new Promise<any>((resolve, reject) => {
             try {
-                let promise = this.target[method](...args) as Promise<any>
+                const promise = this.target[method](...args) as Promise<any>
                 promise
                     .catch(err => reject(err))
-                    .then(result => resolve(result))
+                    .then(result => resolve(result));
             } catch (err) {
-                reject(err)
+                reject(err);
             }
         })
     }
@@ -163,7 +163,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * methods calls.
      */
     protected onNotification(method: string, ...args: any[]): void {
-        this.target[method](...args)
+        this.target[method](...args);
     }
 
     /**
@@ -174,8 +174,8 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      * If `T` implements `JsonRpcServer` then a client is used as a target object for a remote target object.
      */
     createProxy(): JsonRpcProxy<T> {
-        const result = new Proxy<T>(this as any, this)
-        return result as any
+        const result = new Proxy<T>(this as any, this);
+        return result as any;
     }
 
     /**
@@ -212,38 +212,37 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
         if (p === 'onDidCloseConnection') {
             return this.onDidCloseConnectionEmitter.event;
         }
-        const isNotify = this.isNotification(p)
-        return (...args: any[]) => {
-            return this.connectionPromise.then(connection => {
-                return new Promise((resolve, reject) => {
+        const isNotify = this.isNotification(p);
+        return (...args: any[]) =>
+            this.connectionPromise.then(connection =>
+                new Promise((resolve, reject) => {
                     try {
                         if (isNotify) {
-                            connection.sendNotification(p.toString(), ...args)
+                            connection.sendNotification(p.toString(), ...args);
                             resolve();
                         } else {
-                            const resultPromise = connection.sendRequest(p.toString(), ...args) as Promise<any>
+                            const resultPromise = connection.sendRequest(p.toString(), ...args) as Promise<any>;
                             resultPromise
                                 .catch((err: any) => reject(err))
-                                .then((result: any) => resolve(result))
+                                .then((result: any) => resolve(result));
                         }
                     } catch (err) {
-                        reject(err)
+                        reject(err);
                     }
                 })
-            })
-        }
+            );
     }
 
     /**
      * Return whether the given property represents a notification.
      *
      * A property leads to a notification rather than a method call if its name
-     * begins with `notifiy` or `on`.
+     * begins with `notify` or `on`.
      *
      * @param p - The property being called on the proxy.
      * @return Whether `p` represents a notification.
      */
     protected isNotification(p: PropertyKey): boolean {
-        return p.toString().startsWith("notify") || p.toString().startsWith("on")
+        return p.toString().startsWith("notify") || p.toString().startsWith("on");
     }
 }
