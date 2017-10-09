@@ -14,13 +14,13 @@ export const StorageService = Symbol('IStorageService');
  */
 export interface StorageService {
 
-    /*
-     * stores the given data under the given key.
+    /**
+     * Stores the given data under the given key.
      */
     setData<T>(key: string, data: T): Promise<void>;
 
-    /*
-     * returns the data stored for the given key or the provided default value if nothing is stored for the given key.
+    /**
+     * Returns the data stored for the given key or the provided default value if nothing is stored for the given key.
      */
     getData<T>(key: string, defaultValue: T): Promise<T>;
     getData<T>(key: string): Promise<T | undefined>;

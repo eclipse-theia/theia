@@ -22,6 +22,7 @@ import { createCommit } from 'dugite-extra/lib/command/commit';
 import { stage, unstage } from 'dugite-extra/lib/command/stage';
 import { reset, GitResetMode } from 'dugite-extra/lib/command/reset';
 import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol';
+import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { getTextContents, getBlobContents } from 'dugite-extra/lib/command/show';
 import { checkoutBranch, checkoutPaths } from 'dugite-extra/lib/command/checkout';
 import { Repository, WorkingDirectoryStatus, GitFileChange, GitFileStatus } from '../common/model';
@@ -35,17 +36,18 @@ import { IStatusResult, IAheadBehind, AppFileStatus, WorkingDirectoryStatus as D
 export class DugiteGit implements Git {
 
     constructor(
-        @inject(WorkspaceServer) protected readonly workspace: WorkspaceServer) {
+        @inject(WorkspaceServer) protected readonly workspace: WorkspaceServer,
+        @inject(WorkspaceServer) protected readonly fileSystem: FileSystem) {
     }
 
     async clone(remoteUrl: string, options?: Git.Options.Clone): Promise<Repository> {
-        const localUri = options && options.localUri ? options.localUri : await this.workspace.getRoot();
+        const localUri = options && options.localUri ? options.localUri : await this.getRootUri();
         await clone(remoteUrl, this.getFsPath(localUri));
         return { localUri };
     }
 
     async repositories(): Promise<Repository[]> {
-        const workspaceRoot = await this.workspace.getRoot();
+        const workspaceRoot = await this.getRootUri();
         const workspaceRootPath = this.getFsPath(workspaceRoot);
         const repositoriesPromise = locateRepositories(workspaceRootPath);
         const containerRepositoryPromise = this.getContainerRepository(workspaceRootPath);
@@ -179,6 +181,11 @@ export class DugiteGit implements Git {
             return (await getBlobContents(repositoryPath, commitish, path)).toString();
         }
         return (await getTextContents(repositoryPath, commitish, path)).toString();
+    }
+
+    protected async getRootUri(): Promise<string> {
+        const root = await this.workspace.getRoot();
+        return root ? root : (await this.fileSystem.getRoots())[0].uri;
     }
 
     private getCommitish(options?: Git.Options.Show): string {

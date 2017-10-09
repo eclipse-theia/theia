@@ -6,13 +6,12 @@
  */
 
 import * as path from 'path';
-import { injectable, inject } from "inversify";
-import { ILogger } from '@theia/core/lib/common';
-import { WorkspaceServer } from "../common";
-import { CliContribution } from '@theia/core/lib/node/cli';
 import * as yargs from 'yargs';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { injectable, inject } from "inversify";
 import { FileUri } from '@theia/core/lib/node';
+import { CliContribution } from '@theia/core/lib/node/cli';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { WorkspaceServer } from "../common";
 
 @injectable()
 export class WorkspaceCliContribution implements CliContribution {
@@ -46,13 +45,16 @@ export class WorkspaceCliContribution implements CliContribution {
 @injectable()
 export class DefaultWorkspaceServer implements WorkspaceServer {
 
-    protected root: Promise<string>;
+    protected root: Promise<string | undefined>;
 
     constructor(
-        @inject(WorkspaceCliContribution) protected readonly cliParams: WorkspaceCliContribution,
-        @inject(ILogger) protected readonly logger: ILogger
+        @inject(WorkspaceCliContribution) protected readonly cliParams: WorkspaceCliContribution
     ) {
-        this.root = this.getRootURI();
+        this.root = this.getRootURIFromCli();
+    }
+
+    getRoot(): Promise<string | undefined> {
+        return this.root;
     }
 
     setRoot(uri: string): Promise<void> {
@@ -60,18 +62,9 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
         return Promise.resolve();
     }
 
-    getRoot(): Promise<string> {
-        return this.root;
-    }
-
-    protected async getRootURI(): Promise<string> {
+    protected async getRootURIFromCli(): Promise<string | undefined> {
         const arg = await this.cliParams.workspaceRoot.promise;
-        const cwd = process.cwd();
-        if (!arg) {
-            this.logger.info(`No workspace folder provided. Falling back to current working directory: '${cwd}'.`)
-            return FileUri.create(cwd).toString();
-        }
-        return FileUri.create(arg).toString();
+        return arg !== undefined ? FileUri.create(arg).toString() : undefined;
     }
 
 }

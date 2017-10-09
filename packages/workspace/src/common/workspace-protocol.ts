@@ -14,12 +14,12 @@ export const WorkspaceServer = Symbol('WorkspaceServer');
 export interface WorkspaceServer {
 
     /**
-     * Returns the current workspace root URI.
+     * Returns with a promise that resolves to the workspace root URI as a string. Resolves to `undefined` if the workspace root is not yet set.
      */
-    getRoot(): Promise<string>;
+    getRoot(): Promise<string | undefined>;
 
     /**
-     * Sets the desired URI as the root of the workspace.
+     * Sets the desired string representation of the URI as the workspace root.
      */
     setRoot(uri: string): Promise<void>;
 
