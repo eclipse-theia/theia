@@ -67,20 +67,14 @@ export class ApplicationPackageManager {
     }
 
     async startElectron(args: string[]): Promise<void> {
-        if (!args.some(arg => arg.startsWith('--hostname='))) {
-            args.push('--hostname=localhost');
-        }
         return this.__process.bunyan(
             this.__process.spawnBin('electron', [this.pck.frontend('electron-main.js'), ...args], {
-                stdio: [0, 'pipe', 'pipe', 'ipc']
+                stdio: [0, 'pipe', 'pipe']
             })
         );
     }
 
     async startBrowser(args: string[]): Promise<void> {
-        if (!args.some(arg => arg.startsWith('--port='))) {
-            args.push('--port=3000');
-        }
         return this.__process.bunyan(
             this.__process.fork(this.pck.backend('main.js'), args, {
                 stdio: [0, 'pipe', 'pipe', 'ipc']

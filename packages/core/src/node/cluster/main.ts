@@ -36,12 +36,7 @@ export async function start(serverPath: string): Promise<Address> {
         const master = new MasterProcess();
         return master.start().listening;
     }
-    const { port, hostname } = args;
-    console.info("Starting express on port '" + port + "'.");
-    if (hostname) {
-        console.info("Allowed host is '" + hostname + "'.");
-    }
-    const server: http.Server = await require(serverPath)(port, hostname);
+    const server: http.Server = await require(serverPath)();
     return server.address();
 }
 export default start;
