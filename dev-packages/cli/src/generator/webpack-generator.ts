@@ -31,9 +31,9 @@ const development = process.env.NODE_ENV === 'development';
 
 const monacoEditorPath = development ? '${this.resolve('monaco-editor-core', 'dev/vs')}' : '${this.resolve('monaco-editor-core', 'min/vs')}';
 const monacoLanguagesPath = '${this.resolve('monaco-languages', 'release')}';
-const monacoCssLanguagePath = development ? '${this.resolve('monaco-css', 'release/dev')}' : '${this.resolve('monaco-css', 'release/min')}';
-const monacoJsonLanguagePath = development ? '${this.resolve('monaco-json', 'release/dev')}' : '${this.resolve('monaco-json', 'release/min')}';
-const monacoHtmlLanguagePath = development ? '${this.resolve('monaco-html', 'release/dev')}' : '${this.resolve('monaco-html', 'release/min')}';${this.ifBrowser(`
+const monacoCssLanguagePath = '${this.resolve('monaco-css', 'release/min')}';
+const monacoJsonLanguagePath = '${this.resolve('monaco-json', 'release/min')}';
+const monacoHtmlLanguagePath = '${this.resolve('monaco-html', 'release/min')}';${this.ifBrowser(`
 const requirePath = '${this.resolve('requirejs', 'require.js')}';`)}
 
 module.exports = {
