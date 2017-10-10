@@ -128,7 +128,7 @@ export class KeybindingRegistry {
         if (existing) {
             const collided = existing.filter(b => b.context === binding.context);
             if (collided.length > 0) {
-                this.logger.warn(`Collided keybinding is ignored; `, binding, ' collided with ', collided.join(', '));
+                this.logger.warn(`Collided keybinding is ignored; `, JSON.stringify(binding), ' collided with ', collided.map(b => JSON.stringify(b)).join(', '));
                 return;
             }
         }

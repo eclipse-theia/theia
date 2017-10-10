@@ -152,7 +152,14 @@ export namespace Key {
     }
 
     export function getKey(arg: string | number) {
-        return typeof arg === "number" ? KEY_CODE_TO_KEY[arg] : CODE_TO_KEY[arg];
+        if (typeof arg === "number") {
+            return KEY_CODE_TO_KEY[arg] || {
+                code: 'unknown',
+                keyCode: arg
+            };
+        } else {
+            return CODE_TO_KEY[arg];
+        }
     }
 
     export function isModifier(arg: string | number) {
@@ -165,6 +172,7 @@ export namespace Key {
     export const ENTER: Key = { code: "Enter", keyCode: 13 };
     export const SPACE: Key = { code: "Space", keyCode: 32 };
     export const TAB: Key = { code: "Tab", keyCode: 9 };
+    export const BACKSPACE: Key = { code: "Backspace", keyCode: 8 };
     export const DELETE: Key = { code: "Delete", keyCode: 46 };
     export const END: Key = { code: "End", keyCode: 35 };
     export const HOME: Key = { code: "Home", keyCode: 36 };
@@ -252,6 +260,7 @@ export namespace Key {
 
     export const COMMA: Key = { code: "Comma", keyCode: 188 };
     export const PERIOD: Key = { code: "Period", keyCode: 190 };
+    export const SLASH: Key = { code: "Slash", keyCode: 191 };
     export const SEMICOLON: Key = { code: "Semicolon", keyCode: 186 };
     export const QUOTE: Key = { code: "Quote", keyCode: 222 };
     export const BRACKET_LEFT: Key = { code: "BracketLeft", keyCode: 219 };
