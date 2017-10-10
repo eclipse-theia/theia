@@ -41,6 +41,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/platform/keybinding/common/keybindingResolver',
                 'vs/platform/keybinding/common/usLayoutResolvedKeybinding',
                 'vs/base/common/keyCodes',
+                'vs/editor/common/editorCommonExtensions',
                 'vs/editor/standalone/browser/simpleServices',
                 'vs/editor/standalone/browser/standaloneServices',
                 'vs/base/parts/quickopen/common/quickOpen',
@@ -50,7 +51,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/platform/theme/common/styler',
                 'vs/base/common/platform'
             ], (basic: any, css: any, html: any, json: any, commands: any, actions: any, registry: any, resolver: any, resolvedKeybinding: any,
-                keyCodes: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
+                keyCodes: any, editorCommonExtensions: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
                 filters: any, styler: any, platform: any) => {
                     const global: any = self;
                     global.monaco.commands = commands;
@@ -61,6 +62,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                     global.monaco.filters = filters;
                     global.monaco.theme = styler;
                     global.monaco.platform = platform;
+                    global.monaco.editorCommonExtensions = editorCommonExtensions;
                     resolve();
                 });
         });

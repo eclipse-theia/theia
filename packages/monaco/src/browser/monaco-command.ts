@@ -46,23 +46,8 @@ export namespace MonacoCommands {
     export const SELECTION_ADD_PREVIOUS_OCCURRENCE = 'editor.action.addSelectionToPreviousFindMatch';
     export const SELECTION_SELECT_ALL_OCCURRENCES = 'editor.action.selectHighlights';
 
-    // If you are wondering where the accelerators come from for the menus, see the `monaco-keybinding` module.
     export const ACTIONS: MonacoCommand[] = [
-        { id: SELECTION_SELECT_ALL, label: 'Select All', delegate: 'editor.action.selectAll' },
-        { id: SELECTION_EXPAND_SELECTION, label: 'Expand Selection' },
-        { id: SELECTION_SHRINK_SELECTION, label: 'Shrink Selection' },
-
-        { id: SELECTION_COPY_LINE_UP, label: 'Copy Line Up' },
-        { id: SELECTION_COPY_LINE_DOWN, label: 'Copy Line Down' },
-        { id: SELECTION_MOVE_LINE_UP, label: 'Move Line Up' },
-        { id: SELECTION_MOVE_LINE_DOWN, label: 'Move Line Down' },
-
-        { id: SELECTION_ADD_CURSOR_ABOVE, label: 'Add Cursor Above' },
-        { id: SELECTION_ADD_CURSOR_BELOW, label: 'Add Cursor Below' },
-        { id: SELECTION_ADD_CURSOR_TO_LINE_END, label: 'Add Cursors to Line Ends' },
-        { id: SELECTION_ADD_NEXT_OCCURRENCE, label: 'Add Next Occurrence' },
-        { id: SELECTION_ADD_PREVIOUS_OCCURRENCE, label: 'Add Previous Occurrence' },
-        { id: SELECTION_SELECT_ALL_OCCURRENCES, label: 'Select All Occurrences' }
+        { id: SELECTION_SELECT_ALL, label: 'Select All', delegate: 'editor.action.selectAll' }
     ];
     export const EXCLUDE_ACTIONS = new Set([
         ...Object.keys(COMMON_ACTIONS),
@@ -70,15 +55,25 @@ export namespace MonacoCommands {
         'editor.action.clipboardCutAction',
         'editor.action.clipboardCopyAction',
         'editor.action.clipboardPasteAction',
+        'editor.action.goToImplementation',
+        'editor.action.toggleTabFocusMode',
+        'find.history.showNext',
+        'find.history.showPrevious',
     ]);
+    const iconClasses = new Map<string, string>();
     for (const menuItem of MenuRegistry.getMenuItems(MenuId.EditorContext)) {
-        const { id, title, iconClass } = menuItem.command;
+        if (menuItem.command.iconClass) {
+            iconClasses.set(menuItem.command.id, menuItem.command.iconClass);
+        }
+    }
+    for (const command of monaco.editorCommonExtensions.CommonEditorRegistry.getEditorActions()) {
+        const id = command.id;
         if (!EXCLUDE_ACTIONS.has(id)) {
-            const label = title;
+            const label = command.label;
+            const iconClass = iconClasses.get(id);
             ACTIONS.push({ id, label, iconClass });
         }
     }
-
 }
 
 @injectable()

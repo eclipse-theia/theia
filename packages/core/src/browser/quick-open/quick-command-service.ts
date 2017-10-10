@@ -24,7 +24,8 @@ export class QuickCommandService implements QuickOpenModel {
     open(): void {
         // let's compute the items here to do it in the context of the currently activeElement
         this.items = [];
-        for (const command of this.commands.commands) {
+        const filteredAndSortedCommands = this.commands.commands.filter(a => a.label).sort((a, b) => a.label!.localeCompare(b.label!));
+        for (const command of filteredAndSortedCommands) {
             if (command.label) {
                 this.items.push(new CommandQuickOpenItem(command, this.commands, this.keybindings));
             }
@@ -33,7 +34,7 @@ export class QuickCommandService implements QuickOpenModel {
         this.quickOpenService.open(this, {
             placeholder: 'Type the name of a command you want to execute',
             fuzzyMatchLabel: true,
-            fuzzySort: true
+            fuzzySort: false
         });
     }
 
@@ -74,9 +75,12 @@ export class CommandQuickOpenItem extends QuickOpenItem {
         if (mode !== QuickOpenMode.OPEN) {
             return false;
         }
-        // reset focus on the previously active element.
-        this.activeElement.focus();
-        this.commands.executeCommand(this.command.id);
+        // allow the quick open widget to close itself
+        setTimeout(() => {
+            // reset focus on the previously active element.
+            this.activeElement.focus();
+            this.commands.executeCommand(this.command.id);
+        }, 50);
         return true;
     }
 }

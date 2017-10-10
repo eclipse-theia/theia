@@ -501,3 +501,16 @@ declare module monaco.filters {
     }
     export function matchesFuzzy(word: string, wordToMatchAgainst: string, enableSeparateSubstringMatching?: boolean): IMatch[] | undefined;
 }
+
+declare module monaco.editorCommonExtensions {
+
+    export interface EditorAction {
+        id: string;
+        label: string;
+        alias: string;
+    }
+
+    export module CommonEditorRegistry {
+        export function getEditorActions(): EditorAction[];
+    }
+}
