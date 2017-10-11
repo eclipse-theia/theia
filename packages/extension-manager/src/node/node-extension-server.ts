@@ -189,11 +189,7 @@ export class NodeExtensionServer implements ExtensionServer {
 
     protected async toResolvedExtension(extensionPackage: ExtensionPackage): Promise<ResolvedExtension> {
         const resolvedRawExtension = await this.toResolvedRawExtension(extensionPackage);
-        return Object.assign(resolvedRawExtension, {
-            installed: extensionPackage.installed,
-            outdated: await extensionPackage.isOutdated(),
-            busy: this.isBusy(extensionPackage.name)
-        });
+        return this.withExtensionPackage(resolvedRawExtension, extensionPackage);
     }
 
     protected async toResolvedRawExtension(extensionPackage: ExtensionPackage): Promise<ResolvedRawExtension> {
@@ -219,10 +215,15 @@ export class NodeExtensionServer implements ExtensionServer {
 
     protected async toExtension(extensionPackage: ExtensionPackage): Promise<Extension> {
         const rawExtension = this.toRawExtension(extensionPackage);
-        return Object.assign(rawExtension, {
+        return this.withExtensionPackage(rawExtension, extensionPackage);
+    }
+
+    protected async withExtensionPackage<T extends RawExtension>(raw: T, extensionPackage: ExtensionPackage): Promise<T & Extension> {
+        return Object.assign(raw, {
             installed: extensionPackage.installed,
             outdated: await extensionPackage.isOutdated(),
-            busy: this.isBusy(extensionPackage.name)
+            busy: this.isBusy(extensionPackage.name),
+            dependent: extensionPackage.dependent
         });
     }
 

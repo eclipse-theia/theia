@@ -8,7 +8,7 @@
 import { injectable, inject } from 'inversify';
 import { h, VirtualNode } from '@phosphor/virtualdom/lib';
 import { DisposableCollection, Disposable } from '@theia/core';
-import { VirtualWidget, VirtualRenderer, OpenerService, open } from '@theia/core/lib/browser';
+import { VirtualWidget, VirtualRenderer, OpenerService, open, DISABLED_CLASS } from '@theia/core/lib/browser';
 import { Extension, ExtensionManager } from '../common';
 import { ExtensionUri } from './extension-uri';
 
@@ -120,9 +120,9 @@ export class ExtensionWidget extends VirtualWidget {
             className: 'extensionDescription noWrapInfo'
         }, extension.description);
 
-        const extensionButtonContainer = h.div({
+        const extensionButtonContainer = !extension.dependent ? h.div({
             className: 'extensionButtonContainer flexcontainer'
-        }, this.createButton(extension));
+        }, this.createButton(extension)) : 'installed via ' + extension.dependent;
 
         const leftColumn = this.renderColumn(
             'extensionInformationContainer',
@@ -130,11 +130,18 @@ export class ExtensionWidget extends VirtualWidget {
             this.renderRow(description),
             this.renderRow(author, extensionButtonContainer));
 
-        const container = h.div({
-            className: 'extensionHeaderContainer',
+        return h.div({
+            className: this.createExtensionClassName(extension),
             onclick: () => open(this.openerService, ExtensionUri.toUri(extension.name))
         }, leftColumn);
-        return container;
+    }
+
+    protected createExtensionClassName(extension: Extension): string {
+        const classNames = ['extensionHeaderContainer'];
+        if (extension.dependent) {
+            classNames.push(DISABLED_CLASS);
+        }
+        return classNames.join(' ');
     }
 
     protected renderRow(...children: h.Child[]): h.Child {

@@ -45,6 +45,11 @@ export class Extension extends RawExtension {
      * Test whether the extension should be updated.
      */
     readonly outdated: boolean;
+    /**
+     * The dependent root extension.
+     * If `undefined` then this extension is a root extension.
+     */
+    readonly dependent?: string;
 }
 
 /**
