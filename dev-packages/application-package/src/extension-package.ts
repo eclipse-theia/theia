@@ -48,6 +48,30 @@ export class ExtensionPackage {
         return !!this.raw.installed;
     }
 
+    get dependent(): string | undefined {
+        if (!this.transitive) {
+            return undefined;
+        }
+        let current = this.parent!;
+        let parent = current.parent;
+        while (parent !== undefined) {
+            current = parent;
+            parent = current.parent;
+        }
+        return current.name;
+    }
+
+    get transitive(): boolean {
+        return !!this.raw.installed && this.raw.installed.transitive;
+    }
+
+    get parent(): ExtensionPackage | undefined {
+        if (this.raw.installed) {
+            return this.raw.installed.parent;
+        }
+        return undefined;
+    }
+
     readme?: string;
     async getReadme(): Promise<string> {
         if (this.readme === undefined) {
@@ -113,6 +137,8 @@ export interface RawExtensionPackage extends PublishedNodePackage {
     installed?: {
         version: string;
         packagePath: string;
+        transitive: boolean;
+        parent?: ExtensionPackage;
     }
     theiaExtensions: Extension[];
 }

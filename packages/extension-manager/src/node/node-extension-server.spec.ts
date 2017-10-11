@@ -147,13 +147,22 @@ describe("node-extension-server", function () {
             assertExtension({
                 name: '@theia/core',
                 installed: true,
-                outdated: true
+                outdated: true,
+                dependent: undefined
+            }, extensions);
+
+            assertExtension({
+                name: '@theia/filesystem',
+                installed: true,
+                outdated: false,
+                dependent: '@theia/extension-manager'
             }, extensions);
 
             assertExtension({
                 name: '@theia/extension-manager',
                 installed: true,
-                outdated: false
+                outdated: false,
+                dependent: undefined
             }, extensions);
         });
     });
@@ -169,13 +178,15 @@ describe("node-extension-server", function () {
             assertExtension({
                 name: '@theia/core',
                 installed: true,
-                outdated: true
+                outdated: true,
+                dependent: undefined
             }, filtered);
 
             assertExtension({
                 name: '@theia/editor',
                 installed: false,
-                outdated: false
+                outdated: false,
+                dependent: undefined
             }, filtered);
         });
     });
@@ -186,12 +197,14 @@ function assertExtension(expectation: {
     name: string
     installed: boolean
     outdated: boolean
+    dependent?: string
 }, extensions: Extension[]): void {
-    const extension = extensions.find(e => e.name === expectation.name);
-    assert.deepEqual(false, !extension, JSON.stringify(extensions, undefined, 2));
+    const extension = extensions.find(e => e.name === expectation.name)!;
+    assert.ok(extension, JSON.stringify(extensions, undefined, 2));
     assert.deepEqual(expectation, Object.assign({}, {
         name: extension!.name,
-        installed: extension!.installed,
-        outdated: extension!.outdated
+        installed: extension.installed,
+        outdated: extension.outdated,
+        dependent: extension.dependent
     }), JSON.stringify(extensions, undefined, 2));
 }

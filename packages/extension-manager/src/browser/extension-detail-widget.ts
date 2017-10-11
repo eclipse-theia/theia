@@ -7,7 +7,7 @@
 
 import { Extension, ResolvedExtension } from '../common/extension-manager';
 import { Message } from '@phosphor/messaging/lib';
-import { VirtualWidget, VirtualRenderer } from '@theia/core/lib/browser';
+import { VirtualWidget, VirtualRenderer, DISABLED_CLASS } from '@theia/core/lib/browser';
 import { h } from '@phosphor/virtualdom/lib';
 
 export class ExtensionDetailWidget extends VirtualWidget {
@@ -52,18 +52,33 @@ export class ExtensionDetailWidget extends VirtualWidget {
 
         const description = h.div({ className: 'extensionDescription' }, r.description);
 
-        const buttonRow = h.div({ className: 'extensionButtonRow' },
-            VirtualRenderer.flatten(this.createButtons(this.resolvedExtension)));
+        const buttonContainer = this.createButtonContainer();
 
-        const buttonContainer = h.div({ className: 'extensionButtonContainer' }, buttonRow);
-
-        const headerContainer = h.div({ className: 'extensionHeaderContainer' },
-            titleContainer, description, buttonContainer);
+        const headerContainer = h.div({
+            className: this.createExtensionClassName()
+        }, titleContainer, description, buttonContainer);
 
         const documentation = h.div({ className: 'extensionDocumentation', id: this.id + 'Doc' }, '');
         const docContainer = h.div({ className: 'extensionDocContainer flexcontainer' }, documentation);
 
         return [headerContainer, docContainer];
+    }
+
+    protected createExtensionClassName(): string {
+        const classNames = ['extensionHeaderContainer'];
+        if (this.resolvedExtension.dependent) {
+            classNames.push(DISABLED_CLASS);
+        }
+        return classNames.join(' ');
+    }
+
+    protected createButtonContainer(): h.Child {
+        if (this.resolvedExtension.dependent) {
+            return 'installed via ' + this.resolvedExtension.dependent;
+        }
+        const buttonRow = h.div({ className: 'extensionButtonRow' },
+            VirtualRenderer.flatten(this.createButtons(this.resolvedExtension)));
+        return h.div({ className: 'extensionButtonContainer' }, buttonRow);
     }
 
     protected createButtons(extension: Extension): h.Child[] {
