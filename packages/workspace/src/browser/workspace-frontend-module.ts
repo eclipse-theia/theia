@@ -16,6 +16,8 @@ import { WorkspaceCommandContribution, FileMenuContribution } from './workspace-
 import { WorkspaceStorageService } from './workspace-storage-service';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 
+import '../../src/browser/style/index.css';
+
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bind(WorkspaceService).toSelf().inSingletonScope();
     bind(WorkspaceServer).toDynamicValue(ctx => {

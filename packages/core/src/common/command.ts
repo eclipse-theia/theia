@@ -103,7 +103,8 @@ export class CommandRegistry implements CommandService {
         if (handler) {
             return Promise.resolve(handler.execute(...args));
         }
-        return Promise.reject(`command '${command}' cannot be executed`);
+        const argsMessage = args && args.length > 0 ? ` (args: ${JSON.stringify(args)})` : '';
+        return Promise.reject(`The command '${command}' cannot be executed. There are no active handlers available for the command.${argsMessage}`);
     }
 
     getVisibleHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
