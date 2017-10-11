@@ -8,8 +8,8 @@
 import * as humane from 'humane-js';
 import { injectable } from "inversify";
 import 'humane-js/themes/jackedup.css';
-import { FrontendApplication, FrontendApplicationContribution } from './frontend-application';
 import { MessageClient, MessageType } from '../common/message-service-protocol';
+import { FrontendApplication, FrontendApplicationContribution } from './frontend-application';
 
 export const MESSAGE_CLASS = 'theia-Message';
 export const MESSAGE_ITEM_CLASS = 'theia-MessageItem';
@@ -21,7 +21,12 @@ export class HumaneMessageClient implements MessageClient, FrontendApplicationCo
         // no-op
     }
 
-    showMessage(type: MessageType, message: string, ...actions: string[]): Promise<string | undefined> {
+    async showMessage(type: MessageType, message: string, ...actions: string[]): Promise<string | undefined> {
+        await this.hide();
+        return this.show(type, message, ...actions);
+    }
+
+    protected show(type: MessageType, message: string, ...actions: string[]): Promise<string | undefined> {
         // TODO style actions
         let html = `<div class='${MESSAGE_CLASS}'>${message}</div>`;
         if (!!actions && actions.length > 0) {
@@ -39,6 +44,10 @@ export class HumaneMessageClient implements MessageClient, FrontendApplicationCo
                 resolve(undefined);
             });
         });
+    }
+
+    protected hide(): Promise<void> {
+        return new Promise(resolve => humane.remove(resolve));
     }
 
     protected notificationClass(type: MessageType): string {

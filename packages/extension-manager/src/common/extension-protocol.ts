@@ -135,9 +135,19 @@ export interface ExtensionServer extends JsonRpcServer<ExtensionClient> {
 }
 
 /**
+ * The installation param.
+ */
+export interface InstallationParam {
+    /**
+     * Test whether this installation is reverting to the backup.
+     */
+    readonly reverting: boolean;
+}
+
+/**
  * The installation process result.
  */
-export interface DidStopInstallationParam {
+export interface InstallationResult extends InstallationParam {
     /**
      * Test whether the installation process is failed.
      */
@@ -160,9 +170,9 @@ export interface ExtensionClient {
     /**
      * Notiy when the installation process is going to be started.
      */
-    onWillStartInstallation(): void;
+    onWillStartInstallation(param: InstallationParam): void;
     /**
      * Notiy when the installation process has been finished.
      */
-    onDidStopInstallation(param: DidStopInstallationParam): void;
+    onDidStopInstallation(param: InstallationResult): void;
 }

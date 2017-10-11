@@ -9,7 +9,7 @@ import * as path from 'path';
 import * as temp from 'temp';
 import * as fs from 'fs-extra';
 import * as assert from 'assert';
-import { DidStopInstallationParam } from "../common/extension-protocol";
+import { InstallationParam, InstallationResult } from "../common/extension-protocol";
 import extensionNodeTestContainer from './test/extension-node-test-container';
 import { ApplicationProject } from './application-project';
 
@@ -24,8 +24,8 @@ export async function assertInstallation(expectation: {
     installed?: string[],
     uninstalled?: string[]
 }): Promise<void> {
-    const waitForWillInstall = new Promise<void>(resolve => appProject.onWillInstall(resolve));
-    const waitForDidInstall = new Promise<DidStopInstallationParam>(resolve => appProject.onDidInstall(resolve));
+    const waitForWillInstall = new Promise<InstallationParam>(resolve => appProject.onWillInstall(resolve));
+    const waitForDidInstall = new Promise<InstallationResult>(resolve => appProject.onDidInstall(resolve));
 
     await waitForWillInstall;
     const result = await waitForDidInstall;

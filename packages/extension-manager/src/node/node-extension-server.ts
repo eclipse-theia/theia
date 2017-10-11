@@ -31,12 +31,8 @@ export class NodeExtensionServer implements ExtensionServer {
         @inject(ApplicationProject) protected readonly project: ApplicationProject,
         @inject(ExtensionKeywords) protected readonly extensionKeywords: ExtensionKeywords
     ) {
-        this.toDispose.push(project.onWillInstall(() =>
-            this.notification('onWillStartInstallation')()
-        ));
-        this.toDispose.push(project.onDidInstall(params =>
-            this.notification('onDidStopInstallation')(params)
-        ));
+        this.toDispose.push(project.onWillInstall(param => this.notification('onWillStartInstallation')(param)));
+        this.toDispose.push(project.onDidInstall(result => this.notification('onDidStopInstallation')(result)));
     }
 
     dispose(): void {
@@ -48,11 +44,7 @@ export class NodeExtensionServer implements ExtensionServer {
     }
 
     protected notification<T extends keyof ExtensionClient>(notification: T): ExtensionClient[T] {
-        if (this.client) {
-            return this.client[notification];
-        }
-        return () => {
-        };
+        return this.client ? this.client[notification] : () => { };
     }
 
     async search(param: SearchParam): Promise<RawExtension[]> {
