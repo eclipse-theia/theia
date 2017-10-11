@@ -8,10 +8,13 @@
 import { injectable, inject } from "inversify";
 import { Message } from "@phosphor/messaging";
 import URI from "@theia/core/lib/common/uri";
-import { ContextMenuRenderer, TreeProps } from "@theia/core/lib/browser";
+import { CommandService } from '@theia/core/lib/common/command';
+import { ContextMenuRenderer, TreeProps, ITreeModel } from "@theia/core/lib/browser";
 import { FileTreeWidget } from "@theia/filesystem/lib/browser";
 import { FileNavigatorModel } from "./navigator-model";
 import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
+import { h } from "@phosphor/virtualdom/lib";
+import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-frontend-contribution';
 
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
 export const DIR_NODE_CLASS = 'theia-DirNode';
@@ -28,12 +31,17 @@ export class FileNavigatorWidget extends FileTreeWidget {
         @inject(TreeProps) readonly props: TreeProps,
         @inject(FileNavigatorModel) readonly model: FileNavigatorModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
-        @inject(FileIconProvider) iconProvider: FileIconProvider
+        @inject(FileIconProvider) iconProvider: FileIconProvider,
+        @inject(CommandService) protected readonly commandService: CommandService
     ) {
         super(props, model, contextMenuRenderer, iconProvider);
         this.id = FILE_NAVIGATOR_ID;
         this.title.label = LABEL;
         this.addClass(CLASS);
+    }
+
+    protected renderTree(model: ITreeModel): h.Child {
+        return super.renderTree(model) || this.renderOpenWorkspaceDiv();
     }
 
     protected onAfterAttach(msg: Message): void {
@@ -61,6 +69,20 @@ export class FileNavigatorWidget extends FileTreeWidget {
         if (this.model.copy(uri)) {
             event.preventDefault();
         }
+    }
+
+    /**
+     * Instead of rendering the file resources form the workspace, we render a placeholder
+     * button when the workspace root is not yet set.
+     */
+    protected renderOpenWorkspaceDiv(): h.Child {
+        const button = h.button({
+            className: 'open-workspace-button',
+            title: 'Select a directory as your workspace root',
+            onclick: e => this.commandService.executeCommand(WorkspaceCommands.OPEN.id)
+        }, 'Open Workspace');
+        const buttonContainer = h.div({ className: 'open-workspace-button-container' }, button);
+        return h.div({ className: 'theia-workspace-container' }, 'You have not yet opened a workspace.', buttonContainer);
     }
 
 }
