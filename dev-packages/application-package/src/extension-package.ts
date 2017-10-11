@@ -80,6 +80,10 @@ export class ExtensionPackage {
         return this.readme;
     }
     protected async resolveReadme(): Promise<string> {
+        const raw = await RawExtensionPackage.view(this.registry, this.name, this.version);
+        if (raw && raw.readme) {
+            return raw.readme;
+        }
         if (this.raw.installed) {
             const readmePath = paths.resolve(this.raw.installed.packagePath, '..', 'README.md');
             if (await fs.pathExists(readmePath)) {
@@ -87,8 +91,7 @@ export class ExtensionPackage {
             }
             return '';
         }
-        const raw = await RawExtensionPackage.view(this.registry, this.name, this.version);
-        return raw ? raw.readme || '' : '';
+        return '';
     }
 
     latestVersion?: string;
