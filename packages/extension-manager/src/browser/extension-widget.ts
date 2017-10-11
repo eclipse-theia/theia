@@ -15,7 +15,7 @@ import { ExtensionUri } from './extension-uri';
 @injectable()
 export class ExtensionWidget extends VirtualWidget {
 
-    protected extensionStore: Extension[] = [];
+    protected extensions: Extension[] = [];
     protected readonly updateTimeAfterTyping = 50;
     protected readonly toDisposeOnTypeSearchQuery = new DisposableCollection();
     protected readonly toDisposedOnFetch = new DisposableCollection();
@@ -31,6 +31,7 @@ export class ExtensionWidget extends VirtualWidget {
         this.addClass('theia-extensions');
 
         this.fetchExtensions();
+        extensionManager.onDidChange(() => this.fetchExtensions());
     }
 
     protected onActivateRequest() {
@@ -41,16 +42,11 @@ export class ExtensionWidget extends VirtualWidget {
     protected fetchExtensions() {
         this.toDisposedOnFetch.dispose();
         const htmlInputElement = (document.getElementById('extensionSearchField') as HTMLInputElement);
-        const searchQuery = htmlInputElement ? htmlInputElement.value : '';
+        const searchQuery = htmlInputElement ? htmlInputElement.value.trim() : '';
         this.extensionManager.list({
             query: searchQuery
         }).then(extensions => {
-            this.extensionStore = extensions;
-            extensions.forEach(ext => {
-                this.toDisposedOnFetch.push(ext.onDidChange(() => {
-                    this.update();
-                }));
-            });
+            this.extensions = searchQuery ? extensions : extensions.filter(e => !e.dependent);
             this.ready = true;
             this.update();
         });
@@ -92,7 +88,7 @@ export class ExtensionWidget extends VirtualWidget {
 
     protected renderExtensionList(): VirtualNode {
         const theList: h.Child[] = [];
-        this.extensionStore.forEach(extension => {
+        this.extensions.forEach(extension => {
             const container = this.renderExtension(extension);
             theList.push(container);
         });
