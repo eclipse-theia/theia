@@ -7,7 +7,7 @@
 
 import { ContainerModule, decorate, injectable } from "inversify";
 import { MenuContribution, CommandContribution, KeybindingContribution } from "@theia/core/lib/common";
-import { QuickOpenService } from "@theia/core/lib/browser";
+import { QuickOpenService, FrontendApplicationContribution } from "@theia/core/lib/browser";
 import { Languages, Workspace } from "@theia/languages/lib/common";
 import { TextEditorProvider } from "@theia/editor/lib/browser";
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
@@ -20,6 +20,7 @@ import { MonacoWorkspace } from "./monaco-workspace";
 import { MonacoEditorService } from "./monaco-editor-service";
 import { MonacoTextModelService } from "./monaco-text-model-service";
 import { MonacoContextMenuService } from "./monaco-context-menu";
+import { MonacoOutlineContribution } from './monaco-outline-contribution';
 import { MonacoCommandService, MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
@@ -28,6 +29,8 @@ decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
 
 import '../../src/browser/style/index.css';
+import '../../src/browser/style/symbol-sprite.svg';
+import '../../src/browser/style/symbol-icons.css';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoToProtocolConverter).toSelf().inSingletonScope();
@@ -48,6 +51,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(TextEditorProvider).toProvider(context =>
         uri => context.container.get(MonacoEditorProvider).get(uri)
     );
+
+    bind(MonacoOutlineContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(MonacoOutlineContribution));
 
     bind(MonacoCommandRegistry).toSelf().inSingletonScope();
     bind(CommandContribution).to(MonacoEditorCommandHandlers).inSingletonScope();

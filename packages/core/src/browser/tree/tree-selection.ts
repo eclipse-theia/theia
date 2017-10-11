@@ -70,9 +70,7 @@ export class TreeSelectionService implements ITreeSelectionService {
     protected _selectedNode: ISelectableTreeNode | undefined;
     protected readonly onSelectionChangedEmitter = new Emitter<ISelectableTreeNode | undefined>();
 
-    constructor( @inject(ITree) protected readonly tree: ITree) {
-        tree.onChanged(() => this.selectNode(this._selectedNode));
-    }
+    constructor( @inject(ITree) protected readonly tree: ITree) { }
 
     dispose() {
         this.onSelectionChangedEmitter.dispose();

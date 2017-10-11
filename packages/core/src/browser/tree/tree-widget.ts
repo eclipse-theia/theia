@@ -1,9 +1,9 @@
 /*
- * Copyright (C) 2017 TypeFox and others.
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+* Copyright (C) 2017 TypeFox and others.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+*/
 
 import { injectable, inject } from "inversify";
 import { Message } from "@phosphor/messaging";
@@ -11,6 +11,7 @@ import { ElementExt } from "@phosphor/domutils";
 import { h, ElementAttrs, ElementInlineStyle } from "@phosphor/virtualdom";
 import { Disposable, Key } from "../../common";
 import { ContextMenuRenderer } from "../context-menu-renderer";
+import { StatefulWidget } from '../shell-layout-restorer';
 import { VirtualWidget, VirtualRenderer, SELECTED_CLASS, COLLAPSED_CLASS } from "../widgets";
 import { ITreeNode, ICompositeTreeNode } from "./tree";
 import { ITreeModel } from "./tree-model";
@@ -56,7 +57,7 @@ export const defaultTreeProps: TreeProps = {
 }
 
 @injectable()
-export class TreeWidget extends VirtualWidget {
+export class TreeWidget extends VirtualWidget implements StatefulWidget {
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -291,6 +292,43 @@ export class TreeWidget extends VirtualWidget {
         }
         event.stopPropagation();
         event.preventDefault();
+    }
+
+    protected deflateForStorage(node: ITreeNode): object {
+        const copy = Object.assign({}, node) as any;
+        if (copy.parent) {
+            delete copy.parent;
+        }
+        if (ICompositeTreeNode.is(node)) {
+            copy.children = [];
+            for (const child of node.children) {
+                copy.children.push(this.deflateForStorage(child));
+            }
+        }
+        return copy;
+    }
+
+    // tslint:disable-next-line:no-any
+    protected inflateFromStorage(node: any, parent?: ITreeNode): ITreeNode {
+        if (node.selected) {
+            node.selected = false;
+        }
+        if (parent) {
+            node.parent = parent;
+        }
+        if (Array.isArray(node.children)) {
+            for (const child of node.children as ITreeNode[]) {
+                this.inflateFromStorage(child, node);
+            }
+        }
+        return node;
+    }
+
+    storeState(): object {
+        return this.deflateForStorage(this.model.root!);
+    }
+    restoreState(oldState: object): void {
+        this.model.root = this.inflateFromStorage(oldState);
     }
 
 }

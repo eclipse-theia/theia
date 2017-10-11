@@ -1,0 +1,47 @@
+.symbol-icon {
+    background-image: url(symbol-sprite.svg);
+    background-repeat: no-repeat;
+    overflow: hidden;
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.symbol-icon.method {
+    background-position: 0 calc(-4px + var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.constant,
+.symbol-icon.variable {
+    background-position: -22px calc(-4px + var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.class {
+    background-position: -43px calc(-3px + var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.interface {
+    background-position: -63px calc(-4px + var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.module {
+    background-position: -82px calc(-4px + var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.property {
+    background-position: -102px calc(-3px + var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.enum {
+    background-position: -122px calc(-3px + var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.rule {
+    background-position: -242px calc(-4px + var(--theia-sprite-y-offset));
+}
+
+.symbol-icon.file {
+    background-position: -262px calc(-4px + var(--theia-sprite-y-offset));
+}
