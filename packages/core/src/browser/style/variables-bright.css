@@ -27,7 +27,7 @@ all of MD as it is not optimized for dense, information rich UIs.
   The following variables, specify the visual styling of borders in Theia.
    */
 
-  --theia-border-width: 1px;
+   --theia-border-width: 1px;
   --theia-border-color0: var(--md-grey-700);
   --theia-border-color1: var(--md-grey-500);
   --theia-border-color2: var(--md-grey-300);
@@ -99,7 +99,7 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-layout-color0: white;
   --theia-layout-color1: white;
   --theia-layout-color2: var(--md-grey-200);
-  --theia-layout-color3: var(--md-grey-400);
+  --theia-layout-color3: var(--md-grey-400); 
 
   /* Brand/accent */
 
@@ -141,5 +141,6 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-disabled-color3: var(--md-blue-grey-100);
 
   /* icons */
-  --theia-icon-close: url(../icons/close-bright.svg)
+  --theia-icon-close: url(../icons/close-bright.svg);
+  --theia-sprite-y-offset: 0px;
 }

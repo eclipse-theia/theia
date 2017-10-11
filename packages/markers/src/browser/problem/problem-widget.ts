@@ -15,6 +15,8 @@ import { h } from "@phosphor/virtualdom/lib";
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
 import { Message } from '@phosphor/messaging';
 import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
+import URI from '@theia/core/lib/common/uri';
+import { UriSelection } from '@theia/filesystem/lib/common';
 
 @injectable()
 export class ProblemWidget extends TreeWidget {
@@ -35,6 +37,24 @@ export class ProblemWidget extends TreeWidget {
         this.addClass('theia-marker-container');
 
         this.addClipboardListener(this.node, 'copy', e => this.handleCopy(e));
+    }
+
+    protected deflateForStorage(node: ITreeNode): object {
+        const result = super.deflateForStorage(node) as any;
+        if (UriSelection.is(node) && node.uri) {
+            result.uri = node.uri.toString();
+        }
+        return result;
+    }
+
+    protected inflateFromStorage(node: any, parent?: ITreeNode): ITreeNode {
+        if (node.uri) {
+            node.uri = new URI(node.uri);
+        }
+        if (node.selected) {
+            node.selected = false;
+        }
+        return super.inflateFromStorage(node);
     }
 
     protected handleCopy(event: ClipboardEvent): void {

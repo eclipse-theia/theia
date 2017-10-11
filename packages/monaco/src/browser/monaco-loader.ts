@@ -49,10 +49,12 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/base/parts/quickopen/browser/quickOpenModel',
                 'vs/base/common/filters',
                 'vs/platform/theme/common/styler',
-                'vs/base/common/platform'
+                'vs/base/common/platform',
+                'vs/editor/common/modes',
+                'vs/base/common/cancellation'
             ], (basic: any, css: any, html: any, json: any, commands: any, actions: any, registry: any, resolver: any, resolvedKeybinding: any,
                 keyCodes: any, editorCommonExtensions: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
-                filters: any, styler: any, platform: any) => {
+                filters: any, styler: any, platform: any, modes: any, cancellation: any) => {
                     const global: any = self;
                     global.monaco.commands = commands;
                     global.monaco.actions = actions;
@@ -63,6 +65,8 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                     global.monaco.theme = styler;
                     global.monaco.platform = platform;
                     global.monaco.editorCommonExtensions = editorCommonExtensions;
+                    global.monaco.modes = modes;
+                    global.monaco.cancellation = cancellation;
                     resolve();
                 });
         });

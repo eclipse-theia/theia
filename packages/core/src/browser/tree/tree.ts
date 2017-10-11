@@ -208,10 +208,11 @@ export class Tree implements ITree {
         if (ICompositeTreeNode.is(parent)) {
             this.resolveChildren(parent).then(children => this.setChildren(parent, children));
         }
+        this.fireChanged();
     }
 
     protected resolveChildren(parent: ICompositeTreeNode): Promise<ITreeNode[]> {
-        return Promise.resolve([]);
+        return Promise.resolve(Array.from(parent.children));
     }
 
     protected setChildren(parent: ICompositeTreeNode, children: ITreeNode[]): void {

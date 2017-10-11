@@ -21,80 +21,80 @@ all of MD as it is not optimized for dense, information rich UIs.
 
 
 :root {
-
-  /* Borders
-
-  The following variables, specify the visual styling of borders in Theia.
-   */
-
-  --theia-border-width: 1px;
-  --theia-border-color0: var(--md-grey-900);
-  --theia-border-color1: var(--md-grey-700);
-  --theia-border-color2: var(--md-grey-500);
-  --theia-border-color3: var(--md-grey-300);
-
-  /* UI Fonts
-
-  The UI font CSS variables are used for the typography all of the Theia
-  user interface elements that are not directly user generated content.
-  */
-
-  --theia-ui-font-scale-factor: 1.2;
-  --theia-ui-font-size0: calc(var(--theia-ui-font-size1)/var(--theia-ui-font-scale-factor));
-  --theia-ui-font-size1: 13px; /* Base font size */
-  --theia-ui-font-size2: calc(var(--theia-ui-font-size1)*var(--theia-ui-font-scale-factor));
-  --theia-ui-font-size3: calc(var(--theia-ui-font-size2)*var(--theia-ui-font-scale-factor));
-  --theia-ui-icon-font-size: 14px; /* Ensures px perfect FontAwesome icons */
-  --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-
-  /* Use these font colors against the corresponding main layout colors.
-     In a light theme, these go from dark to light.
-  */
-
-  --theia-ui-font-color0: #D4D4D4;
-  --theia-ui-font-color1: #D4D4D4;
-  --theia-ui-font-color2: rgba(212, 212, 212, 0.4);
-  --theia-ui-font-color3: #D4D4D4;
-
-  /* Use these against the brand/accent/warn/error colors.
-     These will typically go from light to darker, in both a dark and light theme
-   */
-
-  --theia-inverse-ui-font-color0: rgba(0,0,0,1);
-  --theia-inverse-ui-font-color1: rgba(0,0,0,1.0);
-  --theia-inverse-ui-font-color2: rgba(0,0,0,0.7);
-  --theia-inverse-ui-font-color3: rgba(0,0,0,0.5);
-
-  /* Content Fonts
-
-  Content font variables are used for typography of user generated content.
-  */
-
-  --theia-content-font-size: 13px;
-  --theia-content-line-height: 1.5;
-  --theia-content-font-color0: white;
-  --theia-content-font-color1: white;
-  --theia-content-font-color2: var(--md-grey-500);
-  --theia-content-font-color3: var(--md-grey-700);
-
-  --theia-ui-font-scale-factor: 1.2;
-  --theia-ui-font-size0: calc(var(--theia-ui-font-size1)/var(--theia-ui-font-scale-factor));
-  --theia-ui-font-size1: 13px; /* Base font size */
-  --theia-ui-font-size2: calc(var(--theia-ui-font-size1)*var(--theia-ui-font-scale-factor));
-  --theia-ui-font-size3: calc(var(--theia-ui-font-size2)*var(--theia-ui-font-scale-factor));
-
-  --theia-code-font-size: 13px;
-  --theia-code-line-height: 17px;
-  --theia-code-padding: 5px;
-  --theia-code-font-family: monospace;
-  --theia-ui-padding: 6px;
-
-
-  /* Layout
-
-  The following are the main layout colors use in Theia. In a light
-  theme these would go from light to dark.
-  */
+  
+    /* Borders
+  
+    The following variables, specify the visual styling of borders in Theia.
+     */
+  
+    --theia-border-width: 1px;
+    --theia-border-color0: var(--md-grey-900);
+    --theia-border-color1: var(--md-grey-700);
+    --theia-border-color2: var(--md-grey-500);
+    --theia-border-color3: var(--md-grey-300);
+  
+    /* UI Fonts
+  
+    The UI font CSS variables are used for the typography all of the Theia
+    user interface elements that are not directly user generated content.
+    */
+  
+    --theia-ui-font-scale-factor: 1.2;
+    --theia-ui-font-size0: calc(var(--theia-ui-font-size1)/var(--theia-ui-font-scale-factor));
+    --theia-ui-font-size1: 13px; /* Base font size */
+    --theia-ui-font-size2: calc(var(--theia-ui-font-size1)*var(--theia-ui-font-scale-factor));
+    --theia-ui-font-size3: calc(var(--theia-ui-font-size2)*var(--theia-ui-font-scale-factor));
+    --theia-ui-icon-font-size: 14px; /* Ensures px perfect FontAwesome icons */
+    --theia-ui-font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  
+    /* Use these font colors against the corresponding main layout colors.
+       In a light theme, these go from dark to light.
+    */
+  
+    --theia-ui-font-color0: #D4D4D4;
+    --theia-ui-font-color1: #D4D4D4;
+    --theia-ui-font-color2: rgba(212, 212, 212, 0.4);
+    --theia-ui-font-color3: #D4D4D4;
+  
+    /* Use these against the brand/accent/warn/error colors.
+       These will typically go from light to darker, in both a dark and light theme
+     */
+  
+    --theia-inverse-ui-font-color0: rgba(0,0,0,1);
+    --theia-inverse-ui-font-color1: rgba(0,0,0,1.0);
+    --theia-inverse-ui-font-color2: rgba(0,0,0,0.7);
+    --theia-inverse-ui-font-color3: rgba(0,0,0,0.5);
+  
+    /* Content Fonts
+  
+    Content font variables are used for typography of user generated content.
+    */
+  
+    --theia-content-font-size: 13px;
+    --theia-content-line-height: 1.5;
+    --theia-content-font-color0: white;
+    --theia-content-font-color1: white;
+    --theia-content-font-color2: var(--md-grey-500);
+    --theia-content-font-color3: var(--md-grey-700);
+  
+    --theia-ui-font-scale-factor: 1.2;
+    --theia-ui-font-size0: calc(var(--theia-ui-font-size1)/var(--theia-ui-font-scale-factor));
+    --theia-ui-font-size1: 13px; /* Base font size */
+    --theia-ui-font-size2: calc(var(--theia-ui-font-size1)*var(--theia-ui-font-scale-factor));
+    --theia-ui-font-size3: calc(var(--theia-ui-font-size2)*var(--theia-ui-font-scale-factor));
+  
+    --theia-code-font-size: 13px;
+    --theia-code-line-height: 17px;
+    --theia-code-padding: 5px;
+    --theia-code-font-family: monospace;
+    --theia-ui-padding: 6px;
+  
+  
+    /* Layout
+  
+    The following are the main layout colors use in Theia. In a light
+    theme these would go from light to dark.
+    */
 
   --theia-layout-color0: #2E2E2E;
   --theia-layout-color1: #1E1E1E;
@@ -141,5 +141,6 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-disabled-color3: var(--md-blue-grey-100);
 
   /* icons */
-  --theia-icon-close: url(../icons/close-dark.svg)
+  --theia-icon-close: url(../icons/close-dark.svg);
+  --theia-sprite-y-offset: -20px;
 }
