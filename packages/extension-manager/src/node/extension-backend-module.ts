@@ -8,7 +8,7 @@
 import { ContainerModule, interfaces } from "inversify";
 import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core';
 import { CliContribution } from '@theia/core/lib/node';
-import { ExtensionServer, ExtensionClient, extensionPath, ExtensionChange, DidStopInstallationParam } from "../common/extension-protocol";
+import { ExtensionServer, ExtensionClient, extensionPath } from "../common/extension-protocol";
 import { ExtensionKeywords, NodeExtensionServer } from './node-extension-server';
 import { ApplicationProject, ApplicationProjectOptions } from './application-project';
 import { NpmClient, NpmClientOptions } from './npm-client';
@@ -44,25 +44,11 @@ export default new ContainerModule(bind => {
     bindNodeExtensionServer(bind);
 
     const clients = new Set<ExtensionClient>();
-
     const dispatchingClient: ExtensionClient = {
-        onDidChange: (extensionChange: ExtensionChange) => {
-            clients.forEach(client => {
-                client.onDidChange(extensionChange);
-            });
-        },
-        onDidStopInstallation: (params: DidStopInstallationParam) => {
-            clients.forEach(client => {
-                client.onDidStopInstallation(params);
-            });
-        },
-        onWillStartInstallation: () => {
-            clients.forEach(client => {
-                client.onWillStartInstallation();
-            });
-        }
+        onDidChange: change => clients.forEach(client => client.onDidChange(change)),
+        onDidStopInstallation: result => clients.forEach(client => client.onDidStopInstallation(result)),
+        onWillStartInstallation: param => clients.forEach(client => client.onWillStartInstallation(param))
     };
-
     bind(ConnectionHandler).toDynamicValue(ctx => {
         const server = ctx.container.get<ExtensionServer>(ExtensionServer);
         server.setClient(dispatchingClient);
@@ -73,6 +59,5 @@ export default new ContainerModule(bind => {
             });
             return server;
         });
-    }
-    ).inSingletonScope();
+    }).inSingletonScope();
 });

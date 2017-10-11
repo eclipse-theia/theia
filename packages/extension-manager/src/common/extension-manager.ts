@@ -92,8 +92,8 @@ export type ResolvedExtension = Extension & protocol.ResolvedExtension;
 export class ExtensionManager implements Disposable {
 
     protected readonly onChangedEmitter = new Emitter<protocol.ExtensionChange>();
-    protected readonly onWillStartInstallationEmitter = new Emitter<void>();
-    protected readonly onDidStopInstallationEmitter = new Emitter<protocol.DidStopInstallationParam>();
+    protected readonly onWillStartInstallationEmitter = new Emitter<protocol.InstallationParam>();
+    protected readonly onDidStopInstallationEmitter = new Emitter<protocol.InstallationResult>();
     protected readonly toDispose = new DisposableCollection();
 
     constructor(
@@ -105,8 +105,8 @@ export class ExtensionManager implements Disposable {
         this.toDispose.push(this.onDidStopInstallationEmitter);
         this.server.setClient({
             onDidChange: change => this.fireDidChange(change),
-            onWillStartInstallation: () => this.fireWillStartInstallation(),
-            onDidStopInstallation: params => this.fireDidStopInstallation(params),
+            onWillStartInstallation: param => this.fireWillStartInstallation(param),
+            onDidStopInstallation: result => this.fireDidStopInstallation(result),
         });
     }
 
@@ -147,26 +147,26 @@ export class ExtensionManager implements Disposable {
         this.onChangedEmitter.fire(change);
     }
 
-    /**
+    /**InsrallationResultInsrallationResult
      * Notiy when the installation process is going to be started.
      */
-    get onWillStartInstallation(): Event<void> {
+    get onWillStartInstallation(): Event<protocol.InstallationParam> {
         return this.onWillStartInstallationEmitter.event;
     }
 
-    protected fireWillStartInstallation(): void {
-        this.onWillStartInstallationEmitter.fire(undefined);
+    protected fireWillStartInstallation(param: protocol.InstallationParam): void {
+        this.onWillStartInstallationEmitter.fire(param);
     }
 
     /**
      * Notiy when the installation process has been finished.
      */
-    get onDidStopInstallation(): Event<protocol.DidStopInstallationParam> {
+    get onDidStopInstallation(): Event<protocol.InstallationResult> {
         return this.onDidStopInstallationEmitter.event;
     }
 
-    protected fireDidStopInstallation(params: protocol.DidStopInstallationParam): void {
-        this.onDidStopInstallationEmitter.fire(params);
+    protected fireDidStopInstallation(result: protocol.InstallationResult): void {
+        this.onDidStopInstallationEmitter.fire(result);
     }
 
 

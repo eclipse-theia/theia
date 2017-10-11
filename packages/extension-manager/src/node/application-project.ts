@@ -16,7 +16,7 @@ import {
 } from "@theia/core";
 import { FileUri, ServerProcess } from "@theia/core/lib/node";
 import { FileSystemWatcherServer, DidFilesChangedParams } from "@theia/filesystem/lib/common/filesystem-watcher-protocol";
-import { DidStopInstallationParam } from '../common/extension-protocol';
+import { InstallationResult, InstallationParam } from '../common/extension-protocol';
 import { NpmClient } from './npm-client';
 
 @injectable()
@@ -30,8 +30,8 @@ export class ApplicationProject implements Disposable {
     protected readonly packageUri: string;
     protected readonly toDispose = new DisposableCollection();
     protected readonly onChangePackageEmitter = new Emitter<void>();
-    protected readonly onWillInstallEmitter = new Emitter<void>();
-    protected readonly onDidInstallEmitter = new Emitter<DidStopInstallationParam>();
+    protected readonly onWillInstallEmitter = new Emitter<InstallationParam>();
+    protected readonly onDidInstallEmitter = new Emitter<InstallationResult>();
 
     constructor(
         @inject(ApplicationProjectOptions) readonly options: ApplicationProjectOptions,
@@ -83,18 +83,18 @@ export class ApplicationProject implements Disposable {
         }, this.options));
     }
 
-    get onWillInstall(): Event<void> {
+    get onWillInstall(): Event<InstallationParam> {
         return this.onWillInstallEmitter.event;
     }
-    protected fireWillInstall(): void {
-        this.onWillInstallEmitter.fire(undefined);
+    protected fireWillInstall(param: InstallationParam): void {
+        this.onWillInstallEmitter.fire(param);
     }
 
-    get onDidInstall(): Event<DidStopInstallationParam> {
+    get onDidInstall(): Event<InstallationResult> {
         return this.onDidInstallEmitter.event;
     }
-    protected fireDidInstall(params: DidStopInstallationParam = { failed: false }): void {
-        this.onDidInstallEmitter.fire(params);
+    protected fireDidInstall(result: InstallationResult): void {
+        this.onDidInstallEmitter.fire(result);
     }
 
     protected async autoInstall(): Promise<void> {
@@ -116,8 +116,9 @@ export class ApplicationProject implements Disposable {
     }
 
     protected async install(token?: CancellationToken): Promise<void> {
+        const reverting = this.reverting;
         try {
-            this.fireWillInstall();
+            this.fireWillInstall({ reverting });
             this.logger.info('Intalling the app...');
 
             await this.build(token);
@@ -125,7 +126,10 @@ export class ApplicationProject implements Disposable {
 
             this.backup();
             this.logger.info('The app installation is finished');
-            this.fireDidInstall();
+            this.fireDidInstall({
+                reverting,
+                failed: false
+            });
 
             this.serverProcess.kill();
         } catch (error) {
@@ -135,6 +139,7 @@ export class ApplicationProject implements Disposable {
             }
             this.logger.error('The app installation is failed' + os.EOL, error);
             this.fireDidInstall({
+                reverting,
                 failed: true
             });
             await this.revert(token);
@@ -177,6 +182,19 @@ export class ApplicationProject implements Disposable {
         return manager.build();
     }
 
+    protected get reverting(): boolean {
+        const packagePath = this.packagePath;
+        if (!fs.existsSync(packagePath)) {
+            return false;
+        }
+        const backupPath = this.backupPath;
+        if (!fs.existsSync(backupPath)) {
+            return false;
+        }
+        const packageContent = fs.readFileSync(packagePath, { encoding: 'utf-8' });
+        const backupContent = fs.readFileSync(backupPath, { encoding: 'utf-8' });
+        return packageContent === backupContent;
+    }
     protected backup(): void {
         const packagePath = this.packagePath;
         if (fs.existsSync(packagePath)) {

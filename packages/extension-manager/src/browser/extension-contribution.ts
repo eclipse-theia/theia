@@ -19,11 +19,17 @@ export class ExtensionContribution implements FrontendApplicationContribution {
         @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager,
         @inject(MessageService) protected readonly messageService: MessageService,
     ) {
-        this.extensionManager.onDidStopInstallation(params => {
-            if (!params.failed) {
-                this.messageService.info('Reload to complete the installation.').then(() =>
-                    window.location.reload()
-                );
+        this.extensionManager.onWillStartInstallation(({ reverting }) => {
+            if (!reverting) {
+                this.messageService.info('Installing extensions...');
+            } else {
+                this.messageService.error('Failed to install extensions. Reverting...');
+            }
+        });
+        this.extensionManager.onDidStopInstallation(({ reverting, failed }) => {
+            if (!failed) {
+                const reloadMessage = !reverting ? 'Reload to complete the installation.' : 'Reload to revert the installation.';
+                this.messageService.info(reloadMessage).then(() => window.location.reload());
             }
         });
     }
