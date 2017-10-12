@@ -6,7 +6,8 @@
 */
 
 import { injectable, inject } from 'inversify';
-import { ProblemMarker, ProblemManager } from './problem-marker';
+import { ProblemManager } from './problem-marker';
+import { ProblemMarker } from '../../common/problem-marker';
 import { ProblemTreeModel } from './problem-tree-model';
 import { MarkerInfoNode, MarkerNode } from '../marker-tree';
 import { TreeWidget, TreeProps, ContextMenuRenderer, ITreeNode, NodeProps, ITreeModel, ISelectableTreeNode } from "@theia/core/lib/browser";

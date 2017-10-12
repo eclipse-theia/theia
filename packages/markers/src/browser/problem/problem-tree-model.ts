@@ -4,7 +4,8 @@
 * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
 * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 */
-import { ProblemMarker, ProblemManager } from './problem-marker';
+import { ProblemMarker } from '../../common/problem-marker';
+import { ProblemManager } from './problem-marker';
 import { MarkerNode, MarkerTree, MarkerOptions } from '../marker-tree';
 import { MarkerTreeModel, MarkerTreeServices } from '../marker-tree-model';
 import { injectable, inject } from "inversify";
