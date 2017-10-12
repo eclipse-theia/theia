@@ -19,7 +19,8 @@
     "@theia/cpp": "^0.1.1",
     "@theia/go": "^0.1.1",
     "@theia/typescript": "^0.1.1",
-    "@theia/markers": "^0.1.1"
+    "@theia/markers": "^0.1.1",
+    "@theia/output-parser": "^0.1.1"
   },
   "scripts": {
     "prepare": "yarn run clean && yarn run build",
