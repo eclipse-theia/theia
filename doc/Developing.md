@@ -16,6 +16,7 @@ For Windows instructions [click here](#building-on-windows).
  - [**Clone the repository**](#clone-the-repository)
  - [**The repository structure**](#the-repository-structure)
  - [**Build core, extensions and examples packages**](#build-core-extensions-and-examples-packages)
+ - [**Build extension packages individually**](#build-extension-packages-individually)
  - [**Run the browser-based example application**](#run-the-browser-based-example-application)
  - [**Run the Electron-based example application**](#run-the-electron-based-example-application)
  - [**Rebuilding**](#rebuilding)
@@ -98,6 +99,16 @@ You can download dependencies and build it using:
 
 This command downloads dev dependencies, links and builds all packages.
 To learn more and understand precisely what's going on, please look at scripts in [package.json](../package.json).
+
+## Build extension packages individually
+
+From the root:
+
+ `npx run build @theia/package-name`
+
+From the package:
+
+`yarn --ignore-scripts && yarn build`
 
 ## Run the browser-based example application
 
