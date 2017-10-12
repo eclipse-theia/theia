@@ -13,7 +13,7 @@ import {
 } from '@theia/core/lib/common';
 import { FrontendApplication } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
-import { PROBLEM_KIND } from './problem-marker';
+import { PROBLEM_KIND } from '../../common/problem-marker';
 
 export namespace ProblemCommands {
     export const OPEN: Command = {

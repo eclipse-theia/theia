@@ -7,7 +7,8 @@
 
 import { injectable } from "inversify";
 import { Tree, ICompositeTreeNode, ITreeNode, ISelectableTreeNode, IExpandableTreeNode } from "@theia/core/lib/browser";
-import { MarkerManager, Marker } from './marker-manager';
+import { MarkerManager } from './marker-manager';
+import { Marker } from '../common/marker';
 import { UriSelection } from "@theia/filesystem/lib/common";
 import URI from "@theia/core/lib/common/uri";
 

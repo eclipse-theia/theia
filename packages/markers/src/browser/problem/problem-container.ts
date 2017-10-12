@@ -11,7 +11,7 @@ import { ProblemWidget } from './problem-widget';
 import { ProblemTreeModel, ProblemTree } from './problem-tree-model';
 import { TreeWidget, TreeProps, defaultTreeProps, ITreeModel, createTreeContainer, TreeModel, Tree, ITree } from "@theia/core/lib/browser";
 import { MarkerTreeServices } from '../marker-tree-model';
-import { PROBLEM_KIND } from './problem-marker';
+import { PROBLEM_KIND } from '../../common/problem-marker';
 
 export const PROBLEM_TREE_PROPS = <TreeProps>{
     ...defaultTreeProps,

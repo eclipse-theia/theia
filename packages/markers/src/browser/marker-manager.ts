@@ -10,30 +10,8 @@ import { Event, Emitter } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { FileSystemWatcher, FileChangeType } from '@theia/filesystem/lib/common';
+import { Marker } from '../common/marker';
 
-/*
- * A marker represents meta information for a given uri
- */
-export interface Marker<T> {
-    /**
-     * the uri this marker is associated with.
-     */
-    uri: string;
-    /*
-     * the owner of this marker. Any string provided by the registrar.
-     */
-    owner: string;
-
-    /**
-     * the kind, e.g. 'problem'
-     */
-    kind?: string;
-
-    /*
-     * marker kind specfic data
-     */
-    data: T;
-}
 
 /*
  * argument to the `findMarkes` method.
@@ -154,7 +132,7 @@ export abstract class MarkerManager<D extends object> {
     protected async loadMarkersFromStorage(): Promise<void> {
         const key = this.getStorageKey();
         if (key) {
-            const entries = await this.storageService.getData<Uri2MarkerEntry[]>(key, [])
+            const entries = await this.storageService.getData<Uri2MarkerEntry[]>(key, []);
             for (const entry of entries) {
                 for (const ownerEntry of entry.markers) {
                     this.internalSetMarkers(new URI(entry.uri), ownerEntry.owner, ownerEntry.markerData as D[]);
