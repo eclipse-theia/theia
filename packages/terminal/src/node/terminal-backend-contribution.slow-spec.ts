@@ -24,7 +24,7 @@ const expect = chai.expect;
 
 describe('Terminal Backend Contribution', function () {
 
-    this.timeout(5000);
+    this.timeout(10000);
     let server: http.Server;
     let shellTerminalServer: IShellTerminalServer;
 
