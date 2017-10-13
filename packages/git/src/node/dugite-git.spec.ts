@@ -29,8 +29,10 @@ describe('git', async function () {
             await initRepository(path.join(root, 'A'));
             await initRepository(path.join(root, 'B'));
             await initRepository(path.join(root, 'C'));
-            const git = await createGit(root);
-            const repositories = await git.repositories();
+            const git = await createGit();
+            const workspace = await createWorkspace(root);
+            const workspaceRootUri = await workspace.getRoot();
+            const repositories = await git.repositories(workspaceRootUri!);
             expect(repositories.map(r => path.basename(FileUri.fsPath(r.localUri))).sort()).to.deep.equal(['A', 'B', 'C']);
 
         });
@@ -46,8 +48,10 @@ describe('git', async function () {
             await initRepository(path.join(root, 'BASE', 'A'));
             await initRepository(path.join(root, 'BASE', 'B'));
             await initRepository(path.join(root, 'BASE', 'C'));
-            const git = await createGit(path.join(root, 'BASE'));
-            const repositories = await git.repositories();
+            const git = await createGit();
+            const workspace = await createWorkspace(path.join(root, 'BASE'));
+            const workspaceRootUri = await workspace.getRoot();
+            const repositories = await git.repositories(workspaceRootUri!);
             expect(repositories.map(r => path.basename(FileUri.fsPath(r.localUri))).sort()).to.deep.equal(['A', 'B', 'BASE', 'C']);
 
         });
@@ -64,8 +68,10 @@ describe('git', async function () {
             await initRepository(path.join(root, 'BASE', 'WS_ROOT', 'A'));
             await initRepository(path.join(root, 'BASE', 'WS_ROOT', 'B'));
             await initRepository(path.join(root, 'BASE', 'WS_ROOT', 'C'));
-            const git = await createGit(path.join(root, 'BASE', 'WS_ROOT'));
-            const repositories = await git.repositories();
+            const git = await createGit();
+            const workspace = await createWorkspace(path.join(root, 'BASE', 'WS_ROOT'));
+            const workspaceRootUri = await workspace.getRoot();
+            const repositories = await git.repositories(workspaceRootUri!);
             const repositoryNames = repositories.map(r => path.basename(FileUri.fsPath(r.localUri)));
             expect(repositoryNames.shift()).to.equal('BASE'); // The first must be the container repository.
             expect(repositoryNames.sort()).to.deep.equal(['A', 'B', 'C']);
@@ -216,8 +222,7 @@ describe('git', async function () {
 });
 
 async function createGit(fsRoot: string = ''): Promise<DugiteGit> {
-    const workspace = await createWorkspace(fsRoot);
-    return new DugiteGit(workspace);
+    return new DugiteGit();
 }
 
 async function createWorkspace(fsRoot: string): Promise<WorkspaceServer> {

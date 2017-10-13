@@ -118,10 +118,9 @@ export namespace Git {
             /**
              * The desired destination path (given as a URI) for the cloned repository.
              * If the path does not exist it will be created. Cloning into an existing
-             * directory is only allowed if the directory is empty. If not specified,
-             * then the workspace root will be used as the destination.
+             * directory is only allowed if the directory is empty.
              */
-            readonly localUri?: string;
+            readonly localUri: string;
 
             /**
              * The branch to checkout after the clone has completed. If not given,
@@ -336,12 +335,12 @@ export interface Git {
      * @param remoteUrl the URL of the remote.
      * @param options the clone options.
      */
-    clone(remoteUrl: string, options?: Git.Options.Clone): Promise<Repository>;
+    clone(remoteUrl: string, options: Git.Options.Clone): Promise<Repository>;
 
     /**
-     * Resolves to an array of repositories discovered in the workspace.
+     * Resolves to an array of repositories discovered in the workspace given with the workspace root URI.
      */
-    repositories(): Promise<Repository[]>;
+    repositories(workspaceRootUri: string): Promise<Repository[]>;
 
     /**
      * Returns with the working directory status of the given Git repository.

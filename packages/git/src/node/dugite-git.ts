@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import * as Path from 'path';
 import { Git, GitUtils } from '../common/git';
 import { git } from 'dugite-extra/lib/core/git';
-import { injectable, inject } from "inversify";
+import { injectable } from "inversify";
 import { push } from 'dugite-extra/lib/command/push';
 import { pull } from 'dugite-extra/lib/command/pull';
 import { clone } from 'dugite-extra/lib/command/clone';
@@ -21,8 +21,6 @@ import { locateRepositories } from './git-repository-locator';
 import { createCommit } from 'dugite-extra/lib/command/commit';
 import { stage, unstage } from 'dugite-extra/lib/command/stage';
 import { reset, GitResetMode } from 'dugite-extra/lib/command/reset';
-import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol';
-import { ILogger } from '@theia/core/lib/common';
 import { getTextContents, getBlobContents } from 'dugite-extra/lib/command/show';
 import { checkoutBranch, checkoutPaths } from 'dugite-extra/lib/command/checkout';
 import { Repository, WorkingDirectoryStatus, GitFileChange, GitFileStatus } from '../common/model';
@@ -35,29 +33,14 @@ import { IStatusResult, IAheadBehind, AppFileStatus, WorkingDirectoryStatus as D
 @injectable()
 export class DugiteGit implements Git {
 
-    constructor(
-        @inject(WorkspaceServer) protected readonly workspace: WorkspaceServer,
-        @inject(ILogger) protected readonly logger?: ILogger
-    ) { }
-
-    async clone(remoteUrl: string, options?: Git.Options.Clone): Promise<Repository> {
-        const localUri = options && options.localUri ? options.localUri : await this.workspace.getRoot();
-        if (!localUri) {
-            throw new Error(`If the workspace root is not set, then the destination of the local Git clone has to be specified explicitly.`);
-        }
+    async clone(remoteUrl: string, options: Git.Options.Clone): Promise<Repository> {
+        const { localUri } = options;
         await clone(remoteUrl, this.getFsPath(localUri));
         return { localUri };
     }
 
-    async repositories(): Promise<Repository[]> {
-        const workspaceRoot = await this.workspace.getRoot();
-        if (!workspaceRoot) {
-            if (this.logger) {
-                this.logger.warn(`The workspace root is not yet set.`);
-            }
-            return [];
-        }
-        const workspaceRootPath = this.getFsPath(workspaceRoot);
+    async repositories(workspaceRootUri: string): Promise<Repository[]> {
+        const workspaceRootPath = this.getFsPath(workspaceRootUri);
         const repositoriesPromise = locateRepositories(workspaceRootPath);
         const containerRepositoryPromise = this.getContainerRepository(workspaceRootPath);
         const repositories = await repositoriesPromise;

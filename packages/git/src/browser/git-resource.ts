@@ -9,6 +9,7 @@ import { injectable, inject } from "inversify";
 import { Git, Repository } from '../common';
 import { Resource, ResourceResolver } from "@theia/core";
 import URI from "@theia/core/lib/common/uri";
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
 export const GIT_RESOURCE_SCHEME = 'gitrev';
 
@@ -27,7 +28,8 @@ export class GitResource implements Resource {
 export class GitResourceResolver implements ResourceResolver {
 
     constructor(
-        @inject(Git) protected readonly git: Git
+        @inject(Git) protected readonly git: Git,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
     ) { }
 
     resolve(uri: URI): Resource | Promise<Resource> {
@@ -43,8 +45,9 @@ export class GitResourceResolver implements ResourceResolver {
     }
 
     async getRepository(uri: URI): Promise<Repository> {
+        const root = await this.workspaceService.root;
         const uriWithoutScheme = uri.withoutScheme();
-        const repos = await this.git.repositories();
+        const repos = await this.git.repositories(root.uri);
         // We sort by length so that we visit the nested repositories first.
         // We do not want to get the repository A instead of B if we have:
         // repository A, another repository B inside A and a resource A/B/C.ext.
