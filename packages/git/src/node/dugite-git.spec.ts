@@ -10,7 +10,9 @@ import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol'
 
 const track = temp.track();
 
-describe('git', async () => {
+describe('git', async function () {
+
+    this.timeout(10000);
 
     after(async () => {
         track.cleanupSync();
