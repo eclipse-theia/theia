@@ -6,6 +6,7 @@
 */
 import { Git, Repository } from '../common';
 import { injectable, inject } from "inversify";
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
 @injectable()
 export class GitRepositoryProvider {
@@ -13,16 +14,16 @@ export class GitRepositoryProvider {
     protected selectedRepository: Repository;
 
     constructor(
-        @inject(Git) protected readonly git: Git
-    ) {
-
-    }
+        @inject(Git) protected readonly git: Git,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
+    ) { }
 
     async getSelected(): Promise<Repository> {
         if (this.selectedRepository) {
             return this.selectedRepository;
         } else {
-            return this.git.repositories().then(r => this.selectedRepository = r[0]);
+            const root = await this.workspaceService.root;
+            return this.git.repositories(root.uri).then(r => this.selectedRepository = r[0]);
         }
     }
 

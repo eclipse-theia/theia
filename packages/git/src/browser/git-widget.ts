@@ -19,6 +19,7 @@ import { h } from '@phosphor/virtualdom/lib';
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
 import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
 @injectable()
 export class GitWidget extends VirtualWidget {
@@ -44,7 +45,8 @@ export class GitWidget extends VirtualWidget {
         @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
         @inject(MessageService) protected readonly messageService: MessageService,
         @inject(FileIconProvider) protected readonly iconProvider: FileIconProvider,
-        @inject(CommandService) protected readonly commandService: CommandService) {
+        @inject(CommandService) protected readonly commandService: CommandService,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService) {
         super();
         this.id = 'theia-gitContainer';
         this.title.label = 'Git';
@@ -58,7 +60,8 @@ export class GitWidget extends VirtualWidget {
     }
 
     async initialize(): Promise<void> {
-        this.repositories = await this.git.repositories();
+        const root = await this.workspaceService.root;
+        this.repositories = await this.git.repositories(root.uri);
         this.repository = await this.gitRepositoryProvider.getSelected();
         this.gitWatcher.dispose();
         this.watcherDisposable = await this.gitWatcher.watchGitChanges(this.repository);
