@@ -175,6 +175,11 @@ export class DugiteGit implements Git {
         return (await getTextContents(repositoryPath, commitish, path)).toString();
     }
 
+    async remote(repository: Repository): Promise<string[]> {
+        const repositoryPath = this.getFsPath(repository);
+        return this.getRemotes(repositoryPath);
+    }
+
     private getCommitish(options?: Git.Options.Show): string {
         if (options && options.commitish) {
             return 'index' === options.commitish ? '' : options.commitish;
@@ -196,11 +201,16 @@ export class DugiteGit implements Git {
         return undefined;
     }
 
+    private async getRemotes(repositoryPath: string): Promise<string[]> {
+        const result = await git(['remote'], repositoryPath, 'remote');
+        const out = result.stdout || '';
+        return out.trim().match(/\S+/g) || [];
+    }
+
     private async getDefaultRemote(repositoryPath: string, remote?: string): Promise<string | undefined> {
         if (remote === undefined) {
-            const result = await git(['remote'], repositoryPath, 'remote');
-            const out = result.stdout || '';
-            return (out.trim().match(/\S+/g) || []).shift();
+            const remotes = await this.getRemotes(repositoryPath);
+            return remotes.shift();
         }
         return remote;
     }

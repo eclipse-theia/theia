@@ -2,8 +2,9 @@ import * as path from 'path';
 import * as temp from 'temp';
 import * as fs from 'fs-extra';
 import { expect } from 'chai';
-import { FileUri } from '@theia/core/lib/node/file-uri';
 import { DugiteGit } from './dugite-git';
+import { git as gitExec } from 'dugite-extra/lib/core/git';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 import { WorkingDirectoryStatus, Repository } from '../common/model';
 import { initRepository, createTestRepository } from 'dugite-extra/lib/command/test-helper';
 import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol';
@@ -215,6 +216,44 @@ describe('git', async function () {
             await git!.add(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString());
             expect(await git!.show(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString(), { commitish: 'index' })).to.be.equal('new content');
             expect(await git!.show(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString(), { commitish: 'HEAD' })).to.be.equal('A');
+        });
+
+    });
+
+    describe('remote', async () => {
+
+        it('remotes are not set by default', async () => {
+            const root = track.mkdirSync('remote-with-init');
+            const localUri = FileUri.create(root).toString();
+            await initRepository(root);
+            const git = await createGit();
+            const remotes = await git.remote({ localUri });
+            expect(remotes).to.be.empty;
+        });
+
+        it('origin is the default after a fresh clone', async () => {
+            const git = await createGit();
+            const remoteUrl = 'https://github.com/TypeFox/find-git-exec.git';
+            const localUri = FileUri.create(track.mkdirSync('remote-with-clone')).toString();
+            const options = { localUri };
+            await git.clone(remoteUrl, options);
+
+            const remotes = await git.remote({ localUri });
+            expect(remotes).to.be.lengthOf(1);
+            expect(remotes.shift()).to.be.equal('origin');
+        });
+
+        it('remotes can be added and queried', async () => {
+            const root = track.mkdirSync('remote-with-init');
+            const localUri = FileUri.create(root).toString();
+            await initRepository(root);
+
+            await gitExec(['remote', 'add', 'first', 'some/location'], root, 'addRemote');
+            await gitExec(['remote', 'add', 'second', 'some/location'], root, 'addRemote');
+
+            const git = await createGit();
+            const remotes = await git.remote({ localUri });
+            expect(remotes).to.be.deep.equal(['first', 'second']);
         });
 
     });

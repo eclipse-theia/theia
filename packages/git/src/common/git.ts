@@ -453,6 +453,12 @@ export interface Git {
      */
     show(repository: Repository, uri: string, options?: Git.Options.Show): Promise<string>;
 
+    /**
+     * Without any arguments, it resolves to a list of configured remotes. If no remotes are set,
+     * resolves to an empty array.
+     */
+    remote(repository: Repository): Promise<string[]>;
+
 }
 
 /**
