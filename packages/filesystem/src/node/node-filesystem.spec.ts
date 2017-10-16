@@ -780,6 +780,24 @@ describe("NodeFileSystem", () => {
 
     });
 
+    describe("#14 roots", async () => {
+
+        it("should not throw error", async () => {
+            expect(await createFileSystem().getRoots()).to.be.not.empty;
+        });
+
+    });
+
+    describe("#15 currentUserHome", async () => {
+
+        it("should exist", async () => {
+            const actual = (await createFileSystem().getCurrentUserHome()).uri.toString();
+            const expected = FileUri.create(os.homedir()).toString();
+            expect(expected).to.be.equal(actual);
+        });
+
+    });
+
     function createFileSystem(): FileSystem {
         return new FileSystemNode();
     }

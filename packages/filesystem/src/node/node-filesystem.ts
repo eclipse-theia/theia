@@ -9,6 +9,7 @@ import * as mv from 'mv';
 import * as trash from 'trash';
 import * as paths from 'path';
 import * as fs from 'fs-extra';
+import * as os from 'os';
 import * as touch from 'touch';
 import { injectable, inject, optional } from "inversify";
 import URI from "@theia/core/lib/common/uri";
@@ -27,7 +28,7 @@ export class FileSystemNodeOptions {
         overwrite: false,
         recursive: true,
         moveToTrash: true
-    }
+    };
 }
 
 @injectable()
@@ -144,9 +145,7 @@ export class FileSystemNode implements FileSystem {
             } else if (targetStat && targetStat.isDirectory && sourceStat.isDirectory && !targetStat.hasChildren && sourceStat.hasChildren) {
                 // Copy source to target, since target is empty. Then wipe the source content.
                 this.copy(sourceUri, targetUri, { overwrite: true }).then(stat => {
-                    this.delete(sourceUri).then(() => {
-                        return resolve(stat);
-                    });
+                    this.delete(sourceUri).then(() => resolve(stat));
                 }).catch(error => {
                     reject(error);
                 });
@@ -261,7 +260,7 @@ export class FileSystemNode implements FileSystem {
             // https://github.com/paulmillr/chokidar/issues/566
             const moveToTrash = this.doGetMoveToTrash(options);
             if (moveToTrash) {
-                resolve(trash([FileUri.fsPath(_uri)]))
+                resolve(trash([FileUri.fsPath(_uri)]));
             } else {
                 fs.remove(FileUri.fsPath(_uri), error => {
                     if (error) {
@@ -296,6 +295,10 @@ export class FileSystemNode implements FileSystem {
         }
         console.error(`Cannot locate the file system root under ${rootUri}.`);
         return Promise.resolve([]);
+    }
+
+    async getCurrentUserHome(): Promise<FileStat> {
+        return this.getFileStat(FileUri.create(os.homedir()).toString());
     }
 
     dispose(): void {

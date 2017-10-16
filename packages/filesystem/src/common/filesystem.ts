@@ -95,6 +95,11 @@ export interface FileSystem extends Disposable {
      */
     getRoots(): Promise<FileStat[]>;
 
+    /**
+     * Returns a promise the resolves to a file stat representing the current user's home directory.
+     */
+    getCurrentUserHome(): Promise<FileStat>;
+
 }
 
 /**
