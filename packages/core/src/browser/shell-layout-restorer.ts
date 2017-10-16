@@ -11,15 +11,30 @@ import { StorageService } from './storage-service';
 import { LayoutData } from './shell';
 import { Widget } from '@phosphor/widgets';
 import { ILogger } from '../common/logger';
+import { CommandContribution, CommandRegistry } from '../common/command';
 
 @injectable()
-export class ShellLayoutRestorer implements FrontendApplicationContribution {
+export class ShellLayoutRestorer implements FrontendApplicationContribution, CommandContribution {
     private storageKey = 'layout';
+    private storeLayout: boolean = true;
 
     constructor(
         @inject(WidgetManager) protected widgetManager: WidgetManager,
         @inject(ILogger) protected logger: ILogger,
         @inject(StorageService) protected storageService: StorageService) { }
+
+    registerCommands(commands: CommandRegistry): void {
+        commands.registerCommand({
+            id: 'reset.layout',
+            label: 'Reset Workbench Layout'
+        }, {
+                execute: () => {
+                    this.storeLayout = false;
+                    this.storageService.setData(this.storageKey, undefined)
+                        .then(() => window.location.reload());
+                }
+            });
+    }
 
     onStart(app: FrontendApplication): void {
         this.storageService.getData<string>(this.storageKey).then(serializedLayoutData => {
@@ -33,12 +48,14 @@ export class ShellLayoutRestorer implements FrontendApplicationContribution {
     }
 
     onStop(app: FrontendApplication): void {
-        try {
-            const layoutData = app.shell.getLayoutData();
-            this.storageService.setData(this.storageKey, this.deflate(layoutData));
-        } catch (error) {
-            this.storageService.setData(this.storageKey, undefined);
-            this.logger.error(`Error during serialization of layout data: ${error}`);
+        if (this.storeLayout) {
+            try {
+                const layoutData = app.shell.getLayoutData();
+                this.storageService.setData(this.storageKey, this.deflate(layoutData));
+            } catch (error) {
+                this.storageService.setData(this.storageKey, undefined);
+                this.logger.error(`Error during serialization of layout data: ${error}`);
+            }
         }
     }
 
