@@ -18,3 +18,4 @@ export * from './endpoint';
 export * from './common-frontend-contribution';
 export * from './quick-open';
 export * from './widget-manager';
+export * from './shell-layout-restorer';
