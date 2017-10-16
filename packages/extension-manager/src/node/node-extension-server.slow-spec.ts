@@ -119,8 +119,8 @@ describe("node-extension-server", function () {
         this.timeout(10000);
 
         return server.outdated().then(extensions => {
-            assert.equal(extensions.length, 1, JSON.stringify(extensions, undefined, 2));
-            assert.equal(extensions[0].name, '@theia/core');
+            assert.equal(extensions.length, 2, JSON.stringify(extensions, undefined, 2));
+            assert.deepEqual(extensions.map(e => e.name).sort(), ['@theia/core', '@theia/extension-manager']);
         });
     });
 
@@ -161,7 +161,7 @@ describe("node-extension-server", function () {
             assertExtension({
                 name: '@theia/extension-manager',
                 installed: true,
-                outdated: false,
+                outdated: true,
                 dependent: undefined
             }, extensions);
         });

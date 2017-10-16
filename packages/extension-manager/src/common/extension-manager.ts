@@ -52,7 +52,7 @@ export class Extension extends protocol.Extension {
     }
 
     /**
-     * Intall the latest version of this extension.
+     * Install the latest version of this extension.
      */
     install(): void {
         this.server.install(this.name);
@@ -137,7 +137,7 @@ export class ExtensionManager implements Disposable {
     }
 
     /**
-     * Notify when extensions are installed, uninsalled or updated.
+     * Notify when extensions are installed, uninstalled or updated.
      */
     get onDidChange(): Event<protocol.ExtensionChange> {
         return this.onChangedEmitter.event;
@@ -148,7 +148,7 @@ export class ExtensionManager implements Disposable {
     }
 
     /**InsrallationResultInsrallationResult
-     * Notiy when the installation process is going to be started.
+     * Notify when the installation process is going to be started.
      */
     get onWillStartInstallation(): Event<protocol.InstallationParam> {
         return this.onWillStartInstallationEmitter.event;
@@ -159,7 +159,7 @@ export class ExtensionManager implements Disposable {
     }
 
     /**
-     * Notiy when the installation process has been finished.
+     * Notify when the installation process has been finished.
      */
     get onDidStopInstallation(): Event<protocol.InstallationResult> {
         return this.onDidStopInstallationEmitter.event;
@@ -168,6 +168,5 @@ export class ExtensionManager implements Disposable {
     protected fireDidStopInstallation(result: protocol.InstallationResult): void {
         this.onDidStopInstallationEmitter.fire(result);
     }
-
 
 }

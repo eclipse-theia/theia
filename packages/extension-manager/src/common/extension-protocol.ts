@@ -63,7 +63,7 @@ export type ResolvedExtension = Extension & ResolvedRawExtension;
 export interface SearchParam {
     /**
      * The query with support for filters and other modifiers, see https://api-docs.npms.io/#api-Search.
-     * The search is always narrowed with extensino keywords, e.g. `keywords:theia-extension` is always appended by default.
+     * The search is always narrowed with extension keywords, e.g. `keywords:theia-extension` is always appended by default.
      */
     readonly query: string;
     /**
@@ -169,15 +169,15 @@ export const ExtensionClient = Symbol('ExtensionClient');
  */
 export interface ExtensionClient {
     /**
-     * Notify when extensions are installed, uninsalled or updated.
+     * Notify when extensions are installed, uninstalled or updated.
      */
     onDidChange(change: ExtensionChange): void;
     /**
-     * Notiy when the installation process is going to be started.
+     * Notify when the installation process is going to be started.
      */
     onWillStartInstallation(param: InstallationParam): void;
     /**
-     * Notiy when the installation process has been finished.
+     * Notify when the installation process has been finished.
      */
     onDidStopInstallation(param: InstallationResult): void;
 }
