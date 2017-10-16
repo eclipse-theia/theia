@@ -14,10 +14,12 @@ import { ProcessManager } from './process-manager';
 const pty = require("node-pty");
 
 export const TerminalProcessOptions = Symbol("TerminalProcessOptions");
+
 export interface TerminalProcessOptions {
     command: string,
     args?: string[],
-    options?: object
+    options?: object,
+    overideSpawn?: boolean
 }
 
 export const TerminalProcessFactory = Symbol("TerminalProcessFactory");
@@ -50,18 +52,10 @@ export class TerminalProcess extends Process {
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(ILogger) logger: ILogger) {
         super(processManager, logger);
-
-        this.logger.debug(`Starting terminal process: ${options.command},`
-            + ` with args : ${options.args}, `
-            + ` options ${JSON.stringify(options.options)} `);
-
-        this.terminal = pty.spawn(
-            options.command,
-            options.args,
-            options.options);
-
-        this.terminal.on('exit', this.emitOnExit.bind(this));
-        this.output = new TerminalReadableStream(this.terminal);
+        if (options.overideSpawn === undefined
+            || options.overideSpawn === false) {
+            this.spawn(options.command, options.args, options.options);
+        }
     }
 
     get pid() {
@@ -80,5 +74,20 @@ export class TerminalProcess extends Process {
 
     write(data: string): void {
         this.terminal.write(data);
+    }
+
+    protected spawn(command: string, args?: string[], options?: object) {
+
+        this.logger.debug(`Starting terminal process: ${command},`
+            + ` with args : ${args}, `
+            + ` options ${JSON.stringify(options)} `);
+
+        this.terminal = pty.spawn(
+            command,
+            args,
+            options);
+
+        this.terminal.on('exit', this.emitOnExit.bind(this));
+        this.output = new TerminalReadableStream(this.terminal);
     }
 }
