@@ -48,7 +48,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
 
     protected showFileDialog(): void {
         this.workspaceService.tryRoot.then(async resolvedRoot => {
-            const root = resolvedRoot || (await this.fileSystem.getRoots())[0];
+            const root = resolvedRoot || await this.fileSystem.getCurrentUserHome();
             if (root) {
                 const rootUri = new URI(root.uri).parent;
                 const rootStat = await this.fileSystem.getFileStat(rootUri.toString());
