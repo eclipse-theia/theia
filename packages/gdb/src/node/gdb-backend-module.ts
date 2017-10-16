@@ -10,6 +10,7 @@ import {
     IMIDebugger, MIDebugger, MIInterpreter,
     IMIParser, MIParser, MIOutputParser
 } from './mi';
+import { bindGDBPreferences } from './gdb-preferences'
 
 import { GDBTerminalProcess, GDBTerminalProcessFactory, GDBTerminalProcessOptions } from './gdb-terminal-process';
 import { GDBRawProcess, GDBRawProcessFactory, GDBRawProcessOptions } from './gdb-raw-process';
@@ -17,6 +18,7 @@ import { IDebugSession } from '@theia/debug/lib/node/debug-session';
 import { GDBDebugSession } from './gdb-debug-session';
 
 export default new ContainerModule(bind => {
+    bindGDBPreferences(bind);
     bind<IMIDebugger>(IMIDebugger).to(MIDebugger);
     bind<MIInterpreter>(MIInterpreter).to(MIInterpreter);
     bind<IMIParser>(IMIParser).to(MIParser);
