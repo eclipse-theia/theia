@@ -12,6 +12,35 @@ import { LayoutData } from './shell';
 import { Widget } from '@phosphor/widgets';
 import { ILogger } from '../common/logger';
 
+
+/**
+ * A contract for widgets that want to store and restore their inner state, between sessions.
+ */
+export interface StatefulWidget {
+
+    /**
+     * Called on unload to store the inner state.
+     */
+    storeState(): object;
+
+    /**
+     * Called when the widget got created by the storage service
+     */
+    restoreState(oldState: object): void;
+}
+
+export namespace StatefulWidget {
+    // tslint:disable-next-line:no-any
+    export function is(arg: any): arg is StatefulWidget {
+        return typeof arg["storeState"] === 'function' && typeof arg["restoreState"] === 'function';
+    }
+}
+
+interface WidgetDescription {
+    constructionOptions: WidgetConstructionOptions,
+    innerWidgetState?: object
+}
+
 @injectable()
 export class ShellLayoutRestorer implements FrontendApplicationContribution {
     private storageKey = 'layout';
@@ -52,11 +81,18 @@ export class ShellLayoutRestorer implements FrontendApplicationContribution {
     protected deflate(data: LayoutData): string {
         return JSON.stringify(data, (property: string, value) => {
             if (this.isWidgetsProperty(property)) {
-                const result: WidgetConstructionOptions[] = [];
+                const result: WidgetDescription[] = [];
                 for (const widget of (value as Widget[])) {
                     const desc = this.widgetManager.getDescription(widget);
                     if (desc) {
-                        result.push(desc);
+                        let innerState = undefined;
+                        if (StatefulWidget.is(widget)) {
+                            innerState = widget.storeState();
+                        }
+                        result.push({
+                            constructionOptions: desc,
+                            innerWidgetState: innerState
+                        });
                     }
                 }
                 return result;
@@ -73,10 +109,15 @@ export class ShellLayoutRestorer implements FrontendApplicationContribution {
         const result = JSON.parse(layoutData, (property: string, value) => {
             if (this.isWidgetsProperty(property)) {
                 const widgets: Widget[] = [];
-                for (const desc of (value as WidgetConstructionOptions[])) {
-                    const promise = this.widgetManager.getOrCreateWidget(desc.factoryId, desc.options)
+                for (const desc of (value as WidgetDescription[])) {
+                    const promise = this.widgetManager.getOrCreateWidget(desc.constructionOptions.factoryId, desc.constructionOptions.options)
                         .then(widget => {
                             if (widget) {
+                                if (desc.innerWidgetState) {
+                                    if (StatefulWidget.is(widget) && desc.innerWidgetState) {
+                                        widget.restoreState(desc.innerWidgetState);
+                                    }
+                                }
                                 widgets.push(widget);
                             }
                         }).catch(err => {
