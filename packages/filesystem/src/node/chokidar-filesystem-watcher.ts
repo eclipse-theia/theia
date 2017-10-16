@@ -43,7 +43,7 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
     watchFileChanges(uri: string, options: WatchOptions = { ignored: [] }): Promise<number> {
         const watcherId = this.watcherSequence++;
         const paths = this.toPaths(uri);
-        this.logger.info(`Starting watching:`, paths)
+        this.logger.info(`Starting watching:`, paths);
         return new Promise<number>(resolve => {
             if (options.ignored.length > 0) {
                 this.logger.debug(log =>
@@ -55,12 +55,16 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
                 ignored: options.ignored
             });
             watcher.once('ready', () => {
-                this.logger.info(`Started watching:`, paths)
-                resolve(watcherId)
+                this.logger.info(`Started watching:`, paths);
+                resolve(watcherId);
             });
-            watcher.on('error', error =>
-                this.logger.error(`Watching error:`, error)
-            );
+            watcher.on('error', error => {
+                if (this.isWatchingError(error) && error.code === 'EPERM') {
+                    this.logger.warn(`Cannot watch file changes due to insufficient permissions. Skipping: ${error.filename}.`);
+                } else {
+                    this.logger.error(`Watching error:`, error);
+                }
+            });
             watcher.on('add', path => this.pushAdded(watcherId, path));
             watcher.on('addDir', path => this.pushAdded(watcherId, path));
             watcher.on('change', path => this.pushUpdated(watcherId, path));
@@ -131,6 +135,10 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
         if (this.client) {
             this.client.onDidFilesChanged(event);
         }
+    }
+
+    protected isWatchingError(error: any): error is { code: string, filename: string } {
+        return ('code' in error) && ('filename' in error) && error.code !== undefined && error.filename !== undefined;
     }
 
 }
