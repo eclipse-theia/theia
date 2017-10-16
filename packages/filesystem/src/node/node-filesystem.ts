@@ -314,7 +314,7 @@ export class FileSystemNode implements FileSystem {
             return this.doCreateFileStat(uri, stats);
         } catch (error) {
             if (isErrnoException(error)) {
-                if (error.code === "ENOENT" || error.code === "EACCES") {
+                if (error.code === "ENOENT" || error.code === "EACCES" || error.code === 'EBUSY') {
                     return undefined;
                 }
             }
@@ -332,16 +332,29 @@ export class FileSystemNode implements FileSystem {
     }
 
     protected doCreateDirectoryStat(uri: URI, path: string, stat: fs.Stats, depth: number): FileStat {
-        const files = fs.readdirSync(path);
-        const hasChildren = files.length > 0;
-        const children = hasChildren ? depth > 0 ? this.doGetChildren(uri, files, depth) : undefined : [];
-        return {
-            uri: uri.toString(),
-            lastModification: stat.mtime.getTime(),
-            isDirectory: true,
-            hasChildren,
-            children
-        };
+        try {
+            const files = fs.readdirSync(path);
+            const hasChildren = files.length > 0;
+            const children = hasChildren ? depth > 0 ? this.doGetChildren(uri, files, depth) : undefined : [];
+            return {
+                uri: uri.toString(),
+                lastModification: stat.mtime.getTime(),
+                isDirectory: true,
+                hasChildren,
+                children
+            };
+        } catch (error) {
+            if (isErrnoException(error) && error.code === 'EPERM') {
+                return {
+                    uri: uri.toString(),
+                    lastModification: -1,
+                    isDirectory: true,
+                    children: [],
+                    hasChildren: false
+                };
+            }
+            throw error;
+        }
     }
 
     protected doGetChildren(uri: URI, files: string[], depth: number): FileStat[] {
