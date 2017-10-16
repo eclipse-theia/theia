@@ -32,7 +32,7 @@ export interface TerminalWidgetOptions {
 
 export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOptions> {
     /* a unique string per terminal */
-    created: string
+    created: string,
 }
 
 @injectable()
