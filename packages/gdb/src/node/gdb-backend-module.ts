@@ -13,6 +13,8 @@ import {
 
 import { GDBTerminalProcess, GDBTerminalProcessFactory, GDBTerminalProcessOptions } from './gdb-terminal-process';
 import { GDBRawProcess, GDBRawProcessFactory, GDBRawProcessOptions } from './gdb-raw-process';
+import { IDebugSession } from '@theia/debug/lib/node/debug-session';
+import { GDBDebugSession } from './gdb-debug-session';
 
 export default new ContainerModule(bind => {
     bind<IMIDebugger>(IMIDebugger).to(MIDebugger);
@@ -21,6 +23,7 @@ export default new ContainerModule(bind => {
     bind<MIOutputParser>(MIOutputParser).toSelf();
     bind<GDBTerminalProcess>(GDBTerminalProcess).toSelf();
     bind<GDBRawProcess>(GDBRawProcess).toSelf();
+    bind(IDebugSession).to(GDBDebugSession);
 
     bind(GDBTerminalProcessFactory).toFactory(ctx =>
         (options: GDBTerminalProcessOptions) => {

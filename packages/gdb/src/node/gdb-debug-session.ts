@@ -19,23 +19,25 @@ export interface LaunchRequestArguments {
 @injectable()
 export class GDBDebugSession extends DebugSession {
 
+    public readonly id: number;
+
     public constructor(
         @inject(DebugSessionManager) protected readonly manager: DebugSessionManager,
-        @inject(IMIDebugger) protected readonly miDebugger: IMIDebugger,
+        @inject(IMIDebugger) protected readonly _debugger: IMIDebugger,
         @inject(ILogger) protected readonly logger: ILogger) {
         super(manager);
         this.logger.debug("New GDB Debug Session");
     }
     public start(options: object) {
         /* FIXME this should obviously not be hardcoded */
-        this.miDebugger.start({ command: 'gdb', args: [] })
+        this._debugger.start({ command: 'gdb', args: [] })
             .then((result) => {
             }).catch((error) => {
                 this.logger.error(`Error starting debug session ${error.message}`);
             });
     }
 
-    public getTerminal(): any {
-        return this.miDebugger.getTerminal();
+    get debugger(): IMIDebugger {
+        return this._debugger;
     }
 }

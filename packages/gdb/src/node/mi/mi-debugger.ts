@@ -7,15 +7,15 @@
 import { injectable, inject } from 'inversify';
 import { MIInterpreter } from './mi-interpreter'
 import { MIProtocol as MI } from './mi-protocol';
-import { IDebugProcess } from '@theia/debug/lib/node/debug-process';
+import { IDebugProcess, IDebugger } from '@theia/debug/lib/node';
 import { GDBTerminalProcessFactory } from '../gdb-terminal-process'
 import { ILogger } from '@theia/core/lib/common';
 
 export const IMIDebugger = Symbol("IMIDebugger");
 
-export interface IMIDebugger {
+export interface IMIDebugger extends IDebugger {
     start(options: IMIDebuggerOptions): Promise<any>;
-    getTerminal(): any;
+    debugProcess: IDebugProcess
 }
 
 export interface IMIDebuggerOptions {
@@ -33,7 +33,8 @@ export enum ProcessState {
 @injectable()
 export class MIDebugger implements IMIDebugger {
 
-    protected rawProcess: IDebugProcess;
+    public readonly id: number;
+    protected _debugProcess: IDebugProcess;
 
     constructor(
         @inject(MIInterpreter) protected readonly interpreter: MIInterpreter,
@@ -43,19 +44,19 @@ export class MIDebugger implements IMIDebugger {
 
     spawn(command: string, args: string[]): Promise<any> {
         return new Promise((resolve, reject) => {
-            this.rawProcess = this.gdbFactory({ 'command': command, 'args': args });
+            this._debugProcess = this.gdbFactory({ 'command': command, 'args': args });
 
             /* FIXME Dispose of these handler */
-            this.rawProcess.onError((err: Error) => {
+            this.debugProcess.onError((err: Error) => {
                 reject(err)
             });
-            this.rawProcess.onExit(event => {
+            this.debugProcess.onExit(event => {
                 if (event.code > 0) {
                     reject(new Error(`Exited with code: ${event.code}`));
                 }
             });
 
-            this.interpreter.start(this.rawProcess.readStream, this.rawProcess.writeStream);
+            this.interpreter.start(this.debugProcess.readStream, this.debugProcess.writeStream);
             this.interpreter.once('NotifyAsyncOutput', (input: any) => {
                 resolve(input);
             });
@@ -65,7 +66,7 @@ export class MIDebugger implements IMIDebugger {
     start(options: IMIDebuggerOptions): Promise<any> {
         const p = new Promise((resolve, reject) => {
             this.spawn(options.command, options.args).then(() => {
-                this.rawProcess.onExit(event => { this.onProcessExit(event.code, event.signal) });
+                this.debugProcess.onExit(event => { this.onProcessExit(event.code, event.signal) });
                 /* Send command to list capabilities */
                 const command = new MI.MICommand('list-features');
                 this.interpreter.sendCommand(command).then((result: MI.ResultRecord) => {
@@ -89,7 +90,7 @@ export class MIDebugger implements IMIDebugger {
 
     }
 
-    public getTerminal(): any {
-        return this.rawProcess.terminal;
+    get debugProcess(): IDebugProcess {
+        return this._debugProcess;
     }
 }

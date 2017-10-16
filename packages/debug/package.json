@@ -14,6 +14,7 @@
     },
     "theiaExtensions": [
         {
+            "frontend": "lib/browser/debug-frontend-module",
             "backend": "lib/node/debug-backend-module"
         }
     ],
