@@ -124,12 +124,6 @@ export interface FileStat {
     isDirectory: boolean;
 
     /**
-     * Return {{true}} when this is a directory
-     * that is not empty.
-     */
-    hasChildren?: boolean;
-
-    /**
      * The children of the file stat.
      * If it is undefined and isDirectory is true, then this file stat is unresolved.
      */

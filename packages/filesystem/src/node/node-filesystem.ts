@@ -127,7 +127,7 @@ export class FileSystemNode implements FileSystem {
 
             // Handling special Windows case when source and target resources are empty folders.
             // Source should be deleted and target should be touched.
-            if (targetStat && targetStat.isDirectory && sourceStat.isDirectory && !targetStat.hasChildren && !sourceStat.hasChildren) {
+            if (overwrite && targetStat && targetStat.isDirectory && sourceStat.isDirectory && !this.mayHaveChildren(_targetUri) && !this.mayHaveChildren(_sourceUri)) {
                 // The value should be a Unix timestamp in seconds.
                 // For example, `Date.now()` returns milliseconds, so it should be divided by `1000` before passing it in.
                 const now = Date.now() / 1000;
@@ -142,7 +142,7 @@ export class FileSystemNode implements FileSystem {
                         resolve(this.doGetStat(_targetUri, 1));
                     });
                 });
-            } else if (targetStat && targetStat.isDirectory && sourceStat.isDirectory && !targetStat.hasChildren && sourceStat.hasChildren) {
+            } else if (overwrite && targetStat && targetStat.isDirectory && sourceStat.isDirectory && !this.mayHaveChildren(_targetUri) && this.mayHaveChildren(_sourceUri)) {
                 // Copy source to target, since target is empty. Then wipe the source content.
                 this.copy(sourceUri, targetUri, { overwrite: true }).then(stat => {
                     this.delete(sourceUri).then(() => resolve(stat));
@@ -150,7 +150,7 @@ export class FileSystemNode implements FileSystem {
                     reject(error);
                 });
             } else {
-                mv(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), { mkdirp: true }, (error) => {
+                mv(FileUri.fsPath(_sourceUri), FileUri.fsPath(_targetUri), { mkdirp: true, clobber: overwrite }, (error) => {
                     if (error) {
                         return reject(error);
                     }
@@ -305,11 +305,10 @@ export class FileSystemNode implements FileSystem {
     }
 
     protected doGetStat(uri: URI, depth: number): FileStat | undefined {
-        const path = FileUri.fsPath(uri);
         try {
-            const stats = fs.statSync(path);
+            const stats = fs.statSync(FileUri.fsPath(uri));
             if (stats.isDirectory()) {
-                return this.doCreateDirectoryStat(uri, path, stats, depth);
+                return this.doCreateDirectoryStat(uri, stats, depth);
             }
             return this.doCreateFileStat(uri, stats);
         } catch (error) {
@@ -331,20 +330,18 @@ export class FileSystemNode implements FileSystem {
         };
     }
 
-    protected doCreateDirectoryStat(uri: URI, path: string, stat: fs.Stats, depth: number): FileStat {
-        const files = fs.readdirSync(path);
-        const hasChildren = files.length > 0;
-        const children = hasChildren ? depth > 0 ? this.doGetChildren(uri, files, depth) : undefined : [];
+    protected doCreateDirectoryStat(uri: URI, stat: fs.Stats, depth: number): FileStat {
+        const children = depth > 0 ? this.doGetChildren(uri, depth) : [];
         return {
             uri: uri.toString(),
             lastModification: stat.mtime.getTime(),
             isDirectory: true,
-            hasChildren,
             children
         };
     }
 
-    protected doGetChildren(uri: URI, files: string[], depth: number): FileStat[] {
+    protected doGetChildren(uri: URI, depth: number): FileStat[] {
+        const files = fs.readdirSync(FileUri.fsPath(uri));
         const children = [];
         for (const file of files) {
             const childUri = uri.resolve(file);
@@ -354,6 +351,40 @@ export class FileSystemNode implements FileSystem {
             }
         }
         return children;
+    }
+
+    /** Return true if it's possible for this URI to have children.
+     *  It might not be possible to be certain because of permission problems
+     *  Or other filesystem errors.
+     */
+    protected mayHaveChildren(uri: URI): boolean {
+        /* If there's a problem reading the root directory.
+           Assume it's not empty to avoid overwriting anything.  */
+        try {
+            const rootStat = this.doGetStat(uri, 0);
+            if (rootStat === undefined) {
+                return true;
+            }
+            /* Not a directory.  */
+            if (rootStat !== undefined && rootStat.isDirectory === false) {
+                return false;
+            }
+        } catch {
+            return true;
+        }
+
+        /* If there's a problem with it's children then the directory must
+        not be empty.  */
+        try {
+            const stat = this.doGetStat(uri, 1);
+            if (stat !== undefined && stat.children !== undefined) {
+                return stat.children.length > 0;
+            } else {
+                return true;
+            }
+        } catch (err) {
+            return true;
+        }
     }
 
     protected doGetEncoding(option?: { encoding?: string }): string {
