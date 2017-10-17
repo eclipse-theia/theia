@@ -17,10 +17,11 @@ import { GitWidget } from './git-widget';
 import { GitResourceResolver } from './git-resource';
 import { GitContextMenu } from './git-context-menu';
 import { GitRepositoryProvider } from './git-repository-provider';
+import { GitQuickOpenService } from './git-quick-open-service';
 
 import '../../src/browser/style/index.css';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindGitPreferences(bind);
     bind(GitWatcherServerProxy).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitWatcherPath)).inSingletonScope();
     bind(GitWatcherServer).to(ReconnectingGitWatcherServer).inSingletonScope();
@@ -41,4 +42,5 @@ export default new ContainerModule(bind => {
     bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(GitResourceResolver));
 
     bind(GitRepositoryProvider).toSelf().inSingletonScope();
+    bind(GitQuickOpenService).toSelf().inSingletonScope();
 });
