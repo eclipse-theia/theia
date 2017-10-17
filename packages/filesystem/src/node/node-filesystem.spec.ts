@@ -100,7 +100,6 @@ describe("NodeFileSystem", () => {
             expect(fs.statSync(FileUri.fsPath(uri_2)).isFile()).to.be.true;
 
             return fileSystem.getFileStat(root.toString()).then(stat => {
-                expect(stat.hasChildren).to.be.true;
                 expect(stat.children!.length).to.equal(2);
             });
         });
@@ -161,7 +160,6 @@ describe("NodeFileSystem", () => {
                 content.should.eventually.have.property("stat").that.has.property("size").that.is.greaterThan(1),
                 content.should.eventually.have.property("stat").that.has.property("lastModification").that.is.greaterThan(1),
                 content.should.eventually.have.property("stat").that.has.property("isDirectory").that.is.false,
-                content.should.eventually.have.property("stat").that.not.have.property("hasChildren"),
                 content.should.eventually.have.property("stat").that.not.have.property("children"),
             ]);
         });
@@ -556,7 +554,6 @@ describe("NodeFileSystem", () => {
                 expect(stat).is.an("object");
                 expect(stat).has.property("uri").that.is.equal(uri.toString());
                 expect(stat).not.has.property("children");
-                expect(stat).not.has.property("hasChildren");
                 expect(fs.readFileSync(FileUri.fsPath(uri), "utf8")).to.be.empty;
             });
         });
@@ -569,7 +566,6 @@ describe("NodeFileSystem", () => {
                 expect(stat).is.an("object");
                 expect(stat).has.property("uri").that.is.equal(uri.toString());
                 expect(stat).not.has.property("children");
-                expect(stat).not.has.property("hasChildren");
                 expect(fs.readFileSync(FileUri.fsPath(uri), "utf8")).to.be.equal("foo");
             });
         });
@@ -582,7 +578,6 @@ describe("NodeFileSystem", () => {
                 expect(stat).is.an("object");
                 expect(stat).has.property("uri").that.is.equal(uri.toString());
                 expect(stat).not.has.property("children");
-                expect(stat).not.has.property("hasChildren");
                 expect(fs.readFileSync(FileUri.fsPath(uri), "utf8")).to.be.equal("foo");
             });
         });
@@ -595,7 +590,6 @@ describe("NodeFileSystem", () => {
                 expect(stat).is.an("object");
                 expect(stat).has.property("uri").that.is.equal(uri.toString());
                 expect(stat).not.has.property("children");
-                expect(stat).not.has.property("hasChildren");
                 expect(fs.readFileSync(FileUri.fsPath(uri), "utf8")).to.be.equal("foo");
             });
         });
@@ -619,7 +613,6 @@ describe("NodeFileSystem", () => {
             return fileSystem.createFolder(uri.toString()).then(stat => {
                 expect(stat).to.be.an("object");
                 expect(stat).to.have.property("uri").that.equals(uri.toString());
-                expect(stat).to.have.property("hasChildren").that.is.false;
                 expect(stat).to.have.property("children").that.is.empty;
             });
         });
@@ -631,7 +624,6 @@ describe("NodeFileSystem", () => {
             return fileSystem.createFolder(uri.toString()).then(stat => {
                 expect(stat).to.be.an("object");
                 expect(stat).to.have.property("uri").that.equals(uri.toString());
-                expect(stat).to.have.property("hasChildren").that.is.false;
                 expect(stat).to.have.property("children").that.is.empty;
             });
         });
