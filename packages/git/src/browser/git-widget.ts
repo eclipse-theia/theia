@@ -107,11 +107,11 @@ export class GitWidget extends VirtualWidget {
         return [headerContainer, changesContainer];
     }
 
-    protected renderRepoList(): h.Child {
-        const repoOptionElements: h.Child[] = [];
-        this.repositories.forEach(repo => {
-            const uri = new URI(repo.localUri);
-            repoOptionElements.push(h.option({ value: uri.toString() }, uri.displayName));
+    protected renderRepositoryList(): h.Child {
+        const repositoryOptionElements: h.Child[] = [];
+        this.repositories.forEach(repository => {
+            const uri = new URI(repository.localUri);
+            repositoryOptionElements.push(h.option({ value: uri.toString() }, uri.displayName));
         });
 
         return h.select({
@@ -122,7 +122,7 @@ export class GitWidget extends VirtualWidget {
                 const status = await this.git.status(this.repository);
                 this.updateView(status);
             }
-        }, VirtualRenderer.flatten(repoOptionElements));
+        }, VirtualRenderer.flatten(repositoryOptionElements));
     }
 
     protected renderCommandBar(): h.Child {
@@ -134,8 +134,8 @@ export class GitWidget extends VirtualWidget {
                 const messageInput = document.getElementById('git-messageInput') as HTMLInputElement;
                 if (this.message !== '') {
                     const extendedMessageInput = document.getElementById('git-extendedMessageInput') as HTMLInputElement;
-                    const repo = await this.gitRepositoryProvider.getSelected();
-                    this.git.commit(repo, this.message + "\n\n" + this.additionalMessage)
+                    const repository = await this.gitRepositoryProvider.getSelected();
+                    this.git.commit(repository, this.message + "\n\n" + this.additionalMessage)
                         .then(async () => {
                             messageInput.value = '';
                             extendedMessageInput.value = '';
@@ -155,7 +155,13 @@ export class GitWidget extends VirtualWidget {
         const refresh = h.a({
             className: 'button',
             title: 'Refresh',
-            onclick: e => {
+            onclick: async e => {
+                const selected = await this.gitRepositoryProvider.getSelected();
+                try {
+                    await this.git.status(selected);
+                } catch {
+                    this.gitRepositoryProvider.select(undefined);
+                }
                 this.initialize();
             }
         }, h.i({ className: 'fa fa-refresh' }));
@@ -173,7 +179,7 @@ export class GitWidget extends VirtualWidget {
             }
         }, h.i({ className: 'fa fa-ellipsis-h' }));
         const btnContainer = h.div({ className: 'flexcontainer buttons' }, commit, refresh, commands);
-        const repositoryListContainer = h.div({ id: 'repositoryListContainer' }, this.renderRepoList());
+        const repositoryListContainer = h.div({ id: 'repositoryListContainer' }, this.renderRepositoryList());
         return h.div({ id: 'commandBar', className: 'flexcontainer evenlySpreaded' }, repositoryListContainer, btnContainer);
     }
 
@@ -213,8 +219,8 @@ export class GitWidget extends VirtualWidget {
                 className: 'button',
                 title: 'Unstage Changes',
                 onclick: async event => {
-                    const repo = await this.gitRepositoryProvider.getSelected();
-                    this.git.unstage(repo, change.uri);
+                    const repository = await this.gitRepositoryProvider.getSelected();
+                    this.git.unstage(repository, change.uri);
                 }
             }, h.i({ className: 'fa fa-minus' })));
         } else {
@@ -222,12 +228,12 @@ export class GitWidget extends VirtualWidget {
                 className: 'button',
                 title: 'Discard Changes',
                 onclick: async event => {
-                    const repo = await this.gitRepositoryProvider.getSelected();
+                    const repository = await this.gitRepositoryProvider.getSelected();
                     const options: Git.Options.Checkout.WorkingTreeFile = { paths: change.uri };
                     if (change.status === GitFileStatus.New) {
                         this.commandService.executeCommand(WorkspaceCommands.FILE_DELETE, new URI(change.uri));
                     } else {
-                        this.git.checkout(repo, options);
+                        this.git.checkout(repository, options);
                     }
                 }
             }, h.i({ className: 'fa fa-undo' })));
@@ -235,8 +241,8 @@ export class GitWidget extends VirtualWidget {
                 className: 'button',
                 title: 'Stage Changes',
                 onclick: async event => {
-                    const repo = await this.gitRepositoryProvider.getSelected();
-                    this.git.add(repo, change.uri);
+                    const repository = await this.gitRepositoryProvider.getSelected();
+                    this.git.add(repository, change.uri);
                 }
             }, h.i({ className: 'fa fa-plus' })));
         }
@@ -256,8 +262,8 @@ export class GitWidget extends VirtualWidget {
     }
 
     protected getRepositoryRelativePath(absPath: string) {
-        const repoPath = new URI(this.repository.localUri).path.toString();
-        return absPath.replace(repoPath, '').replace(/^\//, '');
+        const repositoryPath = new URI(this.repository.localUri).path.toString();
+        return absPath.replace(repositoryPath, '').replace(/^\//, '');
     }
 
     protected renderGitItem(change: GitFileChange): h.Child {

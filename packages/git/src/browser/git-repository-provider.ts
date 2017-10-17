@@ -11,7 +11,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 @injectable()
 export class GitRepositoryProvider {
 
-    protected selectedRepository: Repository;
+    protected selectedRepository: Repository | undefined;
 
     constructor(
         @inject(Git) protected readonly git: Git,
@@ -27,7 +27,7 @@ export class GitRepositoryProvider {
         }
     }
 
-    select(localUri: string) {
-        this.selectedRepository = { localUri };
+    select(localUri: string | undefined) {
+        this.selectedRepository = localUri ? { localUri } : undefined;
     }
 }
