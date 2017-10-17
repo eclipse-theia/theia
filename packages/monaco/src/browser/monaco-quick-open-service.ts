@@ -9,8 +9,9 @@ import { injectable } from 'inversify';
 import { QuickOpenService, QuickOpenModel, QuickOpenOptions, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode } from "@theia/core/lib/browser";
 import { KEY_CODE_MAP } from './monaco-keycode-map';
 
-export interface InternalMonacoQuickOpenModel extends monaco.quickOpen.IQuickOpenControllerOpts {
+export interface MonacoQuickOpenControllerOpts extends monaco.quickOpen.IQuickOpenControllerOpts {
     readonly prefix?: string;
+    onType?(lookFor: string, acceptor: (model: monaco.quickOpen.QuickOpenModel) => void): void;
     onClose?(canceled: boolean): void;
 }
 
@@ -19,7 +20,8 @@ export class MonacoQuickOpenService extends QuickOpenService {
 
     protected readonly container: HTMLElement;
     protected _widget: monaco.quickOpen.QuickOpenWidget | undefined;
-    protected model: InternalMonacoQuickOpenModel | undefined;
+    protected opts: MonacoQuickOpenControllerOpts | undefined;
+    protected previousActiveElement: Element | undefined;
 
     constructor() {
         super();
@@ -35,24 +37,30 @@ export class MonacoQuickOpenService extends QuickOpenService {
     }
 
     open(model: QuickOpenModel, options?: QuickOpenOptions): void {
-        this.internalOpen(new MonacoQuickOpenModel(model, options));
+        this.internalOpen(new MonacoQuickOpenControllerOptsImpl(model, options));
     }
 
-    internalOpen(model: InternalMonacoQuickOpenModel): void {
-        this.model = model;
+    internalOpen(opts: MonacoQuickOpenControllerOpts): void {
+        this.opts = opts;
+        this.previousActiveElement = window.document.activeElement;
         const widget = this.widget;
-        widget.show(this.model.prefix || '');
-        widget.setPlaceHolder(model.inputAriaLabel);
+        widget.show(this.opts.prefix || '');
+        widget.setPlaceHolder(opts.inputAriaLabel);
     }
 
     protected get widget(): monaco.quickOpen.QuickOpenWidget {
         if (this._widget) {
             return this._widget;
         }
-
         this._widget = new monaco.quickOpen.QuickOpenWidget(this.container, {
             onOk: () => this.onClose(false),
-            onCancel: () => this.onClose(true),
+            onCancel: () => {
+                if (this.previousActiveElement instanceof HTMLElement) {
+                    this.previousActiveElement.focus();
+                    this.previousActiveElement = undefined;
+                }
+                this.onClose(true);
+            },
             onType: lookFor => this.onType(lookFor || ''),
             onFocusLost: () => false
         }, {});
@@ -74,21 +82,27 @@ export class MonacoQuickOpenService extends QuickOpenService {
     }
 
     protected onClose(cancelled: boolean): void {
-        if (this.model && this.model.onClose) {
-            this.model.onClose(cancelled);
+        if (this.opts && this.opts.onClose) {
+            this.opts.onClose(cancelled);
         }
     }
 
-    protected onType(lookFor: string): void {
-        const options = this.model;
-        if (this.widget && options) {
-            this.widget.setInput(options.getModel(lookFor), options.getAutoFocus(lookFor), options.inputAriaLabel);
+    protected async onType(lookFor: string): Promise<void> {
+        const opts = this.opts;
+        if (this.widget && opts) {
+            if (opts.onType) {
+                opts.onType(lookFor, model =>
+                    this.widget.setInput(model, opts.getAutoFocus(lookFor), opts.inputAriaLabel));
+            } else {
+                const m = opts.getModel(lookFor);
+                this.widget.setInput(m, opts.getAutoFocus(lookFor), opts.inputAriaLabel);
+            }
         }
     }
 
 }
 
-export class MonacoQuickOpenModel implements InternalMonacoQuickOpenModel {
+export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControllerOpts {
 
     protected readonly options: QuickOpenOptions.Resolved;
 
@@ -112,9 +126,8 @@ export class MonacoQuickOpenModel implements InternalMonacoQuickOpenModel {
         this.options.onClose(cancelled);
     }
 
-    getModel(lookFor: string): monaco.quickOpen.QuickOpenModel {
+    private toOpenModel(lookFor: string, items: QuickOpenItem[]): monaco.quickOpen.QuickOpenModel {
         const entries: monaco.quickOpen.QuickOpenEntry[] = [];
-        const items = this.model.getItems(lookFor);
         for (const item of items) {
             const entry = this.createEntry(item, lookFor);
             if (entry) {
@@ -127,24 +140,34 @@ export class MonacoQuickOpenModel implements InternalMonacoQuickOpenModel {
         return new monaco.quickOpen.QuickOpenModel(entries);
     }
 
+    getModel(lookFor: string): monaco.quickOpen.QuickOpenModel {
+        throw new Error("getModel not supported!");
+    }
+
+    onType(lookFor: string, acceptor: (model: monaco.quickOpen.QuickOpenModel) => void): void {
+        this.model.onType(lookFor, items => {
+            const result = this.toOpenModel(lookFor, items);
+            acceptor(result);
+        });
+    }
+
     protected createEntry(item: QuickOpenItem, lookFor: string): monaco.quickOpen.QuickOpenEntry | undefined {
         const labelHighlights = this.options.fuzzyMatchLabel ? this.matchesFuzzy(lookFor, item.getLabel()) : item.getLabelHighlights();
-        if (!labelHighlights) {
-            return undefined;
-        }
         const descriptionHighlights = this.options.fuzzyMatchDescription ? this.matchesFuzzy(lookFor, item.getDescription()) : item.getDescriptionHighlights();
         const detailHighlights = this.options.fuzzyMatchDetail ? this.matchesFuzzy(lookFor, item.getDetail()) : item.getDetailHighlights();
-
+        if (lookFor && !labelHighlights && !descriptionHighlights && !detailHighlights) {
+            return undefined;
+        }
         const entry = item instanceof QuickOpenGroupItem ? new QuickOpenEntryGroup(item) : new QuickOpenEntry(item);
-        entry.setHighlights(labelHighlights, descriptionHighlights, detailHighlights);
+        entry.setHighlights(labelHighlights || [], descriptionHighlights, detailHighlights);
         return entry;
     }
 
     protected matchesFuzzy(lookFor: string, value: string | undefined): monaco.quickOpen.IHighlight[] | undefined {
         if (!lookFor || !value) {
-            return [];
+            return undefined;
         }
-        return monaco.filters.matchesFuzzy(lookFor, value);
+        return monaco.filters.matchesFuzzy(lookFor, value, true);
     }
 
     getAutoFocus(lookFor: string): monaco.quickOpen.IAutoFocus {

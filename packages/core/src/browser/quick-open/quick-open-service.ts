@@ -13,21 +13,24 @@ export namespace QuickOpenOptions {
     export interface Resolved {
         readonly prefix: string;
         readonly placeholder: string;
-        onClose(canceled: boolean): void;
 
         readonly fuzzyMatchLabel: boolean;
         readonly fuzzyMatchDetail: boolean;
         readonly fuzzyMatchDescription: boolean;
         readonly fuzzySort: boolean;
+
+        onClose(canceled: boolean): void;
     }
     export const defaultOptions: Resolved = Object.freeze({
         prefix: '',
         placeholder: '',
-        onClose: () => { /* no-op*/ },
+
         fuzzyMatchLabel: false,
         fuzzyMatchDetail: false,
         fuzzyMatchDescription: false,
-        fuzzySort: false
+        fuzzySort: false,
+
+        onClose: () => { /* no-op*/ }
     });
     export function resolve(options: QuickOpenOptions = {}, source: Resolved = defaultOptions): Resolved {
         return Object.assign({}, source, options);
