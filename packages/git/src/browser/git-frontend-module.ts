@@ -21,7 +21,7 @@ import { GitQuickOpenService } from './git-quick-open-service';
 
 import '../../src/browser/style/index.css';
 
-export default new ContainerModule((bind, unbind, isBound, rebind) => {
+export default new ContainerModule(bind => {
     bindGitPreferences(bind);
     bind(GitWatcherServerProxy).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitWatcherPath)).inSingletonScope();
     bind(GitWatcherServer).to(ReconnectingGitWatcherServer).inSingletonScope();

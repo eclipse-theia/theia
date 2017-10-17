@@ -9,7 +9,7 @@ import { injectable, inject } from "inversify";
 import { QuickOpenItem, QuickOpenMode, QuickOpenModel } from '@theia/core/lib/browser/quick-open/quick-open-model';
 import { QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser/quick-open/quick-open-service';
 import { Git } from '../common';
-import { Repository } from '../common/model';
+import { Repository, Branch, BranchType } from '../common/model';
 import { GitRepositoryProvider } from './git-repository-provider';
 
 /**
@@ -30,29 +30,47 @@ export class GitQuickOpenService {
         const [repository, remotes] = await Promise.all([this.getRepository(), this.getRemotes()]);
         const execute = (item: QuickOpenItem) => this.git.fetch(repository, { remote: item.getLabel() });
         const items = remotes.map(remote => new GitQuickOpenItem(remote, execute));
-        this.quickOpenService.open(this.getModel(items), this.getOptions('Select a remote to fetch from.'));
+        this.quickOpenService.open(this.getModel(items), this.getOptions('Pick a remote to fetch from:'));
     }
 
     async push(): Promise<void> {
         const [repository, remotes] = await Promise.all([this.getRepository(), this.getRemotes()]);
         const execute = (item: QuickOpenItem) => this.git.push(repository, { remote: item.getLabel() });
         const items = remotes.map(remote => new GitQuickOpenItem(remote, execute));
-        this.quickOpenService.open(this.getModel(items), this.getOptions('Select a remote to push to.'));
+        const TODO_currentBranchName = ''; // Otherwise should be the branch name.
+        this.quickOpenService.open(this.getModel(items), this.getOptions(`Pick a remote to push the branch${TODO_currentBranchName} to:`));
     }
-
 
     async pull(): Promise<void> {
         const [repository, remotes] = await Promise.all([this.getRepository(), this.getRemotes()]);
-        const execute = (item: QuickOpenItem) => this.git.pull(repository, { remote: item.getLabel() });
-        const items = remotes.map(remote => new GitQuickOpenItem(remote, execute));
-        this.quickOpenService.open(this.getModel(items), this.getOptions('Select a remote to pull from.'));
+        const defaultRemote = remotes[0]; // I wish I could use assignment destructuring here. (GH-413)
+        const executeRemote = async (remoteItem: GitQuickOpenItem<string>) => {
+            // The first remote is the default.
+            if (remoteItem.ref === defaultRemote) {
+                this.git.pull(repository, { remote: remoteItem.getLabel() });
+            } else {
+                // Otherwise we need to propose the branches from
+                const branches = await this.getBranches();
+                const executeBranch = (item: GitQuickOpenItem<Branch>) => this.git.pull(repository, { remote: remoteItem.getLabel() });
+                const toLabel = (branchItem: GitQuickOpenItem<Branch>) => branchItem.ref.name;
+                const branchItems = branches
+                    .filter(branch => branch.type === BranchType.Remote)
+                    .filter(branch => (branch.name || '').startsWith(`${remoteItem.ref}/`))
+                    .map(branch => new GitQuickOpenItem<Branch>(branch, executeBranch, toLabel));
+                this.quickOpenService.open(this.getModel(branchItems), this.getOptions('Select the branch to pull the changes from:'));
+            }
+        };
+        const remoteItems = remotes.map(remote => new GitQuickOpenItem(remote, executeRemote));
+        this.quickOpenService.open(this.getModel(remoteItems), this.getOptions('Pick a remote to pull the branch from:'));
     }
 
     async merge(): Promise<void> {
         const [repository, branches] = await Promise.all([this.getRepository(), this.getBranches()]);
-        const execute = (item: QuickOpenItem) => this.git.merge(repository, { branch: item.getLabel()! });
-        const items = branches.map(remote => new GitQuickOpenItem(remote, execute));
-        this.quickOpenService.open(this.getModel(items), this.getOptions('Select a branch to merge into the currently active one.'));
+        const execute = (item: GitQuickOpenItem<Branch>) => this.git.merge(repository, { branch: item.getLabel()! });
+        const toLabel = (item: GitQuickOpenItem<Branch>) => item.ref.name;
+        const items = branches.map(branch => new GitQuickOpenItem<Branch>(branch, execute, toLabel));
+        const TODO_currentBranchName = ''; // Otherwise should be the branch name.
+        this.quickOpenService.open(this.getModel(items), this.getOptions(`Pick a branch to merge into the currently active ${TODO_currentBranchName} branch:`));
     }
 
     private getOptions(placeholder: string): QuickOpenOptions.Resolved {
@@ -80,7 +98,7 @@ export class GitQuickOpenService {
         return this.git.remote(repository);
     }
 
-    private async getBranches(): Promise<string[]> {
+    private async getBranches(): Promise<Branch[]> {
         const repository = await this.getRepository();
         const [local, remote] = await Promise.all([
             this.git.branch(repository, { type: 'local' }),
@@ -92,9 +110,12 @@ export class GitQuickOpenService {
 }
 
 
-class GitQuickOpenItem extends QuickOpenItem {
+class GitQuickOpenItem<T> extends QuickOpenItem {
 
-    constructor(private label: string, private execute: (item: QuickOpenItem) => void) {
+    constructor(
+        public readonly ref: T,
+        private execute: (item: GitQuickOpenItem<T>) => void,
+        private toLabel: (item: GitQuickOpenItem<T>) => string = (item: QuickOpenItem) => `${ref}`) {
         super();
     }
 
@@ -107,7 +128,7 @@ class GitQuickOpenItem extends QuickOpenItem {
     }
 
     getLabel(): string {
-        return this.label;
+        return this.toLabel(this);
     }
 
 }

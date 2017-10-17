@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Repository, WorkingDirectoryStatus } from './model';
+import { Repository, WorkingDirectoryStatus, Branch } from './model';
 
 /**
  * The WS endpoint path to the Git service.
@@ -370,9 +370,9 @@ export interface Git {
     /**
      * Lists, creates, renames or deletes a branch.
      *
-     *  - It returns with either `undefined`, or a `string` or an array of `string`s when listing the branches. A single
-     * `string` value will be provided if the `type` is `current`. It returns with `undefined` if the current branch is detached.
-     * Otherwise it returns with an array of branch names.
+     *  - It returns with either `undefined`, or a `Branch` or an array of `Branch`es when listing the branches. A single
+     * `Branch` value will be provided if the `type` is `current`. It returns with `undefined` if the current branch is detached.
+     * Otherwise it returns with an array of branches.
      *  - It returns with a promise that resolves to `void` when creating, renaming or deleting a branch.
      *
      * @param the repository to get the active branch from.
@@ -382,7 +382,7 @@ export interface Git {
         Git.Options.Branch.List |
         Git.Options.Branch.Create |
         Git.Options.Branch.Rename |
-        Git.Options.Branch.Delete): Promise<void | undefined | string | string[]>;
+        Git.Options.Branch.Delete): Promise<void | undefined | Branch | Branch[]>;
 
     /**
      * Switches branches or restores working tree files.

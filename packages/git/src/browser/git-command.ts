@@ -38,25 +38,25 @@ export class GitCommandHandlers implements CommandContribution {
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(GIT_COMMANDS.FETCH);
         registry.registerHandler(GIT_COMMANDS.FETCH.id, {
-            execute: (): any => this.quickOpenService.fetch(),
+            execute: () => this.quickOpenService.fetch(),
             isEnabled: () => true
         });
 
         registry.registerCommand(GIT_COMMANDS.PULL);
         registry.registerHandler(GIT_COMMANDS.PULL.id, {
-            execute: (): any => this.quickOpenService.pull(),
+            execute: () => this.quickOpenService.pull(),
             isEnabled: () => true
         });
 
         registry.registerCommand(GIT_COMMANDS.PUSH);
         registry.registerHandler(GIT_COMMANDS.PUSH.id, {
-            execute: (): any => this.quickOpenService.push(),
+            execute: () => this.quickOpenService.push(),
             isEnabled: () => true
         });
 
         registry.registerCommand(GIT_COMMANDS.MERGE);
         registry.registerHandler(GIT_COMMANDS.MERGE.id, {
-            execute: (): any => this.quickOpenService.merge(),
+            execute: () => this.quickOpenService.merge(),
             isEnabled: () => true
         });
 
