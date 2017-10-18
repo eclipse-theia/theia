@@ -42,11 +42,9 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(TerminalCommands.NEW);
-        this.workspaceService.root.then(() => {
-            commands.registerHandler(TerminalCommands.NEW.id, {
-                isEnabled: () => true,
-                execute: () => this.newTerminal()
-            });
+        commands.registerHandler(TerminalCommands.NEW.id, {
+            isEnabled: () => true,
+            execute: () => this.newTerminal()
         });
     }
 
