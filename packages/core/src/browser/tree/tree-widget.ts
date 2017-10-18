@@ -180,7 +180,7 @@ export class TreeWidget extends VirtualWidget {
                 height: `${height}px`
             },
             onclick: event => {
-                this.model.toggleNodeExpansion(node);
+                this.handleClickEvent(node, event);
                 event.stopPropagation();
             }
         });
