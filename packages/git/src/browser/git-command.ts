@@ -8,6 +8,7 @@
 import { injectable, inject } from "inversify";
 import { CommandContribution, CommandRegistry } from "@theia/core/lib/common";
 import { GitQuickOpenService } from './git-quick-open-service';
+import { GitRepositoryProvider } from './git-repository-provider';
 
 export namespace GIT_COMMANDS {
     export const FETCH = {
@@ -32,33 +33,38 @@ export namespace GIT_COMMANDS {
 export class GitCommandHandlers implements CommandContribution {
 
     constructor(
-        @inject(GitQuickOpenService) protected readonly quickOpenService: GitQuickOpenService
+        @inject(GitQuickOpenService) protected readonly quickOpenService: GitQuickOpenService,
+        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider
     ) { }
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(GIT_COMMANDS.FETCH);
         registry.registerHandler(GIT_COMMANDS.FETCH.id, {
             execute: () => this.quickOpenService.fetch(),
-            isEnabled: () => true
+            isEnabled: () => this.repositorySelected
         });
 
         registry.registerCommand(GIT_COMMANDS.PULL);
         registry.registerHandler(GIT_COMMANDS.PULL.id, {
             execute: () => this.quickOpenService.pull(),
-            isEnabled: () => true
+            isEnabled: () => this.repositorySelected
         });
 
         registry.registerCommand(GIT_COMMANDS.PUSH);
         registry.registerHandler(GIT_COMMANDS.PUSH.id, {
             execute: () => this.quickOpenService.push(),
-            isEnabled: () => true
+            isEnabled: () => this.repositorySelected
         });
 
         registry.registerCommand(GIT_COMMANDS.MERGE);
         registry.registerHandler(GIT_COMMANDS.MERGE.id, {
             execute: () => this.quickOpenService.merge(),
-            isEnabled: () => true
+            isEnabled: () => this.repositorySelected
         });
 
+    }
+
+    protected get repositorySelected(): boolean {
+        return this.repositoryProvider.selectedRepository !== undefined;
     }
 }
