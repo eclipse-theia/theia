@@ -24,9 +24,6 @@ import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service
 @injectable()
 export class GitWidget extends VirtualWidget {
 
-    protected repository: Repository;
-
-    protected repositories: Repository[] = [];
     protected stagedChanges: GitFileChange[] = [];
     protected unstagedChanges: GitFileChange[] = [];
     protected mergeChanges: GitFileChange[] = [];
@@ -38,7 +35,7 @@ export class GitWidget extends VirtualWidget {
 
     constructor(
         @inject(Git) protected readonly git: Git,
-        @inject(GitRepositoryProvider) protected readonly gitRepositoryProvider: GitRepositoryProvider,
+        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
         @inject(GitWatcher) protected readonly gitWatcher: GitWatcher,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
@@ -60,48 +57,53 @@ export class GitWidget extends VirtualWidget {
     }
 
     async initialize(): Promise<void> {
-        const root = await this.workspaceService.root;
-        this.repositories = await this.git.repositories(root.uri);
-        this.repository = await this.gitRepositoryProvider.getSelected();
-        this.gitWatcher.dispose();
-        this.watcherDisposable = await this.gitWatcher.watchGitChanges(this.repository);
-        this.gitWatcher.onGitEvent(async gitEvent => {
-            if (GitStatusChangeEvent.is(gitEvent)) {
-                this.status = gitEvent.status;
-                this.updateView(gitEvent.status);
-            }
-        });
+        await this.repositoryProvider.refresh();
+        const repository = this.repositoryProvider.selectedRepository;
+        if (repository) {
+            this.gitWatcher.dispose();
+            this.watcherDisposable = await this.gitWatcher.watchGitChanges(repository);
+            this.gitWatcher.onGitEvent(async gitEvent => {
+                if (GitStatusChangeEvent.is(gitEvent)) {
+                    this.status = gitEvent.status;
+                    this.updateView(gitEvent.status);
+                }
+            });
+        }
     }
 
-    protected updateView(status: WorkingDirectoryStatus) {
+    protected updateView(status: WorkingDirectoryStatus | undefined) {
         this.stagedChanges = [];
         this.unstagedChanges = [];
         this.mergeChanges = [];
-        status.changes.forEach(change => {
-            if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
-                if (change.staged) {
-                    this.stagedChanges.push(change);
+        if (status) {
+            status.changes.forEach(change => {
+                if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
+                    if (change.staged) {
+                        this.stagedChanges.push(change);
+                    } else {
+                        this.unstagedChanges.push(change);
+                    }
                 } else {
-                    this.unstagedChanges.push(change);
+                    if (!change.staged) {
+                        this.mergeChanges.push(change);
+                    }
                 }
-            } else {
-                if (!change.staged) {
-                    this.mergeChanges.push(change);
-                }
-            }
-        });
+            });
+        }
         this.update();
     }
 
     protected render(): h.Child {
-        const commandBar = this.renderCommandBar();
+        const repository = this.repositoryProvider.selectedRepository;
+
+        const commandBar = this.renderCommandBar(repository);
         const messageInput = this.renderMessageInput();
         const messageTextarea = this.renderMessageTextarea();
         const headerContainer = h.div({ className: 'headerContainer' }, commandBar, messageInput, messageTextarea);
 
-        const mergeChanges = this.renderMergeChanges() || '';
-        const stagedChanges = this.renderStagedChanges() || '';
-        const unstagedChanges = this.renderUnstagedChanges() || '';
+        const mergeChanges = this.renderMergeChanges(repository) || '';
+        const stagedChanges = this.renderStagedChanges(repository) || '';
+        const unstagedChanges = this.renderUnstagedChanges(repository) || '';
         const changesContainer = h.div({ className: "changesOuterContainer" }, mergeChanges, stagedChanges, unstagedChanges);
 
         return [headerContainer, changesContainer];
@@ -109,7 +111,7 @@ export class GitWidget extends VirtualWidget {
 
     protected renderRepositoryList(): h.Child {
         const repositoryOptionElements: h.Child[] = [];
-        this.repositories.forEach(repository => {
+        this.repositoryProvider.allRepositories.forEach(repository => {
             const uri = new URI(repository.localUri);
             repositoryOptionElements.push(h.option({ value: uri.toString() }, uri.displayName));
         });
@@ -117,16 +119,16 @@ export class GitWidget extends VirtualWidget {
         return h.select({
             id: 'repositoryList',
             onchange: async event => {
-                this.gitRepositoryProvider.select((event.target as HTMLSelectElement).value);
-                this.repository = await this.gitRepositoryProvider.getSelected();
-                const status = await this.git.status(this.repository);
+                const repository = { localUri: (event.target as HTMLSelectElement).value };
+                this.repositoryProvider.selectedRepository = repository;
+                const status = repository ? await this.git.status(repository) : undefined;
                 this.updateView(status);
             }
         }, VirtualRenderer.flatten(repositoryOptionElements));
     }
 
-    protected renderCommandBar(): h.Child {
-        const commit = h.a({
+    protected renderCommandBar(repository: Repository | undefined): h.Child {
+        const commit = repository ? h.a({
             className: 'button',
             title: 'Commit',
             onclick: async event => {
@@ -134,12 +136,12 @@ export class GitWidget extends VirtualWidget {
                 const messageInput = document.getElementById('git-messageInput') as HTMLInputElement;
                 if (this.message !== '') {
                     const extendedMessageInput = document.getElementById('git-extendedMessageInput') as HTMLInputElement;
-                    const repository = await this.gitRepositoryProvider.getSelected();
-                    this.git.commit(repository, this.message + "\n\n" + this.additionalMessage)
+                    // We can make sure, repository exists, otherwise we would not have this button.
+                    this.git.commit(repository!, this.message + "\n\n" + this.additionalMessage)
                         .then(async () => {
                             messageInput.value = '';
                             extendedMessageInput.value = '';
-                            const status = await this.git.status(this.repository);
+                            const status = await this.git.status(repository!);
                             this.updateView(status);
                         });
                 } else {
@@ -151,21 +153,16 @@ export class GitWidget extends VirtualWidget {
                     this.messageService.error('Please provide a commit message!');
                 }
             }
-        }, h.i({ className: 'fa fa-check' }));
+        }, h.i({ className: 'fa fa-check' })) : '';
         const refresh = h.a({
             className: 'button',
             title: 'Refresh',
             onclick: async e => {
-                const selected = await this.gitRepositoryProvider.getSelected();
-                try {
-                    await this.git.status(selected);
-                } catch {
-                    this.gitRepositoryProvider.select(undefined);
-                }
+                await this.repositoryProvider.refresh();
                 this.initialize();
             }
         }, h.i({ className: 'fa fa-refresh' }));
-        const commands = h.a({
+        const commands = repository ? h.a({
             className: 'button',
             title: 'More...',
             onclick: event => {
@@ -177,7 +174,7 @@ export class GitWidget extends VirtualWidget {
                     });
                 }
             }
-        }, h.i({ className: 'fa fa-ellipsis-h' }));
+        }, h.i({ className: 'fa fa-ellipsis-h' })) : '';
         const btnContainer = h.div({ className: 'flexcontainer buttons' }, commit, refresh, commands);
         const repositoryListContainer = h.div({ id: 'repositoryListContainer' }, this.renderRepositoryList());
         return h.div({ id: 'commandBar', className: 'flexcontainer evenlySpreaded' }, repositoryListContainer, btnContainer);
@@ -212,14 +209,13 @@ export class GitWidget extends VirtualWidget {
         return h.div({ id: 'messageTextareaContainer', className: 'flexcontainer row' }, textarea);
     }
 
-    protected renderGitItemButtons(change: GitFileChange): h.Child {
+    protected renderGitItemButtons(repository: Repository, change: GitFileChange): h.Child {
         const buttons: h.Child[] = [];
         if (change.staged) {
             buttons.push(h.a({
                 className: 'button',
                 title: 'Unstage Changes',
                 onclick: async event => {
-                    const repository = await this.gitRepositoryProvider.getSelected();
                     this.git.unstage(repository, change.uri);
                 }
             }, h.i({ className: 'fa fa-minus' })));
@@ -228,7 +224,6 @@ export class GitWidget extends VirtualWidget {
                 className: 'button',
                 title: 'Discard Changes',
                 onclick: async event => {
-                    const repository = await this.gitRepositoryProvider.getSelected();
                     const options: Git.Options.Checkout.WorkingTreeFile = { paths: change.uri };
                     if (change.status === GitFileStatus.New) {
                         this.commandService.executeCommand(WorkspaceCommands.FILE_DELETE, new URI(change.uri));
@@ -241,7 +236,6 @@ export class GitWidget extends VirtualWidget {
                 className: 'button',
                 title: 'Stage Changes',
                 onclick: async event => {
-                    const repository = await this.gitRepositoryProvider.getSelected();
                     this.git.add(repository, change.uri);
                 }
             }, h.i({ className: 'fa fa-plus' })));
@@ -261,17 +255,20 @@ export class GitWidget extends VirtualWidget {
         return '';
     }
 
-    protected getRepositoryRelativePath(absPath: string) {
-        const repositoryPath = new URI(this.repository.localUri).path.toString();
+    protected getRepositoryRelativePath(repository: Repository, absPath: string) {
+        const repositoryPath = new URI(repository.localUri).path.toString();
         return absPath.replace(repositoryPath, '').replace(/^\//, '');
     }
 
-    protected renderGitItem(change: GitFileChange): h.Child {
+    protected renderGitItem(repository: Repository | undefined, change: GitFileChange): h.Child {
+        if (!repository) {
+            return '';
+        }
         const changeUri: URI = new URI(change.uri);
         const fileIcon = this.iconProvider.getFileIconForURI(changeUri);
         const iconSpan = h.span({ className: fileIcon });
         const nameSpan = h.span({ className: 'name' }, changeUri.displayName + ' ');
-        const pathSpan = h.span({ className: 'path' }, this.getRepositoryRelativePath(changeUri.path.dir.toString()));
+        const pathSpan = h.span({ className: 'path' }, this.getRepositoryRelativePath(repository, changeUri.path.dir.toString()));
         const nameAndPathDiv = h.div({
             className: 'noWrapInfo',
             onclick: () => {
@@ -306,7 +303,7 @@ export class GitWidget extends VirtualWidget {
                 open(this.openerService, uri);
             }
         }, iconSpan, nameSpan, pathSpan);
-        const buttonsDiv = this.renderGitItemButtons(change);
+        const buttonsDiv = this.renderGitItemButtons(repository, change);
         const staged = change.staged ? 'staged ' : '';
         const statusDiv = h.div({ className: 'status ' + staged + GitFileStatus[change.status].toLowerCase() }, this.getStatusChar(change.status, change.staged));
         const itemBtnsAndStatusDiv = h.div({ className: 'itemButtonsContainer' }, buttonsDiv, statusDiv);
@@ -318,11 +315,11 @@ export class GitWidget extends VirtualWidget {
         return stagedChangesHeaderDiv;
     }
 
-    protected renderMergeChanges(): h.Child | undefined {
+    protected renderMergeChanges(repository: Repository | undefined): h.Child | undefined {
         const mergeChangeDivs: h.Child[] = [];
         if (this.mergeChanges.length > 0) {
             this.mergeChanges.forEach(change => {
-                mergeChangeDivs.push(this.renderGitItem(change));
+                mergeChangeDivs.push(this.renderGitItem(repository, change));
             });
             return h.div({
                 id: 'mergeChanges',
@@ -333,11 +330,11 @@ export class GitWidget extends VirtualWidget {
         }
     }
 
-    protected renderStagedChanges(): h.Child | undefined {
+    protected renderStagedChanges(repository: Repository | undefined): h.Child | undefined {
         const stagedChangeDivs: h.Child[] = [];
         if (this.stagedChanges.length > 0) {
             this.stagedChanges.forEach(change => {
-                stagedChangeDivs.push(this.renderGitItem(change));
+                stagedChangeDivs.push(this.renderGitItem(repository, change));
             });
             return h.div({
                 id: 'stagedChanges',
@@ -348,11 +345,11 @@ export class GitWidget extends VirtualWidget {
         }
     }
 
-    protected renderUnstagedChanges(): h.Child {
+    protected renderUnstagedChanges(repository: Repository | undefined): h.Child | undefined {
         const unstagedChangeDivs: h.Child[] = [];
         if (this.unstagedChanges.length > 0) {
             this.unstagedChanges.forEach(change => {
-                unstagedChangeDivs.push(this.renderGitItem(change));
+                unstagedChangeDivs.push(this.renderGitItem(repository, change));
             });
             return h.div({
                 id: 'unstagedChanges',
@@ -360,6 +357,6 @@ export class GitWidget extends VirtualWidget {
             }, h.div({ className: 'theia-header' }, 'Changed'), VirtualRenderer.flatten(unstagedChangeDivs));
         }
 
-        return '';
+        return undefined;
     }
 }
