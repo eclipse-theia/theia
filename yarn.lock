@@ -7329,9 +7329,9 @@ xtend@~2.1.1:
   dependencies:
     object-keys "~0.4.0"
 
-xterm@^2.8.1:
-  version "2.9.2"
-  resolved "https://registry.yarnpkg.com/xterm/-/xterm-2.9.2.tgz#ec3e7c636ba67af4a7026be2cff7bdf08e56400a"
+xterm@theia-ide/xterm.js#v3-built:
+  version "2.9.1"
+  resolved "https://codeload.github.com/theia-ide/xterm.js/tar.gz/e2aca68c8d5a64320d26b889d2c8d3f4510d4805"
 
 y18n@^3.2.1:
   version "3.2.1"

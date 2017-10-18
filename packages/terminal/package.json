@@ -8,7 +8,7 @@
     "@theia/process": "^0.1.1",
     "@theia/workspace": "^0.1.1",
     "@types/xterm": "^2.0.3",
-    "xterm": "^2.8.1"
+    "xterm": "theia-ide/xterm.js#v3-built"
   },
   "publishConfig": {
     "access": "public"

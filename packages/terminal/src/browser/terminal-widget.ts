@@ -39,7 +39,7 @@ export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOpti
 export class TerminalWidget extends BaseWidget {
 
     private terminalId: number | undefined
-    private term: Xterm
+    private term: Xterm.Terminal
     private cols: number = 80
     private rows: number = 40
     private endpoint: Endpoint
@@ -68,9 +68,8 @@ export class TerminalWidget extends BaseWidget {
         this.title.closable = true
         this.addClass("terminal-container")
 
-        this.term = new Xterm({
+        this.term = new Xterm.Terminal({
             cursorBlink: true,
-            theme: 'dark'
         });
 
         this.term.open(this.node);
@@ -88,6 +87,11 @@ export class TerminalWidget extends BaseWidget {
             if (this.terminalId === undefined) {
                 return;
             }
+
+            if (!size) {
+                return;
+            }
+
             this.cols = size.cols;
             this.rows = size.rows;
             this.shellTerminalServer.resize(this.terminalId, this.cols, this.rows);
