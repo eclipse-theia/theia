@@ -1,0 +1,15 @@
+{
+	"en": {
+		"workspace-frontend": {
+			"Open": "Open..."
+		},
+		"workspace-commands": {
+			"File": "File",
+			"New File": "New File",
+			"New Folder": "New Folder",
+			"Open": "Open...",
+			"Rename": "Rename",
+			"Delete": "Delete"
+		}
+	}
+}

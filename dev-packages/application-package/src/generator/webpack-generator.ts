@@ -31,6 +31,7 @@ const CircularDependencyPlugin = require('circular-dependency-plugin');
 
 const outputPath = path.resolve(__dirname, 'lib');
 const development = process.env.NODE_ENV === 'development';${this.ifMonaco(() => `
+const GlobalizePlugin = require("globalize-webpack-plugin");
 
 const monacoEditorPath = development ? '${this.resolve('monaco-editor-core', 'dev/vs')}' : '${this.resolve('monaco-editor-core', 'min/vs')}';
 const monacoLanguagesPath = '${this.resolve('monaco-languages', 'release')}';
@@ -124,6 +125,10 @@ module.exports = {
         new CircularDependencyPlugin({
             exclude: /(node_modules|examples)\\/./,
             failOnError: false // https://github.com/nodejs/readable-stream/issues/280#issuecomment-297076462
+        }),
+        new GlobalizePlugin({
+            production: false, // true: production, false: development
+            developmentLocale: "en", // locale to be used for development.
         })
     ],
     stats: {
