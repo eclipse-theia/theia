@@ -151,7 +151,11 @@
     align-items: baseline;
 }
 
-#theia-gitContainer .numberOfChanges {}
+#theia-gitContainer .changesOuterContainer {
+    height: calc(100% - 93px);
+    overflow-y: auto;
+    padding-right: 5px;
+}
 
 #theia-gitContainer .warn {
     background-color: var(--theia-error-color2) !important;

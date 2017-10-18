@@ -97,11 +97,14 @@ export class GitWidget extends VirtualWidget {
         const commandBar = this.renderCommandBar();
         const messageInput = this.renderMessageInput();
         const messageTextarea = this.renderMessageTextarea();
+        const headerContainer = h.div({ className: 'headerContainer' }, commandBar, messageInput, messageTextarea);
+
         const mergeChanges = this.renderMergeChanges() || '';
         const stagedChanges = this.renderStagedChanges() || '';
         const unstagedChanges = this.renderUnstagedChanges() || '';
+        const changesContainer = h.div({ className: "changesOuterContainer" }, mergeChanges, stagedChanges, unstagedChanges);
 
-        return h.div({ id: 'gitContainer' }, commandBar, messageInput, messageTextarea, mergeChanges, stagedChanges, unstagedChanges);
+        return [headerContainer, changesContainer];
     }
 
     protected renderRepoList(): h.Child {
