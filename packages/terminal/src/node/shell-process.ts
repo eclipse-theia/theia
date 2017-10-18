@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject, named } from 'inversify';
-import * as process from 'process';
+import * as os from 'os';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { TerminalProcess, TerminalProcessOptions, ProcessManager } from '@theia/process/lib/node';
 import { isWindows } from "@theia/core/lib/common";
@@ -29,7 +29,7 @@ function getRootPath(rootURI?: string): string {
         const uri = new URI(rootURI);
         return FileUri.fsPath(uri);
     } else {
-        return process.cwd();
+        return os.homedir();
     }
 }
 
