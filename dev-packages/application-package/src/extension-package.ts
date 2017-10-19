@@ -33,6 +33,12 @@ export class ExtensionPackage {
         if (this.raw.installed) {
             return this.raw.installed.version;
         }
+        if (this.raw.view) {
+            const latestVersion = this.raw.view.latestVersion;
+            if (latestVersion) {
+                return latestVersion;
+            }
+        }
         return this.raw.version;
     }
 
@@ -75,7 +81,7 @@ export class ExtensionPackage {
     protected async view(): Promise<RawExtensionPackage.ViewState> {
         if (this.raw.view === undefined) {
             const raw = await RawExtensionPackage.view(this.registry, this.name, this.version);
-            this.raw.view = raw ? raw.view : {};
+            this.raw.view = raw ? raw.view : new RawExtensionPackage.ViewState(this.registry);
         }
         return this.raw.view!;
     }
@@ -104,16 +110,7 @@ export class ExtensionPackage {
 
     async getLatestVersion(): Promise<string | undefined> {
         const raw = await this.view();
-        if (raw.tags) {
-            if (this.registry.options.next) {
-                const next = raw.tags['next'];
-                if (next !== undefined) {
-                    return next;
-                }
-            }
-            return raw.tags['latest'];
-        }
-        return undefined;
+        return raw.latestVersion;
     }
 
     protected versionRange?: string;
@@ -181,10 +178,25 @@ export namespace RawExtensionPackage {
         transitive: boolean;
         parent?: ExtensionPackage;
     }
-    export interface ViewState {
-        readme?: string
+    export class ViewState {
+        readme?: string;
         tags?: {
             [tag: string]: string
+        };
+        constructor(
+            protected readonly registry: NpmRegistry
+        ) { }
+        get latestVersion(): string | undefined {
+            if (this.tags) {
+                if (this.registry.options.next) {
+                    const next = this.tags['next'];
+                    if (next !== undefined) {
+                        return next;
+                    }
+                }
+                return this.tags['latest'];
+            }
+            return undefined;
         }
     }
     export function is(pck: NodePackage | undefined): pck is RawExtensionPackage {
@@ -206,10 +218,10 @@ export namespace RawExtensionPackage {
         for (const current of versions.reverse()) {
             const raw = result.versions[current];
             if (is(raw)) {
-                raw.view = {
-                    readme: result.readme,
-                    tags
-                };
+                const viewState = new ViewState(registry);
+                viewState.readme = result.readme;
+                viewState.tags = tags;
+                raw.view = viewState;
                 return raw;
             }
         }
