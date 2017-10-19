@@ -6,7 +6,7 @@
 */
 
 import { injectable, inject } from 'inversify';
-import { ProblemManager } from './problem-marker';
+import { ProblemManager } from './problem-manager';
 import { ProblemMarker } from '../../common/problem-marker';
 import { ProblemTreeModel } from './problem-tree-model';
 import { MarkerInfoNode, MarkerNode } from '../marker-tree';
