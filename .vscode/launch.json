@@ -99,7 +99,7 @@
                 "--no-timeouts",
                 "--colors",
                 "--opts",
-                "${workspaceRoot}/packages/mocha.opts"
+                "${workspaceRoot}/configs/mocha.opts"
             ],
             "env": {
                 "TS_NODE_PROJECT": "${workspaceRoot}/tsconfig.json"

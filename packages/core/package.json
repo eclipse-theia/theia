@@ -64,6 +64,6 @@
     "@theia/ext-scripts": "^0.1.1"
   },
   "nyc": {
-    "extends": "../nyc.json"
+    "extends": "../../configs/nyc.json"
   }
 }
