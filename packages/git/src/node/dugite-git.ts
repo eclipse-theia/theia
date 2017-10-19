@@ -43,10 +43,7 @@ export class DugiteGit implements Git {
 
     async repositories(workspaceRootUri: string): Promise<Repository[]> {
         const workspaceRootPath = this.getFsPath(workspaceRootUri);
-        const repositoriesPromise = locateRepositories(workspaceRootPath);
-        const containerRepositoryPromise = this.getContainerRepository(workspaceRootPath);
-        const repositories = await repositoriesPromise;
-        const containerRepository = await containerRepositoryPromise;
+        const [containerRepository, repositories] = await Promise.all([this.getContainerRepository(workspaceRootPath), locateRepositories(workspaceRootPath)]);
         // Make sure not to add the container to the repositories twice. Can happen when WS root is a git repository.
         if (containerRepository) {
             // Below URIs point to the same location, but their `toString()` are not the same:
@@ -153,7 +150,11 @@ export class DugiteGit implements Git {
         if (r === undefined) {
             this.fail(repository, `No remote repository specified. Please, specify either a URL or a remote name from which new revisions should be fetched.`);
         }
-        await pull(repositoryPath, r!);
+        if (options && options.branch) {
+            await pull(repositoryPath, r!, options.branch);
+        } else {
+            await pull(repositoryPath, r!);
+        }
     }
 
     async reset(repository: Repository, options: Git.Options.Reset): Promise<void> {

@@ -284,6 +284,12 @@ export namespace Git {
              */
             readonly remote?: string;
 
+            /**
+             * The name of the branch to pull form. This is required when one performs a `git pull` from a remote which is not
+             * the default remote tracking of the currently active branch.
+             */
+            readonly branch?: string;
+
         }
 
         /**

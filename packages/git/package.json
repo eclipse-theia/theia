@@ -9,7 +9,7 @@
     "@theia/preferences-api": "^0.1.1",
     "@theia/workspace": "^0.1.1",
     "abs": "^1.3.8",
-    "dugite-extra": "0.0.1-alpha.12",
+    "dugite-extra": "0.0.1-alpha.13",
     "findit2": "^2.2.3"
   },
   "publishConfig": {
