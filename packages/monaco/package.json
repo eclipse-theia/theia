@@ -19,10 +19,12 @@
   "publishConfig": {
     "access": "public"
   },
-  "theiaExtensions": [{
-    "frontend": "lib/browser/monaco-browser-module",
-    "frontendElectron": "lib/electron-browser/monaco-electron-module"
-  }],
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/monaco-browser-module",
+      "frontendElectron": "lib/electron-browser/monaco-electron-module"
+    }
+  ],
   "keywords": [
     "theia-extension"
   ],
@@ -51,6 +53,6 @@
     "@theia/ext-scripts": "^0.1.1"
   },
   "nyc": {
-    "extends": "../nyc.json"
+    "extends": "../../configs/nyc.json"
   }
 }

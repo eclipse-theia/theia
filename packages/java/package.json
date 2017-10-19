@@ -50,6 +50,6 @@
     "src"
   ],
   "nyc": {
-    "extends": "../nyc.json"
+    "extends": "../../configs/nyc.json"
   }
 }
