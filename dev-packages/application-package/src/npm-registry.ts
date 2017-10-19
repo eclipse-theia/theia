@@ -120,9 +120,4 @@ export class NpmRegistry {
         });
     }
 
-    async latestVersion(name: string): Promise<string | undefined> {
-        const result = await this.view({ name }).catch(() => undefined);
-        return !!result ? result['dist-tags']['latest'] : undefined;
-    }
-
 }
