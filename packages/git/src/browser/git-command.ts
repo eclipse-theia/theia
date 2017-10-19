@@ -13,19 +13,19 @@ import { GitRepositoryProvider } from './git-repository-provider';
 export namespace GIT_COMMANDS {
     export const FETCH = {
         id: 'git.fetch',
-        label: 'Fetch'
+        label: 'Git Fetch'
     };
     export const PULL = {
         id: 'git.pull',
-        label: 'Pull'
+        label: 'Git Pull'
     };
     export const PUSH = {
         id: 'git.push',
-        label: 'Push'
+        label: 'Git Push'
     };
     export const MERGE = {
         id: 'git.merge',
-        label: 'Merge'
+        label: 'Git Merge'
     };
 }
 
