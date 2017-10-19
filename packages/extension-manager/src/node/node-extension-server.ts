@@ -147,7 +147,11 @@ export class NodeExtensionServer implements ExtensionServer {
             if (!await extensionPackage.isOutdated()) {
                 return;
             }
-            if (manager.pck.setDependency(extension, extensionPackage.latestVersion)) {
+            const latestVersion = await extensionPackage.getLatestVersion();
+            if (!latestVersion) {
+                return;
+            }
+            if (manager.pck.setDependency(extension, latestVersion)) {
                 this.notifyDidChange({
                     name: extension,
                     outdated: false

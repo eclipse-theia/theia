@@ -72,7 +72,15 @@ export class ExtensionPackage {
         return undefined;
     }
 
-    readme?: string;
+    protected async view(): Promise<RawExtensionPackage.ViewState> {
+        if (this.raw.view === undefined) {
+            const raw = await RawExtensionPackage.view(this.registry, this.name, this.version);
+            this.raw.view = raw ? raw.view : {};
+        }
+        return this.raw.view!;
+    }
+
+    protected readme?: string;
     async getReadme(): Promise<string> {
         if (this.readme === undefined) {
             this.readme = await this.resolveReadme();
@@ -80,7 +88,7 @@ export class ExtensionPackage {
         return this.readme;
     }
     protected async resolveReadme(): Promise<string> {
-        const raw = await RawExtensionPackage.view(this.registry, this.name, this.version);
+        const raw = await this.view();
         if (raw && raw.readme) {
             return raw.readme;
         }
@@ -94,15 +102,30 @@ export class ExtensionPackage {
         return '';
     }
 
-    latestVersion?: string;
     async getLatestVersion(): Promise<string | undefined> {
-        if (this.latestVersion === undefined) {
-            this.latestVersion = await this.resolveLatestVersion();
-        }
-        return this.latestVersion;
+        const raw = await this.view();
+        return raw.tags ? raw.tags['latest'] : undefined;
     }
-    protected resolveLatestVersion(): Promise<string | undefined> {
-        return this.registry.latestVersion(this.name);
+
+    protected versionRange?: string;
+    async getVersionRange(): Promise<string | undefined> {
+        if (this.versionRange === undefined) {
+            this.versionRange = await this.resolveVersionRange();
+        }
+        return this.versionRange;
+    }
+    protected async resolveVersionRange(): Promise<string | undefined> {
+        const version = this.raw.version;
+        const validVersion = semver.valid(version);
+        if (validVersion) {
+            return validVersion;
+        }
+        const validRange = semver.validRange(version);
+        if (validRange) {
+            return validRange;
+        }
+        const raw = await this.view();
+        return raw.tags ? raw.tags[version] : undefined;
     }
 
     getAuthor(): string {
@@ -122,30 +145,39 @@ export class ExtensionPackage {
     }
 
     async isOutdated(): Promise<boolean> {
-        if (!this.raw.installed) {
-            return false;
-        }
         const latestVersion = await this.getLatestVersion();
         if (!latestVersion) {
             return false;
         }
-        if (semver.gtr(latestVersion, this.raw.version)) {
+        const versionRange = await this.getVersionRange();
+        if (versionRange && semver.gtr(latestVersion, versionRange)) {
             return true;
         }
-        return semver.gt(latestVersion, this.raw.installed.version);
+        if (this.raw.installed) {
+            return semver.gt(latestVersion, this.raw.installed.version);
+        }
+        return false;
     }
 }
 
 export interface RawExtensionPackage extends PublishedNodePackage {
-    installed?: {
+    installed?: RawExtensionPackage.InstalledState
+    view?: RawExtensionPackage.ViewState
+    theiaExtensions: Extension[];
+}
+export namespace RawExtensionPackage {
+    export interface InstalledState {
         version: string;
         packagePath: string;
         transitive: boolean;
         parent?: ExtensionPackage;
     }
-    theiaExtensions: Extension[];
-}
-export namespace RawExtensionPackage {
+    export interface ViewState {
+        readme?: string
+        tags?: {
+            [tag: string]: string
+        }
+    }
     export function is(pck: NodePackage | undefined): pck is RawExtensionPackage {
         return PublishedNodePackage.is(pck) && !!pck.theiaExtensions;
     }
@@ -154,14 +186,21 @@ export namespace RawExtensionPackage {
         if (!result) {
             return undefined;
         }
-        const latest = result['dist-tags']['latest'];
-        const current = !version ? latest : result['dist-tags'][version] || version;
-        const raw = result.versions[current];
-        if (!is(raw)) {
-            return undefined;
+        const tags = result['dist-tags'];
+        const versions = [tags['latest']];
+        if (version) {
+            versions.push(tags[version], version);
         }
-        raw.readme = result.readme;
-        raw.latestVersion = latest;
-        return raw;
+        for (const current of versions.reverse()) {
+            const raw = result.versions[current];
+            if (is(raw)) {
+                raw.view = {
+                    readme: result.readme,
+                    tags
+                };
+                return raw;
+            }
+        }
+        return undefined;
     }
 }
