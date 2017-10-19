@@ -31,7 +31,7 @@ export class ExtensionWidget extends VirtualWidget {
         this.addClass('theia-extensions');
 
         this.fetchExtensions();
-        extensionManager.onDidChange(() => this.fetchExtensions());
+        extensionManager.onDidChange(() => this.update());
     }
 
     protected onActivateRequest() {
