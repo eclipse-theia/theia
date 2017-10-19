@@ -31,6 +31,18 @@ The target can be configured in package.json via `theia/target` property, e.g:
 }
 ```
 
+### Using latest builds
+
+If you set `next` in your theia config, then Theia will prefer `next` over `latest` as the lattest tag.
+
+```json
+{
+    "theia": {
+        "next": "true"
+    }
+}
+```
+
 ## Run
 
 - `theia clean` - remove the built output (`lib` folder) and the generated configurations

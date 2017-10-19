@@ -72,6 +72,10 @@ export function sortByKey(object: { [key: string]: any }) {
 
 export class NpmRegistryOptions {
     /**
+     * Default: 'false'
+     */
+    readonly next: boolean;
+    /**
      * Default: https://registry.npmjs.org/.
      */
     readonly registry: string;
@@ -80,6 +84,7 @@ export class NpmRegistryOptions {
 export class NpmRegistry {
 
     static defaultOptions: NpmRegistryOptions = {
+        next: false,
         registry: 'https://registry.npmjs.org/'
     };
 
