@@ -40,7 +40,7 @@ For Windows instructions [click here](#building-on-windows).
 ## Prerequisites
  - Node.js v8.0 or higher
  - [Yarn package manager](https://yarnpkg.com/en/docs/install) v1.2.1
- - git
+ - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
 
 [nvm](https://github.com/creationix/nvm) is recommended to easily switch between
 Node.js versions.
