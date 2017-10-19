@@ -30,6 +30,17 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
 
     abstract create(options: IBaseTerminalServerOptions): Promise<number>;
 
+    attach(id: number): Promise<number> {
+        const term = this.processManager.get(id);
+
+        if (term && term instanceof TerminalProcess) {
+            return Promise.resolve(term.id);
+        } else {
+            this.logger.error(`Couldn't attach - can't find terminal with id: ${id} `);
+            return Promise.resolve(-1);
+        }
+    }
+
     dispose(): void {
         // noop
     }
