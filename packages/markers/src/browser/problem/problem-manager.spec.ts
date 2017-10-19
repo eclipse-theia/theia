@@ -7,7 +7,7 @@
 
 import { Container } from 'inversify';
 import * as chai from 'chai';
-import { ProblemManager } from './problem-marker';
+import { ProblemManager } from './problem-manager';
 import URI from "@theia/core/lib/common/uri";
 import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
 import { ILogger } from '@theia/core/lib/common/logger';

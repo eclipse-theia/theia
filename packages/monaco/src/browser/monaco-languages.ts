@@ -8,7 +8,7 @@
 import { injectable, inject, decorate } from "inversify";
 import { MonacoLanguages as BaseMonacoLanguages, ProtocolToMonacoConverter, MonacoToProtocolConverter } from "monaco-languageclient";
 import { Languages, DiagnosticCollection } from "@theia/languages/lib/common";
-import { ProblemManager } from "@theia/markers/lib/browser/problem/problem-marker";
+import { ProblemManager } from "@theia/markers/lib/browser/problem/problem-manager";
 import URI from '@theia/core/lib/common/uri';
 
 decorate(injectable(), BaseMonacoLanguages);

@@ -10,7 +10,7 @@ import { ProblemWidget } from './problem-widget';
 import { ProblemContribution } from './problem-contribution';
 import { createProblemWidget } from './problem-container';
 import { CommandContribution, MenuContribution, KeybindingContribution } from "@theia/core/lib/common";
-import { ProblemManager } from './problem-marker';
+import { ProblemManager } from './problem-manager';
 import { PROBLEM_KIND } from '../../common/problem-marker';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 
