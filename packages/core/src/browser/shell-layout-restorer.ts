@@ -126,7 +126,9 @@ export class ShellLayoutRestorer implements FrontendApplicationContribution, Com
         const result = JSON.parse(layoutData, (property: string, value) => {
             if (this.isWidgetsProperty(property)) {
                 const widgets: Widget[] = [];
-                for (const desc of (value as WidgetDescription[])) {
+                const descs = (value as WidgetDescription[]);
+                for (let i = 0; i < descs.length; i++) {
+                    const desc = descs[i];
                     const promise = this.widgetManager.getOrCreateWidget(desc.constructionOptions.factoryId, desc.constructionOptions.options)
                         .then(widget => {
                             if (widget) {
@@ -135,7 +137,7 @@ export class ShellLayoutRestorer implements FrontendApplicationContribution, Com
                                         widget.restoreState(desc.innerWidgetState);
                                     }
                                 }
-                                widgets.push(widget);
+                                widgets[i] = widget;
                             }
                         }).catch(err => {
                             this.logger.warn(`Couldn't restore widget for ${desc}. Error : ${err} `);
