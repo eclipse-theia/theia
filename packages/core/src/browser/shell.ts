@@ -584,8 +584,11 @@ namespace Private {
             if (layoutData) {
                 this.collapse();
                 if (layoutData.widgets) {
-                    for (let i = 0; i < layoutData.widgets.length; i++) {
-                        this.addWidget(layoutData.widgets[i], i);
+                    let index = 0;
+                    for (const widget of layoutData.widgets) {
+                        if (widget) {
+                            this.addWidget(widget, index++);
+                        }
                     }
                 }
                 if (layoutData.activeWidgets) {
