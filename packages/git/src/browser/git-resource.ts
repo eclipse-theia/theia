@@ -9,16 +9,20 @@ import { injectable, inject } from "inversify";
 import { Git, Repository } from '../common';
 import { Resource, ResourceResolver } from "@theia/core";
 import URI from "@theia/core/lib/common/uri";
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { GitRepositoryProvider } from './git-repository-provider';
 
 export const GIT_RESOURCE_SCHEME = 'gitrev';
 
 export class GitResource implements Resource {
 
-    constructor(readonly uri: URI, protected readonly repository: Repository, protected readonly git: Git) { }
+    constructor(readonly uri: URI, protected readonly repository: Repository | undefined, protected readonly git: Git) { }
 
     async readContents(options?: { encoding?: string | undefined; } | undefined): Promise<string> {
-        return await this.git.show(this.repository, this.uri.toString(), Object.assign({ commitish: this.uri.query }, options));
+        if (this.repository) {
+            const commitish = this.uri.query;
+            return await this.git.show(this.repository, this.uri.toString(), Object.assign({ commitish }, options));
+        }
+        return '';
     }
 
     dispose(): void { }
@@ -29,7 +33,7 @@ export class GitResourceResolver implements ResourceResolver {
 
     constructor(
         @inject(Git) protected readonly git: Git,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
+        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider
     ) { }
 
     resolve(uri: URI): Resource | Promise<Resource> {
@@ -44,22 +48,21 @@ export class GitResourceResolver implements ResourceResolver {
         return new GitResource(uri, repository, this.git);
     }
 
-    async getRepository(uri: URI): Promise<Repository> {
-        const root = await this.workspaceService.root;
+    async getRepository(uri: URI): Promise<Repository | undefined> {
         const uriWithoutScheme = uri.withoutScheme();
-        const repos = await this.git.repositories(root.uri);
+        const repositories = this.repositoryProvider.allRepositories;
         // We sort by length so that we visit the nested repositories first.
         // We do not want to get the repository A instead of B if we have:
         // repository A, another repository B inside A and a resource A/B/C.ext.
-        const sortedRepos = repos.sort((a, b) => b.localUri.length - a.localUri.length);
-        for (const repo of sortedRepos) {
-            const localUri = new URI(repo.localUri);
-            // make sure that localUri of repo has no scheme.
+        const sortedRepositories = repositories.sort((a, b) => b.localUri.length - a.localUri.length);
+        for (const repository of sortedRepositories) {
+            const localUri = new URI(repository.localUri);
+            // make sure that localUri of repository has no scheme.
             const localUriStr = localUri.withoutScheme().toString();
             if (uriWithoutScheme.toString().startsWith(localUriStr)) {
                 return { localUri: localUriStr };
             }
         }
-        return repos[0];
+        return undefined;
     }
 }
