@@ -1,0 +1,54 @@
+{
+    "name": "@theia/gdb",
+    "version": "0.1.1",
+    "description": "Theia - GDB Extension",
+    "dependencies": {
+        "@theia/core": "^0.1.1",
+        "@theia/process": "^0.1.1",
+        "@theia/workspace": "^0.1.1",
+        "@theia/filesystem": "^0.1.1",
+        "@theia/preferences": "^0.1.1",
+        "@theia/preferences-api": "^0.1.1",
+        "@theia/terminal": "^0.1.1",
+        "@theia/debug": "^0.1.1"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "theiaExtensions": [
+        {
+            "frontend": "lib/browser/gdb-frontend-module",
+            "backend": "lib/node/gdb-backend-module"
+        }
+    ],
+    "keywords": [
+        "theia-extension"
+    ],
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/theia-ide/theia.git"
+    },
+    "bugs": {
+        "url": "https://github.com/theia-ide/theia/issues"
+    },
+    "homepage": "https://github.com/theia-ide/theia",
+    "files": [
+        "lib",
+        "src"
+    ],
+    "scripts": {
+        "prepare": "yarn run clean && yarn run build",
+        "clean": "theiaext clean",
+        "build": "theiaext build",
+        "watch": "theiaext watch",
+        "test": "theiaext test",
+        "docs": "theiaext docs"
+    },
+    "devDependencies": {
+        "@theia/ext-scripts": "^0.1.1"
+    },
+    "nyc": {
+        "extends": "../nyc.json"
+    }
+}
