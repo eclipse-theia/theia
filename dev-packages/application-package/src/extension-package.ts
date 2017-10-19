@@ -104,7 +104,16 @@ export class ExtensionPackage {
 
     async getLatestVersion(): Promise<string | undefined> {
         const raw = await this.view();
-        return raw.tags ? raw.tags['latest'] : undefined;
+        if (raw.tags) {
+            if (this.registry.options.next) {
+                const next = raw.tags['next'];
+                if (next !== undefined) {
+                    return next;
+                }
+            }
+            return raw.tags['latest'];
+        }
+        return undefined;
     }
 
     protected versionRange?: string;
@@ -188,6 +197,9 @@ export namespace RawExtensionPackage {
         }
         const tags = result['dist-tags'];
         const versions = [tags['latest']];
+        if (registry.options.next) {
+            versions.push(tags['next']);
+        }
         if (version) {
             versions.push(tags[version], version);
         }
