@@ -32,7 +32,12 @@ function rebuildCommand(command: string, target: ApplicationPackageTarget): yarg
         describe: 'rebuild native node modules for the ' + target,
         handler: () => {
             const { modules } = yargs.array('modules').argv;
-            rebuild(target, modules);
+            try {
+                rebuild(target, modules);
+            } catch (err) {
+                console.error(err);
+                process.exit(1);
+            }
         }
     };
 }
@@ -45,25 +50,60 @@ yargs
     .command({
         command: 'start',
         describe: 'start the ' + manager.pck.target + ' backend',
-        handler: () => manager.start(commandArgs('start'))
+        handler: async () => {
+            try {
+                await manager.start(commandArgs('start'));
+            } catch (err) {
+                console.error(err);
+                process.exit(1);
+            }
+        }
     })
     .command({
         command: 'clean',
         describe: 'clean for the ' + target + ' target',
-        handler: () => manager.clean()
+        handler: () => {
+            try {
+                manager.clean();
+            } catch (err) {
+                console.error(err);
+                process.exit(1);
+            }
+        }
     })
     .command({
         command: 'copy',
-        handler: () => manager.copy()
+        handler: () => {
+            try {
+                manager.copy();
+            } catch (err) {
+                console.error(err);
+                process.exit(1);
+            }
+        }
     })
     .command({
         command: 'generate',
-        handler: () => manager.generate()
+        handler: () => {
+            try {
+                manager.generate();
+            } catch (err) {
+                console.error(err);
+                process.exit(1);
+            }
+        }
     })
     .command({
         command: 'build',
         describe: 'webpack the ' + target + ' frontend',
-        handler: () => manager.build(commandArgs('build'))
+        handler: async () => {
+            try {
+                await manager.build(commandArgs('build'))
+            } catch (err) {
+                console.error(err);
+                process.exit(1);
+            }
+        }
     })
     .command(rebuildCommand('rebuild', target))
     .command(rebuildCommand('rebuild:browser', 'browser'))
