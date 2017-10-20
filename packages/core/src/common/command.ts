@@ -9,31 +9,74 @@ import { injectable, inject, named } from "inversify";
 import { Disposable, DisposableCollection } from "./disposable";
 import { ContributionProvider } from './contribution-provider';
 
+/**
+ * A command is a unique identifier of a function
+ * which can be executed by a user via a keyboard shortcut,
+ * a menu action or directly.
+ */
 export interface Command {
+    /**
+     * A unique identifier of this command.
+     */
     id: string;
+    /**
+     * A label of this command.
+     */
     label?: string;
+    /**
+     * An icon class of this command.
+     */
     iconClass?: string;
 }
+/**
+ * A command handler is an implementation of a command.
+ *
+ * A command can have multiple handlers
+ * but they should be active in different contexts,
+ * otherwise first active will be executed.
+ */
 export interface CommandHandler {
+    /**
+     * Execute this handler.
+     */
     execute(...args: any[]): any;
+    /**
+     * Test whether this handler is enabled (active).
+     */
     isEnabled?(...args: any[]): boolean;
+    /**
+     * Test whether menu items for this handler should be visible.
+     */
     isVisible?(...args: any[]): boolean;
 }
 
 export const CommandContribution = Symbol("CommandContribution");
-
+/**
+ * The command contribution should be implemented to register custom commands and handler.
+ */
 export interface CommandContribution {
+    /**
+     * Register commands and handlers.
+     */
     registerCommands(commands: CommandRegistry): void;
 }
 
 export const CommandService = Symbol("CommandService");
+/**
+ * The command service should be used to execute commands.
+ */
 export interface CommandService {
     /**
+     * Execute the active handler for the given command and arguments.
+     *
      * Reject if a command cannot be executed.
      */
     executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined>;
 }
 
+/**
+ * The command registry manages commands and handlers.
+ */
 @injectable()
 export class CommandRegistry implements CommandService {
 
@@ -52,6 +95,11 @@ export class CommandRegistry implements CommandService {
         }
     }
 
+    /**
+     * Register the given command and handler if present.
+     *
+     * Throw if a command is already registered for the given command identifier.
+     */
     registerCommand(command: Command, handler?: CommandHandler): Disposable {
         if (handler) {
             const toDispose = new DisposableCollection();
@@ -74,6 +122,9 @@ export class CommandRegistry implements CommandService {
         };
     }
 
+    /**
+     * Register the given handler for the given command identifier.
+     */
     registerHandler(commandId: string, handler: CommandHandler): Disposable {
         let handlers = this._handlers[commandId];
         if (!handlers) {
@@ -90,14 +141,25 @@ export class CommandRegistry implements CommandService {
         };
     }
 
+    /**
+     * Test whether there is an active handler for the given command.
+     */
     isEnabled(command: string, ...args: any[]): boolean {
         return this.getActiveHandler(command, ...args) !== undefined;
     }
 
+    /**
+     * Test whether there is a visible handler for the given command.
+     */
     isVisible(command: string, ...args: any[]): boolean {
         return this.getVisibleHandler(command, ...args) !== undefined;
     }
 
+    /**
+     * Execute the active handler for the given command and arguments.
+     *
+     * Reject if a command cannot be executed.
+     */
     executeCommand<T>(command: string, ...args: any[]): Promise<T | undefined> {
         const handler = this.getActiveHandler(command, ...args);
         if (handler) {
@@ -107,6 +169,9 @@ export class CommandRegistry implements CommandService {
         return Promise.reject(`The command '${command}' cannot be executed. There are no active handlers available for the command.${argsMessage}`);
     }
 
+    /**
+     * A visible handler for the given command or `undefined`.
+     */
     getVisibleHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
         const handlers = this._handlers[commandId];
         if (handlers) {
@@ -119,6 +184,9 @@ export class CommandRegistry implements CommandService {
         return undefined;
     }
 
+    /**
+     * An active handler for the given command or `undefined`.
+     */
     getActiveHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
         const handlers = this._handlers[commandId];
         if (handlers) {
@@ -131,6 +199,9 @@ export class CommandRegistry implements CommandService {
         return undefined;
     }
 
+    /**
+     * All registered commands.
+     */
     get commands(): Command[] {
         const commands: Command[] = [];
         for (const id of this.commandIds) {
@@ -142,10 +213,16 @@ export class CommandRegistry implements CommandService {
         return commands;
     }
 
+    /**
+     * A command for the given command identifier.
+     */
     getCommand(id: string): Command | undefined {
         return this._commands[id];
     }
 
+    /**
+     * Identifiers of all registered commands.
+     */
     get commandIds(): string[] {
         return Object.keys(this._commands);
     }
