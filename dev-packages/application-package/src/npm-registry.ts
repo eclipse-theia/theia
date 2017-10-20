@@ -44,14 +44,6 @@ export namespace PublishedNodePackage {
     }
 }
 
-export interface ViewParam {
-    readonly name: string;
-    /**
-     * Return only the fields required to support installation.
-     * If undefined then true.
-     */
-    readonly abbreviated?: boolean;
-}
 export interface ViewResult {
     'dist-tags': {
         [tag: string]: string
@@ -88,27 +80,39 @@ export class NpmRegistry {
         registry: 'https://registry.npmjs.org/'
     };
 
-    readonly options: NpmRegistryOptions;
+    readonly options: NpmRegistryOptions = { ...NpmRegistry.defaultOptions };
+    // TODO: invalidate index with NPM registry web hooks, see: https://github.com/npm/registry-follower-tutorial
+    protected readonly index = new Map<string, Promise<ViewResult>>();
 
-    constructor(
-        options: Partial<NpmRegistryOptions>
-    ) {
-        this.options = { ...NpmRegistry.defaultOptions, ...options };
+    constructor(options?: Partial<NpmRegistryOptions>) {
+        this.updateOptions(options);
     }
 
-    view(param: ViewParam): Promise<ViewResult> {
+    updateOptions(options?: Partial<NpmRegistryOptions>) {
+        Object.assign(this.options, options);
+    }
+
+    view(name: string): Promise<ViewResult> {
+        const indexed = this.index.get(name);
+        if (indexed) {
+            return indexed;
+        }
+        const result = this.doView(name);
+        this.index.set(name, result);
+        result.catch(() => this.index.delete(name));
+        return result;
+    }
+
+    protected doView(name: string): Promise<ViewResult> {
         let url = this.options.registry;
-        if (param.name[0] === '@') {
-            url += '@' + encodeURIComponent(param.name.substr(1));
+        if (name[0] === '@') {
+            url += '@' + encodeURIComponent(name.substr(1));
         } else {
-            url += encodeURIComponent(param.name);
+            url += encodeURIComponent(name);
         }
         const headers: {
             [header: string]: string
         } = {};
-        if (param.abbreviated === undefined || param.abbreviated) {
-            headers['Accept'] = 'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*';
-        }
         return new Promise((resolve, reject) => {
             request({
                 url, headers

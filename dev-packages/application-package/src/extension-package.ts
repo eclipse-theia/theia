@@ -203,7 +203,7 @@ export namespace RawExtensionPackage {
         return PublishedNodePackage.is(pck) && !!pck.theiaExtensions;
     }
     export async function view(registry: NpmRegistry, name: string, version?: string): Promise<RawExtensionPackage | undefined> {
-        const result = await registry.view({ name, abbreviated: false }).catch(() => undefined);
+        const result = await registry.view(name).catch(() => undefined);
         if (!result) {
             return undefined;
         }

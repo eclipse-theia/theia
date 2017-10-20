@@ -22,16 +22,12 @@ export class ApplicationPackageOptions {
     readonly projectPath: string;
     readonly log?: ApplicationLog;
     readonly error?: ApplicationLog;
+    readonly registry?: NpmRegistry;
 }
 
 export type ApplicationModuleResolver = (modulePath: string) => string;
 
 export class ApplicationPackage {
-
-    static defaultOptions: Partial<ApplicationPackageOptions> = {
-        log: console.log.bind(console),
-        error: console.error.bind(console)
-    };
 
     static defaultConfig: ApplicationPackageConfig = {
         ...NpmRegistry.defaultOptions,
@@ -42,13 +38,22 @@ export class ApplicationPackage {
     readonly log: ApplicationLog;
     readonly error: ApplicationLog;
 
-    constructor(options: ApplicationPackageOptions) {
-        Object.assign(this, ApplicationPackage.defaultOptions, options);
+    constructor(
+        protected readonly options: ApplicationPackageOptions
+    ) {
+        this.projectPath = options.projectPath;
+        this.log = options.log || console.log.bind(console);
+        this.error = options.error || console.error.bind(console);
     }
 
     protected _registry: NpmRegistry | undefined;
     get registry(): NpmRegistry {
         if (this._registry) {
+            return this._registry;
+        }
+        if (this.options.registry) {
+            this._registry = this.options.registry;
+            this._registry.updateOptions(this.config);
             return this._registry;
         }
         return this._registry = new NpmRegistry(this.config);
