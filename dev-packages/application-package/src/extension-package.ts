@@ -188,7 +188,7 @@ export namespace RawExtensionPackage {
         ) { }
         get latestVersion(): string | undefined {
             if (this.tags) {
-                if (this.registry.options.next) {
+                if (this.registry.config.next) {
                     const next = this.tags['next'];
                     if (next !== undefined) {
                         return next;
@@ -209,7 +209,7 @@ export namespace RawExtensionPackage {
         }
         const tags = result['dist-tags'];
         const versions = [tags['latest']];
-        if (registry.options.next) {
+        if (registry.config.next) {
             versions.push(tags['next']);
         }
         if (version) {

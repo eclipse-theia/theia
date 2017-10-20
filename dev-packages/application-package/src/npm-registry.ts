@@ -7,6 +7,12 @@
 
 // tslint:disable:no-any
 import * as request from 'request';
+const ChangesStream = require('changes-stream');
+
+export interface IChangeStream {
+    on(event: 'data', cb: (change: { id: string }) => void): void;
+    destroy(): void;
+}
 
 export interface Author {
     name: string;
@@ -62,7 +68,7 @@ export function sortByKey(object: { [key: string]: any }) {
     }, {} as { [key: string]: any });
 }
 
-export class NpmRegistryOptions {
+export class NpmRegistryConfig {
     /**
      * Default: 'false'
      */
@@ -73,23 +79,59 @@ export class NpmRegistryOptions {
     readonly registry: string;
 }
 
+export class NpmRegistryOptions {
+    /**
+     * Default: false.
+     */
+    readonly watchChanges: boolean;
+}
+
 export class NpmRegistry {
 
-    static defaultOptions: NpmRegistryOptions = {
+    static defaultConfig: NpmRegistryConfig = {
         next: false,
         registry: 'https://registry.npmjs.org/'
     };
 
-    readonly options: NpmRegistryOptions = { ...NpmRegistry.defaultOptions };
-    // TODO: invalidate index with NPM registry web hooks, see: https://github.com/npm/registry-follower-tutorial
+    readonly config: NpmRegistryConfig = { ...NpmRegistry.defaultConfig };
+    protected readonly options: NpmRegistryOptions;
+
+    protected changes: undefined | IChangeStream;
     protected readonly index = new Map<string, Promise<ViewResult>>();
 
     constructor(options?: Partial<NpmRegistryOptions>) {
-        this.updateOptions(options);
+        this.options = {
+            watchChanges: false,
+            ...options
+        };
+        this.resetIndex();
     }
 
-    updateOptions(options?: Partial<NpmRegistryOptions>) {
-        Object.assign(this.options, options);
+    updateConfig(config?: Partial<NpmRegistryConfig>) {
+        const oldRegistry = this.config.registry;
+        Object.assign(this.config, config);
+        const newRegistry = this.config.registry;
+        if (oldRegistry !== newRegistry) {
+            this.resetIndex();
+        }
+    }
+    protected resetIndex(): void {
+        this.index.clear();
+        if (this.options.watchChanges && this.config.registry === NpmRegistry.defaultConfig.registry) {
+            if (this.changes) {
+                this.changes.destroy();
+            }
+            // invalidate index with NPM registry web hooks
+            // see: https://github.com/npm/registry-follower-tutorial
+            const db = 'https://replicate.npmjs.com';
+            this.changes = new ChangesStream({ db }) as IChangeStream;
+            this.changes.on('data', change => this.invalidate(change.id));
+        }
+    }
+    protected invalidate(name: string): void {
+        if (this.index.delete(name)) {
+            this.view(name);
+        }
     }
 
     view(name: string): Promise<ViewResult> {
@@ -104,7 +146,7 @@ export class NpmRegistry {
     }
 
     protected doView(name: string): Promise<ViewResult> {
-        let url = this.options.registry;
+        let url = this.config.registry;
         if (name[0] === '@') {
             url += '@' + encodeURIComponent(name.substr(1));
         } else {

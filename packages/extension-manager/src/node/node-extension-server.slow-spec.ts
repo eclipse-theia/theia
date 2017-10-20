@@ -48,7 +48,8 @@ describe("node-extension-server", function () {
         const container = extensionNodeTestContainer({
             projectPath: appProjectPath,
             npmClient: 'yarn',
-            autoInstall: false
+            autoInstall: false,
+            watchRegistry: false
         });
         server = container.get(ExtensionServer);
         appProject = container.get(ApplicationProject);
