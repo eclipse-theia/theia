@@ -34,6 +34,7 @@
     "@types/semver": "^5.4.0",
     "@types/write-json-file": "^2.2.1",
     "bunyan": "^1.8.10",
+    "changes-stream": "^2.2.0",
     "circular-dependency-plugin": "^2.0.0",
     "copy-webpack-plugin": "^4.0.1",
     "css-loader": "^0.28.1",

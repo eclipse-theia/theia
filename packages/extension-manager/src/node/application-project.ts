@@ -22,6 +22,7 @@ import { NpmClient } from './npm-client';
 @injectable()
 export class ApplicationProjectOptions extends ApplicationPackageOptions {
     readonly autoInstall: boolean;
+    readonly watchRegistry: boolean;
 }
 
 @injectable()
@@ -32,7 +33,7 @@ export class ApplicationProject implements Disposable {
     protected readonly onChangePackageEmitter = new Emitter<void>();
     protected readonly onWillInstallEmitter = new Emitter<InstallationParam>();
     protected readonly onDidInstallEmitter = new Emitter<InstallationResult>();
-    protected readonly registry = new NpmRegistry();
+    protected readonly registry: NpmRegistry;
 
     constructor(
         @inject(ApplicationProjectOptions) readonly options: ApplicationProjectOptions,
@@ -42,6 +43,9 @@ export class ApplicationProject implements Disposable {
         @inject(ServerProcess) protected readonly serverProcess: ServerProcess
     ) {
         logger.debug('AppProjectOptions', options);
+        this.registry = new NpmRegistry({
+            watchChanges: this.options.watchRegistry
+        });
         this.backup();
         this.packageUri = FileUri.create(this.packagePath).toString();
         this.toDispose.push(this.fileSystemWatcher);

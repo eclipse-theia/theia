@@ -55,7 +55,8 @@ describe("application-project", function () {
         appProject = extensionNodeTestContainer({
             projectPath: appProjectPath,
             npmClient: 'yarn',
-            autoInstall: false
+            autoInstall: false,
+            watchRegistry: false
         }).get(ApplicationProject);
     });
 

@@ -16,6 +16,7 @@ export type ApplicationProjectArgs = ApplicationProjectOptions & NpmClientOption
 const appProjectPath = 'app-project-path';
 const appNpmClient = 'app-npm-client';
 const appAutoInstall = 'app-auto-install';
+const appWatchRegistry = 'app-watch-registry';
 
 @injectable()
 export class ApplicationProjectCliContribution implements CliContribution {
@@ -40,13 +41,18 @@ export class ApplicationProjectCliContribution implements CliContribution {
             type: "boolean",
             default: true
         });
+        conf.option(appWatchRegistry, {
+            type: "boolean",
+            default: true
+        });
     }
 
     setArguments(args: yargs.Arguments): void {
         this._args = {
             projectPath: args[appProjectPath],
             npmClient: args[appNpmClient],
-            autoInstall: args[appAutoInstall]
+            autoInstall: args[appAutoInstall],
+            watchRegistry: args[appWatchRegistry]
         };
     }
 

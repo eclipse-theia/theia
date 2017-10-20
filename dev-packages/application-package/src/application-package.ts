@@ -8,12 +8,12 @@
 import * as fs from 'fs-extra';
 import * as paths from 'path';
 import { readJsonFile, writeJsonFile } from './json-file';
-import { NpmRegistry, NpmRegistryOptions, NodePackage, PublishedNodePackage, sortByKey } from './npm-registry';
+import { NpmRegistry, NpmRegistryConfig, NodePackage, PublishedNodePackage, sortByKey } from './npm-registry';
 import { Extension, ExtensionPackage, RawExtensionPackage } from './extension-package';
 import { ExtensionPackageCollector } from './extension-package-collector';
 
 export type ApplicationPackageTarget = 'browser' | 'electron';
-export class ApplicationPackageConfig extends NpmRegistryOptions {
+export class ApplicationPackageConfig extends NpmRegistryConfig {
     readonly target: ApplicationPackageTarget;
 }
 
@@ -30,7 +30,7 @@ export type ApplicationModuleResolver = (modulePath: string) => string;
 export class ApplicationPackage {
 
     static defaultConfig: ApplicationPackageConfig = {
-        ...NpmRegistry.defaultOptions,
+        ...NpmRegistry.defaultConfig,
         target: 'browser'
     };
 
@@ -51,12 +51,9 @@ export class ApplicationPackage {
         if (this._registry) {
             return this._registry;
         }
-        if (this.options.registry) {
-            this._registry = this.options.registry;
-            this._registry.updateOptions(this.config);
-            return this._registry;
-        }
-        return this._registry = new NpmRegistry(this.config);
+        this._registry = this.options.registry || new NpmRegistry();
+        this._registry.updateConfig(this.config);
+        return this._registry;
     }
 
     get target(): ApplicationPackageTarget {
