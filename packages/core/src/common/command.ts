@@ -170,7 +170,7 @@ export class CommandRegistry implements CommandService {
     }
 
     /**
-     * A visible handler for the given command or `undefined`.
+     * Get a visible handler for the given command or `undefined`.
      */
     getVisibleHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
         const handlers = this._handlers[commandId];
@@ -185,7 +185,7 @@ export class CommandRegistry implements CommandService {
     }
 
     /**
-     * An active handler for the given command or `undefined`.
+     * Get an active handler for the given command or `undefined`.
      */
     getActiveHandler(commandId: string, ...args: any[]): CommandHandler | undefined {
         const handlers = this._handlers[commandId];
@@ -200,7 +200,7 @@ export class CommandRegistry implements CommandService {
     }
 
     /**
-     * All registered commands.
+     * Get all registered commands.
      */
     get commands(): Command[] {
         const commands: Command[] = [];
@@ -214,14 +214,14 @@ export class CommandRegistry implements CommandService {
     }
 
     /**
-     * A command for the given command identifier.
+     * Get a command for the given command identifier.
      */
     getCommand(id: string): Command | undefined {
         return this._commands[id];
     }
 
     /**
-     * Identifiers of all registered commands.
+     * Get all registered commands identifiers.
      */
     get commandIds(): string[] {
         return Object.keys(this._commands);
