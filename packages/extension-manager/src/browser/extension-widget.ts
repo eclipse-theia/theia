@@ -6,7 +6,8 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { h, VirtualNode } from '@phosphor/virtualdom/lib';
+import { Message } from '@phosphor/messaging';
+import { h, VirtualNode } from '@phosphor/virtualdom';
 import { DisposableCollection, Disposable } from '@theia/core';
 import { VirtualWidget, VirtualRenderer, OpenerService, open, DISABLED_CLASS } from '@theia/core/lib/browser';
 import { Extension, ExtensionManager } from '../common';
@@ -15,10 +16,11 @@ import { ExtensionUri } from './extension-uri';
 @injectable()
 export class ExtensionWidget extends VirtualWidget {
 
+    static SEARCH_DELAY = 200;
+
     protected extensions: Extension[] = [];
-    protected readonly updateTimeAfterTyping = 50;
-    protected readonly toDisposeOnTypeSearchQuery = new DisposableCollection();
-    protected readonly toDisposedOnFetch = new DisposableCollection();
+    protected readonly toDisposeOnFetch = new DisposableCollection();
+    protected readonly toDisposeOnSearch = new DisposableCollection();
     protected ready = false;
 
     constructor(
@@ -30,23 +32,21 @@ export class ExtensionWidget extends VirtualWidget {
         this.title.label = 'Extensions';
         this.addClass('theia-extensions');
 
+        this.update();
         this.fetchExtensions();
         extensionManager.onDidChange(() => this.update());
     }
 
-    protected onActivateRequest() {
-        this.update();
+    protected onActivateRequest(msg: Message) {
+        super.onActivateRequest(msg);
         this.fetchExtensions();
     }
 
-    protected fetchExtensions() {
-        this.toDisposedOnFetch.dispose();
+    protected fetchExtensions(): void {
         const htmlInputElement = (document.getElementById('extensionSearchField') as HTMLInputElement);
-        const searchQuery = htmlInputElement ? htmlInputElement.value.trim() : '';
-        this.extensionManager.list({
-            query: searchQuery
-        }).then(extensions => {
-            this.extensions = searchQuery ? extensions : extensions.filter(e => !e.dependent);
+        const query = htmlInputElement ? htmlInputElement.value.trim() : '';
+        this.extensionManager.list({ query }).then(extensions => {
+            this.extensions = query ? extensions : extensions.filter(e => !e.dependent);
             this.ready = true;
             this.update();
         });
@@ -66,10 +66,10 @@ export class ExtensionWidget extends VirtualWidget {
             id: 'extensionSearchField',
             type: 'text',
             placeholder: 'Search theia extensions',
-            onkeyup: event => {
-                this.toDisposeOnTypeSearchQuery.dispose();
-                const timer = setTimeout(() => this.fetchExtensions(), this.updateTimeAfterTyping);
-                this.toDisposeOnTypeSearchQuery.push(Disposable.create(() => clearTimeout(timer)));
+            onkeyup: () => {
+                this.toDisposeOnSearch.dispose();
+                const delay = setTimeout(() => this.fetchExtensions(), ExtensionWidget.SEARCH_DELAY);
+                this.toDisposeOnSearch.push(Disposable.create(() => clearTimeout(delay)));
             }
         });
 

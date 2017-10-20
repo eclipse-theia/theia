@@ -9,7 +9,7 @@ import * as os from 'os';
 import * as paths from 'path';
 import * as fs from 'fs-extra';
 import { injectable, inject } from 'inversify';
-import { ApplicationPackageManager, ApplicationPackageOptions } from '@theia/application-package';
+import { ApplicationPackageManager, ApplicationPackageOptions, NpmRegistry } from '@theia/application-package';
 import {
     Disposable, DisposableCollection, Event, Emitter, ILogger,
     CancellationTokenSource, CancellationToken, isCancelled, checkCancelled
@@ -32,6 +32,7 @@ export class ApplicationProject implements Disposable {
     protected readonly onChangePackageEmitter = new Emitter<void>();
     protected readonly onWillInstallEmitter = new Emitter<InstallationParam>();
     protected readonly onDidInstallEmitter = new Emitter<InstallationResult>();
+    protected readonly registry = new NpmRegistry();
 
     constructor(
         @inject(ApplicationProjectOptions) readonly options: ApplicationProjectOptions,
@@ -79,7 +80,8 @@ export class ApplicationProject implements Disposable {
     createPackageManager(): ApplicationPackageManager {
         return new ApplicationPackageManager(Object.assign({
             log: this.logger.info.bind(this.logger),
-            error: this.logger.error.bind(this.logger)
+            error: this.logger.error.bind(this.logger),
+            registry: this.registry
         }, this.options));
     }
 
