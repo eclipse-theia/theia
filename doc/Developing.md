@@ -233,6 +233,8 @@ Using Git Bash as administrator:
 
 ## Troubleshooting
 
+You might see `error Could not open cafile: EISDIR: illegal operation on a directory` errors when running `yarn`. This is a known [issue in `yarn` version `1.2.1`](https://github.com/yarnpkg/yarn/issues/4695), and will be fixed in the next release. You can safely ignore it for now.
+
 ### Linux
 
 The start command will start a watcher on many files in the theia directory.
