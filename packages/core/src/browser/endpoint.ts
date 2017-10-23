@@ -16,11 +16,21 @@ export class Endpoint {
     }
 
     getWebSocketUrl(): URI {
-        return new URI(`${this.wsScheme}://${this.host}${this.path}`)
+        return new URI(`${this.wsScheme}://${this.host}${this.pathname}${this.path}`)
     }
 
     getRestUrl(): URI {
-        return new URI(`${this.httpScheme}://${this.host}${this.path}`)
+        return new URI(`${this.httpScheme}://${this.host}${this.pathname}${this.path}`)
+    }
+
+    protected get pathname() {
+        if (location.pathname === '/') {
+            return ''
+        }
+        if (location.pathname.endsWith('/')) {
+            return location.pathname.substr(0, location.pathname.length - 1)
+        }
+        return location.pathname
     }
 
     protected get host() {
