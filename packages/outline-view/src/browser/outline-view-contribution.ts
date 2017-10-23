@@ -16,7 +16,7 @@ export class OutlineViewContribution implements FrontendApplicationContribution 
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager
     ) { }
 
-    onStart(app: FrontendApplication): void {
+    async initializeLayout(app: FrontendApplication): Promise<void> {
         this.widgetManager.getOrCreateWidget('outline-view').then(outline => {
             app.shell.addToRightArea(outline);
         });

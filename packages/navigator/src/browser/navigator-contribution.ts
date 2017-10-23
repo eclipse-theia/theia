@@ -39,7 +39,7 @@ export class FileNavigatorContribution implements FrontendApplicationContributio
         });
     }
 
-    onStart(app: FrontendApplication): void {
+    async initializeLayout(app: FrontendApplication): Promise<void> {
         this.widgetManager.getOrCreateWidget('navigator').then(navigator =>
             app.shell.addToLeftArea(navigator)
         );

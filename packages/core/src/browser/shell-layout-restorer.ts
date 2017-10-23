@@ -42,9 +42,9 @@ interface WidgetDescription {
 }
 
 @injectable()
-export class ShellLayoutRestorer implements FrontendApplicationContribution, CommandContribution {
+export class ShellLayoutRestorer implements CommandContribution {
     private storageKey = 'layout';
-    private storeLayout: boolean = true;
+    private shouldStoreLayout: boolean = true;
 
     constructor(
         @inject(WidgetManager) protected widgetManager: WidgetManager,
@@ -57,26 +57,30 @@ export class ShellLayoutRestorer implements FrontendApplicationContribution, Com
             label: 'Reset Workbench Layout'
         }, {
                 execute: () => {
-                    this.storeLayout = false;
+                    this.shouldStoreLayout = false;
                     this.storageService.setData(this.storageKey, undefined)
                         .then(() => window.location.reload());
                 }
             });
     }
 
-    onStart(app: FrontendApplication): void {
-        this.storageService.getData<string>(this.storageKey).then(serializedLayoutData => {
-            let promise = Promise.resolve<void>(undefined);
-            if (serializedLayoutData !== undefined) {
-                promise = this.inflate(serializedLayoutData).then(layoutData => {
-                    app.shell.setLayoutData(layoutData);
-                });
+    async initializeLayout(app: FrontendApplication, contributions: FrontendApplicationContribution[]): Promise<void> {
+        const serializedLayoutData = await this.storageService.getData<string>(this.storageKey);
+        if (serializedLayoutData !== undefined) {
+            await this.inflate(serializedLayoutData).then(layoutData => {
+                app.shell.setLayoutData(layoutData);
+            });
+        } else {
+            for (const initializer of contributions) {
+                if (initializer.initializeLayout) {
+                    await initializer.initializeLayout(app);
+                }
             }
-        });
+        }
     }
 
-    onStop(app: FrontendApplication): void {
-        if (this.storeLayout) {
+    storeLayout(app: FrontendApplication): void {
+        if (this.shouldStoreLayout) {
             try {
                 const layoutData = app.shell.getLayoutData();
                 this.storageService.setData(this.storageKey, this.deflate(layoutData));
@@ -128,20 +132,22 @@ export class ShellLayoutRestorer implements FrontendApplicationContribution, Com
                 const descs = (value as WidgetDescription[]);
                 for (let i = 0; i < descs.length; i++) {
                     const desc = descs[i];
-                    const promise = this.widgetManager.getOrCreateWidget(desc.constructionOptions.factoryId, desc.constructionOptions.options)
-                        .then(widget => {
-                            if (widget) {
-                                if (desc.innerWidgetState) {
-                                    if (StatefulWidget.is(widget) && desc.innerWidgetState) {
-                                        widget.restoreState(desc.innerWidgetState);
+                    if (desc.constructionOptions) {
+                        const promise = this.widgetManager.getOrCreateWidget(desc.constructionOptions.factoryId, desc.constructionOptions.options)
+                            .then(widget => {
+                                if (widget) {
+                                    if (desc.innerWidgetState) {
+                                        if (StatefulWidget.is(widget) && desc.innerWidgetState) {
+                                            widget.restoreState(desc.innerWidgetState);
+                                        }
                                     }
+                                    widgets[i] = widget;
                                 }
-                                widgets[i] = widget;
-                            }
-                        }).catch(err => {
-                            this.logger.warn(`Couldn't restore widget for ${desc}. Error : ${err} `);
-                        });
-                    pending.push(promise);
+                            }).catch(err => {
+                                this.logger.warn(`Couldn't restore widget for ${desc}. Error : ${err} `);
+                            });
+                        pending.push(promise);
+                    }
                 }
                 return widgets;
             }
