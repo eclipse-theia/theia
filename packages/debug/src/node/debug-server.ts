@@ -35,8 +35,8 @@ export class DebugServer implements IDebugServer {
     getSessionTerminalId(sessionId: number): Promise<number> {
         const session = this.debugSesssionManager.get(sessionId);
         if (session !== undefined) {
-            const adebugger = session.debugger;
-            return Promise.resolve(adebugger.debugProcess.id);
+            const debugProcess = session.debugger.debugProcess;
+            return debugProcess.then(process => process.id);
         } else {
             throw (new Error(`No Session id: ${sessionId}`));
         }

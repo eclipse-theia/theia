@@ -7,15 +7,13 @@
 import { injectable, inject } from 'inversify';
 import { MIInterpreter } from './mi-interpreter'
 import { MIProtocol as MI } from './mi-protocol';
-import { IDebugProcess, IDebugger } from '@theia/debug/lib/node';
-import { GDBTerminalProcessFactory } from '../gdb-terminal-process'
+import { IDebugProcess, IDebugger, IDebugProcessFactory, IDebugProcessFactoryProvider } from '@theia/debug/lib/node';
 import { ILogger } from '@theia/core/lib/common';
 
 export const IMIDebugger = Symbol("IMIDebugger");
 
 export interface IMIDebugger extends IDebugger {
     start(options: IMIDebuggerOptions): Promise<any>;
-    debugProcess: IDebugProcess
 }
 
 export interface IMIDebuggerOptions {
@@ -32,41 +30,51 @@ export enum ProcessState {
 
 @injectable()
 export class MIDebugger implements IMIDebugger {
-
     public readonly id: number;
-    protected _debugProcess: IDebugProcess;
+    protected debugProcessFactory: IDebugProcessFactory;
+    protected _debugProcess: Promise<IDebugProcess>;
 
     constructor(
         @inject(MIInterpreter) protected readonly interpreter: MIInterpreter,
-        @inject(GDBTerminalProcessFactory) protected readonly gdbFactory: GDBTerminalProcessFactory,
+        @inject(IDebugProcessFactoryProvider) protected readonly debugProcessFactoryProvider: IDebugProcessFactoryProvider,
         @inject(ILogger) protected readonly logger: ILogger) {
     }
 
-    spawn(command: string, args: string[]): Promise<any> {
-        return new Promise((resolve, reject) => {
-            this._debugProcess = this.gdbFactory({ 'command': command, 'args': args });
+    /* FIXME This needs to be done better since the real spawn is now in the constructor of the process */
+    async spawn(): Promise<any> {
+        const debugProcess = await this._debugProcess;
 
+        return new Promise((resolve, reject) => {
             /* FIXME Dispose of these handler */
-            this.debugProcess.onError((err: Error) => {
+            debugProcess.onError((err: Error) => {
                 reject(err)
             });
-            this.debugProcess.onExit(event => {
+            debugProcess.onExit(event => {
                 if (event.code > 0) {
                     reject(new Error(`Exited with code: ${event.code}`));
                 }
             });
 
-            this.interpreter.start(this.debugProcess.readStream, this.debugProcess.writeStream);
+            this.interpreter.start(debugProcess.readStream, debugProcess.writeStream);
             this.interpreter.once('NotifyAsyncOutput', (input: any) => {
                 resolve(input);
             });
         });
     }
 
-    start(options: IMIDebuggerOptions): Promise<any> {
+    async start(options: IMIDebuggerOptions): Promise<any> {
+
+        this._debugProcess = new Promise(resolve => {
+            this.debugProcessFactoryProvider().then(factory => {
+                resolve(factory({ 'command': options.command, 'args': options.args }));
+            });
+        });
+
+        const debugProcess = await this._debugProcess;
+
         const p = new Promise((resolve, reject) => {
-            this.spawn(options.command, options.args).then(() => {
-                this.debugProcess.onExit(event => { this.onProcessExit(event.code, event.signal) });
+            this.spawn().then(() => {
+                debugProcess.onExit(event => { this.onProcessExit(event.code, event.signal) });
                 /* Send command to list capabilities */
                 const command = new MI.MICommand('list-features');
                 this.interpreter.sendCommand(command).then((result: MI.ResultRecord) => {
@@ -90,7 +98,7 @@ export class MIDebugger implements IMIDebugger {
 
     }
 
-    get debugProcess(): IDebugProcess {
+    get debugProcess(): Promise<IDebugProcess> {
         return this._debugProcess;
     }
 }

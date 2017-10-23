@@ -6,8 +6,15 @@
  */
 
 export const IDebugProcess = "IDebugProcess";
+
 import { Event } from '@theia/core/lib/common';
 import { IProcessExitEvent } from '@theia/process/lib/node';
+
+export const IDebugProcessFactory = "IDebugProcessFactory";
+export type IDebugProcessFactory = (options: object) => IDebugProcess;
+
+export const IDebugProcessFactoryProvider = "IDebugProcessFactoryProvider";
+export type IDebugProcessFactoryProvider = () => Promise<IDebugProcessFactory>;
 
 export interface IDebugProcess {
     id: number,

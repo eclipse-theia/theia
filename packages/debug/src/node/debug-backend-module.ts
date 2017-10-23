@@ -8,6 +8,7 @@
 import { ContainerModule } from 'inversify';
 import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common/messaging";
 import { IDebugSession, IDebugSessionFactory } from './debug-session';
+
 import { DebugSessionManager } from './debug-session-manager';
 import { IDebugServer, IDebugClient, debugPath } from '../common/debug-protocol';
 import { DebugServer } from './debug-server';
