@@ -12,7 +12,8 @@ import URI from "../common/uri";
  */
 export class Endpoint {
 
-    constructor(protected options: Endpoint.Options = {}) {
+    constructor(protected options: Endpoint.Options = {},
+        protected location: Endpoint.Location = window.location) {
     }
 
     getWebSocketUrl(): URI {
@@ -24,18 +25,18 @@ export class Endpoint {
     }
 
     protected get pathname() {
-        if (location.pathname === '/') {
+        if (this.location.pathname === '/') {
             return ''
         }
-        if (location.pathname.endsWith('/')) {
-            return location.pathname.substr(0, location.pathname.length - 1)
+        if (this.location.pathname.endsWith('/')) {
+            return this.location.pathname.substr(0, this.location.pathname.length - 1)
         }
-        return location.pathname
+        return this.location.pathname
     }
 
     protected get host() {
-        if (location.host) {
-            return location.host;
+        if (this.location.host) {
+            return this.location.host;
         }
         return 'localhost:' + this.port;
     }
@@ -45,7 +46,7 @@ export class Endpoint {
     }
 
     protected getSearchParam(name: string, defaultValue: string): string {
-        const search = location.search;
+        const search = this.location.search;
         if (!search) {
             return defaultValue;
         }
@@ -65,8 +66,8 @@ export class Endpoint {
         if (this.options.httpScheme) {
             return this.options.httpScheme
         }
-        if (location.protocol === 'http' || location.protocol === 'https') {
-            return location.protocol
+        if (this.location.protocol === 'http' || this.location.protocol === 'https') {
+            return this.location.protocol
         }
         return 'http'
     }
@@ -89,5 +90,14 @@ export namespace Endpoint {
         wsScheme?: string
         httpScheme?: string
         path?: string
+    }
+
+    // Necessary for running tests with dependecy on TS lib on node
+    // FIXME figure out how to mock with ts-node
+    export class Location {
+        host: string
+        pathname: string
+        search: string
+        protocol: string
     }
 }
