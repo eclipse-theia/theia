@@ -39,7 +39,7 @@ export class MainPage {
 
     waitForLoadingPanels() {
         this.driver.waitForExist('#theia-top-panel');
-        this.driver.waitForExist('#theia-main-content-panel');
+        this.driver.waitForVisible('#theia-main-content-panel');
     }
 
     isMainContentPanelLoaded(): boolean {
