@@ -15,6 +15,7 @@ export class FileResource implements Resource {
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
+    protected readonly onDidChangeUriEmitter = new Emitter<void>();
 
     constructor(
         readonly uri: URI,
@@ -51,6 +52,9 @@ export class FileResource implements Resource {
         return this.onDidChangeContentsEmitter.event;
     }
 
+    get onDidChangeUri(): Event<void> {
+        return this.onDidChangeUriEmitter.event;
+    }
 }
 
 @injectable()
@@ -72,5 +76,4 @@ export class FileResourceResolver implements ResourceResolver {
             throw new Error('The given uri is a directory: ' + uri);
         });
     }
-
 }

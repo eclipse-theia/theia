@@ -36,8 +36,11 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
         (props: FileDialogProps) =>
             createFileDialog(ctx.container, props)
     );
+    bind(WorkspaceCommandContribution).toSelf().inSingletonScope();
     bind(CommandContribution).to(WorkspaceCommandContribution).inSingletonScope();
     bind(MenuContribution).to(FileMenuContribution).inSingletonScope();
+
+
 
     rebind(StorageService).to(WorkspaceStorageService).inSingletonScope();
 });

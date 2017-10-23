@@ -56,7 +56,8 @@ export class WidgetManager {
 
     constructor(
         @inject(ContributionProvider) @named(WidgetFactory) protected readonly factoryProvider: ContributionProvider<WidgetFactory>,
-        @inject(ILogger) protected logger: ILogger) {
+        @inject(ILogger) protected logger: ILogger
+    ) {
     }
 
     getWidgets(factoryId: string): Widget[] {
@@ -67,6 +68,10 @@ export class WidgetManager {
             }
         }
         return result;
+    }
+
+    getWidgetsMap(): Map<string, Widget> {
+        return this.widgets;
     }
 
     /*
@@ -105,7 +110,7 @@ export class WidgetManager {
         return undefined;
     }
 
-    protected toKey(options: WidgetConstructionOptions) {
+    public toKey(options: WidgetConstructionOptions) {
         return JSON.stringify(options);
     }
 

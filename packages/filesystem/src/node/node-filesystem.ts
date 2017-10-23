@@ -15,6 +15,15 @@ import { injectable, inject, optional } from "inversify";
 import URI from "@theia/core/lib/common/uri";
 import { FileUri } from "@theia/core/lib/node";
 import { FileStat, FileSystem } from "../common/filesystem";
+import { Emitter, Event } from '@theia/core/lib/common/event';
+
+export interface IUriChangedEvent {
+    factoryId: string;
+    options: any;
+    newOptions: any;
+    newLabel: any;
+}
+
 
 @injectable()
 export class FileSystemNodeOptions {
@@ -34,6 +43,11 @@ export class FileSystemNodeOptions {
 @injectable()
 export class FileSystemNode implements FileSystem {
 
+    protected readonly onIUriChangedEmitter = new Emitter<IUriChangedEvent>();
+
+    get onIUriChanged(): Event<IUriChangedEvent> {
+        return this.onIUriChangedEmitter.event;
+    }
     constructor(
         @inject(FileSystemNodeOptions) @optional() protected readonly options: FileSystemNodeOptions = FileSystemNodeOptions.default
     ) { }
@@ -154,6 +168,13 @@ export class FileSystemNode implements FileSystem {
                     if (error) {
                         return reject(error);
                     }
+                    let event: IUriChangedEvent = {
+                        factoryId: "code-editor-opener",
+                        options: _sourceUri.parent.resolve(_sourceUri.path.base).toString(),
+                        newOptions: options,
+                        newLabel: FileUri.fsPath(_targetUri).toString()
+                    };
+                    this.onIUriChangedEmitter.fire(event);
                     resolve(this.doGetStat(_targetUri, 1));
                 });
             }

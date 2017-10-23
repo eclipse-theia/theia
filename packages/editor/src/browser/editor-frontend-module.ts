@@ -16,6 +16,7 @@ import { EditorCommandHandlers } from "./editor-command";
 import { EditorKeybindingContribution, EditorKeybindingContext } from "./editor-keybinding";
 import { bindEditorPreferences } from './editor-preferences';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
+// import { WorkspaceCommandContribution } from '@theia/workspace/lib/browser/workspace-commands';
 
 export default new ContainerModule(bind => {
     bindEditorPreferences(bind);
@@ -30,4 +31,5 @@ export default new ContainerModule(bind => {
     bind(EditorKeybindingContext).toSelf().inSingletonScope();
     bind(KeybindingContext).toDynamicValue(context => context.container.get(EditorKeybindingContext));
     bind(KeybindingContribution).to(EditorKeybindingContribution);
+    // bind(WorkspaceCommandContribution).toSelf().inSingletonScope();
 });
