@@ -6,10 +6,22 @@
  */
 
 import { ContainerModule } from 'inversify';
-import { IDebugSession, DebugSession } from './debug-session';
+import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common/messaging";
+import { IDebugSession, IDebugSessionFactory } from './debug-session';
 import { DebugSessionManager } from './debug-session-manager';
+import { IDebugServer, IDebugClient, debugPath } from '../common/debug-protocol';
+import { DebugServer } from './debug-server';
 
 export default new ContainerModule(bind => {
-    bind<IDebugSession>(IDebugSession).to(DebugSession).whenTargetIsDefault();
     bind<DebugSessionManager>(DebugSessionManager).toSelf().inSingletonScope();
+    bind(IDebugSessionFactory).toAutoFactory(IDebugSession);
+    bind(IDebugServer).to(DebugServer).inSingletonScope();
+
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler<IDebugClient>(debugPath, client => {
+            const server = ctx.container.get<IDebugServer>(IDebugServer);
+            server.setClient(client);
+            return server;
+        })
+    ).inSingletonScope();
 });

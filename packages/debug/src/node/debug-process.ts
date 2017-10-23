@@ -10,6 +10,7 @@ import { Event } from '@theia/core/lib/common';
 import { IProcessExitEvent } from '@theia/process/lib/node';
 
 export interface IDebugProcess {
+    id: number,
     readStream: NodeJS.ReadableStream;
     writeStream: NodeJS.WritableStream;
     process: any;
