@@ -11,7 +11,10 @@ import {
     IMIParser, MIParser, MIOutputParser
 } from './mi';
 import { bindGDBPreferences } from './gdb-preferences'
-
+import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common/messaging";
+import { IBaseTerminalClient } from '@theia/terminal/lib/common/base-terminal-protocol';
+import { IGDBTerminalServer, gdbTerminalPath } from '../common/gdb-terminal-protocol';
+import { GDBTerminalServer } from './gdb-terminal-server';
 import { GDBTerminalProcess, GDBTerminalProcessFactory, GDBTerminalProcessOptions } from './gdb-terminal-process';
 import { GDBRawProcess, GDBRawProcessFactory, GDBRawProcessOptions } from './gdb-raw-process';
 import { IDebugSession } from '@theia/debug/lib/node/debug-session';
@@ -26,6 +29,7 @@ export default new ContainerModule(bind => {
     bind<GDBTerminalProcess>(GDBTerminalProcess).toSelf();
     bind<GDBRawProcess>(GDBRawProcess).toSelf();
     bind(IDebugSession).to(GDBDebugSession);
+    bind(IGDBTerminalServer).to(GDBTerminalServer).inSingletonScope();
 
     bind(GDBTerminalProcessFactory).toFactory(ctx =>
         (options: GDBTerminalProcessOptions) => {
@@ -43,4 +47,12 @@ export default new ContainerModule(bind => {
             child.bind(GDBRawProcessOptions).toConstantValue(options);
             return child.get(GDBRawProcess);
         });
+
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler<IBaseTerminalClient>(gdbTerminalPath, client => {
+            const terminalServer = ctx.container.get<IGDBTerminalServer>(IGDBTerminalServer);
+            terminalServer.setClient(client);
+            return terminalServer;
+        })
+    ).inSingletonScope();
 });

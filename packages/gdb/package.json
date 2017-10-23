@@ -9,6 +9,7 @@
         "@theia/filesystem": "^0.1.1",
         "@theia/preferences": "^0.1.1",
         "@theia/preferences-api": "^0.1.1",
+        "@theia/terminal": "^0.1.1",
         "@theia/debug": "^0.1.1"
     },
     "publishConfig": {
@@ -16,6 +17,7 @@
     },
     "theiaExtensions": [
         {
+            "frontend": "lib/browser/gdb-frontend-module",
             "backend": "lib/node/gdb-backend-module"
         }
     ],
