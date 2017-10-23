@@ -16,6 +16,7 @@ import { MessageService, ResourceProvider, Disposable, CommandService } from '@t
 import URI from '@theia/core/lib/common/uri';
 import { VirtualRenderer, VirtualWidget, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
 import { h } from '@phosphor/virtualdom/lib';
+import { Message } from '@phosphor/messaging';
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
 import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
@@ -107,6 +108,26 @@ export class GitWidget extends VirtualWidget {
         const changesContainer = h.div({ className: "changesOuterContainer" }, mergeChanges, stagedChanges, unstagedChanges);
 
         return [headerContainer, changesContainer];
+    }
+
+    /**
+     * After rendering the DOM elements, it makes sure that the selection (`selectionIndex`) is correct in the repositories
+     * drop-down even if one adds/removes local Git clones to/from the workspace.
+     *
+     * By default the `selectionIndex` is `0`, so we need to set it based on the user's repository selection.
+     */
+    protected onUpdateRequest(message: Message): void {
+        super.onUpdateRequest(message);
+        const repositories = this.repositoryProvider.allRepositories;
+        // Set the selected repository.
+        const combo = document.getElementById('repositoryList') as any;
+        if (combo && combo.selectedIndex !== undefined && this.repositoryProvider.selectedRepository) {
+            const selectedUri = this.repositoryProvider.selectedRepository.localUri.toString();
+            const index = repositories.map(repository => repository.localUri.toString()).findIndex(uri => uri === selectedUri);
+            if (index !== -1) {
+                combo.selectedIndex = index;
+            }
+        }
     }
 
     protected renderRepositoryList(): h.Child {
