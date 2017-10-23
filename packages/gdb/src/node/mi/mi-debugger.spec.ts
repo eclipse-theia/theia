@@ -9,8 +9,7 @@ import 'mocha';
 import * as chaiAsPromised from 'chai-as-promised'
 import { testContainer } from '../inversify.spec-config';
 import { IMIDebugger } from './mi-debugger';
-import * as yargs from 'yargs';
-
+import { PreferenceService } from '@theia/preferences-api/lib/common';
 chai.use(chaiAsPromised);
 
 /**
@@ -20,9 +19,8 @@ chai.use(chaiAsPromised);
 
 const expect = chai.expect;
 
-const debuggerPath = 'gdb';
-const debuggerArgs: string[] = yargs.parse('-i=mi').argv;
-
+const preferences = testContainer.get<PreferenceService>(PreferenceService);
+const debuggerPath = preferences.getString('gdb.command', 'gdb');
 
 describe('MIDebugger', function () {
     let miDebugger: IMIDebugger;
@@ -41,7 +39,7 @@ describe('MIDebugger', function () {
     });
 
     it('should start GDB', function () {
-        const promise = miDebugger.start({ command: debuggerPath, args: debuggerArgs });
+        const promise = miDebugger.start({ command: debuggerPath, args: [] });
         // FIXME this should be digested by the debugger, for now return the raw mi output
         return expect(promise).to.eventually.deep.equal(
             {
