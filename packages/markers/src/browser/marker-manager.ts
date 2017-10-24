@@ -12,7 +12,6 @@ import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { FileSystemWatcher, FileChangeType } from '@theia/filesystem/lib/common';
 import { Marker } from '../common/marker';
 
-
 /*
  * argument to the `findMarkes` method.
  */

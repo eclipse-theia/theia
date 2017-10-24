@@ -12,7 +12,6 @@ import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { FileSystemWatcher } from '@theia/filesystem/lib/common';
 import { PROBLEM_KIND } from '../../common/problem-marker';
 
-
 @injectable()
 export class ProblemManager extends MarkerManager<Diagnostic> {
 
