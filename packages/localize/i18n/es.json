@@ -1,0 +1,15 @@
+{
+	"es": {
+		"workspace-frontend": {
+			"Open": "Abierto..."
+		},
+		"workspace-commands": {
+			"File": "Archivo",
+			"New File": "Archivo Nuevo",
+			"New Folder": "Nueva Carpeta",
+			"Open": "Abierto...",
+			"Rename": "Rebautizar",
+			"Delete": "Borrar"
+		}
+	}
+}

@@ -16,6 +16,8 @@ import { UriSelection } from '@theia/filesystem/lib/common/filesystem-selection'
 import { SingleTextInputDialog, ConfirmDialog } from "@theia/core/lib/browser/dialogs";
 import { OpenerService, OpenHandler, open } from "@theia/core/lib/browser";
 import { WorkspaceService } from './workspace-service';
+import { localizeWithPrefix } from './localize';
+const localize: Function = localizeWithPrefix("workspace-commands");
 
 export namespace WorkspaceCommands {
     export const NEW_FILE = 'file:newFile';
@@ -44,7 +46,7 @@ export class FileMenuContribution implements MenuContribution {
 
     registerMenus(registry: MenuModelRegistry) {
         // Explicitly register the Edit Submenu
-        registry.registerSubmenu([MAIN_MENU_BAR], FileMenus.FILE[1], "File");
+        registry.registerSubmenu([MAIN_MENU_BAR], FileMenus.FILE[1], localize("File", "File"));
 
         registry.registerMenuAction(FileMenus.NEW_GROUP, {
             commandId: WorkspaceCommands.NEW_FILE
@@ -67,23 +69,23 @@ export class WorkspaceCommandContribution implements CommandContribution {
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand({
             id: WorkspaceCommands.NEW_FILE,
-            label: 'New File'
+            label: localize("New File", "New File")
         });
         registry.registerCommand({
             id: WorkspaceCommands.NEW_FOLDER,
-            label: 'New Folder'
+            label: localize("New Folder", "New Folder")
         });
         registry.registerCommand({
             id: WorkspaceCommands.FILE_OPEN,
-            label: 'Open'
+            label: localize("Open", "Open")
         });
         registry.registerCommand({
             id: WorkspaceCommands.FILE_RENAME,
-            label: 'Rename'
+            label: localize("Rename", "Rename")
         });
         registry.registerCommand({
             id: WorkspaceCommands.FILE_DELETE,
-            label: 'Delete'
+            label: localize("Delete", "Delete")
         });
 
         this.openerService.getOpeners().then(openers => {
@@ -115,7 +117,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 const parentUri = new URI(parent.uri);
                 const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled', '.txt');
                 const dialog = new SingleTextInputDialog({
-                    title: `New File`,
+                    title: localize("New File", "New File"),
                     initialValue: vacantChildUri.path.base,
                     validate: name => this.validateFileName(name, parent)
                 });
@@ -133,7 +135,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 const parentUri = new URI(parent.uri);
                 const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled');
                 const dialog = new SingleTextInputDialog({
-                    title: `New Folder`,
+                    title: localize("New Folder", "New Folder"),
                     initialValue: vacantChildUri.path.base,
                     validate: name => this.validateFileName(name, parent)
                 });

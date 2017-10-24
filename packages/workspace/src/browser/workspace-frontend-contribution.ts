@@ -14,11 +14,13 @@ import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from './workspace-service';
 import { FileMenus } from './workspace-commands';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
+import { localizeWithPrefix } from './localize';
+const localize: Function = localizeWithPrefix("workspace-commands");
 
 export namespace WorkspaceCommands {
     export const OPEN: Command = {
         id: 'workspace:open',
-        label: 'Open...'
+        label: localize("Open", "Open...")
     }
 }
 
