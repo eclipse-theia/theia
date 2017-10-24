@@ -35,6 +35,20 @@ export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOpti
     created: string
 }
 
+interface TerminalCSSProperties {
+    /* The font family (e.g. monospace).  */
+    fontFamily: string;
+
+    /* The font size, in number of px.  */
+    fontSize: number;
+
+    /* The text color, as a CSS color string.  */
+    foreground: string;
+
+    /* The background color, as a CSS color string.  */
+    background: string;
+}
+
 @injectable()
 export class TerminalWidget extends BaseWidget {
 
@@ -68,14 +82,76 @@ export class TerminalWidget extends BaseWidget {
         this.title.closable = true
         this.addClass("terminal-container")
 
+        /* Read CSS properties from the page and apply them to the terminal.  */
+        const cssProps = this.getCSSPropertiesFromPage();
+
         this.term = new Xterm.Terminal({
             cursorBlink: true,
+            fontFamily: cssProps.fontFamily,
+            fontSize: cssProps.fontSize,
+            theme: {
+                foreground: cssProps.foreground,
+                background: cssProps.background,
+            },
         });
 
         this.term.open(this.node);
         this.term.on('title', (title: string) => {
             this.title.label = title;
         });
+    }
+
+    /* Get the font family and size from the CSS custom properties defined in
+       the root element.  */
+
+    private getCSSPropertiesFromPage(): TerminalCSSProperties {
+        /* Helper to look up a CSS property value and throw an error if it's
+           not defined.  */
+
+        function lookup(props: CSSStyleDeclaration, name: string): string {
+            /* There is sometimes an extra space in the front, remove it.  */
+            const value = htmlElementProps.getPropertyValue(name).trim();
+            if (!value) {
+                throw new Error(`Couldn\'t find value of ${name}`);
+            }
+
+            return value;
+        }
+
+        /* Get the CSS properties of <html> (aka :root in css).  */
+        const htmlElementProps = getComputedStyle(document.documentElement);
+
+        const fontFamily = lookup(htmlElementProps, '--theia-code-font-family');
+        const fontSizeStr = lookup(htmlElementProps, '--theia-code-font-size');
+        const foreground = lookup(htmlElementProps, '--theia-ui-font-color0');
+        const background = lookup(htmlElementProps, '--theia-layout-color1');
+
+        /* The font size is returned as a string, such as ' 13px').  We want to
+           return just the number of px.  */
+        const fontSizeMatch = fontSizeStr.trim().match(/^(\d+)px$/);
+        if (!fontSizeMatch) {
+            throw new Error(`Unexpected format for --theia-code-font-size (${fontSizeStr})`);
+        }
+
+        const fontSize = Number.parseInt(fontSizeMatch[1]);
+
+        /* xterm.js expects #XXX of #XXXXXX for colors.  */
+        const colorRe = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+        if (!foreground.match(colorRe)) {
+            throw new Error(`Unexpected format for --theia-ui-font-color0 (${foreground})`);
+        }
+
+        if (!background.match(colorRe)) {
+            throw new Error(`Unexpected format for --theia-layout-color1 (${background})`);
+        }
+
+        return {
+            fontSize: fontSize,
+            fontFamily: fontFamily,
+            foreground: foreground,
+            background: background,
+        };
     }
 
     protected registerResize(): void {
