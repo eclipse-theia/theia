@@ -14,10 +14,12 @@ import { TextEditorProvider, Range, Position } from "./editor";
 import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { Widget } from '@phosphor/widgets';
 import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
+import { WorkspaceCommandContribution } from "@theia/workspace/lib/browser/workspace-commands";
 
 export const EditorManager = Symbol("EditorManager");
 
 export interface EditorManager extends OpenHandler {
+
     /**
      * All opened editors.
      */
@@ -27,6 +29,7 @@ export interface EditorManager extends OpenHandler {
      * Reject if the given input is not an editor input or an editor cannot be opened.
      */
     open(uri: URI, input?: EditorInput): Promise<EditorWidget>;
+
     /**
      * The most recently focused editor.
      */
@@ -64,10 +67,14 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(FrontendApplication) protected readonly app: FrontendApplication,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
-        @inject(FileIconProvider) protected readonly iconProvider: FileIconProvider
+        @inject(FileIconProvider) protected readonly iconProvider: FileIconProvider,
+        @inject(WorkspaceCommandContribution) protected readonly uiEvent: WorkspaceCommandContribution
     ) {
         this.currentObserver = new EditorManagerImpl.Observer('current', app);
         this.activeObserver = new EditorManagerImpl.Observer('active', app);
+        uiEvent.onIUriChanged(event => {
+            this.renameWidget(event.factoryId.toString(), event.options, event.newOptions, event.newLabel);
+        });
     }
 
     get editors() {
@@ -103,6 +110,28 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
             this.revealSelection(editor, input);
             return editor;
         });
+    }
+
+    /*
+     *  check if a widget exists already and rename it
+     */
+    renameWidget(factoryId: string, options: any, newOptions: any, newLabel: any): void {
+        let key = this.widgetManager.toKey({ factoryId, options });
+        let existingWidget = this.widgetManager.getWidgetsMap().get(key);
+        if (existingWidget) {
+            existingWidget.title.label = newLabel;
+            this.updateWidgetKey(key, existingWidget, factoryId, options, newOptions);
+        }
+    }
+
+    /*
+     *  update a widget key following a rename
+     */
+    private updateWidgetKey(key: any, widget: Widget, factoryId: string, options: any, newOptions: any): void {
+        this.widgetManager.getWidgetsMap().delete(key);
+        options = newOptions;
+        key = this.widgetManager.toKey({ factoryId, options });
+        this.widgetManager.getWidgetsMap().set(key, widget);
     }
 
     // don't call directly, but use WidgetManager
@@ -155,7 +184,6 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
         }
         return undefined;
     }
-
 }
 
 export namespace EditorManagerImpl {

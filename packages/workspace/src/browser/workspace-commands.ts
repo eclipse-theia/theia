@@ -16,6 +16,7 @@ import { UriSelection } from '@theia/filesystem/lib/common/filesystem-selection'
 import { SingleTextInputDialog, ConfirmDialog } from "@theia/core/lib/browser/dialogs";
 import { OpenerService, OpenHandler, open } from "@theia/core/lib/browser";
 import { WorkspaceService } from './workspace-service';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 
 export namespace WorkspaceCommands {
     export const NEW_FILE = 'file:newFile';
@@ -37,6 +38,22 @@ export namespace FileMenus {
     export const FILE = [MAIN_MENU_BAR, "1_file"];
     export const NEW_GROUP = [...FILE, '1_new'];
     export const OPEN_GROUP = [...FILE, '2_open'];
+}
+
+// @injectable()
+// export class UiEvent {
+//     public onIUriChangedEmitter = new Emitter<IUriChangedEvent>();
+
+//     get onIUriChanged(): Event<IUriChangedEvent> {
+//         return this.onIUriChangedEmitter.event;
+//     }
+// }
+
+export interface IUriChangedEvent {
+    factoryId: string;
+    options: any;
+    newOptions: any;
+    newLabel: any;
 }
 
 @injectable()
@@ -63,6 +80,15 @@ export class WorkspaceCommandContribution implements CommandContribution {
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(OpenerService) protected readonly openerService: OpenerService
     ) { }
+
+
+
+
+    protected readonly onIUriChangedEmitter = new Emitter<IUriChangedEvent>();
+
+    get onIUriChanged(): Event<IUriChangedEvent> {
+        return this.onIUriChangedEmitter.event;
+    }
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand({
@@ -104,9 +130,17 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     initialValue: uri.path.base,
                     validate: name => this.validateFileName(name, parent)
                 });
-                dialog.open().then(name =>
-                    this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString())
-                );
+                dialog.open().then(name => {
+                    this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString()).then(() => {
+                        let event: IUriChangedEvent = {
+                            factoryId: "code-editor-opener",
+                            options: uri.parent.resolve(uri.path.base).toString(),
+                            newOptions: uri.parent.resolve(name).toString(),
+                            newLabel: name
+                        };
+                        this.onIUriChangedEmitter.fire(event);
+                    });
+                });
             })
         }));
 
