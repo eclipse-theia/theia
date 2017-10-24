@@ -68,7 +68,6 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
         const serverProcess = cp.spawn(command, args, options);
         serverProcess.once('error', this.onDidFailSpawnProcess.bind(this));
         serverProcess.stderr.on('data', this.logError.bind(this));
-        serverProcess.stdout.on('data', this.logInfo.bind(this));
         return serverProcess;
     }
 
