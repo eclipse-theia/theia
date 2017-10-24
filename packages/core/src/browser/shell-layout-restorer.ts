@@ -13,7 +13,6 @@ import { Widget } from '@phosphor/widgets';
 import { ILogger } from '../common/logger';
 import { CommandContribution, CommandRegistry } from '../common/command';
 
-
 /**
  * A contract for widgets that want to store and restore their inner state, between sessions.
  */

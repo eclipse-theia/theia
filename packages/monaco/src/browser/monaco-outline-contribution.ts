@@ -69,7 +69,6 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         });
     }
 
-
     protected updateOutline() {
         const editor = this.editorManager.currentEditor;
         if (editor) {

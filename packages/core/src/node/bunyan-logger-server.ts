@@ -12,7 +12,6 @@ import { LogLevel } from '../common/logger';
 import { ILoggerServer, ILoggerClient, LoggerServerOptions } from '../common/logger-protocol';
 import { CliContribution } from './cli';
 
-
 @injectable()
 export class LogLevelCliContribution implements CliContribution {
 
@@ -30,7 +29,6 @@ export class LogLevelCliContribution implements CliContribution {
         this.logLevel = args['logLevel'];
     }
 }
-
 
 @injectable()
 export class BunyanLoggerServer implements ILoggerServer {

@@ -17,7 +17,6 @@ export const GitPath = '/services/git';
  */
 export const Git = Symbol('Git');
 
-
 export namespace Git {
 
     /**
@@ -161,7 +160,6 @@ export namespace Git {
                  * and you will be on the new branch.
                  */
                 readonly merge?: boolean;
-
 
                 /**
                  * The name for the new local branch.
@@ -503,4 +501,3 @@ export namespace GitUtils {
     }
 
 }
-

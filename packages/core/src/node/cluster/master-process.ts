@@ -74,4 +74,3 @@ export class MasterProcess extends EventEmitter {
     }
 
 }
-
