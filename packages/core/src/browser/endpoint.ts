@@ -12,26 +12,30 @@ import URI from "../common/uri";
  */
 export class Endpoint {
 
-    constructor(protected options: Endpoint.Options = {},
-        protected location: Endpoint.Location = window.location) {
-    }
+    constructor(
+        protected readonly options: Endpoint.Options = {},
+        protected readonly location: Endpoint.Location = window.location
+    ) { }
 
     getWebSocketUrl(): URI {
-        return new URI(`${this.wsScheme}://${this.host}${this.pathname}${this.path}`)
+        return new URI(`${this.wsScheme}://${this.host}${this.pathname}${this.path}`);
     }
 
     getRestUrl(): URI {
-        return new URI(`${this.httpScheme}://${this.host}${this.pathname}${this.path}`)
+        return new URI(`${this.httpScheme}://${this.host}${this.pathname}${this.path}`);
     }
 
     protected get pathname() {
+        if (this.location.protocol === 'file:') {
+            return '';
+        }
         if (this.location.pathname === '/') {
-            return ''
+            return '';
         }
         if (this.location.pathname.endsWith('/')) {
-            return this.location.pathname.substr(0, this.location.pathname.length - 1)
+            return this.location.pathname.substr(0, this.location.pathname.length - 1);
         }
-        return this.location.pathname
+        return this.location.pathname;
     }
 
     protected get host() {
@@ -54,7 +58,7 @@ export class Endpoint {
             .filter(value => value.startsWith(name + '='))
             .map(value => {
                 const encoded = value.substr(name.length + 1);
-                return decodeURIComponent(encoded)
+                return decodeURIComponent(encoded);
             })[0] || defaultValue;
     }
 
@@ -64,10 +68,10 @@ export class Endpoint {
 
     protected get httpScheme() {
         if (this.options.httpScheme) {
-            return this.options.httpScheme
+            return this.options.httpScheme;
         }
         if (this.location.protocol === 'http' || this.location.protocol === 'https') {
-            return this.location.protocol
+            return this.location.protocol;
         }
         return 'http'
     }
@@ -75,29 +79,29 @@ export class Endpoint {
     protected get path() {
         if (this.options.path) {
             if (this.options.path.startsWith("/")) {
-                return this.options.path
+                return this.options.path;
             } else {
-                return '/' + this.options.path
+                return '/' + this.options.path;
             }
         }
-        return this.options.path || ""
+        return this.options.path || "";
     }
 }
 
 export namespace Endpoint {
     export class Options {
-        host?: string
-        wsScheme?: string
-        httpScheme?: string
-        path?: string
+        host?: string;
+        wsScheme?: string;
+        httpScheme?: string;
+        path?: string;
     }
 
     // Necessary for running tests with dependecy on TS lib on node
     // FIXME figure out how to mock with ts-node
     export class Location {
-        host: string
-        pathname: string
-        search: string
-        protocol: string
+        host: string;
+        pathname: string;
+        search: string;
+        protocol: string;
     }
 }
