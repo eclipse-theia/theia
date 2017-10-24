@@ -21,6 +21,15 @@ export namespace CommonMenus {
     export const EDIT_MENU_CUT_COPY_PASTE_GROUP = "2_cut/copy/paste";
     export const EDIT_MENU_FIND_REPLACE_GROUP = "3_find/replace";
 
+    const viewId = 'view';
+    const viewParent = [MAIN_MENU_BAR];
+    export const VIEW = {
+        id: viewId,
+        parent: viewParent,
+        path: [...viewParent, viewId],
+        label: 'View'
+    };
+
 }
 
 export namespace CommonCommands {
@@ -83,8 +92,8 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
     ) { }
 
     registerMenus(registry: MenuModelRegistry): void {
-        // Explicitly register the Edit Submenu
         registry.registerSubmenu([MAIN_MENU_BAR], CommonMenus.EDIT_MENU, "Edit");
+        registry.registerSubmenu(CommonMenus.VIEW.parent, CommonMenus.VIEW.id, CommonMenus.VIEW.label);
 
         // Undo/Redo
         registry.registerMenuAction([

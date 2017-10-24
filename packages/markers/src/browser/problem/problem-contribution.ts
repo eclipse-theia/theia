@@ -9,9 +9,9 @@ import { injectable, inject } from 'inversify';
 import {
     MenuModelRegistry, Command, CommandContribution,
     MenuContribution, KeybindingContribution, KeybindingRegistry,
-    KeyCode, Key, Modifier, CommandRegistry, MAIN_MENU_BAR
+    KeyCode, Key, Modifier, CommandRegistry
 } from '@theia/core/lib/common';
-import { FrontendApplication } from '@theia/core/lib/browser';
+import { FrontendApplication, CommonMenus } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { PROBLEM_KIND } from '../../common/problem-marker';
 
@@ -55,8 +55,7 @@ export class ProblemContribution implements CommandContribution, MenuContributio
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        menus.registerSubmenu([MAIN_MENU_BAR], 'view', 'View');
-        menus.registerMenuAction([MAIN_MENU_BAR, 'view'], {
+        menus.registerMenuAction(CommonMenus.VIEW.path, {
             commandId: ProblemCommands.OPEN.id
         });
     }
