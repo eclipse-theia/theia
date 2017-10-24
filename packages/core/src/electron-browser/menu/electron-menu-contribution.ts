@@ -12,14 +12,35 @@ import {
     KeybindingContribution, KeybindingRegistry, KeyCode, Key, Modifier,
     MAIN_MENU_BAR, MenuModelRegistry, MenuContribution
 } from '../../common';
-import { FrontendApplication, FrontendApplicationContribution } from '../../browser';
+import { FrontendApplication, FrontendApplicationContribution, CommonMenus } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 
-export namespace ElectronMenuCommands {
+export namespace ElectronCommands {
     export const TOGGLE_DEVELOPER_TOOLS: Command = {
         id: 'theia.toggleDevTools',
         label: 'Toggle Developer Tools'
     };
+    export const RELOAD: Command = {
+        id: 'view.reload',
+        label: 'Reload Window'
+    };
+    export const ZOOM_IN: Command = {
+        id: 'view.zoomIn',
+        label: 'Zoom In'
+    };
+    export const ZOOM_OUT: Command = {
+        id: 'view.zoomOut',
+        label: 'Zoom Out'
+    };
+    export const RESET_ZOOM: Command = {
+        id: 'view.resetZoom',
+        label: 'Reset Zoom'
+    };
+}
+
+export namespace ElectronMenus {
+    export const VIEW_WINDOW = [...CommonMenus.VIEW.path, 'window'];
+    export const VIEW_ZOOM = [...CommonMenus.VIEW.path, 'zoom'];
 }
 
 export namespace ElectronMenus {
@@ -51,7 +72,7 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
     }
 
     registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand(ElectronMenuCommands.TOGGLE_DEVELOPER_TOOLS, {
+        registry.registerCommand(ElectronCommands.TOGGLE_DEVELOPER_TOOLS, {
             execute: () => {
                 const webContent = electron.remote.getCurrentWebContents();
                 if (!webContent.isDevToolsOpened()) {
@@ -61,20 +82,94 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
                 }
             }
         });
+
+        registry.registerCommand(ElectronCommands.RELOAD, {
+            execute: () => {
+                const focusedWindow = electron.remote.getCurrentWindow();
+                if (focusedWindow) {
+                    focusedWindow.reload();
+                }
+            }
+        });
+        registry.registerCommand(ElectronCommands.ZOOM_IN, {
+            execute: () => {
+                const focusedWindow = electron.remote.getCurrentWindow();
+                if (focusedWindow) {
+                    const webContents = focusedWindow.webContents;
+                    webContents.getZoomLevel(zoomLevel =>
+                        webContents.setZoomLevel(zoomLevel + 0.5)
+                    );
+                }
+            }
+        });
+        registry.registerCommand(ElectronCommands.ZOOM_OUT, {
+            execute: () => {
+                const focusedWindow = electron.remote.getCurrentWindow();
+                if (focusedWindow) {
+                    const webContents = focusedWindow.webContents;
+                    webContents.getZoomLevel(zoomLevel =>
+                        webContents.setZoomLevel(zoomLevel - 0.5)
+                    );
+                }
+            }
+        });
+        registry.registerCommand(ElectronCommands.RESET_ZOOM, {
+            execute: () => {
+                const focusedWindow = electron.remote.getCurrentWindow();
+                if (focusedWindow) {
+                    focusedWindow.webContents.setZoomLevel(0);
+                }
+            }
+        });
     }
 
     registerKeyBindings(registry: KeybindingRegistry): void {
         registry.registerKeyBinding({
-            commandId: ElectronMenuCommands.TOGGLE_DEVELOPER_TOOLS.id,
+            commandId: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id,
             keyCode: KeyCode.createKeyCode({ first: Key.KEY_I, modifiers: [Modifier.M1, Modifier.M2] })
+        });
+
+        registry.registerKeyBinding({
+            commandId: ElectronCommands.RELOAD.id,
+            keyCode: KeyCode.createKeyCode({ first: Key.KEY_R, modifiers: [Modifier.M1] })
+        });
+
+        registry.registerKeyBinding({
+            commandId: ElectronCommands.ZOOM_IN.id,
+            keyCode: KeyCode.createKeyCode({ first: Key.EQUAL, modifiers: [Modifier.M1] })
+        });
+        registry.registerKeyBinding({
+            commandId: ElectronCommands.ZOOM_OUT.id,
+            keyCode: KeyCode.createKeyCode({ first: Key.MINUS, modifiers: [Modifier.M1] })
+        });
+        registry.registerKeyBinding({
+            commandId: ElectronCommands.RESET_ZOOM.id,
+            keyCode: KeyCode.createKeyCode({ first: Key.DIGIT0, modifiers: [Modifier.M1] })
         });
     }
 
     registerMenus(registry: MenuModelRegistry) {
-        // Explicitly register the Help Submenu
         registry.registerSubmenu([MAIN_MENU_BAR], ElectronMenus.HELP[1], "Help");
         registry.registerMenuAction(ElectronMenus.TOGGLE, {
-            commandId: ElectronMenuCommands.TOGGLE_DEVELOPER_TOOLS.id
+            commandId: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id
+        });
+
+        registry.registerMenuAction(ElectronMenus.VIEW_WINDOW, {
+            commandId: ElectronCommands.RELOAD.id,
+            order: 'z0'
+        });
+
+        registry.registerMenuAction(ElectronMenus.VIEW_ZOOM, {
+            commandId: ElectronCommands.ZOOM_IN.id,
+            order: 'z1'
+        });
+        registry.registerMenuAction(ElectronMenus.VIEW_ZOOM, {
+            commandId: ElectronCommands.ZOOM_OUT.id,
+            order: 'z2'
+        });
+        registry.registerMenuAction(ElectronMenus.VIEW_ZOOM, {
+            commandId: ElectronCommands.RESET_ZOOM.id,
+            order: 'z3'
         });
     }
 
