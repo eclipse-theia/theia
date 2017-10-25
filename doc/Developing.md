@@ -35,6 +35,7 @@ For Windows instructions [click here](#building-on-windows).
  - [**Troubleshooting**](#troubleshooting)
      - [Linux](#linux)
      - [Windows](#windows)
+     - [macOS](#macos)
      - [Root privileges errors](#root-privileges-errors)
 
 ## Prerequisites
@@ -275,6 +276,25 @@ If you have accidentally installed the wrong `yarn` version, you have to remove 
 
 [all-in-one packages]: https://github.com/felixrieseberg/windows-build-tools
 [bug]: https://github.com/theia-ide/theia/issues
+
+### macOS
+
+You need to have the xcode command line tools installed in order to build and run Theia. You can install the tools by running
+
+    xcode-select --install
+ 
+If you receive the following error when running
+
+    Error: spawn node-gyp ENOENT
+        at _errnoException (util.js:1021:11)
+        at Process.ChildProcess._handle.onexit (internal/child_process.js:192:19)
+        at onErrorNT (internal/child_process.js:374:16)
+        at _combinedTickCallback (internal/process/next_tick.js:138:11)
+        at process._tickCallback (internal/process/next_tick.js:180:9)
+      
+You can install gyp manually
+
+    npm install -g node-gyp
 
 ### Root privileges errors
 When trying to install with root privileges, you might encounter errors such as
