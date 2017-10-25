@@ -23,7 +23,7 @@ const testOutdated = (expectation: boolean, name: string, version: string) =>
 describe("extension-package", () => {
 
     describe("isOutdated", () => {
-        testOutdated(false, '@theia/core', 'next');
+        testOutdated(true, '@theia/core', 'next');
         testOutdated(false, '@theia/core', 'latest');
         testOutdated(true, '@theia/core', '0.1.0');
     });
