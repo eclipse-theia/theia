@@ -35,6 +35,7 @@ For Windows instructions [click here](#building-on-windows).
  - [**Troubleshooting**](#troubleshooting)
      - [Linux](#linux)
      - [Windows](#windows)
+     - [macOS](#macos)
      - [Root privileges errors](#root-privileges-errors)
 
 ## Prerequisites
@@ -276,6 +277,12 @@ If you have accidentally installed the wrong `yarn` version, you have to remove 
 [all-in-one packages]: https://github.com/felixrieseberg/windows-build-tools
 [bug]: https://github.com/theia-ide/theia/issues
 
+### macOS
+
+You need to have the xcode command line tools installed in order to build and run Theia. You can install the tools by running
+
+    xcode-select --install
+ 
 ### Root privileges errors
 When trying to install with root privileges, you might encounter errors such as
 `cannot run in wd`.
