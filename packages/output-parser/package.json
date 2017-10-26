@@ -11,7 +11,9 @@
     "access": "public"
   },
   "theiaExtensions": [
-    {}
+    {
+      "backend": "lib/node/output-parser-backend-module"
+    }
   ],
   "keywords": [
     "theia-extension"
@@ -38,9 +40,9 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.1.1"
+    "@theia/ext-scripts": "^0.2.0"
   },
   "nyc": {
-    "extends": "../nyc.json"
+    "extends": "../../configs/nyc.json"
   }
 }
