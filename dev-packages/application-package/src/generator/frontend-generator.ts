@@ -87,25 +87,46 @@ if (cluster.isMaster) {
     }
     process.env.LC_NUMERIC = 'C';
     const electron = require('electron');
-    const path = require('path');
     electron.app.on('window-all-closed', function () {
         if (process.platform !== 'darwin') {
             electron.app.quit();
         }
     });
     electron.app.on('ready', function () {
+        const path = require('path');
+        const { fork }  = require('child_process');
+        // Check whether we are in bundled application or development mode.
+        const devMode = process.defaultApp || /node_modules[\\/]electron[\\/]/.test(process.execPath);
         const mainWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
-        require("../backend/main").then(address => {
-            mainWindow.loadURL(\`file://\${path.join(__dirname, '../../lib/index.html')}?port=\${address.port}\`);
-        }).catch(() => {
-            electron.app.exit(1);
-        });
+        const mainPath = path.join(__dirname, '..', 'backend', 'main');
+        const loadMainWindow = function(port) {
+            mainWindow.loadURL(\`file://\${path.join(__dirname, '../../lib/index.html')}?port=\${port}\`);
+        };
+        // We need to distinguish between bundled application and development mode when starting the clusters.
+        // https://github.com/electron/electron/issues/6337#issuecomment-230183287
+        if (devMode) {
+            require(mainPath).then(address => {
+                loadMainWindow(address.port);
+            }).catch((error) => {
+                console.error(error);
+                electron.app.exit(1);
+            });
+        } else {
+            const cp = fork(mainPath, process.argv, { stdio: [0, 1, 2, 'ipc'] });
+            cp.on('message', function (message) {
+                loadMainWindow(message);
+            });
+            cp.on('error', function (error) {
+                console.error(error);
+                electron.app.exit(1);
+            });
+        }
         mainWindow.on('closed', function () {
             electron.app.exit(0);
         });
     });
 } else {
-    require("../backend/main");
+    require('../backend/main');
 }
 `;
     }
