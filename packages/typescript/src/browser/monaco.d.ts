@@ -1,1 +1,1 @@
-/// <reference path="../../../monaco/src/typings/monaco/index.d.ts"/>
+/// <reference types="@theia/monaco/src/typings/monaco/index"/>
