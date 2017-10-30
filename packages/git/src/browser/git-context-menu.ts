@@ -16,15 +16,13 @@ export class GitContextMenu implements MenuContribution {
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerSubmenu([], GIT_CONTEXT_MENU, '');
-
-        menus.registerMenuAction([GIT_CONTEXT_MENU], {
-            commandId: GIT_COMMANDS.FETCH.id
-        });
-        menus.registerMenuAction([GIT_CONTEXT_MENU], {
-            commandId: GIT_COMMANDS.PULL.id
-        });
-        menus.registerMenuAction([GIT_CONTEXT_MENU], {
-            commandId: GIT_COMMANDS.PUSH.id
-        });
+        const commands = [GIT_COMMANDS.FETCH, GIT_COMMANDS.PULL, GIT_COMMANDS.PUSH, GIT_COMMANDS.MERGE];
+        commands.forEach(command =>
+            menus.registerMenuAction([GIT_CONTEXT_MENU], {
+                commandId: command.id,
+                label: command.label.slice('Git '.length) + '...'
+            })
+        );
     }
+
 }

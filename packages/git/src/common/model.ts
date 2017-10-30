@@ -109,3 +109,121 @@ export interface Repository {
     readonly localUri: string;
 
 }
+
+/**
+ * The branch type. Either local or remote.
+ * The order matters.
+ */
+export enum BranchType {
+
+    /**
+     * The local branch type.
+     */
+    Local = 0,
+
+    /**
+     * The remote branch type.
+     */
+    Remote = 1,
+}
+
+/**
+ * Representation of a Git branch.
+ */
+export interface Branch {
+
+    /**
+     * The short name of the branch. For instance; `master`.
+     */
+    readonly name: string;
+
+    /**
+     * The remote-prefixed upstream name. For instance; `origin/master`.
+     */
+    readonly upstream?: string;
+
+    /**
+     * The type of branch. Could be either [local](BranchType.Local) or [remote](BranchType.Remote).
+     */
+    readonly type: BranchType;
+
+    /**
+     * The commit associated with this branch.
+     */
+    readonly tip: Commit;
+
+    /**
+     * The name of the remote of the upstream.
+     */
+    readonly remote?: string;
+
+    /**
+     * The name of the branch's upstream without the remote prefix.
+     */
+    readonly upstreamWithoutRemote?: string;
+
+    /**
+     * The name of the branch without the remote prefix. If the branch is a local
+     * branch, this is the same as its `name`.
+     */
+    readonly nameWithoutRemote: string;
+
+}
+
+/**
+ * A git commit.
+ */
+export interface Commit {
+
+    /**
+     * The commit SHA.
+     */
+    readonly sha: string;
+
+    /**
+     * The first line of the commit message.
+     */
+    readonly summary: string;
+
+    /**
+     * The commit message without the first line and CR.
+     */
+    readonly body: string;
+
+    /**
+     * Information about the author of this commit. It includes name, email and date.
+     */
+    readonly author: CommitIdentity;
+
+    /**
+     * The SHAs for the parents of the commit.
+     */
+    readonly parentSHAs: string[];
+
+}
+/**
+ * A tuple of name, email, and a date for the author or commit info in a commit.
+ */
+export interface CommitIdentity {
+
+    /**
+     * The name for the commit.
+     */
+    readonly name: string;
+
+    /**
+     * The email address for the user who did the commit.
+     */
+    readonly email: string;
+
+    /**
+     * The date of the commit.
+     */
+    readonly date: Date;
+
+    /**
+     * The time-zone offset.
+     */
+    readonly tzOffset: number;
+
+}

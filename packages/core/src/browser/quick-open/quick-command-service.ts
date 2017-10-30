@@ -47,7 +47,7 @@ export class QuickCommandService implements QuickOpenModel {
 export class CommandQuickOpenItem extends QuickOpenItem {
 
     private activeElement: HTMLElement;
-    private hidden: boolean
+    private hidden: boolean;
 
     constructor(
         protected readonly command: Command,

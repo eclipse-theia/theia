@@ -33,16 +33,22 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
         const watcher = this.watcherSequence++;
         const interval = this.preferences['git.pollInterval']; // TODO refresh timers on preference change.
         const timer = setInterval(async () => {
-            const status = await this.git.status(repository);
-            const oldStatus = this.status.get(repository);
-            if (this.client && !WorkingDirectoryStatus.equals(status, oldStatus)) {
-                this.status.set(repository, status);
-                const event: GitStatusChangeEvent = {
-                    source: repository,
-                    status,
-                    oldStatus
-                };
-                this.client.onGitChanged(event);
+            try {
+                const status = await this.git.status(repository);
+                const oldStatus = this.status.get(repository);
+                if (this.client && !WorkingDirectoryStatus.equals(status, oldStatus)) {
+                    this.status.set(repository, status);
+                    const event: GitStatusChangeEvent = {
+                        source: repository,
+                        status,
+                        oldStatus
+                    };
+                    this.client.onGitChanged(event);
+                }
+            } catch (error) {
+                if (error.message === 'Unable to find path to repository on disk.') {
+                    await this.unwatchGitChanges(watcher);
+                }
             }
         }, interval);
         this.watchers.set(watcher, timer);
@@ -50,9 +56,12 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
     }
 
     async unwatchGitChanges(watcher: number): Promise<void> {
-        if (!this.watchers.delete(watcher)) {
+        const timer = this.watchers.get(watcher);
+        if (!timer) {
             throw new Error(`No Git watchers were registered with ID: ${watcher}.`);
         }
+        clearInterval(timer);
+        this.watchers.delete(watcher);
     }
 
     dispose(): void {

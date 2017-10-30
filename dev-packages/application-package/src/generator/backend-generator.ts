@@ -59,9 +59,15 @@ module.exports = (port, host) => Promise.resolve()${this.compileBackendModuleImp
     }
 
     protected compileMain(backendModules: Map<string, string>): string {
-        return ` // @ts-check
+        return `// @ts-check
 const serverPath = require('path').resolve(__dirname, 'server');
-module.exports = require('@theia/core/lib/node/cluster/main').default(serverPath);
+const address = require('@theia/core/lib/node/cluster/main').default(serverPath);
+address.then(function (address) {
+    if (process && process.send) {
+        process.send(address.port.toString());
+    }
+});
+module.exports = address;
 `;
     }
 

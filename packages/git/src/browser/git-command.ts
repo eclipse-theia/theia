@@ -6,22 +6,26 @@
 */
 
 import { injectable, inject } from "inversify";
-import { Git } from '../common';
+import { CommandContribution, CommandRegistry } from "@theia/core/lib/common";
+import { GitQuickOpenService } from './git-quick-open-service';
 import { GitRepositoryProvider } from './git-repository-provider';
-import { CommandContribution, CommandRegistry, ILogger } from "@theia/core/lib/common";
 
 export namespace GIT_COMMANDS {
     export const FETCH = {
         id: 'git.fetch',
-        label: 'Git: Fetch'
+        label: 'Git Fetch'
     };
     export const PULL = {
         id: 'git.pull',
-        label: 'Git: Pull'
+        label: 'Git Pull'
     };
     export const PUSH = {
         id: 'git.push',
-        label: 'Git: Push'
+        label: 'Git Push'
+    };
+    export const MERGE = {
+        id: 'git.merge',
+        label: 'Git Merge'
     };
 }
 
@@ -29,41 +33,38 @@ export namespace GIT_COMMANDS {
 export class GitCommandHandlers implements CommandContribution {
 
     constructor(
-        @inject(Git) protected readonly git: Git,
-        @inject(GitRepositoryProvider) protected readonly gitRepositoryProvider: GitRepositoryProvider,
-        @inject(ILogger) protected readonly logger: ILogger
+        @inject(GitQuickOpenService) protected readonly quickOpenService: GitQuickOpenService,
+        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider
     ) { }
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(GIT_COMMANDS.FETCH);
         registry.registerHandler(GIT_COMMANDS.FETCH.id, {
-            execute: (): any => {
-                this.gitRepositoryProvider.getSelected().then(repo => {
-                    this.git.fetch(repo);
-                });
-            },
-            isEnabled: () => true
+            execute: () => this.quickOpenService.fetch(),
+            isEnabled: () => this.repositorySelected
         });
 
         registry.registerCommand(GIT_COMMANDS.PULL);
         registry.registerHandler(GIT_COMMANDS.PULL.id, {
-            execute: (): any => {
-                this.gitRepositoryProvider.getSelected().then(repo => {
-                    this.git.pull(repo);
-                });
-            },
-            isEnabled: () => true
+            execute: () => this.quickOpenService.pull(),
+            isEnabled: () => this.repositorySelected
         });
 
         registry.registerCommand(GIT_COMMANDS.PUSH);
         registry.registerHandler(GIT_COMMANDS.PUSH.id, {
-            execute: (): any => {
-                this.gitRepositoryProvider.getSelected().then(repo => {
-                    this.git.push(repo);
-                });
-            },
-            isEnabled: () => true
+            execute: () => this.quickOpenService.push(),
+            isEnabled: () => this.repositorySelected
         });
 
+        registry.registerCommand(GIT_COMMANDS.MERGE);
+        registry.registerHandler(GIT_COMMANDS.MERGE.id, {
+            execute: () => this.quickOpenService.merge(),
+            isEnabled: () => this.repositorySelected
+        });
+
+    }
+
+    protected get repositorySelected(): boolean {
+        return this.repositoryProvider.selectedRepository !== undefined;
     }
 }

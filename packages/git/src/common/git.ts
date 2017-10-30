@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Repository, WorkingDirectoryStatus } from './model';
+import { Repository, WorkingDirectoryStatus, Branch } from './model';
 
 /**
  * The WS endpoint path to the Git service.
@@ -282,6 +282,12 @@ export namespace Git {
              */
             readonly remote?: string;
 
+            /**
+             * The name of the branch to pull form. This is required when one performs a `git pull` from a remote which is not
+             * the default remote tracking of the currently active branch.
+             */
+            readonly branch?: string;
+
         }
 
         /**
@@ -368,9 +374,9 @@ export interface Git {
     /**
      * Lists, creates, renames or deletes a branch.
      *
-     *  - It returns with either `undefined`, or a `string` or an array of `string`s when listing the branches. A single
-     * `string` value will be provided if the `type` is `current`. It returns with `undefined` if the current branch is detached.
-     * Otherwise it returns with an array of branch names.
+     *  - It returns with either `undefined`, or a `Branch` or an array of `Branch`es when listing the branches. A single
+     * `Branch` value will be provided if the `type` is `current`. It returns with `undefined` if the current branch is detached.
+     * Otherwise it returns with an array of branches.
      *  - It returns with a promise that resolves to `void` when creating, renaming or deleting a branch.
      *
      * @param the repository to get the active branch from.
@@ -380,7 +386,7 @@ export interface Git {
         Git.Options.Branch.List |
         Git.Options.Branch.Create |
         Git.Options.Branch.Rename |
-        Git.Options.Branch.Delete): Promise<void | undefined | string | string[]>;
+        Git.Options.Branch.Delete): Promise<void | undefined | Branch | Branch[]>;
 
     /**
      * Switches branches or restores working tree files.
@@ -450,6 +456,12 @@ export interface Git {
      * @param options the options for further refining the `git show`.
      */
     show(repository: Repository, uri: string, options?: Git.Options.Show): Promise<string>;
+
+    /**
+     * Without any arguments, it resolves to a list of configured remotes. If no remotes are set,
+     * resolves to an empty array.
+     */
+    remote(repository: Repository): Promise<string[]>;
 
 }
 
