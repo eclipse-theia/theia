@@ -25,6 +25,9 @@ export class BrowserMainMenuFactory {
         menuBar.id = 'theia:menubar';
         const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR);
         const phosphorCommands = this.createPhosporCommands(menuModel);
+        // for the main menu we want all items to be visible.
+        phosphorCommands.isVisible = () => true;
+
         for (const menu of menuModel.children) {
             if (menu instanceof CompositeMenuNode) {
                 const menuWidget = new DynamicMenuWidget(menu, { commands: phosphorCommands });
