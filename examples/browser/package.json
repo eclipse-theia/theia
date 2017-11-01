@@ -18,6 +18,7 @@
     "@theia/outline-view": "0.2.0",
     "@theia/preferences": "0.2.0",
     "@theia/process": "0.2.0",
+    "@theia/ripgrep-workspace": "0.2.0",
     "@theia/python": "0.2.0",
     "@theia/terminal": "0.2.0",
     "@theia/typescript": "0.2.0",

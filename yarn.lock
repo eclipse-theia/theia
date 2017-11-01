@@ -6699,7 +6699,7 @@ tslib@^1.7.1:
   version "1.7.1"
   resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.7.1.tgz#bc8004164691923a79fe8378bbeb3da2017538ec"
 
-tslint@^5.7.0:
+tslint@^5.5.0, tslint@^5.7.0:
   version "5.7.0"
   resolved "https://registry.yarnpkg.com/tslint/-/tslint-5.7.0.tgz#c25e0d0c92fa1201c2bc30e844e08e682b4f3552"
   dependencies:
@@ -6797,6 +6797,10 @@ typescript-language-server@^0.1.4:
 typescript@2.4.1:
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.4.1.tgz#c3ccb16ddaa0b2314de031e7e6fee89e5ba346bc"
+
+typescript@^2.4.1:
+  version "2.5.3"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.5.3.tgz#df3dcdc38f3beb800d4bc322646b04a3f6ca7f0d"
 
 typescript@^2.5.2:
   version "2.5.2"
@@ -7048,6 +7052,10 @@ vscode-languageserver@^3.4.0, vscode-languageserver@^3.4.3:
   dependencies:
     vscode-languageserver-protocol "^3.4.1"
     vscode-uri "^1.0.1"
+
+vscode-ripgrep@^0.0.25:
+  version "0.0.25"
+  resolved "https://registry.yarnpkg.com/vscode-ripgrep/-/vscode-ripgrep-0.0.25.tgz#b8e6d6145b0b558d80379162e8ad6447035eab17"
 
 vscode-uri@^1.0.0, vscode-uri@^1.0.1:
   version "1.0.1"

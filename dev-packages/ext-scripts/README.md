@@ -21,7 +21,7 @@ For instance, if you want add a new `hello` script that prints `Hello World`:
 {
     "name": "@theia/myextension",
     "devDependencies": {
-        "@theia/ext-scripts": "^0.1.1"
+        "@theia/ext-scripts": "^0.2.0"
     }
 }
 ```

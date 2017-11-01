@@ -84,7 +84,6 @@ export interface IPattern {
     "message": number
 }
 
-
 /**
  * Class to parse build logs, to find instances of errors and warnings.
  */
