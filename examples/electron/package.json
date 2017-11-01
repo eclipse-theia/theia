@@ -24,7 +24,8 @@
     "@theia/terminal": "0.2.0",
     "@theia/typescript": "0.2.0",
     "@theia/file-search": "0.2.0",
-    "@theia/workspace": "0.2.0"
+    "@theia/workspace": "0.2.0",
+    "@theia/metrics": "0.2.0"
   },
   "scripts": {
     "prepare": "yarn run clean && yarn build",
