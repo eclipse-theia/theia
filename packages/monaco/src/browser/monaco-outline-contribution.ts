@@ -24,6 +24,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
     protected symbolList: NodeAndSymbol[] = [];
     protected readonly toDispose = new DisposableCollection();
     protected readonly outlineSymbolInformations: MonacoOutlineSymbolInformationNode[];
+    protected cancellationSource: CancellationTokenSource;
 
     constructor(
         @inject(OutlineViewService) protected readonly outlineViewManager: OutlineViewService,
@@ -98,10 +99,12 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
 
         const documentSymbolProviders = await DocumentSymbolProviderRegistry.all(model);
 
-        const cancellationSource = new CancellationTokenSource();
-        cancellationSource.cancel();
+        if (this.cancellationSource) {
+            this.cancellationSource.cancel();
+        }
+        this.cancellationSource = new CancellationTokenSource();
         for (const documentSymbolProvider of documentSymbolProviders) {
-            const symbolInformation = await documentSymbolProvider.provideDocumentSymbols(model, cancellationSource.token);
+            const symbolInformation = await documentSymbolProvider.provideDocumentSymbols(model, this.cancellationSource.token);
             entries.push(...symbolInformation);
         }
         this.ids = [];
