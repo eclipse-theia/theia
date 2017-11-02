@@ -2,6 +2,10 @@
   "private": true,
   "name": "parent",
   "version": "0.0.0",
+  "engines": {
+    "yarn": "1.0.x || >=1.2.1",
+    "node": ">=7.9.0"
+  },
   "devDependencies": {
     "@types/chai": "^4.0.1",
     "@types/chai-as-promised": "0.0.31",
