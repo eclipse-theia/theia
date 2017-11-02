@@ -169,12 +169,10 @@ export class Tree implements ITree {
     }
 
     set root(root: ITreeNode | undefined) {
-        if (!ITreeNode.equals(this._root, root)) {
-            this.nodes = {};
-            this._root = root;
-            this.addNode(root);
-            this.refresh();
-        }
+        this.nodes = {};
+        this._root = root;
+        this.addNode(root);
+        this.refresh();
     }
 
     get onChanged(): Event<void> {
