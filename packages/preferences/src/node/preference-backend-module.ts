@@ -55,7 +55,7 @@ export default new ContainerModule(bind => {
         const userServer = ctx.container.get<UserPreferenceServer>(UserPreferenceServer);
         const workspaceServer = ctx.container.get<WorkspacePreferenceServer>(WorkspacePreferenceServer);
         return new CompoundPreferenceServer(workspaceServer, userServer);
-    });
+    }).inSingletonScope();
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<PreferenceClient>(preferencesPath, client => {
