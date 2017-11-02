@@ -8,14 +8,14 @@
 import { injectable, inject } from "inversify";
 import SymbolInformation = monaco.modes.SymbolInformation;
 import SymbolKind = monaco.modes.SymbolKind;
-import { FrontendApplicationContribution, FrontendApplication, OpenerService, open, ITreeNode } from "@theia/core/lib/browser";
-import { MonacoTextModelService } from './monaco-text-model-service';
+import { FrontendApplicationContribution, FrontendApplication, ITreeNode } from "@theia/core/lib/browser";
 import { Range, EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import DocumentSymbolProviderRegistry = monaco.modes.DocumentSymbolProviderRegistry;
 import CancellationTokenSource = monaco.cancellation.CancellationTokenSource;
 import { DisposableCollection } from "@theia/core";
 import { OutlineViewService, OutlineSymbolInformationNode } from "@theia/outline-view/lib/browser/outline-view-service";
 import URI from "@theia/core/lib/common/uri";
+import { get } from './monaco-editor';
 
 @injectable()
 export class MonacoOutlineContribution implements FrontendApplicationContribution {
@@ -28,9 +28,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
 
     constructor(
         @inject(OutlineViewService) protected readonly outlineViewManager: OutlineViewService,
-        @inject(EditorManager) protected readonly editorManager: EditorManager,
-        @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(MonacoTextModelService) protected readonly textModelService: MonacoTextModelService) { }
+        @inject(EditorManager) protected readonly editorManager: EditorManager) { }
 
     onStart(app: FrontendApplication): void {
         this.outlineViewManager.onDidChangeOpenState(async isOpen => {
@@ -39,7 +37,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         // let's skip the initial current Editor change event, as on reload it comes before the language sevrers have started,
         // resulting in an empty outline.
         setTimeout(() => {
-            this.editorManager.onCurrentEditorChanged(async (editor: EditorWidget) => {
+            this.editorManager.onCurrentEditorChanged(async editor => {
                 this.updateOutlineForEditor(editor);
             });
         }, 1000);
@@ -50,18 +48,15 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
 
         this.outlineViewManager.onDidSelect(async node => {
             if (MonacoOutlineSymbolInformationNode.is(node) && node.parent) {
-                let widget = this.editorManager.editors.find(editor => editor.editor.uri.toString() === node.uri);
-                if (!widget) {
-                    widget = await this.editorManager.open(new URI(node.uri));
-                }
-                widget.editor.selection = node.range;
-                widget.editor.revealRange(node.range);
+                this.editorManager.open(new URI(node.uri), {
+                    selection: node.range
+                });
             }
         });
 
         this.outlineViewManager.onDidOpen(node => {
             if (MonacoOutlineSymbolInformationNode.is(node)) {
-                open(this.openerService, new URI(node.uri), {
+                this.editorManager.open(new URI(node.uri), {
                     selection: <Range>{
                         start: node.range.start
                     }
@@ -77,39 +72,44 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         }
     }
 
-    protected async updateOutlineForEditor(editor: EditorWidget) {
+    protected async updateOutlineForEditor(editor: EditorWidget | undefined) {
         if (this.outlineViewManager.open) {
             const model = await this.getModel(editor);
             this.publish(model);
         }
     }
 
-    protected async getModel(editor: EditorWidget): Promise<monaco.editor.IModel> {
-        const reference = await this.textModelService.createModelReference(editor.editor.uri);
-        const model = reference.object.textEditorModel;
-        this.toDispose.dispose();
-        this.toDispose.push(model.onDidChangeContent(ev => {
-            this.publish(model);
-        }));
-        return model;
+    protected async getModel(editor: EditorWidget | undefined): Promise<monaco.editor.IModel | undefined> {
+        if (editor) {
+            const monacoEditor = get(editor);
+            const model = monacoEditor!.getControl().getModel();
+            this.toDispose.dispose();
+            this.toDispose.push(model.onDidChangeContent(ev => {
+                this.publish(model);
+            }));
+            return model;
+        }
     }
 
-    protected async publish(model: monaco.editor.IModel) {
-        const entries: SymbolInformation[] = [];
+    protected async publish(model: monaco.editor.IModel | undefined) {
+        let outlineSymbolInformations: OutlineSymbolInformationNode[] = [];
+        if (model) {
+            const entries: SymbolInformation[] = [];
 
-        const documentSymbolProviders = await DocumentSymbolProviderRegistry.all(model);
+            const documentSymbolProviders = await DocumentSymbolProviderRegistry.all(model);
 
-        if (this.cancellationSource) {
-            this.cancellationSource.cancel();
+            if (this.cancellationSource) {
+                this.cancellationSource.cancel();
+            }
+            this.cancellationSource = new CancellationTokenSource();
+            for (const documentSymbolProvider of documentSymbolProviders) {
+                const symbolInformation = await documentSymbolProvider.provideDocumentSymbols(model, this.cancellationSource.token);
+                entries.push(...symbolInformation);
+            }
+            this.ids = [];
+            this.symbolList = [];
+            outlineSymbolInformations = this.createTree(undefined, entries);
         }
-        this.cancellationSource = new CancellationTokenSource();
-        for (const documentSymbolProvider of documentSymbolProviders) {
-            const symbolInformation = await documentSymbolProvider.provideDocumentSymbols(model, this.cancellationSource.token);
-            entries.push(...symbolInformation);
-        }
-        this.ids = [];
-        this.symbolList = [];
-        const outlineSymbolInformations = this.createTree(undefined, entries);
         this.outlineViewManager.publish(outlineSymbolInformations);
     }
 
