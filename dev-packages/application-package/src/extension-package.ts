@@ -19,11 +19,9 @@ export interface Extension {
 
 export class ExtensionPackage {
     constructor(
-        protected readonly raw: PublishedNodePackage & Partial<RawExtensionPackage>,
+        readonly raw: PublishedNodePackage & Partial<RawExtensionPackage>,
         protected readonly registry: NpmRegistry
-    ) {
-        this.raw = raw;
-    }
+    ) { }
 
     get name(): string {
         return this.raw.name;
