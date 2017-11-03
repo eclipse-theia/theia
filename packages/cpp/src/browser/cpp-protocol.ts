@@ -7,6 +7,7 @@
 
 import { RequestType } from 'vscode-jsonrpc';
 import { TextDocumentIdentifier, Command, MessageType } from "@theia/languages/lib/common";
+import { DidChangeConfigurationParams } from "./cpp-commands";
 export interface ActionableMessage {
     severity: MessageType;
     message: string;
@@ -16,4 +17,8 @@ export interface ActionableMessage {
 
 export namespace TextDocumentItemRequest {
     export const type = new RequestType<TextDocumentIdentifier, string | undefined, void, void>("textDocument/switchSourceHeader");
+}
+
+export namespace AnyRequest {
+    export const type = new RequestType<DidChangeConfigurationParams, string | undefined, void, void>("workspace/didChangeConfiguration");
 }
