@@ -54,9 +54,11 @@ export class NodeExtensionServer implements ExtensionServer {
         const extensions = [];
         for (const raw of packages) {
             if (PublishedNodePackage.is(raw)) {
-                const extensionPackage = manager.pck.newExtensionPackage(raw);
-                const extension = this.toRawExtension(extensionPackage);
-                extensions.push(extension);
+                const extensionPackage = await manager.pck.findExtensionPackage(raw.name);
+                if (extensionPackage) {
+                    const extension = this.toRawExtension(extensionPackage);
+                    extensions.push(extension);
+                }
             }
         }
         return extensions;

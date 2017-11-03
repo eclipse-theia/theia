@@ -110,7 +110,7 @@ export class ApplicationPackage {
         return raw ? this.newExtensionPackage(raw) : undefined;
     }
 
-    newExtensionPackage(raw: PublishedNodePackage): ExtensionPackage {
+    protected newExtensionPackage(raw: PublishedNodePackage): ExtensionPackage {
         return new ExtensionPackage(raw, this.registry);
     }
 
