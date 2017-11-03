@@ -79,7 +79,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         if (this.outlineViewManager.open) {
             if (editor) {
                 const model = await this.getModel(editor);
-                this.publish(await this.computeSybolInformations(model));
+                this.publish(await this.computeSymbolInformations(model));
             } else {
                 this.publish([]);
             }
@@ -91,12 +91,12 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         const model = monacoEditor!.getControl().getModel();
         this.toDispose.dispose();
         this.toDispose.push(model.onDidChangeContent(async ev => {
-            this.publish(await this.computeSybolInformations(model));
+            this.publish(await this.computeSymbolInformations(model));
         }));
         return model;
     }
 
-    protected async computeSybolInformations(model: monaco.editor.IModel): Promise<SymbolInformation[]> {
+    protected async computeSymbolInformations(model: monaco.editor.IModel): Promise<SymbolInformation[]> {
         const entries: SymbolInformation[] = [];
 
         const documentSymbolProviders = await DocumentSymbolProviderRegistry.all(model);
