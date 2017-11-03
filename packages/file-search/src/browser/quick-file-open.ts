@@ -77,8 +77,6 @@ export class QuickFileOpenService implements QuickOpenModel {
 
 export class FileQuickOpenItem extends QuickOpenItem {
 
-    private activeElement: HTMLElement;
-
     constructor(
         protected readonly uri: URI,
         protected readonly icon: string,
@@ -86,7 +84,6 @@ export class FileQuickOpenItem extends QuickOpenItem {
         protected readonly openerService: OpenerService
     ) {
         super();
-        this.activeElement = window.document.activeElement as HTMLElement;
     }
 
     getLabel(): string {

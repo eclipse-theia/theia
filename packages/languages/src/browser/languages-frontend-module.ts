@@ -6,12 +6,13 @@
  */
 
 import { ContainerModule, } from "inversify";
-import { bindContributionProvider } from '@theia/core/lib/common';
+import { bindContributionProvider, KeybindingContribution, CommandContribution } from '@theia/core/lib/common';
 import { FrontendApplicationContribution } from "@theia/core/lib/browser";
 import { Window, ConsoleWindow, Commands, DefaultCommands } from '../common';
 import { LanguageClientFactory } from './language-client-factory';
 import { LanguagesFrontendContribution } from './languages-frontend-contribution';
 import { LanguageClientContribution } from "./language-client-contribution";
+import { WorkspaceSymbolCommand } from './workspace-symbols';
 
 export default new ContainerModule(bind => {
     bind(Window).to(ConsoleWindow).inSingletonScope();
@@ -21,4 +22,8 @@ export default new ContainerModule(bind => {
 
     bindContributionProvider(bind, LanguageClientContribution);
     bind(FrontendApplicationContribution).to(LanguagesFrontendContribution);
+
+    bind(WorkspaceSymbolCommand).toSelf().inSingletonScope();
+    bind(CommandContribution).toDynamicValue(ctx => ctx.container.get(WorkspaceSymbolCommand));
+    bind(KeybindingContribution).toDynamicValue(ctx => ctx.container.get(WorkspaceSymbolCommand));
 });

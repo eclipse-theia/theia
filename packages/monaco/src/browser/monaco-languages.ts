@@ -10,6 +10,8 @@ import { MonacoLanguages as BaseMonacoLanguages, ProtocolToMonacoConverter, Mona
 import { Languages, DiagnosticCollection } from "@theia/languages/lib/common";
 import { ProblemManager } from "@theia/markers/lib/browser/problem/problem-manager";
 import URI from '@theia/core/lib/common/uri';
+import { WorkspaceSymbolProvider } from 'vscode-base-languageclient/lib/services';
+import { Disposable } from 'vscode-jsonrpc';
 
 decorate(injectable(), BaseMonacoLanguages);
 decorate(inject(ProtocolToMonacoConverter), BaseMonacoLanguages, 0);
@@ -17,6 +19,8 @@ decorate(inject(MonacoToProtocolConverter), BaseMonacoLanguages, 1);
 
 @injectable()
 export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
+
+    workspaceSymbolProviders: WorkspaceSymbolProvider[] = [];
 
     constructor(
         @inject(ProtocolToMonacoConverter) p2m: ProtocolToMonacoConverter,
@@ -45,4 +49,15 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
             }
         };
     }
+
+    registerWorkspaceSymbolProvider(provider: WorkspaceSymbolProvider): Disposable {
+        this.workspaceSymbolProviders.push(provider);
+        return {
+            dispose: () => {
+                const index = this.workspaceSymbolProviders.indexOf(provider);
+                this.workspaceSymbolProviders = this.workspaceSymbolProviders.splice(index, 1);
+            }
+        };
+    }
+
 }
