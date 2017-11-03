@@ -194,7 +194,11 @@ export namespace RawExtensionPackage {
                         return next;
                     }
                 }
-                return this.tags['latest'];
+                const latest = this.tags['latest'];
+                if (this.registry.config.next || !semver.prerelease(latest)) {
+                    return latest;
+                }
+                return undefined;
             }
             return undefined;
         }
