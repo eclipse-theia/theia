@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "description": "Theia - Metrics Extension",
   "dependencies": {
-    "@theia/core": "0.2.0",
+    "@theia/core": "^0.2.0",
     "prom-client": "^10.2.0"
   },
   "publishConfig": {
@@ -39,7 +39,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "0.2.0"
+    "@theia/ext-scripts": "^0.2.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

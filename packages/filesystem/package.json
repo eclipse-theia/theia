@@ -3,8 +3,8 @@
   "version": "0.2.0",
   "description": "Theia - FileSystem Extension",
   "dependencies": {
-    "@theia/core": "0.2.0",
-    "@theia/preferences-api": "0.2.0",
+    "@theia/core": "^0.2.0",
+    "@theia/preferences-api": "^0.2.0",
     "@types/chokidar": "^1.7.0",
     "@types/fs-extra": "^4.0.2",
     "@types/touch": "0.0.1",
@@ -49,7 +49,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "0.2.0"
+    "@theia/ext-scripts": "^0.2.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

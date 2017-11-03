@@ -92,7 +92,7 @@ export class NodeExtensionServer implements ExtensionServer {
             if (!latestVersion) {
                 return;
             }
-            if (manager.pck.setDependency(extension, latestVersion)) {
+            if (manager.pck.setDependency(extension, `^${latestVersion}`)) {
                 this.notifyDidChange({
                     name: extension,
                     installed: true
@@ -151,7 +151,7 @@ export class NodeExtensionServer implements ExtensionServer {
             if (!latestVersion) {
                 return;
             }
-            if (manager.pck.setDependency(extension, latestVersion)) {
+            if (manager.pck.setDependency(extension, `^${latestVersion}`)) {
                 this.notifyDidChange({
                     name: extension,
                     outdated: false
