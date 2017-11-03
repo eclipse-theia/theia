@@ -12,7 +12,7 @@ import {
 import { DisposableCollection } from "@theia/core/lib/common";
 import { FileChangeType, FileSystem, FileSystemWatcher } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from "@theia/workspace/lib/browser";
-import { EditorManager } from "@theia/editor/lib/browser"
+import { EditorManager } from "@theia/editor/lib/browser";
 import * as lang from "@theia/languages/lib/common";
 import { Emitter, Event, TextDocument, TextDocumentWillSaveEvent, TextEdit } from "@theia/languages/lib/common";
 import { MonacoTextModelService } from "./monaco-text-model-service";

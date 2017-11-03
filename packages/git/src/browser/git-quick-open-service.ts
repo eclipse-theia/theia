@@ -95,8 +95,8 @@ export class GitQuickOpenService {
 
     private getModel(items: QuickOpenItem[]): QuickOpenModel {
         return {
-            getItems(): QuickOpenItem[] {
-                return items;
+            onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
+                return acceptor(items);
             }
         };
     }

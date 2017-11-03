@@ -68,5 +68,5 @@ export class QuickOpenGroupItem extends QuickOpenItem {
 }
 
 export interface QuickOpenModel {
-    getItems(lookFor: string): QuickOpenItem[];
+    onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void;
 }

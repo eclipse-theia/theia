@@ -10,6 +10,8 @@ import { ContributionProvider, CommandRegistry, KeybindingRegistry, MenuModelReg
 import { ApplicationShell } from './shell';
 import { Widget } from "./widgets";
 import { ILogger } from '../common';
+import { MaybePromise } from '../common/types';
+import { ShellLayoutRestorer } from './shell-layout-restorer';
 
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.
@@ -24,8 +26,9 @@ export interface FrontendApplicationContribution {
 
     /**
      * Called when the application is started.
+     * Should return a promise if it runs asynchronously.
      */
-    onStart?(app: FrontendApplication): void;
+    onStart?(app: FrontendApplication): MaybePromise<void>;
 
     /**
      * Called when an application is stopped or unloaded.
@@ -33,6 +36,12 @@ export interface FrontendApplicationContribution {
      * Note that this is implemented using `window.unload` which doesn't allow any asynchronous code anymore. I.e. this is the last tick.
      */
     onStop?(app: FrontendApplication): void;
+
+    /**
+     * called after start, when there is no previous workbench layout state.
+     * Should return a promise if it runs asynchronously.
+     */
+    initializeLayout?(app: FrontendApplication): MaybePromise<void>;
 }
 
 @injectable()
@@ -45,6 +54,7 @@ export class FrontendApplication {
         @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry,
         @inject(KeybindingRegistry) protected readonly keybindings: KeybindingRegistry,
         @inject(ILogger) protected readonly logger: ILogger,
+        @inject(ShellLayoutRestorer) protected readonly layoutRestorer: ShellLayoutRestorer,
         @inject(ContributionProvider) @named(FrontendApplicationContribution)
         protected readonly contributions: ContributionProvider<FrontendApplicationContribution>
     ) { }
@@ -64,13 +74,13 @@ export class FrontendApplication {
      * - start frontend contributions
      * - display the application shell
      */
-    start(): void {
+    async start(): Promise<void> {
         if (this._shell) {
             throw new Error('The application is already running.');
         }
         this._shell = this.createShell();
         this.startContributions();
-
+        await this.layoutRestorer.initializeLayout(this, this.contributions.getContributions());
         this.ensureLoaded().then(() =>
             this.attachShell()
         );
@@ -100,7 +110,7 @@ export class FrontendApplication {
         );
     }
 
-    protected startContributions(): void {
+    protected async startContributions(): Promise<void> {
 
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.initialize) {
@@ -123,7 +133,7 @@ export class FrontendApplication {
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.onStart) {
                 try {
-                    contribution.onStart(this);
+                    await contribution.onStart(this);
                 } catch (err) {
                     this.logger.error(err.toString());
                 }
@@ -131,6 +141,7 @@ export class FrontendApplication {
         }
 
         window.onunload = () => {
+            this.layoutRestorer.storeLayout(this);
             for (const contribution of this.contributions.getContributions()) {
                 if (contribution.onStop) {
                     try {

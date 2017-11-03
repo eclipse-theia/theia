@@ -8,7 +8,6 @@
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { WorkspaceService } from './workspace-service';
 import { inject, injectable } from 'inversify';
-import { FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { ILogger } from '@theia/core/lib/common';
 import { LocalStorageService } from '@theia/core/lib/browser/storage-service';
 
@@ -18,33 +17,37 @@ import { LocalStorageService } from '@theia/core/lib/browser/storage-service';
 @injectable()
 export class WorkspaceStorageService implements StorageService {
 
-    // we cache the root here because we cannot work with promises during window.onunload (see packages/core/src/browser/shell-layout-restorer.ts)
-    private root: FileStat;
-    private rootPromise: Promise<FileStat>;
+    private prefix: string;
+    private initialized: Promise<void>;
     protected storageService: StorageService;
 
     constructor( @inject(WorkspaceService) protected workspaceService: WorkspaceService,
         @inject(ILogger) protected logger: ILogger) {
-        this.rootPromise = this.workspaceService.root;
-        this.rootPromise.then(stat => this.root = stat);
+        this.initialized = this.workspaceService.tryRoot.then(stat => {
+            if (stat) {
+                this.prefix = stat.uri;
+            } else {
+                this.prefix = '_global_';
+            }
+        });
         this.storageService = new LocalStorageService(this.logger);
     }
 
     async setData<T>(key: string, data: T): Promise<void> {
-        if (!this.root) {
-            await this.rootPromise;
+        if (!this.prefix) {
+            await this.initialized;
         }
         const fullKey = this.prefixWorkspaceURI(key);
         return this.storageService.setData(fullKey, data);
     }
 
     async getData<T>(key: string, defaultValue?: T): Promise<T | undefined> {
-        await this.rootPromise;
+        await this.initialized;
         const fullKey = this.prefixWorkspaceURI(key);
         return this.storageService.getData(fullKey, defaultValue);
     }
 
     protected prefixWorkspaceURI(originalKey: string): string {
-        return this.root.uri + ":" + originalKey;
+        return this.prefix + ":" + originalKey;
     }
 }

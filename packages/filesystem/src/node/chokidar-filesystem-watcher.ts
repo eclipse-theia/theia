@@ -59,7 +59,7 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
                 resolve(watcherId);
             });
             watcher.on('error', error => {
-                if (this.isWatchingError(error) && error.code === 'EPERM') {
+                if (this.isWatchingError(error) && (error.code === 'EPERM' || error.code === 'EACCES')) {
                     this.logger.warn(`Cannot watch file changes due to insufficient permissions. Skipping: ${error.filename}.`);
                 } else {
                     this.logger.error(`Watching error:`, error);

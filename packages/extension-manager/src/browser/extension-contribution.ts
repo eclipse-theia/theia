@@ -34,7 +34,7 @@ export class ExtensionContribution implements FrontendApplicationContribution {
         });
     }
 
-    async onStart(app: FrontendApplication): Promise<void> {
+    async initializeLayout(app: FrontendApplication): Promise<void> {
         const extensionWidget = await this.widgetManager.getOrCreateWidget('extensions');
         app.shell.addToLeftArea(extensionWidget, {
             rank: 300

@@ -42,7 +42,6 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bindContributionProvider(bind, WidgetFactory);
     bind(WidgetManager).toSelf().inSingletonScope();
     bind(ShellLayoutRestorer).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(ShellLayoutRestorer));
     bind(CommandContribution).toDynamicValue(ctx => ctx.container.get(ShellLayoutRestorer));
 
     bind(DefaultResourceProvider).toSelf().inSingletonScope();
