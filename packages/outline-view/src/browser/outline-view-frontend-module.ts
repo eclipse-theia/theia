@@ -5,26 +5,30 @@
 * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 */
 
-import { ContainerModule } from 'inversify';
-import { OutlineViewWidget } from './outline-view-widget';
+import { ContainerModule, interfaces } from 'inversify';
 import { OutlineViewService } from './outline-view-service';
-import { createOutlineViewWidget } from './outline-view-container';
 import { OutlineViewContribution } from './outline-view-contribution';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, createTreeContainer, TreeWidget } from '@theia/core/lib/browser';
+import { OutlineViewWidgetFactory, OutlineViewWidget } from './outline-view-widget';
 
 export default new ContainerModule(bind => {
-    bind(OutlineViewService).toSelf().inSingletonScope();
-
-    bind(OutlineViewWidget).toDynamicValue(ctx =>
-        createOutlineViewWidget(ctx.container)
+    bind(OutlineViewWidgetFactory).toFactory(ctx =>
+        () => createOutlineViewWidget(ctx.container)
     );
 
-    bind(WidgetFactory).toDynamicValue(context => ({
-        id: 'outline-view',
-        createWidget: () => context.container.get<OutlineViewWidget>(OutlineViewWidget)
-    }));
+    bind(OutlineViewService).toSelf().inSingletonScope();
+    bind(WidgetFactory).toDynamicValue(context => context.container.get(OutlineViewService));
 
     bind(OutlineViewContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(OutlineViewContribution));
 });
+
+function createOutlineViewWidget(parent: interfaces.Container): OutlineViewWidget {
+    const child = createTreeContainer(parent);
+
+    child.unbind(TreeWidget);
+    child.bind(OutlineViewWidget).toSelf();
+
+    return child.get(OutlineViewWidget);
+}

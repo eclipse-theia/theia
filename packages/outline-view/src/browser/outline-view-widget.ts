@@ -6,7 +6,6 @@
 */
 
 import { injectable, inject } from 'inversify';
-import { OutlineSymbolInformationNode, OutlineViewService } from './outline-view-service';
 import {
     TreeWidget,
     ITreeNode,
@@ -19,37 +18,72 @@ import {
 } from "@theia/core/lib/browser";
 import { h } from "@phosphor/virtualdom/lib";
 import { Message } from '@phosphor/messaging';
+import { Emitter } from '@theia/core';
+import { ICompositeTreeNode, VirtualRenderer } from '@theia/core/lib/browser';
+
+export interface OutlineSymbolInformationNode extends ICompositeTreeNode, ISelectableTreeNode, IExpandableTreeNode {
+    iconClass: string;
+}
+
+export namespace OutlineSymbolInformationNode {
+    export function is(node: ITreeNode): node is OutlineSymbolInformationNode {
+        return !!node && ISelectableTreeNode.is(node) && 'iconClass' in node;
+    }
+}
+
+export type OutlineViewWidgetFactory = () => OutlineViewWidget;
+export const OutlineViewWidgetFactory = Symbol('OutlineViewWidgetFactory');
 
 @injectable()
 export class OutlineViewWidget extends TreeWidget {
 
+    readonly onDidChangeOpenStateEmitter = new Emitter<boolean>();
+
     constructor(
         @inject(TreeProps) protected readonly treeProps: TreeProps,
         @inject(TreeModel) model: TreeModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
-        @inject(OutlineViewService) protected readonly outlineViewManager: OutlineViewService
+        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
     ) {
         super(treeProps, model, contextMenuRenderer);
-
-        this.model.onSelectionChanged(node => {
-            if (node && OutlineSymbolInformationNode.is(node)) {
-                this.outlineViewManager.fireSelect(node);
-            }
-        });
 
         this.id = 'outline-view';
         this.title.label = 'Outline';
         this.addClass('theia-outline-view');
     }
 
+    public setOutlineTree(roots: OutlineSymbolInformationNode[]) {
+        const nodes = this.reconcileTreeState(roots);
+        this.model.root = <ICompositeTreeNode>{
+            id: 'outline-view-root',
+            name: 'Outline Root',
+            visible: false,
+            children: nodes,
+            parent: undefined
+        };
+    }
+
+    protected reconcileTreeState(nodes: ITreeNode[]): ITreeNode[] {
+        nodes.forEach(node => {
+            if (OutlineSymbolInformationNode.is(node)) {
+                const treeNode = this.model.getNode(node.id);
+                if (treeNode && OutlineSymbolInformationNode.is(treeNode)) {
+                    node.expanded = treeNode.expanded;
+                    node.selected = treeNode.selected;
+                }
+                this.reconcileTreeState(Array.from(node.children));
+            }
+        });
+        return nodes;
+    }
+
     protected onAfterHide(msg: Message) {
         super.onAfterHide(msg);
-        this.outlineViewManager.open = false;
+        this.onDidChangeOpenStateEmitter.fire(false);
     }
 
     protected onAfterShow(msg: Message) {
         super.onAfterShow(msg);
-        this.outlineViewManager.open = true;
+        this.onDidChangeOpenStateEmitter.fire(true);
     }
 
     protected onUpdateRequest(msg: Message): void {
@@ -60,35 +94,16 @@ export class OutlineViewWidget extends TreeWidget {
     }
 
     protected decorateCaption(node: ITreeNode, caption: h.Child, props: NodeProps): h.Child {
+        let newCaption = caption;
         if (OutlineSymbolInformationNode.is(node)) {
             const icon = h.span({ className: "symbol-icon " + node.iconClass });
-            const theTree = h.div({
-                ondblclick: () => {
-                    this.outlineViewManager.fireOpen(node);
-                }
-            }, icon, node.name);
-            return node.children.length ? super.decorateExpandableCaption(node, theTree, props) : theTree;
-        } else {
-            return "";
+            newCaption = VirtualRenderer.merge(icon, caption);
         }
+        return super.decorateCaption(node, newCaption, props);
     }
 
-    protected createExpandableChildProps(child: ITreeNode, parent: IExpandableTreeNode, props: NodeProps): NodeProps {
-        if (!props.visible) {
-            return props;
-        }
-        if (OutlineSymbolInformationNode.is(child)) {
-            const hasChildren = !!child.children.length;
-            const visible = parent.expanded;
-            const { width } = this.props.expansionToggleSize;
-            const parentVisibility = ITreeNode.isVisible(parent) ? 1 : 0;
-            const childExpansion = hasChildren ? 0 : 1;
-            const indentMultiplier = parentVisibility + childExpansion;
-            const relativeIndentSize = width * indentMultiplier;
-            const indentSize = props.indentSize + relativeIndentSize;
-            return Object.assign({}, props, { visible, indentSize });
-        }
-        return super.createExpandableChildProps(child, parent, props);
+    protected isExandable(node: ITreeNode): node is IExpandableTreeNode {
+        return OutlineSymbolInformationNode.is(node) && node.children.length > 0;
     }
 
 }
