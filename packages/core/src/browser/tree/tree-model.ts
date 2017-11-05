@@ -44,6 +44,10 @@ export interface ITreeModel extends ITree, ITreeSelectionService, ITreeExpansion
      */
     openNode(node?: ITreeNode | undefined): void;
     /**
+     * Event for when a node should be opened.
+     */
+    readonly onOpenNode: Event<ITreeNode>;
+    /**
      * Select a parent node relatively to the selected taking into account node expansion.
      */
     selectParent(): void;
@@ -81,6 +85,7 @@ export class TreeServices {
 export class TreeModel implements ITreeModel, SelectionProvider<Readonly<ISelectableTreeNode>> {
 
     protected readonly onChangedEmitter = new Emitter<void>();
+    protected readonly onOpenNodeEmitter = new Emitter<ITreeNode>();
     protected readonly toDispose = new DisposableCollection();
 
     protected readonly selection: ITreeSelectionService;
@@ -123,6 +128,10 @@ export class TreeModel implements ITreeModel, SelectionProvider<Readonly<ISelect
 
     get onChanged(): Event<void> {
         return this.onChangedEmitter.event;
+    }
+
+    get onOpenNode(): Event<ITreeNode> {
+        return this.onOpenNodeEmitter.event;
     }
 
     protected fireChanged(): void {
@@ -227,6 +236,7 @@ export class TreeModel implements ITreeModel, SelectionProvider<Readonly<ISelect
         const node = raw || this.selectedNode;
         if (node) {
             this.doOpenNode(node);
+            this.onOpenNodeEmitter.fire(node);
         }
     }
 
