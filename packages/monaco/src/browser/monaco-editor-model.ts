@@ -21,7 +21,7 @@ export interface WillSaveModelEvent {
 
 export class MonacoEditorModel implements ITextEditorModel {
 
-    autoSave: boolean = true;
+    autoSave: 'on' |  'off' = 'on';
     autoSaveDelay: number = 500;
 
     protected model: monaco.editor.IModel;
@@ -87,7 +87,7 @@ export class MonacoEditorModel implements ITextEditorModel {
     }
 
     protected doAutoSave(): void {
-        if (this.autoSave) {
+        if (this.autoSave === 'on') {
             this.toDisposeOnAutoSave.dispose();
             const handle = window.setTimeout(() => {
                 this.doSave(TextDocumentSaveReason.AfterDelay);
