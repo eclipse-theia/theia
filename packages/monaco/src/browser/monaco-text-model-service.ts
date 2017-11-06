@@ -71,6 +71,8 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
         await this.editorPreferences.ready;
         const resource = await this.resourceProvider(uri);
         const model = await (new MonacoEditorModel(resource).load());
+        model.autoSave = this.editorPreferences["editor.autoSave"];
+        model.autoSaveDelay = this.editorPreferences["editor.autoSaveDelay"];
         model.textEditorModel.updateOptions(this.getModelOptions());
         const disposable = this.editorPreferences.onPreferenceChanged(change => this.updateModel(model, change));
         model.onDispose(() => disposable.dispose());
@@ -84,6 +86,12 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     };
 
     protected updateModel(model: MonacoEditorModel, change: EditorPreferenceChange): void {
+        if (change.preferenceName === "editor.autoSave") {
+            model.autoSave = this.editorPreferences["editor.autoSave"];
+        }
+        if (change.preferenceName === "editor.autoSaveDelay") {
+            model.autoSaveDelay = this.editorPreferences["editor.autoSaveDelay"];
+        }
         const modelOption = this.modelOptions[change.preferenceName];
         if (modelOption) {
             const options: monaco.editor.ITextModelUpdateOptions = {};
