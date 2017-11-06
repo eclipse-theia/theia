@@ -99,7 +99,7 @@ export class FileSystemNode implements FileSystem {
             throw new Error(`File does not exist under ${sourceUri}.`);
         }
         if (targetStat && !overwrite) {
-            throw new Error(`File already exist under the '${targetUri}' target location. Did you set the 'overwrite' flag to true?`);
+            throw new Error(`File already exists under the '${targetUri}' target location. Did you set the 'overwrite' flag to true?`);
         }
 
         // Different types. Files <-> Directory.
@@ -109,19 +109,21 @@ export class FileSystemNode implements FileSystem {
             throw new Error(message);
         }
 
+        const [sourceMightHaveChildren, targetMightHaveChildren] = await Promise.all([this.mayHaveChildren(_sourceUri), this.mayHaveChildren(_targetUri)]);
         // Handling special Windows case when source and target resources are empty folders.
         // Source should be deleted and target should be touched.
-        if (overwrite && targetStat && targetStat.isDirectory && sourceStat.isDirectory && !this.mayHaveChildren(_targetUri) && !this.mayHaveChildren(_sourceUri)) {
+        if (overwrite && targetStat && targetStat.isDirectory && sourceStat.isDirectory && !sourceMightHaveChildren && !targetMightHaveChildren) {
             // The value should be a Unix timestamp in seconds.
             // For example, `Date.now()` returns milliseconds, so it should be divided by `1000` before passing it in.
             const now = Date.now() / 1000;
             await fs.utimes(FileUri.fsPath(_targetUri), now, now);
+            await fs.rmdir(FileUri.fsPath(_sourceUri));
             const newStat = await this.doGetStat(_targetUri, 1);
             if (newStat) {
                 return newStat;
             }
             throw new Error(`Error occurred when moving resource from ${sourceUri} to ${targetUri}. Resource does not exist at ${targetUri}.`);
-        } else if (overwrite && targetStat && targetStat.isDirectory && sourceStat.isDirectory && !this.mayHaveChildren(_targetUri) && this.mayHaveChildren(_sourceUri)) {
+        } else if (overwrite && targetStat && targetStat.isDirectory && sourceStat.isDirectory && !targetMightHaveChildren && sourceMightHaveChildren) {
             // Copy source to target, since target is empty. Then wipe the source content.
             const newStat = await this.copy(sourceUri, targetUri, { overwrite });
             await this.delete(sourceUri);
@@ -163,12 +165,11 @@ export class FileSystemNode implements FileSystem {
 
     async createFile(uri: string, options?: { content?: string, encoding?: string }): Promise<FileStat> {
         const _uri = new URI(uri);
-        const stat = await this.doGetStat(_uri, 0);
+        const parentUri = _uri.parent;
+        const [stat, parentStat] = await Promise.all([this.doGetStat(_uri, 0), this.doGetStat(parentUri, 0)]);
         if (stat) {
             throw new Error(`Error occurred while creating the file. File already exists at ${uri}.`);
         }
-        const parentUri = _uri.parent;
-        const parentStat = await this.doGetStat(parentUri, 0);
         if (!parentStat) {
             await fs.mkdirs(FileUri.fsPath(parentUri));
         }
@@ -330,7 +331,7 @@ export class FileSystemNode implements FileSystem {
             } else {
                 return true;
             }
-        } catch (err) {
+        } catch {
             return true;
         }
     }
