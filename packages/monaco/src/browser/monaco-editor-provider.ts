@@ -43,17 +43,10 @@ export class MonacoEditorProvider {
         @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService
     ) { }
 
-    protected async createReference(uri: URI, toDispose: DisposableCollection): Promise<MonacoEditorModel> {
-        await this.editorPreferences.ready;
-
+    protected async getModel(uri: URI, toDispose: DisposableCollection): Promise<MonacoEditorModel> {
         const reference = await this.textModelService.createModelReference(uri);
         toDispose.push(reference);
-
-        const model = reference.object;
-        const textEditorModel = model.textEditorModel;
-        textEditorModel.updateOptions(this.getModelOptions());
-
-        return model;
+        return reference.object;
     }
 
     protected createEditor(create: (n: HTMLDivElement, o: IEditorOverrideServices) => MonacoEditor, toDispose: DisposableCollection): MonacoEditor {
@@ -79,11 +72,13 @@ export class MonacoEditorProvider {
     }
 
     async get(uri: URI): Promise<MonacoEditor> {
+        await this.editorPreferences.ready;
+
         let editor: MonacoEditor;
         const toDispose = new DisposableCollection();
 
         if (!DiffUris.isDiffUri(uri)) {
-            const model = await this.createReference(uri, toDispose);
+            const model = await this.getModel(uri, toDispose);
 
             editor = this.createEditor((node, override) => new MonacoEditor(
                 uri, node, this.m2p, this.p2m, this.workspace, this.getEditorOptions(model), override
@@ -92,8 +87,8 @@ export class MonacoEditorProvider {
         } else {
             const [original, modified] = DiffUris.decode(uri);
 
-            const originalModel = await this.createReference(original, toDispose);
-            const modifiedModel = await this.createReference(modified, toDispose);
+            const originalModel = await this.getModel(original, toDispose);
+            const modifiedModel = await this.getModel(modified, toDispose);
 
             editor = this.createEditor((node, override) => new MonacoDiffEditor(
                 node,
@@ -112,12 +107,6 @@ export class MonacoEditorProvider {
         return Promise.resolve(editor);
     }
 
-    protected getModelOptions(): monaco.editor.ITextModelUpdateOptions {
-        return {
-            tabSize: this.editorPreferences["editor.tabSize"]
-        };
-    }
-
     protected getEditorOptions(model: MonacoEditorModel): MonacoEditor.IOptions | undefined {
         return {
             model: model.textEditorModel,
@@ -134,12 +123,6 @@ export class MonacoEditorProvider {
         return {};
     }
 
-    protected readonly modelOptions: {
-        [name: string]: (keyof monaco.editor.ITextModelUpdateOptions | undefined)
-    } = {
-        'editor.tabSize': 'tabSize'
-    };
-
     protected readonly editorOptions: {
         [name: string]: (keyof monaco.editor.IEditorOptions | undefined)
     } = {
@@ -148,14 +131,6 @@ export class MonacoEditorProvider {
     };
 
     protected updateOptions(change: EditorPreferenceChange, editor: MonacoEditor): void {
-        const modelOption = this.modelOptions[change.preferenceName];
-        if (modelOption) {
-            const options: monaco.editor.ITextModelUpdateOptions = {};
-            // tslint:disable-next-line:no-any
-            options[modelOption] = change.newValue as any;
-            editor.getControl().getModel().updateOptions(options);
-        }
-
         const editorOption = this.editorOptions[change.preferenceName];
         if (editorOption) {
             const options: monaco.editor.IEditorOptions = {};
