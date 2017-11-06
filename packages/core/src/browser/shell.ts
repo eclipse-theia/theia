@@ -7,6 +7,7 @@
 
 import { ArrayExt, each, find, toArray } from "@phosphor/algorithm";
 import { ISignal, Signal } from "@phosphor/signaling";
+import { injectable } from 'inversify';
 
 import {
     BoxLayout,
@@ -20,6 +21,8 @@ import {
     Title,
     Widget
 } from "@phosphor/widgets";
+
+export const ApplicationShellOptions = Symbol("ApplicationShellOptions");
 
 /**
  * The class name added to AppShell instances.
@@ -59,6 +62,7 @@ export interface DockLayoutData extends DockPanel.ILayoutConfig {
 /**
  * The application shell.
  */
+@injectable()
 export class ApplicationShell extends Widget {
     /**
      * Construct a new application shell.
