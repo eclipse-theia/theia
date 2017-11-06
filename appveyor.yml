@@ -11,6 +11,10 @@ branches:
   only:
   - master
 
+environment:
+  GITHUB_TOKEN:
+    secure: tuJHE+eKL5SSctDlPSu50OymD8iCIWuAr3HyBZvVQxV9l5kZXRNy1K2y/u82wgc+Ir4ieBROqYbC5FmyscdkDQ==
+
 install:
   - ps: Install-Product node $env:nodejs_version $env:platform
   - ps: npm install --global --production windows-build-tools

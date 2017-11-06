@@ -1,0 +1,63 @@
+{
+  "name": "@theia/ripgrep-workspace",
+  "version": "0.2.0",
+  "description": "Theia - RipGrep Workspace Extension",
+  "dependencies": {
+    "@theia/core": "^0.2.0",
+    "@theia/process": "^0.2.0",
+    "vscode-ripgrep": "^0.0.25",
+    "@theia/output-parser": "^0.2.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/search-workspace-frontend-module",
+      "backend": "lib/node/search-workspace-backend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.0.1",
+    "@types/chai-as-promised": "0.0.31",
+    "@types/mocha": "^2.2.41",
+    "chai": "^4.1.0",
+    "chai-as-promised": "^7.1.1",
+    "concurrently": "^3.5.0",
+    "@theia/ext-scripts": "^0.2.0",
+    "mocha": "^3.4.2",
+    "nyc": "^11.0.3",
+    "rimraf": "^2.6.1",
+    "ts-node": "^3.2.0",
+    "tslint": "^5.5.0",
+    "typedoc": "^0.8",
+    "typescript": "^2.4.1"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}
