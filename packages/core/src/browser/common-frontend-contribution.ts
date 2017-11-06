@@ -11,7 +11,7 @@ import { KeybindingContribution, KeybindingRegistry } from '../common/keybinding
 import { KeyCode, Key, Modifier } from '../common/keys';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
 import { MessageService } from '../common/message-service';
-import { FrontendApplication } from './frontend-application';
+import { ApplicationShell } from './shell';
 import * as browser from './browser';
 
 export namespace CommonMenus {
@@ -87,7 +87,7 @@ export const supportPaste = browser.isNative || (!browser.isChrome && document.q
 export class CommonFrontendContribution implements MenuContribution, CommandContribution, KeybindingContribution {
 
     constructor(
-        @inject(FrontendApplication) protected readonly app: FrontendApplication,
+        @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(MessageService) protected readonly messageService: MessageService
     ) { }
 
@@ -187,12 +187,12 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         commandRegistry.registerCommand(CommonCommands.REPLACE);
 
         commandRegistry.registerCommand(CommonCommands.NEXT_TAB, {
-            isEnabled: () => this.app.shell.hasSelectedTab(),
-            execute: () => this.app.shell.activateNextTab()
+            isEnabled: () => this.shell.hasSelectedTab(),
+            execute: () => this.shell.activateNextTab()
         });
         commandRegistry.registerCommand(CommonCommands.PREVIOUS_TAB, {
-            isEnabled: () => this.app.shell.hasSelectedTab(),
-            execute: () => this.app.shell.activatePreviousTab()
+            isEnabled: () => this.shell.hasSelectedTab(),
+            execute: () => this.shell.activatePreviousTab()
         });
     }
 
