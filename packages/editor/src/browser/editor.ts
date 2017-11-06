@@ -5,24 +5,28 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Position, Range, TextDocument } from 'vscode-languageserver-types';
+import { Position, Range } from 'vscode-languageserver-types';
+import * as lsp from 'vscode-languageserver-types';
 import URI from "@theia/core/lib/common/uri";
 import { Event, Disposable } from '@theia/core/lib/common';
+import { Saveable } from '@theia/core/lib/browser';
 
 export {
-    Position, Range, TextDocument
-}
+    Position, Range
+};
 
 export const TextEditorProvider = Symbol('TextEditorProvider');
 export type TextEditorProvider = (uri: URI) => Promise<TextEditor>;
+
+export interface TextEditorDocument extends lsp.TextDocument, Saveable, Disposable {
+}
 
 export interface TextEditor extends Disposable, TextEditorSelection {
     readonly node: HTMLElement;
 
     readonly uri: URI;
-    readonly document: TextDocument;
-    readonly onDocumentContentChanged: Event<TextDocument>;
-    readonly onDocumentContentSaved: Event<TextDocument>;
+    readonly document: TextEditorDocument;
+    readonly onDocumentContentChanged: Event<TextEditorDocument>;
 
     cursor: Position;
     readonly onCursorPositionChanged: Event<Position>;

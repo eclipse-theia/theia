@@ -14,7 +14,7 @@ import { CommonCommands } from "@theia/core/lib/browser/common-frontend-contribu
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { UriSelection } from '@theia/filesystem/lib/common/filesystem-selection';
 import { SingleTextInputDialog, ConfirmDialog } from "@theia/core/lib/browser/dialogs";
-import { OpenerService, OpenHandler, open } from "@theia/core/lib/browser";
+import { OpenerService, OpenHandler, open, FrontendApplication } from "@theia/core/lib/browser";
 import { WorkspaceService } from './workspace-service';
 
 export namespace WorkspaceCommands {
@@ -31,12 +31,22 @@ export namespace WorkspaceCommands {
     export const FILE_PASTE = CommonCommands.PASTE.id;
     export const FILE_RENAME = 'file:fileRename';
     export const FILE_DELETE = 'file:fileDelete';
+
+    export const SAVE: Command = {
+        id: 'file:save',
+        label: 'Save'
+    };
+    export const SAVE_ALL: Command = {
+        id: 'file:saveAll',
+        label: 'Save All'
+    };
 }
 
 export namespace FileMenus {
     export const FILE = [MAIN_MENU_BAR, "1_file"];
     export const NEW_GROUP = [...FILE, '1_new'];
     export const OPEN_GROUP = [...FILE, '2_open'];
+    export const SAVE_GROUP = [...FILE, '3_save'];
 }
 
 @injectable()
@@ -52,6 +62,13 @@ export class FileMenuContribution implements MenuContribution {
         registry.registerMenuAction(FileMenus.NEW_GROUP, {
             commandId: WorkspaceCommands.NEW_FOLDER
         });
+
+        registry.registerMenuAction(FileMenus.SAVE_GROUP, {
+            commandId: WorkspaceCommands.SAVE.id
+        });
+        registry.registerMenuAction(FileMenus.SAVE_GROUP, {
+            commandId: WorkspaceCommands.SAVE_ALL.id
+        });
     }
 }
 
@@ -61,7 +78,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
-        @inject(OpenerService) protected readonly openerService: OpenerService
+        @inject(OpenerService) protected readonly openerService: OpenerService,
+        @inject(FrontendApplication) protected readonly app: FrontendApplication
     ) { }
 
     registerCommands(registry: CommandRegistry): void {
@@ -95,6 +113,15 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     isVisible: uri => opener.canHandle(uri) !== 0
                 }));
             }
+        });
+
+        registry.registerCommand(WorkspaceCommands.SAVE, {
+            execute: () => this.app.shell.save(),
+            isEnabled: () => this.app.shell.canSave()
+        });
+        registry.registerCommand(WorkspaceCommands.SAVE_ALL, {
+            execute: () => this.app.shell.saveAll(),
+            isEnabled: () => this.app.shell.canSaveAll()
         });
 
         registry.registerHandler(WorkspaceCommands.FILE_RENAME, this.newFileHandler({

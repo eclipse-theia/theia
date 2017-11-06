@@ -51,6 +51,13 @@ const ACTIVE_CLASS = 'theia-mod-active';
  * The class name added to the dirty widget's title.
  */
 const DIRTY_CLASS = 'theia-mod-dirty';
+export function setDirty(widget: Widget, dirty: boolean): void {
+    const dirtyClass = ` ${DIRTY_CLASS}`;
+    widget.title.className = widget.title.className.replace(dirtyClass, '');
+    if (dirty) {
+        widget.title.className += dirtyClass;
+    }
+}
 
 export interface LayoutData {
     mainArea?: DockLayoutData;
@@ -531,6 +538,34 @@ export class ApplicationShell extends Widget {
     }
 
     /**
+     * Test whether the current widget is dirty.
+     */
+    canSave(): boolean {
+        return Saveable.isDirty(this.currentWidget);
+    }
+
+    /**
+     * Save the current widget if it is dirty.
+     */
+    async save(): Promise<void> {
+        await Saveable.save(this.currentWidget);
+    }
+
+    /**
+     * Test whether there is a dirty widget.
+     */
+    canSaveAll(): boolean {
+        return this._tracker.widgets.some(Saveable.isDirty);
+    }
+
+    /**
+     * Save all dirty widgets.
+     */
+    async saveAll(): Promise<void> {
+        await Promise.all(this._tracker.widgets.map(Saveable.save));
+    }
+
+    /**
      * Close all widgets in the main area.
      */
     closeAll(): void {
@@ -638,17 +673,10 @@ export class ApplicationShell extends Widget {
 
     protected track(widget: Widget): void {
         this._tracker.add(widget);
-        if (Saveable.is(widget)) {
-            this.updateDirty(widget);
-            widget.onDirtyChanged(() => this.updateDirty(widget));
-        }
-    }
-
-    protected updateDirty(widget: Widget & Saveable): void {
-        const dirtyClass = ` ${DIRTY_CLASS}`;
-        widget.title.className = widget.title.className.replace(dirtyClass, '');
-        if (widget.dirty) {
-            widget.title.className += dirtyClass;
+        const saveable = Saveable.get(widget);
+        if (saveable) {
+            setDirty(widget, saveable.dirty);
+            saveable.onDirtyChanged(() => setDirty(widget, saveable.dirty));
         }
     }
 
