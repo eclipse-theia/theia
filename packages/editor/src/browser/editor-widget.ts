@@ -5,18 +5,34 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { SelectionService } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message } from '@theia/core/lib/browser';
+import { SelectionService, Emitter, Event } from '@theia/core/lib/common';
+import { Widget, BaseWidget, Message, Saveable } from '@theia/core/lib/browser';
 import { TextEditor } from "./editor";
 
-export class EditorWidget extends BaseWidget {
+export class EditorWidget extends BaseWidget implements Saveable {
 
     constructor(
         readonly editor: TextEditor,
-        readonly selectionService: SelectionService
+        protected readonly selectionService: SelectionService
     ) {
         super(editor);
         this.toDispose.push(this.editor);
+        this.editor.onDocumentContentChanged(() => this.setDirty(true));
+        this.editor.onDocumentContentSaved(() => this.setDirty(false));
+    }
+
+    protected _dirty = false;
+    get dirty(): boolean {
+        return this._dirty;
+    }
+    protected setDirty(dirty: boolean): void {
+        this._dirty = dirty;
+        this.onDirtyChangedEmitter.fire(undefined);
+    }
+
+    protected readonly onDirtyChangedEmitter = new Emitter<void>();
+    get onDirtyChanged(): Event<void> {
+        return this.onDirtyChangedEmitter.event;
     }
 
     protected onActivateRequest(msg: Message): void {

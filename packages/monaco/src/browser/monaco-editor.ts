@@ -78,6 +78,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
     protected readonly onSelectionChangedEmitter = new Emitter<Range>();
     protected readonly onFocusChangedEmitter = new Emitter<boolean>();
     protected readonly onDocumentContentChangedEmitter = new Emitter<TextDocument>();
+    protected readonly onDocumentContentSavedEmitter = new Emitter<TextDocument>();
 
     constructor(
         readonly uri: URI,
@@ -95,17 +96,25 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         this.addHandlers(this.editor);
     }
 
-    protected create(options?: MonacoEditor.IOptions, override?: monaco.editor.IEditorOverrideServices) {
+    protected create(options?: MonacoEditor.IOptions, override?: monaco.editor.IEditorOverrideServices): void {
         this.toDispose.push(this.editor = monaco.editor.create(this.node, {
             ...options,
             fixedOverflowWidgets: true
         }, override));
     }
 
-    protected addHandlers(codeEditor: IStandaloneCodeEditor) {
+    protected addHandlers(codeEditor: IStandaloneCodeEditor): void {
         this.toDispose.push(codeEditor.onDidChangeConfiguration(e => this.refresh()));
         this.toDispose.push(codeEditor.onDidChangeModel(e => this.refresh()));
-        this.toDispose.push(codeEditor.onDidChangeModelContent(() => this.refresh()));
+        this.toDispose.push(codeEditor.onDidChangeModelContent(() => {
+            this.refresh();
+            this.onDocumentContentChangedEmitter.fire(this.document);
+        }));
+        this.toDispose.push(this.workspace.onDidSaveTextDocument(d => {
+            if (d.uri === this.uri.toString()) {
+                this.onDocumentContentSavedEmitter.fire(d);
+            }
+        }));
         this.toDispose.push(codeEditor.onDidChangeCursorPosition(() =>
             this.onCursorPositionChangedEmitter.fire(this.cursor)
         ));
@@ -118,11 +127,10 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         this.toDispose.push(codeEditor.onDidBlurEditor(() =>
             this.onFocusChangedEmitter.fire(this.isFocused())
         ));
-
         this.addOnDidFocusHandler(codeEditor);
     }
 
-    protected addOnDidFocusHandler(codeEditor: IStandaloneCodeEditor) {
+    protected addOnDidFocusHandler(codeEditor: IStandaloneCodeEditor): void {
         // increase the z-index for the focussed element hierarchy within the dockpanel
         this.toDispose.push(this.editor.onDidFocusEditor(() => {
             const z = '1';
@@ -148,6 +156,10 @@ export class MonacoEditor implements TextEditor, IEditorReference {
 
     get onDocumentContentChanged(): Event<TextDocument> {
         return this.onDocumentContentChangedEmitter.event;
+    }
+
+    get onDocumentContentSaved(): Event<TextDocument> {
+        return this.onDocumentContentSavedEmitter.event;
     }
 
     get cursor(): Position {
