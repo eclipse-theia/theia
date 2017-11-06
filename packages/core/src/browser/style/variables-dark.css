@@ -143,4 +143,5 @@ all of MD as it is not optimized for dense, information rich UIs.
   /* icons */
   --theia-icon-close: url(../icons/close-dark.svg);
   --theia-sprite-y-offset: -20px;
+  --theia-icon-circle: url(../icons/circle-dark.svg);
 }

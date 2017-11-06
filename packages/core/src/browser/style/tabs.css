@@ -150,7 +150,7 @@
 
 .p-DockPanel-tabBar .p-TabBar-tab.p-mod-closable.theia-mod-dirty>.p-TabBar-tabCloseIcon {
   background-size: 10px;
-  background-image: url(../icons/circle.svg);
+  background-image: var(--theia-icon-circle);
 }
 
 .p-TabBar-tab.p-mod-drag-image {
