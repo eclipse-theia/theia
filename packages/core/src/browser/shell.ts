@@ -7,12 +7,13 @@
 
 import { ArrayExt, each, find, toArray } from "@phosphor/algorithm";
 import { ISignal, Signal } from "@phosphor/signaling";
-import { injectable } from 'inversify';
+import { injectable, inject, optional } from 'inversify';
 
 import {
     BoxLayout,
     BoxPanel,
     DockPanel,
+    DockLayout,
     FocusTracker,
     Panel,
     SplitPanel,
@@ -21,6 +22,9 @@ import {
     Title,
     Widget
 } from "@phosphor/widgets";
+import {
+    VirtualElement, h
+} from '@phosphor/virtualdom';
 
 export const ApplicationShellOptions = Symbol("ApplicationShellOptions");
 
@@ -59,6 +63,45 @@ export interface DockLayoutData extends DockPanel.ILayoutConfig {
     activeWidgets?: Widget[]
 }
 
+@injectable()
+export class DockPanelTabBarRenderer implements TabBar.IRenderer<any> {
+    readonly closeIconSelector = TabBar.defaultRenderer.closeIconSelector;
+
+    constructor() { }
+
+    renderTab(data: TabBar.IRenderData<any>): VirtualElement {
+        const title = data.title.caption;
+        const key = TabBar.defaultRenderer.createTabKey(data);
+        const style = TabBar.defaultRenderer.createTabStyle(data);
+        const className = TabBar.defaultRenderer.createTabClass(data);
+        const dataset = TabBar.defaultRenderer.createTabDataset(data);
+        return (
+            h.li({ key, className, title, style, dataset },
+                TabBar.defaultRenderer.renderIcon(data),
+                TabBar.defaultRenderer.renderLabel(data),
+                TabBar.defaultRenderer.renderCloseIcon(data)
+            )
+        );
+    }
+}
+
+@injectable()
+export class DockPanelRenderer implements DockLayout.IRenderer {
+
+    constructor( @inject(DockPanelTabBarRenderer) protected readonly tabBarRenderer: TabBar.IRenderer<any>) {
+    }
+
+    createTabBar(): TabBar<Widget> {
+        const bar = new TabBar<Widget>({ renderer: this.tabBarRenderer });
+        bar.addClass('p-DockPanel-tabBar');
+        return bar;
+    }
+
+    createHandle(): HTMLDivElement {
+        return DockPanel.defaultRenderer.createHandle();
+    }
+}
+
 /**
  * The application shell.
  */
@@ -67,14 +110,17 @@ export class ApplicationShell extends Widget {
     /**
      * Construct a new application shell.
      */
-    constructor(options?: Widget.IOptions) {
+    constructor(
+        @inject(DockPanelRenderer) dockPanelRenderer: DockPanelRenderer,
+        @inject(ApplicationShellOptions) @optional() options?: Widget.IOptions | undefined,
+    ) {
         super(options);
         this.addClass(APPLICATION_SHELL_CLASS);
         this.id = 'main';
 
         const topPanel = this._topPanel = new Panel();
         const hboxPanel = this._hboxPanel = new BoxPanel();
-        const dockPanel = this._dockPanel = new DockPanel();
+        const dockPanel = this._dockPanel = new DockPanel({ renderer: dockPanelRenderer });
         const hsplitPanel = this._hsplitPanel = new SplitPanel();
         const leftHandler = this._leftHandler = new Private.SideBarHandler('left');
         const rightHandler = this._rightHandler = new Private.SideBarHandler('right');
