@@ -6,9 +6,10 @@
  */
 
 import { inject, injectable } from 'inversify';
-import { DisposableCollection, Disposable, ResourceProvider } from "@theia/core/lib/common";
-import { MonacoEditorModel } from "./monaco-editor-model";
 import URI from "@theia/core/lib/common/uri";
+import { DisposableCollection, Disposable, ResourceProvider } from "@theia/core/lib/common";
+import { EditorPreferences, EditorPreferenceChange } from '@theia/editor/lib/browser';
+import { MonacoEditorModel } from "./monaco-editor-model";
 
 @injectable()
 export class MonacoTextModelService implements monaco.editor.ITextModelService {
@@ -17,9 +18,9 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     protected readonly references = new Map<monaco.editor.ITextEditorModel, DisposableCollection>();
 
     constructor(
-        @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider
-    ) {
-    }
+        @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
+        @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences
+    ) { }
 
     createModelReference(raw: monaco.Uri | URI): monaco.Promise<monaco.editor.IReference<MonacoEditorModel>> {
         const uri = raw instanceof URI ? raw : new URI(raw.toString());
@@ -63,11 +64,39 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     }
 
     protected createModel(uri: URI): monaco.Promise<MonacoEditorModel> {
-        return monaco.Promise.wrap(
-            this.resourceProvider(uri).then(resource =>
-                new MonacoEditorModel(resource).load()
-            )
-        );
+        return monaco.Promise.wrap(this.loadModel(uri));
+    }
+
+    protected async loadModel(uri: URI): Promise<MonacoEditorModel> {
+        await this.editorPreferences.ready;
+        const resource = await this.resourceProvider(uri);
+        const model = await (new MonacoEditorModel(resource).load());
+        model.textEditorModel.updateOptions(this.getModelOptions());
+        const disposable = this.editorPreferences.onPreferenceChanged(change => this.updateModel(model, change));
+        model.onDispose(() => disposable.dispose());
+        return model;
+    }
+
+    protected readonly modelOptions: {
+        [name: string]: (keyof monaco.editor.ITextModelUpdateOptions | undefined)
+    } = {
+        'editor.tabSize': 'tabSize'
+    };
+
+    protected updateModel(model: MonacoEditorModel, change: EditorPreferenceChange): void {
+        const modelOption = this.modelOptions[change.preferenceName];
+        if (modelOption) {
+            const options: monaco.editor.ITextModelUpdateOptions = {};
+            // tslint:disable-next-line:no-any
+            options[modelOption] = change.newValue as any;
+            model.textEditorModel.updateOptions(options);
+        }
+    }
+
+    protected getModelOptions(): monaco.editor.ITextModelUpdateOptions {
+        return {
+            tabSize: this.editorPreferences["editor.tabSize"]
+        };
     }
 
     registerTextModelContentProvider(scheme: string, provider: monaco.editor.ITextModelContentProvider): monaco.IDisposable {
