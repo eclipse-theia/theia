@@ -5,11 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { injectable, inject, optional } from 'inversify';
 import { ArrayExt, each, find, toArray } from "@phosphor/algorithm";
 import { ISignal, Signal } from "@phosphor/signaling";
-import { injectable, inject, optional } from 'inversify';
-import { ContextMenuRenderer } from "./context-menu-renderer";
-
 import {
     BoxLayout,
     BoxPanel,
@@ -23,9 +21,9 @@ import {
     Title,
     Widget
 } from "@phosphor/widgets";
-import {
-    VirtualElement, h
-} from '@phosphor/virtualdom';
+import { VirtualElement, h } from '@phosphor/virtualdom';
+import { Saveable } from "./saveable";
+import { ContextMenuRenderer } from "./context-menu-renderer";
 
 export const ApplicationShellOptions = Symbol("ApplicationShellOptions");
 
@@ -48,6 +46,11 @@ const CURRENT_CLASS = 'theia-mod-current';
  * The class name added to the active widget's title.
  */
 const ACTIVE_CLASS = 'theia-mod-active';
+
+/**
+ * The class name added to the dirty widget's title.
+ */
+const DIRTY_CLASS = 'theia-mod-dirty';
 
 export interface LayoutData {
     mainArea?: DockLayoutData;
@@ -240,7 +243,7 @@ export class ApplicationShell extends Widget {
         }
         if (data.hasOwnProperty("widgets")) {
             for (const widget of data["widgets"] as Widget[]) {
-                this._tracker.add(widget);
+                this.track(widget);
             }
         } else if (data.hasOwnProperty("children")) {
             for (const child of data["children"] as object[]) {
@@ -412,7 +415,7 @@ export class ApplicationShell extends Widget {
             return;
         }
         this._dockPanel.addWidget(widget, { mode: 'tab-after' });
-        this._tracker.add(widget);
+        this.track(widget);
     }
 
     /**
@@ -631,6 +634,22 @@ export class ApplicationShell extends Widget {
             );
         }
         this._activeChanged.emit(args);
+    }
+
+    protected track(widget: Widget): void {
+        this._tracker.add(widget);
+        if (Saveable.is(widget)) {
+            this.updateDirty(widget);
+            widget.onDirtyChanged(() => this.updateDirty(widget));
+        }
+    }
+
+    protected updateDirty(widget: Widget & Saveable): void {
+        const dirtyClass = ` ${DIRTY_CLASS}`;
+        widget.title.className = widget.title.className.replace(dirtyClass, '');
+        if (widget.dirty) {
+            widget.title.className += dirtyClass;
+        }
     }
 
     private _dockPanel: DockPanel;

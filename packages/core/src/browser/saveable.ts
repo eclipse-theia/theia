@@ -1,0 +1,19 @@
+/*
+ * Copyright (C) 2017 TypeFox and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+import { Event } from '../common';
+
+export interface Saveable {
+    readonly dirty: boolean;
+    readonly onDirtyChanged: Event<void>;
+}
+
+export namespace Saveable {
+    export function is(arg: any): arg is Saveable {
+        return !!arg && ('dirty' in arg) && ('onDirtyChanged' in arg);
+    }
+}
