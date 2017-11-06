@@ -39,7 +39,7 @@ export interface CppConfiguration {
 
 export const defaultCppConfiguration: CppConfiguration = {
     'cpp.clangdCompileCommandsPath': "-compile-commands-dir=/",
-    'cpp.clangdPath': "/"
+    'cpp.clangdPath': ""
 }
 
 export const CppPreferences = Symbol('CppPreferences');

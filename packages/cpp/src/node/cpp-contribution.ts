@@ -41,12 +41,12 @@ export class CppContribution extends BaseLanguageServerContribution {
     public start(clientConnection: IConnection): void {
         let command: any = '';
         let args: string[] = [];
-        if (this.cppPreferences["cpp.clangdPath"] === "") {
+        if (this.cppPreferences["cpp.clangdPath"] !== "") {
             command = (this.cppPreferences["cpp.clangdPath"] + '/clangd');
             args = [];
         } else {
             command = 'clangd';
-            args = []; // [this.cppPreferences["cpp.clangdCompileCommandsPath"]];
+            args = [];
         }
 
         const serverConnection = this.createProcessStreamConnection(command, args);

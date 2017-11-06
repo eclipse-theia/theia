@@ -11,43 +11,37 @@ import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/c
 import URI from "@theia/core/lib/common/uri";
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { CppClientContribution } from "./cpp-client-contribution";
-import { TextDocumentItemRequest, AnyRequest } from "./cpp-protocol";
+import { TextDocumentItemRequest } from "./cpp-protocol";
+import { DidChangeConfigurationNotification, DidChangeConfigurationParams } from "vscode-base-languageclient/lib/base";
 import { TextDocumentIdentifier } from "@theia/languages/lib/common";
 import { DirNode, FileDialogFactory, FileStatNode } from '@theia/filesystem/lib/browser';
 import { EditorManager } from "@theia/editor/lib/browser";
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
-export namespace Commands {
+export namespace CppCommands {
 
-    export const OPEN: Command = {
-        id: 'cpp:open',
-        label: 'Specify folder location...'
+    export const OPEN_COMPILATION_DATABASE_PATH: Command = {
+        id: 'cpp.open.cdb.path',
+        label: 'Select folder containing compile_commands.json'
     };
 
     /**
      * Switch between source/header file
      */
     export const SWITCH_SOURCE_HEADER: Command = {
-        id: 'switch_source_header',
+        id: 'cpp.switch.source.header',
         label: 'Switch between source/header file'
     };
 
     /**
-     * Switch between source/header file
+     * Change clangd configuration
      */
     export const CHANGE_CONFIGURATION: Command = {
-        id: 'change_configuration',
+        id: 'cpp.change.configuration',
         label: 'Change Clangd Configuration'
     };
 
-}
-
-export interface DidChangeConfigurationParams {
-    /**
-    * The actual changed settings
-    */
-    settings: ClangdConfigurationParams;
 }
 
 export interface ClangdConfigurationParams {
@@ -72,15 +66,15 @@ export class CppCommandContribution implements CommandContribution {
     ) { }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(Commands.SWITCH_SOURCE_HEADER, {
+        commands.registerCommand(CppCommands.SWITCH_SOURCE_HEADER, {
             isEnabled: () => (this.editorService && !!this.editorService.activeEditor &&
                 (this.editorService.activeEditor.editor.document.uri.endsWith(".cpp") || this.editorService.activeEditor.editor.document.uri.endsWith(".h"))),
             execute: () => {
                 this.switchSourceHeader();
             }
         });
-        commands.registerCommand(Commands.CHANGE_CONFIGURATION, {
-            isEnabled: () => (this.editorService && !!this.editorService.activeEditor &&
+        commands.registerCommand(CppCommands.CHANGE_CONFIGURATION, {
+            isEnabled: () => (!!this.editorService.activeEditor &&
                 (this.editorService.activeEditor.editor.document.uri.endsWith(".cpp") || this.editorService.activeEditor.editor.document.uri.endsWith(".h"))),
             execute: () => {
                 this.changeConfiguration();
@@ -102,26 +96,31 @@ export class CppCommandContribution implements CommandContribution {
 
     protected changeConfiguration(): void {
         this.workspaceService.tryRoot.then(async resolvedRoot => {
-            const root = resolvedRoot || await this.fileSystem.getCurrentUserHome();
+            let root = resolvedRoot;
+            if (root === undefined) {
+                root = await this.fileSystem.getCurrentUserHome();
+            }
             const rootUri = new URI(root.uri).parent;
             const rootStat = await this.fileSystem.getFileStat(rootUri.toString());
             const rootNode = DirNode.createRoot(rootStat);
-            const dialog = this.fileDialogFactory({ title: Commands.OPEN.label! });
+            const dialog = this.fileDialogFactory({ title: CppCommands.OPEN_COMPILATION_DATABASE_PATH.label! });
             dialog.model.navigateTo(rootNode);
             const node = await dialog.open();
             let targetFolder: string = this.getTargetFolder(node);
 
-            this.clientContribution.languageClient.then((languageClient) => {
-                let configParams: ClangdConfigurationParams = { compilationDatabasePath: targetFolder };
-                let interfaceParams: DidChangeConfigurationParams = { settings: configParams };
-                languageClient.sendRequest(AnyRequest.type, interfaceParams);
-            });
+            if (targetFolder !== "/") {
+                this.clientContribution.languageClient.then((languageClient) => {
+                    let configParams: ClangdConfigurationParams = { compilationDatabasePath: targetFolder };
+                    let interfaceParams: DidChangeConfigurationParams = { settings: configParams };
+                    languageClient.sendNotification(DidChangeConfigurationNotification.type, interfaceParams); // AnyRequest
+                });
+            }
         });
     }
 
     protected getTargetFolder(node: Readonly<FileStatNode> | undefined): string {
         if (!node) {
-            return "";
+            return "/";
         }
         return node.uri.path.toString();
     }

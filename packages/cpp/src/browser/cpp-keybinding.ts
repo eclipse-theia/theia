@@ -34,14 +34,9 @@ export class CppKeybindingContribution implements KeybindingContribution {
     registerKeyBindings(registry: KeybindingRegistry): void {
         [
             {
-                commandId: 'switch_source_header',
+                commandId: 'cpp.switch.source.header',
                 context: this.cppKeybindingContext,
                 keyCode: KeyCode.createKeyCode({ first: Key.KEY_O, modifiers: [Modifier.M3] })
-            },
-            {
-                commandId: 'change_configuration',
-                context: this.cppKeybindingContext,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_K, modifiers: [Modifier.M3] })
             }
         ].forEach(binding => {
             registry.registerKeyBinding(binding);
