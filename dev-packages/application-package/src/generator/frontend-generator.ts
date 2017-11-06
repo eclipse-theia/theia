@@ -112,7 +112,7 @@ if (cluster.isMaster) {
                 electron.app.exit(1);
             });
         } else {
-            const cp = fork(mainPath, process.argv, { stdio: [0, 1, 2, 'ipc'] });
+            const cp = fork(mainPath);
             cp.on('message', function (message) {
                 loadMainWindow(message);
             });

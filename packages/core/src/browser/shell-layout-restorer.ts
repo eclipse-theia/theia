@@ -136,10 +136,8 @@ export class ShellLayoutRestorer implements CommandContribution {
                         const promise = this.widgetManager.getOrCreateWidget(desc.constructionOptions.factoryId, desc.constructionOptions.options)
                             .then(widget => {
                                 if (widget) {
-                                    if (desc.innerWidgetState) {
-                                        if (StatefulWidget.is(widget) && desc.innerWidgetState) {
-                                            widget.restoreState(desc.innerWidgetState);
-                                        }
+                                    if (StatefulWidget.is(widget) && desc.innerWidgetState !== undefined) {
+                                        widget.restoreState(desc.innerWidgetState);
                                     }
                                     widgets[i] = widget;
                                 }

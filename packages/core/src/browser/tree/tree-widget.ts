@@ -329,10 +329,20 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
     }
 
     storeState(): object {
-        return this.deflateForStorage(this.model.root!);
+        if (this.model.root) {
+            return {
+                root: this.deflateForStorage(this.model.root)
+            };
+        } else {
+            return {};
+        }
     }
+
     restoreState(oldState: object): void {
-        this.model.root = this.inflateFromStorage(oldState);
+        // tslint:disable-next-line:no-any
+        if ((oldState as any).root) {
+            this.model.root = this.inflateFromStorage(oldState);
+        }
     }
 
 }
