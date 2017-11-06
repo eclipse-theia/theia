@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
 import { ElementExt } from "@phosphor/domutils";
 import URI from "@theia/core/lib/common/uri";
 import { DisposableCollection, Disposable, Emitter, Event } from "@theia/core/lib/common";
@@ -14,11 +15,11 @@ import {
     EditorWidget,
     Position,
     Range,
-    TextDocument,
+    TextEditorDocument,
     TextEditor
 } from '@theia/editor/lib/browser';
-import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
-import { MonacoWorkspace } from "./monaco-workspace";
+import { MonacoEditorDocument } from "./monaco-editor-document";
+import { MonacoEditorModel } from "./monaco-editor-model";
 
 import IEditorConstructionOptions = monaco.editor.IEditorConstructionOptions;
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
@@ -77,30 +78,31 @@ export class MonacoEditor implements TextEditor, IEditorReference {
     protected readonly onCursorPositionChangedEmitter = new Emitter<Position>();
     protected readonly onSelectionChangedEmitter = new Emitter<Range>();
     protected readonly onFocusChangedEmitter = new Emitter<boolean>();
-    protected readonly onDocumentContentChangedEmitter = new Emitter<TextDocument>();
-    protected readonly onDocumentContentSavedEmitter = new Emitter<TextDocument>();
+    protected readonly onDocumentContentChangedEmitter = new Emitter<TextEditorDocument>();
+
+    readonly document: MonacoEditorDocument;
 
     constructor(
         readonly uri: URI,
+        readonly model: MonacoEditorModel,
         readonly node: HTMLElement,
         protected readonly m2p: MonacoToProtocolConverter,
         protected readonly p2m: ProtocolToMonacoConverter,
-        protected readonly workspace: MonacoWorkspace,
         options?: MonacoEditor.IOptions,
         override?: IEditorOverrideServices,
     ) {
+        this.toDispose.push(this.document = new MonacoEditorDocument(model, m2p, p2m));
         this.autoSizing = options && options.autoSizing !== undefined ? options.autoSizing : false;
         this.minHeight = options && options.minHeight !== undefined ? options.minHeight : -1;
-        this.create(options, override);
-
+        this.toDispose.push(this.create(options, override));
         this.addHandlers(this.editor);
     }
 
-    protected create(options?: MonacoEditor.IOptions, override?: monaco.editor.IEditorOverrideServices): void {
-        this.toDispose.push(this.editor = monaco.editor.create(this.node, {
+    protected create(options?: MonacoEditor.IOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {
+        return this.editor = monaco.editor.create(this.node, {
             ...options,
             fixedOverflowWidgets: true
-        }, override));
+        }, override);
     }
 
     protected addHandlers(codeEditor: IStandaloneCodeEditor): void {
@@ -109,11 +111,6 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         this.toDispose.push(codeEditor.onDidChangeModelContent(() => {
             this.refresh();
             this.onDocumentContentChangedEmitter.fire(this.document);
-        }));
-        this.toDispose.push(this.workspace.onDidSaveTextDocument(d => {
-            if (d.uri === this.uri.toString()) {
-                this.onDocumentContentSavedEmitter.fire(d);
-            }
         }));
         this.toDispose.push(codeEditor.onDidChangeCursorPosition(() =>
             this.onCursorPositionChangedEmitter.fire(this.cursor)
@@ -150,16 +147,8 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         return this.toDispose.onDispose;
     }
 
-    get document(): TextDocument {
-        return this.workspace.getTextDocument(this.uri.toString())!;
-    }
-
-    get onDocumentContentChanged(): Event<TextDocument> {
+    get onDocumentContentChanged(): Event<TextEditorDocument> {
         return this.onDocumentContentChangedEmitter.event;
-    }
-
-    get onDocumentContentSaved(): Event<TextDocument> {
-        return this.onDocumentContentSavedEmitter.event;
     }
 
     get cursor(): Position {

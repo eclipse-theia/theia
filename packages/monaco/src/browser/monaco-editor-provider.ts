@@ -81,7 +81,7 @@ export class MonacoEditorProvider {
             const model = await this.getModel(uri, toDispose);
 
             editor = this.createEditor((node, override) => new MonacoEditor(
-                uri, node, this.m2p, this.p2m, this.workspace, this.getEditorOptions(model), override
+                uri, model, node, this.m2p, this.p2m, this.getEditorOptions(model), override
             ), toDispose);
 
         } else {
@@ -92,14 +92,11 @@ export class MonacoEditorProvider {
 
             editor = this.createEditor((node, override) => new MonacoDiffEditor(
                 node,
+                originalModel,
+                modifiedModel,
                 this.m2p,
                 this.p2m,
-                this.workspace,
-                {
-                    original: originalModel.textEditorModel,
-                    modified: modifiedModel.textEditorModel
-                },
-                this.getDiffEditorOptions(),
+                this.getDiffEditorOptions(originalModel, modifiedModel),
                 override
             ), toDispose);
         }
@@ -107,7 +104,7 @@ export class MonacoEditorProvider {
         return Promise.resolve(editor);
     }
 
-    protected getEditorOptions(model: MonacoEditorModel): MonacoEditor.IOptions | undefined {
+    protected getEditorOptions(model: MonacoEditorModel): MonacoEditor.IOptions {
         return {
             model: model.textEditorModel,
             wordWrap: 'off',
@@ -119,8 +116,11 @@ export class MonacoEditorProvider {
         };
     }
 
-    protected getDiffEditorOptions(): MonacoDiffEditor.IOptions {
-        return {};
+    protected getDiffEditorOptions(original: MonacoEditorModel, modified: MonacoEditorModel): MonacoDiffEditor.IOptions {
+        return {
+            originalEditable: !original.readOnly,
+            readOnly: modified.readOnly
+        };
     }
 
     protected readonly editorOptions: {

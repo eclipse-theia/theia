@@ -5,23 +5,21 @@
 * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 */
 
-import { MonacoWorkspace } from './monaco-workspace';
+import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
+import URI from '@theia/core/lib/common/uri';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common';
+import { Dimension } from '@theia/editor/lib/browser';
+import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
-import { DisposableCollection } from '@theia/core/lib/common';
-import {
-    Dimension
-} from '@theia/editor/lib/browser';
 
 import IStandaloneDiffEditor = monaco.editor.IStandaloneDiffEditor;
 import IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor;
-import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import IDiffEditorConstructionOptions = monaco.editor.IDiffEditorConstructionOptions;
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
-import IDiffEditorModel = monaco.editor.IDiffEditorModel;
-import URI from '@theia/core/lib/common/uri';
 
 export namespace MonacoDiffEditor {
-    export interface IOptions extends MonacoEditor.ICommonOptions, IDiffEditorConstructionOptions { }
+    export interface IOptions extends MonacoEditor.ICommonOptions, IDiffEditorConstructionOptions {
+    }
 }
 
 export class MonacoDiffEditor extends MonacoEditor {
@@ -29,26 +27,26 @@ export class MonacoDiffEditor extends MonacoEditor {
 
     constructor(
         readonly node: HTMLElement,
+        readonly originalModel: MonacoEditorModel,
+        readonly modifiedModel: MonacoEditorModel,
         protected readonly m2p: MonacoToProtocolConverter,
         protected readonly p2m: ProtocolToMonacoConverter,
-        protected readonly workspace: MonacoWorkspace,
-        protected readonly model: IDiffEditorModel,
         options?: MonacoDiffEditor.IOptions,
         override?: IEditorOverrideServices,
     ) {
-        super(new URI(''), node, m2p, p2m, workspace, options, override);
-        this.diffEditor.setModel({ original: model.original, modified: model.modified });
-        // this.addHandlers(this.diffEditor.getOriginalEditor());
+        super(new URI(''), modifiedModel, node, m2p, p2m, options, override);
+        const original = originalModel.textEditorModel;
+        const modified = modifiedModel.textEditorModel;
+        this.diffEditor.setModel({ original, modified });
     }
 
-    protected create(options: MonacoDiffEditor.IOptions | undefined, override?: monaco.editor.IEditorOverrideServices) {
+    protected create(options?: MonacoDiffEditor.IOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {
         this.diffEditor = monaco.editor.createDiffEditor(this.node, {
             ...options,
             fixedOverflowWidgets: true
         });
-        this.toDispose.push(this.diffEditor);
-
         this.editor = this.diffEditor.getModifiedEditor();
+        return this.diffEditor;
     }
 
     protected addOnDidFocusHandler(codeEditor: IStandaloneCodeEditor) {
@@ -66,10 +64,6 @@ export class MonacoDiffEditor extends MonacoEditor {
                 toDisposeOnBlur.dispose()
             ));
         }));
-    }
-
-    protected isDiffEditor(e: IStandaloneDiffEditor | IStandaloneCodeEditor): e is IStandaloneDiffEditor {
-        return 'getOriginalEditor' in e && 'getModifiedEditor' in e;
     }
 
     protected resize(dimension: Dimension | null): void {

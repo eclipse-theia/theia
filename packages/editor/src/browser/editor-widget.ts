@@ -5,11 +5,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { SelectionService, Emitter, Event } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message, Saveable } from '@theia/core/lib/browser';
+import { SelectionService } from '@theia/core/lib/common';
+import { Widget, BaseWidget, Message, Saveable, SaveableSource } from '@theia/core/lib/browser';
 import { TextEditor } from "./editor";
 
-export class EditorWidget extends BaseWidget implements Saveable {
+export class EditorWidget extends BaseWidget implements SaveableSource {
 
     constructor(
         readonly editor: TextEditor,
@@ -17,22 +17,10 @@ export class EditorWidget extends BaseWidget implements Saveable {
     ) {
         super(editor);
         this.toDispose.push(this.editor);
-        this.editor.onDocumentContentChanged(() => this.setDirty(true));
-        this.editor.onDocumentContentSaved(() => this.setDirty(false));
     }
 
-    protected _dirty = false;
-    get dirty(): boolean {
-        return this._dirty;
-    }
-    protected setDirty(dirty: boolean): void {
-        this._dirty = dirty;
-        this.onDirtyChangedEmitter.fire(undefined);
-    }
-
-    protected readonly onDirtyChangedEmitter = new Emitter<void>();
-    get onDirtyChanged(): Event<void> {
-        return this.onDirtyChangedEmitter.event;
+    get saveable(): Saveable {
+        return this.editor.document;
     }
 
     protected onActivateRequest(msg: Message): void {
