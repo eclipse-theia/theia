@@ -11,6 +11,11 @@ import URI from "../common/uri";
  * An endpoint provides URLs for http and ws, based on configuration ansd defaults.
  */
 export class Endpoint {
+    static readonly PROTO_HTTPS: string = "https:";
+    static readonly PROTO_HTTP: string = "http:";
+    static readonly PROTO_WS: string = "ws:";
+    static readonly PROTO_WSS: string = "wss:";
+    static readonly PROTO_FILE: string = "file:";
 
     constructor(
         protected readonly options: Endpoint.Options = {},
@@ -18,15 +23,15 @@ export class Endpoint {
     ) { }
 
     getWebSocketUrl(): URI {
-        return new URI(`${this.wsScheme}://${this.host}${this.pathname}${this.path}`);
+        return new URI(`${this.wsScheme}//${this.host}${this.pathname}${this.path}`);
     }
 
     getRestUrl(): URI {
-        return new URI(`${this.httpScheme}://${this.host}${this.pathname}${this.path}`);
+        return new URI(`${this.httpScheme}//${this.host}${this.pathname}${this.path}`);
     }
 
     protected get pathname() {
-        if (this.location.protocol === 'file:') {
+        if (this.location.protocol === Endpoint.PROTO_FILE) {
             return '';
         }
         if (this.location.pathname === '/') {
@@ -63,17 +68,18 @@ export class Endpoint {
     }
 
     protected get wsScheme() {
-        return this.httpScheme === 'https:' ? 'wss' : 'ws';
+        return this.httpScheme === Endpoint.PROTO_HTTPS ? Endpoint.PROTO_WSS : Endpoint.PROTO_WS;
     }
 
     protected get httpScheme() {
         if (this.options.httpScheme) {
             return this.options.httpScheme;
         }
-        if (this.location.protocol === 'http' || this.location.protocol === 'https') {
+        if (this.location.protocol === Endpoint.PROTO_HTTP ||
+            this.location.protocol === Endpoint.PROTO_HTTPS) {
             return this.location.protocol;
         }
-        return 'http'
+        return Endpoint.PROTO_HTTP;
     }
 
     protected get path() {
