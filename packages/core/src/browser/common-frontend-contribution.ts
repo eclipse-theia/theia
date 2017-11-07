@@ -74,7 +74,6 @@ export namespace CommonCommands {
         id: 'core.previousTab',
         label: 'Switch to previous tab'
     };
-
     export const CLOSE_TAB: Command = {
         id: 'core.close.tab',
         label: 'Close'
@@ -223,17 +222,20 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             isEnabled: () => this.shell.hasSelectedTab(),
             execute: () => this.shell.activatePreviousTab()
         });
-
         commandRegistry.registerCommand(CommonCommands.CLOSE_TAB, {
+            isEnabled: () => this.shell.hasSelectedTab(),
             execute: () => this.shell.closeTab()
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_OTHER_TABS, {
+            isEnabled: () => this.shell.hasSelectedTab(),
             execute: () => this.shell.closeOtherTabs()
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_RIGHT_TABS, {
+            isEnabled: () => this.shell.hasSelectedTab(),
             execute: () => this.shell.closeRightTabs()
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_ALL_TABS, {
+            isEnabled: () => this.shell.hasSelectedTab(),
             execute: () => this.shell.closeAllTabs()
         });
 
@@ -288,6 +290,18 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             {
                 commandId: CommonCommands.PREVIOUS_TAB.id,
                 keyCode: KeyCode.createKeyCode({ first: Key.TAB, modifiers: [Modifier.M1, Modifier.M2] })
+            },
+            {
+                commandId: CommonCommands.CLOSE_TAB.id,
+                keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M3] })
+            },
+            {
+                commandId: CommonCommands.CLOSE_OTHER_TABS.id,
+                keyCode: KeyCode.createKeyCode({ first: Key.KEY_T, modifiers: [Modifier.M3, Modifier.M1] })
+            },
+            {
+                commandId: CommonCommands.CLOSE_ALL_TABS.id,
+                keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M2, Modifier.M3] })
             },
             {
                 commandId: CommonCommands.SAVE.id,

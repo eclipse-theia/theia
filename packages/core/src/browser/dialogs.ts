@@ -149,7 +149,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     }
 
     protected addCloseAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
-        this.addKeyListener(element, Key.ESCAPE, () => this.close(), ...additionalEventTypes);
+        this.addKeyListener(element, Key.ENTER, () => this.close(), ...additionalEventTypes);
     }
 
     protected addAcceptAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
