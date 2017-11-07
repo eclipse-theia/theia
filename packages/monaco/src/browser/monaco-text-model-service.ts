@@ -6,6 +6,7 @@
  */
 
 import { inject, injectable } from 'inversify';
+import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import URI from "@theia/core/lib/common/uri";
 import { DisposableCollection, Disposable, ResourceProvider } from "@theia/core/lib/common";
 import { EditorPreferences, EditorPreferenceChange } from '@theia/editor/lib/browser';
@@ -19,7 +20,9 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
 
     constructor(
         @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
-        @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences
+        @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
+        @inject(MonacoToProtocolConverter) protected readonly m2p: MonacoToProtocolConverter,
+        @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter
     ) { }
 
     createModelReference(raw: monaco.Uri | URI): monaco.Promise<monaco.editor.IReference<MonacoEditorModel>> {
@@ -70,7 +73,7 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     protected async loadModel(uri: URI): Promise<MonacoEditorModel> {
         await this.editorPreferences.ready;
         const resource = await this.resourceProvider(uri);
-        const model = await (new MonacoEditorModel(resource).load());
+        const model = await (new MonacoEditorModel(resource, this.m2p, this.p2m).load());
         model.autoSave = this.editorPreferences["editor.autoSave"];
         model.autoSaveDelay = this.editorPreferences["editor.autoSaveDelay"];
         model.textEditorModel.updateOptions(this.getModelOptions());

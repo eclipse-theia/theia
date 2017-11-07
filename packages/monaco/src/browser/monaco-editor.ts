@@ -18,7 +18,6 @@ import {
     TextEditorDocument,
     TextEditor
 } from '@theia/editor/lib/browser';
-import { MonacoEditorDocument } from "./monaco-editor-document";
 import { MonacoEditorModel } from "./monaco-editor-model";
 
 import IEditorConstructionOptions = monaco.editor.IEditorConstructionOptions;
@@ -80,18 +79,15 @@ export class MonacoEditor implements TextEditor, IEditorReference {
     protected readonly onFocusChangedEmitter = new Emitter<boolean>();
     protected readonly onDocumentContentChangedEmitter = new Emitter<TextEditorDocument>();
 
-    readonly document: MonacoEditorDocument;
-
     constructor(
         readonly uri: URI,
-        readonly model: MonacoEditorModel,
+        readonly document: MonacoEditorModel,
         readonly node: HTMLElement,
         protected readonly m2p: MonacoToProtocolConverter,
         protected readonly p2m: ProtocolToMonacoConverter,
         options?: MonacoEditor.IOptions,
         override?: IEditorOverrideServices,
     ) {
-        this.toDispose.push(this.document = new MonacoEditorDocument(model, m2p, p2m));
         this.autoSizing = options && options.autoSizing !== undefined ? options.autoSizing : false;
         this.minHeight = options && options.minHeight !== undefined ? options.minHeight : -1;
         this.toDispose.push(this.create(options, override));
