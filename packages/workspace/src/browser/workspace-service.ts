@@ -24,9 +24,15 @@ export class WorkspaceService {
         (async () => {
             const root = await this.tryRoot;
             if (root) {
-                watcher.watchFileChanges(new URI(root.uri));
+                const uri = new URI(root.uri);
+                this.updateTitle(uri);
+                watcher.watchFileChanges(uri);
             }
         })();
+    }
+
+    protected updateTitle(uri: URI): void {
+        document.title = uri.displayName;
     }
 
     /**
