@@ -10,7 +10,7 @@ import { inject, injectable } from 'inversify';
 import {
     Command, CommandContribution, CommandRegistry,
     KeybindingContribution, KeybindingRegistry, KeyCode, Key, Modifier,
-    MAIN_MENU_BAR, MenuModelRegistry, MenuContribution
+    MenuModelRegistry, MenuContribution
 } from '../../common';
 import { FrontendApplication, FrontendApplicationContribution, CommonMenus } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
@@ -39,13 +39,12 @@ export namespace ElectronCommands {
 }
 
 export namespace ElectronMenus {
-    export const VIEW_WINDOW = [...CommonMenus.VIEW.path, 'window'];
-    export const VIEW_ZOOM = [...CommonMenus.VIEW.path, 'zoom'];
+    export const VIEW_WINDOW = [...CommonMenus.VIEW, 'window'];
+    export const VIEW_ZOOM = [...CommonMenus.VIEW, 'zoom'];
 }
 
 export namespace ElectronMenus {
-    export const HELP = [MAIN_MENU_BAR, "4_help"];
-    export const TOGGLE = [...HELP, '1_toggle'];
+    export const HELP_TOGGLE = [...CommonMenus.HELP, 'z_toggle'];
 }
 
 @injectable()
@@ -149,8 +148,7 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
     }
 
     registerMenus(registry: MenuModelRegistry) {
-        registry.registerSubmenu([MAIN_MENU_BAR], ElectronMenus.HELP[1], "Help");
-        registry.registerMenuAction(ElectronMenus.TOGGLE, {
+        registry.registerMenuAction(ElectronMenus.HELP_TOGGLE, {
             commandId: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id
         });
 

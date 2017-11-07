@@ -9,50 +9,50 @@ import { injectable, inject } from "inversify";
 import { CommandContribution, CommandRegistry, Command } from "@theia/core/lib/common";
 import { EditorManager } from "./editor-manager";
 
-/**
- * Show editor references
- */
-export const SHOW_REFERENCES: Command = {
-    id: 'textEditor.commands.showReferences'
-};
+export namespace EditorCommands {
+
+    /**
+     * Show editor references
+     */
+    export const SHOW_REFERENCES: Command = {
+        id: 'textEditor.commands.showReferences'
+    };
+
+    export const CLOSE: Command = {
+        id: 'editor.close',
+        label: 'Close Active Editor'
+    };
+    export const CLOSE_ALL: Command = {
+        id: 'editor.close.all',
+        label: 'Close All Editors'
+    };
+
+}
 
 @injectable()
-export class EditorCommandHandlers implements CommandContribution {
+export class EditorCommandContribution implements CommandContribution {
 
     constructor(
         @inject(EditorManager) private editorService: EditorManager
     ) { }
 
     registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand(SHOW_REFERENCES);
-        registry.registerCommand({
-            id: 'editor.close',
-            label: 'Close Active Editor'
-        });
-        registry.registerHandler('editor.close', {
-            execute: (): any => {
+        registry.registerCommand(EditorCommands.SHOW_REFERENCES);
+
+        registry.registerCommand(EditorCommands.CLOSE, {
+            execute: () => {
                 const editor = this.editorService.activeEditor;
                 if (editor) {
                     editor.close();
                 }
-                return null;
-            },
-            isEnabled: () => true
+            }
         });
-
-        registry.registerCommand({
-            id: 'editor.close.all',
-            label: 'Close All Editors'
-        });
-        registry.registerHandler('editor.close.all', {
-            execute: (): any => {
+        registry.registerCommand(EditorCommands.CLOSE_ALL, {
+            execute: () => {
                 this.editorService.editors.forEach(editor => {
                     editor.close();
                 });
-                return null;
-            },
-            isEnabled: () => true
+            }
         });
-
     }
 }

@@ -5,4 +5,26 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { injectable } from "inversify";
+import { MenuContribution, MenuModelRegistry } from "@theia/core";
+import { CommonCommands } from "@theia/core/lib/browser";
+
 export const EDITOR_CONTEXT_MENU_ID = 'editor_context_menu';
+
+export namespace EditorContextMenu {
+    export const UNDO_REDO = [EDITOR_CONTEXT_MENU_ID, '1_undo'];
+}
+
+@injectable()
+export class EditorMenuContribution implements MenuContribution {
+
+    registerMenus(registry: MenuModelRegistry) {
+        registry.registerMenuAction(EditorContextMenu.UNDO_REDO, {
+            commandId: CommonCommands.UNDO.id
+        });
+        registry.registerMenuAction(EditorContextMenu.UNDO_REDO, {
+            commandId: CommonCommands.REDO.id
+        });
+    }
+
+}

@@ -247,7 +247,7 @@ export class GitWidget extends VirtualWidget {
                 onclick: async event => {
                     const options: Git.Options.Checkout.WorkingTreeFile = { paths: change.uri };
                     if (change.status === GitFileStatus.New) {
-                        this.commandService.executeCommand(WorkspaceCommands.FILE_DELETE, new URI(change.uri));
+                        this.commandService.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(change.uri));
                     } else {
                         this.git.checkout(repository, options);
                     }

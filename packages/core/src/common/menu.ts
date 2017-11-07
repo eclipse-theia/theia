@@ -46,6 +46,16 @@ export class MenuModelRegistry {
         return parent.addNode(actionNode);
     }
 
+    registerSubMenu(subMenuPath: string[], label: string): Disposable {
+        if (subMenuPath.length === 0) {
+            throw new Error("The sub menu path cannot be empty.");
+        }
+        const index = subMenuPath.length - 1;
+        const menuPath = index === 0 ? [] : subMenuPath.slice(0, index);
+        const id = subMenuPath[index];
+        return this.registerSubmenu(menuPath, id, label);
+    }
+
     registerSubmenu(menuPath: string[], id: string, label: string): Disposable {
         const parent = this.findGroup(menuPath);
         let groupNode = this.findSubMenu(parent, id);
