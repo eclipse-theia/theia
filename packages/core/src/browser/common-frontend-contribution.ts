@@ -13,6 +13,7 @@ import { CommandContribution, CommandRegistry, Command } from '../common/command
 import { MessageService } from '../common/message-service';
 import { ApplicationShell } from './shell';
 import * as browser from './browser';
+import { MAINAREA_TABBAR_CONTEXT_MENU } from './shell';
 
 export namespace CommonMenus {
 
@@ -72,6 +73,24 @@ export namespace CommonCommands {
     export const PREVIOUS_TAB: Command = {
         id: 'core.previousTab',
         label: 'Switch to previous tab'
+    };
+
+    export const CLOSE_TAB: Command = {
+        id: 'core.close.tab',
+        label: 'Close'
+    };
+    export const CLOSE_OTHER_TABS: Command = {
+        id: 'core.close.other.tabs',
+        label: 'Close Others'
+    };
+
+    export const CLOSE_RIGHT_TABS: Command = {
+        id: 'core.close.right.tabs',
+        label: 'Close to the Right'
+    };
+    export const CLOSE_ALL_TABS: Command = {
+        id: 'core.close.all.tabs',
+        label: 'Close All'
     };
 
 }
@@ -149,6 +168,29 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 commandId: CommonCommands.PASTE.id,
                 order: '2'
             });
+
+        // Tab ContextMenu
+        registry.registerSubmenu([], MAINAREA_TABBAR_CONTEXT_MENU, '');
+        registry.registerMenuAction([MAINAREA_TABBAR_CONTEXT_MENU], {
+            commandId: CommonCommands.CLOSE_TAB.id,
+            label: CommonCommands.CLOSE_TAB.label,
+            order: '0'
+        });
+        registry.registerMenuAction([MAINAREA_TABBAR_CONTEXT_MENU], {
+            commandId: CommonCommands.CLOSE_OTHER_TABS.id,
+            label: CommonCommands.CLOSE_OTHER_TABS.label,
+            order: '1'
+        });
+        registry.registerMenuAction([MAINAREA_TABBAR_CONTEXT_MENU], {
+            commandId: CommonCommands.CLOSE_RIGHT_TABS.id,
+            label: CommonCommands.CLOSE_RIGHT_TABS.label,
+            order: '2'
+        });
+        registry.registerMenuAction([MAINAREA_TABBAR_CONTEXT_MENU], {
+            commandId: CommonCommands.CLOSE_ALL_TABS.id,
+            label: CommonCommands.CLOSE_ALL_TABS.label,
+            order: '3'
+        });
     }
 
     registerCommands(commandRegistry: CommandRegistry): void {
@@ -193,6 +235,26 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         commandRegistry.registerCommand(CommonCommands.PREVIOUS_TAB, {
             isEnabled: () => this.shell.hasSelectedTab(),
             execute: () => this.shell.activatePreviousTab()
+        });
+
+        commandRegistry.registerCommand(CommonCommands.CLOSE_TAB);
+        commandRegistry.registerHandler(CommonCommands.CLOSE_TAB.id, {
+            execute: () => this.shell.closeTab()
+        });
+
+        commandRegistry.registerCommand(CommonCommands.CLOSE_OTHER_TABS);
+        commandRegistry.registerHandler(CommonCommands.CLOSE_OTHER_TABS.id, {
+            execute: () => this.shell.closeOtherTabs()
+        });
+
+        commandRegistry.registerCommand(CommonCommands.CLOSE_RIGHT_TABS);
+        commandRegistry.registerHandler(CommonCommands.CLOSE_RIGHT_TABS.id, {
+            execute: () => this.shell.closeRightTabs()
+        });
+
+        commandRegistry.registerCommand(CommonCommands.CLOSE_ALL_TABS);
+        commandRegistry.registerHandler(CommonCommands.CLOSE_ALL_TABS.id, {
+            execute: () => this.shell.closeAllTabs()
         });
     }
 

@@ -27,7 +27,7 @@ import { QuickOpenService, QuickCommandService, QuickCommandFrontendContribution
 import { LocalStorageService, StorageService } from './storage-service';
 import { WidgetFactory, WidgetManager } from './widget-manager';
 import { ShellLayoutRestorer } from './shell-layout-restorer';
-import { ApplicationShell, ApplicationShellOptions, DockPanelRenderer, DockPanelTabBarRenderer } from './shell';
+import { ApplicationShell, ApplicationShellOptions, DockPanelRenderer, DockPanelTabBarRenderer, DockPanelTabBarRendererFactory } from './shell';
 
 import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
@@ -40,6 +40,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(ApplicationShell).toSelf().inSingletonScope();
 
     bind(DockPanelRenderer).toSelf();
+    bind(DockPanelTabBarRendererFactory).toAutoFactory(DockPanelTabBarRenderer);
     bind(DockPanelTabBarRenderer).toSelf();
 
     bindContributionProvider(bind, OpenHandler);
