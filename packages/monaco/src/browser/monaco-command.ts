@@ -10,7 +10,7 @@ import { ProtocolToMonacoConverter } from "monaco-languageclient/lib";
 import { Command, CommandContribution } from '@theia/core';
 import { Position, Location } from "@theia/languages/lib/common";
 import { CommonCommands } from '@theia/core/lib/browser';
-import { SHOW_REFERENCES } from '@theia/editor/lib/browser';
+import { EditorCommands } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoCommandRegistry, MonacoEditorCommandHandler } from './monaco-command-registry';
 import MenuRegistry = monaco.actions.MenuRegistry;
@@ -106,7 +106,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
     }
 
     protected registerEditorCommandHandlers(): void {
-        this.registry.registerHandler(SHOW_REFERENCES.id, this.newShowReferenceHandler());
+        this.registry.registerHandler(EditorCommands.SHOW_REFERENCES.id, this.newShowReferenceHandler());
     }
     protected newShowReferenceHandler(): MonacoEditorCommandHandler {
         return {

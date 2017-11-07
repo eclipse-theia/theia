@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable } from "inversify"
+import { inject, injectable } from "inversify";
 import {
     CommandContribution,
     KeybindingContribution,
@@ -18,8 +18,7 @@ import {
     MenuContribution,
     MenuModelRegistry
 } from '@theia/core/lib/common';
-import { FrontendApplication } from '@theia/core/lib/browser';
-import { FileMenus } from '@theia/workspace/lib/browser/workspace-commands';
+import { FrontendApplication, CommonMenus } from '@theia/core/lib/browser';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from './terminal-widget';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
@@ -49,7 +48,7 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        menus.registerMenuAction(FileMenus.OPEN_GROUP, {
+        menus.registerMenuAction(CommonMenus.FILE_OPEN, {
             commandId: TerminalCommands.NEW.id
         });
     }

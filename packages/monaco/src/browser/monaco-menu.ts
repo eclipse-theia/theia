@@ -7,7 +7,6 @@
 
 import { injectable, inject } from "inversify";
 import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR } from "@theia/core/lib/common";
-import { CommonCommands, CommonMenus } from "@theia/core/lib/browser";
 import { EDITOR_CONTEXT_MENU_ID } from "@theia/editor/lib/browser";
 import { MonacoCommands } from "./monaco-command";
 import { MonacoCommandRegistry } from './monaco-command-registry';
@@ -19,7 +18,7 @@ export interface MonacoActionGroup {
     actions: string[];
 }
 export namespace MonacoMenus {
-    export const SELECTION_MENU = '3_selection';
+    export const SELECTION = [MAIN_MENU_BAR, '3_selection'];
 
     export const SELECTION_GROUP: MonacoActionGroup = {
         id: '1_selection_group',
@@ -67,15 +66,6 @@ export class MonacoEditorMenuContribution implements MenuContribution {
     ) { }
 
     registerMenus(registry: MenuModelRegistry) {
-        // FIXME: it should belong to the editor extension menu contribution
-        registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, CommonMenus.EDIT_MENU_UNDO_GROUP], {
-            commandId: CommonCommands.UNDO.id
-        });
-        // FIXME: it should belong to the editor extension menu contribution
-        registry.registerMenuAction([EDITOR_CONTEXT_MENU_ID, CommonMenus.EDIT_MENU_UNDO_GROUP], {
-            commandId: CommonCommands.REDO.id
-        });
-
         for (const item of MenuRegistry.getMenuItems(MenuId.EditorContext)) {
             const commandId = this.commands.validate(item.command.id);
             if (commandId) {
@@ -84,12 +74,12 @@ export class MonacoEditorMenuContribution implements MenuContribution {
             }
         }
 
-        registry.registerSubmenu([MAIN_MENU_BAR], MonacoMenus.SELECTION_MENU, "Selection");
+        registry.registerSubMenu(MonacoMenus.SELECTION, 'Selection');
         for (const group of MonacoMenus.SELECTION_GROUPS) {
             group.actions.forEach((action, index) => {
                 const commandId = this.commands.validate(action);
                 if (commandId) {
-                    const path = [MAIN_MENU_BAR, MonacoMenus.SELECTION_MENU, group.id];
+                    const path = [...MonacoMenus.SELECTION, group.id];
                     const order = index.toString();
                     registry.registerMenuAction(path, { commandId, order });
                 }

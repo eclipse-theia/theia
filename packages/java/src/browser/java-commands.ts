@@ -7,7 +7,7 @@
 
 import { inject, injectable } from "inversify";
 import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
-import { SHOW_REFERENCES } from "@theia/editor/lib/browser";
+import { EditorCommands } from "@theia/editor/lib/browser";
 import { WorkspaceEdit, Workspace } from "@theia/languages/lib/common";
 
 /**
@@ -34,7 +34,7 @@ export class JavaCommandContribution implements CommandContribution {
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(SHOW_JAVA_REFERENCES, {
             execute: (uri: string, position: Position, locations: Location[]) =>
-                commands.executeCommand(SHOW_REFERENCES.id, uri, position, locations)
+                commands.executeCommand(EditorCommands.SHOW_REFERENCES.id, uri, position, locations)
         });
         commands.registerCommand(APPLY_WORKSPACE_EDIT, {
             execute: (changes: WorkspaceEdit) =>
