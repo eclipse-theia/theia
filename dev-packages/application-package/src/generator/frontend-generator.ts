@@ -36,7 +36,6 @@ export class FrontendGenerator extends AbstractGenerator {
     protected compileIndexHead(frontendModules: Map<string, string>): string {
         return `
   <meta charset="UTF-8">
-  <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
   <script type="text/javascript" src="https://www.promisejs.org/polyfills/promise-6.1.0.js" charset="utf-8"></script>`
     }
 
