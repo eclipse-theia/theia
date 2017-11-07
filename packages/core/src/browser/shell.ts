@@ -47,18 +47,6 @@ const CURRENT_CLASS = 'theia-mod-current';
  */
 const ACTIVE_CLASS = 'theia-mod-active';
 
-/**
- * The class name added to the dirty widget's title.
- */
-const DIRTY_CLASS = 'theia-mod-dirty';
-export function setDirty(widget: Widget, dirty: boolean): void {
-    const dirtyClass = ` ${DIRTY_CLASS}`;
-    widget.title.className = widget.title.className.replace(dirtyClass, '');
-    if (dirty) {
-        widget.title.className += dirtyClass;
-    }
-}
-
 export interface LayoutData {
     mainArea?: DockLayoutData;
     leftBar?: SideBarData;
@@ -673,11 +661,7 @@ export class ApplicationShell extends Widget {
 
     protected track(widget: Widget): void {
         this._tracker.add(widget);
-        const saveable = Saveable.get(widget);
-        if (saveable) {
-            setDirty(widget, saveable.dirty);
-            saveable.onDirtyChanged(() => setDirty(widget, saveable.dirty));
-        }
+        Saveable.apply(widget);
     }
 
     private _dockPanel: DockPanel;
