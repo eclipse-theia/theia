@@ -18,7 +18,7 @@ import { PROBLEM_KIND } from '../../common/problem-marker';
 export namespace ProblemCommands {
     export const OPEN: Command = {
         id: 'problems:open',
-        label: 'Open Problem View'
+        label: 'Open Problems View'
     };
 }
 
