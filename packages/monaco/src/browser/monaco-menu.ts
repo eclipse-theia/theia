@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import { MenuContribution, MenuModelRegistry, MAIN_MENU_BAR } from "@theia/core/lib/common";
-import { EDITOR_CONTEXT_MENU_ID } from "@theia/editor/lib/browser";
+import { EDITOR_CONTEXT_MENU } from "@theia/editor/lib/browser";
 import { MonacoCommands } from "./monaco-command";
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import MenuRegistry = monaco.actions.MenuRegistry;
@@ -18,7 +18,7 @@ export interface MonacoActionGroup {
     actions: string[];
 }
 export namespace MonacoMenus {
-    export const SELECTION = [MAIN_MENU_BAR, '3_selection'];
+    export const SELECTION = [...MAIN_MENU_BAR, '3_selection'];
 
     export const SELECTION_GROUP: MonacoActionGroup = {
         id: '1_selection_group',
@@ -69,12 +69,12 @@ export class MonacoEditorMenuContribution implements MenuContribution {
         for (const item of MenuRegistry.getMenuItems(MenuId.EditorContext)) {
             const commandId = this.commands.validate(item.command.id);
             if (commandId) {
-                const menuPath = [EDITOR_CONTEXT_MENU_ID, (item.group || "")];
+                const menuPath = [...EDITOR_CONTEXT_MENU, (item.group || "")];
                 registry.registerMenuAction(menuPath, { commandId });
             }
         }
 
-        registry.registerSubMenu(MonacoMenus.SELECTION, 'Selection');
+        registry.registerSubmenu(MonacoMenus.SELECTION, 'Selection');
         for (const group of MonacoMenus.SELECTION_GROUPS) {
             group.actions.forEach((action, index) => {
                 const commandId = this.commands.validate(action);

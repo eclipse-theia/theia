@@ -6,18 +6,18 @@
  */
 
 import { injectable, inject } from "inversify";
-import { MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
+import { MenuContribution, MenuModelRegistry, MenuPath } from "@theia/core/lib/common";
 import { OpenerService, CommonCommands } from '@theia/core/lib/browser';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 
-export const NAVIGATOR_CONTEXT_MENU = 'navigator-context-menu';
+export const NAVIGATOR_CONTEXT_MENU: MenuPath = ['navigator-context-menu'];
 
 export namespace NavigatorContextMenu {
-    export const OPEN = [NAVIGATOR_CONTEXT_MENU, '1_open'];
+    export const OPEN = [...NAVIGATOR_CONTEXT_MENU, '1_open'];
     export const OPEN_WITH = [...OPEN, 'open_with'];
-    export const CLIPBOARD = [NAVIGATOR_CONTEXT_MENU, '2_clipboard'];
-    export const MOVE = [NAVIGATOR_CONTEXT_MENU, '3_move'];
-    export const NEW = [NAVIGATOR_CONTEXT_MENU, '4_new'];
+    export const CLIPBOARD = [...NAVIGATOR_CONTEXT_MENU, '2_clipboard'];
+    export const MOVE = [...NAVIGATOR_CONTEXT_MENU, '3_move'];
+    export const NEW = [...NAVIGATOR_CONTEXT_MENU, '4_new'];
 }
 
 @injectable()
@@ -31,7 +31,7 @@ export class NavigatorMenuContribution implements MenuContribution {
         registry.registerMenuAction(NavigatorContextMenu.OPEN, {
             commandId: WorkspaceCommands.FILE_OPEN.id
         });
-        registry.registerSubMenu(NavigatorContextMenu.OPEN_WITH, 'Open With');
+        registry.registerSubmenu(NavigatorContextMenu.OPEN_WITH, 'Open With');
         this.openerService.getOpeners().then(openers => {
             for (const opener of openers) {
                 const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);

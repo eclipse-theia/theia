@@ -7,7 +7,7 @@
 
 import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
-import { CommandRegistry, isOSX, ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry } from '../../common';
+import { CommandRegistry, isOSX, ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry, MenuPath } from '../../common';
 
 @injectable()
 export class ElectronMainMenuFactory {
@@ -26,8 +26,8 @@ export class ElectronMainMenuFactory {
         return electron.remote.Menu.buildFromTemplate(template);
     }
 
-    createContextMenu(path: string): Electron.Menu {
-        const menuModel = this.menuProvider.getMenu(path);
+    createContextMenu(menuPath: MenuPath): Electron.Menu {
+        const menuModel = this.menuProvider.getMenu(menuPath);
         const template = this.fillMenuTemplate([], menuModel);
 
         return electron.remote.Menu.buildFromTemplate(template);

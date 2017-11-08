@@ -9,7 +9,7 @@ import { injectable, inject } from "inversify";
 import { Message } from "@phosphor/messaging";
 import { ElementExt } from "@phosphor/domutils";
 import { h, ElementAttrs, ElementInlineStyle } from "@phosphor/virtualdom";
-import { Disposable, Key } from "../../common";
+import { Disposable, Key, MenuPath } from "../../common";
 import { ContextMenuRenderer } from "../context-menu-renderer";
 import { StatefulWidget } from '../shell-layout-restorer';
 import { VirtualWidget, VirtualRenderer, SELECTED_CLASS, COLLAPSED_CLASS } from "../widgets";
@@ -32,7 +32,7 @@ export interface Size {
 
 export const TreeProps = Symbol('TreeProps');
 export interface TreeProps {
-    readonly contextMenuPath?: string;
+    readonly contextMenuPath?: MenuPath;
     readonly expansionToggleSize: Size;
 }
 
