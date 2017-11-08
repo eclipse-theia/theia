@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export * from './user-storage-protocol';
+export * from './user-storage-service';
 export * from './user-storage-resource';
 export * from './user-storage-uri';
 export * from './user-storage-service-filesystem';

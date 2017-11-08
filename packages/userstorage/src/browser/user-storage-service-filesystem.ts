@@ -5,42 +5,36 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Disposable, DisposableCollection, ILogger, Emitter, Event } from '@theia/core/lib/common';
-import { UserStorageChangeEvent, UserStorageService } from './user-storage-protocol';
+import { DisposableCollection, ILogger, Emitter, Event } from '@theia/core/lib/common';
+import { UserStorageChangeEvent, UserStorageService, THEIA_USER_STORAGE_FOLDER } from './user-storage-service';
 import { injectable, inject } from 'inversify';
-import { FileSystem } from '@theia/filesystem/lib/common';
-import { FileSystemWatcherServer, DidFilesChangedParams } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
-import * as jsoncparser from 'jsonc-parser';
+import { FileSystem, FileChange } from '@theia/filesystem/lib/common';
+import { FileSystemWatcher } from "@theia/filesystem/lib/common";
+import { stripComments } from 'jsonc-parser';
 import URI from '@theia/core/lib/common/uri';
 import { UserStorageUri } from './user-storage-uri';
 
 @injectable()
-export class UserStorageServiceFilesystem implements UserStorageService {
+export class UserStorageServiceFilesystemImpl implements UserStorageService {
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly onUserStorageChangedEmitter = new Emitter<UserStorageChangeEvent>();
-    protected rootURI: URI;
+    protected userStorageFolder: Promise<URI>;
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(FileSystemWatcherServer) protected readonly watcherServer: FileSystemWatcherServer,
+        @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
         @inject(ILogger) protected readonly logger: ILogger
 
     ) {
-        this.fileSystem.getCurrentUserHome().then(home => {
-            this.rootURI = new URI(home.uri);
+        this.userStorageFolder = this.fileSystem.getCurrentUserHome().then(home => {
 
-            watcherServer.setClient({
-                onDidFilesChanged: p => this.onDidFilesChanged(p)
-            });
-
-            watcherServer.watchFileChanges(this.rootURI.toString()).then(id => {
-                this.toDispose.push(Disposable.create(() =>
-                    watcherServer.unwatchFileChanges(id))
-                );
-            });
-
-            this.toDispose.push(watcherServer);
+            const userStorageFolderUri = new URI(home.uri).resolve(THEIA_USER_STORAGE_FOLDER);
+            watcher.watchFileChanges(userStorageFolderUri).then(disposable =>
+                this.toDispose.push(disposable)
+            );
+            this.toDispose.push(this.watcher.onFilesChanged(changes => this.onDidFilesChanged(changes)));
+            return new URI(home.uri).resolve(THEIA_USER_STORAGE_FOLDER);
         });
     }
 
@@ -48,28 +42,32 @@ export class UserStorageServiceFilesystem implements UserStorageService {
         this.toDispose.dispose();
     }
 
-    onDidFilesChanged(params: DidFilesChangedParams): void {
+    onDidFilesChanged(fileChanges: FileChange[]): void {
         const uris: string[] = [];
-        for (const change of params.changes) {
-            uris.push(UserStorageUri.create(change.uri).toString());
+        for (const change of fileChanges) {
+            uris.push(UserStorageUri.create(change.uri.toString()).toString());
         }
         this.onUserStorageChangedEmitter.fire({ uris });
     }
 
     readContents(uri: string) {
-        const fsUri = UserStorageUri.toFsUri(this.rootURI, new URI(uri));
-
-        return this.fileSystem.resolveContent(fsUri.toString()).then(({ stat, content }) => jsoncparser.stripComments(content));
-
+        return this.userStorageFolder
+            .then(folderUri => {
+                const userStorageUri = new URI(uri);
+                return this.fileSystem.resolveContent(UserStorageUri.toFsUri(folderUri, userStorageUri).toString());
+            })
+            .then(({ stat, content }) => stripComments(content));
     }
 
     saveContents(uri: string, content: string) {
-        const fsUri = UserStorageUri.toFsUri(this.rootURI, new URI(uri));
 
-        return this.fileSystem.getFileStat(fsUri.toString()).then(fileStat => {
-            this.fileSystem.setContent(fileStat, content);
+        return this.userStorageFolder.then(folderUri => {
+            const fsUri = UserStorageUri.toFsUri(folderUri, new URI(uri));
+
+            this.fileSystem.getFileStat(fsUri.toString()).then(fileStat => {
+                this.fileSystem.setContent(fileStat, content).then(() => Promise.resolve());
+            });
         });
-
     }
 
     get onUserStorageChanged(): Event<UserStorageChangeEvent> {

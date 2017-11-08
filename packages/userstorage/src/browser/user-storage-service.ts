@@ -8,6 +8,8 @@ import { Event, Disposable } from '@theia/core/lib/common';
 
 export const UserStorageService = Symbol('UserStorageService');
 
+export const THEIA_USER_STORAGE_FOLDER = '.theia';
+
 export interface UserStorageService extends Disposable {
     readContents(uri: string): Promise<string>;
 

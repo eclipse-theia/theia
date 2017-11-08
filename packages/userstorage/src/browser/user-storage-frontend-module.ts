@@ -8,13 +8,13 @@
 import { ContainerModule, } from 'inversify';
 import { ResourceResolver } from '@theia/core/lib/common';
 import { UserStorageResolver } from './user-storage-resource';
-import { UserStorageServiceFilesystem } from './user-storage-service-filesystem';
-import { UserStorageService } from './user-storage-protocol';
+import { UserStorageServiceFilesystemImpl } from './user-storage-service-filesystem';
+import { UserStorageService } from './user-storage-service';
 
 export default new ContainerModule(bind => {
 
     bind(UserStorageResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(UserStorageResolver));
 
-    bind(UserStorageService).to(UserStorageServiceFilesystem).inSingletonScope();
+    bind(UserStorageService).to(UserStorageServiceFilesystemImpl).inSingletonScope();
 });

@@ -8,7 +8,7 @@
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Resource, ResourceResolver, Emitter, Event, MaybePromise, DisposableCollection } from '@theia/core/lib/common';
-import { UserStorageServiceFilesystem } from './user-storage-service-filesystem';
+import { UserStorageService } from './user-storage-service';
 import { UserStorageUri } from './user-storage-uri';
 
 export class UserStorageResource implements Resource {
@@ -19,7 +19,7 @@ export class UserStorageResource implements Resource {
 
     constructor(
         public uri: URI,
-        protected readonly service: UserStorageServiceFilesystem
+        protected readonly service: UserStorageService
     ) {
 
         this._uri = uri.toString();
@@ -54,7 +54,7 @@ export class UserStorageResource implements Resource {
 export class UserStorageResolver implements ResourceResolver {
 
     constructor(
-        @inject(UserStorageServiceFilesystem) protected readonly service: UserStorageServiceFilesystem
+        @inject(UserStorageService) protected readonly service: UserStorageService
 
     ) { }
 

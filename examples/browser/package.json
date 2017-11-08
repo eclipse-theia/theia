@@ -23,7 +23,8 @@
     "@theia/python": "^0.2.1",
     "@theia/terminal": "^0.2.1",
     "@theia/typescript": "^0.2.1",
-    "@theia/workspace": "^0.2.1"
+    "@theia/workspace": "^0.2.1",
+    "@theia/userstorage": "0.2.0"
   },
   "scripts": {
     "prepare": "yarn run clean && yarn build",
