@@ -20,6 +20,7 @@
     "@theia/metrics": "^0.2.0",
     "@theia/monaco": "^0.2.0",
     "@theia/navigator": "^0.2.0",
+    "@theia/outline-view": "0.2.0",
     "@theia/preferences": "^0.2.0",
     "@theia/process": "^0.2.0",
     "@theia/python": "^0.2.0",
