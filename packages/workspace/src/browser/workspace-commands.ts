@@ -128,12 +128,14 @@ export class WorkspaceCommandContribution implements CommandContribution {
             })
         }));
         registry.registerCommand(WorkspaceCommands.FILE_DELETE, this.newFileHandler({
-            execute: uri => {
+            execute: async uri => {
                 const dialog = new ConfirmDialog({
                     title: 'Delete File',
                     msg: `Do you really want to delete '${uri.path.base}'?`
                 });
-                return dialog.open().then(() => this.fileSystem.delete(uri.toString()));
+                if (await dialog.open()) {
+                    await this.fileSystem.delete(uri.toString());
+                }
             }
         }));
     }

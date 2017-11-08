@@ -117,7 +117,7 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
             newEditor.id = this.id + ":" + uri.toString();
             newEditor.title.closable = true;
             newEditor.title.label = uri.path.base;
-            newEditor.title.iconClass = this.iconProvider.getFileIconForURI(textEditor.uri);
+            newEditor.title.iconClass = this.iconProvider.getFileIconForURI(uri);
             return newEditor;
         });
     }

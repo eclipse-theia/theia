@@ -14,7 +14,7 @@ import * as touch from 'touch';
 import { injectable, inject, optional } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { FileStat, FileSystem } from '../common/filesystem';
+import { FileStat, FileSystem, FileSystemClient } from '../common/filesystem';
 
 @injectable()
 export class FileSystemNodeOptions {
@@ -39,6 +39,11 @@ export class FileSystemNode implements FileSystem {
     constructor(
         @inject(FileSystemNodeOptions) @optional() protected readonly options: FileSystemNodeOptions = FileSystemNodeOptions.DEFAULT
     ) { }
+
+    protected client: FileSystemClient | undefined;
+    setClient(client: FileSystemClient | undefined): void {
+        this.client = client;
+    }
 
     async getFileStat(uri: string): Promise<FileStat> {
         const uri_ = new URI(uri);
@@ -76,11 +81,10 @@ export class FileSystemNode implements FileSystem {
         if (stat.isDirectory) {
             throw new Error(`Cannot set the content of a directory. URI: ${file.uri}.`);
         }
-        if (stat.lastModification !== file.lastModification) {
-            throw new Error(`File is out of sync. URI: ${file.uri}. Expected timestamp: ${stat.lastModification}. Actual timestamp: ${file.lastModification}.`);
-        }
-        if (stat.size !== file.size) {
-            throw new Error(`File is out of sync. URI: ${file.uri}. Expected size: ${stat.size}. Actual size: ${file.size}.`);
+        if (!(await this.isInSync(file, stat))) {
+            throw new Error(`File is out of sync. URI: ${file.uri}.
+Expected: ${JSON.stringify(stat)}.
+Actual: ${JSON.stringify(file)}.`);
         }
         const encoding = await this.doGetEncoding(options);
         await fs.writeFile(FileUri.fsPath(_uri), content, { encoding });
@@ -89,6 +93,13 @@ export class FileSystemNode implements FileSystem {
             return newStat;
         }
         throw new Error(`Error occurred while writing file content. The file does not exist under ${file.uri}.`);
+    }
+
+    protected async isInSync(file: FileStat, stat: FileStat): Promise<boolean> {
+        if (stat.lastModification === file.lastModification && stat.size === file.size) {
+            return true;
+        }
+        return this.client ? this.client.shouldOverwrite(file, stat) : false;
     }
 
     async move(sourceUri: string, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat> {

@@ -5,13 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Disposable } from '@theia/core/lib/common';
+import { JsonRpcServer } from '@theia/core/lib/common';
 
 export const fileSystemPath = '/services/filesystem';
 
 export const FileSystem = Symbol("FileSystem");
 
-export interface FileSystem extends Disposable {
+export interface FileSystem extends JsonRpcServer<FileSystemClient> {
 
     /**
      * Returns the filestat for the given uri.
@@ -99,6 +99,16 @@ export interface FileSystem extends Disposable {
      * Returns a promise the resolves to a file stat representing the current user's home directory.
      */
     getCurrentUserHome(): Promise<FileStat>;
+
+}
+
+export interface FileSystemClient {
+
+    /**
+     * Tests whether the given file can be overwritten
+     * in the case if it is out of sync with the given file stat.
+     */
+    shouldOverwrite(file: FileStat, stat: FileStat): Promise<boolean>;
 
 }
 
