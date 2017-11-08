@@ -22,6 +22,7 @@ import {
     Widget
 } from "@phosphor/widgets";
 import { VirtualElement, h } from '@phosphor/virtualdom';
+import { MenuPath } from "../common";
 import { Saveable } from "./saveable";
 import { ContextMenuRenderer } from "./context-menu-renderer";
 
@@ -62,7 +63,7 @@ export interface DockLayoutData extends DockPanel.ILayoutConfig {
     activeWidgets?: Widget[]
 }
 
-export const MAINAREA_TABBAR_CONTEXT_MENU = ['mainarea-tabbar-context-menu'];
+export const MAINAREA_TABBAR_CONTEXT_MENU: MenuPath = ['mainarea-tabbar-context-menu'];
 
 export const DockPanelTabBarRendererFactory = Symbol('DockPanelTabBarRendererFactory');
 
@@ -106,7 +107,7 @@ export class DockPanelTabBarRenderer implements TabBar.IRenderer<any> {
             }
         }
 
-        this.contextMenuRenderer.render(MAINAREA_TABBAR_CONTEXT_MENU[0], event);
+        this.contextMenuRenderer.render(MAINAREA_TABBAR_CONTEXT_MENU, event);
     }
 }
 

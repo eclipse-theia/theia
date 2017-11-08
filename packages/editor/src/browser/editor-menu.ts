@@ -6,13 +6,13 @@
  */
 
 import { injectable } from "inversify";
-import { MenuContribution, MenuModelRegistry } from "@theia/core";
+import { MenuContribution, MenuModelRegistry, MenuPath } from "@theia/core";
 import { CommonCommands } from "@theia/core/lib/browser";
 
-export const EDITOR_CONTEXT_MENU_ID = 'editor_context_menu';
+export const EDITOR_CONTEXT_MENU: MenuPath = ['editor_context_menu'];
 
 export namespace EditorContextMenu {
-    export const UNDO_REDO = [EDITOR_CONTEXT_MENU_ID, '1_undo'];
+    export const UNDO_REDO = [...EDITOR_CONTEXT_MENU, '1_undo'];
 }
 
 @injectable()

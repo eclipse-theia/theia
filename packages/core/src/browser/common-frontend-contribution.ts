@@ -17,19 +17,19 @@ import { MAINAREA_TABBAR_CONTEXT_MENU } from './shell';
 
 export namespace CommonMenus {
 
-    export const FILE = [MAIN_MENU_BAR, '1_file'];
+    export const FILE = [...MAIN_MENU_BAR, '1_file'];
     export const FILE_NEW = [...FILE, '1_new'];
     export const FILE_OPEN = [...FILE, '2_open'];
     export const FILE_SAVE = [...FILE, '3_save'];
 
-    export const EDIT = [MAIN_MENU_BAR, '2_edit'];
+    export const EDIT = [...MAIN_MENU_BAR, '2_edit'];
     export const EDIT_UNDO = [...EDIT, '1_undo'];
     export const EDIT_CLIPBOARD = [...EDIT, '2_clipboard'];
     export const EDIT_FIND = [...EDIT, '3_find'];
 
-    export const VIEW = [MAIN_MENU_BAR, '3_view'];
+    export const VIEW = [...MAIN_MENU_BAR, '3_view'];
 
-    export const HELP = [MAIN_MENU_BAR, "4_help"];
+    export const HELP = [...MAIN_MENU_BAR, "4_help"];
 
 }
 
@@ -118,10 +118,10 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
     ) { }
 
     registerMenus(registry: MenuModelRegistry): void {
-        registry.registerSubMenu(CommonMenus.FILE, 'File');
-        registry.registerSubMenu(CommonMenus.EDIT, 'Edit');
-        registry.registerSubMenu(CommonMenus.VIEW, 'View');
-        registry.registerSubMenu(CommonMenus.HELP, 'Help');
+        registry.registerSubmenu(CommonMenus.FILE, 'File');
+        registry.registerSubmenu(CommonMenus.EDIT, 'Edit');
+        registry.registerSubmenu(CommonMenus.VIEW, 'View');
+        registry.registerSubmenu(CommonMenus.HELP, 'Help');
 
         registry.registerMenuAction(CommonMenus.EDIT_UNDO, {
             commandId: CommonCommands.UNDO.id,

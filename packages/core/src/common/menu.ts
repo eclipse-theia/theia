@@ -17,7 +17,9 @@ export interface MenuAction {
     order?: string
 }
 
-export const MAIN_MENU_BAR = 'menubar';
+export type MenuPath = string[];
+
+export const MAIN_MENU_BAR: MenuPath = ['menubar'];
 
 export const MenuContribution = Symbol("MenuContribution");
 export interface MenuContribution {
@@ -40,27 +42,23 @@ export class MenuModelRegistry {
         }
     }
 
-    registerMenuAction(menuPath: string[], item: MenuAction): Disposable {
+    registerMenuAction(menuPath: MenuPath, item: MenuAction): Disposable {
         const parent = this.findGroup(menuPath);
         const actionNode = new ActionMenuNode(item, this.commands);
         return parent.addNode(actionNode);
     }
 
-    registerSubMenu(subMenuPath: string[], label: string): Disposable {
-        if (subMenuPath.length === 0) {
+    registerSubmenu(menuPath: MenuPath, label: string): Disposable {
+        if (menuPath.length === 0) {
             throw new Error("The sub menu path cannot be empty.");
         }
-        const index = subMenuPath.length - 1;
-        const menuPath = index === 0 ? [] : subMenuPath.slice(0, index);
-        const id = subMenuPath[index];
-        return this.registerSubmenu(menuPath, id, label);
-    }
-
-    registerSubmenu(menuPath: string[], id: string, label: string): Disposable {
-        const parent = this.findGroup(menuPath);
-        let groupNode = this.findSubMenu(parent, id);
+        const index = menuPath.length - 1;
+        const menuId = menuPath[index];
+        const groupPath = index === 0 ? [] : menuPath.slice(0, index);
+        const parent = this.findGroup(groupPath);
+        let groupNode = this.findSubMenu(parent, menuId);
         if (!groupNode) {
-            groupNode = new CompositeMenuNode(id, label);
+            groupNode = new CompositeMenuNode(menuId, label);
             return parent.addNode(groupNode);
         } else {
             if (!groupNode.label) {
@@ -72,7 +70,7 @@ export class MenuModelRegistry {
         }
     }
 
-    protected findGroup(menuPath: string[]): CompositeMenuNode {
+    protected findGroup(menuPath: MenuPath): CompositeMenuNode {
         let currentMenu = this.root;
         for (const segment of menuPath) {
             currentMenu = this.findSubMenu(currentMenu, segment);
@@ -93,7 +91,7 @@ export class MenuModelRegistry {
         return newSub;
     }
 
-    getMenu(...menuPath: string[]): CompositeMenuNode {
+    getMenu(menuPath: MenuPath = []): CompositeMenuNode {
         return this.findGroup(menuPath);
     }
 }

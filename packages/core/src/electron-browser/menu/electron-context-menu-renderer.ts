@@ -6,6 +6,7 @@
  */
 
 import { inject, injectable } from "inversify";
+import { MenuPath } from "../../common";
 import { ContextMenuRenderer, Anchor } from "../../browser";
 import { ElectronMainMenuFactory } from "./electron-main-menu-factory";
 
@@ -15,8 +16,8 @@ export class ElectronContextMenuRenderer implements ContextMenuRenderer {
     constructor( @inject(ElectronMainMenuFactory) private menuFactory: ElectronMainMenuFactory) {
     }
 
-    render(path: string, anchor: Anchor, onHide?: () => void): void {
-        const menu = this.menuFactory.createContextMenu(path);
+    render(menuPath: MenuPath, anchor: Anchor, onHide?: () => void): void {
+        const menu = this.menuFactory.createContextMenu(menuPath);
         menu.popup();
         if (onHide) {
             onHide();
