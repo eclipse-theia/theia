@@ -182,14 +182,9 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         if (this.resource.saveContents) {
             await this.fireWillSaveModel(reason);
             if (this.dirty) {
+                const content = this.model.getValue();
+                await this.resource.saveContents(content);
                 this.setDirty(false);
-                try {
-                    const content = this.model.getValue();
-                    await this.resource.saveContents(content);
-                } catch (e) {
-                    this.setDirty(true);
-                    throw e;
-                }
             }
             this.onDidSaveModelEmitter.fire(this.model);
         }

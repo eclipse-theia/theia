@@ -94,7 +94,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         this.addHandlers(this.editor);
     }
 
-    protected create(options?: MonacoEditor.IOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {
+    protected create(options?: IEditorConstructionOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {
         return this.editor = monaco.editor.create(this.node, {
             ...options,
             fixedOverflowWidgets: true

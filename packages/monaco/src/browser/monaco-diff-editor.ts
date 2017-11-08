@@ -40,7 +40,7 @@ export class MonacoDiffEditor extends MonacoEditor {
         this.diffEditor.setModel({ original, modified });
     }
 
-    protected create(options?: MonacoDiffEditor.IOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {
+    protected create(options?: IDiffEditorConstructionOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {
         this.diffEditor = monaco.editor.createDiffEditor(this.node, {
             ...options,
             fixedOverflowWidgets: true
