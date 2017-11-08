@@ -96,7 +96,8 @@ if (cluster.isMaster) {
         const { fork }  = require('child_process');
         // Check whether we are in bundled application or development mode.
         const devMode = process.defaultApp || /node_modules[\\/]electron[\\/]/.test(process.execPath);
-        const mainWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
+        const mainWindow = new electron.BrowserWindow({ width: 1024, height: 728, show: false });
+        mainWindow.on('ready-to-show', () => mainWindow.show());
         const mainPath = path.join(__dirname, '..', 'backend', 'main');
         const loadMainWindow = function(port) {
             mainWindow.loadURL(\`file://\${path.join(__dirname, '../../lib/index.html')}?port=\${port}\`);
