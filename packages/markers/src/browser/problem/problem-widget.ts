@@ -22,7 +22,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 @injectable()
 export class ProblemWidget extends TreeWidget {
 
-    protected workspacePath: string;
+    protected workspacePath: string | undefined;
 
     constructor(
         @inject(ProblemManager) protected readonly problemManager: ProblemManager,
@@ -40,8 +40,8 @@ export class ProblemWidget extends TreeWidget {
         this.title.closable = true;
         this.addClass('theia-marker-container');
 
-        this.workspaceService.tryRoot.then(workspaceFileStat => {
-            this.workspacePath = workspaceFileStat ? workspaceFileStat.uri : '';
+        this.workspaceService.root.then(workspaceFileStat => {
+            this.workspacePath = workspaceFileStat ? workspaceFileStat.uri : undefined;
             this.update();
         });
 
