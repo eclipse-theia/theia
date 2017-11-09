@@ -241,7 +241,7 @@ export class FileSystemCommandHandler implements CommandHandler {
 
 export class WorkspaceRootAwareCommandHandler extends FileSystemCommandHandler {
 
-    protected rootUri: URI;
+    protected rootUri: URI | undefined;
 
     constructor(
         protected readonly workspaceService: WorkspaceService,
@@ -249,10 +249,13 @@ export class WorkspaceRootAwareCommandHandler extends FileSystemCommandHandler {
         protected readonly handler: UriCommandHandler
     ) {
         super(selectionService, handler);
-        workspaceService.root.then(root => {
-            this.rootUri = new URI(root.uri);
+        workspaceService.tryRoot.then(root => {
+            if (root) {
+                this.rootUri = new URI(root.uri);
+            }
         });
     }
+
     protected getUri(): URI | undefined {
         return UriSelection.getUri(this.selectionService.selection) || this.rootUri;
     }

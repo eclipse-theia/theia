@@ -54,9 +54,11 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
         @inject(EditorManager) protected readonly editorManager: EditorManager
     ) {
         super(p2m, m2p);
-        workspaceService.root.then(rootStat => {
-            this._rootUri = rootStat.uri;
-            this.resolveReady();
+        workspaceService.tryRoot.then(rootStat => {
+            if (rootStat) {
+                this._rootUri = rootStat.uri;
+                this.resolveReady();
+            }
         });
         monaco.editor.onDidCreateModel(model => {
             this.textModelService.createModelReference(model.uri).then(reference => {

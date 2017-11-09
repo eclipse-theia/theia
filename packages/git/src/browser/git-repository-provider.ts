@@ -54,7 +54,10 @@ export class GitRepositoryProvider {
      *  - This method blocks, if the workspace root is not yet set.
      */
     async refresh(): Promise<void> {
-        const root = await this.workspaceService.root;
+        const root = await this.workspaceService.tryRoot;
+        if (!root) {
+            return;
+        }
         const repositories = await this.git.repositories(root.uri);
         this._allRepositories = repositories;
         // If no repository is selected or the selected one does not exist on the backend anymore, update the selected one.
