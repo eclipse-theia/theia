@@ -14,8 +14,7 @@ import {
     MenuModelRegistry
 } from '@theia/core/lib/common';
 import { open, OpenerService } from '@theia/core/lib/browser';
-import { FrontendApplication } from '@theia/core/lib/browser';
-import { FileMenus } from '@theia/workspace/lib/browser/workspace-commands';
+import { FrontendApplication, CommonMenus } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { keymapsUri } from './keymaps-service';
 export namespace KeymapsCommands {
@@ -42,7 +41,7 @@ export class KeymapsFrontendContribution implements CommandContribution, MenuCon
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        menus.registerMenuAction(FileMenus.OPEN_GROUP, {
+        menus.registerMenuAction(CommonMenus.FILE_OPEN, {
             commandId: KeymapsCommands.OPEN_KEYMAPS.id
         });
     }

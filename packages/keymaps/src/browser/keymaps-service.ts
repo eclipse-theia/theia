@@ -85,7 +85,6 @@ export class KeymapsService implements Disposable, FrontendApplicationContributi
     protected parseKeybindings(content: string) {
         let keybindings: any;
         try {
-            this.keyBindingRegistry.clearKeymaps();
             keybindings = JSON.parse(content);
             if (keybindings) {
                 this.setKeymap(keybindings);
