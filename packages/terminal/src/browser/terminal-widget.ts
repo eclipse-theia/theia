@@ -184,7 +184,7 @@ export class TerminalWidget extends BaseWidget {
         this.registerResize();
 
         if (id === undefined) {
-            const root = await this.workspaceService.tryRoot;
+            const root = await this.workspaceService.root;
             const rootURI = root !== undefined ? root.uri : undefined;
             this.terminalId = await this.shellTerminalServer.create(
                 { rootURI, cols: this.cols, rows: this.rows });

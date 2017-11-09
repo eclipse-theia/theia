@@ -249,7 +249,7 @@ export class WorkspaceRootAwareCommandHandler extends FileSystemCommandHandler {
         protected readonly handler: UriCommandHandler
     ) {
         super(selectionService, handler);
-        workspaceService.tryRoot.then(root => {
+        workspaceService.root.then(root => {
             if (root) {
                 this.rootUri = new URI(root.uri);
             }
