@@ -54,7 +54,7 @@ export class GitRepositoryProvider {
      *  - This method blocks, if the workspace root is not yet set.
      */
     async refresh(): Promise<void> {
-        const root = await this.workspaceService.tryRoot;
+        const root = await this.workspaceService.root;
         if (!root) {
             return;
         }

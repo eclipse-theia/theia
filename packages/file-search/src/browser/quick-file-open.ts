@@ -25,7 +25,7 @@ export class QuickFileOpenService implements QuickOpenModel {
         @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService,
         @inject(FileSearchService) protected readonly fileSearchService: FileSearchService
     ) {
-        workspaceService.tryRoot.then(root => this.wsRoot = root);
+        workspaceService.root.then(root => this.wsRoot = root);
     }
 
     private wsRoot: FileStat | undefined;
