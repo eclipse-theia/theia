@@ -36,20 +36,6 @@ export class WorkspaceService {
     }
 
     /**
-     * A promise which will get resolved only and if only when the workspace root URI is set on the backend and it points to an existing directory.
-     */
-    get root(): Promise<FileStat> {
-        return new Promise(async resolve => {
-            const root = await this.server.getRoot();
-            const validRoot = await this.isValidRoot(root);
-            // If the workspace root is either not set or invalid, we never resolve the promise.
-            if (validRoot) {
-                resolve(this.toFileStat(root!));
-            }
-        });
-    }
-
-    /**
      * Unlike [root](WorkspaceService.root), this method gets resolved even if the workspace root URI is not yet set on the backend or if it
      * is invalid. In such cases, it will resolve to `undefined`.
      */
