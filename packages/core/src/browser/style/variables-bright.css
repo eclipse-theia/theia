@@ -144,4 +144,5 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-icon-close: url(../icons/close-bright.svg);
   --theia-sprite-y-offset: 0px;
   --theia-icon-circle: url(../icons/circle-bright.svg);
+  --theia-preloader: url(../icons/spinner.gif);
 }

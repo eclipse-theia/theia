@@ -66,6 +66,13 @@ module.exports = {
                 loader: 'url-loader?limit=10000&mimetype=image/svg+xml'
             },
             {
+                test: /\.(jpg|png|gif)$/,
+                loader: 'file-loader',
+                options: {
+                    name: '[path][name].[hash].[ext]',
+                }
+            },
+            {
                 test: /node_modules.+xterm.+\.map$/,
                 loader: 'ignore-loader'
             },
