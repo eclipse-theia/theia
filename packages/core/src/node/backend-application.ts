@@ -22,7 +22,7 @@ export interface BackendApplicationContribution {
 }
 
 const defaultPort = BackendProcess.electron ? 0 : 3000;
-const defaultHost = BackendProcess.electron ? 'localhost' : undefined;
+const defaultHost = 'localhost';
 
 @injectable()
 export class BackendApplicationCliContribution implements CliContribution {
