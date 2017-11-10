@@ -11,6 +11,11 @@ body {
   overflow: hidden;
   font-family: var(--theia-ui-font-family);
   background: var(--theia-layout-color3);
+  background-image: var(--theia-preloader);
+  background-size: 60px 60px;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: center;
 }
 
 .theia-ApplicationShell {
@@ -19,6 +24,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
+  background: var(--theia-layout-color3);
 }
 
 .theia-icon {
