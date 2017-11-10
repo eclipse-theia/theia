@@ -372,21 +372,31 @@ export interface Git {
     unstage(repository: Repository, uri: string | string[]): Promise<void>;
 
     /**
-     * Lists, creates, renames or deletes a branch.
+     * Returns with the currently active branch, or `undefined` if the current branch is in detached mode.
      *
-     *  - It returns with either `undefined`, or a `Branch` or an array of `Branch`es when listing the branches. A single
-     * `Branch` value will be provided if the `type` is `current`. It returns with `undefined` if the current branch is detached.
-     * Otherwise it returns with an array of branches.
-     *  - It returns with a promise that resolves to `void` when creating, renaming or deleting a branch.
+     * @param the repository where the current branch has to be queried.
+     * @param options the type of the branch, which is always the `current`.
+     */
+    branch(repository: Repository, options: { type: 'current' }): Promise<Branch | undefined>;
+
+    /**
+     * Returns with an array of branches.
      *
-     * @param the repository to get the active branch from.
-     * @param type the type of the query to run. The default type is `current`.
+     * @param the repository where the branches has to be queried.
+     * @param options the type of the branch, which is either the `local`, the `remote`, or `all` of them.
+     */
+    branch(repository: Repository, options: { type: 'local' | 'remote' | 'all' }): Promise<Branch[]>;
+
+    /**
+     * Creates, renames, and deletes a branch.
+     *
+     * @param the repository where the branch modification has to be performed.
+     * @param options further Git command refinements for the branch modification.
      */
     branch(repository: Repository, options:
-        Git.Options.Branch.List |
         Git.Options.Branch.Create |
         Git.Options.Branch.Rename |
-        Git.Options.Branch.Delete): Promise<void | undefined | Branch | Branch[]>;
+        Git.Options.Branch.Delete): Promise<void>;
 
     /**
      * Switches branches or restores working tree files.
@@ -473,6 +483,7 @@ export namespace GitUtils {
     /**
      * `true` if the argument is an option for renaming an existing branch in the repository.
      */
+    // tslint:disable-next-line:no-any
     export function isBranchRename(arg: any | undefined): arg is Git.Options.Branch.Rename {
         return !!arg && ('newName' in arg);
     }
@@ -480,6 +491,7 @@ export namespace GitUtils {
     /**
      * `true` if the argument is an option for deleting an existing branch in the repository.
      */
+    // tslint:disable-next-line:no-any
     export function isBranchDelete(arg: any | undefined): arg is Git.Options.Branch.Delete {
         return !!arg && ('toDelete' in arg);
     }
@@ -487,6 +499,7 @@ export namespace GitUtils {
     /**
      * `true` if the argument is an option for creating a new branch in the repository.
      */
+    // tslint:disable-next-line:no-any
     export function isBranchCreate(arg: any | undefined): arg is Git.Options.Branch.Create {
         return !!arg && ('toCreate' in arg);
     }
@@ -494,6 +507,7 @@ export namespace GitUtils {
     /**
      * `true` if the argument is an option for listing the branches in a repository.
      */
+    // tslint:disable-next-line:no-any
     export function isBranchList(arg: any | undefined): arg is Git.Options.Branch.List {
         return !!arg && ('type' in arg);
     }
@@ -501,6 +515,7 @@ export namespace GitUtils {
     /**
      * `true` if the argument is an option for checking out a new local branch.
      */
+    // tslint:disable-next-line:no-any
     export function isBranchCheckout(arg: any | undefined): arg is Git.Options.Checkout.Branch {
         return !!arg && ('branch' in arg);
     }
@@ -508,6 +523,7 @@ export namespace GitUtils {
     /**
      * `true` if the argument is an option for checking out a working tree file.
      */
+    // tslint:disable-next-line:no-any
     export function isWorkingTreeFileCheckout(arg: any | undefined): arg is Git.Options.Checkout.WorkingTreeFile {
         return !!arg && ('paths' in arg);
     }
