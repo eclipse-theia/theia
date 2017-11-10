@@ -4,7 +4,7 @@
   "description": "Theia process support.",
   "dependencies": {
     "@theia/core": "^0.2.0",
-    "node-pty": "^0.7.0"
+    "node-pty": "^0.7.1"
   },
   "publishConfig": {
     "access": "public"
