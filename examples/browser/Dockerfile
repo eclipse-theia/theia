@@ -43,4 +43,4 @@ RUN git clone --depth 1 https://github.com/theia-ide/theia && \
     yarn
 EXPOSE 3000
 WORKDIR /home/theia/theia/examples/browser
-CMD yarn run start
+CMD yarn run start --hostname 0.0.0.0
