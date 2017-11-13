@@ -21,8 +21,9 @@ const testOutdated = (expectation: (extensionPackage: ExtensionPackage) => boole
         assert.equal(await expectation(extensionPackage), outdated);
     });
 
-describe("extension-package", () => {
+describe("extension-package", function () {
 
+    this.timeout(10000);
     describe("isOutdated", () => {
         testOutdated(async extensionPackage => {
             const latestVersion = await extensionPackage.getLatestVersion();
