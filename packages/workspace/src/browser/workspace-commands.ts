@@ -9,48 +9,51 @@ import { inject, injectable } from 'inversify';
 import URI from "@theia/core/lib/common/uri";
 import { SelectionService } from '@theia/core/lib/common';
 import { Command, CommandContribution, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
-import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
-import { CommonCommands } from "@theia/core/lib/browser/common-frontend-contribution";
+import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
+import { CommonMenus } from "@theia/core/lib/browser/common-frontend-contribution";
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
 import { UriSelection } from '@theia/filesystem/lib/common/filesystem-selection';
 import { SingleTextInputDialog, ConfirmDialog } from "@theia/core/lib/browser/dialogs";
-import { OpenerService, OpenHandler, open } from "@theia/core/lib/browser";
+import { OpenerService, OpenHandler, open, FrontendApplication } from "@theia/core/lib/browser";
 import { WorkspaceService } from './workspace-service';
 
 export namespace WorkspaceCommands {
-    export const NEW_FILE = 'file:newFile';
-    export const NEW_FOLDER = 'file:newFolder';
-    export const FILE_OPEN = 'file:open';
-    export const FILE_OPEN_WITH = (opener: OpenHandler): Command => <Command>{
-        id: `file:openWith:${opener.id}`,
+    export const NEW_FILE: Command = {
+        id: 'file.newFile',
+        label: 'New File'
+    };
+    export const NEW_FOLDER: Command = {
+        id: 'file.newFolder',
+        label: 'New Folder'
+    };
+    export const FILE_OPEN: Command = {
+        id: 'file.open',
+        label: 'Open'
+    };
+    export const FILE_OPEN_WITH = (opener: OpenHandler): Command => ({
+        id: `file.openWith.${opener.id}`,
         label: opener.label,
         iconClass: opener.iconClass
+    });
+    export const FILE_RENAME: Command = {
+        id: 'file.rename',
+        label: 'Rename'
     };
-    export const FILE_CUT = CommonCommands.CUT.id;
-    export const FILE_COPY = CommonCommands.COPY.id;
-    export const FILE_PASTE = CommonCommands.PASTE.id;
-    export const FILE_RENAME = 'file:fileRename';
-    export const FILE_DELETE = 'file:fileDelete';
-}
-
-export namespace FileMenus {
-    export const FILE = [MAIN_MENU_BAR, "1_file"];
-    export const NEW_GROUP = [...FILE, '1_new'];
-    export const OPEN_GROUP = [...FILE, '2_open'];
+    export const FILE_DELETE: Command = {
+        id: 'file.delete',
+        label: 'Delete'
+    };
 }
 
 @injectable()
 export class FileMenuContribution implements MenuContribution {
 
     registerMenus(registry: MenuModelRegistry) {
-        // Explicitly register the Edit Submenu
-        registry.registerSubmenu([MAIN_MENU_BAR], FileMenus.FILE[1], "File");
-
-        registry.registerMenuAction(FileMenus.NEW_GROUP, {
-            commandId: WorkspaceCommands.NEW_FILE
+        registry.registerMenuAction(CommonMenus.FILE_NEW, {
+            commandId: WorkspaceCommands.NEW_FILE.id
         });
-        registry.registerMenuAction(FileMenus.NEW_GROUP, {
-            commandId: WorkspaceCommands.NEW_FOLDER
+        registry.registerMenuAction(CommonMenus.FILE_NEW, {
+            commandId: WorkspaceCommands.NEW_FOLDER.id
         });
     }
 }
@@ -61,31 +64,14 @@ export class WorkspaceCommandContribution implements CommandContribution {
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
-        @inject(OpenerService) protected readonly openerService: OpenerService
+        @inject(OpenerService) protected readonly openerService: OpenerService,
+        @inject(FrontendApplication) protected readonly app: FrontendApplication
     ) { }
 
     registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand({
-            id: WorkspaceCommands.NEW_FILE,
-            label: 'New File'
-        });
-        registry.registerCommand({
-            id: WorkspaceCommands.NEW_FOLDER,
-            label: 'New Folder'
-        });
-        registry.registerCommand({
-            id: WorkspaceCommands.FILE_OPEN,
-            label: 'Open'
-        });
-        registry.registerCommand({
-            id: WorkspaceCommands.FILE_RENAME,
-            label: 'Rename'
-        });
-        registry.registerCommand({
-            id: WorkspaceCommands.FILE_DELETE,
-            label: 'Delete'
-        });
-
+        registry.registerCommand(WorkspaceCommands.FILE_OPEN, this.newFileHandler({
+            execute: uri => open(this.openerService, uri)
+        }));
         this.openerService.getOpeners().then(openers => {
             for (const opener of openers) {
                 const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
@@ -97,20 +83,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
             }
         });
 
-        registry.registerHandler(WorkspaceCommands.FILE_RENAME, this.newFileHandler({
-            execute: uri => this.getParent(uri).then(parent => {
-                const dialog = new SingleTextInputDialog({
-                    title: 'Rename File',
-                    initialValue: uri.path.base,
-                    validate: name => this.validateFileName(name, parent)
-                });
-                dialog.open().then(name =>
-                    this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString())
-                );
-            })
-        }));
-
-        registry.registerHandler(WorkspaceCommands.NEW_FILE, this.newWorkspaceHandler({
+        registry.registerCommand(WorkspaceCommands.NEW_FILE, this.newWorkspaceHandler({
             execute: uri => this.getDirectory(uri).then(parent => {
                 const parentUri = new URI(parent.uri);
                 const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled', '.txt');
@@ -127,8 +100,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 });
             })
         }));
-
-        registry.registerHandler(WorkspaceCommands.NEW_FOLDER, this.newWorkspaceHandler({
+        registry.registerCommand(WorkspaceCommands.NEW_FOLDER, this.newWorkspaceHandler({
             execute: uri => this.getDirectory(uri).then(parent => {
                 const parentUri = new URI(parent.uri);
                 const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled');
@@ -143,18 +115,28 @@ export class WorkspaceCommandContribution implements CommandContribution {
             })
         }));
 
-        registry.registerHandler(WorkspaceCommands.FILE_DELETE, this.newFileHandler({
-            execute: uri => {
+        registry.registerCommand(WorkspaceCommands.FILE_RENAME, this.newFileHandler({
+            execute: uri => this.getParent(uri).then(parent => {
+                const dialog = new SingleTextInputDialog({
+                    title: 'Rename File',
+                    initialValue: uri.path.base,
+                    validate: name => this.validateFileName(name, parent)
+                });
+                dialog.open().then(name =>
+                    this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString())
+                );
+            })
+        }));
+        registry.registerCommand(WorkspaceCommands.FILE_DELETE, this.newFileHandler({
+            execute: async uri => {
                 const dialog = new ConfirmDialog({
                     title: 'Delete File',
                     msg: `Do you really want to delete '${uri.path.base}'?`
                 });
-                return dialog.open().then(() => this.fileSystem.delete(uri.toString()));
+                if (await dialog.open()) {
+                    await this.fileSystem.delete(uri.toString());
+                }
             }
-        }));
-
-        registry.registerHandler(WorkspaceCommands.FILE_OPEN, this.newFileHandler({
-            execute: uri => open(this.openerService, uri)
         }));
     }
 
@@ -259,7 +241,7 @@ export class FileSystemCommandHandler implements CommandHandler {
 
 export class WorkspaceRootAwareCommandHandler extends FileSystemCommandHandler {
 
-    protected rootUri: URI;
+    protected rootUri: URI | undefined;
 
     constructor(
         protected readonly workspaceService: WorkspaceService,
@@ -268,9 +250,12 @@ export class WorkspaceRootAwareCommandHandler extends FileSystemCommandHandler {
     ) {
         super(selectionService, handler);
         workspaceService.root.then(root => {
-            this.rootUri = new URI(root.uri);
+            if (root) {
+                this.rootUri = new URI(root.uri);
+            }
         });
     }
+
     protected getUri(): URI | undefined {
         return UriSelection.getUri(this.selectionService.selection) || this.rootUri;
     }

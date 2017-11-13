@@ -23,7 +23,7 @@ export class WorkspaceStorageService implements StorageService {
 
     constructor( @inject(WorkspaceService) protected workspaceService: WorkspaceService,
         @inject(ILogger) protected logger: ILogger) {
-        this.initialized = this.workspaceService.tryRoot.then(stat => {
+        this.initialized = this.workspaceService.root.then(stat => {
             if (stat) {
                 this.prefix = stat.uri;
             } else {

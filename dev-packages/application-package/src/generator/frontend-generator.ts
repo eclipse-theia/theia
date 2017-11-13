@@ -36,7 +36,6 @@ export class FrontendGenerator extends AbstractGenerator {
     protected compileIndexHead(frontendModules: Map<string, string>): string {
         return `
   <meta charset="UTF-8">
-  <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
   <script type="text/javascript" src="https://www.promisejs.org/polyfills/promise-6.1.0.js" charset="utf-8"></script>`
     }
 
@@ -97,7 +96,8 @@ if (cluster.isMaster) {
         const { fork }  = require('child_process');
         // Check whether we are in bundled application or development mode.
         const devMode = process.defaultApp || /node_modules[\\/]electron[\\/]/.test(process.execPath);
-        const mainWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
+        const mainWindow = new electron.BrowserWindow({ width: 1024, height: 728, show: false });
+        mainWindow.on('ready-to-show', () => mainWindow.show());
         const mainPath = path.join(__dirname, '..', 'backend', 'main');
         const loadMainWindow = function(port) {
             mainWindow.loadURL(\`file://\${path.join(__dirname, '../../lib/index.html')}?port=\${port}\`);
@@ -112,7 +112,7 @@ if (cluster.isMaster) {
                 electron.app.exit(1);
             });
         } else {
-            const cp = fork(mainPath, process.argv, { stdio: [0, 1, 2, 'ipc'] });
+            const cp = fork(mainPath);
             cp.on('message', function (message) {
                 loadMainWindow(message);
             });

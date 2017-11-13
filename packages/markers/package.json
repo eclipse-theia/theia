@@ -1,10 +1,11 @@
 {
   "name": "@theia/markers",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Theia - Markers Extension",
   "dependencies": {
-    "@theia/core": "^0.2.0",
-    "@theia/filesystem": "^0.2.0"
+    "@theia/core": "^0.2.1",
+    "@theia/filesystem": "^0.2.1",
+    "@theia/workspace": "^0.2.1"
   },
   "publishConfig": {
     "access": "public"

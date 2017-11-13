@@ -6,6 +6,7 @@
  */
 
 import { inject, injectable } from "inversify";
+import { MenuPath } from '../../common/menu';
 import { ContextMenuRenderer, Anchor } from "../context-menu-renderer";
 import { BrowserMainMenuFactory } from "./browser-menu-plugin";
 
@@ -15,8 +16,8 @@ export class BrowserContextMenuRenderer implements ContextMenuRenderer {
     constructor( @inject(BrowserMainMenuFactory) private menuFactory: BrowserMainMenuFactory) {
     }
 
-    render(path: string, anchor: Anchor, onHide?: () => void): void {
-        const contextMenu = this.menuFactory.createContextMenu(path);
+    render(menuPath: MenuPath, anchor: Anchor, onHide?: () => void): void {
+        const contextMenu = this.menuFactory.createContextMenu(menuPath);
         const { x, y } = anchor instanceof MouseEvent ? { x: anchor.clientX, y: anchor.clientY } : anchor;
         if (onHide) {
             contextMenu.aboutToClose.connect(() => onHide());

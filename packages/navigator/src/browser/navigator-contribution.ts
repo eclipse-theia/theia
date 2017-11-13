@@ -30,7 +30,7 @@ export class FileNavigatorContribution implements FrontendApplicationContributio
         this.fileNavigator.model.onSelectionChanged(selection =>
             this.selectionService.selection = selection
         );
-        this.workspaceService.tryRoot.then(resolvedRoot => {
+        this.workspaceService.root.then(resolvedRoot => {
             if (resolvedRoot) {
                 this.fileNavigator.model.root = DirNode.createRoot(resolvedRoot);
             } else {

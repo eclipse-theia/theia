@@ -18,7 +18,7 @@ import { PROBLEM_KIND } from '../../common/problem-marker';
 export namespace ProblemCommands {
     export const OPEN: Command = {
         id: 'problems:open',
-        label: 'Open Problem View'
+        label: 'Open Problems View'
     };
 }
 
@@ -41,7 +41,6 @@ export class ProblemContribution implements CommandContribution, MenuContributio
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(ProblemCommands.OPEN, {
-            isEnabled: () => true,
             execute: () => this.openProblemsView()
         });
     }
@@ -55,7 +54,7 @@ export class ProblemContribution implements CommandContribution, MenuContributio
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        menus.registerMenuAction(CommonMenus.VIEW.path, {
+        menus.registerMenuAction(CommonMenus.VIEW, {
             commandId: ProblemCommands.OPEN.id
         });
     }

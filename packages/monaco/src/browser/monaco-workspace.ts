@@ -55,8 +55,10 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
     ) {
         super(p2m, m2p);
         workspaceService.root.then(rootStat => {
-            this._rootUri = rootStat.uri;
-            this.resolveReady();
+            if (rootStat) {
+                this._rootUri = rootStat.uri;
+                this.resolveReady();
+            }
         });
         monaco.editor.onDidCreateModel(model => {
             this.textModelService.createModelReference(model.uri).then(reference => {

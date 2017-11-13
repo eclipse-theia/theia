@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget } from "@phosphor/widgets";
 import { CommandRegistry as PhosphorCommandRegistry } from "@phosphor/commands";
-import { CommandRegistry, KeybindingRegistry, ActionMenuNode, CompositeMenuNode, MenuModelRegistry, MAIN_MENU_BAR } from "../../common";
+import { CommandRegistry, KeybindingRegistry, ActionMenuNode, CompositeMenuNode, MenuModelRegistry, MAIN_MENU_BAR, MenuPath } from "../../common";
 import { FrontendApplicationContribution, FrontendApplication } from "../frontend-application";
 
 @injectable()
@@ -37,7 +37,7 @@ export class BrowserMainMenuFactory {
         return menuBar;
     }
 
-    createContextMenu(path: string): MenuWidget {
+    createContextMenu(path: MenuPath): MenuWidget {
         const menuModel = this.menuProvider.getMenu(path);
         const phosphorCommands = this.createPhosporCommands(menuModel);
 

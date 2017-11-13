@@ -47,8 +47,6 @@ export interface FrontendApplicationContribution {
 @injectable()
 export class FrontendApplication {
 
-    protected _shell: ApplicationShell | undefined;
-
     constructor(
         @inject(CommandRegistry) protected readonly commands: CommandRegistry,
         @inject(MenuModelRegistry) protected readonly menus: MenuModelRegistry,
@@ -56,14 +54,12 @@ export class FrontendApplication {
         @inject(ILogger) protected readonly logger: ILogger,
         @inject(ShellLayoutRestorer) protected readonly layoutRestorer: ShellLayoutRestorer,
         @inject(ContributionProvider) @named(FrontendApplicationContribution)
-        protected readonly contributions: ContributionProvider<FrontendApplicationContribution>
+        protected readonly contributions: ContributionProvider<FrontendApplicationContribution>,
+        @inject(ApplicationShell) protected readonly _shell: ApplicationShell,
     ) { }
 
     get shell(): ApplicationShell {
-        if (this._shell) {
-            return this._shell;
-        }
-        throw new Error('The application has not been started yet.');
+        return this._shell;
     }
 
     /**
@@ -75,19 +71,11 @@ export class FrontendApplication {
      * - display the application shell
      */
     async start(): Promise<void> {
-        if (this._shell) {
-            throw new Error('The application is already running.');
-        }
-        this._shell = this.createShell();
         this.startContributions();
         await this.layoutRestorer.initializeLayout(this, this.contributions.getContributions());
         this.ensureLoaded().then(() =>
             this.attachShell()
         );
-    }
-
-    protected createShell(): ApplicationShell {
-        return new ApplicationShell();
     }
 
     protected attachShell(): void {

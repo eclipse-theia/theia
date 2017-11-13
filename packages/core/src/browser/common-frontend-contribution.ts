@@ -11,24 +11,25 @@ import { KeybindingContribution, KeybindingRegistry } from '../common/keybinding
 import { KeyCode, Key, Modifier } from '../common/keys';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
 import { MessageService } from '../common/message-service';
-import { FrontendApplication } from './frontend-application';
+import { ApplicationShell } from './shell';
 import * as browser from './browser';
+import { MAINAREA_TABBAR_CONTEXT_MENU } from './shell';
 
 export namespace CommonMenus {
 
-    export const EDIT_MENU = "2_edit";
-    export const EDIT_MENU_UNDO_GROUP = "1_undo/redo";
-    export const EDIT_MENU_CUT_COPY_PASTE_GROUP = "2_cut/copy/paste";
-    export const EDIT_MENU_FIND_REPLACE_GROUP = "3_find/replace";
+    export const FILE = [...MAIN_MENU_BAR, '1_file'];
+    export const FILE_NEW = [...FILE, '1_new'];
+    export const FILE_OPEN = [...FILE, '2_open'];
+    export const FILE_SAVE = [...FILE, '3_save'];
 
-    const viewId = 'view';
-    const viewParent = [MAIN_MENU_BAR];
-    export const VIEW = {
-        id: viewId,
-        parent: viewParent,
-        path: [...viewParent, viewId],
-        label: 'View'
-    };
+    export const EDIT = [...MAIN_MENU_BAR, '2_edit'];
+    export const EDIT_UNDO = [...EDIT, '1_undo'];
+    export const EDIT_CLIPBOARD = [...EDIT, '2_clipboard'];
+    export const EDIT_FIND = [...EDIT, '3_find'];
+
+    export const VIEW = [...MAIN_MENU_BAR, '3_view'];
+
+    export const HELP = [...MAIN_MENU_BAR, "4_help"];
 
 }
 
@@ -73,6 +74,31 @@ export namespace CommonCommands {
         id: 'core.previousTab',
         label: 'Switch to previous tab'
     };
+    export const CLOSE_TAB: Command = {
+        id: 'core.close.tab',
+        label: 'Close'
+    };
+    export const CLOSE_OTHER_TABS: Command = {
+        id: 'core.close.other.tabs',
+        label: 'Close Others'
+    };
+    export const CLOSE_RIGHT_TABS: Command = {
+        id: 'core.close.right.tabs',
+        label: 'Close to the Right'
+    };
+    export const CLOSE_ALL_TABS: Command = {
+        id: 'core.close.all.tabs',
+        label: 'Close All'
+    };
+
+    export const SAVE: Command = {
+        id: 'core.save',
+        label: 'Save'
+    };
+    export const SAVE_ALL: Command = {
+        id: 'core.saveAll',
+        label: 'Save All'
+    };
 
 }
 
@@ -87,68 +113,70 @@ export const supportPaste = browser.isNative || (!browser.isChrome && document.q
 export class CommonFrontendContribution implements MenuContribution, CommandContribution, KeybindingContribution {
 
     constructor(
-        @inject(FrontendApplication) protected readonly app: FrontendApplication,
+        @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(MessageService) protected readonly messageService: MessageService
     ) { }
 
     registerMenus(registry: MenuModelRegistry): void {
-        registry.registerSubmenu([MAIN_MENU_BAR], CommonMenus.EDIT_MENU, "Edit");
-        registry.registerSubmenu(CommonMenus.VIEW.parent, CommonMenus.VIEW.id, CommonMenus.VIEW.label);
+        registry.registerSubmenu(CommonMenus.FILE, 'File');
+        registry.registerSubmenu(CommonMenus.EDIT, 'Edit');
+        registry.registerSubmenu(CommonMenus.VIEW, 'View');
+        registry.registerSubmenu(CommonMenus.HELP, 'Help');
 
-        // Undo/Redo
-        registry.registerMenuAction([
-            MAIN_MENU_BAR,
-            CommonMenus.EDIT_MENU,
-            CommonMenus.EDIT_MENU_UNDO_GROUP], {
-                commandId: CommonCommands.UNDO.id,
-                order: '0'
-            });
-        registry.registerMenuAction([
-            MAIN_MENU_BAR,
-            CommonMenus.EDIT_MENU,
-            CommonMenus.EDIT_MENU_UNDO_GROUP], {
-                commandId: CommonCommands.REDO.id,
-                order: '1'
-            });
+        registry.registerMenuAction(CommonMenus.EDIT_UNDO, {
+            commandId: CommonCommands.UNDO.id,
+            order: '0'
+        });
+        registry.registerMenuAction(CommonMenus.EDIT_UNDO, {
+            commandId: CommonCommands.REDO.id,
+            order: '1'
+        });
 
-        // Find/Replace
-        registry.registerMenuAction([
-            MAIN_MENU_BAR,
-            CommonMenus.EDIT_MENU,
-            CommonMenus.EDIT_MENU_FIND_REPLACE_GROUP], {
-                commandId: CommonCommands.FIND.id,
-                order: '0'
-            });
-        registry.registerMenuAction([
-            MAIN_MENU_BAR,
-            CommonMenus.EDIT_MENU,
-            CommonMenus.EDIT_MENU_FIND_REPLACE_GROUP], {
-                commandId: CommonCommands.REPLACE.id,
-                order: '1'
-            });
+        registry.registerMenuAction(CommonMenus.EDIT_FIND, {
+            commandId: CommonCommands.FIND.id,
+            order: '0'
+        });
+        registry.registerMenuAction(CommonMenus.EDIT_FIND, {
+            commandId: CommonCommands.REPLACE.id,
+            order: '1'
+        });
 
-        // Cut/Copy/Paste
-        registry.registerMenuAction([
-            MAIN_MENU_BAR,
-            CommonMenus.EDIT_MENU,
-            CommonMenus.EDIT_MENU_CUT_COPY_PASTE_GROUP], {
-                commandId: CommonCommands.CUT.id,
-                order: '0'
-            });
-        registry.registerMenuAction([
-            MAIN_MENU_BAR,
-            CommonMenus.EDIT_MENU,
-            CommonMenus.EDIT_MENU_CUT_COPY_PASTE_GROUP], {
-                commandId: CommonCommands.COPY.id,
-                order: '1'
-            });
-        registry.registerMenuAction([
-            MAIN_MENU_BAR,
-            CommonMenus.EDIT_MENU,
-            CommonMenus.EDIT_MENU_CUT_COPY_PASTE_GROUP], {
-                commandId: CommonCommands.PASTE.id,
-                order: '2'
-            });
+        registry.registerMenuAction(CommonMenus.EDIT_CLIPBOARD, {
+            commandId: CommonCommands.CUT.id,
+            order: '0'
+        });
+        registry.registerMenuAction(CommonMenus.EDIT_CLIPBOARD, {
+            commandId: CommonCommands.COPY.id,
+            order: '1'
+        });
+        registry.registerMenuAction(CommonMenus.EDIT_CLIPBOARD, {
+            commandId: CommonCommands.PASTE.id,
+            order: '2'
+        });
+
+        registry.registerMenuAction(MAINAREA_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.CLOSE_TAB.id,
+            order: '0'
+        });
+        registry.registerMenuAction(MAINAREA_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.CLOSE_OTHER_TABS.id,
+            order: '1'
+        });
+        registry.registerMenuAction(MAINAREA_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.CLOSE_RIGHT_TABS.id,
+            order: '2'
+        });
+        registry.registerMenuAction(MAINAREA_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.CLOSE_ALL_TABS.id,
+            order: '3'
+        });
+
+        registry.registerMenuAction(CommonMenus.FILE_SAVE, {
+            commandId: CommonCommands.SAVE.id
+        });
+        registry.registerMenuAction(CommonMenus.FILE_SAVE, {
+            commandId: CommonCommands.SAVE_ALL.id
+        });
     }
 
     registerCommands(commandRegistry: CommandRegistry): void {
@@ -187,12 +215,35 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         commandRegistry.registerCommand(CommonCommands.REPLACE);
 
         commandRegistry.registerCommand(CommonCommands.NEXT_TAB, {
-            isEnabled: () => this.app.shell.hasSelectedTab(),
-            execute: () => this.app.shell.activateNextTab()
+            isEnabled: () => this.shell.hasSelectedTab(),
+            execute: () => this.shell.activateNextTab()
         });
         commandRegistry.registerCommand(CommonCommands.PREVIOUS_TAB, {
-            isEnabled: () => this.app.shell.hasSelectedTab(),
-            execute: () => this.app.shell.activatePreviousTab()
+            isEnabled: () => this.shell.hasSelectedTab(),
+            execute: () => this.shell.activatePreviousTab()
+        });
+        commandRegistry.registerCommand(CommonCommands.CLOSE_TAB, {
+            isEnabled: () => this.shell.hasSelectedTab(),
+            execute: () => this.shell.closeTab()
+        });
+        commandRegistry.registerCommand(CommonCommands.CLOSE_OTHER_TABS, {
+            isEnabled: () => this.shell.hasSelectedTab(),
+            execute: () => this.shell.closeOtherTabs()
+        });
+        commandRegistry.registerCommand(CommonCommands.CLOSE_RIGHT_TABS, {
+            isEnabled: () => this.shell.hasSelectedTab(),
+            execute: () => this.shell.closeRightTabs()
+        });
+        commandRegistry.registerCommand(CommonCommands.CLOSE_ALL_TABS, {
+            isEnabled: () => this.shell.hasSelectedTab(),
+            execute: () => this.shell.closeAllTabs()
+        });
+
+        commandRegistry.registerCommand(CommonCommands.SAVE, {
+            execute: () => this.shell.save()
+        });
+        commandRegistry.registerCommand(CommonCommands.SAVE_ALL, {
+            execute: () => this.shell.saveAll()
         });
     }
 
@@ -239,6 +290,26 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             {
                 commandId: CommonCommands.PREVIOUS_TAB.id,
                 keyCode: KeyCode.createKeyCode({ first: Key.TAB, modifiers: [Modifier.M1, Modifier.M2] })
+            },
+            {
+                commandId: CommonCommands.CLOSE_TAB.id,
+                keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M3] })
+            },
+            {
+                commandId: CommonCommands.CLOSE_OTHER_TABS.id,
+                keyCode: KeyCode.createKeyCode({ first: Key.KEY_T, modifiers: [Modifier.M3, Modifier.M1] })
+            },
+            {
+                commandId: CommonCommands.CLOSE_ALL_TABS.id,
+                keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M2, Modifier.M3] })
+            },
+            {
+                commandId: CommonCommands.SAVE.id,
+                keyCode: KeyCode.createKeyCode({ first: Key.KEY_S, modifiers: [Modifier.M1] })
+            },
+            {
+                commandId: CommonCommands.SAVE_ALL.id,
+                keyCode: KeyCode.createKeyCode({ first: Key.KEY_S, modifiers: [Modifier.M3, Modifier.M1] })
             }
         );
     }

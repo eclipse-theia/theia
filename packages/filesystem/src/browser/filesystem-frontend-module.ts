@@ -14,6 +14,7 @@ import {
     fileSystemWatcherPath, FileSystemWatcherServer,
     FileSystemWatcherServerProxy, ReconnectingFileSystemWatcherServer
 } from '../common/filesystem-watcher-protocol';
+import { FileSystemListener } from './filesystem-listener';
 
 import "../../src/browser/style/index.css";
 
@@ -26,9 +27,12 @@ export default new ContainerModule(bind => {
     bind(FileSystemWatcherServer).to(ReconnectingFileSystemWatcherServer).inSingletonScope();
     bind(FileSystemWatcher).toSelf().inSingletonScope();
 
-    bind(FileSystem).toDynamicValue(ctx =>
-        WebSocketConnectionProvider.createProxy(ctx.container, fileSystemPath)
-    ).inSingletonScope();
+    bind(FileSystemListener).toSelf().inSingletonScope();
+    bind(FileSystem).toDynamicValue(ctx => {
+        const filesystem = WebSocketConnectionProvider.createProxy<FileSystem>(ctx.container, fileSystemPath);
+        ctx.container.get(FileSystemListener).listen(filesystem);
+        return filesystem;
+    }).inSingletonScope();
 
     bind(FileResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(FileResourceResolver));

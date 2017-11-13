@@ -8,7 +8,7 @@
 import { ContainerModule, interfaces } from "inversify";
 import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common";
 import { FileSystemNode } from './node-filesystem';
-import { FileSystemWatcher, FileSystem, fileSystemPath, bindFileSystemPreferences } from "../common";
+import { FileSystemWatcher, FileSystem, FileSystemClient, fileSystemPath, bindFileSystemPreferences } from "../common";
 import { FileSystemWatcherServer, FileSystemWatcherClient, fileSystemWatcherPath } from '../common/filesystem-watcher-protocol';
 import { ChokidarFileSystemWatcherServer } from './chokidar-filesystem-watcher';
 
@@ -29,9 +29,12 @@ export default new ContainerModule(bind => {
 
     bindFileSystem(bind);
     bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler(fileSystemPath, () =>
-            ctx.container.get(FileSystem)
-        )
+        new JsonRpcConnectionHandler<FileSystemClient>(fileSystemPath, client => {
+            const server = ctx.container.get<FileSystem>(FileSystem);
+            server.setClient(client);
+            client.onDidCloseConnection(() => server.dispose());
+            return server;
+        })
     ).inSingletonScope();
 
     bindFileSystemWatcherServer(bind);

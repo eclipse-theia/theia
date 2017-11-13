@@ -19,3 +19,5 @@ export * from './common-frontend-contribution';
 export * from './quick-open';
 export * from './widget-manager';
 export * from './shell-layout-restorer';
+export * from './saveable';
+export * from './storage-service';

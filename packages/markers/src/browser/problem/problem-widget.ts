@@ -17,16 +17,20 @@ import { Message } from '@phosphor/messaging';
 import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
 import URI from '@theia/core/lib/common/uri';
 import { UriSelection } from '@theia/filesystem/lib/common';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 @injectable()
 export class ProblemWidget extends TreeWidget {
+
+    protected workspacePath: string | undefined;
 
     constructor(
         @inject(ProblemManager) protected readonly problemManager: ProblemManager,
         @inject(TreeProps) readonly treeProps: TreeProps,
         @inject(ProblemTreeModel) readonly model: ProblemTreeModel,
         @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer,
-        @inject(FileIconProvider) protected readonly iconProvider: FileIconProvider
+        @inject(FileIconProvider) protected readonly iconProvider: FileIconProvider,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
     ) {
         super(treeProps, model, contextMenuRenderer);
 
@@ -35,6 +39,11 @@ export class ProblemWidget extends TreeWidget {
         this.title.iconClass = 'fa fa-exclamation-circle';
         this.title.closable = true;
         this.addClass('theia-marker-container');
+
+        this.workspaceService.root.then(workspaceFileStat => {
+            this.workspacePath = workspaceFileStat ? workspaceFileStat.uri : undefined;
+            this.update();
+        });
 
         this.addClipboardListener(this.node, 'copy', e => this.handleCopy(e));
     }
@@ -57,7 +66,7 @@ export class ProblemWidget extends TreeWidget {
         return super.inflateFromStorage(node);
     }
 
-    protected handleCopy(event: ClipboardEvent): void {
+    protected handleCopy(event: ClipboardEvent) {
         const node = this.model.selectedNode;
         if (!node) {
             return;
@@ -69,7 +78,7 @@ export class ProblemWidget extends TreeWidget {
         }
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected onUpdateRequest(msg: Message) {
         if (!this.model.selectedNode && ISelectableTreeNode.is(this.model.root)) {
             this.model.selectNode(this.model.root);
         }
@@ -111,16 +120,23 @@ export class ProblemWidget extends TreeWidget {
             case 1: return 'fa fa-times-circle error';
             case 2: return 'fa fa-exclamation-circle warning';
             case 3: return 'fa fa-info-circle information';
-            case 4: return 'fa fa-hand-o-up hint';
-            default: return '';
+            default: return 'fa fa-hand-o-up hint';
         }
     }
 
     protected decorateMarkerFileNode(node: MarkerInfoNode, caption: h.Child): h.Child {
         const fileIcon = this.iconProvider.getFileIconForURI(node.uri);
         const filenameDiv = h.div({ className: fileIcon }, node.uri.displayName);
-        const pathDiv = h.div({ className: 'path' }, node.uri.path.toString());
+        const pathDiv = h.div({ className: 'path' }, this.getRelativePath(node));
         const counterDiv = h.div({ className: 'counter' }, node.numberOfMarkers.toString());
         return h.div({ className: 'markerFileNode' }, filenameDiv, pathDiv, counterDiv);
+    }
+
+    protected getRelativePath(node: MarkerInfoNode): string {
+        const absPath = node.uri.parent.toString();
+        if (this.workspacePath) {
+            return absPath.substr(this.workspacePath.length);
+        }
+        return absPath;
     }
 }

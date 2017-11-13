@@ -102,7 +102,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
 
     open(): Promise<T> {
         if (this.resolve) {
-            return Promise.reject('The dialog is already opened.')
+            return Promise.reject('The dialog is already opened.');
         }
         return new Promise<T>((resolve, reject) => {
             this.resolve = resolve;
@@ -149,7 +149,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     }
 
     protected addCloseAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
-        this.addKeyListener(element, Key.ESCAPE, () => this.close(), ...additionalEventTypes);
+        this.addKeyListener(element, Key.ENTER, () => this.close(), ...additionalEventTypes);
     }
 
     protected addAcceptAction<K extends keyof HTMLElementEventMap>(element: HTMLElement, ...additionalEventTypes: K[]): void {
@@ -165,7 +165,7 @@ export class ConfirmDialogProps extends DialogProps {
     readonly ok?: string;
 }
 
-export class ConfirmDialog extends AbstractDialog<void> {
+export class ConfirmDialog extends AbstractDialog<boolean> {
 
     constructor(
         @inject(ConfirmDialogProps) protected readonly props: ConfirmDialogProps
@@ -180,8 +180,15 @@ export class ConfirmDialog extends AbstractDialog<void> {
         this.appendAcceptButton(props.ok);
     }
 
-    get value(): void {
-        return;
+    protected onCloseRequest(msg: Message): void {
+        super.onCloseRequest(msg);
+        this.confirmed = false;
+        this.accept();
+    }
+
+    protected confirmed = true;
+    get value(): boolean {
+        return this.confirmed;
     }
 
 }

@@ -80,19 +80,20 @@ export class DugiteGit implements Git {
         return unstage(this.getFsPath(repository), paths);
     }
 
-    async branch(repository: Repository,
-        options: Git.Options.Branch.List |
-            Git.Options.Branch.Create |
-            Git.Options.Branch.Rename |
-            Git.Options.Branch.Delete): Promise<void | undefined | Branch | Branch[]> {
+    async branch(repository: Repository, options: { type: 'current' }): Promise<Branch | undefined>;
+    async branch(repository: Repository, options: { type: 'local' | 'remote' | 'all' }): Promise<Branch[]>;
+    async branch(repository: Repository, options: Git.Options.Branch.Create | Git.Options.Branch.Rename | Git.Options.Branch.Delete): Promise<void>;
+    // tslint:disable-next-line:no-any
+    async branch(repository: any, options: any): Promise<void | undefined | Branch | Branch[]> {
 
         const repositoryPath = this.getFsPath(repository);
         if (GitUtils.isBranchList(options)) {
-            const branches = await listBranch(repositoryPath, options.type);
-            if (Array.isArray(branches)) {
-                return Promise.all(branches.map(branch => this.mapBranch(branch)));
+            if (options.type === 'current') {
+                const currentBranch = await listBranch(repositoryPath, options.type);
+                return currentBranch ? this.mapBranch(currentBranch) : undefined;
             } else {
-                return branches ? this.mapBranch(branches) : undefined;
+                const branches = await listBranch(repositoryPath, options.type);
+                return Promise.all(branches.map(branch => this.mapBranch(branch)));
             }
         } else {
             if (GitUtils.isBranchCreate(options)) {

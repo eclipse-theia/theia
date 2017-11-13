@@ -5,13 +5,14 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { injectable, inject, optional } from 'inversify';
 import { ArrayExt, each, find, toArray } from "@phosphor/algorithm";
 import { ISignal, Signal } from "@phosphor/signaling";
-
 import {
     BoxLayout,
     BoxPanel,
     DockPanel,
+    DockLayout,
     FocusTracker,
     Panel,
     SplitPanel,
@@ -20,6 +21,12 @@ import {
     Title,
     Widget
 } from "@phosphor/widgets";
+import { VirtualElement, h } from '@phosphor/virtualdom';
+import { MenuPath } from "../common";
+import { Saveable } from "./saveable";
+import { ContextMenuRenderer } from "./context-menu-renderer";
+
+export const ApplicationShellOptions = Symbol("ApplicationShellOptions");
 
 /**
  * The class name added to AppShell instances.
@@ -56,21 +63,92 @@ export interface DockLayoutData extends DockPanel.ILayoutConfig {
     activeWidgets?: Widget[]
 }
 
+export const MAINAREA_TABBAR_CONTEXT_MENU: MenuPath = ['mainarea-tabbar-context-menu'];
+
+export const DockPanelTabBarRendererFactory = Symbol('DockPanelTabBarRendererFactory');
+
+@injectable()
+export class DockPanelTabBarRenderer implements TabBar.IRenderer<any> {
+    readonly closeIconSelector = TabBar.defaultRenderer.closeIconSelector;
+
+    protected _tabBar: TabBar<Widget> | undefined = undefined;
+    constructor( @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer) { }
+
+    renderTab(data: TabBar.IRenderData<any>): VirtualElement {
+        const title = data.title;
+        const key = TabBar.defaultRenderer.createTabKey(data);
+        const style = TabBar.defaultRenderer.createTabStyle(data);
+        const className = TabBar.defaultRenderer.createTabClass(data);
+        const dataset = TabBar.defaultRenderer.createTabDataset(data);
+        return (
+            h.li({
+                key, className, title: title.caption, style, dataset,
+                oncontextmenu: event => this.handleContextMenuEvent(event, title)
+            },
+                TabBar.defaultRenderer.renderIcon(data),
+                TabBar.defaultRenderer.renderLabel(data),
+                TabBar.defaultRenderer.renderCloseIcon(data)
+            )
+        );
+    }
+
+    set tabBar(tabBar: TabBar<Widget>) {
+        this._tabBar = tabBar;
+    }
+
+    handleContextMenuEvent(event: MouseEvent, title: Title<Widget>) {
+        event.stopPropagation();
+        event.preventDefault();
+
+        if (this._tabBar !== undefined) {
+            this._tabBar.currentTitle = title;
+            if (title.owner !== null) {
+                title.owner.activate();
+            }
+        }
+
+        this.contextMenuRenderer.render(MAINAREA_TABBAR_CONTEXT_MENU, event);
+    }
+}
+
+@injectable()
+export class DockPanelRenderer implements DockLayout.IRenderer {
+
+    constructor( @inject(DockPanelTabBarRendererFactory) protected readonly tabBarRendererFactory: () => DockPanelTabBarRenderer) {
+    }
+
+    createTabBar(): TabBar<Widget> {
+        const renderer = this.tabBarRendererFactory();
+        const bar = new TabBar<Widget>({ renderer });
+        bar.addClass('p-DockPanel-tabBar');
+        renderer.tabBar = bar;
+        return bar;
+    }
+
+    createHandle(): HTMLDivElement {
+        return DockPanel.defaultRenderer.createHandle();
+    }
+}
+
 /**
  * The application shell.
  */
+@injectable()
 export class ApplicationShell extends Widget {
     /**
      * Construct a new application shell.
      */
-    constructor(options?: Widget.IOptions) {
+    constructor(
+        @inject(DockPanelRenderer) dockPanelRenderer: DockPanelRenderer,
+        @inject(ApplicationShellOptions) @optional() options?: Widget.IOptions | undefined,
+    ) {
         super(options);
         this.addClass(APPLICATION_SHELL_CLASS);
         this.id = 'main';
 
         const topPanel = this._topPanel = new Panel();
         const hboxPanel = this._hboxPanel = new BoxPanel();
-        const dockPanel = this._dockPanel = new DockPanel();
+        const dockPanel = this._dockPanel = new DockPanel({ renderer: dockPanelRenderer });
         const hsplitPanel = this._hsplitPanel = new SplitPanel();
         const leftHandler = this._leftHandler = new Private.SideBarHandler('left');
         const rightHandler = this._rightHandler = new Private.SideBarHandler('right');
@@ -161,7 +239,7 @@ export class ApplicationShell extends Widget {
         }
         if (data.hasOwnProperty("widgets")) {
             for (const widget of data["widgets"] as Widget[]) {
-                this._tracker.add(widget);
+                this.track(widget);
             }
         } else if (data.hasOwnProperty("children")) {
             for (const child of data["children"] as object[]) {
@@ -333,7 +411,7 @@ export class ApplicationShell extends Widget {
             return;
         }
         this._dockPanel.addWidget(widget, { mode: 'tab-after' });
-        this._tracker.add(widget);
+        this.track(widget);
     }
 
     /**
@@ -378,6 +456,102 @@ export class ApplicationShell extends Widget {
      */
     collapseRight(): void {
         this._rightHandler.collapse();
+    }
+
+    /**
+     * Close the current tab.
+     */
+    closeTab(): void {
+        const current = this._currentTabBar();
+        if (current) {
+            const ci = current.currentIndex;
+            if (ci !== -1) {
+                const title = current.currentTitle;
+                if (title !== null) {
+                    title.owner.close();
+                }
+            }
+        }
+    }
+
+    /**
+     * Close the tabs right of the current one.
+     */
+    closeRightTabs(): void {
+        const current = this._currentTabBar();
+        if (current) {
+            const length = current.titles.length;
+            if (length > 0) {
+                const ci = current.currentIndex;
+                const last = length - 1;
+                const next = ci + 1;
+                if (ci !== -1 && last > ci) {
+                    for (let i = next; i <= last; i++) {
+                        current.titles[next].owner.close();
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Close all tabs expect the current one.
+     */
+    closeOtherTabs(): void {
+        const current = this._currentTabBar();
+        if (current) {
+            const ci = current.currentIndex;
+            if (ci !== -1) {
+                const titles = current.titles.slice(0);
+                for (let i = 0; i < titles.length; i++) {
+                    if (i !== ci) {
+                        titles[i].owner.close();
+                    }
+                }
+            }
+
+        }
+    }
+
+    /**
+     * Close all tabs.
+     */
+    closeAllTabs(): void {
+        const current = this._currentTabBar();
+        if (current) {
+            const length = current.titles.length;
+            for (let i = 0; i < length; i++) {
+                current.titles[0].owner.close();
+            }
+        }
+    }
+
+    /**
+     * Test whether the current widget is dirty.
+     */
+    canSave(): boolean {
+        return Saveable.isDirty(this.currentWidget);
+    }
+
+    /**
+     * Save the current widget if it is dirty.
+     */
+    async save(): Promise<void> {
+        await Saveable.save(this.currentWidget);
+    }
+
+    /**
+     * Test whether there is a dirty widget.
+     */
+    canSaveAll(): boolean {
+        return this._tracker.widgets.some(Saveable.isDirty);
+    }
+
+    /**
+     * Save all dirty widgets.
+     */
+    async saveAll(): Promise<void> {
+        await Promise.all(this._tracker.widgets.map(Saveable.save));
     }
 
     /**
@@ -484,6 +658,11 @@ export class ApplicationShell extends Widget {
             );
         }
         this._activeChanged.emit(args);
+    }
+
+    protected track(widget: Widget): void {
+        this._tracker.add(widget);
+        Saveable.apply(widget);
     }
 
     private _dockPanel: DockPanel;

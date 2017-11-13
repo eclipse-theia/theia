@@ -55,6 +55,9 @@ export class GitRepositoryProvider {
      */
     async refresh(): Promise<void> {
         const root = await this.workspaceService.root;
+        if (!root) {
+            return;
+        }
         const repositories = await this.git.repositories(root.uri);
         this._allRepositories = repositories;
         // If no repository is selected or the selected one does not exist on the backend anymore, update the selected one.

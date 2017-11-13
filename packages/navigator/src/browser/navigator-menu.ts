@@ -6,17 +6,19 @@
  */
 
 import { injectable, inject } from "inversify";
-import { MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
-import { OpenerService } from '@theia/core/lib/browser';
+import { MenuContribution, MenuModelRegistry, MenuPath } from "@theia/core/lib/common";
+import { OpenerService, CommonCommands } from '@theia/core/lib/browser';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 
-export const NAVIGATOR_CONTEXT_MENU = 'navigator-context-menu';
+export const NAVIGATOR_CONTEXT_MENU: MenuPath = ['navigator-context-menu'];
 
-export const OPEN_MENU_GROUP = '1_open';
-export const OPEN_WITH_MENU = 'open-with';
-export const CUT_MENU_GROUP = '2_cut/copy/paste';
-export const MOVE_MENU_GROUP = '3_move';
-export const NEW_MENU_GROUP = '4_new';
+export namespace NavigatorContextMenu {
+    export const OPEN = [...NAVIGATOR_CONTEXT_MENU, '1_open'];
+    export const OPEN_WITH = [...OPEN, 'open_with'];
+    export const CLIPBOARD = [...NAVIGATOR_CONTEXT_MENU, '2_clipboard'];
+    export const MOVE = [...NAVIGATOR_CONTEXT_MENU, '3_move'];
+    export const NEW = [...NAVIGATOR_CONTEXT_MENU, '4_new'];
+}
 
 @injectable()
 export class NavigatorMenuContribution implements MenuContribution {
@@ -26,38 +28,41 @@ export class NavigatorMenuContribution implements MenuContribution {
     ) { }
 
     registerMenus(registry: MenuModelRegistry) {
-        registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, OPEN_MENU_GROUP], {
-            commandId: WorkspaceCommands.FILE_OPEN
+        registry.registerMenuAction(NavigatorContextMenu.OPEN, {
+            commandId: WorkspaceCommands.FILE_OPEN.id
         });
-        registry.registerSubmenu([NAVIGATOR_CONTEXT_MENU, OPEN_MENU_GROUP], OPEN_WITH_MENU, 'Open With');
+        registry.registerSubmenu(NavigatorContextMenu.OPEN_WITH, 'Open With');
         this.openerService.getOpeners().then(openers => {
             for (const opener of openers) {
                 const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
-                registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, OPEN_MENU_GROUP, OPEN_WITH_MENU], {
+                registry.registerMenuAction(NavigatorContextMenu.OPEN_WITH, {
                     commandId: openWithCommand.id
                 });
             }
         });
+
         // registry.registerMenuAction([CONTEXT_MENU_PATH, CUT_MENU_GROUP], {
         //     commandId: Commands.FILE_CUT
         // });
-        registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, CUT_MENU_GROUP], {
-            commandId: WorkspaceCommands.FILE_COPY
+        registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
+            commandId: CommonCommands.COPY.id
         });
-        registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, CUT_MENU_GROUP], {
-            commandId: WorkspaceCommands.FILE_PASTE
+        registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
+            commandId: CommonCommands.PASTE.id
         });
-        registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, MOVE_MENU_GROUP], {
-            commandId: WorkspaceCommands.FILE_RENAME
+
+        registry.registerMenuAction(NavigatorContextMenu.MOVE, {
+            commandId: WorkspaceCommands.FILE_RENAME.id
         });
-        registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, MOVE_MENU_GROUP], {
-            commandId: WorkspaceCommands.FILE_DELETE
+        registry.registerMenuAction(NavigatorContextMenu.MOVE, {
+            commandId: WorkspaceCommands.FILE_DELETE.id
         });
-        registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, NEW_MENU_GROUP], {
-            commandId: WorkspaceCommands.NEW_FILE
+
+        registry.registerMenuAction(NavigatorContextMenu.NEW, {
+            commandId: WorkspaceCommands.NEW_FILE.id
         });
-        registry.registerMenuAction([NAVIGATOR_CONTEXT_MENU, NEW_MENU_GROUP], {
-            commandId: WorkspaceCommands.NEW_FOLDER
+        registry.registerMenuAction(NavigatorContextMenu.NEW, {
+            commandId: WorkspaceCommands.NEW_FOLDER.id
         });
     }
 }
