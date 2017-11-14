@@ -10,10 +10,11 @@ import {
     CommandContribution, MenuContribution,
     KeybindingContribution, KeybindingContext
 } from "@theia/core/lib/common";
-import { OpenHandler, WidgetFactory } from '@theia/core/lib/browser';
+import { OpenHandler, WidgetFactory, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { EditorManagerImpl, EditorManager } from './editor-manager';
-import { EditorCommandContribution } from "./editor-command";
-import { EditorMenuContribution } from "./editor-menu";
+import { EditorContribution } from './editor-contribution';
+import { EditorMenuContribution } from './editor-menu';
+import { EditorCommandContribution } from './editor-command';
 import { EditorKeybindingContribution, EditorKeybindingContext } from "./editor-keybinding";
 import { bindEditorPreferences } from './editor-preferences';
 
@@ -28,6 +29,10 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).to(EditorCommandContribution).inSingletonScope();
     bind(MenuContribution).to(EditorMenuContribution).inSingletonScope();
     bind(EditorKeybindingContext).toSelf().inSingletonScope();
+
     bind(KeybindingContext).toDynamicValue(context => context.container.get(EditorKeybindingContext)).inSingletonScope();
     bind(KeybindingContribution).to(EditorKeybindingContribution).inSingletonScope();
+
+    bind(EditorContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(EditorContribution));
 });

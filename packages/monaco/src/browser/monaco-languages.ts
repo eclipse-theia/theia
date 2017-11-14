@@ -7,7 +7,7 @@
 
 import { injectable, inject, decorate } from "inversify";
 import { MonacoLanguages as BaseMonacoLanguages, ProtocolToMonacoConverter, MonacoToProtocolConverter } from "monaco-languageclient";
-import { Languages, DiagnosticCollection } from "@theia/languages/lib/common";
+import { Languages, DiagnosticCollection, Language } from "@theia/languages/lib/common";
 import { ProblemManager } from "@theia/markers/lib/browser/problem/problem-manager";
 import URI from '@theia/core/lib/common/uri';
 import { WorkspaceSymbolProvider } from 'vscode-base-languageclient/lib/services';
@@ -58,6 +58,14 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
                 this.workspaceSymbolProviders = this.workspaceSymbolProviders.splice(index, 1);
             }
         };
+    }
+
+    get languages(): Language[] {
+        const monacoLanguages: monaco.languages.ILanguageExtensionPoint[] = monaco.languages.getLanguages();
+        return monacoLanguages.map((monacoLang: monaco.languages.ILanguageExtensionPoint) => ({
+            id: monacoLang.id,
+            name: monacoLang.aliases && monacoLang.aliases.length > 0 ? monacoLang.aliases[0] : monacoLang.id
+        }))
     }
 
 }
