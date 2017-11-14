@@ -25,6 +25,7 @@ import { VirtualElement, h } from '@phosphor/virtualdom';
 import { MenuPath } from "../common";
 import { Saveable } from "./saveable";
 import { ContextMenuRenderer } from "./context-menu-renderer";
+import { StatusBarImpl, StatusBarLayoutData } from "./statusbar/statusbar";
 
 export const ApplicationShellOptions = Symbol("ApplicationShellOptions");
 
@@ -52,6 +53,7 @@ export interface LayoutData {
     mainArea?: DockLayoutData;
     leftBar?: SideBarData;
     rightBar?: SideBarData;
+    statusbar?: StatusBarLayoutData;
 }
 
 export interface SideBarData {
@@ -140,7 +142,8 @@ export class ApplicationShell extends Widget {
      */
     constructor(
         @inject(DockPanelRenderer) dockPanelRenderer: DockPanelRenderer,
-        @inject(ApplicationShellOptions) @optional() options?: Widget.IOptions | undefined,
+        @inject(StatusBarImpl) protected readonly _statusbar: StatusBarImpl,
+        @inject(ApplicationShellOptions) @optional() options?: Widget.IOptions | undefined
     ) {
         super(options);
         this.addClass(APPLICATION_SHELL_CLASS);
@@ -195,14 +198,17 @@ export class ApplicationShell extends Widget {
 
         BoxLayout.setStretch(topPanel, 0);
         BoxLayout.setStretch(hboxPanel, 1);
+        BoxLayout.setStretch(_statusbar, 0);
 
         rootLayout.addWidget(topPanel);
         rootLayout.addWidget(hboxPanel);
+        rootLayout.addWidget(_statusbar);
 
         this.layout = rootLayout;
 
         this._tracker.currentChanged.connect(this._onCurrentChanged, this);
         this._tracker.activeChanged.connect(this._onActiveChanged, this);
+
     }
 
     getLayoutData(): LayoutData {
@@ -212,7 +218,8 @@ export class ApplicationShell extends Widget {
                 ...this._dockPanel.saveLayout()
             },
             leftBar: this._leftHandler.getLayoutData(),
-            rightBar: this._rightHandler.getLayoutData()
+            rightBar: this._rightHandler.getLayoutData(),
+            statusbar: this._statusbar.getLayoutData()
         };
     }
 
@@ -229,6 +236,7 @@ export class ApplicationShell extends Widget {
             }
             this._leftHandler.setLayoutData(layoutData.leftBar);
             this._rightHandler.setLayoutData(layoutData.rightBar);
+            this._statusbar.setLayoutData(layoutData.statusbar);
         }
     }
 
