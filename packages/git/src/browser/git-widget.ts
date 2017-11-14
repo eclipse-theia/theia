@@ -1,9 +1,9 @@
 /*
-* Copyright (C) 2017 TypeFox and others.
-*
-* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-*/
+ * Copyright (C) 2017 TypeFox and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
 
 import { injectable, inject } from 'inversify';
 import { Git } from '../common/git';
@@ -12,7 +12,7 @@ import { GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus } from
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { GitRepositoryProvider } from './git-repository-provider';
-import { MessageService, ResourceProvider, Disposable, CommandService } from '@theia/core';
+import { MessageService, ResourceProvider, Disposable, CommandService, DisposableCollection } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { VirtualRenderer, VirtualWidget, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
 import { h } from '@phosphor/virtualdom/lib';
@@ -32,7 +32,7 @@ export class GitWidget extends VirtualWidget {
     protected messageInputHighlighted: boolean = false;
     protected additionalMessage: string = '';
     protected status: WorkingDirectoryStatus;
-    protected watcherDisposable: Disposable;
+    protected toDispose = new DisposableCollection();
 
     constructor(
         @inject(Git) protected readonly git: Git,
@@ -51,24 +51,22 @@ export class GitWidget extends VirtualWidget {
 
         this.addClass('theia-git');
         this.update();
+
+        this.repositoryProvider.onDidChangeRepository(repo => {
+            this.initialize(repo);
+        });
     }
 
-    protected onActivateRequest() {
-        this.initialize();
-    }
-
-    async initialize(): Promise<void> {
-        await this.repositoryProvider.refresh();
-        const repository = this.repositoryProvider.selectedRepository;
+    async initialize(repository: Repository | undefined): Promise<void> {
         if (repository) {
-            this.gitWatcher.dispose();
-            this.watcherDisposable = await this.gitWatcher.watchGitChanges(repository);
-            this.gitWatcher.onGitEvent(async gitEvent => {
+            this.toDispose.dispose();
+            this.toDispose.push(await this.gitWatcher.watchGitChanges(repository));
+            this.toDispose.push(this.gitWatcher.onGitEvent(async gitEvent => {
                 if (GitStatusChangeEvent.is(gitEvent)) {
                     this.status = gitEvent.status;
                     this.updateView(gitEvent.status);
                 }
-            });
+            }));
         }
     }
 
@@ -180,7 +178,6 @@ export class GitWidget extends VirtualWidget {
             title: 'Refresh',
             onclick: async e => {
                 await this.repositoryProvider.refresh();
-                this.initialize();
             }
         }, h.i({ className: 'fa fa-refresh' }));
         const commands = repository ? h.a({

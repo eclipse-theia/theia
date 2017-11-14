@@ -7,12 +7,14 @@
 import { Git, Repository } from '../common';
 import { injectable, inject } from "inversify";
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { Event, Emitter } from '@theia/core';
 
 @injectable()
 export class GitRepositoryProvider {
 
     protected _selectedRepository: Repository | undefined;
     protected _allRepositories: Repository[];
+    protected onDidChangeRepositoryEmitter = new Emitter<Repository | undefined>();
 
     constructor(
         @inject(Git) protected readonly git: Git,
@@ -36,6 +38,15 @@ export class GitRepositoryProvider {
      */
     set selectedRepository(repository: Repository | undefined) {
         this._selectedRepository = repository;
+        this.onDidChangeRepositoryEmitter.fire(repository);
+    }
+
+    get onDidChangeRepository(): Event<Repository | undefined>{
+        return this.onDidChangeRepositoryEmitter.event;
+    }
+
+    protected fireOnDidChangeRepository(repository: Repository | undefined): void {
+        this.onDidChangeRepositoryEmitter.fire(repository);
     }
 
     /**
@@ -64,7 +75,7 @@ export class GitRepositoryProvider {
         if (this._selectedRepository === undefined
             || this._selectedRepository && !repositories.map(r => r.localUri.toString()).some(uri => uri === this._selectedRepository!.localUri.toString())
         ) {
-            this._selectedRepository = this._allRepositories[0];
+            this.selectedRepository = this._allRepositories[0];
         }
     }
 
