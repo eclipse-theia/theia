@@ -1,0 +1,54 @@
+/*
+ * Copyright (C) 2017 TypeFox and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+:root {
+    --theia-statusbar-height: 19px;
+}
+
+#theia-statusbar {
+    border-bottom: var(--theia-border-width) solid var(--theia-border-color1);
+    background: var(--theia-accent-color3);
+    display: flex;
+    min-height: var(--theia-statusbar-height);
+}
+
+#theia-statusbar .area {
+    flex: 1;
+    display: flex;
+    align-items: stretch;
+}
+
+#theia-statusbar .area.left {
+    justify-content: flex-start;
+    padding-left: 20px;
+}
+
+#theia-statusbar .area.right {
+    justify-content: flex-end;
+    padding-right: 20px;
+}
+
+#theia-statusbar .area .element {
+    color: var(--theia-content-font-color0);
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    font-size: var(--theia-font-size1);
+}
+
+#theia-statusbar .area .element.hasCommand:hover {
+    background-color: var(--theia-accent-color2);
+    cursor: pointer;
+}
+
+#theia-statusbar .area.left .element {
+    margin-right: 15px;
+}
+
+#theia-statusbar .area.right .element {
+    margin-left: 15px;
+}

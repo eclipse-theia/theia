@@ -28,6 +28,8 @@ import { LocalStorageService, StorageService } from './storage-service';
 import { WidgetFactory, WidgetManager } from './widget-manager';
 import { ShellLayoutRestorer } from './shell-layout-restorer';
 import { ApplicationShell, ApplicationShellOptions, DockPanelRenderer, DockPanelTabBarRenderer, DockPanelTabBarRendererFactory } from './shell';
+import { StatusBar, StatusBarImpl } from "./statusbar/statusbar";
+import { LabelParser } from './label-parser';
 
 import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
@@ -93,4 +95,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     );
 
     bind(StorageService).to(LocalStorageService).inSingletonScope();
+
+    bind(StatusBarImpl).toSelf().inSingletonScope();
+    bind(StatusBar).toDynamicValue(ctx => ctx.container.get(StatusBarImpl)).inSingletonScope();
+    bind(LabelParser).toSelf().inSingletonScope();
 });
