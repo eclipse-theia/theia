@@ -5,12 +5,19 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { MarkerManager } from '../marker-manager';
-import { Diagnostic } from "vscode-languageserver-types";
 import { injectable, inject } from 'inversify';
+import { MarkerManager } from '../marker-manager';
+import { PROBLEM_KIND } from '../../common/problem-marker';
+import { Marker } from '../../common/marker';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { FileSystemWatcher } from '@theia/filesystem/lib/common';
-import { PROBLEM_KIND } from '../../common/problem-marker';
+import URI from '@theia/core/lib/common/uri';
+import { Diagnostic } from "vscode-languageserver-types";
+
+export interface ProblemStat {
+    errors: number;
+    warnings: number;
+}
 
 @injectable()
 export class ProblemManager extends MarkerManager<Diagnostic> {
@@ -23,6 +30,18 @@ export class ProblemManager extends MarkerManager<Diagnostic> {
         @inject(StorageService) storageService: StorageService,
         @inject(FileSystemWatcher) protected fileWatcher?: FileSystemWatcher) {
         super(storageService, fileWatcher);
+    }
+
+    getProblemStat(): ProblemStat {
+        const allMarkers: Marker<Diagnostic>[] = [];
+        for (const uri of this.getUris()) {
+            allMarkers.push( ...this.findMarkers({uri: new URI(uri)}));
+        }
+
+        const errors = allMarkers.filter( m => m.data.severity === 1).length;
+        const warnings = allMarkers.filter( m => m.data.severity === 2 ).length;
+
+        return { errors, warnings};
     }
 
 }
