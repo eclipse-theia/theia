@@ -15,9 +15,15 @@ export * from 'vscode-base-languageclient/lib/services';
 export * from 'vscode-base-languageclient/lib/connection';
 export { BaseLanguageClient } from 'vscode-base-languageclient/lib/base';
 
+export interface Language {
+    readonly id: string;
+    readonly name: string;
+}
+
 export const Languages = Symbol('Languages');
 export interface Languages extends services.Languages {
     readonly workspaceSymbolProviders?: WorkspaceSymbolProvider[];
+    readonly languages?: Language[]
 }
 
 export const Workspace = Symbol('Workspace');
