@@ -18,7 +18,7 @@
   overflow: visible;
   color: var(--theia-ui-font-color1);
   font-size: var(--theia-ui-font-size1);
-  background: var(--theia-layout-color3);
+  background: var(--theia-layout-color6);
 }
 
 .p-TabBar[data-orientation='horizontal'] {
@@ -42,7 +42,7 @@
   line-height: var(--theia-private-horizontal-tab-height);
   padding: 0px 8px;
   background: var(--theia-layout-color0);
-  border: var(--theia-border-width) solid var(--theia-border-color0);
+  border: var(--theia-border-width) solid var(--theia-border-color1);
   border-bottom: none;
   border-top: none;
   border-left: none;
@@ -51,7 +51,7 @@
 }
 
 .p-DockPanel-tabBar .p-TabBar-tab:last-child {
-  border-right-color: var(--theia-layout-color0);
+  border-right-color: var(--theia-border-color0);
 }
 
 .p-DockPanel-tabBar .p-TabBar-tab:hover:not(.p-mod-current) {
