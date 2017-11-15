@@ -68,7 +68,8 @@ export class CommandQuickOpenItem extends QuickOpenItem {
     }
 
     getKeybinding(): Keybinding | undefined {
-        return this.keybindings.getKeybindingForCommand(this.command.id);
+        const bindings = this.keybindings.getKeybindingsForCommand(this.command.id);
+        return bindings ? bindings[0] : undefined;
     }
 
     run(mode: QuickOpenMode): boolean {

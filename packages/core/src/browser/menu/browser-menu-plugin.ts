@@ -74,8 +74,11 @@ export class BrowserMainMenuFactory {
             isVisible: () => this.commandRegistry.isVisible(command.id)
         });
 
-        const binding = this.keybindingRegistry.getKeybindingForCommand(command.id, { active: false });
-        if (binding) {
+        const bindings = this.keybindingRegistry.getKeybindingsForCommand(command.id);
+
+        /* Only consider the first keybinding. */
+        if (bindings.length > 0) {
+            const binding = bindings[0];
             const keys = binding.accelerator || [];
             commands.addKeyBinding({
                 command: command.id,
