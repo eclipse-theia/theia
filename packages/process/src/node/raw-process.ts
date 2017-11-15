@@ -27,9 +27,11 @@ export interface RawProcessFactory {
 @injectable()
 export class RawProcess extends Process {
 
+    readonly input: stream.Writable;
     readonly output: stream.Readable;
     readonly errorOutput: stream.Readable;
-    protected process: child.ChildProcess;
+    // XXX: Do we have to make this public? How to attach additional listeners to the underlying process then?
+    readonly process: child.ChildProcess;
 
     constructor(
         @inject(RawProcessOptions) options: RawProcessOptions,
@@ -50,6 +52,7 @@ export class RawProcess extends Process {
         this.process.on('exit', this.emitOnExit.bind(this));
 
         this.output = this.process.stdout;
+        this.input = this.process.stdin;
         this.errorOutput = this.process.stderr;
     }
 

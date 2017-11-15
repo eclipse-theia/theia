@@ -24,22 +24,37 @@ export const TerminalProcessFactory = Symbol("TerminalProcessFactory");
 export type TerminalProcessFactory = (options: TerminalProcessOptions) => TerminalProcess;
 
 /* Use this instead of the node-pty stream, since the node-pty stream is already resumed.  */
-export class TerminalReadableStream extends stream.Readable {
-    constructor(protected readonly terminal: any, opts?: any) {
+class TerminalReadableStream extends stream.Readable {
+
+    constructor(protected readonly terminal: ITerminal, opts?: stream.ReadableOptions) {
         super(opts);
-        this.terminal.on('data', (data: any) => {
-            this.push(data);
-        });
+        this.terminal.on('data', data => this.push(data));
     }
+
     /* This needs to be implemented as per node's API doc, even if it's empty.  */
     _read(size: number) {
     }
+
+}
+
+class TerminalWritableStream extends stream.Writable {
+
+    constructor(protected readonly terminal: ITerminal) {
+        super({
+            write: (chunk, encoding, next) => {
+                this.terminal.write(chunk.toString());
+                next();
+            }
+        });
+    }
+
 }
 
 @injectable()
 export class TerminalProcess extends Process {
 
-    readonly output: TerminalReadableStream;
+    readonly input: stream.Writable;
+    readonly output: stream.Readable;
     protected readonly terminal: ITerminal;
 
     constructor(
@@ -59,6 +74,7 @@ export class TerminalProcess extends Process {
 
         this.terminal.on('exit', this.emitOnExit.bind(this));
         this.output = new TerminalReadableStream(this.terminal);
+        this.input = new TerminalWritableStream(this.terminal);
     }
 
     get pid() {

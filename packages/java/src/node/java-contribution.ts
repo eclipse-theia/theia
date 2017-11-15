@@ -29,7 +29,7 @@ export class JavaContribution extends BaseLanguageServerContribution {
         const serverPath = path.resolve(__dirname, 'server');
         const jarPaths = glob.sync('**/plugins/org.eclipse.equinox.launcher_*.jar', { cwd: serverPath });
         if (jarPaths.length === 0) {
-            throw new Error('The java server launcher is not found.');
+            throw new Error('The Java server launcher is not found.');
         }
 
         const jarPath = path.resolve(serverPath, jarPaths[0]);
@@ -70,9 +70,8 @@ export class JavaContribution extends BaseLanguageServerContribution {
             env.STDIN_PORT = inServer.address().port;
             env.STDOUT_HOST = outServer.address().address;
             env.STDOUT_PORT = outServer.address().port;
-            this.createProcessSocketConnection(inSocket, outSocket, command, args, {
-                env: env
-            }).then(serverConnection => this.forward(clientConnection, serverConnection));
+            this.createProcessSocketConnection(inSocket, outSocket, command, args, { env })
+                .then(serverConnection => this.forward(clientConnection, serverConnection));
         });
     }
 }
