@@ -44,6 +44,6 @@
 }
 
 .theia-Tree:not(:focus) .theia-TreeNode.theia-mod-selected {
-    background:var(--md-grey-800);
+    background:var(--theia-accent-color4);
 }
 
