@@ -11,8 +11,9 @@
 }
 
 .theia-extension-detail .extensionHeaderContainer {
-    background: var(--theia-layout-color0);
+    background: var(--theia-layout-color3);
     padding: 15px 22px;
+    border-bottom: 3px solid var(--theia-border-color1);
 }
 
 .theia-extension-detail .extensionTitleContainer {

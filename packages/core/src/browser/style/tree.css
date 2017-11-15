@@ -2,7 +2,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     color: var(--theia-ui-font-color1);
-    background:var(--theia-layout-color1);
+    background:var(--theia-layout-color3);
     font-size: var(--theia-ui-font-size1);
 }
 

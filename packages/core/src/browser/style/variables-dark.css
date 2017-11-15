@@ -29,7 +29,7 @@ all of MD as it is not optimized for dense, information rich UIs.
   
     --theia-border-width: 1px;
     --theia-border-color0: var(--md-grey-900);
-    --theia-border-color1: var(--md-grey-700);
+    --theia-border-color1: var(--md-grey-800);
     --theia-border-color2: var(--md-grey-500);
     --theia-border-color3: var(--md-grey-300);
   
@@ -96,10 +96,10 @@ all of MD as it is not optimized for dense, information rich UIs.
     theme these would go from light to dark.
     */
 
-  --theia-layout-color0: #2E2E2E;
-  --theia-layout-color1: #1E1E1E;
-  --theia-layout-color2: #111111;
-  --theia-layout-color3: #111111;
+  --theia-layout-color0: var(--md-grey-800); /* #2e2e2e */
+  --theia-layout-color1: #333333;
+  --theia-layout-color2: #2b2b2b;
+  --theia-layout-color3: #1e1e1e;
 
   /* Brand/accent */
 

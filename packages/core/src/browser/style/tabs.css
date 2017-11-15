@@ -16,10 +16,11 @@
 
 
 .p-DockPanel-tabBar {
-  border-bottom: var(--theia-border-width) solid var(--theia-border-color1);
+  border-right: var(--theia-border-width) solid var(--theia-border-color1);
   overflow: visible;
   color: var(--theia-ui-font-color1);
   font-size: var(--theia-ui-font-size1);
+  background: var(--theia-layout-color3);
 }
 
 .p-TabBar[data-orientation='horizontal'] {
@@ -43,11 +44,16 @@
   margin-left: calc(-1*var(--theia-border-width));
   line-height: var(--theia-private-horizontal-tab-height);
   padding: 0px 8px;
-  background: var(--theia-layout-color2);
-  border: var(--theia-border-width) solid var(--theia-border-color1);
+  background: var(--theia-layout-color0);
+  border: var(--theia-border-width) solid var(--theia-border-color0);
   border-bottom: none;
+  border-top: none;
   position: relative;
   overflow: visible;
+}
+
+.p-DockPanel-tabBar .p-TabBar-tab:last-child {
+  border-right-color: var(--theia-layout-color0);
 }
 
 .p-DockPanel-tabBar .p-TabBar-tab:hover:not(.p-mod-current) {
@@ -62,7 +68,7 @@
 /* This is a current tab of a tab bar in the dock panel: each tab bar has 1. */
 
 .p-DockPanel-tabBar .p-TabBar-tab.p-mod-current {
-  background: var(--theia-layout-color0);
+  background: var(--theia-layout-color3);
   color: var(--theia-ui-font-color0);
   min-height: calc(var(--theia-private-horizontal-tab-height) + 2 * var(--theia-border-width));
   transform: translateY(var(--theia-border-width));
@@ -89,7 +95,7 @@
 }
 
 .p-TabBar-tab.p-mod-current:hover {
-  background: var(--theia-layout-color1);
+  background: var(--theia-layout-color2);
 }
 
 .p-DockPanel-tabBar .p-TabBar.p-mod-left .p-TabBar-tab,
