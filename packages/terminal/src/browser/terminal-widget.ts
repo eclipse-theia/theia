@@ -124,7 +124,7 @@ export class TerminalWidget extends BaseWidget {
         const fontFamily = lookup(htmlElementProps, '--theia-code-font-family');
         const fontSizeStr = lookup(htmlElementProps, '--theia-code-font-size');
         const foreground = lookup(htmlElementProps, '--theia-ui-font-color0');
-        const background = lookup(htmlElementProps, '--theia-layout-color1');
+        const background = lookup(htmlElementProps, '--theia-layout-color3');
 
         /* The font size is returned as a string, such as ' 13px').  We want to
            return just the number of px.  */
@@ -143,7 +143,7 @@ export class TerminalWidget extends BaseWidget {
         }
 
         if (!background.match(colorRe)) {
-            throw new Error(`Unexpected format for --theia-layout-color1 (${background})`);
+            throw new Error(`Unexpected format for --theia-layout-color3 (${background})`);
         }
 
         return {

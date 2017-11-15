@@ -171,8 +171,8 @@ export class ApplicationShell extends Widget {
         rightHandler.stackedPanel.id = 'theia-right-stack';
 
         hboxPanel.spacing = 0;
-        dockPanel.spacing = 5;
-        hsplitPanel.spacing = 1;
+        dockPanel.spacing = 0;
+        hsplitPanel.spacing = 0;
 
         hboxPanel.direction = 'left-to-right';
         hsplitPanel.orientation = 'horizontal';

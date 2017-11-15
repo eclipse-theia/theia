@@ -7,7 +7,7 @@
 
 .theia-extensions {
     min-width: 250px !important;
-    background-color: var(--theia-layout-color1);
+    background-color: var(--theia-layout-color3);
 }
 
 #extensionSearchContainer {
@@ -41,6 +41,7 @@
 .theia-extensions .extensionHeaderContainer {
     padding: 3px 15px;
     font-size: var(--theia-ui-font-size0);
+    background: var(--theia-layout-color3);
 }
 
 .theia-extensions .extensionHeaderContainer:hover {
