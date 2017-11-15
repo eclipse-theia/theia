@@ -5,34 +5,39 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
+import * as stream from 'stream';
+import { injectable, inject, unmanaged } from "inversify";
 import { ProcessManager } from './process-manager';
 import { ILogger, Emitter, Event } from '@theia/core/lib/common';
-import * as child from 'child_process';
-import * as stream from 'stream';
 
 export interface IProcessExitEvent {
-    code: number,
-    signal?: string
+    readonly code: number,
+    readonly signal?: string
+}
+
+export enum ProcessType {
+    'Raw',
+    'Terminal'
 }
 
 @injectable()
 export abstract class Process {
 
     readonly id: number;
-    abstract readonly type: 'Raw' | 'Terminal';
-    abstract pid: number;
-    abstract output: stream.Readable;
-    protected abstract process: child.ChildProcess | undefined;
-    protected abstract terminal: any;
-    protected readonly exitEmitter = new Emitter<IProcessExitEvent>();
-    protected readonly errorEmitter = new Emitter<Error>();
+    readonly exitEmitter: Emitter<IProcessExitEvent>;
+    readonly errorEmitter: Emitter<Error>;
+    abstract readonly pid: number;
+    abstract readonly output: stream.Readable;
     protected _killed = false;
 
     constructor(
         @inject(ProcessManager) protected readonly processManager: ProcessManager,
-        protected readonly logger: ILogger) {
+        protected readonly logger: ILogger,
+        readonly type: ProcessType) {
+
         this.id = this.processManager.register(this);
+        this.exitEmitter = new Emitter<IProcessExitEvent>();
+        this.errorEmitter = new Emitter<Error>();
     }
 
     abstract kill(signal?: string): void;
@@ -41,22 +46,16 @@ export abstract class Process {
         return this._killed;
     }
 
-    set killed(killed: boolean) {
-        /* readonly public property */
-    }
-
     get onExit(): Event<IProcessExitEvent> {
         return this.exitEmitter.event;
-
     }
 
     get onError(): Event<Error> {
         return this.errorEmitter.event;
-
     }
 
     protected emitOnExit(code: number, signal?: string) {
-        const exitEvent = { 'code': code, 'signal': signal };
+        const exitEvent = { code, signal };
         this.handleOnExit(exitEvent);
         this.exitEmitter.fire(exitEvent);
     }
@@ -80,4 +79,5 @@ export abstract class Process {
         this._killed = true;
         this.logger.error(error.toString());
     }
+
 }

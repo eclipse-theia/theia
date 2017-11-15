@@ -8,7 +8,7 @@
 import { injectable, inject } from 'inversify';
 import { ProcessManager } from './process-manager';
 import { ILogger } from '@theia/core/lib/common';
-import { Process } from './process';
+import { Process, ProcessType } from './process';
 import * as child from 'child_process';
 import * as stream from 'stream';
 
@@ -20,26 +20,26 @@ export interface RawProcessOptions {
 }
 
 export const RawProcessFactory = Symbol("RawProcessFactory");
-export type RawProcessFactory = (options: RawProcessOptions) => RawProcess;
+export interface RawProcessFactory {
+    (options: RawProcessOptions): RawProcess;
+}
 
 @injectable()
 export class RawProcess extends Process {
 
-    readonly type: 'Raw' | 'Terminal' = 'Raw';
-    output: stream.Readable;
-    errorOutput: stream.Readable;
+    readonly output: stream.Readable;
+    readonly errorOutput: stream.Readable;
     protected process: child.ChildProcess;
-    protected terminal = undefined;
 
     constructor(
         @inject(RawProcessOptions) options: RawProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(ILogger) logger: ILogger) {
-        super(processManager, logger);
+        super(processManager, logger, ProcessType.Raw);
 
         this.logger.debug(`Starting raw process : ${options.command},`
             + ` with args : ${options.args}, `
-            + ` options ${JSON.stringify(options.options)} `);
+            + ` options ${JSON.stringify(options.options)}`);
 
         this.process = child.spawn(
             options.command,
@@ -62,4 +62,5 @@ export class RawProcess extends Process {
             this.process.kill(signal);
         }
     }
+
 }
