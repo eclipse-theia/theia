@@ -93,13 +93,13 @@ if (cluster.isMaster) {
     });
     electron.app.on('ready', function () {
         const path = require('path');
-        const { fork }  = require('child_process');
+        const { fork } = require('child_process');
         // Check whether we are in bundled application or development mode.
         const devMode = process.defaultApp || /node_modules[\\/]electron[\\/]/.test(process.execPath);
         const mainWindow = new electron.BrowserWindow({ width: 1024, height: 728, show: false });
         mainWindow.on('ready-to-show', () => mainWindow.show());
         const mainPath = path.join(__dirname, '..', 'backend', 'main');
-        const loadMainWindow = function(port) {
+        const loadMainWindow = function (port) {
             mainWindow.loadURL(\`file://\${path.join(__dirname, '../../lib/index.html')}?port=\${port}\`);
         };
         // We need to distinguish between bundled application and development mode when starting the clusters.
@@ -119,6 +119,11 @@ if (cluster.isMaster) {
             cp.on('error', function (error) {
                 console.error(error);
                 electron.app.exit(1);
+            });
+            electron.app.on('quit', function() {
+                // If we forked the process for the clusters, we need to manually terminate it.
+                // See: https://github.com/theia-ide/theia/issues/835
+                process.kill(cp.pid);
             });
         }
         mainWindow.on('closed', function () {

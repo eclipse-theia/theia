@@ -25,7 +25,7 @@ export class ServerWorker {
         let onDidInitialize: () => void = () => { };
         this.initialized = new Promise<void>(resolve => onDidInitialize = resolve);
 
-        console.log('Starting the express server worker...');
+        console.log('Starting server worker...');
         this.worker = cluster.fork();
         this.server = createRemoteServer(this.worker, { onDidInitialize, restart });
 
@@ -35,11 +35,12 @@ export class ServerWorker {
         this.disconnect = new Promise(resolve => this.worker.once('disconnect', resolve));
         this.exit = new Promise(resolve => this.worker.once('exit', resolve));
 
-        this.online.then(() => console.log(`The express server worker ${this.worker.id} has been started.`));
-        this.failed.then(error => console.error(`The express server worker ${this.worker.id} failed:`, error));
-        this.initialized.then(() => console.log(`The express server worker ${this.worker.id} is ready to accept messages.`));
-        this.disconnect.then(() => console.log(`The express server worker ${this.worker.id} has been disconnected.`));
-        this.exit.then(() => console.log(`The express server worker ${this.worker.id} has been stopped.`));
+        const workerIdentifier = `[ID: ${this.worker.id} | PID: ${this.worker.process.pid}]`;
+        this.online.then(() => console.log(`Server worker has been started. ${workerIdentifier}`));
+        this.failed.then(error => console.error(`Server worker failed. ${workerIdentifier}`, error));
+        this.initialized.then(() => console.log(`Server worker is ready to accept messages. ${workerIdentifier}`));
+        this.disconnect.then(() => console.log(`Server worker has been disconnected. ${workerIdentifier}`));
+        this.exit.then(() => console.log(`Server worker has been stopped. ${workerIdentifier}`));
     }
 
     async stop(): Promise<void> {

@@ -19,7 +19,7 @@ export class MasterProcess extends EventEmitter {
 
     start(): ServerWorker {
         if (this.serverWorker) {
-            throw new Error('The express server worker is already running.')
+            throw new Error('Server worker is already running.');
         }
         this.serverWorker = this.fork();
         this.emit('started', this.serverWorker);
@@ -31,10 +31,10 @@ export class MasterProcess extends EventEmitter {
 
     async restart(): Promise<void> {
         if (!this.serverWorker) {
-            throw new Error('The express server worker is not running.');
+            throw new Error('Server worker is not running.');
         }
         this.emit('restarting', this.serverWorker);
-        console.log(`Restarting the express server worker is requested.`);
+        console.log(`Restarting the server worker is requested.`);
         const serverWorker = this.fork();
         const success = serverWorker.initialized.then(() => true);
 
@@ -44,12 +44,12 @@ export class MasterProcess extends EventEmitter {
         const restarted = await Promise.race([success, failure]);
         if (!restarted) {
             serverWorker.stop();
-            const message = `The express server worker failed to restart.`;
+            const message = `Server worker failed to restart.`;
             console.error(message);
             throw new Error(message);
         }
         this.serverWorker = serverWorker;
-        console.log(`The express server worker has been restarted.`);
+        console.log(`Server worker has been restarted.`);
         this.emit('restarted', this.serverWorker);
     }
     get restarting(): Promise<ServerWorker> {
