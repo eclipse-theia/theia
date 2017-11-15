@@ -43,7 +43,7 @@ export class JavaResourceResolver implements ResourceResolver {
 
     resolve(uri: URI): JavaResource {
         if (uri.scheme !== JAVA_SCHEME) {
-            throw new Error("The given uri is not a java uri: " + uri);
+            throw new Error("The given URI is not a valid Java uri: " + uri);
         }
         return new JavaResource(uri, this.clientContribution);
     }

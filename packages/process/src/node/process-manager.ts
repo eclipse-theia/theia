@@ -4,22 +4,26 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { Process } from './process';
 import { Emitter, Event } from '@theia/core/lib/common';
+import { ILogger } from '@theia/core/lib/common/logger';
 
 @injectable()
 export class ProcessManager {
 
-    protected readonly processes: Map<number, Process> = new Map();
     protected id: number = 0;
-    protected readonly deleteEmitter = new Emitter<number>();
+    protected readonly processes: Map<number, Process>;
+    protected readonly deleteEmitter: Emitter<number>;
+
+    constructor( @inject(ILogger) protected logger: ILogger) {
+        this.processes = new Map();
+        this.deleteEmitter = new Emitter<number>();
+    }
 
     register(process: Process): number {
-        const id = this.id;
-        this.processes.set(id, process);
-        this.id++;
-        return id;
+        this.processes.set(++this.id, process);
+        return this.id;
     }
 
     get(id: number): Process | undefined {
@@ -28,11 +32,14 @@ export class ProcessManager {
 
     delete(process: Process): void {
         process.kill();
-        this.processes.delete(process.id);
+        if (!this.processes.delete(process.id)) {
+            this.logger.warn(`The process was not registered via this manager. Anyway, we kill your process. PID: ${process.pid}.`);
+        }
         this.deleteEmitter.fire(process.id);
     }
 
     get onDelete(): Event<number> {
         return this.deleteEmitter.event;
     }
+
 }

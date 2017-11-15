@@ -6,7 +6,7 @@
  */
 
 import * as stream from 'stream';
-import { injectable, inject, unmanaged } from "inversify";
+import { injectable, inject } from "inversify";
 import { ProcessManager } from './process-manager';
 import { ILogger, Emitter, Event } from '@theia/core/lib/common';
 
@@ -27,6 +27,7 @@ export abstract class Process {
     readonly exitEmitter: Emitter<IProcessExitEvent>;
     readonly errorEmitter: Emitter<Error>;
     abstract readonly pid: number;
+    abstract readonly input: stream.Writable;
     abstract readonly output: stream.Readable;
     protected _killed = false;
 
