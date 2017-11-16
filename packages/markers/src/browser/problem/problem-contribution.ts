@@ -15,7 +15,7 @@ import { FrontendApplication, CommonMenus, FrontendApplicationContribution } fro
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { PROBLEM_KIND } from '../../common/problem-marker';
 import { ProblemManager, ProblemStat } from './problem-manager';
-import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/statusbar/statusbar';
+import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
 
 export namespace ProblemCommands {
     export const OPEN: Command = {
@@ -31,23 +31,23 @@ export class ProblemContribution implements CommandContribution, MenuContributio
         @inject(WidgetManager) protected readonly widgetFactory: WidgetManager,
         @inject(FrontendApplication) protected readonly app: FrontendApplication,
         @inject(ProblemManager) protected readonly problemManager: ProblemManager,
-        @inject(StatusBar) protected readonly statusbar: StatusBar) { }
+        @inject(StatusBar) protected readonly statusBar: StatusBar) { }
 
     onStart(app: FrontendApplication) {
         this.problemManager.onDidChangeMarkers(() => {
-            this.setStatusbarElement(this.problemManager.getProblemStat());
+            this.setStatusBarElement(this.problemManager.getProblemStat());
         });
     }
 
     initializeLayout(app: FrontendApplication) {
-        this.setStatusbarElement({
+        this.setStatusBarElement({
             errors: 0,
             warnings: 0
         });
     }
 
-    setStatusbarElement(problemStat: ProblemStat) {
-        this.statusbar.setElement('problem-marker-status', {
+    setStatusBarElement(problemStat: ProblemStat) {
+        this.statusBar.setElement('problem-marker-status', {
             text: `$(times-circle) ${problemStat.errors} $(exclamation-triangle) ${problemStat.warnings}`,
             alignment: StatusBarAlignment.LEFT,
             priority: 10,

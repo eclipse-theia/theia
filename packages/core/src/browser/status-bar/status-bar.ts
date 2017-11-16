@@ -52,9 +52,9 @@ export interface StatusBarEntryAttributes {
     onmouseout?: () => void;
 }
 
-export const STATUSBAR_WIDGET_FACTORY_ID = 'statusbar';
+export const STATUSBAR_WIDGET_FACTORY_ID = 'statusBar';
 
-export const StatusBar = Symbol('Statusbar');
+export const StatusBar = Symbol('StatusBar');
 
 export interface StatusBar {
     setElement(id: string, entry: StatusBarEntry): void;
@@ -71,7 +71,7 @@ export class StatusBarImpl extends VirtualWidget implements StatusBar {
         @inject(LabelParser) protected readonly entryService: LabelParser
     ) {
         super();
-        this.id = 'theia-statusbar';
+        this.id = 'theia-statusBar';
     }
 
     setElement(id: string, entry: StatusBarEntry) {

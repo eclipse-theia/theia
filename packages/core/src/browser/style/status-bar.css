@@ -6,33 +6,33 @@
  */
 
 :root {
-    --theia-statusbar-height: 19px;
+    --theia-statusBar-height: 19px;
 }
 
-#theia-statusbar {
+#theia-statusBar {
     border-bottom: var(--theia-border-width) solid var(--theia-border-color1);
     background: var(--theia-accent-color3);
     display: flex;
-    min-height: var(--theia-statusbar-height);
+    min-height: var(--theia-statusBar-height);
 }
 
-#theia-statusbar .area {
+#theia-statusBar .area {
     flex: 1;
     display: flex;
     align-items: stretch;
 }
 
-#theia-statusbar .area.left {
+#theia-statusBar .area.left {
     justify-content: flex-start;
     padding-left: 20px;
 }
 
-#theia-statusbar .area.right {
+#theia-statusBar .area.right {
     justify-content: flex-end;
     padding-right: 20px;
 }
 
-#theia-statusbar .area .element {
+#theia-statusBar .area .element {
     color: var(--theia-content-font-color0);
     display: flex;
     align-items: center;
@@ -40,15 +40,15 @@
     font-size: var(--theia-font-size1);
 }
 
-#theia-statusbar .area .element.hasCommand:hover {
+#theia-statusBar .area .element.hasCommand:hover {
     background-color: var(--theia-accent-color2);
     cursor: pointer;
 }
 
-#theia-statusbar .area.left .element {
+#theia-statusBar .area.left .element {
     margin-right: 15px;
 }
 
-#theia-statusbar .area.right .element {
+#theia-statusBar .area.right .element {
     margin-left: 15px;
 }

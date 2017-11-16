@@ -9,7 +9,7 @@ import { CommandService } from './../common';
 import { Container } from "inversify";
 import { expect } from 'chai';
 
-let statusbarEntryUtility: LabelParser;
+let statusBarEntryUtility: LabelParser;
 
 before(() => {
     const testContainer = new Container();
@@ -20,43 +20,43 @@ before(() => {
         }
     })).inSingletonScope();
 
-    statusbarEntryUtility = testContainer.get(LabelParser);
+    statusBarEntryUtility = testContainer.get(LabelParser);
 });
 
-describe("StatusbarEntryUtility", () => {
+describe("StatusBarEntryUtility", () => {
 
     let text: string;
 
     it("should create an empty array.", () => {
         text = '';
-        const iconArr: LabelPart[] = statusbarEntryUtility.parse(text);
+        const iconArr: LabelPart[] = statusBarEntryUtility.parse(text);
         expect(iconArr).to.have.lengthOf(0);
     });
 
     it("should create a string array with one entry.", () => {
         text = 'foo bar';
-        const iconArr: LabelPart[] = statusbarEntryUtility.parse(text);
+        const iconArr: LabelPart[] = statusBarEntryUtility.parse(text);
         expect(iconArr).to.have.lengthOf(1);
         expect(iconArr[0]).equals('foo bar');
     });
 
     it("should create a string array with one entry - text contains an $.", () => {
         text = 'foo $ bar';
-        const iconArr: LabelPart[] = statusbarEntryUtility.parse(text);
+        const iconArr: LabelPart[] = statusBarEntryUtility.parse(text);
         expect(iconArr).to.have.lengthOf(1);
         expect(iconArr[0]).equals('foo $ bar');
     });
 
     it("should create a string array with one entry - text contains an $( which does not close.", () => {
         text = 'foo $(bar';
-        const iconArr: LabelPart[] = statusbarEntryUtility.parse(text);
+        const iconArr: LabelPart[] = statusBarEntryUtility.parse(text);
         expect(iconArr).to.have.lengthOf(1);
         expect(iconArr[0]).equals('foo $(bar');
     });
 
-    it("should create a string array with two entries. Second is a simple StatusbarIcon.", () => {
+    it("should create a string array with two entries. Second is a simple StatusBarIcon.", () => {
         text = 'foo $(bar)';
-        const iconArr: LabelPart[] = statusbarEntryUtility.parse(text);
+        const iconArr: LabelPart[] = statusBarEntryUtility.parse(text);
         expect(iconArr).to.have.lengthOf(2);
         expect(iconArr[0]).equals('foo ');
         expect(iconArr[1]).has.property('name');
@@ -65,9 +65,9 @@ describe("StatusbarEntryUtility", () => {
         expect((iconArr[1] as LabelIcon).animation).to.be.undefined;
     });
 
-    it("should create a string array with two entries. Second is a StatusbarIcon with an animation.", () => {
+    it("should create a string array with two entries. Second is a StatusBarIcon with an animation.", () => {
         text = 'foo $(bar~baz)';
-        const iconArr: LabelPart[] = statusbarEntryUtility.parse(text);
+        const iconArr: LabelPart[] = statusBarEntryUtility.parse(text);
         expect(iconArr).to.have.lengthOf(2);
         expect(iconArr[0]).equals('foo ');
         expect(iconArr[1]).has.property('name');
@@ -78,7 +78,7 @@ describe("StatusbarEntryUtility", () => {
 
     it("should create string array of 'foo $(icon1) bar $(icon2) baz $(icon3)'", () => {
         text = "foo $(icon1) bar $(icon2) baz $(icon3)";
-        const iconArr: LabelPart[] = statusbarEntryUtility.parse(text);
+        const iconArr: LabelPart[] = statusBarEntryUtility.parse(text);
         expect(iconArr).to.have.lengthOf(6);
         expect(iconArr[0]).equals('foo ');
         expect(iconArr[2]).equals(' bar ');
@@ -86,7 +86,7 @@ describe("StatusbarEntryUtility", () => {
 
     it("should create string array of '$(icon1) foo bar $(icon2) baz $(icon3)'", () => {
         text = "$(icon1) foo bar $(icon2~ani1) baz $(icon3)";
-        const iconArr: LabelPart[] = statusbarEntryUtility.parse(text);
+        const iconArr: LabelPart[] = statusBarEntryUtility.parse(text);
         expect(iconArr).to.have.lengthOf(5);
         expect(iconArr[0]).has.property('name');
         expect((iconArr[0] as LabelIcon).name).equals('icon1');
@@ -96,7 +96,7 @@ describe("StatusbarEntryUtility", () => {
 
     it("should create an array with one element of '$(icon1)'", () => {
         text = "$(icon1)";
-        const iconArr: LabelPart[] = statusbarEntryUtility.parse(text);
+        const iconArr: LabelPart[] = statusBarEntryUtility.parse(text);
         expect(iconArr).to.have.lengthOf(1);
         expect(iconArr[0]).has.property('name');
         expect((iconArr[0] as LabelIcon).name).equals('icon1');
@@ -104,7 +104,7 @@ describe("StatusbarEntryUtility", () => {
 
     it("should create an array of '$(icon1)$(icon2) (icon3)'", () => {
         text = "$(icon1)$(icon2) $(icon3)";
-        const iconArr: LabelPart[] = statusbarEntryUtility.parse(text);
+        const iconArr: LabelPart[] = statusBarEntryUtility.parse(text);
         expect(iconArr).to.have.lengthOf(4);
         expect(iconArr[0]).has.property('name');
         expect((iconArr[0] as LabelIcon).name).equals('icon1');

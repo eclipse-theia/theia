@@ -12,7 +12,7 @@ import { GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus } from
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { GitRepositoryProvider } from './git-repository-provider';
-import { MessageService, ResourceProvider, Disposable, CommandService, DisposableCollection } from '@theia/core';
+import { MessageService, ResourceProvider, CommandService, DisposableCollection } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { VirtualRenderer, VirtualWidget, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
 import { h } from '@phosphor/virtualdom/lib';
