@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 import { Event, Disposable } from '@theia/core/lib/common';
+import URI from '@theia/core/lib/common/uri';
 
 export const UserStorageService = Symbol('UserStorageService');
 
@@ -17,5 +18,5 @@ export interface UserStorageService extends Disposable {
 }
 
 export interface UserStorageChangeEvent {
-    uris: string[];
+    uris: URI[];
 }

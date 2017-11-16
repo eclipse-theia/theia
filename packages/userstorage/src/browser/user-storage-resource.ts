@@ -26,11 +26,13 @@ export class UserStorageResource implements Resource {
 
         this.toDispose.push(this.service.onUserStorageChanged(e => {
             for (const changedUri of e.uris) {
-                if (changedUri === this._uri) {
+                if (changedUri === this.uri) {
                     this.onDidChangeContentsEmitter.fire(undefined);
                 }
             }
         }));
+
+        this.toDispose.push(this.onDidChangeContentsEmitter);
     }
 
     dispose(): void {
