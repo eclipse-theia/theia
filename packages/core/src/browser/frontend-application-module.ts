@@ -28,7 +28,7 @@ import { LocalStorageService, StorageService } from './storage-service';
 import { WidgetFactory, WidgetManager } from './widget-manager';
 import { ShellLayoutRestorer } from './shell-layout-restorer';
 import { ApplicationShell, ApplicationShellOptions, DockPanelRenderer, DockPanelTabBarRenderer, DockPanelTabBarRendererFactory } from './shell';
-import { StatusBar, StatusBarImpl } from "./statusbar/statusbar";
+import { StatusBar, StatusBarImpl } from "./status-bar/status-bar";
 import { LabelParser } from './label-parser';
 
 import '../../src/browser/style/index.css';

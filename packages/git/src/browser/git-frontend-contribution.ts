@@ -8,7 +8,7 @@ import { injectable, inject } from "inversify";
 import { GitRepositoryProvider } from './git-repository-provider';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
-import { StatusBar, StatusBarAlignment } from "@theia/core/lib/browser/statusbar/statusbar";
+import { StatusBar, StatusBarAlignment } from "@theia/core/lib/browser/status-bar/status-bar";
 import { Git } from '../common';
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { DisposableCollection } from "@theia/core";
@@ -25,7 +25,7 @@ export class GitFrontendContribution implements FrontendApplicationContribution 
         @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
         @inject(Git) protected readonly git: Git,
         @inject(GitWatcher) protected readonly gitWatcher: GitWatcher,
-        @inject(StatusBar) protected readonly statusbar: StatusBar
+        @inject(StatusBar) protected readonly statusBar: StatusBar
     ) { }
 
     onStart(app: FrontendApplication) {
@@ -36,7 +36,7 @@ export class GitFrontendContribution implements FrontendApplicationContribution 
                 this.toDispose.push(
                     this.gitWatcher.onGitEvent((gitStatus: GitStatusChangeEvent) => {
                         if (gitStatus.status.branch) {
-                            this.statusbar.setElement('git-repository-status', {
+                            this.statusBar.setElement('git-repository-status', {
                                 text: `$(code-fork) ${gitStatus.status.branch}`,
                                 alignment: StatusBarAlignment.LEFT,
                                 priority: 100

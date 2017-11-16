@@ -7,27 +7,30 @@
 
 import { EditorManager } from './editor-manager';
 import { injectable, inject } from "inversify";
-import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/statusbar/statusbar';
+import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
 import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
 import { Position } from 'vscode-languageserver-types';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { Languages } from '@theia/languages/lib/common';
+import { DisposableCollection } from '@theia/core';
 
 @injectable()
 export class EditorContribution implements FrontendApplicationContribution {
 
+    protected toDispose = new DisposableCollection();
+
     constructor(
-        @inject(StatusBar) protected readonly statusbar: StatusBar,
+        @inject(StatusBar) protected readonly statusBar: StatusBar,
         @inject(EditorManager) protected readonly editorManager: EditorManager,
         @inject(FileIconProvider) protected readonly iconProvider: FileIconProvider,
         @inject(Languages) protected readonly languages: Languages
     ) { }
 
     onStart() {
-        this.addStatusbarWidgets();
+        this.addStatusBarWidgets();
     }
 
-    protected async addStatusbarWidgets() {
+    protected async addStatusBarWidgets() {
         this.editorManager.onCurrentEditorChanged(async e => {
             if (e) {
                 const langId = e.editor.document.languageId;
@@ -37,25 +40,26 @@ export class EditorContribution implements FrontendApplicationContribution {
                     const language = languages.find(l => l.id === langId);
                     languageName = language ? language.name : '';
                 }
-                this.statusbar.setElement('editor-status-language', {
+                this.statusBar.setElement('editor-status-language', {
                     text: languageName,
                     alignment: StatusBarAlignment.RIGHT,
                     priority: 1
                 });
 
                 this.setCursorPositionStatus(e.editor.cursor);
-                e.editor.onCursorPositionChanged(position => {
+                this.toDispose.dispose();
+                this.toDispose.push(e.editor.onCursorPositionChanged(position => {
                     this.setCursorPositionStatus(position);
-                });
+                }));
             } else if (this.editorManager.editors.length === 0) {
-                this.statusbar.removeElement('editor-status-language');
-                this.statusbar.removeElement('editor-status-cursor-position');
+                this.statusBar.removeElement('editor-status-language');
+                this.statusBar.removeElement('editor-status-cursor-position');
             }
         });
     }
 
     protected setCursorPositionStatus(position: Position) {
-        this.statusbar.setElement('editor-status-cursor-position', {
+        this.statusBar.setElement('editor-status-cursor-position', {
             text: `Ln ${position.line + 1}, Col ${position.character + 1}`,
             alignment: StatusBarAlignment.RIGHT,
             priority: 100

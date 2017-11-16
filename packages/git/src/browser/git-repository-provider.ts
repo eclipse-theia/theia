@@ -14,7 +14,7 @@ export class GitRepositoryProvider {
 
     protected _selectedRepository: Repository | undefined;
     protected _allRepositories: Repository[];
-    protected onDidChangeRepositoryEmitter = new Emitter<Repository | undefined>();
+    protected readonly onDidChangeRepositoryEmitter = new Emitter<Repository | undefined>();
 
     constructor(
         @inject(Git) protected readonly git: Git,
@@ -41,7 +41,7 @@ export class GitRepositoryProvider {
         this.onDidChangeRepositoryEmitter.fire(repository);
     }
 
-    get onDidChangeRepository(): Event<Repository | undefined>{
+    get onDidChangeRepository(): Event<Repository | undefined> {
         return this.onDidChangeRepositoryEmitter.event;
     }
 
