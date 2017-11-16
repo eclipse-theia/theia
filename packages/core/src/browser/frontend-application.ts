@@ -139,7 +139,7 @@ export class FrontendApplication {
                     }
                 }
             }
-        }
+        };
     }
 
 }

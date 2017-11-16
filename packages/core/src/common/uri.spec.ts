@@ -6,7 +6,7 @@
  */
 
 import * as chai from 'chai';
-import URI from "./uri"
+import URI from "./uri";
 
 const expect = chai.expect;
 
@@ -103,7 +103,7 @@ describe("uri", () => {
 
         it("Should not return the encoded path", () => {
             expect(new URI("file:///foo 3/bar 4/baz 4.txt").path.toString()).equals("/foo 3/bar 4/baz 4.txt");
-        })
+        });
     });
 
     describe("#withFragment", () => {
@@ -121,28 +121,28 @@ describe("uri", () => {
     describe("#toString()", () => {
         it("should produce the non encoded string", () => {
             function check(uri: string): void {
-                expect(new URI(uri).toString(true)).equals(uri)
+                expect(new URI(uri).toString(true)).equals(uri);
             }
-            check('file:///X?test=32')
-            check('file:///X?test=32#345')
-            check('file:///X test/ddd?test=32#345')
-        })
-    })
+            check('file:///X?test=32');
+            check('file:///X?test=32#345');
+            check('file:///X test/ddd?test=32#345');
+        });
+    });
 
     describe("#Uri.with...()", () => {
         it("produce proper URIs", () => {
-            let uri = new URI().withScheme('file').withPath('/foo/bar.txt').withQuery("x=12").withFragment("baz")
-            expect(uri.toString(true)).equals("file:///foo/bar.txt?x=12#baz")
+            let uri = new URI().withScheme('file').withPath('/foo/bar.txt').withQuery("x=12").withFragment("baz");
+            expect(uri.toString(true)).equals("file:///foo/bar.txt?x=12#baz");
 
-            expect(uri.withoutScheme().toString(true)).equals("/foo/bar.txt?x=12#baz")
+            expect(uri.withoutScheme().toString(true)).equals("/foo/bar.txt?x=12#baz");
 
-            expect(uri.withScheme("http").toString(true)).equals("http:/foo/bar.txt?x=12#baz")
+            expect(uri.withScheme("http").toString(true)).equals("http:/foo/bar.txt?x=12#baz");
 
-            expect(uri.withoutQuery().toString(true)).equals("file:///foo/bar.txt#baz")
+            expect(uri.withoutQuery().toString(true)).equals("file:///foo/bar.txt#baz");
 
-            expect(uri.withoutFragment().toString(true)).equals(uri.withFragment('').toString(true))
+            expect(uri.withoutFragment().toString(true)).equals(uri.withFragment('').toString(true));
 
-            expect(uri.withPath("hubba-bubba").toString(true)).equals("file://hubba-bubba?x=12#baz")
-        })
-    })
+            expect(uri.withPath("hubba-bubba").toString(true)).equals("file://hubba-bubba?x=12#baz");
+        });
+    });
 });

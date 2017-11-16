@@ -98,7 +98,7 @@ yargs
         describe: 'webpack the ' + target + ' frontend',
         handler: async () => {
             try {
-                await manager.build(commandArgs('build'))
+                await manager.build(commandArgs('build'));
             } catch (err) {
                 console.error(err);
                 process.exit(1);

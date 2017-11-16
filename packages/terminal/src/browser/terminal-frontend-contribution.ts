@@ -27,7 +27,7 @@ export namespace TerminalCommands {
     export const NEW: Command = {
         id: 'terminal:new',
         label: 'New Terminal'
-    }
+    };
 }
 
 @injectable()

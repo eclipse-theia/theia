@@ -7,12 +7,12 @@
 
 import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core/lib/common';
 import { PreferenceService, PreferenceChange } from "./preference-service";
-import { PreferenceSchema } from "./preference-contribution"
+import { PreferenceSchema } from "./preference-contribution";
 import * as Ajv from "ajv";
 
 export type Configuration = {
     [preferenceName: string]: any
-}
+};
 export interface PreferenceChangeEvent<T> {
     readonly preferenceName: keyof T
     readonly newValue?: T[keyof T]
@@ -71,7 +71,7 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
             }
             throw new Error('unexpected property: ' + p);
         }
-    })
+    });
 }
 
 export function validatePreference(schema: PreferenceSchema, preference: Object) {

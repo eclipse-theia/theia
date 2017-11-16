@@ -33,4 +33,4 @@ export function search(query: string, from?: number, size?: number): Promise<Nod
             }
         });
     });
-};
+}

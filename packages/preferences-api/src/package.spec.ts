@@ -17,5 +17,5 @@ describe("preferences-api package", () => {
 
     it("support code coverage statistics", () => {
         return true;
-    })
+    });
 });

@@ -37,11 +37,6 @@
         }
       ],
       "severity": "error"
-    },
-    "semicolon": [
-      true,
-      "always",
-      "ignore-interfaces"
-    ]
+    }
   }
 }

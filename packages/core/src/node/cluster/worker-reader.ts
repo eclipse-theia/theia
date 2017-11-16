@@ -26,7 +26,7 @@ export class WorkerMessageReader extends AbstractStreamMessageReader {
                 this.fireError(error);
             }
             this.fireClose();
-        })
+        });
         this.worker.on('error', e =>
             this.fireError(e)
         );

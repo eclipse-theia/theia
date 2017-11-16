@@ -10,8 +10,8 @@ import * as chaiAsPromised from "chai-as-promised";
 import * as temp from 'temp';
 import * as fs from 'fs-extra';
 
-import { CompoundPreferenceServer } from '@theia/preferences-api'
-import { JsonPrefHelper } from '../node/test/preference-stubs'
+import { CompoundPreferenceServer } from '@theia/preferences-api';
+import { JsonPrefHelper } from '../node/test/preference-stubs';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 
 const expect = chai.expect;
@@ -40,7 +40,7 @@ before(() => {
 after(() => {
     compoundPrefServer.dispose();
     track.cleanupSync();
-})
+});
 
 describe('compound-preference-server', () => {
     it('register a client', async () => {
@@ -58,8 +58,8 @@ describe('compound-preference-server', () => {
                         }
                     }
                 }
-            })
-        })
+            });
+        });
 
         const fileContent = '{ "showLineNumbers": true }';
 
@@ -76,9 +76,9 @@ describe('compound-preference-server', () => {
                     type: 0
                 }]
             }
-        )
+        );
 
         return promise;
 
-    })
+    });
 });

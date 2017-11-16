@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from "inversify";
-import { EditorManager } from "@theia/editor/lib/browser"
+import { EditorManager } from "@theia/editor/lib/browser";
 import {
     KeybindingContext, Keybinding, KeybindingContribution, KeybindingRegistry, KeyCode, Key, Modifier
 } from "@theia/core/lib/common";

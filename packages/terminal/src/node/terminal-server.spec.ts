@@ -6,7 +6,7 @@
  */
 import * as chai from 'chai';
 import 'mocha';
-import * as chaiAsPromised from 'chai-as-promised'
+import * as chaiAsPromised from 'chai-as-promised';
 import { testContainer } from './test/inversify.spec-config';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { ITerminalServer } from '../common/terminal-protocol';

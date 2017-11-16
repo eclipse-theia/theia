@@ -21,7 +21,7 @@ export class FileTree extends Tree {
         if (FileStatNode.is(parent)) {
             return this.resolveFileStat(parent).then(fileStat =>
                 this.toNodes(fileStat, parent)
-            )
+            );
         }
         return super.resolveChildren(parent);
     }
@@ -43,7 +43,7 @@ export class FileTree extends Tree {
     }
 
     protected toNode(fileStat: FileStat, parent: ICompositeTreeNode): FileNode | DirNode {
-        const uri = new URI(fileStat.uri)
+        const uri = new URI(fileStat.uri);
         const id = fileStat.uri;
         const node = this.getNode(id);
         if (fileStat.isDirectory) {
@@ -57,7 +57,7 @@ export class FileTree extends Tree {
                 expanded: false,
                 selected: false,
                 children: []
-            }
+            };
         }
         if (FileNode.is(node)) {
             node.fileStat = fileStat;
@@ -67,7 +67,7 @@ export class FileTree extends Tree {
         return <FileNode>{
             id, uri, fileStat, name, parent,
             selected: false
-        }
+        };
     }
 
 }
@@ -105,7 +105,7 @@ export namespace DirNode {
     }
 
     export function createRoot(fileStat: FileStat): DirNode {
-        const uri = new URI(fileStat.uri)
+        const uri = new URI(fileStat.uri);
         const id = fileStat.uri;
         return {
             id, uri, fileStat,
@@ -115,6 +115,6 @@ export namespace DirNode {
             children: [],
             expanded: true,
             selected: false
-        }
+        };
     }
 }

@@ -26,12 +26,12 @@ export class TerminalBackendContribution implements BackendApplicationContributi
         openSocket({
             server,
             matches: (request) => {
-                const uri = new URI(request.url!)
-                return uri.path.toString().startsWith('/services/terminals/')
+                const uri = new URI(request.url!);
+                return uri.path.toString().startsWith('/services/terminals/');
             }
         }, (ws, request) => {
-            const uri = new URI(request.url!)
-            const id = parseInt(uri.path.base, 10)
+            const uri = new URI(request.url!);
+            const id = parseInt(uri.path.base, 10);
             let term = this.processManager.get(id);
             if (!term) {
                 return;
@@ -43,7 +43,7 @@ export class TerminalBackendContribution implements BackendApplicationContributi
                 try {
                     ws.send(data.toString());
                 } catch (ex) {
-                    console.error(ex)
+                    console.error(ex);
                 }
             });
 
@@ -51,7 +51,7 @@ export class TerminalBackendContribution implements BackendApplicationContributi
 
             ws.on('message', (msg: any) => {
                 if (term instanceof TerminalProcess) {
-                    term.write(msg)
+                    term.write(msg);
                 }
             });
             ws.on('close', (msg: any) => {

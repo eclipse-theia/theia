@@ -54,4 +54,4 @@ export interface ILanguageClient extends base.BaseLanguageClient { }
 import LanguageClientOptions = base.BaseLanguageClientOptions;
 export {
     LanguageClientOptions
-}
+};

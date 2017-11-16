@@ -11,7 +11,7 @@ export const ILoggerServer = Symbol('ILoggerServer');
 
 export const loggerPath = '/services/logger';
 
-export const LoggerServerOptions = Symbol('LoggerServerOptions')
+export const LoggerServerOptions = Symbol('LoggerServerOptions');
 
 export interface ILoggerServer extends JsonRpcServer<ILoggerClient> {
     setLogLevel(id: number, logLevel: number): Promise<void>;

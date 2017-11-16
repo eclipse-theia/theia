@@ -42,8 +42,8 @@ export class ConsoleWindow implements Window {
             show(): void {
                 // no-op
             }
-        }
-        this.channels.set(name, channel)
+        };
+        this.channels.set(name, channel);
         return channel;
     }
 }

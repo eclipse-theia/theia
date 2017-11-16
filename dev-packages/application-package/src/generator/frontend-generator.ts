@@ -36,7 +36,7 @@ export class FrontendGenerator extends AbstractGenerator {
     protected compileIndexHead(frontendModules: Map<string, string>): string {
         return `
   <meta charset="UTF-8">
-  <script type="text/javascript" src="https://www.promisejs.org/polyfills/promise-6.1.0.js" charset="utf-8"></script>`
+  <script type="text/javascript" src="https://www.promisejs.org/polyfills/promise-6.1.0.js" charset="utf-8"></script>`;
     }
 
     protected compileIndexJs(frontendModules: Map<string, string>): string {

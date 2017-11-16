@@ -17,5 +17,5 @@ describe("java package", () => {
 
     it("support code coverage statistics", () => {
         return true;
-    })
+    });
 });
