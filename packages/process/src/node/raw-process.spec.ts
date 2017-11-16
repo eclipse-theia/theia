@@ -62,7 +62,7 @@ describe('RawProcess', function () {
 
         const outStream = new stream.PassThrough();
 
-        const p = new Promise<String>((resolve, reject) => {
+        const p = new Promise<string>((resolve, reject) => {
             let version = '';
             outStream.on('data', data => {
                 version += data.toString();
@@ -83,7 +83,7 @@ describe('RawProcess', function () {
 
         const outStream = new stream.PassThrough();
 
-        const p = new Promise<String>((resolve, reject) => {
+        const p = new Promise<string>((resolve, reject) => {
             let version = '';
             outStream.on('data', data => {
                 version += data.toString();

@@ -28,7 +28,7 @@ describe('TerminalProcess', function () {
 
     it('test error on non existent path', function () {
 
-        /* Strangly linux returns exited with code 1 when using a non existant path but windows throws an error.
+        /* Strangely, Linux returns exited with code 1 when using a non existing path but Windows throws an error.
         This would need to be investigated more.  */
         if (isWindows) {
             return expect(() => terminalProcessFactory({ command: '/non-existent' })).to.throw();
@@ -69,7 +69,7 @@ describe('TerminalProcess', function () {
 
         const outStream = new stream.PassThrough();
 
-        const p = new Promise<String>((resolve, reject) => {
+        const p = new Promise<string>((resolve, reject) => {
             let version = '';
             outStream.on('data', data => {
                 version += data.toString();
