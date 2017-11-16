@@ -19,6 +19,12 @@ export interface BackendApplicationContribution {
     initialize?(): void;
     configure?(app: express.Application): void;
     onStart?(server: http.Server): void;
+
+    /**
+     * Called when the backend application shuts down. Contributions must perform only synchronous operations.
+     * Any kind of additional asynchronous work queued in the event loop will be ignored and abandoned.
+     */
+    onStop?(app?: express.Application): void;
 }
 
 const defaultPort = BackendProcess.electron ? 0 : 3000;
@@ -63,6 +69,14 @@ export class BackendApplication {
                 }
             }
         });
+
+        // Handles normal process termination.
+        process.on('exit', () => this.onStop());
+        // Handles `Ctrl+C`.
+        process.on('SIGINT', () => this.onStop());
+        // Handles `kill pid`
+        process.on('SIGUSR1', () => this.onStop());
+        process.on('SIGUSR2', () => this.onStop());
 
         for (const contribution of this.contributionsProvider.getContributions()) {
             if (contribution.initialize) {
@@ -112,6 +126,18 @@ export class BackendApplication {
             }
         }
         return deferred.promise;
+    }
+
+    private onStop(): void {
+        for (const contrib of this.contributionsProvider.getContributions()) {
+            if (contrib.onStop) {
+                try {
+                    contrib.onStop(this.app);
+                } catch (err) {
+                    this.logger.error(err);
+                }
+            }
+        }
     }
 
 }

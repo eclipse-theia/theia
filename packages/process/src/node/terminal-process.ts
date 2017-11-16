@@ -24,7 +24,7 @@ export const TerminalProcessFactory = Symbol("TerminalProcessFactory");
 export type TerminalProcessFactory = (options: TerminalProcessOptions) => TerminalProcess;
 
 /* Use this instead of the node-pty stream, since the node-pty stream is already resumed.  */
-class TerminalReadableStream extends stream.Readable {
+class ReadableTerminalStream extends stream.Readable {
 
     constructor(protected readonly terminal: ITerminal, opts?: stream.ReadableOptions) {
         super(opts);
@@ -37,7 +37,7 @@ class TerminalReadableStream extends stream.Readable {
 
 }
 
-class TerminalWritableStream extends stream.Writable {
+class WritableTerminalStream extends stream.Writable {
 
     constructor(protected readonly terminal: ITerminal) {
         super({
@@ -73,8 +73,8 @@ export class TerminalProcess extends Process {
             options.options);
 
         this.terminal.on('exit', this.emitOnExit.bind(this));
-        this.output = new TerminalReadableStream(this.terminal);
-        this.input = new TerminalWritableStream(this.terminal);
+        this.output = new ReadableTerminalStream(this.terminal);
+        this.input = new WritableTerminalStream(this.terminal);
     }
 
     get pid() {

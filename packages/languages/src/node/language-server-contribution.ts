@@ -19,6 +19,7 @@ import {
 import { MaybePromise } from "@theia/core/lib/common";
 import { LanguageContribution } from "../common";
 import { RawProcess, RawProcessFactory } from '@theia/process/lib/node/raw-process';
+import { ProcessManager } from '@theia/process/lib/node/process-manager';
 
 export {
     LanguageContribution, IConnection, Message
@@ -27,6 +28,10 @@ export {
 export const LanguageServerContribution = Symbol('LanguageServerContribution');
 export interface LanguageServerContribution extends LanguageContribution {
     start(clientConnection: IConnection): void;
+    /**
+     * Called on shut down. Only synchronous operations are permitted.
+     */
+    stop?(): void;
 }
 
 @injectable()
@@ -34,10 +39,22 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
 
     abstract readonly id: string;
     abstract readonly name: string;
-    abstract start(clientConnection: IConnection): void;
+    protected readonly spawnedProcessIds: number[] = [];
 
     @inject(RawProcessFactory)
     protected readonly processFactory: RawProcessFactory;
+
+    @inject(ProcessManager)
+    protected readonly processManager: ProcessManager;
+
+    abstract start(clientConnection: IConnection): void;
+
+    stop(): void {
+        this.spawnedProcessIds
+            .map(id => this.processManager.get(id))
+            .filter(process => process)
+            .forEach(process => this.processManager.delete(process!));
+    }
 
     protected forward(clientConnection: IConnection, serverConnection: IConnection): void {
         forward(clientConnection, serverConnection, this.map.bind(this));
@@ -68,6 +85,7 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
 
     protected spawnProcess(command: string, args?: string[], options?: cp.SpawnOptions): RawProcess {
         const rawProcess = this.processFactory({ command, args, options });
+        this.spawnedProcessIds.push(rawProcess.id);
         const { process } = rawProcess;
         process.once('error', this.onDidFailSpawnProcess.bind(this));
         process.stderr.on('data', this.logError.bind(this));

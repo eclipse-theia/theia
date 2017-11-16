@@ -63,12 +63,8 @@ export abstract class Process {
 
     protected handleOnExit(event: IProcessExitEvent) {
         this._killed = true;
-        let logMsg = `Process ${this.pid} has exited with code ${event.code}`;
-
-        if (event.signal !== undefined) {
-            logMsg += `, signal : ${event.signal}.`;
-        }
-        this.logger.info(logMsg);
+        const signalSuffix = event.signal ? `, signal: ${event.signal}` : '';
+        this.logger.info(`Process ${this.pid} has exited with code ${event.code}${signalSuffix}.`);
     }
 
     protected emitOnError(err: Error) {
