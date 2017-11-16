@@ -35,7 +35,7 @@ export const defaultFileSystemConfiguration: FileSystemConfiguration = {
         "**/.git/subtree-cache/**": true,
         "**/node_modules/**": true
     }
-}
+};
 
 export const FileSystemPreferences = Symbol('FileSystemPreferences');
 export type FileSystemPreferences = PreferenceProxy<FileSystemConfiguration>;

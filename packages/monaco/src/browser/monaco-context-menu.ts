@@ -33,7 +33,7 @@ export class MonacoContextMenuService implements IContextMenuService {
                 });
 
                 for (const action of actions) {
-                    const commandId = 'quickfix_' + actions.indexOf(action)
+                    const commandId = 'quickfix_' + actions.indexOf(action);
                     commands.addCommand(commandId, {
                         label: action.label,
                         className: action.class,

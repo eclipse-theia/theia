@@ -7,7 +7,7 @@
 
 import { interfaces } from "inversify";
 
-export const ContributionProvider = Symbol("ContributionProvider")
+export const ContributionProvider = Symbol("ContributionProvider");
 
 export interface ContributionProvider<T extends object> {
     getContributions(): T[]
@@ -35,7 +35,7 @@ class ContainerBasedContributionProvider<T extends object> implements Contributi
                 this.services = [];
             }
         }
-        return this.services
+        return this.services;
     }
 }
 

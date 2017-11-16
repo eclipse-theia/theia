@@ -55,4 +55,4 @@ describe("file-uri", () => {
         expect(uri.toString(true)).to.be.equal('file:///c:/');
     });
 
-})
+});

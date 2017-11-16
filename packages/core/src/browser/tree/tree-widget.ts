@@ -54,7 +54,7 @@ export const defaultTreeProps: TreeProps = {
         width: 16,
         height: 16
     }
-}
+};
 
 @injectable()
 export class TreeWidget extends VirtualWidget implements StatefulWidget {
@@ -151,7 +151,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         return {
             paddingLeft: `${props.indentSize}px`,
             display: props.visible ? 'block' : 'none',
-        }
+        };
     }
 
     protected renderNodeCaption(node: ITreeNode, props: NodeProps): h.Child {
@@ -205,7 +205,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
 
     protected renderChild(child: ITreeNode, parent: ICompositeTreeNode, props: NodeProps): h.Child {
         const childProps = this.createChildProps(child, parent, props);
-        return this.renderNodes(child, childProps)
+        return this.renderNodes(child, childProps);
     }
 
     protected createChildProps(child: ITreeNode, parent: ICompositeTreeNode, props: NodeProps): NodeProps {

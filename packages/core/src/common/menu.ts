@@ -84,7 +84,7 @@ export class MenuModelRegistry {
             return sub;
         }
         if (sub) {
-            throw Error(`'${menuId}' is not a menu group.`)
+            throw Error(`'${menuId}' is not a menu group.`);
         }
         const newSub = new CompositeMenuNode(menuId);
         current.addNode(newSub);
@@ -121,9 +121,9 @@ export class CompositeMenuNode implements MenuNode {
         this._children.push(node);
         this._children.sort((m1, m2) => {
             if (m1.sortString < m2.sortString) {
-                return -1
+                return -1;
             } else if (m1.sortString > m2.sortString) {
-                return 1
+                return 1;
             } else {
                 return 0;
             }
@@ -135,7 +135,7 @@ export class CompositeMenuNode implements MenuNode {
                     this._children.splice(idx, 1);
                 }
             }
-        }
+        };
     }
 
     get sortString() {
@@ -163,7 +163,7 @@ export class ActionMenuNode implements MenuNode {
         }
         const cmd = this.commands.getCommand(this.action.commandId);
         if (!cmd) {
-            throw new Error(`A command with id '${this.action.commandId}' does not exist.`)
+            throw new Error(`A command with id '${this.action.commandId}' does not exist.`);
         }
         return cmd.label || cmd.id;
     }

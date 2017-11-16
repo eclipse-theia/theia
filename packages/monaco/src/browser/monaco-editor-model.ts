@@ -59,7 +59,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
      */
     protected initialize(content: string): void {
         if (!this.toDispose.disposed) {
-            this.model = monaco.editor.createModel(content, undefined, monaco.Uri.parse(this.resource.uri.toString()))
+            this.model = monaco.editor.createModel(content, undefined, monaco.Uri.parse(this.resource.uri.toString()));
             this.toDispose.push(this.model);
             this.toDispose.push(this.model.onDidChangeContent(event => this.markAsDirty()));
             if (this.resource.onDidChangeContents) {

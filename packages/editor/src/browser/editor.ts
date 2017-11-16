@@ -66,6 +66,6 @@ export interface TextEditorSelection {
 
 export namespace TextEditorSelection {
     export function is(e: any): e is TextEditorSelection {
-        return e && e["uri"] instanceof URI
+        return e && e["uri"] instanceof URI;
     }
 }

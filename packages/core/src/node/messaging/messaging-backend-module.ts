@@ -13,7 +13,7 @@ import { createServerWebSocketConnection } from "./connection";
 
 export const messagingBackendModule = new ContainerModule(bind => {
     bind<BackendApplicationContribution>(BackendApplicationContribution).to(MessagingContribution);
-    bindContributionProvider(bind, ConnectionHandler)
+    bindContributionProvider(bind, ConnectionHandler);
 });
 
 @injectable()
@@ -31,7 +31,7 @@ export class MessagingContribution implements BackendApplicationContribution {
                     path
                 }, connection => handler.onConnection(connection));
             } catch (error) {
-                console.error(error)
+                console.error(error);
             }
         }
     }

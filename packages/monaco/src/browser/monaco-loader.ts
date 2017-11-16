@@ -23,7 +23,7 @@ export function loadVsRequire(context: any): Promise<any> {
                 resolve(amdRequire);
             });
             document.body.appendChild(vsLoader);
-        }
+        };
     });
 }
 
@@ -71,4 +71,4 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 });
         });
     });
-};
+}

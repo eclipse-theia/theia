@@ -7,7 +7,7 @@
 
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 
-export interface IBaseTerminalServerOptions { };
+export interface IBaseTerminalServerOptions { }
 
 export interface IBaseTerminalServer extends JsonRpcServer<IBaseTerminalClient> {
     create(IBaseTerminalServerOptions: object): Promise<number>;

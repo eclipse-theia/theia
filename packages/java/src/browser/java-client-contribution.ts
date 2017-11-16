@@ -26,7 +26,7 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
         @inject(Window) protected readonly window: Window,
         @inject(CommandService) protected readonly commandService: CommandService
     ) {
-        super(workspace, languages, languageClientFactory)
+        super(workspace, languages, languageClientFactory);
     }
 
     protected get globPatterns() {

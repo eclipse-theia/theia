@@ -52,7 +52,7 @@ export enum FileChangeType {
     DELETED = 2
 }
 
-export const FileSystemWatcherServerProxy = Symbol('FileSystemWatcherServerProxy')
+export const FileSystemWatcherServerProxy = Symbol('FileSystemWatcherServerProxy');
 export type FileSystemWatcherServerProxy = JsonRpcProxy<FileSystemWatcherServer>;
 
 @injectable()
@@ -89,7 +89,7 @@ export class ReconnectingFileSystemWatcherServer implements FileSystemWatcherSer
 
     protected doWatchFileChanges(watcher: number, uri: string, options?: WatchOptions): Promise<number> {
         return this.proxy.watchFileChanges(uri, options).then(remote => {
-            this.localToRemoteWatcher.set(watcher, remote)
+            this.localToRemoteWatcher.set(watcher, remote);
             return watcher;
         });
     }

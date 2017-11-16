@@ -59,7 +59,7 @@ export namespace ISelectableTreeNode {
             if (isVisible(node.parent)) {
                 return node.parent;
             }
-            return getVisibleParent(node.parent)
+            return getVisibleParent(node.parent);
         }
     }
 }

@@ -28,6 +28,11 @@
       "check-whitespace"
     ],
     "radix": true,
+    "semicolon": [
+      true,
+      "always",
+      "ignore-interfaces"
+    ],
     "trailing-comma": [
       false
     ],

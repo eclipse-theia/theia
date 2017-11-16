@@ -6,7 +6,7 @@
  */
 import * as chai from 'chai';
 import 'mocha';
-import * as chaiAsPromised from 'chai-as-promised'
+import * as chaiAsPromised from 'chai-as-promised';
 import * as process from 'process';
 import * as stream from 'stream';
 import { testContainer } from './inversify.spec-config';

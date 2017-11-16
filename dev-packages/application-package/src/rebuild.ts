@@ -23,7 +23,7 @@ export function rebuild(target: 'electron' | 'browser', modules: string[]) {
             const src = path.join(nodeModulesPath, module);
             if (fs.existsSync(src)) {
                 const dest = path.join(browserModulesPath, module);
-                const packJson = fs.readJsonSync(path.join(src, 'package.json'))
+                const packJson = fs.readJsonSync(path.join(src, 'package.json'));
                 dependencies[module] = packJson.version;
                 fs.copySync(src, dest);
             }

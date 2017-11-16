@@ -6,7 +6,7 @@
  */
 import * as chai from 'chai';
 import 'mocha';
-import * as chaiAsPromised from 'chai-as-promised'
+import * as chaiAsPromised from 'chai-as-promised';
 import * as process from 'process';
 import * as stream from 'stream';
 import { testContainer } from './inversify.spec-config';
@@ -77,7 +77,7 @@ describe('TerminalProcess', function () {
             /* node-pty is not sending 'end' on the stream as it quits
             only 'exit' is sent on the terminal process.  */
             terminalProcess.onExit(() => {
-                resolve(version.trim())
+                resolve(version.trim());
             });
         });
 

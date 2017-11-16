@@ -31,7 +31,7 @@ describe('types', () => {
                             value: -1
                         }
                     ], values)
-                )
+                );
         });
 
         it('prioritizeAll #02', () => {
@@ -54,7 +54,7 @@ describe('types', () => {
                             value: -1
                         }
                     ], values)
-                )
+                );
         });
     });
 });

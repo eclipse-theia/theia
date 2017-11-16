@@ -17,7 +17,7 @@ export namespace ITreeNodeIterator {
     }
     export const DEFAULT_OPTIONS: IOptions = {
         pruneCollapsed: false
-    }
+    };
 }
 
 export abstract class AbstractTreeNodeIterator implements ITreeNodeIterator {
@@ -91,7 +91,7 @@ export class BackwardTreeNodeIterator extends AbstractTreeNodeIterator {
             return node;
         }
         const lastChild = ICompositeTreeNode.getLastChild(node);
-        return this.findLastChild(lastChild)
+        return this.findLastChild(lastChild);
     }
 
 }

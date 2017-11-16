@@ -37,7 +37,7 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
         const uris: string[] = [];
         return {
             set: (uri, diagnostics) => {
-                monacoCollection.set(uri, diagnostics)
+                monacoCollection.set(uri, diagnostics);
                 this.problemManager.setMarkers(new URI(uri), owner, diagnostics);
                 uris.push(uri);
             },

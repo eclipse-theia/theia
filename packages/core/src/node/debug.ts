@@ -13,7 +13,7 @@ function isInDebugMode(): boolean {
     if (process && process.execArgv) {
         return process.execArgv.some(arg =>
             /^--debug=?/.test(arg) || /^--debug-brk=?/.test(arg)
-        )
+        );
     }
     return false;
 }

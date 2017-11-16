@@ -132,7 +132,7 @@ describe("NodeFileSystem", () => {
             expect(fs.readFileSync(FileUri.fsPath(uri), { encoding: "utf8" })).to.be.equal("foo");
 
             return fileSystem.resolveContent(uri.toString(), { encoding: "unknownEncoding" }).should.eventually.be.rejectedWith(Error);
-        })
+        });
 
         it("Should be return with the content for an existing file.", () => {
             const uri = root.resolve("foo.txt");
@@ -640,7 +640,7 @@ describe("NodeFileSystem", () => {
                 expect(stat).is.an("object");
                 expect(stat).has.property("uri").that.equals(uri.toString());
                 expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
-            })
+            });
         });
 
         it("Should update the modification timestamp on an existing file.", done => {

@@ -13,12 +13,12 @@ import { ILoggerClient, ILogLevelChangedEvent } from './logger-protocol';
 export class LoggerWatcher {
 
     getLoggerClient(): ILoggerClient {
-        const emitter = this.onLogLevelChangedEmitter
+        const emitter = this.onLogLevelChangedEmitter;
         return {
             onLogLevelChanged(event: ILogLevelChangedEvent) {
-                emitter.fire(event)
+                emitter.fire(event);
             }
-        }
+        };
     }
 
     private onLogLevelChangedEmitter = new Emitter<ILogLevelChangedEvent>();

@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { ContainerModule, Container } from 'inversify'
+import { ContainerModule, Container } from 'inversify';
 import { CommandContribution, MenuContribution, KeybindingContribution } from '@theia/core/lib/common';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalWidget, TerminalWidgetOptions, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget';

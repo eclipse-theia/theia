@@ -15,11 +15,11 @@ export default class URI {
 
     constructor(uri?: string | Uri) {
         if (uri === undefined) {
-            this.codeUri = Uri.from({})
+            this.codeUri = Uri.from({});
         } else if (uri instanceof Uri) {
-            this.codeUri = uri
+            this.codeUri = uri;
         } else {
-            this.codeUri = Uri.parse(uri)
+            this.codeUri = Uri.parse(uri);
         }
     }
 
@@ -66,7 +66,7 @@ export default class URI {
         const newCodeUri = Uri.from({
             ...this.codeUri.toJSON(),
             scheme
-        })
+        });
         return new URI(newCodeUri);
     }
 
@@ -74,7 +74,7 @@ export default class URI {
      * return this URI without a scheme
      */
     withoutScheme(): URI {
-        return this.withScheme('')
+        return this.withScheme('');
     }
 
     /**
@@ -84,7 +84,7 @@ export default class URI {
         const newCodeUri = Uri.from({
             ...this.codeUri.toJSON(),
             authority
-        })
+        });
         return new URI(newCodeUri);
     }
 
@@ -92,7 +92,7 @@ export default class URI {
      * return this URI without a authority
      */
     withoutAuthority(): URI {
-        return this.withAuthority('')
+        return this.withAuthority('');
     }
 
     /**
@@ -102,7 +102,7 @@ export default class URI {
         const newCodeUri = Uri.from({
             ...this.codeUri.toJSON(),
             path: path.toString()
-        })
+        });
         return new URI(newCodeUri);
     }
 
@@ -110,7 +110,7 @@ export default class URI {
      * return this URI without a path
      */
     withoutPath(): URI {
-        return this.withPath('')
+        return this.withPath('');
     }
 
     /**
@@ -120,7 +120,7 @@ export default class URI {
         const newCodeUri = Uri.from({
             ...this.codeUri.toJSON(),
             query
-        })
+        });
         return new URI(newCodeUri);
     }
 
@@ -128,7 +128,7 @@ export default class URI {
      * return this URI without a query
      */
     withoutQuery(): URI {
-        return this.withQuery('')
+        return this.withQuery('');
     }
 
     /**
@@ -138,7 +138,7 @@ export default class URI {
         const newCodeUri = Uri.from({
             ...this.codeUri.toJSON(),
             fragment
-        })
+        });
         return new URI(newCodeUri);
     }
 
@@ -146,15 +146,15 @@ export default class URI {
      * return this URI without a fragment
      */
     withoutFragment(): URI {
-        return this.withFragment('')
+        return this.withFragment('');
     }
 
     get scheme(): string {
-        return this.codeUri.scheme
+        return this.codeUri.scheme;
     }
 
     get authority(): string {
-        return this.codeUri.authority
+        return this.codeUri.authority;
     }
 
     get path(): Path {
@@ -165,11 +165,11 @@ export default class URI {
     }
 
     get query(): string {
-        return this.codeUri.query
+        return this.codeUri.query;
     }
 
     get fragment(): string {
-        return this.codeUri.fragment
+        return this.codeUri.fragment;
     }
 
     toString(skipEncoding?: boolean) {

@@ -6,7 +6,7 @@
  */
 
 import { PreferenceService } from './preference-service';
-import { PreferenceServer, PreferenceClient, PreferenceChangedEvent, PreferenceChange } from './'
+import { PreferenceServer, PreferenceClient, PreferenceChangedEvent, PreferenceChange } from './';
 import * as chai from 'chai';
 import * as chaiAsPromised from 'chai-as-promised';
 
@@ -19,7 +19,7 @@ const prefJson: { [key: string]: any } = {
     "testString": "string",
     "testBooleanTrue": true,
     "testNumber1": 1,
-}
+};
 
 class PreferenceServerStub implements PreferenceServer {
     has(preferenceName: string): Promise<boolean> {
@@ -81,7 +81,7 @@ class PreferenceServerStub implements PreferenceServer {
 
     fireEvents() {
         for (const field of Object.keys(prefJson)) {
-            const event = { preferenceName: field, newValue: prefJson[field] }
+            const event = { preferenceName: field, newValue: prefJson[field] };
             const changes: PreferenceChange[] = [];
             changes.push(event);
 
@@ -146,13 +146,13 @@ describe('preference-service  (simplified api)', () => {
         expect(valBoolean).to.be.false;
 
         // should return true value as a "true" string
-        valString = prefService.getString("testBooleanTrue")
+        valString = prefService.getString("testBooleanTrue");
         expect(valString).to.be.equal("true");
 
         // should return NaN for a NaN
         valNumber = prefService.getNumber("testString");
         expect(isNaN(valNumber!)).to.be.true;
-    })
+    });
 
     it('should return undefined when wrong value and no default value supplied', () => {
         // should return undefined for a non-existing boolean key
@@ -189,7 +189,7 @@ describe('preference-service  (simplified api)', () => {
                 { preferenceName: "test" },
                 { preferenceName: "test2", newValue: true },
                 { preferenceName: "test3", newValue: true, oldValue: false }]
-        }
+        };
 
         prefService.onPreferenceChanged((event) => {
             switch (event.preferenceName) {
@@ -209,7 +209,7 @@ describe('preference-service  (simplified api)', () => {
                     break;
                 }
             }
-        })
+        });
 
         prefStub.onDidChangePreference(prefChangedEvent);
     });
