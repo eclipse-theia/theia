@@ -20,7 +20,7 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly onUserStorageChangedEmitter = new Emitter<UserStorageChangeEvent>();
-    protected userStorageFolder: Promise<URI>;
+    protected readonly userStorageFolder: Promise<URI>;
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
@@ -37,6 +37,9 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
             this.toDispose.push(this.watcher.onFilesChanged(changes => this.onDidFilesChanged(changes)));
             return new URI(home.uri).resolve(THEIA_USER_STORAGE_FOLDER);
         });
+
+        this.toDispose.push(this.onUserStorageChangedEmitter);
+
     }
 
     dispose(): void {
@@ -44,18 +47,21 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
     }
 
     onDidFilesChanged(fileChanges: FileChange[]): void {
-        const uris: string[] = [];
-        for (const change of fileChanges) {
-            uris.push(this.fromFsUri(change.uri.toString()).toString());
-        }
-        this.onUserStorageChangedEmitter.fire({ uris });
+        const uris: URI[] = [];
+        this.userStorageFolder.then(folder => {
+            for (const change of fileChanges) {
+                const userStorageUri = UserStorageServiceFilesystemImpl.toUserStorageUri(folder, change.uri);
+                uris.push(userStorageUri);
+            }
+            this.onUserStorageChangedEmitter.fire({ uris });
+        });
     }
 
     readContents(uri: string) {
         return this.userStorageFolder
             .then(folderUri => {
-                const userStorageUri = new URI(uri);
-                return this.fileSystem.resolveContent(this.toFsUri(folderUri, userStorageUri).toString());
+                const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, new URI(uri));
+                return this.fileSystem.resolveContent(filesystemUri.toString());
             })
             .then(({ stat, content }) => content);
     }
@@ -63,9 +69,9 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
     saveContents(uri: string, content: string) {
 
         return this.userStorageFolder.then(folderUri => {
-            const fsUri = this.toFsUri(folderUri, new URI(uri));
+            const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, new URI(uri));
 
-            this.fileSystem.getFileStat(fsUri.toString()).then(fileStat => {
+            this.fileSystem.getFileStat(filesystemUri.toString()).then(fileStat => {
                 this.fileSystem.setContent(fileStat, content).then(() => Promise.resolve());
             });
         });
@@ -76,16 +82,32 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
     }
 
     /**
-     * Creates a new user storage URI from the filesystem path argument.
-     * @param fsPath the filesystem path.
+     * Creates a new user storage URI from the filesystem URI.
+     * @param userStorageFolderUri User storage folder URI
+     * @param fsPath The filesystem URI
      */
-    private fromFsUri(fsPath: string) {
-        const fsUri = new URI(fsPath);
-        return new URI('').withScheme(UserStorageUri.SCHEME).withPath(fsUri.path.base);
-
+    public static toUserStorageUri(userStorageFolderUri: URI, rawUri: URI): URI {
+        const userStorageRelativePath = this.getRelativeUserStoragePath(userStorageFolderUri, rawUri);
+        return new URI('').withScheme(UserStorageUri.SCHEME).withPath(userStorageRelativePath).withFragment(rawUri.fragment).withQuery(rawUri.query);
     }
 
-    private toFsUri(root: URI, userUri: URI): URI {
-        return userUri.withPath(root.path.join(userUri.path.toString()));
+    /**
+     * Returns the path relative to the user storage filesystem uri i.e if the user storage root is
+     * 'file://home/user/.theia' and the fileUri is 'file://home/user.theia/keymaps.json' it will return 'keymaps.json'
+     * @param userStorageFolderUri User storage folder URI
+     * @param fileUri User storage
+     */
+    private static getRelativeUserStoragePath(userStorageFolderUri: URI, fileUri: URI): string {
+        /* + 1 so that it removes the beginning slash  i.e return keymaps.json and not /keymaps.json */
+        return fileUri.toString().slice(userStorageFolderUri.toString().length + 1);
+    }
+
+    /**
+     * Returns the associated filesystem URI relative to the user storage folder passed as argument.
+     * @param userStorageFolderUri User storage folder URI
+     * @param userStorageUri User storage URI to be converted in filesystem URI
+     */
+    public static toFilesystemURI(userStorageFolderUri: URI, userStorageUri: URI): URI {
+        return userStorageFolderUri.withPath(userStorageFolderUri.path.join(userStorageUri.path.toString()));
     }
 }
