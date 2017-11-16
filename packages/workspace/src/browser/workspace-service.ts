@@ -5,10 +5,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
-import URI from "@theia/core/lib/common/uri";
-import { FileSystem, FileStat, FileSystemWatcher } from "@theia/filesystem/lib/common";
-import { WorkspaceServer } from "../common";
+import { injectable, inject } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
+import { FileSystem, FileStat, FileSystemWatcher } from '@theia/filesystem/lib/common';
+import { WorkspaceServer } from '../common';
+import { WindowHelper } from './window-helper';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 
 /**
@@ -22,7 +23,8 @@ export class WorkspaceService implements FrontendApplicationContribution {
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
-        @inject(WorkspaceServer) protected readonly server: WorkspaceServer
+        @inject(WorkspaceServer) protected readonly server: WorkspaceServer,
+        @inject(WindowHelper) protected readonly windowHelper: WindowHelper,
     ) {
         (async () => {
             const root = await this.root;
@@ -120,11 +122,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     protected reloadWindow(): void {
-        window.location.reload();
+        this.windowHelper.reloadWindow(window);
     }
 
     protected openNewWindow(): void {
-        window.open(window.location.href);
+        this.windowHelper.openNewWindow(window.location.href);
     }
 
     protected shouldPreserveWindow(options?: WorkspaceInput): boolean {

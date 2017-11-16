@@ -75,60 +75,99 @@ module.exports = Promise.resolve()${this.compileFrontendModuleImports(frontendMo
 
     protected compileElectronMain(): string {
         return `// @ts-check
-const cluster = require('cluster');
-if (cluster.isMaster) {
-    // Workaround for https://github.com/electron/electron/issues/9225. Chrome has an issue where
-    // in certain locales (e.g. PL), image metrics are wrongly computed. We explicitly set the
-    // LC_NUMERIC to prevent this from happening (selects the numeric formatting category of the
-    // C locale, http://en.cppreference.com/w/cpp/locale/LC_categories).
-    if (process.env.LC_ALL) {
-        process.env.LC_ALL = 'C';
+const path = require('path');
+const { isMaster } = require('cluster');
+const { fork } = require('child_process');
+const electron = require('electron');
+const { app, BrowserWindow, ipcMain } = electron;
+
+// Workaround for https://github.com/electron/electron/issues/9225. Chrome has an issue where
+// in certain locales (e.g. PL), image metrics are wrongly computed. We explicitly set the
+// LC_NUMERIC to prevent this from happening (selects the numeric formatting category of the
+// C locale, http://en.cppreference.com/w/cpp/locale/LC_categories).
+if (process.env.LC_ALL) {
+    process.env.LC_ALL = 'C';
+}
+process.env.LC_NUMERIC = 'C';
+
+const windows = [];
+
+function getUrl(port) {
+    return \`file://\${path.join(__dirname, '../../lib/index.html')}?port=\${port}\`;
+}
+
+function createNewWindow(theUrl) {
+    const show = !!theUrl;
+    const newWindow = new BrowserWindow({ width: 1024, height: 728, show: show });
+    if (windows.length === 0) {
+        newWindow.webContents.on('new-window', (event, url, frameName, disposition, options) => {
+            // If the first electron window isn't visible, then all other new windows will remain invisible.
+            // https://github.com/electron/electron/issues/3751
+            options.show = true;
+            options.width = 1024;
+            options.height = 728;
+        });
     }
-    process.env.LC_NUMERIC = 'C';
-    const electron = require('electron');
-    electron.app.on('window-all-closed', function () {
-        if (process.platform !== 'darwin') {
-            electron.app.quit();
+    windows.push(newWindow);
+    if (show) {
+        newWindow.loadURL(theUrl);
+    } else {
+        newWindow.on('ready-to-show', () => newWindow.show());
+    }
+    newWindow.on('closed', () => {
+        const index = windows.indexOf(newWindow);
+        if (index !== -1) {
+            let windowToClose = windows.splice(index, 1);
+            windowToClose = null;
+        }
+        if (windows.length === 0) {
+            app.exit(0);
         }
     });
-    electron.app.on('ready', function () {
-        const path = require('path');
-        const { fork } = require('child_process');
+    return newWindow;
+}
+
+if (isMaster) {
+    app.on('window-all-closed', () => {
+        if (process.platform !== 'darwin') {
+            app.quit();
+        }
+    });
+    ipcMain.on('create-new-window', (event, url) => {
+        createNewWindow(url);
+    });
+    app.on('ready', () => {
         // Check whether we are in bundled application or development mode.
         const devMode = process.defaultApp || /node_modules[\\/]electron[\\/]/.test(process.execPath);
-        const mainWindow = new electron.BrowserWindow({ width: 1024, height: 728, show: false });
-        mainWindow.on('ready-to-show', () => mainWindow.show());
-        const mainPath = path.join(__dirname, '..', 'backend', 'main');
-        const loadMainWindow = function (port) {
-            mainWindow.loadURL(\`file://\${path.join(__dirname, '../../lib/index.html')}?port=\${port}\`);
+        const mainWindow = createNewWindow();
+        const loadMainWindow = (aWindow, port) => {
+            aWindow.loadURL(getUrl(port));
         };
         // We need to distinguish between bundled application and development mode when starting the clusters.
-        // https://github.com/electron/electron/issues/6337#issuecomment-230183287
+        // See: https://github.com/electron/electron/issues/6337#issuecomment-230183287
+        const mainPath = path.join(__dirname, '..', 'backend', 'main');
         if (devMode) {
             require(mainPath).then(address => {
-                loadMainWindow(address.port);
+                loadMainWindow(mainWindow, address.port);
             }).catch((error) => {
                 console.error(error);
-                electron.app.exit(1);
+                app.exit(1);
             });
         } else {
             const cp = fork(mainPath);
-            cp.on('message', function (message) {
-                loadMainWindow(message);
+            cp.on('message', (message) => {
+                loadMainWindow(mainWindow, message);
             });
-            cp.on('error', function (error) {
+            cp.on('error', (error) => {
                 console.error(error);
-                electron.app.exit(1);
+                app.exit(1);
             });
-            electron.app.on('quit', function() {
+            app.on('quit', () => {
                 // If we forked the process for the clusters, we need to manually terminate it.
                 // See: https://github.com/theia-ide/theia/issues/835
                 process.kill(cp.pid);
             });
         }
-        mainWindow.on('closed', function () {
-            electron.app.exit(0);
-        });
     });
 } else {
     require('../backend/main');
