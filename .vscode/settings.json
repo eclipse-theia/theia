@@ -19,6 +19,7 @@
         "packages/filesystem/coverage/lcov.info",
         "packages/extension-manager/coverage/lcov.info",
         "packages/go/coverage/lcov.info",
+        "packages/grep-workspace/coverage/lcov.info",
         "packages/java/coverage/lcov.info",
         "packages/languages/coverage/lcov.info",
         "packages/monaco/coverage/lcov.info",

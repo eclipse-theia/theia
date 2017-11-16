@@ -75,7 +75,6 @@ const gccLinkerErrorMatcher: IMatcher = {
     "pattern": gccLinkerErrorPattern
 };
 
-
 describe("output-parser", () => {
     let parser: IOutputParser;
     beforeEach(function () {
@@ -302,4 +301,3 @@ describe("output-parser", () => {
     });
 
 });
-
