@@ -65,7 +65,7 @@ export class MonacoLanguages extends BaseMonacoLanguages implements Languages {
         return monacoLanguages.map((monacoLang: monaco.languages.ILanguageExtensionPoint) => ({
             id: monacoLang.id,
             name: monacoLang.aliases && monacoLang.aliases.length > 0 ? monacoLang.aliases[0] : monacoLang.id
-        }))
+        }));
     }
 
 }
