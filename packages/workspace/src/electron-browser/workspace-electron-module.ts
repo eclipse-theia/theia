@@ -6,7 +6,7 @@
  */
 
 import { interfaces, ContainerModule } from 'inversify';
-import { createContainerModule } from '../browser/browser-workspace-frontend-module';
+import { createContainerModule } from '../browser/workspace-frontend-module';
 import { WindowHelper } from '../browser/window-helper';
 import { ElectronWindowHelper } from './electron-window-helper';
 

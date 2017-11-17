@@ -12,8 +12,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/browser-workspace-frontend-module",
-      "frontendElectron": "lib/electron-browser/electron-workspace-frontend-module",
+      "frontend": "lib/browser/workspace-frontend-module",
+      "frontendElectron": "lib/electron-browser/workspace-electron-module",
       "backend": "lib/node/workspace-backend-module"
     }
   ],
