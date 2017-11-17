@@ -26,8 +26,8 @@ export class QuickFileOpenFrontendContribution implements CommandContribution, K
         });
     }
 
-    registerKeyBindings(keybindings: KeybindingRegistry): void {
-        keybindings.registerKeyBinding({
+    registerKeybindings(keybindings: KeybindingRegistry): void {
+        keybindings.registerKeybinding({
             commandId: quickFileOpen.id,
             keyCode: KeyCode.createKeyCode({ first: Key.KEY_P, modifiers: [Modifier.M1] })
         });

@@ -29,7 +29,7 @@ export class EditorKeybindingContribution implements KeybindingContribution {
         @inject(EditorKeybindingContext) protected readonly editorKeybindingContext: EditorKeybindingContext
     ) { }
 
-    registerKeyBindings(registry: KeybindingRegistry): void {
+    registerKeybindings(registry: KeybindingRegistry): void {
     }
 
 }

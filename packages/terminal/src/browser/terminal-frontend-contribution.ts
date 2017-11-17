@@ -53,14 +53,14 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
         });
     }
 
-    registerKeyBindings(keybindings: KeybindingRegistry): void {
+    registerKeybindings(keybindings: KeybindingRegistry): void {
         [
             {
                 commandId: TerminalCommands.NEW.id,
                 keyCode: KeyCode.createKeyCode({ first: Key.BACKQUOTE, modifiers: [Modifier.M1] })
             },
         ].forEach(binding => {
-            keybindings.registerKeyBinding(binding);
+            keybindings.registerKeybinding(binding);
         });
     }
 

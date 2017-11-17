@@ -247,21 +247,21 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         });
     }
 
-    registerKeyBindings(registry: KeybindingRegistry): void {
+    registerKeybindings(registry: KeybindingRegistry): void {
         if (supportCut) {
-            registry.registerKeyBinding({
+            registry.registerKeybinding({
                 commandId: CommonCommands.CUT.id,
                 keyCode: KeyCode.createKeyCode({ first: Key.KEY_X, modifiers: [Modifier.M1] })
             });
         }
         if (supportCopy) {
-            registry.registerKeyBinding({
+            registry.registerKeybinding({
                 commandId: CommonCommands.COPY.id,
                 keyCode: KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [Modifier.M1] })
             });
         }
         if (supportPaste) {
-            registry.registerKeyBinding({
+            registry.registerKeybinding({
                 commandId: CommonCommands.PASTE.id,
                 keyCode: KeyCode.createKeyCode({ first: Key.KEY_V, modifiers: [Modifier.M1] })
             });

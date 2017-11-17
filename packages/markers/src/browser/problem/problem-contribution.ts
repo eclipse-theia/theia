@@ -55,8 +55,8 @@ export class ProblemContribution implements CommandContribution, MenuContributio
         });
     }
 
-    registerKeyBindings(keybindings: KeybindingRegistry): void {
-        keybindings.registerKeyBinding({
+    registerKeybindings(keybindings: KeybindingRegistry): void {
+        keybindings.registerKeybinding({
             commandId: ProblemCommands.OPEN.id,
             keyCode: KeyCode.createKeyCode({
                 first: Key.KEY_M, modifiers: [Modifier.M2, Modifier.M1]
