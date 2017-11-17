@@ -53,7 +53,7 @@ export class EditorKeybindingContribution implements KeybindingContribution {
         @inject(EditorKeybindingContext) protected readonly editorKeybindingContext: EditorKeybindingContext
     ) { }
 
-    registerKeyBindings(registry: KeybindingRegistry): void {
+    registerKeybindings(registry: KeybindingRegistry): void {
         [
             {
                 commandId: 'editor.close',
@@ -66,7 +66,7 @@ export class EditorKeybindingContribution implements KeybindingContribution {
                 keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M2, Modifier.M3] })
             }
         ].forEach(binding => {
-            registry.registerKeyBinding(binding);
+            registry.registerKeybinding(binding);
         });
     }
 }

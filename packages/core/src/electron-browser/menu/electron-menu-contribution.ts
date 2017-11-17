@@ -122,26 +122,26 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
         });
     }
 
-    registerKeyBindings(registry: KeybindingRegistry): void {
-        registry.registerKeyBinding({
+    registerKeybindings(registry: KeybindingRegistry): void {
+        registry.registerKeybinding({
             commandId: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id,
             keyCode: KeyCode.createKeyCode({ first: Key.KEY_I, modifiers: [Modifier.M1, Modifier.M2] })
         });
 
-        registry.registerKeyBinding({
+        registry.registerKeybinding({
             commandId: ElectronCommands.RELOAD.id,
             keyCode: KeyCode.createKeyCode({ first: Key.KEY_R, modifiers: [Modifier.M1] })
         });
 
-        registry.registerKeyBinding({
+        registry.registerKeybinding({
             commandId: ElectronCommands.ZOOM_IN.id,
             keyCode: KeyCode.createKeyCode({ first: Key.EQUAL, modifiers: [Modifier.M1] })
         });
-        registry.registerKeyBinding({
+        registry.registerKeybinding({
             commandId: ElectronCommands.ZOOM_OUT.id,
             keyCode: KeyCode.createKeyCode({ first: Key.MINUS, modifiers: [Modifier.M1] })
         });
-        registry.registerKeyBinding({
+        registry.registerKeybinding({
             commandId: ElectronCommands.RESET_ZOOM.id,
             keyCode: KeyCode.createKeyCode({ first: Key.DIGIT0, modifiers: [Modifier.M1] })
         });
