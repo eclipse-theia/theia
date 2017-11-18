@@ -12,6 +12,7 @@ import { TerminalProcess, TerminalProcessOptions, ProcessManager } from '@theia/
 import { isWindows } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
 import { FileUri } from "@theia/core/lib/node/file-uri";
+import { parseArgs } from '@theia/process/lib/node/utils';
 
 export const ShellProcessFactory = Symbol("ShellProcessFactory");
 export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess;
@@ -46,7 +47,7 @@ export class ShellProcess extends TerminalProcess {
     ) {
         super(<TerminalProcessOptions>{
             command: options.shell || ShellProcess.getShellExecutablePath(),
-            args: [],
+            args: ShellProcess.getShellExecutableArgs(),
             options: {
                 name: 'xterm-color',
                 cols: options.cols || ShellProcess.defaultCols,
@@ -58,10 +59,22 @@ export class ShellProcess extends TerminalProcess {
     }
 
     protected static getShellExecutablePath(): string {
+        const shell = process.env.THEIA_SHELL;
+        if (shell) {
+            return shell;
+        }
         if (isWindows) {
             return 'cmd.exe';
         } else {
             return process.env.SHELL!;
         }
+    }
+
+    protected static getShellExecutableArgs(): string[] {
+        const args = process.env.THEIA_SHELL_ARGS;
+        if (args) {
+            return parseArgs(args);
+        }
+        return [];
     }
 }
