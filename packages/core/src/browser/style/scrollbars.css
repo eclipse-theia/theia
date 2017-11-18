@@ -1,13 +1,13 @@
 ::-webkit-scrollbar {
-    height: 12px;
-    width: 12px;
-    background: var(--theia-layout-color1);
+    height: 9px;
+    width: 9px;
+    background: var(--theia-scrollbar-color);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--theia-ui-font-color2);
+    background: var(--theia-scrollbar-thumb-color);
 }
 
 ::-webkit-scrollbar-corner {
-    background: var(--theia-layout-color1);
+    background: transparent;
 }

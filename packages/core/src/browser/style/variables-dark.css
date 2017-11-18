@@ -100,6 +100,7 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-layout-color1: #333333;
   --theia-layout-color2: #2b2b2b;
   --theia-layout-color3: #1e1e1e;
+  --theia-layout-color4: #404040;
 
   /* Brand/accent */
 
@@ -145,4 +146,8 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-sprite-y-offset: -20px;
   --theia-icon-circle: url(../icons/circle-dark.svg);
   --theia-preloader: url(../icons/spinner.gif);
+
+  /* scrollbars */
+  --theia-scrollbar-thumb-color: var(--theia-layout-color4);
+  --theia-scrollbar-color: var(--theia-layout-color3);
 }
