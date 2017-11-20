@@ -4,8 +4,7 @@
   "description": "Theia - Workspace Extension",
   "dependencies": {
     "@theia/core": "^0.2.1",
-    "@theia/filesystem": "^0.2.1",
-    "electron": "1.7.6"
+    "@theia/filesystem": "^0.2.1"
   },
   "publishConfig": {
     "access": "public"
