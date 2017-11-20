@@ -22,8 +22,10 @@ export class ProcessManager {
     }
 
     register(process: Process): number {
-        this.processes.set(++this.id, process);
-        return this.id;
+        const id = this.id;
+        this.processes.set(id, process);
+        this.id++;
+        return id;
     }
 
     get(id: number): Process | undefined {

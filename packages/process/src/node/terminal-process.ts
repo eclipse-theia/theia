@@ -21,7 +21,9 @@ export interface TerminalProcessOptions {
 }
 
 export const TerminalProcessFactory = Symbol("TerminalProcessFactory");
-export type TerminalProcessFactory = (options: TerminalProcessOptions) => TerminalProcess;
+export interface TerminalProcessFactory {
+    (options: TerminalProcessOptions): TerminalProcess;
+}
 
 /* Use this instead of the node-pty stream, since the node-pty stream is already resumed.  */
 class ReadableTerminalStream extends stream.Readable {
