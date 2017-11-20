@@ -8,12 +8,14 @@
 import { ContainerModule, Container } from 'inversify';
 import { RawProcess, RawProcessOptions, RawProcessFactory } from './raw-process';
 import { TerminalProcess, TerminalProcessOptions, TerminalProcessFactory } from './terminal-process';
+import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { ProcessManager } from "./process-manager";
 import { ILogger } from '@theia/core/lib/common';
 
 export default new ContainerModule(bind => {
     bind(RawProcess).toSelf().inTransientScope();
     bind(ProcessManager).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).to(ProcessManager).inSingletonScope();
     bind(RawProcessFactory).toFactory(ctx =>
         (options: RawProcessOptions) => {
             const child = new Container({ defaultScope: 'Singleton' });
