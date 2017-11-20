@@ -74,9 +74,8 @@ export class BackendApplication {
         process.on('exit', () => this.onStop());
         // Handles `Ctrl+C`.
         process.on('SIGINT', () => this.onStop());
-        // Handles `kill pid`
-        process.on('SIGUSR1', () => this.onStop());
-        process.on('SIGUSR2', () => this.onStop());
+        // Handles `kill pid`.
+        process.on('SIGTERM', () => this.onStop());
 
         for (const contribution of this.contributionsProvider.getContributions()) {
             if (contribution.initialize) {
