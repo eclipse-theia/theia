@@ -5,16 +5,12 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { ipcRenderer } from 'electron';
 import { injectable } from 'inversify';
-import { DefaultWindowHelper } from '../browser/window-helper';
+import { ipcRenderer } from 'electron';
+import { DefaultWindowService } from '../../browser/window/window-service';
 
 @injectable()
-export class ElectronWindowHelper extends DefaultWindowHelper {
-
-    reloadWindow(window: Window): void {
-        window.location.reload();
-    }
+export class ElectronWindowService extends DefaultWindowService {
 
     openNewWindow(url: string): void {
         ipcRenderer.send('create-new-window', url);
