@@ -8,9 +8,10 @@ import { injectable, inject } from 'inversify';
 import { Process } from './process';
 import { Emitter, Event } from '@theia/core/lib/common';
 import { ILogger } from '@theia/core/lib/common/logger';
+import { BackendApplicationContribution } from '@theia/core/lib/node';
 
 @injectable()
-export class ProcessManager {
+export class ProcessManager implements BackendApplicationContribution {
 
     protected id: number = 0;
     protected readonly processes: Map<number, Process>;
@@ -35,13 +36,23 @@ export class ProcessManager {
     delete(process: Process): void {
         process.kill();
         if (!this.processes.delete(process.id)) {
-            this.logger.warn(`The process was not registered via this manager. Anyway, we kill your process. PID: ${process.pid}.`);
+            this.logger.warn(`The process was not registered via this manager. Anyway, we terminate your process. PID: ${process.pid}.`);
         }
         this.deleteEmitter.fire(process.id);
     }
 
     get onDelete(): Event<number> {
         return this.deleteEmitter.event;
+    }
+
+    onStop?(): void {
+        for (const process of this.processes.values()) {
+            try {
+                this.delete(process);
+            } catch (error) {
+                this.logger.error(`Error occurred when terminating process. PID: ${process.pid}.`, error);
+            }
+        }
     }
 
 }

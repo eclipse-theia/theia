@@ -38,17 +38,4 @@ export class LanguagesBackendContribution implements BackendApplicationContribut
         }
     }
 
-    onStop(): void {
-        for (const contribution of this.contributors.getContributions()) {
-            if (contribution.stop) {
-                try {
-                    contribution.stop();
-                } catch (e) {
-                    const path = LanguageContribution.getPath(contribution);
-                    this.logger.error(`Error occurred while stopping language contribution. ${path}.`, e);
-                }
-            }
-        }
-    }
-
 }
