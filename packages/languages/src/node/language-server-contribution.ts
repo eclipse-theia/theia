@@ -16,7 +16,7 @@ import {
     forward,
     IConnection
 } from 'vscode-ws-jsonrpc/lib/server';
-import { MaybePromise } from "@theia/core/lib/common";
+import { Disposable, MaybePromise } from "@theia/core/lib/common";
 import { LanguageContribution } from "../common";
 import { RawProcess, RawProcessFactory } from '@theia/process/lib/node/raw-process';
 import { ProcessManager } from '@theia/process/lib/node/process-manager';
@@ -39,7 +39,7 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
 
     abstract readonly id: string;
     abstract readonly name: string;
-    protected readonly spawnedProcessIds: number[] = [];
+    protected readonly disposables: Disposable[] = [];
 
     @inject(RawProcessFactory)
     protected readonly processFactory: RawProcessFactory;
@@ -50,10 +50,12 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
     abstract start(clientConnection: IConnection): void;
 
     stop(): void {
-        this.spawnedProcessIds
-            .map(id => this.processManager.get(id))
-            .filter(process => process)
-            .forEach(process => this.processManager.delete(process!));
+        while (this.disposables.length > 0) {
+            const disposable = this.disposables.pop();
+            if (disposable) {
+                disposable.dispose();
+            }
+        }
     }
 
     protected forward(clientConnection: IConnection, serverConnection: IConnection): void {
@@ -85,10 +87,16 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
 
     protected spawnProcess(command: string, args?: string[], options?: cp.SpawnOptions): RawProcess {
         const rawProcess = this.processFactory({ command, args, options });
-        this.spawnedProcessIds.push(rawProcess.id);
-        const { process } = rawProcess;
-        process.once('error', this.onDidFailSpawnProcess.bind(this));
-        process.stderr.on('data', this.logError.bind(this));
+        this.disposables.push({
+            dispose: () => {
+                const process = this.processManager.get(rawProcess.id);
+                if (process) {
+                    this.processManager.delete(process);
+                }
+            }
+        });
+        rawProcess.process.once('error', this.onDidFailSpawnProcess.bind(this));
+        rawProcess.process.stderr.on('data', this.logError.bind(this));
         return rawProcess;
     }
 
