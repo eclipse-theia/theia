@@ -5,7 +5,6 @@
 :root {
   /* These need to be root because tabs get attached to the body during dragging. */
   --theia-private-horizontal-tab-height: 24px;
-  --theia-private-horizontal-tab-width: 144px;
   --theia-private-horizontal-tab-active-top-border: 2px;
 }
 
@@ -38,7 +37,7 @@
 }
 
 .p-DockPanel-tabBar .p-TabBar-tab {
-  flex: 0 1 var(--theia-private-horizontal-tab-width);
+  flex: 0 1 auto;
   min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-border-width));
   min-width: 35px;
   margin-left: calc(-1*var(--theia-border-width));
@@ -168,7 +167,6 @@
   font-size: var(--theia-ui-font-size1);
   line-height: var(--theia-private-horizontal-tab-height);
   min-height: var(--theia-private-horizontal-tab-height);
-  min-width: var(--theia-private-horizontal-tab-width);
   padding: 0px 10px;
   transform: translateX(-40%) translateY(-58%);
 }
