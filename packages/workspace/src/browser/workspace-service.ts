@@ -9,7 +9,7 @@ import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystem, FileStat, FileSystemWatcher } from '@theia/filesystem/lib/common';
 import { WorkspaceServer } from '../common';
-import { WindowHelper } from './window-helper';
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 
 /**
@@ -24,7 +24,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
         @inject(WorkspaceServer) protected readonly server: WorkspaceServer,
-        @inject(WindowHelper) protected readonly windowHelper: WindowHelper,
+        @inject(WindowService) protected readonly windowService: WindowService,
     ) {
         (async () => {
             const root = await this.root;
@@ -122,11 +122,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     protected reloadWindow(): void {
-        this.windowHelper.reloadWindow(window);
+        window.location.reload();
     }
 
     protected openNewWindow(): void {
-        this.windowHelper.openNewWindow(window.location.href);
+        this.windowService.openNewWindow(window.location.href);
     }
 
     protected shouldPreserveWindow(options?: WorkspaceInput): boolean {

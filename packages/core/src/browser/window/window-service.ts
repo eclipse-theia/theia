@@ -8,15 +8,10 @@
 import { injectable } from 'inversify';
 
 /**
- * Helper for opening new browser windows and reloading the content of existing ones.
+ * Service for opening new browser windows.
  */
-export const WindowHelper = Symbol('WindowHelper');
-export interface WindowHelper {
-
-    /**
-     * Reloads the content of the `window` argument.
-     */
-    reloadWindow(window: Window): void;
+export const WindowService = Symbol('WindowService');
+export interface WindowService {
 
     /**
      * Opens a new window and loads the content from the given URL.
@@ -26,11 +21,7 @@ export interface WindowHelper {
 }
 
 @injectable()
-export class DefaultWindowHelper implements WindowHelper {
-
-    reloadWindow(window: Window): void {
-        window.location.reload();
-    }
+export class DefaultWindowService implements WindowService {
 
     openNewWindow(url: string): void {
         window.open(url);

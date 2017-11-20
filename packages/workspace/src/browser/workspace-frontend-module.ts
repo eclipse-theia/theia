@@ -15,39 +15,30 @@ import { WorkspaceService } from './workspace-service';
 import { WorkspaceCommandContribution, FileMenuContribution } from './workspace-commands';
 import { WorkspaceStorageService } from './workspace-storage-service';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
-import { WindowHelper, DefaultWindowHelper } from './window-helper';
 
 import '../../src/browser/style/index.css';
 
-export function createContainerModule(extensionCallback?: interfaces.ContainerModuleCallBack): ContainerModule {
-    return new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
-        bind(WorkspaceService).toSelf().inSingletonScope();
-        bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(WorkspaceService));
-        bind(WorkspaceServer).toDynamicValue(ctx => {
-            const provider = ctx.container.get(WebSocketConnectionProvider);
-            return provider.createProxy<WorkspaceServer>(workspacePath);
-        }).inSingletonScope();
+export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
+    bind(WorkspaceService).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(WorkspaceService));
+    bind(WorkspaceServer).toDynamicValue(ctx => {
+        const provider = ctx.container.get(WebSocketConnectionProvider);
+        return provider.createProxy<WorkspaceServer>(workspacePath);
+    }).inSingletonScope();
 
-        bind(WorkspaceFrontendContribution).toSelf().inSingletonScope();
-        for (const identifier of [CommandContribution, MenuContribution]) {
-            bind(identifier).toDynamicValue(ctx =>
-                ctx.container.get(WorkspaceFrontendContribution)
-            ).inSingletonScope();
-        }
+    bind(WorkspaceFrontendContribution).toSelf().inSingletonScope();
+    for (const identifier of [CommandContribution, MenuContribution]) {
+        bind(identifier).toDynamicValue(ctx =>
+            ctx.container.get(WorkspaceFrontendContribution)
+        ).inSingletonScope();
+    }
 
-        bind(FileDialogFactory).toFactory(ctx =>
-            (props: FileDialogProps) =>
-                createFileDialog(ctx.container, props)
-        );
-        bind(CommandContribution).to(WorkspaceCommandContribution).inSingletonScope();
-        bind(MenuContribution).to(FileMenuContribution).inSingletonScope();
-        bind(WindowHelper).to(DefaultWindowHelper).inSingletonScope();
+    bind(FileDialogFactory).toFactory(ctx =>
+        (props: FileDialogProps) =>
+            createFileDialog(ctx.container, props)
+    );
+    bind(CommandContribution).to(WorkspaceCommandContribution).inSingletonScope();
+    bind(MenuContribution).to(FileMenuContribution).inSingletonScope();
 
-        rebind(StorageService).to(WorkspaceStorageService).inSingletonScope();
-        if (extensionCallback) {
-            extensionCallback(bind, unbind, isBound, rebind);
-        }
-    });
-}
-
-export default createContainerModule();
+    rebind(StorageService).to(WorkspaceStorageService).inSingletonScope();
+});
