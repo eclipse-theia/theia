@@ -9,12 +9,14 @@ import { ContainerModule, interfaces } from 'inversify';
 import { CommandContribution, MenuContribution } from "@theia/core/lib/common";
 import { WebSocketConnectionProvider, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { FileDialogFactory, createFileDialog, FileDialogProps } from '@theia/filesystem/lib/browser';
+import { StorageService } from '@theia/core/lib/browser/storage-service';
+import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { WorkspaceServer, workspacePath } from '../common';
 import { WorkspaceFrontendContribution } from "./workspace-frontend-contribution";
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceCommandContribution, FileMenuContribution } from './workspace-commands';
 import { WorkspaceStorageService } from './workspace-storage-service';
-import { StorageService } from '@theia/core/lib/browser/storage-service';
+import { WorkspaceUriLabelProviderContribution } from './workspace-uri-contribution';
 
 import '../../src/browser/style/index.css';
 
@@ -41,4 +43,6 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(MenuContribution).to(FileMenuContribution).inSingletonScope();
 
     rebind(StorageService).to(WorkspaceStorageService).inSingletonScope();
+
+    bind(LabelProviderContribution).to(WorkspaceUriLabelProviderContribution).inSingletonScope();
 });

@@ -6,6 +6,8 @@
 */
 
 import URI from "@theia/core/lib/common/uri";
+import { LabelProviderContribution, LabelProvider } from '@theia/core/lib/browser/label-provider';
+import { injectable, inject } from "inversify";
 
 export namespace DiffUris {
 
@@ -32,4 +34,41 @@ export namespace DiffUris {
         return uri.scheme === 'diff';
     }
 
+}
+
+@injectable()
+export class DiffUriLabelProviderContribution implements LabelProviderContribution {
+
+    constructor( @inject(LabelProvider) protected labelProvider: LabelProvider) { }
+
+    canHandle(element: object): number {
+        if (element instanceof URI && DiffUris.isDiffUri(element)) {
+            return 20;
+        }
+        return 0;
+    }
+
+    getLongName(uri: URI): string {
+        const [left, right] = DiffUris.decode(uri);
+        const leftLongName = this.labelProvider.getLongName(left);
+        const rightLongName = this.labelProvider.getLongName(right);
+        if (leftLongName === rightLongName) {
+            return leftLongName;
+        }
+        return `${leftLongName} <-> ${rightLongName}`;
+    }
+
+    getName(uri: URI): string {
+        const [left, right] = DiffUris.decode(uri);
+        const leftLongName = this.labelProvider.getName(left);
+        const rightLongName = this.labelProvider.getName(right);
+        if (leftLongName === rightLongName) {
+            return leftLongName;
+        }
+        return `${leftLongName} <-> ${rightLongName}`;
+    }
+
+    getIcon(uri: URI): string {
+        return `fa fa-columns`;
+    }
 }

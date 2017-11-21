@@ -25,7 +25,8 @@
     "vscode-uri": "^1.0.1",
     "vscode-ws-jsonrpc": "0.0.1-alpha.5",
     "ws": "^3.0.0",
-    "yargs": "^9.0.1"
+    "yargs": "^9.0.1",
+    "file-icons-js": "^1.0.3"
   },
   "publishConfig": {
     "access": "public"

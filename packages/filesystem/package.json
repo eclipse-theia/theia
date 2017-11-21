@@ -9,7 +9,6 @@
     "@types/fs-extra": "^4.0.2",
     "@types/touch": "0.0.1",
     "chokidar": "^1.7.0",
-    "file-icons-js": "^1.0.3",
     "fs-extra": "^4.0.2",
     "mv": "^2.1.1",
     "touch": "^3.1.0",

@@ -8,7 +8,6 @@
 import { EditorManager } from './editor-manager';
 import { injectable, inject } from "inversify";
 import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
-import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
 import { Position } from 'vscode-languageserver-types';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { Languages } from '@theia/languages/lib/common';
@@ -22,7 +21,6 @@ export class EditorContribution implements FrontendApplicationContribution {
     constructor(
         @inject(StatusBar) protected readonly statusBar: StatusBar,
         @inject(EditorManager) protected readonly editorManager: EditorManager,
-        @inject(FileIconProvider) protected readonly iconProvider: FileIconProvider,
         @inject(Languages) protected readonly languages: Languages
     ) { }
 

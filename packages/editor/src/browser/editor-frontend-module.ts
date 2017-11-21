@@ -17,6 +17,8 @@ import { EditorMenuContribution } from './editor-menu';
 import { EditorCommandContribution } from './editor-command';
 import { EditorKeybindingContribution, EditorKeybindingContext } from "./editor-keybinding";
 import { bindEditorPreferences } from './editor-preferences';
+import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
+import { DiffUriLabelProviderContribution } from './diff-uris';
 
 export default new ContainerModule(bind => {
     bindEditorPreferences(bind);
@@ -35,4 +37,6 @@ export default new ContainerModule(bind => {
 
     bind(EditorContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(EditorContribution));
+
+    bind(LabelProviderContribution).to(DiffUriLabelProviderContribution).inSingletonScope();
 });

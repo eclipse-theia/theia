@@ -14,23 +14,19 @@ import { TreeWidget, TreeProps, ContextMenuRenderer, ITreeNode, NodeProps, ITree
 import { h } from "@phosphor/virtualdom/lib";
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
 import { Message } from '@phosphor/messaging';
-import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
 import URI from '@theia/core/lib/common/uri';
 import { UriSelection } from '@theia/filesystem/lib/common';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 
 @injectable()
 export class ProblemWidget extends TreeWidget {
-
-    protected workspacePath: string | undefined;
 
     constructor(
         @inject(ProblemManager) protected readonly problemManager: ProblemManager,
         @inject(TreeProps) readonly treeProps: TreeProps,
         @inject(ProblemTreeModel) readonly model: ProblemTreeModel,
         @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer,
-        @inject(FileIconProvider) protected readonly iconProvider: FileIconProvider,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
+        @inject(LabelProvider) protected readonly labelProvider: LabelProvider
     ) {
         super(treeProps, model, contextMenuRenderer);
 
@@ -39,11 +35,6 @@ export class ProblemWidget extends TreeWidget {
         this.title.iconClass = 'fa fa-exclamation-circle';
         this.title.closable = true;
         this.addClass('theia-marker-container');
-
-        this.workspaceService.root.then(workspaceFileStat => {
-            this.workspacePath = workspaceFileStat ? workspaceFileStat.uri : undefined;
-            this.update();
-        });
 
         this.addClipboardListener(this.node, 'copy', e => this.handleCopy(e));
     }
@@ -125,18 +116,11 @@ export class ProblemWidget extends TreeWidget {
     }
 
     protected decorateMarkerFileNode(node: MarkerInfoNode, caption: h.Child): h.Child {
-        const fileIcon = this.iconProvider.getFileIconForURI(node.uri);
-        const filenameDiv = h.div({ className: fileIcon }, node.uri.displayName);
-        const pathDiv = h.div({ className: 'path' }, this.getRelativePath(node));
+        const fileIcon = this.labelProvider.getIcon(node.uri);
+        const filenameDiv = h.div({ className: fileIcon + ' file-icon' }, this.labelProvider.getName(node.uri));
+        const pathDiv = h.div({ className: 'path' }, this.labelProvider.getLongName(node.uri.parent));
         const counterDiv = h.div({ className: 'counter' }, node.numberOfMarkers.toString());
         return h.div({ className: 'markerFileNode' }, filenameDiv, pathDiv, counterDiv);
     }
 
-    protected getRelativePath(node: MarkerInfoNode): string {
-        const absPath = node.uri.parent.toString();
-        if (this.workspacePath) {
-            return absPath.substr(this.workspacePath.length);
-        }
-        return absPath;
-    }
 }
