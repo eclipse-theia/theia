@@ -201,6 +201,7 @@ export interface Commit {
     readonly parentSHAs: string[];
 
 }
+
 /**
  * A tuple of name, email, and a date for the author or commit info in a commit.
  */
