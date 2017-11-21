@@ -1987,9 +1987,9 @@ dtrace-provider@~0.8:
   dependencies:
     nan "^2.3.3"
 
-dugite-extra@0.0.1-alpha.13:
-  version "0.0.1-alpha.13"
-  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.0.1-alpha.13.tgz#951fee6d9a255321b4255677ce445955b12c946c"
+dugite-extra@0.0.1-alpha.15:
+  version "0.0.1-alpha.15"
+  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.0.1-alpha.15.tgz#8308c76760d1af0ad2b4f8f0f39b6c5638669d08"
   dependencies:
     byline "^5.0.0"
     dugite "1.42.0"
@@ -6822,9 +6822,9 @@ typescript@2.4.1:
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.4.1.tgz#c3ccb16ddaa0b2314de031e7e6fee89e5ba346bc"
 
-typescript@^2.5.2:
-  version "2.5.2"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.5.2.tgz#038a95f7d9bbb420b1bf35ba31d4c5c1dd3ffe34"
+typescript@^2.6.1:
+  version "2.6.1"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.6.1.tgz#ef39cdea27abac0b500242d6726ab90e0c846631"
 
 typpy@^2.0.0, typpy@^2.3.4:
   version "2.3.9"

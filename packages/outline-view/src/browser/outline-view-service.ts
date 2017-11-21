@@ -5,34 +5,31 @@
 * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 */
 
-import { injectable } from "inversify";
-import { Event, Emitter } from "@theia/core";
-import { ICompositeTreeNode, ISelectableTreeNode, IExpandableTreeNode, ITreeNode } from "@theia/core/lib/browser";
+import { injectable, inject } from 'inversify';
+import { Event, Emitter, DisposableCollection } from '@theia/core';
+import { WidgetFactory } from '@theia/core/lib/browser';
+import { OutlineViewWidget, OutlineViewWidgetFactory, OutlineSymbolInformationNode } from './outline-view-widget';
+import { Widget } from '@phosphor/widgets';
 
 @injectable()
-export class OutlineViewService {
+export class OutlineViewService implements WidgetFactory {
 
-    protected _open: boolean = false;
+    id = 'outline-view';
 
+    protected widget?: OutlineViewWidget;
     protected readonly onDidChangeOutlineEmitter = new Emitter<OutlineSymbolInformationNode[]>();
     protected readonly onDidChangeOpenStateEmitter = new Emitter<boolean>();
     protected readonly onDidSelectEmitter = new Emitter<OutlineSymbolInformationNode>();
     protected readonly onDidOpenEmitter = new Emitter<OutlineSymbolInformationNode>();
 
+    constructor( @inject(OutlineViewWidgetFactory) protected factory: OutlineViewWidgetFactory) { }
+
     get onDidSelect(): Event<OutlineSymbolInformationNode> {
         return this.onDidSelectEmitter.event;
     }
 
-    fireSelect(node: OutlineSymbolInformationNode) {
-        this.onDidSelectEmitter.fire(node);
-    }
-
     get onDidOpen(): Event<OutlineSymbolInformationNode> {
         return this.onDidOpenEmitter.event;
-    }
-
-    fireOpen(node: OutlineSymbolInformationNode) {
-        return this.onDidOpenEmitter.fire(node);
     }
 
     get onDidChangeOutline(): Event<OutlineSymbolInformationNode[]> {
@@ -43,26 +40,27 @@ export class OutlineViewService {
         return this.onDidChangeOpenStateEmitter.event;
     }
 
-    publish(symbolInformations: OutlineSymbolInformationNode[]): void {
-        this.onDidChangeOutlineEmitter.fire(symbolInformations);
-    }
-
     get open(): boolean {
-        return this._open;
+        return this.widget !== undefined && this.widget.isVisible;
     }
 
-    set open(open: boolean) {
-        this._open = open;
-        this.onDidChangeOpenStateEmitter.fire(open);
+    publish(roots: OutlineSymbolInformationNode[]): void {
+        if (this.widget) {
+            this.widget.setOutlineTree(roots);
+            this.onDidChangeOutlineEmitter.fire(roots);
+        }
     }
-}
 
-export interface OutlineSymbolInformationNode extends ICompositeTreeNode, ISelectableTreeNode, IExpandableTreeNode {
-    iconClass: string;
-}
-
-export namespace OutlineSymbolInformationNode {
-    export function is(node: ITreeNode): node is OutlineSymbolInformationNode {
-        return !!node && IExpandableTreeNode.is(node) && ISelectableTreeNode.is(node) && 'iconClass' in node;
+    createWidget(): Promise<Widget> {
+        this.widget = this.factory();
+        const disposables = new DisposableCollection();
+        disposables.push(this.widget.onDidChangeOpenStateEmitter.event(open => this.onDidChangeOpenStateEmitter.fire(open)));
+        disposables.push(this.widget.model.onOpenNode(node => this.onDidOpenEmitter.fire(node as OutlineSymbolInformationNode)));
+        disposables.push(this.widget.model.onSelectionChanged(node => this.onDidSelectEmitter.fire(node as OutlineSymbolInformationNode)));
+        this.widget.disposed.connect(() => {
+            this.widget = undefined;
+            disposables.dispose();
+        });
+        return Promise.resolve(this.widget);
     }
 }

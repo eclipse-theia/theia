@@ -20,7 +20,7 @@ describe("Endpoint", () => {
     describe("01 #getWebSocketUrl", () => {
 
         it("Should correctly join root pathname", () => {
-            expectUri(
+            expectWsUri(
                 {
                     httpScheme: "ws",
                     path: "/miau/"
@@ -30,11 +30,11 @@ describe("Endpoint", () => {
                     pathname: "/",
                     search: "",
                     protocol: ""
-                }, "ws://example.org/miau/")
+                }, "ws://example.org/miau/");
         });
 
         it("Should correctly join pathname and path", () => {
-            expectUri(
+            expectWsUri(
                 {
                     httpScheme: "ws",
                     path: "/miau/"
@@ -44,11 +44,11 @@ describe("Endpoint", () => {
                     pathname: "/mainresource",
                     search: "",
                     protocol: ""
-                }, "ws://example.org/mainresource/miau/")
+                }, "ws://example.org/mainresource/miau/");
         });
 
         it("Should correctly join pathname and path, ignoring double slash in between", () => {
-            expectUri(
+            expectWsUri(
                 {
                     httpScheme: "ws",
                     path: "/miau/"
@@ -58,11 +58,11 @@ describe("Endpoint", () => {
                     pathname: "/mainresource/",
                     search: "",
                     protocol: ""
-                }, "ws://example.org/mainresource/miau/")
+                }, "ws://example.org/mainresource/miau/");
         });
 
         it("Should correctly join pathname and path, without trailing slash", () => {
-            expectUri(
+            expectWsUri(
                 {
                     httpScheme: "ws",
                     path: "/miau"
@@ -72,13 +72,35 @@ describe("Endpoint", () => {
                     pathname: "/mainresource",
                     search: "",
                     protocol: ""
-                }, "ws://example.org/mainresource/miau")
+                }, "ws://example.org/mainresource/miau");
+        });
+    });
+
+    describe("02 #httpScheme", () => {
+
+        it("Should choose https:// if location protocol is https://", () => {
+            expectRestUri(
+                {
+                    path: "/"
+                },
+                {
+                    host: "example.org",
+                    pathname: "/",
+                    search: "",
+                    protocol: "https:"
+                }, "https://example.org/");
         });
     });
 });
 
-function expectUri(options: Endpoint.Options, mockLocation: Endpoint.Location, expectedUri: string) {
-    const cut = new Endpoint(options, mockLocation)
-    const uri = cut.getWebSocketUrl()
-    expect(uri.toString()).to.eq(expectedUri)
+function expectWsUri(options: Endpoint.Options, mockLocation: Endpoint.Location, expectedUri: string) {
+    const cut = new Endpoint(options, mockLocation);
+    const uri = cut.getWebSocketUrl();
+    expect(uri.toString()).to.eq(expectedUri);
+}
+
+function expectRestUri(options: Endpoint.Options, mockLocation: Endpoint.Location, expectedUri: string) {
+    const cut = new Endpoint(options, mockLocation);
+    const uri = cut.getRestUrl();
+    expect(uri.toString()).to.eq(expectedUri);
 }

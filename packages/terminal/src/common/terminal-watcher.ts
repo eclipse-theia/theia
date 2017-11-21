@@ -17,12 +17,12 @@ export class TerminalWatcher {
         const errorEmitter = this.onTerminalErrorEmitter;
         return {
             onTerminalExitChanged(event: IBaseTerminalExitEvent) {
-                exitEmitter.fire(event)
+                exitEmitter.fire(event);
             },
             onTerminalError(event: IBaseTerminalErrorEvent) {
                 errorEmitter.fire(event);
             }
-        }
+        };
     }
 
     private onTerminalExitEmitter = new Emitter<IBaseTerminalExitEvent>();

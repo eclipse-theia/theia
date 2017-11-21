@@ -5,13 +5,15 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { TextDocumentSaveReason } from "vscode-languageserver-types";
+import { TextDocumentSaveReason, Position } from "vscode-languageserver-types";
+import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
+import { TextEditorDocument } from "@theia/editor/lib/browser";
 import { DisposableCollection, Disposable, Emitter, Event, Resource } from '@theia/core/lib/common';
 import ITextEditorModel = monaco.editor.ITextEditorModel;
 
 export {
     TextDocumentSaveReason
-}
+};
 
 export interface WillSaveModelEvent {
     readonly model: monaco.editor.IModel;
@@ -19,9 +21,9 @@ export interface WillSaveModelEvent {
     waitUntil(thenable: Thenable<monaco.editor.IIdentifiedSingleEditOperation[]>): void;
 }
 
-export class MonacoEditorModel implements ITextEditorModel {
+export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
 
-    autoSave: boolean = true;
+    autoSave: 'on' | 'off' = 'on';
     autoSaveDelay: number = 500;
 
     protected model: monaco.editor.IModel;
@@ -33,12 +35,21 @@ export class MonacoEditorModel implements ITextEditorModel {
     protected readonly onDidSaveModelEmitter = new Emitter<monaco.editor.IModel>();
     protected readonly onWillSaveModelEmitter = new Emitter<WillSaveModelEvent>();
 
-    constructor(protected readonly resource: Resource) {
+    constructor(
+        protected readonly resource: Resource,
+        protected readonly m2p: MonacoToProtocolConverter,
+        protected readonly p2m: ProtocolToMonacoConverter
+    ) {
         this.toDispose.push(resource);
         this.toDispose.push(this.toDisposeOnAutoSave);
         this.toDispose.push(this.onDidSaveModelEmitter);
         this.toDispose.push(this.onWillSaveModelEmitter);
+        this.toDispose.push(this.onDirtyChangedEmitter);
         this.resolveModel = resource.readContents().then(content => this.initialize(content));
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     /**
@@ -46,16 +57,58 @@ export class MonacoEditorModel implements ITextEditorModel {
      * Only this method can create an instance of `monaco.editor.IModel`,
      * there should not be other calls to `monaco.editor.createModel`.
      */
-    protected initialize(content: string) {
+    protected initialize(content: string): void {
         if (!this.toDispose.disposed) {
-            this.model = monaco.editor.createModel(content, undefined, monaco.Uri.parse(this.resource.uri.toString()))
+            this.model = monaco.editor.createModel(content, undefined, monaco.Uri.parse(this.resource.uri.toString()));
             this.toDispose.push(this.model);
-            this.toDispose.push(this.model.onDidChangeContent(event => this.doAutoSave()));
+            this.toDispose.push(this.model.onDidChangeContent(event => this.markAsDirty()));
+            if (this.resource.onDidChangeContents) {
+                this.toDispose.push(this.resource.onDidChangeContents(() => this.sync()));
+            }
         }
     }
 
-    dispose(): void {
-        this.toDispose.dispose();
+    protected _dirty = false;
+    get dirty(): boolean {
+        return this._dirty;
+    }
+    protected setDirty(dirty: boolean): void {
+        this._dirty = dirty;
+        this.onDirtyChangedEmitter.fire(undefined);
+    }
+
+    protected readonly onDirtyChangedEmitter = new Emitter<void>();
+    get onDirtyChanged(): Event<void> {
+        return this.onDirtyChangedEmitter.event;
+    }
+
+    get uri(): string {
+        return this.model.uri.toString();
+    }
+
+    get languageId(): string {
+        return this.model.getModeId();
+    }
+
+    get version(): number {
+        return this.model.getVersionId();
+    }
+
+    getText(): string {
+        return this.model.getValue();
+    }
+
+    positionAt(offset: number): Position {
+        const { lineNumber, column } = this.model.getPositionAt(offset);
+        return this.m2p.asPosition(lineNumber, column);
+    }
+
+    offsetAt(position: Position): number {
+        return this.model.getOffsetAt(this.p2m.asPosition(position));
+    }
+
+    get lineCount(): number {
+        return this.model.getLineCount();
     }
 
     get readOnly(): boolean {
@@ -86,8 +139,35 @@ export class MonacoEditorModel implements ITextEditorModel {
         return this.doSave(TextDocumentSaveReason.Manual);
     }
 
+    protected synchronizing = false;
+    async sync(): Promise<void> {
+        if (!this._dirty) {
+            const newText = await this.resource.readContents();
+            if (!this._dirty) {
+                const value = this.model.getValue();
+                if (value !== newText) {
+                    this.synchronizing = true;
+                    try {
+                        this.model.applyEdits([this.p2m.asTextEdit({
+                            range: this.m2p.asRange(this.model.getFullModelRange()),
+                            newText
+                        }) as monaco.editor.IIdentifiedSingleEditOperation]);
+                    } finally {
+                        this.synchronizing = false;
+                    }
+                }
+            }
+        }
+    }
+    protected markAsDirty(): void {
+        if (!this.synchronizing) {
+            this.setDirty(true);
+            this.doAutoSave();
+        }
+    }
+
     protected doAutoSave(): void {
-        if (this.autoSave) {
+        if (this.autoSave === 'on') {
             this.toDisposeOnAutoSave.dispose();
             const handle = window.setTimeout(() => {
                 this.doSave(TextDocumentSaveReason.AfterDelay);
@@ -98,18 +178,16 @@ export class MonacoEditorModel implements ITextEditorModel {
         }
     }
 
-    protected doSave(reason: TextDocumentSaveReason): Promise<void> {
-        return new Promise<void>(resolve => {
-            if (this.resource.saveContents) {
-                const save = this.resource.saveContents.bind(this.resource);
-                this.fireWillSaveModel(reason).then(() => {
-                    const content = this.model.getValue();
-                    resolve(save(content).then(() =>
-                        this.onDidSaveModelEmitter.fire(this.model)
-                    ));
-                });
+    protected async doSave(reason: TextDocumentSaveReason): Promise<void> {
+        if (this.resource.saveContents) {
+            await this.fireWillSaveModel(reason);
+            if (this.dirty) {
+                const content = this.model.getValue();
+                await this.resource.saveContents(content);
+                this.setDirty(false);
             }
-        });
+            this.onDidSaveModelEmitter.fire(this.model);
+        }
     }
 
     protected fireWillSaveModel(reason: TextDocumentSaveReason): Promise<void> {

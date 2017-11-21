@@ -139,7 +139,7 @@ export enum Modifier {
     M4 = "M4"
 }
 
-export declare type Key = { code: string, keyCode: number };
+export declare type Key = { readonly code: string, readonly keyCode: number };
 
 const CODE_TO_KEY: { [code: string]: Key } = {};
 const KEY_CODE_TO_KEY: { [keyCode: number]: Key } = {};

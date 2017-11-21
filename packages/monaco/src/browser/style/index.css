@@ -6,10 +6,17 @@
 }
 
 .monaco-editor {
-    padding-top: 5.6px;
     padding-bottom: 5.6px;
     font-family: monospace !important;
     font-size: inherit !important;
+}
+
+.monaco-editor, .monaco-editor-background {
+    background: var(--theia-layout-color3);
+}
+
+.monaco-editor .margin {
+    background: var(--theia-layout-color3);
 }
 
 /* 

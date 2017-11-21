@@ -50,9 +50,9 @@ export class WebSocketConnectionProvider {
 
         const logger = this.createLogger();
         webSocket.onerror = function (error: Event) {
-            logger.error('' + error)
+            logger.error('' + error);
             return;
-        }
+        };
         doListen({
             webSocket,
             onConnection: handler.onConnection.bind(handler),
@@ -68,8 +68,8 @@ export class WebSocketConnectionProvider {
      * Creates a websocket URL to the current location
      */
     createWebSocketUrl(path: string): string {
-        const endpoint = new Endpoint({ path })
-        return endpoint.getWebSocketUrl().toString()
+        const endpoint = new Endpoint({ path });
+        return endpoint.getWebSocketUrl().toString();
     }
 
     /**

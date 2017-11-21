@@ -30,7 +30,7 @@ export const CppConfigSchema: PreferenceSchema = {
             "description": "Literal command to start Clangd with. Can contain any relative or absolute path to clangd executable."
         }
     }
-}
+};
 
 export interface CppConfiguration {
     'cpp.clangdCompileCommandsPath': string,
@@ -40,7 +40,7 @@ export interface CppConfiguration {
 export const defaultCppConfiguration: CppConfiguration = {
     'cpp.clangdCompileCommandsPath': "-compile-commands-dir=/home/ewilenr/theiaEclipse/eclipse/git/llvm/build",
     'cpp.clangdPath': "/home/ewilenr/theiaEclipse/eclipse/git/llvm/build/bin/compile_commands.json"
-}
+};
 
 export const CppPreferences = Symbol('CppPreferences');
 export type CppPreferences = PreferenceProxy<CppConfiguration>;

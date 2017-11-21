@@ -11,7 +11,7 @@ import { PreferenceServer, PreferenceChangedEvent, PreferenceChange } from './pr
 
 export {
     PreferenceChange
-}
+};
 
 @injectable()
 export class PreferenceService implements Disposable {

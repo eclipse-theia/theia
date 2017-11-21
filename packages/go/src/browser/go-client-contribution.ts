@@ -20,7 +20,7 @@ export class GoClientContribution extends BaseLanguageClientContribution {
         @inject(Languages) protected readonly languages: Languages,
         @inject(LanguageClientFactory) protected readonly languageClientFactory: LanguageClientFactory
     ) {
-        super(workspace, languages, languageClientFactory)
+        super(workspace, languages, languageClientFactory);
     }
 
     protected get documentSelector() {

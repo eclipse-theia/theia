@@ -146,14 +146,14 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
     protected onRequest(method: string, ...args: any[]): Promise<any> {
         return new Promise<any>((resolve, reject) => {
             try {
-                const promise = this.target[method](...args) as Promise<any>
+                const promise = this.target[method](...args) as Promise<any>;
                 promise
                     .catch(err => reject(err))
                     .then(result => resolve(result));
             } catch (err) {
                 reject(err);
             }
-        })
+        });
     }
 
     /**
@@ -204,7 +204,7 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
         if (p === 'setClient') {
             return (client: any) => {
                 this.target = client;
-            }
+            };
         }
         if (p === 'onDidOpenConnection') {
             return this.onDidOpenConnectionEmitter.event;

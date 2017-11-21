@@ -21,7 +21,7 @@ import { LanguageContribution } from "../common";
 
 export {
     LanguageContribution, IConnection, Message
-}
+};
 
 export const LanguageServerContribution = Symbol('LanguageServerContribution');
 export interface LanguageServerContribution extends LanguageContribution {
@@ -72,12 +72,12 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
     }
 
     protected onDidFailSpawnProcess(error: Error): void {
-        console.error(error)
+        console.error(error);
     }
 
     protected logError(data: string | Buffer) {
         if (data) {
-            console.error(`${this.name}: ${data}`)
+            console.error(`${this.name}: ${data}`);
         }
     }
 
@@ -89,7 +89,7 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
 
     protected startSocketServer(): Promise<net.Server> {
         return new Promise(resolve => {
-            const server = net.createServer()
+            const server = net.createServer();
             server.addListener('listening', () =>
                 resolve(server)
             );

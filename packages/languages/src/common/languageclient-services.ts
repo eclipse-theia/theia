@@ -10,12 +10,21 @@ import { Disposable, CommandRegistry } from '@theia/core/lib/common';
 import * as base from 'vscode-base-languageclient/lib/base';
 import * as services from 'vscode-base-languageclient/lib/services';
 import * as connection from 'vscode-base-languageclient/lib/connection';
+import { WorkspaceSymbolProvider } from 'vscode-base-languageclient/lib/services';
 export * from 'vscode-base-languageclient/lib/services';
 export * from 'vscode-base-languageclient/lib/connection';
 export { BaseLanguageClient } from 'vscode-base-languageclient/lib/base';
 
+export interface Language {
+    readonly id: string;
+    readonly name: string;
+}
+
 export const Languages = Symbol('Languages');
-export interface Languages extends services.Languages { }
+export interface Languages extends services.Languages {
+    readonly workspaceSymbolProviders?: WorkspaceSymbolProvider[];
+    readonly languages?: Language[]
+}
 
 export const Workspace = Symbol('Workspace');
 export interface Workspace extends services.Workspace {
@@ -51,4 +60,4 @@ export interface ILanguageClient extends base.BaseLanguageClient { }
 import LanguageClientOptions = base.BaseLanguageClientOptions;
 export {
     LanguageClientOptions
-}
+};

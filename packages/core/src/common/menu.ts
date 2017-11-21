@@ -17,7 +17,9 @@ export interface MenuAction {
     order?: string
 }
 
-export const MAIN_MENU_BAR = 'menubar';
+export type MenuPath = string[];
+
+export const MAIN_MENU_BAR: MenuPath = ['menubar'];
 
 export const MenuContribution = Symbol("MenuContribution");
 export interface MenuContribution {
@@ -40,17 +42,23 @@ export class MenuModelRegistry {
         }
     }
 
-    registerMenuAction(menuPath: string[], item: MenuAction): Disposable {
+    registerMenuAction(menuPath: MenuPath, item: MenuAction): Disposable {
         const parent = this.findGroup(menuPath);
         const actionNode = new ActionMenuNode(item, this.commands);
         return parent.addNode(actionNode);
     }
 
-    registerSubmenu(menuPath: string[], id: string, label: string): Disposable {
-        const parent = this.findGroup(menuPath);
-        let groupNode = this.findSubMenu(parent, id);
+    registerSubmenu(menuPath: MenuPath, label: string): Disposable {
+        if (menuPath.length === 0) {
+            throw new Error("The sub menu path cannot be empty.");
+        }
+        const index = menuPath.length - 1;
+        const menuId = menuPath[index];
+        const groupPath = index === 0 ? [] : menuPath.slice(0, index);
+        const parent = this.findGroup(groupPath);
+        let groupNode = this.findSubMenu(parent, menuId);
         if (!groupNode) {
-            groupNode = new CompositeMenuNode(id, label);
+            groupNode = new CompositeMenuNode(menuId, label);
             return parent.addNode(groupNode);
         } else {
             if (!groupNode.label) {
@@ -62,7 +70,7 @@ export class MenuModelRegistry {
         }
     }
 
-    protected findGroup(menuPath: string[]): CompositeMenuNode {
+    protected findGroup(menuPath: MenuPath): CompositeMenuNode {
         let currentMenu = this.root;
         for (const segment of menuPath) {
             currentMenu = this.findSubMenu(currentMenu, segment);
@@ -76,14 +84,14 @@ export class MenuModelRegistry {
             return sub;
         }
         if (sub) {
-            throw Error(`'${menuId}' is not a menu group.`)
+            throw Error(`'${menuId}' is not a menu group.`);
         }
         const newSub = new CompositeMenuNode(menuId);
         current.addNode(newSub);
         return newSub;
     }
 
-    getMenu(...menuPath: string[]): CompositeMenuNode {
+    getMenu(menuPath: MenuPath = []): CompositeMenuNode {
         return this.findGroup(menuPath);
     }
 }
@@ -113,9 +121,9 @@ export class CompositeMenuNode implements MenuNode {
         this._children.push(node);
         this._children.sort((m1, m2) => {
             if (m1.sortString < m2.sortString) {
-                return -1
+                return -1;
             } else if (m1.sortString > m2.sortString) {
-                return 1
+                return 1;
             } else {
                 return 0;
             }
@@ -127,7 +135,7 @@ export class CompositeMenuNode implements MenuNode {
                     this._children.splice(idx, 1);
                 }
             }
-        }
+        };
     }
 
     get sortString() {
@@ -155,7 +163,7 @@ export class ActionMenuNode implements MenuNode {
         }
         const cmd = this.commands.getCommand(this.action.commandId);
         if (!cmd) {
-            throw new Error(`A command with id '${this.action.commandId}' does not exist.`)
+            throw new Error(`A command with id '${this.action.commandId}' does not exist.`);
         }
         return cmd.label || cmd.id;
     }

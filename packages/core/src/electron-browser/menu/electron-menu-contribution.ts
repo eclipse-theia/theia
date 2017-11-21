@@ -10,7 +10,7 @@ import { inject, injectable } from 'inversify';
 import {
     Command, CommandContribution, CommandRegistry,
     KeybindingContribution, KeybindingRegistry, KeyCode, Key, Modifier,
-    MAIN_MENU_BAR, MenuModelRegistry, MenuContribution
+    MenuModelRegistry, MenuContribution
 } from '../../common';
 import { FrontendApplication, FrontendApplicationContribution, CommonMenus } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
@@ -39,13 +39,12 @@ export namespace ElectronCommands {
 }
 
 export namespace ElectronMenus {
-    export const VIEW_WINDOW = [...CommonMenus.VIEW.path, 'window'];
-    export const VIEW_ZOOM = [...CommonMenus.VIEW.path, 'zoom'];
+    export const VIEW_WINDOW = [...CommonMenus.VIEW, 'window'];
+    export const VIEW_ZOOM = [...CommonMenus.VIEW, 'zoom'];
 }
 
 export namespace ElectronMenus {
-    export const HELP = [MAIN_MENU_BAR, "4_help"];
-    export const TOGGLE = [...HELP, '1_toggle'];
+    export const HELP_TOGGLE = [...CommonMenus.HELP, 'z_toggle'];
 }
 
 @injectable()
@@ -123,34 +122,33 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
         });
     }
 
-    registerKeyBindings(registry: KeybindingRegistry): void {
-        registry.registerKeyBinding({
+    registerKeybindings(registry: KeybindingRegistry): void {
+        registry.registerKeybinding({
             commandId: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id,
             keyCode: KeyCode.createKeyCode({ first: Key.KEY_I, modifiers: [Modifier.M1, Modifier.M2] })
         });
 
-        registry.registerKeyBinding({
+        registry.registerKeybinding({
             commandId: ElectronCommands.RELOAD.id,
             keyCode: KeyCode.createKeyCode({ first: Key.KEY_R, modifiers: [Modifier.M1] })
         });
 
-        registry.registerKeyBinding({
+        registry.registerKeybinding({
             commandId: ElectronCommands.ZOOM_IN.id,
             keyCode: KeyCode.createKeyCode({ first: Key.EQUAL, modifiers: [Modifier.M1] })
         });
-        registry.registerKeyBinding({
+        registry.registerKeybinding({
             commandId: ElectronCommands.ZOOM_OUT.id,
             keyCode: KeyCode.createKeyCode({ first: Key.MINUS, modifiers: [Modifier.M1] })
         });
-        registry.registerKeyBinding({
+        registry.registerKeybinding({
             commandId: ElectronCommands.RESET_ZOOM.id,
             keyCode: KeyCode.createKeyCode({ first: Key.DIGIT0, modifiers: [Modifier.M1] })
         });
     }
 
     registerMenus(registry: MenuModelRegistry) {
-        registry.registerSubmenu([MAIN_MENU_BAR], ElectronMenus.HELP[1], "Help");
-        registry.registerMenuAction(ElectronMenus.TOGGLE, {
+        registry.registerMenuAction(ElectronMenus.HELP_TOGGLE, {
             commandId: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id
         });
 

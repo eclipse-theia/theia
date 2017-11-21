@@ -10,6 +10,7 @@ import { ProblemWidget } from './problem-widget';
 import { ProblemContribution } from './problem-contribution';
 import { createProblemWidget } from './problem-container';
 import { CommandContribution, MenuContribution, KeybindingContribution } from "@theia/core/lib/common";
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { ProblemManager } from './problem-manager';
 import { PROBLEM_KIND } from '../../common/problem-marker';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
@@ -28,7 +29,7 @@ export default new ContainerModule(bind => {
         createWidget: () => context.container.get<ProblemWidget>(ProblemWidget)
     }));
     bind(ProblemContribution).toSelf().inSingletonScope();
-    for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution]) {
+    for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution, FrontendApplicationContribution]) {
         bind(identifier).toDynamicValue(ctx =>
             ctx.container.get(ProblemContribution)
         ).inSingletonScope();

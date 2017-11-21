@@ -22,7 +22,7 @@ export class LanguagesFrontendContribution implements FrontendApplicationContrib
         for (const contribution of this.contributions.getContributions()) {
             contribution.waitForActivation(app).then(() =>
                 contribution.activate(app)
-            )
+            );
         }
     }
 

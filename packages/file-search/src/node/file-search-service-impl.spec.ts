@@ -14,7 +14,10 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
 const expect = chai.expect;
 
-describe('search-service', () => {
+describe('search-service', function () {
+
+    this.timeout(10000);
+
     it('shall fuzzy search this spec file', async () => {
         const service = new FileSearchServiceImpl(new MockLogger());
         const uri = FileUri.create(path.resolve(__dirname, ".."));

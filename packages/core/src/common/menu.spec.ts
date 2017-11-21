@@ -27,13 +27,15 @@ describe('menu-model-registry', () => {
 
     describe('01 #register', () => {
         it('Should allow to register menu actions.', () => {
-            let service = createMenuRegistry({
+            const fileMenu = ["main", "File"];
+            const fileOpenMenu = [...fileMenu, "0_open"];
+            const service = createMenuRegistry({
                 registerMenus(menuRegistry: MenuModelRegistry): void {
-                    menuRegistry.registerSubmenu(["main"], "File", "File");
-                    menuRegistry.registerMenuAction(["main", "File", "0_open"], {
+                    menuRegistry.registerSubmenu(fileMenu, "File");
+                    menuRegistry.registerMenuAction(fileOpenMenu, {
                         commandId: 'open'
                     });
-                    menuRegistry.registerMenuAction(["main", "File", "0_open"], {
+                    menuRegistry.registerMenuAction(fileOpenMenu, {
                         commandId: 'open.with'
                     });
                 }
@@ -49,25 +51,26 @@ describe('menu-model-registry', () => {
                         });
                     }
                 });
-            let all = service.getMenu();
-            let main = all.children[0] as CompositeMenuNode;
+            const all = service.getMenu();
+            const main = all.children[0] as CompositeMenuNode;
             expect(main.children.length).equals(1);
             expect(main.id, "main");
             expect(all.children.length).equals(1);
-            let file = main.children[0] as CompositeMenuNode;
+            const file = main.children[0] as CompositeMenuNode;
             expect(file.children.length).equals(1);
             expect(file.label, "File");
-            let openGroup = file.children[0] as CompositeMenuNode;
+            const openGroup = file.children[0] as CompositeMenuNode;
             expect(openGroup.children.length).equals(2);
+            // tslint:disable-next-line:no-unused-expression
             expect(openGroup.label).undefined;
         });
     });
 });
 
 function createMenuRegistry(menuContrib: MenuContribution, commandContrib: CommandContribution) {
-    let cmdReg = new CommandRegistry({ getContributions: () => [commandContrib] });
+    const cmdReg = new CommandRegistry({ getContributions: () => [commandContrib] });
     cmdReg.onStart();
-    let menuReg = new MenuModelRegistry({ getContributions: () => [menuContrib] }, cmdReg);
+    const menuReg = new MenuModelRegistry({ getContributions: () => [menuContrib] }, cmdReg);
     menuReg.onStart();
     return menuReg;
 }

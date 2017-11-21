@@ -5,54 +5,65 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
-import URI from "@theia/core/lib/common/uri";
-import { FileSystem, FileStat, FileSystemWatcher } from "@theia/filesystem/lib/common";
-import { WorkspaceServer } from "../common";
+import { injectable, inject } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
+import { FileSystem, FileStat, FileSystemWatcher } from '@theia/filesystem/lib/common';
+import { WorkspaceServer } from '../common';
+import { WindowService } from '@theia/core/lib/browser/window/window-service';
+import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 
 /**
  * The workspace service.
  */
 @injectable()
-export class WorkspaceService {
+export class WorkspaceService implements FrontendApplicationContribution {
+
+    private _root: FileStat | undefined;
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
-        @inject(WorkspaceServer) protected readonly server: WorkspaceServer
+        @inject(WorkspaceServer) protected readonly server: WorkspaceServer,
+        @inject(WindowService) protected readonly windowService: WindowService,
     ) {
         (async () => {
-            const root = await this.tryRoot;
+            const root = await this.root;
             if (root) {
-                watcher.watchFileChanges(new URI(root.uri));
+                const uri = new URI(root.uri);
+                this.updateTitle(uri);
+                watcher.watchFileChanges(uri);
             }
         })();
     }
 
-    /**
-     * A promise which will get resolved only and if only when the workspace root URI is set on the backend and it points to an existing directory.
-     */
-    get root(): Promise<FileStat> {
-        return new Promise(async resolve => {
-            const root = await this.server.getRoot();
-            const validRoot = await this.isValidRoot(root);
-            // If the workspace root is either not set or invalid, we never resolve the promise.
-            if (validRoot) {
-                resolve(this.toFileStat(root!));
-            }
-        });
+    protected updateTitle(uri: URI): void {
+        document.title = uri.displayName;
     }
 
     /**
-     * Unlike [root](WorkspaceService.root), this method gets resolved even if the workspace root URI is not yet set on the backend or if it
-     * is invalid. In such cases, it will resolve to `undefined`.
+     * on unload, we set our workspace root as the last recently used on the backend.
+     * @param app
      */
-    get tryRoot(): Promise<FileStat | undefined> {
+    onStop(app: FrontendApplication): void {
+        if (this._root) {
+            this.server.setRoot(this._root.uri);
+        }
+    }
+
+    /**
+     * returns the most recently used workspace root or undefined if no root is known.
+     */
+    get root(): Promise<FileStat | undefined> {
+        if (this._root) {
+            return Promise.resolve(this._root);
+        }
         return new Promise(async resolve => {
             const root = await this.server.getRoot();
             const validRoot = await this.isValidRoot(root);
-            // If the workspace root is either not set or invalid, we resolve the promise with `undefined`.
-            resolve(validRoot ? this.toFileStat(root!) : undefined);
+            if (validRoot) {
+                this._root = await this.toFileStat(root!);
+            }
+            resolve(this._root);
         });
     }
 
@@ -68,7 +79,7 @@ export class WorkspaceService {
         const valid = await this.isValidRoot(rootUri);
         if (valid) {
             // The same window has to be preserved too (instead of opening a new one), if the workspace root is not yet available and we are setting it for the first time.
-            const preserveWindow = !(await this.tryRoot);
+            const preserveWindow = !(await this.root);
             await this.server.setRoot(rootUri);
             this.openWindow(uri, Object.assign(options || {}, { preserveWindow }));
             return;
@@ -115,7 +126,7 @@ export class WorkspaceService {
     }
 
     protected openNewWindow(): void {
-        window.open(window.location.href);
+        this.windowService.openNewWindow(window.location.href);
     }
 
     protected shouldPreserveWindow(options?: WorkspaceInput): boolean {

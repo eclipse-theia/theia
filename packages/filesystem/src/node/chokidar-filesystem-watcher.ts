@@ -18,6 +18,11 @@ import {
     WatchOptions
 } from '../common/filesystem-watcher-protocol';
 
+export interface WatchError {
+    readonly code: string;
+    readonly filename: string;
+}
+
 @injectable()
 export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer {
 
@@ -31,6 +36,9 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
     protected changes: FileChange[] = [];
     protected readonly fireDidFilesChangedTimeout = 50;
     protected readonly toDisposeOnFileChange = new DisposableCollection();
+
+    /* Did we print the message about exhausted inotify watches yet?  */
+    protected printedENOSPCError: boolean = false;
 
     constructor(
         @inject(ILogger) protected readonly logger: ILogger
@@ -58,13 +66,15 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
                 this.logger.info(`Started watching:`, paths);
                 resolve(watcherId);
             });
+
             watcher.on('error', error => {
-                if (this.isWatchingError(error) && (error.code === 'EPERM' || error.code === 'EACCES')) {
-                    this.logger.warn(`Cannot watch file changes due to insufficient permissions. Skipping: ${error.filename}.`);
+                if (this.isWatchError(error)) {
+                    this.handleWatchError(error);
                 } else {
-                    this.logger.error(`Watching error:`, error);
+                    this.logger.error('Unknown file watch error:', error);
                 }
             });
+
             watcher.on('add', path => this.pushAdded(watcherId, path));
             watcher.on('addDir', path => this.pushAdded(watcherId, path));
             watcher.on('change', path => this.pushUpdated(watcherId, path));
@@ -137,8 +147,46 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
         }
     }
 
-    protected isWatchingError(error: any): error is { code: string, filename: string } {
+    protected isWatchError(error: any): error is WatchError {
         return ('code' in error) && ('filename' in error) && error.code !== undefined && error.filename !== undefined;
+    }
+
+    /**
+     * Given a watch error object, print a user-friendly error message that
+     * explains what failed, and what can be done about it.
+     *
+     * @param error The error thrown by chokidar.
+     */
+    protected handleWatchError(error: WatchError): void {
+        let msg: string;
+
+        switch (error.code) {
+            case 'ENOSPC':
+                /* On Linux, exhausted inotify watch limit.  */
+                if (this.printedENOSPCError) {
+                    return;
+                }
+
+                this.printedENOSPCError = true;
+
+                msg = "Theia has reached the inotify file limit.  See: \
+https://github.com/theia-ide/theia/blob/master/doc/Developing.md#linux.  This \
+message will appear only once.";
+                break;
+
+            case 'EPERM':
+            case 'EACCES':
+                msg = 'Insufficient permissions.';
+                break;
+
+            default:
+                /* We don't specifically know about this error, just return the
+                   code.  */
+                msg = error.code;
+                break;
+        }
+
+        this.logger.error(`Error watching ${error.filename}: ${msg}`);
     }
 
 }

@@ -13,7 +13,7 @@ import { FileSystemPreferences } from "./filesystem-preferences";
 
 export {
     FileChangeType
-}
+};
 
 export interface FileChange {
     uri: URI;
@@ -100,7 +100,7 @@ export class FileSystemWatcher implements Disposable {
         return this.getIgnored().then(ignored => {
             return {
                 ignored
-            }
+            };
         });
     }
 

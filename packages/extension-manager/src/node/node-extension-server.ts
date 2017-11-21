@@ -54,9 +54,11 @@ export class NodeExtensionServer implements ExtensionServer {
         const extensions = [];
         for (const raw of packages) {
             if (PublishedNodePackage.is(raw)) {
-                const extensionPackage = manager.pck.newExtensionPackage(raw);
-                const extension = this.toRawExtension(extensionPackage);
-                extensions.push(extension);
+                const extensionPackage = await manager.pck.findExtensionPackage(raw.name);
+                if (extensionPackage) {
+                    const extension = this.toRawExtension(extensionPackage);
+                    extensions.push(extension);
+                }
             }
         }
         return extensions;
@@ -92,7 +94,7 @@ export class NodeExtensionServer implements ExtensionServer {
             if (!latestVersion) {
                 return;
             }
-            if (manager.pck.setDependency(extension, latestVersion)) {
+            if (manager.pck.setDependency(extension, `^${latestVersion}`)) {
                 this.notifyDidChange({
                     name: extension,
                     installed: true
@@ -151,7 +153,7 @@ export class NodeExtensionServer implements ExtensionServer {
             if (!latestVersion) {
                 return;
             }
-            if (manager.pck.setDependency(extension, latestVersion)) {
+            if (manager.pck.setDependency(extension, `^${latestVersion}`)) {
                 this.notifyDidChange({
                     name: extension,
                     outdated: false

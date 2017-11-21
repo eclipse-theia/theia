@@ -5,6 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { MenuPath } from "../common/menu";
+
 export type Anchor = MouseEvent | { x: number, y: number };
 
 export function toAnchor(anchor: HTMLElement | { x: number, y: number }): Anchor {
@@ -13,5 +15,5 @@ export function toAnchor(anchor: HTMLElement | { x: number, y: number }): Anchor
 
 export const ContextMenuRenderer = Symbol("ContextMenuRenderer");
 export interface ContextMenuRenderer {
-    render(path: string, anchor: Anchor, onHide?: () => void): void;
+    render(menuPath: MenuPath, anchor: Anchor, onHide?: () => void): void;
 }

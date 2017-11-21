@@ -55,8 +55,10 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
     ) {
         super(p2m, m2p);
         workspaceService.root.then(rootStat => {
-            this._rootUri = rootStat.uri;
-            this.resolveReady();
+            if (rootStat) {
+                this._rootUri = rootStat.uri;
+                this.resolveReady();
+            }
         });
         monaco.editor.onDidCreateModel(model => {
             this.textModelService.createModelReference(model.uri).then(reference => {
@@ -117,8 +119,8 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
     }
 
     createFileSystemWatcher(globPattern: string, ignoreCreateEvents?: boolean, ignoreChangeEvents?: boolean, ignoreDeleteEvents?: boolean): lang.FileSystemWatcher {
-        const disposables = new DisposableCollection()
-        const onFileEventEmitter = new lang.Emitter<lang.FileEvent>()
+        const disposables = new DisposableCollection();
+        const onFileEventEmitter = new lang.Emitter<lang.FileEvent>();
         disposables.push(onFileEventEmitter);
         disposables.push(this.fileSystemWatcher.onFilesChanged(changes => {
             for (const change of changes) {
@@ -151,7 +153,7 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
                 // start a fresh operation
                 model.pushStackElement();
                 const range = edit.range;
-                const selections = [new monaco.Selection(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn)]
+                const selections = [new monaco.Selection(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn)];
                 model.pushEditOperations(selections, [{
                     identifier: undefined!,
                     forceMoveMarkers: false,

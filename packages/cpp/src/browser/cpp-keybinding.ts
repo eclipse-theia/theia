@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from "inversify";
-import { EditorManager } from "@theia/editor/lib/browser"
+import { EditorManager } from "@theia/editor/lib/browser";
 import {
     KeybindingContext, Keybinding, KeybindingContribution, KeybindingRegistry, KeyCode, Key, Modifier
 } from "@theia/core/lib/common";
@@ -31,7 +31,7 @@ export class CppKeybindingContribution implements KeybindingContribution {
         @inject(CppKeybindingContext) protected readonly cppKeybindingContext: CppKeybindingContext
     ) { }
 
-    registerKeyBindings(registry: KeybindingRegistry): void {
+    registerKeybindings(registry: KeybindingRegistry): void {
         [
             {
                 commandId: 'switch_source_header',
@@ -39,7 +39,7 @@ export class CppKeybindingContribution implements KeybindingContribution {
                 keyCode: KeyCode.createKeyCode({ first: Key.KEY_O, modifiers: [Modifier.M3] })
             }
         ].forEach(binding => {
-            registry.registerKeyBinding(binding);
+            registry.registerKeybinding(binding);
         });
 
     }

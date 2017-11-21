@@ -52,11 +52,11 @@ interface TerminalCSSProperties {
 @injectable()
 export class TerminalWidget extends BaseWidget {
 
-    private terminalId: number | undefined
-    private term: Xterm.Terminal
-    private cols: number = 80
-    private rows: number = 40
-    private endpoint: Endpoint
+    private terminalId: number | undefined;
+    private term: Xterm.Terminal;
+    private cols: number = 80;
+    private rows: number = 40;
+    private endpoint: Endpoint;
 
     constructor(
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
@@ -79,8 +79,8 @@ export class TerminalWidget extends BaseWidget {
             ));
         }
 
-        this.title.closable = true
-        this.addClass("terminal-container")
+        this.title.closable = true;
+        this.addClass("terminal-container");
 
         /* Read CSS properties from the page and apply them to the terminal.  */
         const cssProps = this.getCSSPropertiesFromPage();
@@ -124,7 +124,7 @@ export class TerminalWidget extends BaseWidget {
         const fontFamily = lookup(htmlElementProps, '--theia-code-font-family');
         const fontSizeStr = lookup(htmlElementProps, '--theia-code-font-size');
         const foreground = lookup(htmlElementProps, '--theia-ui-font-color0');
-        const background = lookup(htmlElementProps, '--theia-layout-color1');
+        const background = lookup(htmlElementProps, '--theia-layout-color3');
 
         /* The font size is returned as a string, such as ' 13px').  We want to
            return just the number of px.  */
@@ -143,7 +143,7 @@ export class TerminalWidget extends BaseWidget {
         }
 
         if (!background.match(colorRe)) {
-            throw new Error(`Unexpected format for --theia-layout-color1 (${background})`);
+            throw new Error(`Unexpected format for --theia-layout-color3 (${background})`);
         }
 
         return {
@@ -155,7 +155,7 @@ export class TerminalWidget extends BaseWidget {
     }
 
     protected registerResize(): void {
-        const initialGeometry = (this.term as any).proposeGeometry()
+        const initialGeometry = (this.term as any).proposeGeometry();
         this.cols = initialGeometry.cols;
         this.rows = initialGeometry.rows;
 
@@ -184,7 +184,7 @@ export class TerminalWidget extends BaseWidget {
         this.registerResize();
 
         if (id === undefined) {
-            const root = await this.workspaceService.tryRoot;
+            const root = await this.workspaceService.root;
             const rootURI = root !== undefined ? root.uri : undefined;
             this.terminalId = await this.shellTerminalServer.create(
                 { rootURI, cols: this.cols, rows: this.rows });
@@ -209,23 +209,23 @@ export class TerminalWidget extends BaseWidget {
     }
 
     protected createWebSocket(pid: string): WebSocket {
-        const url = this.endpoint.getWebSocketUrl().resolve(pid)
-        return this.webSocketConnectionProvider.createWebSocket(url.toString(), { reconnecting: false })
+        const url = this.endpoint.getWebSocketUrl().resolve(pid);
+        return this.webSocketConnectionProvider.createWebSocket(url.toString(), { reconnecting: false });
     }
 
     protected onActivateRequest(msg: Message): void {
-        super.onActivateRequest(msg)
-        this.term.focus()
+        super.onActivateRequest(msg);
+        this.term.focus();
     }
 
-    private resizeTimer: any
+    private resizeTimer: any;
 
     protected onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
-        clearTimeout(this.resizeTimer)
+        clearTimeout(this.resizeTimer);
         this.resizeTimer = setTimeout(() => {
-            this.doResize()
-        }, 500)
+            this.doResize();
+        }, 500);
     }
 
     protected monitorTerminal(id: number) {
@@ -260,9 +260,9 @@ export class TerminalWidget extends BaseWidget {
     }
 
     private doResize() {
-        const geo = (this.term as any).proposeGeometry()
-        this.cols = geo.cols
-        this.rows = geo.rows - 1 // subtract one row for margin
-        this.term.resize(this.cols, this.rows)
+        const geo = (this.term as any).proposeGeometry();
+        this.cols = geo.cols;
+        this.rows = geo.rows - 1; // subtract one row for margin
+        this.term.resize(this.cols, this.rows);
     }
 }

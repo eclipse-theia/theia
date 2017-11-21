@@ -14,7 +14,6 @@
       true,
       "ignore-same-line"
     ],
-    "eofline": true,
     "indent": [
       true,
       "spaces",
@@ -38,11 +37,6 @@
         }
       ],
       "severity": "error"
-    },
-    "semicolon": [
-      true,
-      "always",
-      "ignore-interfaces"
-    ]
+    }
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@theia/core",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
@@ -34,6 +34,10 @@
     {
       "frontend": "lib/browser/menu/browser-menu-module",
       "frontendElectron": "lib/electron-browser/menu/electron-menu-module"
+    },
+    {
+      "frontend": "lib/browser/window/browser-window-module",
+      "frontendElectron": "lib/electron-browser/window/electron-window-module"
     }
   ],
   "keywords": [
@@ -61,7 +65,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "0.2.0"
+    "@theia/ext-scripts": "^0.2.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

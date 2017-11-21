@@ -26,7 +26,7 @@ export class LanguageClientFactory {
 
     get(contribution: LanguageContribution, clientOptions: LanguageClientOptions): ILanguageClient {
         const { workspace, languages, commands, window } = this;
-        const services = { workspace, languages, commands, window }
+        const services = { workspace, languages, commands, window };
         return new BaseLanguageClient({
             name: contribution.name,
             clientOptions,
@@ -42,7 +42,7 @@ export class LanguageClientFactory {
                             }
                         },
                             { reconnecting: false }
-                        )
+                        );
                     })
             }
         });

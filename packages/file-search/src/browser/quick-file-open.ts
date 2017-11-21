@@ -28,7 +28,7 @@ export class QuickFileOpenService implements QuickOpenModel {
         workspaceService.root.then(root => this.wsRoot = root);
     }
 
-    private wsRoot: FileStat;
+    private wsRoot: FileStat | undefined;
 
     isEnabled(): boolean {
         return this.wsRoot !== undefined;
@@ -46,6 +46,9 @@ export class QuickFileOpenService implements QuickOpenModel {
     private cancelIndicator = new CancellationTokenSource();
 
     public async onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
+        if (!this.wsRoot) {
+            return;
+        }
         this.cancelIndicator.cancel();
         this.cancelIndicator = new CancellationTokenSource();
         const token = this.cancelIndicator.token;
@@ -69,15 +72,13 @@ export class QuickFileOpenService implements QuickOpenModel {
         const uri = new URI(uriString);
         const icon = this.fileIconProvider.getFileIconForURI(uri);
         const parent = uri.parent.toString();
-        const description = parent.substr(this.wsRoot.uri.length);
+        const description = parent.substr(this.wsRoot!.uri.length);
         return new FileQuickOpenItem(uri, icon, description, this.openerService);
     }
 
 }
 
 export class FileQuickOpenItem extends QuickOpenItem {
-
-    private activeElement: HTMLElement;
 
     constructor(
         protected readonly uri: URI,
@@ -86,7 +87,6 @@ export class FileQuickOpenItem extends QuickOpenItem {
         protected readonly openerService: OpenerService
     ) {
         super();
-        this.activeElement = window.document.activeElement as HTMLElement;
     }
 
     getLabel(): string {

@@ -9,7 +9,7 @@ import { injectable, inject } from "inversify";
 import { Message } from "@phosphor/messaging";
 import { ElementExt } from "@phosphor/domutils";
 import { h, ElementAttrs, ElementInlineStyle } from "@phosphor/virtualdom";
-import { Disposable, Key } from "../../common";
+import { Disposable, Key, MenuPath } from "../../common";
 import { ContextMenuRenderer } from "../context-menu-renderer";
 import { StatefulWidget } from '../shell-layout-restorer';
 import { VirtualWidget, VirtualRenderer, SELECTED_CLASS, COLLAPSED_CLASS } from "../widgets";
@@ -32,7 +32,7 @@ export interface Size {
 
 export const TreeProps = Symbol('TreeProps');
 export interface TreeProps {
-    readonly contextMenuPath?: string;
+    readonly contextMenuPath?: MenuPath;
     readonly expansionToggleSize: Size;
 }
 
@@ -54,7 +54,7 @@ export const defaultTreeProps: TreeProps = {
         width: 16,
         height: 16
     }
-}
+};
 
 @injectable()
 export class TreeWidget extends VirtualWidget implements StatefulWidget {
@@ -138,7 +138,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         if (ICompositeTreeNode.is(node)) {
             classNames.push(COMPOSITE_TREE_NODE_CLASS);
         }
-        if (IExpandableTreeNode.is(node)) {
+        if (this.isExandable(node)) {
             classNames.push(EXPANDABLE_TREE_NODE_CLASS);
         }
         if (ISelectableTreeNode.isSelected(node)) {
@@ -151,7 +151,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         return {
             paddingLeft: `${props.indentSize}px`,
             display: props.visible ? 'block' : 'none',
-        }
+        };
     }
 
     protected renderNodeCaption(node: ITreeNode, props: NodeProps): h.Child {
@@ -161,10 +161,14 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
     }
 
     protected decorateCaption(node: ITreeNode, caption: h.Child, props: NodeProps): h.Child {
-        if (IExpandableTreeNode.is(node)) {
+        if (this.isExandable(node)) {
             return this.decorateExpandableCaption(node, caption, props);
         }
         return caption;
+    }
+
+    protected isExandable(node: ITreeNode): node is IExpandableTreeNode {
+        return IExpandableTreeNode.is(node);
     }
 
     protected decorateExpandableCaption(node: IExpandableTreeNode, caption: h.Child, props: NodeProps): h.Child {
@@ -201,11 +205,11 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
 
     protected renderChild(child: ITreeNode, parent: ICompositeTreeNode, props: NodeProps): h.Child {
         const childProps = this.createChildProps(child, parent, props);
-        return this.renderNodes(child, childProps)
+        return this.renderNodes(child, childProps);
     }
 
     protected createChildProps(child: ITreeNode, parent: ICompositeTreeNode, props: NodeProps): NodeProps {
-        if (IExpandableTreeNode.is(parent)) {
+        if (this.isExandable(parent)) {
             return this.createExpandableChildProps(child, parent, props);
         }
         return props;
@@ -218,7 +222,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         const visible = parent.expanded;
         const { width } = this.props.expansionToggleSize;
         const parentVisibility = ITreeNode.isVisible(parent) ? 1 : 0;
-        const childExpansion = IExpandableTreeNode.is(child) ? 0 : 1;
+        const childExpansion = this.isExandable(child) ? 0 : 1;
         const indentMultiplier = parentVisibility + childExpansion;
         const relativeIndentSize = width * indentMultiplier;
         const indentSize = props.indentSize + relativeIndentSize;
@@ -265,7 +269,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
             if (ISelectableTreeNode.is(node)) {
                 this.model.selectNode(node);
             }
-            if (IExpandableTreeNode.is(node)) {
+            if (this.isExandable(node)) {
                 this.model.toggleNodeExpansion(node);
             }
             event.stopPropagation();
@@ -325,10 +329,20 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
     }
 
     storeState(): object {
-        return this.deflateForStorage(this.model.root!);
+        if (this.model.root) {
+            return {
+                root: this.deflateForStorage(this.model.root)
+            };
+        } else {
+            return {};
+        }
     }
+
     restoreState(oldState: object): void {
-        this.model.root = this.inflateFromStorage(oldState);
+        // tslint:disable-next-line:no-any
+        if ((oldState as any).root) {
+            this.model.root = this.inflateFromStorage((oldState as any).root);
+        }
     }
 
 }

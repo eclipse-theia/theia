@@ -9,12 +9,10 @@
 
 
 .p-DockPanel-widget {
-  background:var(--theia-layout-color1);
-  border-left: var(--theia-border-width) solid var(--theia-border-color1);
+  background: var(--theia-layout-color3);
   border-right: var(--theia-border-width) solid var(--theia-border-color1);
   border-bottom: var(--theia-border-width) solid var(--theia-border-color1);
 }
-
 
 .p-DockPanel-overlay {
   background: rgba(33, 150, 243, 0.1);
@@ -35,5 +33,5 @@
 
 
 #theia-main-dock-panel {
-  padding: 5px;
+  padding: 0px;
 }

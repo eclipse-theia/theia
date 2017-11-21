@@ -55,7 +55,7 @@ export class JavaContribution extends BaseLanguageServerContribution {
             '-jar', jarPath,
             '-configuration', configurationPath,
             '-data', workspacePath
-        )
+        );
 
         Promise.all([
             this.startSocketServer(), this.startSocketServer()

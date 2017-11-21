@@ -28,7 +28,7 @@ export interface Keybinding {
 
 export const KeybindingContribution = Symbol("KeybindingContribution");
 export interface KeybindingContribution {
-    registerKeyBindings(keybindings: KeybindingRegistry): void;
+    registerKeybindings(keybindings: KeybindingRegistry): void;
 }
 
 export const KeybindingContext = Symbol("KeybindingContextExtension");
@@ -108,13 +108,13 @@ export class KeybindingRegistry {
 
     onStart(): void {
         for (const contribution of this.contributions.getContributions()) {
-            contribution.registerKeyBindings(this);
+            contribution.registerKeybindings(this);
         }
     }
 
     registerKeybindings(...bindings: Keybinding[]): void {
         for (const binding of bindings) {
-            this.registerKeyBinding(binding);
+            this.registerKeybinding(binding);
         }
     }
 
@@ -123,7 +123,7 @@ export class KeybindingRegistry {
      *
      * @param binding
      */
-    registerKeyBinding(binding: Keybinding) {
+    registerKeybinding(binding: Keybinding) {
         const existing = this.keybindings[binding.keyCode.keystroke];
         if (existing) {
             const collided = existing.filter(b => b.context === binding.context);

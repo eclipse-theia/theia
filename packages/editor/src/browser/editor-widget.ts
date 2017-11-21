@@ -6,17 +6,21 @@
  */
 
 import { SelectionService } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message } from '@theia/core/lib/browser';
+import { Widget, BaseWidget, Message, Saveable, SaveableSource } from '@theia/core/lib/browser';
 import { TextEditor } from "./editor";
 
-export class EditorWidget extends BaseWidget {
+export class EditorWidget extends BaseWidget implements SaveableSource {
 
     constructor(
         readonly editor: TextEditor,
-        readonly selectionService: SelectionService
+        protected readonly selectionService: SelectionService
     ) {
         super(editor);
         this.toDispose.push(this.editor);
+    }
+
+    get saveable(): Saveable {
+        return this.editor.document;
     }
 
     protected onActivateRequest(msg: Message): void {

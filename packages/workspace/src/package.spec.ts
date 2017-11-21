@@ -17,5 +17,5 @@ describe("workspace package", () => {
 
     it("support code coverage statistics", () => {
         return true;
-    })
+    });
 });

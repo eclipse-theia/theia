@@ -26,12 +26,12 @@ export class QuickCommandFrontendContribution implements CommandContribution, Ke
         });
     }
 
-    registerKeyBindings(keybindings: KeybindingRegistry): void {
-        keybindings.registerKeyBinding({
+    registerKeybindings(keybindings: KeybindingRegistry): void {
+        keybindings.registerKeybinding({
             commandId: quickCommand.id,
             keyCode: KeyCode.createKeyCode({ first: Key.F1 })
         });
-        keybindings.registerKeyBinding({
+        keybindings.registerKeybinding({
             commandId: quickCommand.id,
             keyCode: KeyCode.createKeyCode({ first: Key.KEY_P, modifiers: [Modifier.M1, Modifier.M2] })
         });

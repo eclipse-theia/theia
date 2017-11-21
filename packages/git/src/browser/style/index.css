@@ -9,7 +9,7 @@
     color: var(--theia-ui-font-color0);
     padding: 10px;
     box-sizing: border-box;
-    background: var(--theia-layout-color1);
+    background: var(--theia-layout-color3);
 }
 
 #theia-gitContainer .flexcontainer {

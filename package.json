@@ -30,7 +30,7 @@
     "ts-node": "^3.2.0",
     "tslint": "^5.7.0",
     "typedoc": "^0.8",
-    "typescript": "^2.5.2",
+    "typescript": "^2.6.1",
     "uuid": "^3.1.0",
     "wdio-mocha-framework": "^0.5.9",
     "wdio-phantomjs-service": "^0.2.2",
@@ -53,7 +53,7 @@
     "rebuild:electron:debug": "DEBUG=electron-rebuild && yarn rebuild:electron",
     "watch": "lerna run watch --scope \"@theia/!(example-)*\" --parallel",
     "publish": "yarn && yarn test && yarn publish:latest",
-    "publish:latest": "lerna publish --registry=https://registry.npmjs.org/ --exact --skip-git",
+    "publish:latest": "lerna publish --registry=https://registry.npmjs.org/ --skip-git",
     "publish:next": "lerna publish --registry=https://registry.npmjs.org/ --exact --canary=next --npm-tag=next --force-publish --skip-git --yes"
   },
   "workspaces": [

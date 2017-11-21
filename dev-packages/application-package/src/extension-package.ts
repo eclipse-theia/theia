@@ -19,11 +19,9 @@ export interface Extension {
 
 export class ExtensionPackage {
     constructor(
-        protected readonly raw: PublishedNodePackage & Partial<RawExtensionPackage>,
+        readonly raw: PublishedNodePackage & Partial<RawExtensionPackage>,
         protected readonly registry: NpmRegistry
-    ) {
-        this.raw = raw;
-    }
+    ) { }
 
     get name(): string {
         return this.raw.name;
@@ -194,7 +192,11 @@ export namespace RawExtensionPackage {
                         return next;
                     }
                 }
-                return this.tags['latest'];
+                const latest = this.tags['latest'];
+                if (this.registry.config.next || !semver.prerelease(latest)) {
+                    return latest;
+                }
+                return undefined;
             }
             return undefined;
         }

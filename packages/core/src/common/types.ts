@@ -17,7 +17,7 @@ export type MaybePromise<T> = T | Promise<T>;
 export type Prioritizeable<T> = {
     readonly priority: number,
     readonly value: T
-}
+};
 export namespace Prioritizeable {
     export type GetPriority<T> = (value: T) => MaybePromise<number>;
     export async function toPrioritizeable<T>(rawValue: MaybePromise<T>, getPriority: GetPriority<T>): Promise<Prioritizeable<T>>;

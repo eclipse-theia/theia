@@ -6,19 +6,18 @@
 */
 
 import { injectable } from "inversify";
-import { MenuContribution, MenuModelRegistry } from "@theia/core";
+import { MenuContribution, MenuModelRegistry, MenuPath } from "@theia/core";
 import { GIT_COMMANDS } from "./git-command";
 
-export const GIT_CONTEXT_MENU: string = 'git-context-menu';
+export const GIT_CONTEXT_MENU: MenuPath = ['git-context-menu'];
 
 @injectable()
 export class GitContextMenu implements MenuContribution {
 
     registerMenus(menus: MenuModelRegistry): void {
-        menus.registerSubmenu([], GIT_CONTEXT_MENU, '');
         const commands = [GIT_COMMANDS.FETCH, GIT_COMMANDS.PULL, GIT_COMMANDS.PUSH, GIT_COMMANDS.MERGE];
         commands.forEach(command =>
-            menus.registerMenuAction([GIT_CONTEXT_MENU], {
+            menus.registerMenuAction(GIT_CONTEXT_MENU, {
                 commandId: command.id,
                 label: command.label.slice('Git '.length) + '...'
             })

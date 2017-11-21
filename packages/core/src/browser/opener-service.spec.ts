@@ -28,7 +28,7 @@ describe("opener-service", () => {
     it("getOpeners", () => {
         return openerService.getOpeners().then(openers => {
             assert.deepStrictEqual([openHandler], openers);
-        })
+        });
     });
 
 });

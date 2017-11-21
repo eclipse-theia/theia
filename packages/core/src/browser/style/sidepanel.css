@@ -14,22 +14,12 @@
 
 .theia-SideBar.p-TabBar {
   color: var(--theia-ui-font-color1);
-  background: var(--theia-layout-color2);
+  background: var(--theia-layout-color0);
   font-size: var(--theia-ui-font-size1);
-  min-width: calc(var(--theia-private-sidebar-tab-width) + var(--theia-border-width));
-  max-width: calc(var(--theia-private-sidebar-tab-width) + var(--theia-border-width));
+  min-width: calc(var(--theia-private-sidebar-tab-width)); 
+  max-width: calc(var(--theia-private-sidebar-tab-width));
   overflow: visible;
   display: block;
-}
-
-
-.theia-SideBar.p-TabBar.theia-mod-left {
-  border-right: var(--theia-border-width) solid var(--theia-border-color1);
-}
-
-
-.theia-SideBar.p-TabBar.theia-mod-right {
-  border-left: var(--theia-border-width) solid var(--theia-border-color1);
 }
 
 
@@ -59,9 +49,13 @@
 
 .theia-SideBar .p-TabBar-tab {
   padding: 0 18px;
-  background: var(--theia-layout-color2);
+  background: var(--theia-layout-color0);
   border: none;
   overflow: visible;
+}
+
+.theia-SideBar .p-TabBar-tab.p-mod-current {
+  background: var(--theia-layout-color3);
 }
 
 
@@ -74,26 +68,9 @@
   background: var(--theia-layout-color1);
 }
 
-
-.theia-SideBar.theia-mod-left .p-TabBar-tab {
-  border-left: var(--theia-border-width) solid var(--theia-border-color1);
-}
-
-
-.theia-SideBar.theia-mod-right .p-TabBar-tab {
-  border-right: var(--theia-border-width) solid var(--theia-border-color1);
-}
-
-
 #theia-left-stack > .p-Widget, #theia-right-stack > .p-Widget {
   min-width: 200px;
 }
-
-
-#theia-right-stack {
-  border-left: var(--theia-border-width) solid var(--theia-border-color1);
-}
-
 
 #theia-left-stack {
   border-right: var(--theia-border-width) solid var(--theia-border-color1);

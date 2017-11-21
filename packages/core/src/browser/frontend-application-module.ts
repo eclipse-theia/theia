@@ -27,6 +27,9 @@ import { QuickOpenService, QuickCommandService, QuickCommandFrontendContribution
 import { LocalStorageService, StorageService } from './storage-service';
 import { WidgetFactory, WidgetManager } from './widget-manager';
 import { ShellLayoutRestorer } from './shell-layout-restorer';
+import { ApplicationShell, ApplicationShellOptions, DockPanelRenderer, DockPanelTabBarRenderer, DockPanelTabBarRendererFactory } from './shell';
+import { StatusBar, StatusBarImpl } from "./status-bar/status-bar";
+import { LabelParser } from './label-parser';
 
 import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
@@ -34,6 +37,13 @@ import 'font-awesome/css/font-awesome.min.css';
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplication).toSelf().inSingletonScope();
     bindContributionProvider(bind, FrontendApplicationContribution);
+
+    bind(ApplicationShellOptions).toConstantValue({});
+    bind(ApplicationShell).toSelf().inSingletonScope();
+
+    bind(DockPanelRenderer).toSelf();
+    bind(DockPanelTabBarRendererFactory).toAutoFactory(DockPanelTabBarRenderer);
+    bind(DockPanelTabBarRenderer).toSelf();
 
     bindContributionProvider(bind, OpenHandler);
     bind(DefaultOpenerService).toSelf().inSingletonScope();
@@ -85,4 +95,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     );
 
     bind(StorageService).to(LocalStorageService).inSingletonScope();
+
+    bind(StatusBarImpl).toSelf().inSingletonScope();
+    bind(StatusBar).toDynamicValue(ctx => ctx.container.get(StatusBarImpl)).inSingletonScope();
+    bind(LabelParser).toSelf().inSingletonScope();
 });
