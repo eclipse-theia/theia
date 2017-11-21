@@ -108,17 +108,32 @@ export class GitQuickOpenService {
                 return branch.type === BranchType.Remote ? `Remote branch at${tip}` : `${tip}`;
             };
             const items: QuickOpenItem[] = branches.map(branch => new GitQuickOpenItem(branch, switchBranch, toLabel, toDescription));
-            const createBranch = (item: QuickOpenItem) => {
-                const execute = item => {
-                    // TODO create the branch and close the widget.
-                    // Nice to have: update the Please provider a branch name. Press 'Enter' to confirm or 'Escape' to cancel. based on the entered string.
-                    // Pipe-dream: validate the new branch name.... existence, contains no spaces etc.
-                    console.log(item);
+            const createBranchItem = (item: QuickOpenItem) => {
+                const thisGit = this.git;
+                const thisRepository = this.getRepository();
+                const createBranchModel: QuickOpenModel = {
+                    onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
+                        const dynamicItems: QuickOpenItem[] = [];
+                        const suffix = `Press 'Enter' to confirm or 'Escape' to cancel.`;
+                        if (lookFor === undefined || lookFor.length === 0) {
+                            dynamicItems.push(new CreateNewBranchOpenItem(`Please provider a branch name. ${suffix}`));
+                        } else {
+                            dynamicItems.push(new CreateNewBranchOpenItem(
+                                `Create a new local branch with name: ${lookFor}. ${suffix}`,
+                                async () => {
+                                    // await thisGit.branch(thisRepository!, { toCreate: lookFor });
+                                    // await thisGit.checkout(thisRepository!, { branch: lookFor });
+                                    console.log(thisGit, thisRepository);
+                                    alert(`Create a new local branch ${lookFor} and switch to it.`);
+                                }
+                            ));
+                        }
+                        acceptor(dynamicItems);
+                    }
                 };
-                const model = this.getModel(new CreateNewBranchOpenItem(`Please provider a branch name. Press 'Enter' to confirm or 'Escape' to cancel.`, execute));
-                this.quickOpenService.open(model, this.getOptions('The name of the branch:', false));
+                this.quickOpenService.open(createBranchModel, this.getOptions('The name of the branch:', false));
             };
-            items.unshift(...[new CreateNewBranchOpenItem('Create new branch...', createBranch)]);
+            items.unshift(new CreateNewBranchOpenItem('Create new branch...', createBranchItem));
             this.open(items, 'Select a ref to checkout or create a new local branch:');
         }
     }
@@ -213,7 +228,8 @@ class CreateNewBranchOpenItem extends QuickOpenItem {
 
     constructor(
         private readonly label: string,
-        private readonly execute: (item: QuickOpenItem) => void) {
+        private readonly execute: (item: QuickOpenItem) => void = () => { },
+        private readonly canRun: (mode: QuickOpenMode) => boolean = mode => mode === QuickOpenMode.OPEN) {
 
         super();
     }
@@ -223,7 +239,7 @@ class CreateNewBranchOpenItem extends QuickOpenItem {
     }
 
     run(mode: QuickOpenMode): boolean {
-        if (mode !== QuickOpenMode.OPEN) {
+        if (!this.canRun(mode)) {
             return false;
         }
         this.execute(this);
