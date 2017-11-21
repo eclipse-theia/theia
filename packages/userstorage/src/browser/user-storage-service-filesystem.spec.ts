@@ -9,6 +9,7 @@ import { Container } from 'inversify';
 import * as chai from 'chai';
 import { UserStorageServiceFilesystemImpl } from './user-storage-service-filesystem';
 import { UserStorageService } from './user-storage-service';
+import { UserStorageResource } from './user-storage-resource';
 import { Emitter, } from '@theia/core/lib/common';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
@@ -90,18 +91,25 @@ before(async () => {
 
         return fs;
     }).inSingletonScope();
-
-    testContainer.bind(UserStorageService).to(UserStorageServiceFilesystemImpl).inSingletonScope();
-    userStorageService = testContainer.get<UserStorageServiceFilesystemImpl>(UserStorageService);
+    testContainer.bind(UserStorageService).to(UserStorageServiceFilesystemImpl);
 });
 
 describe('User Storage Service (Filesystem implementation)', () => {
+    let testFile: string;
+    before(() => {
+        testFile = 'test.json';
+        userStorageService = testContainer.get<UserStorageServiceFilesystemImpl>(UserStorageService);
+    });
+
+    after(() => {
+        userStorageService.dispose();
+    });
+
     beforeEach(() => {
         files = {};
     });
 
     it('Should return a user storage uri from a filesystem uri', () => {
-        const testFile = 'keymaps.json';
 
         const test = UserStorageServiceFilesystemImpl.toUserStorageUri(userStorageFolder, new URI('file://' + homeDir + '/' + THEIA_USER_STORAGE_FOLDER + '/' + testFile));
         expect(test.scheme).eq(UserStorageUri.SCHEME);
@@ -123,7 +131,6 @@ describe('User Storage Service (Filesystem implementation)', () => {
     });
 
     it('Should return a filesystem uri from a user storage uri', () => {
-        const testFile = 'keymaps.json';
         const test = UserStorageServiceFilesystemImpl.toFilesystemURI(userStorageFolder, new URI(UserStorageUri.SCHEME + ':' + testFile));
 
         expect(test.scheme).eq('file');
@@ -134,21 +141,20 @@ describe('User Storage Service (Filesystem implementation)', () => {
         userStorageService.onUserStorageChanged(event => {
             const userStorageUri = event.uris[0];
             expect(userStorageUri.scheme).eq(UserStorageUri.SCHEME);
+            expect(userStorageUri.path.toString()).eq(testFile);
             done();
         });
 
         mockOnFileChangedEmitter.fire([
             {
                 type: FileChangeType.UPDATED,
-                uri: userStorageFolder.resolve('test.json')
+                uri: userStorageFolder.resolve(testFile)
             }
         ]);
 
     }).timeout(2000);
 
     it('Should save the contents correctly using a user storage uri to a filesystem uri', async () => {
-
-        const testFile = 'keymaps.json';
 
         const userStorageUri = UserStorageServiceFilesystemImpl.
             toUserStorageUri(userStorageFolder, new URI('file://' + homeDir + '/' + THEIA_USER_STORAGE_FOLDER + '/' + testFile));
@@ -164,4 +170,50 @@ describe('User Storage Service (Filesystem implementation)', () => {
 
     }).timeout(2000);
 
+});
+
+describe('User Storage Resource (Filesystem implementation)', () => {
+    let userStorageResource: UserStorageResource;
+    let testFile: string;
+
+    before(() => {
+        testFile = 'test.json';
+        userStorageService = testContainer.get<UserStorageServiceFilesystemImpl>(UserStorageService);
+        const userStorageUriTest = UserStorageServiceFilesystemImpl.
+            toUserStorageUri(userStorageFolder, new URI('file://' + homeDir + '/' + THEIA_USER_STORAGE_FOLDER + '/' + testFile));
+        userStorageResource = new UserStorageResource(userStorageUriTest, userStorageService);
+    });
+
+    after(() => {
+        userStorageService.dispose();
+    });
+
+    beforeEach(() => {
+        files = {};
+    });
+
+    it('Should return notify client when resource changed underneath', done => {
+        userStorageResource.onDidChangeContents(() => {
+            done();
+        });
+
+        mockOnFileChangedEmitter.fire([
+            {
+                type: FileChangeType.UPDATED,
+                uri: userStorageFolder.resolve(testFile)
+            }
+        ]);
+    }).timeout(2000);
+
+    it('Should save and read correctly to fs', async () => {
+        const testContent = 'test content';
+        await userStorageResource.saveContents(testContent);
+        const testFsUri = UserStorageServiceFilesystemImpl.toFilesystemURI(userStorageFolder, userStorageResource.uri);
+
+        expect(files[testFsUri.toString()]).eq(testContent);
+
+        const readTestContent = await userStorageResource.readContents();
+        expect(readTestContent).eq(testContent);
+
+    }).timeout(2000);
 });
