@@ -11,6 +11,7 @@ import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { StatusBar, StatusBarAlignment } from "@theia/core/lib/browser/status-bar/status-bar";
 import { Git } from '../common';
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
+import { GIT_COMMANDS } from './git-command';
 import { DisposableCollection } from "@theia/core";
 
 export const GIT_WIDGET_FACTORY_ID = 'git';
@@ -39,7 +40,8 @@ export class GitFrontendContribution implements FrontendApplicationContribution 
                             this.statusBar.setElement('git-repository-status', {
                                 text: `$(code-fork) ${gitStatus.status.branch}`,
                                 alignment: StatusBarAlignment.LEFT,
-                                priority: 100
+                                priority: 100,
+                                command: GIT_COMMANDS.CHECKOUT.id
                             });
                         }
                     }));
