@@ -15,15 +15,10 @@ export class UserStorageResource implements Resource {
 
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
     protected readonly toDispose = new DisposableCollection();
-    private readonly _uri: string;
-
     constructor(
         public uri: URI,
         protected readonly service: UserStorageService
     ) {
-
-        this._uri = uri.toString();
-
         this.toDispose.push(this.service.onUserStorageChanged(e => {
             for (const changedUri of e.uris) {
                 if (changedUri === this.uri) {
@@ -40,11 +35,11 @@ export class UserStorageResource implements Resource {
     }
 
     readContents(options?: { encoding?: string }): Promise<string> {
-        return this.service.readContents(this._uri);
+        return this.service.readContents(this.uri);
     }
 
     saveContents(content: string): Promise<void> {
-        return this.service.saveContents(this._uri, content);
+        return this.service.saveContents(this.uri, content);
     }
 
     get onDidChangeContents(): Event<void> {

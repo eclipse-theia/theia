@@ -10,9 +10,9 @@ import URI from '@theia/core/lib/common/uri';
 export const UserStorageService = Symbol('UserStorageService');
 
 export interface UserStorageService extends Disposable {
-    readContents(uri: string): Promise<string>;
+    readContents(uri: URI): Promise<string>;
 
-    saveContents(uri: string, content: string): Promise<void>;
+    saveContents(uri: URI, content: string): Promise<void>;
 
     onUserStorageChanged: Event<UserStorageChangeEvent>;
 }

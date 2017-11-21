@@ -57,19 +57,19 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
         });
     }
 
-    readContents(uri: string) {
+    readContents(uri: URI) {
         return this.userStorageFolder
             .then(folderUri => {
-                const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, new URI(uri));
+                const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, uri);
                 return this.fileSystem.resolveContent(filesystemUri.toString());
             })
             .then(({ stat, content }) => content);
     }
 
-    saveContents(uri: string, content: string) {
+    saveContents(uri: URI, content: string) {
 
         return this.userStorageFolder.then(folderUri => {
-            const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, new URI(uri));
+            const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, uri);
 
             this.fileSystem.getFileStat(filesystemUri.toString()).then(fileStat => {
                 this.fileSystem.setContent(fileStat, content).then(() => Promise.resolve());

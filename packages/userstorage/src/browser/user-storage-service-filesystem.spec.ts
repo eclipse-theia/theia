@@ -153,9 +153,9 @@ describe('User Storage Service (Filesystem implementation)', () => {
         const userStorageUri = UserStorageServiceFilesystemImpl.
             toUserStorageUri(userStorageFolder, new URI('file://' + homeDir + '/' + THEIA_USER_STORAGE_FOLDER + '/' + testFile));
 
-        await userStorageService.saveContents(userStorageUri.toString(), 'test content');
+        await userStorageService.saveContents(userStorageUri, 'test content');
 
-        const newContent = await userStorageService.readContents(userStorageUri.toString());
+        const newContent = await userStorageService.readContents(userStorageUri);
 
         expect(newContent).eq('test content');
         // Confirm that the URI was transformed to a filesystem uri by accessing it via the fs index
