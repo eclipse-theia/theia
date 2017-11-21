@@ -18,9 +18,9 @@ import { VirtualRenderer, VirtualWidget, ContextMenuRenderer, OpenerService, ope
 import { h } from '@phosphor/virtualdom/lib';
 import { Message } from '@phosphor/messaging';
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
-import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 
 @injectable()
 export class GitWidget extends VirtualWidget {
@@ -42,7 +42,7 @@ export class GitWidget extends VirtualWidget {
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
         @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
         @inject(MessageService) protected readonly messageService: MessageService,
-        @inject(FileIconProvider) protected readonly iconProvider: FileIconProvider,
+        @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
         @inject(CommandService) protected readonly commandService: CommandService,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService) {
         super();
@@ -283,9 +283,9 @@ export class GitWidget extends VirtualWidget {
             return '';
         }
         const changeUri: URI = new URI(change.uri);
-        const fileIcon = this.iconProvider.getFileIconForURI(changeUri);
-        const iconSpan = h.span({ className: fileIcon });
-        const nameSpan = h.span({ className: 'name' }, changeUri.displayName + ' ');
+        const fileIcon = this.labelProvider.getIcon(changeUri);
+        const iconSpan = h.span({ className: fileIcon + ' file-icon' });
+        const nameSpan = h.span({ className: 'name' }, this.labelProvider.getName(changeUri) + ' ');
         const pathSpan = h.span({ className: 'path' }, this.getRepositoryRelativePath(repository, changeUri.path.dir.toString()));
         const nameAndPathDiv = h.div({
             className: 'noWrapInfo',

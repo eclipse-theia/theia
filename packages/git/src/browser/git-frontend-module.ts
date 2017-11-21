@@ -18,6 +18,8 @@ import { GitResourceResolver } from './git-resource';
 import { GitContextMenu } from './git-context-menu';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { GitQuickOpenService } from './git-quick-open-service';
+import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
+import { GitUriLabelProviderContribution } from './git-uri-label-contribution';
 
 import '../../src/browser/style/index.css';
 
@@ -43,4 +45,6 @@ export default new ContainerModule(bind => {
 
     bind(GitRepositoryProvider).toSelf().inSingletonScope();
     bind(GitQuickOpenService).toSelf().inSingletonScope();
+
+    bind(LabelProviderContribution).to(GitUriLabelProviderContribution).inSingletonScope();
 });
