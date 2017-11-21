@@ -110,7 +110,6 @@ export class GitQuickOpenService {
             const items: QuickOpenItem[] = branches.map(branch => new GitQuickOpenItem(branch, switchBranch, toLabel, toDescription));
             const createBranchItem = (item: QuickOpenItem) => {
                 const thisGit = this.git;
-                const thisRepository = this.getRepository();
                 const createBranchModel: QuickOpenModel = {
                     onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
                         const dynamicItems: QuickOpenItem[] = [];
@@ -121,9 +120,9 @@ export class GitQuickOpenService {
                             dynamicItems.push(new CreateNewBranchOpenItem(
                                 `Create a new local branch with name: ${lookFor}. ${suffix}`,
                                 async () => {
-                                    // await thisGit.branch(thisRepository!, { toCreate: lookFor });
-                                    // await thisGit.checkout(thisRepository!, { branch: lookFor });
-                                    console.log(thisGit, thisRepository);
+                                    // await thisGit.branch(repository, { toCreate: lookFor });
+                                    // await thisGit.checkout(repository, { branch: lookFor });
+                                    console.log(thisGit, repository);
                                     alert(`Create a new local branch ${lookFor} and switch to it.`);
                                 }
                             ));
