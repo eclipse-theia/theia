@@ -27,6 +27,10 @@ export namespace GIT_COMMANDS {
         id: 'git.merge',
         label: 'Git Merge'
     };
+    export const CHECKOUT = {
+        id: 'git.checkout',
+        label: 'Git Checkout'
+    };
 }
 
 @injectable()
@@ -38,6 +42,7 @@ export class GitCommandHandlers implements CommandContribution {
     ) { }
 
     registerCommands(registry: CommandRegistry): void {
+
         registry.registerCommand(GIT_COMMANDS.FETCH);
         registry.registerHandler(GIT_COMMANDS.FETCH.id, {
             execute: () => this.quickOpenService.fetch(),
@@ -62,9 +67,16 @@ export class GitCommandHandlers implements CommandContribution {
             isEnabled: () => this.repositorySelected
         });
 
+        registry.registerCommand(GIT_COMMANDS.CHECKOUT);
+        registry.registerHandler(GIT_COMMANDS.CHECKOUT.id, {
+            execute: () => this.quickOpenService.checkout(),
+            isEnabled: () => this.repositorySelected
+        });
+
     }
 
     protected get repositorySelected(): boolean {
         return this.repositoryProvider.selectedRepository !== undefined;
     }
+
 }
