@@ -14,6 +14,7 @@ import { TextEditorProvider, Range, Position } from "./editor";
 import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { Widget } from '@phosphor/widgets';
 import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
+import { WorkspaceService } from "@theia/workspace/lib/browser";
 
 export const EditorManager = Symbol("EditorManager");
 
@@ -64,7 +65,8 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(FrontendApplication) protected readonly app: FrontendApplication,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
-        @inject(FileIconProvider) protected readonly iconProvider: FileIconProvider
+        @inject(FileIconProvider) protected readonly iconProvider: FileIconProvider,
+        @inject(WorkspaceService) protected readonly workspaceServie: WorkspaceService
     ) {
         this.currentObserver = new EditorManagerImpl.Observer('current', app);
         this.activeObserver = new EditorManagerImpl.Observer('active', app);
@@ -112,14 +114,38 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
     }
 
     protected createEditor(uri: URI): Promise<EditorWidget> {
-        return this.editorProvider(uri).then(textEditor => {
-            const newEditor = new EditorWidget(textEditor, this.selectionService);
-            newEditor.id = this.id + ":" + uri.toString();
-            newEditor.title.closable = true;
-            newEditor.title.label = uri.path.base;
-            newEditor.title.iconClass = this.iconProvider.getFileIconForURI(uri);
-            return newEditor;
-        });
+        const editorPromise = this.editorProvider(uri);
+        const workspaceRootPromise = this.workspaceServie.root;
+
+        return Promise.all([editorPromise, workspaceRootPromise])
+            .then(res => {
+                const [textEditor, workspaceRoot] = res;
+
+                const newEditor = new EditorWidget(textEditor, this.selectionService);
+                newEditor.id = this.id + ":" + uri.toString();
+                newEditor.title.closable = true;
+
+                /* Put just the base filename in the tab itself.  */
+                newEditor.title.label = uri.path.base;
+
+                /* Put the workspace-relative path in the caption (hover popup).  */
+                let caption = uri.path.toString();
+                if (workspaceRoot) {
+                    let root = workspaceRoot.uri + '/';
+
+                    if (root.startsWith('file://')) {
+                        root = root.slice('file://'.length);
+                    }
+
+                    if (caption.startsWith(root)) {
+                        caption = caption.slice(root.length);
+                    }
+                }
+                newEditor.title.caption = caption;
+
+                newEditor.title.iconClass = this.iconProvider.getFileIconForURI(uri);
+                return newEditor;
+            });
     }
 
     protected revealIfVisible(editor: EditorWidget, input?: EditorInput): void {
