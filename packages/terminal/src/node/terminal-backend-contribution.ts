@@ -25,39 +25,43 @@ export class TerminalBackendContribution implements BackendApplicationContributi
     onStart(server: http.Server): void {
         openSocket({
             server,
-            matches: (request) => {
+            matches: request => {
                 const uri = new URI(request.url!);
                 return uri.path.toString().startsWith('/services/terminals/');
             }
         }, (ws, request) => {
             const uri = new URI(request.url!);
             const id = parseInt(uri.path.base, 10);
-            let term = this.processManager.get(id);
-            if (!term) {
+            let termProcess = this.processManager.get(id);
+            if (!termProcess) {
                 return;
             }
 
             const termStream = new stream.PassThrough();
 
+            // tslint:disable-next-line:no-any
             termStream.on('data', (data: any) => {
                 try {
                     ws.send(data.toString());
-                } catch (ex) {
-                    console.error(ex);
+                } catch (error) {
+                    // tslint:disable-next-line:no-console
+                    console.error(error);
                 }
             });
 
-            term.output.pipe(termStream);
+            termProcess.output.pipe(termStream);
 
+            // tslint:disable-next-line:no-any
             ws.on('message', (msg: any) => {
-                if (term instanceof TerminalProcess) {
-                    term.write(msg);
+                if (termProcess instanceof TerminalProcess) {
+                    termProcess.write(msg);
                 }
             });
+            // tslint:disable-next-line:no-any
             ws.on('close', (msg: any) => {
-                if (term !== undefined) {
-                    this.processManager.delete(term);
-                    term = undefined;
+                if (termProcess !== undefined) {
+                    termProcess.kill();
+                    termProcess = undefined;
                 }
             });
         });

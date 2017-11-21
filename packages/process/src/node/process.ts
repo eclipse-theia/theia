@@ -36,9 +36,9 @@ export abstract class Process {
         protected readonly logger: ILogger,
         readonly type: ProcessType) {
 
-        this.id = this.processManager.register(this);
         this.exitEmitter = new Emitter<IProcessExitEvent>();
         this.errorEmitter = new Emitter<Error>();
+        this.id = this.processManager.register(this);
     }
 
     abstract kill(signal?: string): void;

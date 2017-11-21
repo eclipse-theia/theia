@@ -22,23 +22,44 @@ export class ProcessManager implements BackendApplicationContribution {
         this.deleteEmitter = new Emitter<number>();
     }
 
+    /**
+     * Registers the given process into this manager. Both on process termination and on error,
+     * the process will be automatically removed from the manager.
+     *
+     * @param process the process to register.
+     */
     register(process: Process): number {
         const id = this.id;
         this.processes.set(id, process);
+        process.onExit(() => this.unregister(process));
+        process.onError(() => this.unregister(process));
         this.id++;
         return id;
     }
 
-    get(id: number): Process | undefined {
-        return this.processes.get(id);
+    /**
+     * Removes the process from this process manager. Invoking this method, will make
+     * sure that the process is terminated before eliminating it from the manager's cache.
+     *
+     * @param process the process to unregister from this process manager.
+     */
+    protected unregister(process: Process): void {
+        const processLabel = this.getProcessLabel(process);
+        this.logger.info(`Unregistering process. ${processLabel}`);
+        if (!process.killed) {
+            this.logger.info(`Ensuring process termination. ${processLabel}`);
+            process.kill();
+        }
+        if (this.processes.delete(process.id)) {
+            this.deleteEmitter.fire(process.id);
+            this.logger.info(`The process was successfully unregistered. ${processLabel}`);
+        } else {
+            this.logger.warn(`This process was not registered or was already unregistered. ${processLabel}`);
+        }
     }
 
-    delete(process: Process): void {
-        process.kill();
-        if (!this.processes.delete(process.id)) {
-            this.logger.warn(`The process was not registered via this manager. Anyway, we terminate your process. PID: ${process.pid}.`);
-        }
-        this.deleteEmitter.fire(process.id);
+    get(id: number): Process | undefined {
+        return this.processes.get(id);
     }
 
     get onDelete(): Event<number> {
@@ -48,11 +69,15 @@ export class ProcessManager implements BackendApplicationContribution {
     onStop?(): void {
         for (const process of this.processes.values()) {
             try {
-                this.delete(process);
+                this.unregister(process);
             } catch (error) {
-                this.logger.error(`Error occurred when terminating process. PID: ${process.pid}.`, error);
+                this.logger.error(`Error occurred when unregistering process. ${this.getProcessLabel(process)}`, error);
             }
         }
+    }
+
+    private getProcessLabel(process: Process): string {
+        return `[ID: ${process.id}]`;
     }
 
 }
