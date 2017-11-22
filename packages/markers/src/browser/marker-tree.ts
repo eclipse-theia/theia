@@ -21,11 +21,10 @@ export interface MarkerOptions {
 @injectable()
 export abstract class MarkerTree<T extends object> extends Tree {
 
-    @inject(LabelProvider) protected labelProvider: LabelProvider;
-
     constructor(
         protected readonly markerManager: MarkerManager<T>,
-        protected readonly markerOptions: MarkerOptions
+        protected readonly markerOptions: MarkerOptions,
+        protected readonly labelProvider: LabelProvider
     ) {
         super();
 
