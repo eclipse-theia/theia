@@ -4,7 +4,7 @@
 
 :root {
   /* These need to be root because tabs get attached to the body during dragging. */
-  --theia-private-horizontal-tab-height: 24px;
+  --theia-private-horizontal-tab-height: 22px;
   --theia-private-horizontal-tab-active-top-border: 2px;
 }
 
@@ -15,7 +15,6 @@
 
 
 .p-DockPanel-tabBar {
-  border-right: var(--theia-border-width) solid var(--theia-border-color1);
   overflow: visible;
   color: var(--theia-ui-font-color1);
   font-size: var(--theia-ui-font-size1);
@@ -23,7 +22,7 @@
 }
 
 .p-TabBar[data-orientation='horizontal'] {
-  min-height: calc(var(--theia-private-horizontal-tab-height) + 2 * var(--theia-border-width));
+  min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-border-width));
 }
 
 .p-DockPanel-tabBar.p-mod-vertical {
@@ -38,15 +37,15 @@
 
 .p-DockPanel-tabBar .p-TabBar-tab {
   flex: 0 1 auto;
-  min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-border-width));
+  height: var(--theia-private-horizontal-tab-height);
   min-width: 35px;
-  margin-left: calc(-1*var(--theia-border-width));
   line-height: var(--theia-private-horizontal-tab-height);
   padding: 0px 8px;
   background: var(--theia-layout-color0);
   border: var(--theia-border-width) solid var(--theia-border-color0);
   border-bottom: none;
   border-top: none;
+  border-left: none;
   position: relative;
   overflow: visible;
 }
@@ -69,7 +68,7 @@
 .p-DockPanel-tabBar .p-TabBar-tab.p-mod-current {
   background: var(--theia-layout-color3);
   color: var(--theia-ui-font-color0);
-  min-height: calc(var(--theia-private-horizontal-tab-height) + 2 * var(--theia-border-width));
+  min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-border-width));
   transform: translateY(var(--theia-border-width));
 }
 

@@ -4,6 +4,8 @@
     color: var(--theia-ui-font-color1);
     background:var(--theia-layout-color3);
     font-size: var(--theia-ui-font-size1);
+    transform: translateY(var(--theia-border-width));
+    max-height: calc(100% - var(--theia-border-width));
 }
 
 .theia-Tree:focus {
@@ -13,6 +15,7 @@
 
 .theia-TreeNode {
     width: 500px;
+    height: var(--theia-private-horizontal-tab-height);
 }
 
 .theia-TreeNode:hover {
@@ -25,7 +28,7 @@
     flex-direction: row;
     align-items: center;
     user-select: none;
-    padding: 2px;
+    height: var(--theia-private-horizontal-tab-height);
 }
 
 .theia-ExpansionToggle.theia-mod-collapsed {

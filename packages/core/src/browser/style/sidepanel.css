@@ -75,3 +75,7 @@
 #theia-left-stack {
   border-right: var(--theia-border-width) solid var(--theia-border-color1);
 }
+
+#theia-right-stack {
+  border-left: var(--theia-border-width) solid var(--theia-border-color1);
+}

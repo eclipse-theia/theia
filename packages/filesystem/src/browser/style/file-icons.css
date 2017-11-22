@@ -5,8 +5,14 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+.file-icon {
+    max-height: calc(var(--theia-content-font-size) * 0.8);
+    display: flex;
+    align-items: center;
+}
+
 .file-icon:before {
-    font-size: 10px;
+    font-size: calc(var(--theia-content-font-size) * 0.8);
     text-align: center;
     margin-right: 4px;
 }

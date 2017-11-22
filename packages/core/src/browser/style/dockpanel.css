@@ -10,8 +10,16 @@
 
 .p-DockPanel-widget {
   background: var(--theia-layout-color3);
-  border-right: var(--theia-border-width) solid var(--theia-border-color1);
-  border-bottom: var(--theia-border-width) solid var(--theia-border-color1);
+}
+
+.p-DockPanel-handle[data-orientation='vertical'] {
+  min-height: var(--theia-border-width);
+  border-top: var(--theia-border-width) solid var(--theia-border-color1);
+}
+
+.p-DockPanel-handle[data-orientation='horizontal'] {
+  min-width: var(--theia-border-width);
+  border-left: var(--theia-border-width) solid var(--theia-border-color1);
 }
 
 .p-DockPanel-overlay {

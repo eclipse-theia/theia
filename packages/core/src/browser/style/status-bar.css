@@ -10,8 +10,7 @@
 }
 
 #theia-statusBar {
-    border-bottom: var(--theia-border-width) solid var(--theia-border-color1);
-    background: var(--theia-accent-color3);
+    background: var(--theia-brand-color0);
     display: flex;
     min-height: var(--theia-statusBar-height);
 }
