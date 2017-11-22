@@ -14,6 +14,8 @@ import { FileNavigatorWidget, FILE_NAVIGATOR_ID } from './navigator-widget';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { Widget } from '@phosphor/widgets';
+import { LabelProvider } from "@theia/core/lib/browser/label-provider";
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class FileNavigatorContribution implements FrontendApplicationContribution, WidgetFactory {
@@ -25,14 +27,18 @@ export class FileNavigatorContribution implements FrontendApplicationContributio
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(FileNavigatorWidget) @named(FILE_NAVIGATOR_ID) protected readonly fileNavigator: FileNavigatorWidget,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
-        @inject(StorageService) protected storageService: StorageService
+        @inject(StorageService) protected storageService: StorageService,
+        @inject(LabelProvider) protected readonly labelProvider: LabelProvider
     ) {
         this.fileNavigator.model.onSelectionChanged(selection =>
             this.selectionService.selection = selection
         );
-        this.workspaceService.root.then(resolvedRoot => {
+        this.workspaceService.root.then(async resolvedRoot => {
             if (resolvedRoot) {
-                this.fileNavigator.model.root = DirNode.createRoot(resolvedRoot);
+                const uri = new URI(resolvedRoot.uri);
+                const label = this.labelProvider.getName(uri);
+                const icon = await this.labelProvider.getIcon(resolvedRoot);
+                this.fileNavigator.model.root = DirNode.createRoot(resolvedRoot, label, icon);
             } else {
                 this.fileNavigator.update();
             }

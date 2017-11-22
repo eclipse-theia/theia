@@ -53,10 +53,11 @@ export class QuickFileOpenService implements QuickOpenModel {
         this.cancelIndicator = new CancellationTokenSource();
         const token = this.cancelIndicator.token;
         const proposed = new Set<string>();
-        const handler = (result: string[]) => {
+        const handler = async (result: string[]) => {
             if (!token.isCancellationRequested) {
                 result.forEach(p => proposed.add(p));
-                acceptor(Array.from(proposed).map(uri => this.toItem(uri)));
+                const itemPromises = Array.from(proposed).map(uri => this.toItem(uri));
+                acceptor(await Promise.all(itemPromises));
             }
         };
         if (lookFor.length <= 2) {
@@ -68,11 +69,11 @@ export class QuickFileOpenService implements QuickOpenModel {
         }
     }
 
-    private toItem(uriString: string) {
+    private async toItem(uriString: string) {
         const uri = new URI(uriString);
         return new FileQuickOpenItem(uri,
             this.labelProvider.getName(uri),
-            this.labelProvider.getIcon(uri),
+            await this.labelProvider.getIcon(uri),
             this.labelProvider.getLongName(uri.parent),
             this.openerService);
     }

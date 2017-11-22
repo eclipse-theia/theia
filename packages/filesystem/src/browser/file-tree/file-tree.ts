@@ -9,19 +9,22 @@ import { injectable, inject } from "inversify";
 import URI from '@theia/core/lib/common/uri';
 import { ITreeNode, ICompositeTreeNode, ISelectableTreeNode, IExpandableTreeNode, Tree } from "@theia/core/lib/browser";
 import { FileSystem, FileStat, UriSelection } from "../../common";
+import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 
 @injectable()
 export class FileTree extends Tree {
 
-    constructor( @inject(FileSystem) protected readonly fileSystem: FileSystem) {
+    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+
+    constructor(
+        @inject(FileSystem) protected readonly fileSystem: FileSystem) {
         super();
     }
 
-    resolveChildren(parent: ICompositeTreeNode): Promise<ITreeNode[]> {
+    async resolveChildren(parent: ICompositeTreeNode): Promise<ITreeNode[]> {
         if (FileStatNode.is(parent)) {
-            return this.resolveFileStat(parent).then(fileStat =>
-                this.toNodes(fileStat, parent)
-            );
+            const fileStat = await this.resolveFileStat(parent);
+            return this.toNodes(fileStat, parent);
         }
         return super.resolveChildren(parent);
     }
@@ -33,17 +36,20 @@ export class FileTree extends Tree {
         });
     }
 
-    protected toNodes(fileStat: FileStat, parent: ICompositeTreeNode): ITreeNode[] {
+    protected async toNodes(fileStat: FileStat, parent: ICompositeTreeNode): Promise<ITreeNode[]> {
         if (!fileStat.children) {
             return [];
         }
-        return fileStat.children.map(child =>
-            this.toNode(child, parent)
-        ).sort(DirNode.compare);
+        const result = await Promise.all(fileStat.children.map(async child =>
+            await this.toNode(child, parent)
+        ));
+        return result.sort(DirNode.compare);
     }
 
-    protected toNode(fileStat: FileStat, parent: ICompositeTreeNode): FileNode | DirNode {
+    protected async toNode(fileStat: FileStat, parent: ICompositeTreeNode): Promise<FileNode | DirNode> {
         const uri = new URI(fileStat.uri);
+        const name = await this.labelProvider.getName(uri);
+        const icon = await this.labelProvider.getIcon(fileStat);
         const id = fileStat.uri;
         const node = this.getNode(id);
         if (fileStat.isDirectory) {
@@ -51,9 +57,8 @@ export class FileTree extends Tree {
                 node.fileStat = fileStat;
                 return node;
             }
-            const name = uri.displayName;
             return <DirNode>{
-                id, uri, fileStat, name, parent,
+                id, uri, fileStat, name, icon, parent,
                 expanded: false,
                 selected: false,
                 children: []
@@ -63,9 +68,8 @@ export class FileTree extends Tree {
             node.fileStat = fileStat;
             return node;
         }
-        const name = uri.displayName;
         return <FileNode>{
-            id, uri, fileStat, name, parent,
+            id, uri, fileStat, name, icon, parent,
             selected: false
         };
     }
@@ -104,12 +108,13 @@ export namespace DirNode {
         return b - a;
     }
 
-    export function createRoot(fileStat: FileStat): DirNode {
+    export function createRoot(fileStat: FileStat, name: string, icon: string): DirNode {
         const uri = new URI(fileStat.uri);
         const id = fileStat.uri;
         return {
             id, uri, fileStat,
-            name: uri.displayName,
+            name,
+            icon,
             visible: true,
             parent: undefined,
             children: [],

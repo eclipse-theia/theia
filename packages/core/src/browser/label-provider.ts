@@ -9,7 +9,7 @@ import { inject, injectable, named } from "inversify";
 import * as fileIcons from "file-icons-js";
 import URI from "../common/uri";
 import { ContributionProvider } from '../common/contribution-provider';
-import { Prioritizeable } from '../common/types';
+import { Prioritizeable, MaybePromise } from '../common/types';
 
 import "file-icons-js/css/style.css";
 
@@ -26,7 +26,7 @@ export interface LabelProviderContribution {
     /**
      * returns an icon class for the given element.
      */
-    getIcon?(element: object): string;
+    getIcon?(element: object): MaybePromise<string>;
 
     /**
      * returns a short name for the given element.
@@ -43,15 +43,15 @@ export interface LabelProviderContribution {
 @injectable()
 export class DefaultUriLabelProviderContribution implements LabelProviderContribution {
 
-    canHandle(uri: object) {
+    canHandle(uri: object): number {
         if (uri instanceof URI) {
             return 1;
         }
         return 0;
     }
 
-    getIcon(uri: URI): string {
-        const iconClass = fileIcons.getClass(uri.path.toString());
+    getIcon(uri: URI): MaybePromise<string> {
+        const iconClass = this.getFileIcon(uri);
         if (!iconClass) {
             if (uri.displayName.indexOf('.') === -1) {
                 return 'fa fa-folder';
@@ -60,6 +60,10 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
             }
         }
         return iconClass;
+    }
+
+    protected getFileIcon(uri: URI): string | undefined {
+        return fileIcons.getClass(uri.path.toString());
     }
 
     getName(uri: URI): string {
@@ -79,7 +83,7 @@ export class LabelProvider {
         protected readonly contributionProvider: ContributionProvider<LabelProviderContribution>
     ) { }
 
-    getIcon(element: object): string {
+    async getIcon(element: object): Promise<string> {
         const contribs = this.findContribution(element);
         const contrib = contribs.find(c => c.getIcon !== undefined);
         if (!contrib) {

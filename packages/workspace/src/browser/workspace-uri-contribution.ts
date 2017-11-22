@@ -5,17 +5,21 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { LabelProviderContribution } from "@theia/core/lib/browser/label-provider";
+import { DefaultUriLabelProviderContribution } from "@theia/core/lib/browser/label-provider";
 import URI from "@theia/core/lib/common/uri";
 import { injectable, inject } from "inversify";
 import { WorkspaceService } from "./workspace-service";
+import { FileSystem, FileStat } from "@theia/filesystem/lib/common";
+import { MaybePromise } from "@theia/core";
 
 @injectable()
-export class WorkspaceUriLabelProviderContribution implements LabelProviderContribution {
+export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProviderContribution {
 
     wsRoot: string;
 
-    constructor( @inject(WorkspaceService) wsService: WorkspaceService) {
+    constructor( @inject(WorkspaceService) wsService: WorkspaceService,
+        @inject(FileSystem) protected fileSystem: FileSystem) {
+        super();
         wsService.root.then(root => {
             if (root) {
                 this.wsRoot = root.uri;
@@ -24,18 +28,52 @@ export class WorkspaceUriLabelProviderContribution implements LabelProviderContr
     }
 
     canHandle(element: object): number {
-        if (this.wsRoot && element instanceof URI) {
-            if (element.toString().startsWith(this.wsRoot)) {
-                return 10;
-            }
+        if ((element instanceof URI || FileStat.is(element))) {
+            return 10;
         }
         return 0;
+    }
+
+    private getUri(element: URI | FileStat) {
+        if (FileStat.is(element)) {
+            return new URI(element.uri);
+        }
+        return new URI(element.toString());
+    }
+
+    private getStat(element: URI | FileStat): MaybePromise<FileStat> {
+        if (FileStat.is(element)) {
+            return element;
+        }
+        return this.fileSystem.getFileStat(element.toString());
+    }
+
+    async getIcon(element: URI | FileStat): Promise<string> {
+        const uri = this.getUri(element);
+        const icon = super.getFileIcon(uri);
+        if (!icon) {
+            const stat = await this.getStat(element);
+            if (stat.isDirectory) {
+                return 'fa fa-folder';
+            } else {
+                return 'fa fa-file';
+            }
+        }
+        return icon;
+    }
+
+    getName(element: URI | FileStat): string {
+        return super.getName(this.getUri(element));
     }
 
     /**
      * trims the workspace root from a file uri, if it is a child.
      */
-    getLongName(uri: URI): string {
+    getLongName(element: URI | FileStat): string {
+        const uri = this.getUri(element);
+        if (!this.wsRoot) {
+            return super.getLongName(uri);
+        }
         const short = uri.toString().substr(this.wsRoot.length);
         if (short[0] === '/') {
             return short.substr(1);
