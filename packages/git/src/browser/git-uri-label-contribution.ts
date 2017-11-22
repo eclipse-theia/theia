@@ -9,6 +9,7 @@ import { injectable, inject } from 'inversify';
 import { LabelProviderContribution, LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
+import { MaybePromise } from '@theia/core';
 
 @injectable()
 export class GitUriLabelProviderContribution implements LabelProviderContribution {
@@ -31,7 +32,7 @@ export class GitUriLabelProviderContribution implements LabelProviderContributio
         return this.labelProvider.getName(this.toFileUri(uri)) + this.getTagSuffix(uri);
     }
 
-    getIcon(uri: URI): string {
+    getIcon(uri: URI): MaybePromise<string> {
         return this.labelProvider.getIcon(this.toFileUri(uri));
     }
 

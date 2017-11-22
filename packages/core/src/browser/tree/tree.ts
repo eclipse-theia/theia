@@ -59,6 +59,14 @@ export interface ITreeNode {
      */
     readonly name: string;
     /**
+     * A css string for this tree node icon.
+     */
+    readonly icon?: string;
+    /**
+     * A human-readable description of this tree node.
+     */
+    readonly description?: string;
+    /**
      * Test whether this node is visible.
      * If undefined then visible.
      */

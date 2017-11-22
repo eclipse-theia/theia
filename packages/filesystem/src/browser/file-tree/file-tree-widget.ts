@@ -13,8 +13,6 @@ import {
 } from "@theia/core/lib/browser";
 import { DirNode, FileStatNode } from "./file-tree";
 import { FileTreeModel } from "./file-tree-model";
-import { LabelProvider } from "@theia/core/lib/browser/label-provider";
-import URI from "@theia/core/lib/common/uri";
 
 export const FILE_TREE_CLASS = 'theia-FileTree';
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
@@ -27,8 +25,7 @@ export class FileTreeWidget extends TreeWidget {
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
         @inject(FileTreeModel) readonly model: FileTreeModel,
-        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
-        @inject(LabelProvider) readonly labelProvider: LabelProvider
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
         super(props, model, contextMenuRenderer);
         this.addClass(FILE_TREE_CLASS);
@@ -53,9 +50,8 @@ export class FileTreeWidget extends TreeWidget {
     }
 
     protected decorateFileStatCaption(node: FileStatNode, caption: h.Child, props: NodeProps): h.Child {
-        const icon_class = this.labelProvider.getIcon(new URI(node.fileStat.uri));
         const icon = h.span({
-            className: icon_class + ' file-icon'
+            className: (node.icon || '') + ' file-icon'
         });
         return super.decorateCaption(node, VirtualRenderer.merge(icon, caption), props);
     }

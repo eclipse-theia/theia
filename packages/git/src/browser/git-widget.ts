@@ -22,12 +22,18 @@ import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-comman
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 
+export interface GitFileChangeNode extends GitFileChange {
+    readonly icon: string;
+    readonly label: string;
+    readonly description: string;
+}
+
 @injectable()
 export class GitWidget extends VirtualWidget {
 
-    protected stagedChanges: GitFileChange[] = [];
-    protected unstagedChanges: GitFileChange[] = [];
-    protected mergeChanges: GitFileChange[] = [];
+    protected stagedChanges: GitFileChangeNode[] = [];
+    protected unstagedChanges: GitFileChangeNode[] = [];
+    protected mergeChanges: GitFileChangeNode[] = [];
     protected message: string = '';
     protected messageInputHighlighted: boolean = false;
     protected additionalMessage: string = '';
@@ -70,21 +76,37 @@ export class GitWidget extends VirtualWidget {
         }
     }
 
-    protected updateView(status: WorkingDirectoryStatus | undefined) {
+    protected async updateView(status: WorkingDirectoryStatus | undefined) {
         this.stagedChanges = [];
         this.unstagedChanges = [];
         this.mergeChanges = [];
         if (status) {
-            status.changes.forEach(change => {
+            status.changes.forEach(async change => {
+                const uri = new URI(change.uri);
+                const repository = this.repositoryProvider.selectedRepository;
+                const [icon, label, description] = await Promise.all([
+                    this.labelProvider.getIcon(uri),
+                    this.labelProvider.getName(uri),
+                    repository ? this.getRepositoryRelativePath(repository, uri) : this.labelProvider.getLongName(uri)
+                ]);
                 if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
                     if (change.staged) {
-                        this.stagedChanges.push(change);
+                        this.stagedChanges.push({
+                            icon, label, description,
+                            ...change
+                        });
                     } else {
-                        this.unstagedChanges.push(change);
+                        this.unstagedChanges.push({
+                            icon, label, description,
+                            ...change
+                        });
                     }
                 } else {
                     if (!change.staged) {
-                        this.mergeChanges.push(change);
+                        this.mergeChanges.push({
+                            icon, label, description,
+                            ...change
+                        });
                     }
                 }
             });
@@ -273,20 +295,19 @@ export class GitWidget extends VirtualWidget {
         return '';
     }
 
-    protected getRepositoryRelativePath(repository: Repository, absPath: string) {
-        const repositoryPath = new URI(repository.localUri).path.toString();
-        return absPath.replace(repositoryPath, '').replace(/^\//, '');
+    protected getRepositoryRelativePath(repository: Repository, uri: URI) {
+        const repoUri = new URI(repository.localUri);
+        return uri.toString().substr(repoUri.toString().length + 1);
     }
 
-    protected renderGitItem(repository: Repository | undefined, change: GitFileChange): h.Child {
+    protected renderGitItem(repository: Repository | undefined, change: GitFileChangeNode): h.Child {
         if (!repository) {
             return '';
         }
         const changeUri: URI = new URI(change.uri);
-        const fileIcon = this.labelProvider.getIcon(changeUri);
-        const iconSpan = h.span({ className: fileIcon + ' file-icon' });
-        const nameSpan = h.span({ className: 'name' }, this.labelProvider.getName(changeUri) + ' ');
-        const pathSpan = h.span({ className: 'path' }, this.getRepositoryRelativePath(repository, changeUri.path.dir.toString()));
+        const iconSpan = h.span({ className: change.icon + ' file-icon' });
+        const nameSpan = h.span({ className: 'name' }, change.label + ' ');
+        const pathSpan = h.span({ className: 'path' }, change.description);
         const nameAndPathDiv = h.div({
             className: 'noWrapInfo',
             onclick: () => {

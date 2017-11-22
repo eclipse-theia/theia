@@ -5,12 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable } from "inversify";
+import { injectable, inject } from "inversify";
 import { Tree, ICompositeTreeNode, ITreeNode, ISelectableTreeNode, IExpandableTreeNode } from "@theia/core/lib/browser";
 import { MarkerManager } from './marker-manager';
 import { Marker } from '../common/marker';
 import { UriSelection } from "@theia/filesystem/lib/common";
 import URI from "@theia/core/lib/common/uri";
+import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 
 export const MarkerOptions = Symbol('MarkerOptions');
 export interface MarkerOptions {
@@ -19,6 +20,8 @@ export interface MarkerOptions {
 
 @injectable()
 export abstract class MarkerTree<T extends object> extends Tree {
+
+    @inject(LabelProvider) protected labelProvider: LabelProvider;
 
     constructor(
         protected readonly markerManager: MarkerManager<T>,
@@ -47,12 +50,15 @@ export abstract class MarkerTree<T extends object> extends Tree {
         return super.resolveChildren(parent);
     }
 
-    getMarkerInfoNodes(parent: MarkerRootNode): Promise<MarkerInfoNode[]> {
+    async getMarkerInfoNodes(parent: MarkerRootNode): Promise<MarkerInfoNode[]> {
         const uriNodes: MarkerInfoNode[] = [];
         if (this.root && MarkerRootNode.is(this.root)) {
             for (const uriString of this.markerManager.getUris()) {
                 const id = 'markerInfo-' + uriString;
                 const uri = new URI(uriString);
+                const label = await this.labelProvider.getName(uri);
+                const icon = await this.labelProvider.getIcon(uri);
+                const description = await this.labelProvider.getLongName(uri.parent);
                 const numberOfMarkers = this.markerManager.findMarkers({ uri }).length;
                 if (numberOfMarkers > 0) {
                     const cachedMarkerInfo = this.getNode(id);
@@ -65,7 +71,9 @@ export abstract class MarkerTree<T extends object> extends Tree {
                             expanded: true,
                             uri,
                             id,
-                            name: uri.displayName,
+                            name: label,
+                            icon,
+                            description,
                             parent,
                             selected: false,
                             numberOfMarkers

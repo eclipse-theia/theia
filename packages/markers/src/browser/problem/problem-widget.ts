@@ -16,7 +16,6 @@ import { DiagnosticSeverity } from 'vscode-languageserver-types';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { UriSelection } from '@theia/filesystem/lib/common';
-import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 
 @injectable()
 export class ProblemWidget extends TreeWidget {
@@ -25,8 +24,7 @@ export class ProblemWidget extends TreeWidget {
         @inject(ProblemManager) protected readonly problemManager: ProblemManager,
         @inject(TreeProps) readonly treeProps: TreeProps,
         @inject(ProblemTreeModel) readonly model: ProblemTreeModel,
-        @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer,
-        @inject(LabelProvider) protected readonly labelProvider: LabelProvider
+        @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer
     ) {
         super(treeProps, model, contextMenuRenderer);
 
@@ -116,9 +114,8 @@ export class ProblemWidget extends TreeWidget {
     }
 
     protected decorateMarkerFileNode(node: MarkerInfoNode, caption: h.Child): h.Child {
-        const fileIcon = this.labelProvider.getIcon(node.uri);
-        const filenameDiv = h.div({ className: fileIcon + ' file-icon' }, this.labelProvider.getName(node.uri));
-        const pathDiv = h.div({ className: 'path' }, this.labelProvider.getLongName(node.uri.parent));
+        const filenameDiv = h.div({ className: (node.icon || '') + ' file-icon' }, node.name);
+        const pathDiv = h.div({ className: 'path' }, node.description || '');
         const counterDiv = h.div({ className: 'counter' }, node.numberOfMarkers.toString());
         return h.div({ className: 'markerFileNode' }, filenameDiv, pathDiv, counterDiv);
     }
