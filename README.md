@@ -31,7 +31,7 @@ A [`beta` version of Theia](https://github.com/theia-ide/theia/milestone/3) is p
 Here you can find guides and examples for common scenarios:
 - [Develop a new Theia extension](doc/Authoring_Extensions.md)
 - Develop a new Theia application for [Cloud](examples/browser/package.json) or [Desktop](examples/electron/package.json) with [Theia CLI](dev-packages/cli/README.md)
-- [Run a cloud Theia application with Docker](examples/browser/Dockerfile)
+- [Run Theia IDE for Web Developers with Docker](https://github.com/theia-ide/theia-apps#theia-docker)
 - [Package a desktop Theia application with Electon](https://github.com/theia-ide/yangster-electron)
 
 ## Documentation
