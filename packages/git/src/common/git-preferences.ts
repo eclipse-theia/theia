@@ -10,27 +10,14 @@ import { createPreferenceProxy, PreferenceProxy, PreferenceService } from '@thei
 import { PreferenceSchema } from '@theia/preferences-api/lib/common/';
 
 export interface GitConfiguration {
-
-    /**
-     * The time-interval (in milliseconds) to poll for the status changes in the local working directory.
-     */
-    'git.pollInterval': number
-
 }
 
 const DefaultGitConfiguration: GitConfiguration = {
-    'git.pollInterval': 1000
 };
 
 export const GitPreferenceSchema: PreferenceSchema = {
     'type': 'object',
-    'properties': {
-        'git.pollInterval': {
-            'type': 'number',
-            'minimum': 100,
-            'description': 'The time-interval (in milliseconds) to poll for the status changes in the local working directory.'
-        }
-    }
+    'properties': {}
 };
 
 export const GitPreferences = Symbol('GitPreferences');
