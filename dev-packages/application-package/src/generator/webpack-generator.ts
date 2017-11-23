@@ -59,7 +59,12 @@ module.exports = {
         rules: [
             {
                 test: /\\.css$/,
+                exclude: /\\.useable\\.css$/,
                 loader: 'style-loader!css-loader'
+            },
+            {
+                test: /\\.useable\\.css$/,
+                loader: 'style-loader/useable!css-loader'
             },
             {
                 test: /\\.(ttf|eot|svg)(\\?v=\\d+\\.\\d+\\.\\d+)?$/,

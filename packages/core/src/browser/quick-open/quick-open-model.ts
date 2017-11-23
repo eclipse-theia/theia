@@ -19,42 +19,67 @@ export enum QuickOpenMode {
     OPEN_IN_BACKGROUND
 }
 
+export interface QuickOpenItemOptions {
+    tooltip?: string;
+    label?: string;
+    labelHighlights?: Highlight[];
+    description?: string;
+    descriptionHighlights?: Highlight[];
+    detail?: string;
+    detailHighlights?: Highlight[];
+    hidden?: boolean;
+    uri?: URI;
+    iconClass?: string;
+    keybinding?: Keybinding;
+    run?(mode: QuickOpenMode): boolean;
+}
+
 export class QuickOpenItem {
+
+    private options: QuickOpenItemOptions;
+
+    constructor(options?: QuickOpenItemOptions) {
+        this.options = options || {};
+    }
+
     getTooltip(): string | undefined {
-        return this.getLabel();
+        return this.options.tooltip || this.getLabel();
     }
     getLabel(): string | undefined {
-        return undefined;
+        return this.options.label;
     }
     getLabelHighlights(): Highlight[] {
-        return [];
+        return this.options.labelHighlights || [];
     }
     getDescription(): string | undefined {
-        return undefined;
+        return this.options.description;
     }
     getDescriptionHighlights(): Highlight[] | undefined {
-        return undefined;
+        return this.options.descriptionHighlights;
     }
     getDetail(): string | undefined {
-        return undefined;
+        return this.options.detail;
     }
     getDetailHighlights(): Highlight[] | undefined {
-        return undefined;
+        return this.options.detailHighlights;
     }
     isHidden(): boolean {
-        return false;
+        return this.options.hidden || false;
     }
     getUri(): URI | undefined {
-        return undefined;
+        return this.options.uri;
     }
     getIconClass(): string | undefined {
-        return undefined;
+        return this.options.iconClass;
     }
     getKeybinding(): Keybinding | undefined {
-        return undefined;
+        return this.options.keybinding;
     }
     run(mode: QuickOpenMode): boolean {
-        return false;
+        if (!this.options.run) {
+            return false;
+        }
+        return this.options.run(mode);
     }
 }
 

@@ -34,6 +34,7 @@ import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContri
 
 import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
+import { ThemingCommandContribution, ThemeService } from './theming';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplication).toSelf().inSingletonScope();
@@ -104,4 +105,9 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bindContributionProvider(bind, LabelProviderContribution);
     bind(LabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).to(DefaultUriLabelProviderContribution).inSingletonScope();
+
+    bind(CommandContribution).to(ThemingCommandContribution).inSingletonScope();
 });
+
+const theme = ThemeService.get().getCurrentTheme().id;
+ThemeService.get().setCurrentTheme(theme);
