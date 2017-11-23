@@ -8,7 +8,7 @@
 
 Theia is an extensible platform to develop full-fledged multi-language Cloud & Desktop IDE-like products with state-of-the-art web technologies.
 
-![Theia](https://user-images.githubusercontent.com/3082655/32766055-816eb1a8-c90d-11e7-8df7-31014cb53172.png)
+![Theia](https://user-images.githubusercontent.com/372735/33182625-0f6575f0-d075-11e7-8ec7-53801e3892bd.jpg)
 
 A [`beta` version of Theia](https://github.com/theia-ide/theia/milestone/3) is planned for December 6, 2017, look at our [roadmap](#roadmap).
 
