@@ -21,12 +21,17 @@ import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { MonacoWorkspace } from './monaco-workspace';
+import { ThemeService } from '@theia/core/lib/browser/theming';
 
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 
-const monacoTheme = 'vs-dark';
-monaco.editor.setTheme(monacoTheme);
-document.body.classList.add(monacoTheme);
+function changeTheme(editorTheme: string | undefined) {
+    const monacoTheme = editorTheme || 'vs-dark';
+    monaco.editor.setTheme(monacoTheme);
+    document.body.classList.add(monacoTheme);
+}
+changeTheme(ThemeService.get().getCurrentTheme().editorTheme);
+ThemeService.get().onThemeChange(event => changeTheme(event.newTheme.editorTheme));
 
 @injectable()
 export class MonacoEditorProvider {
@@ -126,9 +131,9 @@ export class MonacoEditorProvider {
     protected readonly editorOptions: {
         [name: string]: (keyof monaco.editor.IEditorOptions | undefined)
     } = {
-        'editor.lineNumbers': 'lineNumbers',
-        'editor.renderWhitespace': 'renderWhitespace'
-    };
+            'editor.lineNumbers': 'lineNumbers',
+            'editor.renderWhitespace': 'renderWhitespace'
+        };
 
     protected updateOptions(change: EditorPreferenceChange, editor: MonacoEditor): void {
         const editorOption = this.editorOptions[change.preferenceName];

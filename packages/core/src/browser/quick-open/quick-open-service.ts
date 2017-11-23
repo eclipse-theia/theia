@@ -19,6 +19,8 @@ export namespace QuickOpenOptions {
         readonly fuzzyMatchDescription: boolean;
         readonly fuzzySort: boolean;
 
+        selectIndex(lookfor: string): number;
+
         onClose(canceled: boolean): void;
     }
     export const defaultOptions: Resolved = Object.freeze({
@@ -30,7 +32,9 @@ export namespace QuickOpenOptions {
         fuzzyMatchDescription: false,
         fuzzySort: false,
 
-        onClose: () => { /* no-op*/ }
+        onClose: () => { /* no-op*/ },
+
+        selectIndex: () => -1
     });
     export function resolve(options: QuickOpenOptions = {}, source: Resolved = defaultOptions): Resolved {
         return Object.assign({}, source, options);
