@@ -9,7 +9,6 @@ import { Git, Repository } from '../common';
 import { injectable, inject } from "inversify";
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { Event, Emitter } from '@theia/core';
-import { GitPreferences } from '../common/git-preferences';
 
 export interface GitRefreshOptions {
     readonly maxCount: number
@@ -24,7 +23,6 @@ export class GitRepositoryProvider {
 
     constructor(
         @inject(Git) protected readonly git: Git,
-        @inject(GitPreferences) protected readonly preferences: GitPreferences,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
     ) {
         this.initialize();

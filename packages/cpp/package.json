@@ -8,7 +8,8 @@
     "@theia/filesystem": "^0.3.4",
     "@theia/languages": "^0.3.3",
     "@theia/monaco": "^0.3.4",
-    "@theia/preferences": "^0.3.4"
+    "@theia/preferences": "^0.3.4",
+    "@theia/process": "^0.3.3"
   },
   "publishConfig": {
     "access": "public"

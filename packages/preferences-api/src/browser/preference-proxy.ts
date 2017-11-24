@@ -46,6 +46,7 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
                     });
                 }
             } else {
+                // TODO If it's deleted, fire the default preference
                 onPreferenceChangedEmitter.fire(e);
             }
         }

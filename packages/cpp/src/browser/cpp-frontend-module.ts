@@ -11,11 +11,9 @@ import { CppCommandContribution } from './cpp-commands';
 
 import { LanguageClientContribution } from "@theia/languages/lib/browser";
 import { CppClientContribution } from "./cpp-client-contribution";
-import { bindCppPreferences } from "../common";
 import { CppKeybindingContribution, CppKeybindingContext } from "./cpp-keybinding";
 
 export default new ContainerModule(bind => {
-    bindCppPreferences(bind);
     bind(CommandContribution).to(CppCommandContribution).inSingletonScope();
     bind(CppKeybindingContext).toSelf().inSingletonScope();
     bind(KeybindingContext).toDynamicValue(context => context.container.get(CppKeybindingContext));
