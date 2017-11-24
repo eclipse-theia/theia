@@ -115,8 +115,9 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-accent-color0: var(--md-blue-grey-700);
   --theia-accent-color1: var(--md-blue-grey-500);
   --theia-accent-color2: var(--md-blue-grey-300);
-  --theia-accent-color3: var(--md-blue-grey-100);
-  --theia-accent-color4: var(--md-blue-grey-300);
+  --theia-accent-color3: var(--md-blue-grey-300);
+  --theia-accent-color4: var(--md-blue-grey-100);
+  --theia-accent-color5: var(--theia-layout-color0);
   
   /* State colors (warn, error, success, info) */
 
