@@ -1,13 +1,25 @@
+/*
+* Copyright (C) 2017 TypeFox and others.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+*/
+
 import * as path from 'path';
 import * as temp from 'temp';
 import * as fs from 'fs-extra';
 import { expect } from 'chai';
+import { Container } from 'inversify';
 import { DugiteGit } from './dugite-git';
 import { git as gitExec } from 'dugite-extra/lib/core/git';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { WorkingDirectoryStatus, Repository } from '../common/model';
 import { initRepository, createTestRepository } from 'dugite-extra/lib/command/test-helper';
 import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol';
+import { bindGit } from './git-backend-module';
+import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
+import { ILoggerServer } from '@theia/core/lib/common/logger-protocol';
+import { ConsoleLoggerServer } from '@theia/core/lib/common/console-logger-server';
 
 const track = temp.track();
 
@@ -261,7 +273,12 @@ describe('git', async function () {
 });
 
 async function createGit(fsRoot: string = ''): Promise<DugiteGit> {
-    return new DugiteGit();
+    const container = new Container();
+    const bind = container.bind.bind(container);
+    bindLogger(bind);
+    container.rebind(ILoggerServer).to(ConsoleLoggerServer).inSingletonScope();
+    bindGit(bind);
+    return container.get(DugiteGit);
 }
 
 async function createWorkspace(fsRoot: string): Promise<WorkspaceServer> {
