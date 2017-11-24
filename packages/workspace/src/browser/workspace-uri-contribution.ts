@@ -28,7 +28,7 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
     }
 
     canHandle(element: object): number {
-        if ((element instanceof URI || FileStat.is(element))) {
+        if ((element instanceof URI && element.scheme === 'file' || FileStat.is(element))) {
             return 10;
         }
         return 0;
@@ -52,10 +52,14 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
         const uri = this.getUri(element);
         const icon = super.getFileIcon(uri);
         if (!icon) {
-            const stat = await this.getStat(element);
-            if (stat.isDirectory) {
-                return 'fa fa-folder';
-            } else {
+            try {
+                const stat = await this.getStat(element);
+                if (stat.isDirectory) {
+                    return 'fa fa-folder';
+                } else {
+                    return 'fa fa-file';
+                }
+            } catch (err) {
                 return 'fa fa-file';
             }
         }
