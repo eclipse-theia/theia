@@ -6,18 +6,23 @@
 */
 
 import { injectable, inject } from "inversify";
-import { Git, Repository } from '../common';
+import { Repository } from '../common';
 import { GitRepositoryWatcher, GitRepositoryWatcherFactory } from "./git-repository-watcher";
 
 @injectable()
 export class GitRepositoryManager {
 
-    @inject(Git)
-    protected readonly git: Git;
-
     @inject(GitRepositoryWatcherFactory)
     protected readonly watcherFactory: GitRepositoryWatcherFactory;
     protected readonly watchers = new Map<string, GitRepositoryWatcher>();
+
+    run<T>(repository: Repository, op: () => Promise<T>): Promise<T> {
+        const result = op();
+        result.then(() =>
+            this.getWatcher(repository).sync()
+        );
+        return result;
+    }
 
     getWatcher(repository: Repository): GitRepositoryWatcher {
         const existing = this.watchers.get(repository.localUri);
