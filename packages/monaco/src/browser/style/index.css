@@ -19,6 +19,10 @@
     background: var(--theia-layout-color3);
 }
 
+.monaco-keybinding-key {
+    color: var(--theia-ui-font-color0) !important;
+}
+
 /* 
  * set z-index to 0, so tabs are not above overlay widgets 
  */

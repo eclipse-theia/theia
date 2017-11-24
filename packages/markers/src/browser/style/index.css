@@ -81,4 +81,5 @@
     text-align: center;
     align-self: center;
     font-size: var(--theia-ui-font-size0);
+    color: var(--theia-ui-icon-font-color);
 }
