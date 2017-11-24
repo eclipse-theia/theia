@@ -16,6 +16,7 @@ import { TerminalWatcher } from '../common/terminal-watcher';
 import * as Xterm from 'xterm';
 import 'xterm/lib/addons/fit/fit';
 import 'xterm/lib/addons/attach/attach';
+import { ThemeService } from "@theia/core/lib/browser/theming";
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -95,6 +96,15 @@ export class TerminalWidget extends BaseWidget {
                 cursor: cssProps.foreground
             },
         });
+
+        this.toDispose.push(ThemeService.get().onThemeChange(c => {
+            const changedProps = this.getCSSPropertiesFromPage();
+            this.term.setOption('theme', {
+                foreground: changedProps.foreground,
+                background: changedProps.background,
+                cursor: changedProps.foreground
+            });
+        }));
 
         this.term.open(this.node);
         this.term.on('title', (title: string) => {
