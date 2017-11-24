@@ -81,7 +81,7 @@ export class GitWidget extends VirtualWidget {
         this.unstagedChanges = [];
         this.mergeChanges = [];
         if (status) {
-            status.changes.forEach(async change => {
+            for (const change of status.changes) {
                 const uri = new URI(change.uri);
                 const repository = this.repositoryProvider.selectedRepository;
                 const [icon, label, description] = await Promise.all([
@@ -109,7 +109,7 @@ export class GitWidget extends VirtualWidget {
                         });
                     }
                 }
-            });
+            }
         }
         this.update();
     }
