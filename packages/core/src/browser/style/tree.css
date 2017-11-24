@@ -19,7 +19,7 @@
 }
 
 .theia-TreeNode:hover {
-    background: var(--theia-layout-color0);
+    background: var(--theia-accent-color4);
     cursor: pointer;
 }
 
@@ -44,6 +44,6 @@
 }
 
 .theia-Tree:not(:focus) .theia-TreeNode.theia-mod-selected {
-    background:var(--theia-accent-color4);
+    background:var(--theia-accent-color5);
 }
 

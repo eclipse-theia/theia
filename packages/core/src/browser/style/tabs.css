@@ -93,7 +93,7 @@
 }
 
 .p-TabBar-tab.p-mod-current:hover {
-  background: var(--theia-layout-color2);
+  background: var(--theia-layout-color3);
 }
 
 .p-DockPanel-tabBar .p-TabBar.p-mod-left .p-TabBar-tab,
