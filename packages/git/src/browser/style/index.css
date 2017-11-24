@@ -30,11 +30,14 @@
 
 #theia-gitContainer .gitItem {
     margin: 1px 0 1px 3px;
-    ;
     padding: 2px 0;
     font-size: var(--theia-ui-font-size1);
     display: flex;
     justify-content: space-between;
+}
+
+#theia-gitContainer .gitItem .file-icon {
+    display: initial;
 }
 
 #theia-gitContainer .gitItem:hover {
@@ -58,6 +61,7 @@
     padding: 2px 4px;
     border-radius: 6px;
     font-size: var(--theia-ui-font-size0);
+    color: var(--theia-ui-icon-font-color);
 }
 
 #theia-gitContainer .gitItem .itemButtonsContainer .status.new {

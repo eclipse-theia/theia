@@ -51,13 +51,16 @@ all of MD as it is not optimized for dense, information rich UIs.
      In a light theme, these go from dark to light.
   */
 
-  --theia-ui-font-color0: #000;
+  --theia-ui-font-color0: #1a1a1a;
   --theia-ui-font-color1: rgba(0,0,0,0.87);
   --theia-ui-font-color2: rgba(0,0,0,0.54);
   --theia-ui-font-color3: rgba(0,0,0,0.38);
 
+  /* Special font colors */
+  --theia-ui-icon-font-color: #FFFFFF;
+      
   --theia-ui-bar-font-color0: var(--theia-ui-font-color0);
-  --theia-ui-bar-font-color1: rgba(255,255,255,0.75);
+  --theia-ui-bar-font-color1: #D4D4D4;
 
   /* Use these against the brand/accent/warn/error colors.
      These will typically go from light to darker, in both a dark and light theme
@@ -79,12 +82,6 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-content-font-color1: black;
   --theia-content-font-color2: var(--md-grey-700);
   --theia-content-font-color3: var(--md-grey-500);
-
-  --theia-ui-font-scale-factor: 1.2;
-  --theia-ui-font-size0: calc(var(--theia-ui-font-size1)/var(--theia-ui-font-scale-factor));
-  --theia-ui-font-size1: 13px; /* Base font size */
-  --theia-ui-font-size2: calc(var(--theia-ui-font-size1)*var(--theia-ui-font-scale-factor));
-  --theia-ui-font-size3: calc(var(--theia-ui-font-size2)*var(--theia-ui-font-scale-factor));
 
   --theia-code-font-size: 13px;
   --theia-code-line-height: 17px;
