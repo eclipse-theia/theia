@@ -57,24 +57,30 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
         });
     }
 
-    readContents(uri: URI) {
-        return this.userStorageFolder
-            .then(folderUri => {
-                const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, uri);
-                return this.fileSystem.resolveContent(filesystemUri.toString());
-            })
-            .then(({ stat, content }) => content);
+    async readContents(uri: URI) {
+        const folderUri = await this.userStorageFolder;
+        const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, uri);
+        const exists = this.fileSystem.exists(filesystemUri.toString());
+
+        if (exists) {
+            return this.fileSystem.resolveContent(filesystemUri.toString()).then(({ stat, content }) => content);
+        }
+
+        return "";
     }
 
-    saveContents(uri: URI, content: string) {
+    async saveContents(uri: URI, content: string) {
+        const folderUri = await this.userStorageFolder;
+        const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, uri);
+        const exists = this.fileSystem.exists(filesystemUri.toString());
 
-        return this.userStorageFolder.then(folderUri => {
-            const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, uri);
-
+        if (exists) {
             this.fileSystem.getFileStat(filesystemUri.toString()).then(fileStat => {
                 this.fileSystem.setContent(fileStat, content).then(() => Promise.resolve());
             });
-        });
+        } else {
+            this.fileSystem.createFile(filesystemUri.toString(), { content });
+        }
     }
 
     get onUserStorageChanged(): Event<UserStorageChangeEvent> {
