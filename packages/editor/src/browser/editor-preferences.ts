@@ -13,7 +13,7 @@ import {
     PreferenceContribution,
     PreferenceSchema,
     PreferenceChangeEvent
-} from '@theia/preferences-api';
+} from '@theia/preferences-api/lib/browser';
 
 export const editorPreferenceSchema: PreferenceSchema = {
     "type": "object",
@@ -361,9 +361,9 @@ export function createEditorPreferences(preferences: PreferenceService): EditorP
 
 export function bindEditorPreferences(bind: interfaces.Bind): void {
     bind(EditorPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get(PreferenceService);
+        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
         return createEditorPreferences(preferences);
-    });
+    }).inSingletonScope();
 
     bind(PreferenceContribution).toConstantValue({ schema: editorPreferenceSchema });
 }

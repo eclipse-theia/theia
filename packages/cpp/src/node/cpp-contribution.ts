@@ -5,12 +5,14 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
+import { injectable } from "inversify";
 import { BaseLanguageServerContribution, IConnection } from "@theia/languages/lib/node";
+import { parseArgs } from '@theia/process/lib/node/utils';
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME } from '../common';
-import { CppPreferences, CLANGD_COMMAND_DEFAULT } from "../common";
 import { Message, isRequestMessage } from 'vscode-ws-jsonrpc';
 import { InitializeParams, InitializeRequest } from 'vscode-languageserver-protocol';
+
+export const CLANGD_COMMAND_DEFAULT = 'clangd';
 
 @injectable()
 export class CppContribution extends BaseLanguageServerContribution {
@@ -18,9 +20,7 @@ export class CppContribution extends BaseLanguageServerContribution {
     readonly id = CPP_LANGUAGE_ID;
     readonly name = CPP_LANGUAGE_NAME;
 
-    constructor(
-        @inject(CppPreferences) protected readonly cppPreferences: CppPreferences
-    ) {
+    constructor() {
         super();
     }
 
@@ -39,14 +39,20 @@ export class CppContribution extends BaseLanguageServerContribution {
     }
 
     public start(clientConnection: IConnection): void {
-        const command = this.cppPreferences['cpp.clangdCommand'] === '' ? CLANGD_COMMAND_DEFAULT : this.cppPreferences['cpp.clangdCommand'];
+        const envCommand = process.env.CPP_CLANGD_COMMAND;
+        const command = envCommand ? envCommand : CLANGD_COMMAND_DEFAULT;
 
-        const args: string[] = this.cppPreferences['cpp.clangdCommandArgs'];
-        if (this.cppPreferences['cpp.clangdCompilationDatabaseDirectory'] !== '') {
-            args.push("-compile-commands-dir=" + this.cppPreferences['cpp.clangdCompilationDatabaseDirectory']);
+        const envArgs = process.env.CPP_CLANGD_ARGS;
+        let args: string[] = [];
+        if (envArgs) {
+            args = parseArgs(envArgs);
+        }
+
+        const envCompilationDatabase = process.env.CPP_CLANGD_COMPILATION_DB_DIRECTORY;
+        if (envCompilationDatabase) {
+            args.push("-compile-commands-dir=" + envCompilationDatabase);
         }
         const serverConnection = this.createProcessStreamConnection(command, args);
         this.forward(clientConnection, serverConnection);
     }
-
 }
