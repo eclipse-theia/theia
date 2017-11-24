@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import * as Path from 'path';
 import { Git, GitUtils } from '../common/git';
 import { git } from 'dugite-extra/lib/core/git';
-import { injectable } from "inversify";
+import { injectable, inject } from "inversify";
 import { push } from 'dugite-extra/lib/command/push';
 import { pull } from 'dugite-extra/lib/command/pull';
 import { clone } from 'dugite-extra/lib/command/clone';
@@ -17,7 +17,7 @@ import { fetch } from 'dugite-extra/lib/command/fetch';
 import { merge } from 'dugite-extra/lib/command/merge';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { getStatus } from 'dugite-extra/lib/command/status';
-import { locateRepositories } from './git-repository-locator';
+import { GitRepositoryLocator } from './git-repository-locator';
 import { createCommit } from 'dugite-extra/lib/command/commit';
 import { stage, unstage } from 'dugite-extra/lib/command/stage';
 import { reset, GitResetMode } from 'dugite-extra/lib/command/reset';
@@ -35,6 +35,9 @@ import { Commit as DugiteCommit, CommitIdentity as DugiteCommitIdentity } from '
 @injectable()
 export class DugiteGit implements Git {
 
+    @inject(GitRepositoryLocator)
+    protected readonly repositoryLocator: GitRepositoryLocator;
+
     async clone(remoteUrl: string, options: Git.Options.Clone): Promise<Repository> {
         const { localUri } = options;
         await clone(remoteUrl, this.getFsPath(localUri));
@@ -43,7 +46,7 @@ export class DugiteGit implements Git {
 
     async repositories(workspaceRootUri: string): Promise<Repository[]> {
         const workspaceRootPath = this.getFsPath(workspaceRootUri);
-        const [containerRepository, repositories] = await Promise.all([this.getContainerRepository(workspaceRootPath), locateRepositories(workspaceRootPath)]);
+        const [containerRepository, repositories] = await Promise.all([this.getContainerRepository(workspaceRootPath), this.repositoryLocator.locate(workspaceRootPath)]);
         // Make sure not to add the container to the repositories twice. Can happen when WS root is a git repository.
         if (containerRepository) {
             // Below URIs point to the same location, but their `toString()` are not the same:
