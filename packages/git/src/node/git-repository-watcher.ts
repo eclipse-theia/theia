@@ -6,7 +6,7 @@
 */
 
 import { injectable, inject } from "inversify";
-import { Disposable, Event, Emitter, ILogger } from "@theia/core";
+import { Disposable, Event, Emitter, ILogger, DisposableCollection } from "@theia/core";
 import { Git, Repository, WorkingDirectoryStatus } from '../common';
 import { GitStatusChangeEvent } from "../common/git-watcher";
 
@@ -33,9 +33,20 @@ export class GitRepositoryWatcher {
     @inject(GitRepositoryWatcherOptions)
     protected readonly options: GitRepositoryWatcherOptions;
 
+    sync(): Promise<void> {
+        return new Promise<void>(resolve => {
+            const toDispose = new DisposableCollection();
+            toDispose.push(this.onStatusChanged(() => {
+                toDispose.dispose();
+                resolve();
+            }));
+            toDispose.push(this.watch());
+        });
+    }
+
     protected references = 0;
     watch(): Disposable {
-        this.schedule(0, true);
+        this.schedule(true);
         if (this.references === 0) {
             this.logger.info('Started watching the git repo:', this.options.repository.localUri);
         }
@@ -51,21 +62,22 @@ export class GitRepositoryWatcher {
 
     protected initial: boolean = true;
     protected watchTimer: NodeJS.Timer | undefined;
-    protected schedule(delay: number = 1000, initial: boolean = false): void {
-        if (initial) {
+    protected schedule(initial: boolean = false): void {
+        if (initial && !this.initial) {
             this.initial = true;
+            this.clear();
         }
         if (this.watchTimer) {
             return;
         }
         this.watchTimer = setTimeout(async () => {
             this.watchTimer = undefined;
-            const initial = this.initial;
+            const syncInitial = this.initial;
             this.initial = false;
-            if (await this.sync(initial)) {
+            if (await this.syncStatus(syncInitial)) {
                 this.schedule();
             }
-        }, delay);
+        }, initial ? 0 : 5000);
     }
     protected clear(): void {
         if (this.watchTimer) {
@@ -75,12 +87,12 @@ export class GitRepositoryWatcher {
     }
 
     protected status: WorkingDirectoryStatus | undefined;
-    async sync(initial: boolean = false): Promise<boolean> {
+    protected async syncStatus(initial: boolean = false): Promise<boolean> {
         try {
             const source = this.options.repository;
             const status = await this.git.status(source);
             const oldStatus = this.status;
-            if (initial || !WorkingDirectoryStatus.equals(status, oldStatus)) {
+            if (initial || !WorkingDirectoryStatus.equals(status, oldStatus)) {
                 this.status = status;
                 this.onStatusChangedEmitter.fire({ source, status, oldStatus });
             }
