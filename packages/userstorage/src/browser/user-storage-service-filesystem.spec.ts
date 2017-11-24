@@ -16,9 +16,8 @@ import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/';
 import { FileSystemPreferences, createFileSystemPreferences } from '@theia/filesystem/lib/browser/filesystem-preferences';
 import { FileSystemWatcher, FileChange, FileChangeType } from '@theia/filesystem/lib/browser/filesystem-watcher';
-
-import { PreferenceService, PreferenceServer } from '@theia/preferences-api/lib/common';
-import { MockPreferenceServer } from '@theia/preferences-api/lib/common/test';
+import { PreferenceService } from '@theia/preferences-api/lib/browser';
+import { MockPreferenceService } from '@theia/preferences-api/lib/browser/test/mock-preference-service';
 import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { MockFilesystem, MockFilesystemWatcherServer } from '@theia/filesystem/lib/common/test';
 import { UserStorageUri } from './user-storage-uri';
@@ -41,9 +40,11 @@ before(async () => {
     testContainer = new Container();
 
     /* Preference bindings*/
-    testContainer.bind(PreferenceService).toSelf().inSingletonScope();
-    testContainer.bind(PreferenceServer).to(MockPreferenceServer).inSingletonScope();
-
+    testContainer.bind(PreferenceService).to(MockPreferenceService).inSingletonScope();
+    testContainer.bind(FileSystemPreferences).toDynamicValue(ctx => {
+        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
+        return createFileSystemPreferences(preferences);
+    });
     /* FS mocks and bindings */
     testContainer.bind(FileSystemWatcherServer).to(MockFilesystemWatcherServer).inSingletonScope();
     testContainer.bind(FileSystemWatcher).toDynamicValue(ctx => {
@@ -58,10 +59,6 @@ before(async () => {
         return watcher;
 
     }).inSingletonScope();
-    testContainer.bind(FileSystemPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get(PreferenceService);
-        return createFileSystemPreferences(preferences);
-    });
 
     /* Mock logger binding*/
     testContainer.bind(ILogger).to(MockLogger);
