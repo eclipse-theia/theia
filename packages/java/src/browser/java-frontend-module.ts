@@ -13,6 +13,8 @@ import { JavaCommandContribution } from './java-commands';
 import { JavaResourceResolver } from './java-resource';
 
 import "./monaco-contribution";
+import { LabelProviderContribution } from "@theia/core/lib/browser/label-provider";
+import { JavaLabelProviderContribution } from './java-label-provider';
 
 export default new ContainerModule(bind => {
     bind(CommandContribution).to(JavaCommandContribution).inSingletonScope();
@@ -22,4 +24,6 @@ export default new ContainerModule(bind => {
 
     bind(JavaResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(JavaResourceResolver));
+
+    bind(LabelProviderContribution).to(JavaLabelProviderContribution).inSingletonScope();
 });
