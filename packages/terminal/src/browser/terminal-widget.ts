@@ -92,6 +92,7 @@ export class TerminalWidget extends BaseWidget {
             theme: {
                 foreground: cssProps.foreground,
                 background: cssProps.background,
+                cursor: cssProps.foreground
             },
         });
 
