@@ -1,4 +1,4 @@
-# Theia - Build Cloud & Desktop IDEs with modern web tech.
+# Theia - Cloud & Desktop IDE
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/theia-ide/theia/labels/help%20wanted)
 [![Gitter](https://img.shields.io/badge/chat-on%20gitter-blue.svg)](https://gitter.im/theia-ide/theia)
 [![Build Status](https://travis-ci.org/theia-ide/theia.svg?branch=master)](https://travis-ci.org/theia-ide/theia)
@@ -79,7 +79,7 @@ The contributors have committed to deliver a framework with the following featur
  - Git integration
  - Language Support for TypeScript, C/C++, Java, Python, Go, [YANG](https://tools.ietf.org/html/rfc6020)
  - Diagramming Support through [Sprotty](https://github.com/theia-ide/sprotty)
- - [many more features](https://github.com/theia-ide/theia/milestone/3)
+ - [many more features](https://github.com/theia-ide/theia/milestone/3?closed=1)
 
 The team is also working on the following Open-Source Products based on Theia:
  - [Yangster](https://github.com/theia-ide/yangster) - A YANG IDE
