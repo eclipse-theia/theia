@@ -6,12 +6,12 @@
  */
 
 import { injectable, inject } from 'inversify';
-import * as stream from 'stream';
 import { ILogger } from '@theia/core/lib/common';
 import { Process, ProcessType } from './process';
 import { ProcessManager } from './process-manager';
 import * as pty from 'node-pty';
 import { ITerminal } from 'node-pty/lib/interfaces';
+import { MultiRingBuffer, MultiRingBufferReadableStream } from './multi-ring-buffer';
 
 export const TerminalProcessOptions = Symbol("TerminalProcessOptions");
 export interface TerminalProcessOptions {
@@ -25,29 +25,15 @@ export interface TerminalProcessFactory {
     (options: TerminalProcessOptions): TerminalProcess;
 }
 
-/* Use this instead of the node-pty stream, since the node-pty stream is already resumed.  */
-class ReadableTerminalStream extends stream.Readable {
-
-    constructor(protected readonly terminal: ITerminal, opts?: stream.ReadableOptions) {
-        super(opts);
-        this.terminal.on('data', data => this.push(data));
-    }
-
-    /* This needs to be implemented as per node's API doc, even if it's empty.  */
-    _read(size: number) {
-    }
-
-}
-
 @injectable()
 export class TerminalProcess extends Process {
 
-    readonly output: stream.Readable;
     protected readonly terminal: ITerminal;
 
     constructor(
         @inject(TerminalProcessOptions) options: TerminalProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
+        @inject(MultiRingBuffer) protected readonly ringBuffer: MultiRingBuffer,
         @inject(ILogger) logger: ILogger) {
         super(processManager, logger, ProcessType.Terminal);
 
@@ -61,7 +47,14 @@ export class TerminalProcess extends Process {
             options.options);
 
         this.terminal.on('exit', this.emitOnExit.bind(this));
-        this.output = new ReadableTerminalStream(this.terminal);
+
+        this.terminal.on('data', (data: string) => {
+            ringBuffer.enq(data);
+        });
+    }
+
+    createOutputStream(): MultiRingBufferReadableStream {
+        return this.ringBuffer.getStream();
     }
 
     get pid() {

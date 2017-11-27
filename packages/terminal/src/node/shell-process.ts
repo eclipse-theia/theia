@@ -8,7 +8,7 @@
 import { injectable, inject, named } from 'inversify';
 import * as os from 'os';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { TerminalProcess, TerminalProcessOptions, ProcessManager } from '@theia/process/lib/node';
+import { TerminalProcess, TerminalProcessOptions, ProcessManager, MultiRingBuffer } from '@theia/process/lib/node';
 import { isWindows } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
 import { FileUri } from "@theia/core/lib/node/file-uri";
@@ -43,6 +43,7 @@ export class ShellProcess extends TerminalProcess {
     constructor(
         @inject(ShellProcessOptions) options: ShellProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
+        @inject(MultiRingBuffer) ringBuffer: MultiRingBuffer,
         @inject(ILogger) @named("terminal") logger: ILogger
     ) {
         super(<TerminalProcessOptions>{
@@ -55,7 +56,7 @@ export class ShellProcess extends TerminalProcess {
                 cwd: getRootPath(options.rootURI),
                 env: process.env as any
             }
-        }, processManager, logger);
+        }, processManager, ringBuffer, logger);
     }
 
     protected static getShellExecutablePath(): string {

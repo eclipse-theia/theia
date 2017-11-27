@@ -81,7 +81,7 @@ describe('TerminalProcess', function () {
             });
         });
 
-        terminalProcess.output.pipe(outStream);
+        terminalProcess.createOutputStream().pipe(outStream);
 
         /* Avoid using equal since terminal characters can be inserted at the end.  */
         return expect(p).to.eventually.have.string(process.version);
