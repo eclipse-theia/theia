@@ -115,15 +115,13 @@ export class GitQuickOpenService {
                         const dynamicItems: QuickOpenItem[] = [];
                         const suffix = `Press 'Enter' to confirm or 'Escape' to cancel.`;
                         if (lookFor === undefined || lookFor.length === 0) {
-                            dynamicItems.push(new CreateNewBranchOpenItem(`Please provider a branch name. ${suffix}`));
+                            dynamicItems.push(new CreateNewBranchOpenItem(`Please provider a branch name. ${suffix}`, () => { }, () => false));
                         } else {
                             dynamicItems.push(new CreateNewBranchOpenItem(
                                 `Create a new local branch with name: ${lookFor}. ${suffix}`,
                                 async () => {
-                                    // await thisGit.branch(repository, { toCreate: lookFor });
-                                    // await thisGit.checkout(repository, { branch: lookFor });
-                                    console.log(thisGit, repository);
-                                    alert(`Create a new local branch ${lookFor} and switch to it.`);
+                                    await thisGit.branch(repository, { toCreate: lookFor });
+                                    await thisGit.checkout(repository, { branch: lookFor });
                                 }
                             ));
                         }
@@ -132,7 +130,7 @@ export class GitQuickOpenService {
                 };
                 this.quickOpenService.open(createBranchModel, this.getOptions('The name of the branch:', false));
             };
-            items.unshift(new CreateNewBranchOpenItem('Create new branch...', createBranchItem));
+            items.unshift(new CreateNewBranchOpenItem('Create new branch...', createBranchItem, (mode: QuickOpenMode) => mode === QuickOpenMode.OPEN, () => false));
             this.open(items, 'Select a ref to checkout or create a new local branch:');
         }
     }
@@ -228,7 +226,8 @@ class CreateNewBranchOpenItem extends QuickOpenItem {
     constructor(
         private readonly label: string,
         private readonly execute: (item: QuickOpenItem) => void = () => { },
-        private readonly canRun: (mode: QuickOpenMode) => boolean = mode => mode === QuickOpenMode.OPEN) {
+        private readonly canRun: (mode: QuickOpenMode) => boolean = mode => mode === QuickOpenMode.OPEN,
+        private readonly canClose: (mode: QuickOpenMode) => boolean = mode => true) {
 
         super();
     }
@@ -242,7 +241,7 @@ class CreateNewBranchOpenItem extends QuickOpenItem {
             return false;
         }
         this.execute(this);
-        return false;
+        return this.canClose(mode);
     }
 
 }
