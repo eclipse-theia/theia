@@ -27,7 +27,6 @@ export abstract class Process {
     readonly exitEmitter: Emitter<IProcessExitEvent>;
     readonly errorEmitter: Emitter<Error>;
     abstract readonly pid: number;
-    abstract readonly input: stream.Writable;
     abstract readonly output: stream.Readable;
     protected _killed = false;
 

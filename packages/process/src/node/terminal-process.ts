@@ -39,23 +39,9 @@ class ReadableTerminalStream extends stream.Readable {
 
 }
 
-class WritableTerminalStream extends stream.Writable {
-
-    constructor(protected readonly terminal: ITerminal) {
-        super({
-            write: (chunk, encoding, next) => {
-                this.terminal.write(chunk.toString());
-                next();
-            }
-        });
-    }
-
-}
-
 @injectable()
 export class TerminalProcess extends Process {
 
-    readonly input: stream.Writable;
     readonly output: stream.Readable;
     protected readonly terminal: ITerminal;
 
@@ -76,7 +62,6 @@ export class TerminalProcess extends Process {
 
         this.terminal.on('exit', this.emitOnExit.bind(this));
         this.output = new ReadableTerminalStream(this.terminal);
-        this.input = new WritableTerminalStream(this.terminal);
     }
 
     get pid() {
