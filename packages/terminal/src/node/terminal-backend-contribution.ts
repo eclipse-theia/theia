@@ -54,9 +54,6 @@ export class TerminalBackendContribution implements BackendApplicationContributi
             // tslint:disable-next-line:no-any
             ws.on('close', (msg: any) => {
                 output.dispose();
-                if (termProcess !== undefined) {
-                    termProcess.kill();
-                }
             });
         });
     }

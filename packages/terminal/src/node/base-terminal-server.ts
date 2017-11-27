@@ -41,6 +41,15 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
         }
     }
 
+    close(id: number): Promise<void> {
+        const term = this.processManager.get(id);
+
+        if (term instanceof TerminalProcess) {
+            term.kill();
+        }
+        return Promise.resolve();
+    }
+
     dispose(): void {
         // noop
     }
