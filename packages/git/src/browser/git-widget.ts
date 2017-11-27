@@ -77,9 +77,9 @@ export class GitWidget extends VirtualWidget {
     }
 
     protected async updateView(status: WorkingDirectoryStatus | undefined) {
-        this.stagedChanges = [];
-        this.unstagedChanges = [];
-        this.mergeChanges = [];
+        const stagedChanges = [];
+        const unstagedChanges = [];
+        const mergeChanges = [];
         if (status) {
             for (const change of status.changes) {
                 const uri = new URI(change.uri);
@@ -91,19 +91,19 @@ export class GitWidget extends VirtualWidget {
                 ]);
                 if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
                     if (change.staged) {
-                        this.stagedChanges.push({
+                        stagedChanges.push({
                             icon, label, description,
                             ...change
                         });
                     } else {
-                        this.unstagedChanges.push({
+                        unstagedChanges.push({
                             icon, label, description,
                             ...change
                         });
                     }
                 } else {
                     if (!change.staged) {
-                        this.mergeChanges.push({
+                        mergeChanges.push({
                             icon, label, description,
                             ...change
                         });
@@ -111,6 +111,10 @@ export class GitWidget extends VirtualWidget {
                 }
             }
         }
+        const sort = (l: GitFileChangeNode, r: GitFileChangeNode) => l.label.localeCompare(r.label);
+        this.stagedChanges = stagedChanges.sort(sort);
+        this.unstagedChanges = unstagedChanges.sort(sort);
+        this.mergeChanges = mergeChanges.sort(sort);
         this.update();
     }
 
