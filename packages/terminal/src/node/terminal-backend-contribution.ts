@@ -6,7 +6,6 @@
  */
 
 import * as http from 'http';
-import * as stream from 'stream';
 import { injectable, inject } from 'inversify';
 import URI from "@theia/core/lib/common/uri";
 import { ILogger } from "@theia/core/lib/common";
@@ -32,26 +31,21 @@ export class TerminalBackendContribution implements BackendApplicationContributi
         }, (ws, request) => {
             const uri = new URI(request.url!);
             const id = parseInt(uri.path.base, 10);
-            let termProcess = this.processManager.get(id);
-            if (!termProcess) {
+            const termProcess = this.processManager.get(id);
+            if (!(termProcess instanceof TerminalProcess)) {
                 return;
             }
 
-            const termStream = new stream.PassThrough();
-
-            // tslint:disable-next-line:no-any
-            termStream.on('data', (data: any) => {
+            /* Note this typecast will be refactored after #841 */
+            const output = termProcess.createOutputStream();
+            output.on('data', (data: string) => {
                 try {
-                    ws.send(data.toString());
-                } catch (error) {
-                    // tslint:disable-next-line:no-console
-                    console.error(error);
+                    ws.send(data);
+                } catch (ex) {
+                    console.error(ex);
                 }
             });
 
-            termProcess.output.pipe(termStream);
-
-            // tslint:disable-next-line:no-any
             ws.on('message', (msg: any) => {
                 if (termProcess instanceof TerminalProcess) {
                     termProcess.write(msg);
@@ -59,9 +53,9 @@ export class TerminalBackendContribution implements BackendApplicationContributi
             });
             // tslint:disable-next-line:no-any
             ws.on('close', (msg: any) => {
+                output.dispose();
                 if (termProcess !== undefined) {
                     termProcess.kill();
-                    termProcess = undefined;
                 }
             });
         });

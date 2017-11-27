@@ -5,7 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as stream from 'stream';
 import { injectable, inject } from "inversify";
 import { ProcessManager } from './process-manager';
 import { ILogger, Emitter, Event } from '@theia/core/lib/common';
@@ -27,7 +26,6 @@ export abstract class Process {
     readonly exitEmitter: Emitter<IProcessExitEvent>;
     readonly errorEmitter: Emitter<Error>;
     abstract readonly pid: number;
-    abstract readonly output: stream.Readable;
     protected _killed = false;
 
     constructor(
