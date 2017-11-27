@@ -45,14 +45,14 @@ export class ProcessManager implements BackendApplicationContribution {
      */
     protected unregister(process: Process): void {
         const processLabel = this.getProcessLabel(process);
-        this.logger.info(`Unregistering process. ${processLabel}`);
+        this.logger.debug(`Unregistering process. ${processLabel}`);
         if (!process.killed) {
-            this.logger.info(`Ensuring process termination. ${processLabel}`);
+            this.logger.debug(`Ensuring process termination. ${processLabel}`);
             process.kill();
         }
         if (this.processes.delete(process.id)) {
             this.deleteEmitter.fire(process.id);
-            this.logger.info(`The process was successfully unregistered. ${processLabel}`);
+            this.logger.debug(`The process was successfully unregistered. ${processLabel}`);
         } else {
             this.logger.warn(`This process was not registered or was already unregistered. ${processLabel}`);
         }

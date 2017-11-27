@@ -9,7 +9,7 @@ import { injectable, inject } from 'inversify';
 import { ProcessManager } from './process-manager';
 import { ILogger } from '@theia/core/lib/common';
 import { Process, ProcessType } from './process';
-import * as child_process from 'child_process';
+import { ChildProcess, spawn } from 'child_process';
 import * as stream from 'stream';
 
 export const RawProcessOptions = Symbol("RawProcessOptions");
@@ -30,7 +30,7 @@ export class RawProcess extends Process {
     readonly input: stream.Writable;
     readonly output: stream.Readable;
     readonly errorOutput: stream.Readable;
-    readonly process: child_process.ChildProcess;
+    readonly process: ChildProcess;
 
     constructor(
         @inject(RawProcessOptions) options: RawProcessOptions,
@@ -42,7 +42,7 @@ export class RawProcess extends Process {
             + ` with args : ${options.args}, `
             + ` options ${JSON.stringify(options.options)}`);
 
-        this.process = child_process.spawn(
+        this.process = spawn(
             options.command,
             options.args,
             options.options);
