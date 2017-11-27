@@ -11,6 +11,7 @@ import { TerminalProcess, TerminalProcessOptions, TerminalProcessFactory } from 
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { ProcessManager } from "./process-manager";
 import { ILogger } from '@theia/core/lib/common';
+import { MultiRingBuffer, MultiRingBufferOptions } from './multi-ring-buffer';
 
 export default new ContainerModule(bind => {
     bind(RawProcess).toSelf().inTransientScope();
@@ -42,4 +43,8 @@ export default new ContainerModule(bind => {
             return child.get(TerminalProcess);
         }
     );
+
+    bind(MultiRingBuffer).toSelf().inTransientScope();
+    /* 1MB size, TODO should be a user preference. */
+    bind(MultiRingBufferOptions).toConstantValue({ size: 1048576 });
 });
