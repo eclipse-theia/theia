@@ -11,7 +11,7 @@ import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/c
 import URI from "@theia/core/lib/common/uri";
 import { open, OpenerService } from '@theia/core/lib/browser';
 import { CppClientContribution } from "./cpp-client-contribution";
-import { TextDocumentItemRequest } from "./cpp-protocol";
+import { SwitchSourceHeaderRequest } from "./cpp-protocol";
 import { TextDocumentIdentifier } from "@theia/languages/lib/common";
 import { EditorManager } from "@theia/editor/lib/browser";
 
@@ -51,8 +51,8 @@ export class CppCommandContribution implements CommandContribution {
 
     protected switchSourceHeader(): void {
         const docIdentifier = TextDocumentIdentifier.create(this.selectionService.selection.uri.toString());
-        this.clientContribution.languageClient.then((languageClient) => {
-            languageClient.sendRequest(TextDocumentItemRequest.type, docIdentifier).then(sourceUri => {
+        this.clientContribution.languageClient.then(languageClient => {
+            languageClient.sendRequest(SwitchSourceHeaderRequest.type, docIdentifier).then(sourceUri => {
                 if (sourceUri !== undefined) {
                     open(this.openerService, new URI(sourceUri.toString()));
                 }
