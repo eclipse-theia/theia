@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import { BaseLanguageServerContribution, IConnection } from "@theia/languages/lib/node";
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME } from '../common';
-import { CppPreferences } from "../common";
+import { CppPreferences, CLANGD_COMMAND_DEFAULT } from "../common";
 import { Message, isRequestMessage } from 'vscode-ws-jsonrpc';
 import { InitializeParams, InitializeRequest } from 'vscode-languageserver-protocol';
 
@@ -39,16 +39,12 @@ export class CppContribution extends BaseLanguageServerContribution {
     }
 
     public start(clientConnection: IConnection): void {
-        let command: any = '';
-        let args: string[] = [];
-        if (this.cppPreferences["cpp.clangdPath"] === "") {
-            command = (this.cppPreferences["cpp.clangdPath"] + '/clangd');
-            args = [];
-        } else {
-            command = 'clangd';
-            args = []; // [this.cppPreferences["cpp.clangdCompileCommandsPath"]];
-        }
+        const command = this.cppPreferences['cpp.clangdCommand'] === '' ? CLANGD_COMMAND_DEFAULT : this.cppPreferences['cpp.clangdCommand'];
 
+        const args: string[] = this.cppPreferences['cpp.clangdCommandArgs'];
+        if (this.cppPreferences['cpp.clangdCompilationDatabaseDirectory'] !== '') {
+            args.push("-compile-commands-dir=" + this.cppPreferences['cpp.clangdCompilationDatabaseDirectory']);
+        }
         const serverConnection = this.createProcessStreamConnection(command, args);
         this.forward(clientConnection, serverConnection);
     }
