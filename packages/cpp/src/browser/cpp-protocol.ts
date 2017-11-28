@@ -14,6 +14,6 @@ export interface ActionableMessage {
     commands?: Command[];
 }
 
-export namespace TextDocumentItemRequest {
+export namespace SwitchSourceHeaderRequest {
     export const type = new RequestType<TextDocumentIdentifier, string | undefined, void, void>("textDocument/switchSourceHeader");
 }
