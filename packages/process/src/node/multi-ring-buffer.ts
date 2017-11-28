@@ -63,7 +63,7 @@ export interface MultiRingBufferOptions {
     readonly encoding?: string,
 }
 
-export interface WrapedPosition { newPos: number, wrap: boolean }
+export interface WrappedPosition { newPos: number, wrap: boolean }
 
 @injectable()
 export class MultiRingBuffer {
@@ -174,7 +174,7 @@ export class MultiRingBuffer {
 
         let buffer = "";
         const maxDeqSize = this.sizeForReader(id);
-        const wrapped = this.isWraped(pos, this.head);
+        const wrapped = this.isWrapped(pos, this.head);
 
         let deqSize;
         if (size === -1) {
@@ -207,14 +207,14 @@ export class MultiRingBuffer {
             return 0;
         }
 
-        return this.sizeFrom(pos, this.head, this.isWraped(pos, this.head));
+        return this.sizeFrom(pos, this.head, this.isWrapped(pos, this.head));
     }
 
     size() {
-        return this.sizeFrom(this.tail, this.head, this.isWraped(this.tail, this.head));
+        return this.sizeFrom(this.tail, this.head, this.isWrapped(this.tail, this.head));
     }
 
-    protected isWraped(from: number, to: number) {
+    protected isWrapped(from: number, to: number) {
         if (to < from) {
             return true;
         } else {
@@ -263,7 +263,7 @@ export class MultiRingBuffer {
         const { newPos: newHead, wrap } = this.inc(end, size);
 
         /* Tail Head */
-        if (this.isWraped(pos, end) === false) {
+        if (this.isWrapped(pos, end) === false) {
             // Head needs to wrap to push the tail
             if (wrap === true && newHead >= pos) {
                 return true;
@@ -277,13 +277,13 @@ export class MultiRingBuffer {
         return false;
     }
 
-    protected incTailSize(pos: number, head: number, size: number): WrapedPosition {
+    protected incTailSize(pos: number, head: number, size: number): WrappedPosition {
         const { newPos: newHead } = this.inc(head, size);
         /* New tail is 1 past newHead.  */
         return this.inc(newHead, 1);
     }
 
-    protected incTail(pos: number, size: number): WrapedPosition {
+    protected incTail(pos: number, size: number): WrappedPosition {
 
         if (this.shouldIncPos(pos, this.head, size) === false) {
             return { newPos: pos, wrap: false };
@@ -305,7 +305,7 @@ export class MultiRingBuffer {
         }
     }
 
-    protected inc(pos: number, size: number): WrapedPosition {
+    protected inc(pos: number, size: number): WrappedPosition {
         if (size === 0) {
             return { newPos: pos, wrap: false };
         }
