@@ -11,6 +11,7 @@ import { MarkerManager } from './marker-manager';
 import { Marker } from '../common/marker';
 import { UriSelection } from "@theia/filesystem/lib/common";
 import URI from "@theia/core/lib/common/uri";
+import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 
 export const MarkerOptions = Symbol('MarkerOptions');
 export interface MarkerOptions {
@@ -22,7 +23,8 @@ export abstract class MarkerTree<T extends object> extends Tree {
 
     constructor(
         protected readonly markerManager: MarkerManager<T>,
-        protected readonly markerOptions: MarkerOptions
+        protected readonly markerOptions: MarkerOptions,
+        protected readonly labelProvider: LabelProvider
     ) {
         super();
 
@@ -47,12 +49,15 @@ export abstract class MarkerTree<T extends object> extends Tree {
         return super.resolveChildren(parent);
     }
 
-    getMarkerInfoNodes(parent: MarkerRootNode): Promise<MarkerInfoNode[]> {
+    async getMarkerInfoNodes(parent: MarkerRootNode): Promise<MarkerInfoNode[]> {
         const uriNodes: MarkerInfoNode[] = [];
         if (this.root && MarkerRootNode.is(this.root)) {
             for (const uriString of this.markerManager.getUris()) {
                 const id = 'markerInfo-' + uriString;
                 const uri = new URI(uriString);
+                const label = await this.labelProvider.getName(uri);
+                const icon = await this.labelProvider.getIcon(uri);
+                const description = await this.labelProvider.getLongName(uri.parent);
                 const numberOfMarkers = this.markerManager.findMarkers({ uri }).length;
                 if (numberOfMarkers > 0) {
                     const cachedMarkerInfo = this.getNode(id);
@@ -65,7 +70,9 @@ export abstract class MarkerTree<T extends object> extends Tree {
                             expanded: true,
                             uri,
                             id,
-                            name: uri.displayName,
+                            name: label,
+                            icon,
+                            description,
                             parent,
                             selected: false,
                             numberOfMarkers

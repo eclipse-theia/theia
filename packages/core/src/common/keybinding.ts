@@ -19,7 +19,7 @@ export interface Keybinding {
      * If not specified, then this keybinding context belongs to the NOOP
      * keybinding context.
      */
-    readonly context?: KeybindingContext;
+    readonly contextId?: string;
     /**
      * Sugar for showing the keybindings in the menus.
      */
@@ -38,7 +38,7 @@ export interface KeybindingContext {
      */
     readonly id: string;
 
-    isEnabled(arg?: Keybinding): boolean;
+    isEnabled(arg: Keybinding): boolean;
 }
 export namespace KeybindingContexts {
 
@@ -89,12 +89,12 @@ export class KeybindingContextRegistry {
     getContext(contextId: string): KeybindingContext | undefined {
         return this.contexts[contextId];
     }
-
 }
 
 @injectable()
 export class KeybindingRegistry {
 
+    static readonly PASSTHROUGH_PSEUDO_COMMAND = "passthrough";
     protected readonly keybindings: { [index: string]: Keybinding[] } = {};
     protected readonly commands: { [commandId: string]: Keybinding[] } = {};
 
@@ -126,7 +126,7 @@ export class KeybindingRegistry {
     registerKeybinding(binding: Keybinding) {
         const existing = this.keybindings[binding.keyCode.keystroke];
         if (existing) {
-            const collided = existing.filter(b => b.context === binding.context);
+            const collided = existing.filter(b => b.contextId === binding.contextId);
             if (collided.length > 0) {
                 this.logger.warn(`Collided keybinding is ignored; `, JSON.stringify(binding), ' collided with ', collided.map(b => JSON.stringify(b)).join(', '));
                 return;
@@ -137,45 +137,66 @@ export class KeybindingRegistry {
         bindings.push(binding);
         this.keybindings[keyCode.keystroke] = bindings;
 
-        const commands = this.commands[commandId] || [];
-        commands.push(binding);
-        this.commands[commandId] = bindings;
+        /* Keep a mapping of the Command -> Key mapping.  */
+        if (!this.isPseudoCommand(commandId)) {
+            const commands = this.commands[commandId] || [];
+            commands.push(binding);
+            this.commands[commandId] = bindings;
+        }
     }
 
     /**
-     * The `active` flag with `false` could come handy when we do not want to check whether the command is currently active or not.
-     * For instance, when building the main menu, it could easily happen that the command is not yet active (no active editors and so on)
-     * but still, we have to build the key accelerator.
+     * Get the keybindings associated to commandId.
      *
-     * @param commandId the unique ID of the command for we the associated ke binding are looking for.
-     * @param options if `active` is false` then the availability of the command will not be checked. Default is `true`
+     * @param commandId The ID of the command for which we are looking for keybindings.
      */
-    getKeybindingForCommand(commandId: string, options: { active: boolean } = ({ active: true })): Keybinding | undefined {
-        const bindings = this.commands[commandId];
-        if (!bindings) {
-            return undefined;
-        }
-        if (!options.active) {
-            return bindings[0];
-        }
-        return bindings.find(this.isActive.bind(this));
+    getKeybindingsForCommand(commandId: string): Keybinding[] {
+        return this.commands[commandId] || [];
     }
 
     /**
-     * @param keyCode the key code of the binding we are searching.
+     * Get the list of keybindings matching keyCode.  The list is sorted by
+     * priority (see #sortKeybindingsByPriority).
+     *
+     * @param keyCode The key code for which we are looking for keybindings.
      */
-    getKeybindingForKeyCode(keyCode: KeyCode, options: { active: boolean } = ({ active: true })): Keybinding | undefined {
-        const bindings = this.keybindings[keyCode.keystroke];
-        if (!bindings) {
-            return undefined;
-        }
-        if (!options.active) {
-            return bindings[0];
-        }
-        return bindings.find(this.isActive.bind(this));
+    getKeybindingsForKeyCode(keyCode: KeyCode): Keybinding[] {
+        const bindings = this.keybindings[keyCode.keystroke] || [];
+
+        this.sortKeybindingsByPriority(bindings);
+
+        return bindings;
+    }
+
+    /**
+     * Sort keybindings in-place, in order of priority.
+     *
+     * The only criterion right now is that a keybinding with a context has
+     * more priority than a keybinding with no context.
+     *
+     * @param keybindings Array of keybindings to be sorted in-place.
+     */
+    private sortKeybindingsByPriority(keybindings: Keybinding[]) {
+        keybindings.sort((a: Keybinding, b: Keybinding): number => {
+            if (a.contextId && !b.contextId) {
+                return -1;
+            }
+
+            if (!a.contextId && b.contextId) {
+                return 1;
+            }
+
+            return 0;
+        });
     }
 
     protected isActive(binding: Keybinding): boolean {
+        /* Pseudo commands like "passthrough" are always active (and not found
+           in the command registry).  */
+        if (this.isPseudoCommand(binding.commandId)) {
+            return true;
+        }
+
         const command = this.commandRegistry.getCommand(binding.commandId);
         return !!command && !!this.commandRegistry.getActiveHandler(command.id);
     }
@@ -187,20 +208,44 @@ export class KeybindingRegistry {
         if (event.defaultPrevented) {
             return;
         }
+
         const keyCode = KeyCode.createKeyCode(event);
-        const binding = this.getKeybindingForKeyCode(keyCode);
-        if (!binding) {
-            return;
-        }
-        const context = binding.context || KeybindingContexts.NOOP_CONTEXT;
-        if (context && context.isEnabled(binding)) {
-            const handler = this.commandRegistry.getActiveHandler(binding.commandId);
-            if (handler) {
-                event.preventDefault();
-                event.stopPropagation();
-                handler.execute();
+        const bindings = this.getKeybindingsForKeyCode(keyCode);
+
+        for (const binding of bindings) {
+            const context = binding.contextId
+                ? this.contextRegistry.getContext(binding.contextId)
+                : undefined;
+
+            /* Only execute if it has no context (global context) or if we're in
+               that context.  */
+            if (!context || context.isEnabled(binding)) {
+
+                if (this.isPseudoCommand(binding.commandId)) {
+                    /* Don't do anything, let the event propagate.  */
+                } else {
+                    const commandHandler = this.commandRegistry.getActiveHandler(binding.commandId);
+
+                    if (commandHandler) {
+                        commandHandler.execute();
+                    }
+
+                    /* Note that if a keybinding is in context but the command is
+                       not active we still stop the processing here.  */
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+
+                break;
             }
         }
     }
 
+    /* Return true of string a pseudo-command id, in other words a command id
+       that has a special meaning and that we won't find in the command
+       registry.  */
+
+    isPseudoCommand(commandId: string): boolean {
+        return commandId === KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND;
+    }
 }

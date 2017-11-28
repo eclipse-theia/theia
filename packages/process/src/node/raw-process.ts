@@ -8,8 +8,8 @@
 import { injectable, inject } from 'inversify';
 import { ProcessManager } from './process-manager';
 import { ILogger } from '@theia/core/lib/common';
-import { Process } from './process';
-import * as child from 'child_process';
+import { Process, ProcessType } from './process';
+import { ChildProcess, spawn } from 'child_process';
 import * as stream from 'stream';
 
 export const RawProcessOptions = Symbol("RawProcessOptions");
@@ -20,28 +20,29 @@ export interface RawProcessOptions {
 }
 
 export const RawProcessFactory = Symbol("RawProcessFactory");
-export type RawProcessFactory = (options: RawProcessOptions) => RawProcess;
+export interface RawProcessFactory {
+    (options: RawProcessOptions): RawProcess;
+}
 
 @injectable()
 export class RawProcess extends Process {
 
-    readonly type: 'Raw' | 'Terminal' = 'Raw';
-    output: stream.Readable;
-    errorOutput: stream.Readable;
-    protected process: child.ChildProcess;
-    protected terminal = undefined;
+    readonly input: stream.Writable;
+    readonly output: stream.Readable;
+    readonly errorOutput: stream.Readable;
+    readonly process: ChildProcess;
 
     constructor(
         @inject(RawProcessOptions) options: RawProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(ILogger) logger: ILogger) {
-        super(processManager, logger);
+        super(processManager, logger, ProcessType.Raw);
 
         this.logger.debug(`Starting raw process : ${options.command},`
             + ` with args : ${options.args}, `
-            + ` options ${JSON.stringify(options.options)} `);
+            + ` options ${JSON.stringify(options.options)}`);
 
-        this.process = child.spawn(
+        this.process = spawn(
             options.command,
             options.args,
             options.options);
@@ -50,6 +51,7 @@ export class RawProcess extends Process {
         this.process.on('exit', this.emitOnExit.bind(this));
 
         this.output = this.process.stdout;
+        this.input = this.process.stdin;
         this.errorOutput = this.process.stderr;
     }
 
@@ -62,4 +64,5 @@ export class RawProcess extends Process {
             this.process.kill(signal);
         }
     }
+
 }

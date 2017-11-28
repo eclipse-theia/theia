@@ -75,9 +75,10 @@ export class MonacoQuickOpenService extends QuickOpenService {
         }
         const themeService = monaco.services.StaticServices.standaloneThemeService.get();
         const detach = monaco.theme.attachQuickOpenStyler(this._widget, themeService);
-        themeService.onThemeChange(() => {
+        const dispose = themeService.onThemeChange(() => {
             detach.dispose();
             this.attachQuickOpenStyler();
+            dispose.dispose();
         });
     }
 
@@ -171,6 +172,14 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
     }
 
     getAutoFocus(lookFor: string): monaco.quickOpen.IAutoFocus {
+        if (this.options.selectIndex) {
+            const idx = this.options.selectIndex(lookFor);
+            if (idx >= 0) {
+                return {
+                    autoFocusIndex: idx
+                };
+            }
+        }
         return {
             autoFocusFirstEntry: true,
             autoFocusPrefixMatch: lookFor

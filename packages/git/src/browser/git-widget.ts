@@ -18,16 +18,22 @@ import { VirtualRenderer, VirtualWidget, ContextMenuRenderer, OpenerService, ope
 import { h } from '@phosphor/virtualdom/lib';
 import { Message } from '@phosphor/messaging';
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
-import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { LabelProvider } from '@theia/core/lib/browser/label-provider';
+
+export interface GitFileChangeNode extends GitFileChange {
+    readonly icon: string;
+    readonly label: string;
+    readonly description: string;
+}
 
 @injectable()
 export class GitWidget extends VirtualWidget {
 
-    protected stagedChanges: GitFileChange[] = [];
-    protected unstagedChanges: GitFileChange[] = [];
-    protected mergeChanges: GitFileChange[] = [];
+    protected stagedChanges: GitFileChangeNode[] = [];
+    protected unstagedChanges: GitFileChangeNode[] = [];
+    protected mergeChanges: GitFileChangeNode[] = [];
     protected message: string = '';
     protected messageInputHighlighted: boolean = false;
     protected additionalMessage: string = '';
@@ -42,7 +48,7 @@ export class GitWidget extends VirtualWidget {
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
         @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
         @inject(MessageService) protected readonly messageService: MessageService,
-        @inject(FileIconProvider) protected readonly iconProvider: FileIconProvider,
+        @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
         @inject(CommandService) protected readonly commandService: CommandService,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService) {
         super();
@@ -70,25 +76,45 @@ export class GitWidget extends VirtualWidget {
         }
     }
 
-    protected updateView(status: WorkingDirectoryStatus | undefined) {
-        this.stagedChanges = [];
-        this.unstagedChanges = [];
-        this.mergeChanges = [];
+    protected async updateView(status: WorkingDirectoryStatus | undefined) {
+        const stagedChanges = [];
+        const unstagedChanges = [];
+        const mergeChanges = [];
         if (status) {
-            status.changes.forEach(change => {
+            for (const change of status.changes) {
+                const uri = new URI(change.uri);
+                const repository = this.repositoryProvider.selectedRepository;
+                const [icon, label, description] = await Promise.all([
+                    this.labelProvider.getIcon(uri),
+                    this.labelProvider.getName(uri),
+                    repository ? this.getRepositoryRelativePath(repository, uri) : this.labelProvider.getLongName(uri)
+                ]);
                 if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
                     if (change.staged) {
-                        this.stagedChanges.push(change);
+                        stagedChanges.push({
+                            icon, label, description,
+                            ...change
+                        });
                     } else {
-                        this.unstagedChanges.push(change);
+                        unstagedChanges.push({
+                            icon, label, description,
+                            ...change
+                        });
                     }
                 } else {
                     if (!change.staged) {
-                        this.mergeChanges.push(change);
+                        mergeChanges.push({
+                            icon, label, description,
+                            ...change
+                        });
                     }
                 }
-            });
+            }
         }
+        const sort = (l: GitFileChangeNode, r: GitFileChangeNode) => l.label.localeCompare(r.label);
+        this.stagedChanges = stagedChanges.sort(sort);
+        this.unstagedChanges = unstagedChanges.sort(sort);
+        this.mergeChanges = mergeChanges.sort(sort);
         this.update();
     }
 
@@ -273,20 +299,19 @@ export class GitWidget extends VirtualWidget {
         return '';
     }
 
-    protected getRepositoryRelativePath(repository: Repository, absPath: string) {
-        const repositoryPath = new URI(repository.localUri).path.toString();
-        return absPath.replace(repositoryPath, '').replace(/^\//, '');
+    protected getRepositoryRelativePath(repository: Repository, uri: URI) {
+        const repoUri = new URI(repository.localUri);
+        return uri.toString().substr(repoUri.toString().length + 1);
     }
 
-    protected renderGitItem(repository: Repository | undefined, change: GitFileChange): h.Child {
+    protected renderGitItem(repository: Repository | undefined, change: GitFileChangeNode): h.Child {
         if (!repository) {
             return '';
         }
         const changeUri: URI = new URI(change.uri);
-        const fileIcon = this.iconProvider.getFileIconForURI(changeUri);
-        const iconSpan = h.span({ className: fileIcon });
-        const nameSpan = h.span({ className: 'name' }, changeUri.displayName + ' ');
-        const pathSpan = h.span({ className: 'path' }, this.getRepositoryRelativePath(repository, changeUri.path.dir.toString()));
+        const iconSpan = h.span({ className: change.icon + ' file-icon' });
+        const nameSpan = h.span({ className: 'name' }, change.label + ' ');
+        const pathSpan = h.span({ className: 'path' }, change.description);
         const nameAndPathDiv = h.div({
             className: 'noWrapInfo',
             onclick: () => {

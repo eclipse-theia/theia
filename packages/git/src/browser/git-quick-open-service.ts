@@ -32,7 +32,7 @@ export class GitQuickOpenService {
             const remotes = await this.getRemotes();
             const execute = (item: QuickOpenItem) => this.git.fetch(repository, { remote: item.getLabel() });
             const items = remotes.map(remote => new GitQuickOpenItem(remote, execute));
-            this.quickOpenService.open(this.getModel(items), this.getOptions('Pick a remote to fetch from:'));
+            this.open(items, 'Pick a remote to fetch from:');
         }
     }
 
@@ -43,7 +43,7 @@ export class GitQuickOpenService {
             const execute = (item: QuickOpenItem) => this.git.push(repository, { remote: item.getLabel() });
             const items = remotes.map(remote => new GitQuickOpenItem(remote, execute));
             const branchName = currentBranch ? `'${currentBranch.name}' ` : '';
-            this.quickOpenService.open(this.getModel(items), this.getOptions(`Pick a remote to push the currently active branch ${branchName}to:`));
+            this.open(items, `Pick a remote to push the currently active branch ${branchName}to:`);
         }
     }
 
@@ -64,12 +64,12 @@ export class GitQuickOpenService {
                     const branchItems = branches
                         .filter(branch => branch.type === BranchType.Remote)
                         .filter(branch => (branch.name || '').startsWith(`${remoteItem.ref}/`))
-                        .map(branch => new GitQuickOpenItem<Branch>(branch, executeBranch, toLabel));
-                    this.quickOpenService.open(this.getModel(branchItems), this.getOptions('Select the branch to pull the changes from:'));
+                        .map(branch => new GitQuickOpenItem(branch, executeBranch, toLabel));
+                    this.open(branchItems, 'Select the branch to pull the changes from:');
                 }
             };
             const remoteItems = remotes.map(remote => new GitQuickOpenItem(remote, executeRemote));
-            this.quickOpenService.open(this.getModel(remoteItems), this.getOptions('Pick a remote to pull the branch from:'));
+            this.open(remoteItems, 'Pick a remote to pull the branch from:');
         }
     }
 
@@ -79,33 +79,84 @@ export class GitQuickOpenService {
             const [branches, currentBranch] = await Promise.all([this.getBranches(), this.getCurrentBranch()]);
             const execute = (item: GitQuickOpenItem<Branch>) => this.git.merge(repository, { branch: item.getLabel()! });
             const toLabel = (item: GitQuickOpenItem<Branch>) => item.ref.name;
-            const items = branches.map(branch => new GitQuickOpenItem<Branch>(branch, execute, toLabel));
+            const items = branches.map(branch => new GitQuickOpenItem(branch, execute, toLabel));
             const branchName = currentBranch ? `'${currentBranch.name}' ` : '';
-            this.quickOpenService.open(this.getModel(items), this.getOptions(`Pick a branch to merge into the currently active ${branchName}branch:`));
+            this.open(items, `Pick a branch to merge into the currently active ${branchName}branch:`);
         }
     }
 
-    private getOptions(placeholder: string): QuickOpenOptions {
+    async checkout(): Promise<void> {
+        const repository = this.getRepository();
+        if (repository) {
+            const [branches, currentBranch] = await Promise.all([this.getBranches(), this.getCurrentBranch()]);
+            if (currentBranch) {
+                // We do not show the current branch.
+                const index = branches.findIndex(branch => branch && branch.name === currentBranch.name);
+                branches.splice(index, 1);
+            }
+            const switchBranch = (item: GitQuickOpenItem<Branch>) => {
+                this.git.checkout(repository, { branch: item.ref.nameWithoutRemote });
+            };
+            const toLabel = (item: GitQuickOpenItem<Branch>) => {
+                const branch = item.ref;
+                return branch.type === BranchType.Remote ? branch.name : branch.nameWithoutRemote;
+            };
+            const toDescription = (item: GitQuickOpenItem<Branch>) => {
+                const branch = item.ref;
+                // We have only the long SHA1, but getting the first seven characters is the same.
+                const tip = branch.tip.sha.length > 8 ? ` ${branch.tip.sha.slice(0, 7)}` : '';
+                return branch.type === BranchType.Remote ? `Remote branch at${tip}` : `${tip}`;
+            };
+            const items: QuickOpenItem[] = branches.map(branch => new GitQuickOpenItem(branch, switchBranch, toLabel, toDescription));
+            const createBranchItem = (item: QuickOpenItem) => {
+                const thisGit = this.git;
+                const createBranchModel: QuickOpenModel = {
+                    onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
+                        const dynamicItems: QuickOpenItem[] = [];
+                        const suffix = `Press 'Enter' to confirm or 'Escape' to cancel.`;
+                        if (lookFor === undefined || lookFor.length === 0) {
+                            dynamicItems.push(new CreateNewBranchOpenItem(`Please provider a branch name. ${suffix}`, () => { }, () => false));
+                        } else {
+                            dynamicItems.push(new CreateNewBranchOpenItem(
+                                `Create a new local branch with name: ${lookFor}. ${suffix}`,
+                                async () => {
+                                    await thisGit.branch(repository, { toCreate: lookFor });
+                                    await thisGit.checkout(repository, { branch: lookFor });
+                                }
+                            ));
+                        }
+                        acceptor(dynamicItems);
+                    }
+                };
+                this.quickOpenService.open(createBranchModel, this.getOptions('The name of the branch:', false));
+            };
+            items.unshift(new CreateNewBranchOpenItem('Create new branch...', createBranchItem, (mode: QuickOpenMode) => mode === QuickOpenMode.OPEN, () => false));
+            this.open(items, 'Select a ref to checkout or create a new local branch:');
+        }
+    }
+
+    private open(items: QuickOpenItem | QuickOpenItem[], placeholder: string): void {
+        this.quickOpenService.open(this.getModel(Array.isArray(items) ? items : [items]), this.getOptions(placeholder));
+    }
+
+    private getOptions(placeholder: string, fuzzyMatchLabel: boolean = true): QuickOpenOptions {
         return QuickOpenOptions.resolve({
             placeholder,
-            fuzzyMatchLabel: true,
+            fuzzyMatchLabel,
             fuzzySort: false
         });
     }
 
-    private getModel(items: QuickOpenItem[]): QuickOpenModel {
+    private getModel(items: QuickOpenItem | QuickOpenItem[]): QuickOpenModel {
         return {
             onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
-                return acceptor(items);
+                acceptor(Array.isArray(items) ? items : [items]);
             }
         };
     }
 
     private getRepository(): Repository | undefined {
-        const selectedRepository = this.repositoryProvider.selectedRepository;
-        if (selectedRepository) {
-            return selectedRepository;
-        }
+        return this.repositoryProvider.selectedRepository;
     }
 
     private async getRemotes(): Promise<string[]> {
@@ -130,11 +181,7 @@ export class GitQuickOpenService {
         if (!repository) {
             return undefined;
         }
-        const branch = await this.git.branch(repository, { type: 'current' });
-        if (branch && !Array.isArray(branch)) {
-            return branch;
-        }
-        return undefined;
+        return await this.git.branch(repository, { type: 'current' });
     }
 
 }
@@ -146,8 +193,10 @@ class GitQuickOpenItem<T> extends QuickOpenItem {
 
     constructor(
         public readonly ref: T,
-        private execute: (item: GitQuickOpenItem<T>) => void,
-        private toLabel: (item: GitQuickOpenItem<T>) => string = (item: QuickOpenItem) => `${ref}`) {
+        protected readonly execute: (item: GitQuickOpenItem<T>) => void,
+        private readonly toLabel: (item: GitQuickOpenItem<T>) => string = (item: QuickOpenItem) => `${ref}`,
+        private readonly toDescription: (item: GitQuickOpenItem<T>) => string | undefined = (item: QuickOpenItem) => undefined) {
+
         super();
     }
 
@@ -161,6 +210,38 @@ class GitQuickOpenItem<T> extends QuickOpenItem {
 
     getLabel(): string {
         return this.toLabel(this);
+    }
+
+    getDescription(): string | undefined {
+        return this.toDescription(this);
+    }
+
+}
+
+/**
+ * Placeholder item for creating a new local branch.
+ */
+class CreateNewBranchOpenItem extends QuickOpenItem {
+
+    constructor(
+        private readonly label: string,
+        private readonly execute: (item: QuickOpenItem) => void = () => { },
+        private readonly canRun: (mode: QuickOpenMode) => boolean = mode => mode === QuickOpenMode.OPEN,
+        private readonly canClose: (mode: QuickOpenMode) => boolean = mode => true) {
+
+        super();
+    }
+
+    getLabel(): string {
+        return this.label;
+    }
+
+    run(mode: QuickOpenMode): boolean {
+        if (!this.canRun(mode)) {
+            return false;
+        }
+        this.execute(this);
+        return this.canClose(mode);
     }
 
 }

@@ -12,7 +12,6 @@ import { CommandService } from '@theia/core/lib/common/command';
 import { ContextMenuRenderer, TreeProps, ITreeModel, ITreeNode } from '@theia/core/lib/browser';
 import { FileTreeWidget } from "@theia/filesystem/lib/browser";
 import { FileNavigatorModel } from "./navigator-model";
-import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
 import { h } from "@phosphor/virtualdom/lib";
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-frontend-contribution';
 
@@ -31,10 +30,9 @@ export class FileNavigatorWidget extends FileTreeWidget {
         @inject(TreeProps) readonly props: TreeProps,
         @inject(FileNavigatorModel) readonly model: FileNavigatorModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
-        @inject(FileIconProvider) iconProvider: FileIconProvider,
         @inject(CommandService) protected readonly commandService: CommandService
     ) {
-        super(props, model, contextMenuRenderer, iconProvider);
+        super(props, model, contextMenuRenderer);
         this.id = FILE_NAVIGATOR_ID;
         this.title.label = LABEL;
         this.addClass(CLASS);

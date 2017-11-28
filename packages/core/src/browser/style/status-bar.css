@@ -10,8 +10,7 @@
 }
 
 #theia-statusBar {
-    border-bottom: var(--theia-border-width) solid var(--theia-border-color1);
-    background: var(--theia-accent-color3);
+    background: var(--theia-brand-color0);
     display: flex;
     min-height: var(--theia-statusBar-height);
 }
@@ -33,7 +32,7 @@
 }
 
 #theia-statusBar .area .element {
-    color: var(--theia-content-font-color0);
+    color: var(--theia-ui-bar-font-color1);
     display: flex;
     align-items: center;
     padding: 0 4px;

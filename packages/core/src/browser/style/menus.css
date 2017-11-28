@@ -16,8 +16,8 @@
 
 .p-MenuBar {
   padding-left: 5px;
-  background: var(--theia-layout-color0);
-  color: var(--theia-ui-font-color1);
+  background: var(--theia-layout-color5);
+  color: var(--theia-ui-bar-font-color1);
   font-size: var(--theia-ui-font-size1);
 }
 
@@ -37,6 +37,7 @@
 
 .p-MenuBar-item.p-mod-active {
   background: var(--theia-layout-color2);
+  color: var(--theia-ui-bar-font-color0);
 }
 
 
@@ -68,7 +69,7 @@
 
 
 #theia-top-panel {
-  background: var(--theia-layout-color0);
+  background: var(--theia-layout-color5);
   display: flex;
   min-height: var(--theia-private-menubar-height);
 }

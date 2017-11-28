@@ -1,10 +1,11 @@
 {
   "name": "@theia/process",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Theia process support.",
   "dependencies": {
-    "@theia/core": "^0.2.1",
-    "node-pty": "^0.7.0"
+    "@theia/core": "^0.2.2",
+    "node-pty": "^0.7.0",
+    "string-argv": "0.0.2"
   },
   "publishConfig": {
     "access": "public"

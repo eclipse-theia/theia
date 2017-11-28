@@ -30,9 +30,11 @@ import { ShellLayoutRestorer } from './shell-layout-restorer';
 import { ApplicationShell, ApplicationShellOptions, DockPanelRenderer, DockPanelTabBarRenderer, DockPanelTabBarRendererFactory } from './shell';
 import { StatusBar, StatusBarImpl } from "./status-bar/status-bar";
 import { LabelParser } from './label-parser';
+import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from "./label-provider";
 
 import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
+import { ThemingCommandContribution, ThemeService } from './theming';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplication).toSelf().inSingletonScope();
@@ -99,4 +101,13 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(StatusBarImpl).toSelf().inSingletonScope();
     bind(StatusBar).toDynamicValue(ctx => ctx.container.get(StatusBarImpl)).inSingletonScope();
     bind(LabelParser).toSelf().inSingletonScope();
+
+    bindContributionProvider(bind, LabelProviderContribution);
+    bind(LabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).to(DefaultUriLabelProviderContribution).inSingletonScope();
+
+    bind(CommandContribution).to(ThemingCommandContribution).inSingletonScope();
 });
+
+const theme = ThemeService.get().getCurrentTheme().id;
+ThemeService.get().setCurrentTheme(theme);

@@ -22,7 +22,6 @@
   display: block;
 }
 
-
 .theia-SideBar .p-TabBar-content,
 .theia-SideBar .p-TabBar-content {
   margin: 0;
@@ -74,4 +73,8 @@
 
 #theia-left-stack {
   border-right: var(--theia-border-width) solid var(--theia-border-color1);
+}
+
+#theia-right-stack {
+  border-left: var(--theia-border-width) solid var(--theia-border-color1);
 }

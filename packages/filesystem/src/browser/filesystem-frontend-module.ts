@@ -9,7 +9,6 @@ import { ContainerModule } from 'inversify';
 import { ResourceResolver } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { FileSystem, FileSystemWatcher, FileResourceResolver, fileSystemPath, bindFileSystemPreferences } from "../common";
-import { FileIconProvider } from './icons/file-icons';
 import {
     fileSystemWatcherPath, FileSystemWatcherServer,
     FileSystemWatcherServerProxy, ReconnectingFileSystemWatcherServer
@@ -36,6 +35,4 @@ export default new ContainerModule(bind => {
 
     bind(FileResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(FileResourceResolver));
-
-    bind(FileIconProvider).toSelf().inSingletonScope();
 });

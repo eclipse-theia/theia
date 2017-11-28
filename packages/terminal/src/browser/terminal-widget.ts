@@ -7,7 +7,7 @@
 
 import { inject, injectable } from "inversify";
 import { Disposable, ILogger } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message, WebSocketConnectionProvider, Endpoint } from '@theia/core/lib/browser';
+import { Widget, BaseWidget, Message, WebSocketConnectionProvider, Endpoint, StatefulWidget } from '@theia/core/lib/browser';
 import { WorkspaceService } from "@theia/workspace/lib/browser";
 import { IShellTerminalServer } from '../common/shell-terminal-protocol';
 import { ITerminalServer } from '../common/terminal-protocol';
@@ -16,6 +16,7 @@ import { TerminalWatcher } from '../common/terminal-watcher';
 import * as Xterm from 'xterm';
 import 'xterm/lib/addons/fit/fit';
 import 'xterm/lib/addons/attach/attach';
+import { ThemeService } from "@theia/core/lib/browser/theming";
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -26,8 +27,6 @@ export interface TerminalWidgetOptions {
     caption: string,
     label: string
     destroyTermOnClose: boolean
-    /* attach to this existing terminal id */
-    attachId?: number
 }
 
 export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOptions> {
@@ -50,13 +49,15 @@ interface TerminalCSSProperties {
 }
 
 @injectable()
-export class TerminalWidget extends BaseWidget {
+export class TerminalWidget extends BaseWidget implements StatefulWidget {
 
     private terminalId: number | undefined;
     private term: Xterm.Terminal;
     private cols: number = 80;
     private rows: number = 40;
     private endpoint: Endpoint;
+    protected started = false;
+    protected closeOnDispose = true;
 
     constructor(
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
@@ -92,13 +93,35 @@ export class TerminalWidget extends BaseWidget {
             theme: {
                 foreground: cssProps.foreground,
                 background: cssProps.background,
+                cursor: cssProps.foreground
             },
         });
+
+        this.toDispose.push(ThemeService.get().onThemeChange(c => {
+            const changedProps = this.getCSSPropertiesFromPage();
+            this.term.setOption('theme', {
+                foreground: changedProps.foreground,
+                background: changedProps.background,
+                cursor: changedProps.foreground
+            });
+        }));
 
         this.term.open(this.node);
         this.term.on('title', (title: string) => {
             this.title.label = title;
         });
+    }
+
+    storeState(): object {
+        this.closeOnDispose = false;
+        return { terminalId: this.terminalId };
+    }
+
+    restoreState(oldState: object) {
+        /* This is a workaround to issue #879 */
+        if (this.started === false) {
+            this.start((oldState as any).terminalId);
+        }
     }
 
     /* Get the font family and size from the CSS custom properties defined in
@@ -181,6 +204,7 @@ export class TerminalWidget extends BaseWidget {
      * If id is provided attach to the terminal for this id.
      */
     public async start(id?: number): Promise<void> {
+        this.started = true;
         this.registerResize();
 
         if (id === undefined) {
@@ -199,7 +223,8 @@ export class TerminalWidget extends BaseWidget {
             if (id === undefined) {
                 this.logger.error("Error creating terminal widget, see the backend error log for more information.  ");
             } else {
-                this.logger.error(`Error attaching to terminal id ${id}, see the backend error log for more information.  `);
+                this.logger.error(`Error attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.  `);
+                this.start();
             }
             return;
         }
@@ -257,6 +282,16 @@ export class TerminalWidget extends BaseWidget {
         this.toDispose.push(Disposable.create(() =>
             socket.close()
         ));
+    }
+
+    dispose(): void {
+
+        /* Close the backend terminal only when explicitly closting the terminal
+         * a refresh for example won't close it.  */
+        if (this.closeOnDispose === true && this.terminalId !== undefined) {
+            this.shellTerminalServer.close(this.terminalId);
+        }
+        super.dispose();
     }
 
     private doResize() {

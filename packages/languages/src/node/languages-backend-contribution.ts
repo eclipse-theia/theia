@@ -12,13 +12,14 @@ import { ContributionProvider } from '@theia/core/lib/common';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { openJsonRpcSocket } from '@theia/core/lib/node';
 import { LanguageServerContribution, LanguageContribution } from "./language-server-contribution";
+import { ILogger } from '@theia/core/lib/common/logger';
 
 @injectable()
 export class LanguagesBackendContribution implements BackendApplicationContribution {
 
     constructor(
-        @inject(ContributionProvider) @named(LanguageServerContribution)
-        protected readonly contributors: ContributionProvider<LanguageServerContribution>
+        @inject(ContributionProvider) @named(LanguageServerContribution) protected readonly contributors: ContributionProvider<LanguageServerContribution>,
+        @inject(ILogger) protected logger: ILogger
     ) { }
 
     onStart(server: http.Server): void {
@@ -29,6 +30,7 @@ export class LanguagesBackendContribution implements BackendApplicationContribut
                     const connection = createWebSocketConnection(socket);
                     contribution.start(connection);
                 } catch (e) {
+                    this.logger.error(`Error occurred while starting language contribution. ${path}.`, e);
                     socket.dispose();
                     throw e;
                 }

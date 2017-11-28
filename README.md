@@ -1,4 +1,4 @@
-# Theia - Build Cloud & Desktop IDEs with modern web tech.
+# Theia - Cloud & Desktop IDE
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/theia-ide/theia/labels/help%20wanted)
 [![Gitter](https://img.shields.io/badge/chat-on%20gitter-blue.svg)](https://gitter.im/theia-ide/theia)
 [![Build Status](https://travis-ci.org/theia-ide/theia.svg?branch=master)](https://travis-ci.org/theia-ide/theia)
@@ -8,7 +8,7 @@
 
 Theia is an extensible platform to develop full-fledged multi-language Cloud & Desktop IDE-like products with state-of-the-art web technologies.
 
-![Theia](https://user-images.githubusercontent.com/3082655/32766055-816eb1a8-c90d-11e7-8df7-31014cb53172.png)
+![Theia](https://user-images.githubusercontent.com/372735/33182625-0f6575f0-d075-11e7-8ec7-53801e3892bd.jpg)
 
 A [`beta` version of Theia](https://github.com/theia-ide/theia/milestone/3) is planned for December 6, 2017, look at our [roadmap](#roadmap).
 
@@ -31,7 +31,7 @@ A [`beta` version of Theia](https://github.com/theia-ide/theia/milestone/3) is p
 Here you can find guides and examples for common scenarios:
 - [Develop a new Theia extension](doc/Authoring_Extensions.md)
 - Develop a new Theia application for [Cloud](examples/browser/package.json) or [Desktop](examples/electron/package.json) with [Theia CLI](dev-packages/cli/README.md)
-- [Run a cloud Theia application with Docker](examples/browser/Dockerfile)
+- [Run Theia IDE for Web Developers with Docker](https://github.com/theia-ide/theia-apps#theia-docker)
 - [Package a desktop Theia application with Electon](https://github.com/theia-ide/yangster-electron)
 
 ## Documentation
@@ -79,7 +79,7 @@ The contributors have committed to deliver a framework with the following featur
  - Git integration
  - Language Support for TypeScript, C/C++, Java, Python, Go, [YANG](https://tools.ietf.org/html/rfc6020)
  - Diagramming Support through [Sprotty](https://github.com/theia-ide/sprotty)
- - [many more features](https://github.com/theia-ide/theia/milestone/3)
+ - [many more features](https://github.com/theia-ide/theia/milestone/3?closed=1)
 
 The team is also working on the following Open-Source Products based on Theia:
  - [Yangster](https://github.com/theia-ide/yangster) - A YANG IDE

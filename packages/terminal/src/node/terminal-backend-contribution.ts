@@ -6,7 +6,6 @@
  */
 
 import * as http from 'http';
-import * as stream from 'stream';
 import { injectable, inject } from 'inversify';
 import URI from "@theia/core/lib/common/uri";
 import { ILogger } from "@theia/core/lib/common";
@@ -25,40 +24,36 @@ export class TerminalBackendContribution implements BackendApplicationContributi
     onStart(server: http.Server): void {
         openSocket({
             server,
-            matches: (request) => {
+            matches: request => {
                 const uri = new URI(request.url!);
                 return uri.path.toString().startsWith('/services/terminals/');
             }
         }, (ws, request) => {
             const uri = new URI(request.url!);
             const id = parseInt(uri.path.base, 10);
-            let term = this.processManager.get(id);
-            if (!term) {
+            const termProcess = this.processManager.get(id);
+            if (!(termProcess instanceof TerminalProcess)) {
                 return;
             }
 
-            const termStream = new stream.PassThrough();
-
-            termStream.on('data', (data: any) => {
+            /* Note this typecast will be refactored after #841 */
+            const output = termProcess.createOutputStream();
+            output.on('data', (data: string) => {
                 try {
-                    ws.send(data.toString());
+                    ws.send(data);
                 } catch (ex) {
                     console.error(ex);
                 }
             });
 
-            term.output.pipe(termStream);
-
             ws.on('message', (msg: any) => {
-                if (term instanceof TerminalProcess) {
-                    term.write(msg);
+                if (termProcess instanceof TerminalProcess) {
+                    termProcess.write(msg);
                 }
             });
+            // tslint:disable-next-line:no-any
             ws.on('close', (msg: any) => {
-                if (term !== undefined) {
-                    this.processManager.delete(term);
-                    term = undefined;
-                }
+                output.dispose();
             });
         });
     }

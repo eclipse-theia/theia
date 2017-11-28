@@ -1,6 +1,6 @@
 {
   "name": "@theia/core",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
@@ -15,6 +15,7 @@
     "bunyan": "^1.8.10",
     "electron": "1.7.6",
     "express": "^4.15.3",
+    "file-icons-js": "^1.0.3",
     "font-awesome": "^4.7.0",
     "humane-js": "^3.2.2",
     "inversify": "^4.2.0",

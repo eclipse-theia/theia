@@ -7,17 +7,19 @@
 
 import * as net from 'net';
 import * as cp from 'child_process';
-import { injectable } from "inversify";
+import { injectable, inject } from "inversify";
 import { Message, isRequestMessage } from 'vscode-ws-jsonrpc';
 import { InitializeParams, InitializeRequest } from 'vscode-languageserver-protocol';
 import {
     createProcessSocketConnection,
-    createProcessStreamConnection,
+    createStreamConnection,
     forward,
     IConnection
 } from 'vscode-ws-jsonrpc/lib/server';
 import { MaybePromise } from "@theia/core/lib/common";
 import { LanguageContribution } from "../common";
+import { RawProcess, RawProcessFactory } from '@theia/process/lib/node/raw-process';
+import { ProcessManager } from '@theia/process/lib/node/process-manager';
 
 export {
     LanguageContribution, IConnection, Message
@@ -30,8 +32,16 @@ export interface LanguageServerContribution extends LanguageContribution {
 
 @injectable()
 export abstract class BaseLanguageServerContribution implements LanguageServerContribution {
+
     abstract readonly id: string;
     abstract readonly name: string;
+
+    @inject(RawProcessFactory)
+    protected readonly processFactory: RawProcessFactory;
+
+    @inject(ProcessManager)
+    protected readonly processManager: ProcessManager;
+
     abstract start(clientConnection: IConnection): void;
 
     protected forward(clientConnection: IConnection, serverConnection: IConnection): void {
@@ -48,27 +58,24 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
         return message;
     }
 
-    protected createProcessSocketConnection(
-        outSocket: MaybePromise<net.Socket>, inSocket: MaybePromise<net.Socket>,
-        command: string, args?: string[], options?: cp.SpawnOptions
-    ): Promise<IConnection> {
+    protected async createProcessSocketConnection(outSocket: MaybePromise<net.Socket>, inSocket: MaybePromise<net.Socket>,
+        command: string, args?: string[], options?: cp.SpawnOptions): Promise<IConnection> {
+
         const process = this.spawnProcess(command, args, options);
-        return Promise.all([
-            Promise.resolve(outSocket),
-            Promise.resolve(inSocket)
-        ]).then(result => createProcessSocketConnection(process, result[0], result[1]));
+        const [outSock, inSock] = await Promise.all([outSocket, inSocket]);
+        return createProcessSocketConnection(process.process, outSock, inSock);
     }
 
     protected createProcessStreamConnection(command: string, args?: string[], options?: cp.SpawnOptions): IConnection {
         const process = this.spawnProcess(command, args, options);
-        return createProcessStreamConnection(process);
+        return createStreamConnection(process.output, process.input, () => process.kill());
     }
 
-    protected spawnProcess(command: string, args?: string[], options?: cp.SpawnOptions): cp.ChildProcess {
-        const serverProcess = cp.spawn(command, args, options);
-        serverProcess.once('error', this.onDidFailSpawnProcess.bind(this));
-        serverProcess.stderr.on('data', this.logError.bind(this));
-        return serverProcess;
+    protected spawnProcess(command: string, args?: string[], options?: cp.SpawnOptions): RawProcess {
+        const rawProcess = this.processFactory({ command, args, options });
+        rawProcess.process.once('error', this.onDidFailSpawnProcess.bind(this));
+        rawProcess.process.stderr.on('data', this.logError.bind(this));
+        return rawProcess;
     }
 
     protected onDidFailSpawnProcess(error: Error): void {

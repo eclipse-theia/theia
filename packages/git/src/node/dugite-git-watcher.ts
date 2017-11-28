@@ -6,66 +6,52 @@
 */
 
 import { injectable, inject } from "inversify";
-import { Git } from '../common/git';
-import { Repository, WorkingDirectoryStatus } from '../common/model';
-import { GitPreferences } from '../common/git-preferences';
-import { GitWatcherServer, GitWatcherClient, GitStatusChangeEvent } from '../common/git-watcher';
-import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
+import { Disposable, DisposableCollection } from "@theia/core";
+import { Repository } from '../common';
+import { GitWatcherServer, GitWatcherClient } from '../common/git-watcher';
+import { GitRepositoryManager } from "./git-repository-manager";
 
 @injectable()
 export class DugiteGitWatcherServer implements GitWatcherServer {
 
-    private watcherSequence = 1;
-    private client: GitWatcherClient | undefined;
-    private readonly watchers: Map<number, NodeJS.Timer>;
-    private readonly status: Map<Repository, WorkingDirectoryStatus | undefined>;
+    protected client: GitWatcherClient | undefined;
+
+    protected watcherSequence = 1;
+    protected readonly watchers = new Map<number, Disposable>();
 
     constructor(
-        @inject(Git) protected readonly git: Git,
-        @inject(GitPreferences) protected readonly preferences: GitPreferences,
-        @inject(FileSystemWatcherServer) protected readonly filesystemWatcher: FileSystemWatcherServer
-    ) {
-        this.watchers = new Map();
-        this.status = new Map();
+        @inject(GitRepositoryManager) protected readonly manager: GitRepositoryManager
+    ) { }
+
+    dispose(): void {
+        for (const watcher of this.watchers.values()) {
+            watcher.dispose();
+        }
+        this.watchers.clear();
     }
 
     async watchGitChanges(repository: Repository): Promise<number> {
-        const watcher = this.watcherSequence++;
-        const interval = this.preferences['git.pollInterval']; // TODO refresh timers on preference change.
-        const timer = setInterval(async () => {
-            try {
-                const status = await this.git.status(repository);
-                const oldStatus = this.status.get(repository);
-                if (this.client && !WorkingDirectoryStatus.equals(status, oldStatus)) {
-                    this.status.set(repository, status);
-                    const event: GitStatusChangeEvent = {
-                        source: repository,
-                        status,
-                        oldStatus
-                    };
-                    this.client.onGitChanged(event);
-                }
-            } catch (error) {
-                if (error.message === 'Unable to find path to repository on disk.') {
-                    await this.unwatchGitChanges(watcher);
-                }
+        const watcher = this.manager.getWatcher(repository);
+        const disposable = new DisposableCollection();
+        disposable.push(watcher.onStatusChanged(e => {
+            if (this.client) {
+                this.client.onGitChanged(e);
             }
-        }, interval);
-        this.watchers.set(watcher, timer);
-        return watcher;
+        }));
+        disposable.push(watcher.watch());
+        const watcherId = this.watcherSequence++;
+        this.watchers.set(watcherId, disposable);
+        return watcherId;
     }
 
     async unwatchGitChanges(watcher: number): Promise<void> {
-        const timer = this.watchers.get(watcher);
-        if (!timer) {
+        const disposable = this.watchers.get(watcher);
+        if (disposable) {
+            disposable.dispose();
+            this.watchers.delete(watcher);
+        } else {
             throw new Error(`No Git watchers were registered with ID: ${watcher}.`);
         }
-        clearInterval(timer);
-        this.watchers.delete(watcher);
-    }
-
-    dispose(): void {
-        [...this.watchers.values()].forEach(clearInterval);
     }
 
     setClient(client?: GitWatcherClient): void {

@@ -11,6 +11,7 @@ import { ICompositeTreeNode, TreeModel, TreeServices } from "@theia/core/lib/bro
 import { FileSystem, FileSystemWatcher, FileChangeType, FileChange } from "../../common";
 import { FileStatNode, DirNode, FileTree } from "./file-tree";
 import { LocationService } from '../location';
+import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 
 @injectable()
 export class FileTreeServices extends TreeServices {
@@ -23,6 +24,8 @@ export class FileTreeModel extends TreeModel implements LocationService {
 
     protected readonly fileSystem: FileSystem;
     protected readonly watcher: FileSystemWatcher;
+
+    @inject(LabelProvider) protected labelProvider: LabelProvider;
 
     constructor(
         @inject(FileTree) protected readonly tree: FileTree,
@@ -42,8 +45,10 @@ export class FileTreeModel extends TreeModel implements LocationService {
 
     set location(uri: URI | undefined) {
         if (uri) {
-            this.fileSystem.getFileStat(uri.toString()).then(fileStat => {
-                const node = DirNode.createRoot(fileStat);
+            this.fileSystem.getFileStat(uri.toString()).then(async fileStat => {
+                const label = this.labelProvider.getName(uri);
+                const icon = await this.labelProvider.getIcon(fileStat);
+                const node = DirNode.createRoot(fileStat, label, icon);
                 this.navigateTo(node);
             });
         } else {

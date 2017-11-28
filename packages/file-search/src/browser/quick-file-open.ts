@@ -8,11 +8,11 @@
 import { inject, injectable } from "inversify";
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode, QuickOpenService, OpenerService } from '@theia/core/lib/browser';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
-import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileSearchService } from '../common/file-search-service';
 import { CancellationTokenSource } from '@theia/core/lib/common';
+import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 
 @injectable()
 export class QuickFileOpenService implements QuickOpenModel {
@@ -20,10 +20,10 @@ export class QuickFileOpenService implements QuickOpenModel {
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(FileIconProvider) protected readonly fileIconProvider: FileIconProvider,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService,
-        @inject(FileSearchService) protected readonly fileSearchService: FileSearchService
+        @inject(FileSearchService) protected readonly fileSearchService: FileSearchService,
+        @inject(LabelProvider) protected readonly labelProvider: LabelProvider
     ) {
         workspaceService.root.then(root => this.wsRoot = root);
     }
@@ -53,10 +53,11 @@ export class QuickFileOpenService implements QuickOpenModel {
         this.cancelIndicator = new CancellationTokenSource();
         const token = this.cancelIndicator.token;
         const proposed = new Set<string>();
-        const handler = (result: string[]) => {
+        const handler = async (result: string[]) => {
             if (!token.isCancellationRequested) {
                 result.forEach(p => proposed.add(p));
-                acceptor(Array.from(proposed).map(uri => this.toItem(uri)));
+                const itemPromises = Array.from(proposed).map(uri => this.toItem(uri));
+                acceptor(await Promise.all(itemPromises));
             }
         };
         if (lookFor.length <= 2) {
@@ -68,12 +69,13 @@ export class QuickFileOpenService implements QuickOpenModel {
         }
     }
 
-    private toItem(uriString: string) {
+    private async toItem(uriString: string) {
         const uri = new URI(uriString);
-        const icon = this.fileIconProvider.getFileIconForURI(uri);
-        const parent = uri.parent.toString();
-        const description = parent.substr(this.wsRoot!.uri.length);
-        return new FileQuickOpenItem(uri, icon, description, this.openerService);
+        return new FileQuickOpenItem(uri,
+            this.labelProvider.getName(uri),
+            await this.labelProvider.getIcon(uri),
+            this.labelProvider.getLongName(uri.parent),
+            this.openerService);
     }
 
 }
@@ -82,6 +84,7 @@ export class FileQuickOpenItem extends QuickOpenItem {
 
     constructor(
         protected readonly uri: URI,
+        protected readonly label: string,
         protected readonly icon: string,
         protected readonly parent: string,
         protected readonly openerService: OpenerService
@@ -90,7 +93,7 @@ export class FileQuickOpenItem extends QuickOpenItem {
     }
 
     getLabel(): string {
-        return this.uri.displayName;
+        return this.label;
     }
 
     isHidden(): boolean {
@@ -110,7 +113,7 @@ export class FileQuickOpenItem extends QuickOpenItem {
     }
 
     getIconClass(): string {
-        return this.icon;
+        return this.icon + ' file-icon';
     }
 
     run(mode: QuickOpenMode): boolean {

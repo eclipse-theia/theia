@@ -145,3 +145,11 @@ export interface FileStat {
     size?: number;
 
 }
+
+export namespace FileStat {
+    export function is(candidate: object): candidate is FileStat {
+        return candidate.hasOwnProperty('uri')
+            && candidate.hasOwnProperty('lastModification')
+            && candidate.hasOwnProperty('isDirectory');
+    }
+}

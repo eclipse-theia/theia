@@ -43,8 +43,6 @@ export default new ContainerModule(bind => {
 
             app.shell.addToMainArea(result);
             app.shell.activateMain(result.id);
-            result.start(options.attachId);
-
             return result;
         }
     }));

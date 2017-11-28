@@ -192,6 +192,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
     }
 
     protected createTree(parentNode: NodeAndSymbol | undefined, symbolInformationList: SymbolInformation[]): OutlineSymbolInformationNode[] {
+        const isRangeBased = symbolInformationList.find(s => s.location.range.startLineNumber !== s.location.range.endLineNumber) !== undefined;
         const childNodes: NodeAndSymbol[] =
             symbolInformationList
                 // filter children
@@ -207,10 +208,10 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
                         const endColSmallerOrEqual = symRange.end.character <= nodeRange.end.character;
                         const endLineSmaller = symRange.end.line < nodeRange.end.line;
                         return nodeIsContainer &&
-                            ((sameStartLine && startColGreaterOrEqual) || (startLineGreater)) &&
-                            ((sameEndLine && endColSmallerOrEqual) || (endLineSmaller));
+                            (((sameStartLine && startColGreaterOrEqual || startLineGreater) &&
+                                (sameEndLine && endColSmallerOrEqual || endLineSmaller)) || !isRangeBased);
                     } else {
-                        return !sym.containerName;
+                        return !sym.containerName || symbolInformationList[0] === sym;
                     }
                 })
                 // create array of children as nodes

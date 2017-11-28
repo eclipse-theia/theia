@@ -12,6 +12,7 @@ import { open, OpenerService, CommonMenus, StorageService } from '@theia/core/li
 import { DirNode, FileDialogFactory, FileStatNode } from '@theia/filesystem/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from './workspace-service';
+import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 
 export namespace WorkspaceCommands {
     export const OPEN: Command = {
@@ -28,7 +29,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
         @inject(FileDialogFactory) protected readonly fileDialogFactory: FileDialogFactory,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(StorageService) protected readonly workspaceStorage: StorageService
+        @inject(StorageService) protected readonly workspaceStorage: StorageService,
+        @inject(LabelProvider) protected readonly labelProvider: LabelProvider
     ) { }
 
     registerCommands(commands: CommandRegistry): void {
@@ -50,7 +52,9 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
             if (root) {
                 const rootUri = new URI(root.uri).parent;
                 const rootStat = await this.fileSystem.getFileStat(rootUri.toString());
-                const rootNode = DirNode.createRoot(rootStat);
+                const name = this.labelProvider.getName(rootUri);
+                const label = await this.labelProvider.getIcon(root);
+                const rootNode = DirNode.createRoot(rootStat, name, label);
                 const dialog = this.fileDialogFactory({ title: WorkspaceCommands.OPEN.label! });
                 dialog.model.navigateTo(rootNode);
                 const node = await dialog.open();

@@ -13,7 +13,7 @@ import { EditorWidget } from "./editor-widget";
 import { TextEditorProvider, Range, Position } from "./editor";
 import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { Widget } from '@phosphor/widgets';
-import { FileIconProvider } from '@theia/filesystem/lib/browser/icons/file-icons';
+import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 
 export const EditorManager = Symbol("EditorManager");
 
@@ -64,7 +64,7 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(FrontendApplication) protected readonly app: FrontendApplication,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
-        @inject(FileIconProvider) protected readonly iconProvider: FileIconProvider
+        @inject(LabelProvider) protected readonly labelProvider: LabelProvider
     ) {
         this.currentObserver = new EditorManagerImpl.Observer('current', app);
         this.activeObserver = new EditorManagerImpl.Observer('active', app);
@@ -111,13 +111,15 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
         return this.createEditor(uri);
     }
 
-    protected createEditor(uri: URI): Promise<EditorWidget> {
+    protected async createEditor(uri: URI): Promise<EditorWidget> {
+        const icon = await this.labelProvider.getIcon(uri);
         return this.editorProvider(uri).then(textEditor => {
             const newEditor = new EditorWidget(textEditor, this.selectionService);
             newEditor.id = this.id + ":" + uri.toString();
             newEditor.title.closable = true;
-            newEditor.title.label = uri.path.base;
-            newEditor.title.iconClass = this.iconProvider.getFileIconForURI(uri);
+            newEditor.title.label = this.labelProvider.getName(uri);
+            newEditor.title.iconClass = icon + ' file-icon';
+            newEditor.title.caption = this.labelProvider.getLongName(uri);
             return newEditor;
         });
     }

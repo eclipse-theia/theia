@@ -8,10 +8,11 @@
 import { injectable, inject, named } from 'inversify';
 import * as os from 'os';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { TerminalProcess, TerminalProcessOptions, ProcessManager } from '@theia/process/lib/node';
+import { TerminalProcess, TerminalProcessOptions, ProcessManager, MultiRingBuffer } from '@theia/process/lib/node';
 import { isWindows } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
 import { FileUri } from "@theia/core/lib/node/file-uri";
+import { parseArgs } from '@theia/process/lib/node/utils';
 
 export const ShellProcessFactory = Symbol("ShellProcessFactory");
 export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess;
@@ -42,11 +43,12 @@ export class ShellProcess extends TerminalProcess {
     constructor(
         @inject(ShellProcessOptions) options: ShellProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
+        @inject(MultiRingBuffer) ringBuffer: MultiRingBuffer,
         @inject(ILogger) @named("terminal") logger: ILogger
     ) {
         super(<TerminalProcessOptions>{
             command: options.shell || ShellProcess.getShellExecutablePath(),
-            args: [],
+            args: ShellProcess.getShellExecutableArgs(),
             options: {
                 name: 'xterm-color',
                 cols: options.cols || ShellProcess.defaultCols,
@@ -54,14 +56,26 @@ export class ShellProcess extends TerminalProcess {
                 cwd: getRootPath(options.rootURI),
                 env: process.env as any
             }
-        }, processManager, logger);
+        }, processManager, ringBuffer, logger);
     }
 
     protected static getShellExecutablePath(): string {
+        const shell = process.env.THEIA_SHELL;
+        if (shell) {
+            return shell;
+        }
         if (isWindows) {
             return 'cmd.exe';
         } else {
             return process.env.SHELL!;
         }
+    }
+
+    protected static getShellExecutableArgs(): string[] {
+        const args = process.env.THEIA_SHELL_ARGS;
+        if (args) {
+            return parseArgs(args);
+        }
+        return [];
     }
 }
