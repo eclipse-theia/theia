@@ -21,7 +21,7 @@
     color: var(--theia-ui-font-color1);
     font-size: var(--theia-ui-font-size1);
     border-radius: 0;
-    background: transparent;
+    background-color: var(--theia-accent-color3);
     outline: none;
     cursor: pointer;
     padding-left: 12px;
