@@ -78,12 +78,8 @@ export class FileDialog extends AbstractDialog<Readonly<FileStatNode> | undefine
             Widget.detach(this.widget)
         ));
 
-        const controlPanel = document.createElement('div');
-        controlPanel.classList.add(CONTROL_PANEL_CLASS);
-        this.contentNode.appendChild(controlPanel);
-
-        controlPanel.appendChild(this.createCloseButton('Cancel'));
-        controlPanel.appendChild(this.createAcceptButton('Open'));
+        this.appendCloseButton('Cancel');
+        this.appendAcceptButton('Open');
 
         this.addKeyListener(this.back, Key.ENTER, () => this.model.navigateBackward(), 'click');
         this.addKeyListener(this.forward, Key.ENTER, () => this.model.navigateForward(), 'click');
