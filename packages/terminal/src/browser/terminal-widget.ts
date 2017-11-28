@@ -56,8 +56,13 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
     private cols: number = 80;
     private rows: number = 40;
     private endpoint: Endpoint;
-    protected started = false;
+    protected restored = false;
     protected closeOnDispose = true;
+    protected waitForStarted: Promise<void>;
+    protected started: Function;
+    protected openAfterShow = false;
+    protected isOpeningTerm = false;
+    protected isTermOpen = false;
 
     constructor(
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
@@ -73,6 +78,10 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         this.title.caption = options.caption;
         this.title.label = options.label;
         this.title.iconClass = "fa fa-terminal";
+
+        this.waitForStarted = new Promise(resolve => {
+            this.started = resolve;
+        });
 
         if (options.destroyTermOnClose === true) {
             this.toDispose.push(Disposable.create(() =>
@@ -106,7 +115,6 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             });
         }));
 
-        this.term.open(this.node);
         this.term.on('title', (title: string) => {
             this.title.label = title;
         });
@@ -114,13 +122,16 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
 
     storeState(): object {
         this.closeOnDispose = false;
-        return { terminalId: this.terminalId };
+        return { terminalId: this.terminalId, titleLabel: this.title.label };
     }
 
     restoreState(oldState: object) {
-        /* This is a workaround to issue #879 */
-        if (this.started === false) {
-            this.start((oldState as any).terminalId);
+        if (this.restored === false) {
+            const state = oldState as any;
+            /* This is a workaround to issue #879 */
+            this.restored = true;
+            this.title.label = state.titleLabel;
+            this.start(state.terminalId);
         }
     }
 
@@ -204,9 +215,6 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
      * If id is provided attach to the terminal for this id.
      */
     public async start(id?: number): Promise<void> {
-        this.started = true;
-        this.registerResize();
-
         if (id === undefined) {
             const root = await this.workspaceService.root;
             const rootURI = root !== undefined ? root.uri : undefined;
@@ -228,11 +236,41 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             }
             return;
         }
-
-        this.connectSocket(this.terminalId);
-        this.monitorTerminal(this.terminalId);
+        this.started();
     }
 
+    protected async openTerm(): Promise<void> {
+        this.isOpeningTerm = true;
+
+        if (this.isTermOpen === true) {
+            this.isOpeningTerm = false;
+            return Promise.reject("Already open");
+        }
+
+        /* Wait for the backend terminal to be requested before opening the xterm terminal.  */
+        await this.waitForStarted;
+
+        if (this.terminalId === undefined) {
+            /* Don't retry to open, something is permanently wrong.  */
+            this.isOpeningTerm = false;
+            this.isTermOpen = true;
+            return Promise.reject("No terminal");
+        }
+
+        /* This may have changed since we waited for waitForStarted. Test it again.  */
+        if (this.isVisible === false) {
+            this.isOpeningTerm = false;
+            return Promise.reject("Not visible");
+        }
+
+        this.term.open(this.node);
+        this.registerResize();
+        this.connectSocket(this.terminalId);
+        this.monitorTerminal(this.terminalId);
+
+        this.isTermOpen = true;
+        return Promise.resolve();
+    }
     protected createWebSocket(pid: string): WebSocket {
         const url = this.endpoint.getWebSocketUrl().resolve(pid);
         return this.webSocketConnectionProvider.createWebSocket(url.toString(), { reconnecting: false });
@@ -240,17 +278,44 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        this.term.focus();
+        if (this.isTermOpen) {
+            this.term.focus();
+        }
     }
 
+    protected onAfterShow(msg: Message): void {
+        super.onAfterShow(msg);
+        if (this.openAfterShow) {
+            if (this.isOpeningTerm === false) {
+                this.openTerm().then(() => {
+                    this.openAfterShow = false;
+                    this.term.focus();
+                }).catch(() => { });
+            }
+        } else {
+            this.term.focus();
+        }
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        if (this.isVisible) {
+            this.openTerm().then(() => {
+            }).catch(() => { this.openAfterShow = true; });
+        } else {
+            this.openAfterShow = true;
+        }
+    }
     private resizeTimer: any;
 
     protected onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
-        clearTimeout(this.resizeTimer);
-        this.resizeTimer = setTimeout(() => {
-            this.doResize();
-        }, 500);
+        if (this.isTermOpen) {
+            clearTimeout(this.resizeTimer);
+            this.resizeTimer = setTimeout(() => {
+                this.doResize();
+            }, 500);
+        }
     }
 
     protected monitorTerminal(id: number) {
@@ -273,9 +338,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             (this.term as any).attach(socket);
             (this.term as any)._initialized = true;
         };
-        socket.onclose = () => {
-            this.title.label = `<terminated>`;
-        };
+
         socket.onerror = err => {
             console.error(err);
         };
@@ -291,10 +354,19 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         if (this.closeOnDispose === true && this.terminalId !== undefined) {
             this.shellTerminalServer.close(this.terminalId);
         }
+
+        if (this.resizeTimer !== undefined) {
+            clearTimeout(this.resizeTimer);
+        }
+
         super.dispose();
     }
 
     private doResize() {
+        if (this.term === undefined) {
+            clearTimeout(this.resizeTimer);
+            return;
+        }
         const geo = (this.term as any).proposeGeometry();
         this.cols = geo.cols;
         this.rows = geo.rows - 1; // subtract one row for margin
