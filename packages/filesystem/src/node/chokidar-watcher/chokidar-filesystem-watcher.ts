@@ -6,24 +6,30 @@
  */
 
 import { watch } from "chokidar";
-import { injectable, inject } from "inversify";
 import URI from "@theia/core/lib/common/uri";
-import { Disposable, DisposableCollection, ILogger } from '@theia/core/lib/common';
-import { FileUri } from "@theia/core/lib/node";
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { FileUri } from "@theia/core/lib/node/file-uri";
 import {
     FileChange,
     FileChangeType,
     FileSystemWatcherClient,
     FileSystemWatcherServer,
     WatchOptions
-} from '../common/filesystem-watcher-protocol';
+} from '../../common/filesystem-watcher-protocol';
+
+// tslint:disable:no-console
+// tslint:disable:no-any
 
 export interface WatchError {
     readonly code: string;
     readonly filename: string;
 }
+export namespace WatchError {
+    export function is(error: any): error is WatchError {
+        return ('code' in error) && ('filename' in error) && error.code !== undefined && error.filename !== undefined;
+    }
+}
 
-@injectable()
 export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer {
 
     protected client: FileSystemWatcherClient | undefined;
@@ -38,40 +44,42 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
     protected readonly toDisposeOnFileChange = new DisposableCollection();
 
     /* Did we print the message about exhausted inotify watches yet?  */
-    protected printedENOSPCError: boolean = false;
+    protected printedENOSPCError = false;
 
-    constructor(
-        @inject(ILogger) protected readonly logger: ILogger
-    ) { }
+    constructor(protected readonly options: {
+        verbose: boolean
+    } = { verbose: false }) { }
 
     dispose(): void {
         this.toDispose.dispose();
     }
 
-    watchFileChanges(uri: string, options: WatchOptions = { ignored: [] }): Promise<number> {
+    watchFileChanges(uri: string, rawOptions?: WatchOptions): Promise<number> {
+        const options: WatchOptions = {
+            ignored: [],
+            ...rawOptions
+        };
         const watcherId = this.watcherSequence++;
         const paths = this.toPaths(uri);
-        this.logger.info(`Starting watching:`, paths);
+        this.debug('Starting watching:', paths);
         return new Promise<number>(resolve => {
             if (options.ignored.length > 0) {
-                this.logger.debug(log =>
-                    log('Files ignored for watching', options.ignored)
-                );
+                this.debug('Files ignored for watching', options.ignored);
             }
             const watcher = watch(paths, {
                 ignoreInitial: true,
                 ignored: options.ignored
             });
             watcher.once('ready', () => {
-                this.logger.info(`Started watching:`, paths);
+                console.info('Started watching:', paths);
                 resolve(watcherId);
             });
 
             watcher.on('error', error => {
-                if (this.isWatchError(error)) {
+                if (WatchError.is(error)) {
                     this.handleWatchError(error);
                 } else {
-                    this.logger.error('Unknown file watch error:', error);
+                    console.error('Unknown file watch error:', error);
                 }
             });
 
@@ -82,9 +90,9 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
             watcher.on('unlinkDir', path => this.pushDeleted(watcherId, path));
             const disposable = Disposable.create(() => {
                 this.watchers.delete(watcherId);
-                this.logger.info(`Stopping watching:`, paths);
+                this.debug('Stopping watching:', paths);
                 watcher.close();
-                this.logger.info(`Stopped watching.`);
+                console.info('Stopped watching.');
             });
             this.watchers.set(watcherId, disposable);
             this.toDispose.push(disposable);
@@ -109,23 +117,17 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
     }
 
     protected pushAdded(watcherId: number, path: string): void {
-        this.logger.debug(log =>
-            log(`Added:`, path)
-        );
+        this.debug('Added:', path);
         this.pushFileChange(watcherId, path, FileChangeType.ADDED);
     }
 
     protected pushUpdated(watcherId: number, path: string): void {
-        this.logger.debug(log =>
-            log(`Updated:`, path)
-        );
+        this.debug('Updated:', path);
         this.pushFileChange(watcherId, path, FileChangeType.UPDATED);
     }
 
     protected pushDeleted(watcherId: number, path: string): void {
-        this.logger.debug(log =>
-            log(`Deleted:`, path)
-        );
+        this.debug('Deleted:', path);
         this.pushFileChange(watcherId, path, FileChangeType.DELETED);
     }
 
@@ -145,10 +147,6 @@ export class ChokidarFileSystemWatcherServer implements FileSystemWatcherServer 
         if (this.client) {
             this.client.onDidFilesChanged(event);
         }
-    }
-
-    protected isWatchError(error: any): error is WatchError {
-        return ('code' in error) && ('filename' in error) && error.code !== undefined && error.filename !== undefined;
     }
 
     /**
@@ -186,7 +184,13 @@ message will appear only once.";
                 break;
         }
 
-        this.logger.error(`Error watching ${error.filename}: ${msg}`);
+        console.error(`Error watching ${error.filename}: ${msg}`);
+    }
+
+    protected debug(...params: any[]): void {
+        if (this.options.verbose) {
+            console.log(...params);
+        }
     }
 
 }

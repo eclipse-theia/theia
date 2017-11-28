@@ -68,7 +68,10 @@ export class ReconnectingFileSystemWatcherServer implements FileSystemWatcherSer
     constructor(
         @inject(FileSystemWatcherServerProxy) protected readonly proxy: FileSystemWatcherServerProxy
     ) {
-        this.proxy.onDidOpenConnection(() => this.reconnect());
+        const onInitialized = this.proxy.onDidOpenConnection(() => {
+            onInitialized.dispose();
+            this.proxy.onDidOpenConnection(() => this.reconnect());
+        });
     }
 
     protected reconnect(): void {
@@ -104,7 +107,7 @@ export class ReconnectingFileSystemWatcherServer implements FileSystemWatcherSer
         return Promise.resolve();
     }
 
-    setClient(client: FileSystemWatcherClient): void {
+    setClient(client: FileSystemWatcherClient | undefined): void {
         this.proxy.setClient(client);
     }
 

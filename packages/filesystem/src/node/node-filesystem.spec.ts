@@ -11,13 +11,12 @@ import * as chaiAsPromised from 'chai-as-promised';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 import URI from "@theia/core/lib/common/uri";
-import { Logger } from "@theia/core/lib/common";
 import { FileUri } from "@theia/core/lib/node";
 import { PreferenceService, PreferenceServer, PreferenceClient } from "@theia/preferences-api";
 import { FileSystem } from "../common/filesystem";
 import { FileSystemWatcher, FileChange, FileChangeType, createFileSystemPreferences } from '../common';
 import { FileSystemNode } from "./node-filesystem";
-import { ChokidarFileSystemWatcherServer } from './chokidar-filesystem-watcher';
+import { ChokidarFileSystemWatcherServer } from './chokidar-watcher/chokidar-filesystem-watcher';
 
 function tmpdirPath() {
     const path = os.tmpdir();
@@ -795,20 +794,9 @@ describe("NodeFileSystem", () => {
     }
 
     function createFileSystemWatcher(): FileSystemWatcher {
-        const logger = new Proxy<Logger>({} as any, {
-            get: (target, name) => () => {
-                if (name.toString().startsWith('is')) {
-                    return Promise.resolve(false);
-                }
-                if (name.toString().startsWith('if')) {
-                    return new Promise(resolve => { });
-                }
-            }
-        });
-
         const preferences = new PreferenceService(new PreferenceServerStub());
         const fileSystemPreferences = createFileSystemPreferences(preferences);
-        const server = new ChokidarFileSystemWatcherServer(logger);
+        const server = new ChokidarFileSystemWatcherServer();
         return new FileSystemWatcher(server, fileSystemPreferences);
     }
 
