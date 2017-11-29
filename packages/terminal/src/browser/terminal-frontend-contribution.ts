@@ -18,7 +18,8 @@ import {
     MenuContribution,
     MenuModelRegistry,
     Keybinding,
-    KeybindingContextRegistry
+    KeybindingContextRegistry,
+    isOSX
 } from '@theia/core/lib/common';
 import { FrontendApplication, CommonMenus } from '@theia/core/lib/browser';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidget } from './terminal-widget';
@@ -83,9 +84,10 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
         /* Register ctrl + k (the passed Key) as a passthrough command in the
            context of the terminal.  */
         const regCtrl = (k: Key) => {
+            const modifier = isOSX ? Modifier.M4 : Modifier.M1;
             keybindings.registerKeybindings({
                 commandId: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-                keyCode: KeyCode.createKeyCode({ first: k, modifiers: [Modifier.M1] }),
+                keyCode: KeyCode.createKeyCode({ first: k, modifiers: [modifier] }),
                 contextId: TERMINAL_ACTIVE_CONTEXT,
             });
         };
@@ -148,6 +150,14 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
             regAlt({
                 keyCode: Key.DIGIT0.keyCode + i,
                 code: 'Digit' + String.fromCharCode('0'.charCodeAt(0) + i)
+            });
+        }
+        if (isOSX) {
+            // selectAll on OSX
+            keybindings.registerKeybindings({
+                commandId: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
+                keyCode: KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M1] }),
+                contextId: TERMINAL_ACTIVE_CONTEXT,
             });
         }
     }
