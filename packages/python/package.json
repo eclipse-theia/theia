@@ -1,10 +1,10 @@
 {
   "name": "@theia/python",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Theia - Python Extension",
   "dependencies": {
-    "@theia/core": "^0.2.2",
-    "@theia/languages": "^0.2.2"
+    "@theia/core": "^0.2.3",
+    "@theia/languages": "^0.2.3"
   },
   "publishConfig": {
     "access": "public"
