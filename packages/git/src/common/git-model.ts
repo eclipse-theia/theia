@@ -110,6 +110,15 @@ export interface Repository {
 
 }
 
+export namespace Repository {
+    export function equal(repository: Repository | undefined, repository2: Repository | undefined): boolean {
+        if (repository && repository2) {
+            return repository.localUri === repository2.localUri;
+        }
+        return repository === repository2;
+    }
+}
+
 /**
  * The branch type. Either local or remote.
  * The order matters.

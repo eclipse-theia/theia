@@ -6,9 +6,8 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Git } from '../common/git';
+import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus } from '../common';
 import { GIT_CONTEXT_MENU } from './git-context-menu';
-import { GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus } from '../common/model';
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { GitRepositoryProvider } from './git-repository-provider';

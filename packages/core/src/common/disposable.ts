@@ -53,13 +53,19 @@ export class DisposableCollection implements Disposable {
     push(disposable: Disposable): Disposable {
         const disposables = this.disposables;
         disposables.push(disposable);
-        return Disposable.create(() => {
+        const originalDispose = disposable.dispose.bind(disposable);
+        const toRemove = Disposable.create(() => {
             const index = disposables.indexOf(disposable);
             if (index !== -1) {
                 disposables.splice(index, 1);
             }
             this.checkDisposed();
         });
+        disposable.dispose = () => {
+            toRemove.dispose();
+            originalDispose();
+        };
+        return toRemove;
     }
 
     pushAll(disposables: Disposable[]): Disposable[] {

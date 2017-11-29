@@ -5,7 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Repository, WorkingDirectoryStatus, Branch } from './model';
+import { Disposable } from '@theia/core';
+import { Repository, WorkingDirectoryStatus, Branch } from './git-model';
 
 /**
  * The WS endpoint path to the Git service.
@@ -126,6 +127,24 @@ export namespace Git {
              * the default branch will will be the current one which is usually the `master`.
              */
             readonly branch?: string;
+
+        }
+
+        /**
+         * Git repositories options.
+         */
+        export interface Repositories {
+
+            /**
+             * The maximum count of repositories to look up, should be greater than 0.
+             * Undefined to look up all repositores.
+             */
+            readonly maxCount?: number;
+
+            /**
+             * The max depth of repositories look up.
+             */
+            readonly maxDepth: number;
 
         }
 
@@ -331,7 +350,7 @@ export namespace Git {
 /**
  * Provides basic functionality for Git.
  */
-export interface Git {
+export interface Git extends Disposable {
 
     /**
      * Clones a remote repository into the desired local location.
@@ -344,7 +363,7 @@ export interface Git {
     /**
      * Resolves to an array of repositories discovered in the workspace given with the workspace root URI.
      */
-    repositories(workspaceRootUri: string): Promise<Repository[]>;
+    repositories(workspaceRootUri: string, options: Git.Options.Repositories): Promise<Repository[]>;
 
     /**
      * Returns with the working directory status of the given Git repository.

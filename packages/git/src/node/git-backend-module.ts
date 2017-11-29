@@ -13,7 +13,8 @@ import { DugiteGitWatcherServer } from './dugite-git-watcher';
 import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common";
 import { GitRepositoryManager } from './git-repository-manager';
 import { GitRepositoryWatcherFactory, GitRepositoryWatcherOptions, GitRepositoryWatcher } from './git-repository-watcher';
-import { GitRepositoryLocator } from './git-repository-locator';
+import { GitLocator } from './git-locator/git-locator-protocol';
+import { GitLocatorClient } from './git-locator/git-locator-client';
 
 export function bindGit(bind: interfaces.Bind): void {
     bind(GitRepositoryManager).toSelf().inSingletonScope();
@@ -24,14 +25,20 @@ export function bindGit(bind: interfaces.Bind): void {
         child.bind(GitRepositoryWatcherOptions).toConstantValue(options);
         return child.get(GitRepositoryWatcher);
     });
-    bind(GitRepositoryLocator).toSelf().inSingletonScope();
-    bind(DugiteGit).toSelf().inSingletonScope();
-    bind(Git).toDynamicValue(ctx => ctx.container.get(DugiteGit)).inSingletonScope();
+    bind(GitLocator).to(GitLocatorClient);
+    bind(DugiteGit).toSelf();
+    bind(Git).toDynamicValue(ctx => ctx.container.get(DugiteGit));
 }
 
 export default new ContainerModule(bind => {
     bindGit(bind);
-    bind(ConnectionHandler).toDynamicValue(context => new JsonRpcConnectionHandler(GitPath, () => context.container.get(Git))).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(context =>
+        new JsonRpcConnectionHandler(GitPath, client => {
+            const server = context.container.get<Git>(Git);
+            client.onDidCloseConnection(() => server.dispose());
+            return server;
+        })
+    ).inSingletonScope();
 
     bind(DugiteGitWatcherServer).toSelf();
     bind(GitWatcherServer).toDynamicValue(context => context.container.get(DugiteGitWatcherServer));

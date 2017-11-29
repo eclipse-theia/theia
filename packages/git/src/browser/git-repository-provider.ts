@@ -8,20 +8,30 @@ import { Git, Repository } from '../common';
 import { injectable, inject } from "inversify";
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { Event, Emitter } from '@theia/core';
+import { GitPreferences } from '../common/git-preferences';
+
+export interface GitRefreshOptions {
+    readonly maxCount: number
+}
 
 @injectable()
 export class GitRepositoryProvider {
 
     protected _selectedRepository: Repository | undefined;
-    protected _allRepositories: Repository[];
+    protected _allRepositories: Repository[] = [];
     protected readonly onDidChangeRepositoryEmitter = new Emitter<Repository | undefined>();
 
     constructor(
         @inject(Git) protected readonly git: Git,
+        @inject(GitPreferences) protected readonly preferences: GitPreferences,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
     ) {
-        this._allRepositories = [];
-        this.refresh();
+        this.initialize();
+    }
+
+    protected async initialize(): Promise<void> {
+        await this.refresh({ maxCount: 1 });
+        await this.refresh();
     }
 
     /**
@@ -38,15 +48,14 @@ export class GitRepositoryProvider {
      */
     set selectedRepository(repository: Repository | undefined) {
         this._selectedRepository = repository;
-        this.onDidChangeRepositoryEmitter.fire(repository);
+        this.fireDidChangeRepository();
     }
 
     get onDidChangeRepository(): Event<Repository | undefined> {
         return this.onDidChangeRepositoryEmitter.event;
     }
-
-    protected fireOnDidChangeRepository(repository: Repository | undefined): void {
-        this.onDidChangeRepositoryEmitter.fire(repository);
+    protected fireDidChangeRepository(): void {
+        this.onDidChangeRepositoryEmitter.fire(this._selectedRepository);
     }
 
     /**
@@ -56,27 +65,26 @@ export class GitRepositoryProvider {
         return this._allRepositories;
     }
 
-    /**
-     * Refreshes the state of this Git repository provider.
-     *  - Retrieves all known repositories from the backend, discards the current state of [all known repositories](GitRepositoryProvider.allRepositories).
-     *  - If no repository was [selected](GitRepositoryProvider.selectedRepository), then selects the first items from all known ones.
-     *  - If no repositories are available, leaves the selected one as `undefined`.
-     *  - If the previously selected one, does not exist among the most recently discovered one, selects the first one.
-     *  - This method blocks, if the workspace root is not yet set.
-     */
-    async refresh(): Promise<void> {
+    async refresh(options?: GitRefreshOptions): Promise<void> {
         const root = await this.workspaceService.root;
         if (!root) {
             return;
         }
-        const repositories = await this.git.repositories(root.uri);
+        const repositories = await this.git.repositories(root.uri, {
+            ...options,
+            maxDepth: this.preferences['git.locateMaxDepth']
+        });
         this._allRepositories = repositories;
-        // If no repository is selected or the selected one does not exist on the backend anymore, update the selected one.
-        if (this._selectedRepository === undefined
-            || this._selectedRepository && !repositories.map(r => r.localUri.toString()).some(uri => uri === this._selectedRepository!.localUri.toString())
-        ) {
+        const selectedRepository = this._selectedRepository;
+        if (!selectedRepository || !this.exists(selectedRepository)) {
             this.selectedRepository = this._allRepositories[0];
+        } else {
+            this.fireDidChangeRepository();
         }
+    }
+
+    protected exists(repository: Repository): boolean {
+        return this._allRepositories.some(repository2 => Repository.equal(repository, repository2));
     }
 
 }
