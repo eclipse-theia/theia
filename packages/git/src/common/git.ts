@@ -528,4 +528,24 @@ export namespace GitUtils {
         return !!arg && ('paths' in arg);
     }
 
+    /**
+     * The error code for when the path to a repository doesn't exist.
+     */
+    const RepositoryDoesNotExistErrorCode = 'repository-does-not-exist-error';
+
+    /**
+     * `true` if the argument is an error indicating the absence of a local Git repository.
+     * Otherwise, `false`.
+     */
+    // tslint:disable-next-line:no-any
+    export function isRepositoryDoesNotExistError(error: any | undefined): boolean {
+        // TODO this is odd here.This piece of code is already implementation specific, so this should go to the Git API.
+        // But how can we ensure that the `any` type error is serializable?
+        if (error instanceof Error && ('code' in error)) {
+            // tslint:disable-next-line:no-any
+            return (<any>error).code === RepositoryDoesNotExistErrorCode;
+        }
+        return false;
+    }
+
 }

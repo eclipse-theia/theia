@@ -11,6 +11,7 @@ import { QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser/quic
 import { Git } from '../common';
 import { Repository, Branch, BranchType } from '../common/model';
 import { GitRepositoryProvider } from './git-repository-provider';
+import { MessageService } from '@theia/core/lib/common/message-service';
 
 /**
  * Service delegating into the `Quick Open Service`, so that the Git commands can be further refined.
@@ -23,14 +24,21 @@ export class GitQuickOpenService {
     constructor(
         @inject(Git) protected readonly git: Git,
         @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
-        @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService
+        @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService,
+        @inject(MessageService) protected readonly messageService: MessageService
     ) { }
 
     async fetch(): Promise<void> {
         const repository = this.getRepository();
         if (repository) {
             const remotes = await this.getRemotes();
-            const execute = (item: QuickOpenItem) => this.git.fetch(repository, { remote: item.getLabel() });
+            const execute = async (item: QuickOpenItem) => {
+                try {
+                    await this.git.fetch(repository, { remote: item.getLabel() });
+                } catch (error) {
+                    this.logError(error);
+                }
+            };
             const items = remotes.map(remote => new GitQuickOpenItem(remote, execute));
             this.open(items, 'Pick a remote to fetch from:');
         }
@@ -40,7 +48,13 @@ export class GitQuickOpenService {
         const repository = this.getRepository();
         if (repository) {
             const [remotes, currentBranch] = await Promise.all([this.getRemotes(), this.getCurrentBranch()]);
-            const execute = (item: QuickOpenItem) => this.git.push(repository, { remote: item.getLabel() });
+            const execute = async (item: QuickOpenItem) => {
+                try {
+                    await this.git.push(repository, { remote: item.getLabel() });
+                } catch (error) {
+                    this.logError(error);
+                }
+            };
             const items = remotes.map(remote => new GitQuickOpenItem(remote, execute));
             const branchName = currentBranch ? `'${currentBranch.name}' ` : '';
             this.open(items, `Pick a remote to push the currently active branch ${branchName}to:`);
@@ -55,11 +69,21 @@ export class GitQuickOpenService {
             const executeRemote = async (remoteItem: GitQuickOpenItem<string>) => {
                 // The first remote is the default.
                 if (remoteItem.ref === defaultRemote) {
-                    this.git.pull(repository, { remote: remoteItem.getLabel() });
+                    try {
+                        await this.git.pull(repository, { remote: remoteItem.getLabel() });
+                    } catch (error) {
+                        this.logError(error);
+                    }
                 } else {
                     // Otherwise we need to propose the branches from
                     const branches = await this.getBranches();
-                    const executeBranch = (branchItem: GitQuickOpenItem<Branch>) => this.git.pull(repository, { remote: remoteItem.ref, branch: branchItem.ref.nameWithoutRemote });
+                    const executeBranch = async (branchItem: GitQuickOpenItem<Branch>) => {
+                        try {
+                            await this.git.pull(repository, { remote: remoteItem.ref, branch: branchItem.ref.nameWithoutRemote });
+                        } catch (error) {
+                            this.logError(error);
+                        }
+                    };
                     const toLabel = (branchItem: GitQuickOpenItem<Branch>) => branchItem.ref.name;
                     const branchItems = branches
                         .filter(branch => branch.type === BranchType.Remote)
@@ -77,7 +101,13 @@ export class GitQuickOpenService {
         const repository = this.getRepository();
         if (repository) {
             const [branches, currentBranch] = await Promise.all([this.getBranches(), this.getCurrentBranch()]);
-            const execute = (item: GitQuickOpenItem<Branch>) => this.git.merge(repository, { branch: item.getLabel()! });
+            const execute = async (item: GitQuickOpenItem<Branch>) => {
+                try {
+                    await this.git.merge(repository, { branch: item.getLabel()! });
+                } catch (error) {
+                    this.logError(error);
+                }
+            };
             const toLabel = (item: GitQuickOpenItem<Branch>) => item.ref.name;
             const items = branches.map(branch => new GitQuickOpenItem(branch, execute, toLabel));
             const branchName = currentBranch ? `'${currentBranch.name}' ` : '';
@@ -94,8 +124,12 @@ export class GitQuickOpenService {
                 const index = branches.findIndex(branch => branch && branch.name === currentBranch.name);
                 branches.splice(index, 1);
             }
-            const switchBranch = (item: GitQuickOpenItem<Branch>) => {
-                this.git.checkout(repository, { branch: item.ref.nameWithoutRemote });
+            const switchBranch = async (item: GitQuickOpenItem<Branch>) => {
+                try {
+                    await this.git.checkout(repository, { branch: item.ref.nameWithoutRemote });
+                } catch (error) {
+                    this.logError(error);
+                }
             };
             const toLabel = (item: GitQuickOpenItem<Branch>) => {
                 const branch = item.ref;
@@ -109,7 +143,7 @@ export class GitQuickOpenService {
             };
             const items: QuickOpenItem[] = branches.map(branch => new GitQuickOpenItem(branch, switchBranch, toLabel, toDescription));
             const createBranchItem = (item: QuickOpenItem) => {
-                const thisGit = this.git;
+                const __this = this;
                 const createBranchModel: QuickOpenModel = {
                     onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
                         const dynamicItems: QuickOpenItem[] = [];
@@ -120,8 +154,12 @@ export class GitQuickOpenService {
                             dynamicItems.push(new CreateNewBranchOpenItem(
                                 `Create a new local branch with name: ${lookFor}. ${suffix}`,
                                 async () => {
-                                    await thisGit.branch(repository, { toCreate: lookFor });
-                                    await thisGit.checkout(repository, { branch: lookFor });
+                                    try {
+                                        await __this.git.branch(repository, { toCreate: lookFor });
+                                        await __this.git.checkout(repository, { branch: lookFor });
+                                    } catch (error) {
+                                        __this.logError(error);
+                                    }
                                 }
                             ));
                         }
@@ -161,7 +199,12 @@ export class GitQuickOpenService {
 
     private async getRemotes(): Promise<string[]> {
         const repository = this.getRepository();
-        return repository ? this.git.remote(repository) : [];
+        try {
+            return repository ? await this.git.remote(repository) : [];
+        } catch (error) {
+            this.logError(error);
+            return [];
+        }
     }
 
     private async getBranches(): Promise<Branch[]> {
@@ -169,11 +212,16 @@ export class GitQuickOpenService {
         if (!repository) {
             return [];
         }
-        const [local, remote] = await Promise.all([
-            this.git.branch(repository, { type: 'local' }),
-            this.git.branch(repository, { type: 'remote' })
-        ]);
-        return [...local, ...remote];
+        try {
+            const [local, remote] = await Promise.all([
+                this.git.branch(repository, { type: 'local' }),
+                this.git.branch(repository, { type: 'remote' })
+            ]);
+            return [...local, ...remote];
+        } catch (error) {
+            this.logError(error);
+            return [];
+        }
     }
 
     private async getCurrentBranch(): Promise<Branch | undefined> {
@@ -181,7 +229,18 @@ export class GitQuickOpenService {
         if (!repository) {
             return undefined;
         }
-        return await this.git.branch(repository, { type: 'current' });
+        try {
+            return await this.git.branch(repository, { type: 'current' });
+        } catch (error) {
+            this.logError(error);
+            return undefined;
+        }
+    }
+
+    // tslint:disable-next-line:no-any
+    private logError(error: any): void {
+        const message = error instanceof Error ? error.message : error;
+        this.messageService.error(message);
     }
 
 }
