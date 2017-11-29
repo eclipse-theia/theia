@@ -48,7 +48,7 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
             }
         }
     }));
-    return new Proxy({} as any, {
+    return new Proxy(configuration as any, {
         get: (_, p: string) => {
             if (p in configuration) {
                 const preference = preferences.get(p, configuration[p]);
