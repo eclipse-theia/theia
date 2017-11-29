@@ -1,3 +1,4 @@
+
 /*
  * Copyright (C) 2017 TypeFox and others.
  *
@@ -5,5 +6,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export * from './connection';
-export * from './ipc-connection-provider';
+import { MessageConnection } from "vscode-jsonrpc";
+
+export const THEIA_PARENT_PID = 'THEIA_PARENT_PID';
+export const THEIA_ENTRY_POINT = 'THEIA_ENTRY_POINT';
+
+export type IPCEntryPoint = (connection: MessageConnection) => void;

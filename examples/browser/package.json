@@ -32,7 +32,7 @@
     "build": "theia build",
     "watch": "yarn build --watch",
     "start": "theia start",
-    "start:debug": "yarn start --loglevel=debug",
+    "start:debug": "yarn start --logLevel=debug",
     "test": "wdio",
     "coverage:compile": "yarn build --config coverage-webpack.config.js",
     "coverage:remap": "remap-istanbul -i coverage/coverage.json -o coverage/coverage-final.json --exclude 'frontend/index.js' && rimraf coverage/coverage.json",

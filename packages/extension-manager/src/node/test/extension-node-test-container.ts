@@ -11,7 +11,9 @@ import { ILoggerServer } from "@theia/core/lib/common/logger-protocol";
 import { stubRemoteMasterProcessFactory } from "@theia/core/lib/node";
 import { bindServerProcess } from "@theia/core/lib/node/backend-application-module";
 import { bindLogger } from "@theia/core/lib/node/logger-backend-module";
-import { bindFileSystem, bindFileSystemWatcherServer } from "@theia/filesystem/lib/node/filesystem-backend-module";
+import { bindFileSystem } from "@theia/filesystem/lib/node/filesystem-backend-module";
+import { FileSystemWatcherServer } from "@theia/filesystem/lib/common/filesystem-watcher-protocol";
+import { ChokidarFileSystemWatcherServer } from "@theia/filesystem/lib/node/chokidar-watcher/chokidar-filesystem-watcher";
 import { ApplicationProjectArgs } from "../application-project-cli";
 import { bindNodeExtensionServer } from '../extension-backend-module';
 
@@ -22,7 +24,7 @@ export const extensionNodeTestContainer = (args: ApplicationProjectArgs) => {
     bindServerProcess(bind, stubRemoteMasterProcessFactory);
     container.rebind(ILoggerServer).to(ConsoleLoggerServer).inSingletonScope();
     bindFileSystem(bind);
-    bindFileSystemWatcherServer(bind);
+    bind(FileSystemWatcherServer).toConstantValue(new ChokidarFileSystemWatcherServer());
     bindNodeExtensionServer(bind, args);
     return container;
 };

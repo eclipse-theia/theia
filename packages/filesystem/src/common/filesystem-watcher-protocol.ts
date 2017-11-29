@@ -69,6 +69,7 @@ export class ReconnectingFileSystemWatcherServer implements FileSystemWatcherSer
         @inject(FileSystemWatcherServerProxy) protected readonly proxy: FileSystemWatcherServerProxy
     ) {
         const onInitialized = this.proxy.onDidOpenConnection(() => {
+            // skip reconnection on the first connection
             onInitialized.dispose();
             this.proxy.onDidOpenConnection(() => this.reconnect());
         });
