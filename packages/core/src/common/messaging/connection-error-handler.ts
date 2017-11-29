@@ -6,9 +6,11 @@
  */
 
 import { Message } from "vscode-jsonrpc";
+import { ILogger } from "../../common";
 
 export interface ResolvedConnectionErrorHandlerOptions {
     readonly serverName: string
+    readonly logger: ILogger
     /**
      * The maximum amout of errors allowed before stopping the server.
      */
@@ -25,6 +27,7 @@ export interface ResolvedConnectionErrorHandlerOptions {
 
 export type ConnectionErrorHandlerOptions = Partial<ResolvedConnectionErrorHandlerOptions> & {
     readonly serverName: string
+    readonly logger: ILogger
 };
 
 export class ConnectionErrorHandler {
@@ -44,18 +47,19 @@ export class ConnectionErrorHandler {
     }
 
     protected readonly restarts: number[] = [];
-    shouldRestart(): string | undefined {
+    shouldRestart(): boolean {
         this.restarts.push(Date.now());
-        if (this.restarts.length < this.options.maxRestarts) {
-            return undefined;
+        if (this.restarts.length <= this.options.maxRestarts) {
+            return true;
         }
         const diff = this.restarts[this.restarts.length - 1] - this.restarts[0];
         if (diff <= this.options.restartInterval * 60 * 1000) {
-            return `The ${this.options.serverName} server crashed ${this.options.maxRestarts} times in the last ${this.options.restartInterval} minutes.
-The server will not be restarted.`;
+            // tslint:disable-next-line:max-line-length
+            this.options.logger.error(`The ${this.options.serverName} server crashed ${this.options.maxRestarts} times in the last ${this.options.restartInterval} minutes. The server will not be restarted.`);
+            return false;
         }
         this.restarts.shift();
-        return undefined;
+        return true;
     }
 
 }

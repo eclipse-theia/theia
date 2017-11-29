@@ -10,7 +10,7 @@ import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/com
 import { FileSystemNode } from './node-filesystem';
 import { FileSystemWatcher, FileSystem, FileSystemClient, fileSystemPath, bindFileSystemPreferences } from "../common";
 import { FileSystemWatcherServer, FileSystemWatcherClient, fileSystemWatcherPath } from '../common/filesystem-watcher-protocol';
-import { HostFileSystemWatcherServer } from './host-filesystem-watcher';
+import { FileSystemWatcherServerClient } from './filesystem-watcher-client';
 
 export function bindFileSystem(bind: interfaces.Bind): void {
     bind(FileSystemNode).toSelf().inSingletonScope();
@@ -18,9 +18,9 @@ export function bindFileSystem(bind: interfaces.Bind): void {
 }
 
 export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
-    bind(HostFileSystemWatcherServer).toSelf();
+    bind(FileSystemWatcherServerClient).toSelf();
     bind(FileSystemWatcherServer).toDynamicValue(ctx =>
-        ctx.container.get(HostFileSystemWatcherServer)
+        ctx.container.get(FileSystemWatcherServerClient)
     );
 }
 
