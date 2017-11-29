@@ -29,6 +29,7 @@
     align-items: center;
     user-select: none;
     height: var(--theia-private-horizontal-tab-height);
+    white-space: nowrap;
 }
 
 .theia-ExpansionToggle.theia-mod-collapsed {
