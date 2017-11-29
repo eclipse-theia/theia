@@ -6,4 +6,4 @@
  */
 
 export * from './git';
-export * from './model';
+export * from './git-model';

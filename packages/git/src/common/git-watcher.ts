@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import { JsonRpcServer, JsonRpcProxy } from '@theia/core';
-import { Repository, WorkingDirectoryStatus } from './model';
+import { Repository, WorkingDirectoryStatus } from './git-model';
 import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 
 /**
