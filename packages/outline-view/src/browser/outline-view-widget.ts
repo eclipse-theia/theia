@@ -102,7 +102,7 @@ export class OutlineViewWidget extends TreeWidget {
         return super.decorateCaption(node, newCaption, props);
     }
 
-    protected isExandable(node: ITreeNode): node is IExpandableTreeNode {
+    protected isExpandable(node: ITreeNode): node is IExpandableTreeNode {
         return OutlineSymbolInformationNode.is(node) && node.children.length > 0;
     }
 
