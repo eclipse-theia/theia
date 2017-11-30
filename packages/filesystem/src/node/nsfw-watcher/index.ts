@@ -8,7 +8,7 @@
 import * as yargs from 'yargs';
 import { JsonRpcProxyFactory } from '@theia/core';
 import { FileSystemWatcherClient } from '../../common/filesystem-watcher-protocol';
-import { ChokidarFileSystemWatcherServer } from './chokidar-filesystem-watcher';
+import { NsfwFileSystemWatcherServer } from './nsfw-filesystem-watcher';
 import { IPCEntryPoint } from '@theia/core/lib/node/messaging/ipc-protocol';
 
 // tslint:disable:no-console
@@ -23,7 +23,7 @@ const options: {
 }).argv as any;
 
 export default <IPCEntryPoint>(connection => {
-    const server = new ChokidarFileSystemWatcherServer(options);
+    const server = new NsfwFileSystemWatcherServer(options);
     const factory = new JsonRpcProxyFactory<FileSystemWatcherClient>(server);
     server.setClient(factory.createProxy());
     factory.listen(connection);
