@@ -90,18 +90,16 @@ export class FileSystemWatcher implements Disposable {
     }
 
     /**
-      * Emit when files under watched uris are changed.
-      */
+     * Emit when files under watched uris are changed.
+     */
     get onFilesChanged(): Event<FileChange[]> {
         return this.onFileChangedEmitter.event;
     }
 
     protected createWatchOptions(): Promise<WatchOptions> {
-        return this.getIgnored().then(ignored => {
-            return {
-                ignored
-            };
-        });
+        return this.getIgnored().then(ignored => ({
+            ignored
+        }));
     }
 
     protected getIgnored(): Promise<string[]> {

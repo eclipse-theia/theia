@@ -11,7 +11,7 @@ import { JsonRpcProxyFactory, ILogger, ConnectionErrorHandler, DisposableCollect
 import { IPCConnectionProvider } from "@theia/core/lib/node/messaging";
 import { FileSystemWatcherServer, WatchOptions, FileSystemWatcherClient, ReconnectingFileSystemWatcherServer } from "../common/filesystem-watcher-protocol";
 
-export const CHOKIDAR_WATCHER = 'chokidar-watcher';
+export const NSFW_WATCHER = 'nsfw-watcher';
 
 @injectable()
 export class FileSystemWatcherServerClient implements FileSystemWatcherServer {
@@ -55,10 +55,10 @@ export class FileSystemWatcherServerClient implements FileSystemWatcherServer {
 
     protected listen(): Disposable {
         return this.ipcConnectionProvider.listen({
-            serverName: CHOKIDAR_WATCHER,
-            entryPoint: path.resolve(__dirname, CHOKIDAR_WATCHER),
+            serverName: NSFW_WATCHER,
+            entryPoint: path.resolve(__dirname, NSFW_WATCHER),
             errorHandler: new ConnectionErrorHandler({
-                serverName: CHOKIDAR_WATCHER,
+                serverName: NSFW_WATCHER,
                 logger: this.logger
             })
         }, connection => this.proxyFactory.listen(connection));

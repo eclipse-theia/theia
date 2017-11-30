@@ -5,12 +5,11 @@
   "dependencies": {
     "@theia/core": "^0.2.3",
     "@theia/preferences-api": "^0.2.3",
-    "@types/chokidar": "^1.7.0",
     "@types/fs-extra": "^4.0.2",
     "@types/touch": "0.0.1",
-    "chokidar": "^1.7.0",
     "fs-extra": "^4.0.2",
     "mv": "^2.1.1",
+    "nsfw": "^1.0.16",
     "touch": "^3.1.0",
     "trash": "^4.0.1"
   },
@@ -45,6 +44,7 @@
     "build": "theiaext build",
     "watch": "theiaext watch",
     "test": "theiaext test",
+    "test:watch": "theiaext test:watch",
     "docs": "theiaext docs"
   },
   "devDependencies": {

@@ -16,6 +16,7 @@ export interface ResolvedIPCConnectionOptions {
     readonly serverName: string
     readonly entryPoint: string
     readonly logger: ILogger
+    readonly args: string[]
     readonly debug?: number
     readonly debugBrk?: number
     readonly errorHandler?: ConnectionErrorHandler
@@ -34,6 +35,7 @@ export class IPCConnectionProvider {
     listen(options: IPCConnectionOptions, acceptor: (connection: MessageConnection) => void): Disposable {
         return this.doListen({
             logger: this.logger,
+            args: [],
             ...options
         }, acceptor);
     }
@@ -95,7 +97,7 @@ export class IPCConnectionProvider {
         if (typeof options.debugBrk === 'number') {
             forkOptions.execArgv = ['--nolazy', '--inspect-brk=' + options.debugBrk];
         }
-        const childProcess = cp.fork(path.resolve(__dirname, 'ipc-bootstrap.js'), [], forkOptions);
+        const childProcess = cp.fork(path.resolve(__dirname, 'ipc-bootstrap.js'), options.args, forkOptions);
         childProcess.stdout.on('data', data => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${data.toString()}`));
         childProcess.stderr.on('data', data => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${data.toString()}`));
 
