@@ -35,7 +35,7 @@ export class CppKeybindingContribution implements KeybindingContribution {
         [
             {
                 commandId: 'switch_source_header',
-                context: this.cppKeybindingContext,
+                contextId: this.cppKeybindingContext.id,
                 keyCode: KeyCode.createKeyCode({ first: Key.KEY_O, modifiers: [Modifier.M3] })
             }
         ].forEach(binding => {
