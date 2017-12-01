@@ -9,7 +9,6 @@ import { Disposable } from "vscode-jsonrpc";
 
 export interface GitLocateOptions {
     readonly maxCount?: number;
-    readonly maxDepth: number;
 }
 
 export const GitLocator = Symbol('GitLocator');

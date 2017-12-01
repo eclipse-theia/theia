@@ -9,8 +9,7 @@
     "@theia/preferences-api": "^0.2.3",
     "@theia/workspace": "^0.2.3",
     "dugite-extra": "0.0.1-alpha.15",
-    "findit2": "^2.2.3",
-    "ignore": "^3.3.7"
+    "find-git-repositories": "^0.1.0"
   },
   "publishConfig": {
     "access": "public"

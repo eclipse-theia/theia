@@ -10,22 +10,14 @@ import { createPreferenceProxy, PreferenceProxy, PreferenceService } from '@thei
 import { PreferenceSchema } from '@theia/preferences-api/lib/common/';
 
 export interface GitConfiguration {
-    'git.locateMaxDepth': number
 }
 
 const DefaultGitConfiguration: GitConfiguration = {
-    "git.locateMaxDepth": 4
 };
 
 export const GitPreferenceSchema: PreferenceSchema = {
     'type': 'object',
-    'properties': {
-        "git.locateMaxDepth": {
-            "type": "number",
-            "default": 4,
-            "description": "Configure the max depth of the git repository look up"
-        }
-    }
+    'properties': {}
 };
 
 export const GitPreferences = Symbol('GitPreferences');

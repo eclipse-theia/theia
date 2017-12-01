@@ -141,11 +141,6 @@ export namespace Git {
              */
             readonly maxCount?: number;
 
-            /**
-             * The max depth of repositories look up.
-             */
-            readonly maxDepth: number;
-
         }
 
         /**
