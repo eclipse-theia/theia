@@ -69,7 +69,6 @@ export class DugiteGit implements Git {
             return repositories;
         }
         for (const repositoryPath of await this.locator.locate(workspaceRootPath, {
-            ...options,
             maxCount
         })) {
             if (containingPath !== repositoryPath) {

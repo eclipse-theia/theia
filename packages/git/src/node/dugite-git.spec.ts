@@ -47,7 +47,7 @@ describe('git', async function () {
             const git = await createGit();
             const workspace = await createWorkspace(root);
             const workspaceRootUri = await workspace.getRoot();
-            const repositories = await git.repositories(workspaceRootUri!, { maxDepth: 1, maxCount: 1 });
+            const repositories = await git.repositories(workspaceRootUri!, { maxCount: 1 });
             expect(repositories.length).to.deep.equal(1);
 
         });
@@ -64,7 +64,7 @@ describe('git', async function () {
             const git = await createGit();
             const workspace = await createWorkspace(root);
             const workspaceRootUri = await workspace.getRoot();
-            const repositories = await git.repositories(workspaceRootUri!, { maxDepth: 1 });
+            const repositories = await git.repositories(workspaceRootUri!, {});
             expect(repositories.map(r => path.basename(FileUri.fsPath(r.localUri))).sort()).to.deep.equal(['A', 'B', 'C']);
 
         });
@@ -83,7 +83,7 @@ describe('git', async function () {
             const git = await createGit();
             const workspace = await createWorkspace(path.join(root, 'BASE'));
             const workspaceRootUri = await workspace.getRoot();
-            const repositories = await git.repositories(workspaceRootUri!, { maxDepth: 2 });
+            const repositories = await git.repositories(workspaceRootUri!, {});
             expect(repositories.map(r => path.basename(FileUri.fsPath(r.localUri))).sort()).to.deep.equal(['A', 'B', 'BASE', 'C']);
 
         });
@@ -103,7 +103,7 @@ describe('git', async function () {
             const git = await createGit();
             const workspace = await createWorkspace(path.join(root, 'BASE', 'WS_ROOT'));
             const workspaceRootUri = await workspace.getRoot();
-            const repositories = await git.repositories(workspaceRootUri!, { maxDepth: 2 });
+            const repositories = await git.repositories(workspaceRootUri!, {});
             const repositoryNames = repositories.map(r => path.basename(FileUri.fsPath(r.localUri)));
             expect(repositoryNames.shift()).to.equal('BASE'); // The first must be the container repository.
             expect(repositoryNames.sort()).to.deep.equal(['A', 'B', 'C']);

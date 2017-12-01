@@ -71,8 +71,7 @@ export class GitRepositoryProvider {
             return;
         }
         const repositories = await this.git.repositories(root.uri, {
-            ...options,
-            maxDepth: this.preferences['git.locateMaxDepth']
+            ...options
         });
         this._allRepositories = repositories;
         const selectedRepository = this._selectedRepository;
