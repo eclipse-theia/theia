@@ -64,8 +64,8 @@ export class DugiteGit implements Git {
                 localUri: this.getUri(containingPath)
             });
         }
-        const maxCount = options.maxCount ? options.maxCount - repositories.length : undefined;
-        if (!!maxCount && maxCount <= 0) {
+        const maxCount = typeof options.maxCount === 'number' ? options.maxCount - repositories.length : undefined;
+        if (typeof maxCount === 'number' && maxCount <= 0) {
             return repositories;
         }
         for (const repositoryPath of await this.locator.locate(workspaceRootPath, {
