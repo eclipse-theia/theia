@@ -20,8 +20,6 @@ import { bindGit } from './git-backend-module';
 import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
 import { ILoggerServer } from '@theia/core/lib/common/logger-protocol';
 import { ConsoleLoggerServer } from '@theia/core/lib/common/console-logger-server';
-import { GitLocatorImpl } from './git-locator/git-locator-impl';
-import { GitLocator } from './git-locator/git-locator-protocol';
 
 const track = temp.track();
 
@@ -297,7 +295,6 @@ async function createGit(fsRoot: string = ''): Promise<DugiteGit> {
     bindLogger(bind);
     container.rebind(ILoggerServer).to(ConsoleLoggerServer).inSingletonScope();
     bindGit(bind);
-    container.rebind(GitLocator).toConstantValue(new GitLocatorImpl());
     return container.get(DugiteGit);
 }
 

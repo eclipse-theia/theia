@@ -5,16 +5,18 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import * as cluster from 'cluster';
 import { ContainerModule, Container, interfaces } from 'inversify';
 import { Git, GitPath } from '../common/git';
 import { GitWatcherPath, GitWatcherClient, GitWatcherServer } from '../common/git-watcher';
 import { DugiteGit } from './dugite-git';
 import { DugiteGitWatcherServer } from './dugite-git-watcher';
-import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common";
+import { ConnectionHandler, JsonRpcConnectionHandler, ILogger } from "@theia/core/lib/common";
 import { GitRepositoryManager } from './git-repository-manager';
 import { GitRepositoryWatcherFactory, GitRepositoryWatcherOptions, GitRepositoryWatcher } from './git-repository-watcher';
 import { GitLocator } from './git-locator/git-locator-protocol';
 import { GitLocatorClient } from './git-locator/git-locator-client';
+import { GitLocatorImpl } from './git-locator/git-locator-impl';
 
 export function bindGit(bind: interfaces.Bind): void {
     bind(GitRepositoryManager).toSelf().inSingletonScope();
@@ -25,7 +27,17 @@ export function bindGit(bind: interfaces.Bind): void {
         child.bind(GitRepositoryWatcherOptions).toConstantValue(options);
         return child.get(GitRepositoryWatcher);
     });
-    bind(GitLocator).to(GitLocatorClient);
+    if (cluster.isMaster) {
+        bind(GitLocator).toDynamicValue(ctx => {
+            const logger = ctx.container.get<ILogger>(ILogger);
+            return new GitLocatorImpl({
+                info: (message, ...args) => logger.info(message, ...args),
+                error: (message, ...args) => logger.error(message, ...args)
+            });
+        });
+    } else {
+        bind(GitLocator).to(GitLocatorClient);
+    }
     bind(DugiteGit).toSelf();
     bind(Git).toDynamicValue(ctx => ctx.container.get(DugiteGit));
 }
