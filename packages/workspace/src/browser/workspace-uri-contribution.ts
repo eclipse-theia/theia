@@ -49,6 +49,9 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
     }
 
     async getIcon(element: URI | FileStat): Promise<string> {
+        if (FileStat.is(element) && element.isDirectory) {
+            return 'fa fa-folder';
+        }
         const uri = this.getUri(element);
         const icon = super.getFileIcon(uri);
         if (!icon) {
