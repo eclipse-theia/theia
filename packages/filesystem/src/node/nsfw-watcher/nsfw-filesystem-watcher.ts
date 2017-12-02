@@ -20,7 +20,6 @@ import {
 } from '../../common/filesystem-watcher-protocol';
 import { setInterval, clearInterval } from "timers";
 
-// tslint:disable:no-console
 // tslint:disable:no-any
 
 export interface WatcherOptions {
@@ -41,9 +40,24 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
     protected readonly fireDidFilesChangedTimeout = 50;
     protected readonly toDisposeOnFileChange = new DisposableCollection();
 
-    constructor(protected readonly options: {
+    protected readonly options: {
         verbose: boolean
-    } = { verbose: false }) { }
+        info: (message: string, ...args: any[]) => void
+        error: (message: string, ...args: any[]) => void
+    };
+
+    constructor(options?: {
+        verbose?: boolean,
+        info?: (message: string, ...args: any[]) => void
+        error?: (message: string, ...args: any[]) => void
+    }) {
+        this.options = {
+            verbose: false,
+            info: (message, ...args) => console.info(message, ...args),
+            error: (message, ...args) => console.error(message, ...args),
+            ...options
+        };
+    }
 
     dispose(): void {
         this.toDispose.dispose();
@@ -100,13 +114,13 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
             }
         });
         await watcher.start();
-        console.info('Started watching:', basePath);
+        this.options.info('Started watching:', basePath);
         const disposable = Disposable.create(() => {
             this.watcherOptions.delete(watcherId);
             this.watchers.delete(watcherId);
             this.debug('Stopping watching:', basePath);
             watcher.stop();
-            console.info('Stopped watching.');
+            this.options.info('Stopped watching.');
         });
         this.watcherOptions.set(watcherId, {
             ignored: options.ignored.map(pattern => new Minimatch(pattern))
@@ -170,9 +184,9 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
         return !!options && options.ignored.length > 0 && options.ignored.some(m => m.match(path));
     }
 
-    protected debug(...params: any[]): void {
+    protected debug(message: string, ...params: any[]): void {
         if (this.options.verbose) {
-            console.log(...params);
+            this.options.info(message, ...params);
         }
     }
 

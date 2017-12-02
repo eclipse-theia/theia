@@ -5,12 +5,14 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import * as cluster from 'cluster';
 import { ContainerModule, interfaces } from "inversify";
-import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common";
+import { ConnectionHandler, JsonRpcConnectionHandler, ILogger } from "@theia/core/lib/common";
 import { FileSystemNode } from './node-filesystem';
 import { FileSystemWatcher, FileSystem, FileSystemClient, fileSystemPath, bindFileSystemPreferences } from "../common";
 import { FileSystemWatcherServer, FileSystemWatcherClient, fileSystemWatcherPath } from '../common/filesystem-watcher-protocol';
 import { FileSystemWatcherServerClient } from './filesystem-watcher-client';
+import { NsfwFileSystemWatcherServer } from './nsfw-watcher/nsfw-filesystem-watcher';
 
 export function bindFileSystem(bind: interfaces.Bind): void {
     bind(FileSystemNode).toSelf().inSingletonScope();
@@ -18,10 +20,20 @@ export function bindFileSystem(bind: interfaces.Bind): void {
 }
 
 export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
-    bind(FileSystemWatcherServerClient).toSelf();
-    bind(FileSystemWatcherServer).toDynamicValue(ctx =>
-        ctx.container.get(FileSystemWatcherServerClient)
-    );
+    if (cluster.isMaster) {
+        bind(FileSystemWatcherServer).toDynamicValue(ctx => {
+            const logger = ctx.container.get<ILogger>(ILogger);
+            return new NsfwFileSystemWatcherServer({
+                info: (message, ...args) => logger.info(message, ...args),
+                error: (message, ...args) => logger.error(message, ...args)
+            });
+        });
+    } else {
+        bind(FileSystemWatcherServerClient).toSelf();
+        bind(FileSystemWatcherServer).toDynamicValue(ctx =>
+            ctx.container.get(FileSystemWatcherServerClient)
+        );
+    }
 }
 
 export default new ContainerModule(bind => {

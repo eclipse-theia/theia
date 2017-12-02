@@ -19,6 +19,22 @@ export interface GitLocateContext {
 
 export class GitLocatorImpl implements GitLocator {
 
+    protected readonly options: {
+        info: (message: string, ...args: any[]) => void
+        error: (message: string, ...args: any[]) => void
+    };
+
+    constructor(options?: {
+        info?: (message: string, ...args: any[]) => void
+        error?: (message: string, ...args: any[]) => void
+    }) {
+        this.options = {
+            info: (message, ...args) => console.info(message, ...args),
+            error: (message, ...args) => console.error(message, ...args),
+            ...options
+        };
+    }
+
     dispose(): void {
     }
 
@@ -69,7 +85,7 @@ export class GitLocatorImpl implements GitLocator {
         return new Promise<string[]>(resolve => {
             fs.readdir(repositoryPath, async (err, files) => {
                 if (err) {
-                    console.error(err);
+                    this.options.error(err.message, err);
                     resolve([]);
                 } else {
                     resolve(this.locateFrom(
