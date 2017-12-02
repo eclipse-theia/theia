@@ -57,6 +57,8 @@ export class FileSystemWatcherServerClient implements FileSystemWatcherServer {
         return this.ipcConnectionProvider.listen({
             serverName: NSFW_WATCHER,
             entryPoint: path.resolve(__dirname, NSFW_WATCHER),
+            debug: Number(process.env['FS_WATCH_DEBUG']),
+            debugBrk: Number(process.env['FS_WATCH_DEBUG_BRK']),
             errorHandler: new ConnectionErrorHandler({
                 serverName: NSFW_WATCHER,
                 logger: this.logger

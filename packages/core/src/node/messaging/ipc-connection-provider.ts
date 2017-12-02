@@ -91,10 +91,10 @@ export class IPCConnectionProvider {
         };
         forkOptions.env[THEIA_PARENT_PID] = String(process.pid);
         forkOptions.env[THEIA_ENTRY_POINT] = options.entryPoint;
-        if (typeof options.debug === 'number') {
+        if (typeof options.debug === 'number' && !isNaN(options.debug)) {
             forkOptions.execArgv = ['--nolazy', '--inspect=' + options.debug];
         }
-        if (typeof options.debugBrk === 'number') {
+        if (typeof options.debugBrk === 'number' && !isNaN(options.debugBrk)) {
             forkOptions.execArgv = ['--nolazy', '--inspect-brk=' + options.debugBrk];
         }
         const childProcess = cp.fork(path.resolve(__dirname, 'ipc-bootstrap.js'), options.args, forkOptions);
