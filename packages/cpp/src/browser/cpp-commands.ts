@@ -14,6 +14,7 @@ import { CppClientContribution } from "./cpp-client-contribution";
 import { SwitchSourceHeaderRequest } from "./cpp-protocol";
 import { TextDocumentIdentifier } from "@theia/languages/lib/common";
 import { EditorManager } from "@theia/editor/lib/browser";
+import { HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
 
 /**
  * Switch between source/header file
@@ -40,8 +41,13 @@ export class CppCommandContribution implements CommandContribution {
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(SWITCH_SOURCE_HEADER, {
-            isEnabled: () => (this.editorService && !!this.editorService.activeEditor &&
-                (this.editorService.activeEditor.editor.document.uri.endsWith(".cpp") || this.editorService.activeEditor.editor.document.uri.endsWith(".h"))),
+            isEnabled: () => {
+                if (this.editorService && !!this.editorService.activeEditor) {
+                    const uri = this.editorService.activeEditor.editor.document.uri;
+                    return HEADER_AND_SOURCE_FILE_EXTENSIONS.some(value => uri.endsWith("." + value));
+                }
+                return false;
+            },
             execute: () => {
                 this.switchSourceHeader();
             }
