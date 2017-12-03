@@ -7,7 +7,7 @@
 
 import { injectable } from "inversify";
 import { BaseLanguageClientContribution } from '@theia/languages/lib/browser';
-import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME } from '../common';
+import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME, HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
 
 @injectable()
 export class CppClientContribution extends BaseLanguageClientContribution {
@@ -16,14 +16,12 @@ export class CppClientContribution extends BaseLanguageClientContribution {
     readonly name = CPP_LANGUAGE_NAME;
 
     protected get documentSelector() {
-        return [
-            'h', 'hxx', 'hh', 'hpp', 'inc', 'c', 'cxx', 'C', 'c++', 'cc', 'cc', 'cpp'
-        ];
+        return HEADER_AND_SOURCE_FILE_EXTENSIONS;
     }
 
     protected get globPatterns() {
         return [
-            '**/*.h', '**/*.hxx', '**/*.hh', '**/*.hpp', '**/*.inc', '**/*.c', '**/*.cxx', '**/*.C', '**/*.c++', '**/*.cc', '**/*.cc', '**/*.cpp'
+            '**/*.{' + HEADER_AND_SOURCE_FILE_EXTENSIONS.join() + '}'
         ];
     }
 
