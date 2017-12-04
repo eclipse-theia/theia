@@ -73,7 +73,7 @@ export const editorPreferenceSchema: PreferenceSchema = {
         },
         "editor.minimap.enabled": {
             "type": "boolean",
-            "default": true,
+            "default": false,
             "description": "Enable or disable the minimap"
         },
         "editor.minimap.showSlider": {
@@ -228,23 +228,12 @@ export const editorPreferenceSchema: PreferenceSchema = {
         },
         "editor.emptySelectionClipboard": {
             "type": "boolean",
-            "default": true,
             "description": "Copying without a selection copies the current line."
         },
         "editor.wordBasedSuggestions": {
             "type": "boolean",
             "default": true,
             "description": "Enable word based suggestions. Defaults to 'true'"
-        },
-        "editor.suggestFontSize": {
-            "type": "number",
-            "default": 13,
-            "description": "The font size for the suggest widget."
-        },
-        "editor.suggestLineHeight": {
-            "type": "number",
-            "default": 1.5,
-            "description": "The line height for the suggest widget."
         },
         "editor.selectionHighlight": {
             "type": "boolean",
@@ -293,160 +282,74 @@ export const editorPreferenceSchema: PreferenceSchema = {
         },
         "editor.useTabStops": {
             "type": "boolean",
-            "default": true,
             "description": "Inserting and deleting whitespace follows tab stops."
-        },
-        "editor.fontFamily": {
-            "type": "string",
-            "default": "'Helvetica Neue', Helvetica, Arial, sans-serif",
-            "description": "The font family"
-        },
-        "editor.fontWeight": {
-            "enum": ['normal', 'bold', 'bolder', 'lighter', 'initial', 'inherit', '100', '200', '300', '400', '500', '600', '700', '800', '900'],
-            "default": "normal",
-            "description": "The font weight"
-        },
-        "editor.fontSize": {
-            "type": "number",
-            "default": 13,
-            "description": "The font size"
-        },
-        "editor.lineHeight": {
-            "type": "number",
-            "default": 0,
-            "description": "The line height"
-        },
-        "editor.letterSpacing": {
-            "type": "number",
-            "default": 0,
-            "description": "The letter spacing"
         }
     }
 };
 
 export interface EditorConfiguration {
     'editor.tabSize': number
-    'editor.lineNumbers': 'on' | 'off'
-    'editor.renderWhitespace': 'none' | 'boundary' | 'all'
     'editor.autoSave': 'on' | 'off'
     'editor.autoSaveDelay': number
-    'editor.rulers': number[]
-    'editor.wordSeparators': string
-    'editor.glyphMargin': boolean
-    'editor.roundedSelection': boolean
-    'editor.minimap.enabled': boolean,
-    'editor.minimap.showSlider': string,
-    'editor.minimap.renderCharacters': boolean,
-    'editor.minimap.maxColumn': number,
-    'editor.overviewRulerLanes': number
-    'editor.overviewRulerBorder': boolean
-    'editor.cursorBlinking': string
-    'editor.mouseWheelZoom': boolean
-    'editor.cursorStyle': string
-    'editor.fontLigatures': boolean
-    'editor.hideCursorInOverviewRuler': boolean
-    'editor.scrollBeyondLastLine': boolean
-    'editor.wordWrap': 'off' | 'on' | 'wordWrapColumn' | 'bounded'
-    'editor.wordWrapColumn': number
-    'editor.wrappingIndent': string
-    'editor.links': boolean
-    'editor.mouseWheelScrollSensitivity': number
-    'editor.multiCursorModifier': 'ctrlCmd' | 'alt'
-    'editor.accessibilitySupport': 'auto' | 'off' | 'on'
-    'editor.quickSuggestions': boolean
-    'editor.quickSuggestionsDelay': number
-    'editor.parameterHints': boolean
-    'editor.autoClosingBrackets': boolean
-    'editor.autoIndent': boolean
-    'editor.formatOnType': boolean
-    'editor.formatOnPaste': boolean
-    'editor.dragAndDrop': boolean
-    'editor.suggestOnTriggerCharacters': boolean
-    'editor.acceptSuggestionOnEnter': 'on' | 'smart' | 'off'
-    'editor.acceptSuggestionOnCommitCharacter': boolean
-    'editor.snippetSuggestions': 'top' | 'bottom' | 'inline' | 'none'
-    'editor.emptySelectionClipboard': boolean
-    'editor.wordBasedSuggestions': boolean
-    'editor.suggestFontSize': number
-    'editor.suggestLineHeight': number
-    'editor.selectionHighlight': boolean
-    'editor.occurrencesHighlight': boolean
-    'editor.codeLens': boolean
-    'editor.folding': boolean
-    'editor.showFoldingControls': 'always' | 'mouseover'
-    'editor.matchBrackets': boolean
-    'editor.renderControlCharacters': boolean
-    'editor.renderIndentGuides': boolean
-    'editor.renderLineHighlight': 'none' | 'gutter' | 'line' | 'all'
-    'editor.useTabStops': boolean
-    'editor.fontFamily': string
-    'editor.fontWeight': 'normal' | 'bold' | 'bolder' | 'lighter' | 'initial' | 'inherit' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900'
-    'editor.fontSize': number
-    'editor.lineHeight': number
-    'editor.letterSpacing': number
+    'editor.lineNumbers'?: 'on' | 'off'
+    'editor.renderWhitespace'?: 'none' | 'boundary' | 'all'
+    'editor.rulers'?: number[]
+    'editor.wordSeparators'?: string
+    'editor.glyphMargin'?: boolean
+    'editor.roundedSelection'?: boolean
+    'editor.minimap.enabled'?: boolean,
+    'editor.minimap.showSlider'?: string,
+    'editor.minimap.renderCharacters'?: boolean,
+    'editor.minimap.maxColumn'?: number,
+    'editor.overviewRulerLanes'?: number
+    'editor.overviewRulerBorder'?: boolean
+    'editor.cursorBlinking'?: string
+    'editor.mouseWheelZoom'?: boolean
+    'editor.cursorStyle'?: string
+    'editor.fontLigatures'?: boolean
+    'editor.hideCursorInOverviewRuler'?: boolean
+    'editor.scrollBeyondLastLine'?: boolean
+    'editor.wordWrap'?: 'off' | 'on' | 'wordWrapColumn' | 'bounded'
+    'editor.wordWrapColumn'?: number
+    'editor.wrappingIndent'?: string
+    'editor.links'?: boolean
+    'editor.mouseWheelScrollSensitivity'?: number
+    'editor.multiCursorModifier'?: 'ctrlCmd' | 'alt'
+    'editor.accessibilitySupport'?: 'auto' | 'off' | 'on'
+    'editor.quickSuggestions'?: boolean
+    'editor.quickSuggestionsDelay'?: number
+    'editor.parameterHints'?: boolean
+    'editor.autoClosingBrackets'?: boolean
+    'editor.autoIndent'?: boolean
+    'editor.formatOnType'?: boolean
+    'editor.formatOnPaste'?: boolean
+    'editor.dragAndDrop'?: boolean
+    'editor.suggestOnTriggerCharacters'?: boolean
+    'editor.acceptSuggestionOnEnter'?: 'on' | 'smart' | 'off'
+    'editor.acceptSuggestionOnCommitCharacter'?: boolean
+    'editor.snippetSuggestions'?: 'top' | 'bottom' | 'inline' | 'none'
+    'editor.emptySelectionClipboard'?: boolean
+    'editor.wordBasedSuggestions'?: boolean
+    'editor.selectionHighlight'?: boolean
+    'editor.occurrencesHighlight'?: boolean
+    'editor.codeLens'?: boolean
+    'editor.folding'?: boolean
+    'editor.showFoldingControls'?: 'always' | 'mouseover'
+    'editor.matchBrackets'?: boolean
+    'editor.renderControlCharacters'?: boolean
+    'editor.renderIndentGuides'?: boolean
+    'editor.renderLineHighlight'?: 'none' | 'gutter' | 'line' | 'all'
+    'editor.useTabStops'?: boolean
 }
 export type EditorPreferenceChange = PreferenceChangeEvent<EditorConfiguration>;
 
 export const defaultEditorConfiguration: EditorConfiguration = {
-    'editor.tabSize': 4,
-    'editor.lineNumbers': 'on',
-    'editor.renderWhitespace': 'none',
     'editor.autoSave': 'on',
     'editor.autoSaveDelay': 500,
-    'editor.rulers': [],
-    'editor.wordSeparators': '`~!@#$%^&*()-=+[{]}\|;:\'",.<>/',
-    'editor.glyphMargin': true,
-    'editor.roundedSelection': true,
+    'editor.tabSize': 4,
     'editor.minimap.enabled': false,
-    'editor.minimap.showSlider': 'mouseover',
-    'editor.minimap.renderCharacters': true,
-    'editor.minimap.maxColumn': 120,
-    'editor.overviewRulerLanes': 2,
-    'editor.overviewRulerBorder': true,
-    'editor.cursorBlinking': 'blink',
-    'editor.mouseWheelZoom': false,
-    'editor.cursorStyle': 'line',
-    'editor.fontLigatures': false,
-    'editor.hideCursorInOverviewRuler': false,
-    'editor.scrollBeyondLastLine': true,
-    'editor.wordWrap': 'off',
-    'editor.wordWrapColumn': 80,
-    'editor.wrappingIndent': 'same',
-    'editor.links': true,
-    'editor.mouseWheelScrollSensitivity': 1,
-    'editor.multiCursorModifier': 'alt',
-    'editor.accessibilitySupport': 'auto',
-    'editor.quickSuggestions': true,
-    'editor.quickSuggestionsDelay': 500,
-    'editor.parameterHints': true,
-    'editor.autoClosingBrackets': true,
-    'editor.autoIndent': false,
-    'editor.formatOnType': false,
-    'editor.formatOnPaste': false,
-    'editor.dragAndDrop': false,
-    'editor.suggestOnTriggerCharacters': true,
-    'editor.acceptSuggestionOnEnter': 'on',
-    'editor.acceptSuggestionOnCommitCharacter': true,
-    'editor.snippetSuggestions': 'inline',
-    'editor.emptySelectionClipboard': true,
-    'editor.wordBasedSuggestions': true,
-    'editor.suggestFontSize': 12,
-    'editor.suggestLineHeight': 1.5,
-    'editor.selectionHighlight': true,
-    'editor.occurrencesHighlight': true,
-    'editor.codeLens': true,
-    'editor.folding': true,
-    'editor.showFoldingControls': 'mouseover',
-    'editor.matchBrackets': true,
-    'editor.renderControlCharacters': false,
-    'editor.renderIndentGuides': false,
-    'editor.renderLineHighlight': 'all',
-    'editor.useTabStops': true,
-    'editor.fontFamily': "Menlo, Monaco, 'Courier New', monospace",
-    'editor.fontWeight': 'normal',
-    'editor.fontSize': 12,
-    'editor.lineHeight': 0,
-    'editor.letterSpacing': 0,
+    'editor.glyphMargin': true,
+    'editor.wrappingIndent': 'same'
 };
 
 export const EditorPreferences = Symbol('EditorPreferences');
