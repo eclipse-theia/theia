@@ -17,8 +17,6 @@ export interface ResolvedIPCConnectionOptions {
     readonly entryPoint: string
     readonly logger: ILogger
     readonly args: string[]
-    readonly debug?: number
-    readonly debugBrk?: number
     readonly errorHandler?: ConnectionErrorHandler
 }
 export type IPCConnectionOptions = Partial<ResolvedIPCConnectionOptions> & {
@@ -84,18 +82,15 @@ export class IPCConnectionProvider {
     protected fork(options: ResolvedIPCConnectionOptions): cp.ChildProcess {
         const forkOptions: cp.ForkOptions = {
             silent: true,
-            env: createIpcEnv({
-                env: process.env,
-                entryPoint: options.entryPoint
-            }),
+            env: createIpcEnv(options),
             execArgv: []
         };
-        if (typeof options.debug === 'number' && !isNaN(options.debug)) {
-            forkOptions.execArgv = ['--nolazy', '--inspect=' + options.debug];
+        const inspectArgPrefix = `--${options.serverName}-inspect`;
+        const inspectArg = process.argv.find(v => v.startsWith(inspectArgPrefix));
+        if (inspectArg !== undefined) {
+            forkOptions.execArgv = ['--nolazy', `--inspect${inspectArg.substr(inspectArgPrefix.length)}`];
         }
-        if (typeof options.debugBrk === 'number' && !isNaN(options.debugBrk)) {
-            forkOptions.execArgv = ['--nolazy', '--inspect-brk=' + options.debugBrk];
-        }
+
         const childProcess = cp.fork(path.resolve(__dirname, 'ipc-bootstrap.js'), options.args, forkOptions);
         childProcess.stdout.on('data', data => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${data.toString()}`));
         childProcess.stderr.on('data', data => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${data.toString()}`));
