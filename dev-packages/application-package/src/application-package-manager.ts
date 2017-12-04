@@ -83,16 +83,14 @@ export class ApplicationPackageManager {
                 THEIA_PARENT_PID: String(process.pid)
             }
         };
-        const debug = Number(process.env['THEIA_DEBUG']);
-        if (typeof debug === 'number' && !isNaN(debug)) {
-            options.execArgv = ['--nolazy', '--inspect=' + debug];
-        }
-        const debugBrk = Number(process.env['THEIA_DEBUG_BRK']);
-        if (typeof debugBrk === 'number' && !isNaN(debugBrk)) {
-            options.execArgv = ['--nolazy', '--inspect-brk=' + debugBrk];
+        const mainArgs = [...args];
+        const inspectIndex = mainArgs.findIndex(v => v.startsWith('--inspect'));
+        if (inspectIndex !== -1) {
+            const inspectArg = mainArgs.splice(inspectIndex, 1)[0];
+            options.execArgv = ['--nolazy', inspectArg];
         }
         return this.__process.bunyan(
-            this.__process.fork(this.pck.backend('main.js'), args, options)
+            this.__process.fork(this.pck.backend('main.js'), mainArgs, options)
         );
     }
 
