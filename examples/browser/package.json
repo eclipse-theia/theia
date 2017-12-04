@@ -1,30 +1,30 @@
 {
   "private": true,
   "name": "@theia/example-browser",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "dependencies": {
-    "@theia/core": "^0.2.3",
-    "@theia/cpp": "^0.2.3",
-    "@theia/editor": "^0.2.3",
-    "@theia/extension-manager": "^0.2.3",
-    "@theia/file-search": "^0.2.3",
-    "@theia/filesystem": "^0.2.3",
-    "@theia/git": "^0.2.3",
-    "@theia/go": "^0.2.3",
-    "@theia/java": "^0.2.3",
-    "@theia/languages": "^0.2.3",
-    "@theia/markers": "^0.2.3",
-    "@theia/metrics": "^0.2.3",
-    "@theia/monaco": "^0.2.3",
-    "@theia/navigator": "^0.2.3",
-    "@theia/outline-view": "^0.2.3",
-    "@theia/preferences": "^0.2.3",
-    "@theia/process": "^0.2.3",
-    "@theia/python": "^0.2.3",
-    "@theia/terminal": "^0.2.3",
-    "@theia/typescript": "^0.2.3",
-    "@theia/userstorage": "^0.2.3",
-    "@theia/workspace": "^0.2.3"
+    "@theia/core": "^0.2.4",
+    "@theia/cpp": "^0.2.4",
+    "@theia/editor": "^0.2.4",
+    "@theia/extension-manager": "^0.2.4",
+    "@theia/file-search": "^0.2.4",
+    "@theia/filesystem": "^0.2.4",
+    "@theia/git": "^0.2.4",
+    "@theia/go": "^0.2.4",
+    "@theia/java": "^0.2.4",
+    "@theia/languages": "^0.2.4",
+    "@theia/markers": "^0.2.4",
+    "@theia/metrics": "^0.2.4",
+    "@theia/monaco": "^0.2.4",
+    "@theia/navigator": "^0.2.4",
+    "@theia/outline-view": "^0.2.4",
+    "@theia/preferences": "^0.2.4",
+    "@theia/process": "^0.2.4",
+    "@theia/python": "^0.2.4",
+    "@theia/terminal": "^0.2.4",
+    "@theia/typescript": "^0.2.4",
+    "@theia/userstorage": "^0.2.4",
+    "@theia/workspace": "^0.2.4"
   },
   "scripts": {
     "prepare": "yarn run clean && yarn build",
@@ -41,6 +41,6 @@
     "coverage": "yarn coverage:compile && yarn test && yarn coverage:remap && yarn coverage:report:lcov && yarn coverage:report:html"
   },
   "devDependencies": {
-    "@theia/cli": "^0.2.2"
+    "@theia/cli": "^0.2.4"
   }
 }

@@ -1,9 +1,9 @@
 {
   "name": "@theia/process",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Theia process support.",
   "dependencies": {
-    "@theia/core": "^0.2.3",
+    "@theia/core": "^0.2.4",
     "node-pty": "^0.7.0",
     "string-argv": "0.0.2"
   },
