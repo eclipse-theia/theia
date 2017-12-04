@@ -7,6 +7,7 @@
 // tslint:disable:no-console
 
 import * as cluster from 'cluster';
+import { createIpcEnv } from '../messaging/ipc-protocol';
 import { RemoteServer, createRemoteServer } from './cluster-protocol';
 
 export class ServerWorker {
@@ -26,7 +27,9 @@ export class ServerWorker {
         this.initialized = new Promise<void>(resolve => onDidInitialize = resolve);
 
         console.log('Starting server worker...');
-        this.worker = cluster.fork();
+        this.worker = cluster.fork(createIpcEnv({
+            env: process.env
+        }));
         this.server = createRemoteServer(this.worker, { onDidInitialize, restart });
 
         this.online = new Promise(resolve => this.worker.once('online', resolve));

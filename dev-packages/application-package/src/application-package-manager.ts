@@ -77,7 +77,11 @@ export class ApplicationPackageManager {
 
     async startBrowser(args: string[]): Promise<void> {
         const options: cp.ForkOptions = {
-            stdio: [0, 'pipe', 'pipe', 'ipc']
+            stdio: [0, 'pipe', 'pipe', 'ipc'],
+            env: {
+                ...process.env,
+                THEIA_PARENT_PID: String(process.pid)
+            }
         };
         const debug = Number(process.env['THEIA_DEBUG']);
         if (typeof debug === 'number' && !isNaN(debug)) {
