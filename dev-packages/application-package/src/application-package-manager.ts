@@ -6,6 +6,7 @@
  */
 
 import * as fs from 'fs-extra';
+import * as cp from 'child_process';
 import { ApplicationPackage, ApplicationPackageOptions } from "./application-package";
 import { WebpackGenerator, FrontendGenerator, BackendGenerator } from "./generator";
 import { ApplicationProcess } from './application-process';
@@ -75,10 +76,19 @@ export class ApplicationPackageManager {
     }
 
     async startBrowser(args: string[]): Promise<void> {
+        const options: cp.ForkOptions = {
+            stdio: [0, 'pipe', 'pipe', 'ipc']
+        };
+        const debug = Number(process.env['THEIA_DEBUG']);
+        if (typeof debug === 'number' && !isNaN(debug)) {
+            options.execArgv = ['--nolazy', '--inspect=' + debug];
+        }
+        const debugBrk = Number(process.env['THEIA_DEBUG_BRK']);
+        if (typeof debugBrk === 'number' && !isNaN(debugBrk)) {
+            options.execArgv = ['--nolazy', '--inspect-brk=' + debugBrk];
+        }
         return this.__process.bunyan(
-            this.__process.fork(this.pck.backend('main.js'), args, {
-                stdio: [0, 'pipe', 'pipe', 'ipc']
-            })
+            this.__process.fork(this.pck.backend('main.js'), args, options)
         );
     }
 
