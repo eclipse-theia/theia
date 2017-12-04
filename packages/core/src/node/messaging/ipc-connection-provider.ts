@@ -10,7 +10,7 @@ import * as cp from "child_process";
 import { injectable, inject } from "inversify";
 import { Trace, IPCMessageReader, IPCMessageWriter, createMessageConnection, MessageConnection, Message } from "vscode-jsonrpc";
 import { ILogger, ConnectionErrorHandler, DisposableCollection, Disposable } from "../../common";
-import { THEIA_PARENT_PID, THEIA_ENTRY_POINT } from './ipc-protocol';
+import { createIpcEnv } from './ipc-protocol';
 
 export interface ResolvedIPCConnectionOptions {
     readonly serverName: string
@@ -84,13 +84,12 @@ export class IPCConnectionProvider {
     protected fork(options: ResolvedIPCConnectionOptions): cp.ChildProcess {
         const forkOptions: cp.ForkOptions = {
             silent: true,
-            env: {
-                ...process.env
-            },
+            env: createIpcEnv({
+                env: process.env,
+                entryPoint: options.entryPoint
+            }),
             execArgv: []
         };
-        forkOptions.env[THEIA_PARENT_PID] = String(process.pid);
-        forkOptions.env[THEIA_ENTRY_POINT] = options.entryPoint;
         if (typeof options.debug === 'number' && !isNaN(options.debug)) {
             forkOptions.execArgv = ['--nolazy', '--inspect=' + options.debug];
         }

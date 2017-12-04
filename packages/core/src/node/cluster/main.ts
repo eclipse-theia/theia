@@ -7,7 +7,10 @@
 // tslint:disable:no-console
 import * as http from 'http';
 import * as cluster from 'cluster';
+import { checkParentAlive } from '../messaging/ipc-protocol';
 import { MasterProcess } from './master-process';
+
+checkParentAlive();
 
 process.on('unhandledRejection', (reason, promise) => {
     throw reason;
