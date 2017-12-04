@@ -15,9 +15,6 @@
       "@theia/core/lib/*": [
         "packages/core/src/*"
       ],
-      "humane-js": [
-        "packages/core/src/typings/humane-js"
-      ],
       "@theia/extension-manager/lib/*": [
         "packages/extension-manager/src/*"
       ],
@@ -80,6 +77,9 @@
       ],
       "@theia/outline/lib/*": [
         "packages/outline/src/*"
+      ],
+      "@theia/messages/lib/*": [
+        "packages/messages/src/*"
       ]
     }
   },

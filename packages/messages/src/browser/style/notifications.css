@@ -1,0 +1,149 @@
+/*
+* Copyright (C) 2017 TypeFox and others.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+*/
+
+.theia-NotificationsContainer {
+    pointer-events: none;
+    z-index: 1000000;
+    position: fixed;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    -webkit-align-items: center;
+    align-items: center;
+    -webkit-justify-content: center;
+    justify-content: center;
+    top: 0;
+    left: 0;
+    right: 0;
+    text-align: left;
+}
+
+.theia-Notification {
+    pointer-events: all;
+    user-select: none;
+    -webkit-user-select: none;
+    display: flex;
+    flex-direction: row;
+    -webkit-justify-content: center;
+    justify-content: center;
+    clear: both;
+    box-sizing: border-box;
+    position: relative;
+    width: 60%;
+    min-width: 500px;
+    background-color: #222222;
+    color: white;
+    box-shadow: 0 5px 5px -5px rgba(0, 0, 0, 0.6);
+    min-height: 35px;
+    -webkit-animation: fadeInDown 0.5s ease both;
+    animation: fadeInDown 0.5s ease both;
+}
+
+.theia-Notification .icon {
+    display: inline-block;
+    width: 35px;
+    order: 1;
+    padding: 10px 15px;
+}
+
+.theia-Notification .icon .fa {
+    line-height: inherit;
+    vertical-align: middle;
+    font-size: 120%;
+    color: #4caf50;
+}
+
+.theia-Notification .text {
+    order: 2;
+    display: inline-block;
+    flex: 1 100%;
+    height: 100%;
+    padding: 10px;
+}
+
+.theia-Notification .text > p {
+    margin: 0px;
+    vertical-align: middle;
+}
+
+.theia-Notification .buttons {
+    display: flex;
+    flex-direction: row;
+    order: 3;
+    white-space: nowrap;
+}
+
+.theia-Notification .buttons > button {
+    background-color: rgb(57, 175, 61);
+    border: none;
+    border-radius: 0px;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    padding: 0px 10px;
+    margin: 0px;
+    font-weight: bold;
+    outline: none;
+    cursor: pointer;
+}
+
+.theia-Notification .buttons > button:hover {
+    background-color: rgba(57, 175, 61, 0.7);
+}
+
+@-moz-keyframes fadeInDown {
+    from {
+        opacity: 0;
+        -webkit-transform: translate3d(0, -100%, 0);
+        transform: translate3d(0, -100%, 0);
+    }
+    to {
+        opacity: 1;
+        -webkit-transform: none;
+        transform: none;
+    }
+}
+
+@-webkit-keyframes fadeInDown {
+    from {
+        opacity: 0;
+        -webkit-transform: translate3d(0, -100%, 0);
+        transform: translate3d(0, -100%, 0);
+    }
+    to {
+        opacity: 1;
+        -webkit-transform: none;
+        transform: none;
+    }
+}
+
+@-o-keyframes fadeInDown {
+    from {
+        opacity: 0;
+        -webkit-transform: translate3d(0, -100%, 0);
+        transform: translate3d(0, -100%, 0);
+    }
+    to {
+        opacity: 1;
+        -webkit-transform: none;
+        transform: none;
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        -webkit-transform: translate3d(0, -100%, 0);
+        transform: translate3d(0, -100%, 0);
+    }
+    to {
+        opacity: 1;
+        -webkit-transform: none;
+        transform: none;
+    }
+}

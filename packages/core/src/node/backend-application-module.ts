@@ -6,8 +6,7 @@
  */
 
 import { ContainerModule, interfaces } from "inversify";
-import { bindContributionProvider, ConnectionHandler, JsonRpcConnectionHandler, MessageService } from '../common';
-import { MessageClient, DispatchingMessageClient, messageServicePath } from '../common/message-service-protocol';
+import { bindContributionProvider, MessageService, MessageClient } from '../common';
 import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution } from './backend-application';
 import { CliManager, CliContribution } from './cli';
 import { ServerProcess, RemoteMasterProcessFactory, clusterRemoteMasterProcessFactory } from './cluster';
@@ -31,16 +30,7 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bindServerProcess(bind, clusterRemoteMasterProcessFactory);
 
-    bind(DispatchingMessageClient).toSelf().inSingletonScope();
-    bind(MessageClient).toDynamicValue(ctx => ctx.container.get(DispatchingMessageClient)).inSingletonScope();
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<MessageClient>(messageServicePath, client => {
-            const dispatching = ctx.container.get<DispatchingMessageClient>(DispatchingMessageClient);
-            dispatching.clients.add(client);
-            client.onDidCloseConnection(() => dispatching.clients.delete(client));
-            return dispatching;
-        })
-    ).inSingletonScope();
+    bind(MessageClient).toSelf().inSingletonScope();
     bind(MessageService).toSelf().inSingletonScope();
 
     bind(IPCConnectionProvider).toSelf().inSingletonScope();

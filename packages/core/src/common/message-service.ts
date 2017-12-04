@@ -16,19 +16,19 @@ export class MessageService {
     ) { }
 
     log(message: string, ...actions: string[]): Promise<string | undefined> {
-        return this.client.showMessage(MessageType.Log, message, ...actions);
+        return this.client.showMessage({ type: MessageType.Log, text: message, actions: actions || [] });
     }
 
     info(message: string, ...actions: string[]): Promise<string | undefined> {
-        return this.client.showMessage(MessageType.Info, message, ...actions);
+        return this.client.showMessage({ type: MessageType.Info, text: message, actions: actions || [] });
     }
 
     warn(message: string, ...actions: string[]): Promise<string | undefined> {
-        return this.client.showMessage(MessageType.Warning, message, ...actions);
+        return this.client.showMessage({ type: MessageType.Warning, text: message, actions: actions || [] });
     }
 
     error(message: string, ...actions: string[]): Promise<string | undefined> {
-        return this.client.showMessage(MessageType.Error, message, ...actions);
+        return this.client.showMessage({ type: MessageType.Error, text: message, actions: actions || [] });
     }
 
 }
