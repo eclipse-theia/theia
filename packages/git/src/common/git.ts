@@ -5,8 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { ChildProcess } from 'child_process';
 import { Disposable } from '@theia/core';
-import { Repository, WorkingDirectoryStatus, Branch } from './git-model';
+import { Repository, WorkingDirectoryStatus, Branch, GitResult, GitError, GitFileStatus } from './git-model';
 
 /**
  * The WS endpoint path to the Git service.
@@ -137,7 +138,7 @@ export namespace Git {
 
             /**
              * The maximum count of repositories to look up, should be greater than 0.
-             * Undefined to look up all repositores.
+             * Undefined to look up all repositories.
              */
             readonly maxCount?: number;
 
@@ -338,6 +339,68 @@ export namespace Git {
 
         }
 
+        /**
+         * A set of configuration options that can be passed when executing a low-level Git command.
+         */
+        export interface Execution {
+
+            /**
+             * The exit codes which indicate success to the caller. Unexpected exit codes will be logged and an
+             * error thrown. Defaults to `0` if `undefined`.
+             */
+            readonly successExitCodes?: ReadonlySet<number>;
+
+            /**
+             * The Git errors which are expected by the caller. Unexpected errors will
+             * be logged and an error thrown.
+             */
+            readonly expectedErrors?: ReadonlySet<GitError>;
+
+            /**
+             * An optional collection of key-value pairs which will be
+             * set as environment variables before executing the Git
+             * process.
+             */
+            readonly env?: Object;
+
+            /**
+             * An optional string which will be written to the child process
+             * stdin stream immediately after spawning the process.
+             */
+            readonly stdin?: string;
+
+            /**
+             * The encoding to use when writing to `stdin`, if the `stdin`
+             * parameter is a string.
+             */
+            readonly stdinEncoding?: string;
+
+            /**
+             * The size the output buffer to allocate to the spawned process. Set this
+             * if you are anticipating a large amount of output.
+             *
+             * If not specified, this will be 10MB (10485760 bytes) which should be
+             * enough for most Git operations.
+             */
+            readonly maxBuffer?: number;
+
+            /**
+             * An optional callback which will be invoked with the child
+             * process instance after spawning the Git process.
+             *
+             * Note that if the `stdin` parameter was specified the `stdin`
+             * stream will be closed by the time this callback fires.
+             *
+             * Defining this property could make the `exec` function invocation **non-client** compatible.
+             */
+            readonly processCallback?: (process: ChildProcess) => void;
+
+            /**
+             * The name for the command based on its caller's context.
+             * This could be used only for performance measurements and debugging. It has no runtime behavior effects.
+             */
+            readonly name?: string;
+        }
     }
 
 }
@@ -482,10 +545,22 @@ export interface Git extends Disposable {
     show(repository: Repository, uri: string, options?: Git.Options.Show): Promise<string>;
 
     /**
-     * Without any arguments, it resolves to a list of configured remotes. If no remotes are set,
-     * resolves to an empty array.
+     * It resolves to an array of configured remotes for the given repository.
+     *
+     * @param repository the repository to get the remotes.
      */
     remote(repository: Repository): Promise<string[]>;
+
+    /**
+     * Executes the Git command and resolves to the result. If an executed Git command exits with a code that is not in the `successExitCodes` or an error not in `expectedErrors`,
+     * a `GitError` will be thrown.
+     *
+     * @param repository the repository where one can execute the command. (Although the repository path is not necessarily mandatory for each Git commands,
+     * such as `git config -l`, or `git --version`, we treat the repository as a required argument to have a symmetric API.)
+     * @param args the array of arguments for Git.
+     * @param options options can be used to tweaked additional configurations for the low-level command execution.
+     */
+    exec(repository: Repository, args: string[], options?: Git.Options.Execution): Promise<GitResult>;
 
 }
 
@@ -560,6 +635,41 @@ export namespace GitUtils {
             return (<any>error).code === RepositoryDoesNotExistErrorCode;
         }
         return false;
+    }
+
+    /**
+     * Maps the raw status text from Git to a Git file status enumeration.
+     */
+    export function mapStatus(rawStatus: string): GitFileStatus {
+        const status = rawStatus.trim();
+
+        if (status === 'M') {
+            return GitFileStatus.Modified;
+        } // modified
+        if (status === 'A') {
+            return GitFileStatus.New;
+        } // added
+        if (status === 'D') {
+            return GitFileStatus.Deleted;
+        } // deleted
+        if (status === 'R') {
+            return GitFileStatus.Renamed;
+        } // renamed
+        if (status === 'C') {
+            return GitFileStatus.Copied;
+        } // copied
+
+        // git log -M --name-status will return a RXXX - where XXX is a percentage
+        if (status.match(/R[0-9]+/)) {
+            return GitFileStatus.Renamed;
+        }
+
+        // git log -C --name-status will return a CXXX - where XXX is a percentage
+        if (status.match(/C[0-9]+/)) {
+            return GitFileStatus.Copied;
+        }
+
+        return GitFileStatus.Modified;
     }
 
 }
