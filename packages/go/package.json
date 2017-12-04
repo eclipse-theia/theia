@@ -1,13 +1,13 @@
 {
   "name": "@theia/go",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "description": "Theia - Go Extension",
   "dependencies": {
-    "@theia/core": "^0.2.2",
-    "@theia/editor": "^0.2.2",
-    "@theia/filesystem": "^0.2.2",
-    "@theia/languages": "^0.2.2",
-    "@theia/monaco": "^0.2.2"
+    "@theia/core": "^0.2.4",
+    "@theia/editor": "^0.2.4",
+    "@theia/filesystem": "^0.2.4",
+    "@theia/languages": "^0.2.4",
+    "@theia/monaco": "^0.2.4"
   },
   "publishConfig": {
     "access": "public"

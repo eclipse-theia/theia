@@ -1,17 +1,15 @@
 {
   "name": "@theia/git",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "description": "Theia - Git Integration",
   "dependencies": {
-    "@theia/core": "^0.2.2",
-    "@theia/editor": "^0.2.2",
-    "@theia/filesystem": "^0.2.2",
-    "@theia/preferences-api": "^0.2.2",
-    "@theia/workspace": "^0.2.2",
-    "abs": "^1.3.8",
+    "@theia/core": "^0.2.4",
+    "@theia/editor": "^0.2.4",
+    "@theia/filesystem": "^0.2.4",
+    "@theia/preferences-api": "^0.2.4",
+    "@theia/workspace": "^0.2.4",
     "dugite-extra": "0.0.1-alpha.15",
-    "findit2": "^2.2.3",
-    "ignore": "^3.3.7"
+    "find-git-repositories": "^0.1.0"
   },
   "publishConfig": {
     "access": "public"

@@ -1,33 +1,33 @@
 {
   "private": true,
   "name": "@theia/example-electron",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "theia": {
     "target": "electron"
   },
   "dependencies": {
-    "@theia/core": "^0.2.2",
-    "@theia/cpp": "^0.2.2",
-    "@theia/editor": "^0.2.2",
-    "@theia/extension-manager": "^0.2.2",
-    "@theia/file-search": "^0.2.2",
-    "@theia/filesystem": "^0.2.2",
-    "@theia/git": "^0.2.2",
-    "@theia/go": "^0.2.2",
-    "@theia/java": "^0.2.2",
-    "@theia/languages": "^0.2.2",
-    "@theia/markers": "^0.2.2",
-    "@theia/metrics": "^0.2.2",
-    "@theia/monaco": "^0.2.2",
-    "@theia/navigator": "^0.2.2",
-    "@theia/outline-view": "^0.2.2",
-    "@theia/preferences": "^0.2.2",
-    "@theia/process": "^0.2.2",
-    "@theia/python": "^0.2.2",
-    "@theia/terminal": "^0.2.2",
-    "@theia/typescript": "^0.2.2",
-    "@theia/userstorage": "^0.2.2",
-    "@theia/workspace": "^0.2.2"
+    "@theia/core": "^0.2.4",
+    "@theia/cpp": "^0.2.4",
+    "@theia/editor": "^0.2.4",
+    "@theia/extension-manager": "^0.2.4",
+    "@theia/file-search": "^0.2.4",
+    "@theia/filesystem": "^0.2.4",
+    "@theia/git": "^0.2.4",
+    "@theia/go": "^0.2.4",
+    "@theia/java": "^0.2.4",
+    "@theia/languages": "^0.2.4",
+    "@theia/markers": "^0.2.4",
+    "@theia/metrics": "^0.2.4",
+    "@theia/monaco": "^0.2.4",
+    "@theia/navigator": "^0.2.4",
+    "@theia/outline-view": "^0.2.4",
+    "@theia/preferences": "^0.2.4",
+    "@theia/process": "^0.2.4",
+    "@theia/python": "^0.2.4",
+    "@theia/terminal": "^0.2.4",
+    "@theia/typescript": "^0.2.4",
+    "@theia/userstorage": "^0.2.4",
+    "@theia/workspace": "^0.2.4"
   },
   "scripts": {
     "prepare": "yarn run clean && yarn build",
@@ -40,6 +40,6 @@
     "test:ui": "wdio wdio.conf.js"
   },
   "devDependencies": {
-    "@theia/cli": "^0.2.2"
+    "@theia/cli": "^0.2.4"
   }
 }

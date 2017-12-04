@@ -11,6 +11,7 @@ import { MessageClient, DispatchingMessageClient, messageServicePath } from '../
 import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution } from './backend-application';
 import { CliManager, CliContribution } from './cli';
 import { ServerProcess, RemoteMasterProcessFactory, clusterRemoteMasterProcessFactory } from './cluster';
+import { IPCConnectionProvider } from "./messaging";
 
 export function bindServerProcess(bind: interfaces.Bind, masterFactory: RemoteMasterProcessFactory): void {
     bind(RemoteMasterProcessFactory).toConstantValue(masterFactory);
@@ -41,4 +42,6 @@ export const backendApplicationModule = new ContainerModule(bind => {
         })
     ).inSingletonScope();
     bind(MessageService).toSelf().inSingletonScope();
+
+    bind(IPCConnectionProvider).toSelf().inSingletonScope();
 });

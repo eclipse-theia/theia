@@ -33,7 +33,7 @@ The target can be configured in package.json via `theia/target` property, e.g:
 
 ### Using latest builds
 
-If you set `next` in your theia config, then Theia will prefer `next` over `latest` as the lattest tag.
+If you set `next` in your theia config, then Theia will prefer `next` over `latest` as the latest tag.
 
 ```json
 {

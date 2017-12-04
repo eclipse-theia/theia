@@ -51,6 +51,12 @@ export class GitResourceResolver implements ResourceResolver {
     async getRepository(uri: URI): Promise<Repository | undefined> {
         const uriWithoutScheme = uri.withoutScheme();
         const repositories = this.repositoryProvider.allRepositories;
+        // The layout restorer might ask for the known repositories this point.
+        if (repositories.length === 0) {
+            // So let's make sure, the repository provider state is in sync with the backend.
+            await this.repositoryProvider.refresh();
+            repositories.push(...this.repositoryProvider.allRepositories);
+        }
         // We sort by length so that we visit the nested repositories first.
         // We do not want to get the repository A instead of B if we have:
         // repository A, another repository B inside A and a resource A/B/C.ext.

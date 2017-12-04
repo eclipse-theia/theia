@@ -98,9 +98,6 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         return this.editor = monaco.editor.create(this.node, {
             ...options,
             fixedOverflowWidgets: true,
-            minimap: {
-                enabled: false
-            },
             scrollbar: {
                 useShadows: false,
                 verticalHasArrows: false,

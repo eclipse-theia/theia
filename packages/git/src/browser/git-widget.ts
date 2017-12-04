@@ -6,9 +6,8 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Git } from '../common/git';
+import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus } from '../common';
 import { GIT_CONTEXT_MENU } from './git-context-menu';
-import { GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus } from '../common/model';
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { GitRepositoryProvider } from './git-repository-provider';
@@ -58,8 +57,8 @@ export class GitWidget extends VirtualWidget {
         this.addClass('theia-git');
         this.update();
 
-        this.repositoryProvider.onDidChangeRepository(repo => {
-            this.initialize(repo);
+        this.repositoryProvider.onDidChangeRepository(repository => {
+            this.initialize(repository);
         });
     }
 
@@ -144,6 +143,7 @@ export class GitWidget extends VirtualWidget {
         super.onUpdateRequest(message);
         const repositories = this.repositoryProvider.allRepositories;
         // Set the selected repository.
+        // tslint:disable-next-line:no-any
         const combo = document.getElementById('repositoryList') as any;
         if (combo && combo.selectedIndex !== undefined && this.repositoryProvider.selectedRepository) {
             const selectedUri = this.repositoryProvider.selectedRepository.localUri.toString();
@@ -166,7 +166,14 @@ export class GitWidget extends VirtualWidget {
             onchange: async event => {
                 const repository = { localUri: (event.target as HTMLSelectElement).value };
                 this.repositoryProvider.selectedRepository = repository;
-                const status = repository ? await this.git.status(repository) : undefined;
+                let status: WorkingDirectoryStatus | undefined = undefined;
+                if (repository) {
+                    try {
+                        status = await this.git.status(repository);
+                    } catch (error) {
+                        this.logError(error);
+                    }
+                }
                 this.updateView(status);
             }
         }, VirtualRenderer.flatten(repositoryOptionElements));
@@ -181,14 +188,16 @@ export class GitWidget extends VirtualWidget {
                 const messageInput = document.getElementById('git-messageInput') as HTMLInputElement;
                 if (this.message !== '') {
                     const extendedMessageInput = document.getElementById('git-extendedMessageInput') as HTMLInputElement;
-                    // We can make sure, repository exists, otherwise we would not have this button.
-                    this.git.commit(repository!, this.message + "\n\n" + this.additionalMessage)
-                        .then(async () => {
-                            messageInput.value = '';
-                            extendedMessageInput.value = '';
-                            const status = await this.git.status(repository!);
-                            this.updateView(status);
-                        });
+                    try {
+                        // We can make sure, repository exists, otherwise we would not have this button.
+                        await this.git.commit(repository!, this.message + "\n\n" + this.additionalMessage);
+                        messageInput.value = '';
+                        extendedMessageInput.value = '';
+                        const status = await this.git.status(repository!);
+                        this.updateView(status);
+                    } catch (error) {
+                        this.logError(error);
+                    }
                 } else {
                     if (messageInput) {
                         this.messageInputHighlighted = true;
@@ -260,7 +269,11 @@ export class GitWidget extends VirtualWidget {
                 className: 'button',
                 title: 'Unstage Changes',
                 onclick: async event => {
-                    this.git.unstage(repository, change.uri);
+                    try {
+                        await this.git.unstage(repository, change.uri);
+                    } catch (error) {
+                        this.logError(error);
+                    }
                 }
             }, h.i({ className: 'fa fa-minus' })));
         } else {
@@ -272,7 +285,11 @@ export class GitWidget extends VirtualWidget {
                     if (change.status === GitFileStatus.New) {
                         this.commandService.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(change.uri));
                     } else {
-                        this.git.checkout(repository, options);
+                        try {
+                            await this.git.checkout(repository, options);
+                        } catch (error) {
+                            this.logError(error);
+                        }
                     }
                 }
             }, h.i({ className: 'fa fa-undo' })));
@@ -280,7 +297,11 @@ export class GitWidget extends VirtualWidget {
                 className: 'button',
                 title: 'Stage Changes',
                 onclick: async event => {
-                    this.git.add(repository, change.uri);
+                    try {
+                        await this.git.add(repository, change.uri);
+                    } catch (error) {
+                        this.logError(error);
+                    }
                 }
             }, h.i({ className: 'fa fa-plus' })));
         }
@@ -300,8 +321,8 @@ export class GitWidget extends VirtualWidget {
     }
 
     protected getRepositoryRelativePath(repository: Repository, uri: URI) {
-        const repoUri = new URI(repository.localUri);
-        return uri.toString().substr(repoUri.toString().length + 1);
+        const repositoryUri = new URI(repository.localUri);
+        return uri.toString().substr(repositoryUri.toString().length + 1);
     }
 
     protected renderGitItem(repository: Repository | undefined, change: GitFileChangeNode): h.Child {
@@ -349,8 +370,8 @@ export class GitWidget extends VirtualWidget {
         const buttonsDiv = this.renderGitItemButtons(repository, change);
         const staged = change.staged ? 'staged ' : '';
         const statusDiv = h.div({ className: 'status ' + staged + GitFileStatus[change.status].toLowerCase() }, this.getStatusChar(change.status, change.staged));
-        const itemBtnsAndStatusDiv = h.div({ className: 'itemButtonsContainer' }, buttonsDiv, statusDiv);
-        return h.div({ className: 'gitItem noselect' }, nameAndPathDiv, itemBtnsAndStatusDiv);
+        const itemButtonsAndStatusDiv = h.div({ className: 'itemButtonsContainer' }, buttonsDiv, statusDiv);
+        return h.div({ className: 'gitItem noselect' }, nameAndPathDiv, itemButtonsAndStatusDiv);
     }
 
     protected renderChangesHeader(title: string): h.Child {
@@ -402,4 +423,11 @@ export class GitWidget extends VirtualWidget {
 
         return undefined;
     }
+
+    // tslint:disable-next-line:no-any
+    protected logError(error: any): void {
+        const message = error instanceof Error ? error.message : error;
+        this.messageService.error(message);
+    }
+
 }

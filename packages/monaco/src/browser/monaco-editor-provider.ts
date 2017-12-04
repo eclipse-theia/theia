@@ -109,16 +109,35 @@ export class MonacoEditorProvider {
         return Promise.resolve(editor);
     }
 
+    protected setOption(pref: string, value: any, options: any) {
+        const prefix = "editor.";
+        const option = pref.startsWith(prefix) ? pref.substr(prefix.length) : pref;
+        const _setOption = (obj: { [n: string]: any }, value: any, names: string[], idx: number = 0) => {
+            const name = names[idx];
+            if (!obj[name]) {
+                if (names.length > (idx + 1)) {
+                    obj[name] = {};
+                    _setOption(obj[name], value, names, (idx + 1));
+                } else {
+                    obj[name] = value;
+                }
+            }
+        };
+        _setOption(options, value, option.split('.'));
+    }
+
     protected getEditorOptions(model: MonacoEditorModel): MonacoEditor.IOptions {
-        return {
+        const editorOptions: { [name: string]: any } = {
             model: model.textEditorModel,
-            wordWrap: 'off',
-            folding: true,
-            lineNumbers: this.editorPreferences["editor.lineNumbers"],
-            renderWhitespace: this.editorPreferences["editor.renderWhitespace"],
-            glyphMargin: true,
             readOnly: model.readOnly
         };
+
+        Object.keys(this.editorPreferences).forEach(key => {
+            const value: any = (<any>this.editorPreferences)[key];
+            this.setOption(key, value, editorOptions);
+        });
+
+        return editorOptions;
     }
 
     protected getDiffEditorOptions(original: MonacoEditorModel, modified: MonacoEditorModel): MonacoDiffEditor.IOptions {
@@ -128,20 +147,10 @@ export class MonacoEditorProvider {
         };
     }
 
-    protected readonly editorOptions: {
-        [name: string]: (keyof monaco.editor.IEditorOptions | undefined)
-    } = {
-            'editor.lineNumbers': 'lineNumbers',
-            'editor.renderWhitespace': 'renderWhitespace'
-        };
-
     protected updateOptions(change: EditorPreferenceChange, editor: MonacoEditor): void {
-        const editorOption = this.editorOptions[change.preferenceName];
-        if (editorOption) {
-            const options: monaco.editor.IEditorOptions = {};
-            options[editorOption] = change.newValue;
-            editor.getControl().updateOptions(options);
-        }
+        const options: monaco.editor.IEditorOptions = {};
+        this.setOption(change.preferenceName, change.newValue, options);
+        editor.getControl().updateOptions(options);
     }
 
     protected installQuickOpenService(editor: MonacoEditor): void {

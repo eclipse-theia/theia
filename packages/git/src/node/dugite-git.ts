@@ -1,15 +1,14 @@
 /*
-* Copyright (C) 2017 TypeFox and others.
-*
-* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-*/
+ * Copyright (C) 2017 TypeFox and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
 
 import * as fs from 'fs';
 import * as Path from 'path';
-import { Git, GitUtils } from '../common/git';
-import { git } from 'dugite-extra/lib/core/git';
 import { injectable, inject } from "inversify";
+import { git } from 'dugite-extra/lib/core/git';
 import { push } from 'dugite-extra/lib/command/push';
 import { pull } from 'dugite-extra/lib/command/pull';
 import { clone } from 'dugite-extra/lib/command/clone';
@@ -17,18 +16,19 @@ import { fetch } from 'dugite-extra/lib/command/fetch';
 import { merge } from 'dugite-extra/lib/command/merge';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { getStatus } from 'dugite-extra/lib/command/status';
-import { GitRepositoryLocator } from './git-repository-locator';
 import { createCommit } from 'dugite-extra/lib/command/commit';
 import { stage, unstage } from 'dugite-extra/lib/command/stage';
 import { reset, GitResetMode } from 'dugite-extra/lib/command/reset';
 import { getTextContents, getBlobContents } from 'dugite-extra/lib/command/show';
 import { checkoutBranch, checkoutPaths } from 'dugite-extra/lib/command/checkout';
-import { Repository, WorkingDirectoryStatus, GitFileChange, GitFileStatus, Branch, Commit, CommitIdentity } from '../common/model';
 import { createBranch, deleteBranch, renameBranch, listBranch } from 'dugite-extra/lib/command/branch';
 import { IStatusResult, IAheadBehind, AppFileStatus, WorkingDirectoryStatus as DugiteStatus, FileChange as DugiteFileChange } from 'dugite-extra/lib/model/status';
 import { Branch as DugiteBranch } from 'dugite-extra/lib/model/branch';
 import { Commit as DugiteCommit, CommitIdentity as DugiteCommitIdentity } from 'dugite-extra/lib/model/commit';
+import { ILogger } from '@theia/core';
+import { Git, GitUtils, Repository, WorkingDirectoryStatus, GitFileChange, GitFileStatus, Branch, Commit, CommitIdentity } from '../common';
 import { GitRepositoryManager } from './git-repository-manager';
+import { GitLocator } from './git-locator/git-locator-protocol';
 
 /**
  * `dugite-extra` based Git implementation.
@@ -36,11 +36,18 @@ import { GitRepositoryManager } from './git-repository-manager';
 @injectable()
 export class DugiteGit implements Git {
 
-    @inject(GitRepositoryLocator)
-    protected readonly repositoryLocator: GitRepositoryLocator;
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
+    @inject(GitLocator)
+    protected readonly locator: GitLocator;
 
     @inject(GitRepositoryManager)
     protected readonly manager: GitRepositoryManager;
+
+    dispose(): void {
+        this.locator.dispose();
+    }
 
     async clone(remoteUrl: string, options: Git.Options.Clone): Promise<Repository> {
         const { localUri } = options;
@@ -48,24 +55,26 @@ export class DugiteGit implements Git {
         return { localUri };
     }
 
-    async repositories(workspaceRootUri: string): Promise<Repository[]> {
+    async repositories(workspaceRootUri: string, options: Git.Options.Repositories): Promise<Repository[]> {
         const workspaceRootPath = this.getFsPath(workspaceRootUri);
-        const [containerRepository, repositories] = await Promise.all([this.getContainerRepository(workspaceRootPath), this.repositoryLocator.locate(workspaceRootPath)]);
-        // Make sure not to add the container to the repositories twice. Can happen when WS root is a git repository.
-        if (containerRepository) {
-            // Below URIs point to the same location, but their `toString()` are not the same:
-            // On Windows:
-            // file:///c%3A/Users/KITTAA~1/AppData/Local/Temp/discovery-test-211796-8240-vm7sah.wow0b/BASE',
-            // file:///c%3A/Users/kittaakos/AppData/Local/Temp/discovery-test-211796-8240-vm7sah.wow0b/BASE
-            // Similar on OS X:
-            // /private/var/folders/k3/d2fkvv1j16v3_rz93k7f74180000gn/T/discovery-test-211797-35913-7vqenj.5qxk3/BASE
-            // /var/folders/k3/d2fkvv1j16v3_rz93k7f74180000gn/T/discovery-test-211797-35913-7vqenj.5qxk3/BASE
-            const toCompareString = (path: string) => JSON.stringify(fs.statSync(path));
-            const subRepositoryPaths = repositories.map(r => Path.resolve(this.getFsPath(r.localUri)));
-            const containerRepositoryPath = Path.resolve(this.getFsPath(containerRepository.localUri));
-
-            if (!subRepositoryPaths.some(p => toCompareString(p) === toCompareString(containerRepositoryPath))) {
-                repositories.unshift(containerRepository);
+        const repositories: Repository[] = [];
+        const containingPath = await this.resolveContainingPath(workspaceRootPath);
+        if (containingPath) {
+            repositories.push({
+                localUri: this.getUri(containingPath)
+            });
+        }
+        const maxCount = options.maxCount ? options.maxCount - repositories.length : undefined;
+        if (!!maxCount && maxCount <= 0) {
+            return repositories;
+        }
+        for (const repositoryPath of await this.locator.locate(workspaceRootPath, {
+            maxCount
+        })) {
+            if (containingPath !== repositoryPath) {
+                repositories.push({
+                    localUri: this.getUri(repositoryPath)
+                });
             }
         }
         return repositories;
@@ -218,14 +227,18 @@ export class DugiteGit implements Git {
 
     // TODO: akitta what about symlinks? What if the workspace root is a symlink?
     // Maybe, we should use `--show-cdup` here instead of `--show-toplevel` because `show-toplevel` dereferences symlinks.
-    private async getContainerRepository(repositoryPath: string): Promise<Repository | undefined> {
+    private async resolveContainingPath(repositoryPath: string): Promise<string | undefined> {
         // Do not log an error if we are not contained in a Git repository. Treat exit code 128 as a success too.
         const options = { successExitCodes: new Set([0, 128]) };
         const result = await git(['rev-parse', '--show-toplevel'], repositoryPath, 'rev-parse', options);
         const out = result.stdout;
         if (out && out.length !== 0) {
-            const localUri = FileUri.create(out.trim()).toString();
-            return { localUri };
+            try {
+                return fs.realpathSync(out.trim());
+            } catch (e) {
+                this.logger.error(e);
+                return undefined;
+            }
         }
         return undefined;
     }

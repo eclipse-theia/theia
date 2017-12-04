@@ -1,11 +1,11 @@
 {
   "name": "@theia/extension-manager",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "description": "Theia - Extension Manager",
   "dependencies": {
-    "@theia/application-package": "^0.2.2",
-    "@theia/core": "^0.2.2",
-    "@theia/filesystem": "^0.2.2",
+    "@theia/application-package": "^0.2.4",
+    "@theia/core": "^0.2.4",
+    "@theia/filesystem": "^0.2.4",
     "@types/sanitize-html": "^1.13.31",
     "@types/showdown": "^1.7.1",
     "sanitize-html": "^1.14.1",

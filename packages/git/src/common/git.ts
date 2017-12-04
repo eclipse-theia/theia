@@ -5,7 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Repository, WorkingDirectoryStatus, Branch } from './model';
+import { Disposable } from '@theia/core';
+import { Repository, WorkingDirectoryStatus, Branch } from './git-model';
 
 /**
  * The WS endpoint path to the Git service.
@@ -126,6 +127,19 @@ export namespace Git {
              * the default branch will will be the current one which is usually the `master`.
              */
             readonly branch?: string;
+
+        }
+
+        /**
+         * Git repositories options.
+         */
+        export interface Repositories {
+
+            /**
+             * The maximum count of repositories to look up, should be greater than 0.
+             * Undefined to look up all repositores.
+             */
+            readonly maxCount?: number;
 
         }
 
@@ -331,7 +345,7 @@ export namespace Git {
 /**
  * Provides basic functionality for Git.
  */
-export interface Git {
+export interface Git extends Disposable {
 
     /**
      * Clones a remote repository into the desired local location.
@@ -344,7 +358,7 @@ export interface Git {
     /**
      * Resolves to an array of repositories discovered in the workspace given with the workspace root URI.
      */
-    repositories(workspaceRootUri: string): Promise<Repository[]>;
+    repositories(workspaceRootUri: string, options: Git.Options.Repositories): Promise<Repository[]>;
 
     /**
      * Returns with the working directory status of the given Git repository.
@@ -526,6 +540,26 @@ export namespace GitUtils {
     // tslint:disable-next-line:no-any
     export function isWorkingTreeFileCheckout(arg: any | undefined): arg is Git.Options.Checkout.WorkingTreeFile {
         return !!arg && ('paths' in arg);
+    }
+
+    /**
+     * The error code for when the path to a repository doesn't exist.
+     */
+    const RepositoryDoesNotExistErrorCode = 'repository-does-not-exist-error';
+
+    /**
+     * `true` if the argument is an error indicating the absence of a local Git repository.
+     * Otherwise, `false`.
+     */
+    // tslint:disable-next-line:no-any
+    export function isRepositoryDoesNotExistError(error: any | undefined): boolean {
+        // TODO this is odd here.This piece of code is already implementation specific, so this should go to the Git API.
+        // But how can we ensure that the `any` type error is serializable?
+        if (error instanceof Error && ('code' in error)) {
+            // tslint:disable-next-line:no-any
+            return (<any>error).code === RepositoryDoesNotExistErrorCode;
+        }
+        return false;
     }
 
 }

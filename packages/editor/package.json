@@ -1,11 +1,11 @@
 {
   "name": "@theia/editor",
-  "version": "0.2.2",
+  "version": "0.2.4",
   "description": "Theia - Editor Extension",
   "dependencies": {
-    "@theia/core": "^0.2.2",
-    "@theia/languages": "^0.2.2",
-    "@theia/preferences-api": "^0.2.2"
+    "@theia/core": "^0.2.4",
+    "@theia/languages": "^0.2.4",
+    "@theia/preferences-api": "^0.2.4"
   },
   "publishConfig": {
     "access": "public"

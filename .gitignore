@@ -16,3 +16,4 @@ examples/*/webpack.config.js
 **/docs/api
 package-backup.json
 .history
+.Trash-*

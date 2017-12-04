@@ -26,6 +26,25 @@ export interface Keybinding {
     readonly accelerator?: Accelerator;
 }
 
+export namespace Keybinding {
+
+    /**
+     * Returns with the string representation of the binding. Any additional properties which are not described on the `Keybinding` API will be ignored.
+     *
+     * @param binding the binding to stringify.
+     */
+    export function stringify(binding: Keybinding): string {
+        const copy: Keybinding = {
+            commandId: binding.commandId,
+            keyCode: binding.keyCode,
+            contextId: binding.contextId,
+            accelerator: binding.accelerator
+        };
+        return JSON.stringify(copy);
+    }
+
+}
+
 export const KeybindingContribution = Symbol("KeybindingContribution");
 export interface KeybindingContribution {
     registerKeybindings(keybindings: KeybindingRegistry): void;
@@ -128,7 +147,7 @@ export class KeybindingRegistry {
         if (existing) {
             const collided = existing.filter(b => b.contextId === binding.contextId);
             if (collided.length > 0) {
-                this.logger.warn(`Collided keybinding is ignored; `, JSON.stringify(binding), ' collided with ', collided.map(b => JSON.stringify(b)).join(', '));
+                this.logger.warn('Collided keybinding is ignored; ', Keybinding.stringify(binding), ' collided with ', collided.map(b => Keybinding.stringify(b)).join(', '));
                 return;
             }
         }
