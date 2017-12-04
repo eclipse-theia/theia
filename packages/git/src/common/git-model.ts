@@ -36,6 +36,7 @@ export interface WorkingDirectoryStatus {
      * The hash string of the current HEAD.
      */
     readonly currentHead?: string;
+
 }
 
 export namespace WorkingDirectoryStatus {
@@ -80,12 +81,7 @@ export interface GitFileChange {
     /**
      * The current URI of the changed file resource.
      */
-    readonly uri: string
-
-    /**
-     * The previous URI of the changed URI. Can be absent if the file is new, or just changed and so on.
-     */
-    readonly oldUri?: string;
+    readonly uri: string;
 
     /**
      * The file status.
@@ -93,9 +89,29 @@ export interface GitFileChange {
     readonly status: GitFileStatus;
 
     /**
-     * `true` if the file is staged, otherwise `false`.
+     * The previous URI of the changed URI. Can be absent if the file is new, or just changed and so on.
      */
-    readonly staged: boolean;
+    readonly oldUri?: string;
+
+    /**
+     * `true` if the file is staged, otherwise `false`. If absent, it means, not staged.
+     */
+    readonly staged?: boolean;
+
+}
+
+/**
+ * An object encapsulating the changes to a committed file.
+ */
+export interface CommittedFileChange extends GitFileChange {
+
+    /**
+     * A commit SHA or some other identifier that ultimately dereferences to a commit.
+     * This is the pointer to the `after` version of this change. For instance, the parent of this
+     * commit will contain the `before` (or nothing, if the file change represents a new file).
+     */
+    readonly commitish: string;
+
 }
 
 /**
@@ -111,7 +127,7 @@ export interface Repository {
 }
 
 export namespace Repository {
-    export function equal(repository: Repository | undefined, repository2: Repository | undefined): boolean {
+    export function equal(repository: Repository | undefined, repository2: Repository | undefined): boolean {
         if (repository && repository2) {
             return repository.localUri === repository2.localUri;
         }
@@ -133,7 +149,8 @@ export enum BranchType {
     /**
      * The remote branch type.
      */
-    Remote = 1,
+    Remote = 1
+
 }
 
 /**
@@ -180,7 +197,7 @@ export interface Branch {
 }
 
 /**
- * A git commit.
+ * A Git commit.
  */
 export interface Commit {
 
@@ -236,4 +253,69 @@ export interface CommitIdentity {
      */
     readonly tzOffset: number;
 
+}
+
+/**
+ * The result of shelling out to Git.
+ */
+export interface GitResult {
+
+    /**
+     * The standard output from Git.
+     */
+    readonly stdout: string;
+
+    /**
+     * The standard error output from Git.
+     */
+    readonly stderr: string;
+
+    /**
+     * The exit code of the Git process.
+     */
+    readonly exitCode: number;
+
+}
+
+/**
+ * The Git errors which can be parsed from failed Git commands.
+ */
+export declare enum GitError {
+    SSHKeyAuditUnverified = 0,
+    SSHAuthenticationFailed = 1,
+    SSHPermissionDenied = 2,
+    HTTPSAuthenticationFailed = 3,
+    RemoteDisconnection = 4,
+    HostDown = 5,
+    RebaseConflicts = 6,
+    MergeConflicts = 7,
+    HTTPSRepositoryNotFound = 8,
+    SSHRepositoryNotFound = 9,
+    PushNotFastForward = 10,
+    BranchDeletionFailed = 11,
+    DefaultBranchDeletionFailed = 12,
+    RevertConflicts = 13,
+    EmptyRebasePatch = 14,
+    NoMatchingRemoteBranch = 15,
+    NothingToCommit = 16,
+    NoSubmoduleMapping = 17,
+    SubmoduleRepositoryDoesNotExist = 18,
+    InvalidSubmoduleSHA = 19,
+    LocalPermissionDenied = 20,
+    InvalidMerge = 21,
+    InvalidRebase = 22,
+    NonFastForwardMergeIntoEmptyHead = 23,
+    PatchDoesNotApply = 24,
+    BranchAlreadyExists = 25,
+    BadRevision = 26,
+    NotAGitRepository = 27,
+    CannotMergeUnrelatedHistories = 28,
+    LFSAttributeDoesNotMatch = 29,
+    PushWithFileSizeExceedingLimit = 30,
+    HexBranchNameRejected = 31,
+    ForcePushRejected = 32,
+    InvalidRefLength = 33,
+    ProtectedBranchRequiresReview = 34,
+    ProtectedBranchForcePush = 35,
+    PushWithPrivateEmail = 36
 }

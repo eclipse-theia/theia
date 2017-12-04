@@ -44,6 +44,7 @@
     "build": "theiaext build",
     "watch": "theiaext watch",
     "test": "theiaext test",
+    "test:watch": "theiaext test:watch",
     "docs": "theiaext docs"
   },
   "devDependencies": {

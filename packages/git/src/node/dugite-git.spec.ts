@@ -13,7 +13,7 @@ import { Container } from 'inversify';
 import { DugiteGit } from './dugite-git';
 import { git as gitExec } from 'dugite-extra/lib/core/git';
 import { FileUri } from '@theia/core/lib/node/file-uri';
-import { WorkingDirectoryStatus, Repository } from '../common';
+import { WorkingDirectoryStatus, Repository, GitUtils, GitFileStatus } from '../common';
 import { initRepository, createTestRepository } from 'dugite-extra/lib/command/test-helper';
 import { WorkspaceServer } from '@theia/workspace/lib/common/workspace-protocol';
 import { bindGit } from './git-backend-module';
@@ -283,6 +283,59 @@ describe('git', async function () {
             const git = await createGit();
             const remotes = await git.remote({ localUri });
             expect(remotes).to.be.deep.equal(['first', 'second']);
+        });
+
+    });
+
+    describe('exec', async () => {
+
+        it('version', async () => {
+            const root = track.mkdirSync('exec-version');
+            const localUri = FileUri.create(root).toString();
+            await initRepository(root);
+
+            const git = await createGit();
+            const result = await git.exec({ localUri }, ['--version']);
+            expect(result.stdout.trim().replace(/^git version /, '').startsWith('2')).to.be.true;
+            expect(result.stderr.trim()).to.be.empty;
+            expect(result.exitCode).to.be.equal(0);
+
+        });
+
+        it('config', async () => {
+            const root = track.mkdirSync('exec-foo');
+            const localUri = FileUri.create(root).toString();
+            await initRepository(root);
+
+            const git = await createGit();
+            const result = await git.exec({ localUri }, ['config', '-l']);
+            expect(result.stdout.trim()).to.be.not.empty;
+            expect(result.stderr.trim()).to.be.empty;
+            expect(result.exitCode).to.be.equal(0);
+        });
+
+    });
+
+    describe('map-status', async () => {
+
+        it('deleted', () => {
+            expect(GitUtils.mapStatus('D')).to.be.equal(GitFileStatus.Deleted);
+        });
+
+        it('added with leading whitespace', () => {
+            expect(GitUtils.mapStatus(' A')).to.be.equal(GitFileStatus.New);
+        });
+
+        it('modified with trailing whitespace', () => {
+            expect(GitUtils.mapStatus('M ')).to.be.equal(GitFileStatus.Modified);
+        });
+
+        it('copied with percentage', () => {
+            expect(GitUtils.mapStatus('C100')).to.be.equal(GitFileStatus.Copied);
+        });
+
+        it('renamed with percentage', () => {
+            expect(GitUtils.mapStatus('R10')).to.be.equal(GitFileStatus.Renamed);
         });
 
     });

@@ -369,7 +369,7 @@ export class GitWidget extends VirtualWidget {
         }, iconSpan, nameSpan, pathSpan);
         const buttonsDiv = this.renderGitItemButtons(repository, change);
         const staged = change.staged ? 'staged ' : '';
-        const statusDiv = h.div({ className: 'status ' + staged + GitFileStatus[change.status].toLowerCase() }, this.getStatusChar(change.status, change.staged));
+        const statusDiv = h.div({ className: 'status ' + staged + GitFileStatus[change.status].toLowerCase() }, this.getStatusChar(change.status, change.staged || false));
         const itemButtonsAndStatusDiv = h.div({ className: 'itemButtonsContainer' }, buttonsDiv, statusDiv);
         return h.div({ className: 'gitItem noselect' }, nameAndPathDiv, itemButtonsAndStatusDiv);
     }

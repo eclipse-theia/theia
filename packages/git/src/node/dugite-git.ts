@@ -26,7 +26,7 @@ import { IStatusResult, IAheadBehind, AppFileStatus, WorkingDirectoryStatus as D
 import { Branch as DugiteBranch } from 'dugite-extra/lib/model/branch';
 import { Commit as DugiteCommit, CommitIdentity as DugiteCommitIdentity } from 'dugite-extra/lib/model/commit';
 import { ILogger } from '@theia/core';
-import { Git, GitUtils, Repository, WorkingDirectoryStatus, GitFileChange, GitFileStatus, Branch, Commit, CommitIdentity } from '../common';
+import { Git, GitUtils, Repository, WorkingDirectoryStatus, GitFileChange, GitFileStatus, Branch, Commit, CommitIdentity, GitResult } from '../common';
 import { GitRepositoryManager } from './git-repository-manager';
 import { GitLocator } from './git-locator/git-locator-protocol';
 
@@ -216,6 +216,14 @@ export class DugiteGit implements Git {
     async remote(repository: Repository): Promise<string[]> {
         const repositoryPath = this.getFsPath(repository);
         return this.getRemotes(repositoryPath);
+    }
+
+    async exec(repository: Repository, args: string[], options?: Git.Options.Execution): Promise<GitResult> {
+        const repositoryPath = this.getFsPath(repository);
+        return this.manager.run(repository, async () => {
+            const name = options && options.name ? options.name : '';
+            return (await git(args, repositoryPath, name, options));
+        });
     }
 
     private getCommitish(options?: Git.Options.Show): string {
