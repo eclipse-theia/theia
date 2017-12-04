@@ -14,6 +14,7 @@
     "@theia/java": "^0.2.4",
     "@theia/languages": "^0.2.4",
     "@theia/markers": "^0.2.4",
+    "@theia/messages": "^0.2.4",
     "@theia/metrics": "^0.2.4",
     "@theia/monaco": "^0.2.4",
     "@theia/navigator": "^0.2.4",

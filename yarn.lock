@@ -3219,10 +3219,6 @@ https-browserify@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/https-browserify/-/https-browserify-0.0.1.tgz#3f91365cabe60b77ed0ebba24b454e3e09d95a82"
 
-humane-js@^3.2.2:
-  version "3.2.2"
-  resolved "https://registry.yarnpkg.com/humane-js/-/humane-js-3.2.2.tgz#b762af5f8b246f3fd6f455eb131c252bd5c00a8c"
-
 humanize-duration@~3.10.0:
   version "3.10.1"
   resolved "https://registry.yarnpkg.com/humanize-duration/-/humanize-duration-3.10.1.tgz#65b550c0aa095156ecb7c340db44ee0bdf71af4b"
