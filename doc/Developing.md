@@ -29,6 +29,7 @@ For Windows instructions [click here](#building-on-windows).
      - [Debug the browser example's frontend and backend at the same time](#debug-the-browser-examples-frontend-and-backend-at-the-same-time)
      - [Debug the Electron example's backend](#debug-the-electron-examples-backend)
      - [Debug the Electron example's frontend](#debug-the-electron-examples-frontend)
+     - [Debug IPC servers](#debug-ipc-servers)
  - [**Testing**](#testing)
  - [**Code coverage**](#code-coverage)
  - [**Building on Windows**](#building-on-windows)
@@ -189,6 +190,16 @@ Note that some breakpoints don't hit because of [this issue](https://github.com/
 
  - Start the backend by using `yarn run start`.
  - In Electron: Help -> Toggle Electron Developer Tools.
+
+### Debug IPC servers
+
+  - Pass `--${server-name}-inspect` arg to the backend server.
+    - For example `--nfsw-watcher-inspect=0` to inspect nfsw watcher processes with dynamic port allocation.
+    - All variations of `--inspect` flag are supported: https://nodejs.org/en/docs/inspector/#command-line-options.
+  - Attach the debugger to the logged port.
+
+In order to look up `server-name` run the backend server with `--logLevel=debug` flag to enable logging of IPC servers instantiation.
+You should be able to see message of `[${server-name}: ${server-PID}]: IPC started` format, like `[nsfw-watcher: 37557] IPC started`.
 
 ## Testing
 

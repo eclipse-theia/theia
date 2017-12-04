@@ -2,6 +2,15 @@
 
 `theia` is a command line tool to manage Theia applications.
 
+- [**Getting started**](#getting-started)
+- [**Configure**](#configure)
+  - [**Build Target**](#build-target)
+  - [**Using latest builds**](#using-latest-builds)
+- [**Building**](#building)
+- [**Rebuilding native modules**](#rebuilding-native-modules)
+- [**Running**](#running)
+- [**Debugging**](#debugging)
+
 ## Getting started
 
 Install `@theia/cli` as a dev dependency in your application.
@@ -43,15 +52,45 @@ If you set `next` in your theia config, then Theia will prefer `next` over `late
 }
 ```
 
-## Run
+## Building
 
-- `theia clean` - remove the built output (`lib` folder) and the generated configurations
-- `theia generate` - generate configurations for the given target
-- `theia copy` - copy static resources to the built output
-- `theia build` - package the frontend code with webpack
-    - arguments passed to webpack, e.g. `theia build --watch` to package the frontend code incrementally
-- `theia rebuild` - rebuild native modules for the given target
-- `theia start` - start the backend node or electron process
-    - by default on port `3000` for the browser target
-    - by default on host `localhost` for the electron target
-    - arguments passed to a backend process, e.g. `theia start --port=3001` to start the backend on port `3001`
+To build once:
+
+    theia build
+
+In order to rebuild on each change:
+
+    theia build --watch
+
+In order to clean up the build result:
+
+    theia clean
+
+Arguments are passed directly to [webpack](https://webpack.js.org/), use `--help` to learn which options are supported.
+
+## Rebuilding native modules
+
+In order to run electron one should rebuild native node modules for an electron version:
+
+    theia rebuild
+
+To rollback native modules change the target to `browser` and run the command again.
+
+## Running
+
+To run the backend server:
+
+    theia start
+
+For the browser target a server is started on http://localhost:3000 by default.
+For the electron target a server is started on `localhost` host with the dynamically allocated port by default.
+
+Arguments are passed directly to a server, use `--help` to learn which options are supported.
+
+## Debugging
+
+To debug the backend server:
+
+    theia start --inspect
+
+Theia CLI accepts `--inspect` node flag: https://nodejs.org/en/docs/inspector/#command-line-options.
