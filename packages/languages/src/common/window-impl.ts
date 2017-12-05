@@ -5,25 +5,35 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
+import { MessageService } from '@theia/core/lib/common';
 import { MessageActionItem, MessageType } from 'vscode-base-languageclient/lib/protocol';
 import { Window, OutputChannel } from 'vscode-base-languageclient/lib/services';
 
 @injectable()
-export class ConsoleWindow implements Window {
+export class WindowImpl implements Window {
     protected readonly channels = new Map<string, OutputChannel>();
+    constructor( @inject(MessageService) protected readonly messageService: MessageService) { }
     showMessage<T extends MessageActionItem>(type: MessageType, message: string, ...actions: T[]): Thenable<T | undefined> {
+        const originalActions = new Map((actions || []).map(action => [action.title, action] as [string, T]));
+        const actionTitles = (actions || []).map(action => action.title);
+        const mapActionType: (result: string | undefined) => (T | undefined) = result => {
+            if (!!result) {
+                return originalActions.get(result);
+            }
+            return undefined;
+        };
         if (type === MessageType.Error) {
-            console.error(message);
+            return this.messageService.error(message, ...actionTitles).then(mapActionType);
         }
         if (type === MessageType.Warning) {
-            console.warn(message);
+            return this.messageService.warn(message, ...actionTitles).then(mapActionType);
         }
         if (type === MessageType.Info) {
-            console.info(message);
+            return this.messageService.info(message, ...actionTitles).then(mapActionType);
         }
         if (type === MessageType.Log) {
-            console.log(message);
+            return this.messageService.log(message, ...actionTitles).then(mapActionType);
         }
         return Promise.resolve(undefined);
     }
