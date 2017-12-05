@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { MessageConnection } from "vscode-jsonrpc";
+import { MessageConnection, ResponseError, ErrorCodes } from "vscode-jsonrpc";
 import { Event, Emitter } from "../event";
 import { Disposable } from "../disposable";
 import { ConnectionHandler } from './handler';
@@ -143,17 +143,18 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
      *
      * @returns A promise of the method call completion.
      */
-    protected onRequest(method: string, ...args: any[]): Promise<any> {
-        return new Promise<any>((resolve, reject) => {
-            try {
-                const promise = this.target[method](...args) as Promise<any>;
-                promise
-                    .catch(err => reject(err))
-                    .then(result => resolve(result));
-            } catch (err) {
-                reject(err);
+    protected async onRequest(method: string, ...args: any[]): Promise<any> {
+        try {
+            return await this.target[method](...args);
+        } catch (e) {
+            if (e instanceof ResponseError) {
+                throw e;
             }
-        });
+            const reason = e.message || '';
+            const stack = e.stack || '';
+            throw new ResponseError(ErrorCodes.InternalError, `Request ${method} failed with error: ${reason}
+${stack}`);
+        }
     }
 
     /**
