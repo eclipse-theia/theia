@@ -24,11 +24,10 @@ export class WorkspaceStorageService implements StorageService {
     constructor( @inject(WorkspaceService) protected workspaceService: WorkspaceService,
         @inject(ILogger) protected logger: ILogger) {
         this.initialized = this.workspaceService.root.then(stat => {
-            const loc = window.location.toString();
             if (stat) {
-                this.prefix = loc + stat.uri;
+                this.prefix = stat.uri;
             } else {
-                this.prefix = loc + '_global_';
+                this.prefix = '_global_';
             }
         });
         this.storageService = new LocalStorageService(this.logger);
