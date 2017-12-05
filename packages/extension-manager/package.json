@@ -6,8 +6,10 @@
     "@theia/application-package": "^0.2.4",
     "@theia/core": "^0.2.4",
     "@theia/filesystem": "^0.2.4",
+    "@types/fs-extra": "^4.0.2",
     "@types/sanitize-html": "^1.13.31",
     "@types/showdown": "^1.7.1",
+    "fs-extra": "^4.0.2",
     "sanitize-html": "^1.14.1",
     "showdown": "^1.7.4"
   },
