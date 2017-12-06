@@ -14,9 +14,16 @@ export interface UserStorageService extends Disposable {
 
     saveContents(uri: URI, content: string): Promise<void>;
 
-    onUserStorageChanged: Event<UserStorageChangeEvent>;
+    onChanged: Event<UserStorageChange[]>;
 }
 
-export interface UserStorageChangeEvent {
-    uris: URI[];
+export interface UserStorageChange {
+    uri: URI;
+    type: UserStorageChangeType
+}
+
+export enum UserStorageChangeType {
+    UPDATED = 0,
+    ADDED = 1,
+    DELETED = 2
 }

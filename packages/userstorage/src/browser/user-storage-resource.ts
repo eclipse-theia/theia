@@ -8,26 +8,29 @@
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Resource, ResourceResolver, Emitter, Event, MaybePromise, DisposableCollection } from '@theia/core/lib/common';
-import { UserStorageService } from './user-storage-service';
+import { UserStorageService, UserStorageChangeType } from './user-storage-service';
 import { UserStorageUri } from './user-storage-uri';
 
 export class UserStorageResource implements Resource {
 
-    protected readonly onDidChangeContentsEmitter = new Emitter<void>();
     protected readonly toDispose = new DisposableCollection();
+    readonly onDispose = this.toDispose.onDispose.bind(this.toDispose);
+
+    protected readonly onDidChangeContentsEmitter = new Emitter<void>();
+
     constructor(
         public uri: URI,
         protected readonly service: UserStorageService
     ) {
-        this.toDispose.push(this.service.onUserStorageChanged(e => {
-            for (const changedUri of e.uris) {
-                if (changedUri.toString() === this.uri.toString()) {
-                    this.onDidChangeContentsEmitter.fire(undefined);
-                }
+        this.toDispose.push(this.onDidChangeContentsEmitter);
+        this.toDispose.push(this.service.onChanged(changes => {
+            const relevant = changes.filter(e => e.uri.toString() === uri.toString());
+            if (relevant.some(e => e.type === UserStorageChangeType.DELETED)) {
+                this.dispose();
+            } else if (relevant.some(e => e.type !== UserStorageChangeType.DELETED)) {
+                this.onDidChangeContentsEmitter.fire(undefined);
             }
         }));
-
-        this.toDispose.push(this.onDidChangeContentsEmitter);
     }
 
     dispose(): void {
