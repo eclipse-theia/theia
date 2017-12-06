@@ -35,12 +35,13 @@
     position: relative;
     width: 60%;
     min-width: 500px;
-    background-color: #222222;
-    color: white;
+    background-color: var(--theia-layout-color5);
     box-shadow: 0 5px 5px -5px rgba(0, 0, 0, 0.6);
     min-height: 35px;
     -webkit-animation: fadeInDown 0.5s ease both;
     animation: fadeInDown 0.5s ease both;
+    margin-bottom: 1px;
+    color: var(--theia-ui-icon-font-color);
 }
 
 .theia-Notification .icon {
@@ -54,12 +55,21 @@
     line-height: inherit;
     vertical-align: middle;
     font-size: 120%;
-    color: #4caf50;
+    color: var(--theia-accent-color2);
+}
+
+.theia-Notification .icon .error {
+    color: var(--theia-error-color1);
+}
+
+.theia-Notification .icon .warning {
+    color: var(--theia-warn-color1);
 }
 
 .theia-Notification .text {
     order: 2;
     display: inline-block;
+    align-self: center;
     flex: 1 100%;
     height: 100%;
     padding: 10px;
@@ -67,6 +77,7 @@
 
 .theia-Notification .text > p {
     margin: 0px;
+    font-size: var(--theia-ui-font-size1);
     vertical-align: middle;
 }
 
@@ -75,25 +86,27 @@
     flex-direction: row;
     order: 3;
     white-space: nowrap;
+    align-self: flex-end;
+    height: 40px;
 }
 
 .theia-Notification .buttons > button {
-    background-color: rgb(57, 175, 61);
+    background-color: var(--theia-accent-color3);
+    color: var(--theia-ui-icon-font-color);
     border: none;
     border-radius: 0px;
-    color: white;
     text-align: center;
     text-decoration: none;
     display: inline-block;
     padding: 0px 10px;
     margin: 0px;
-    font-weight: bold;
+    font-size: var(--theia-ui-font-size1);
     outline: none;
     cursor: pointer;
 }
 
 .theia-Notification .buttons > button:hover {
-    background-color: rgba(57, 175, 61, 0.7);
+    background-color: var(--theia-accent-color1);
 }
 
 @-moz-keyframes fadeInDown {

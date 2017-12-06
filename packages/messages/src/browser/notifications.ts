@@ -54,7 +54,7 @@ export class Notifications {
         const iconContainer = element.appendChild(document.createElement('div'));
         iconContainer.classList.add(ICON);
         const icon = iconContainer.appendChild(document.createElement('i'));
-        icon.classList.add('fa', this.toIconClass(properties.icon), 'fa-fw');
+        icon.classList.add('fa', this.toIconClass(properties.icon), 'fa-fw', properties.icon);
         const textContainer = element.appendChild(document.createElement('div'));
         textContainer.classList.add(TEXT);
         const text = textContainer.appendChild(document.createElement('p'));
