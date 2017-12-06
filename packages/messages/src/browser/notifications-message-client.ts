@@ -30,16 +30,19 @@ export class NotificationsMessageClient extends MessageClient {
 
     protected showToast(message: Message, onCloseFn: (action: string | undefined) => void): void {
         const icon = this.iconFor(message.type);
-        const actions = message.actions || [];
         const text = message.text;
-
+        const actions = (message.actions || []).map(action => <NotificationAction>{
+            label: action,
+            fn: element => onCloseFn(action)
+        });
+        actions.push(<NotificationAction>{
+            label: 'Close',
+            fn: element => onCloseFn(undefined)
+        });
         this.notifications.show({
-            text,
             icon,
-            actions: actions.map(action => <NotificationAction>{
-                label: action,
-                fn: element => onCloseFn(action)
-            })
+            text,
+            actions
         });
     }
 

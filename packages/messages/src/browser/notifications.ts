@@ -75,9 +75,6 @@ export class Notifications {
                 });
             }
         }
-        const closeButton = buttons.appendChild(document.createElement('button'));
-        closeButton.innerText = 'Close';
-        closeButton.addEventListener('click', close);
         return fragment;
     }
 
