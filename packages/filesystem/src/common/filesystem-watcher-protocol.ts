@@ -38,6 +38,7 @@ export interface WatchOptions {
 }
 
 export interface DidFilesChangedParams {
+    watcher: number;
     changes: FileChange[];
 }
 
@@ -72,6 +73,9 @@ export class ReconnectingFileSystemWatcherServer implements FileSystemWatcherSer
             // skip reconnection on the first connection
             onInitialized.dispose();
             this.proxy.onDidOpenConnection(() => this.reconnect());
+        });
+        this.proxy.setClient({
+            onDidFilesChanged: e => this.dispatchChanges(e)
         });
     }
 
@@ -108,8 +112,31 @@ export class ReconnectingFileSystemWatcherServer implements FileSystemWatcherSer
         return Promise.resolve();
     }
 
+    protected client: FileSystemWatcherClient | undefined;
     setClient(client: FileSystemWatcherClient | undefined): void {
-        this.proxy.setClient(client);
+        this.client = client;
+    }
+
+    protected dispatchChanges(event: DidFilesChangedParams): void {
+        const client = this.client;
+        if (client) {
+            const watcher = this.getLocalWatcher(event.watcher);
+            if (watcher) {
+                client.onDidFilesChanged({
+                    ...event,
+                    watcher
+                });
+            }
+        }
+    }
+
+    protected getLocalWatcher(watcher: number): number | undefined {
+        for (const [local, remote] of this.localToRemoteWatcher.entries()) {
+            if (remote === watcher) {
+                return local;
+            }
+        }
+        return undefined;
     }
 
 }

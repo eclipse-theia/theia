@@ -20,7 +20,7 @@ const preferencePath = '.theia/prefs.json';
 
 let compoundPrefServer: CompoundPreferenceServer;
 let preferenceFileUri: any;
-let helper = new JsonPrefHelper();
+const helper = new JsonPrefHelper();
 
 before(() => {
     chai.should();
@@ -46,7 +46,7 @@ describe('compound-preference-server', () => {
     it('register a client', async () => {
 
         // Register a simple client
-        let promise: Promise<boolean> = new Promise<boolean>((done) => {
+        const promise: Promise<boolean> = new Promise<boolean>((done) => {
             compoundPrefServer.setClient({
                 onDidChangePreference(event) {
                     for (const change of event.changes) {
@@ -66,17 +66,16 @@ describe('compound-preference-server', () => {
         // Modify the content.
         fs.writeFileSync(FileUri.fsPath(preferenceFileUri), fileContent);
 
-        let { content } = await helper.getFS().resolveContent(FileUri.fsPath(preferenceFileUri));
+        const { content } = await helper.getFS().resolveContent(FileUri.fsPath(preferenceFileUri));
         expect(content).to.be.equal(fileContent);
 
-        helper.getWatcher().fireEvents(
-            {
-                changes: [{
-                    uri: preferenceFileUri.toString(),
-                    type: 0
-                }]
-            }
-        );
+        helper.getWatcher().fireEvents({
+            changes: [{
+                uri: preferenceFileUri.toString(),
+                type: 0
+            }],
+            watcher: 2
+        });
 
         return promise;
 
