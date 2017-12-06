@@ -14,6 +14,7 @@ import { MaybePromise } from "./types";
 
 export interface Resource extends Disposable {
     readonly uri: URI;
+    readonly onDispose?: Event<void>;
     readContents(options?: { encoding?: string }): Promise<string>;
     saveContents?(content: string, options?: { encoding?: string }): Promise<void>;
     readonly onDidChangeContents?: Event<void>;

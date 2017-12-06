@@ -9,11 +9,13 @@ import { injectable, inject } from "inversify";
 import { Resource, ResourceResolver, MaybePromise, Emitter, Event, DisposableCollection } from "@theia/core";
 import URI from "@theia/core/lib/common/uri";
 import { FileSystem, FileStat } from "./filesystem";
-import { FileSystemWatcher } from "./filesystem-watcher";
+import { FileSystemWatcher, FileChangeType } from "./filesystem-watcher";
 
 export class FileResource implements Resource {
 
     protected readonly toDispose = new DisposableCollection();
+    readonly onDispose = this.toDispose.onDispose.bind(this.toDispose);
+
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
 
     constructor(
@@ -24,7 +26,10 @@ export class FileResource implements Resource {
     ) {
         this.toDispose.push(this.onDidChangeContentsEmitter);
         this.toDispose.push(this.fileSystemWatcher.onFilesChanged(changes => {
-            if (changes.some(e => e.uri.toString() === uri.toString())) {
+            const relevant = changes.filter(e => e.uri.toString() === uri.toString());
+            if (relevant.some(e => e.type === FileChangeType.DELETED)) {
+                this.dispose();
+            } else if (relevant.some(e => e.type !== FileChangeType.DELETED)) {
                 this.onDidChangeContentsEmitter.fire(undefined);
             }
         }));
