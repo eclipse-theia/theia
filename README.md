@@ -32,7 +32,7 @@ Here you can find guides and examples for common scenarios:
 - [Develop a new Theia extension](doc/Authoring_Extensions.md)
 - Develop a new Theia application for [Cloud](examples/browser/package.json) or [Desktop](examples/electron/package.json) with [Theia CLI](dev-packages/cli/README.md)
 - [Run Theia IDE for Web Developers with Docker](https://github.com/theia-ide/theia-apps#theia-docker)
-- [Package a desktop Theia application with Electon](https://github.com/theia-ide/yangster-electron)
+- [Package a desktop Theia application with Electron](https://github.com/theia-ide/yangster-electron)
 
 ## Documentation
 
@@ -52,17 +52,17 @@ There are guides to get familiar with Theia architecture and internals:
 
 Read below to learn how to take part in improving Theia:
 - Fork the repository and [run the examples from source](doc/Developing.md#quick-start)
-- Get familiar with [the development workflow](doc/Developing.md), [Coding Guidlines](https://github.com/theia-ide/theia/wiki/Coding-Guidelines), [Code of Conduct](CODE_OF_CONDUCT.md) and [learn how to sign your work](CONTRIBUTING.md#sign-your-work)
+- Get familiar with [the development workflow](doc/Developing.md), [Coding Guidelines](https://github.com/theia-ide/theia/wiki/Coding-Guidelines), [Code of Conduct](CODE_OF_CONDUCT.md) and [learn how to sign your work](CONTRIBUTING.md#sign-your-work)
 - Find an issue to work on and submit a pull request
-  - First time contirbuting to open source? Pick a [good first issue](https://github.com/theia-ide/theia/labels/good%20first%20issue) to get you familiar with GitHub contributing process.
+  - First time contributing to open source? Pick a [good first issue](https://github.com/theia-ide/theia/labels/good%20first%20issue) to get you familiar with GitHub contributing process.
   - First time contributing to Theia? Pick a [beginner friendly issue](https://github.com/theia-ide/theia/labels/beginners) to get you familiar with codebase and our contributing process.
   - Want to become a Committer? Solve an issue showing that you understand Theia objectives and architecture. [Here](https://github.com/theia-ide/theia/labels/help%20wanted) is a good list to start.
-- Could not find an issue? Look for bugs, typos and missing features.
+- Could not find an issue? Look for bugs, typos, and missing features.
 
 ## Feedback
 
 Read below how to engage with Theia community:
-- Join discussion on [Gitter](https://gitter.im/theia-ide/theia).
+- Join the discussion on [Gitter](https://gitter.im/theia-ide/theia).
 - Ask a question, request a new feature and file a bug with [GitHub issues](https://github.com/theia-ide/theia/issues/new).
 - Star the repository to show your support.
 - Follow Theia on [Twitter](https://twitter.com/theia_ide).
