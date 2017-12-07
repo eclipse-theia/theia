@@ -1,10 +1,10 @@
 {
   "name": "@theia/workspace",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "description": "Theia - Workspace Extension",
   "dependencies": {
-    "@theia/core": "^0.2.4",
-    "@theia/filesystem": "^0.2.4",
+    "@theia/core": "^0.3.0",
+    "@theia/filesystem": "^0.3.0",
     "@types/fs-extra": "^4.0.2",
     "fs-extra": "^4.0.2"
   },

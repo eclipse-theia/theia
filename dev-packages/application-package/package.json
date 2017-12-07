@@ -1,6 +1,6 @@
 {
   "name": "@theia/application-package",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "description": "Theia application package API.",
   "publishConfig": {
     "access": "public"
