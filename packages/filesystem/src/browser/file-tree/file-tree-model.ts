@@ -26,7 +26,8 @@ export class FileTreeModel extends TreeModel implements LocationService {
     protected readonly fileSystem: FileSystem;
     protected readonly watcher: FileSystemWatcher;
 
-    @inject(LabelProvider) protected labelProvider: LabelProvider;
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
 
     constructor(
         @inject(FileTree) protected readonly tree: FileTree,
@@ -110,21 +111,60 @@ export class FileTreeModel extends TreeModel implements LocationService {
         return true;
     }
 
-    upload(destination: string, file: File, fileName: string) {
-        const uri = destination + '/' + fileName;
-        const encoding = 'base64';
+    upload(node: DirNode, items: DataTransferItemList): void {
+        for (let i = 0; i < items.length; i++) {
+            const entry = items[i].webkitGetAsEntry() as WebKitEntry;
+            this.uploadEntry(node.uri, entry);
+        }
+    }
+
+    protected uploadEntry(base: URI, entry: WebKitEntry | null): void {
+        if (!entry) {
+            return;
+        }
+        if (entry.isDirectory) {
+            this.uploadDirectoryEntry(base, entry as WebKitDirectoryEntry);
+        } else {
+            this.uploadFileEntry(base, entry as WebKitFileEntry);
+        }
+    }
+
+    protected async uploadDirectoryEntry(base: URI, entry: WebKitDirectoryEntry): Promise<void> {
+        const reader = entry.createReader();
+        const newBase = base.resolve(entry.name);
+        const uri = newBase.toString();
+        if (!await this.fileSystem.exists(uri)) {
+            await this.fileSystem.createFolder(uri);
+        }
+        reader.readEntries(items => this.uploadEntries(newBase, items as any));
+    }
+
+    protected uploadEntries(base: URI, entries: WebKitEntry[]): void {
+        for (let i = 0; i < entries.length; i++) {
+            this.uploadEntry(base, entries[i]);
+        }
+    }
+
+    protected uploadFileEntry(base: URI, entry: WebKitFileEntry): void {
+        entry.file(file => this.uploadFile(base, file as any));
+    }
+
+    protected uploadFile(base: URI, file: File): void {
         const reader = new FileReader();
-        reader.onload = async e => {
-            const fileContent: ArrayBuffer = reader.result;
-            const content = base64.fromByteArray(new Uint8Array(fileContent));
-            if (await this.fileSystem.exists(uri)) {
-                const stat = await this.fileSystem.getFileStat(uri);
-                this.fileSystem.setContent(stat, content, { encoding });
-            } else {
-                this.fileSystem.createFile(uri, { content, encoding });
-            }
-        };
+        reader.onload = () => this.uploadFileContent(base.resolve(file.name), reader.result);
         reader.readAsArrayBuffer(file);
+    }
+
+    protected async uploadFileContent(base: URI, fileContent: Iterable<number>): Promise<void> {
+        const uri = base.toString();
+        const encoding = 'base64';
+        const content = base64.fromByteArray(new Uint8Array(fileContent));
+        if (await this.fileSystem.exists(uri)) {
+            const stat = await this.fileSystem.getFileStat(uri);
+            await this.fileSystem.setContent(stat, content, { encoding });
+        } else {
+            await this.fileSystem.createFile(uri, { content, encoding });
+        }
     }
 
 }
