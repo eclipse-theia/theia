@@ -172,16 +172,9 @@ To rebuild each time a change is detected in frontend or backend you can run:
 
 ### Debug the browser example's frontend and backend at the same time
 
- - Create a symlink to theia directory `ln -s theia theia-frontend`.
- - Open one VS Code in theia directory.
- - Open another VS Code in theia-frontend directory.
- - In one VS Code window: start the debug tab and run the `Launch Backend`
- configuration.
- - In the other VS Code window: start the debug tab and run the `Launch Frontend`
- configuration.
+ - In VS Code: Start the debug tab and run the `Launch Backend` configuration.
+ - Then run the `Launch Frontend` configuration.
  
-Note that some breakpoints don't hit because of [this issue](https://github.com/Microsoft/vscode/issues/28817).
-
 ### Debug the Electron example's backend
 
  - In VS Code: Start the debug tab and run the `Launch Electron Backend` configuration.
