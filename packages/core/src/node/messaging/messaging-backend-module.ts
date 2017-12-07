@@ -6,6 +6,7 @@
  */
 
 import * as http from 'http';
+import * as https from 'https';
 import { ContainerModule, injectable, inject, named } from "inversify";
 import { bindContributionProvider, ContributionProvider, ConnectionHandler } from '../../common';
 import { BackendApplicationContribution } from "../backend-application";
@@ -22,7 +23,7 @@ export class MessagingContribution implements BackendApplicationContribution {
     constructor( @inject(ContributionProvider) @named(ConnectionHandler) protected readonly handlers: ContributionProvider<ConnectionHandler>) {
     }
 
-    onStart(server: http.Server): void {
+    onStart(server: http.Server | https.Server): void {
         for (const handler of this.handlers.getContributions()) {
             const path = handler.path;
             try {

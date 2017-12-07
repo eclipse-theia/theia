@@ -7,6 +7,7 @@
 
 import * as ws from "ws";
 import * as http from "http";
+import * as https from "https";
 import * as url from "url";
 import * as net from "net";
 import { MessageConnection } from "vscode-jsonrpc";
@@ -14,7 +15,7 @@ import { createWebSocketConnection, IWebSocket } from "vscode-ws-jsonrpc";
 import { ConsoleLogger } from "./logger";
 
 export interface IServerOptions {
-    readonly server: http.Server;
+    readonly server: http.Server | https.Server;
     readonly path?: string;
     matches?(request: http.IncomingMessage): boolean;
 }

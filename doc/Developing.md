@@ -13,6 +13,7 @@ For Windows instructions [click here](#building-on-windows).
 
  - [**Prerequisites**](#prerequisites)
  - [**Quick Start**](#quick-start)
+    - [Run with SSL](#run-the-browser-example-with-ssl)
  - [**Clone the repository**](#clone-the-repository)
  - [**The repository structure**](#the-repository-structure)
  - [**Build core, extensions and examples packages**](#build-core-extensions-and-examples-packages)
@@ -67,6 +68,18 @@ To build and run the Electron example:
     && yarn run rebuild:electron \
     && cd examples/electron \
     && yarn run start
+
+### Run the browser example with SSL
+
+To run the browser example using SSL use:
+
+    git clone https://github.com/theia-ide/theia \
+    && cd theia \
+    && yarn \
+    && cd examples/browser \
+    && yarn run start --ssl --cert /path/to/cert.crt --certkey /path/to/certkey.key
+
+Start your browser on https://localhost:3000.
 
 ## Clone the repository
 

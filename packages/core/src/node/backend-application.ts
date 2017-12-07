@@ -6,6 +6,7 @@
  */
 
 import * as http from 'http';
+import * as https from 'https';
 import * as express from 'express';
 import * as yargs from 'yargs';
 import { inject, named, injectable } from "inversify";
@@ -13,12 +14,13 @@ import { ILogger, ContributionProvider } from '../common';
 import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
 import { BackendProcess } from './backend-process';
+import * as fs from "fs-extra";
 
 export const BackendApplicationContribution = Symbol("BackendApplicationContribution");
 export interface BackendApplicationContribution {
     initialize?(): void;
     configure?(app: express.Application): void;
-    onStart?(server: http.Server): void;
+    onStart?(server: http.Server | https.Server): void;
 
     /**
      * Called when the backend application shuts down. Contributions must perform only synchronous operations.
@@ -29,21 +31,31 @@ export interface BackendApplicationContribution {
 
 const defaultPort = BackendProcess.electron ? 0 : 3000;
 const defaultHost = 'localhost';
+const defaultSSL = false;
 
 @injectable()
 export class BackendApplicationCliContribution implements CliContribution {
 
     port: number;
     hostname: string | undefined;
+    ssl: boolean | undefined;
+    cert: string | undefined;
+    certkey: string | undefined;
 
     configure(conf: yargs.Argv): void {
         yargs.option('port', { alias: 'p', description: 'The port the backend server listens on.', type: 'number', default: defaultPort });
         yargs.option('hostname', { description: 'The allowed hostname for connections.', type: 'string', default: defaultHost });
+        yargs.option('ssl', { description: 'Use SSL (HTTPS), cert and certkey must also be set', type: 'boolean', default: defaultSSL });
+        yargs.option('cert', { description: 'Path to SSL certificate.', type: 'string' });
+        yargs.option('certkey', { description: 'Path to SSL certificate key.', type: 'string' });
     }
 
     setArguments(args: yargs.Arguments): void {
         this.port = args.port;
         this.hostname = args.hostname;
+        this.ssl = args.ssl;
+        this.cert = args.cert;
+        this.certkey = args.certkey;
     }
 }
 
@@ -102,13 +114,45 @@ export class BackendApplication {
         this.app.use(...handlers);
     }
 
-    async start(aPort?: number, aHostname?: string): Promise<http.Server> {
-        const deferred = new Deferred<http.Server>();
-        let server: http.Server;
+    async start(aPort?: number, aHostname?: string): Promise<http.Server | https.Server> {
+        const deferred = new Deferred<http.Server | https.Server>();
+        let server: http.Server | https.Server;
         const port = aPort !== undefined ? aPort : this.cliParams.port;
         const hostname = aHostname !== undefined ? aHostname : this.cliParams.hostname;
-        server = this.app.listen(port, hostname!, () => {
-            this.logger.info(`Theia app listening on http://${hostname || 'localhost'}:${server.address().port}.`);
+
+        if (this.cliParams.ssl) {
+
+            if (this.cliParams.cert === undefined) {
+                throw new Error("Missing --cert option, see --help for usage");
+            }
+
+            if (this.cliParams.certkey === undefined) {
+                throw new Error("Missing --certkey option, see --help for usage");
+            }
+
+            let key;
+            let cert;
+            try {
+                key = await fs.readFile(this.cliParams.certkey as string);
+            } catch (err) {
+                await this.logger.error(`Can't read certificate key`);
+                throw err;
+            }
+
+            try {
+                cert = await fs.readFile(this.cliParams.cert as string);
+            } catch (err) {
+                await this.logger.error(`Can't read certificate`);
+                throw err;
+            }
+            server = https.createServer({ key, cert }, this.app);
+        } else {
+            server = http.createServer(this.app);
+        }
+
+        server.listen(port, hostname, () => {
+            const scheme = this.cliParams.ssl ? 'https' : 'http';
+            this.logger.info(`Theia app listening on ${scheme}://${hostname || 'localhost'}:${server.address().port}.`);
             deferred.resolve(server);
         });
 
