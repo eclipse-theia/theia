@@ -122,4 +122,12 @@ export namespace DirNode {
             selected: false
         };
     }
+
+    export function getContainingDir(node: ITreeNode | undefined): DirNode | undefined {
+        let containing = node;
+        while (!!containing && !is(containing)) {
+            containing = containing.parent;
+        }
+        return containing;
+    }
 }
