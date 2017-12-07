@@ -6,6 +6,7 @@
  */
 
 import * as http from 'http';
+import * as https from 'https';
 import { injectable, inject } from 'inversify';
 import URI from "@theia/core/lib/common/uri";
 import { ILogger } from "@theia/core/lib/common";
@@ -21,7 +22,7 @@ export class TerminalBackendContribution implements BackendApplicationContributi
         @inject(ILogger) protected readonly logger: ILogger) {
     }
 
-    onStart(server: http.Server): void {
+    onStart(server: http.Server | https.Server): void {
         openSocket({
             server,
             matches: request => {

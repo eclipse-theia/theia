@@ -7,6 +7,7 @@
 
 import * as net from 'net';
 import * as http from 'http';
+import * as https from 'https';
 import * as cluster from 'cluster';
 import { injectable, inject } from "inversify";
 import { createRemoteMaster, IMasterProcess, IServerProcess } from './cluster-protocol';
@@ -34,7 +35,7 @@ export const clusterRemoteMasterProcessFactory: RemoteMasterProcessFactory = ser
 export class ServerProcess implements BackendApplicationContribution {
 
     protected readonly master: IMasterProcess;
-    protected server: http.Server | undefined;
+    protected server: http.Server | https.Server | undefined;
     protected readonly sockets = new Set<net.Socket>();
 
     constructor(
@@ -44,7 +45,7 @@ export class ServerProcess implements BackendApplicationContribution {
         this.master.onDidInitialize();
     }
 
-    onStart(server: http.Server): void {
+    onStart(server: http.Server | https.Server): void {
         this.server = server;
         server.on('connection', socket => {
             this.sockets.add(socket);

@@ -6,6 +6,7 @@
  */
 
 import * as http from 'http';
+import * as https from 'https';
 import { injectable, inject, named } from "inversify";
 import { createWebSocketConnection } from "vscode-ws-jsonrpc/lib/server";
 import { ContributionProvider } from '@theia/core/lib/common';
@@ -22,7 +23,7 @@ export class LanguagesBackendContribution implements BackendApplicationContribut
         @inject(ILogger) protected logger: ILogger
     ) { }
 
-    onStart(server: http.Server): void {
+    onStart(server: http.Server | https.Server): void {
         for (const contribution of this.contributors.getContributions()) {
             const path = LanguageContribution.getPath(contribution);
             openJsonRpcSocket({ server, path }, socket => {

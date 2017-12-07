@@ -5,7 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 // tslint:disable:no-console
-import * as http from 'http';
 import * as cluster from 'cluster';
 import { checkParentAlive } from '../messaging/ipc-protocol';
 import { MasterProcess } from './master-process';
@@ -39,7 +38,7 @@ export async function start(serverPath: string): Promise<Address> {
         const master = new MasterProcess();
         return master.start().listening;
     }
-    const server: http.Server = await require(serverPath)();
+    const server = await require(serverPath)();
     return server.address();
 }
 export default start;
