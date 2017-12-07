@@ -12,6 +12,7 @@ import { FileSystem, FileSystemWatcher, FileChangeType, FileChange } from "../..
 import { FileStatNode, DirNode, FileTree } from "./file-tree";
 import { LocationService } from '../location';
 import { LabelProvider } from "@theia/core/lib/browser/label-provider";
+import * as base64 from 'base64-js';
 
 @injectable()
 export class FileTreeServices extends TreeServices {
@@ -107,6 +108,23 @@ export class FileTreeModel extends TreeModel implements LocationService {
         const targetUri = node.uri.resolve(uri.path.base);
         this.fileSystem.copy(uri.toString(), targetUri.toString());
         return true;
+    }
+
+    upload(destination: string, file: File, fileName: string) {
+        const uri = destination + '/' + fileName;
+        const encoding = 'base64';
+        const reader = new FileReader();
+        reader.onload = async e => {
+            const fileContent: ArrayBuffer = reader.result;
+            const content = base64.fromByteArray(new Uint8Array(fileContent));
+            if (await this.fileSystem.exists(uri)) {
+                const stat = await this.fileSystem.getFileStat(uri);
+                this.fileSystem.setContent(stat, content, { encoding });
+            } else {
+                this.fileSystem.createFile(uri, { content, encoding });
+            }
+        };
+        reader.readAsArrayBuffer(file);
     }
 
 }
