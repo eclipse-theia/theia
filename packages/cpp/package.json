@@ -1,13 +1,13 @@
 {
   "name": "@theia/cpp",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Theia - Cpp Extension",
   "dependencies": {
     "@theia/core": "^0.3.0",
-    "@theia/editor": "^0.3.0",
+    "@theia/editor": "^0.3.1",
     "@theia/filesystem": "^0.3.0",
-    "@theia/languages": "^0.3.0",
-    "@theia/monaco": "^0.3.0",
+    "@theia/languages": "^0.3.1",
+    "@theia/monaco": "^0.3.1",
     "@theia/preferences": "^0.3.0"
   },
   "publishConfig": {

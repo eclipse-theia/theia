@@ -1,12 +1,12 @@
 {
   "name": "@theia/monaco",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Theia - Monaco Extension",
   "dependencies": {
     "@theia/core": "^0.3.0",
-    "@theia/editor": "^0.3.0",
+    "@theia/editor": "^0.3.1",
     "@theia/filesystem": "^0.3.0",
-    "@theia/languages": "^0.3.0",
+    "@theia/languages": "^0.3.1",
     "@theia/markers": "^0.3.0",
     "@theia/outline-view": "^0.3.0",
     "@theia/preferences": "^0.3.0",

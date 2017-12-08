@@ -1,6 +1,6 @@
 {
   "name": "@theia/languages",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Theia - Languages Extension",
   "dependencies": {
     "@theia/core": "^0.3.0",
