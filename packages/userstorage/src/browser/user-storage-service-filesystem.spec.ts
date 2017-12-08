@@ -10,10 +10,12 @@ import * as chai from 'chai';
 import { UserStorageServiceFilesystemImpl } from './user-storage-service-filesystem';
 import { UserStorageService } from './user-storage-service';
 import { UserStorageResource } from './user-storage-resource';
-import { Emitter, } from '@theia/core/lib/common';
+import { Disposable } from '@theia/core/lib/common';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { FileSystemWatcher, FileSystem, FileSystemPreferences, FileStat, FileChange, FileChangeType, createFileSystemPreferences } from '@theia/filesystem/lib/common/';
+import {
+    FileSystemWatcher, FileSystem, FileSystemPreferences, FileStat, FileChangeType, createFileSystemPreferences, WatchCallback
+} from '@theia/filesystem/lib/common';
 import { PreferenceService, PreferenceServer } from '@theia/preferences-api/lib/common';
 import { MockPreferenceServer } from '@theia/preferences-api/lib/common/test';
 import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
@@ -31,7 +33,7 @@ let userStorageService: UserStorageServiceFilesystemImpl;
 const homeDir = '/home/test';
 const THEIA_USER_STORAGE_FOLDER = '.theia';
 const userStorageFolder = new URI('file://' + homeDir).resolve(THEIA_USER_STORAGE_FOLDER);
-const mockOnFileChangedEmitter = new Emitter<FileChange[]>();
+let fireChanges: WatchCallback | undefined;
 let files: { [key: string]: string; } = {};
 
 before(async () => {
@@ -48,9 +50,12 @@ before(async () => {
         const prefs = ctx.container.get<FileSystemPreferences>(FileSystemPreferences);
         const watcher = new FileSystemWatcher(server, prefs);
 
-        sinon.stub(watcher, 'onFilesChanged').get(() =>
-            mockOnFileChangedEmitter.event
-        );
+        sinon.stub(watcher, 'watchFileChanges').callsFake((uri: URI, cb: WatchCallback) => {
+            fireChanges = cb;
+            return Promise.resolve(Disposable.create(() => {
+                fireChanges = undefined;
+            }));
+        });
 
         return watcher;
 
@@ -138,14 +143,14 @@ describe('User Storage Service (Filesystem implementation)', () => {
     });
 
     it('Should register a client and notifies it of the fs changesby converting them to user storage changes', done => {
-        userStorageService.onUserStorageChanged(event => {
-            const userStorageUri = event.uris[0];
+        userStorageService.onChanged(changes => {
+            const userStorageUri = changes[0].uri;
             expect(userStorageUri.scheme).eq(UserStorageUri.SCHEME);
             expect(userStorageUri.path.toString()).eq(testFile);
             done();
         });
 
-        mockOnFileChangedEmitter.fire([
+        fireChanges!([
             {
                 type: FileChangeType.UPDATED,
                 uri: userStorageFolder.resolve(testFile)
@@ -197,7 +202,7 @@ describe('User Storage Resource (Filesystem implementation)', () => {
             done();
         });
 
-        mockOnFileChangedEmitter.fire([
+        fireChanges!([
             {
                 type: FileChangeType.UPDATED,
                 uri: userStorageFolder.resolve(testFile)

@@ -14,6 +14,7 @@ export interface Saveable {
     readonly dirty: boolean;
     readonly onDirtyChanged: Event<void>;
     save(): MaybePromise<void>;
+    readonly onDispose: Event<void>;
 }
 
 export interface SaveableSource {
@@ -57,6 +58,7 @@ export namespace Saveable {
         if (saveable) {
             setDirty(widget, saveable.dirty);
             saveable.onDirtyChanged(() => setDirty(widget, saveable.dirty));
+            saveable.onDispose(() => widget.close());
 
             const close = widget.close.bind(widget);
             widget.close = async () => {

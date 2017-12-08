@@ -11,7 +11,7 @@ import { ConnectionHandler, JsonRpcConnectionHandler, ILogger } from "@theia/cor
 import { FileSystemNode } from './node-filesystem';
 import { FileSystemWatcher, FileSystem, FileSystemClient, fileSystemPath, bindFileSystemPreferences } from "../common";
 import { FileSystemWatcherServer, FileSystemWatcherClient, fileSystemWatcherPath } from '../common/filesystem-watcher-protocol';
-import { FileSystemWatcherServerClient } from './filesystem-watcher-client';
+import { FileSystemWatcherHostClient } from './filesystem-watcher-host-client';
 import { NsfwFileSystemWatcherServer } from './nsfw-watcher/nsfw-filesystem-watcher';
 
 export function bindFileSystem(bind: interfaces.Bind): void {
@@ -29,9 +29,9 @@ export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
             });
         });
     } else {
-        bind(FileSystemWatcherServerClient).toSelf();
+        bind(FileSystemWatcherHostClient).toSelf();
         bind(FileSystemWatcherServer).toDynamicValue(ctx =>
-            ctx.container.get(FileSystemWatcherServerClient)
+            ctx.container.get(FileSystemWatcherHostClient)
         );
     }
 }

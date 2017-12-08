@@ -30,10 +30,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     protected readonly resolveModel: Promise<void>;
 
     protected readonly toDispose = new DisposableCollection();
-    protected readonly toDisposeOnAutoSave = new DisposableCollection();
-
-    protected readonly onDidSaveModelEmitter = new Emitter<monaco.editor.IModel>();
-    protected readonly onWillSaveModelEmitter = new Emitter<WillSaveModelEvent>();
+    readonly onDispose: Event<void> = this.toDispose.onDispose;
 
     constructor(
         protected readonly resource: Resource,
@@ -46,6 +43,9 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         this.toDispose.push(this.onWillSaveModelEmitter);
         this.toDispose.push(this.onDirtyChangedEmitter);
         this.resolveModel = resource.readContents().then(content => this.initialize(content));
+        if (resource.onDispose) {
+            resource.onDispose(() => this.dispose());
+        }
     }
 
     dispose(): void {
@@ -63,23 +63,20 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             this.toDispose.push(this.model);
             this.toDispose.push(this.model.onDidChangeContent(event => this.markAsDirty()));
             if (this.resource.onDidChangeContents) {
-                this.toDispose.push(this.resource.onDidChangeContents(() => this.sync()));
+                this.toDispose.push(this.resource.onDidChangeContents(e => this.sync()));
             }
         }
     }
 
     protected _dirty = false;
+    protected readonly onDirtyChangedEmitter = new Emitter<void>();
+    readonly onDirtyChanged = this.onDirtyChangedEmitter.event;
     get dirty(): boolean {
         return this._dirty;
     }
     protected setDirty(dirty: boolean): void {
         this._dirty = dirty;
         this.onDirtyChangedEmitter.fire(undefined);
-    }
-
-    protected readonly onDirtyChangedEmitter = new Emitter<void>();
-    get onDirtyChanged(): Event<void> {
-        return this.onDirtyChangedEmitter.event;
     }
 
     get uri(): string {
@@ -115,20 +112,8 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         return this.resource.saveContents === undefined;
     }
 
-    get onDispose(): monaco.IEvent<void> {
-        return this.toDispose.onDispose;
-    }
-
     get textEditorModel(): monaco.editor.IModel {
         return this.model;
-    }
-
-    get onWillSaveModel(): Event<WillSaveModelEvent> {
-        return this.onWillSaveModelEmitter.event;
-    }
-
-    get onDidSaveModel(): Event<monaco.editor.IModel> {
-        return this.onDidSaveModelEmitter.event;
     }
 
     load(): monaco.Promise<MonacoEditorModel> {
@@ -166,6 +151,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         }
     }
 
+    protected readonly toDisposeOnAutoSave = new DisposableCollection();
     protected doAutoSave(): void {
         if (this.autoSave === 'on') {
             this.toDisposeOnAutoSave.dispose();
@@ -178,6 +164,8 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         }
     }
 
+    protected readonly onDidSaveModelEmitter = new Emitter<monaco.editor.IModel>();
+    readonly onDidSaveModel = this.onDidSaveModelEmitter.event;
     protected async doSave(reason: TextDocumentSaveReason): Promise<void> {
         if (this.resource.saveContents) {
             await this.fireWillSaveModel(reason);
@@ -190,6 +178,8 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         }
     }
 
+    protected readonly onWillSaveModelEmitter = new Emitter<WillSaveModelEvent>();
+    readonly onWillSaveModel = this.onWillSaveModelEmitter.event;
     protected fireWillSaveModel(reason: TextDocumentSaveReason): Promise<void> {
         const model = this.model;
         return new Promise<void>(resolve => {
@@ -204,7 +194,4 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         });
     }
 
-    protected fireDidSaveModel(): void {
-        this.onDidSaveModelEmitter.fire(this.model);
-    }
 }

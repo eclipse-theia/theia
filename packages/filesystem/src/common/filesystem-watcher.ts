@@ -20,12 +20,15 @@ export interface FileChange {
     type: FileChangeType;
 }
 
+export type WatchCallback = (changes: FileChange[]) => void;
+
 @injectable()
 export class FileSystemWatcher implements Disposable {
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly toRestartAll = new DisposableCollection();
     protected readonly onFileChangedEmitter = new Emitter<FileChange[]>();
+    protected readonly callbacks = new Map<number, WatchCallback>();
 
     constructor(
         @inject(FileSystemWatcherServer) protected readonly server: FileSystemWatcherServer,
@@ -58,35 +61,40 @@ export class FileSystemWatcher implements Disposable {
             uri: new URI(change.uri),
             type: change.type
         });
-        this.onFileChangedEmitter.fire(changes);
+        const callback = this.callbacks.get(event.watcher);
+        if (callback) {
+            callback(changes);
+        } else {
+            this.onFileChangedEmitter.fire(changes);
+        }
     }
 
     /**
      * Start file watching under the given uri.
      *
+     * An optional callback can be provided if a client wants to watch exclusively.
+     *
      * Resolve when watching is started.
      * Return a disposable to stop file watching under the given uri.
      */
-    watchFileChanges(uri: URI): Promise<Disposable> {
-        return this.createWatchOptions()
-            .then(options =>
-                this.server.watchFileChanges(uri.toString(), options)
-            )
-            .then(watcher => {
-                const toDispose = new DisposableCollection();
-                const toStop = Disposable.create(() =>
-                    this.server.unwatchFileChanges(watcher)
-                );
-                const toRestart = toDispose.push(toStop);
-                this.toRestartAll.push(Disposable.create(() => {
-                    toRestart.dispose();
-                    toStop.dispose();
-                    this.watchFileChanges(uri).then(disposable =>
-                        toDispose.push(disposable)
-                    );
-                }));
-                return toDispose;
-            });
+    async watchFileChanges(uri: URI, callback?: WatchCallback): Promise<Disposable> {
+        const options = await this.createWatchOptions();
+        const watcher = await this.server.watchFileChanges(uri.toString(), options);
+        if (callback) {
+            this.callbacks.set(watcher, callback);
+        }
+        const toDispose = new DisposableCollection();
+        const toStop = Disposable.create(() => {
+            this.callbacks.delete(watcher);
+            this.server.unwatchFileChanges(watcher);
+        });
+        const toRestart = toDispose.push(toStop);
+        this.toRestartAll.push(Disposable.create(async () => {
+            toRestart.dispose();
+            toStop.dispose();
+            toDispose.push(await this.watchFileChanges(uri, callback));
+        }));
+        return toDispose;
     }
 
     /**

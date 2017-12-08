@@ -6,7 +6,7 @@
  */
 
 import { DisposableCollection, ILogger, Emitter, Event } from '@theia/core/lib/common';
-import { UserStorageChangeEvent, UserStorageService } from './user-storage-service';
+import { UserStorageChange, UserStorageService } from './user-storage-service';
 import { injectable, inject } from 'inversify';
 import { FileSystem, FileChange } from '@theia/filesystem/lib/common';
 import { FileSystemWatcher } from "@theia/filesystem/lib/common";
@@ -19,72 +19,57 @@ const THEIA_USER_STORAGE_FOLDER = '.theia';
 export class UserStorageServiceFilesystemImpl implements UserStorageService {
 
     protected readonly toDispose = new DisposableCollection();
-    protected readonly onUserStorageChangedEmitter = new Emitter<UserStorageChangeEvent>();
+
+    protected readonly onUserStorageChangedEmitter = new Emitter<UserStorageChange[]>();
+    readonly onChanged: Event<UserStorageChange[]> = this.onUserStorageChangedEmitter.event;
+
     protected readonly userStorageFolder: Promise<URI>;
 
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
         @inject(ILogger) protected readonly logger: ILogger
-
     ) {
-        this.userStorageFolder = this.fileSystem.getCurrentUserHome().then(home => {
-
-            const userStorageFolderUri = new URI(home.uri).resolve(THEIA_USER_STORAGE_FOLDER);
-            watcher.watchFileChanges(userStorageFolderUri).then(disposable =>
-                this.toDispose.push(disposable)
-            );
-            this.toDispose.push(this.watcher.onFilesChanged(changes => this.onDidFilesChanged(changes)));
-            return new URI(home.uri).resolve(THEIA_USER_STORAGE_FOLDER);
-        });
-
         this.toDispose.push(this.onUserStorageChangedEmitter);
-
+        this.userStorageFolder = this.fileSystem.getCurrentUserHome().then(home =>
+            new URI(home.uri).resolve(THEIA_USER_STORAGE_FOLDER)
+        );
+        this.userStorageFolder.then(async uri =>
+            this.toDispose.push(await watcher.watchFileChanges(uri, changes => this.onDidFilesChanged(changes)))
+        );
     }
 
     dispose(): void {
         this.toDispose.dispose();
     }
 
-    onDidFilesChanged(fileChanges: FileChange[]): void {
-        const uris: URI[] = [];
-        this.userStorageFolder.then(folder => {
-            for (const change of fileChanges) {
-                const userStorageUri = UserStorageServiceFilesystemImpl.toUserStorageUri(folder, change.uri);
-                uris.push(userStorageUri);
-            }
-            this.onUserStorageChangedEmitter.fire({ uris });
-        });
+    protected async onDidFilesChanged(changes: FileChange[]): Promise<void> {
+        const folder = await this.userStorageFolder;
+        this.onUserStorageChangedEmitter.fire(changes.map(change => ({
+            uri: UserStorageServiceFilesystemImpl.toUserStorageUri(folder, change.uri),
+            type: Number(change.type)
+        })));
     }
 
-    async readContents(uri: URI) {
+    async readContents(uri: URI): Promise<string> {
         const folderUri = await this.userStorageFolder;
-        const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, uri);
-        const exists = this.fileSystem.exists(filesystemUri.toString());
-
-        if (exists) {
-            return this.fileSystem.resolveContent(filesystemUri.toString()).then(({ stat, content }) => content);
+        const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, uri).toString();
+        if (await this.fileSystem.exists(filesystemUri)) {
+            const { content } = await this.fileSystem.resolveContent(filesystemUri);
+            return content;
         }
-
         return "";
     }
 
-    async saveContents(uri: URI, content: string) {
+    async saveContents(uri: URI, content: string): Promise<void> {
         const folderUri = await this.userStorageFolder;
-        const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, uri);
-        const exists = this.fileSystem.exists(filesystemUri.toString());
-
-        if (exists) {
-            this.fileSystem.getFileStat(filesystemUri.toString()).then(fileStat => {
-                this.fileSystem.setContent(fileStat, content).then(() => Promise.resolve());
-            });
+        const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, uri).toString();
+        if (await this.fileSystem.exists(filesystemUri)) {
+            const fileStat = await this.fileSystem.getFileStat(filesystemUri);
+            await this.fileSystem.setContent(fileStat, content);
         } else {
-            this.fileSystem.createFile(filesystemUri.toString(), { content });
+            await this.fileSystem.createFile(filesystemUri, { content });
         }
-    }
-
-    get onUserStorageChanged(): Event<UserStorageChangeEvent> {
-        return this.onUserStorageChangedEmitter.event;
     }
 
     /**

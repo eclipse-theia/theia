@@ -14,7 +14,7 @@ import { FileSystemWatcherServer, WatchOptions, FileSystemWatcherClient, Reconne
 export const NSFW_WATCHER = 'nsfw-watcher';
 
 @injectable()
-export class FileSystemWatcherServerClient implements FileSystemWatcherServer {
+export class FileSystemWatcherHostClient implements FileSystemWatcherServer {
 
     protected readonly proxyFactory = new JsonRpcProxyFactory<FileSystemWatcherServer>();
     protected readonly remote = new ReconnectingFileSystemWatcherServer(this.proxyFactory.createProxy());

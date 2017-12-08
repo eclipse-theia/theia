@@ -166,14 +166,14 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
         this.changes.push({ uri, type });
 
         this.toDisposeOnFileChange.dispose();
-        const timer = setTimeout(() => this.fireDidFilesChanged(), this.fireDidFilesChangedTimeout);
+        const timer = setTimeout(() => this.fireDidFilesChanged(watcherId), this.fireDidFilesChangedTimeout);
         this.toDisposeOnFileChange.push(Disposable.create(() => clearTimeout(timer)));
     }
 
-    protected fireDidFilesChanged(): void {
+    protected fireDidFilesChanged(watcher: number): void {
         const changes = this.changes;
         this.changes = [];
-        const event = { changes };
+        const event = { watcher, changes };
         if (this.client) {
             this.client.onDidFilesChanged(event);
         }
