@@ -10,8 +10,6 @@ Theia is an extensible platform to develop full-fledged multi-language Cloud & D
 
 ![Theia](https://user-images.githubusercontent.com/372735/33182625-0f6575f0-d075-11e7-8ec7-53801e3892bd.jpg)
 
-A [`beta` version of Theia](https://github.com/theia-ide/theia/milestone/3) is planned for December 6, 2017, look at our [roadmap](#roadmap).
-
 - [**Scope**](#scope)
 - [**Getting Started**](#getting-started)
 - [**Documentation**](#documentation)
@@ -68,18 +66,14 @@ Read below how to engage with Theia community:
 - Follow Theia on [Twitter](https://twitter.com/theia_ide).
 
 ## Roadmap
-The contributors have committed to deliver a framework with the following features by December 6, 2017:
- - Dynamic Extension System
- - Rich Text Editing incl. [Language Server Protocol](https://github.com/Microsoft/language-server-protocol) Support
- - Shell With Flexible Layouts and Side Panels
- - Electron & Browser Support
- - File Navigator
- - Monaco-based Editor
- - Terminal integration
- - Git integration
- - Language Support for TypeScript, C/C++, Java, Python, Go, [YANG](https://tools.ietf.org/html/rfc6020)
- - Diagramming Support through [Sprotty](https://github.com/theia-ide/sprotty)
- - [many more features](https://github.com/theia-ide/theia/milestone/3?closed=1)
+On December 6, 2017 we reached version 0.3.0.
+The team is now in the process of defining the scope for the next months. It will include features like
+ - Debugging
+ - Search
+ - More Advanced Git Integration
+ - many more
+
+A more concrete milestone plan will be added soon.
 
 The team is also working on the following Open-Source Products based on Theia:
  - [Yangster](https://github.com/theia-ide/yangster) - A YANG IDE
