@@ -10,7 +10,6 @@
     "@theia/file-search": "^0.3.0",
     "@theia/filesystem": "^0.3.0",
     "@theia/git": "^0.3.1",
-    "@theia/go": "^0.3.1",
     "@theia/java": "^0.3.1",
     "@theia/languages": "^0.3.1",
     "@theia/markers": "^0.3.0",
