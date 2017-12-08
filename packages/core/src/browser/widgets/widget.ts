@@ -102,7 +102,7 @@ export function addKeyListener<K extends keyof HTMLElementEventMap>(element: HTM
     const toDispose = new DisposableCollection();
     const keyCode = KeyCode.createKeyCode({ first: keybinding });
     toDispose.push(addEventListener(element, 'keydown', e => {
-        if (KeyCode.createKeyCode(e).equals(keyCode)) {
+        if (KeyCode.createKeyCode(e) === keyCode) {
             action();
             e.stopPropagation();
             e.preventDefault();

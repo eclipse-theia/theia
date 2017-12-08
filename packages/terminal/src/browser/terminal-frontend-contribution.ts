@@ -71,7 +71,7 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
             isEnabled: (binding: Keybinding) => this.isTerminalFocused(binding),
         });
 
-        keybindings.registerKeybindings({
+        keybindings.registerKeybinding({
             commandId: TerminalCommands.NEW.id,
             keyCode: KeyCode.createKeyCode({ first: Key.BACKQUOTE, modifiers: [Modifier.M1] }),
         });
@@ -95,7 +95,7 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
         /* Register alt + k (the passed Key) as a passthrough command in the
            context of the terminal.  */
         const regAlt = (k: Key) => {
-            keybindings.registerKeybindings({
+            keybindings.registerKeybinding({
                 commandId: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keyCode: KeyCode.createKeyCode({ first: k, modifiers: [Modifier.M3] }),
                 contextId: TERMINAL_ACTIVE_CONTEXT,

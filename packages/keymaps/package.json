@@ -1,0 +1,52 @@
+{
+  "name": "@theia/keymaps",
+  "version": "0.3.0",
+  "description": "Theia - Custom Keymaps Extension",
+  "dependencies": {
+    "@theia/core": "^0.3.0",
+    "@theia/workspace": "^0.3.0",
+    "@theia/userstorage": "^0.3.0",
+    "jsonc-parser": "^1.0.0",
+    "ajv": "^5.2.2"
+  },
+  "devDependencies": {
+    "@types/temp": "^0.8.29",
+    "temp": "^0.8.3",
+    "@theia/ext-scripts": "0.2.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/keymaps-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}
