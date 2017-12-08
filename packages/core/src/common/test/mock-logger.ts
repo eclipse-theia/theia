@@ -27,8 +27,8 @@ export class MockLogger implements ILogger {
         return Promise.resolve();
     }
 
-    log(logLevel: number, arg2: string | Loggable, ...params: any[]): void {
-        return;
+    log(logLevel: number, arg2: string | Loggable, ...params: any[]): Promise<void> {
+        return Promise.resolve();
     }
 
     isTrace(): Promise<boolean> {
@@ -38,8 +38,8 @@ export class MockLogger implements ILogger {
     ifTrace(): Promise<void> {
         return Promise.resolve();
     }
-    trace(arg: string | Loggable, ...params: any[]): void {
-        return;
+    trace(arg: string | Loggable, ...params: any[]): Promise<void> {
+        return Promise.resolve();
     }
 
     isDebug(): Promise<boolean> {
@@ -50,8 +50,8 @@ export class MockLogger implements ILogger {
         return Promise.resolve();
     }
 
-    debug(arg: string | Loggable, ...params: any[]): void {
-        return;
+    debug(arg: string | Loggable, ...params: any[]): Promise<void> {
+        return Promise.resolve();
     }
 
     isInfo(): Promise<boolean> {
@@ -62,8 +62,8 @@ export class MockLogger implements ILogger {
         return Promise.resolve();
     }
 
-    info(arg: string | Loggable, ...params: any[]): void {
-        return;
+    info(arg: string | Loggable, ...params: any[]): Promise<void> {
+        return Promise.resolve();
     }
 
     isWarn(): Promise<boolean> {
@@ -74,8 +74,8 @@ export class MockLogger implements ILogger {
         return Promise.resolve();
     }
 
-    warn(arg: string | Loggable, ...params: any[]): void {
-        return;
+    warn(arg: string | Loggable, ...params: any[]): Promise<void> {
+        return Promise.resolve();
     }
 
     isError(): Promise<boolean> {
@@ -85,8 +85,8 @@ export class MockLogger implements ILogger {
     ifError(): Promise<void> {
         return Promise.resolve();
     }
-    error(arg: string | Loggable, ...params: any[]): void {
-        return;
+    error(arg: string | Loggable, ...params: any[]): Promise<void> {
+        return Promise.resolve();
     }
 
     isFatal(): Promise<boolean> {
@@ -97,8 +97,8 @@ export class MockLogger implements ILogger {
         return Promise.resolve();
     }
 
-    fatal(arg: string | Loggable, ...params: any[]): void {
-        return;
+    fatal(arg: string | Loggable, ...params: any[]): Promise<void> {
+        return Promise.resolve();
     }
 
     child(obj: Object): ILogger {

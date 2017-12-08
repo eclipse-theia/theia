@@ -62,7 +62,7 @@ export interface ILogger {
     /**
      * Log a loggable with the given level if it is enabled.
      */
-    log(logLevel: number, loggable: Loggable): void;
+    log(logLevel: number, loggable: Loggable): Promise<void>;
     /**
      * Log a message with the given level if it is enabled.
      *
@@ -83,14 +83,14 @@ export interface ILogger {
     /**
      * Log a loggable with the trace level if it is enabled.
      */
-    trace(loggable: Loggable): void;
+    trace(loggable: Loggable): Promise<void>;
     /**
      * Log a message with the trace level if it is enabled.
      *
      * @param message - The message format string.
      * @param params - The format string variables.
      */
-    trace(message: string, ...params: any[]): void;
+    trace(message: string, ...params: any[]): Promise<void>;
 
     /**
      * Test whether the debug level is enabled.
@@ -103,14 +103,14 @@ export interface ILogger {
     /**
      * Log a loggable with the debug level if it is enabled.
      */
-    debug(loggable: Loggable): void;
+    debug(loggable: Loggable): Promise<void>;
     /**
      * Log a message with the debug level if it is enabled.
      *
      * @param message - The message format string.
      * @param params - The format string variables.
      */
-    debug(message: string, ...params: any[]): void;
+    debug(message: string, ...params: any[]): Promise<void>;
 
     /**
      * Test whether the info level is enabled.
@@ -123,14 +123,14 @@ export interface ILogger {
     /**
      * Log a loggable with the info level if it is enabled.
      */
-    info(loggable: Loggable): void;
+    info(loggable: Loggable): Promise<void>;
     /**
      * Log a message with the info level if it is enabled.
      *
      * @param message - The message format string.
      * @param params - The format string variables.
      */
-    info(message: string, ...params: any[]): void;
+    info(message: string, ...params: any[]): Promise<void>;
 
     /**
      * Test whether the warn level is enabled.
@@ -143,14 +143,14 @@ export interface ILogger {
     /**
      * Log a loggable with the warn level if it is enabled.
      */
-    warn(loggable: Loggable): void;
+    warn(loggable: Loggable): Promise<void>;
     /**
      * Log a message with the warn level if it is enabled.
      *
      * @param message - The message format string.
      * @param params - The format string variables.
      */
-    warn(message: string, ...params: any[]): void;
+    warn(message: string, ...params: any[]): Promise<void>;
 
     /**
      * Test whether the error level is enabled.
@@ -163,14 +163,14 @@ export interface ILogger {
     /**
      * Log a loggable with the error level if it is enabled.
      */
-    error(loggable: Loggable): void;
+    error(loggable: Loggable): Promise<void>;
     /**
      * Log a message with the error level.
      *
      * @param message - The message format string.
      * @param params - The format string variables.
      */
-    error(message: string, ...params: any[]): void;
+    error(message: string, ...params: any[]): Promise<void>;
 
     /**
      * Test whether the fatal level is enabled.
@@ -183,14 +183,14 @@ export interface ILogger {
     /**
      * Log a loggable with the fatal level if it is enabled.
      */
-    fatal(loggable: Loggable): void;
+    fatal(loggable: Loggable): Promise<void>;
     /**
      * Log a message with the fatal level if it is enabled.
      *
      * @param message - The message format string.
      * @param params - The format string variables.
      */
-    fatal(message: string, ...params: any[]): void;
+    fatal(message: string, ...params: any[]): Promise<void>;
 
     /**
      * Create a child logger from this logger.
@@ -272,8 +272,8 @@ export class Logger implements ILogger {
             })
         );
     }
-    log(logLevel: number, arg2: string | Loggable, ...params: any[]): void {
-        this.getLog(logLevel).then(log => {
+    log(logLevel: number, arg2: string | Loggable, ...params: any[]): Promise<void> {
+        return this.getLog(logLevel).then(log => {
             if (typeof arg2 === 'string') {
                 const message = arg2;
                 log(message, ...params);
@@ -298,8 +298,8 @@ export class Logger implements ILogger {
     ifTrace(): Promise<void> {
         return this.ifEnabled(LogLevel.TRACE);
     }
-    trace(arg: string | Loggable, ...params: any[]): void {
-        this.log(LogLevel.TRACE, arg, ...params);
+    trace(arg: string | Loggable, ...params: any[]): Promise<void> {
+        return this.log(LogLevel.TRACE, arg, ...params);
     }
 
     isDebug(): Promise<boolean> {
@@ -308,8 +308,8 @@ export class Logger implements ILogger {
     ifDebug(): Promise<void> {
         return this.ifEnabled(LogLevel.DEBUG);
     }
-    debug(arg: string | Loggable, ...params: any[]): void {
-        this.log(LogLevel.DEBUG, arg, ...params);
+    debug(arg: string | Loggable, ...params: any[]): Promise<void> {
+        return this.log(LogLevel.DEBUG, arg, ...params);
     }
 
     isInfo(): Promise<boolean> {
@@ -318,8 +318,8 @@ export class Logger implements ILogger {
     ifInfo(): Promise<void> {
         return this.ifEnabled(LogLevel.INFO);
     }
-    info(arg: string | Loggable, ...params: any[]): void {
-        this.log(LogLevel.INFO, arg, ...params);
+    info(arg: string | Loggable, ...params: any[]): Promise<void> {
+        return this.log(LogLevel.INFO, arg, ...params);
     }
 
     isWarn(): Promise<boolean> {
@@ -328,8 +328,8 @@ export class Logger implements ILogger {
     ifWarn(): Promise<void> {
         return this.ifEnabled(LogLevel.WARN);
     }
-    warn(arg: string | Loggable, ...params: any[]): void {
-        this.log(LogLevel.WARN, arg, ...params);
+    warn(arg: string | Loggable, ...params: any[]): Promise<void> {
+        return this.log(LogLevel.WARN, arg, ...params);
     }
 
     isError(): Promise<boolean> {
@@ -338,8 +338,8 @@ export class Logger implements ILogger {
     ifError(): Promise<void> {
         return this.ifEnabled(LogLevel.ERROR);
     }
-    error(arg: string | Loggable, ...params: any[]): void {
-        this.log(LogLevel.ERROR, arg, ...params);
+    error(arg: string | Loggable, ...params: any[]): Promise<void> {
+        return this.log(LogLevel.ERROR, arg, ...params);
     }
 
     isFatal(): Promise<boolean> {
@@ -348,8 +348,8 @@ export class Logger implements ILogger {
     ifFatal(): Promise<void> {
         return this.ifEnabled(LogLevel.FATAL);
     }
-    fatal(arg: string | Loggable, ...params: any[]): void {
-        this.log(LogLevel.FATAL, arg, ...params);
+    fatal(arg: string | Loggable, ...params: any[]): Promise<void> {
+        return this.log(LogLevel.FATAL, arg, ...params);
     }
 
     child(obj: object): ILogger {
