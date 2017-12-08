@@ -26,6 +26,13 @@ export interface Keybinding {
     readonly accelerator?: Accelerator;
 }
 
+export enum KeybindingScope {
+    DEFAULT,
+    USER,
+    WORKSPACE,
+    END
+}
+
 export namespace Keybinding {
 
     /**
@@ -42,7 +49,12 @@ export namespace Keybinding {
         };
         return JSON.stringify(copy);
     }
+}
 
+export interface RawKeybinding {
+    command: string;
+    keybinding: string;
+    context?: string;
 }
 
 export const KeybindingContribution = Symbol("KeybindingContribution");
@@ -113,9 +125,8 @@ export class KeybindingContextRegistry {
 @injectable()
 export class KeybindingRegistry {
 
+    private keymaps: Keybinding[][] = [];
     static readonly PASSTHROUGH_PSEUDO_COMMAND = "passthrough";
-    protected readonly keybindings: { [index: string]: Keybinding[] } = {};
-    protected readonly commands: { [commandId: string]: Keybinding[] } = {};
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
@@ -123,7 +134,9 @@ export class KeybindingRegistry {
         @inject(ContributionProvider) @named(KeybindingContribution)
         protected readonly contributions: ContributionProvider<KeybindingContribution>,
         @inject(ILogger) protected readonly logger: ILogger
-    ) { }
+    ) {
+        for (let i = KeybindingScope.DEFAULT; i < KeybindingScope.END; i++) { this.keymaps.push([]); }
+    }
 
     onStart(): void {
         for (const contribution of this.contributions.getContributions()) {
@@ -138,30 +151,20 @@ export class KeybindingRegistry {
     }
 
     /**
-     * Adds a keybinding to the registry.
+     * Register a default keybinding to the registry.
      *
      * @param binding
      */
     registerKeybinding(binding: Keybinding) {
-        const existing = this.keybindings[binding.keyCode.keystroke];
-        if (existing) {
-            const collided = existing.filter(b => b.contextId === binding.contextId);
+        const existingBindings = this.getKeybindingsForKeyCode(binding.keyCode);
+        if (existingBindings.length > 0) {
+            const collided = existingBindings.filter(b => b.contextId === binding.contextId);
             if (collided.length > 0) {
                 this.logger.warn('Collided keybinding is ignored; ', Keybinding.stringify(binding), ' collided with ', collided.map(b => Keybinding.stringify(b)).join(', '));
                 return;
             }
         }
-        const { keyCode, commandId } = binding;
-        const bindings = this.keybindings[keyCode.keystroke] || [];
-        bindings.push(binding);
-        this.keybindings[keyCode.keystroke] = bindings;
-
-        /* Keep a mapping of the Command -> Key mapping.  */
-        if (!this.isPseudoCommand(commandId)) {
-            const commands = this.commands[commandId] || [];
-            commands.push(binding);
-            this.commands[commandId] = bindings;
-        }
+        this.keymaps[KeybindingScope.DEFAULT].push(binding);
     }
 
     /**
@@ -170,7 +173,20 @@ export class KeybindingRegistry {
      * @param commandId The ID of the command for which we are looking for keybindings.
      */
     getKeybindingsForCommand(commandId: string): Keybinding[] {
-        return this.commands[commandId] || [];
+        const result: Keybinding[] = [];
+
+        for (let scope = KeybindingScope.END - 1; scope >= KeybindingScope.DEFAULT; scope--) {
+            this.keymaps[scope].forEach(binding => {
+                if (binding.commandId === commandId) {
+                    result.push(binding);
+                }
+            });
+
+            if (result.length > 0) {
+                return result;
+            }
+        }
+        return result;
     }
 
     /**
@@ -180,11 +196,58 @@ export class KeybindingRegistry {
      * @param keyCode The key code for which we are looking for keybindings.
      */
     getKeybindingsForKeyCode(keyCode: KeyCode): Keybinding[] {
-        const bindings = this.keybindings[keyCode.keystroke] || [];
+        const result: Keybinding[] = [];
 
-        this.sortKeybindingsByPriority(bindings);
+        for (let scope = KeybindingScope.DEFAULT; scope < KeybindingScope.END; scope++) {
+            this.keymaps[scope].forEach(binding => {
+                if (KeyCode.equals(binding.keyCode, keyCode)) {
+                    if (!this.isKeybindingShadowed(scope, binding)) {
+                        result.push(binding);
+                    }
+                }
+            });
+        }
+        this.sortKeybindingsByPriority(result);
+        return result;
+    }
 
-        return bindings;
+    /**
+     * Returns a list of keybindings for a command in a specific scope
+     * @param scope specific scope to look for
+     * @param commandId unique id of the command
+     */
+    getScopedKeybindingsForCommand(scope: KeybindingScope, commandId: string): Keybinding[] {
+        const result: Keybinding[] = [];
+
+        if (scope >= KeybindingScope.END) {
+            return [];
+        }
+
+        this.keymaps[scope].forEach(binding => {
+            if (binding.commandId === commandId) {
+                result.push(binding);
+            }
+        });
+        return result;
+    }
+
+    /**
+     * Returns true if a keybinding is shadowed in a more specific scope i.e bound in user scope but remapped in
+     * workspace scope means the user keybinding is shadowed.
+     * @param scope scope of the current keybinding
+     * @param binding keybinding that will be checked in more specific scopes
+     */
+    isKeybindingShadowed(scope: KeybindingScope, binding: Keybinding): boolean {
+        if (scope >= KeybindingScope.END) {
+            return false;
+        }
+
+        const nextScope = ++scope;
+
+        if (this.getScopedKeybindingsForCommand(nextScope, binding.commandId).length > 0) {
+            return true;
+        }
+        return this.isKeybindingShadowed(nextScope, binding);
     }
 
     /**
@@ -266,5 +329,51 @@ export class KeybindingRegistry {
 
     isPseudoCommand(commandId: string): boolean {
         return commandId === KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND;
+    }
+
+    setKeymap(scope: KeybindingScope, rawKeyBindings: RawKeybinding[]) {
+        const customBindings: Keybinding[] = [];
+        for (const rawKeyBinding of rawKeyBindings) {
+            if (this.commandRegistry.getCommand(rawKeyBinding.command)) {
+                const code = KeyCode.parse(rawKeyBinding.keybinding);
+                if (code) {
+                    let context: KeybindingContext | undefined;
+                    if (rawKeyBinding.context) {
+                        context = this.contextRegistry.getContext(rawKeyBinding.context);
+                    }
+
+                    customBindings.push({
+                        commandId: rawKeyBinding.command,
+                        keyCode: code,
+                        contextId: context ? context.id : undefined
+                    });
+
+                } else {
+                    this.resetKeybindingsForScope(scope);
+                    return;
+                }
+            } else {
+                this.logger.warn(`Invalid command id:  ${rawKeyBinding.command} does not exist, no command will be bound to keybinding: ${rawKeyBinding.keybinding}`);
+                return;
+            }
+        }
+        this.keymaps[scope] = customBindings;
+    }
+
+    /**
+     * Reset keybindings for a specific scope
+     * @param scope scope to reset the keybindings for
+     */
+    resetKeybindingsForScope(scope: KeybindingScope) {
+        this.keymaps[scope] = [];
+    }
+
+    /**
+     * Reset keybindings for all scopes(only leaves the default keybindings mapped)
+     */
+    resetKeybindings() {
+        for (let i = KeybindingScope.DEFAULT + 1; i < KeybindingScope.END; i++) {
+            this.keymaps[i] = [];
+        }
     }
 }
