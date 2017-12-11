@@ -301,6 +301,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         super.onAfterAttach(msg);
         if (this.isVisible) {
             this.openTerm().then(() => {
+                this.term.focus();
             }).catch(() => { this.openAfterShow = true; });
         } else {
             this.openAfterShow = true;
