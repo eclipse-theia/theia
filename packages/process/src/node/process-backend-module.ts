@@ -16,7 +16,7 @@ import { MultiRingBuffer, MultiRingBufferOptions } from './multi-ring-buffer';
 export default new ContainerModule(bind => {
     bind(RawProcess).toSelf().inTransientScope();
     bind(ProcessManager).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).to(ProcessManager).inSingletonScope();
+    bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(ProcessManager)).inSingletonScope();
     bind(RawProcessFactory).toFactory(ctx =>
         (options: RawProcessOptions) => {
             const child = new Container({ defaultScope: 'Singleton' });
