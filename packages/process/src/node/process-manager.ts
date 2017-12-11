@@ -66,7 +66,7 @@ export class ProcessManager implements BackendApplicationContribution {
         return this.deleteEmitter.event;
     }
 
-    onStop?(): void {
+    onStop(): void {
         for (const process of this.processes.values()) {
             try {
                 this.unregister(process);
