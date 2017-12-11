@@ -60,7 +60,7 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
     async readContents(uri: URI) {
         const folderUri = await this.userStorageFolder;
         const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, uri);
-        const exists = this.fileSystem.exists(filesystemUri.toString());
+        const exists = await this.fileSystem.exists(filesystemUri.toString());
 
         if (exists) {
             return this.fileSystem.resolveContent(filesystemUri.toString()).then(({ stat, content }) => content);
@@ -72,7 +72,7 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
     async saveContents(uri: URI, content: string) {
         const folderUri = await this.userStorageFolder;
         const filesystemUri = UserStorageServiceFilesystemImpl.toFilesystemURI(folderUri, uri);
-        const exists = this.fileSystem.exists(filesystemUri.toString());
+        const exists = await this.fileSystem.exists(filesystemUri.toString());
 
         if (exists) {
             this.fileSystem.getFileStat(filesystemUri.toString()).then(fileStat => {
