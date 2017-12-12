@@ -113,8 +113,21 @@ export class FileTreeModel extends TreeModel implements LocationService {
 
     upload(node: DirNode, items: DataTransferItemList): void {
         for (let i = 0; i < items.length; i++) {
-            const entry = items[i].webkitGetAsEntry() as WebKitEntry;
-            this.uploadEntry(node.uri, entry);
+            if (items[i].kind === 'file') {
+                // File from outside Theia
+                const entry = items[i].webkitGetAsEntry() as WebKitEntry;
+                this.uploadEntry(node.uri, entry);
+            } else if (items[i].kind === 'string' && items[i].type === "theia-nodeid") {
+                // Files/folders to move from inside theia
+                items[i].getAsString(id => {
+                    const nodeToMove = this.tree.getNode(id);
+                    if (nodeToMove !== undefined) {
+                        const newBase = node.uri.resolve(nodeToMove.name);
+                        const destination = newBase.toString();
+                        this.move(id, destination);
+                    }
+                });
+            }
         }
     }
 
@@ -167,4 +180,7 @@ export class FileTreeModel extends TreeModel implements LocationService {
         }
     }
 
+    protected move(uriToMove: string, nodeDest: string) {
+        this.fileSystem.move(uriToMove, nodeDest, { overwrite: true }).then(e => this.refresh());
+    }
 }

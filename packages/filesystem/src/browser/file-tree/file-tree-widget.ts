@@ -74,11 +74,18 @@ export class FileTreeWidget extends TreeWidget {
         const elementAttrs = super.createNodeAttributes(node, props);
         return {
             ...elementAttrs,
+            draggable: "true",
+            ondragstart: event => this.handleDragStartEvent(node, event),
             ondragenter: event => this.handleDragEnterEvent(node, event),
             ondragover: event => this.handleDragOverEvent(node, event),
             ondragleave: event => this.handleDragLeaveEvent(node, event),
             ondrop: event => this.handleDropEvent(node, event)
         };
+    }
+    protected handleDragStartEvent(node: ITreeNode, event: DragEvent): void {
+        // store a ref. on the dragged elem. initiated within Theia.
+        event.dataTransfer.setData('theia-nodeid', node.id);
+        event.stopPropagation();
     }
 
     protected handleDragEnterEvent(node: ITreeNode | undefined, event: DragEvent): void {
