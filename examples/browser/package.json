@@ -22,6 +22,7 @@
     "@theia/preferences": "^0.3.2",
     "@theia/process": "^0.3.2",
     "@theia/python": "^0.3.2",
+    "@theia/search-in-workspace": "^0.3.2",
     "@theia/task": "^0.3.2",
     "@theia/terminal": "^0.3.2",
     "@theia/typescript": "^0.3.2",
