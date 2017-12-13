@@ -24,11 +24,13 @@ import { NsfwFileSystemWatcherServer } from './nsfw-watcher/nsfw-filesystem-watc
 const expect = chai.expect;
 const track = temp.track();
 
-describe("NodeFileSystem", () => {
+describe("NodeFileSystem", function () {
 
     let root: URI;
     let fileSystem: FileSystem;
     let watcher: FileSystemWatcher;
+
+    this.timeout(10000);
 
     before(() => {
         chai.config.showDiff = true;
@@ -717,7 +719,6 @@ describe("NodeFileSystem", () => {
     describe("#13 watchFileChanges", () => {
 
         it("Should receive file changes events from in the workspace by default.", async function () {
-            this.timeout(10000);
             const expectedUris = [
                 root.resolve("foo").toString(),
                 root.withPath(root.path.join('foo', 'bar')).toString(),
