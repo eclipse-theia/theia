@@ -227,7 +227,7 @@ The `package.json` for the Electron app looks almost the same, except for the na
 
 ```json
 {
-  "name": “electron-app",
+  "name": "electron-app",
   ...
   "theia": {
     "target": "electron"
