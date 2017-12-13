@@ -32,6 +32,10 @@ export const CppConfigSchema: PreferenceSchema = {
         "cpp.clangdCommandArgs": {
             "type": "array",
             "description": "Arguments to the clangd command."
+        },
+        "cpp.indexingExclusions": {
+            "type": "array",
+            "description": "Files and folders that are ignored by the indexer."
         }
     }
 };
@@ -39,13 +43,15 @@ export const CppConfigSchema: PreferenceSchema = {
 export interface CppConfiguration {
     'cpp.clangdCompilationDatabaseDirectory': string,
     'cpp.clangdCommand': string,
-    'cpp.clangdCommandArgs': string[]
+    'cpp.clangdCommandArgs': string[],
+    'cpp.indexingExclusions': string[]
 }
 
 export const defaultCppConfiguration: CppConfiguration = {
     'cpp.clangdCompilationDatabaseDirectory': '',
     'cpp.clangdCommand': CLANGD_COMMAND_DEFAULT,
-    'cpp.clangdCommandArgs': []
+    'cpp.clangdCommandArgs': [],
+    'cpp.indexingExclusions': []
 };
 
 export const CppPreferences = Symbol('CppPreferences');
