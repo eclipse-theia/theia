@@ -12,9 +12,9 @@ import * as electron from 'electron';
 
 const expect = chai.expect;
 
-let mainWindow: Electron.BrowserWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
+const mainWindow: Electron.BrowserWindow = new electron.BrowserWindow({ width: 1024, height: 728 });
 
-const { app } = require('electron')
+const { app } = require('electron');
 
 before(() => {
     chai.config.showDiff = true;
@@ -22,8 +22,6 @@ before(() => {
     chai.should();
     chai.use(chaiAsPromised);
 });
-
-
 
 describe('basic-example-spec', () => {
     describe('01 #start example app', () => {
@@ -39,4 +37,3 @@ describe('basic-example-spec', () => {
         });
     });
 });
-
