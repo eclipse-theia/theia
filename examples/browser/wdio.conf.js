@@ -84,7 +84,7 @@ exports.config = {
     baseUrl: `http://${host}:${port}`,
     //
     // Default timeout for all waitFor* commands.
-    waitforTimeout: 300000,
+    waitforTimeout: 30000,
     //
     // Default timeout in milliseconds for request
     // if Selenium Grid doesn't send response
@@ -142,7 +142,7 @@ exports.config = {
         compilers: ['ts:ts-node/register'],
         requires: ['reflect-metadata/Reflect'],
         watch: 'ts',
-        timeout: 180000,
+        timeout: 30000,
     },
     //
     // =====
@@ -213,7 +213,9 @@ exports.config = {
         var fs = require("fs");
         let result = browser.execute("return window.__coverage__;")
         try {
-            fs.mkdirSync('coverage');
+            if (!fs.existsSync('coverage')) {
+                fs.mkdirSync('coverage');
+            }
             fs.writeFileSync('coverage/coverage.json', JSON.stringify(result.value));
         } catch (err) {
             console.log(`Error writing coverage ${err}`);
