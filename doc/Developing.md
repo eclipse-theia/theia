@@ -24,6 +24,7 @@ For Windows instructions [click here](#building-on-windows).
  - [**Watching**](#watching)
      - [Watch the core and extension packages](#watch-the-core-and-extension-packages)
      - [Watch the examples](#watch-the-examples)
+     - [Watch a specific package](#watch-a-specific-package)
  - [**Debugging**](#debugging)
      - [Debug the browser example's backend](#debug-the-browser-examples-backend)
      - [Debug the browser example's frontend](#debug-the-browser-examples-frontend)
@@ -170,6 +171,12 @@ To rebuild each time a change is detected run:
 To rebuild each time a change is detected in frontend or backend you can run:
 
     yarn run watch
+
+### Watch a specific package
+
+You can use `npx` to watch a single package:
+
+    npx run watch @theia/the-package-name
 
 ## Debugging
 
