@@ -12,18 +12,34 @@ import { GitWatcherPath, GitWatcherClient, GitWatcherServer } from '../common/gi
 import { DugiteGit } from './dugite-git';
 import { DugiteGitWatcherServer } from './dugite-git-watcher';
 import { ConnectionHandler, JsonRpcConnectionHandler, ILogger } from "@theia/core/lib/common";
-import { GitRepositoryManager } from './git-repository-manager';
-import { GitRepositoryWatcherFactory, GitRepositoryWatcherOptions, GitRepositoryWatcher } from './git-repository-watcher';
+import { GitRepositoryManager, GitRepositoryManagerImpl } from './git-repository-manager';
+import { GitRepositoryWatcherFactory, GitRepositoryWatcherOptions, GitRepositoryWatcher, GitRepositoryWatcherImpl } from './git-repository-watcher';
 import { GitLocator } from './git-locator/git-locator-protocol';
 import { GitLocatorClient } from './git-locator/git-locator-client';
 import { GitLocatorImpl } from './git-locator/git-locator-impl';
 
-export function bindGit(bind: interfaces.Bind): void {
-    bind(GitRepositoryManager).toSelf().inSingletonScope();
+export interface GitBindingOptions {
+    readonly bindManager: (binding: interfaces.BindingToSyntax<{}>) => interfaces.BindingWhenOnSyntax<{}>;
+    readonly bindWatcher: (binding: interfaces.BindingToSyntax<{}>) => interfaces.BindingWhenOnSyntax<{}>;
+}
+
+export namespace GitBindingOptions {
+    export const Default: GitBindingOptions = {
+        bindManager(binding: interfaces.BindingToSyntax<{}>): interfaces.BindingWhenOnSyntax<{}> {
+            return binding.to(GitRepositoryManagerImpl).inSingletonScope();
+        },
+        bindWatcher(binding: interfaces.BindingToSyntax<{}>): interfaces.BindingWhenOnSyntax<{}> {
+            return binding.to(GitRepositoryWatcherImpl);
+        }
+    };
+}
+
+export function bindGit(bind: interfaces.Bind, bindingOptions: GitBindingOptions = GitBindingOptions.Default): void {
+    bindingOptions.bindManager(bind(GitRepositoryManager));
     bind(GitRepositoryWatcherFactory).toFactory(ctx => (options: GitRepositoryWatcherOptions) => {
         const child = new Container({ defaultScope: 'Singleton' });
         child.parent = ctx.container;
-        child.bind(GitRepositoryWatcher).toSelf();
+        bindingOptions.bindWatcher(child.bind(GitRepositoryWatcher));
         child.bind(GitRepositoryWatcherOptions).toConstantValue(options);
         return child.get(GitRepositoryWatcher);
     });

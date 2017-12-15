@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Disposable } from "vscode-jsonrpc";
+import { Disposable } from "@theia/core";
 
 export interface GitLocateOptions {
     readonly maxCount?: number;
@@ -15,7 +15,7 @@ export const GitLocator = Symbol('GitLocator');
 export interface GitLocator extends Disposable {
 
     /**
-     * Resolves repositoriy paths under the given absolute path.
+     * Resolves to the repository paths under the given absolute path.
      */
     locate(path: string, options: GitLocateOptions): Promise<string[]>;
 
