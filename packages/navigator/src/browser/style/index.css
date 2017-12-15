@@ -1,0 +1,32 @@
+/*
+* Copyright (C) 2017 TypeFox and others.
+*
+* Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+*/
+
+.theia-workspace-container {
+  font-size: var(--theia-ui-font-size1);
+  color: var(--theia-ui-font-color0);
+  margin: 5px;
+}
+
+.theia-workspace-container .open-workspace-button-container {
+  margin: auto;
+  margin-top: 5px;
+}
+
+.p-Widget .open-workspace-button {
+  border: 1px solid var(--theia-border-color1);
+  color: var(--theia-ui-font-color1);
+  font-size: var(--theia-ui-font-size1);
+  border-radius: 0;
+  background-color: var(--theia-accent-color3);
+  outline: none;
+  cursor: pointer;
+  padding-left: 12px;
+  padding-right: 12px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  width: 100%;
+}
