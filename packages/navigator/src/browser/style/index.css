@@ -5,13 +5,13 @@
 * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 */
 
-.theia-workspace-container {
+.theia-navigator-container {
     font-size: var(--theia-ui-font-size1);
     color: var(--theia-ui-font-color0);
     margin: 5px;
 }
 
-.theia-workspace-container .open-workspace-button-container {
+.theia-navigator-container .open-workspace-button-container {
     margin: auto;
     margin-top: 5px;
 }

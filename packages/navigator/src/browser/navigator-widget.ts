@@ -95,7 +95,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
             onclick: e => this.commandService.executeCommand(WorkspaceCommands.OPEN.id)
         }, 'Open Workspace');
         const buttonContainer = h.div({ className: 'open-workspace-button-container' }, button);
-        return h.div({ className: 'theia-workspace-container' }, 'You have not yet opened a workspace.', buttonContainer);
+        return h.div({ className: 'theia-navigator-container' }, 'You have not yet opened a workspace.', buttonContainer);
     }
 
 }
