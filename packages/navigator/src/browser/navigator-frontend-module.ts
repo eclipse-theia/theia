@@ -5,21 +5,32 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { ContainerModule } from 'inversify';
-import { MenuContribution } from '@theia/core/lib/common';
+import { ContainerModule } from "inversify";
+import { MenuContribution } from "@theia/core/lib/common";
 import { FrontendApplicationContribution } from "@theia/core/lib/browser";
 import { FileNavigatorWidget, FILE_NAVIGATOR_ID } from "./navigator-widget";
-import { NavigatorMenuContribution } from './navigator-menu';
-import { FileNavigatorContribution } from './navigator-contribution';
+import { NavigatorMenuContribution } from "./navigator-menu";
+import { FileNavigatorContribution } from "./navigator-contribution";
 import { createFileNavigatorWidget } from "./navigator-container";
-import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
+import { WidgetFactory } from "@theia/core/lib/browser/widget-manager";
+
+import "../../src/browser/style/index.css";
 
 export default new ContainerModule(bind => {
-    bind(FileNavigatorContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(FileNavigatorContribution));
-    bind(WidgetFactory).toDynamicValue(c => c.container.get(FileNavigatorContribution));
-    bind(MenuContribution).to(NavigatorMenuContribution).inSingletonScope();
-    bind(FileNavigatorWidget).toDynamicValue(ctx =>
-        createFileNavigatorWidget(ctx.container)
-    ).inSingletonScope().whenTargetNamed(FILE_NAVIGATOR_ID);
+  bind(FileNavigatorContribution)
+    .toSelf()
+    .inSingletonScope();
+  bind(FrontendApplicationContribution).toDynamicValue(c =>
+    c.container.get(FileNavigatorContribution)
+  );
+  bind(WidgetFactory).toDynamicValue(c =>
+    c.container.get(FileNavigatorContribution)
+  );
+  bind(MenuContribution)
+    .to(NavigatorMenuContribution)
+    .inSingletonScope();
+  bind(FileNavigatorWidget)
+    .toDynamicValue(ctx => createFileNavigatorWidget(ctx.container))
+    .inSingletonScope()
+    .whenTargetNamed(FILE_NAVIGATOR_ID);
 });
