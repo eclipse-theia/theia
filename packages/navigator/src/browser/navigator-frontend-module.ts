@@ -14,6 +14,8 @@ import { FileNavigatorContribution } from './navigator-contribution';
 import { createFileNavigatorWidget } from "./navigator-container";
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 
+import '../../src/browser/style/index.css';
+
 export default new ContainerModule(bind => {
     bind(FileNavigatorContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(FileNavigatorContribution));
