@@ -1,6 +1,10 @@
 {
   "defaultSeverity": "error",
   "rules": {
+    "file-header": [
+      true,
+      "\n \\* Copyright \\(C\\) \\d{4} .*\n"
+    ],
     "class-name": true,
     "comment-format": [
       true,
