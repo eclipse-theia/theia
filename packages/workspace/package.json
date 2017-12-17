@@ -6,7 +6,8 @@
     "@theia/core": "^0.3.0",
     "@theia/filesystem": "^0.3.0",
     "@types/fs-extra": "^4.0.2",
-    "fs-extra": "^4.0.2"
+    "fs-extra": "^4.0.2",
+    "valid-filename": "^2.0.1"
   },
   "publishConfig": {
     "access": "public"

@@ -17,6 +17,8 @@ import { SingleTextInputDialog, ConfirmDialog } from "@theia/core/lib/browser/di
 import { OpenerService, OpenHandler, open, FrontendApplication } from "@theia/core/lib/browser";
 import { WorkspaceService } from './workspace-service';
 
+const validFilename = require('valid-filename');
+
 export namespace WorkspaceCommands {
     export const NEW_FILE: Command = {
         id: 'file.newFile',
@@ -154,7 +156,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
      * @param parent the parent directory's file stat
      */
     protected validateFileName(name: string, parent: FileStat): string {
-        if (!name || !name.match(/^[\w\-. ]+$/)) {
+        if (!validFilename(name)) {
             return "Invalid name, try other";
         }
         if (parent.children) {
