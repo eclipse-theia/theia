@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import URI from '@theia/core/lib/common/uri';
-import { ICompositeTreeNode, TreeModel, TreeServices } from "@theia/core/lib/browser";
+import { ICompositeTreeNode, TreeModel, TreeServices, ITreeNode } from "@theia/core/lib/browser";
 import { FileSystem, FileSystemWatcher, FileChangeType, FileChange } from "../../common";
 import { FileStatNode, DirNode, FileTree } from "./file-tree";
 import { LocationService } from '../location';
@@ -88,8 +88,7 @@ export class FileTreeModel extends TreeModel implements LocationService {
     protected getAffectedNodes(changes: FileChange[]): ICompositeTreeNode[] {
         const nodes: DirNode[] = [];
         for (const change of changes) {
-            const uri = change.uri;
-            const id = change.type > FileChangeType.UPDATED ? uri.parent.toString() : uri.toString();
+            const id = change.uri.parent.toString();
             const node = this.getNode(id);
             if (DirNode.is(node) && node.expanded) {
                 nodes.push(node);
@@ -111,23 +110,23 @@ export class FileTreeModel extends TreeModel implements LocationService {
         return true;
     }
 
+    /**
+     * Move the given source file or directory to the given target directory.
+     */
+    async move(source: ITreeNode, target: ITreeNode) {
+        if (DirNode.is(target) && FileStatNode.is(source)) {
+            const sourceUri = source.uri.toString();
+            const targetUri = target.uri.resolve(source.name).toString();
+            await this.fileSystem.move(sourceUri, targetUri, { overwrite: true });
+            // to workaround https://github.com/Axosoft/nsfw/issues/42
+            this.refresh(target);
+        }
+    }
+
     upload(node: DirNode, items: DataTransferItemList): void {
         for (let i = 0; i < items.length; i++) {
-            if (items[i].kind === 'file') {
-                // File from outside Theia
-                const entry = items[i].webkitGetAsEntry() as WebKitEntry;
-                this.uploadEntry(node.uri, entry);
-            } else if (items[i].kind === 'string' && items[i].type === "theia-nodeid") {
-                // Files/folders to move from inside theia
-                items[i].getAsString(id => {
-                    const nodeToMove = this.tree.getNode(id);
-                    if (nodeToMove !== undefined) {
-                        const newBase = node.uri.resolve(nodeToMove.name);
-                        const destination = newBase.toString();
-                        this.move(id, destination);
-                    }
-                });
-            }
+            const entry = items[i].webkitGetAsEntry() as WebKitEntry;
+            this.uploadEntry(node.uri, entry);
         }
     }
 
@@ -180,7 +179,4 @@ export class FileTreeModel extends TreeModel implements LocationService {
         }
     }
 
-    protected move(uriToMove: string, nodeDest: string) {
-        this.fileSystem.move(uriToMove, nodeDest, { overwrite: true }).then(e => this.refresh());
-    }
 }
