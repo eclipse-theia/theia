@@ -12,14 +12,13 @@ describe('theia main elements loading', () => {
             browser.waitUntil(function () {
                 console.log('Browser not loaded yet. Trying again...');
                 return browser.getTitle() === '';
-            }, 300000), 5000;
+            }, 300000);
         }
         mainPage = new MainPage(browser);
+        mainPage.waitForLoadingPanels();
     });
 
     it('files panel is showing', () => {
-        mainPage.waitForLoadingPanels();
-
         // Panel is closed
         assert.isFalse(mainPage.isFileNavigatorOpen());
 
@@ -33,7 +32,6 @@ describe('theia main elements loading', () => {
     });
 
     it('menu shows up correctly', () => {
-        mainPage.waitForLoadingPanels();
 
         // No menu list is shown
         assert.isFalse(mainPage.isSubMenuShowing());

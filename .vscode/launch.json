@@ -115,6 +115,37 @@
             "request": "launch",
             "url": "http://localhost:3000/",
             "webRoot": "${workspaceRoot}"
+        },
+        {
+            // http://blog.likewise.org/2017/02/debugging-a-javascript-webdriverio-project-in-vscode/
+            // http://www.wiktorzychla.com/2017/08/debugging-javascript-webdriver-io-in.html
+            "type": "node",
+            "request": "launch",
+            "port": 5859,
+            "name": "WebdriverIO",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/wdio",
+            "windows": {
+                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/wdio.cmd"
+            },
+            "cwd": "${workspaceRoot}/examples/browser",
+            "smartStep": true,
+            "internalConsoleOptions": "openOnSessionStart",
+            "outputCapture": "std",
+            "args": [
+                "--no-preload"
+            ],
+            "env": {
+                "DEBUG": "true",
+                // To run a specific file, you can also do:
+                //"SPEC": "test/specs/foo.spec.js"
+                "SPEC": "${workspaceRoot}/${relativeFile}",
+                "TS_NODE_CACHE": "false",
+                "TS_NODE_PROJECT": "${workspaceRoot}/tsconfig.json"
+            },
+            "sourceMaps": true,
+            "outFiles": [
+                "${workspaceRoot}/**/*.js"
+            ]
         }
     ]
 }
