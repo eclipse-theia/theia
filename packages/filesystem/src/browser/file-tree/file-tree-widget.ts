@@ -74,7 +74,7 @@ export class FileTreeWidget extends TreeWidget {
         const elementAttrs = super.createNodeAttributes(node, props);
         return {
             ...elementAttrs,
-            draggable: "true",
+            draggable: String(FileStatNode.is(node)),
             ondragstart: event => this.handleDragStartEvent(node, event),
             ondragenter: event => this.handleDragEnterEvent(node, event),
             ondragover: event => this.handleDragOverEvent(node, event),
@@ -83,9 +83,8 @@ export class FileTreeWidget extends TreeWidget {
         };
     }
     protected handleDragStartEvent(node: ITreeNode, event: DragEvent): void {
-        // store a ref. on the dragged elem. initiated within Theia.
-        event.dataTransfer.setData('theia-nodeid', node.id);
         event.stopPropagation();
+        this.setTreeNodeAsData(event.dataTransfer, node);
     }
 
     protected handleDragEnterEvent(node: ITreeNode | undefined, event: DragEvent): void {
@@ -125,8 +124,21 @@ export class FileTreeWidget extends TreeWidget {
         event.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
         const containing = DirNode.getContainingDir(node);
         if (containing) {
-            this.model.upload(containing, event.dataTransfer.items);
+            const source = this.getTreeNodeFromData(event.dataTransfer);
+            if (source) {
+                this.model.move(source, containing);
+            } else {
+                this.model.upload(containing, event.dataTransfer.items);
+            }
         }
+    }
+
+    protected setTreeNodeAsData(data: DataTransfer, node: ITreeNode): void {
+        data.setData('tree-node', node.id);
+    }
+    protected getTreeNodeFromData(data: DataTransfer): ITreeNode | undefined {
+        const id = data.getData('tree-node');
+        return this.model.getNode(id);
     }
 
 }
