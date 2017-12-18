@@ -1,3 +1,4 @@
+/* tslint:disable:no-unused-expression */
 /*
  * Copyright (C) 2017 Ericsson and others.
  *
@@ -12,6 +13,7 @@ import { KeybindingRegistry, KeybindingContext, KeybindingContextRegistry, Keybi
 import { KeyCode, Key, Modifier } from './keys';
 import { CommandRegistry, CommandContribution, Command } from './command';
 import { MockLogger } from './test/mock-logger';
+import { isOSX } from './os';
 import * as chai from 'chai';
 const jsdom = require('jsdom-global');
 
@@ -73,7 +75,7 @@ describe('keybindings', () => {
     it("should set a keymap", () => {
         const rawKeybindings: RawKeybinding[] = [{
             command: "test.command",
-            keybinding: "ctrl+c"
+            keybinding: "shift+c"
         }];
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, rawKeybindings);
@@ -81,7 +83,7 @@ describe('keybindings', () => {
         const bindings = keybindingRegistry.getKeybindingsForCommand('test.command');
         if (bindings) {
             expect(bindings[0].keyCode.key).to.be.equal(Key.KEY_C);
-            expect(bindings[0].keyCode.ctrl).to.be.true;
+            expect(bindings[0].keyCode.shift).to.be.true;
         }
 
     });
@@ -89,7 +91,7 @@ describe('keybindings', () => {
     it("should reset to default in case of invalid keybinding", () => {
         const rawKeybindings: RawKeybinding[] = [{
             command: "test.command",
-            keybinding: "ctrl+invalid"
+            keybinding: "shift+invalid"
         }];
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, rawKeybindings);
@@ -97,7 +99,7 @@ describe('keybindings', () => {
         const bindings = keybindingRegistry.getKeybindingsForCommand('test.command');
         if (bindings) {
             expect(bindings[0].keyCode.key).to.be.equal(Key.KEY_A);
-            expect(bindings[0].keyCode.ctrl).to.be.true;
+            expect(bindings[0].keyCode.shift).to.be.true;
         }
     });
 
@@ -113,14 +115,14 @@ describe('keybindings', () => {
         if (bindings) {
             expect(bindings.length).to.be.equal(2);
             expect(bindings[0].keyCode.key).to.be.equal(Key.F1);
-            expect(bindings[0].keyCode.ctrl).to.be.true;
+            expect(bindings[0].keyCode.shift).to.be.true;
         }
     });
 
     it("should register a correct keybinding, then default back to the original for a wrong one after", () => {
         let rawKeybindings: RawKeybinding[] = [{
             command: "test.command",
-            keybinding: "ctrl+c"
+            keybinding: "shift+c"
         }];
         // Get default binding
         const keystroke = keybindingRegistry.getKeybindingsForCommand('test.command');
@@ -130,7 +132,7 @@ describe('keybindings', () => {
         const bindings = keybindingRegistry.getKeybindingsForCommand('test.command');
         if (bindings) {
             expect(bindings[0].keyCode.key).to.be.equal(Key.KEY_C);
-            expect(bindings[0].keyCode.ctrl).to.be.true;
+            expect(bindings[0].keyCode.shift).to.be.true;
         }
 
         // Set invalid binding
@@ -152,43 +154,77 @@ describe('keybindings', () => {
     it("should only return the more specific keybindings when a keystroke is entered", () => {
         const rawKeybindingsUser: RawKeybinding[] = [{
             command: "test.command",
-            keybinding: "ctrl+b"
+            keybinding: "shift+b"
         }];
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, rawKeybindingsUser);
 
         const rawKeybindingsSpecific: RawKeybinding[] = [{
             command: "test.command",
-            keybinding: "ctrl+c"
+            keybinding: "shift+c"
         }];
 
-        const validKeyCode = KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [Modifier.M1] });
+        const validKeyCode = KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [Modifier.M2] });
 
         keybindingRegistry.setKeymap(KeybindingScope.WORKSPACE, rawKeybindingsSpecific);
 
-        let bindings = keybindingRegistry.getKeybindingsForKeyCode(KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M1] }));
+        let bindings = keybindingRegistry.getKeybindingsForKeyCode(KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M2] }));
         expect(bindings).to.be.empty;
 
-        bindings = keybindingRegistry.getKeybindingsForKeyCode(KeyCode.createKeyCode({ first: Key.KEY_B, modifiers: [Modifier.M1] }));
+        bindings = keybindingRegistry.getKeybindingsForKeyCode(KeyCode.createKeyCode({ first: Key.KEY_B, modifiers: [Modifier.M2] }));
         expect(bindings).to.be.empty;
 
-        bindings = keybindingRegistry.getKeybindingsForKeyCode(KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [Modifier.M1] }));
+        bindings = keybindingRegistry.getKeybindingsForKeyCode(KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [Modifier.M2] }));
         expect(bindings[0].keyCode.key).to.be.equal(validKeyCode.key);
     });
 });
 
 describe("keys api", () => {
-    it("parses a string to a KeyCode correctly", () => {
-        let keycode = KeyCode.parse("ctrl+b");
+    it("should parse a string to a KeyCode correctly", () => {
+        let keycode = KeyCode.parse("shift+b");
         expect(keycode).is.not.undefined;
         if (keycode) {
+            expect(keycode.shift).to.be.true;
             expect(keycode.key).is.equal(Key.KEY_B);
-            expect(keycode.ctrl).to.be.true;
         }
         // Invalid keystroke string
         keycode = KeyCode.parse("ctl+b");
         expect(keycode).is.undefined;
     });
+
+    if (isOSX) {
+        it("should parse a string containing ctrl/option to a KeyCode correctly (OS X)", () => {
+            const keycodeCtrl = KeyCode.parse("ctrl+b");
+            expect(keycodeCtrl).is.not.undefined;
+            if (keycodeCtrl) {
+                expect(keycodeCtrl.meta).to.be.true;
+                expect(keycodeCtrl.key).is.equal(Key.KEY_B);
+            }
+
+            const keycodeOption = KeyCode.parse("option+b");
+            expect(keycodeOption).is.not.undefined;
+            if (keycodeOption) {
+                expect(keycodeOption.alt).to.be.true;
+                expect(keycodeOption.key).is.equal(Key.KEY_B);
+            }
+        });
+    } else {
+        it("should parse a string containing ctrl/option to a KeyCode correctly", () => {
+            const keycode = KeyCode.parse("ctrl+b");
+            expect(keycode).is.not.undefined;
+            if (keycode) {
+                expect(keycode.ctrl).to.be.true;
+                expect(keycode.key).is.equal(Key.KEY_B);
+            }
+
+            const keycodeOption = KeyCode.parse("option+b");
+            expect(keycodeOption).is.not.undefined;
+            if (keycodeOption) {
+                expect(keycodeOption.alt).to.be.true;
+                expect(keycodeOption.key).is.equal(Key.KEY_B);
+            }
+        });
+    }
 });
 
 const TEST_COMMAND: Command = {
@@ -211,9 +247,9 @@ export class TestContribution implements CommandContribution, KeybindingContribu
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
-        const keycode1 = KeyCode.parse('ctrl+a');
-        const keycode2 = KeyCode.parse('ctrl+f1');
-        const keycode3 = KeyCode.parse('ctrl+f2');
+        const keycode1 = KeyCode.parse('shift+a');
+        const keycode2 = KeyCode.parse('shift+f1');
+        const keycode3 = KeyCode.parse('shift+f2');
         if (keycode1 && keycode2 && keycode3) {
             [
                 {
