@@ -6,6 +6,7 @@
  */
 
 import { injectable, inject } from "inversify";
+import { MessageService } from '@theia/core';
 import { Disposable } from "@theia/core/lib/common";
 import { FrontendApplication } from '@theia/core/lib/browser';
 import {
@@ -32,6 +33,7 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
 
     protected resolveReady: (languageClient: ILanguageClient) => void;
     protected ready: Promise<ILanguageClient>;
+    @inject(MessageService) protected readonly messageService: MessageService;
 
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
@@ -87,7 +89,11 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         const fileEvents = this.createFileEvents();
         return {
             documentSelector: this.documentSelector,
-            synchronize: { fileEvents }
+            synchronize: { fileEvents },
+            initializationFailedHandler: () => {
+                this.messageService.error("Failed to start language server '" + this.name + "'.");
+                return false;
+            }
         };
     }
 
