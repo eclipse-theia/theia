@@ -72,13 +72,25 @@ export class KeyCode {
             }
             const key = EASY_TO_KEY[keyString];
 
-            if (keyString === 'meta') {
+            /* meta only works on macOS */
+            if (keyString === SpecialCases.META) {
+                if (isOSX) {
+                    sequence.push(`${Modifier.M1}`);
+                } else {
+                    return undefined;
+                }
+                /* ControlOrCommand for keybindings that work on both macOS and other platforms */
+            } else if (keyString === SpecialCases.CTRL_OR_COMMAND) {
                 sequence.push(`${Modifier.M1}`);
-            }
-            if (Key.isKey(key)) {
+            } else if (Key.isKey(key)) {
                 if (Key.isModifier(key.code)) {
                     if (key.keyCode === EasyKey.CONTROL.keyCode) {
-                        sequence.push(`${Modifier.M1}`);
+                        // CTRL on MacOS X (M4)
+                        if (isOSX) {
+                            sequence.push(`${Modifier.M4}`);
+                        } else {
+                            sequence.push(`${Modifier.M1}`);
+                        }
                     } else if (key.keyCode === EasyKey.SHIFT.keyCode) {
                         sequence.push(`${Modifier.M2}`);
                     } else if (key.keyCode === EasyKey.ALT.keyCode) {
@@ -201,8 +213,15 @@ const SPECIAL_ALIASES: { [index: string]: string } = {
     'esc': 'escape',
     'mod': 'ctrl',
     'ins': 'insert',
-    'del': 'delete'
+    'del': 'delete',
+    'control': 'ctrl',
+    'CommandOrControl': 'ControlOrCommand',
 };
+
+export namespace SpecialCases {
+    export const META = 'meta';
+    export const CTRL_OR_COMMAND = 'ControlOrCommand';
+}
 
 export namespace EasyKey {
     export const ENTER: EasyKey = { keyCode: 13, easyString: 'enter' };
