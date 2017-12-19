@@ -22,8 +22,8 @@ export default new ContainerModule(bind => {
 
     bind(FileSystemWatcherServerProxy).toDynamicValue(ctx =>
         WebSocketConnectionProvider.createProxy(ctx.container, fileSystemWatcherPath)
-    ).inSingletonScope();
-    bind(FileSystemWatcherServer).to(ReconnectingFileSystemWatcherServer).inSingletonScope();
+    );
+    bind(FileSystemWatcherServer).to(ReconnectingFileSystemWatcherServer);
     bind(FileSystemWatcher).toSelf().inSingletonScope();
 
     bind(FileSystemListener).toSelf().inSingletonScope();
