@@ -155,6 +155,7 @@ exports.config = {
     //
     // Gets executed once before all workers get launched.
     onPrepare: function (config, capabilities) {
+        process.argv.push(`--root-dir=${path.join(__dirname, 'test', 'browsertest')}`);
         return require('./src-gen/backend/server')(port, host).then(s => {
             server = s;
         });
