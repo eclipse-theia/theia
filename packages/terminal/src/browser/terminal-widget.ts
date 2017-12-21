@@ -290,7 +290,9 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
                 this.openTerm().then(() => {
                     this.openAfterShow = false;
                     this.term.focus();
-                }).catch(() => { });
+                }).catch(e => {
+                    this.logger.error("Error opening terminal", e.toString());
+                });
             }
         } else {
             this.term.focus();
@@ -302,7 +304,10 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         if (this.isVisible) {
             this.openTerm().then(() => {
                 this.term.focus();
-            }).catch(() => { this.openAfterShow = true; });
+            }).catch(e => {
+                this.openAfterShow = true;
+                this.logger.error("Error opening terminal", e.toString());
+            });
         } else {
             this.openAfterShow = true;
         }
