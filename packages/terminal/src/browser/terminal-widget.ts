@@ -14,9 +14,10 @@ import { ITerminalServer } from '../common/terminal-protocol';
 import { IBaseTerminalErrorEvent, IBaseTerminalExitEvent } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import * as Xterm from 'xterm';
-import 'xterm/lib/addons/fit/fit';
-import 'xterm/lib/addons/attach/attach';
 import { ThemeService } from "@theia/core/lib/browser/theming";
+
+Xterm.Terminal.applyAddon(require('xterm/lib/addons/fit/fit'));
+Xterm.Terminal.applyAddon(require('xterm/lib/addons/attach/attach'));
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 

@@ -6,8 +6,17 @@
  */
 
 .terminal-container {
-    padding-top: calc(var(--theia-code-padding)*3) !important;
-    padding-left: calc(var(--theia-code-padding)*3) !important;
     width:100%;
     height:100%;
+}
+
+/* This one is created by xterm.js.  */
+.terminal-container .terminal {
+    /* We should be able to add back the padding once
+
+         https://github.com/xtermjs/xterm.js/pull/1123
+
+       is merged in xterm.js.  */
+    /* padding-top: calc(var(--theia-code-padding)*3) !important;
+    padding-left: calc(var(--theia-code-padding)*3) !important; */
 }

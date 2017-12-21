@@ -78,23 +78,6 @@ module.exports = {
                 }
             },
             {
-                test: /node_modules.+xterm.+\.map$/,
-                loader: 'ignore-loader'
-            },
-            {
-                /* Get rid of :
-
-                   @theia/example-electron: WARNING in /home/emaisin/src/theia/~/xterm/lib/addons/attach/index.html
-                   @theia/example-electron: Module parse failed: /home/emaisin/src/theia/node_modules/xterm/lib/addons/attach/index.html Unexpected token (1:0)
-                   @theia/example-electron: You may need an appropriate loader to handle this file type.
-
-                   See: https://github.com/theia-ide/theia/pull/688#issuecomment-338289418
-                */
-
-                test: /node_modules\\/xterm\\/lib\\/addons\\/attach\\/index\\.html/,
-                loader: 'ignore-loader',
-            },
-            {
                 // see https://github.com/theia-ide/theia/issues/556
                 test: /source-map-support/,
                 loader: 'ignore-loader'
