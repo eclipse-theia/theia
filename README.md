@@ -66,17 +66,38 @@ Read below how to engage with Theia community:
 - Follow Theia on [Twitter](https://twitter.com/theia_ide).
 
 ## Roadmap
-On December 6, 2017 we reached version 0.3.0.
-The team is now in the process of defining the scope for the next months. It will include features like
- - Debugging
- - Search
- - More Advanced Git Integration
- - many more
+During the first half of 2018, the team is focusing on the following features:
+ 
+ - __Debugging__ 
+   
+   A visual debugger leveraging the Debug Server Protocol defined by the VS Code team.
 
-A more concrete milestone plan will be added soon.
+ - __Workbench Improvements__
 
-The team is also working on the following Open-Source Products based on Theia:
- - [Yangster](https://github.com/theia-ide/yangster) - A YANG IDE
+   Theia's workbench shell will be improved, such that the user can drag and drop widgets from the side bar to the main area and vice-versa.
+
+ - __Search__
+
+   Theia already can search files by name (<kbd>CMD</kbd> + <kbd>P</kbd>). In early 2018 a full text search shall be developed and added.
+ 
+ - __More Git Support__
+
+   In addition to the already present commit staging view, the team will add a git history and git diff view to better visualize the different states of git repositories. 
+
+ - __Navigator Improvements__
+
+   The file navigator shall support decorations, which are to be used by the git and the problems view extensions. It will allow to signal on a file whether there are git changes resp. diagnostics.
+
+ - __Better Markdown Support__ 
+
+   The Markdown support shall be improved to allow better preview that syncs scrolling. Also rendering plug-ins based on `markdown-it` shall be supported and tools like linters and dead link checkers shall be integrated.
+
+ - __Robustness and Improved UX__
+   We will further work on simplifying Theia and its UI / UX, improve the performance and keep working on bug reports that are rolling in.
+
+ - __More__
+
+   Any contributors might want to work on additional things. At least this happened in 2017 and is likely to increase with a growing community. :) 
 
 ## License
 
