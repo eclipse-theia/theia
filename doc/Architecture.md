@@ -53,7 +53,7 @@ by platform:
 Theia uses the DI framework [Inversify.js](http://inversify.io/) to wire up the
 different components.
 
-DI decouples a components from creating its dependencies. Instead, it gets them
+DI decouples a component from creating its dependencies. Instead, it gets them
 injected on creation (as parameters of a constructor). A DI container does the
 creation for you, based on some configuration you provide on startup through
 so-called container modules.
@@ -81,7 +81,7 @@ any number of DI modules (`ContainerModule`) that contribute to the creation of
 the DI container.
 
 _At the moment an extension is consumed by adding a dependency to the
-npm-package and then reference the exposed DI modules in the startup script
+npm-package and then referencing the exposed DI modules in the startup script
 (see [main.ts](../examples/browser/src/client/main.ts)). In the future, we will
 automate the creation of the application, based on metadata in the
 `package.json` of an extension. Extensions can be installed/uninstalled at
