@@ -40,7 +40,7 @@ cd theia-hello-world-extension
 yo theia-extension hello-world
 ```
 
-Let's have look at the generated code now. The root `package.json` defines the workspaces, the dependencies to `lerna`, `typescript`and `rimraf and some scripts to rebuild the native packages for browser or electron.
+Let's have look at the generated code now. The root `package.json` defines the workspaces, the dependencies to `lerna`, `typescript` and `rimraf` and some scripts to rebuild the native packages for browser or electron.
 
 ```json
 {

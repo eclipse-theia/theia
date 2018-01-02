@@ -40,7 +40,8 @@ export default new ContainerModule(bind => {
 The class that is in charge of registering and executing the commands is the command registry. It is also possible to get the list of commands with the `get commandIds()` api.
 
 ## Adding keybindings to the keybinding registry
-Commands don't need keybindings by default, as they can be called by a lot of other means (programatically, user clicks etc.). However, keybindings with specific contexts can be added to a command in a similar way to contributing commands.
+
+Commands don't need keybindings by default, as they can be called by a lot of other means (programmatically, user clicks etc.). However, keybindings with specific contexts can be added to a command in a similar way to contributing commands.
 
 To contribute a keybinding, simply inject an implementation of `KeybindingContribution`.
 
