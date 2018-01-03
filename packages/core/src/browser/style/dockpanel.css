@@ -10,6 +10,8 @@
 
 .p-DockPanel-widget {
   background: var(--theia-layout-color3);
+  min-width: 100px;
+  min-height: 100px;
 }
 
 .p-DockPanel-handle[data-orientation='vertical'] {
@@ -30,7 +32,6 @@
   transition-timing-function: ease;
 }
 
-
 .p-DockPanel-overlay.p-mod-root-top,
 .p-DockPanel-overlay.p-mod-root-left,
 .p-DockPanel-overlay.p-mod-root-right,
@@ -40,6 +41,6 @@
 }
 
 
-#theia-main-dock-panel {
+#theia-main-content-panel {
   padding: 0px;
 }

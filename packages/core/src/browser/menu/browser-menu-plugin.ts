@@ -169,9 +169,9 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
 
     onStart(app: FrontendApplication): void {
         const logo = this.createLogo();
-        app.shell.addToTopArea(logo);
+        app.shell.addWidget(logo, { area: 'top' });
         const menu = this.factory.createMenuBar();
-        app.shell.addToTopArea(menu);
+        app.shell.addWidget(menu, { area: 'top' });
     }
 
     protected createLogo(): Widget {

@@ -5,20 +5,28 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
-import { FrontendApplicationContribution, FrontendApplication } from "@theia/core/lib/browser";
-import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
+import { injectable } from "inversify";
+import { KeyCode, Key, Modifier } from '@theia/core/lib/common/keys';
+import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
+import { OutlineViewWidget } from './outline-view-widget';
+
+export const OUTLINE_WIDGET_FACTORY_ID = 'outline-view';
 
 @injectable()
-export class OutlineViewContribution implements FrontendApplicationContribution {
+export class OutlineViewContribution extends AbstractViewContribution<OutlineViewWidget> {
 
-    constructor(
-        @inject(WidgetManager) protected readonly widgetManager: WidgetManager
-    ) { }
-
-    async initializeLayout(app: FrontendApplication): Promise<void> {
-        this.widgetManager.getOrCreateWidget('outline-view').then(outline => {
-            app.shell.addToRightArea(outline);
+    constructor() {
+        super({
+            widgetId: OUTLINE_WIDGET_FACTORY_ID,
+            widgetName: 'Outline',
+            defaultWidgetOptions: {
+                area: 'right',
+                rank: 100
+            },
+            toggleCommandId: 'outlineView:toggle',
+            toggleKeybinding: KeyCode.createKeyCode({
+                first: Key.KEY_O, modifiers: [Modifier.CTRL, Modifier.SHIFT]
+            })
         });
     }
 

@@ -5,9 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { interfaces, Container } from 'inversify';
+import { Container, interfaces } from 'inversify';
 import { ITree, ITreeModel, TreeProps, defaultTreeProps } from "@theia/core/lib/browser";
-import { createFileTreeContainer, FileTree, FileTreeModel, FileTreeWidget, FileTreeServices } from "@theia/filesystem/lib/browser";
+import { createFileTreeContainer, FileTree, FileTreeModel, FileTreeWidget, FileTreeServices } from '@theia/filesystem/lib/browser';
 import { FileNavigatorTree } from "./navigator-tree";
 import { FileNavigatorModel, FileNavigatorServices } from "./navigator-model";
 import { FileNavigatorWidget } from "./navigator-widget";

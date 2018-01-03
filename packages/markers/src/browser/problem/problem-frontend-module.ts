@@ -23,11 +23,11 @@ export default new ContainerModule(bind => {
     bind(ProblemWidget).toDynamicValue(ctx =>
         createProblemWidget(ctx.container)
     );
-
     bind(WidgetFactory).toDynamicValue(context => ({
         id: PROBLEM_KIND,
         createWidget: () => context.container.get<ProblemWidget>(ProblemWidget)
     }));
+
     bind(ProblemContribution).toSelf().inSingletonScope();
     for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution, FrontendApplicationContribution]) {
         bind(identifier).toDynamicValue(ctx =>

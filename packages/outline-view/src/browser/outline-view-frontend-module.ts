@@ -11,6 +11,9 @@ import { OutlineViewContribution } from './outline-view-contribution';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { FrontendApplicationContribution, createTreeContainer, TreeWidget } from '@theia/core/lib/browser';
 import { OutlineViewWidgetFactory, OutlineViewWidget } from './outline-view-widget';
+import { CommandContribution } from '@theia/core/lib/common/command';
+import { KeybindingContribution } from '@theia/core/lib/common/keybinding';
+import { MenuContribution } from '@theia/core/lib/common/menu';
 
 export default new ContainerModule(bind => {
     bind(OutlineViewWidgetFactory).toFactory(ctx =>
@@ -22,6 +25,9 @@ export default new ContainerModule(bind => {
 
     bind(OutlineViewContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(OutlineViewContribution));
+    bind(CommandContribution).toDynamicValue(c => c.container.get(OutlineViewContribution));
+    bind(KeybindingContribution).toDynamicValue(c => c.container.get(OutlineViewContribution));
+    bind(MenuContribution).toDynamicValue(c => c.container.get(OutlineViewContribution));
 });
 
 function createOutlineViewWidget(parent: interfaces.Container): OutlineViewWidget {

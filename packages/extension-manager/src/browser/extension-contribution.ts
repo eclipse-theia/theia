@@ -7,23 +7,41 @@
 
 import { injectable, inject } from "inversify";
 import { MessageService } from "@theia/core";
-import { FrontendApplication, FrontendApplicationContribution } from "@theia/core/lib/browser";
+import { FrontendApplication } from '@theia/core/lib/browser';
 import { ExtensionManager } from '../common';
-import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
+import { KeyCode, Key, Modifier } from '@theia/core/lib/common/keys';
+import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
+import { ExtensionWidget } from './extension-widget';
+
+export const EXTENSIONS_WIDGET_FACTORY_ID = 'extensions';
 
 @injectable()
-export class ExtensionContribution implements FrontendApplicationContribution {
+export class ExtensionContribution extends AbstractViewContribution<ExtensionWidget> {
 
-    constructor(
-        @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
-        @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager,
-        @inject(MessageService) protected readonly messageService: MessageService,
-    ) {
+    @inject(ExtensionManager) protected readonly extensionManager: ExtensionManager;
+    @inject(MessageService) protected readonly messageService: MessageService;
+
+    constructor() {
+        super({
+            widgetId: EXTENSIONS_WIDGET_FACTORY_ID,
+            widgetName: 'Extensions',
+            defaultWidgetOptions: {
+                area: 'left',
+                rank: 300
+            },
+            toggleCommandId: 'extensionsView:toggle',
+            toggleKeybinding: KeyCode.createKeyCode({
+                first: Key.KEY_X, modifiers: [Modifier.M2, Modifier.M1]
+            })
+        });
+    }
+
+    onStart(app: FrontendApplication) {
         this.extensionManager.onWillStartInstallation(({ reverting }) => {
-            if (!reverting) {
-                this.messageService.info('Installing extensions...');
-            } else {
+            if (reverting) {
                 this.messageService.error('Failed to install extensions. Reverting...');
+            } else {
+                this.messageService.info('Installing extensions...');
             }
         });
         this.extensionManager.onDidStopInstallation(({ reverting, failed }) => {
@@ -31,13 +49,6 @@ export class ExtensionContribution implements FrontendApplicationContribution {
                 const reloadMessage = !reverting ? 'Reload to complete the installation.' : 'Reload to revert the installation.';
                 this.messageService.info(reloadMessage).then(() => window.location.reload());
             }
-        });
-    }
-
-    async initializeLayout(app: FrontendApplication): Promise<void> {
-        const extensionWidget = await this.widgetManager.getOrCreateWidget('extensions');
-        app.shell.addToLeftArea(extensionWidget, {
-            rank: 300
         });
     }
 

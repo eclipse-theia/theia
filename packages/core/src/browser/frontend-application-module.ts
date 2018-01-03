@@ -24,8 +24,10 @@ import { CommonFrontendContribution } from './common-frontend-contribution';
 import { QuickOpenService, QuickCommandService, QuickCommandFrontendContribution } from './quick-open';
 import { LocalStorageService, StorageService } from './storage-service';
 import { WidgetFactory, WidgetManager } from './widget-manager';
-import { ShellLayoutRestorer } from './shell-layout-restorer';
-import { ApplicationShell, ApplicationShellOptions, DockPanelRenderer, DockPanelTabBarRenderer, DockPanelTabBarRendererFactory } from './shell';
+import {
+    ApplicationShell, ApplicationShellOptions, DockPanelRenderer, TabBarRenderer,
+    TabBarRendererFactory, ShellLayoutRestorer, SidePanelHandler, SidePanelHandlerFactory
+} from './shell';
 import { StatusBar, StatusBarImpl } from "./status-bar/status-bar";
 import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from "./label-provider";
@@ -40,10 +42,12 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(ApplicationShellOptions).toConstantValue({});
     bind(ApplicationShell).toSelf().inSingletonScope();
+    bind(SidePanelHandlerFactory).toAutoFactory(SidePanelHandler);
+    bind(SidePanelHandler).toSelf();
 
     bind(DockPanelRenderer).toSelf();
-    bind(DockPanelTabBarRendererFactory).toAutoFactory(DockPanelTabBarRenderer);
-    bind(DockPanelTabBarRenderer).toSelf();
+    bind(TabBarRendererFactory).toAutoFactory(TabBarRenderer);
+    bind(TabBarRenderer).toSelf();
 
     bindContributionProvider(bind, OpenHandler);
     bind(DefaultOpenerService).toSelf().inSingletonScope();

@@ -5,53 +5,27 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject, named } from "inversify";
-import { SelectionService } from "@theia/core/lib/common";
-import { FrontendApplicationContribution, FrontendApplication } from "@theia/core/lib/browser";
-import { DirNode } from "@theia/filesystem/lib/browser";
-import { WorkspaceService } from "@theia/workspace/lib/browser";
-import { FileNavigatorWidget, FILE_NAVIGATOR_ID } from './navigator-widget';
-import { StorageService } from '@theia/core/lib/browser/storage-service';
-import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser/widget-manager';
-import { Widget } from '@phosphor/widgets';
-import { LabelProvider } from "@theia/core/lib/browser/label-provider";
-import URI from '@theia/core/lib/common/uri';
+import { injectable } from "inversify";
+import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
+import { KeyCode, Key, Modifier } from '@theia/core/lib/common/keys';
+import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 
 @injectable()
-export class FileNavigatorContribution implements FrontendApplicationContribution, WidgetFactory {
+export class FileNavigatorContribution extends AbstractViewContribution<FileNavigatorWidget> {
 
-    id = 'navigator';
-
-    constructor(
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(SelectionService) protected readonly selectionService: SelectionService,
-        @inject(FileNavigatorWidget) @named(FILE_NAVIGATOR_ID) protected readonly fileNavigator: FileNavigatorWidget,
-        @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
-        @inject(StorageService) protected storageService: StorageService,
-        @inject(LabelProvider) protected readonly labelProvider: LabelProvider
-    ) {
-        this.fileNavigator.model.onSelectionChanged(selection =>
-            this.selectionService.selection = selection
-        );
-        this.workspaceService.root.then(async resolvedRoot => {
-            if (resolvedRoot) {
-                const uri = new URI(resolvedRoot.uri);
-                const label = this.labelProvider.getName(uri);
-                const icon = await this.labelProvider.getIcon(resolvedRoot);
-                this.fileNavigator.model.root = DirNode.createRoot(resolvedRoot, label, icon);
-            } else {
-                this.fileNavigator.update();
-            }
+    constructor() {
+        super({
+            widgetId: FILE_NAVIGATOR_ID,
+            widgetName: 'Files',
+            defaultWidgetOptions: {
+                area: 'left',
+                rank: 100
+            },
+            toggleCommandId: 'fileNavigator:toggle',
+            toggleKeybinding: KeyCode.createKeyCode({
+                first: Key.KEY_E, modifiers: [Modifier.M2, Modifier.M1]
+            })
         });
     }
 
-    async initializeLayout(app: FrontendApplication): Promise<void> {
-        this.widgetManager.getOrCreateWidget('navigator').then(navigator =>
-            app.shell.addToLeftArea(navigator)
-        );
-    }
-
-    async createWidget(): Promise<Widget> {
-        return this.fileNavigator;
-    }
 }

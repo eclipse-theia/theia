@@ -10,10 +10,13 @@ import { Message } from "@phosphor/messaging";
 import URI from "@theia/core/lib/common/uri";
 import { CommandService } from '@theia/core/lib/common/command';
 import { ContextMenuRenderer, TreeProps, ITreeModel, ITreeNode } from '@theia/core/lib/browser';
-import { FileTreeWidget } from "@theia/filesystem/lib/browser";
+import { FileTreeWidget, DirNode } from "@theia/filesystem/lib/browser";
 import { FileNavigatorModel } from "./navigator-model";
-import { h } from "@phosphor/virtualdom/lib";
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-frontend-contribution';
+import { SelectionService } from '@theia/core/lib/common';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { LabelProvider } from '@theia/core/lib/browser/label-provider';
+import { h } from "@phosphor/virtualdom/lib";
 
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
 export const DIR_NODE_CLASS = 'theia-DirNode';
@@ -30,12 +33,33 @@ export class FileNavigatorWidget extends FileTreeWidget {
         @inject(TreeProps) readonly props: TreeProps,
         @inject(FileNavigatorModel) readonly model: FileNavigatorModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
-        @inject(CommandService) protected readonly commandService: CommandService
+        @inject(CommandService) protected readonly commandService: CommandService,
+        @inject(SelectionService) protected readonly selectionService: SelectionService,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
+        @inject(LabelProvider) protected readonly labelProvider: LabelProvider
     ) {
         super(props, model, contextMenuRenderer);
         this.id = FILE_NAVIGATOR_ID;
         this.title.label = LABEL;
         this.addClass(CLASS);
+        this.initialize();
+    }
+
+    protected initialize(): void {
+        this.model.onSelectionChanged(selection =>
+            this.selectionService.selection = selection
+        );
+
+        this.workspaceService.root.then(async resolvedRoot => {
+            if (resolvedRoot) {
+                const uri = new URI(resolvedRoot.uri);
+                const label = this.labelProvider.getName(uri);
+                const icon = await this.labelProvider.getIcon(resolvedRoot);
+                this.model.root = DirNode.createRoot(resolvedRoot, label, icon);
+            } else {
+                this.update();
+            }
+        });
     }
 
     protected deflateForStorage(node: ITreeNode): object {

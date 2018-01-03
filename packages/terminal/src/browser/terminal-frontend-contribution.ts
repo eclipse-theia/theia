@@ -21,7 +21,7 @@ import {
     KeybindingContextRegistry,
     isOSX
 } from '@theia/core/lib/common';
-import { FrontendApplication, CommonMenus } from '@theia/core/lib/browser';
+import { CommonMenus, ApplicationShell } from '@theia/core/lib/browser';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidget } from './terminal-widget';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
@@ -39,7 +39,7 @@ const TERMINAL_ACTIVE_CONTEXT = "terminalActive";
 export class TerminalFrontendContribution implements CommandContribution, MenuContribution, KeybindingContribution {
 
     constructor(
-        @inject(FrontendApplication) protected readonly app: FrontendApplication,
+        @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(KeybindingContextRegistry) protected readonly keybindingContextRegistry: KeybindingContextRegistry,
@@ -54,7 +54,7 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        menus.registerMenuAction(CommonMenus.FILE_OPEN, {
+        menus.registerMenuAction(CommonMenus.FILE_NEW, {
             commandId: TerminalCommands.NEW.id
         });
     }
@@ -62,7 +62,7 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
     /* Return true if a TerminalWidget widget is currently in focus.  */
 
     isTerminalFocused(binding: Keybinding): boolean {
-        return this.app.shell.currentWidget instanceof TerminalWidget;
+        return this.shell.currentWidget instanceof TerminalWidget;
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
@@ -84,10 +84,9 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
         /* Register ctrl + k (the passed Key) as a passthrough command in the
            context of the terminal.  */
         const regCtrl = (k: Key) => {
-            const modifier = isOSX ? Modifier.M4 : Modifier.M1;
             keybindings.registerKeybindings({
                 commandId: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-                keyCode: KeyCode.createKeyCode({ first: k, modifiers: [modifier] }),
+                keyCode: KeyCode.createKeyCode({ first: k, modifiers: [Modifier.CTRL] }),
                 contextId: TERMINAL_ACTIVE_CONTEXT,
             });
         };

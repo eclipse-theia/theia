@@ -11,7 +11,7 @@ import { ElementExt } from "@phosphor/domutils";
 import { h, ElementAttrs, ElementInlineStyle } from "@phosphor/virtualdom";
 import { Disposable, Key, MenuPath } from "../../common";
 import { ContextMenuRenderer } from "../context-menu-renderer";
-import { StatefulWidget } from '../shell-layout-restorer';
+import { StatefulWidget } from '../shell';
 import { VirtualWidget, VirtualRenderer, SELECTED_CLASS, COLLAPSED_CLASS } from "../widgets";
 import { ITreeNode, ICompositeTreeNode } from "./tree";
 import { ITreeModel } from "./tree-model";
@@ -71,7 +71,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         this.toDispose.push(model);
     }
 
-    onActivateRequest(msg: Message): void {
+    protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (!this.model.selectedNode && ISelectableTreeNode.is(this.model.root)) {
             this.model.selectNode(this.model.root);

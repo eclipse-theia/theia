@@ -20,6 +20,7 @@ import { GitRepositoryProvider } from './git-repository-provider';
 import { GitQuickOpenService } from './git-quick-open-service';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { GitUriLabelProviderContribution } from './git-uri-label-contribution';
+import { KeybindingContribution } from '@theia/core/lib/common/keybinding';
 
 import '../../src/browser/style/index.css';
 
@@ -33,7 +34,11 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).to(GitCommandHandlers);
     bind(MenuContribution).to(GitContextMenu);
 
-    bind(FrontendApplicationContribution).to(GitFrontendContribution);
+    bind(GitFrontendContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(GitFrontendContribution));
+    bind(CommandContribution).toDynamicValue(c => c.container.get(GitFrontendContribution));
+    bind(KeybindingContribution).toDynamicValue(c => c.container.get(GitFrontendContribution));
+    bind(MenuContribution).toDynamicValue(c => c.container.get(GitFrontendContribution));
     bind(GitWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
         id: GIT_WIDGET_FACTORY_ID,
