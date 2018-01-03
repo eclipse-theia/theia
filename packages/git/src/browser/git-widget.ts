@@ -62,6 +62,16 @@ export class GitWidget extends VirtualWidget {
         });
     }
 
+    protected onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        const messageInput = document.getElementById('git-messageInput');
+        if (messageInput) {
+            messageInput.focus();
+        } else {
+            this.node.focus();
+        }
+    }
+
     async initialize(repository: Repository | undefined): Promise<void> {
         if (repository) {
             this.toDispose.dispose();

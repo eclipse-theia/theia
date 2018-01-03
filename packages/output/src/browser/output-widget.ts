@@ -34,6 +34,16 @@ export class OutputWidget extends VirtualWidget {
         this.update();
     }
 
+    protected onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        const channelSelector = document.getElementById('outputChannelList');
+        if (channelSelector) {
+            channelSelector.focus();
+        } else {
+            this.node.focus();
+        }
+    }
+
     protected registerListener(outputChannel: OutputChannelImpl) {
         if (!this.selectedChannel) {
             this.selectedChannel = outputChannel;

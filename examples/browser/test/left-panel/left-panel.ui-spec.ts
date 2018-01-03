@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2017 Ericsson and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
+
 /* tslint:disable:no-unused-expression*/
 import { expect } from "chai";
 import { LeftPanel } from "./left-panel";
@@ -24,7 +31,7 @@ describe('theia left panel', () => {
     });
 
     describe('files tab', () => {
-        it(`should show that no workspace is opened yet and close it after`, () => {
+        it(`should open/close the files tab`, () => {
             leftPanel.openCloseTab('Files');
             expect(leftPanel.isFileTreeVisible()).to.be.true;
             expect(leftPanel.isTabActive('Files')).to.be.true;
@@ -33,7 +40,7 @@ describe('theia left panel', () => {
             expect(leftPanel.isFileTreeVisible()).to.be.false;
             expect(leftPanel.isTabActive('Files')).to.be.false;
         });
-    })
+    });
 
     describe('git tab', () => {
         it(`should open/close the git tab`, () => {
@@ -41,12 +48,11 @@ describe('theia left panel', () => {
             expect(leftPanel.isGitContainerVisible()).to.be.true;
             expect(leftPanel.isTabActive('Git')).to.be.true;
 
-
             leftPanel.openCloseTab('Git');
             expect(leftPanel.isGitContainerVisible()).to.be.false;
             expect(leftPanel.isTabActive('Git')).to.be.false;
         });
-    })
+    });
 
     describe('extensions tab', () => {
         it(`should open/close the extensions tab`, () => {
@@ -54,10 +60,9 @@ describe('theia left panel', () => {
             expect(leftPanel.isExtensionTabVisible()).to.be.true;
             expect(leftPanel.isTabActive('Extensions')).to.be.true;
 
-
             leftPanel.openCloseTab('Extensions');
             expect(leftPanel.isExtensionTabVisible()).to.be.false;
             expect(leftPanel.isTabActive('Extensions')).to.be.false;
         });
-    })
+    });
 });

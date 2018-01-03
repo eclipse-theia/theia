@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import URI from "@theia/core/lib/common/uri";
-import { OpenHandler, WidgetManager, FrontendApplication } from "@theia/core/lib/browser";
+import { OpenHandler, WidgetManager, ApplicationShell } from "@theia/core/lib/browser";
 import { ExtensionUri } from "./extension-uri";
 import { ExtensionWidgetOptions } from './extension-widget-factory';
 import { ExtensionDetailWidget } from './extension-detail-widget';
@@ -18,7 +18,7 @@ export class ExtensionOpenHandler implements OpenHandler {
     readonly id = ExtensionUri.scheme;
 
     constructor(
-        @inject(FrontendApplication) protected readonly app: FrontendApplication,
+        @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager
     ) { }
 
@@ -36,8 +36,10 @@ export class ExtensionOpenHandler implements OpenHandler {
             name: ExtensionUri.toExtensionName(uri)
         };
         const widget = await this.widgetManager.getOrCreateWidget<ExtensionDetailWidget>(ExtensionUri.scheme, options);
-        this.app.shell.addToMainArea(widget);
-        this.app.shell.activateMain(widget.id);
+        if (!widget.isAttached) {
+            this.shell.addWidget(widget, { area: 'main' });
+        }
+        this.shell.activateWidget(widget.id);
         return widget;
     }
 

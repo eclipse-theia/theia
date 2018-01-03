@@ -6,32 +6,33 @@
  */
 
 import { injectable, inject } from 'inversify';
-import {
-    MenuModelRegistry, Command, CommandContribution,
-    MenuContribution, KeybindingContribution, KeybindingRegistry,
-    KeyCode, Key, Modifier, CommandRegistry
-} from '@theia/core/lib/common';
-import { FrontendApplication, CommonMenus, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
+import { KeyCode, Key, Modifier } from '@theia/core/lib/common';
+import { FrontendApplication } from '@theia/core/lib/browser';
+import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
+import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { PROBLEM_KIND } from '../../common/problem-marker';
 import { ProblemManager, ProblemStat } from './problem-manager';
-import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
-
-export namespace ProblemCommands {
-    export const OPEN: Command = {
-        id: 'problems:open',
-        label: 'Open Problems View'
-    };
-}
+import { ProblemWidget } from './problem-widget';
 
 @injectable()
-export class ProblemContribution implements CommandContribution, MenuContribution, KeybindingContribution, FrontendApplicationContribution {
+export class ProblemContribution extends AbstractViewContribution<ProblemWidget> {
 
-    constructor(
-        @inject(WidgetManager) protected readonly widgetFactory: WidgetManager,
-        @inject(FrontendApplication) protected readonly app: FrontendApplication,
-        @inject(ProblemManager) protected readonly problemManager: ProblemManager,
-        @inject(StatusBar) protected readonly statusBar: StatusBar) { }
+    @inject(ProblemManager) protected readonly problemManager: ProblemManager;
+    @inject(StatusBar) protected readonly statusBar: StatusBar;
+
+    constructor() {
+        super({
+            widgetId: PROBLEM_KIND,
+            widgetName: 'Problems',
+            defaultWidgetOptions: {
+                area: 'bottom'
+            },
+            toggleCommandId: 'problemsView:toggle',
+            toggleKeybinding: KeyCode.createKeyCode({
+                first: Key.KEY_M, modifiers: [Modifier.M2, Modifier.M1]
+            })
+        });
+    }
 
     onStart(app: FrontendApplication) {
         this.problemManager.onDidChangeMarkers(() => {
@@ -46,41 +47,13 @@ export class ProblemContribution implements CommandContribution, MenuContributio
         });
     }
 
-    setStatusBarElement(problemStat: ProblemStat) {
+    protected setStatusBarElement(problemStat: ProblemStat) {
         this.statusBar.setElement('problem-marker-status', {
             text: `$(times-circle) ${problemStat.errors} $(exclamation-triangle) ${problemStat.warnings}`,
             alignment: StatusBarAlignment.LEFT,
             priority: 10,
-            command: ProblemCommands.OPEN.id
+            command: this.toggleCommand ? this.toggleCommand.id : undefined
         });
     }
 
-    registerKeybindings(keybindings: KeybindingRegistry): void {
-        keybindings.registerKeybinding({
-            commandId: ProblemCommands.OPEN.id,
-            keyCode: KeyCode.createKeyCode({
-                first: Key.KEY_M, modifiers: [Modifier.M2, Modifier.M1]
-            })
-        });
-    }
-
-    registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(ProblemCommands.OPEN, {
-            execute: () => this.openProblemsView()
-        });
-    }
-
-    protected async openProblemsView(): Promise<void> {
-        const markerWidget = await this.widgetFactory.getOrCreateWidget(PROBLEM_KIND);
-        if (!markerWidget.isAttached) {
-            this.app.shell.addToMainArea(markerWidget);
-        }
-        this.app.shell.activateMain(markerWidget.id);
-    }
-
-    registerMenus(menus: MenuModelRegistry): void {
-        menus.registerMenuAction(CommonMenus.VIEW, {
-            commandId: ProblemCommands.OPEN.id
-        });
-    }
 }

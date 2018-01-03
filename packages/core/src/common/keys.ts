@@ -196,6 +196,18 @@ export enum Modifier {
     M4 = "M4"
 }
 
+export namespace Modifier {
+    /**
+     * The CTRL key, independently of the platform.
+     * _Note:_ In general `Modifier.M1` should be preferred over this constant.
+     */
+    export const CTRL = isOSX ? Modifier.M4 : Modifier.M1;
+    /**
+     * An alias for the SHIFT key (`Modifier.M2`).
+     */
+    export const SHIFT = Modifier.M2;
+}
+
 export declare type Key = { readonly code: string, readonly keyCode: number };
 export declare type EasyKey = { readonly keyCode: number, readonly easyString: string };
 

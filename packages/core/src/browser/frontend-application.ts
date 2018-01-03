@@ -7,11 +7,10 @@
 
 import { inject, injectable, named } from 'inversify';
 import { ContributionProvider, CommandRegistry, KeybindingRegistry, MenuModelRegistry } from '../common';
-import { ApplicationShell } from './shell';
+import { ApplicationShell, ShellLayoutRestorer } from './shell';
 import { Widget } from "./widgets";
 import { ILogger } from '../common';
 import { MaybePromise } from '../common/types';
-import { ShellLayoutRestorer } from './shell-layout-restorer';
 
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.

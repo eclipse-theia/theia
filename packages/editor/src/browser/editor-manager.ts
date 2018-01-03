@@ -97,7 +97,7 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
     open(uri: URI, input?: EditorInput): Promise<EditorWidget> {
         return this.widgetManager.getOrCreateWidget<EditorWidget>(this.id, uri.toString()).then(editor => {
             if (!editor.isAttached) {
-                this.app.shell.addToMainArea(editor);
+                this.app.shell.addWidget(editor, { area: 'main' });
             }
             this.revealIfVisible(editor, input);
             this.revealSelection(editor, input);
@@ -126,7 +126,7 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
 
     protected revealIfVisible(editor: EditorWidget, input?: EditorInput): void {
         if (input === undefined || input.revealIfVisible === undefined || input.revealIfVisible) {
-            this.app.shell.activateMain(editor.id);
+            this.app.shell.activateWidget(editor.id);
         }
     }
 

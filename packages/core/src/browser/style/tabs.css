@@ -10,32 +10,24 @@
 
 
 /*-----------------------------------------------------------------------------
-| Tabs in the dock panel
+| Tabs in the center area (main and bottom)
 |----------------------------------------------------------------------------*/
 
-
-.p-DockPanel-tabBar {
+.p-TabBar.theia-app-centers {
   overflow: visible;
   color: var(--theia-ui-font-color1);
   font-size: var(--theia-ui-font-size1);
   background: var(--theia-layout-color6);
-}
-
-.p-TabBar[data-orientation='horizontal'] {
   min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-border-width));
 }
 
-.p-DockPanel-tabBar.p-mod-vertical {
-  min-width: 80px;
-}
-
-.p-DockPanel-tabBar>.p-TabBar-content {
+.p-TabBar.theia-app-centers > .p-TabBar-content {
   align-items: flex-end;
   min-width: 0;
   min-height: 0;
 }
 
-.p-DockPanel-tabBar .p-TabBar-tab {
+.p-TabBar.theia-app-centers .p-TabBar-tab {
   flex: 0 1 auto;
   height: var(--theia-private-horizontal-tab-height);
   min-width: 35px;
@@ -50,32 +42,28 @@
   overflow: visible;
 }
 
-.p-DockPanel-tabBar .p-TabBar-tab:last-child {
+.p-TabBar.theia-app-centers .p-TabBar-tab:last-child {
   border-right-color: var(--theia-border-color0);
 }
 
-.p-DockPanel-tabBar .p-TabBar-tab:hover:not(.p-mod-current) {
+.p-TabBar.theia-app-centers .p-TabBar-tab:hover:not(.p-mod-current) {
   background: var(--theia-layout-color1);
 }
 
-.p-DockPanel-tabBar .p-TabBar-tab:first-child {
+.p-TabBar.theia-app-centers .p-TabBar-tab:first-child {
   margin-left: 0;
 }
 
-
-/* This is a current tab of a tab bar in the dock panel: each tab bar has 1. */
-
-.p-DockPanel-tabBar .p-TabBar-tab.p-mod-current {
+/* This is a current tab of a tab bar: each tab bar has 1. */
+.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-current {
   background: var(--theia-layout-color3);
   color: var(--theia-ui-font-color0);
   min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-border-width));
   transform: translateY(var(--theia-border-width));
 }
 
-
 /* This is the main application level active tab: only 1 exists. */
-
-.p-DockPanel-tabBar .p-TabBar-tab.theia-mod-active:before {
+.p-TabBar.theia-app-centers .p-TabBar-tab.theia-mod-active:before {
   position: absolute;
   top: calc(-1 * var(--theia-border-width));
   left: calc(-1 * var(--theia-border-width));
@@ -85,63 +73,18 @@
   background: var(--theia-brand-color1);
 }
 
-
-/* This is the left tab bar current tab: only 1 exists. */
-
-.p-TabBar-tab.p-mod-current {
-  background: var(--theia-layout-color0);
-}
-
-.p-TabBar-tab.p-mod-current:hover {
-  background: var(--theia-layout-color3);
-}
-
-.p-DockPanel-tabBar .p-TabBar.p-mod-left .p-TabBar-tab,
-.p-DockPanel-tabBar .p-TabBar.p-mod-right .p-TabBar-tab {
-  flex: 0 1 40px;
-  margin-top: -1px;
-  line-height: 40px;
-}
-
-.p-DockPanel-tabBar .p-TabBar.p-mod-left .p-TabBar-tab {
-  border-right: none;
-}
-
-.p-DockPanel-tabBar .p-TabBar.p-mod-right .p-TabBar-tab {
-  border-left: none;
-}
-
-.p-DockPanel-tabBar .p-TabBar.p-mod-left .p-TabBar-tab:first-child,
-.p-DockPanel-tabBar .p-TabBar.p-mod-right .p-TabBar-tab:first-child {
-  margin-top: 0;
-}
-
-.p-DockPanel-tabBar .p-TabBar.p-mod-left .p-TabBar-tab.p-mod-current,
-.p-DockPanel-tabBar .p-TabBar.p-mod-right .p-TabBar-tab.p-mod-current {
-  min-width: 80px;
-  max-width: 80px;
-}
-
-.p-DockPanel-tabBar .p-TabBar.p-mod-right .p-TabBar-tab.p-mod-current {
-  transform: translateX(-1px);
-}
-
-.p-DockPanel-tabBar .p-TabBar-tabIcon,
-.p-DockPanel-tabBar .p-TabBar-tabLabel,
-.p-DockPanel-tabBar .p-TabBar-tabCloseIcon {
+.p-TabBar.theia-app-centers .p-TabBar-tabIcon,
+.p-TabBar.theia-app-centers .p-TabBar-tabLabel,
+.p-TabBar.theia-app-centers .p-TabBar-tabCloseIcon {
   display: inline-block;
 }
 
-.p-DockPanel-tabBar .p-TabBar-tabIcon {
+.p-TabBar.theia-app-centers .p-TabBar-tabIcon {
   width: 15px;
   line-height: 1.7;
 }
 
-.p-TabBar-WindowTabLabel {
-  margin-top: 4px;
-}
-
-.p-DockPanel-tabBar .p-TabBar-tab.p-mod-closable>.p-TabBar-tabCloseIcon {
+.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable>.p-TabBar-tabCloseIcon {
   margin-left: 4px;
   padding-top: 8px;
   background-size: 16px;
@@ -152,7 +95,7 @@
   background-repeat: no-repeat;
 }
 
-.p-DockPanel-tabBar .p-TabBar-tab.p-mod-closable.theia-mod-dirty>.p-TabBar-tabCloseIcon {
+.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable.theia-mod-dirty>.p-TabBar-tabCloseIcon {
   background-size: 10px;
   background-image: var(--theia-icon-circle);
 }

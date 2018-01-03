@@ -92,8 +92,8 @@ export class StatusBarImpl extends VirtualWidget implements StatusBar {
         return { entries };
     }
 
-    setLayoutData(data: StatusBarLayoutData | undefined) {
-        if (data && data.entries) {
+    setLayoutData(data: StatusBarLayoutData) {
+        if (data.entries) {
             data.entries.forEach(entryData => {
                 this.entries.set(entryData.id, entryData.entry);
             });

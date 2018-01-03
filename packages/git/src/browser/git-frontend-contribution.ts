@@ -6,28 +6,40 @@
  */
 import { injectable, inject } from "inversify";
 import { GitRepositoryProvider } from './git-repository-provider';
-import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
+import { FrontendApplication } from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from "@theia/core/lib/browser/status-bar/status-bar";
-import { Git } from '../common';
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_COMMANDS } from './git-command';
 import { DisposableCollection } from "@theia/core";
+import { KeyCode, Key, Modifier } from '@theia/core/lib/common/keys';
+import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
+import { GitWidget } from './git-widget';
 
 export const GIT_WIDGET_FACTORY_ID = 'git';
 
 @injectable()
-export class GitFrontendContribution implements FrontendApplicationContribution {
+export class GitFrontendContribution extends AbstractViewContribution<GitWidget> {
 
     protected toDispose = new DisposableCollection();
 
-    constructor(
-        @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
-        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
-        @inject(Git) protected readonly git: Git,
-        @inject(GitWatcher) protected readonly gitWatcher: GitWatcher,
-        @inject(StatusBar) protected readonly statusBar: StatusBar
-    ) { }
+    @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider;
+    @inject(GitWatcher) protected readonly gitWatcher: GitWatcher;
+    @inject(StatusBar) protected readonly statusBar: StatusBar;
+
+    constructor() {
+        super({
+            widgetId: GIT_WIDGET_FACTORY_ID,
+            widgetName: 'Git',
+            defaultWidgetOptions: {
+                area: 'left',
+                rank: 200
+            },
+            toggleCommandId: 'gitView:toggle',
+            toggleKeybinding: KeyCode.createKeyCode({
+                first: Key.KEY_G, modifiers: [Modifier.CTRL, Modifier.SHIFT]
+            })
+        });
+    }
 
     onStart(app: FrontendApplication) {
         this.repositoryProvider.onDidChangeRepository(async repository => {
@@ -48,14 +60,6 @@ export class GitFrontendContribution implements FrontendApplicationContribution 
             }
         });
         this.repositoryProvider.refresh();
-    }
-
-    async initializeLayout(app: FrontendApplication): Promise<void> {
-        this.widgetManager.getOrCreateWidget(GIT_WIDGET_FACTORY_ID).then(widget => {
-            app.shell.addToLeftArea(widget, {
-                rank: 200
-            });
-        });
     }
 
 }

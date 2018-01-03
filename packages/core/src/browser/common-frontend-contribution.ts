@@ -11,9 +11,9 @@ import { KeybindingContribution, KeybindingRegistry } from '../common/keybinding
 import { KeyCode, Key, Modifier } from '../common/keys';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
 import { MessageService } from '../common/message-service';
-import { ApplicationShell } from './shell';
+import { ApplicationShell } from './shell/application-shell';
+import { SHELL_TABBAR_CONTEXT_MENU } from './shell/tab-bars';
 import * as browser from './browser';
-import { MAINAREA_TABBAR_CONTEXT_MENU } from './shell';
 
 export namespace CommonMenus {
 
@@ -68,27 +68,35 @@ export namespace CommonCommands {
 
     export const NEXT_TAB: Command = {
         id: 'core.nextTab',
-        label: 'Switch to next tab'
+        label: 'Switch to Next Tab'
     };
     export const PREVIOUS_TAB: Command = {
         id: 'core.previousTab',
-        label: 'Switch to previous tab'
+        label: 'Switch to Previous Tab'
     };
     export const CLOSE_TAB: Command = {
         id: 'core.close.tab',
-        label: 'Close'
+        label: 'Close Tab'
     };
     export const CLOSE_OTHER_TABS: Command = {
         id: 'core.close.other.tabs',
-        label: 'Close Others'
+        label: 'Close Other Tabs'
     };
     export const CLOSE_RIGHT_TABS: Command = {
         id: 'core.close.right.tabs',
-        label: 'Close to the Right'
+        label: 'Close Tabs to the Right'
     };
     export const CLOSE_ALL_TABS: Command = {
         id: 'core.close.all.tabs',
-        label: 'Close All'
+        label: 'Close All Tabs'
+    };
+    export const COLLAPSE_PANEL: Command = {
+        id: 'core.collapse.tab',
+        label: 'Collapse Side Panel'
+    };
+    export const COLLAPSE_ALL_PANELS: Command = {
+        id: 'core.collapse.all.tabs',
+        label: 'Collapse All Side Panels'
     };
 
     export const SAVE: Command = {
@@ -154,21 +162,30 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             order: '2'
         });
 
-        registry.registerMenuAction(MAINAREA_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_TAB.id,
+            label: 'Close',
             order: '0'
         });
-        registry.registerMenuAction(MAINAREA_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_OTHER_TABS.id,
+            label: 'Close Others',
             order: '1'
         });
-        registry.registerMenuAction(MAINAREA_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_RIGHT_TABS.id,
+            label: 'Close to the Right',
             order: '2'
         });
-        registry.registerMenuAction(MAINAREA_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_ALL_TABS.id,
+            label: 'Close All',
             order: '3'
+        });
+        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.COLLAPSE_PANEL.id,
+            label: 'Collapse',
+            order: '4'
         });
 
         registry.registerMenuAction(CommonMenus.FILE_SAVE, {
@@ -215,28 +232,73 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         commandRegistry.registerCommand(CommonCommands.REPLACE);
 
         commandRegistry.registerCommand(CommonCommands.NEXT_TAB, {
-            isEnabled: () => this.shell.hasSelectedTab(),
+            isEnabled: () => this.shell.currentTabBar !== undefined,
             execute: () => this.shell.activateNextTab()
         });
         commandRegistry.registerCommand(CommonCommands.PREVIOUS_TAB, {
-            isEnabled: () => this.shell.hasSelectedTab(),
+            isEnabled: () => this.shell.currentTabBar !== undefined,
             execute: () => this.shell.activatePreviousTab()
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_TAB, {
-            isEnabled: () => this.shell.hasSelectedTab(),
-            execute: () => this.shell.closeTab()
+            isEnabled: () => this.shell.currentTabBar !== undefined,
+            execute: () => {
+                const tabBar = this.shell.currentTabBar!;
+                const currentTitle = tabBar.currentTitle;
+                this.shell.closeTabs(tabBar, (title, index) => title === currentTitle);
+            }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_OTHER_TABS, {
-            isEnabled: () => this.shell.hasSelectedTab(),
-            execute: () => this.shell.closeOtherTabs()
+            isEnabled: () => {
+                const tabBar = this.shell.currentTabBar;
+                if (tabBar) {
+                    return tabBar.titles.length > 1;
+                }
+                return false;
+            },
+            execute: () => {
+                const tabBar = this.shell.currentTabBar!;
+                const currentTitle = tabBar.currentTitle;
+                this.shell.closeTabs(this.shell.currentTabArea!, (title, index) => title !== currentTitle);
+            }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_RIGHT_TABS, {
-            isEnabled: () => this.shell.hasSelectedTab(),
-            execute: () => this.shell.closeRightTabs()
+            isEnabled: () => {
+                const tabBar = this.shell.currentTabBar;
+                if (tabBar) {
+                    return tabBar.currentIndex < tabBar.titles.length - 1;
+                }
+                return false;
+            },
+            isVisible: () => {
+                const area = this.shell.currentTabArea;
+                return area !== 'left' && area !== 'right';
+            },
+            execute: () => {
+                const tabBar = this.shell.currentTabBar!;
+                const currentIndex = tabBar.currentIndex;
+                this.shell.closeTabs(tabBar, (title, index) => index > currentIndex);
+            }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_ALL_TABS, {
-            isEnabled: () => this.shell.hasSelectedTab(),
-            execute: () => this.shell.closeAllTabs()
+            isEnabled: () => this.shell.currentTabBar !== undefined,
+            execute: () => this.shell.closeTabs(this.shell.currentTabArea!)
+        });
+        commandRegistry.registerCommand(CommonCommands.COLLAPSE_PANEL, {
+            isEnabled: () => ApplicationShell.isSideArea(this.shell.currentTabArea),
+            isVisible: () => ApplicationShell.isSideArea(this.shell.currentTabArea),
+            execute: () => {
+                const currentArea = this.shell.currentTabArea;
+                if (ApplicationShell.isSideArea(currentArea)) {
+                    this.shell.collapseSidePanel(currentArea);
+                }
+            }
+        });
+        commandRegistry.registerCommand(CommonCommands.COLLAPSE_ALL_PANELS, {
+            execute: () => {
+                this.shell.collapseSidePanel('left');
+                this.shell.collapseSidePanel('right');
+                this.shell.collapseSidePanel('bottom');
+            }
         });
 
         commandRegistry.registerCommand(CommonCommands.SAVE, {
@@ -302,6 +364,14 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             {
                 commandId: CommonCommands.CLOSE_ALL_TABS.id,
                 keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M2, Modifier.M3] })
+            },
+            {
+                commandId: CommonCommands.COLLAPSE_PANEL.id,
+                keyCode: KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [Modifier.M3] })
+            },
+            {
+                commandId: CommonCommands.COLLAPSE_ALL_PANELS.id,
+                keyCode: KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [Modifier.M2, Modifier.M3] })
             },
             {
                 commandId: CommonCommands.SAVE.id,

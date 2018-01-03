@@ -26,7 +26,7 @@
 /* 
  * set z-index to 0, so tabs are not above overlay widgets 
  */
-.p-DockPanel-tabBar {
+.p-TabBar.theia-app-centers {
     z-index: 0;
 }
 

@@ -13,15 +13,24 @@ import { NavigatorMenuContribution } from './navigator-menu';
 import { FileNavigatorContribution } from './navigator-contribution';
 import { createFileNavigatorWidget } from "./navigator-container";
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
+import { CommandContribution } from '@theia/core/lib/common/command';
+import { KeybindingContribution } from '@theia/core/lib/common/keybinding';
 
 import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
     bind(FileNavigatorContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(FileNavigatorContribution));
-    bind(WidgetFactory).toDynamicValue(c => c.container.get(FileNavigatorContribution));
+    bind(CommandContribution).toDynamicValue(c => c.container.get(FileNavigatorContribution));
+    bind(KeybindingContribution).toDynamicValue(c => c.container.get(FileNavigatorContribution));
+    bind(MenuContribution).toDynamicValue(c => c.container.get(FileNavigatorContribution));
     bind(MenuContribution).to(NavigatorMenuContribution).inSingletonScope();
+
     bind(FileNavigatorWidget).toDynamicValue(ctx =>
         createFileNavigatorWidget(ctx.container)
-    ).inSingletonScope().whenTargetNamed(FILE_NAVIGATOR_ID);
+    );
+    bind(WidgetFactory).toDynamicValue(context => ({
+        id: FILE_NAVIGATOR_ID,
+        createWidget: () => context.container.get<FileNavigatorWidget>(FileNavigatorWidget)
+    }));
 });

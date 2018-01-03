@@ -40,11 +40,17 @@ export class ExtensionWidget extends VirtualWidget {
     protected onActivateRequest(msg: Message) {
         super.onActivateRequest(msg);
         this.fetchExtensions();
+        const searchField = this.findSearchField();
+        if (searchField) {
+            searchField.focus();
+        } else {
+            this.node.focus();
+        }
     }
 
     protected fetchExtensions(): void {
-        const htmlInputElement = (document.getElementById('extensionSearchField') as HTMLInputElement);
-        const query = htmlInputElement ? htmlInputElement.value.trim() : '';
+        const searchField = this.findSearchField();
+        const query = searchField ? searchField.value.trim() : '';
         this.extensionManager.list({ query }).then(extensions => {
             this.extensions = query ? extensions : extensions.filter(e => !e.dependent);
             this.ready = true;
@@ -84,6 +90,10 @@ export class ExtensionWidget extends VirtualWidget {
         }, [innerContainer]);
 
         return container;
+    }
+
+    protected findSearchField(): HTMLInputElement | null {
+        return document.getElementById('extensionSearchField') as HTMLInputElement;
     }
 
     protected renderExtensionList(): VirtualNode {
@@ -166,9 +176,9 @@ export class ExtensionWidget extends VirtualWidget {
 
         const btn = h.div({
             className: 'extensionButton' +
-            (extension.busy ? ' working' : '') + ' ' +
-            (extension.installed && !extension.busy ? ' installed' : '') + ' ' +
-            (extension.outdated && !extension.busy ? ' outdated' : ''),
+                (extension.busy ? ' working' : '') + ' ' +
+                (extension.installed && !extension.busy ? ' installed' : '') + ' ' +
+                (extension.outdated && !extension.busy ? ' outdated' : ''),
             onclick: event => {
                 if (!extension.busy) {
                     if (extension.installed) {

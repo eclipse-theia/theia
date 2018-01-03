@@ -9,10 +9,13 @@ import { ContainerModule } from 'inversify';
 import { FrontendApplicationContribution, WebSocketConnectionProvider, WidgetFactory, OpenHandler } from '@theia/core/lib/browser';
 import { ExtensionServer, extensionPath } from '../common/extension-protocol';
 import { ExtensionManager } from '../common';
-import { ExtensionContribution } from './extension-contribution';
+import { ExtensionContribution, EXTENSIONS_WIDGET_FACTORY_ID } from './extension-contribution';
 import { ExtensionWidget } from './extension-widget';
 import { ExtensionWidgetFactory } from './extension-widget-factory';
 import { ExtensionOpenHandler } from './extension-open-handler';
+import { CommandContribution } from '@theia/core/lib/common/command';
+import { KeybindingContribution } from '@theia/core/lib/common/keybinding';
+import { MenuContribution } from '@theia/core/lib/common/menu';
 
 import '../../src/browser/style/index.css';
 
@@ -23,14 +26,17 @@ export default new ContainerModule(bind => {
     }).inSingletonScope();
     bind(ExtensionManager).toSelf().inSingletonScope();
 
-    bind(FrontendApplicationContribution).to(ExtensionContribution).inSingletonScope();
-    bind(ExtensionWidget).toSelf().inSingletonScope();
+    bind(ExtensionContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(ExtensionContribution));
+    bind(CommandContribution).toDynamicValue(c => c.container.get(ExtensionContribution));
+    bind(KeybindingContribution).toDynamicValue(c => c.container.get(ExtensionContribution));
+    bind(MenuContribution).toDynamicValue(c => c.container.get(ExtensionContribution));
+
+    bind(ExtensionWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
-        id: 'extensions',
-        createWidget() {
-            return ctx.container.get(ExtensionWidget);
-        }
-    })).inSingletonScope();
+        id: EXTENSIONS_WIDGET_FACTORY_ID,
+        createWidget: () => ctx.container.get(ExtensionWidget)
+    }));
 
     bind(ExtensionWidgetFactory).toSelf().inSingletonScope();
     bind(WidgetFactory).toDynamicValue(ctx => ctx.container.get(ExtensionWidgetFactory)).inSingletonScope();
