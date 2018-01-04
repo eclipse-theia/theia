@@ -142,29 +142,28 @@ export class FileTreeModel extends TreeModel implements LocationService {
     }
 
     protected async uploadDirectoryEntry(base: URI, entry: WebKitDirectoryEntry): Promise<void> {
-        const reader = entry.createReader();
         const newBase = base.resolve(entry.name);
         const uri = newBase.toString();
         if (!await this.fileSystem.exists(uri)) {
             await this.fileSystem.createFolder(uri);
         }
-        this.readEntries(reader, newBase);
+        this.readEntries(entry, items => this.uploadEntries(newBase, items));
     }
 
     /**
      *  Read all entries within a folder by block of 100 files or folders until the
      *  whole folder has been read.
      */
-    protected readEntries(reader: WebKitDirectoryReader, dest: URI): void {
+    protected readEntries(entry: WebKitDirectoryEntry, cb: (items: any) => void): void {
+        const reader = entry.createReader();
         const getEntries = () => {
-            reader.readEntries((results: any) => {
+            reader.readEntries(results => {
                 if (results) {
-                    this.uploadEntries(dest, results);
+                    cb(results);
                     getEntries(); // loop to read all entries
                 }
             });
         };
-
         getEntries();
     }
 
