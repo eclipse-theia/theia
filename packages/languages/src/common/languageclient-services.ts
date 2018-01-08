@@ -5,8 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable } from "inversify";
-import { Disposable, CommandRegistry } from '@theia/core/lib/common';
 import * as base from 'vscode-base-languageclient/lib/base';
 import * as services from 'vscode-base-languageclient/lib/services';
 import * as connection from 'vscode-base-languageclient/lib/connection';
@@ -34,20 +32,6 @@ export interface Workspace extends services.Workspace {
 export const Commands = Symbol('Commands');
 export interface Commands extends services.Commands { }
 
-@injectable()
-export class DefaultCommands implements Commands {
-
-    constructor(
-        @inject(CommandRegistry) protected readonly registry: CommandRegistry
-    ) { }
-
-    registerCommand(id: string, callback: (...args: any[]) => any, thisArg?: any): Disposable {
-        const execute = callback.bind(thisArg);
-        return this.registry.registerCommand({ id }, { execute });
-    }
-
-}
-
 export const Window = Symbol('Window');
 export interface Window extends services.Window { }
 
@@ -57,7 +41,6 @@ export interface IConnectionProvider extends connection.IConnectionProvider { }
 export const ILanguageClient = Symbol('ILanguageClient');
 export interface ILanguageClient extends base.BaseLanguageClient { }
 
-import LanguageClientOptions = base.BaseLanguageClientOptions;
-export {
-    LanguageClientOptions
-};
+export interface LanguageClientOptions extends base.BaseLanguageClientOptions {
+    commands: Commands | undefined
+}
