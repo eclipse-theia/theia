@@ -5,10 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { ContainerModule, } from "inversify";
+import { ContainerModule } from "inversify";
 import { bindContributionProvider, KeybindingContribution, CommandContribution } from '@theia/core/lib/common';
 import { FrontendApplicationContribution } from "@theia/core/lib/browser";
-import { Window, WindowImpl, Commands, DefaultCommands } from '../common';
+import { Window, WindowImpl } from '../common';
 import { LanguageClientFactory } from './language-client-factory';
 import { LanguagesFrontendContribution } from './languages-frontend-contribution';
 import { LanguageClientContribution } from "./language-client-contribution";
@@ -16,7 +16,6 @@ import { WorkspaceSymbolCommand } from './workspace-symbols';
 
 export default new ContainerModule(bind => {
     bind(Window).to(WindowImpl).inSingletonScope();
-    bind(Commands).to(DefaultCommands).inSingletonScope();
 
     bind(LanguageClientFactory).toSelf().inSingletonScope();
 

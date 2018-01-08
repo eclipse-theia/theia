@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import { WebSocketConnectionProvider } from "@theia/core/lib/browser";
 import {
-    Workspace, Languages, Commands, Window,
+    Workspace, Languages, Window,
     ILanguageClient, LanguageClientOptions, BaseLanguageClient,
     createConnection, ConnectionErrorHandler, ConnectionCloseHandler, LanguageContribution
 } from '../common';
@@ -19,13 +19,13 @@ export class LanguageClientFactory {
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(Languages) protected readonly languages: Languages,
-        @inject(Commands) protected readonly commands: Commands,
         @inject(Window) protected readonly window: Window,
         @inject(WebSocketConnectionProvider) protected readonly connectionProvider: WebSocketConnectionProvider
     ) { }
 
     get(contribution: LanguageContribution, clientOptions: LanguageClientOptions): ILanguageClient {
-        const { workspace, languages, commands, window } = this;
+        const { workspace, languages, window } = this;
+        const commands = clientOptions.commands;
         const services = { workspace, languages, commands, window };
         return new BaseLanguageClient({
             name: contribution.name,

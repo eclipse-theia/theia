@@ -6,13 +6,13 @@
  */
 
 import { injectable, inject } from "inversify";
-import { MessageService } from '@theia/core';
+import { MessageService, CommandRegistry } from '@theia/core';
 import { Disposable } from "@theia/core/lib/common";
 import { FrontendApplication } from '@theia/core/lib/browser';
 import {
     LanguageContribution, ILanguageClient, LanguageClientOptions,
     DocumentSelector, TextDocument, FileSystemWatcher,
-    Workspace, Languages
+    Workspace, Languages, Commands
 } from '../common';
 import { LanguageClientFactory } from "./language-client-factory";
 
@@ -24,7 +24,7 @@ export interface LanguageClientContribution extends LanguageContribution {
 }
 
 @injectable()
-export abstract class BaseLanguageClientContribution implements LanguageClientContribution {
+export abstract class BaseLanguageClientContribution implements LanguageClientContribution, Commands {
 
     abstract readonly id: string;
     abstract readonly name: string;
@@ -33,7 +33,9 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
 
     protected resolveReady: (languageClient: ILanguageClient) => void;
     protected ready: Promise<ILanguageClient>;
+
     @inject(MessageService) protected readonly messageService: MessageService;
+    @inject(CommandRegistry) protected readonly registry: CommandRegistry;
 
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
@@ -85,9 +87,15 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
         return this.languageClientFactory.get(this, clientOptions);
     }
 
+    registerCommand(id: string, callback: (...args: any[]) => any, thisArg?: any): Disposable {
+        const execute = callback.bind(thisArg);
+        return this.registry.registerCommand({ id }, { execute });
+    }
+
     protected createOptions(): LanguageClientOptions {
         const fileEvents = this.createFileEvents();
         return {
+            commands: this,
             documentSelector: this.documentSelector,
             synchronize: { fileEvents },
             initializationFailedHandler: () => {
