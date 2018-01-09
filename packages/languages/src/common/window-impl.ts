@@ -9,11 +9,15 @@ import { injectable, inject } from 'inversify';
 import { MessageService } from '@theia/core/lib/common';
 import { MessageActionItem, MessageType } from 'vscode-base-languageclient/lib/protocol';
 import { Window, OutputChannel } from 'vscode-base-languageclient/lib/services';
+import { OutputChannelManager } from '@theia/output/lib/common/output-channel';
 
 @injectable()
 export class WindowImpl implements Window {
-    protected readonly channels = new Map<string, OutputChannel>();
-    constructor( @inject(MessageService) protected readonly messageService: MessageService) { }
+    constructor(
+        @inject(MessageService) protected readonly messageService: MessageService,
+        @inject(OutputChannelManager) protected readonly outputChannelManager: OutputChannelManager) {
+    }
+
     showMessage<T extends MessageActionItem>(type: MessageType, message: string, ...actions: T[]): Thenable<T | undefined> {
         const originalActions = new Map((actions || []).map(action => [action.title, action] as [string, T]));
         const actionTitles = (actions || []).map(action => action.title);
@@ -37,23 +41,15 @@ export class WindowImpl implements Window {
         }
         return Promise.resolve(undefined);
     }
+
     createOutputChannel(name: string): OutputChannel {
-        const existing = this.channels.get(name);
-        if (existing) {
-            return existing;
-        }
-        const channel: OutputChannel = {
-            append(value: string): void {
-                console.log(name + ': ' + value);
-            },
-            appendLine(line: string): void {
-                console.log(name + ': ' + line);
-            },
-            show(): void {
+        const outputChannel = this.outputChannelManager.getChannel(name);
+        return {
+            append: outputChannel.append.bind(outputChannel),
+            appendLine: outputChannel.appendLine.bind(outputChannel),
+            show: function (preserveFocus?: boolean): void {
                 // no-op
             }
         };
-        this.channels.set(name, channel);
-        return channel;
     }
 }
