@@ -1,11 +1,11 @@
 {
   "name": "@theia/filesystem",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "description": "Theia - FileSystem Extension",
   "dependencies": {
-    "@theia/core": "^0.3.0",
+    "@theia/core": "^0.3.2",
+    "@theia/preferences-api": "^0.3.2",
     "@types/base64-js": "^1.2.5",
-    "@theia/preferences-api": "^0.3.0",
     "@types/fs-extra": "^4.0.2",
     "@types/touch": "0.0.1",
     "base64-js": "^1.2.1",

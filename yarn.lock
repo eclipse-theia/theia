@@ -7931,7 +7931,7 @@ v8flags@^3.0.0:
   dependencies:
     homedir-polyfill "^1.0.1"
 
-valid-filename@^2.0.1, valid-filename@latest:
+valid-filename@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/valid-filename/-/valid-filename-2.0.1.tgz#0768d6f364b1ed3bdf68f0d15abffb0d9d6cecaf"
   dependencies:

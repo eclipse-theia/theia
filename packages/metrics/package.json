@@ -1,9 +1,9 @@
 {
   "name": "@theia/metrics",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "description": "Theia - Metrics Extension",
   "dependencies": {
-    "@theia/core": "^0.3.0",
+    "@theia/core": "^0.3.2",
     "prom-client": "^10.2.0"
   },
   "publishConfig": {

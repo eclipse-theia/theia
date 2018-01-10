@@ -1,11 +1,11 @@
 {
   "name": "@theia/typescript",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Theia - Typescript Extension",
   "dependencies": {
-    "@theia/core": "^0.3.0",
-    "@theia/languages": "^0.3.1",
-    "@theia/monaco": "^0.3.1",
+    "@theia/core": "^0.3.2",
+    "@theia/languages": "^0.3.2",
+    "@theia/monaco": "^0.3.2",
     "monaco-typescript": "^2.2.0",
     "typescript-language-server": "^0.1.4"
   },

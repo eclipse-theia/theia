@@ -1,11 +1,11 @@
 {
   "name": "@theia/preferences-api",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "description": "Theia - Preferences API",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
   "dependencies": {
-    "@theia/core": "^0.3.0"
+    "@theia/core": "^0.3.2"
   },
   "publishConfig": {
     "access": "public"
