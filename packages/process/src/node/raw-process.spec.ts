@@ -11,6 +11,12 @@ import * as process from 'process';
 import * as stream from 'stream';
 import { testContainer } from './inversify.spec-config';
 import { RawProcessFactory } from './raw-process';
+import * as temp from 'temp';
+import * as fs from 'fs';
+import { isWindows } from '@theia/core';
+
+/* Allow to create temporary files, but delete them when we're done.  */
+const track = temp.track();
 
 chai.use(chaiAsPromised);
 
@@ -25,15 +31,49 @@ describe('RawProcess', function () {
     this.timeout(5000);
     const rawProcessFactory = testContainer.get<RawProcessFactory>(RawProcessFactory);
 
-    it('test error on non existent path', function () {
-        const rawProcess = rawProcessFactory({ command: '/non-existant' });
-        const p = new Promise(resolve => {
+    it('test error on non-existent path', function () {
+        const p = new Promise((resolve, reject) => {
+            const rawProcess = rawProcessFactory({ command: '/non-existent' });
             rawProcess.onError(error => {
-                resolve();
+                // tslint:disable-next-line:no-any
+                const code = (error as any).code;
+                resolve(code);
             });
         });
 
-        return expect(p).to.be.eventually.fulfilled;
+        return expect(p).to.eventually.equal('ENOENT');
+    });
+
+    it('test error on non-executable path', function () {
+        /* Create a non-executable file.  */
+        const f = track.openSync('non-executable');
+        fs.writeSync(f.fd, 'echo bob');
+
+        /* Make really sure it's non-executable.  */
+        let mode = fs.fstatSync(f.fd).mode;
+        mode &= ~fs.constants.S_IXUSR;
+        mode &= ~fs.constants.S_IXGRP;
+        mode &= ~fs.constants.S_IXOTH;
+        fs.fchmodSync(f.fd, mode);
+
+        fs.closeSync(f.fd);
+
+        const p = new Promise((resolve, reject) => {
+            const rawProcess = rawProcessFactory({ command: f.path });
+            rawProcess.onError(error => {
+                // tslint:disable-next-line:no-any
+                const code = (error as any).code;
+                resolve(code);
+            });
+        });
+
+        /* On Windows, we get 'UNKNOWN'.  */
+        let expectedCode = 'EACCES';
+        if (isWindows) {
+            expectedCode = 'UNKNOWN';
+        }
+
+        return expect(p).to.eventually.equal(expectedCode);
     });
 
     it('test exit', function () {
