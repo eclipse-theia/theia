@@ -16,6 +16,7 @@
     "@theia/java": "^0.3.2",
     "@theia/keymaps": "^0.3.2",
     "@theia/languages": "^0.3.2",
+    "@theia/markdown": "^0.3.2",
     "@theia/markers": "^0.3.2",
     "@theia/messages": "^0.3.2",
     "@theia/metrics": "^0.3.2",
