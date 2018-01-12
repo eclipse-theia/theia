@@ -1,0 +1,203 @@
+/*
+ * Copyright (C) 2018 TypeFox and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.markdown-preview {
+	font-family: "Segoe WPC", "Segoe UI", "SFUIText-Light", "HelveticaNeue-Light", sans-serif, "Droid Sans Fallback";
+	font-size: 14px;
+	padding: 0 26px;
+	line-height: 22px;
+	word-wrap: break-word;
+}
+
+.markdown-preview:focus {
+    outline: 0;
+    box-shadow: none;
+}
+
+.markdown-preview .line {
+	position: relative;
+}
+
+.markdown-preview .line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+.markdown-preview li.line:hover:before {
+	left: -30px;
+}
+
+.markdown-preview .line:hover:before {
+	border-left: 3px solid rgba(100, 100, 100, 0.40);
+}
+
+.markdown-preview .line .line:hover:before {
+	border-left: none;
+}
+
+.markdown-preview img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+.markdown-preview a {
+	color: #4080D0;
+	text-decoration: none;
+}
+
+.markdown-preview a:focus,
+.markdown-preview input:focus,
+.markdown-preview select:focus,
+.markdown-preview textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+.markdown-preview hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+.markdown-preview h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+.markdown-preview h1, h2, h3 {
+	font-weight: normal;
+}
+
+.markdown-preview h1 code,
+.markdown-preview h2 code,
+.markdown-preview h3 code,
+.markdown-preview h4 code,
+.markdown-preview h5 code,
+.markdown-preview h6 code {
+	font-size: inherit;
+	line-height: auto;
+}
+
+.markdown-preview a:hover {
+	color: #4080D0;
+	text-decoration: underline;
+}
+
+.markdown-preview table {
+	border-collapse: collapse;
+}
+
+.markdown-preview table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+.markdown-preview table > thead > tr > th,
+.markdown-preview table > thead > tr > td,
+.markdown-preview table > t.markdown-preview > tr > th,
+.markdown-preview table > t.markdown-preview > tr > td {
+	padding: 5px 10px;
+}
+
+.markdown-preview table > t.markdown-preview > tr + tr > td {
+	border-top: 1px solid;
+}
+
+.markdown-preview blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left: 5px solid;
+}
+
+.markdown-preview code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 14px;
+	line-height: 19px;
+}
+
+.markdown-preview.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+.markdown-preview.mac code {
+	font-size: 12px;
+	line-height: 18px;
+}
+
+.markdown-preview pre:not(.hljs),
+.markdown-preview pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+/** Theming */
+
+.vs .markdown-preview,
+.vs .markdown-preview pre code {
+	color: rgb(30, 30, 30);
+}
+
+.vs-dark .markdown-preview,
+.vs-dark .markdown-preview pre code {
+	color: #DDD;
+}
+
+.vs .markdown-preview code {
+	color: #A31515;
+}
+
+.vs-dark .markdown-preview code {
+	color: #D7BA7D;
+}
+
+.vs .markdown-preview pre:not(.hljs),
+.vs .markdown-preview code > div {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vs-dark .markdown-preview pre:not(.hljs),
+.vs-dark .markdown-preview code > div {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vs .markdown-preview table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vs-dark .markdown-preview table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vs .markdown-preview h1,
+.vs .markdown-preview hr,
+.vs .markdown-preview table > t.markdown-preview > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vs-dark .markdown-preview h1,
+.vs-dark .markdown-preview hr,
+.vs-dark .markdown-preview table > t.markdown-preview > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+.vs .markdown-preview blockquote,
+.vs-dark .markdown-preview blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}

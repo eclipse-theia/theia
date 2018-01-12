@@ -1,21 +1,26 @@
 {
-  "name": "@theia/markdown",
+  "name": "@theia/preview",
   "version": "0.3.2",
-  "description": "Theia - Markdown Extension",
+  "description": "Theia - Preview Extension",
   "dependencies": {
-    "@theia/core": "^0.3.0",
-    "@theia/languages": "^0.3.0",
+    "@theia/core": "^0.3.2",
+    "@theia/editor": "^0.3.2",
+    "@theia/languages": "^0.3.2",
     "@types/highlight.js": "^9.12.2",
     "@types/markdown-it": "^0.0.4",
+    "@types/markdown-it-anchor": "^4.0.1",
     "highlight.js": "^9.12.0",
-    "markdown-it": "^8.4.0"
+    "markdown-it": "^8.4.0",
+    "markdown-it-anchor": "^4.0.0",
+    "throttle-debounce": "^1.0.1",
+    "@types/throttle-debounce": "^1.0.0"
   },
   "publishConfig": {
     "access": "public"
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/markdown-frontend-module"
+      "frontend": "lib/browser/preview-frontend-module"
     }
   ],
   "keywords": [
@@ -43,7 +48,12 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.2.0"
+    "@theia/ext-scripts": "^0.2.0",
+    "@types/jsdom": "^11.0.4",
+    "jsdom": "^11.5.1",
+    "jsdom-global": "^3.0.2",
+    "@types/chai-string": "^1.1.31",
+    "chai-string": "^1.4.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
