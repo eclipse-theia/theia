@@ -5,6 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { CancellationToken } from "@theia/core";
+
 export const fileSearchServicePath = '/services/search';
 
 /**
@@ -13,15 +15,17 @@ export const fileSearchServicePath = '/services/search';
 export interface FileSearchService {
 
     /**
-     * finds files by a given search pattern
+     * finds files by a given search pattern.
+     * @return the matching pathes, relative to the given options.rootPath
      */
-    find(uri: string, searchPattern: string, options?: FileSearchService.Options): Promise<string[]>;
+    find(searchPattern: string, options: FileSearchService.Options, cancellationToken?: CancellationToken): Promise<string[]>;
 
 }
 
 export const FileSearchService = Symbol('FileSearchService');
 export namespace FileSearchService {
     export interface Options {
+        rootPath: string,
         fuzzyMatch?: boolean
         limit?: number
         useGitignore?: boolean
