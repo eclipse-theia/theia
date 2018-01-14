@@ -53,20 +53,19 @@ export class QuickFileOpenService implements QuickOpenModel {
         this.cancelIndicator = new CancellationTokenSource();
         const token = this.cancelIndicator.token;
         const proposed = new Set<string>();
+        const rootUri = new URI(this.wsRoot.uri);
+        const rootPath = rootUri.path.toString();
         const handler = async (result: string[]) => {
             if (!token.isCancellationRequested) {
-                result.forEach(p => proposed.add(p));
+                result.forEach(p => {
+                    const uri = rootUri.withPath(rootUri.path.join(p)).toString();
+                    proposed.add(uri);
+                });
                 const itemPromises = Array.from(proposed).map(uri => this.toItem(uri));
                 acceptor(await Promise.all(itemPromises));
             }
         };
-        if (lookFor.length <= 2) {
-            // first a quick search
-            this.fileSearchService.find(this.wsRoot.uri, lookFor, { fuzzyMatch: false, limit: 100 }).then(handler);
-        } else {
-            // then a comprehensive one
-            this.fileSearchService.find(this.wsRoot.uri, lookFor, { fuzzyMatch: true, limit: 2000 }).then(handler);
-        }
+        this.fileSearchService.find(lookFor, { rootPath, fuzzyMatch: true, limit: 200 }, token).then(handler);
     }
 
     private async toItem(uriString: string) {
