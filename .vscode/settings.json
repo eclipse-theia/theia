@@ -37,5 +37,12 @@
             "pattern": "**/*.spec.ts",
             "command": "yarn test:theia"
         }
-    ]
+    ],
+    "editor.insertSpaces": true,
+    "[typescript]": {
+        "editor.tabSize": 4
+    },
+    "[json]": {
+        "editor.tabSize": 2
+    }
 }
