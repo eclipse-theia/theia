@@ -6,21 +6,26 @@
  */
 
 import { ContainerModule } from "inversify";
-import { ResourceResolver, CommandContribution } from '@theia/core/lib/common';
-import { JavaClientContribution } from "./java-client-contribution";
+import { ResourceResolver, CommandContribution, KeybindingContribution, MenuContribution } from '@theia/core/lib/common';
 import { LanguageClientContribution } from "@theia/languages/lib/browser";
-import { JavaCommandContribution } from './java-commands';
+import { LabelProviderContribution } from "@theia/core/lib/browser/label-provider";
+
+import { JavaClientContribution } from "./java-client-contribution";
+import { JavaCommandContribution, JavaEditorContext } from './java-commands';
+import { JavaLabelProviderContribution } from './java-label-provider';
 import { JavaResourceResolver } from './java-resource';
 
 import "./monaco-contribution";
-import { LabelProviderContribution } from "@theia/core/lib/browser/label-provider";
-import { JavaLabelProviderContribution } from './java-label-provider';
 
 export default new ContainerModule(bind => {
-    bind(CommandContribution).to(JavaCommandContribution).inSingletonScope();
+    bind(JavaCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toDynamicValue(ctx => ctx.container.get(JavaCommandContribution)).inSingletonScope();
+    bind(KeybindingContribution).toDynamicValue(ctx => ctx.container.get(JavaCommandContribution)).inSingletonScope();
+    bind(MenuContribution).toDynamicValue(ctx => ctx.container.get(JavaCommandContribution)).inSingletonScope();
 
     bind(JavaClientContribution).toSelf().inSingletonScope();
     bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(JavaClientContribution));
+    bind(JavaEditorContext).toSelf().inSingletonScope();
 
     bind(JavaResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(JavaResourceResolver));
