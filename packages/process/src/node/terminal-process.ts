@@ -35,7 +35,7 @@ export class TerminalProcess extends Process {
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(MultiRingBuffer) protected readonly ringBuffer: MultiRingBuffer,
         @inject(ILogger) logger: ILogger) {
-        super(processManager, logger, ProcessType.Terminal);
+        super(processManager, logger, ProcessType.Terminal, options.command, options.args);
 
         this.logger.debug(`Starting terminal process: ${options.command},`
             + ` with args : ${options.args}, `
