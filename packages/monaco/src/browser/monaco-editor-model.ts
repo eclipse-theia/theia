@@ -8,7 +8,7 @@
 import { TextDocumentSaveReason, Position } from "vscode-languageserver-types";
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
 import { TextEditorDocument } from "@theia/editor/lib/browser";
-import { DisposableCollection, Disposable, Emitter, Event, Resource } from '@theia/core/lib/common';
+import { DisposableCollection, Disposable, Emitter, Event, Resource, CancellationTokenSource } from '@theia/core/lib/common';
 import ITextEditorModel = monaco.editor.ITextEditorModel;
 
 export {
@@ -139,31 +139,34 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         return this.doSave(TextDocumentSaveReason.Manual);
     }
 
-    protected synchronizing = false;
+    protected syncCancellationTokenSource = new CancellationTokenSource();
     async sync(): Promise<void> {
-        if (!this._dirty) {
-            const newText = await this.resource.readContents();
-            if (!this._dirty) {
-                const value = this.model.getValue();
-                if (value !== newText) {
-                    this.synchronizing = true;
-                    try {
-                        this.model.applyEdits([this.p2m.asTextEdit({
-                            range: this.m2p.asRange(this.model.getFullModelRange()),
-                            newText
-                        }) as monaco.editor.IIdentifiedSingleEditOperation]);
-                    } finally {
-                        this.synchronizing = false;
-                    }
-                }
-            }
+        this.syncCancellationTokenSource.cancel();
+        this.syncCancellationTokenSource = new CancellationTokenSource();
+        const cancellationToken = this.syncCancellationTokenSource.token;
+        if (this._dirty) {
+            return;
         }
+
+        const newText = await this.resource.readContents();
+        if (cancellationToken.isCancellationRequested || this._dirty) {
+            return;
+        }
+
+        const value = this.model.getValue();
+        if (value === newText) {
+            return;
+        }
+
+        this.model.applyEdits([this.p2m.asTextEdit({
+            range: this.m2p.asRange(this.model.getFullModelRange()),
+            newText
+        }) as monaco.editor.IIdentifiedSingleEditOperation]);
     }
     protected markAsDirty(): void {
-        if (!this.synchronizing) {
-            this.setDirty(true);
-            this.doAutoSave();
-        }
+        this.syncCancellationTokenSource.cancel();
+        this.setDirty(true);
+        this.doAutoSave();
     }
 
     protected doAutoSave(): void {
