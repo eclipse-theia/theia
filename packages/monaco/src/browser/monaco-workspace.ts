@@ -18,6 +18,7 @@ import { Emitter, Event, TextDocument, TextDocumentWillSaveEvent, TextEdit } fro
 import { MonacoTextModelService } from "./monaco-text-model-service";
 import { WillSaveModelEvent } from "./monaco-editor-model";
 import URI from "@theia/core/lib/common/uri";
+import { get } from "./monaco-editor";
 
 decorate(injectable(), BaseMonacoWorkspace);
 decorate(inject(MonacoToProtocolConverter), BaseMonacoWorkspace, 0);
@@ -144,32 +145,41 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
         };
     }
 
-    applyEdit(changes: lang.WorkspaceEdit): Promise<boolean> {
+    async applyEdit(changes: lang.WorkspaceEdit): Promise<boolean> {
         const workspaceEdit = this.p2m.asWorkspaceEdit(changes);
-        const promises = [];
-        for (const edit of workspaceEdit.edits) {
-            promises.push(this.textModelService.createModelReference(edit.resource).then(reference => {
-                const model = reference.object.textEditorModel;
-                // start a fresh operation
-                model.pushStackElement();
-                const range = edit.range;
-                const selections = [new monaco.Selection(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn)];
-                model.pushEditOperations(selections, [{
+        const uri2Edits = this.groupEdits(workspaceEdit);
+        for (const uri of uri2Edits.keys()) {
+            const editorWidget = await this.editorManager.open(new URI(uri));
+            const editor = get(editorWidget);
+            if (editor) {
+                const model = editor.document.textEditorModel;
+                const currentSelections = editor.getControl().getSelections();
+                const edits = uri2Edits.get(uri)!;
+                const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = edits.map(edit => ({
                     identifier: undefined!,
                     forceMoveMarkers: false,
-                    range: new monaco.Range(range.startLineNumber, range.startColumn, range.endLineNumber, range.endColumn),
+                    range: new monaco.Range(edit.range.startLineNumber, edit.range.startColumn, edit.range.endLineNumber, edit.range.endColumn),
                     text: edit.newText
-                }], (edits) => selections);
-                const editor = this.editorManager.editors.find(editor => editor.editor.uri.toString() === model.uri.toString());
-                if (editor) {
-                    editor.editor.focus();
-                }
+                }));
+                // start a fresh operation
+                model.pushStackElement();
+                model.pushEditOperations(currentSelections, editOperations, (undoEdits: monaco.editor.IIdentifiedSingleEditOperation[]) => currentSelections);
                 // push again to make this change an undoable operation
                 model.pushStackElement();
-                reference.dispose();
-            }));
+            }
         }
-        return Promise.all(promises).then(() => true);
+        return true;
+    }
+
+    protected groupEdits(workspaceEdit: monaco.languages.WorkspaceEdit) {
+        const result = new Map<string, monaco.languages.IResourceEdit[]>();
+        for (const edit of workspaceEdit.edits) {
+            const uri = edit.resource.toString();
+            const edits = result.get(uri) || [];
+            edits.push(edit);
+            result.set(uri, edits);
+        }
+        return result;
     }
 
 }
