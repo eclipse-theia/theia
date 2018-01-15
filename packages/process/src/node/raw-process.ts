@@ -51,7 +51,7 @@ export class RawProcess extends Process {
         @inject(RawProcessOptions) options: RawProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(ILogger) logger: ILogger) {
-        super(processManager, logger, ProcessType.Raw);
+        super(processManager, logger, ProcessType.Raw, options.command, options.args);
 
         this.logger.debug(`Starting raw process : ${options.command},`
             + ` with args : ${options.args}, `
