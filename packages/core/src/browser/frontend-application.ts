@@ -71,7 +71,7 @@ export class FrontendApplication {
      * - display the application shell
      */
     async start(): Promise<void> {
-        this.startContributions();
+        await this.startContributions();
         await this.layoutRestorer.initializeLayout(this, this.contributions.getContributions());
         this.ensureLoaded().then(() =>
             this.attachShell()
