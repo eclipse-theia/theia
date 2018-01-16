@@ -10,7 +10,7 @@
 }
 
 #theia-statusBar {
-    background: var(--theia-brand-color0);
+    background: var(--theia-statusbar-color);
     display: flex;
     min-height: var(--theia-statusBar-height);
 }
@@ -32,11 +32,11 @@
 }
 
 #theia-statusBar .area .element {
-    color: var(--theia-ui-icon-font-color);
+    color: var(--theia-statusBar-font-color);
     display: flex;
     align-items: center;
     padding: 0 4px;
-    font-size: var(--theia-ui-font-size0);
+    font-size: var(--theia-statusBar-font-size);
 }
 
 #theia-statusBar .area .element.hasCommand:hover {

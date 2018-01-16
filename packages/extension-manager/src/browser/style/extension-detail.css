@@ -37,7 +37,7 @@
 .theia-extension-detail .extensionVersion {}
 
 .theia-extension-detail .extensionAuthor {
-    border-right: var(--theia-ui-font-color0) 1px solid;
+    border-right: var(--theia-ui-font-color1) 1px solid;
     padding-right: 10px;
     box-sizing: border-box;
     margin-right: 10px;
@@ -58,7 +58,7 @@
 }
 
 .theia-extension-detail .extensionDocumentation {
-    color: var(--theia-ui-font-color0);
+    color: var(--theia-ui-font-color1);
     height: 100%;
 }
 

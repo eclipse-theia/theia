@@ -51,10 +51,10 @@ all of MD as it is not optimized for dense, information rich UIs.
      In a light theme, these go from dark to light.
   */
 
-  --theia-ui-font-color0: #1a1a1a;
-  --theia-ui-font-color1: rgba(0,0,0,0.87);
-  --theia-ui-font-color2: rgba(0,0,0,0.54);
-  --theia-ui-font-color3: rgba(0,0,0,0.38);
+  --theia-ui-font-color0: var(--md-grey-900);
+  --theia-ui-font-color1: var(--md-grey-700);
+  --theia-ui-font-color2: var(--md-grey-500);
+  --theia-ui-font-color3: var(--md-grey-400);
 
   /* Special font colors */
   --theia-ui-icon-font-color: #FFFFFF;
@@ -156,4 +156,8 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-scrollbar-thumb-color: hsla(0,0%,39%,.4);
   --theia-scrollbar-color: var(--theia-layout-color3);
 
+    /* statusbar */
+    --theia-statusbar-color: var(--theia-brand-color0);
+    --theia-statusBar-font-color: var(--theia-ui-bar-font-color1);
+    --theia-statusBar-font-size: 12px;
 }

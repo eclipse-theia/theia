@@ -6,7 +6,7 @@
  */
 
 #theia-gitContainer {
-    color: var(--theia-ui-font-color0);
+    color: var(--theia-ui-font-color1);
     padding: 10px;
     box-sizing: border-box;
     background: var(--theia-layout-color3);
@@ -141,7 +141,7 @@
     border-style: solid;
     border-color: var(--theia-border-color1);
     background: var(--theia-layout-color0);
-    color: var(--theia-ui-font-color0);
+    color: var(--theia-ui-font-color1);
 }
 
 #theia-gitContainer #repositoryListContainer {

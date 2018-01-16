@@ -30,6 +30,7 @@
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-tab.p-mod-current {
+  color: var(--theia-ui-font-color0);
   background: var(--theia-layout-color3);
 }
 

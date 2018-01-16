@@ -6,7 +6,7 @@
  */
 
 .fa-spinner {
-    color: var(--theia-ui-font-color0);
+    color: var(--theia-ui-font-color1);
 }
 
 .spinnerContainer {
@@ -38,7 +38,7 @@
 .extensionHeaderContainer {
     background: var(--theia-layout-color1);
     margin-bottom: 5px;
-    color: var(--theia-ui-font-color0);
+    color: var(--theia-ui-font-color1);
 }
 
 .extensionButton {
