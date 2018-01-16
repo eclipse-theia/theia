@@ -158,7 +158,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
 
         const fontFamily = lookup(htmlElementProps, '--theia-code-font-family');
         const fontSizeStr = lookup(htmlElementProps, '--theia-code-font-size');
-        const foreground = lookup(htmlElementProps, '--theia-ui-font-color0');
+        const foreground = lookup(htmlElementProps, '--theia-ui-font-color1');
         const background = lookup(htmlElementProps, '--theia-layout-color3');
 
         /* The font size is returned as a string, such as ' 13px').  We want to
@@ -174,7 +174,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         const colorRe = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
         if (!foreground.match(colorRe)) {
-            throw new Error(`Unexpected format for --theia-ui-font-color0 (${foreground})`);
+            throw new Error(`Unexpected format for --theia-ui-font-color1 (${foreground})`);
         }
 
         if (!background.match(colorRe)) {

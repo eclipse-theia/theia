@@ -8,7 +8,7 @@
 #outputView {
 	font-size: var(--theia-ui-font-size1);
     padding: 6px;
-    color: var(--theia-ui-font-color0);
+    color: var(--theia-ui-font-color1);
 }
 
 #outputView #outputContents {
@@ -25,5 +25,5 @@
     border-style: solid;
     border-color: var(--theia-border-color1);
     background: var(--theia-layout-color0);
-    color: var(--theia-ui-font-color0);
+    color: var(--theia-ui-font-color1);
 }

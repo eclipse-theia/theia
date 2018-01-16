@@ -7,7 +7,7 @@
 
 .theia-marker-container {
     font-size: var(--theia-ui-font-size1);
-    color: var(--theia-ui-font-color0);
+    color: var(--theia-ui-font-color1);
 }
 
 .theia-marker-container .theia-TreeNode {
