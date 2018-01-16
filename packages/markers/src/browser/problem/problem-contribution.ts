@@ -9,7 +9,7 @@ import { injectable, inject } from 'inversify';
 import {
     MenuModelRegistry, Command, CommandContribution,
     MenuContribution, KeybindingContribution, KeybindingRegistry,
-    KeyCode, Key, Modifier, CommandRegistry
+    CommandRegistry
 } from '@theia/core/lib/common';
 import { FrontendApplication, CommonMenus, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
@@ -57,10 +57,8 @@ export class ProblemContribution implements CommandContribution, MenuContributio
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
-            commandId: ProblemCommands.OPEN.id,
-            keyCode: KeyCode.createKeyCode({
-                first: Key.KEY_M, modifiers: [Modifier.M2, Modifier.M1]
-            })
+            command: ProblemCommands.OPEN.id,
+            keybinding: "ctrlcmd+shift+m"
         });
     }
 

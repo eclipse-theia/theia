@@ -7,7 +7,7 @@
 
 import { injectable, inject } from 'inversify';
 import { QuickFileOpenService } from './quick-file-open';
-import { Command, CommandRegistry, CommandContribution, Key, Modifier, KeyCode, KeybindingRegistry, KeybindingContribution } from '@theia/core/lib/common';
+import { Command, CommandRegistry, CommandContribution, KeybindingRegistry, KeybindingContribution } from '@theia/core/lib/common';
 
 export const quickFileOpen: Command = {
     id: 'file-search.openFile',
@@ -28,8 +28,8 @@ export class QuickFileOpenFrontendContribution implements CommandContribution, K
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
-            commandId: quickFileOpen.id,
-            keyCode: KeyCode.createKeyCode({ first: Key.KEY_P, modifiers: [Modifier.M1] })
+            command: quickFileOpen.id,
+            keybinding: "ctrlcmd+p"
         });
     }
 

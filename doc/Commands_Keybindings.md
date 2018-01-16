@@ -57,14 +57,14 @@ export class EditorKeybindingContribution implements KeybindingContribution {
     registerKeybindings(registry: KeybindingRegistry): void {
         [
             {
-                commandId: 'editor.close',
+                command: 'editor.close',
                 context: this.editorKeybindingContext,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M3] })
+                keybinding: "alt+w"
             },
             {
-                commandId: 'editor.close.all',
+                command: 'editor.close.all',
                 context: this.editorKeybindingContext,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M2, Modifier.M3] })
+                keybinding: "alt+shift+w"
             }
         ].forEach(binding => {
             registry.registerKeybinding(binding);

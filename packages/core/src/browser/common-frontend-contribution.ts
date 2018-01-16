@@ -8,7 +8,6 @@
 import { injectable, inject } from "inversify";
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from '../common/keybinding';
-import { KeyCode, Key, Modifier } from '../common/keys';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
 import { MessageService } from '../common/message-service';
 import { ApplicationShell } from './shell';
@@ -250,66 +249,66 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
     registerKeybindings(registry: KeybindingRegistry): void {
         if (supportCut) {
             registry.registerKeybinding({
-                commandId: CommonCommands.CUT.id,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_X, modifiers: [Modifier.M1] })
+                command: CommonCommands.CUT.id,
+                keybinding: "ctrlcmd+x"
             });
         }
         if (supportCopy) {
             registry.registerKeybinding({
-                commandId: CommonCommands.COPY.id,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [Modifier.M1] })
+                command: CommonCommands.COPY.id,
+                keybinding: "ctrlcmd+c"
             });
         }
         if (supportPaste) {
             registry.registerKeybinding({
-                commandId: CommonCommands.PASTE.id,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_V, modifiers: [Modifier.M1] })
+                command: CommonCommands.PASTE.id,
+                keybinding: "ctrlcmd+v"
             });
         }
         registry.registerKeybindings(
             {
-                commandId: CommonCommands.UNDO.id,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_Z, modifiers: [Modifier.M1] })
+                command: CommonCommands.UNDO.id,
+                keybinding: "ctrlcmd+z"
             },
             {
-                commandId: CommonCommands.REDO.id,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_Z, modifiers: [Modifier.M2, Modifier.M1] })
+                command: CommonCommands.REDO.id,
+                keybinding: "ctrlcmd+shift+z"
             },
             {
-                commandId: CommonCommands.FIND.id,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_F, modifiers: [Modifier.M1] })
+                command: CommonCommands.FIND.id,
+                keybinding: "ctrlcmd+f"
             },
             {
-                commandId: CommonCommands.REPLACE.id,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_F, modifiers: [Modifier.M3, Modifier.M1] })
+                command: CommonCommands.REPLACE.id,
+                keybinding: "ctrlcmd+alt+f"
             },
             {
-                commandId: CommonCommands.NEXT_TAB.id,
-                keyCode: KeyCode.createKeyCode({ first: Key.TAB, modifiers: [Modifier.M1] })
+                command: CommonCommands.NEXT_TAB.id,
+                keybinding: "ctrlcmd+tab"
             },
             {
-                commandId: CommonCommands.PREVIOUS_TAB.id,
-                keyCode: KeyCode.createKeyCode({ first: Key.TAB, modifiers: [Modifier.M1, Modifier.M2] })
+                command: CommonCommands.PREVIOUS_TAB.id,
+                keybinding: "ctrlcmd+shift+tab"
             },
             {
-                commandId: CommonCommands.CLOSE_TAB.id,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M3] })
+                command: CommonCommands.CLOSE_TAB.id,
+                keybinding: "alt+w"
             },
             {
-                commandId: CommonCommands.CLOSE_OTHER_TABS.id,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_T, modifiers: [Modifier.M3, Modifier.M1] })
+                command: CommonCommands.CLOSE_OTHER_TABS.id,
+                keybinding: "ctrlcmd+alt+t"
             },
             {
-                commandId: CommonCommands.CLOSE_ALL_TABS.id,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_W, modifiers: [Modifier.M2, Modifier.M3] })
+                command: CommonCommands.CLOSE_ALL_TABS.id,
+                keybinding: "alt+shift+w"
             },
             {
-                commandId: CommonCommands.SAVE.id,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_S, modifiers: [Modifier.M1] })
+                command: CommonCommands.SAVE.id,
+                keybinding: "ctrlcmd+s"
             },
             {
-                commandId: CommonCommands.SAVE_ALL.id,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_S, modifiers: [Modifier.M3, Modifier.M1] })
+                command: CommonCommands.SAVE_ALL.id,
+                keybinding: "ctrlcmd+alt+s"
             }
         );
     }

@@ -9,7 +9,7 @@ import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
 import {
     Command, CommandContribution, CommandRegistry,
-    KeybindingContribution, KeybindingRegistry, KeyCode, Key, Modifier,
+    KeybindingContribution, KeybindingRegistry,
     MenuModelRegistry, MenuContribution
 } from '../../common';
 import { FrontendApplication, FrontendApplicationContribution, CommonMenus } from '../../browser';
@@ -124,26 +124,26 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
 
     registerKeybindings(registry: KeybindingRegistry): void {
         registry.registerKeybinding({
-            commandId: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id,
-            keyCode: KeyCode.createKeyCode({ first: Key.KEY_I, modifiers: [Modifier.M1, Modifier.M2] })
+            command: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id,
+            keybinding: "ctrlcmd+shift+i"
         });
 
         registry.registerKeybinding({
-            commandId: ElectronCommands.RELOAD.id,
-            keyCode: KeyCode.createKeyCode({ first: Key.KEY_R, modifiers: [Modifier.M1] })
+            command: ElectronCommands.RELOAD.id,
+            keybinding: "ctrlcmd+r"
         });
 
         registry.registerKeybinding({
-            commandId: ElectronCommands.ZOOM_IN.id,
-            keyCode: KeyCode.createKeyCode({ first: Key.EQUAL, modifiers: [Modifier.M1] })
+            command: ElectronCommands.ZOOM_IN.id,
+            keybinding: "ctrlcmd+="
         });
         registry.registerKeybinding({
-            commandId: ElectronCommands.ZOOM_OUT.id,
-            keyCode: KeyCode.createKeyCode({ first: Key.MINUS, modifiers: [Modifier.M1] })
+            command: ElectronCommands.ZOOM_OUT.id,
+            keybinding: "ctrlcmd+-"
         });
         registry.registerKeybinding({
-            commandId: ElectronCommands.RESET_ZOOM.id,
-            keyCode: KeyCode.createKeyCode({ first: Key.DIGIT0, modifiers: [Modifier.M1] })
+            command: ElectronCommands.RESET_ZOOM.id,
+            keybinding: "ctrlcmd+0"
         });
     }
 

@@ -72,8 +72,8 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
         });
 
         keybindings.registerKeybinding({
-            commandId: TerminalCommands.NEW.id,
-            keyCode: KeyCode.createKeyCode({ first: Key.BACKQUOTE, modifiers: [Modifier.M1] }),
+            command: TerminalCommands.NEW.id,
+            keybinding: "ctrlcmd+`"
         });
 
         /* Register passthrough keybindings for combinations recognized by
@@ -155,9 +155,9 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
         if (isOSX) {
             // selectAll on OSX
             keybindings.registerKeybindings({
-                commandId: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M1] }),
-                contextId: TERMINAL_ACTIVE_CONTEXT,
+                command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
+                keybinding: "ctrlcmd+a",
+                contextId: TERMINAL_ACTIVE_CONTEXT
             });
         }
     }

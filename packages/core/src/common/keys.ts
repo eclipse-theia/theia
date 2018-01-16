@@ -79,8 +79,8 @@ export class KeyCode {
                 } else {
                     return undefined;
                 }
-                /* ControlOrCommand for keybindings that work on both macOS and other platforms */
-            } else if (keyString === SpecialCases.CTRL_OR_COMMAND) {
+                /* ctrlcmd for M1 keybindings that work on both macOS and other platforms */
+            } else if (keyString === SpecialCases.CTRLCMD) {
                 sequence.push(`${Modifier.M1}`);
             } else if (Key.isKey(key)) {
                 if (Key.isModifier(key.code)) {
@@ -215,12 +215,11 @@ const SPECIAL_ALIASES: { [index: string]: string } = {
     'ins': 'insert',
     'del': 'delete',
     'control': 'ctrl',
-    'CommandOrControl': 'ControlOrCommand',
 };
 
 export namespace SpecialCases {
     export const META = 'meta';
-    export const CTRL_OR_COMMAND = 'ControlOrCommand';
+    export const CTRLCMD = 'ctrlcmd';
 }
 
 export namespace EasyKey {
