@@ -261,6 +261,45 @@ describe("keys api", () => {
         }
         stub.restore();
     });
+
+    it("it should seralize a keycode properly with BACKQUOTE + M1", () => {
+        const keyCode = KeyCode.createKeyCode({ first: Key.BACKQUOTE, modifiers: [Modifier.M1] });
+        const keyCodeString = keyCode.toString();
+        if (os.isOSX) {
+            expect(keyCodeString).to.be.equal("meta+`");
+        } else {
+            expect(keyCodeString).to.be.equal("ctrl+`");
+        }
+        const parsedKeyCode = KeyCode.parse(keyCodeString);
+        expect(parsedKeyCode).to.not.be.equal(undefined);
+        if (parsedKeyCode !== undefined) {
+            expect(KeyCode.equals(parsedKeyCode, keyCode)).to.be.true;
+        }
+    });
+
+    it("it should seralize a keycode properly with a + M2 + M3", () => {
+        const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M2, Modifier.M3] });
+        const keyCodeString = keyCode.toString();
+        expect(keyCodeString).to.be.equal("shift+alt+a");
+        const parsedKeyCode = KeyCode.parse(keyCodeString);
+        expect(parsedKeyCode).to.not.be.equal(undefined);
+        if (parsedKeyCode !== undefined) {
+            expect(KeyCode.equals(parsedKeyCode, keyCode)).to.be.true;
+        }
+    });
+
+    if (os.isOSX) {
+        it("it should seralize a keycode properly with a + M4", () => {
+            const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M4] });
+            const keyCodeString = keyCode.toString();
+            expect(keyCodeString).to.be.equal("ctrl+a");
+            const parsedKeyCode = KeyCode.parse(keyCodeString);
+            expect(parsedKeyCode).to.not.be.equal(undefined);
+            if (parsedKeyCode !== undefined) {
+                expect(KeyCode.equals(parsedKeyCode, keyCode)).to.be.true;
+            }
+        });
+    }
 });
 
 const TEST_COMMAND: Command = {

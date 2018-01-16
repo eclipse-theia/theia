@@ -175,6 +175,44 @@ export class KeyCode {
         return (event instanceof KeyCode ? event : KeyCode.createKeyCode(event)).keystroke === this.keystroke;
     }
 
+    toString() {
+        let result = "";
+        let previous = false;
+
+        if (this.meta) {
+            result += SpecialCases.META;
+            previous = true;
+        }
+        if (this.shift) {
+            if (previous) {
+                result += "+";
+            }
+            result += EasyKey.SHIFT.easyString;
+            previous = true;
+        }
+        if (this.alt) {
+            if (previous) {
+                result += "+";
+            }
+            result += EasyKey.ALT.easyString;
+            previous = true;
+        }
+        if (this.ctrl) {
+            if (previous) {
+                result += "+";
+            }
+            result += EasyKey.CONTROL.easyString;
+            previous = true;
+        }
+
+        if (previous) {
+            result += "+";
+        }
+
+        result += KEY_CODE_TO_EASY[this.key.keyCode].easyString;
+
+        return result;
+    }
 }
 
 export enum Modifier {
@@ -460,6 +498,6 @@ export namespace Key {
 
     Object.keys(EasyKey).map(prop => Reflect.get(EasyKey, prop)).forEach(easykey => {
         EASY_TO_KEY[easykey.easyString] = KEY_CODE_TO_KEY[easykey.keyCode];
-        KEY_CODE_TO_EASY[easykey.code] = easykey;
+        KEY_CODE_TO_EASY[easykey.keyCode] = easykey;
     });
 })();
