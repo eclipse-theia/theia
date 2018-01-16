@@ -20,7 +20,7 @@ Example of a valid `keymaps.json` file
 
 For most keys you can directly use the name of the key i.e `a`, `3`,  `/`, `-`.
 
-You can use `shift`, `ctrl`, `alt`, `meta`, `option` (`alt`), `command` (`meta`), `cmd` (`meta`) as modifiers. You can also `ControlOrCommand` or `CommandOrControl` as modifiers if you want the shortcut to fallback on `ctrl` coming from macOS. Note that if you defined a custom shortcut with `cmd`, `command` or `meta`, the same keymaps file won't work on a Windows/Linux machine as this key doesn't have an equivalent.
+You can use `shift`, `ctrl`, `alt`, `meta`, `option` (`alt`), `command` (`meta`), `cmd` (`meta`) as modifiers. You can also `ctrlcmd` as modifier if you want the shortcut to be `cmd` on OSX and `ctrl` on Windows/Linux. Note that if you defined a custom shortcut with `cmd`, `command` or `meta`, the same keymaps file won't work on a Windows/Linux machine as this key doesn't have an equivalent.
 
 You can also use the following strings for special keys: `backspace`, `tab`, `enter`, `return`, `capslock`, `esc`, `escape`, `space`, `pageup`, `pagedown`, `end`, `home`, `left`, `up`, `right`, `down`, `ins`, `del` and `plus`.
 

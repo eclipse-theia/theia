@@ -52,8 +52,8 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         const selectAllCommand = this.commands.validate(MonacoCommands.SELECTION_SELECT_ALL);
         if (selectAllCommand) {
             registry.registerKeybinding({
-                commandId: selectAllCommand,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M1] }),
+                command: selectAllCommand,
+                keybinding: "ctrlcmd+a",
                 accelerator: ['Accel A']
             });
         }

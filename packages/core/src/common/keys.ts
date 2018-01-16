@@ -79,8 +79,8 @@ export class KeyCode {
                 } else {
                     return undefined;
                 }
-                /* ControlOrCommand for keybindings that work on both macOS and other platforms */
-            } else if (keyString === SpecialCases.CTRL_OR_COMMAND) {
+                /* ctrlcmd for M1 keybindings that work on both macOS and other platforms */
+            } else if (keyString === SpecialCases.CTRLCMD) {
                 sequence.push(`${Modifier.M1}`);
             } else if (Key.isKey(key)) {
                 if (Key.isModifier(key.code)) {
@@ -175,6 +175,44 @@ export class KeyCode {
         return (event instanceof KeyCode ? event : KeyCode.createKeyCode(event)).keystroke === this.keystroke;
     }
 
+    toString() {
+        let result = "";
+        let previous = false;
+
+        if (this.meta) {
+            result += SpecialCases.META;
+            previous = true;
+        }
+        if (this.shift) {
+            if (previous) {
+                result += "+";
+            }
+            result += EasyKey.SHIFT.easyString;
+            previous = true;
+        }
+        if (this.alt) {
+            if (previous) {
+                result += "+";
+            }
+            result += EasyKey.ALT.easyString;
+            previous = true;
+        }
+        if (this.ctrl) {
+            if (previous) {
+                result += "+";
+            }
+            result += EasyKey.CONTROL.easyString;
+            previous = true;
+        }
+
+        if (previous) {
+            result += "+";
+        }
+
+        result += KEY_CODE_TO_EASY[this.key.keyCode].easyString;
+
+        return result;
+    }
 }
 
 export enum Modifier {
@@ -215,12 +253,11 @@ const SPECIAL_ALIASES: { [index: string]: string } = {
     'ins': 'insert',
     'del': 'delete',
     'control': 'ctrl',
-    'CommandOrControl': 'ControlOrCommand',
 };
 
 export namespace SpecialCases {
     export const META = 'meta';
-    export const CTRL_OR_COMMAND = 'ControlOrCommand';
+    export const CTRLCMD = 'ctrlcmd';
 }
 
 export namespace EasyKey {
@@ -461,6 +498,6 @@ export namespace Key {
 
     Object.keys(EasyKey).map(prop => Reflect.get(EasyKey, prop)).forEach(easykey => {
         EASY_TO_KEY[easykey.easyString] = KEY_CODE_TO_KEY[easykey.keyCode];
-        KEY_CODE_TO_EASY[easykey.code] = easykey;
+        KEY_CODE_TO_EASY[easykey.keyCode] = easykey;
     });
 })();
