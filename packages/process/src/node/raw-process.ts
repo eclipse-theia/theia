@@ -8,15 +8,12 @@
 import { injectable, inject } from 'inversify';
 import { ProcessManager } from './process-manager';
 import { ILogger } from '@theia/core/lib/common';
-import { Process, ProcessType } from './process';
+import { Process, ProcessType, ProcessOptions } from './process';
 import { ChildProcess, spawn } from 'child_process';
 import * as stream from 'stream';
 
 export const RawProcessOptions = Symbol("RawProcessOptions");
-export interface RawProcessOptions {
-    command: string,
-    args?: string[],
-    options?: object
+export interface RawProcessOptions extends ProcessOptions {
 }
 
 export const RawProcessFactory = Symbol("RawProcessFactory");
@@ -51,7 +48,7 @@ export class RawProcess extends Process {
         @inject(RawProcessOptions) options: RawProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(ILogger) logger: ILogger) {
-        super(processManager, logger, ProcessType.Raw, options.command, options.args);
+        super(processManager, logger, ProcessType.Raw, options);
 
         this.logger.debug(`Starting raw process : ${options.command},`
             + ` with args : ${options.args}, `

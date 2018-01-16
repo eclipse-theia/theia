@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { unmanaged, injectable } from "inversify";
+import { injectable, unmanaged } from "inversify";
 import { ProcessManager } from './process-manager';
 import { ILogger, Emitter, Event } from '@theia/core/lib/common';
 
@@ -17,6 +17,12 @@ export interface IProcessExitEvent {
 export enum ProcessType {
     'Raw',
     'Terminal'
+}
+
+export interface ProcessOptions {
+    readonly command: string,
+    args?: string[],
+    options?: object
 }
 
 @injectable()
@@ -31,9 +37,8 @@ export abstract class Process {
     constructor(
         protected readonly processManager: ProcessManager,
         protected readonly logger: ILogger,
-        @unmanaged() readonly type: ProcessType,
-        @unmanaged() protected readonly command: string,
-        @unmanaged() protected readonly args?: string[]) {
+        @unmanaged() protected readonly type: ProcessType,
+        protected readonly options: ProcessOptions) {
 
         this.exitEmitter = new Emitter<IProcessExitEvent>();
         this.errorEmitter = new Emitter<Error>();
@@ -65,7 +70,7 @@ export abstract class Process {
         const signalSuffix = event.signal ? `, signal: ${event.signal}` : '';
 
         this.logger.debug(`Process ${this.pid} has exited with code ${event.code}${signalSuffix}.`,
-            this.command, this.args);
+            this.options.command, this.options.args);
     }
 
     protected emitOnError(err: Error) {

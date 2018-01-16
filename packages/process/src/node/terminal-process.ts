@@ -7,17 +7,14 @@
 
 import { injectable, inject } from 'inversify';
 import { ILogger } from '@theia/core/lib/common';
-import { Process, ProcessType } from './process';
+import { Process, ProcessType, ProcessOptions } from './process';
 import { ProcessManager } from './process-manager';
 import * as pty from 'node-pty';
 import { ITerminal } from 'node-pty/lib/interfaces';
 import { MultiRingBuffer, MultiRingBufferReadableStream } from './multi-ring-buffer';
 
 export const TerminalProcessOptions = Symbol("TerminalProcessOptions");
-export interface TerminalProcessOptions {
-    readonly command: string,
-    readonly args?: string[],
-    readonly options?: object
+export interface TerminalProcessOptions extends ProcessOptions {
 }
 
 export const TerminalProcessFactory = Symbol("TerminalProcessFactory");
@@ -35,7 +32,7 @@ export class TerminalProcess extends Process {
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(MultiRingBuffer) protected readonly ringBuffer: MultiRingBuffer,
         @inject(ILogger) logger: ILogger) {
-        super(processManager, logger, ProcessType.Terminal, options.command, options.args);
+        super(processManager, logger, ProcessType.Terminal, options);
 
         this.logger.debug(`Starting terminal process: ${options.command},`
             + ` with args : ${options.args}, `
