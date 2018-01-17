@@ -13,6 +13,7 @@
         "**/coverage": true
     },
     "lcov.path": [
+        "packages/builds/coverage/lcov.info",
         "packages/core/coverage/lcov.info",
         "packages/cpp/coverage/lcov.info",
         "packages/editor/coverage/lcov.info",
