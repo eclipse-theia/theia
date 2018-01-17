@@ -63,6 +63,11 @@ describe('Task server / back-end', function () {
     it("task running in terminal - expected data is received from the terminal ws server", async function () {
         const someString = 'someSingleWordString';
 
+        // This test is flaky on Windows and fails intermitently. Disable it for now
+        if (isWindows) {
+            this.skip();
+        }
+
         // create task using terminal process
         const command = isWindows ? commandShortrunningindows : commandShortRunning;
         const taskInfo: TaskInfo = await taskServer.run(createTaskOptions('terminal', FileUri.fsPath(command), [someString]), wsRoot);
