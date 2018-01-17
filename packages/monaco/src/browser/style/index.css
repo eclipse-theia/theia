@@ -36,3 +36,7 @@
     margin-bottom: 4px;
     margin-right: 0px;
 }
+
+.monaco-tree-wrapper {
+    right: 10px;
+}
