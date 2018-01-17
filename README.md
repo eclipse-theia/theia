@@ -5,6 +5,7 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/02s4d40orokl3njl/branch/master?svg=true)](https://ci.appveyor.com/project/kittaakos/theia/branch/master)
 [![Open questions](https://img.shields.io/badge/Open-questions-pink.svg?style=flat-square)](https://github.com/theia-ide/theia/labels/question)
 [![Open bugs](https://img.shields.io/badge/Open-bugs-red.svg?style=flat-square)](https://github.com/theia-ide/theia/labels/bug)
+[![Help Contribute to Open Source](https://www.codetriage.com/theia-ide/theia/badges/users.svg)](https://www.codetriage.com/theia-ide/theia)
 
 Theia is an extensible platform to develop full-fledged multi-language Cloud & Desktop IDE-like products with state-of-the-art web technologies.
 
