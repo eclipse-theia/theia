@@ -7,11 +7,14 @@
 | DockPanel
 |----------------------------------------------------------------------------*/
 
+.p-DockPanel.p-SplitPanel-child {
+  padding: 0px;
+}
 
 .p-DockPanel-widget {
   background: var(--theia-layout-color3);
-  min-width: 100px;
-  min-height: 100px;
+  min-width: 150px;
+  min-height: 150px;
 }
 
 .p-DockPanel-handle[data-orientation='vertical'] {
@@ -38,9 +41,4 @@
 .p-DockPanel-overlay.p-mod-root-bottom,
 .p-DockPanel-overlay.p-mod-root-center {
   border-width: 2px;
-}
-
-
-#theia-main-content-panel {
-  padding: 0px;
 }

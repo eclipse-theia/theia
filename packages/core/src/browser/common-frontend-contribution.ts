@@ -27,6 +27,8 @@ export namespace CommonMenus {
     export const EDIT_FIND = [...EDIT, '3_find'];
 
     export const VIEW = [...MAIN_MENU_BAR, '3_view'];
+    export const VIEW_VIEWS = [...VIEW, '1_views'];
+    export const VIEW_LAYOUT = [...VIEW, '2_layout'];
 
     export const HELP = [...MAIN_MENU_BAR, "4_help"];
 
@@ -97,6 +99,10 @@ export namespace CommonCommands {
         id: 'core.collapse.all.tabs',
         label: 'Collapse All Side Panels'
     };
+    export const TOGGLE_BOTTOM_PANEL: Command = {
+        id: 'core.toggle.bottom.panel',
+        label: 'Toggle Bottom Panel'
+    };
 
     export const SAVE: Command = {
         id: 'core.save',
@@ -130,6 +136,13 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         registry.registerSubmenu(CommonMenus.VIEW, 'View');
         registry.registerSubmenu(CommonMenus.HELP, 'Help');
 
+        registry.registerMenuAction(CommonMenus.FILE_SAVE, {
+            commandId: CommonCommands.SAVE.id
+        });
+        registry.registerMenuAction(CommonMenus.FILE_SAVE, {
+            commandId: CommonCommands.SAVE_ALL.id
+        });
+
         registry.registerMenuAction(CommonMenus.EDIT_UNDO, {
             commandId: CommonCommands.UNDO.id,
             order: '0'
@@ -161,6 +174,15 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             order: '2'
         });
 
+        registry.registerMenuAction(CommonMenus.VIEW_LAYOUT, {
+            commandId: CommonCommands.TOGGLE_BOTTOM_PANEL.id,
+            order: '0'
+        });
+        registry.registerMenuAction(CommonMenus.VIEW_LAYOUT, {
+            commandId: CommonCommands.COLLAPSE_ALL_PANELS.id,
+            order: '1'
+        });
+
         registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_TAB.id,
             label: 'Close',
@@ -185,13 +207,6 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             commandId: CommonCommands.COLLAPSE_PANEL.id,
             label: 'Collapse',
             order: '4'
-        });
-
-        registry.registerMenuAction(CommonMenus.FILE_SAVE, {
-            commandId: CommonCommands.SAVE.id
-        });
-        registry.registerMenuAction(CommonMenus.FILE_SAVE, {
-            commandId: CommonCommands.SAVE_ALL.id
         });
     }
 
@@ -288,15 +303,25 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             execute: () => {
                 const currentArea = this.shell.currentTabArea;
                 if (ApplicationShell.isSideArea(currentArea)) {
-                    this.shell.collapseSidePanel(currentArea);
+                    this.shell.collapsePanel(currentArea);
                 }
             }
         });
         commandRegistry.registerCommand(CommonCommands.COLLAPSE_ALL_PANELS, {
             execute: () => {
-                this.shell.collapseSidePanel('left');
-                this.shell.collapseSidePanel('right');
-                this.shell.collapseSidePanel('bottom');
+                this.shell.collapsePanel('left');
+                this.shell.collapsePanel('right');
+                this.shell.collapsePanel('bottom');
+            }
+        });
+        commandRegistry.registerCommand(CommonCommands.TOGGLE_BOTTOM_PANEL, {
+            isEnabled: () => this.shell.getWidgets('bottom').length > 0,
+            execute: () => {
+                if (this.shell.isExpanded('bottom')) {
+                    this.shell.collapsePanel('bottom');
+                } else {
+                    this.shell.expandPanel('bottom');
+                }
             }
         });
 
@@ -367,6 +392,10 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             {
                 command: CommonCommands.COLLAPSE_PANEL.id,
                 keybinding: "alt+c"
+            },
+            {
+                command: CommonCommands.TOGGLE_BOTTOM_PANEL.id,
+                keybinding: "ctrlcmd+j",
             },
             {
                 command: CommonCommands.COLLAPSE_ALL_PANELS.id,
