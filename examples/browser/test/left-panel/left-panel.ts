@@ -25,15 +25,27 @@ export class LeftPanel {
         this.driver.element(`.p-TabBar.theia-app-left .p-TabBar-content`).click(`div\=${tabName}`);
     }
 
+    collapseTab(tabName: string) {
+        this.driver.element(`.p-TabBar.theia-app-left .p-TabBar-content`).rightClick(`div\=${tabName}`);
+        this.driver.element(`.p-Widget.p-Menu .p-Menu-content`).click(`div\=Collapse`);
+    }
+
     isFileTreeVisible(): boolean {
-        return (this.driver.element('#files').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1);
+        return (this.driver.element('#files').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1)
+            && this.isPanelVisible();
     }
 
     isGitContainerVisible(): boolean {
-        return (this.driver.element('#theia-gitContainer').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1);
+        return (this.driver.element('#theia-gitContainer').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1)
+            && this.isPanelVisible();
     }
 
     isExtensionTabVisible(): boolean {
-        return (this.driver.element('#extensions').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1);
+        return (this.driver.element('#extensions').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1)
+            && this.isPanelVisible();
+    }
+
+    protected isPanelVisible(): boolean {
+        return (this.driver.element('#theia-left-side-panel').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1)
     }
 }

@@ -58,23 +58,25 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
     }
 
     async openView(args: Partial<OpenViewArguments> = {}): Promise<T> {
+        const shell = this.shell;
         const widget = await this.widget;
-        const tabBar = this.shell.getTabBarFor(widget);
+        const tabBar = shell.getTabBarFor(widget);
+        const area = shell.getAreaFor(widget);
         if (!tabBar) {
             // The widget is not attached yet, so add it to the shell
             const widgetArgs: OpenViewArguments = {
                 ...this.options.defaultWidgetOptions,
                 ...args
             };
-            this.shell.addWidget(widget, widgetArgs);
-        } else if (tabBar.currentTitle === widget.title && args.toggle) {
+            shell.addWidget(widget, widgetArgs);
+        } else if (args.toggle && area && shell.isExpanded(area) && tabBar.currentTitle === widget.title) {
             // The widget is attached and visible, so close it (toggle)
             widget.close();
         }
         if (widget.isAttached && args.activate) {
-            this.shell.activateWidget(widget.id);
+            shell.activateWidget(widget.id);
         } else if (widget.isAttached && args.reveal) {
-            this.shell.revealWidget(widget.id);
+            shell.revealWidget(widget.id);
         }
         return widget;
     }
@@ -96,7 +98,7 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
 
     registerMenus(menus: MenuModelRegistry): void {
         if (this.toggleCommand) {
-            menus.registerMenuAction(CommonMenus.VIEW, {
+            menus.registerMenuAction(CommonMenus.VIEW_VIEWS, {
                 commandId: this.toggleCommand.id,
                 label: this.options.widgetName
             });

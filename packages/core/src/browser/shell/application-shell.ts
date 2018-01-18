@@ -12,15 +12,16 @@ import {
     BoxLayout, BoxPanel, DockLayout, DockPanel, FocusTracker, Layout, Panel, SplitLayout,
     SplitPanel, TabBar, Widget, Title
 } from '@phosphor/widgets';
+import { Drag } from '@phosphor/dragdrop';
 import { Saveable } from '../saveable';
 import { StatusBarImpl, StatusBarLayoutData } from '../status-bar/status-bar';
-import { SidePanelHandler, SidePanel, MAIN_BOTTOM_AREA_CLASS, SidePanelHandlerFactory } from './side-panel-handler';
+import { SidePanelHandler, SidePanel, SidePanelHandlerFactory, TheiaDockPanel } from './side-panel-handler';
 import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU } from './tab-bars';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
-/** The class name added to the main area panel. */
-const MAIN_AREA_CLASS = 'theia-app-main';
+/** The class name added to the main and bottom area panels. */
+const MAIN_BOTTOM_AREA_CLASS = 'theia-app-centers';
 /** The class name added to the current widget's title. */
 const CURRENT_CLASS = 'theia-mod-current';
 /** The class name added to the active widget's title. */
@@ -28,6 +29,9 @@ const ACTIVE_CLASS = 'theia-mod-active';
 
 export const ApplicationShellOptions = Symbol('ApplicationShellOptions');
 
+/**
+ * A renderer for dock panels that supports context menus on tabs.
+ */
 @injectable()
 export class DockPanelRenderer implements DockLayout.IRenderer {
 
@@ -38,7 +42,6 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
     createTabBar(): TabBar<Widget> {
         const renderer = this.tabBarRendererFactory();
         const tabBar = new TabBar<Widget>({ renderer });
-        tabBar.addClass(MAIN_AREA_CLASS);
         tabBar.addClass(MAIN_BOTTOM_AREA_CLASS);
         renderer.tabBar = tabBar;
         renderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
@@ -51,47 +54,126 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
 }
 
 /**
- * The application shell.
+ * The application shell manages the top-level widgets of the application. Use this class to
+ * add, remove, or activate a widget.
  */
 @injectable()
 export class ApplicationShell extends Widget {
 
+    /**
+     * General options for the application shell.
+     */
+    protected options: ApplicationShell.Options;
+    /**
+     * The dock panel in the main shell area. This is where editors usually go to.
+     */
     protected mainPanel: DockPanel;
+    /**
+     * The fixed-size panel shown on top. This one usually holds the main menu.
+     */
     protected topPanel: Panel;
+    /**
+     * The dock panel in the bottom shell area. In contrast to the main panel, the bottom panel
+     * can be collapsed and expanded.
+     */
+    protected bottomPanel: DockPanel;
+    /**
+     * Handler for the left side panel. The primary application views go here, such as the
+     * file explorer and the git view.
+     */
     protected leftPanelHandler: SidePanelHandler;
+    /**
+     * Handler for the right side panel. The secondary application views go here, such as the
+     * outline view.
+     */
     protected rightPanelHandler: SidePanelHandler;
-    protected bottomPanelHandler: SidePanelHandler;
+    /**
+     * The last known height of the bottom panel. When the bottom panel is expanded, an attempt
+     * to restore its height to this value is made.
+     */
+    protected lastBottomPanelSize?: number;
 
     private readonly tracker = new FocusTracker<Widget>();
-
-    readonly currentChanged = new Signal<this, FocusTracker.IChangedArgs<Widget>>(this);
-    readonly activeChanged = new Signal<this, FocusTracker.IChangedArgs<Widget>>(this);
+    private widgetDragListener?: (event: Event) => void;
 
     /**
      * Construct a new application shell.
      */
     constructor(
-        @inject(DockPanelRenderer) dockPanelRenderer: DockPanelRenderer,
-        @inject(SidePanelHandlerFactory) sidePanelHandlerFactory: () => SidePanelHandler,
+        @inject(DockPanelRenderer) protected dockPanelRenderer: DockPanelRenderer,
         @inject(StatusBarImpl) protected readonly statusBar: StatusBarImpl,
-        @inject(ApplicationShellOptions) @optional() options?: Widget.IOptions | undefined
+        @inject(SidePanelHandlerFactory) sidePanelHandlerFactory: () => SidePanelHandler,
+        @inject(ApplicationShellOptions) @optional() options?: Partial<ApplicationShell.Options>
     ) {
         super(options);
         this.addClass(APPLICATION_SHELL_CLASS);
         this.id = 'theia-app-shell';
 
+        const defaultOptions: ApplicationShell.Options = {
+            sidePanelExpandThreshold: SidePanel.EMPTY_PANEL_SIZE,
+            maxBottomPanelRatio: 0.67,
+            maxLeftPanelRatio: 0.4,
+            maxRightPanelRatio: 0.4
+        };
+        if (options) {
+            this.options = { ...defaultOptions, ...options };
+        } else {
+            this.options = defaultOptions;
+        }
+
+        this.mainPanel = this.createMainPanel();
         this.topPanel = this.createTopPanel();
-        this.mainPanel = this.createMainPanel(dockPanelRenderer);
+        this.bottomPanel = this.createBottomPanel();
         this.leftPanelHandler = sidePanelHandlerFactory();
         this.leftPanelHandler.create('left');
+        this.leftPanelHandler.maxPanelSizeRatio = this.options.maxLeftPanelRatio;
         this.rightPanelHandler = sidePanelHandlerFactory();
         this.rightPanelHandler.create('right');
-        this.bottomPanelHandler = sidePanelHandlerFactory();
-        this.bottomPanelHandler.create('bottom');
+        this.rightPanelHandler.maxPanelSizeRatio = this.options.maxRightPanelRatio;
         this.layout = this.createLayout();
 
         this.tracker.currentChanged.connect(this.onCurrentChanged, this);
         this.tracker.activeChanged.connect(this.onActiveChanged, this);
+
+        SidePanel.onDragStarted(this.onWidgetDragStarted.bind(this));
+        SidePanel.onDragEnded(this.onWidgetDragEnded.bind(this));
+    }
+
+    /**
+     * Create the dock panel in the main shell area.
+     */
+    protected createMainPanel(): DockPanel {
+        const dockPanel = new TheiaDockPanel({
+            mode: 'multiple-document',
+            renderer: this.dockPanelRenderer,
+            spacing: 0
+        });
+        dockPanel.id = 'theia-main-content-panel';
+        return dockPanel;
+    }
+
+    /**
+     * Create the dock panel in the bottom shell area.
+     */
+    protected createBottomPanel(): DockPanel {
+        const dockPanel = new TheiaDockPanel({
+            mode: 'multiple-document',
+            renderer: this.dockPanelRenderer,
+            spacing: 0
+        });
+        dockPanel.id = 'theia-bottom-content-panel';
+        dockPanel.widgetRemoved.connect((sender, widget) => {
+            if (dockPanel.isEmpty) {
+                this.collapseBottomPanel();
+            }
+        }, this);
+        dockPanel.panelAttached.connect(sender => {
+            if (!this.bottomPanel.isHidden && this.lastBottomPanelSize) {
+                this.setBottomPanelSize(this.lastBottomPanelSize);
+            }
+        }, this);
+        dockPanel.hide();
+        return dockPanel;
     }
 
     /**
@@ -101,61 +183,6 @@ export class ApplicationShell extends Widget {
         const topPanel = new Panel();
         topPanel.id = 'theia-top-panel';
         return topPanel;
-    }
-
-    /**
-     * Create the dock panel, which holds the main area for widgets organized with tabs.
-     */
-    protected createMainPanel(dockPanelRenderer: DockPanelRenderer): DockPanel {
-        const dockPanel = new DockPanel({ renderer: dockPanelRenderer });
-        dockPanel.id = 'theia-main-content-panel';
-        dockPanel.spacing = 0;
-        return dockPanel;
-    }
-
-    /**
-     * Create a panel that arranges a side bar around the given main area.
-     */
-    protected createSideBarLayout(side: ApplicationShell.Area, mainArea: Widget): Panel {
-        const spacing = 0;
-        let boxLayout: BoxLayout;
-        switch (side) {
-            case 'left':
-                boxLayout = this.createBoxLayout([this.leftPanelHandler.sideBar, this.leftPanelHandler.stackedPanel], [0, 1],
-                    { direction: 'left-to-right', spacing });
-                break;
-            case 'right':
-                boxLayout = this.createBoxLayout([this.rightPanelHandler.stackedPanel, this.rightPanelHandler.sideBar], [1, 0],
-                    { direction: 'left-to-right', spacing });
-                break;
-            case 'bottom':
-                boxLayout = this.createBoxLayout([this.bottomPanelHandler.sideBar, this.bottomPanelHandler.stackedPanel], [0, 1],
-                    { direction: 'top-to-bottom', spacing });
-                break;
-            default:
-                throw new Error('Illegal argument: ' + side);
-        }
-        const boxPanel = new BoxPanel({ layout: boxLayout });
-        boxPanel.id = 'theia-' + side + '-content-panel';
-        boxPanel.hide();
-
-        let splitLayout: SplitLayout;
-        switch (side) {
-            case 'left':
-                splitLayout = this.createSplitLayout([boxPanel, mainArea], [0, 1], { orientation: 'horizontal', spacing });
-                break;
-            case 'right':
-                splitLayout = this.createSplitLayout([mainArea, boxPanel], [1, 0], { orientation: 'horizontal', spacing });
-                break;
-            case 'bottom':
-                splitLayout = this.createSplitLayout([mainArea, boxPanel], [1, 0], { orientation: 'vertical', spacing });
-                break;
-            default:
-                throw new Error('Illegal argument: ' + side);
-        }
-        const splitPanel = new SplitPanel({ layout: splitLayout });
-        splitPanel.id = 'theia-' + side + '-split-panel';
-        return splitPanel;
     }
 
     /**
@@ -192,52 +219,206 @@ export class ApplicationShell extends Widget {
 
     /**
      * Assemble the application shell layout. Override this method in order to change the arrangement
-     * of the main area and the side bars.
+     * of the main area and the side panels.
      */
     protected createLayout(): Layout {
-        const panelForBottomSideBar = this.createSideBarLayout('bottom', this.mainPanel);
-        const panelForRightSideBar = this.createSideBarLayout('right', panelForBottomSideBar);
-        const panelForLeftSideBar = this.createSideBarLayout('left', panelForRightSideBar);
+        const bottomSplitLayout = this.createSplitLayout(
+            [this.mainPanel, this.bottomPanel],
+            [1, 0],
+            { orientation: 'vertical', spacing: 2 }
+        );
+        const panelForBottomArea = new SplitPanel({ layout: bottomSplitLayout });
+        panelForBottomArea.id = 'theia-bottom-split-panel';
+
+        const leftRightSplitLayout = this.createSplitLayout(
+            [this.leftPanelHandler.container, panelForBottomArea, this.rightPanelHandler.container],
+            [0, 1, 0],
+            { orientation: 'horizontal', spacing: 2 }
+        );
+        const panelForSideAreas = new SplitPanel({ layout: leftRightSplitLayout });
+        panelForSideAreas.id = 'theia-left-right-split-panel';
 
         return this.createBoxLayout(
-            [this.topPanel, panelForLeftSideBar, this.statusBar],
+            [this.topPanel, panelForSideAreas, this.statusBar],
             [0, 1, 0],
             { direction: 'top-to-bottom', spacing: 0 }
         );
     }
 
+    /**
+     * Invoked when the title of a widget is dragged away from a tab bar. This method sets up
+     * a `mousemove` listener that expands side panels if necessary so the widget can be dropped
+     * into them.
+     */
+    protected onWidgetDragStarted(drag: Drag): void {
+        if (this.widgetDragListener) {
+            return;
+        }
+        const initialPanelState = {
+            leftCollapsed: this.leftPanelHandler.tabBar.currentTitle === null,
+            rightCollapsed: this.rightPanelHandler.tabBar.currentTitle === null,
+            bottomCollapsed: this.bottomPanel.isHidden
+        };
+        const modifiedPanelState = {
+            leftExpanded: false,
+            rightExpanded: false,
+            bottomExpanded: false
+        };
+        this.widgetDragListener = event => {
+            if (event.type === 'mousemove') {
+                const { clientX, clientY } = event as MouseEvent;
+                const threshold = this.options.sidePanelExpandThreshold;
+                if (clientX <= threshold) {
+                    // The mouse cursor is close to the left border, so expand the left panel if necessary
+                    if (!modifiedPanelState.leftExpanded) {
+                        this.leftPanelHandler.expand();
+                        modifiedPanelState.leftExpanded = true;
+                    }
+                } else if (initialPanelState.leftCollapsed && modifiedPanelState.leftExpanded) {
+                    // The mouse cursor is moved away from the left border
+                    this.leftPanelHandler.collapse();
+                    modifiedPanelState.leftExpanded = false;
+                }
+                if (clientX >= window.innerWidth - threshold) {
+                    // The mouse cursor is close to the right border, so expand the right panel if necessary
+                    if (!modifiedPanelState.rightExpanded) {
+                        this.rightPanelHandler.expand();
+                        modifiedPanelState.rightExpanded = true;
+                    }
+                } else if (initialPanelState.rightCollapsed && modifiedPanelState.rightExpanded) {
+                    // The mouse cursor is moved away from the right border
+                    this.rightPanelHandler.collapse();
+                    modifiedPanelState.rightExpanded = false;
+                }
+                const statusBarHeight = this.statusBar.node.clientHeight;
+                if (clientY >= window.innerHeight - threshold - statusBarHeight) {
+                    // The mouse cursor is close to the bottom border, so expand the bottom panel if necessary
+                    if (!modifiedPanelState.bottomExpanded) {
+                        this.expandBottomPanel();
+                        modifiedPanelState.bottomExpanded = true;
+                    }
+                } else if (initialPanelState.bottomCollapsed && modifiedPanelState.bottomExpanded) {
+                    // The mouse cursor is moved away from the bottom border
+                    this.collapseBottomPanel();
+                    modifiedPanelState.bottomExpanded = false;
+                }
+            }
+        };
+        document.addEventListener('mousemove', this.widgetDragListener, true);
+    }
+
+    /**
+     * Removes the listeners that are set up by `onWidgetDragStarted` and resets the shell to the
+     * previous state.
+     */
+    protected onWidgetDragEnded(drag: Drag): void {
+        if (this.widgetDragListener) {
+            document.removeEventListener('mousemove', this.widgetDragListener, true);
+            this.leftPanelHandler.refresh();
+            this.rightPanelHandler.refresh();
+            if (this.bottomPanel.isEmpty) {
+                this.collapseBottomPanel();
+            }
+            this.widgetDragListener = undefined;
+        }
+    }
+
+    /**
+     * Create an object that describes the current shell layout. This object may contain references
+     * to widgets; these need to be transformed before the layout can be serialized.
+     */
     getLayoutData(): ApplicationShell.LayoutData {
         return {
-            mainArea: this.mainPanel.saveLayout(),
+            mainPanel: this.mainPanel.saveLayout(),
+            bottomPanel: {
+                config: this.bottomPanel.saveLayout(),
+                size: this.bottomPanel.isVisible ? this.getBottomPanelSize() : this.lastBottomPanelSize,
+                expanded: this.isExpanded('bottom')
+            },
             leftPanel: this.leftPanelHandler.getLayoutData(),
             rightPanel: this.rightPanelHandler.getLayoutData(),
-            bottomPanel: this.bottomPanelHandler.getLayoutData(),
             statusBar: this.statusBar.getLayoutData()
         };
     }
 
-    setLayoutData(layoutData: ApplicationShell.LayoutData): void {
-        if (layoutData.mainArea) {
-            this.mainPanel.restoreLayout(layoutData.mainArea);
-            this.registerWithFocusTracker(layoutData.mainArea.main);
-        }
-        if (layoutData.leftPanel) {
-            this.leftPanelHandler.setLayoutData(layoutData.leftPanel);
-            this.registerWithFocusTracker(layoutData.leftPanel);
-        }
-        if (layoutData.rightPanel) {
-            this.rightPanelHandler.setLayoutData(layoutData.rightPanel);
-            this.registerWithFocusTracker(layoutData.rightPanel);
-        }
-        if (layoutData.bottomPanel) {
-            this.bottomPanelHandler.setLayoutData(layoutData.bottomPanel);
-            this.registerWithFocusTracker(layoutData.bottomPanel);
-        }
-        if (layoutData.statusBar) {
-            this.statusBar.setLayoutData(layoutData.statusBar);
+    /**
+     * Compute the current height of the bottom panel. This implementation assumes that the container
+     * of the bottom panel is a `SplitPanel`.
+     */
+    protected getBottomPanelSize(): number | undefined {
+        const parent = this.bottomPanel.parent;
+        if (parent instanceof SplitPanel && parent.isVisible) {
+            const index = parent.widgets.indexOf(this.bottomPanel) - 1;
+            if (index >= 0) {
+                const handle = parent.handles[index];
+                if (!handle.classList.contains('p-mod-hidden')) {
+                    const parentHeight = parent.node.clientHeight;
+                    return parentHeight - handle.offsetTop;
+                }
+            }
         }
     }
 
+    /**
+     * Apply a shell layout that has been previously created with `getLayoutData`.
+     */
+    setLayoutData({ mainPanel, bottomPanel, leftPanel, rightPanel, statusBar }: ApplicationShell.LayoutData): void {
+        if (mainPanel) {
+            this.mainPanel.restoreLayout(mainPanel);
+            this.registerWithFocusTracker(mainPanel.main);
+        }
+        if (bottomPanel) {
+            if (bottomPanel.config) {
+                this.bottomPanel.restoreLayout(bottomPanel.config);
+                this.registerWithFocusTracker(bottomPanel.config.main);
+            }
+            if (bottomPanel.size) {
+                this.lastBottomPanelSize = bottomPanel.size;
+            }
+            if (bottomPanel.expanded) {
+                this.expandBottomPanel();
+            } else {
+                this.collapseBottomPanel();
+            }
+        }
+        if (leftPanel) {
+            this.leftPanelHandler.setLayoutData(leftPanel);
+            this.registerWithFocusTracker(leftPanel);
+        }
+        if (rightPanel) {
+            this.rightPanelHandler.setLayoutData(rightPanel);
+            this.registerWithFocusTracker(rightPanel);
+        }
+        if (statusBar) {
+            this.statusBar.setLayoutData(statusBar);
+        }
+    }
+
+    /**
+     * Modify the height of the bottom panel. This implementation assumes that the container of the
+     * bottom panel is a `SplitPanel`.
+     *
+     * The actual height might differ from the value that is given here. The height of the bottom
+     * panel is limited to a customizable ratio of the total height that is available for widgets
+     * (main area plus bottom area). Further limits may be applied by the browser according to CSS
+     * `minHeight` and `maxHeight` settings.
+     */
+    protected setBottomPanelSize(size: number): void {
+        const parent = this.bottomPanel.parent;
+        if (parent instanceof SplitPanel && parent.isVisible) {
+            const index = parent.widgets.indexOf(this.bottomPanel) - 1;
+            if (index >= 0) {
+                const parentHeight = parent.node.clientHeight;
+                const maxHeight = parentHeight * this.options.maxBottomPanelRatio;
+                const position = parentHeight - Math.min(size, maxHeight);
+                SidePanel.moveSplitPos(parent, index, position);
+            }
+        }
+    }
+
+    /**
+     * Track all widgets that are referenced by the given layout data.
+     */
     protected registerWithFocusTracker(data: DockLayout.ITabAreaConfig | DockLayout.ISplitAreaConfig | SidePanel.LayoutData | null): void {
         if (data) {
             if (data.type === 'tab-area') {
@@ -248,7 +429,7 @@ export class ApplicationShell extends Widget {
                 for (const child of data.children) {
                     this.registerWithFocusTracker(child);
                 }
-            } else if (data.type === 'sidebar' && data.items) {
+            } else if (data.type === 'sidepanel' && data.items) {
                 for (const item of data.items) {
                     this.track(item.widget);
                 }
@@ -260,8 +441,7 @@ export class ApplicationShell extends Widget {
      * Add a widget to the application shell. The given widget must have a unique `id` property,
      * which will be used as the DOM id.
      *
-     * All widgets added to the main area should be disposed after removal (or
-     * simply disposed in order to remove).
+     * Widgets are removed from the shell by calling their `close` or `dispose` methods.
      *
      * Widgets added to the top area are not tracked regarding the _current_ and _active_ states.
      */
@@ -272,22 +452,19 @@ export class ApplicationShell extends Widget {
         }
         switch (options.area) {
             case 'main':
-                if (!options.mode) {
-                    options.mode = 'tab-after';
-                }
                 this.mainPanel.addWidget(widget, options);
                 break;
             case 'top':
                 this.topPanel.addWidget(widget);
+                break;
+            case 'bottom':
+                this.bottomPanel.addWidget(widget, options);
                 break;
             case 'left':
                 this.leftPanelHandler.addWidget(widget, options);
                 break;
             case 'right':
                 this.rightPanelHandler.addWidget(widget, options);
-                break;
-            case 'bottom':
-                this.bottomPanelHandler.addWidget(widget, options);
                 break;
             default:
                 throw new Error('Illegal argument: ' + options.area);
@@ -306,12 +483,12 @@ export class ApplicationShell extends Widget {
                 return toArray(this.mainPanel.widgets());
             case 'top':
                 return toArray(this.topPanel.widgets);
-            case 'left':
-                return toArray(this.leftPanelHandler.stackedPanel.widgets);
-            case 'right':
-                return toArray(this.rightPanelHandler.stackedPanel.widgets);
             case 'bottom':
-                return toArray(this.bottomPanelHandler.stackedPanel.widgets);
+                return toArray(this.bottomPanel.widgets());
+            case 'left':
+                return toArray(this.leftPanelHandler.dockPanel.widgets());
+            case 'right':
+                return toArray(this.rightPanelHandler.dockPanel.widgets());
             default:
                 throw new Error('Illegal argument: ' + area);
         }
@@ -338,6 +515,11 @@ export class ApplicationShell extends Widget {
     }
 
     /**
+     * A signal emitted whenever the `currentWidget` property is changed.
+     */
+    readonly currentChanged = new Signal<this, FocusTracker.IChangedArgs<Widget>>(this);
+
+    /**
      * Handle a change to the current widget.
      */
     private onCurrentChanged(sender: any, args: FocusTracker.IChangedArgs<Widget>): void {
@@ -349,6 +531,11 @@ export class ApplicationShell extends Widget {
         }
         this.currentChanged.emit(args);
     }
+
+    /**
+     * A signal emitted whenever the `activeWidget` property is changed.
+     */
+    readonly activeChanged = new Signal<this, FocusTracker.IChangedArgs<Widget>>(this);
 
     /**
      * Handle a change to the active widget.
@@ -387,15 +574,17 @@ export class ApplicationShell extends Widget {
             this.mainPanel.activateWidget(widget);
             return widget;
         }
+        widget = find(this.bottomPanel.widgets(), w => w.id === id);
+        if (widget) {
+            this.expandBottomPanel();
+            this.bottomPanel.activateWidget(widget);
+            return widget;
+        }
         widget = this.leftPanelHandler.activate(id);
         if (widget) {
             return widget;
         }
         widget = this.rightPanelHandler.activate(id);
-        if (widget) {
-            return widget;
-        }
-        widget = this.bottomPanelHandler.activate(id);
         if (widget) {
             return widget;
         }
@@ -409,6 +598,12 @@ export class ApplicationShell extends Widget {
      */
     revealWidget(id: string): Widget | undefined {
         let widget = find(this.mainPanel.widgets(), w => w.id === id);
+        if (!widget) {
+            widget = find(this.bottomPanel.widgets(), w => w.id === id);
+            if (widget) {
+                this.expandBottomPanel();
+            }
+        }
         if (widget) {
             const tabBar = this.getTabBarFor(widget);
             if (tabBar) {
@@ -424,35 +619,106 @@ export class ApplicationShell extends Widget {
         if (widget) {
             return widget;
         }
-        widget = this.bottomPanelHandler.expand(id);
-        if (widget) {
-            return widget;
+    }
+
+    /**
+     * Expand the named side panel area. This makes sure that the panel is visible, even if there
+     * are no widgets in it. If the panel is already visible, nothing happens. If the panel is currently
+     * collapsed (see `collapsePanel`) and it contains widgets, the widgets are revealed that were
+     * visible before it was collapsed.
+     */
+    expandPanel(area: ApplicationShell.Area): void {
+        switch (area) {
+            case 'bottom':
+                this.expandBottomPanel();
+                break;
+            case 'left':
+                this.leftPanelHandler.expand();
+                break;
+            case 'right':
+                this.rightPanelHandler.expand();
+                break;
+            default:
+                throw new Error('Area cannot be expanded: ' + area);
         }
     }
 
     /**
-     * Collapse the given side panel area.
+     * Expand the bottom panel. See `expandPanel` regarding the exact behavior.
      */
-    collapseSidePanel(area: ApplicationShell.Area): void {
+    protected expandBottomPanel(): void {
+        if (this.bottomPanel.isHidden) {
+            this.bottomPanel.show();
+            if (this.lastBottomPanelSize) {
+                this.setBottomPanelSize(this.lastBottomPanelSize);
+            }
+        }
+    }
+
+    /**
+     * Collapse the named side panel area. This makes sure that the panel is hidden,
+     * increasing the space that is available for other shell areas.
+     */
+    collapsePanel(area: ApplicationShell.Area): void {
         switch (area) {
+            case 'bottom':
+                this.collapseBottomPanel();
+                break;
             case 'left':
                 this.leftPanelHandler.collapse();
                 break;
             case 'right':
                 this.rightPanelHandler.collapse();
                 break;
-            case 'bottom':
-                this.bottomPanelHandler.collapse();
-                break;
             default:
                 throw new Error('Area cannot be collapsed: ' + area);
         }
     }
 
+    /**
+     * Collapse the bottom panel. All contained widgets are hidden, but not closed.
+     * They can be restored by calling `expandBottomPanel`.
+     */
+    protected collapseBottomPanel(): void {
+        if (!this.bottomPanel.isHidden) {
+            const size = this.getBottomPanelSize();
+            if (size) {
+                this.lastBottomPanelSize = size;
+            }
+            this.bottomPanel.hide();
+        }
+    }
+
+    /**
+     * Check whether the named side panel area is expanded (returns `true`) or collapsed (returns `false`).
+     */
+    isExpanded(area: ApplicationShell.Area): boolean {
+        switch (area) {
+            case 'bottom':
+                return this.bottomPanel.isVisible;
+            case 'left':
+                return this.leftPanelHandler.tabBar.currentTitle !== null;
+            case 'right':
+                return this.rightPanelHandler.tabBar.currentTitle !== null;
+            default:
+                return true;
+        }
+    }
+
+    /**
+     * Close all tabs or a selection of tabs in a specific part of the application shell.
+     *
+     * @param tabBarOrArea
+     *      Either the name of a shell area or a `TabBar` that is contained in such an area.
+     * @param filter
+     *      If undefined, all tabs are closed; otherwise only those tabs that match the filter are closed.
+     */
     closeTabs(tabBarOrArea: TabBar<Widget> | ApplicationShell.Area,
         filter?: (title: Title<Widget>, index: number) => boolean): void {
         if (tabBarOrArea === 'main') {
             this.mainAreaTabBars.forEach(tb => this.closeTabs(tb, filter));
+        } else if (tabBarOrArea === 'bottom') {
+            this.bottomAreaTabBars.forEach(tb => this.closeTabs(tb, filter));
         } else if (typeof tabBarOrArea === 'string') {
             const tabBar = this.getTabBarFor(tabBarOrArea);
             if (tabBar) {
@@ -469,30 +735,39 @@ export class ApplicationShell extends Widget {
     }
 
     /**
-     * Return the area of the currently active tab.
+     * The shell area name of the currently active tab, or undefined.
      */
     get currentTabArea(): ApplicationShell.Area | undefined {
         const currentWidget = this.currentWidget;
         if (currentWidget) {
-            const currentTitle = currentWidget.title;
-            const mainPanelTabBar = find(this.mainPanel.tabBars(), bar => ArrayExt.firstIndexOf(bar.titles, currentTitle) > -1);
-            if (mainPanelTabBar) {
-                return 'main';
-            }
-            if (ArrayExt.firstIndexOf(this.leftPanelHandler.sideBar.titles, currentTitle) > -1) {
-                return 'left';
-            }
-            if (ArrayExt.firstIndexOf(this.rightPanelHandler.sideBar.titles, currentTitle) > -1) {
-                return 'right';
-            }
-            if (ArrayExt.firstIndexOf(this.bottomPanelHandler.sideBar.titles, currentTitle) > -1) {
-                return 'bottom';
-            }
+            return this.getAreaFor(currentWidget);
         }
     }
 
     /**
-     * Return the TabBar that has the currently active Widget, or undefined.
+     * Determine the name of the shell area where the given widget resides. The result is
+     * undefined if the widget does not reside directly in the shell.
+     */
+    getAreaFor(widget: Widget): ApplicationShell.Area | undefined {
+        const title = widget.title;
+        const mainPanelTabBar = find(this.mainPanel.tabBars(), bar => ArrayExt.firstIndexOf(bar.titles, title) > -1);
+        if (mainPanelTabBar) {
+            return 'main';
+        }
+        const bottomPanelTabBar = find(this.bottomPanel.tabBars(), bar => ArrayExt.firstIndexOf(bar.titles, title) > -1);
+        if (bottomPanelTabBar) {
+            return 'bottom';
+        }
+        if (ArrayExt.firstIndexOf(this.leftPanelHandler.tabBar.titles, title) > -1) {
+            return 'left';
+        }
+        if (ArrayExt.firstIndexOf(this.rightPanelHandler.tabBar.titles, title) > -1) {
+            return 'right';
+        }
+    }
+
+    /**
+     * Return the tab bar that has the currently active widget, or undefined.
      */
     get currentTabBar(): TabBar<Widget> | undefined {
         const currentWidget = this.currentWidget;
@@ -502,19 +777,19 @@ export class ApplicationShell extends Widget {
     }
 
     /**
-     * Return the TabBar in the given shell area, or the TabBar that has the given widget, or undefined.
+     * Return the tab bar in the given shell area, or the tab bar that has the given widget, or undefined.
      */
     getTabBarFor(widgetOrArea: Widget | ApplicationShell.Area): TabBar<Widget> | undefined {
         if (typeof widgetOrArea === 'string') {
             switch (widgetOrArea) {
                 case 'main':
                     return this.mainPanel.tabBars().next();
-                case 'left':
-                    return this.leftPanelHandler.sideBar;
-                case 'right':
-                    return this.rightPanelHandler.sideBar;
                 case 'bottom':
-                    return this.bottomPanelHandler.sideBar;
+                    return this.bottomPanel.tabBars().next();
+                case 'left':
+                    return this.leftPanelHandler.tabBar;
+                case 'right':
+                    return this.rightPanelHandler.tabBar;
                 default:
                     throw new Error('Illegal argument: ' + widgetOrArea);
             }
@@ -524,27 +799,39 @@ export class ApplicationShell extends Widget {
             if (mainPanelTabBar) {
                 return mainPanelTabBar;
             }
-            const leftPanelTabBar = this.leftPanelHandler.sideBar;
+            const bottomPanelTabBar = find(this.bottomPanel.tabBars(), bar => ArrayExt.firstIndexOf(bar.titles, widgetTitle) > -1);
+            if (bottomPanelTabBar) {
+                return bottomPanelTabBar;
+            }
+            const leftPanelTabBar = this.leftPanelHandler.tabBar;
             if (ArrayExt.firstIndexOf(leftPanelTabBar.titles, widgetTitle) > -1) {
                 return leftPanelTabBar;
             }
-            const rightPanelTabBar = this.rightPanelHandler.sideBar;
+            const rightPanelTabBar = this.rightPanelHandler.tabBar;
             if (ArrayExt.firstIndexOf(rightPanelTabBar.titles, widgetTitle) > -1) {
                 return rightPanelTabBar;
-            }
-            const bottomPanelTabBar = this.bottomPanelHandler.sideBar;
-            if (ArrayExt.firstIndexOf(bottomPanelTabBar.titles, widgetTitle) > -1) {
-                return bottomPanelTabBar;
             }
         }
     }
 
+    /**
+     * The tab bars contained in the main shell area. If there is no widget in the main area, the
+     * returned array is empty.
+     */
     get mainAreaTabBars(): TabBar<Widget>[] {
         return toArray(this.mainPanel.tabBars());
     }
 
+    /**
+     * The tab bars contained in the bottom shell area. If there is no widget in the bottom area,
+     * the returned array is empty.
+     */
+    get bottomAreaTabBars(): TabBar<Widget>[] {
+        return toArray(this.bottomPanel.tabBars());
+    }
+
     /*
-     * Activate the next tab in the current TabBar.
+     * Activate the next tab in the current tab bar.
      */
     activateNextTab(): void {
         const current = this.currentTabBar;
@@ -568,7 +855,7 @@ export class ApplicationShell extends Widget {
     }
 
     /**
-     * Return the TabBar next to the given TabBar; return the given TabBar if there is no adjacent one.
+     * Return the tab bar next to the given tab bar; return the given tab bar if there is no adjacent one.
      */
     private nextTabBar(current: TabBar<Widget>): TabBar<Widget> {
         const bars = toArray(this.mainPanel.tabBars());
@@ -584,7 +871,7 @@ export class ApplicationShell extends Widget {
     }
 
     /*
-     * Activate the previous tab in the current TabBar.
+     * Activate the previous tab in the current tab bar.
      */
     activatePreviousTab(): void {
         const current = this.currentTabBar;
@@ -609,7 +896,7 @@ export class ApplicationShell extends Widget {
     }
 
     /**
-     * Return the TabBar previous to the given TabBar; return the given TabBar if there is no adjacent one.
+     * Return the tab bar previous to the given tab bar; return the given tab bar if there is no adjacent one.
      */
     private previousTabBar(current: TabBar<Widget>): TabBar<Widget> {
         const bars = toArray(this.mainPanel.tabBars());
@@ -663,12 +950,47 @@ export namespace ApplicationShell {
      */
     export type Area = 'main' | 'top' | 'left' | 'right' | 'bottom';
 
+    /**
+     * The _side areas_ are those shell areas that can be collapsed and expanded,
+     * i.e. `left`, `right`, and `bottom`.
+     */
     export function isSideArea(area?: Area): area is 'left' | 'right' | 'bottom' {
         return area === 'left' || area === 'right' || area === 'bottom';
     }
 
     /**
-     * The options for adding a widget to the application shell.
+     * General options for the application shell. These are passed on construction and can be modified
+     * through dependency injection (`ApplicationShellOptions` symbol).
+     */
+    export interface Options extends Widget.IOptions {
+        /**
+         * When a widget is being dragged and the distance of the mouse cursor to the shell border
+         * is below this threshold, the respective side panel is expanded so the widget can be dropped
+         * into that panel.
+         */
+        sidePanelExpandThreshold: number;
+        /**
+         * The maximum ratio of the shell height that can be occupied by the bottom panel. This value
+         * does not limit how much the bottom panel can be manually resized, but it is considered when
+         * the size of that panel is restored, e.g. when expanding the panel or reloading the page layout.
+         */
+        maxBottomPanelRatio: number;
+        /**
+         * The maximum ratio of the shell width that can be occupied by the left side panel. This value
+         * does not limit how much the panel can be manually resized, but it is considered when
+         * the size of that panel is restored, e.g. when expanding the panel or reloading the page layout.
+         */
+        maxLeftPanelRatio: number;
+        /**
+         * The maximum ratio of the shell width that can be occupied by the right side panel. This value
+         * does not limit how much the panel can be manually resized, but it is considered when
+         * the size of that panel is restored, e.g. when expanding the panel or reloading the page layout.
+         */
+        maxRightPanelRatio: number;
+    }
+
+    /**
+     * Options for adding a widget to the application shell.
      */
     export interface WidgetOptions extends DockLayout.IAddOptions, SidePanel.WidgetOptions {
         /**
@@ -681,10 +1003,19 @@ export namespace ApplicationShell {
      * Data to save and load the application shell layout.
      */
     export interface LayoutData {
-        mainArea?: DockPanel.ILayoutConfig;
+        mainPanel?: DockPanel.ILayoutConfig;
+        bottomPanel?: BottomPanelLayoutData;
         leftPanel?: SidePanel.LayoutData;
         rightPanel?: SidePanel.LayoutData;
-        bottomPanel?: SidePanel.LayoutData;
         statusBar?: StatusBarLayoutData;
+    }
+
+    /**
+     * Data to save and load the bottom panel layout.
+     */
+    export interface BottomPanelLayoutData {
+        config?: DockPanel.ILayoutConfig;
+        size?: number;
+        expanded?: boolean;
     }
 }
