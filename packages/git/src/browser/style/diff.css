@@ -1,0 +1,37 @@
+.theia-git {
+    color: var(--theia-ui-font-color1);
+}
+
+.theia-git .commitishBar {
+    padding: 5px 0;
+    height: 32px;
+    max-height: 32px;
+}
+
+.theia-git .git-diff-container {
+    height: 100%;
+}
+
+.theia-git .revision .row-title {
+    width: 35px;
+    display: inline-block;
+}
+
+.theia-git .commitFileListContainer {
+    height: calc(100% - 60px);
+}
+
+.theia-git .git-diff-container .commitFileList {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.theia-git .gitItem.diff-file {
+    margin: 1px 0 !important;
+    padding: 0 !important;
+}
+
+.theia-git .gitItem.diff-file:hover {
+    background-color: inherit !important;
+    cursor: inherit !important;
+}

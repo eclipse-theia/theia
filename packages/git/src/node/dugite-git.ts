@@ -436,13 +436,11 @@ export class DugiteGit implements Git {
     private mapRange(toMap: Git.Options.Range | undefined): string {
         let range = 'HEAD';
         if (toMap) {
-            if (toMap.toRevision) {
-                range = toMap.toRevision;
-            }
             if (typeof toMap.fromRevision === 'number') {
-                range = `${range}~${toMap.fromRevision}..${range}`;
+                const toRevision = toMap.toRevision || 'HEAD';
+                range = `${toRevision}~${toMap.fromRevision}..${toRevision}`;
             } else if (typeof toMap.fromRevision === 'string') {
-                range = `${toMap.fromRevision}..${range}`;
+                range = `${toMap.fromRevision}${toMap.toRevision ? '..' + toMap.toRevision : ''}`;
             }
         }
         return range;
