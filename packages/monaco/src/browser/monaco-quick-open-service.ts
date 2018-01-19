@@ -5,9 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { QuickOpenService, QuickOpenModel, QuickOpenOptions, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode } from "@theia/core/lib/browser";
 import { KEY_CODE_MAP } from './monaco-keycode-map';
+import { KeyCode, ILogger } from '@theia/core';
 
 export interface MonacoQuickOpenControllerOpts extends monaco.quickOpen.IQuickOpenControllerOpts {
     readonly prefix?: string;
@@ -23,7 +24,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
     protected opts: MonacoQuickOpenControllerOpts | undefined;
     protected previousActiveElement: Element | undefined;
 
-    constructor() {
+    constructor( @inject(ILogger) protected readonly logger: ILogger) {
         super();
         const overlayWidgets = document.createElement('div');
         overlayWidgets.classList.add('quick-open-overlay');
@@ -230,12 +231,20 @@ export class QuickOpenEntry extends monaco.quickOpen.QuickOpenEntry {
         if (!keybinding) {
             return undefined;
         }
+
+        let keyCode: KeyCode;
+        try {
+            keyCode = KeyCode.parse(keybinding.keybinding);
+        } catch (error) {
+            return undefined;
+        }
+
         const simple = new monaco.keybindings.SimpleKeybinding(
-            keybinding.keyCode.ctrl,
-            keybinding.keyCode.shift,
-            keybinding.keyCode.alt,
-            keybinding.keyCode.meta,
-            KEY_CODE_MAP[keybinding.keyCode.key.keyCode]
+            keyCode.ctrl,
+            keyCode.shift,
+            keyCode.alt,
+            keyCode.meta,
+            KEY_CODE_MAP[keyCode.key.keyCode]
         );
         return new monaco.keybindings.USLayoutResolvedKeybinding(simple, monaco.platform.OS);
     }
