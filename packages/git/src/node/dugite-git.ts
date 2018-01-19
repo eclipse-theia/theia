@@ -26,20 +26,41 @@ import { IStatusResult, IAheadBehind, AppFileStatus, WorkingDirectoryStatus as D
 import { Branch as DugiteBranch } from 'dugite-extra/lib/model/branch';
 import { Commit as DugiteCommit, CommitIdentity as DugiteCommitIdentity } from 'dugite-extra/lib/model/commit';
 import { ILogger } from '@theia/core';
-import { Git, GitUtils, Repository, WorkingDirectoryStatus, GitFileChange, GitFileStatus, Branch, Commit, CommitIdentity, GitResult } from '../common';
+import { Git, GitUtils, Repository, WorkingDirectoryStatus, GitFileChange, GitFileStatus, Branch, Commit, CommitIdentity, GitResult, CommitWithChanges } from '../common';
 import { GitRepositoryManager } from './git-repository-manager';
 import { GitLocator } from './git-locator/git-locator-protocol';
+
+/**
+ * Parsing and converting raw Git output into Git model instances.
+ */
+@injectable()
+export abstract class OutputParser<T> {
+
+    /** This is the `NUL` delimiter. Equals wih `%x00`. */
+    static readonly LINE_DELIMITER = '\0';
+
+    abstract parse(repositoryUri: string, raw: string, delimiter?: string): T[];
+    abstract parse(repositoryUri: string, items: string[]): T[];
+    abstract parse(repositoryUri: string, input: string | string[], delimiter?: string): T[];
+
+    protected toUri(repositoryUri: string, pathSegment: string): string {
+        return FileUri.create(Path.join(FileUri.fsPath(repositoryUri), pathSegment)).toString();
+    }
+
+    protected split(input: string | string[], delimiter: string): string[] {
+        return (Array.isArray(input) ? input : input.split(delimiter)).filter(item => item && item.length > 0);
+    }
+
+}
 
 /**
  * Status parser for converting raw Git `--name-status` output into file change objects.
  */
 @injectable()
-export class NameStatusParser {
+export class NameStatusParser extends OutputParser<GitFileChange> {
 
-    parse(repositoryUri: string, raw: string, delimiter?: string): GitFileChange[];
-    parse(repositoryUri: string, items: string[]): GitFileChange[];
-    parse(repositoryUri: string, input: string | string[], delimiter?: string): GitFileChange[] {
-        const items = Array.isArray(input) ? input : input.split(delimiter === undefined ? '\0' : delimiter);
+    parse(repositoryUri: string, input: string | string[], delimiter: string = OutputParser.LINE_DELIMITER): GitFileChange[] {
+        const items = this.split(input, delimiter);
         const changes: GitFileChange[] = [];
         let index = 0;
         while (index < items.length) {
@@ -66,8 +87,69 @@ export class NameStatusParser {
         return changes;
     }
 
-    protected toUri(repositoryUri: string, pathSegment: string): string {
-        return FileUri.create(Path.join(FileUri.fsPath(repositoryUri), pathSegment)).toString();
+}
+
+/**
+ * Built-in Git placeholders for tuning the `--format` option for `git diff` or `git log`.
+ */
+export enum CommitPlaceholders {
+    HASH = '%H',
+    AUTHOR_EMAIL = '%aE',
+    AUTHOR_NAME = '%aN',
+    AUTHOR_DATE = '%ad',
+    AUTHOR_RELATIVE_DATE = '%ar',
+    SUBJECT = '%s'
+}
+
+/**
+ * Parser for converting raw, Git commit details into `CommitWithChanges` instances.
+ */
+@injectable()
+export class CommitDetailsParser extends OutputParser<CommitWithChanges> {
+
+    static readonly ENTRY_DELIMITER = '\x01';
+    static readonly COMMIT_CHUNK_DELIMITER = '\x02';
+    static readonly DEFAULT_PLACEHOLDERS = [
+        CommitPlaceholders.HASH,
+        CommitPlaceholders.AUTHOR_EMAIL,
+        CommitPlaceholders.AUTHOR_NAME,
+        CommitPlaceholders.AUTHOR_DATE,
+        CommitPlaceholders.AUTHOR_RELATIVE_DATE,
+        CommitPlaceholders.SUBJECT];
+
+    @inject(NameStatusParser)
+    protected readonly nameStatusParser: NameStatusParser;
+
+    parse(repositoryUri: string, input: string | string[], delimiter: string = CommitDetailsParser.COMMIT_CHUNK_DELIMITER): CommitWithChanges[] {
+        const chunks = this.split(input, delimiter);
+        const changes: CommitWithChanges[] = [];
+        for (const chunk of chunks) {
+            const [sha, email, name, timestamp, authorDateRelative, summary, rawChanges] = chunk.trim().split(CommitDetailsParser.ENTRY_DELIMITER);
+            const date = this.toDate(timestamp);
+            const fileChanges = this.nameStatusParser.parse(repositoryUri, (rawChanges || '').trim());
+            changes.push({
+                sha,
+                author: {
+                    date, email, name
+                },
+                authorDateRelative,
+                summary,
+                fileChanges
+            });
+        }
+        return changes;
+    }
+
+    getFormat(...placeholders: CommitPlaceholders[]): string {
+        return '%x02' + placeholders.join('%x01') + '%x01';
+    }
+
+    protected toDate(epochSeconds: string | undefined): Date {
+        const date = new Date(0);
+        if (epochSeconds) {
+            date.setUTCSeconds(Number.parseInt(epochSeconds));
+        }
+        return date;
     }
 
 }
@@ -89,6 +171,9 @@ export class DugiteGit implements Git {
 
     @inject(NameStatusParser)
     protected readonly nameStatusParser: NameStatusParser;
+
+    @inject(CommitDetailsParser)
+    protected readonly commitDetailsParser: CommitDetailsParser;
 
     dispose(): void {
         this.locator.dispose();
@@ -272,19 +357,38 @@ export class DugiteGit implements Git {
     }
 
     async diff(repository: Repository, options?: Git.Options.Diff): Promise<GitFileChange[]> {
-        const args = [
-            'diff',
-            '--name-status',
-            '-C',
-            '-M',
-            '-z'
-        ];
+        const args = ['diff', '--name-status', '-C', '-M', '-z'];
         args.push(this.mapRange((options || {}).range));
         if (options && options.uri) {
-            args.push(...['--', Path.relative(FileUri.fsPath(repository.localUri), FileUri.fsPath(options.uri))]);
+            args.push(...['--', Path.relative(this.getFsPath(repository), this.getFsPath(options.uri))]);
         }
         const result = await this.exec(repository, args);
-        return this.nameStatusParser.parse(repository.localUri, result.stdout.trim().split('\0').filter(item => item && item.length > 0));
+        return this.nameStatusParser.parse(repository.localUri, result.stdout.trim());
+    }
+
+    async log(repository: Repository, options?: Git.Options.Log): Promise<CommitWithChanges[]> {
+        // If remaining commits should be calculated by the backend, then run `git rev-list --count ${fromRevision | HEAD~fromRevision}`.
+        // How to use `mailmap` to map authors: https://www.kernel.org/pub/software/scm/git/docs/git-shortlog.html.
+        const args = ['log'];
+        if (options && options.branch) {
+            args.push(options.branch);
+        }
+        const range = this.mapRange((options || {}).range);
+        args.push(...[range, '-C', '-M', '-m']);
+        const maxCount = options && options.maxCount ? options.maxCount : 0;
+        if (Number.isInteger(maxCount) && maxCount > 0) {
+            args.push(...['-n', `${maxCount}`]);
+        }
+        args.push(...['--name-status', '--date=unix', `--format=${this.commitDetailsParser.getFormat(...CommitDetailsParser.DEFAULT_PLACEHOLDERS)}`, '-z', '--']);
+        if (options && options.uri) {
+            const file = Path.relative(this.getFsPath(repository), this.getFsPath(options.uri));
+            args.push(...[file]);
+        }
+        const result = await this.exec(repository, args);
+        return this.commitDetailsParser.parse(
+            repository.localUri, result.stdout.trim()
+                .split(CommitDetailsParser.COMMIT_CHUNK_DELIMITER)
+                .filter(item => item && item.length > 0));
     }
 
     private getCommitish(options?: Git.Options.Show): string {
@@ -441,6 +545,8 @@ export class DugiteGit implements Git {
                 range = `${toRevision}~${toMap.fromRevision}..${toRevision}`;
             } else if (typeof toMap.fromRevision === 'string') {
                 range = `${toMap.fromRevision}${toMap.toRevision ? '..' + toMap.toRevision : ''}`;
+            } else if (toMap.toRevision) {
+                range = toMap.toRevision;
             }
         }
         return range;

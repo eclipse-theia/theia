@@ -6,10 +6,18 @@
  */
 
 import { VirtualWidget } from "@theia/core/lib/browser";
-import { GitFileStatus, Repository } from '../common';
+import { GitFileStatus, Repository, GitFileChange } from '../common';
 import URI from "@theia/core/lib/common/uri";
+import { GitRepositoryProvider } from "./git-repository-provider";
+import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 
 export class GitBaseWidget extends VirtualWidget {
+
+    constructor(
+        protected readonly repositoryProvider: GitRepositoryProvider,
+        protected readonly labelProvider: LabelProvider) {
+        super();
+    }
 
     protected getStatusCaption(status: GitFileStatus, staged: boolean): string {
         switch (status) {
@@ -23,13 +31,26 @@ export class GitBaseWidget extends VirtualWidget {
         return '';
     }
 
-    /**
-     * Returns the repository relative path of the given uri.
-     * @param repository
-     * @param uri
-     */
     protected getRepositoryRelativePath(repository: Repository, uri: URI) {
         const repositoryUri = new URI(repository.localUri);
         return uri.toString().substr(repositoryUri.toString().length + 1);
+    }
+
+    protected relativePath(uri: URI | string): string {
+        const parsedUri = typeof uri === 'string' ? new URI(uri) : uri;
+        const repo = this.repositoryProvider.selectedRepository;
+        if (repo) {
+            return this.getRepositoryRelativePath(repo, parsedUri);
+        } else {
+            return this.labelProvider.getLongName(parsedUri);
+        }
+    }
+
+    protected computeCaption(fileChange: GitFileChange): string {
+        let result = `${this.relativePath(fileChange.uri)} - ${this.getStatusCaption(fileChange.status, true)}`;
+        if (fileChange.oldUri) {
+            result = `${this.relativePath(fileChange.oldUri)} -> ${result}`;
+        }
+        return result;
     }
 }

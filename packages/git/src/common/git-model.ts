@@ -225,7 +225,7 @@ export interface Commit {
     /**
      * The commit message without the first line and CR.
      */
-    readonly body: string;
+    readonly body?: string;
 
     /**
      * Information about the author of this commit. It includes name, email and date.
@@ -235,8 +235,24 @@ export interface Commit {
     /**
      * The SHAs for the parents of the commit.
      */
-    readonly parentSHAs: string[];
+    readonly parentSHAs?: string[];
 
+}
+
+/**
+ * Representation of a Git commit, plus the changes that were performed in that particular commit.
+ */
+export interface CommitWithChanges extends Commit {
+
+    /**
+     * The date when the commit was authored.
+     */
+    readonly authorDateRelative: string;
+
+    /**
+     * The number of file changes per commit.
+     */
+    readonly fileChanges: GitFileChange[];
 }
 
 /**
@@ -262,7 +278,7 @@ export interface CommitIdentity {
     /**
      * The time-zone offset.
      */
-    readonly tzOffset: number;
+    readonly tzOffset?: number;
 
 }
 
