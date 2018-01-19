@@ -40,7 +40,7 @@ export interface TextEditor extends Disposable, TextEditorSelection {
     readonly onFocusChanged: Event<boolean>;
 
     revealPosition(position: Position): void;
-    revealRange(range: Range): void;
+    revealRange(range: Range, options?: RevealRangeOptions): void;
 
     /**
      * Rerender the editor.
@@ -62,6 +62,10 @@ export interface TextEditorSelection {
     uri: URI
     cursor?: Position
     selection?: Range
+}
+
+export interface RevealRangeOptions {
+    at: 'center' | 'top' | 'centerIfOutsideViewport';
 }
 
 export namespace TextEditorSelection {
