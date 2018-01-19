@@ -10,7 +10,7 @@ import * as https from 'https';
 import { injectable, inject } from 'inversify';
 import URI from "@theia/core/lib/common/uri";
 import { ILogger } from "@theia/core/lib/common";
-import { TerminalProcess, ProcessManager } from "@theia/process/lib/node";
+import { TerminalProcess, ProcessManager, MultiRingBufferReadableStream } from "@theia/process/lib/node";
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { openSocket } from '@theia/core/lib/node';
 
@@ -38,7 +38,7 @@ export class TerminalBackendContribution implements BackendApplicationContributi
             }
 
             /* Note this typecast will be refactored after #841 */
-            const output = termProcess.createOutputStream();
+            let output: MultiRingBufferReadableStream | undefined = termProcess.createOutputStream();
             output.on('data', (data: string) => {
                 try {
                     ws.send(data);
@@ -54,7 +54,11 @@ export class TerminalBackendContribution implements BackendApplicationContributi
             });
             // tslint:disable-next-line:no-any
             ws.on('close', (msg: any) => {
-                output.dispose();
+                if (output !== undefined) {
+                    output.dispose();
+                    // Make sure it's not leaking a ref
+                    output = undefined;
+                }
             });
         });
     }
