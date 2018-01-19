@@ -169,7 +169,11 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-ui-button-color-disabled: var(--theia-accent-color5);
   --theia-ui-button-font-color-disabled: var(--theia-ui-font-color3);
 
-  /* dialogs */
+  /* expand/collapse element */
+  --theia-ui-expand-button-color: black;
+  --theia-ui-expand-button-font-color: var(--theia-ui-font-color1);
+  
+    /* dialogs */
   --theia-ui-dialog-header-color: var(--theia-brand-color0);
   --theia-ui-dialog-header-font-color: var(--theia-ui-font-color1);
   --theia-ui-dialog-color: var(--theia-layout-color1);

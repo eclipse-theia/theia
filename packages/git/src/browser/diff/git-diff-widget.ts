@@ -29,7 +29,7 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
         @inject(GitRepositoryProvider) protected repositoryProvider: GitRepositoryProvider,
         @inject(LabelProvider) protected labelProvider: LabelProvider,
         @inject(OpenerService) protected openerService: OpenerService) {
-        super();
+        super(repositoryProvider, labelProvider);
         this.id = GIT_DIFF;
         this.title.label = "Diff";
 
@@ -69,24 +69,6 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
             this.fileChangeNodes = fileChangeNodes;
             this.update();
         }
-    }
-
-    protected relativePath(uri: URI | string): string {
-        const parsedUri = typeof uri === 'string' ? new URI(uri) : uri;
-        const repo = this.repositoryProvider.selectedRepository;
-        if (repo) {
-            return this.getRepositoryRelativePath(repo, parsedUri);
-        } else {
-            return this.labelProvider.getLongName(parsedUri);
-        }
-    }
-
-    protected computeCaption(fileChange: GitFileChange): string {
-        let result = `${this.relativePath(fileChange.uri)} - ${this.getStatusCaption(fileChange.status, true)}`;
-        if (fileChange.oldUri) {
-            result = `${this.relativePath(fileChange.oldUri)} -> ${result}`;
-        }
-        return result;
     }
 
     storeState(): object {
@@ -143,7 +125,7 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
             const fileChangeElement: h.Child = this.renderGitItem(fileChange);
             files.push(fileChangeElement);
         }
-        return h.div({ className: "commitFileListContainer" }, ...files);
+        return h.div({ className: "listContainer" }, ...files);
     }
 
     protected renderGitItem(change: GitFileChangeNode): h.Child {

@@ -39,7 +39,7 @@ export namespace DiffUris {
 @injectable()
 export class DiffUriLabelProviderContribution implements LabelProviderContribution {
 
-    constructor( @inject(LabelProvider) protected labelProvider: LabelProvider) { }
+    constructor(@inject(LabelProvider) protected labelProvider: LabelProvider) { }
 
     canHandle(element: object): number {
         if (element instanceof URI && DiffUris.isDiffUri(element)) {
@@ -60,12 +60,17 @@ export class DiffUriLabelProviderContribution implements LabelProviderContributi
 
     getName(uri: URI): string {
         const [left, right] = DiffUris.decode(uri);
-        const leftLongName = this.labelProvider.getName(left);
-        const rightLongName = this.labelProvider.getName(right);
-        if (leftLongName === rightLongName) {
-            return leftLongName;
+
+        if (left.path.toString() === right.path.toString() && left.query && right.query) {
+            return `${left.displayName}: ${left.query} <-> ${right.query}`;
+        } else {
+            const leftLongName = this.labelProvider.getName(left);
+            const rightLongName = this.labelProvider.getName(right);
+            if (leftLongName === rightLongName) {
+                return leftLongName;
+            }
+            return `${leftLongName} <-> ${rightLongName}`;
         }
-        return `${leftLongName} <-> ${rightLongName}`;
     }
 
     getIcon(uri: URI): string {
