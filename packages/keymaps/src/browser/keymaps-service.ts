@@ -8,7 +8,7 @@
 import { inject, injectable } from 'inversify';
 import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
 import { Disposable, DisposableCollection, CommandRegistry, KeybindingRegistry, ILogger, ResourceProvider, Resource } from '@theia/core/lib/common';
-import { RawKeybinding, KeybindingScope } from '@theia/core/lib/common';
+import { Keybinding, KeybindingScope } from '@theia/core/lib/common';
 import { UserStorageUri } from '@theia/userstorage/lib/browser/';
 import URI from '@theia/core/lib/common/uri';
 import * as ajv from 'ajv';
@@ -98,18 +98,18 @@ export class KeymapsService implements Disposable, FrontendApplicationContributi
     }
 
     protected setKeymap(keybindings: any) {
-        const rawBindings: RawKeybinding[] = [];
+        const bindings: Keybinding[] = [];
 
         for (const keybinding of keybindings) {
-            rawBindings.push({
+            bindings.push({
                 command: keybinding.command,
                 keybinding: keybinding.keybinding,
                 context: keybinding.context
             });
         }
 
-        if (this.ajv.validate(keymapsSchema, rawBindings)) {
-            this.keyBindingRegistry.setKeymap(KeybindingScope.USER, rawBindings);
+        if (this.ajv.validate(keymapsSchema, bindings)) {
+            this.keyBindingRegistry.setKeymap(KeybindingScope.USER, bindings);
         }
     }
 }

@@ -32,14 +32,14 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
 
     registerKeybindings(registry: KeybindingRegistry): void {
         for (const item of KeybindingsRegistry.getDefaultKeybindings()) {
-            const commandId = this.commands.validate(item.command);
-            if (commandId) {
+            const command = this.commands.validate(item.command);
+            if (command) {
                 const raw = item.keybinding;
                 if (raw.type === monaco.keybindings.KeybindingType.Simple) {
                     const keybinding = raw as monaco.keybindings.SimpleKeybinding;
                     registry.registerKeybinding({
-                        commandId,
-                        keyCode: this.keyCode(keybinding),
+                        command,
+                        keybinding: this.keyCode(keybinding).toString(),
                         accelerator: this.accelerator(keybinding)
                     });
                 } else {

@@ -33,6 +33,7 @@ export class KeyCode {
     public readonly shift: boolean;
     public readonly alt: boolean;
     public readonly meta: boolean;
+    private static keybindings: { [key: string]: KeyCode } = {};
 
     // TODO: support chrods properly. Currently, second sequence is ignored.
     private constructor(public readonly keystroke: string) {
@@ -58,8 +59,12 @@ export class KeyCode {
      * @param keybinding String representation of a keybinding
      */
     public static parse(keybinding: string): KeyCode {
-        const sequence: string[] = [];
 
+        if (KeyCode.keybindings[keybinding]) {
+            return KeyCode.keybindings[keybinding];
+        }
+
+        const sequence: string[] = [];
         const keys = keybinding.split('+');
         /* If duplicates i.e ctrl+ctrl+a or alt+alt+b or b+alt+b it is invalid */
         if (keys.length !== new Set(keys).size) {
@@ -103,7 +108,9 @@ export class KeyCode {
                 throw new Error(`Unrecognized key in ${keybinding}`);
             }
         }
-        return new KeyCode(sequence.join('+'));
+
+        KeyCode.keybindings[keybinding] = new KeyCode(sequence.join('+'));
+        return KeyCode.keybindings[keybinding];
     }
 
     public static createKeyCode(event: KeyboardEvent | Keystroke): KeyCode {
@@ -175,6 +182,49 @@ export class KeyCode {
         return (event instanceof KeyCode ? event : KeyCode.createKeyCode(event)).keystroke === this.keystroke;
     }
 
+    /* Reset the key hashmap, this is for testing purposes.  */
+    public static resetKeyBindings() {
+        KeyCode.keybindings = {};
+    }
+
+    /* Return a keybinding string compatible with the Keybinding.keybinding property.  */
+    toString() {
+        let result = "";
+        let previous = false;
+
+        if (this.meta) {
+            result += SpecialCases.META;
+            previous = true;
+        }
+        if (this.shift) {
+            if (previous) {
+                result += "+";
+            }
+            result += EasyKey.SHIFT.easyString;
+            previous = true;
+        }
+        if (this.alt) {
+            if (previous) {
+                result += "+";
+            }
+            result += EasyKey.ALT.easyString;
+            previous = true;
+        }
+        if (this.ctrl) {
+            if (previous) {
+                result += "+";
+            }
+            result += EasyKey.CONTROL.easyString;
+            previous = true;
+        }
+
+        if (previous) {
+            result += "+";
+        }
+
+        result += KEY_CODE_TO_EASY[this.key.keyCode].easyString;
+        return result;
+    }
 }
 
 export enum Modifier {

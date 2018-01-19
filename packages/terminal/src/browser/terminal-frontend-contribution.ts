@@ -85,9 +85,9 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
            context of the terminal.  */
         const regCtrl = (k: Key) => {
             keybindings.registerKeybindings({
-                commandId: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-                keyCode: KeyCode.createKeyCode({ first: k, modifiers: [Modifier.CTRL] }),
-                contextId: TERMINAL_ACTIVE_CONTEXT,
+                command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
+                keybinding: KeyCode.createKeyCode({ first: k, modifiers: [Modifier.CTRL] }).toString(),
+                context: TERMINAL_ACTIVE_CONTEXT,
             });
         };
 
@@ -95,9 +95,9 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
            context of the terminal.  */
         const regAlt = (k: Key) => {
             keybindings.registerKeybinding({
-                commandId: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-                keyCode: KeyCode.createKeyCode({ first: k, modifiers: [Modifier.M3] }),
-                contextId: TERMINAL_ACTIVE_CONTEXT,
+                command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
+                keybinding: KeyCode.createKeyCode({ first: k, modifiers: [Modifier.M3] }).toString(),
+                context: TERMINAL_ACTIVE_CONTEXT,
             });
         };
 
@@ -156,7 +156,7 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
             keybindings.registerKeybindings({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keybinding: "ctrlcmd+a",
-                contextId: TERMINAL_ACTIVE_CONTEXT
+                context: TERMINAL_ACTIVE_CONTEXT
             });
         }
     }
