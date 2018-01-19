@@ -7,7 +7,6 @@
 
 import { injectable } from "inversify";
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
-import { KeyCode, Key, Modifier } from '@theia/core/lib/common/keys';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 
 @injectable()
@@ -22,9 +21,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
                 rank: 100
             },
             toggleCommandId: 'fileNavigator:toggle',
-            toggleKeybinding: KeyCode.createKeyCode({
-                first: Key.KEY_E, modifiers: [Modifier.M2, Modifier.M1]
-            })
+            toggleKeybinding: 'ctrlcmd+shift+e'
         });
     }
 

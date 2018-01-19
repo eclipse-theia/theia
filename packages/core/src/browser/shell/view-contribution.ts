@@ -9,7 +9,7 @@ import { injectable, inject } from "inversify";
 import {
     MenuModelRegistry, Command, CommandContribution,
     MenuContribution, KeybindingContribution, KeybindingRegistry,
-    KeyCode, CommandRegistry
+    CommandRegistry
 } from '../../common';
 import { WidgetManager } from '../widget-manager';
 import { Widget } from '@phosphor/widgets';
@@ -27,7 +27,7 @@ export interface ViewContributionOptions {
     widgetName: string;
     defaultWidgetOptions: ApplicationShell.WidgetOptions;
     toggleCommandId?: string;
-    toggleKeybinding?: KeyCode;
+    toggleKeybinding?: string;
 }
 
 /**
@@ -103,8 +103,8 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
     registerKeybindings(keybindings: KeybindingRegistry): void {
         if (this.toggleCommand && this.options.toggleKeybinding) {
             keybindings.registerKeybinding({
-                commandId: this.toggleCommand.id,
-                keyCode: this.options.toggleKeybinding
+                command: this.toggleCommand.id,
+                keybinding: this.options.toggleKeybinding
             });
         }
     }

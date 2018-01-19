@@ -9,7 +9,6 @@ import { injectable, inject } from "inversify";
 import { MessageService } from "@theia/core";
 import { FrontendApplication } from '@theia/core/lib/browser';
 import { ExtensionManager } from '../common';
-import { KeyCode, Key, Modifier } from '@theia/core/lib/common/keys';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { ExtensionWidget } from './extension-widget';
 
@@ -30,9 +29,7 @@ export class ExtensionContribution extends AbstractViewContribution<ExtensionWid
                 rank: 300
             },
             toggleCommandId: 'extensionsView:toggle',
-            toggleKeybinding: KeyCode.createKeyCode({
-                first: Key.KEY_X, modifiers: [Modifier.M2, Modifier.M1]
-            })
+            toggleKeybinding: 'ctrlcmd+shift+x'
         });
     }
 

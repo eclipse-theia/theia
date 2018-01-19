@@ -7,7 +7,6 @@
 
 import { injectable } from "inversify";
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-import { KeyCode, Key, Modifier } from '@theia/core/lib/common/keys';
 import { OUTPUT_WIDGET_KIND, OutputWidget } from "./output-widget";
 
 @injectable()
@@ -21,9 +20,7 @@ export class OutputContribution extends AbstractViewContribution<OutputWidget> {
                 area: 'bottom'
             },
             toggleCommandId: 'output:toggle',
-            toggleKeybinding: KeyCode.createKeyCode({
-                first: Key.KEY_U, modifiers: [Modifier.M2, Modifier.M1]
-            })
+            toggleKeybinding: 'ctrlcmd+shift+u'
         });
     }
 

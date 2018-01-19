@@ -55,6 +55,13 @@ export interface RawKeybinding {
     command: string;
     keybinding: string;
     context?: string;
+    accelerator?: Accelerator;
+}
+export namespace RawKeybinding {
+    export function isRawKeybinding(keybinding: RawKeybinding | Keybinding): keybinding is RawKeybinding {
+        return (<RawKeybinding>keybinding).command !== undefined &&
+            (<RawKeybinding>keybinding).keybinding !== undefined;
+    }
 }
 
 export const KeybindingContribution = Symbol("KeybindingContribution");
@@ -144,9 +151,30 @@ export class KeybindingRegistry {
         }
     }
 
-    registerKeybindings(...bindings: Keybinding[]): void {
+    registerKeybindings(...bindings: (RawKeybinding | Keybinding)[]): void {
         for (const binding of bindings) {
             this.registerKeybinding(binding);
+        }
+    }
+
+    protected keybindingFromRaw(binding: RawKeybinding): Keybinding | undefined {
+        if (this.commandRegistry.getCommand(binding.command)) {
+            const code = KeyCode.parse(binding.keybinding);
+            if (code) {
+                let context: KeybindingContext | undefined;
+                if (binding.context) {
+                    context = this.contextRegistry.getContext(binding.context);
+                }
+                return {
+                    commandId: binding.command,
+                    keyCode: code,
+                    contextId: context ? context.id : undefined,
+                    accelerator: binding.accelerator
+                };
+            } else {
+                this.logger.error(`Can't parse keybinding ${JSON.stringify(binding)}`);
+                return undefined;
+            }
         }
     }
 
@@ -155,16 +183,30 @@ export class KeybindingRegistry {
      *
      * @param binding
      */
-    registerKeybinding(binding: Keybinding) {
+    registerKeybinding(inputBinding: Keybinding | RawKeybinding) {
+
+        let binding: Keybinding | undefined;
+        if (RawKeybinding.isRawKeybinding(inputBinding)) {
+            binding = this.keybindingFromRaw(inputBinding);
+        } else {
+            binding = inputBinding;
+        }
+
+        if (binding === undefined) {
+            return;
+        }
+
         const existingBindings = this.getKeybindingsForKeyCode(binding.keyCode);
         if (existingBindings.length > 0) {
-            const collided = existingBindings.filter(b => b.contextId === binding.contextId);
+            const collided = existingBindings.filter(b => binding !== undefined
+                && b.contextId === binding.contextId);
             if (collided.length > 0) {
                 this.logger.warn('Collided keybinding is ignored; ', Keybinding.stringify(binding), ' collided with ', collided.map(b => Keybinding.stringify(b)).join(', '));
                 return;
             }
         }
         this.keymaps[KeybindingScope.DEFAULT].push(binding);
+
     }
 
     /**

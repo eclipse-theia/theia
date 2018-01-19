@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import { EditorManager } from "@theia/editor/lib/browser";
 import {
-    KeybindingContext, Keybinding, KeybindingContribution, KeybindingRegistry, KeyCode, Key, Modifier
+    KeybindingContext, Keybinding, KeybindingContribution, KeybindingRegistry
 } from "@theia/core/lib/common";
 
 @injectable()
@@ -34,9 +34,9 @@ export class CppKeybindingContribution implements KeybindingContribution {
     registerKeybindings(registry: KeybindingRegistry): void {
         [
             {
-                commandId: 'switch_source_header',
-                contextId: this.cppKeybindingContext.id,
-                keyCode: KeyCode.createKeyCode({ first: Key.KEY_O, modifiers: [Modifier.M3] })
+                command: 'switch_source_header',
+                context: this.cppKeybindingContext.id,
+                keybinding: "alt+o"
             }
         ].forEach(binding => {
             registry.registerKeybinding(binding);
