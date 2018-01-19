@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 /* tslint:disable:no-unused-expression */
-import { Container, injectable, ContainerModule } from 'inversify';
+import { Container, injectable, inject, ContainerModule } from 'inversify';
 import { bindContributionProvider } from './contribution-provider';
 import { ILogger } from './logger';
 import { KeybindingRegistry, KeybindingContext, KeybindingContextRegistry, Keybinding, KeybindingContribution, KeybindingScope, RawKeybinding } from './keybinding';
@@ -218,7 +218,7 @@ describe("keys api", () => {
         const keycodeCommand = KeyCode.parse("cmd+b");
         expect(keycodeCommand).is.undefined;
 
-        const keycodeCtrlOrCommand = KeyCode.parse("ControlOrCommand+b");
+        const keycodeCtrlOrCommand = KeyCode.parse("ctrlcmd+b");
         expect(keycodeCtrlOrCommand).is.not.undefined;
         if (keycodeCtrlOrCommand) {
             expect(keycodeCtrlOrCommand.meta).to.be.false;
@@ -252,7 +252,7 @@ describe("keys api", () => {
             expect(keycodeCommand.key).is.equal(Key.KEY_B);
         }
 
-        const keycodeCtrlOrCommand = KeyCode.parse("ControlOrCommand+b");
+        const keycodeCtrlOrCommand = KeyCode.parse("ctrlcmd+b");
         expect(keycodeCtrlOrCommand).is.not.undefined;
         if (keycodeCtrlOrCommand) {
             expect(keycodeCtrlOrCommand.meta).to.be.true;
@@ -274,56 +274,51 @@ const TEST_COMMAND2: Command = {
 @injectable()
 export class TestContribution implements CommandContribution, KeybindingContribution {
 
-    constructor(
-    ) { }
+    constructor( @inject(KeybindingContextRegistry) protected readonly contextRegistry: KeybindingContextRegistry) {
+    }
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(TEST_COMMAND);
         commands.registerCommand(TEST_COMMAND2);
     }
 
-    registerKeybindings(keybindings: KeybindingRegistry): void {
-        const keycode1 = KeyCode.parse('ctrl+a');
-        const keycode2 = KeyCode.parse('ctrl+f1');
-        const keycode3 = KeyCode.parse('ctrl+f2');
-        if (keycode1 && keycode2 && keycode3) {
-            [
-                {
-                    commandId: TEST_COMMAND.id,
-                    context: {
-                        id: 'testContext',
-                        isEnabled(arg?: Keybinding): boolean {
-                            return true;
-                        }
-                    },
-                    keyCode: keycode1
-                },
-                {
-                    commandId: TEST_COMMAND2.id,
-                    context: {
-                        id: 'testContext',
-                        isEnabled(arg?: Keybinding): boolean {
-                            return true;
-                        }
-                    },
-                    keyCode: keycode2
-                },
-                {
-                    commandId: TEST_COMMAND2.id,
-                    context: {
-                        id: 'testContext',
-                        isEnabled(arg?: Keybinding): boolean {
-                            return true;
-                        }
-                    },
-                    keyCode: keycode3
-                },
-            ].forEach(binding => {
-                keybindings.registerKeybinding(binding);
-            });
-        }
-
+    registerContexts() {
+        this.contextRegistry.registerContext(
+            {
+                id: 'testContext',
+                isEnabled(arg?: Keybinding): boolean {
+                    return true;
+                }
+            },
+            {
+                id: 'testContext',
+                isEnabled(arg?: Keybinding): boolean {
+                    return true;
+                }
+            },
+        );
     }
+    registerKeybindings(keybindings: KeybindingRegistry): void {
+        [{
+            command: TEST_COMMAND.id,
+            context: 'testContext',
+            keybinding: 'ctrl+a'
+        },
+        {
+            command: TEST_COMMAND2.id,
+            context: 'testContext',
+            keybinding: 'ctrl+f1'
+        },
+        {
+            command: TEST_COMMAND2.id,
+            context: 'testContext',
+            keybinding: 'ctrl+f2'
+        },
+        ].forEach(binding => {
+            keybindings.registerKeybinding(binding);
+        });
+    }
+
 }
 
 @injectable()

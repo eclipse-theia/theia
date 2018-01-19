@@ -6,7 +6,6 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { KeyCode, Key, Modifier } from '@theia/core/lib/common';
 import { FrontendApplication } from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
@@ -28,9 +27,7 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
                 area: 'bottom'
             },
             toggleCommandId: 'problemsView:toggle',
-            toggleKeybinding: KeyCode.createKeyCode({
-                first: Key.KEY_M, modifiers: [Modifier.M2, Modifier.M1]
-            })
+            toggleKeybinding: 'ctrlcmd+shift+m'
         });
     }
 
@@ -55,5 +52,4 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
             command: this.toggleCommand ? this.toggleCommand.id : undefined
         });
     }
-
 }

@@ -11,7 +11,6 @@ import { StatusBar, StatusBarAlignment } from "@theia/core/lib/browser/status-ba
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_COMMANDS } from './git-command';
 import { DisposableCollection } from "@theia/core";
-import { KeyCode, Key, Modifier } from '@theia/core/lib/common/keys';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { GitWidget } from './git-widget';
 
@@ -35,9 +34,7 @@ export class GitFrontendContribution extends AbstractViewContribution<GitWidget>
                 rank: 200
             },
             toggleCommandId: 'gitView:toggle',
-            toggleKeybinding: KeyCode.createKeyCode({
-                first: Key.KEY_G, modifiers: [Modifier.CTRL, Modifier.SHIFT]
-            })
+            toggleKeybinding: 'ctrlcmd+shift+g'
         });
     }
 

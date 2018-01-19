@@ -8,7 +8,7 @@
 import { inject, injectable } from "inversify";
 import {
     CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, KeybindingContext,
-    Keybinding, KeybindingContextRegistry, KeybindingContribution, KeybindingRegistry, KeyCode, Key, Modifier
+    Keybinding, KeybindingContextRegistry, KeybindingContribution, KeybindingRegistry
 } from '@theia/core/lib/common';
 import { EditorCommands, EditorManager, EDITOR_CONTEXT_MENU } from "@theia/editor/lib/browser";
 import { WorkspaceEdit, Workspace } from "@theia/languages/lib/common";
@@ -108,10 +108,10 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
     registerKeybindings(keybindings: KeybindingRegistry): void {
         this.keybindingContextRegistry.registerContext(this.editorContext);
         keybindings.registerKeybinding({
-            commandId: JAVA_ORGANIZE_IMPORTS.id,
-            contextId: CONTEXT_ID,
+            command: JAVA_ORGANIZE_IMPORTS.id,
+            context: CONTEXT_ID,
             accelerator: ['Accel Shift O'],
-            keyCode: KeyCode.createKeyCode({ first: Key.KEY_O, modifiers: [Modifier.M1, Modifier.M2] })
+            keybinding: 'ctrlcmd+shift+o'
         });
     }
 }

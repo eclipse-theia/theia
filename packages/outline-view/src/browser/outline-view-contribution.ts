@@ -6,7 +6,6 @@
  */
 
 import { injectable } from "inversify";
-import { KeyCode, Key, Modifier } from '@theia/core/lib/common/keys';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { OutlineViewWidget } from './outline-view-widget';
 
@@ -24,10 +23,7 @@ export class OutlineViewContribution extends AbstractViewContribution<OutlineVie
                 rank: 100
             },
             toggleCommandId: 'outlineView:toggle',
-            toggleKeybinding: KeyCode.createKeyCode({
-                first: Key.KEY_O, modifiers: [Modifier.CTRL, Modifier.SHIFT]
-            })
+            toggleKeybinding: 'ctrlcmd+shift+o'
         });
     }
-
 }
