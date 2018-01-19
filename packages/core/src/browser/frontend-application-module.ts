@@ -34,6 +34,7 @@ import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContri
 
 import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
+import "file-icons-js/css/style.css";
 import { ThemingCommandContribution, ThemeService } from './theming';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
