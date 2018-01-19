@@ -172,6 +172,20 @@ export class GitQuickOpenService {
         }
     }
 
+    async chooseTagsAndBranches(execFunc: (branchName: string, currentBranchName: string) => void): Promise<void> {
+        const repository = this.getRepository();
+        if (repository) {
+            const [branches, currentBranch] = await Promise.all([this.getBranches(), this.getCurrentBranch()]);
+            const execute = async (item: GitQuickOpenItem<Branch>) => {
+                execFunc(item.ref.name, currentBranch ? currentBranch.name : '');
+            };
+            const toLabel = (item: GitQuickOpenItem<Branch>) => item.ref.name;
+            const items = branches.map(branch => new GitQuickOpenItem(branch, execute, toLabel));
+            const branchName = currentBranch ? `'${currentBranch.name}' ` : '';
+            this.open(items, `Pick a branch to compare with the currently active ${branchName} branch:`);
+        }
+    }
+
     private open(items: QuickOpenItem | QuickOpenItem[], placeholder: string): void {
         this.quickOpenService.open(this.getModel(Array.isArray(items) ? items : [items]), this.getOptions(placeholder));
     }

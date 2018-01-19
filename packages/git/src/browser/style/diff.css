@@ -1,0 +1,147 @@
+.theia-git {
+    color: var(--theia-ui-font-color1);
+}
+
+.theia-git .commitishBar {
+    padding: 10px 5px;
+}
+
+.theia-git .commitishBar .revision{
+}
+
+.theia-git .git-diff-container {
+    height: 100%;
+}
+
+.theia-git .git-diff-container .commitFileList {
+    height: 98%;
+    overflow-y: auto;
+}
+
+.theia-git .commitListContainer {
+    height: 98%;
+    overflow-y: auto;
+}
+
+.theia-git .commitListContainer .commitList .commitListElement {
+    margin: 3px 0;
+}
+
+.theia-git .commitListElement .containerHead {
+    width: 100%;
+    height: 50px;
+    background: var(--theia-layout-color4);
+    display: flex;
+    align-items: center;
+}
+
+.theia-git .commitListElement .containerHead:hover {
+    cursor: pointer;
+}
+
+.theia-git .commitListElement .containerHead .headContent {
+    display: flex;
+    width: calc(100% - 16px);
+    margin: 0 8px;
+    justify-content: space-between;
+}
+
+.theia-git .commitListElement .containerHead .headContent .headLabelContainer{
+    width: calc(100% - 50px);
+}
+
+.theia-git .commitListElement .headLabelContainer .headLabel{
+}
+
+.theia-git .commitListElement .headLabelContainer .commitTime{
+}
+
+.theia-git .commitListElement .containerHead .headContent .expansionToggle{
+    display: flex;
+    align-items: center;
+}
+
+.theia-git .commitListElement .containerHead .headContent .expansionToggle > .toggle{
+    display: flex;
+    background: black;
+    padding: 5px;
+    border-radius: 7px;
+    margin-left: 5px;
+}
+
+.theia-git .commitListElement .containerHead .headContent .expansionToggle > .toggle > .number{
+}
+
+.theia-git .commitListElement .containerHead .headContent .expansionToggle > .toggle > .icon{
+}
+
+.theia-git .noWrapInfo  {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.theia-git .commitBody {
+    padding: 5px;
+}
+
+.theia-git .gitItem {
+    display: flex;
+    padding: 3px 10px;
+}
+
+.theia-git .gitItem:hover {
+    background: red;
+}
+
+.theia-git .gitItem .file-icon {
+    display: initial;
+}
+
+.theia-git .gitItem .path {
+    color: var(--theia-ui-font-color2);
+    font-size: var(--theia-ui-font-size0);
+    margin-left: 3px;
+}
+
+.theia-git .gitItem .status {
+    padding: 2px 4px;
+    border-radius: 6px;
+    font-size: var(--theia-ui-font-size0);
+    color: var(--theia-ui-icon-font-color);
+}
+
+.theia-git .gitItem .status.new {
+    background-color: var(--theia-disabled-color0);
+}
+
+.theia-git .gitItem .status.new.staged {
+    background-color: var(--theia-success-color0);
+}
+
+.theia-git .gitItem .status.modified {
+    background-color: var(--theia-brand-color0);
+}
+
+.theia-git .gitItem .status.deleted {
+    background-color: var(--theia-warn-color0);
+}
+
+.theia-git .gitItem .status.renamed {
+    background-color: var(--theia-success-color3);
+}
+
+.theia-git .gitItem .status.conflicted {
+    background-color: var(--theia-error-color0);
+}
+
+.theia-git .gitItem .status.copied {
+    background-color: var(--theia-accent-color3);
+}
+
+.commitSelectionItem {
+    
+}
+
+

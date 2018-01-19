@@ -197,6 +197,17 @@ export interface Branch {
 }
 
 /**
+ * Representation of a Git tag.
+ */
+export interface Tag {
+
+    /**
+     * The name of the tag.
+     */
+    readonly name: string;
+}
+
+/**
  * A Git commit.
  */
 export interface Commit {

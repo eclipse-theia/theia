@@ -8,6 +8,7 @@
 import { ChildProcess } from 'child_process';
 import { Disposable } from '@theia/core';
 import { Repository, WorkingDirectoryStatus, Branch, GitResult, GitError, GitFileStatus } from './git-model';
+import URI from '@theia/core/lib/common/uri';
 
 /**
  * The WS endpoint path to the Git service.
@@ -670,6 +671,16 @@ export namespace GitUtils {
         }
 
         return GitFileStatus.Modified;
+    }
+
+    /**
+     * Returns the repository relative path of the given uri.
+     * @param repository
+     * @param uri
+     */
+    export function getRepositoryRelativePath(repository: Repository, uri: URI) {
+        const repositoryUri = new URI(repository.localUri);
+        return uri.toString().substr(repositoryUri.toString().length + 1);
     }
 
 }

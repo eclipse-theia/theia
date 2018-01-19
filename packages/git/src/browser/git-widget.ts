@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus } from '../common';
+import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus, GitUtils } from '../common';
 import { GIT_CONTEXT_MENU } from './git-context-menu';
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
@@ -96,7 +96,7 @@ export class GitWidget extends VirtualWidget {
                 const [icon, label, description] = await Promise.all([
                     this.labelProvider.getIcon(uri),
                     this.labelProvider.getName(uri),
-                    repository ? this.getRepositoryRelativePath(repository, uri) : this.labelProvider.getLongName(uri)
+                    repository ? GitUtils.getRepositoryRelativePath(repository, uri) : this.labelProvider.getLongName(uri)
                 ]);
                 if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
                     if (change.staged) {
@@ -328,11 +328,6 @@ export class GitWidget extends VirtualWidget {
             case GitFileStatus.Conflicted: return 'C';
         }
         return '';
-    }
-
-    protected getRepositoryRelativePath(repository: Repository, uri: URI) {
-        const repositoryUri = new URI(repository.localUri);
-        return uri.toString().substr(repositoryUri.toString().length + 1);
     }
 
     protected renderGitItem(repository: Repository | undefined, change: GitFileChangeNode): h.Child {
