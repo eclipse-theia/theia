@@ -20,6 +20,7 @@ import { Disposable } from '@theia/core/lib/common';
 export class MultiRingBufferReadableStream extends stream.Readable implements Disposable {
 
     protected more = false;
+    protected disposed = false;
 
     constructor(protected readonly ringBuffer: MultiRingBuffer,
         protected readonly reader: number,
@@ -41,6 +42,10 @@ export class MultiRingBufferReadableStream extends stream.Readable implements Di
     }
 
     deq(size: number) {
+        if (this.disposed === true) {
+            return;
+        }
+
         let buffer = undefined;
         do {
             buffer = this.ringBuffer.deq(this.reader, size, this.encoding);
@@ -48,12 +53,14 @@ export class MultiRingBufferReadableStream extends stream.Readable implements Di
                 this.more = this.push(buffer, this.encoding);
             }
         }
-        while (buffer !== undefined && this.more === true);
+        while (buffer !== undefined && this.more === true && this.disposed === false);
     }
 
     dispose() {
         this.ringBuffer.closeStream(this);
         this.ringBuffer.closeReader(this.reader);
+        this.disposed = true;
+        this.removeAllListeners();
     }
 }
 
