@@ -187,44 +187,33 @@ describe('keybindings', () => {
 
 describe("keys api", () => {
     it("should parse a string to a KeyCode correctly", () => {
+
         let keycode = KeyCode.parse("ctrl+b");
-        expect(keycode).is.not.undefined;
-        if (keycode) {
-            expect(keycode.ctrl).to.be.true;
-            expect(keycode.key).is.equal(Key.KEY_B);
-        }
+        expect(keycode.ctrl).to.be.true;
+        expect(keycode.key).is.equal(Key.KEY_B);
+
         // Invalid keystroke string
-        keycode = KeyCode.parse("ctl+b");
-        expect(keycode).is.undefined;
+        expect(() => KeyCode.parse("ctl+b")).to.throw("Unrecognized key in ctl+b");
+
     });
 
     it("should parse a string containing special modifiers to a KeyCode correctly", () => {
         const stub = sinon.stub(os, 'isOSX').value(false);
 
         const keycode = KeyCode.parse("ctrl+b");
-        expect(keycode).is.not.undefined;
-        if (keycode) {
-            expect(keycode.ctrl).to.be.true;
-            expect(keycode.key).is.equal(Key.KEY_B);
-        }
+        expect(keycode.ctrl).to.be.true;
+        expect(keycode.key).is.equal(Key.KEY_B);
 
         const keycodeOption = KeyCode.parse("option+b");
-        expect(keycodeOption).is.not.undefined;
-        if (keycodeOption) {
-            expect(keycodeOption.alt).to.be.true;
-            expect(keycodeOption.key).is.equal(Key.KEY_B);
-        }
+        expect(keycodeOption.alt).to.be.true;
+        expect(keycodeOption.key).is.equal(Key.KEY_B);
 
-        const keycodeCommand = KeyCode.parse("cmd+b");
-        expect(keycodeCommand).is.undefined;
+        expect(() => KeyCode.parse("cmd+b")).to.throw("Can't parse keybinding cmd+b meta is for OSX only");
 
         const keycodeCtrlOrCommand = KeyCode.parse("ctrlcmd+b");
-        expect(keycodeCtrlOrCommand).is.not.undefined;
-        if (keycodeCtrlOrCommand) {
-            expect(keycodeCtrlOrCommand.meta).to.be.false;
-            expect(keycodeCtrlOrCommand.ctrl).to.be.true;
-            expect(keycodeCtrlOrCommand.key).is.equal(Key.KEY_B);
-        }
+        expect(keycodeCtrlOrCommand.meta).to.be.false;
+        expect(keycodeCtrlOrCommand.ctrl).to.be.true;
+        expect(keycodeCtrlOrCommand.key).is.equal(Key.KEY_B);
 
         stub.restore();
     });
@@ -232,33 +221,22 @@ describe("keys api", () => {
     it("should parse a string containing special modifiers to a KeyCode correctly (macOS)", () => {
         stub = sinon.stub(os, 'isOSX').value(true);
         const keycode = KeyCode.parse("ctrl+b");
-        expect(keycode).is.not.undefined;
-        if (keycode) {
-            expect(keycode.ctrl).to.be.true;
-            expect(keycode.key).is.equal(Key.KEY_B);
-        }
+        expect(keycode.ctrl).to.be.true;
+        expect(keycode.key).is.equal(Key.KEY_B);
 
         const keycodeOption = KeyCode.parse("option+b");
-        expect(keycodeOption).is.not.undefined;
-        if (keycodeOption) {
-            expect(keycodeOption.alt).to.be.true;
-            expect(keycodeOption.key).is.equal(Key.KEY_B);
-        }
+        expect(keycodeOption.alt).to.be.true;
+        expect(keycodeOption.key).is.equal(Key.KEY_B);
 
         const keycodeCommand = KeyCode.parse("cmd+b");
-        expect(keycodeCommand).is.not.undefined;
-        if (keycodeCommand) {
-            expect(keycodeCommand.meta).to.be.true;
-            expect(keycodeCommand.key).is.equal(Key.KEY_B);
-        }
+        expect(keycodeCommand.meta).to.be.true;
+        expect(keycodeCommand.key).is.equal(Key.KEY_B);
 
         const keycodeCtrlOrCommand = KeyCode.parse("ctrlcmd+b");
-        expect(keycodeCtrlOrCommand).is.not.undefined;
-        if (keycodeCtrlOrCommand) {
-            expect(keycodeCtrlOrCommand.meta).to.be.true;
-            expect(keycodeCtrlOrCommand.ctrl).to.be.false;
-            expect(keycodeCtrlOrCommand.key).is.equal(Key.KEY_B);
-        }
+        expect(keycodeCtrlOrCommand.meta).to.be.true;
+        expect(keycodeCtrlOrCommand.ctrl).to.be.false;
+        expect(keycodeCtrlOrCommand.key).is.equal(Key.KEY_B);
+
         stub.restore();
     });
 });
