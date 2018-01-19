@@ -26,9 +26,12 @@ export interface PreferenceProperty {
     description: string;
     type?: JsonType | JsonType[];
     minimum?: number;
+    // tslint:disable-next-line:no-any
     default?: any;
     enum?: string[];
     additionalProperties?: object;
+    // tslint:disable-next-line:no-any
+    [name: string]: any;
 }
 
 export type JsonType = 'string' | 'array' | 'number' | 'integer' | 'object' | 'boolean' | 'null';
