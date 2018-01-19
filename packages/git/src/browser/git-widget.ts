@@ -13,13 +13,14 @@ import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { MessageService, ResourceProvider, CommandService, DisposableCollection } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { VirtualRenderer, VirtualWidget, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
+import { VirtualRenderer, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
 import { h } from '@phosphor/virtualdom/lib';
 import { Message } from '@phosphor/messaging';
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
+import { GitBaseWidget } from './git-base-widget';
 
 export interface GitFileChangeNode extends GitFileChange {
     readonly icon: string;
@@ -28,7 +29,7 @@ export interface GitFileChangeNode extends GitFileChange {
 }
 
 @injectable()
-export class GitWidget extends VirtualWidget {
+export class GitWidget extends GitBaseWidget {
 
     protected stagedChanges: GitFileChangeNode[] = [];
     protected unstagedChanges: GitFileChangeNode[] = [];
@@ -274,23 +275,6 @@ export class GitWidget extends VirtualWidget {
         return h.div({ className: 'buttons' }, VirtualRenderer.flatten(buttons));
     }
 
-    protected getStatusChar(status: GitFileStatus, staged: boolean): string {
-        switch (status) {
-            case GitFileStatus.New:
-            case GitFileStatus.Renamed:
-            case GitFileStatus.Copied: return staged ? 'A' : 'U';
-            case GitFileStatus.Modified: return 'M';
-            case GitFileStatus.Deleted: return 'D';
-            case GitFileStatus.Conflicted: return 'C';
-        }
-        return '';
-    }
-
-    protected getRepositoryRelativePath(repository: Repository, uri: URI) {
-        const repositoryUri = new URI(repository.localUri);
-        return uri.toString().substr(repositoryUri.toString().length + 1);
-    }
-
     protected renderGitItem(repository: Repository | undefined, change: GitFileChangeNode): h.Child {
         if (!repository) {
             return '';
@@ -335,7 +319,10 @@ export class GitWidget extends VirtualWidget {
         }, iconSpan, nameSpan, pathSpan);
         const buttonsDiv = this.renderGitItemButtons(repository, change);
         const staged = change.staged ? 'staged ' : '';
-        const statusDiv = h.div({ className: 'status ' + staged + GitFileStatus[change.status].toLowerCase() }, this.getStatusChar(change.status, change.staged || false));
+        const statusDiv = h.div({
+            title: this.getStatusCaption(change.status, change.staged || false),
+            className: 'status ' + staged + GitFileStatus[change.status].toLowerCase()
+        }, this.getStatusCaption(change.status, change.staged || false).charAt(0));
         const itemButtonsAndStatusDiv = h.div({ className: 'itemButtonsContainer' }, buttonsDiv, statusDiv);
         return h.div({ className: 'gitItem noselect' }, nameAndPathDiv, itemButtonsAndStatusDiv);
     }
