@@ -57,13 +57,13 @@ export class KeyCode {
      * Parses a string and returns a KeyCode object.
      * @param keybinding String representation of a keybinding
      */
-    public static parse(keybinding: string): KeyCode | undefined {
+    public static parse(keybinding: string): KeyCode {
         const sequence: string[] = [];
 
         const keys = keybinding.split('+');
         /* If duplicates i.e ctrl+ctrl+a or alt+alt+b or b+alt+b it is invalid */
         if (keys.length !== new Set(keys).size) {
-            return undefined;
+            throw new Error(`Can't parse keybinding ${keybinding} Duplicate modifiers`);
         }
 
         for (let keyString of keys) {
@@ -77,7 +77,7 @@ export class KeyCode {
                 if (isOSX) {
                     sequence.push(`${Modifier.M1}`);
                 } else {
-                    return undefined;
+                    throw new Error(`Can't parse keybinding ${keybinding} meta is for OSX only`);
                 }
                 /* ctrlcmd for M1 keybindings that work on both macOS and other platforms */
             } else if (keyString === SpecialCases.CTRLCMD) {
@@ -100,7 +100,7 @@ export class KeyCode {
                     sequence.unshift(key.code);
                 }
             } else {
-                return undefined;
+                throw new Error(`Unrecognized key in ${keybinding}`);
             }
         }
         return new KeyCode(sequence.join('+'));

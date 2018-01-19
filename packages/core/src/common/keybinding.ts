@@ -157,10 +157,10 @@ export class KeybindingRegistry {
         }
     }
 
-    protected keybindingFromRaw(binding: RawKeybinding): Keybinding | undefined {
+    protected keybindingFromRaw(binding: RawKeybinding): Keybinding {
         if (this.commandRegistry.getCommand(binding.command)) {
-            const code = KeyCode.parse(binding.keybinding);
-            if (code) {
+            try {
+                const code = KeyCode.parse(binding.keybinding);
                 let context: KeybindingContext | undefined;
                 if (binding.context) {
                     context = this.contextRegistry.getContext(binding.context);
@@ -171,11 +171,11 @@ export class KeybindingRegistry {
                     contextId: context ? context.id : undefined,
                     accelerator: binding.accelerator
                 };
-            } else {
+            } catch {
                 this.logger.error(`Can't parse keybinding ${JSON.stringify(binding)}`);
-                return undefined;
             }
         }
+        throw (new Error("No command for that binding"));
     }
 
     /**
@@ -185,21 +185,20 @@ export class KeybindingRegistry {
      */
     registerKeybinding(inputBinding: Keybinding | RawKeybinding) {
 
-        let binding: Keybinding | undefined;
+        let binding: Keybinding;
         if (RawKeybinding.isRawKeybinding(inputBinding)) {
-            binding = this.keybindingFromRaw(inputBinding);
+            try {
+                binding = this.keybindingFromRaw(inputBinding);
+            } catch (error) {
+                return;
+            }
         } else {
             binding = inputBinding;
         }
 
-        if (binding === undefined) {
-            return;
-        }
-
         const existingBindings = this.getKeybindingsForKeyCode(binding.keyCode);
         if (existingBindings.length > 0) {
-            const collided = existingBindings.filter(b => binding !== undefined
-                && b.contextId === binding.contextId);
+            const collided = existingBindings.filter(b => b.contextId === binding.contextId);
             if (collided.length > 0) {
                 this.logger.warn('Collided keybinding is ignored; ', Keybinding.stringify(binding), ' collided with ', collided.map(b => Keybinding.stringify(b)).join(', '));
                 return;
@@ -377,8 +376,9 @@ export class KeybindingRegistry {
         const customBindings: Keybinding[] = [];
         for (const rawKeyBinding of rawKeyBindings) {
             if (this.commandRegistry.getCommand(rawKeyBinding.command)) {
-                const code = KeyCode.parse(rawKeyBinding.keybinding);
-                if (code) {
+                try {
+                    const code = KeyCode.parse(rawKeyBinding.keybinding);
+
                     let context: KeybindingContext | undefined;
                     if (rawKeyBinding.context) {
                         context = this.contextRegistry.getContext(rawKeyBinding.context);
@@ -389,8 +389,8 @@ export class KeybindingRegistry {
                         keyCode: code,
                         contextId: context ? context.id : undefined
                     });
-
-                } else {
+                } catch (error) {
+                    this.logger.warn(`Invalid keybinding, keymap reset`);
                     this.resetKeybindingsForScope(scope);
                     return;
                 }
