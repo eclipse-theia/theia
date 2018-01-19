@@ -322,6 +322,7 @@ export namespace EasyKey {
 
     export const COMMA: EasyKey = { keyCode: 188, easyString: ',' };
     export const PERIOD: EasyKey = { keyCode: 190, easyString: '.' };
+    export const SLASH: EasyKey = { keyCode: 191, easyString: '/' };
     export const SEMICOLON: EasyKey = { keyCode: 186, easyString: ';' };
     export const QUOTE: EasyKey = { keyCode: 222, easyString: '\'' };
     export const BRACKET_LEFT: EasyKey = { keyCode: 219, easyString: '[' };
@@ -330,6 +331,8 @@ export namespace EasyKey {
     export const BACKSLASH: EasyKey = { keyCode: 220, easyString: '\\' };
     export const MINUS: EasyKey = { keyCode: 189, easyString: '-' };
     export const EQUAL: EasyKey = { keyCode: 187, easyString: '=' };
+    export const INTL_RO: EasyKey = { keyCode: 193, easyString: 'intlro' };
+    export const INTL_YEN: EasyKey = { keyCode: 255, easyString: 'intlyen' };
 }
 
 export namespace Key {
