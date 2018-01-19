@@ -17,7 +17,8 @@ import {
     Range,
     TextEditorDocument,
     TextEditor,
-    RevealRangeOptions
+    RevealRangeOptions,
+    RevealPositionOptions
 } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from "./monaco-editor-model";
 
@@ -182,9 +183,19 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         return this.onSelectionChangedEmitter.event;
     }
 
-    revealPosition(raw: Position): void {
+    revealPosition(raw: Position, options: RevealPositionOptions = { vertical: 'center', horizontal: true }): void {
         const position = this.p2m.asPosition(raw);
-        this.editor.revealPositionInCenter(position);
+        switch (options.vertical) {
+            case 'auto':
+                this.editor.revealPosition(position, false, options.horizontal);
+                break;
+            case 'center':
+                this.editor.revealPosition(position, true, options.horizontal);
+                break;
+            case 'centerIfOutsideViewport':
+                this.editor.revealPositionInCenterIfOutsideViewport(position);
+                break;
+        }
     }
 
     revealRange(raw: Range, options: RevealRangeOptions = { at: 'center' }): void {
@@ -199,7 +210,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
             case 'centerIfOutsideViewport':
                 this.editor.revealRangeInCenterIfOutsideViewport(range!);
                 break;
-            default:
+            case 'auto':
                 this.editor.revealRange(range!);
                 break;
         }
