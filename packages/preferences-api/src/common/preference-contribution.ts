@@ -18,9 +18,20 @@ export const PreferenceSchema = Symbol("PreferenceSchema");
 export interface PreferenceSchema {
     [name: string]: Object,
     properties: {
-        [name: string]: object
+        [name: string]: PreferenceProperty
     }
 }
+
+export interface PreferenceProperty {
+    description: string;
+    type?: JsonType | JsonType[];
+    minimum?: number;
+    default?: any;
+    enum?: string[];
+    additionalProperties?: object;
+}
+
+export type JsonType = 'string' | 'array' | 'number' | 'integer' | 'object' | 'boolean' | 'null';
 
 @injectable()
 export class PreferenceSchemaProvider {
