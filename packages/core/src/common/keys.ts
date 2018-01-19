@@ -475,6 +475,6 @@ export namespace Key {
 
     Object.keys(EasyKey).map(prop => Reflect.get(EasyKey, prop)).forEach(easykey => {
         EASY_TO_KEY[easykey.easyString] = KEY_CODE_TO_KEY[easykey.keyCode];
-        KEY_CODE_TO_EASY[easykey.code] = easykey;
+        KEY_CODE_TO_EASY[easykey.keyCode] = easykey;
     });
 })();
