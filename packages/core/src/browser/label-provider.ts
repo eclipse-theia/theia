@@ -11,8 +11,6 @@ import URI from "../common/uri";
 import { ContributionProvider } from '../common/contribution-provider';
 import { Prioritizeable, MaybePromise } from '../common/types';
 
-import "file-icons-js/css/style.css";
-
 export const LabelProviderContribution = Symbol('LabelProviderContribution');
 export interface LabelProviderContribution {
 
@@ -71,7 +69,7 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
     }
 
     getLongName(uri: URI): string {
-        return uri.parent.path.toString();
+        return uri.path.toString();
     }
 }
 
