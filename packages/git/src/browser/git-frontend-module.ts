@@ -8,7 +8,9 @@
 import { Git, GitPath } from '../common/git';
 import { ContainerModule } from 'inversify';
 import { bindGitDiffModule } from './diff/git-diff-frontend-module';
-import { WebSocketConnectionProvider, FrontendApplicationContribution, WidgetFactory, KeybindingContribution } from '@theia/core/lib/browser';
+import { bindGitHistoryModule } from './history/git-history-frontend-module';
+import { WebSocketConnectionProvider, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
+import { KeybindingContribution } from '@theia/core/lib/browser/keybinding';
 import { GitCommandHandlers } from './git-command';
 import { CommandContribution, MenuContribution, ResourceResolver } from "@theia/core/lib/common";
 import { GitWatcher, GitWatcherPath, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common/git-watcher';
@@ -24,6 +26,7 @@ import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
     bindGitDiffModule(bind);
+    bindGitHistoryModule(bind);
     bind(GitWatcherServerProxy).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitWatcherPath)).inSingletonScope();
     bind(GitWatcherServer).to(ReconnectingGitWatcherServer).inSingletonScope();
     bind(GitWatcher).toSelf().inSingletonScope();

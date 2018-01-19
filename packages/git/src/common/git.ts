@@ -7,7 +7,7 @@
 
 import { ChildProcess } from 'child_process';
 import { Disposable } from '@theia/core';
-import { Repository, WorkingDirectoryStatus, Branch, GitResult, GitError, GitFileStatus, GitFileChange } from './git-model';
+import { Repository, WorkingDirectoryStatus, Branch, GitResult, GitError, GitFileStatus, GitFileChange, CommitWithChanges } from './git-model';
 
 /**
  * The WS endpoint path to the Git service.
@@ -439,6 +439,29 @@ export namespace Git {
 
         }
 
+        /**
+         * Optional configuration for the `git log` command.
+         */
+        export interface Log extends Diff {
+
+            /**
+             * The name of the branch to run the `git log` command. If not specified, then the currently active branch will be used.
+             */
+            readonly branch?: string;
+
+            /**
+             * Limits the number of commits. Also known as `-n` or `--number. If not specified, or not a positive integer, then will be ignored, and the returning list
+             * of commits will not be limited.
+             */
+            readonly maxCount?: number;
+
+            /**
+             * Decides whether the commit hash should be the abbreviated version.
+             */
+            readonly shortSha?: boolean;
+
+        }
+
     }
 
 }
@@ -607,6 +630,14 @@ export interface Git extends Disposable {
      * @param options optional configuration for further refining the `git diff` command execution.
      */
     diff(repository: Repository, options?: Git.Options.Diff): Promise<GitFileChange[]>;
+
+    /**
+     * Returns a list with commits and their respective file changes.
+     *
+     * @param repository the repository where the log has to be calculated.
+     * @param options optional configuration for further refining the `git log` command execution.
+     */
+    log(repository: Repository, options?: Git.Options.Log): Promise<CommitWithChanges[]>
 
 }
 

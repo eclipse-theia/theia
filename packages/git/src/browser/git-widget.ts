@@ -28,6 +28,14 @@ export interface GitFileChangeNode extends GitFileChange {
     readonly description: string;
     readonly caption?: string;
     readonly extraIconClassName?: string;
+    readonly commitSha?: string;
+    selected?: boolean;
+}
+
+export namespace GitFileChangeNode {
+    export function is(node: any): node is GitFileChangeNode {
+        return 'uri' in node && 'status' in node && 'description' in node && 'label' in node && 'icon' in node;
+    }
 }
 
 @injectable()
@@ -53,7 +61,7 @@ export class GitWidget extends GitBaseWidget {
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
         @inject(CommandService) protected readonly commandService: CommandService,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService) {
-        super();
+        super(repositoryProvider, labelProvider);
         this.id = 'theia-gitContainer';
         this.title.label = 'Git';
 
@@ -386,5 +394,4 @@ export class GitWidget extends GitBaseWidget {
         const message = error instanceof Error ? error.message : error;
         this.messageService.error(message);
     }
-
 }
