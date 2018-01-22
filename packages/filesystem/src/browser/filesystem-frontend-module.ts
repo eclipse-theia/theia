@@ -8,12 +8,15 @@
 import { ContainerModule } from 'inversify';
 import { ResourceResolver } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
-import { FileSystem, FileSystemWatcher, FileResourceResolver, fileSystemPath, bindFileSystemPreferences } from "../common";
+import { FileSystem, fileSystemPath } from "../common";
 import {
     fileSystemWatcherPath, FileSystemWatcherServer,
     FileSystemWatcherServerProxy, ReconnectingFileSystemWatcherServer
 } from '../common/filesystem-watcher-protocol';
+import { FileResourceResolver } from './file-resource';
 import { FileSystemListener } from './filesystem-listener';
+import { bindFileSystemPreferences } from './filesystem-preferences';
+import { FileSystemWatcher } from './filesystem-watcher';
 
 import "../../src/browser/style/index.css";
 

@@ -13,7 +13,10 @@ import { UserStorageResource } from './user-storage-resource';
 import { Emitter, } from '@theia/core/lib/common';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { FileSystemWatcher, FileSystem, FileSystemPreferences, FileStat, FileChange, FileChangeType, createFileSystemPreferences } from '@theia/filesystem/lib/common/';
+import { FileSystem, FileStat } from '@theia/filesystem/lib/common/';
+import { FileSystemPreferences, createFileSystemPreferences } from '@theia/filesystem/lib/browser/filesystem-preferences';
+import { FileSystemWatcher, FileChange, FileChangeType } from '@theia/filesystem/lib/browser/filesystem-watcher';
+
 import { PreferenceService, PreferenceServer } from '@theia/preferences-api/lib/common';
 import { MockPreferenceServer } from '@theia/preferences-api/lib/common/test';
 import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';

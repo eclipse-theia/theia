@@ -9,15 +9,11 @@ import * as os from 'os';
 import * as temp from 'temp';
 import * as chai from 'chai';
 import * as fs from 'fs-extra';
-import * as assert from 'assert';
 import * as chaiAsPromised from 'chai-as-promised';
 import URI from "@theia/core/lib/common/uri";
 import { FileUri } from "@theia/core/lib/node";
-import { PreferenceService, PreferenceServer, PreferenceClient } from "@theia/preferences-api";
 import { FileSystem } from "../common/filesystem";
-import { FileSystemWatcher, createFileSystemPreferences } from '../common';
 import { FileSystemNode } from "./node-filesystem";
-import { NsfwFileSystemWatcherServer } from './nsfw-watcher/nsfw-filesystem-watcher';
 
 // tslint:disable:no-unused-expression
 
@@ -28,7 +24,6 @@ describe("NodeFileSystem", function () {
 
     let root: URI;
     let fileSystem: FileSystem;
-    let watcher: FileSystemWatcher;
 
     this.timeout(10000);
 
@@ -42,12 +37,10 @@ describe("NodeFileSystem", function () {
     beforeEach(() => {
         root = FileUri.create(fs.realpathSync(temp.mkdirSync('node-fs-root')));
         fileSystem = createFileSystem();
-        watcher = createFileSystemWatcher();
     });
 
     afterEach(async () => {
         track.cleanupSync();
-        watcher.dispose();
     });
 
     describe("01 #getFileStat", () => {
@@ -716,37 +709,6 @@ describe("NodeFileSystem", function () {
 
     });
 
-    describe("#13 watchFileChanges", () => {
-
-        it("Should receive file changes events from in the workspace by default.", async function () {
-            const expectedUris = [
-                root.resolve("foo").toString(),
-                root.withPath(root.path.join('foo', 'bar')).toString(),
-                root.withPath(root.path.join('foo', 'bar', 'baz.txt')).toString()
-            ];
-            const actualUris = new Set<string>();
-            watcher.onFilesChanged(changes =>
-                changes.forEach(c => actualUris.add(c.uri.toString()))
-            );
-            await watcher.watchFileChanges(root);
-
-            fs.mkdirSync(FileUri.fsPath(root.resolve("foo")));
-            expect(fs.statSync(FileUri.fsPath(root.resolve("foo"))).isDirectory()).to.be.true;
-            await sleep(2000);
-
-            fs.mkdirSync(FileUri.fsPath(root.resolve("foo").resolve("bar")));
-            expect(fs.statSync(FileUri.fsPath(root.resolve("foo").resolve("bar"))).isDirectory()).to.be.true;
-            await sleep(2000);
-
-            fs.writeFileSync(FileUri.fsPath(root.resolve("foo").resolve("bar").resolve("baz.txt")), "baz");
-            expect(fs.readFileSync(FileUri.fsPath(root.resolve("foo").resolve("bar").resolve("baz.txt")), "utf8")).to.be.equal("baz");
-            await sleep(2000);
-
-            assert.deepEqual(expectedUris, [...actualUris]);
-        });
-
-    });
-
     describe("#14 roots", async () => {
 
         it("should not throw error", async () => {
@@ -769,15 +731,6 @@ describe("NodeFileSystem", function () {
         return new FileSystemNode();
     }
 
-    function createFileSystemWatcher(): FileSystemWatcher {
-        const preferences = new PreferenceService(new PreferenceServerStub());
-        const fileSystemPreferences = createFileSystemPreferences(preferences);
-        const server = new NsfwFileSystemWatcherServer({
-            verbose: true
-        });
-        return new FileSystemWatcher(server, fileSystemPreferences);
-    }
-
     function sleep(time: number) {
         return new Promise(resolve => setTimeout(resolve, time));
     }
@@ -787,9 +740,3 @@ describe("NodeFileSystem", function () {
 process.on("unhandledRejection", (reason: any) => {
     console.error("Unhandled promise rejection: " + reason);
 });
-
-class PreferenceServerStub implements PreferenceServer {
-    constructor() { }
-    setClient(client: PreferenceClient | undefined): void { }
-    dispose(): void { }
-}

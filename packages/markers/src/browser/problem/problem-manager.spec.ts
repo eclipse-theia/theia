@@ -12,7 +12,7 @@ import URI from "@theia/core/lib/common/uri";
 import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { FileSystemWatcher } from '@theia/filesystem/lib/common';
+import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 
 const expect = chai.expect;
 let manager: ProblemManager;

@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import { Resource, ResourceResolver, MaybePromise, Emitter, Event, DisposableCollection } from "@theia/core";
 import URI from "@theia/core/lib/common/uri";
-import { FileSystem, FileStat } from "./filesystem";
+import { FileSystem, FileStat } from "../common/filesystem";
 import { FileSystemWatcher } from "./filesystem-watcher";
 
 export class FileResource implements Resource {

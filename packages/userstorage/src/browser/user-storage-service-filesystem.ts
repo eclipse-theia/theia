@@ -8,8 +8,8 @@
 import { DisposableCollection, ILogger, Emitter, Event } from '@theia/core/lib/common';
 import { UserStorageChangeEvent, UserStorageService } from './user-storage-service';
 import { injectable, inject } from 'inversify';
-import { FileSystem, FileChange } from '@theia/filesystem/lib/common';
-import { FileSystemWatcher } from "@theia/filesystem/lib/common";
+import { FileChange, FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
+import { FileSystem } from "@theia/filesystem/lib/common";
 import URI from '@theia/core/lib/common/uri';
 import { UserStorageUri } from './user-storage-uri';
 
