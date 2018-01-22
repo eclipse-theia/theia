@@ -28,6 +28,14 @@ export const FILE_OPEN_PATH = (path: string): Command => <Command>{
     id: `file:openPath`
 };
 
+export function editorContainsCppFiles(editorManager: EditorManager | undefined): boolean {
+    if (editorManager && editorManager.activeEditor) {
+        const uri = editorManager.activeEditor.editor.document.uri;
+        return HEADER_AND_SOURCE_FILE_EXTENSIONS.some(value => uri.endsWith("." + value));
+    }
+    return false;
+}
+
 @injectable()
 export class CppCommandContribution implements CommandContribution {
 
@@ -41,18 +49,9 @@ export class CppCommandContribution implements CommandContribution {
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(SWITCH_SOURCE_HEADER, {
-            isEnabled: () => {
-                if (this.editorService && !!this.editorService.activeEditor) {
-                    const uri = this.editorService.activeEditor.editor.document.uri;
-                    return HEADER_AND_SOURCE_FILE_EXTENSIONS.some(value => uri.endsWith("." + value));
-                }
-                return false;
-            },
-            execute: () => {
-                this.switchSourceHeader();
-            }
+            isEnabled: () => editorContainsCppFiles(this.editorService),
+            execute: () => this.switchSourceHeader()
         });
-
     }
 
     protected switchSourceHeader(): void {

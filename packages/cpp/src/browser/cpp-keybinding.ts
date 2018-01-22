@@ -10,7 +10,7 @@ import { EditorManager } from "@theia/editor/lib/browser";
 import {
     KeybindingContext, Keybinding, KeybindingContribution, KeybindingRegistry
 } from "@theia/core/lib/common";
-import { HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
+import { editorContainsCppFiles } from "./cpp-commands";
 
 @injectable()
 export class CppKeybindingContext implements KeybindingContext {
@@ -18,14 +18,9 @@ export class CppKeybindingContext implements KeybindingContext {
 
     id = 'cpp.keybinding.context';
 
-    isEnabled(arg?: Keybinding) {
-        if (this.editorService && !!this.editorService.activeEditor) {
-            const uri = this.editorService.activeEditor.editor.document.uri;
-            return HEADER_AND_SOURCE_FILE_EXTENSIONS.some(value => uri.endsWith("." + value));
-        }
-        return false;
+    isEnabled(arg: Keybinding): boolean {
+        return editorContainsCppFiles(this.editorService);
     }
-
 }
 
 @injectable()
