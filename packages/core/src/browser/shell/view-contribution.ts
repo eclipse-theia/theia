@@ -20,6 +20,7 @@ import { ApplicationShell } from './application-shell';
 export interface OpenViewArguments extends ApplicationShell.WidgetOptions {
     toggle?: boolean
     activate?: boolean;
+    reveal?: boolean;
 }
 
 export interface ViewContributionOptions {
@@ -72,6 +73,8 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
         }
         if (widget.isAttached && args.activate) {
             this.shell.activateWidget(widget.id);
+        } else if (widget.isAttached && args.reveal) {
+            this.shell.revealWidget(widget.id);
         }
         return widget;
     }
