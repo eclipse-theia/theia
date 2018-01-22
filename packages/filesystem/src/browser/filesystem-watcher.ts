@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { DidFilesChangedParams, FileChangeType, FileSystemWatcherServer, WatchOptions } from './filesystem-watcher-protocol';
+import { DidFilesChangedParams, FileChangeType, FileSystemWatcherServer, WatchOptions } from '../common/filesystem-watcher-protocol';
 import { FileSystemPreferences } from "./filesystem-preferences";
 
 export {

@@ -10,7 +10,7 @@ import { MarkerManager } from '../marker-manager';
 import { PROBLEM_KIND } from '../../common/problem-marker';
 import { Marker } from '../../common/marker';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
-import { FileSystemWatcher } from '@theia/filesystem/lib/common';
+import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import URI from '@theia/core/lib/common/uri';
 import { Diagnostic } from "vscode-languageserver-types";
 
@@ -35,13 +35,13 @@ export class ProblemManager extends MarkerManager<Diagnostic> {
     getProblemStat(): ProblemStat {
         const allMarkers: Marker<Diagnostic>[] = [];
         for (const uri of this.getUris()) {
-            allMarkers.push( ...this.findMarkers({uri: new URI(uri)}));
+            allMarkers.push(...this.findMarkers({ uri: new URI(uri) }));
         }
 
-        const errors = allMarkers.filter( m => m.data.severity === 1).length;
-        const warnings = allMarkers.filter( m => m.data.severity === 2 ).length;
+        const errors = allMarkers.filter(m => m.data.severity === 1).length;
+        const warnings = allMarkers.filter(m => m.data.severity === 2).length;
 
-        return { errors, warnings};
+        return { errors, warnings };
     }
 
 }

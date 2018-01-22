@@ -7,7 +7,8 @@
 
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { FileSystem, FileStat, FileSystemWatcher } from '@theia/filesystem/lib/common';
+import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
+import { FileSystemWatcher } from '@theia/filesystem/lib/browser';
 import { WorkspaceServer } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';

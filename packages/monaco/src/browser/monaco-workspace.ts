@@ -10,7 +10,8 @@ import {
     MonacoWorkspace as BaseMonacoWorkspace, ProtocolToMonacoConverter, MonacoToProtocolConverter, testGlob
 } from "monaco-languageclient";
 import { DisposableCollection } from "@theia/core/lib/common";
-import { FileChangeType, FileSystem, FileSystemWatcher } from '@theia/filesystem/lib/common';
+import { FileSystem, } from '@theia/filesystem/lib/common';
+import { FileChangeType, FileSystemWatcher } from '@theia/filesystem/lib/browser';
 import { WorkspaceService } from "@theia/workspace/lib/browser";
 import { EditorManager } from "@theia/editor/lib/browser";
 import * as lang from "@theia/languages/lib/common";
