@@ -319,7 +319,7 @@ export class ApplicationShell extends Widget {
 
     /**
      * The current widget in the application shell. The current widget is the last widget that
-     * was active and not yet closed.
+     * was active and not yet closed. See the remarks to `activeWidget` on what _active_ means.
      */
     get currentWidget(): Widget | undefined {
         return this.tracker.currentWidget || undefined;
@@ -328,6 +328,10 @@ export class ApplicationShell extends Widget {
     /**
      * The active widget in the application shell. The active widget is the one that has focus
      * (either the widget itself or any of its contents).
+     *
+     * _Note:_ Focus is taken by a widget through the `onActivateRequest` method. It is up to the
+     * widget implementation which DOM element will get the focus. The default implementation
+     * does not take any focus; in that case the widget is never returned by this property.
      */
     get activeWidget(): Widget | undefined {
         return this.tracker.activeWidget || undefined;
@@ -368,7 +372,12 @@ export class ApplicationShell extends Widget {
     }
 
     /**
-     * Activate a widget in the application shell.
+     * Activate a widget in the application shell. This makes the widget visible and usually
+     * also assigns focus to it.
+     *
+     * _Note:_ Focus is taken by a widget through the `onActivateRequest` method. It is up to the
+     * widget implementation which DOM element will get the focus. The default implementation
+     * does not take any focus.
      *
      * @returns the activated widget if it was found
      */
@@ -387,6 +396,35 @@ export class ApplicationShell extends Widget {
             return widget;
         }
         widget = this.bottomPanelHandler.activate(id);
+        if (widget) {
+            return widget;
+        }
+    }
+
+    /**
+     * Reveal a widget in the application shell. This makes the widget visible,
+     * but does not activate it.
+     *
+     * @returns the revealed widget if it was found
+     */
+    revealWidget(id: string): Widget | undefined {
+        let widget = find(this.mainPanel.widgets(), w => w.id === id);
+        if (widget) {
+            const tabBar = this.getTabBarFor(widget);
+            if (tabBar) {
+                tabBar.currentTitle = widget.title;
+            }
+            return widget;
+        }
+        widget = this.leftPanelHandler.expand(id);
+        if (widget) {
+            return widget;
+        }
+        widget = this.rightPanelHandler.expand(id);
+        if (widget) {
+            return widget;
+        }
+        widget = this.bottomPanelHandler.expand(id);
         if (widget) {
             return widget;
         }
