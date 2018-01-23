@@ -11,7 +11,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 .markdown-preview {
-	font-family: "Segoe WPC", "Segoe UI", "SFUIText-Light", "HelveticaNeue-Light", sans-serif, "Droid Sans Fallback";
+	font-family: var(--theia-ui-font-family);
 	font-size: 14px;
 	padding: 0 26px;
 	line-height: 22px;
@@ -41,7 +41,7 @@
 }
 
 .markdown-preview .line:hover:before {
-	border-left: 3px solid rgba(100, 100, 100, 0.40);
+	border-left: 3px solid var(--theia-border-color3);
 }
 
 .markdown-preview .line .line:hover:before {
@@ -54,8 +54,13 @@
 }
 
 .markdown-preview a {
-	color: #4080D0;
+	color: var(--theia-accent-color1);
 	text-decoration: none;
+}
+
+.markdown-preview a:hover {
+	color: var(--theia-accent-color1);
+	text-decoration: underline;
 }
 
 .markdown-preview a:focus,
@@ -93,11 +98,6 @@
 	line-height: auto;
 }
 
-.markdown-preview a:hover {
-	color: #4080D0;
-	text-decoration: underline;
-}
-
 .markdown-preview table {
 	border-collapse: collapse;
 }
@@ -105,16 +105,17 @@
 .markdown-preview table > thead > tr > th {
 	text-align: left;
 	border-bottom: 1px solid;
+	border-color: var(--theia-content-font-color3);
 }
 
 .markdown-preview table > thead > tr > th,
 .markdown-preview table > thead > tr > td,
-.markdown-preview table > t.markdown-preview > tr > th,
-.markdown-preview table > t.markdown-preview > tr > td {
+.markdown-preview table > tbody > tr > th,
+.markdown-preview table > tbody > tr > td {
 	padding: 5px 10px;
 }
 
-.markdown-preview table > t.markdown-preview > tr + tr > td {
+.markdown-preview table > tbody > tr + tr > td {
 	border-top: 1px solid;
 }
 
@@ -122,21 +123,19 @@
 	margin: 0 7px 0 5px;
 	padding: 0 16px 0 10px;
 	border-left: 5px solid;
+	background: var(--theia-accent-color5);
+	border-color: var(--theia-brand-color2);
 }
 
 .markdown-preview code {
-	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
-	font-size: 14px;
-	line-height: 19px;
+	font-family: var(--theia-code-font-family);
+	font-size: var(--theia-code-font-size);
+	line-height: var(--theia-code-line-height);
+	color: var(--md-orange-800);
 }
 
 .markdown-preview.wordWrap pre {
 	white-space: pre-wrap;
-}
-
-.markdown-preview.mac code {
-	font-size: 12px;
-	line-height: 18px;
 }
 
 .markdown-preview pre:not(.hljs),
@@ -146,58 +145,18 @@
 	overflow: auto;
 }
 
-/** Theming */
-
-.vs .markdown-preview,
-.vs .markdown-preview pre code {
-	color: rgb(30, 30, 30);
+.markdown-preview,
+.markdown-preview pre code {
+	color: var(--theia-content-font-color0);
 }
 
-.vs-dark .markdown-preview,
-.vs-dark .markdown-preview pre code {
-	color: #DDD;
+.markdown-preview pre:not(.hljs),
+.markdown-preview code > div {
+	background-color: var(--theia-accent-color5);
 }
 
-.vs .markdown-preview code {
-	color: #A31515;
-}
-
-.vs-dark .markdown-preview code {
-	color: #D7BA7D;
-}
-
-.vs .markdown-preview pre:not(.hljs),
-.vs .markdown-preview code > div {
-	background-color: rgba(220, 220, 220, 0.4);
-}
-
-.vs-dark .markdown-preview pre:not(.hljs),
-.vs-dark .markdown-preview code > div {
-	background-color: rgba(10, 10, 10, 0.4);
-}
-
-.vs .markdown-preview table > thead > tr > th {
-	border-color: rgba(0, 0, 0, 0.69);
-}
-
-.vs-dark .markdown-preview table > thead > tr > th {
-	border-color: rgba(255, 255, 255, 0.69);
-}
-
-.vs .markdown-preview h1,
-.vs .markdown-preview hr,
-.vs .markdown-preview table > t.markdown-preview > tr + tr > td {
-	border-color: rgba(0, 0, 0, 0.18);
-}
-
-.vs-dark .markdown-preview h1,
-.vs-dark .markdown-preview hr,
-.vs-dark .markdown-preview table > t.markdown-preview > tr + tr > td {
-	border-color: rgba(255, 255, 255, 0.18);
-}
-
-.vs .markdown-preview blockquote,
-.vs-dark .markdown-preview blockquote {
-	background: rgba(127, 127, 127, 0.1);
-	border-color: rgba(0, 122, 204, 0.5);
+.markdown-preview h1,
+.markdown-preview hr,
+.markdown-preview table > tbody > tr + tr > td {
+	border-color: var(--theia-content-font-color3);
 }
