@@ -2291,9 +2291,9 @@ electron-window@^0.8.0:
   dependencies:
     is-electron-renderer "^2.0.0"
 
-electron@1.7.6:
-  version "1.7.6"
-  resolved "https://registry.yarnpkg.com/electron/-/electron-1.7.6.tgz#fb69ea31bd03df0eff247f26f0b538bd29b6ee72"
+electron@1.7.11:
+  version "1.7.11"
+  resolved "https://registry.yarnpkg.com/electron/-/electron-1.7.11.tgz#993b6aa79e0e79a7cfcc369f4c813fbd9a0b08d9"
   dependencies:
     "@types/node" "^7.0.18"
     electron-download "^3.0.1"
