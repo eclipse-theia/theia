@@ -31,6 +31,10 @@ export namespace GIT_COMMANDS {
         id: 'git.checkout',
         label: 'Git Checkout'
     };
+    export const CHANGE_REPOSITORY = {
+        id: 'git.change.repository',
+        label: 'Git Change Repository'
+    };
 }
 
 @injectable()
@@ -71,6 +75,12 @@ export class GitCommandHandlers implements CommandContribution {
         registry.registerHandler(GIT_COMMANDS.CHECKOUT.id, {
             execute: () => this.quickOpenService.checkout(),
             isEnabled: () => this.repositorySelected
+        });
+
+        registry.registerCommand(GIT_COMMANDS.CHANGE_REPOSITORY);
+        registry.registerHandler(GIT_COMMANDS.CHANGE_REPOSITORY.id, {
+            execute: () => this.quickOpenService.changeRepository(),
+            isEnabled: () => this.repositoryProvider.allRepositories.length > 1
         });
 
     }
