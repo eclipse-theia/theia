@@ -7,7 +7,7 @@
 
 #theia-gitContainer {
     color: var(--theia-ui-font-color1);
-    padding: 10px;
+    padding: 5px;
     box-sizing: border-box;
     background: var(--theia-layout-color3);
 }
@@ -163,4 +163,22 @@
 
 #theia-gitContainer .warn {
     background-color: var(--theia-error-color2) !important;
+}
+
+#theia-gitContainer .commit-button {
+    border: 1px solid var(--theia-border-color1);
+    color: var(--theia-ui-font-color1);
+    font-size: var(--theia-ui-font-size1);
+    border-radius: 0;
+    background-color: var(--theia-accent-color3);
+    outline: none;
+    cursor: pointer;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+#theia-gitContainer .placeholder {
+    width: 100%;
 }

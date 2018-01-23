@@ -11,6 +11,8 @@ import { QuickOpenService, QuickOpenOptions } from '@theia/core/lib/browser/quic
 import { Git, Repository, Branch, BranchType } from '../common';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import URI from '@theia/core/lib/common/uri';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 
 /**
  * Service delegating into the `Quick Open Service`, so that the Git commands can be further refined.
@@ -169,6 +171,20 @@ export class GitQuickOpenService {
             };
             items.unshift(new CreateNewBranchOpenItem('Create new branch...', createBranchItem, (mode: QuickOpenMode) => mode === QuickOpenMode.OPEN, () => false));
             this.open(items, 'Select a ref to checkout or create a new local branch:');
+        }
+    }
+
+    async changeRepository(): Promise<void> {
+        const repositories = this.repositoryProvider.allRepositories;
+        if (repositories.length > 1) {
+            const items = repositories.map(repository => {
+                const uri = new URI(repository.localUri);
+                const execute = () => this.repositoryProvider.selectedRepository = repository;
+                const toLabel = () => uri.path.name;
+                const toDescription = () => FileUri.fsPath(uri);
+                return new GitQuickOpenItem<Repository>(repository, execute, toLabel, toDescription);
+            });
+            this.open(items, 'Select a local Git repository to work with:');
         }
     }
 
