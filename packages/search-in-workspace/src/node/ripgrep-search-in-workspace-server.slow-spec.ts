@@ -162,7 +162,9 @@ function compareSearchResults(expected: SearchInWorkspaceResult[], actual: Searc
     }
 }
 
-describe('ripgrep-search-in-workspace-server', () => {
+describe('ripgrep-search-in-workspace-server', function () {
+    this.timeout(10000);
+
     // Try some simple patterns with different case.
     it('returns 7 results when searching for "carrot"', function (done) {
         const pattern = 'carrot';
