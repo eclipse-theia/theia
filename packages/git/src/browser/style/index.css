@@ -142,6 +142,7 @@
     border-color: var(--theia-border-color1);
     background: var(--theia-layout-color0);
     color: var(--theia-ui-font-color1);
+    width: 100%;
 }
 
 #theia-gitContainer #repositoryListContainer {
