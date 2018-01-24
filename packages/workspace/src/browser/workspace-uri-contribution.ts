@@ -78,9 +78,11 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
      */
     getLongName(element: URI | FileStat): string {
         const uri = this.getUri(element);
-        if (!this.wsRoot) {
+        const uriStr = uri.toString();
+        if (!this.wsRoot || !uriStr.startsWith(this.wsRoot)) {
             return super.getLongName(uri);
         }
+
         const short = uri.toString().substr(this.wsRoot.length);
         if (short[0] === '/') {
             return short.substr(1);
