@@ -63,6 +63,17 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
         });
         monaco.editor.onDidCreateModel(model => {
             this.textModelService.createModelReference(model.uri).then(reference => {
+                reference.object.onDirtyChanged(() => {
+                    if (reference.object.dirty) {
+                        // create a new reference to make sure the model is not disposed before it is
+                        // acquired by the editor, thus losing the changes that made it dirty.
+                        this.textModelService.createModelReference(model.uri).then(ref => {
+                            this.editorManager.open(new URI(model.uri.toString()), {
+                                revealIfVisible: false
+                            }).then(editor => ref.dispose());
+                        });
+                    }
+                });
                 reference.object.onDidSaveModel(model =>
                     this.onDidSaveModel(model)
                 );
