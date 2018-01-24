@@ -31,6 +31,48 @@ import { GitRepositoryManager } from './git-repository-manager';
 import { GitLocator } from './git-locator/git-locator-protocol';
 
 /**
+ * Status parser for converting raw Git `--name-status` output into file change objects.
+ */
+@injectable()
+export class NameStatusParser {
+
+    parse(repositoryUri: string, raw: string, delimiter?: string): GitFileChange[];
+    parse(repositoryUri: string, items: string[]): GitFileChange[];
+    parse(repositoryUri: string, input: string | string[], delimiter?: string): GitFileChange[] {
+        const items = Array.isArray(input) ? input : input.split(delimiter === undefined ? '\0' : delimiter);
+        const changes: GitFileChange[] = [];
+        let index = 0;
+        while (index < items.length) {
+            const rawStatus = items[index];
+            const status = GitUtils.mapStatus(rawStatus);
+            if (GitUtils.isSimilarityStatus(rawStatus)) {
+                const uri = this.toUri(repositoryUri, items[index + 2]);
+                const oldUri = this.toUri(repositoryUri, items[index + 1]);
+                changes.push({
+                    status,
+                    uri,
+                    oldUri
+                });
+                index = index + 3;
+            } else {
+                const uri = this.toUri(repositoryUri, items[index + 1]);
+                changes.push({
+                    status,
+                    uri
+                });
+                index = index + 2;
+            }
+        }
+        return changes;
+    }
+
+    protected toUri(repositoryUri: string, pathSegment: string): string {
+        return FileUri.create(Path.join(FileUri.fsPath(repositoryUri), pathSegment)).toString();
+    }
+
+}
+
+/**
  * `dugite-extra` based Git implementation.
  */
 @injectable()
@@ -44,6 +86,9 @@ export class DugiteGit implements Git {
 
     @inject(GitRepositoryManager)
     protected readonly manager: GitRepositoryManager;
+
+    @inject(NameStatusParser)
+    protected readonly nameStatusParser: NameStatusParser;
 
     dispose(): void {
         this.locator.dispose();
@@ -226,6 +271,22 @@ export class DugiteGit implements Git {
         });
     }
 
+    async diff(repository: Repository, options?: Git.Options.Diff): Promise<GitFileChange[]> {
+        const args = [
+            'diff',
+            '--name-status',
+            '-C',
+            '-M',
+            '-z'
+        ];
+        args.push(this.mapRange((options || {}).range));
+        if (options && options.uri) {
+            args.push(...['--', Path.relative(FileUri.fsPath(repository.localUri), FileUri.fsPath(options.uri))]);
+        }
+        const result = await this.exec(repository, args);
+        return this.nameStatusParser.parse(repository.localUri, result.stdout.trim().split('\0').filter(item => item && item.length > 0));
+    }
+
     private getCommitish(options?: Git.Options.Show): string {
         if (options && options.commitish) {
             return 'index' === options.commitish ? '' : options.commitish;
@@ -370,6 +431,21 @@ export class DugiteGit implements Git {
             case AppFileStatus.Renamed: return GitFileStatus.Renamed;
             default: throw new Error(`Unexpected application file status: ${toMap}`);
         }
+    }
+
+    private mapRange(toMap: Git.Options.Range | undefined): string {
+        let range = 'HEAD';
+        if (toMap) {
+            if (toMap.toRevision) {
+                range = toMap.toRevision;
+            }
+            if (typeof toMap.fromRevision === 'number') {
+                range = `${range}~${toMap.fromRevision}..${range}`;
+            } else if (typeof toMap.fromRevision === 'string') {
+                range = `${toMap.fromRevision}..${range}`;
+            }
+        }
+        return range;
     }
 
     private getFsPath(repository: Repository | string): string {

@@ -7,7 +7,7 @@
 
 import { ChildProcess } from 'child_process';
 import { Disposable } from '@theia/core';
-import { Repository, WorkingDirectoryStatus, Branch, GitResult, GitError, GitFileStatus } from './git-model';
+import { Repository, WorkingDirectoryStatus, Branch, GitResult, GitError, GitFileStatus, GitFileChange } from './git-model';
 
 /**
  * The WS endpoint path to the Git service.
@@ -400,7 +400,45 @@ export namespace Git {
              * This could be used only for performance measurements and debugging. It has no runtime behavior effects.
              */
             readonly name?: string;
+
         }
+
+        /**
+         * Range that is used for representing to individual commitish when calculating either `git log` or `git diff`.
+         */
+        export interface Range {
+
+            /**
+             * The last revision that should be included among the result running this query. Here, the revision can be a tag, a commitish,
+             * or even an expression (`HEAD~3`). For more details to specify the revision, see [here](https://git-scm.com/docs/gitrevisions#_specifying_revisions).
+             */
+            readonly toRevision?: string;
+
+            /**
+             * Either the from revision (`string`) or a positive integer that is equivalent to the `~` suffix, which means the commit object that is the `fromRevision`<sup>th</sup>
+             * generation ancestor of the named, `toRevision` commit object, following only the first parents. If not specified, equivalent to `origin..toRevision`.
+             */
+            readonly fromRevision?: number | string;
+
+        }
+
+        /**
+         * Optional configuration for the `git diff` command.
+         */
+        export interface Diff {
+
+            /**
+             * The Git revision range that will be used when calculating the diff.
+             */
+            readonly range?: Range;
+
+            /**
+             * The URI of the resource in the repository to get the diff. Can be an individual file or a directory.
+             */
+            readonly uri?: string;
+
+        }
+
     }
 
 }
@@ -562,6 +600,14 @@ export interface Git extends Disposable {
      */
     exec(repository: Repository, args: string[], options?: Git.Options.Execution): Promise<GitResult>;
 
+    /**
+     * Shows the difference between content pairs in the working tree, commits, or index.
+     *
+     * @param repository the repository where where the diff has to be calculated.
+     * @param options optional configuration for further refining the `git diff` command execution.
+     */
+    diff(repository: Repository, options?: Git.Options.Diff): Promise<GitFileChange[]>;
+
 }
 
 /**
@@ -670,6 +716,13 @@ export namespace GitUtils {
         }
 
         return GitFileStatus.Modified;
+    }
+
+    /**
+     * `true` if the argument is a raw Git status with similarity percentage. Otherwise, `false`.
+     */
+    export function isSimilarityStatus(rawStatus: string): boolean {
+        return !!rawStatus.match(/R[0-9][0-9][0-9]/) || !!rawStatus.match(/C[0-9][0-9][0-9]/);
     }
 
 }
