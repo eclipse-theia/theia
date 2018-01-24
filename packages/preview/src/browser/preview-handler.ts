@@ -13,7 +13,7 @@ export const PreviewHandler = Symbol('PreviewHandler');
 
 export interface RenderContentParams {
     content: string;
-    baseUri: URI;
+    originUri: URI;
 }
 
 export interface PreviewHandler {

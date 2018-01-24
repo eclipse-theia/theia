@@ -23,7 +23,7 @@ before(() => {
 describe("markdown-preview-handler", () => {
 
     it("renders html with line information", async () => {
-        const contentElement = await previewHandler.renderContent({ content: exampleMarkdown1, baseUri: new URI('') });
+        const contentElement = await previewHandler.renderContent({ content: exampleMarkdown1, originUri: new URI('') });
         expect(contentElement.innerHTML).equals(exampleHtml1);
     });
 

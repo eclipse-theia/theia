@@ -6,3 +6,4 @@
  */
 
 export * from './preview-handler';
+export { PreviewOpenerOptions } from './preview-contribution';
