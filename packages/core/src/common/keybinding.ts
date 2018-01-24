@@ -7,7 +7,7 @@
 
 import { injectable, inject, named } from 'inversify';
 import { CommandRegistry } from './command';
-import { KeyCode, Accelerator } from './keys';
+import { KeyCode } from './keys';
 import { ContributionProvider } from './contribution-provider';
 import { ILogger } from "./logger";
 
@@ -31,8 +31,7 @@ export namespace Keybinding {
         const copy: Keybinding = {
             command: binding.command,
             keybinding: binding.keybinding,
-            context: binding.context,
-            accelerator: binding.accelerator
+            context: binding.context
         };
         return JSON.stringify(copy);
     }
@@ -49,11 +48,6 @@ export interface Keybinding {
      * keybinding context.
      */
     context?: string;
-
-    /**
-     * Sugar for showing the keybindings in the menus.
-     */
-    accelerator?: Accelerator;
 }
 
 export const KeybindingContribution = Symbol("KeybindingContribution");

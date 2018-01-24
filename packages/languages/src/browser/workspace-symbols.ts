@@ -46,7 +46,6 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
         keybindings.registerKeybinding({
             command: this.command.id,
             keybinding: "ctrlcmd+o",
-            accelerator: ['Accel O']
         });
     }
 
