@@ -38,13 +38,17 @@ export class TerminalBackendContribution implements BackendApplicationContributi
             }
 
             /* Note this typecast will be refactored after #841 */
-            let output: MultiRingBufferReadableStream | undefined = termProcess.createOutputStream();
+            const output: MultiRingBufferReadableStream | undefined = termProcess.createOutputStream();
             output.on('data', (data: string) => {
                 try {
                     ws.send(data);
                 } catch (ex) {
-                    console.error(ex);
+                    this.logger.warn(ex.message, ex);
                 }
+            });
+
+            ws.on('error', err => {
+                this.logger.warn(err.message, err);
             });
 
             ws.on('message', (msg: any) => {
@@ -54,11 +58,7 @@ export class TerminalBackendContribution implements BackendApplicationContributi
             });
             // tslint:disable-next-line:no-any
             ws.on('close', (msg: any) => {
-                if (output !== undefined) {
-                    output.dispose();
-                    // Make sure it's not leaking a ref
-                    output = undefined;
-                }
+                output.dispose();
             });
         });
     }
