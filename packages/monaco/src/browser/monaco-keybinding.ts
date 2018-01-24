@@ -7,12 +7,11 @@
 
 import { injectable, inject } from 'inversify';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/common/keybinding';
-import { Accelerator, Key, KeyCode, Keystroke, Modifier } from '@theia/core/lib/common/keys';
+import { Key, KeyCode, Keystroke, Modifier } from '@theia/core/lib/common/keys';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
 import KeybindingsRegistry = monaco.keybindings.KeybindingsRegistry;
-import KeyCodeUtils = monaco.keybindings.KeyCodeUtils;
 
 function monaco2BrowserKeyCode(keyCode: monaco.KeyCode): number {
     for (let i = 0; i < KEY_CODE_MAP.length; i++) {
@@ -40,7 +39,6 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
                     registry.registerKeybinding({
                         command,
                         keybinding: this.keyCode(keybinding).toString(),
-                        accelerator: this.accelerator(keybinding)
                     });
                 } else {
                     // FIXME support chord keybindings properly, KeyCode does not allow it right now
@@ -54,7 +52,6 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             registry.registerKeybinding({
                 command: selectAllCommand,
                 keybinding: "ctrlcmd+a",
-                accelerator: ['Accel A']
             });
         }
     }
@@ -79,24 +76,4 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
         }
         return KeyCode.createKeyCode(sequence);
     }
-
-    protected accelerator(keybinding: monaco.keybindings.SimpleKeybinding): Accelerator {
-        const keyCode = keybinding.keyCode;
-        const keys: string[] = [];
-        if (keybinding.metaKey) {
-            keys.push('Accel');
-        }
-        if (keybinding.altKey) {
-            keys.push('Alt');
-        }
-        if (keybinding.ctrlKey) {
-            keys.push('Accel');
-        }
-        if (keybinding.shiftKey) {
-            keys.push('Shift');
-        }
-        keys.push(KeyCodeUtils.toString(keyCode & 255));
-        return [keys.join(' ')];
-    }
-
 }

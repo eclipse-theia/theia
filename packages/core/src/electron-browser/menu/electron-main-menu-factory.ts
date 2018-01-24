@@ -7,14 +7,19 @@
 
 import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
-import { CommandRegistry, isOSX, ActionMenuNode, CompositeMenuNode, MAIN_MENU_BAR, MenuModelRegistry, MenuPath } from '../../common';
+import {
+    CommandRegistry, isOSX, ActionMenuNode, CompositeMenuNode,
+    MAIN_MENU_BAR, MenuModelRegistry, MenuPath, KeybindingRegistry,
+    Keybinding, KeyCode, Key
+} from '../../common';
 
 @injectable()
 export class ElectronMainMenuFactory {
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
-        @inject(MenuModelRegistry) protected readonly menuProvider: MenuModelRegistry
+        @inject(MenuModelRegistry) protected readonly menuProvider: MenuModelRegistry,
+        @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry
     ) { }
 
     createMenuBar(): Electron.Menu {
@@ -55,16 +60,74 @@ export class ElectronMainMenuFactory {
                 if (!this.commandRegistry.getCommand(menu.action.commandId)) {
                     throw new Error(`Unknown command with ID: ${menu.action.commandId}.`);
                 }
+
+                const bindings = this.keybindingRegistry.getKeybindingsForCommand(menu.action.commandId);
+
+                let accelerator;
+
+                /* Only consider the first keybinding. */
+                if (bindings.length > 0) {
+                    const binding = bindings[0];
+                    accelerator = this.acceleratorFor(binding);
+                }
+
                 items.push({
                     label: menu.label,
                     icon: menu.icon,
                     enabled: true, // https://github.com/theia-ide/theia/issues/446
                     visible: true,
-                    click: () => this.execute(menu.action.commandId)
+                    click: () => this.execute(menu.action.commandId),
+                    accelerator
                 });
             }
         }
         return items;
+    }
+
+    /* Return a user visble representation of a keybinding.  */
+    protected acceleratorFor(keybinding: Keybinding) {
+        const keyCode = KeyCode.parse(keybinding.keybinding);
+        let result = "";
+        let previous = false;
+        const separator = "+";
+
+        if (keyCode.meta && isOSX) {
+            if (isOSX) {
+                result += "Cmd";
+                previous = true;
+            }
+        }
+
+        if (keyCode.ctrl) {
+            if (previous) {
+                result += separator;
+            }
+            result += "Ctrl";
+            previous = true;
+        }
+
+        if (keyCode.alt) {
+            if (previous) {
+                result += separator;
+            }
+            result += "Alt";
+            previous = true;
+        }
+
+        if (keyCode.shift) {
+            if (previous) {
+                result += separator;
+            }
+            result += "Shift";
+            previous = true;
+        }
+
+        if (previous) {
+            result += separator;
+        }
+
+        result += Key.getEasyKey(keyCode.key).easyString;
+        return result;
     }
 
     protected execute(command: string): void {

@@ -110,7 +110,6 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
         keybindings.registerKeybinding({
             command: JAVA_ORGANIZE_IMPORTS.id,
             context: CONTEXT_ID,
-            accelerator: ['Accel Shift O'],
             keybinding: 'ctrlcmd+shift+o'
         });
     }

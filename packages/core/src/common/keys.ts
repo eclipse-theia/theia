@@ -7,14 +7,6 @@
 
 import { isOSX } from './os';
 
-export declare type Accelerator = string[];
-
-export const AcceleratorProvider = Symbol("AcceleratorProvider");
-
-export interface AcceleratorProvider {
-    getAccelerator(keyCode: KeyCode): Accelerator
-}
-
 /**
  * The key sequence for this binding. This key sequence should consist of one or more key strokes. Key strokes
  * consist of one or more keys held down at the same time. This should be zero or more modifier keys, and one other key.
@@ -400,6 +392,10 @@ export namespace Key {
         } else {
             return CODE_TO_KEY[arg];
         }
+    }
+
+    export function getEasyKey(key: Key) {
+        return KEY_CODE_TO_EASY[key.keyCode];
     }
 
     export function isModifier(arg: string | number) {
