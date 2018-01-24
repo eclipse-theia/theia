@@ -46,8 +46,8 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                     this.revealFragment(contentElement, link);
                 } else {
                     const query = (event.ctrlKey) ? '' : 'open=preview';
-                    const uri = this.resolveUri(link, params.baseUri, query);
-                    this.openLink(uri);
+                    const uri = this.resolveUri(link, params.originUri, query);
+                    this.openLink(uri, params.originUri);
                 }
             }
         });
@@ -67,15 +67,15 @@ export class MarkdownPreviewHandler implements PreviewHandler {
         return candidate.getAttribute('href') || undefined;
     }
 
-    protected async openLink(uri: URI): Promise<void> {
+    protected async openLink(uri: URI, originUri: URI): Promise<void> {
         const opener = await this.openerService.getOpener(uri);
-        opener.open(uri);
+        opener.open(uri, { originUri: originUri.toString() });
     }
 
-    protected resolveUri(link: string, baseUri: URI, query: string = ''): URI {
+    protected resolveUri(link: string, uri: URI, query: string = ''): URI {
         const linkURI = new URI(link);
         if (!linkURI.path.isAbsolute) {
-            return baseUri.resolve(linkURI.path).withFragment(linkURI.fragment).withQuery(query);
+            return uri.parent.resolve(linkURI.path).withFragment(linkURI.fragment).withQuery(query);
         }
         return linkURI;
     }
@@ -213,9 +213,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                         : self.renderToken(tokens, index, options);
                 };
             }
-            anchor(engine, {
-
-            });
+            anchor(engine, {});
         }
         return this.engine;
     }

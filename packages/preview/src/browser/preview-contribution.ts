@@ -24,6 +24,12 @@ export namespace PreviewCommands {
     };
 }
 
+export interface PreviewOpenerOptions extends OpenerOptions {
+    originUri?: string;
+    widgetOptions?: ApplicationShell.WidgetOptions;
+    activate?: boolean;
+}
+
 @injectable()
 export class PreviewContribution implements CommandContribution, MenuContribution, OpenHandler, FrontendApplicationContribution {
 
@@ -46,6 +52,16 @@ export class PreviewContribution implements CommandContribution, MenuContributio
     protected readonly previewWidgetManager: PreviewWidgetManager;
 
     protected readonly syncronizedUris = new Set<string>();
+
+    protected readonly defaultOpenFromEditorOptions: PreviewOpenerOptions = {
+        widgetOptions: { area: 'main', mode: 'split-right' },
+        activate: false
+    };
+
+    protected readonly defaultOpenOptions: PreviewOpenerOptions = {
+        widgetOptions: { area: 'main', mode: 'tab-after' },
+        activate: true
+    };
 
     onStart() {
         this.previewWidgetManager.onWidgetCreated(uri => {
@@ -141,16 +157,33 @@ export class PreviewContribution implements CommandContribution, MenuContributio
         return canHandle;
     }
 
-    async open(uri: URI, options: ApplicationShell.WidgetOptions = { area: 'main', mode: 'tab-after' }, activate: boolean = true): Promise<PreviewWidget> {
+    async open(uri: URI, options?: PreviewOpenerOptions): Promise<PreviewWidget> {
+        const openerOptions = this.updateOpenerOptions(options);
         const previewWidget = <PreviewWidget>await this.widgetManager.getOrCreateWidget(PREVIEW_WIDGET_FACTORY_ID, uri.toString());
         if (!previewWidget.isAttached) {
-            this.app.shell.addWidget(previewWidget, options);
+            this.app.shell.addWidget(previewWidget, openerOptions.widgetOptions || this.defaultOpenOptions.widgetOptions!);
         }
-        if (activate) {
+        if (openerOptions.activate) {
             this.app.shell.activateWidget(previewWidget.id);
         }
-        await previewWidget.start(uri);
+        await previewWidget.updateContent(uri);
         return previewWidget;
+    }
+
+    protected updateOpenerOptions(options?: PreviewOpenerOptions): PreviewOpenerOptions {
+        if (!options) {
+            return this.defaultOpenOptions;
+        }
+        if (options.originUri) {
+            const originPreviewWidget = this.widgetManager.getWidgets(PREVIEW_WIDGET_FACTORY_ID)
+                .find(widget => widget instanceof PreviewWidget
+                    && widget.uri !== undefined
+                    && widget.uri.toString() === options.originUri);
+            if (originPreviewWidget) {
+                return { ...this.defaultOpenOptions, widgetOptions: { area: 'main', mode: 'tab-after', ref: originPreviewWidget } };
+            }
+        }
+        return { ...this.defaultOpenOptions, ...options };
     }
 
     registerCommands(registry: CommandRegistry): void {
@@ -192,7 +225,7 @@ export class PreviewContribution implements CommandContribution, MenuContributio
         }
         const editor = editorWidget.editor;
         const uri = editor.uri;
-        this.open(uri, { area: 'main', mode: 'split-right' }, false);
+        this.open(uri, this.defaultOpenFromEditorOptions);
     }
 
 }
