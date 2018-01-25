@@ -11,7 +11,6 @@ import { FileSystemWatcherClient } from '../../common/filesystem-watcher-protoco
 import { NsfwFileSystemWatcherServer } from './nsfw-filesystem-watcher';
 import { IPCEntryPoint } from '@theia/core/lib/node/messaging/ipc-protocol';
 
-// tslint:disable:no-console
 // tslint:disable:no-any
 
 const options: {

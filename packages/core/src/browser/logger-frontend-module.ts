@@ -13,12 +13,11 @@ import { WebSocketConnectionProvider } from './messaging';
 import { FrontendApplicationContribution } from './frontend-application';
 
 export const loggerFrontendModule = new ContainerModule(bind => {
-    bind(FrontendApplicationContribution).toDynamicValue(ctx =>
-        ({
-            initialize() {
-                setRootLogger(ctx.container.get<ILogger>(ILogger));
-            }
-        }));
+    bind(FrontendApplicationContribution).toDynamicValue(ctx => ({
+        initialize() {
+            setRootLogger(ctx.container.get<ILogger>(ILogger));
+        }
+    }));
 
     bind(ILogger).to(Logger).inSingletonScope();
     bind(LoggerWatcher).toSelf().inSingletonScope();
