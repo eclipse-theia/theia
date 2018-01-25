@@ -58,7 +58,7 @@ beforeEach(() => {
 
 describe('Proxy-Factory', () => {
     it('Should correctly send notifications and requests.', done => {
-        let it = getSetup();
+        const it = getSetup();
         it.clientProxy.notifyThat("hello");
         function check() {
             if (it.client.notifications.length === 0) {
@@ -75,8 +75,8 @@ describe('Proxy-Factory', () => {
         check();
     });
     it('Rejected Promise should result in rejected Promise.', done => {
-        let it = getSetup();
-        let handle = setTimeout(() => done("timeout"), 500);
+        const it = getSetup();
+        const handle = setTimeout(() => done("timeout"), 500);
         it.serverProxy.fails('a', 'b').catch(err => {
             expect(<Error>err.message).to.contain("fails failed");
             clearTimeout(handle);
@@ -84,9 +84,9 @@ describe('Proxy-Factory', () => {
         });
     });
     it('Remote Exceptions should result in rejected Promise.', done => {
-        let it = getSetup();
-        let handle = setTimeout(() => done("timeout"), 500);
-        it.serverProxy.fails2('a', 'b').catch(err => {
+        const { serverProxy } = getSetup();
+        const handle = setTimeout(() => done("timeout"), 500);
+        serverProxy.fails2('a', 'b').catch(err => {
             expect(<Error>err.message).to.contain("fails2 failed");
             clearTimeout(handle);
             done();
@@ -95,20 +95,20 @@ describe('Proxy-Factory', () => {
 });
 
 function getSetup() {
-    let client = new TestClient();
-    let server = new TestServer();
+    const client = new TestClient();
+    const server = new TestServer();
 
-    let serverProxyFactory = new JsonRpcProxyFactory<TestServer>(client);
-    let client2server = new NoTransform();
-    let server2client = new NoTransform();
-    let serverConnection = createMessageConnection(server2client, client2server, new ConsoleLogger());
+    const serverProxyFactory = new JsonRpcProxyFactory<TestServer>(client);
+    const client2server = new NoTransform();
+    const server2client = new NoTransform();
+    const serverConnection = createMessageConnection(server2client, client2server, new ConsoleLogger());
     serverProxyFactory.listen(serverConnection);
-    let serverProxy = serverProxyFactory.createProxy();
+    const serverProxy = serverProxyFactory.createProxy();
 
-    let clientProxyFactory = new JsonRpcProxyFactory<TestClient>(server);
-    let clientConnection = createMessageConnection(client2server, server2client, new ConsoleLogger());
+    const clientProxyFactory = new JsonRpcProxyFactory<TestClient>(server);
+    const clientConnection = createMessageConnection(client2server, server2client, new ConsoleLogger());
     clientProxyFactory.listen(clientConnection);
-    let clientProxy = clientProxyFactory.createProxy();
+    const clientProxy = clientProxyFactory.createProxy();
     return {
         client,
         clientProxy,

@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { MessageConnection, ResponseError, ErrorCodes } from "vscode-jsonrpc";
+import { MessageConnection, ResponseError } from "vscode-jsonrpc";
 import { Event, Emitter } from "../event";
 import { Disposable } from "../disposable";
 import { ConnectionHandler } from './handler';
@@ -152,8 +152,8 @@ export class JsonRpcProxyFactory<T extends object> implements ProxyHandler<T> {
             }
             const reason = e.message || '';
             const stack = e.stack || '';
-            throw new ResponseError(ErrorCodes.InternalError, `Request ${method} failed with error: ${reason}
-${stack}`);
+            console.error(`Request ${method} failed with error: ${reason}`, stack);
+            throw e;
         }
     }
 
