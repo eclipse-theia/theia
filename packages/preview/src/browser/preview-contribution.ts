@@ -6,16 +6,18 @@
  */
 
 import { injectable, inject } from "inversify";
-import { FrontendApplicationContribution, FrontendApplication, OpenHandler, OpenerOptions, ApplicationShell } from "@theia/core/lib/browser";
+import { FrontendApplicationContribution, FrontendApplication, OpenHandler, OpenerOptions, ApplicationShell, WidgetManager } from "@theia/core/lib/browser";
 import { EDITOR_CONTEXT_MENU, EditorManager, TextEditor } from '@theia/editor/lib/browser';
-import { CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, CommandHandler, Disposable } from "@theia/core/lib/common";
-import { DisposableCollection } from '@theia/core';
-import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
+import {
+    ResourceProvider, DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry,
+    CommandHandler, Disposable, MessageService
+} from "@theia/core/lib/common";
 import URI from '@theia/core/lib/common/uri';
 import { Position } from 'vscode-languageserver-types';
 import { PreviewWidget, PREVIEW_WIDGET_FACTORY_ID } from './preview-widget';
 import { PreviewWidgetManager } from './preview-widget-manager';
 import { PreviewHandlerProvider } from './preview-handler';
+import { Widget } from "@phosphor/widgets";
 
 export namespace PreviewCommands {
     export const OPEN: Command = {
@@ -30,10 +32,12 @@ export interface PreviewOpenerOptions extends OpenerOptions {
     activate?: boolean;
 }
 
+export const PREVIEW_OPENER_ID = 'preview-opener';
+
 @injectable()
 export class PreviewContribution implements CommandContribution, MenuContribution, OpenHandler, FrontendApplicationContribution {
 
-    readonly id = 'preview';
+    readonly id = PREVIEW_OPENER_ID;
     readonly label = 'Preview';
 
     @inject(FrontendApplication)
@@ -50,6 +54,12 @@ export class PreviewContribution implements CommandContribution, MenuContributio
 
     @inject(PreviewWidgetManager)
     protected readonly previewWidgetManager: PreviewWidgetManager;
+
+    @inject(ResourceProvider)
+    protected readonly resourceProvider: ResourceProvider;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     protected readonly syncronizedUris = new Set<string>();
 
@@ -121,10 +131,7 @@ export class PreviewContribution implements CommandContribution, MenuContributio
                     line: line + 1,
                     character: 0
                 }
-            },
-                {
-                    at: 'top'
-                });
+            }, { at: 'top' });
         });
     }
 
@@ -157,7 +164,13 @@ export class PreviewContribution implements CommandContribution, MenuContributio
         return canHandle;
     }
 
-    async open(uri: URI, options?: PreviewOpenerOptions): Promise<PreviewWidget> {
+    async open(uri: URI, options?: PreviewOpenerOptions): Promise<PreviewWidget | undefined> {
+        try {
+            await this.resourceProvider(uri);
+        } catch (error) {
+            this.messageService.warn(`'${uri.path.base}' is missing.`);
+            return;
+        }
         const openerOptions = this.updateOpenerOptions(options);
         const previewWidget = <PreviewWidget>await this.widgetManager.getOrCreateWidget(PREVIEW_WIDGET_FACTORY_ID, uri.toString());
         if (!previewWidget.isAttached) {
@@ -172,6 +185,10 @@ export class PreviewContribution implements CommandContribution, MenuContributio
 
     protected updateOpenerOptions(options?: PreviewOpenerOptions): PreviewOpenerOptions {
         if (!options) {
+            const refWidget = this.findWidgetInMainAreaToAddAfter();
+            if (refWidget) {
+                return { ...this.defaultOpenOptions, widgetOptions: { area: 'main', mode: 'tab-after', ref: refWidget } };
+            }
             return this.defaultOpenOptions;
         }
         if (options.originUri) {
@@ -184,6 +201,24 @@ export class PreviewContribution implements CommandContribution, MenuContributio
             }
         }
         return { ...this.defaultOpenOptions, ...options };
+    }
+
+    protected findWidgetInMainAreaToAddAfter(): Widget | undefined {
+        const mainTabBars = this.app.shell.mainAreaTabBars;
+        const defaultTabBar = this.app.shell.getTabBarFor('main');
+        if (mainTabBars.length > 1 && defaultTabBar) {
+            const currentTabArea = this.app.shell.currentTabArea;
+            const currentTabBar = (currentTabArea === 'main') ? this.app.shell.currentTabBar || defaultTabBar : defaultTabBar;
+            const currentIndex = mainTabBars.indexOf(currentTabBar);
+            const targetIndex = (mainTabBars.length === currentIndex + 1) ? currentIndex - 1 : currentIndex + 1;
+            const targetTabBar = mainTabBars[targetIndex];
+            const currentTitle = targetTabBar.currentTitle;
+            if (currentTitle) {
+                const refWidget = currentTitle.owner;
+                return refWidget;
+            }
+        }
+        return;
     }
 
     registerCommands(registry: CommandRegistry): void {

@@ -5,23 +5,12 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {
-    interfaces,
-    injectable
-} from 'inversify';
+import { interfaces, injectable } from 'inversify';
 import { DisposableCollection } from '@theia/core';
 import URI from "@theia/core/lib/common/uri";
-import {
-    WidgetFactory,
-} from '@theia/core/lib/browser';
-import {
-    Emitter,
-    Event,
-} from '@theia/core/lib/common';
-import {
-    PreviewWidget,
-    PREVIEW_WIDGET_FACTORY_ID
-} from './preview-widget';
+import { WidgetFactory } from '@theia/core/lib/browser';
+import { Emitter, Event, } from '@theia/core/lib/common';
+import { PreviewWidget, PREVIEW_WIDGET_FACTORY_ID } from './preview-widget';
 
 @injectable()
 export class PreviewWidgetManager implements WidgetFactory {
