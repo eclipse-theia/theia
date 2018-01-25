@@ -20,6 +20,7 @@ import {
 } from "../common";
 import { FrontendApplication, FrontendApplicationContribution } from './frontend-application';
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
+import { HttpOpenHandler } from './http-open-handler';
 import { CommonFrontendContribution } from './common-frontend-contribution';
 import { QuickOpenService, QuickCommandService, QuickCommandFrontendContribution } from './quick-open';
 import { LocalStorageService, StorageService } from './storage-service';
@@ -53,6 +54,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bindContributionProvider(bind, OpenHandler);
     bind(DefaultOpenerService).toSelf().inSingletonScope();
     bind(OpenerService).toDynamicValue(context => context.container.get(DefaultOpenerService));
+    bind(HttpOpenHandler).toSelf().inSingletonScope();
+    bind(OpenHandler).toDynamicValue(ctx => ctx.container.get(HttpOpenHandler)).inSingletonScope();
 
     bindContributionProvider(bind, WidgetFactory);
     bind(WidgetManager).toSelf().inSingletonScope();
