@@ -96,7 +96,7 @@ export class GitWidget extends VirtualWidget {
                 const [icon, label, description] = await Promise.all([
                     this.labelProvider.getIcon(uri),
                     this.labelProvider.getName(uri),
-                    repository ? this.getRepositoryRelativePath(repository, uri) : this.labelProvider.getLongName(uri)
+                    repository ? this.getRepositoryRelativePath(repository, uri.parent) : this.labelProvider.getLongName(uri.parent)
                 ]);
                 if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
                     if (change.staged) {
