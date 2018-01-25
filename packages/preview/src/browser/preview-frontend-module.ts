@@ -6,16 +6,8 @@
  */
 
 import { ContainerModule } from 'inversify';
-import {
-    CommandContribution,
-    MenuContribution,
-    bindContributionProvider
-} from '@theia/core/lib/common';
-import {
-    OpenHandler,
-    WidgetFactory,
-    FrontendApplicationContribution
-} from '@theia/core/lib/browser';
+import { CommandContribution, MenuContribution, bindContributionProvider } from '@theia/core/lib/common';
+import { OpenHandler, WidgetFactory, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { PreviewContribution } from './preview-contribution';
 import { PreviewWidget } from './preview-widget';
 import { PreviewWidgetManager } from './preview-widget-manager';

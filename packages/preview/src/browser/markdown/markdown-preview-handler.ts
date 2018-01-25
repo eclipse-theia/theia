@@ -7,8 +7,10 @@
 
 import { injectable, inject } from "inversify";
 import { PreviewHandler, RenderContentParams } from '../preview-handler';
+import { PREVIEW_OPENER_ID } from '../preview-contribution';
 import URI from "@theia/core/lib/common/uri";
 import { OpenerService } from '@theia/core/lib/browser';
+import { isOSX } from '@theia/core/lib/common';
 
 import * as hljs from 'highlight.js';
 import * as markdownit from 'markdown-it';
@@ -20,7 +22,8 @@ export class MarkdownPreviewHandler implements PreviewHandler {
     readonly iconClass: string = 'markdown-icon file-icon';
     readonly contentClass: string = 'markdown-preview';
 
-    @inject(OpenerService) protected readonly openerService: OpenerService;
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     canHandle(uri: URI): number {
         return uri.path.ext === '.md' ? 500 : 0;
@@ -45,7 +48,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                 if (link.startsWith('#')) {
                     this.revealFragment(contentElement, link);
                 } else {
-                    const query = (event.ctrlKey) ? '' : 'open=preview';
+                    const query = ((isOSX && event.metaKey) || event.ctrlKey) ? '' : 'opener=' + PREVIEW_OPENER_ID;
                     const uri = this.resolveUri(link, params.originUri, query);
                     this.openLink(uri, params.originUri);
                 }

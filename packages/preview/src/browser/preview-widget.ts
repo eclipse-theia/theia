@@ -5,38 +5,15 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import {
-    inject,
-    injectable
-} from "inversify";
-import {
-    Resource,
-    DisposableCollection,
-    MaybePromise
-} from '@theia/core';
-import {
-    BaseWidget,
-    Message,
-    StatefulWidget
-} from '@theia/core/lib/browser';
+import { inject, injectable } from "inversify";
+import { Resource, DisposableCollection, MaybePromise } from '@theia/core';
+import { BaseWidget, Message, StatefulWidget } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import {
-    ResourceProvider,
-    Event,
-    Emitter,
-} from '@theia/core/lib/common';
-import {
-    Workspace,
-    TextDocument,
-    DidChangeTextDocumentParams,
-    Location,
-    Range,
-} from "@theia/languages/lib/common";
-import {
-    PreviewHandler,
-    PreviewHandlerProvider
-} from './preview-handler';
+import { ResourceProvider, Event, Emitter } from '@theia/core/lib/common';
+import { Workspace, TextDocument, DidChangeTextDocumentParams, Location, Range } from "@theia/languages/lib/common";
+import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
 import { throttle } from 'throttle-debounce';
+import { ThemeService } from '@theia/core/lib/browser/theming';
 
 export const PREVIEW_WIDGET_CLASS = 'theia-preview-widget';
 
@@ -76,6 +53,7 @@ export class PreviewWidget extends BaseWidget implements StatefulWidget {
         this.startScrollSync();
         this.startDoubleClickListener();
         this.update();
+        this.toDispose.push(ThemeService.get().onThemeChange(() => this.update()));
     }
 
     protected preventScrollNotification: boolean = false;
@@ -169,18 +147,19 @@ export class PreviewWidget extends BaseWidget implements StatefulWidget {
     }
 
     async updateContent(uri: URI): Promise<void> {
+        const trimmedUri = uri.withoutFragment().withoutQuery();
         const previewHandler = this.previewHandler = this.previewHandlerProvider.findContribution(uri)[0];
         if (!previewHandler) {
             return;
         }
         this.previewDisposables.dispose();
-        const resource = this.resource = await this.resourceProvider(uri);
+        const resource = this.resource = await this.resourceProvider(trimmedUri);
         this.previewDisposables.push(resource);
         if (resource.onDidChangeContents) {
             this.previewDisposables.push(resource.onDidChangeContents(() => this.update()));
         }
         const updateIfAffected = (affectedUri?: string) => {
-            if (!affectedUri || affectedUri === uri.toString()) {
+            if (!affectedUri || affectedUri === trimmedUri.toString()) {
                 this.update();
             }
         };
