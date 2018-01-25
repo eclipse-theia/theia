@@ -40,8 +40,6 @@ notifications:
     on_start: never
 jobs:
   fast_finish: true
-  allow_failures:
-    - os: osx
   include:
   - state: test
     os: linux
@@ -59,8 +57,3 @@ jobs:
       on:
         branch: master
       skip_cleanup: true
-  - stage: OSx test
-    os: osx
-    env: CXX=c++
-    before_script: skip
-    script: travis_retry yarn test:theia ;
