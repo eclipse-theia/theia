@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import URI from "@theia/core/lib/common/uri";
 import { Emitter, Event, RecursivePartial, SelectionService } from '@theia/core/lib/common';
-import { OpenHandler, FrontendApplication } from "@theia/core/lib/browser";
+import { OpenHandler, OpenerOptions, FrontendApplication, ApplicationShell } from "@theia/core/lib/browser";
 import { EditorWidget } from "./editor-widget";
 import { TextEditorProvider, Range, Position } from "./editor";
 import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser/widget-manager';
@@ -23,10 +23,10 @@ export interface EditorManager extends OpenHandler {
      */
     readonly editors: EditorWidget[];
     /**
-     * Open an editor for the given uri and input.
-     * Reject if the given input is not an editor input or an editor cannot be opened.
+     * Open an editor for the given uri and options.
+     * Reject if the given options is not an editor input or an editor cannot be opened.
      */
-    open(uri: URI, input?: EditorInput): Promise<EditorWidget>;
+    open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget>;
     /**
      * The most recently focused editor.
      */
@@ -48,6 +48,10 @@ export interface EditorManager extends OpenHandler {
 export interface EditorInput {
     revealIfVisible?: boolean;
     selection?: RecursivePartial<Range>;
+}
+
+export interface EditorOpenerOptions extends OpenerOptions, EditorInput {
+    widgetOptions?: ApplicationShell.WidgetOptions;
 }
 
 @injectable()
@@ -90,17 +94,19 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
         return this.activeObserver.onEditorChanged();
     }
 
-    canHandle(uri: URI, input?: EditorInput): number {
+    canHandle(uri: URI, options?: EditorOpenerOptions): number {
         return 100;
     }
 
-    open(uri: URI, input?: EditorInput): Promise<EditorWidget> {
-        return this.widgetManager.getOrCreateWidget<EditorWidget>(this.id, uri.toString()).then(editor => {
+    open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+        const trimmedUri = uri.withoutFragment().withoutQuery();
+        return this.widgetManager.getOrCreateWidget<EditorWidget>(this.id, trimmedUri.toString()).then(editor => {
             if (!editor.isAttached) {
-                this.app.shell.addWidget(editor, { area: 'main' });
+                const widgetOptions: ApplicationShell.WidgetOptions = options && options.widgetOptions || { area: 'main' };
+                this.app.shell.addWidget(editor, widgetOptions);
             }
-            this.revealIfVisible(editor, input);
-            this.revealSelection(editor, input);
+            this.revealIfVisible(editor, options);
+            this.revealSelection(editor, options);
             return editor;
         });
     }
