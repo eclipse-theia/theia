@@ -5,7 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-// tslint:disable:no-console
 import * as path from 'path';
 import * as cluster from 'cluster';
 import { MasterProcess } from './cluster/master-process';

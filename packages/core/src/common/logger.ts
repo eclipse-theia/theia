@@ -22,8 +22,22 @@ export enum LogLevel {
 It can be used outside of the inversify context.  */
 export let logger: ILogger;
 
-export function setRootLogger(alogger: ILogger) {
-    logger = alogger;
+type ConsoleLog = typeof console.log;
+export function setRootLogger(aLogger: ILogger) {
+    logger = aLogger;
+
+    const frontend = !!window && typeof (window as any).process === 'undefined';
+    const log = (logLevel: number, consoleLog: ConsoleLog, message?: any, ...optionalParams: any[]) => {
+        aLogger.log(logLevel, String(message), ...optionalParams);
+        if (frontend) {
+            consoleLog(message, ...optionalParams);
+        }
+    };
+
+    console.log = log.bind(undefined, LogLevel.INFO, console.log);
+    console.info = log.bind(undefined, LogLevel.INFO, console.info);
+    console.warn = log.bind(undefined, LogLevel.WARN, console.warn);
+    console.error = log.bind(undefined, LogLevel.ERROR, console.error);
 }
 
 export type Log = (message: string, ...params: any[]) => void;

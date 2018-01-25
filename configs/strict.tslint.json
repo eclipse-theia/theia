@@ -22,7 +22,7 @@
     "interface-over-type-literal": true,
     "jsdoc-format": true,
     "no-any": true,
-    "no-console": true,
+    "no-console": false,
     "no-construct": true,
     "no-magic-numbers": false,
     "no-null-keyword": true,
