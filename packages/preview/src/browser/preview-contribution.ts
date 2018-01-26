@@ -7,16 +7,16 @@
 
 import { injectable, inject } from "inversify";
 import { FrontendApplicationContribution, FrontendApplication, OpenHandler, OpenerOptions, ApplicationShell, WidgetManager } from "@theia/core/lib/browser";
-import { EDITOR_CONTEXT_MENU, EditorManager, TextEditor } from '@theia/editor/lib/browser';
+import { EDITOR_CONTEXT_MENU, EditorManager, TextEditor, EditorWidget } from '@theia/editor/lib/browser';
 import {
     ResourceProvider, DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry,
     CommandHandler, Disposable, MessageService
 } from "@theia/core/lib/common";
 import URI from '@theia/core/lib/common/uri';
 import { Position } from 'vscode-languageserver-types';
-import { PreviewWidget, PREVIEW_WIDGET_FACTORY_ID } from './preview-widget';
+import { PreviewWidget, PREVIEW_WIDGET_FACTORY_ID, PreviewWidgetOptions } from './preview-widget';
 import { PreviewWidgetManager } from './preview-widget-manager';
-import { PreviewHandlerProvider } from './preview-handler';
+import { PreviewHandlerProvider, PREVIEW_OPENER_ID } from './preview-handler';
 import { Widget } from "@phosphor/widgets";
 
 export namespace PreviewCommands {
@@ -31,8 +31,6 @@ export interface PreviewOpenerOptions extends OpenerOptions {
     widgetOptions?: ApplicationShell.WidgetOptions;
     activate?: boolean;
 }
-
-export const PREVIEW_OPENER_ID = 'preview-opener';
 
 @injectable()
 export class PreviewContribution implements CommandContribution, MenuContribution, OpenHandler, FrontendApplicationContribution {
@@ -74,21 +72,31 @@ export class PreviewContribution implements CommandContribution, MenuContributio
     };
 
     onStart() {
-        this.previewWidgetManager.onWidgetCreated(uri => {
-            this.registerOpenOnDoubleClick(uri);
-            this.registerEditorAndPreviewSync(uri, 'preview');
+        this.previewWidgetManager.onWidgetCreated(previewWidget => {
+            this.registerOpenOnDoubleClick(previewWidget);
+            this.registerEditorAndPreviewSync(previewWidget);
         });
         this.editorManager.onActiveEditorChanged(editorWidget => {
             if (editorWidget) {
-                this.registerEditorAndPreviewSync(editorWidget.editor.uri.toString(), 'editor');
+                this.registerEditorAndPreviewSync(editorWidget);
             }
         });
     }
 
-    protected async registerEditorAndPreviewSync(uri: string, eventSource: 'preview' | 'editor'): Promise<void> {
-        const previewWidget = this.previewWidgetManager.get(uri);
-        const editorWidget = this.editorManager.editors.find(widget => widget.editor.uri.toString() === uri);
-        if (!previewWidget || !editorWidget) {
+    protected async registerEditorAndPreviewSync(source: PreviewWidget | EditorWidget): Promise<void> {
+        let uri: string;
+        let editorWidget: EditorWidget | undefined;
+        let previewWidget: PreviewWidget | undefined;
+        if (source instanceof EditorWidget) {
+            editorWidget = source as EditorWidget;
+            uri = editorWidget.editor.uri.toString();
+            previewWidget = this.previewWidgetManager.get(uri);
+        } else {
+            previewWidget = source as PreviewWidget;
+            uri = previewWidget.getUri().toString();
+            editorWidget = this.editorManager.editors.find(widget => widget.editor.uri.toString() === uri);
+        }
+        if (!previewWidget || !editorWidget || !uri) {
             return;
         }
         if (this.syncronizedUris.has(uri)) {
@@ -96,13 +104,14 @@ export class PreviewContribution implements CommandContribution, MenuContributio
         }
         const syncDisposables = new DisposableCollection();
         const editor = editorWidget.editor;
+        const thatPreviewWidget = previewWidget;
         syncDisposables.push(editor.onCursorPositionChanged(position =>
-            this.revealSourceLineInPreview(previewWidget, position))
+            this.revealSourceLineInPreview(thatPreviewWidget, position))
         );
         syncDisposables.push(this.synchronizeScrollToEditor(previewWidget, editor));
-        if (eventSource === 'preview') {
+        if (!previewWidget) {
             window.setTimeout(() => {
-                this.revealSourceLineInPreview(previewWidget, editor.cursor);
+                this.revealSourceLineInPreview(thatPreviewWidget, editor.cursor);
             }, 100);
         }
         previewWidget.disposed.connect(() => {
@@ -135,13 +144,16 @@ export class PreviewContribution implements CommandContribution, MenuContributio
         });
     }
 
-    protected registerOpenOnDoubleClick(uri: string): void {
-        const previewWidget = this.previewWidgetManager.get(uri);
+    protected registerOpenOnDoubleClick(previewWidget: PreviewWidget): void {
         if (!previewWidget) {
             return;
         }
         const disposable = previewWidget.onDidDoubleClick(location => {
-            this.editorManager.open(new URI(location.uri))
+            const refWidget = this.findWidgetInMainAreaToAddAfter();
+            const widgetOptions: ApplicationShell.WidgetOptions = (refWidget)
+                ? { area: 'main', mode: 'tab-after', ref: refWidget }
+                : { area: 'main', mode: 'split-left' };
+            this.editorManager.open(new URI(location.uri), { widgetOptions })
                 .then(widget => {
                     if (widget) {
                         widget.editor.revealPosition(location.range.start);
@@ -172,14 +184,20 @@ export class PreviewContribution implements CommandContribution, MenuContributio
             return;
         }
         const openerOptions = this.updateOpenerOptions(options);
-        const previewWidget = <PreviewWidget>await this.widgetManager.getOrCreateWidget(PREVIEW_WIDGET_FACTORY_ID, uri.toString());
+        const previewWidget = <PreviewWidget>await this.widgetManager.getOrCreateWidget(
+            PREVIEW_WIDGET_FACTORY_ID,
+            <PreviewWidgetOptions>{ uri: uri.toString() });
         if (!previewWidget.isAttached) {
             this.app.shell.addWidget(previewWidget, openerOptions.widgetOptions || this.defaultOpenOptions.widgetOptions!);
         }
         if (openerOptions.activate) {
             this.app.shell.activateWidget(previewWidget.id);
+        } else {
+            const tabBar = this.app.shell.getTabBarFor(previewWidget);
+            if (tabBar) {
+                tabBar.currentIndex = tabBar.titles.findIndex(title => title.owner === previewWidget);
+            }
         }
-        await previewWidget.updateContent(uri);
         return previewWidget;
     }
 
@@ -192,10 +210,7 @@ export class PreviewContribution implements CommandContribution, MenuContributio
             return this.defaultOpenOptions;
         }
         if (options.originUri) {
-            const originPreviewWidget = this.widgetManager.getWidgets(PREVIEW_WIDGET_FACTORY_ID)
-                .find(widget => widget instanceof PreviewWidget
-                    && widget.uri !== undefined
-                    && widget.uri.toString() === options.originUri);
+            const originPreviewWidget = this.previewWidgetManager.get(options.originUri);
             if (originPreviewWidget) {
                 return { ...this.defaultOpenOptions, widgetOptions: { area: 'main', mode: 'tab-after', ref: originPreviewWidget } };
             }
@@ -260,7 +275,11 @@ export class PreviewContribution implements CommandContribution, MenuContributio
         }
         const editor = editorWidget.editor;
         const uri = editor.uri;
-        this.open(uri, this.defaultOpenFromEditorOptions);
+        const refWidget = this.findWidgetInMainAreaToAddAfter();
+        const widgetOptions: ApplicationShell.WidgetOptions = (refWidget)
+            ? { area: 'main', mode: 'tab-after', ref: refWidget }
+            : { area: 'main', mode: 'split-right' };
+        this.open(uri, { ... this.defaultOpenFromEditorOptions, widgetOptions });
     }
 
 }

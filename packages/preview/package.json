@@ -51,7 +51,6 @@
     "@theia/ext-scripts": "^0.2.0",
     "@types/jsdom": "^11.0.4",
     "jsdom": "^11.5.1",
-    "jsdom-global": "^3.0.2",
     "@types/chai-string": "^1.1.31",
     "chai-string": "^1.4.0"
   },

@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import '../../common/test/jsdom';
+import { cleanupJSDOM } from '../../common/test/jsdom';
 
 import * as chai from 'chai';
 import { expect } from 'chai';
@@ -18,6 +18,10 @@ let previewHandler: MarkdownPreviewHandler;
 
 before(() => {
     previewHandler = new MarkdownPreviewHandler();
+});
+
+after(() => {
+    cleanupJSDOM();
 });
 
 describe("markdown-preview-handler", () => {
