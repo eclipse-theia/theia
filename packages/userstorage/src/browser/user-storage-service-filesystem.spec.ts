@@ -40,14 +40,23 @@ before(async () => {
     testContainer = new Container();
 
     /* Preference bindings*/
+    testContainer.bind(MockPreferenceService).toSelf().inSingletonScope();
     testContainer.bind(PreferenceService).to(MockPreferenceService).inSingletonScope();
     testContainer.bind(FileSystemPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
+        sinon.stub(preferences, 'get').returns({
+            'files.watcherExclude': {
+                "**/.git/objects/**": true,
+                "**/.git/subtree-cache/**": true,
+                "**/node_modules/**": true
+            }
+        });
         return createFileSystemPreferences(preferences);
-    });
+    }).inSingletonScope();
+
     /* FS mocks and bindings */
     testContainer.bind(FileSystemWatcherServer).to(MockFilesystemWatcherServer).inSingletonScope();
-    testContainer.bind(FileSystemWatcher).toSelf().onActivation((_, watcher) => {
+    testContainer.bind(FileSystemWatcher).toSelf().inSingletonScope().onActivation((_, watcher) => {
         sinon.stub(watcher, 'onFilesChanged').get(() =>
             mockOnFileChangedEmitter.event
         );

@@ -13,7 +13,7 @@ import {
     PreferenceContribution,
     PreferenceSchema,
     PreferenceChangeEvent
-} from '@theia/preferences-api/lib/browser';
+} from '@theia/preferences-api';
 
 export const editorPreferenceSchema: PreferenceSchema = {
     "type": "object",
