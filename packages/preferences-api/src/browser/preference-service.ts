@@ -6,7 +6,7 @@
  */
 
 import { JSONExt } from '@phosphor/coreutils';
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { Event, Emitter, DisposableCollection, Disposable } from '@theia/core/lib/common';
 import { PreferenceProvider } from './preference-provider';
@@ -23,88 +23,92 @@ export interface PreferenceChange {
 
 export const PreferenceService = Symbol('PreferenceService');
 export interface PreferenceService extends Disposable {
-
+    readonly ready: Promise<void>;
     get<T>(preferenceName: string): T | undefined;
     get<T>(preferenceName: string, defaultValue: T): T;
     get<T>(preferenceName: string, defaultValue?: T): T | undefined;
-    ready: Promise<void>;
     onPreferenceChanged: Event<PreferenceChange>;
 }
 
+export const PreferenceProviders = Symbol('PreferenceProvidersFactory');
+export type PreferenceProviders = () => PreferenceProvider[];
+
 @injectable()
 export class PreferenceServiceImpl implements PreferenceService, FrontendApplicationContribution {
-    protected prefCache: { [key: string]: any }
-        = {};
+
+    protected preferences: { [key: string]: any } = {};
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly onPreferenceChangedEmitter = new Emitter<PreferenceChange>();
-    protected resolveReady: () => void;
+    readonly onPreferenceChanged = this.onPreferenceChangedEmitter.event;
 
-    readonly ready = new Promise<void>(resolve => {
-        this.resolveReady = resolve;
-    });
+    @inject(PreferenceProviders)
+    protected readonly createPreferenceProviders: PreferenceProviders;
 
-    protected isReady: boolean = false;
-
-    initialize() {
-        this.preferenceProviders.forEach(async preferenceProvider => {
-            preferenceProvider.init();
-        });
-
-        this.getPreferencesFromProviders();
-
-        this.resolveReady();
-        this.isReady = true;
+    protected _preferenceProviders: PreferenceProvider[] | undefined;
+    protected get preferenceProviders(): PreferenceProvider[] {
+        if (!this._preferenceProviders) {
+            this._preferenceProviders = this.createPreferenceProviders();
+        }
+        return this._preferenceProviders;
     }
 
-    constructor(protected readonly preferenceProviders: PreferenceProvider[]) {
-        this.preferenceProviders.forEach(preferenceProvider => {
-            preferenceProvider.onNewPreferences(event => {
-                this.onNewPreferences();
+    onStart() {
+        // tslint:disable-next-line:no-unused-expression
+        this.ready;
+    }
+
+    protected _ready: Promise<void> | undefined;
+    get ready(): Promise<void> {
+        if (!this._ready) {
+            this._ready = new Promise((resolve, reject) => {
+                this.toDispose.push(Disposable.create(() => reject()));
+                for (const preferenceProvider of this.preferenceProviders) {
+                    this.toDispose.push(preferenceProvider);
+                    preferenceProvider.onDidPreferencesChanged(event => this.reconcilePreferences());
+                }
+                this.reconcilePreferences();
+                resolve();
             });
-            // preferenceProvider.setClient({
-            //     onNewPreferences: event => this.onNewPreferences(event)
-            // });
-            this.toDispose.push(preferenceProvider);
-        });
+        }
+        return this._ready;
     }
 
     dispose(): void {
         this.toDispose.dispose();
     }
 
-    protected getPreferencesFromProviders() {
-
+    protected reconcilePreferences(): void {
         const preferenceChanges: { [preferenceName: string]: PreferenceChange } = {};
-        const deleted = new Set(Object.keys(this.prefCache));
+        const deleted = new Set(Object.keys(this.preferences));
 
-        this.preferenceProviders.forEach(provider => {
-            const prefs = provider.getPreferences();
+        for (const preferenceProvider of this.preferenceProviders) {
+            const preferences = preferenceProvider.getPreferences();
             // tslint:disable-next-line:forin
-            for (const preferenceName in prefs) {
+            for (const preferenceName in preferences) {
                 deleted.delete(preferenceName);
-                const oldValue = this.prefCache[preferenceName];
-                const newValue = prefs[preferenceName];
+                const oldValue = this.preferences[preferenceName];
+                const newValue = preferences[preferenceName];
                 if (oldValue) {
                     /* Value changed */
                     if (!JSONExt.deepEqual(oldValue, newValue)) {
                         preferenceChanges[preferenceName] = { preferenceName, newValue, oldValue };
-                        this.prefCache[preferenceName] = newValue;
+                        this.preferences[preferenceName] = newValue;
                     }
                     /* Value didn't change - Do nothing */
                 } else {
                     /* New value without old value */
                     preferenceChanges[preferenceName] = { preferenceName, newValue };
-                    this.prefCache[preferenceName] = newValue;
+                    this.preferences[preferenceName] = newValue;
                 }
             }
-        });
+        }
 
         /* Deleted values */
         for (const preferenceName of deleted) {
-            const oldValue = this.prefCache[preferenceName];
+            const oldValue = this.preferences[preferenceName];
             preferenceChanges[preferenceName] = { preferenceName, oldValue };
-            this.prefCache[preferenceName] = undefined;
+            this.preferences[preferenceName] = undefined;
         }
         // tslint:disable-next-line:forin
         for (const preferenceName in preferenceChanges) {
@@ -112,56 +116,28 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
         }
     }
 
-    protected onNewPreferences(): void {
-        this.getPreferencesFromProviders();
-    }
-
-    get onPreferenceChanged(): Event<PreferenceChange> {
-        return this.onPreferenceChangedEmitter.event;
-    }
-
     has(preferenceName: string): boolean {
-        // if (!this.isReady) {
-        //     this.init();
-        //     this.resolveReady();
-        //     this.isReady = true;
-        // }
-        return this.prefCache[preferenceName] !== undefined;
+        return this.preferences[preferenceName] !== undefined;
     }
 
     get<T>(preferenceName: string): T | undefined;
     get<T>(preferenceName: string, defaultValue: T): T;
     get<T>(preferenceName: string, defaultValue?: T): T | undefined {
-        // if (!this.isReady) {
-        //     this.init();
-        //     this.resolveReady();
-        //     this.isReady = true;
-        // }
-        const value = this.prefCache[preferenceName];
+        const value = this.preferences[preferenceName];
         return value !== null && value !== undefined ? value : defaultValue;
     }
 
     getBoolean(preferenceName: string): boolean | undefined;
     getBoolean(preferenceName: string, defaultValue: boolean): boolean;
     getBoolean(preferenceName: string, defaultValue?: boolean): boolean | undefined {
-        // if (!this.isReady) {
-        //     this.init();
-        //     this.resolveReady();
-        //     this.isReady = true;
-        // }
-        const value = this.prefCache[preferenceName];
+        const value = this.preferences[preferenceName];
         return value !== null && value !== undefined ? !!value : defaultValue;
     }
 
     getString(preferenceName: string): string | undefined;
     getString(preferenceName: string, defaultValue: string): string;
     getString(preferenceName: string, defaultValue?: string): string | undefined {
-        // if (!this.isReady) {
-        //     this.init();
-        //     this.resolveReady();
-        //     this.isReady = true;
-        // }
-        const value = this.prefCache[preferenceName];
+        const value = this.preferences[preferenceName];
         if (value === null || value === undefined) {
             return defaultValue;
         }
@@ -174,12 +150,7 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
     getNumber(preferenceName: string): number | undefined;
     getNumber(preferenceName: string, defaultValue: number): number;
     getNumber(preferenceName: string, defaultValue?: number): number | undefined {
-        // if (!this.isReady) {
-        //     this.init();
-        //     this.resolveReady();
-        //     this.isReady = true;
-        // }
-        const value = this.prefCache[preferenceName];
+        const value = this.preferences[preferenceName];
 
         if (value === null || value === undefined) {
             return defaultValue;
@@ -189,4 +160,5 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
         }
         return Number(value);
     }
+
 }

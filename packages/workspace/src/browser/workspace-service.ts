@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser';
@@ -21,20 +21,26 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     private _root: FileStat | undefined;
 
-    constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher,
-        @inject(WorkspaceServer) protected readonly server: WorkspaceServer,
-        @inject(WindowService) protected readonly windowService: WindowService,
-    ) {
-        (async () => {
-            const root = await this.root;
-            if (root) {
-                const uri = new URI(root.uri);
-                this.updateTitle(uri);
-                watcher.watchFileChanges(uri);
-            }
-        })();
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
+
+    @inject(FileSystemWatcher)
+    protected readonly watcher: FileSystemWatcher;
+
+    @inject(WorkspaceServer)
+    protected readonly server: WorkspaceServer;
+
+    @inject(WindowService)
+    protected readonly windowService: WindowService;
+
+    @postConstruct()
+    protected async init(): Promise<void> {
+        const root = await this.root;
+        if (root) {
+            const uri = new URI(root.uri);
+            this.updateTitle(uri);
+            this.watcher.watchFileChanges(uri);
+        }
     }
 
     protected updateTitle(uri: URI): void {

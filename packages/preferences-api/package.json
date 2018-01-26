@@ -2,8 +2,8 @@
   "name": "@theia/preferences-api",
   "version": "0.3.3",
   "description": "Theia - Preferences API",
-  "main": "lib/common/index.js",
-  "typings": "lib/common/index.d.ts",
+  "main": "lib/browser/index.js",
+  "typings": "lib/browser/index.d.ts",
   "dependencies": {
     "@theia/core": "^0.3.3"
   },

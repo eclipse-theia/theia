@@ -8,15 +8,13 @@
 import { Container } from 'inversify';
 import * as chai from 'chai';
 import { Emitter } from '@theia/core/lib/common';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { PreferenceService, PreferenceServiceImpl } from '@theia/preferences-api/lib/browser/';
+import { PreferenceService } from '@theia/preferences-api';
 import { FileSystem } from '@theia/filesystem/lib/common/';
-import { FileSystemWatcher, FileChange, } from '@theia/filesystem/lib/browser/';
-import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
+import { FileSystemWatcher } from '@theia/filesystem/lib/browser';
+import { FileSystemWatcherServer, FileChange } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { FileSystemPreferences, createFileSystemPreferences } from '@theia/filesystem/lib/browser/filesystem-preferences';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { UserPreferenceProvider } from './user-preference-provider';
-import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { ResourceProvider } from '@theia/core/lib/common/resource';
 import { WorkspaceServer } from '@theia/workspace/lib/common/';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
@@ -26,6 +24,7 @@ import { MockResourceProvider } from '@theia/core/lib/common/test/mock-resource-
 import { MockWorkspaceServer } from '@theia/workspace/lib/common/test/mock-workspace-server';
 import { MockWindowService } from '@theia/core/lib/browser/window/test/mock-window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { bindPreferences } from './preference-frontend-module';
 const jsdom = require('jsdom-global');
 
 import * as sinon from 'sinon';
@@ -42,21 +41,17 @@ before(async () => {
     testContainer = new Container();
 
     /* Preference bindings*/
-    testContainer.bind(UserPreferenceProvider).toSelf();
-    testContainer.bind(WorkspacePreferenceProvider).toSelf();
+    bindPreferences(testContainer.bind.bind(testContainer));
+    testContainer.rebind(UserPreferenceProvider).toSelf().onActivation((_, provider) => {
+        sinon.stub(provider, 'getPreferences').callsFake(() => ({
+            "editor.lineNumbers": "on"
+        }));
+        return provider;
+    });
+
     testContainer.bind(FileSystemPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
         return createFileSystemPreferences(preferences);
-    });
-
-    testContainer.bind(PreferenceService).toDynamicValue(ctx => {
-        const userProvider = ctx.container.get<UserPreferenceProvider>(UserPreferenceProvider);
-        sinon.stub(userProvider, 'getPreferences').callsFake(() => {
-            return { "editor.lineNumbers": "on" };
-        });
-        const workspaceProvider = ctx.container.get<WorkspacePreferenceProvider>(WorkspacePreferenceProvider);
-
-        return new PreferenceServiceImpl([userProvider, workspaceProvider]);
     });
 
     /* Workspace mocks and bindings */
@@ -77,19 +72,12 @@ before(async () => {
 
     /* FS mocks and bindings */
     testContainer.bind(FileSystemWatcherServer).to(MockFilesystemWatcherServer);
-    testContainer.bind(FileSystemWatcher).toDynamicValue(ctx => {
-        const server = ctx.container.get<FileSystemWatcherServer>(FileSystemWatcherServer);
-        const prefs = ctx.container.get<FileSystemPreferences>(FileSystemPreferences);
-
-        const watcher = new FileSystemWatcher(server, prefs);
-
+    testContainer.bind(FileSystemWatcher).toSelf().onActivation((_, watcher) => {
         sinon.stub(watcher, 'onFilesChanged').get(() =>
             mockOnFileChangedEmitter.event
         );
-
         return watcher;
-
-    }).inSingletonScope();
+    });
     testContainer.bind(FileSystem).to(MockFilesystem);
 
     /* Logger mock */
@@ -100,10 +88,6 @@ describe('Preference Service', () => {
 
     before(() => {
         prefService = testContainer.get<PreferenceService>(PreferenceService);
-        const prefServiceContrib = prefService as FrontendApplicationContribution;
-        if (prefServiceContrib.initialize) {
-            prefServiceContrib.initialize();
-        }
     });
 
     after(() => {
