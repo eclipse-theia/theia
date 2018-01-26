@@ -6,11 +6,11 @@
  */
 
 import { inject, injectable } from "inversify";
-import { Resource, DisposableCollection, MaybePromise } from '@theia/core';
-import { BaseWidget, Message, StatefulWidget } from '@theia/core/lib/browser';
+import { Resource, MaybePromise } from '@theia/core';
+import { BaseWidget, Message } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { ResourceProvider, Event, Emitter } from '@theia/core/lib/common';
-import { Workspace, TextDocument, DidChangeTextDocumentParams, Location, Range } from "@theia/languages/lib/common";
+import { Workspace, Location, Range } from "@theia/languages/lib/common";
 import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
 import { throttle } from 'throttle-debounce';
 import { ThemeService } from '@theia/core/lib/browser/theming';
@@ -23,37 +23,67 @@ const DEFAULT_ICON = 'fa fa-eye';
 
 let widgetCounter: number = 0;
 
-@injectable()
-export class PreviewWidget extends BaseWidget implements StatefulWidget {
+export const PreviewWidgetOptions = Symbol('PreviewWidgetOptions');
+export interface PreviewWidgetOptions {
+    uri: string
+}
 
+@injectable()
+export class PreviewWidget extends BaseWidget {
+
+    protected uri: URI;
     protected resource: Resource | undefined;
     protected previewHandler: PreviewHandler | undefined;
     protected firstUpdate: (() => void) | undefined = undefined;
-    protected readonly previewDisposables = new DisposableCollection();
     protected readonly onDidScrollEmitter = new Emitter<number>();
     protected readonly onDidDoubleClickEmitter = new Emitter<Location>();
 
-    @inject(ResourceProvider)
-    protected readonly resourceProvider: ResourceProvider;
-
-    @inject(Workspace)
-    protected readonly workspace: Workspace;
-
-    @inject(PreviewHandlerProvider)
-    protected readonly previewHandlerProvider: PreviewHandlerProvider;
-
     constructor(
+        @inject(PreviewWidgetOptions) protected readonly options: PreviewWidgetOptions,
+        @inject(PreviewHandlerProvider) protected readonly previewHandlerProvider: PreviewHandlerProvider,
+        @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
+        @inject(Workspace) protected readonly workspace: Workspace,
     ) {
         super();
+        this.uri = new URI(options.uri);
         this.id = 'preview-widget-' + widgetCounter++;
-        this.title.iconClass = DEFAULT_ICON;
         this.title.closable = true;
+        this.title.label = `Preview ${this.uri.path.base}`;
+        this.title.caption = this.title.label;
+        this.title.closable = true;
+
         this.addClass(PREVIEW_WIDGET_CLASS);
         this.node.tabIndex = 0;
+        const previewHandler = this.previewHandler = this.previewHandlerProvider.findContribution(this.uri)[0];
+        if (!previewHandler) {
+            return;
+        }
+        this.title.iconClass = previewHandler.iconClass || DEFAULT_ICON;
+        this.initialize();
+    }
+
+    async initialize(): Promise<void> {
+        const trimmedUri = this.uri.withoutFragment().withoutQuery();
+        const resource = this.resource = await this.resourceProvider(trimmedUri);
+        this.toDispose.push(resource);
+        if (resource.onDidChangeContents) {
+            this.toDispose.push(resource.onDidChangeContents(() => this.update()));
+        }
+        const updateIfAffected = (affectedUri?: string) => {
+            if (!affectedUri || affectedUri === trimmedUri.toString()) {
+                this.update();
+            }
+        };
+        this.toDispose.push(this.workspace.onDidOpenTextDocument(document => updateIfAffected(document.uri)));
+        this.toDispose.push(this.workspace.onDidChangeTextDocument(params => updateIfAffected(params.textDocument.uri)));
+        this.toDispose.push(this.workspace.onDidCloseTextDocument(document => updateIfAffected(document.uri)));
+        this.toDispose.push(ThemeService.get().onThemeChange(() => this.update()));
         this.startScrollSync();
         this.startDoubleClickListener();
+        this.firstUpdate = () => {
+            this.revealFragment(this.uri);
+        };
         this.update();
-        this.toDispose.push(ThemeService.get().onThemeChange(() => this.update()));
     }
 
     protected preventScrollNotification: boolean = false;
@@ -84,6 +114,10 @@ export class PreviewWidget extends BaseWidget implements StatefulWidget {
             const offset = offsetParent.classList.contains(PREVIEW_WIDGET_CLASS) ? target.offsetTop : offsetParent.offsetTop;
             this.didDoubleClick(offset);
         });
+    }
+
+    getUri(): URI {
+        return this.uri;
     }
 
     onActivateRequest(msg: Message): void {
@@ -126,58 +160,7 @@ export class PreviewWidget extends BaseWidget implements StatefulWidget {
         return this.previewHandler.renderContent({ content, originUri });
     }
 
-    storeState(): object {
-        if (this.resource) {
-            return { uri: this.resource.uri.toString() };
-        }
-        return {};
-    }
-
-    restoreState(oldState: object) {
-        const state = oldState as any;
-        if (state.uri) {
-            const uri = new URI(state.uri);
-            this.updateContent(uri);
-        }
-    }
-
-    dispose(): void {
-        super.dispose();
-        this.previewDisposables.dispose();
-    }
-
-    async updateContent(uri: URI): Promise<void> {
-        const trimmedUri = uri.withoutFragment().withoutQuery();
-        const previewHandler = this.previewHandler = this.previewHandlerProvider.findContribution(uri)[0];
-        if (!previewHandler) {
-            return;
-        }
-        this.previewDisposables.dispose();
-        const resource = this.resource = await this.resourceProvider(trimmedUri);
-        this.previewDisposables.push(resource);
-        if (resource.onDidChangeContents) {
-            this.previewDisposables.push(resource.onDidChangeContents(() => this.update()));
-        }
-        const updateIfAffected = (affectedUri?: string) => {
-            if (!affectedUri || affectedUri === trimmedUri.toString()) {
-                this.update();
-            }
-        };
-        this.previewDisposables.push(this.workspace.onDidOpenTextDocument((document: TextDocument) => updateIfAffected(document.uri)));
-        this.previewDisposables.push(this.workspace.onDidChangeTextDocument((params: DidChangeTextDocumentParams) => updateIfAffected(params.textDocument.uri)));
-        this.previewDisposables.push(this.workspace.onDidCloseTextDocument((document: TextDocument) => updateIfAffected(document.uri)));
-
-        this.title.label = `Preview ${uri.path.base}`;
-        this.title.iconClass = previewHandler.iconClass || DEFAULT_ICON;
-        this.title.caption = this.title.label;
-        this.title.closable = true;
-        this.firstUpdate = () => {
-            this.revealFragment(uri);
-        };
-        this.update();
-    }
-
-    revealFragment(uri: URI): void {
+    protected revealFragment(uri: URI): void {
         if (uri.fragment === '' || !this.previewHandler || !this.previewHandler.findElementForFragment) {
             return;
         }
@@ -189,10 +172,6 @@ export class PreviewWidget extends BaseWidget implements StatefulWidget {
                 this.preventScrollNotification = false;
             }, 50);
         }
-    }
-
-    get uri(): URI | undefined {
-        return (this.resource) ? this.resource.uri : undefined;
     }
 
     revealForSourceLine(sourceLine: number): void {

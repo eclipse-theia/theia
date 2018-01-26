@@ -9,6 +9,8 @@ import { inject, injectable, named } from "inversify";
 import URI from "@theia/core/lib/common/uri";
 import { ContributionProvider, MaybePromise, Prioritizeable } from "@theia/core";
 
+export const PREVIEW_OPENER_ID = 'preview-opener';
+
 export const PreviewHandler = Symbol('PreviewHandler');
 
 export interface RenderContentParams {

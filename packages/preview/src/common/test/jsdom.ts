@@ -14,10 +14,19 @@ const dom = new JSDOM('<!doctype html><html><body></body></html>');
 (global as any)['navigator'] = { userAgent: 'node.js', platform: 'Mac' };
 (global as any)['HTMLElement'] = (global as any)['window'].HTMLElement;
 
+const toCleanup: string[] = [];
 Object.getOwnPropertyNames((dom.window as any)).forEach(property => {
     if (typeof (global as any)[property] === 'undefined') {
         (global as any)[property] = (dom.window as any)[property];
+        toCleanup.push(property);
     }
 });
 
 (dom.window.document as any)['queryCommandSupported'] = function () { };
+
+export function cleanupJSDOM() {
+    for (const property of toCleanup) {
+        delete (global as any)[property];
+    }
+    delete (dom.window.document as any)['queryCommandSupported'];
+}

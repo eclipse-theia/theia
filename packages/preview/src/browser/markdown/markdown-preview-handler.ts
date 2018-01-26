@@ -6,8 +6,7 @@
  */
 
 import { injectable, inject } from "inversify";
-import { PreviewHandler, RenderContentParams } from '../preview-handler';
-import { PREVIEW_OPENER_ID } from '../preview-contribution';
+import { PreviewHandler, RenderContentParams, PREVIEW_OPENER_ID } from '../preview-handler';
 import URI from "@theia/core/lib/common/uri";
 import { OpenerService } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
