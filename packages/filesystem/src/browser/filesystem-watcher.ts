@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
+import { injectable, inject, postConstruct } from "inversify";
 import { Disposable, DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { DidFilesChangedParams, FileChangeType, FileSystemWatcherServer, WatchOptions } from '../common/filesystem-watcher-protocol';
@@ -27,19 +27,23 @@ export class FileSystemWatcher implements Disposable {
     protected readonly toRestartAll = new DisposableCollection();
     protected readonly onFileChangedEmitter = new Emitter<FileChange[]>();
 
-    constructor(
-        @inject(FileSystemWatcherServer) protected readonly server: FileSystemWatcherServer,
-        @inject(FileSystemPreferences) protected readonly preferences: FileSystemPreferences
-    ) {
+    @inject(FileSystemWatcherServer)
+    protected readonly server: FileSystemWatcherServer;
+
+    @inject(FileSystemPreferences)
+    protected readonly preferences: FileSystemPreferences;
+
+    @postConstruct()
+    protected init(): void {
         this.toDispose.push(this.onFileChangedEmitter);
 
-        this.toDispose.push(server);
-        server.setClient({
+        this.toDispose.push(this.server);
+        this.server.setClient({
             onDidFilesChanged: e => this.onDidFilesChanged(e)
         });
 
-        this.toDispose.push(preferences);
-        this.toDispose.push(preferences.onPreferenceChanged(e => {
+        this.toDispose.push(this.preferences);
+        this.toDispose.push(this.preferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'files.watcherExclude') {
                 this.toRestartAll.dispose();
             }

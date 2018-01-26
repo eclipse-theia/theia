@@ -47,18 +47,12 @@ before(async () => {
     });
     /* FS mocks and bindings */
     testContainer.bind(FileSystemWatcherServer).to(MockFilesystemWatcherServer).inSingletonScope();
-    testContainer.bind(FileSystemWatcher).toDynamicValue(ctx => {
-        const server = ctx.container.get<FileSystemWatcherServer>(FileSystemWatcherServer);
-        const prefs = ctx.container.get<FileSystemPreferences>(FileSystemPreferences);
-        const watcher = new FileSystemWatcher(server, prefs);
-
+    testContainer.bind(FileSystemWatcher).toSelf().onActivation((_, watcher) => {
         sinon.stub(watcher, 'onFilesChanged').get(() =>
             mockOnFileChangedEmitter.event
         );
-
         return watcher;
-
-    }).inSingletonScope();
+    });
 
     /* Mock logger binding*/
     testContainer.bind(ILogger).to(MockLogger);

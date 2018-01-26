@@ -7,13 +7,9 @@
 
 import { Disposable, Event } from '@theia/core/lib/common';
 
-export interface NewPreferencesEvent { }
 export const PreferenceProvider = Symbol('PreferenceProvider');
 
 export interface PreferenceProvider extends Disposable {
     getPreferences(): { [key: string]: any };
-    /* To get rid of the dependency loop problem */
-    init(): Promise<void>;
-    onNewPreferences: Event<NewPreferencesEvent>;
-    ready: Promise<void>;
+    readonly onDidPreferencesChanged: Event<void>;
 }

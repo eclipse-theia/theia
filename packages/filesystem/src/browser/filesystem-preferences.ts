@@ -48,7 +48,7 @@ export function bindFileSystemPreferences(bind: interfaces.Bind): void {
     bind(FileSystemPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
         return createFileSystemPreferences(preferences);
-    });
+    }).inSingletonScope();
 
     bind(PreferenceContribution).toConstantValue({ schema: filesystemPreferenceSchema });
 }
