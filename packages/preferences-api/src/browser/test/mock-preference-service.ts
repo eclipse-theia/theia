@@ -7,7 +7,7 @@
 
 import { injectable } from 'inversify';
 import { PreferenceService, PreferenceChange } from '../';
-import { Event, } from '@theia/core/lib/common';
+import { Emitter, Event } from '@theia/core/lib/common';
 
 @injectable()
 export class MockPreferenceService implements PreferenceService {
@@ -19,6 +19,5 @@ export class MockPreferenceService implements PreferenceService {
         return undefined;
     }
     ready: Promise<void>;
-
-    onPreferenceChanged: Event<PreferenceChange>;
+    readonly onPreferenceChanged: Event<PreferenceChange> = new Emitter<PreferenceChange>().event;
 }
