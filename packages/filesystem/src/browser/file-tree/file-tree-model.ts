@@ -190,7 +190,9 @@ export class FileTreeModel extends TreeModel implements LocationService {
         const content = base64.fromByteArray(new Uint8Array(fileContent));
         if (await this.fileSystem.exists(uri)) {
             const stat = await this.fileSystem.getFileStat(uri);
-            await this.fileSystem.setContent(stat, content, { encoding });
+            if (!stat.isDirectory) {
+                await this.fileSystem.setContent(stat, content, { encoding });
+            }
         } else {
             await this.fileSystem.createFile(uri, { content, encoding });
         }
