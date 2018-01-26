@@ -180,7 +180,7 @@ export class GitQuickOpenService {
             const items = repositories.map(repository => {
                 const uri = new URI(repository.localUri);
                 const execute = () => this.repositoryProvider.selectedRepository = repository;
-                const toLabel = () => uri.path.name;
+                const toLabel = () => uri.path.base;
                 const toDescription = () => FileUri.fsPath(uri);
                 return new GitQuickOpenItem<Repository>(repository, execute, toLabel, toDescription);
             });
