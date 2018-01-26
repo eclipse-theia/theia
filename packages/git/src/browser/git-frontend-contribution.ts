@@ -17,6 +17,10 @@ import { GitWidget } from './git-widget';
 
 export const GIT_WIDGET_FACTORY_ID = 'git';
 
+const GIT_SELECTED_REPOSITORY = 'git-selected-repository';
+const GIT_REPOSITORY_STATUS = 'git-repository-status';
+const GIT_AHEAD_BEHIND = 'git-ahead-behind';
+
 @injectable()
 export class GitFrontendContribution extends AbstractViewContribution<GitWidget> {
 
@@ -47,25 +51,40 @@ export class GitFrontendContribution extends AbstractViewContribution<GitWidget>
                 const repositories = this.repositoryProvider.allRepositories;
                 if (repositories.length > 1) {
                     const path = new URI(repository.localUri).path;
-                    this.statusBar.setElement('git-selected-repository', {
-                        text: `$(database) ${path.name}`,
+                    this.statusBar.setElement(GIT_SELECTED_REPOSITORY, {
+                        text: `$(database) ${path.base}`,
                         alignment: StatusBarAlignment.LEFT,
-                        priority: 101,
+                        priority: 102,
                         command: GIT_COMMANDS.CHANGE_REPOSITORY.id,
                         tooltip: path.toString()
                     });
                 } else {
-                    this.statusBar.removeElement('git-selected-repository');
+                    this.statusBar.removeElement(GIT_SELECTED_REPOSITORY);
                 }
                 this.toDispose.push(
-                    this.gitWatcher.onGitEvent((gitStatus: GitStatusChangeEvent) => {
-                        if (gitStatus.status.branch) {
-                            this.statusBar.setElement('git-repository-status', {
-                                text: `$(code-fork) ${gitStatus.status.branch}`,
-                                alignment: StatusBarAlignment.LEFT,
-                                priority: 100,
-                                command: GIT_COMMANDS.CHECKOUT.id
-                            });
+                    this.gitWatcher.onGitEvent((event: GitStatusChangeEvent) => {
+                        const { status } = event;
+                        const branch = status.branch ? status.branch : 'NO-HEAD';
+                        const dirty = status.changes.length > 0 ? '*' : '';
+                        this.statusBar.setElement(GIT_REPOSITORY_STATUS, {
+                            text: `$(code-fork) ${branch}${dirty}`,
+                            alignment: StatusBarAlignment.LEFT,
+                            priority: 101,
+                            command: GIT_COMMANDS.CHECKOUT.id
+                        });
+                        if (status.aheadBehind === undefined) {
+                            this.statusBar.removeElement(GIT_AHEAD_BEHIND);
+                        } else {
+                            const { ahead, behind } = status.aheadBehind;
+                            if (ahead > 0 || behind > 0) {
+                                this.statusBar.setElement(GIT_AHEAD_BEHIND, {
+                                    text: `${behind}↓ ${ahead}↑`,
+                                    alignment: StatusBarAlignment.LEFT,
+                                    priority: 100
+                                });
+                            } else {
+                                this.statusBar.removeElement(GIT_AHEAD_BEHIND);
+                            }
                         }
                     }));
             }
