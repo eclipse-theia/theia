@@ -97,7 +97,7 @@
     margin-left: 5px;
 }
 
-#theia-gitContainer .buttons .button {
+#theia-gitContainer .buttons .toolbar-button {
     margin: 0 2px;
     cursor: pointer;
     display: flex;
@@ -105,7 +105,7 @@
     padding: 0 3px;
 }
 
-#theia-gitContainer .buttons .button:hover {
+#theia-gitContainer .buttons .toolbar-button:hover {
     background: var(--theia-content-font-color3);
 }
 
@@ -163,20 +163,6 @@
 
 #theia-gitContainer .warn {
     background-color: var(--theia-error-color2) !important;
-}
-
-#theia-gitContainer .commit-button {
-    border: 1px solid var(--theia-border-color1);
-    color: var(--theia-ui-font-color1);
-    font-size: var(--theia-ui-font-size1);
-    border-radius: 0;
-    background-color: var(--theia-accent-color3);
-    outline: none;
-    cursor: pointer;
-    padding-left: 12px;
-    padding-right: 12px;
-    padding-top: 4px;
-    padding-bottom: 4px;
 }
 
 #theia-gitContainer .placeholder {

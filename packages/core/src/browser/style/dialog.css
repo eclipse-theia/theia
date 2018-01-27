@@ -19,8 +19,8 @@
     flex-direction: column;
     min-width: 400px;
     min-height: 150px;
-    background-color: var(--theia-layout-color3);
-    border: 1px solid var(--theia-border-color1);
+    background-color: var(--theia-ui-dialog-color);
+    color: var(--theia-ui-dialog-font-color);
 }
 .p-Widget.dialogOverlay .dialogTitle {
     display: flex;
@@ -30,23 +30,12 @@
     align-items: center;
     text-align: center;
     font-size: var(--theia-ui-font-size1);
-    background-color: var(--theia-layout-color2);
+    background-color: var(--theia-ui-dialog-header-color);
+    color: var(--theia-ui-dialog-header-font-color);
     padding: 0 calc(var(--theia-ui-padding)*2);
     height: 28px;
 }
-.p-Widget.dialogOverlay .dialogClose {
-    flex-grow: 0;
-    pointer-events: auto;
-    cursor: pointer;
-    margin-left: 4px;
-    padding-top: 8px;
-    background-size: 16px;
-    height: 16px;
-    width: 16px;
-    background-image: var(--theia-icon-close);
-    background-position: center;
-    background-repeat: no-repeat;
-}
+
 .p-Widget.dialogOverlay .dialogContent {
     display: flex;
     flex-grow: 2;
@@ -83,22 +72,6 @@ input {
   outline: none;
 }
 
-.p-Widget.dialogOverlay .dialogButton {
-    border: 1px solid var(--theia-border-color1);
-    color: var(--theia-ui-font-color1);
-    font-size: var(--theia-ui-font-size1);
-    border-radius: 0;
-    background-color: var(--theia-layout-color4);
-    min-width: 70px;
-    outline: none;
-    cursor: pointer;
-    padding-left: 12px;
-    padding-right: 12px;
-    padding-top: 4px;
-    padding-bottom: 4px;
-    margin-left: calc(var(--theia-ui-padding)*2);
-}
-
 .p-Widget.dialogOverlay select {
     border: 1px solid var(--theia-border-color1);
     color: var(--theia-ui-font-color1);
@@ -106,14 +79,6 @@ input {
     border-radius: 0;
     background: transparent;
     outline: none;    
-}
-
-.p-Widget.dialogOverlay .dialogButton.main {
-    background-color: var(--theia-accent-color3);
-}
-.p-Widget.dialogOverlay .dialogButton[disabled] {
-    background-color: var(--theia-disabled-color1);
-    cursor: default;
 }
 
 .p-Widget.dialogOverlay.hidden {
@@ -129,7 +94,7 @@ input {
     color: var(--theia-error-color1);
     border-color: var(--theia-error-color1);
 }
-.p-Widget.dialogOverlay .error > .dialogButton.main {
+.p-Widget.dialogOverlay .error > .button.main {
     background-color: var(--theia-error-color1);
     color: var(--theia-ui-font-color1);
 }

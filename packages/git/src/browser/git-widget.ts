@@ -169,14 +169,14 @@ export class GitWidget extends VirtualWidget {
             }
         };
         const refresh = h.a({
-            className: 'button',
+            className: 'toolbar-button',
             title: 'Refresh',
             onclick: async e => {
                 await this.repositoryProvider.refresh();
             }
         }, h.i({ className: 'fa fa-refresh' }));
         const more = repository ? h.a({
-            className: 'button',
+            className: 'toolbar-button',
             title: 'More...',
             onclick: event => {
                 const el = (event.target as HTMLElement).parentElement;
@@ -190,7 +190,7 @@ export class GitWidget extends VirtualWidget {
         }, h.i({ className: 'fa fa-ellipsis-h' })) : '';
         const commandsContainer = h.div({ className: 'buttons' }, refresh, more);
         const commitButton = h.button({
-            className: 'commit-button',
+            className: 'button',
             title: 'Commit all the staged changes',
             onclick: () => commit()
         }, 'Commit');
@@ -232,7 +232,7 @@ export class GitWidget extends VirtualWidget {
         const buttons: h.Child[] = [];
         if (change.staged) {
             buttons.push(h.a({
-                className: 'button',
+                className: 'toolbar-button',
                 title: 'Unstage Changes',
                 onclick: async event => {
                     try {
@@ -244,7 +244,7 @@ export class GitWidget extends VirtualWidget {
             }, h.i({ className: 'fa fa-minus' })));
         } else {
             buttons.push(h.a({
-                className: 'button',
+                className: 'toolbar-button',
                 title: 'Discard Changes',
                 onclick: async event => {
                     const options: Git.Options.Checkout.WorkingTreeFile = { paths: change.uri };
@@ -260,7 +260,7 @@ export class GitWidget extends VirtualWidget {
                 }
             }, h.i({ className: 'fa fa-undo' })));
             buttons.push(h.a({
-                className: 'button',
+                className: 'toolbar-button',
                 title: 'Stage Changes',
                 onclick: async event => {
                     try {

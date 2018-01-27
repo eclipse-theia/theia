@@ -52,7 +52,8 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         titleContentNode.appendChild(this.titleNode);
 
         this.closeCrossNode = document.createElement("i");
-        this.closeCrossNode.classList.add('dialogClose');
+        this.closeCrossNode.classList.add('fa');
+        this.closeCrossNode.classList.add('fa-times');
         titleContentNode.appendChild(this.closeCrossNode);
 
         this.contentNode = document.createElement("div");
@@ -74,19 +75,20 @@ export abstract class AbstractDialog<T> extends BaseWidget {
     protected appendCloseButton(text: string = 'Cancel'): HTMLButtonElement {
         this.closeButton = this.createButton(text);
         this.controlPanel.appendChild(this.closeButton);
+        this.closeButton.classList.add('secondary');
         return this.closeButton;
     }
 
     protected appendAcceptButton(text: string = 'OK'): HTMLButtonElement {
         this.acceptButton = this.createButton(text);
-        this.acceptButton.classList.add('main');
         this.controlPanel.appendChild(this.acceptButton);
+        this.acceptButton.classList.add('main');
         return this.acceptButton;
     }
 
     protected createButton(text: string): HTMLButtonElement {
         const button = document.createElement("button");
-        button.classList.add('dialogButton');
+        button.classList.add('button');
         button.textContent = text;
         return button;
     }
