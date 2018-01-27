@@ -52,7 +52,7 @@ all of MD as it is not optimized for dense, information rich UIs.
     */
   
     --theia-ui-font-color0: var(--md-grey-100);
-    --theia-ui-font-color1: var(--md-grey-400);
+    --theia-ui-font-color1: var(--md-grey-300);
     --theia-ui-font-color2: var(--md-grey-600);
     --theia-ui-font-color3: var(--md-grey-700);
 
@@ -160,4 +160,18 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-statusbar-color: var(--theia-brand-color0);
   --theia-statusBar-font-color: var(--theia-ui-font-color0);
   --theia-statusBar-font-size: 12px;
+
+  /* buttons */
+  --theia-ui-button-color: var(--theia-brand-color1);
+  --theia-ui-button-font-color: var(--theia-ui-font-color1);
+  --theia-ui-button-color-secondary: var(--theia-accent-color5);
+  --theia-ui-button-font-color-secondary: var(--theia-ui-font-color1);
+  --theia-ui-button-color-disabled: var(--theia-accent-color5);
+  --theia-ui-button-font-color-disabled: var(--theia-ui-font-color3);
+
+  /* dialogs */
+  --theia-ui-dialog-header-color: var(--theia-brand-color0);
+  --theia-ui-dialog-header-font-color: var(--theia-ui-font-color1);
+  --theia-ui-dialog-color: var(--theia-layout-color1);
+  --theia-ui-dialog-font-color: var(--theia-ui-font-color1);
 }

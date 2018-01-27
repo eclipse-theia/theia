@@ -13,6 +13,7 @@
     background: var(--theia-statusbar-color);
     display: flex;
     min-height: var(--theia-statusBar-height);
+    white-space: nowrap;
 }
 
 #theia-statusBar .area {

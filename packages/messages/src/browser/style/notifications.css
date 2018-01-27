@@ -35,13 +35,13 @@
     position: relative;
     width: 60%;
     min-width: 500px;
-    background-color: var(--theia-layout-color5);
+    background-color: var(--theia-ui-dialog-color);
     box-shadow: 0 5px 5px -5px rgba(0, 0, 0, 0.6);
     min-height: 35px;
     -webkit-animation: fadeInDown 0.5s ease both;
     animation: fadeInDown 0.5s ease both;
     margin-bottom: 1px;
-    color: var(--theia-ui-icon-font-color);
+    color: var(--theia-ui-dialog-font-color);
 }
 
 .theia-Notification .icon {
@@ -91,8 +91,8 @@
 }
 
 .theia-Notification .buttons > button {
-    background-color: var(--theia-accent-color3);
-    color: var(--theia-ui-icon-font-color);
+    background-color: var(--theia-ui-button-color);
+    color: var(--theia-ui-button-font-color);
     border: none;
     border-radius: 0px;
     text-align: center;

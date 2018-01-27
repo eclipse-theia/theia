@@ -63,6 +63,33 @@ body {
                                   supported by Chrome and Opera */
 }
 
+.button {
+  border: 1px solid var(--theia-border-color1);
+  font-size: var(--theia-ui-font-size1);
+  border-radius: 0;
+  color: var(--theia-ui-button-font-color);
+  background-color: var(--theia-ui-button-color);
+  min-width: 70px;
+  outline: none;
+  cursor: pointer;
+  padding-left: 12px;
+  padding-right: 12px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  margin-left: calc(var(--theia-ui-padding)*2);
+}
+
+.button.secondary {
+  color: var(--theia-ui-button-font-color-secondary);
+  background-color: var(--theia-ui-button-color-secondary);
+}
+
+.button[disabled] {
+  color: var(--theia-ui-button-font-color-disabled);
+  background-color: var(--theia-ui-button-color-disabled);
+  cursor: default;
+}
+
 /*-----------------------------------------------------------------------------
 | Import children style files
 |----------------------------------------------------------------------------*/

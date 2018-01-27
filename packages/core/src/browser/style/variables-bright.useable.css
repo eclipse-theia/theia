@@ -27,10 +27,10 @@ all of MD as it is not optimized for dense, information rich UIs.
   The following variables, specify the visual styling of borders in Theia.
    */
 
-   --theia-border-width: 1px;
+  --theia-border-width: 1px;
   --theia-border-color0: var(--md-grey-500);
-  --theia-border-color1: var(--md-grey-500);
-  --theia-border-color2: var(--md-grey-300);
+  --theia-border-color1: var(--md-grey-300);
+  --theia-border-color2: var(--md-grey-200);
   --theia-border-color3: var(--md-grey-100);
 
   /* UI Fonts
@@ -53,14 +53,14 @@ all of MD as it is not optimized for dense, information rich UIs.
 
   --theia-ui-font-color0: var(--md-grey-900);
   --theia-ui-font-color1: var(--md-grey-700);
-  --theia-ui-font-color2: var(--md-grey-500);
-  --theia-ui-font-color3: var(--md-grey-400);
+  --theia-ui-font-color2: var(--md-grey-400);
+  --theia-ui-font-color3: var(--md-grey-300);
 
   /* Special font colors */
   --theia-ui-icon-font-color: #FFFFFF;
       
   --theia-ui-bar-font-color0: var(--theia-ui-font-color0);
-  --theia-ui-bar-font-color1: #D4D4D4;
+  --theia-ui-bar-font-color1: var(--theia-ui-font-color1);
 
   /* Use these against the brand/accent/warn/error colors.
      These will typically go from light to darker, in both a dark and light theme
@@ -101,23 +101,23 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-layout-color2: var(--md-blue-grey-200);
   --theia-layout-color3: #fff;
   --theia-layout-color4: var(--md-blue-grey-600);
-  --theia-layout-color5: #24292e;
+  --theia-layout-color5: var(--md-blue-grey-50);
   --theia-layout-color6: var(--md-blue-grey-50);
   --theia-layout-color7: #333333;
 
   /* Brand/accent */
 
-  --theia-brand-color0: #24292e;
-  --theia-brand-color1: var(--md-orange-800);
-  --theia-brand-color2: var(--md-orange-800);
-  --theia-brand-color3: var(--md-orange-800);
+  --theia-brand-color0: var(--md-blue-700);
+  --theia-brand-color1: var(--md-blue-500);
+  --theia-brand-color2: var(--md-blue-300);
+  --theia-brand-color3: var(--md-blue-100);
 
-  --theia-accent-color0: var(--md-blue-grey-700);
-  --theia-accent-color1: var(--md-blue-grey-500);
-  --theia-accent-color2: var(--md-blue-grey-300);
-  --theia-accent-color3: var(--md-blue-grey-300);
-  --theia-accent-color4: var(--md-blue-grey-100);
-  --theia-accent-color5: var(--theia-layout-color0);
+  --theia-accent-color0: var(--md-blue-900);
+  --theia-accent-color1: var(--md-blue-700);
+  --theia-accent-color2: var(--md-blue-500);
+  --theia-accent-color3: var(--md-blue-100);
+  --theia-accent-color4: var(--md-grey-200);
+  --theia-accent-color5: var(--md-grey-200);
   
   /* State colors (warn, error, success, info) */
 
@@ -156,8 +156,22 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-scrollbar-thumb-color: hsla(0,0%,39%,.4);
   --theia-scrollbar-color: var(--theia-layout-color3);
 
-    /* statusbar */
-    --theia-statusbar-color: var(--theia-brand-color0);
-    --theia-statusBar-font-color: var(--theia-ui-bar-font-color1);
-    --theia-statusBar-font-size: 12px;
+  /* statusbar */
+  --theia-statusbar-color: var(--theia-brand-color0);
+  --theia-statusBar-font-color: var(--theia-inverse-ui-font-color1);
+  --theia-statusBar-font-size: 12px;
+
+  /* buttons */
+  --theia-ui-button-color: var(--theia-brand-color1);
+  --theia-ui-button-font-color: var(--theia-inverse-ui-font-color1);
+  --theia-ui-button-color-secondary: var(--theia-accent-color5);
+  --theia-ui-button-font-color-secondary: var(--theia-ui-font-color1);
+  --theia-ui-button-color-disabled: var(--theia-accent-color5);
+  --theia-ui-button-font-color-disabled: var(--theia-ui-font-color3);
+
+  /* dialogs */
+  --theia-ui-dialog-header-color: var(--theia-brand-color1);
+  --theia-ui-dialog-header-font-color: var(--theia-inverse-ui-font-color1);
+  --theia-ui-dialog-color: var(--theia-layout-color1);
+  --theia-ui-dialog-font-color: var(--theia-ui-font-color1);
 }
