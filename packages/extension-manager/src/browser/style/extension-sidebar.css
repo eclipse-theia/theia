@@ -8,11 +8,14 @@
 .theia-extensions {
     min-width: 250px !important;
     background-color: var(--theia-layout-color3);
+    display: flex;
+    flex-direction: column;
 }
 
 #extensionSearchContainer {
     padding: 15px;
     box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 #extensionSearchFieldContainer {
@@ -34,8 +37,8 @@
 #extensionListContainer {
     width: 100%;
     box-sizing: border-box;
-    height: calc(100% - 57px);
     overflow-y: auto;
+    flex-grow: 1;
 }
 
 .theia-extensions .extensionHeaderContainer {
