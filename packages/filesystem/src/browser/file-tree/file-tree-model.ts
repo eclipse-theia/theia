@@ -118,7 +118,8 @@ export class FileTreeModel extends TreeModel implements LocationService {
         if (DirNode.is(target) && FileStatNode.is(source)) {
             const sourceUri = source.uri.toString();
             const targetUri = target.uri.resolve(source.name).toString();
-            if (await !this.fileSystem.exists(targetUri) || await this.shouldOverwrite(source.name)) {
+            const targetExists = await this.fileSystem.exists(targetUri);
+            if (!targetExists || await this.shouldOverwrite(source.name)) {
                 await this.fileSystem.move(sourceUri, targetUri, { overwrite: true });
                 // to workaround https://github.com/Axosoft/nsfw/issues/42
                 this.refresh(target);
