@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import URI from '@theia/core/lib/common/uri';
-import { ICompositeTreeNode, TreeModel, TreeServices, ITreeNode } from "@theia/core/lib/browser";
+import { ICompositeTreeNode, TreeModel, TreeServices, ITreeNode, ConfirmDialog } from "@theia/core/lib/browser";
 import { FileSystem, } from "../../common";
 import { FileSystemWatcher, FileChangeType, FileChange } from '../filesystem-watcher';
 import { FileStatNode, DirNode, FileTree } from "./file-tree";
@@ -118,10 +118,23 @@ export class FileTreeModel extends TreeModel implements LocationService {
         if (DirNode.is(target) && FileStatNode.is(source)) {
             const sourceUri = source.uri.toString();
             const targetUri = target.uri.resolve(source.name).toString();
-            await this.fileSystem.move(sourceUri, targetUri, { overwrite: true });
-            // to workaround https://github.com/Axosoft/nsfw/issues/42
-            this.refresh(target);
+            const fileExistsInTarget = await this.fileSystem.exists(targetUri);
+            if (!fileExistsInTarget || await this.shouldReplace(source.name)) {
+                await this.fileSystem.move(sourceUri, targetUri, { overwrite: true });
+                // to workaround https://github.com/Axosoft/nsfw/issues/42
+                this.refresh(target);
+            }
         }
+    }
+
+    async shouldReplace(fileName: string): Promise<boolean> {
+        const dialog = new ConfirmDialog({
+            title: 'Replace file',
+            msg: `File '${fileName}' already exists in the destination folder. Do you want to replace it?`,
+            ok: 'Yes',
+            cancel: 'No'
+        });
+        return dialog.open();
     }
 
     upload(node: DirNode, items: DataTransferItemList): void {
