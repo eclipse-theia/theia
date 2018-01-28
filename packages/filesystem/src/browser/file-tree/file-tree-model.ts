@@ -118,8 +118,8 @@ export class FileTreeModel extends TreeModel implements LocationService {
         if (DirNode.is(target) && FileStatNode.is(source)) {
             const sourceUri = source.uri.toString();
             const targetUri = target.uri.resolve(source.name).toString();
-            const targetExists = await this.fileSystem.exists(targetUri);
-            if (!targetExists || await this.shouldOverwrite(source.name)) {
+            const fileExistsInTarget = await this.fileSystem.exists(targetUri);
+            if (!fileExistsInTarget || await this.shouldReplace(source.name)) {
                 await this.fileSystem.move(sourceUri, targetUri, { overwrite: true });
                 // to workaround https://github.com/Axosoft/nsfw/issues/42
                 this.refresh(target);
@@ -127,7 +127,7 @@ export class FileTreeModel extends TreeModel implements LocationService {
         }
     }
 
-    async shouldOverwrite(fileName: string): Promise<boolean> {
+    async shouldReplace(fileName: string): Promise<boolean> {
         const dialog = new ConfirmDialog({
             title: 'Replace file',
             msg: `File '${fileName}' already exists in the destination folder. Do you want to replace it?`,
