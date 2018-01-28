@@ -74,6 +74,9 @@
       ],
       "@theia/output/lib/*": [
         "packages/output/src/*"
+      ],
+      "@theia/callhierarchy/lib/*": [
+        "packages/callhierarchy/src/*"
       ]
     }
   },

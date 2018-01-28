@@ -13,6 +13,8 @@ import { LanguageClientFactory } from './language-client-factory';
 import { LanguagesFrontendContribution } from './languages-frontend-contribution';
 import { LanguageClientContribution } from "./language-client-contribution";
 import { WorkspaceSymbolCommand } from './workspace-symbols';
+import { LanguageClientProvider } from './language-client-provider';
+import { LanguageClientProviderImpl } from './language-client-provider-impl';
 
 export default new ContainerModule(bind => {
     bind(Window).to(WindowImpl).inSingletonScope();
@@ -25,4 +27,8 @@ export default new ContainerModule(bind => {
     bind(WorkspaceSymbolCommand).toSelf().inSingletonScope();
     bind(CommandContribution).toDynamicValue(ctx => ctx.container.get(WorkspaceSymbolCommand));
     bind(KeybindingContribution).toDynamicValue(ctx => ctx.container.get(WorkspaceSymbolCommand));
+
+    bind(LanguageClientProviderImpl).toSelf().inSingletonScope();
+    bind(LanguageClientProvider).toDynamicValue(ctx => ctx.container.get(LanguageClientProviderImpl)).inSingletonScope();
+
 });

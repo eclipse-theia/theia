@@ -3,6 +3,7 @@
   "name": "@theia/example-browser",
   "version": "0.3.4",
   "dependencies": {
+    "@theia/callhierarchy": "^0.3.4",
     "@theia/core": "^0.3.3",
     "@theia/cpp": "^0.3.4",
     "@theia/editor": "^0.3.4",
