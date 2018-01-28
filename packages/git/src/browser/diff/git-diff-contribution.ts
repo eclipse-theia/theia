@@ -9,7 +9,6 @@ import { CommandRegistry, Command, MenuModelRegistry, SelectionService, MessageT
 import { FrontendApplication, AbstractViewContribution } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { injectable, inject } from "inversify";
-import { GitDiffViewOptions } from './git-diff-model';
 import { GitDiffWidget } from './git-diff-widget';
 import { open, OpenerService } from "@theia/core/lib/browser";
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-menu';
@@ -19,6 +18,7 @@ import { FileSystem } from "@theia/filesystem/lib/common";
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import { NotificationsMessageClient } from "@theia/messages/lib/browser/notifications-message-client";
+import { Git } from "../../common";
 
 export namespace GitDiffCommands {
     export const OPEN_FILE_DIFF: Command = {
@@ -64,7 +64,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
                     async (fromRevision, toRevision) => {
                         const uri = fileUri.toString();
                         const fileStat = await this.fileSystem.getFileStat(uri);
-                        const options: GitDiffViewOptions = {
+                        const options: Git.Options.Diff = {
                             uri,
                             range: {
                                 fromRevision
@@ -90,9 +90,9 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
         }));
     }
 
-    async showWidget(options: GitDiffViewOptions) {
+    async showWidget(options: Git.Options.Diff) {
         const widget = await this.widget;
-        await widget.initialize(options);
+        await widget.setContent(options);
         this.openView({
             toggle: true,
             activate: true

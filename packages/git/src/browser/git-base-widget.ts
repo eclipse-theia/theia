@@ -13,9 +13,9 @@ export class GitBaseWidget extends VirtualWidget {
 
     protected getStatusCaption(status: GitFileStatus, staged: boolean): string {
         switch (status) {
-            case GitFileStatus.New:
-            case GitFileStatus.Renamed:
-            case GitFileStatus.Copied: return staged ? 'Added' : 'Unstaged';
+            case GitFileStatus.New: return staged ? 'Added' : 'Unstaged';
+            case GitFileStatus.Renamed: return 'Renamed';
+            case GitFileStatus.Copied: return 'Copied';
             case GitFileStatus.Modified: return 'Modified';
             case GitFileStatus.Deleted: return 'Deleted';
             case GitFileStatus.Conflicted: return 'Conficted';

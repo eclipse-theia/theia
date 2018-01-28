@@ -26,6 +26,8 @@ export interface GitFileChangeNode extends GitFileChange {
     readonly icon: string;
     readonly label: string;
     readonly description: string;
+    readonly caption?: string;
+    readonly extraIconClassName?: string;
 }
 
 @injectable()
