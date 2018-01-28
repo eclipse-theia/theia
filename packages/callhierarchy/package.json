@@ -1,22 +1,20 @@
 {
-  "name": "@theia/typescript",
+  "name": "@theia/callhierarchy",
   "version": "0.3.4",
-  "description": "Theia - Typescript Extension",
+  "description": "Theia - Call Hierarchy Extension",
   "dependencies": {
     "@theia/core": "^0.3.3",
     "@theia/languages": "^0.3.3",
-    "@theia/monaco": "^0.3.4",
-    "@theia/callhierarchy": "^0.3.4",
-    "monaco-typescript": "^2.2.0",
-    "typescript-language-server": "^0.1.4"
+    "@theia/editor": "^0.3.4",
+    "@theia/monaco": "0.3.4",
+    "ts-md5": "^1.2.2"
   },
   "publishConfig": {
     "access": "public"
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/typescript-frontend-module",
-      "backend": "lib/node/typescript-backend-module"
+      "frontend": "lib/browser/callhierarchy-frontend-module"
     }
   ],
   "keywords": [

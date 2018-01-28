@@ -35,6 +35,9 @@ export class JavaContribution extends BaseLanguageServerContribution {
         const jarPath = path.resolve(serverPath, jarPaths[0]);
         const workspacePath = path.resolve(os.tmpdir(), '_ws_' + new Date().getTime());
         const configuration = configurations.get(process.platform);
+        if (!configuration) {
+            throw new Error('Cannot find Java server configuration for ' + process.platform);
+        }
         const configurationPath = path.resolve(serverPath, configuration);
         const command = 'java';
         const args = [

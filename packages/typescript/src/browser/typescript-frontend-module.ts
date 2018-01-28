@@ -9,6 +9,8 @@ import { ContainerModule } from "inversify";
 import { LanguageClientContribution } from "@theia/languages/lib/browser";
 import { TypeScriptClientContribution, JavaScriptClientContribution } from "./typescript-client-contribution";
 import { registerTypeScript, registerJavaScript } from './typescript-language-config';
+import { TypeScriptCallHierarchyService } from "./typescript-callhierarchy-service";
+import { CallHierarchyService } from "@theia/callhierarchy/lib/browser";
 
 export default new ContainerModule(bind => {
     registerTypeScript();
@@ -19,4 +21,7 @@ export default new ContainerModule(bind => {
 
     bind(JavaScriptClientContribution).toSelf().inSingletonScope();
     bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(JavaScriptClientContribution));
+
+    bind(TypeScriptCallHierarchyService).toSelf().inSingletonScope();
+    bind(CallHierarchyService).toDynamicValue(ctx => ctx.container.get(TypeScriptCallHierarchyService)).inSingletonScope();
 });
