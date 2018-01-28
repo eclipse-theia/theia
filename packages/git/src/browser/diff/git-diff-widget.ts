@@ -9,7 +9,6 @@ import { injectable, inject } from "inversify";
 import { h } from "@phosphor/virtualdom";
 import { GIT_DIFF } from "./git-diff-contribution";
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
-import { GitDiffViewOptions } from './git-diff-model';
 import { VirtualRenderer, open, OpenerService, StatefulWidget } from "@theia/core/lib/browser";
 import { GitRepositoryProvider } from '../git-repository-provider';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
@@ -19,30 +18,11 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { GitBaseWidget } from "../git-base-widget";
 import { GitFileChangeNode } from "../git-widget";
 
-export interface GitDiffFileDescription {
-    icon: string,
-    label: string,
-    path: string
-}
-
-export interface GitDiffViewModel {
-    title?: string;
-    fileChangeNodes: GitFileChangeNode[];
-    toRevision?: string;
-    fromRevision?: string | number;
-    gitDiffFile?: GitDiffFileDescription
-}
-
-export namespace GitDiffViewModel {
-    export function is(model: any): model is GitDiffViewModel {
-        return 'fileChangeNodes' in model;
-    }
-}
-
 @injectable()
 export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
 
-    protected viewModel: GitDiffViewModel;
+    protected fileChangeNodes: GitFileChangeNode[];
+    protected options: Git.Options.Diff;
 
     constructor(
         @inject(Git) protected readonly git: Git,
@@ -51,12 +31,21 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
         @inject(OpenerService) protected openerService: OpenerService) {
         super();
         this.id = GIT_DIFF;
-        this.title.label = "Files changed";
+        this.title.label = "Diff";
 
         this.addClass('theia-git');
     }
 
-    async initialize(options: GitDiffViewOptions) {
+    protected get toRevision() {
+        return this.options.range && this.options.range.toRevision;
+    }
+
+    protected get fromRevision() {
+        return this.options.range && this.options.range.fromRevision;
+    }
+
+    async setContent(options: Git.Options.Diff) {
+        this.options = options;
         const repository = this.repositoryProvider.selectedRepository;
         if (repository) {
             const fileChanges: GitFileChange[] = await this.git.diff(repository, {
@@ -65,57 +54,53 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
             });
             const fileChangeNodes: GitFileChangeNode[] = [];
             for (const fileChange of fileChanges) {
-                const uri = fileChange.uri;
-                const fileChangeUri = new URI(uri);
-                const status = fileChange.status;
+                const fileChangeUri = new URI(fileChange.uri);
                 const [icon, label, description] = await Promise.all([
                     this.labelProvider.getIcon(fileChangeUri),
                     this.labelProvider.getName(fileChangeUri),
-                    repository ? this.getRepositoryRelativePath(repository, fileChangeUri) : this.labelProvider.getLongName(fileChangeUri)
+                    this.relativePath(fileChangeUri.parent)
                 ]);
+
+                const caption = this.computeCaption(fileChange);
                 fileChangeNodes.push({
-                    icon, label, description, uri, status
+                    ...fileChange, icon, label, description, caption
                 });
             }
-            let gitDiffFile: GitDiffFileDescription | undefined = undefined;
-            if (options.uri) {
-                const uri: URI = new URI(options.uri);
-                const [icon, label, path] = await Promise.all([
-                    this.labelProvider.getIcon(uri),
-                    this.labelProvider.getName(uri),
-                    repository ? this.getRepositoryRelativePath(repository, uri) : this.labelProvider.getLongName(uri)
-                ]);
-                gitDiffFile = {
-                    icon, label, path
-                };
-            }
-            const title = options.title;
-            let toRevision: string | undefined = undefined;
-            let fromRevision: string | number | undefined = undefined;
-            if (options.range) {
-                toRevision = options.range.toRevision;
-                fromRevision = options.range.fromRevision ? options.range.fromRevision.toString() : undefined;
-            }
-            this.viewModel = {
-                gitDiffFile,
-                title,
-                fileChangeNodes,
-                toRevision,
-                fromRevision
-            };
             this.update();
         }
+    }
+
+    protected relativePath(uri: URI | string): string {
+        const parsedUri = typeof uri === 'string' ? new URI(uri) : uri;
+        const repo = this.repositoryProvider.selectedRepository;
+        if (repo) {
+            return this.getRepositoryRelativePath(repo, parsedUri);
+        } else {
+            return this.labelProvider.getLongName(parsedUri);
+        }
+    }
+
+    protected computeCaption(fileChange: GitFileChange): string {
+        let result = `${this.relativePath(fileChange.uri)} - ${this.getStatusCaption(fileChange.status, true)}`;
+        if (fileChange.oldUri) {
+            result = `${this.relativePath(fileChange.oldUri)} -> ${result}`;
+        }
+        return result;
     }
 
     storeState(): object {
-        return this.viewModel;
+        const { fileChangeNodes, options } = this;
+        return {
+            fileChangeNodes,
+            options
+        };
     }
 
-    restoreState(oldState: object): void {
-        if (GitDiffViewModel.is(oldState)) {
-            this.viewModel = oldState;
-            this.update();
-        }
+    // tslint:disable-next-line:no-any
+    restoreState(oldState: any): void {
+        this.fileChangeNodes = oldState['fileChangeNodes'];
+        this.options = oldState['options'];
+        this.update();
     }
 
     protected render(): h.Child {
@@ -125,74 +110,95 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
     }
 
     protected renderDiffListHeader(): h.Child {
-        let fileDiv: h.Child = '';
-        if (this.viewModel.gitDiffFile && !this.viewModel.title) {
-            const iconSpan = h.span({ className: this.viewModel.gitDiffFile.icon + ' file-icon' });
-            const nameSpan = h.span({ className: 'name' }, this.viewModel.gitDiffFile.label + ' ');
-            const pathSpan = h.span({ className: 'path' }, this.viewModel.gitDiffFile.path);
-            const compareDiv = h.span({}, 'Compare ');
-            fileDiv = h.div({ className: "gitItem diff-file" }, h.div({ className: "noWrapInfo" }, compareDiv, iconSpan, nameSpan, pathSpan));
-            const withSpan = h.span({ className: 'row-title' }, 'with ');
-            const fromDiv =
-                this.viewModel.fromRevision && typeof this.viewModel.fromRevision !== 'number' ?
-                    h.div({ className: "revision noWrapInfo" }, withSpan, this.viewModel.fromRevision.toString()) :
-                    'previous revision';
-            return h.div({ className: "commitishBar" }, fileDiv, fromDiv);
-        } else {
-            const header = this.viewModel.title ? h.div({ className: 'git-diff-header' }, this.viewModel.title) : '';
-            return h.div({ className: "commitishBar" }, header);
+        const elements = [];
+        if (this.options.uri) {
+            const path = this.relativePath(this.options.uri);
+            if (path.length > 0) {
+                elements.push(h.div({ className: 'header-row' },
+                    h.div({ className: 'theia-header' }, 'path:'),
+                    h.div({ className: 'header-value' }, '/' + path)));
+            }
         }
+        if (this.fromRevision) {
+            let revision;
+            if (typeof this.fromRevision === 'string') {
+                revision = h.div({ className: 'header-value' }, this.fromRevision);
+            } else {
+                revision = h.div({ className: 'header-value' }, (this.toRevision || 'HEAD') + '~' + this.fromRevision);
+            }
+            elements.push(h.div({ className: 'header-row' },
+                h.div({ className: 'theia-header' }, 'revision: '),
+                revision));
+        }
+        const header = h.div({ className: 'theia-header' }, 'Files changed');
+
+        return h.div({ className: "diff-header" }, ...elements, header);
     }
 
     protected renderFileChangeList(): h.Child {
         const files: h.Child[] = [];
 
-        for (const fileChange of this.viewModel.fileChangeNodes) {
+        for (const fileChange of this.fileChangeNodes) {
             const fileChangeElement: h.Child = this.renderGitItem(fileChange);
             files.push(fileChangeElement);
         }
-        const header = h.div({ className: 'theia-header' }, 'Files changed');
-        const list = h.div({ className: "commitFileList" }, ...files);
-        return h.div({ className: "commitFileListContainer" }, header, list);
+        return h.div({ className: "commitFileListContainer" }, ...files);
     }
 
     protected renderGitItem(change: GitFileChangeNode): h.Child {
-        const uri: URI = new URI(change.uri);
-
         const iconSpan = h.span({ className: change.icon + ' file-icon' });
         const nameSpan = h.span({ className: 'name' }, change.label + ' ');
         const pathSpan = h.span({ className: 'path' }, change.description);
-        const nameAndPathDiv = h.div({
+        const elements = [];
+        elements.push(h.div({
+            title: change.caption,
             className: 'noWrapInfo',
             ondblclick: () => {
-                let diffuri: URI | undefined;
-                let fromURI: URI;
-                if (this.viewModel.fromRevision && typeof this.viewModel.fromRevision !== 'number') {
-                    fromURI = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.viewModel.fromRevision);
-                } else if (this.viewModel.fromRevision) {
-                    fromURI = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.viewModel.toRevision + "~" + this.viewModel.fromRevision);
+                const uri: URI = new URI(change.uri);
+
+                let fromURI = uri;
+                if (change.oldUri) { // set on renamed and copied
+                    fromURI = new URI(change.oldUri);
+                }
+                if (this.fromRevision !== undefined) {
+                    if (typeof this.fromRevision !== 'number') {
+                        fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.fromRevision);
+                    } else {
+                        fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + "~" + this.fromRevision);
+                    }
                 } else {
-                    fromURI = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.viewModel.toRevision + "~1");
+                    // default is to compare with previous revision
+                    fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + "~1");
                 }
-                let toURI;
-                if (this.viewModel.toRevision) {
-                    toURI = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.viewModel.toRevision);
+
+                let toURI = uri;
+                if (this.toRevision) {
+                    toURI = toURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision);
+                }
+
+                let uriToOpen = uri;
+                if (change.status === GitFileStatus.Deleted) {
+                    uriToOpen = fromURI;
+                } else if (change.status === GitFileStatus.New) {
+                    uriToOpen = toURI;
                 } else {
-                    toURI = uri;
+                    uriToOpen = DiffUris.encode(fromURI, toURI, uri.displayName);
                 }
-                diffuri = DiffUris.encode(fromURI, toURI, uri.displayName);
-                if (diffuri) {
-                    open(this.openerService, diffuri).catch(e => {
-                        // if we cant open in diff editor due to an error then open in single editor.
-                        open(this.openerService, uri);
-                    });
-                }
+                open(this.openerService, uriToOpen).catch(e => {
+                    console.error(e);
+                });
             }
-        }, iconSpan, nameSpan, pathSpan);
-        const statusDiv = h.div({
-            title: this.getStatusCaption(change.status, true),
+        }, iconSpan, nameSpan, pathSpan));
+        if (change.extraIconClassName) {
+            elements.push(h.div({
+                title: change.caption,
+                className: change.extraIconClassName
+            }));
+        }
+        elements.push(h.div({
+            title: change.caption,
             className: 'status staged ' + GitFileStatus[change.status].toLowerCase()
-        }, this.getStatusCaption(change.status, true).charAt(0));
-        return h.div({ className: 'gitItem noselect' }, nameAndPathDiv, statusDiv);
+        }, this.getStatusCaption(change.status, true).charAt(0)));
+        return h.div({ className: 'gitItem noselect' }, ...elements);
     }
 }
