@@ -66,6 +66,7 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
                     ...fileChange, icon, label, description, caption
                 });
             }
+            this.fileChangeNodes = fileChangeNodes;
             this.update();
         }
     }
