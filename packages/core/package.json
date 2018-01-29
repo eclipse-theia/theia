@@ -65,9 +65,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.2.0",
-    "jsdom": "^11.5.1",
-    "jsdom-global": "^3.0.2"
+    "@theia/ext-scripts": "^0.2.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
