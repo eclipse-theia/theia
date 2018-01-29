@@ -9,17 +9,8 @@ import { injectable, inject } from "inversify";
 import { Repository } from '../common';
 import { GitRepositoryWatcher, GitRepositoryWatcherFactory } from "./git-repository-watcher";
 
-export const GitRepositoryManager = Symbol('GitRepositoryManager');
-export interface GitRepositoryManager {
-
-    run<T>(repository: Repository, op: () => Promise<T>): Promise<T>;
-
-    getWatcher(repository: Repository): GitRepositoryWatcher;
-
-}
-
 @injectable()
-export class GitRepositoryManagerImpl implements GitRepositoryManager {
+export class GitRepositoryManager {
 
     @inject(GitRepositoryWatcherFactory)
     protected readonly watcherFactory: GitRepositoryWatcherFactory;
@@ -27,9 +18,7 @@ export class GitRepositoryManagerImpl implements GitRepositoryManager {
 
     run<T>(repository: Repository, op: () => Promise<T>): Promise<T> {
         const result = op();
-        result.then(() =>
-            this.getWatcher(repository).sync()
-        );
+        this.ensureSync(repository, result);
         return result;
     }
 
@@ -41,6 +30,11 @@ export class GitRepositoryManagerImpl implements GitRepositoryManager {
         const watcher = this.watcherFactory({ repository });
         this.watchers.set(repository.localUri, watcher);
         return watcher;
+    }
+
+    protected async ensureSync<T>(repository: Repository, result: Promise<T>): Promise<T> {
+        result.then(() => this.getWatcher(repository).sync());
+        return result;
     }
 
 }

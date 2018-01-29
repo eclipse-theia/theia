@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Disposable, DisposableCollection } from "@theia/core";
+import { DisposableCollection, Disposable } from "@theia/core";
 import { Repository } from '../common';
 import { GitWatcherServer, GitWatcherClient } from '../common/git-watcher';
 import { GitRepositoryManager } from "./git-repository-manager";
@@ -18,6 +18,7 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
 
     protected watcherSequence = 1;
     protected readonly watchers = new Map<number, Disposable>();
+    protected readonly subscriptions = new Map<string, DisposableCollection>();
 
     constructor(
         @inject(GitRepositoryManager) protected readonly manager: GitRepositoryManager
@@ -28,17 +29,30 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
             watcher.dispose();
         }
         this.watchers.clear();
+        this.subscriptions.clear();
     }
 
     async watchGitChanges(repository: Repository): Promise<number> {
         const watcher = this.manager.getWatcher(repository);
-        const disposable = new DisposableCollection();
-        disposable.push(watcher.onStatusChanged(e => {
-            if (this.client) {
-                this.client.onGitChanged(e);
-            }
-        }));
-        disposable.push(watcher.watch());
+
+        const repositoryUri = repository.localUri;
+        let subscriptions = this.subscriptions.get(repositoryUri);
+        if (subscriptions === undefined) {
+            const unsubscribe = watcher.onStatusChanged(e => {
+                if (this.client) {
+                    this.client.onGitChanged(e);
+                }
+            });
+            subscriptions = new DisposableCollection();
+            subscriptions.onDispose(() => {
+                unsubscribe.dispose();
+                this.subscriptions.delete(repositoryUri);
+            });
+            this.subscriptions.set(repositoryUri, subscriptions);
+        }
+
+        const disposable = watcher.watch();
+        subscriptions.push(disposable);
         const watcherId = this.watcherSequence++;
         this.watchers.set(watcherId, disposable);
         return watcherId;

@@ -18,19 +18,8 @@ export class GitRepositoryWatcherOptions {
     readonly repository: Repository;
 }
 
-export const GitRepositoryWatcher = Symbol('GitRepositoryWatcher');
-export interface GitRepositoryWatcher {
-
-    readonly onStatusChanged: Event<GitStatusChangeEvent>;
-
-    sync(): Promise<void>;
-
-    watch(): Disposable;
-
-}
-
 @injectable()
-export class GitRepositoryWatcherImpl implements GitRepositoryWatcher {
+export class GitRepositoryWatcher {
 
     protected readonly onStatusChangedEmitter = new Emitter<GitStatusChangeEvent>();
     readonly onStatusChanged: Event<GitStatusChangeEvent> = this.onStatusChangedEmitter.event;

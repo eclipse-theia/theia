@@ -9,7 +9,7 @@ import * as temp from 'temp';
 import { expect } from 'chai';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { GitFileStatus } from '../common';
-import { createGit } from './dugite-git.spec';
+import { createGit } from './test/binding-helper';
 
 // tslint:disable:no-unused-expression
 
