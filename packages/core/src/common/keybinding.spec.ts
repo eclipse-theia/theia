@@ -4,7 +4,8 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-/* tslint:disable:no-unused-expression */
+import { cleanupJSDOM } from '../browser/test/jsdom';
+
 import { Container, injectable, inject, ContainerModule } from 'inversify';
 import { bindContributionProvider } from './contribution-provider';
 import { ILogger } from './logger';
@@ -18,7 +19,8 @@ import { MockLogger } from './test/mock-logger';
 import * as os from './os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
-const jsdom = require('jsdom-global');
+
+/* tslint:disable:no-unused-expression */
 
 const expect = chai.expect;
 chai.config.showDiff = true;
@@ -30,7 +32,6 @@ let testContainer: Container;
 let stub: sinon.SinonStub;
 
 before(async () => {
-    jsdom();
     testContainer = new Container();
     const module = new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -60,6 +61,10 @@ before(async () => {
     commandRegistry = testContainer.get(CommandRegistry);
     commandRegistry.onStart();
 
+});
+
+after(() => {
+    cleanupJSDOM();
 });
 
 describe('keybindings', () => {

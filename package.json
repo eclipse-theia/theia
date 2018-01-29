@@ -9,6 +9,7 @@
   "devDependencies": {
     "@types/chai": "^4.0.1",
     "@types/chai-as-promised": "0.0.31",
+    "@types/jsdom": "^11.0.4",
     "@types/mocha": "^2.2.41",
     "@types/sinon": "^2.3.5",
     "@types/temp": "^0.8.29",
@@ -19,6 +20,7 @@
     "electron-mocha": "^3.5.0",
     "istanbul": "^0.4.5",
     "istanbul-instrumenter-loader": "^3.0.0",
+    "jsdom": "^11.5.1",
     "lerna": "^2.2.0",
     "mocha": "^3.4.2",
     "nyc": "^11.0.3",
