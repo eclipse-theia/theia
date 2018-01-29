@@ -25,7 +25,7 @@ export class GitUriLabelProviderContribution implements LabelProviderContributio
     }
 
     getLongName(uri: URI): string {
-        return this.labelProvider.getLongName(this.toFileUri(uri).withoutQuery());
+        return this.labelProvider.getLongName(this.toFileUri(uri).withoutQuery().withoutFragment());
     }
 
     getName(uri: URI): string {

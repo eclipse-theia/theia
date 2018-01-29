@@ -63,7 +63,7 @@ export class PreviewWidget extends BaseWidget {
     }
 
     async initialize(): Promise<void> {
-        const trimmedUri = this.uri.withoutFragment().withoutQuery();
+        const trimmedUri = this.uri.withoutFragment();
         const resource = this.resource = await this.resourceProvider(trimmedUri);
         this.toDispose.push(resource);
         if (resource.onDidChangeContents) {

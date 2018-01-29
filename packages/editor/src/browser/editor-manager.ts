@@ -99,7 +99,7 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
     }
 
     open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
-        const trimmedUri = uri.withoutFragment().withoutQuery();
+        const trimmedUri = uri.withoutFragment();
         return this.widgetManager.getOrCreateWidget<EditorWidget>(this.id, trimmedUri.toString()).then(editor => {
             if (!editor.isAttached) {
                 const widgetOptions: ApplicationShell.WidgetOptions = options && options.widgetOptions || { area: 'main' };
