@@ -39,7 +39,7 @@ export class GitFrontendContribution extends AbstractViewContribution<GitWidget>
                 rank: 200
             },
             toggleCommandId: 'gitView:toggle',
-            toggleKeybinding: 'ctrlcmd+shift+g'
+            toggleKeybinding: 'ctrl+shift+g'
         });
     }
 
