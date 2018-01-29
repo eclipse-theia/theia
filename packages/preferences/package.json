@@ -6,6 +6,7 @@
     "@theia/core": "^0.3.2",
     "@theia/filesystem": "^0.3.2",
     "@theia/preferences-api": "^0.3.2",
+    "@theia/userstorage": "^0.3.2",
     "@theia/workspace": "^0.3.2",
     "@types/fs-extra": "^4.0.2",
     "ajv": "^5.2.2",
@@ -17,8 +18,7 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/preference-frontend-module",
-      "backend": "lib/node/preference-backend-module"
+      "frontend": "lib/browser/preference-frontend-module"
     }
   ],
   "keywords": [
@@ -46,7 +46,9 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.2.0"
+    "@theia/ext-scripts": "^0.2.0",
+    "jsdom": "^11.5.1",
+    "jsdom-global": "^3.0.2"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

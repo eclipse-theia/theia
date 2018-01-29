@@ -12,7 +12,7 @@ import {
     PreferenceService,
     PreferenceContribution,
     PreferenceSchema
-} from '@theia/preferences-api/lib/common';
+} from '@theia/preferences-api/lib/browser';
 
 export const OutputConfigSchema: PreferenceSchema = {
     "type": "object",
@@ -41,7 +41,7 @@ export function createOutputPreferences(preferences: PreferenceService): OutputP
 
 export function bindOutputPreferences(bind: interfaces.Bind): void {
     bind(OutputPreferences).toDynamicValue(ctx => {
-        const preferences = ctx.container.get(PreferenceService);
+        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
         return createOutputPreferences(preferences);
     });
 
