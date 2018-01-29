@@ -1,12 +1,12 @@
 {
   "name": "@theia/terminal",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Theia - Terminal Extension",
   "dependencies": {
-    "@theia/core": "^0.3.2",
-    "@theia/filesystem": "^0.3.2",
-    "@theia/process": "^0.3.2",
-    "@theia/workspace": "^0.3.2",
+    "@theia/core": "^0.3.3",
+    "@theia/filesystem": "^0.3.3",
+    "@theia/process": "^0.3.3",
+    "@theia/workspace": "^0.3.3",
     "xterm": "^3.0.1"
   },
   "publishConfig": {
