@@ -56,7 +56,7 @@ export class PreviewWidgetManager implements WidgetFactory {
     }
 
     protected asKey(uri: string | URI): string {
-        return (uri instanceof URI ? uri : new URI(uri)).withoutQuery().withoutFragment().toString();
+        return (uri instanceof URI ? uri : new URI(uri)).withoutFragment().toString();
     }
 
 }

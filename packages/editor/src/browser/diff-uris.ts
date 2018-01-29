@@ -19,14 +19,14 @@ export namespace DiffUris {
 
         const diffUriStr = JSON.stringify(diffUris);
 
-        return new URI(name || left.displayName).withScheme('diff').withFragment(diffUriStr);
+        return new URI(name || left.displayName).withScheme('diff').withQuery(diffUriStr);
     }
 
     export function decode(uri: URI): URI[] {
         if (uri.scheme !== 'diff') {
             throw ('URI must have scheme "diff".');
         }
-        const diffUris: string[] = JSON.parse(uri.fragment);
+        const diffUris: string[] = JSON.parse(uri.query);
         return diffUris.map(s => new URI(s));
     }
 
