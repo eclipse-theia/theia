@@ -10,19 +10,12 @@ import * as upath from 'upath';
 import * as temp from 'temp';
 import * as fs from 'fs-extra';
 import { expect } from 'chai';
-import { Container, interfaces } from 'inversify';
 import { Git } from '../common/git';
-import { DugiteGit } from './dugite-git';
 import { git as gitExec } from 'dugite-extra/lib/core/git';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { WorkingDirectoryStatus, Repository, GitUtils, GitFileStatus, GitFileChange } from '../common';
 import { initRepository, createTestRepository } from 'dugite-extra/lib/command/test-helper';
-import { bindGit } from './git-backend-module';
-import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
-import { ILoggerServer } from '@theia/core/lib/common/logger-protocol';
-import { ConsoleLoggerServer } from '@theia/core/lib/common/console-logger-server';
-import { MockRepositoryManager } from './test/mock-repository-manager';
-import { MockRepositoryWatcher } from './test/mock-repository-watcher';
+import { createGit } from './test/binding-helper';
 
 // tslint:disable:no-unused-expression
 // tslint:disable:max-line-length
@@ -573,20 +566,4 @@ namespace ChangeDelta {
             status: fileChange.status
         };
     }
-}
-
-export async function createGit(): Promise<Git> {
-    const container = new Container();
-    const bind = container.bind.bind(container);
-    bindLogger(bind);
-    container.rebind(ILoggerServer).to(ConsoleLoggerServer).inSingletonScope();
-    bindGit(bind, {
-        bindManager(binding: interfaces.BindingToSyntax<{}>): interfaces.BindingWhenOnSyntax<{}> {
-            return binding.to(MockRepositoryManager).inSingletonScope();
-        },
-        bindWatcher(binding: interfaces.BindingToSyntax<{}>): interfaces.BindingWhenOnSyntax<{}> {
-            return binding.to(MockRepositoryWatcher);
-        }
-    });
-    return container.get(DugiteGit);
 }
