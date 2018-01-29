@@ -1,6 +1,6 @@
 {
   "name": "@theia/editor",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Theia - Editor Extension",
   "dependencies": {
     "@theia/core": "^0.3.3",

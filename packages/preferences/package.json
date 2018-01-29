@@ -1,12 +1,12 @@
 {
   "name": "@theia/preferences",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Theia - Preferences Extension",
   "dependencies": {
     "@theia/core": "^0.3.3",
-    "@theia/filesystem": "^0.3.3",
+    "@theia/filesystem": "^0.3.4",
     "@theia/preferences-api": "^0.3.3",
-    "@theia/workspace": "^0.3.3",
+    "@theia/workspace": "^0.3.4",
     "@types/fs-extra": "^4.0.2",
     "ajv": "^5.2.2",
     "fs-extra": "^4.0.2",

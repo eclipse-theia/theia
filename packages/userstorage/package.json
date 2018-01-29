@@ -1,10 +1,10 @@
 {
   "name": "@theia/userstorage",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Theia - User Storage Extension",
   "dependencies": {
     "@theia/core": "^0.3.3",
-    "@theia/filesystem": "^0.3.3"
+    "@theia/filesystem": "^0.3.4"
   },
   "publishConfig": {
     "access": "public"
