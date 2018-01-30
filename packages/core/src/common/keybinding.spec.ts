@@ -13,7 +13,7 @@ import {
     KeybindingRegistry, KeybindingContext, KeybindingContextRegistry,
     Keybinding, KeybindingContribution, KeybindingScope
 } from './keybinding';
-import { KeyCode, Key, Modifier } from './keys';
+import { KeyCode, Key, Modifier, KeySequence } from './keys';
 import { CommandRegistry, CommandContribution, Command } from './command';
 import { MockLogger } from './test/mock-logger';
 import * as os from './os';
@@ -285,6 +285,24 @@ describe("keys api", () => {
         expect(keyCodeString).to.be.equal("ctrl+a");
         const parsedKeyCode = KeyCode.parse(keyCodeString);
         expect(KeyCode.equals(parsedKeyCode, keyCode)).to.be.true;
+    });
+
+    it("it should parse a multi keycode keybinding", () => {
+        const validKeyCodes = [];
+        validKeyCodes.push(KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M1] }));
+        validKeyCodes.push(KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [Modifier.M1, Modifier.M2] }));
+
+        const parsedKeyCodes = KeySequence.parse("ctrlcmd+a ctrlcmd+shift+c");
+        expect(parsedKeyCodes).to.deep.equal(validKeyCodes);
+    });
+
+    it("it should parse a multi keycode keybinding with no modifiers", () => {
+        const validKeyCodes = [];
+        validKeyCodes.push(KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M1] }));
+        validKeyCodes.push(KeyCode.createKeyCode({ first: Key.KEY_C }));
+
+        const parsedKeyCodes = KeySequence.parse("ctrlcmd+a c");
+        expect(parsedKeyCodes).to.deep.equal(validKeyCodes);
     });
 });
 
