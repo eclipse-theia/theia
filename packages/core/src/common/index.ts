@@ -14,6 +14,7 @@ export * from './menu';
 export * from './keys';
 export * from './keybinding';
 export * from './selection-service';
+export * from './objects';
 export * from './os';
 export * from './resource';
 export * from './contribution-provider';

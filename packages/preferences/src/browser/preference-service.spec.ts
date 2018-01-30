@@ -189,4 +189,23 @@ describe('Preference Service', function () {
 
         stubUser.restore();
     });
+
+    it('Should throw a TypeError if the preference (reference object) is modified', () => {
+        const userProvider = testContainer.get(UserPreferenceProvider);
+        const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
+            'test.immutable': [
+                'test', 'test', 'test'
+            ]
+        });
+        mockUserPreferenceEmitter.fire(undefined);
+
+        const immutablePref: string[] | undefined = prefService.get('test.immutable');
+        expect(immutablePref).to.not.be.undefined;
+        if (immutablePref !== undefined) {
+            expect(() => {
+                immutablePref.push('fails');
+            }).to.throw(TypeError);
+        }
+        stubUser.restore();
+    });
 });
