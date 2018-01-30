@@ -50,9 +50,9 @@ export class RawProcess extends Process {
         @inject(ILogger) logger: ILogger) {
         super(processManager, logger, ProcessType.Raw, options);
 
-        this.logger.debug(`Starting raw process : ${options.command},`
-            + ` with args : ${options.args}, `
-            + ` options ${JSON.stringify(options.options)}`);
+        this.logger.debug(`Starting raw process: ${options.command},`
+            + ` with args: ${options.args ? options.args.join(' ') : ''}, `
+            + ` with options: ${JSON.stringify(options.options)}`);
 
         /* spawn can throw exceptions, for example if the file is not
            executable, it throws an error with EACCES.  Here, we try to
