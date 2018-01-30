@@ -29,6 +29,7 @@ export class CppContribution extends BaseLanguageServerContribution {
             if (message.method === InitializeRequest.type.method) {
                 const initializeParams = message.params as InitializeParams;
                 initializeParams.processId = process.pid;
+                initializeParams.initializationOptions = this.cppPreferences['cpp.indexingExclusions'];
             }
         }
         return message;

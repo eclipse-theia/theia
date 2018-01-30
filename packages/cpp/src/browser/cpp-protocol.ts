@@ -16,4 +16,5 @@ export interface ActionableMessage {
 
 export namespace SwitchSourceHeaderRequest {
     export const type = new RequestType<TextDocumentIdentifier, string | undefined, void, void>("textDocument/switchSourceHeader");
+
 }
