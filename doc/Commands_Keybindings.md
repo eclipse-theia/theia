@@ -97,7 +97,7 @@ With the `id`, the only other mandatory parameter is the `keycode`, which is bas
 ```typescript
 export declare type Keystroke = { first: Key, modifiers?: Modifier[] };
 ```
-Modifiers are platform independant, so `Modifier.M1` is Command on OS X and CTRL on Windows/Linux. Key string constants are defined in `keys.ts` 
+Modifiers are platform independent, so `Modifier.M1` is Command on OS X and CTRL on Windows/Linux. Key string constants are defined in `keys.ts`
 
 ### Binding the contribution to KeybindingContribution
 
