@@ -15,6 +15,35 @@ import { isOSX } from './os';
  */
 export declare type Keystroke = { first: Key, modifiers?: Modifier[] };
 
+export type KeySequence = KeyCode[];
+export namespace KeySequence {
+
+    export function equals(a: KeySequence, b: KeySequence) {
+        if (a.length !== b.length) {
+            return false;
+        }
+
+        for (let i = 0; i < a.length; i++) {
+            if (a[i].equals(b[i]) === false) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    export function parse(keybinding: string): KeySequence {
+        const keyCodes = [];
+        const rawKeyCodes = keybinding.split(" ");
+        for (const rawKeyCode of rawKeyCodes) {
+            const keyCode = KeyCode.parse(rawKeyCode);
+            if (keyCode !== undefined) {
+                keyCodes.push(keyCode);
+            }
+        }
+        return keyCodes;
+    }
+}
+
 /**
  * Representation of a platform independent key code.
  */
