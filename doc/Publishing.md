@@ -12,7 +12,7 @@ Before publishing it's important to make sure that theia-apps builds against 'ne
 
 - Make sure that there is no pending build on Theia master, otherwise a new "next" version might be published while we validate the current "next".
 
-- Go in the theia-apps repo [here](https://github.com/theia-ide/theia-apps/commits/master) and identify the latest commit. There should be an icon next to it; either a red X or a green checkmark. Click on it to go the the travis page. There re-trigger the build. We need to make sure that at least the various "next" builds passes. If it doesn't, it needs to be fixed before continuying.
+- Go in the theia-apps repo [here](https://github.com/theia-ide/theia-apps/commits/master) and identify the latest commit. There should be an icon next to it; either a red X or a green checkmark. Click on it to go the Travis page. There re-trigger the build. We need to make sure that at least the various "next" builds pass. If it doesn't, it needs to be fixed before continuing.
 
 
 ## Login to the npm registry

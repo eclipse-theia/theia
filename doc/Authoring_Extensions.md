@@ -29,7 +29,7 @@ Also make sure your `python --version` points to a Python 2.x installation.
 
 ## Project Layout
 
-We are going to create a monorepo (a repository containing multiple npm packages) named `theia-hello-world-extension` containing three packages: `hello-world-extension`, `browser-app` and `electron-app`. The first contains our extension, the latter two the Theia applications to run our extension in browser and electron mode.  We are going to use `yarn` instead of `npm`, because it allows to structure such monorepos into workspaces. In our case, each workspace contains its own `npm` package. Common dependencies of these packages are 'hoisted' by `yarn` to their common root directory. We are also going to use `lerna` to run scripts accross workspaces. 
+We are going to create a monorepo (a repository containing multiple npm packages) named `theia-hello-world-extension` containing three packages: `hello-world-extension`, `browser-app` and `electron-app`. The first contains our extension, the latter two the Theia applications to run our extension in browser and electron mode.  We are going to use `yarn` instead of `npm`, because it allows to structure such monorepos into workspaces. In our case, each workspace contains its own `npm` package. Common dependencies of these packages are 'hoisted' by `yarn` to their common root directory. We are also going to use `lerna` to run scripts across workspaces.
 
 To ease the setup of such a repository we have created a [code generator](https://www.npmjs.com/package/generator-theia-extension) to scaffold the project. It will also generate the `hello-world` example. Run it using
 

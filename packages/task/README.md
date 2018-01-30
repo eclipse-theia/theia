@@ -37,7 +37,7 @@ Each task configuration looks like this:
 
 *processOptions.args*: a list of strings, each one being one argument to pass to the command. 
 
-*windowsProcessOptions*: By default, *processOption* above is used on all platforms. However it's not always possible to express a task in the same way, both on Unix and Windows. The command and/or arguments may be different, for example. If a task needs to work on both Linux/MacOS and Windows, it can be better to have two separate process options. If *windowsProcessOptions* is defined, it will be used instead of *processOptions*, when a task is executed on a Windows backend. 
+*windowsProcessOptions*: By default, *processOptions* above is used on all platforms. However it's not always possible to express a task in the same way, both on Unix and Windows. The command and/or arguments may be different, for example. If a task needs to work on both Linux/MacOS and Windows, it can be better to have two separate process options. If *windowsProcessOptions* is defined, it will be used instead of *processOptions*, when a task is executed on a Windows backend.
 
 
 

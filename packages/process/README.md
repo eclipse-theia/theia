@@ -1,6 +1,6 @@
 # Theia - Process Extension
 
-This extension allows the management of proccesses started with or without a terminal.
+This extension allows the management of processes started with or without a terminal.
 
 See [here](https://github.com/theia-ide/theia) for a detailed documentation.
 
