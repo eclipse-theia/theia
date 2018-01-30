@@ -8,7 +8,7 @@
 import { JSONExt } from '@phosphor/coreutils';
 import { injectable, inject } from 'inversify';
 import { FrontendApplicationContribution } from '../../browser';
-import { Event, Emitter, DisposableCollection, Disposable } from '../../common';
+import { Event, Emitter, DisposableCollection, Disposable, deepFreeze } from '../../common';
 import { PreferenceProvider } from './preference-provider';
 
 export interface PreferenceChangedEvent {
@@ -88,7 +88,7 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
             for (const preferenceName in preferences) {
                 deleted.delete(preferenceName);
                 const oldValue = this.preferences[preferenceName];
-                const newValue = preferences[preferenceName];
+                const newValue = deepFreeze(preferences[preferenceName]);
                 if (oldValue) {
                     /* Value changed */
                     if (!JSONExt.deepEqual(oldValue, newValue)) {

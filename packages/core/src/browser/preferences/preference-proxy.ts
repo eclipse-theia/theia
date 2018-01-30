@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Disposable, DisposableCollection, Event, Emitter } from '../../common';
+import { Disposable, DisposableCollection, Event, Emitter, deepFreeze } from '../../common';
 import { PreferenceService, PreferenceChange } from "./preference-service";
 import { PreferenceSchema } from "./preference-contribution";
 import * as Ajv from "ajv";
@@ -27,6 +27,8 @@ export interface PreferenceEventEmitter<T> {
 
 export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T>;
 export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, configuration: T, schema: PreferenceSchema): PreferenceProxy<T> {
+    configuration = deepFreeze(configuration);
+    schema = deepFreeze(schema);
     const toDispose = new DisposableCollection();
     const onPreferenceChangedEmitter = new Emitter<PreferenceChange>();
     toDispose.push(onPreferenceChangedEmitter);
