@@ -31,6 +31,44 @@ export namespace KeySequence {
         return true;
     }
 
+    export enum CompareResult {
+        NONE = 0,
+        PARTIAL,
+        FULL
+    }
+
+    /* Compares two KeySequences, returns:
+     * FULL if the KeySequences are the same.
+     * PARTIAL if the KeySequence is part of the other.
+     * NONE if the KeySequences are not the same at all.
+     */
+    export function compare(a: KeySequence, b: KeySequence): CompareResult {
+        let partial = false;
+        let first = a;
+        let second = b;
+
+        if (b.length < a.length) {
+            first = b;
+            second = a;
+        }
+
+        for (let i = 0; i < first.length; i++) {
+            if (first[i].equals(second[i]) === false) {
+                if (partial === true && first.length !== second.length) {
+                    return KeySequence.CompareResult.PARTIAL;
+                } else {
+                    return KeySequence.CompareResult.NONE;
+                }
+            } else {
+                partial = true;
+            }
+        }
+        if (first.length < second.length) {
+            return KeySequence.CompareResult.PARTIAL;
+        }
+        return KeySequence.CompareResult.FULL;
+    }
+
     export function parse(keybinding: string): KeySequence {
         const keyCodes = [];
         const rawKeyCodes = keybinding.split(" ");

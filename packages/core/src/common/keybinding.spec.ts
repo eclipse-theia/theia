@@ -186,13 +186,13 @@ describe('keybindings', () => {
 
         keybindingRegistry.setKeymap(KeybindingScope.WORKSPACE, keybindingsSpecific);
 
-        let bindings = keybindingRegistry.getKeybindingsForKeyCode(KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M1] }));
+        let bindings = keybindingRegistry.getKeybindingsForKeySequence([KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M1] })]).full;
         expect(bindings).to.be.empty;
 
-        bindings = keybindingRegistry.getKeybindingsForKeyCode(KeyCode.createKeyCode({ first: Key.KEY_B, modifiers: [Modifier.M1] }));
+        bindings = keybindingRegistry.getKeybindingsForKeySequence([KeyCode.createKeyCode({ first: Key.KEY_B, modifiers: [Modifier.M1] })]).full;
         expect(bindings).to.be.empty;
 
-        bindings = keybindingRegistry.getKeybindingsForKeyCode(KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [Modifier.M1] }));
+        bindings = keybindingRegistry.getKeybindingsForKeySequence([KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [Modifier.M1] })]).full;
         const keyCode = KeyCode.parse(bindings[0].keybinding);
         expect(keyCode.key).to.be.equal(validKeyCode.key);
     });
@@ -303,6 +303,35 @@ describe("keys api", () => {
 
         const parsedKeyCodes = KeySequence.parse("ctrlcmd+a c");
         expect(parsedKeyCodes).to.deep.equal(validKeyCodes);
+    });
+
+    it("it should compare keysequences properly", () => {
+        let a = KeySequence.parse("ctrlcmd+a");
+        let b = KeySequence.parse("ctrlcmd+a t");
+
+        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.PARTIAL);
+
+        a = KeySequence.parse("ctrlcmd+a t");
+        b = KeySequence.parse("ctrlcmd+a");
+
+        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.PARTIAL);
+
+        a = KeySequence.parse("ctrlcmd+a t c");
+        b = KeySequence.parse("ctrlcmd+a t");
+
+        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.PARTIAL);
+
+        a = KeySequence.parse("ctrlcmd+a t");
+        b = KeySequence.parse("ctrlcmd+a a");
+        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.NONE);
+
+        a = KeySequence.parse("ctrlcmd+a t");
+        b = KeySequence.parse("ctrlcmd+a t");
+        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.FULL);
+
+        a = KeySequence.parse("ctrlcmd+a t b");
+        b = KeySequence.parse("ctrlcmd+a t b");
+        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.FULL);
     });
 });
 
