@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { CommandRegistry, Command, MenuModelRegistry, SelectionService, MessageType } from "@theia/core/lib/common";
+import { CommandRegistry, Command, MenuModelRegistry, SelectionService, MessageService } from "@theia/core/lib/common";
 import { FrontendApplication, AbstractViewContribution } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { injectable, inject } from "inversify";
@@ -17,7 +17,6 @@ import { GitQuickOpenService } from '../git-quick-open-service';
 import { FileSystem } from "@theia/filesystem/lib/common";
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
-import { NotificationsMessageClient } from "@theia/messages/lib/browser/notifications-message-client";
 import { Git } from "../../common";
 
 export namespace GitDiffCommands {
@@ -39,7 +38,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
         @inject(GitQuickOpenService) protected readonly quickOpenService: GitQuickOpenService,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(OpenerService) protected openerService: OpenerService,
-        @inject(NotificationsMessageClient) protected readonly notifications: NotificationsMessageClient
+        @inject(MessageService) protected readonly notifications: MessageService
     ) {
         super({
             widgetId: GIT_DIFF,
@@ -78,10 +77,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
                             const diffuri = DiffUris.encode(fromURI, toURI, fileUri.displayName);
                             if (diffuri) {
                                 open(this.openerService, diffuri).catch(e => {
-                                    this.notifications.showMessage({
-                                        text: e.message,
-                                        type: MessageType.Error
-                                    });
+                                    this.notifications.error(e.message);
                                 });
                             }
                         }
