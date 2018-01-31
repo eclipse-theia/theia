@@ -7,7 +7,7 @@
 
 import { injectable, inject, named } from 'inversify';
 import { CommandRegistry } from './command';
-import { KeyCode } from './keys';
+import { KeyCode, KeySequence } from './keys';
 import { ContributionProvider } from './contribution-provider';
 import { ILogger } from "./logger";
 
@@ -17,6 +17,8 @@ export enum KeybindingScope {
     WORKSPACE,
     END
 }
+
+export interface KeybindingsResult { full: Keybinding[], partial: Keybinding[] }
 
 export namespace Keybinding {
 
@@ -150,7 +152,7 @@ export class KeybindingRegistry {
      */
     registerKeybinding(binding: Keybinding) {
         try {
-            const existingBindings = this.getKeybindingsForKeyCode(KeyCode.parse(binding.keybinding));
+            const existingBindings = this.getKeybindingsForKeySequence(KeySequence.parse(binding.keybinding)).full;
             if (existingBindings.length > 0) {
                 const collided = existingBindings.filter(b => b.context === binding.context);
                 if (collided.length > 0) {
@@ -192,21 +194,34 @@ export class KeybindingRegistry {
     }
 
     /**
-     * Get the list of keybindings matching keyCode.  The list is sorted by
-     * priority (see #sortKeybindingsByPriority).
+     * Get the lists of keybindings matching fully or partially matching a KeySequence.
+     * The lists are sorted by priority (see #sortKeybindingsByPriority).
      *
-     * @param keyCode The key code for which we are looking for keybindings.
+     * @param keySequence The key sequence for which we are looking for keybindings.
      */
-    getKeybindingsForKeyCode(keyCode: KeyCode): Keybinding[] {
-        const result: Keybinding[] = [];
+    getKeybindingsForKeySequence(keySequence: KeySequence): KeybindingsResult {
+        const result = { full: [] as Keybinding[], partial: [] as Keybinding[] };
 
         for (let scope = KeybindingScope.DEFAULT; scope < KeybindingScope.END; scope++) {
             this.keymaps[scope].forEach(binding => {
                 try {
-                    const bindingKeyCode = KeyCode.parse(binding.keybinding);
-                    if (KeyCode.equals(bindingKeyCode, keyCode)) {
-                        if (!this.isKeybindingShadowed(scope, binding)) {
-                            result.push(binding);
+                    const bindingKeySequence = KeySequence.parse(binding.keybinding);
+                    const compareResult = KeySequence.compare(bindingKeySequence, keySequence);
+                    switch (compareResult) {
+                        case KeySequence.CompareResult.FULL: {
+                            if (!this.isKeybindingShadowed(scope, binding)) {
+                                result.full.push(binding);
+                            }
+                            break;
+                        }
+                        case KeySequence.CompareResult.PARTIAL: {
+                            if (!this.isKeybindingShadowed(scope, binding)) {
+                                result.partial.push(binding);
+                            }
+                            break;
+                        }
+                        default: {
+                            break;
                         }
                     }
                 } catch (error) {
@@ -214,7 +229,8 @@ export class KeybindingRegistry {
                 }
             });
         }
-        this.sortKeybindingsByPriority(result);
+        this.sortKeybindingsByPriority(result.full);
+        this.sortKeybindingsByPriority(result.partial);
         return result;
     }
 
@@ -310,8 +326,8 @@ export class KeybindingRegistry {
             return;
         }
 
-        const keyCode = KeyCode.createKeyCode(event);
-        const bindings = this.getKeybindingsForKeyCode(keyCode);
+        const keySequence = [KeyCode.createKeyCode(event)];
+        const bindings = this.getKeybindingsForKeySequence(keySequence).full;
 
         for (const binding of bindings) {
             const context = binding.context
