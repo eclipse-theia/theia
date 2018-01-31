@@ -150,7 +150,7 @@ export class GitQuickOpenService {
                         const dynamicItems: QuickOpenItem[] = [];
                         const suffix = `Press 'Enter' to confirm or 'Escape' to cancel.`;
                         if (lookFor === undefined || lookFor.length === 0) {
-                            dynamicItems.push(new CreateNewBranchOpenItem(`Please provider a branch name. ${suffix}`, () => { }, () => false));
+                            dynamicItems.push(new CreateNewBranchOpenItem(`Please provide a branch name. ${suffix}`, () => { }, () => false));
                         } else {
                             dynamicItems.push(new CreateNewBranchOpenItem(
                                 `Create a new local branch with name: ${lookFor}. ${suffix}`,
