@@ -135,14 +135,19 @@ export class PreviewWidget extends BaseWidget {
         this.performUpdate();
     }
 
+    protected previousContent: string = '';
     protected async performUpdate(): Promise<void> {
         if (!this.resource) {
             return;
         }
         const uri = this.resource.uri;
         const document = this.workspace.textDocuments.find(d => d.uri === uri.toString());
-        const content: MaybePromise<string> = document ? document.getText() : this.resource.readContents();
-        const contentElement = await this.render(await content, uri);
+        const content: MaybePromise<string> = document ? document.getText() : await this.resource.readContents();
+        if (content === this.previousContent) {
+            return;
+        }
+        this.previousContent = content;
+        const contentElement = await this.render(content, uri);
         this.node.innerHTML = '';
         if (contentElement) {
             this.node.appendChild(contentElement);
