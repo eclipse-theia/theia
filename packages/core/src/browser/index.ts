@@ -20,3 +20,4 @@ export * from './quick-open';
 export * from './widget-manager';
 export * from './saveable';
 export * from './storage-service';
+export * from './preferences';

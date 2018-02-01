@@ -12,7 +12,7 @@ let disableJSDOM = enableJSDOM();
 import { Container } from 'inversify';
 import * as chai from 'chai';
 import { Emitter } from '@theia/core/lib/common';
-import { PreferenceService, PreferenceProviders, PreferenceServiceImpl } from '@theia/preferences-api';
+import { PreferenceService, PreferenceProviders, PreferenceServiceImpl } from '@theia/core/lib/browser/preferences';
 import { FileSystem } from '@theia/filesystem/lib/common/';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';

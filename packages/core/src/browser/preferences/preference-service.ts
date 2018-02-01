@@ -7,8 +7,8 @@
 
 import { JSONExt } from '@phosphor/coreutils';
 import { injectable, inject } from 'inversify';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { Event, Emitter, DisposableCollection, Disposable } from '@theia/core/lib/common';
+import { FrontendApplicationContribution } from '../../browser';
+import { Event, Emitter, DisposableCollection, Disposable } from '../../common';
 import { PreferenceProvider } from './preference-provider';
 
 export interface PreferenceChangedEvent {

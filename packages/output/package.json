@@ -3,8 +3,7 @@
   "version": "0.3.3",
   "description": "Theia - Output Extension",
   "dependencies": {
-    "@theia/core": "^0.3.3",
-    "@theia/preferences-api": "^0.3.3"
+    "@theia/core": "^0.3.3"
   },
   "publishConfig": {
     "access": "public"

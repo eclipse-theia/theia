@@ -5,7 +5,4 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export * from '@theia/core/lib/browser/preferences';
-export * from './abstract-resource-preference-provider';
-export * from './user-preference-provider';
-export * from './workspace-preference-provider';
+export * from './mock-preference-service';
