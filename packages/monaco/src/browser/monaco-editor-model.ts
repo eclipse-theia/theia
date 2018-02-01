@@ -8,7 +8,7 @@
 import { TextDocumentSaveReason, Position } from "vscode-languageserver-types";
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
 import { TextEditorDocument } from "@theia/editor/lib/browser";
-import { DisposableCollection, Disposable, Emitter, Event, Resource, CancellationTokenSource } from '@theia/core/lib/common';
+import { DisposableCollection, Disposable, Emitter, Event, Resource, CancellationTokenSource, CancellationToken } from '@theia/core';
 import ITextEditorModel = monaco.editor.ITextEditorModel;
 
 export {
@@ -136,20 +136,38 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     }
 
     save(): Promise<void> {
-        return this.doSave(TextDocumentSaveReason.Manual);
+        return this.scheduleSave(TextDocumentSaveReason.Manual);
+    }
+
+    protected pendingOperation = Promise.resolve();
+    run(operation: () => Promise<void>): Promise<void> {
+        return this.pendingOperation = this.pendingOperation.then(async () => {
+            try {
+                await operation();
+            } catch (e) {
+                console.error(e);
+            }
+        });
     }
 
     protected syncCancellationTokenSource = new CancellationTokenSource();
-    async sync(): Promise<void> {
+    protected cancelSync(): CancellationToken {
         this.syncCancellationTokenSource.cancel();
         this.syncCancellationTokenSource = new CancellationTokenSource();
-        const cancellationToken = this.syncCancellationTokenSource.token;
-        if (this._dirty) {
+        return this.syncCancellationTokenSource.token;
+    }
+
+    async sync(): Promise<void> {
+        const token = this.cancelSync();
+        return this.run(() => this.doSync(token));
+    }
+    protected async doSync(token: CancellationToken): Promise<void> {
+        if (token.isCancellationRequested || this._dirty) {
             return;
         }
 
         const newText = await this.resource.readContents();
-        if (cancellationToken.isCancellationRequested || this._dirty) {
+        if (token.isCancellationRequested || this._dirty) {
             return;
         }
 
@@ -158,22 +176,36 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             return;
         }
 
-        this.model.applyEdits([this.p2m.asTextEdit({
+        this.applyEdits([this.p2m.asTextEdit({
             range: this.m2p.asRange(this.model.getFullModelRange()),
             newText
         }) as monaco.editor.IIdentifiedSingleEditOperation]);
     }
+
+    protected ignoreEdits = false;
+    protected applyEdits(operations: monaco.editor.IIdentifiedSingleEditOperation[]): monaco.editor.IIdentifiedSingleEditOperation[] {
+        this.ignoreEdits = true;
+        try {
+            return this.model.applyEdits(operations);
+        } finally {
+            this.ignoreEdits = false;
+        }
+    }
     protected markAsDirty(): void {
-        this.syncCancellationTokenSource.cancel();
+        if (this.ignoreEdits) {
+            return;
+        }
+        this.cancelSync();
         this.setDirty(true);
         this.doAutoSave();
     }
 
     protected doAutoSave(): void {
         if (this.autoSave === 'on') {
+            const token = this.cancelSave();
             this.toDisposeOnAutoSave.dispose();
             const handle = window.setTimeout(() => {
-                this.doSave(TextDocumentSaveReason.AfterDelay);
+                this.scheduleSave(TextDocumentSaveReason.AfterDelay, token);
             }, this.autoSaveDelay);
             this.toDisposeOnAutoSave.push(Disposable.create(() =>
                 window.clearTimeout(handle))
@@ -181,26 +213,48 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         }
     }
 
-    protected async doSave(reason: TextDocumentSaveReason): Promise<void> {
-        if (this.resource.saveContents) {
-            await this.fireWillSaveModel(reason);
-            if (this.dirty) {
-                const content = this.model.getValue();
-                await this.resource.saveContents(content);
-                this.setDirty(false);
-            }
-            this.onDidSaveModelEmitter.fire(this.model);
-        }
+    protected saveCancellationTokenSource = new CancellationTokenSource();
+    protected cancelSave(): CancellationToken {
+        this.saveCancellationTokenSource.cancel();
+        this.saveCancellationTokenSource = new CancellationTokenSource();
+        return this.saveCancellationTokenSource.token;
     }
 
-    protected fireWillSaveModel(reason: TextDocumentSaveReason): Promise<void> {
+    protected scheduleSave(reason: TextDocumentSaveReason, token: CancellationToken = this.cancelSave()): Promise<void> {
+        return this.run(() => this.doSave(reason, token));
+    }
+
+    protected async doSave(reason: TextDocumentSaveReason, token: CancellationToken): Promise<void> {
+        if (token.isCancellationRequested || !this.resource.saveContents || !this.dirty) {
+            return;
+        }
+
+        await this.fireWillSaveModel(reason, token);
+        if (token.isCancellationRequested) {
+            return;
+        }
+
+        const content = this.model.getValue();
+        await this.resource.saveContents(content);
+        if (token.isCancellationRequested) {
+            return;
+        }
+
+        this.setDirty(false);
+        this.fireDidSaveModel();
+    }
+
+    protected fireWillSaveModel(reason: TextDocumentSaveReason, token: CancellationToken): Promise<void> {
         const model = this.model;
         return new Promise<void>(resolve => {
             this.onWillSaveModelEmitter.fire({
                 model, reason,
                 waitUntil: thenable =>
                     thenable.then(operations => {
-                        model.applyEdits(operations);
+                        if (token.isCancellationRequested) {
+                            resolve();
+                        }
+                        this.applyEdits(operations);
                         resolve();
                     })
             });

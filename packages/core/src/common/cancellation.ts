@@ -20,7 +20,7 @@ export interface CancellationToken {
     readonly onCancellationRequested: Event<void>;
 }
 
-const shortcutEvent: Event<void> = Object.freeze(function (callback: any, contex?: any): any {
+const shortcutEvent: Event<void> = Object.freeze(function (callback: any, context?: any): any {
     const handle = setTimeout(callback.bind(context), 0);
     return { dispose() { clearTimeout(handle); } };
 });
