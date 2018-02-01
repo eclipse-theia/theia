@@ -30,24 +30,28 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
     const toDispose = new DisposableCollection();
     const onPreferenceChangedEmitter = new Emitter<PreferenceChange>();
     toDispose.push(onPreferenceChangedEmitter);
-    toDispose.push(preferences.onPreferenceChanged(e => {
-        if (e.preferenceName in schema.properties) {
-            if (e.newValue) {
+    toDispose.push(preferences.onPreferenceChanged(change => {
+        if (change.preferenceName in schema.properties) {
+            if (change.newValue) {
                 // Fire the pref if it's valid according to the schema
                 if (validatePreference(schema, {
-                    [e.preferenceName]: e.newValue
+                    [change.preferenceName]: change.newValue
                 })) {
-                    onPreferenceChangedEmitter.fire(e);
+                    onPreferenceChangedEmitter.fire(change);
                 } else {
                     // Fire the default preference
                     onPreferenceChangedEmitter.fire({
-                        preferenceName: e.preferenceName,
-                        newValue: configuration[e.preferenceName]
+                        preferenceName: change.preferenceName,
+                        newValue: configuration[change.preferenceName]
                     });
                 }
             } else {
-                // TODO If it's deleted, fire the default preference
-                onPreferenceChangedEmitter.fire(e);
+                /* Deleted preference, fire the default preference */
+                onPreferenceChangedEmitter.fire({
+                    preferenceName: change.preferenceName,
+                    newValue: schema.properties[change.preferenceName].default || undefined,
+                    oldValue: change.oldValue
+                });
             }
         }
     }));
