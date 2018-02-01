@@ -118,18 +118,16 @@ describe('Preference Service', function () {
 
         const prefValue = true;
         prefService.onPreferenceChanged(pref => {
-            if (pref.preferenceName === 'testPref') {
-                try {
-                    expect(pref.preferenceName).eq('testPref');
-                } catch (e) {
-                    stubGet.restore();
-                    done(e);
-                    return;
-                }
-                expect(pref.newValue).eq(prefValue);
+            try {
+                expect(pref.preferenceName).eq('testPref');
+            } catch (e) {
                 stubGet.restore();
-                done();
+                done(e);
+                return;
             }
+            expect(pref.newValue).eq(prefValue);
+            stubGet.restore();
+            done();
         });
 
         const userProvider = testContainer.get(UserPreferenceProvider);
@@ -144,11 +142,11 @@ describe('Preference Service', function () {
     it('Should return the preference from the more specific scope (user > workspace)', () => {
         const userProvider = testContainer.get(UserPreferenceProvider);
         const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
-        const stubGet = sinon.stub(userProvider, 'getPreferences').returns({
+        const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
             'test.boolean': true,
             'test.number': 1
         });
-        const stubGet2 = sinon.stub(workspaceProvider, 'getPreferences').returns({
+        const stubWorkspace = sinon.stub(workspaceProvider, 'getPreferences').returns({
             'test.boolean': false,
             'test.number': 0
         });
@@ -160,7 +158,7 @@ describe('Preference Service', function () {
         value = prefService.get('test.number');
         expect(value).equals(0);
 
-        [stubGet, stubGet2].forEach(stub => {
+        [stubUser, stubWorkspace].forEach(stub => {
             stub.restore();
         });
     });
@@ -188,5 +186,36 @@ describe('Preference Service', function () {
         expect(value).to.be.true;
 
         stubUser.restore();
+    });
+
+    it('Should still report the more specific preference even though the less specific one changed', () => {
+        const userProvider = testContainer.get(UserPreferenceProvider);
+        const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
+        let stubUser = sinon.stub(userProvider, 'getPreferences').returns({
+            'test.boolean': true,
+            'test.number': 1
+        });
+        const stubWorkspace = sinon.stub(workspaceProvider, 'getPreferences').returns({
+            'test.boolean': false,
+            'test.number': 0
+        });
+        mockUserPreferenceEmitter.fire(undefined);
+
+        let value = prefService.get('test.number');
+        expect(value).equals(0);
+        stubUser.restore();
+
+        stubUser = sinon.stub(userProvider, 'getPreferences').returns({
+            'test.boolean': true,
+            'test.number': 4
+        });
+        mockUserPreferenceEmitter.fire(undefined);
+
+        value = prefService.get('test.number');
+        expect(value).equals(0);
+
+        [stubUser, stubWorkspace].forEach(stub => {
+            stub.restore();
+        });
     });
 });
