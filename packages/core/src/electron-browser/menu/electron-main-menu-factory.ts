@@ -86,8 +86,16 @@ export class ElectronMainMenuFactory {
 
     /* Return a user visble representation of a keybinding.  */
     protected acceleratorFor(keybinding: Keybinding) {
-        const keyCode = KeyCode.parse(keybinding.keybinding);
+        const keyCodesString = keybinding.keybinding.split(" ");
         let result = "";
+        /* FIXME see https://github.com/electron/electron/issues/11740
+           Key Sequences can't be represented properly in the electron menu. */
+        if (keyCodesString.length > 1) {
+            return result;
+        }
+
+        const keyCodeString = keyCodesString[0];
+        const keyCode = KeyCode.parse(keyCodeString);
         let previous = false;
         const separator = "+";
 
@@ -122,11 +130,14 @@ export class ElectronMainMenuFactory {
             previous = true;
         }
 
-        if (previous) {
-            result += separator;
+        if (keyCode.key) {
+            if (previous) {
+                result += separator;
+            }
+
+            result += Key.getEasyKey(keyCode.key).easyString;
         }
 
-        result += Key.getEasyKey(keyCode.key).easyString;
         return result;
     }
 

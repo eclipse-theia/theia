@@ -8,7 +8,7 @@
 import { injectable, inject } from 'inversify';
 import { QuickOpenService, QuickOpenModel, QuickOpenOptions, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode } from "@theia/core/lib/browser";
 import { KEY_CODE_MAP } from './monaco-keycode-map';
-import { KeyCode, ILogger } from '@theia/core';
+import { KeySequence, ILogger } from '@theia/core';
 
 export interface MonacoQuickOpenControllerOpts extends monaco.quickOpen.IQuickOpenControllerOpts {
     readonly prefix?: string;
@@ -232,21 +232,55 @@ export class QuickOpenEntry extends monaco.quickOpen.QuickOpenEntry {
             return undefined;
         }
 
-        let keyCode: KeyCode;
+        let keySequence: KeySequence;
         try {
-            keyCode = KeyCode.parse(keybinding.keybinding);
+            keySequence = KeySequence.parse(keybinding.keybinding);
         } catch (error) {
             return undefined;
         }
 
-        const simple = new monaco.keybindings.SimpleKeybinding(
-            keyCode.ctrl,
-            keyCode.shift,
-            keyCode.alt,
-            keyCode.meta,
-            KEY_CODE_MAP[keyCode.key.keyCode]
-        );
-        return new monaco.keybindings.USLayoutResolvedKeybinding(simple, monaco.platform.OS);
+        if (keySequence.length < 2) {
+            const keyCode = keySequence[0];
+            if (keyCode.key !== undefined) { // This should not happen.
+                const simple = new monaco.keybindings.SimpleKeybinding(
+                    keyCode.ctrl,
+                    keyCode.shift,
+                    keyCode.alt,
+                    keyCode.meta,
+                    KEY_CODE_MAP[keyCode.key.keyCode]
+                );
+                return new monaco.keybindings.USLayoutResolvedKeybinding(simple, monaco.platform.OS);
+            }
+        } else if (keySequence.length === 2) {
+            /* FIXME only 2 keycodes are supported by monaco.  */
+            const first = keySequence[0];
+            const second = keySequence[1];
+
+            if (first.key !== undefined && second.key !== undefined) {
+                const firstPart = new monaco.keybindings.SimpleKeybinding(
+                    first.ctrl,
+                    first.shift,
+                    first.alt,
+                    first.meta,
+                    KEY_CODE_MAP[first.key.keyCode]
+                );
+
+                const secondPart = new monaco.keybindings.SimpleKeybinding(
+                    second.ctrl,
+                    second.shift,
+                    second.alt,
+                    second.meta,
+                    KEY_CODE_MAP[second.key.keyCode]
+                );
+
+                return new monaco.keybindings.USLayoutResolvedKeybinding(
+                    new monaco.keybindings.ChordKeybinding(firstPart, secondPart),
+                    monaco.platform.OS);
+            }
+        } else {
+            return undefined;
+        }
+
     }
 
     run(mode: monaco.quickOpen.Mode): boolean {

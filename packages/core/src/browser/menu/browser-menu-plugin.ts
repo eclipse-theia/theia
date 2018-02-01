@@ -83,7 +83,7 @@ export class BrowserMainMenuFactory {
         /* Only consider the first keybinding. */
         if (bindings.length > 0) {
             const binding = bindings[0];
-            const keys = [this.acceleratorFor(binding)];
+            const keys = this.acceleratorFor(binding);
             commands.addKeyBinding({
                 command: command.id,
                 keys,
@@ -94,50 +94,58 @@ export class BrowserMainMenuFactory {
 
     /* Return a user visble representation of a keybinding.  */
     protected acceleratorFor(keybinding: Keybinding) {
-        const keyCode = KeyCode.parse(keybinding.keybinding);
-        let result = "";
-        let previous = false;
-        const separator = " ";
+        const keyCodesString = keybinding.keybinding.split(" ");
+        const result: string[] = [];
+        for (const keyCodeString of keyCodesString) {
+            let keyCodeResult = "";
+            const keyCode = KeyCode.parse(keyCodeString);
+            let previous = false;
+            const separator = " ";
 
-        if (keyCode.meta && isOSX) {
-            if (isOSX) {
-                result += "Cmd";
+            if (keyCode.meta && isOSX) {
+                if (isOSX) {
+                    keyCodeResult += "Cmd";
+                    previous = true;
+                }
+            }
+
+            if (keyCode.ctrl) {
+                if (previous) {
+                    keyCodeResult += separator;
+                }
+                keyCodeResult += "Ctrl";
                 previous = true;
             }
-        }
 
-        if (keyCode.ctrl) {
-            if (previous) {
-                result += separator;
+            if (keyCode.alt) {
+                if (previous) {
+                    keyCodeResult += separator;
+                }
+                keyCodeResult += "Alt";
+                previous = true;
             }
-            result += "Ctrl";
-            previous = true;
-        }
 
-        if (keyCode.alt) {
-            if (previous) {
-                result += separator;
+            if (keyCode.shift) {
+                if (previous) {
+                    keyCodeResult += separator;
+                }
+                keyCodeResult += "Shift";
+                previous = true;
             }
-            result += "Alt";
-            previous = true;
-        }
 
-        if (keyCode.shift) {
-            if (previous) {
-                result += separator;
+            if (keyCode.key) {
+
+                if (previous) {
+                    keyCodeResult += separator;
+                }
+                keyCodeResult += Key.getEasyKey(keyCode.key).easyString.toUpperCase();
             }
-            result += "Shift";
-            previous = true;
+            result.push(keyCodeResult);
         }
-
-        if (previous) {
-            result += separator;
-        }
-
-        result += Key.getEasyKey(keyCode.key).easyString.toUpperCase();
         return result;
     }
 }
+
 class DynamicMenuBarWidget extends MenuBarWidget {
 
     constructor() {
