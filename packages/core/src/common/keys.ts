@@ -9,11 +9,11 @@ import { isOSX } from './os';
 
 /**
  * The key sequence for this binding. This key sequence should consist of one or more key strokes. Key strokes
- * consist of one or more keys held down at the same time. This should be zero or more modifier keys, and one other key.
+ * consist of one or more keys held down at the same time. This should be zero or more modifier keys, and zero or one other key.
  * Since `M2+M3+<Key>` (Alt+Shift+<Key>) is reserved on MacOS X for writing special characters, such bindings are commonly
  * undefined for platform MacOS X and redefined as `M1+M3+<Key>`. The rule applies on the `M3+M2+<Key>` sequence.
  */
-export declare type Keystroke = { first: Key, modifiers?: Modifier[] };
+export declare type Keystroke = { first?: Key, modifiers?: Modifier[] };
 
 export type KeySequence = KeyCode[];
 export namespace KeySequence {
@@ -87,19 +87,20 @@ export namespace KeySequence {
  */
 export class KeyCode {
 
-    public readonly key: Key;
+    public readonly key: Key | undefined = undefined;
     public readonly ctrl: boolean;
     public readonly shift: boolean;
     public readonly alt: boolean;
     public readonly meta: boolean;
     private static keybindings: { [key: string]: KeyCode } = {};
 
-    // TODO: support chrods properly. Currently, second sequence is ignored.
-    private constructor(public readonly keystroke: string) {
-        // const chord = ((secondSequence & 0x0000ffff) << 16) >>> 0;
-        // (firstSequence | chord) >>> 0;
+    public constructor(public readonly keystroke: string) {
         const parts = keystroke.split('+');
-        this.key = Key.getKey(parts[0]);
+
+        if (parts.every(KeyCode.isModifierString) === false) {
+            this.key = Key.getKey(parts[0]);
+        }
+
         if (isOSX) {
             this.meta = parts.some(part => part === Modifier.M1);
             this.shift = parts.some(part => part === Modifier.M2);
@@ -110,6 +111,28 @@ export class KeyCode {
             this.ctrl = parts.some(part => part === Modifier.M1);
             this.shift = parts.some(part => part === Modifier.M2);
             this.alt = parts.some(part => part === Modifier.M3);
+        }
+    }
+
+    /* Return true of string is a modifier M1 to M4 */
+    public static isModifierString(key: string) {
+        if (key === Modifier.M1
+            || key === Modifier.M2
+            || key === Modifier.M3
+            || key === Modifier.M4) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Returns true KeyCode only contains modifers.
+     */
+    public isModifierOnly() {
+        if (this.key === undefined) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -203,7 +226,8 @@ export class KeyCode {
 
             return new KeyCode(sequence.join('+'));
         } else {
-            return new KeyCode([event.first.code]
+            const key = event.first ? [event.first.code] : [];
+            return new KeyCode(([] as string[]).concat(key)
                 .concat((event.modifiers || []).sort().map(modifier => `${modifier}`))
                 .join('+'));
         }
@@ -277,11 +301,13 @@ export class KeyCode {
             previous = true;
         }
 
-        if (previous) {
-            result += "+";
-        }
+        if (this.key) {
+            if (previous) {
+                result += "+";
+            }
 
-        result += KEY_CODE_TO_EASY[this.key.keyCode].easyString;
+            result += KEY_CODE_TO_EASY[this.key.keyCode].easyString;
+        }
         return result;
     }
 }

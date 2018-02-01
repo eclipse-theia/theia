@@ -196,6 +196,43 @@ describe('keybindings', () => {
         const keyCode = KeyCode.parse(bindings[0].keybinding);
         expect(keyCode.key).to.be.equal(validKeyCode.key);
     });
+
+    it("should return partial keybinding matches", () => {
+        const keybindingsUser: Keybinding[] = [{
+            command: "test.command",
+            keybinding: "ctrlcmd+x t"
+        }];
+
+        keybindingRegistry.setKeymap(KeybindingScope.USER, keybindingsUser);
+
+        const validKeyCodes = [];
+        validKeyCodes.push(KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [Modifier.M1] }));
+        validKeyCodes.push(KeyCode.createKeyCode({ first: Key.KEY_T }));
+
+        const bindings = keybindingRegistry.getKeybindingsForKeySequence(KeySequence.parse("ctrlcmd+x"));
+        expect(bindings.partial.length > 0);
+    });
+
+    it("should not register a shadowing keybinding", () => {
+        const validKeyBinding = "ctrlcmd+b a";
+        const command = "test.command-shadow";
+        const keybindingShadowing: Keybinding[] = [
+            {
+                command,
+                keybinding: validKeyBinding
+            },
+            {
+                command,
+                keybinding: "ctrlcmd+b"
+            }
+        ];
+
+        keybindingRegistry.registerKeybindings(...keybindingShadowing);
+
+        const bindings = keybindingRegistry.getKeybindingsForCommand(command);
+        expect(bindings.length).to.be.equal(1);
+        expect(bindings[0].keybinding).to.be.equal(validKeyBinding);
+    });
 });
 
 describe("keys api", () => {
@@ -333,6 +370,20 @@ describe("keys api", () => {
         b = KeySequence.parse("ctrlcmd+a t b");
         expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.FULL);
     });
+
+    it("it should be a modifier only", () => {
+
+        const keyCode = KeyCode.createKeyCode({ modifiers: [Modifier.M1] });
+        expect(keyCode).to.be.deep.equal(KeyCode.createKeyCode({ modifiers: [Modifier.M1] }));
+        expect(keyCode.isModifierOnly()).to.be.true;
+    });
+
+    it("it should be multiple modifiers only", () => {
+
+        const keyCode = KeyCode.createKeyCode({ modifiers: [Modifier.M1, Modifier.M3] });
+        expect(keyCode).to.be.deep.equal(KeyCode.createKeyCode({ modifiers: [Modifier.M1, Modifier.M3] }));
+        expect(keyCode.isModifierOnly()).to.be.true;
+    });
 });
 
 const TEST_COMMAND: Command = {
@@ -341,6 +392,10 @@ const TEST_COMMAND: Command = {
 
 const TEST_COMMAND2: Command = {
     id: 'test.command2'
+};
+
+const TEST_COMMAND_SHADOW: Command = {
+    id: 'test.command-shadow'
 };
 
 @injectable()
@@ -352,6 +407,7 @@ export class TestContribution implements CommandContribution, KeybindingContribu
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(TEST_COMMAND);
         commands.registerCommand(TEST_COMMAND2);
+        commands.registerCommand(TEST_COMMAND_SHADOW);
     }
 
     registerContexts() {

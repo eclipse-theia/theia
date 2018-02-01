@@ -122,6 +122,10 @@ export class KeybindingRegistry {
 
     private keymaps: Keybinding[][] = [];
     static readonly PASSTHROUGH_PSEUDO_COMMAND = "passthrough";
+    /* Key Sequence time-out in MS.  */
+    protected readonly keySequenceTimeout = 1000;
+    protected keySequence: KeySequence = [];
+    protected timeoutTimer: any = undefined;
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
@@ -152,13 +156,22 @@ export class KeybindingRegistry {
      */
     registerKeybinding(binding: Keybinding) {
         try {
-            const existingBindings = this.getKeybindingsForKeySequence(KeySequence.parse(binding.keybinding)).full;
-            if (existingBindings.length > 0) {
-                const collided = existingBindings.filter(b => b.context === binding.context);
+            const existingBindings = this.getKeybindingsForKeySequence(KeySequence.parse(binding.keybinding));
+            if (existingBindings.full.length > 0) {
+                const collided = existingBindings.full.filter(b => b.context === binding.context);
                 if (collided.length > 0) {
                     this.logger.warn('Collided keybinding is ignored; ',
                         Keybinding.stringify(binding), ' collided with ',
                         collided.map(b => Keybinding.stringify(b)).join(', '));
+                    return;
+                }
+            }
+            if (existingBindings.partial.length > 0) {
+                const shadows = existingBindings.partial.filter(b => b.context === binding.context);
+                if (shadows.length > 0) {
+                    this.logger.warn('Shadowing keybinding is ignored; ',
+                        Keybinding.stringify(binding), ' shadows ',
+                        shadows.map(b => Keybinding.stringify(b)).join(', '));
                     return;
                 }
             }
@@ -318,16 +331,16 @@ export class KeybindingRegistry {
         return !!command && !!this.commandRegistry.getActiveHandler(command.id);
     }
 
-    /**
-     * Run the command matching to the given keyboard event.
+    /* Tries to execute a keybinding.
+     * @param bindings list of matching keybindings as returned by getKeybindingsForKeySequence.full
+     * @param event keyboard event.
+     * @return true if the corresponding command was executed false otherwise.
      */
-    run(event: KeyboardEvent): void {
-        if (event.defaultPrevented) {
-            return;
-        }
+    protected tryKeybindingExecution(bindings: Keybinding[], event: KeyboardEvent) {
 
-        const keySequence = [KeyCode.createKeyCode(event)];
-        const bindings = this.getKeybindingsForKeySequence(keySequence).full;
+        if (bindings.length === 0) {
+            return false;
+        }
 
         for (const binding of bindings) {
             const context = binding.context
@@ -340,6 +353,7 @@ export class KeybindingRegistry {
 
                 if (this.isPseudoCommand(binding.command)) {
                     /* Don't do anything, let the event propagate.  */
+                    return true;
                 } else {
                     const command = this.commandRegistry.getCommand(binding.command);
                     if (command) {
@@ -353,11 +367,45 @@ export class KeybindingRegistry {
                            not active we still stop the processing here.  */
                         event.preventDefault();
                         event.stopPropagation();
+                        return true;
                     }
                 }
-
-                break;
+                return false;
             }
+        }
+        return false;
+    }
+
+    /**
+     * Run the command matching to the given keyboard event.
+     */
+    run(event: KeyboardEvent): void {
+        if (event.defaultPrevented) {
+            return;
+        }
+
+        const keyCode = KeyCode.createKeyCode(event);
+        /* Keycode is only a modifier, next keycode will be modifier + key.
+           Ignore this one.  */
+        if (keyCode.isModifierOnly()) {
+            return;
+        }
+
+        if (this.timeoutTimer) {
+            clearTimeout(this.timeoutTimer);
+        }
+
+        this.keySequence.push(keyCode);
+        const bindings = this.getKeybindingsForKeySequence(this.keySequence);
+
+        if (this.tryKeybindingExecution(bindings.full, event)) {
+            this.keySequence = [];
+        } else if (bindings.partial.length > 0) {
+            this.timeoutTimer = setTimeout(() => {
+                this.keySequence = [];
+            }, this.keySequenceTimeout);
+        } else {
+            this.keySequence = [];
         }
     }
 
