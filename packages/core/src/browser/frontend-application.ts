@@ -43,6 +43,19 @@ export interface FrontendApplicationContribution {
     initializeLayout?(app: FrontendApplication): MaybePromise<void>;
 }
 
+/**
+ * Default frontend contribution that can be extended by clients if they do not want to implement any of the
+ * methods from the interface but still want to contribute to the frontend application.
+ */
+@injectable()
+export abstract class DefaultFrontendApplicationContribution implements FrontendApplicationContribution {
+
+    initialize() {
+        // NOOP
+    }
+
+}
+
 @injectable()
 export class FrontendApplication {
 
