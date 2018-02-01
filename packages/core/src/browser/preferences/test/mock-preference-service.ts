@@ -7,7 +7,7 @@
 
 import { injectable } from 'inversify';
 import { PreferenceService, PreferenceChange } from '../';
-import { Emitter, Event } from '@theia/core/lib/common';
+import { Emitter, Event } from '../../../common';
 
 @injectable()
 export class MockPreferenceService implements PreferenceService {

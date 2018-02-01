@@ -4,7 +4,6 @@
   "description": "Theia - FileSystem Extension",
   "dependencies": {
     "@theia/core": "^0.3.3",
-    "@theia/preferences-api": "^0.3.3",
     "@types/base64-js": "^1.2.5",
     "@types/fs-extra": "^4.0.2",
     "@types/touch": "0.0.1",

@@ -12,7 +12,7 @@ import {
     PreferenceService,
     PreferenceContribution,
     PreferenceSchema
-} from '@theia/preferences-api/lib/browser';
+} from '@theia/core/lib/browser/preferences';
 
 export const OutputConfigSchema: PreferenceSchema = {
     "type": "object",

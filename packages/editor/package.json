@@ -4,8 +4,7 @@
   "description": "Theia - Editor Extension",
   "dependencies": {
     "@theia/core": "^0.3.3",
-    "@theia/languages": "^0.3.3",
-    "@theia/preferences-api": "^0.3.3"
+    "@theia/languages": "^0.3.3"
   },
   "publishConfig": {
     "access": "public"

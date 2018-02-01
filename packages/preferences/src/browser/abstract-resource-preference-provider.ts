@@ -9,7 +9,7 @@ import { inject, injectable, postConstruct } from 'inversify';
 import * as jsoncparser from "jsonc-parser";
 import URI from '@theia/core/lib/common/uri';
 import { ILogger, DisposableCollection, Resource, Event, Emitter, ResourceProvider, MaybePromise } from "@theia/core/lib/common";
-import { PreferenceProvider, } from '@theia/preferences-api/lib/browser';
+import { PreferenceProvider } from '@theia/core/lib/browser/preferences';
 
 @injectable()
 export abstract class AbstractResourcePreferenceProvider implements PreferenceProvider {

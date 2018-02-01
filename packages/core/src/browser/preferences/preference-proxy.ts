@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Disposable, DisposableCollection, Event, Emitter } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection, Event, Emitter } from '../../common';
 import { PreferenceService, PreferenceChange } from "./preference-service";
 import { PreferenceSchema } from "./preference-contribution";
 import * as Ajv from "ajv";

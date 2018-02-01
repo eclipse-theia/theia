@@ -6,27 +6,21 @@
  */
 
 import { ContainerModule, interfaces, } from 'inversify';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { PreferenceService, PreferenceServiceImpl, PreferenceProviders } from "@theia/preferences-api";
+import { PreferenceProviders } from "@theia/core/lib/browser/preferences";
 import { UserPreferenceProvider } from './user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 
-export function bindPreferences(bind: interfaces.Bind): void {
+export function bindPreferences(bind: interfaces.Bind, rebind: interfaces.Rebind): void {
     bind(UserPreferenceProvider).toSelf().inSingletonScope();
     bind(WorkspacePreferenceProvider).toSelf().inSingletonScope();
 
-    bind(PreferenceProviders).toFactory(ctx => () => {
+    rebind(PreferenceProviders).toFactory(ctx => () => {
         const userProvider = ctx.container.get(UserPreferenceProvider);
         const workspaceProvider = ctx.container.get(WorkspacePreferenceProvider);
         return [userProvider, workspaceProvider];
     });
-    bind(PreferenceServiceImpl).toSelf().inSingletonScope();
-
-    for (const serviceIdentifier of [PreferenceService, FrontendApplicationContribution]) {
-        bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(PreferenceServiceImpl)).inSingletonScope();
-    }
 }
 
-export default new ContainerModule(bind => {
-    bindPreferences(bind);
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    bindPreferences(bind, rebind);
 });

@@ -6,7 +6,7 @@
  */
 
 import { inject, injectable, named } from "inversify";
-import { ContributionProvider, ILogger } from '@theia/core/lib/common';
+import { ContributionProvider, ILogger } from '../../common';
 
 export const PreferenceContribution = Symbol("PreferenceContribution");
 export interface PreferenceContribution {

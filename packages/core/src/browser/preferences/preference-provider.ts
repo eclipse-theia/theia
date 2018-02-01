@@ -5,5 +5,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-// export * from './mock-preference-server';
-export * from './mock-preference-service';
+import { Disposable, Event } from '../../common';
+
+export const PreferenceProvider = Symbol('PreferenceProvider');
+
+export interface PreferenceProvider extends Disposable {
+    getPreferences(): { [key: string]: any };
+    readonly onDidPreferencesChanged: Event<void>;
+}
