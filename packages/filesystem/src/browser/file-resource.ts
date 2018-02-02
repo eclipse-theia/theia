@@ -15,13 +15,17 @@ export class FileResource implements Resource {
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
+    readonly onDidChangeContents: Event<void> = this.onDidChangeContentsEmitter.event;
+
+    protected state: FileResource.State = FileResource.emptyState;
+    protected uriString: string;
 
     constructor(
         readonly uri: URI,
-        protected stat: FileStat | undefined,
         protected readonly fileSystem: FileSystem,
         protected readonly fileSystemWatcher: FileSystemWatcher
     ) {
+        this.uriString = this.uri.toString();
         this.toDispose.push(this.onDidChangeContentsEmitter);
         this.toDispose.push(this.fileSystemWatcher.onFilesChanged(changes => {
             if (changes.some(e => e.uri.toString() === uri.toString())) {
@@ -35,29 +39,39 @@ export class FileResource implements Resource {
     }
 
     async readContents(options?: { encoding?: string }): Promise<string> {
+        this.state = await this.doReadContents(options);
+        return this.state.content;
+    }
+    protected async doReadContents(options?: { encoding?: string }): Promise<FileResource.State> {
         try {
-            const { stat, content } = await this.fileSystem.resolveContent(this.uri.toString(), options);
-            this.stat = stat;
-            return content;
+            if (!await this.fileSystem.exists(this.uriString)) {
+                return FileResource.emptyState;
+            }
+            return this.fileSystem.resolveContent(this.uriString, options);
         } catch {
-            return '';
+            return FileResource.emptyState;
         }
     }
 
     async saveContents(content: string, options?: { encoding?: string }): Promise<void> {
-        const uri = this.uri.toString();
-        if (await this.fileSystem.exists(uri)) {
-            this.stat = this.stat || await this.fileSystem.getFileStat(this.uri.toString());
-            this.stat = await this.fileSystem.setContent(this.stat, content, options);
-        } else {
-            await this.fileSystem.createFile(uri, { content });
+        const stat = await this.doSaveContents(content, options);
+        this.state = { stat, content };
+    }
+    protected async doSaveContents(content: string, options?: { encoding?: string }): Promise<FileStat> {
+        if (!await this.fileSystem.exists(this.uriString)) {
+            return this.fileSystem.createFile(this.uriString, { content });
         }
+        const stat = this.state.stat || await this.fileSystem.getFileStat(this.uriString);
+        return this.fileSystem.setContent(stat, content, options);
     }
 
-    get onDidChangeContents(): Event<void> {
-        return this.onDidChangeContentsEmitter.event;
+}
+export namespace FileResource {
+    export interface State {
+        stat?: FileStat,
+        content: string
     }
-
+    export const emptyState: State = { content: '' };
 }
 
 @injectable()
@@ -76,12 +90,15 @@ export class FileResourceResolver implements ResourceResolver {
         if (fileStat && fileStat.isDirectory) {
             throw new Error('The given uri is a directory: ' + uri);
         }
-        return new FileResource(uri, fileStat, this.fileSystem, this.fileSystemWatcher);
+        return new FileResource(uri, this.fileSystem, this.fileSystemWatcher);
     }
 
     protected async getFileStat(uri: URI): Promise<FileStat | undefined> {
         try {
-            return await this.fileSystem.getFileStat(uri.toString());
+            if (await this.fileSystem.exists(uri.toString())) {
+                return await this.fileSystem.getFileStat(uri.toString());
+            }
+            return undefined;
         } catch {
             return undefined;
         }
