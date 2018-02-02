@@ -105,6 +105,9 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         /* Read CSS properties from the page and apply them to the terminal.  */
         // const cssProps = this.getCSSPropertiesFromPage();
         this.term = new DomTerm("domterm");
+        if (! DomTerm.versionString) {
+            DomTerm.versionString = "0.97"; // KLUDGE - FIXME
+        }
         /*
         this.term = new Xterm.Terminal({
             cursorBlink: true,
