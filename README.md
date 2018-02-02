@@ -1,7 +1,8 @@
 # Theia - Cloud & Desktop IDE
 
-This is a fork to use [DomTerm](http://domterm.org/] for the terminal
+This is a fork to use [DomTerm](http://domterm.org/) for the terminal
 emulator, in place of xterm.js.
+See [README-DomTerm.md](./README-DomTerm.md) for more information.
 
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/theia-ide/theia/labels/help%20wanted)
 [![Gitter](https://img.shields.io/badge/chat-on%20gitter-blue.svg)](https://gitter.im/theia-ide/theia)
