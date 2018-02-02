@@ -75,30 +75,22 @@ export class TaskConfigurations implements Disposable {
 
     /**
      * Triggers the watching of a potential task configuration file, under the given root URI.
-     * Returns whether a configuration file was found, and is being watched for changes.
+     * Returns whether a configuration file was found.
      */
     async watchConfigurationFile(rootUri: string): Promise<boolean> {
-        let configFile: string | undefined;
-
-        configFile = this.getConfigFileUri(rootUri);
+        const configFile = this.getConfigFileUri(rootUri);
+        if (this.watchedConfigFileUri !== configFile) {
+            this.watchedConfigFileUri = configFile;
+            const watchId = await this.watcherServer.watchFileChanges(configFile);
+            this.toDispose.push(Disposable.create(() =>
+                this.watcherServer.unwatchFileChanges(watchId))
+            );
+            this.refreshTasks();
+        }
         if (await this.fileSystem.exists(configFile)) {
-            if (this.watchedConfigFileUri !== configFile) {
-                this.watchedConfigFileUri = configFile;
-                const watchId = await this.watcherServer.watchFileChanges(configFile);
-                this.toDispose.push(Disposable.create(() =>
-                    this.watcherServer.unwatchFileChanges(watchId))
-                );
-
-                const tasks = await this.readTasks(configFile);
-                if (tasks) {
-                    for (const task of tasks) {
-                        this.tasksMap.set(task.label, task);
-                    }
-                }
-            }
             return Promise.resolve(true);
         } else {
-            this.logger.warn(`Config file tasks.json does not exist under ${rootUri}`);
+            this.logger.warn(`Config file ${this.TASKFILE} does not exist under ${rootUri}`);
             return Promise.resolve(false);
         }
     }
@@ -129,18 +121,7 @@ export class TaskConfigurations implements Disposable {
     protected async onDidTaskFileChange(changes: DidFilesChangedParams): Promise<void> {
         if (this.hasWatchedFileChanged(changes.changes)) {
             // re-parse the config file
-            const tasksOptionsArray = await this.readTasks(this.watchedConfigFileUri);
-            if (tasksOptionsArray) {
-                // only clear tasks map when successful at parsing the config file
-                // this way we avoid clearing and re-filling it multiple times if the
-                // user is editing the file in the auto-save mode, having momentarily
-                // non-parsing JSON.
-                this.tasksMap.clear();
-
-                for (const task of tasksOptionsArray) {
-                    this.tasksMap.set(task.label, task);
-                }
-            }
+            this.refreshTasks();
         }
     }
 
@@ -152,6 +133,25 @@ export class TaskConfigurations implements Disposable {
             }
         }
         return false;
+    }
+
+    /**
+     * Tries to read the tasks from a config file and if it success then updates the list of available tasks.
+     * If reading a config file wasn't success then does nothing.
+     */
+    protected async refreshTasks() {
+        const tasksOptionsArray = await this.readTasks(this.watchedConfigFileUri);
+        if (tasksOptionsArray) {
+            // only clear tasks map when successful at parsing the config file
+            // this way we avoid clearing and re-filling it multiple times if the
+            // user is editing the file in the auto-save mode, having momentarily
+            // non-parsing JSON.
+            this.tasksMap.clear();
+
+            for (const task of tasksOptionsArray) {
+                this.tasksMap.set(task.label, task);
+            }
+        }
     }
 
     /** parses a config file and extracts the tasks launch configurations */
@@ -184,7 +184,7 @@ export class TaskConfigurations implements Disposable {
         for (const task of tasks) {
             if (filteredTasks.some(t => t.label === task.label)) {
                 // TODO: create a problem marker so that this issue will be visible in the editor?
-                this.logger.error(`Error parsing tasks.json: found duplicate entry for label: ${task.label}`);
+                this.logger.error(`Error parsing ${this.TASKFILE}: found duplicate entry for label: ${task.label}`);
             } else {
                 filteredTasks.push(task);
             }
