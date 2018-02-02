@@ -1,0 +1,41 @@
+/* Standard styling for colors and decorators in class="term-style" spans.
+ * ANSI escape sequences for styles are translated into such spans.
+ * You can change these if you don't like the standard colors and styles.
+ */
+
+span.term-style[reverse] {
+    color: #fffff8; background-color: black;
+    color: var(--background-color); background-color: var(--foreground-color);
+}
+
+/* http://en.wikipedia.org/wiki/ANSI_escape_code#Colors
+  says xterm in July 2004 changed blue #0000CD to  #0000EE,
+  and light-blue #0000FF to #5C5CFF.
+  It also gives #7F7F7F for dark-gray.
+ */
+/* The X: comments refers to xterm color names and their defaults */
+div.domterm {
+    --dt-black: #000000; /* X: 0=black */
+    --dt-red: #CD0000; /* X: 1=red3 */
+    --dt-green: #00CD00; /* X: 2=green3 */
+    --dt-yellow: #CDCD00; /* X: 3=yellow3*/
+    --dt-blue: #0000CD; /* X: 4=blue3 */
+    --dt-magenta: #CD00CD; /* X: 5=magenta3 */
+    --dt-cyan: #00CDCD; /* X: 6=cyan3 */
+    --dt-lightgray: #E5E5E5;; /* X: 7=gray90 */
+    --dt-darkgray: #4D4D4D; /* X: 8=gray30 */
+    --dt-lightred: #FF0000; /* X: 9=red */
+    --dt-lightgreen: #00FF00; /* X: 10=green */
+    --dt-lightyellow: #FFFF00; /* X: 11=yellow */
+    --dt-lightblue: #0000FF; /* X: 12=blue */
+    --dt-lightmagenta: #FF00FF; /* 13=magenta */
+    --dt-lightcyan: #00FFFF; /* X: 14=cyan */
+    --dt-white: #FFFFFF; /* X: 15=white */
+}
+
+span.term-style[font-weight="bold"] { font-weight: bold }
+span.term-style[font-weight="lighter"] { font-weight: lighter }
+span.term-style[text-decoration~="underline"] { text-decoration: underline }
+span.term-style[text-decoration~="overline"] { text-decoration: overline }
+span.term-style[text-decoration~="line-through"] { text-decoration: line-through }
+span.term-style[text-decoration~="blink"] { text-decoration: blink }

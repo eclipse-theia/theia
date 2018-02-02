@@ -7,17 +7,19 @@
 
 import { inject, injectable } from "inversify";
 import { Disposable, ILogger } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message, WebSocketConnectionProvider, Endpoint, StatefulWidget } from '@theia/core/lib/browser';
+import { BaseWidget, Message, WebSocketConnectionProvider, Endpoint, StatefulWidget } from '@theia/core/lib/browser';
 import { WorkspaceService } from "@theia/workspace/lib/browser";
 import { IShellTerminalServer } from '../common/shell-terminal-protocol';
 import { ITerminalServer } from '../common/terminal-protocol';
 import { IBaseTerminalErrorEvent, IBaseTerminalExitEvent } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
-import * as Xterm from 'xterm';
+
+// @ts-ignore
+import * as DomTerm from '../../src/domterm/terminal.js';
 import { ThemeService } from "@theia/core/lib/browser/theming";
 
-Xterm.Terminal.applyAddon(require('xterm/lib/addons/fit/fit'));
-Xterm.Terminal.applyAddon(require('xterm/lib/addons/attach/attach'));
+// Xterm.Terminal.applyAddon(require('xterm/lib/addons/fit/fit'));
+// Xterm.Terminal.applyAddon(require('xterm/lib/addons/attach/attach'));
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -53,7 +55,8 @@ interface TerminalCSSProperties {
 export class TerminalWidget extends BaseWidget implements StatefulWidget {
 
     private terminalId: number | undefined;
-    private term: Xterm.Terminal;
+    // private term: Xterm.Terminal;
+    private term: DomTerm;
     private cols: number = 80;
     private rows: number = 40;
     private endpoint: Endpoint;
@@ -85,17 +88,24 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         });
 
         if (options.destroyTermOnClose === true) {
-            this.toDispose.push(Disposable.create(() =>
-                this.term.destroy()
-            ));
+            const widget = this;
+            this.toDispose.push(Disposable.create(() => {
+                if (widget.term) {
+                    const element = widget.term.topNode;
+                    if (element && element.parentNode) {
+                        element.parentNode.removeChild(element);
+                    }
+                }
+            }));
         }
 
         this.title.closable = true;
         this.addClass("terminal-container");
 
         /* Read CSS properties from the page and apply them to the terminal.  */
-        const cssProps = this.getCSSPropertiesFromPage();
-
+        // const cssProps = this.getCSSPropertiesFromPage();
+        this.term = new DomTerm("domterm");
+        /*
         this.term = new Xterm.Terminal({
             cursorBlink: true,
             fontFamily: cssProps.fontFamily,
@@ -106,19 +116,17 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
                 cursor: cssProps.foreground
             },
         });
+        */
 
         this.toDispose.push(ThemeService.get().onThemeChange(c => {
-            const changedProps = this.getCSSPropertiesFromPage();
-            this.term.setOption('theme', {
-                foreground: changedProps.foreground,
-                background: changedProps.background,
-                cursor: changedProps.foreground
-            });
+            this.term.setMiscOptions(this.getCSSPropertiesFromPage());
         }));
 
+        /*
         this.term.on('title', (title: string) => {
             this.title.label = title;
         });
+        */
     }
 
     storeState(): object {
@@ -170,7 +178,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
 
         const fontSize = Number.parseInt(fontSizeMatch[1]);
 
-        /* xterm.js expects #XXX of #XXXXXX for colors.  */
+        /* xterm.js expects #XXX of #XXXXXX for colors.  * /
         const colorRe = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
         if (!foreground.match(colorRe)) {
@@ -181,6 +189,18 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             throw new Error(`Unexpected format for --theia-layout-color3 (${background})`);
         }
 
+        let fgSum = 0, bgSum = 0;
+        let fgCols = foreground.length == 7 ? 2 : 1;
+        for (let i = 0; i < 3; i++) {
+            fgSum += parseInt(foreground.substring(1+fgCols*i, 3+fgCols*i), 16);
+            bgSum += parseInt(background.substring(1+bgCols*i, 3+bgCols*i), 16);
+        }
+        if (foreground.length == 4)
+            fgCols = 17 * fgCols;
+        if (background.length == 4)
+            bgCols = 17 * bgCols;
+        let darkStyle = fgCols > bgCols;
+        */
         return {
             fontSize: fontSize,
             fontFamily: fontFamily,
@@ -190,24 +210,24 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
     }
 
     protected registerResize(): void {
+        /*
         const initialGeometry = (this.term as any).proposeGeometry();
         this.cols = initialGeometry.cols;
         this.rows = initialGeometry.rows;
-
-        this.term.on('resize', size => {
+        */
+        this.term.setWindowSize = (rows: number, cols: number,
+                                   height: number, width: number) => {
             if (this.terminalId === undefined) {
                 return;
             }
 
-            if (!size) {
-                return;
-            }
-
-            this.cols = size.cols;
-            this.rows = size.rows;
-            this.shellTerminalServer.resize(this.terminalId, this.cols, this.rows);
-        });
+            this.cols = cols;
+            this.rows = rows;
+            this.shellTerminalServer.resize(this.terminalId, cols, rows);
+        };
+        /*
         (this.term as any).fit();
+        */
     }
 
     /**
@@ -264,8 +284,16 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             return Promise.reject("Not visible");
         }
 
-        this.term.open(this.node);
+        // See comment in domterm-core.css.
+        const outer = document.createElement("div");
+        outer.setAttribute("style", "position:relative;width:100%;height:100%");
+        this.node.appendChild(outer);
+        const topNode = DomTerm.makeElement(outer, DomTerm.freshName());
+        // this.term.topNode = topNode;
         this.registerResize();
+        this.term.initializeTerminal(topNode);
+        this.term.setMiscOptions(this.getCSSPropertiesFromPage());
+        this.term.setInputMode(99); // 'c' char mode
         this.connectSocket(this.terminalId);
         this.monitorTerminal(this.terminalId);
 
@@ -280,7 +308,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (this.isTermOpen) {
-            this.term.focus();
+            DomTerm.setFocus(this.term);
         }
     }
 
@@ -290,13 +318,13 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             if (this.isOpeningTerm === false) {
                 this.openTerm().then(() => {
                     this.openAfterShow = false;
-                    this.term.focus();
+                    DomTerm.setFocus(this.term);
                 }).catch(e => {
                     this.logger.error("Error opening terminal", e.toString());
                 });
             }
         } else {
-            this.term.focus();
+            DomTerm.setFocus(this.term);
         }
     }
 
@@ -304,7 +332,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         super.onAfterAttach(msg);
         if (this.isVisible) {
             this.openTerm().then(() => {
-                this.term.focus();
+                DomTerm.setFocus(this.term);
             }).catch(e => {
                 this.openAfterShow = true;
                 this.logger.error("Error opening terminal", e.toString());
@@ -313,6 +341,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             this.openAfterShow = true;
         }
     }
+    /*
     private resizeTimer: any;
 
     protected onResize(msg: Widget.ResizeMessage): void {
@@ -324,6 +353,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             }, 500);
         }
     }
+    */
 
     protected monitorTerminal(id: number) {
         this.toDispose.push(this.terminalWatcher.onTerminalError((event: IBaseTerminalErrorEvent) => {
@@ -339,10 +369,27 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         }));
     }
 
+    protected handleReportEvent(name: String, data: String) {
+        console.log("handleReportEvent " + name);
+    }
+
     protected connectSocket(id: number) {
         const socket = this.createWebSocket(id.toString());
+        const term = this.term;
+        socket.binaryType = "arraybuffer";
+        socket.onmessage = function(evt) {
+            DomTerm._handleOutputData(term, evt.data);
+        };
+        term.processInputCharacters = (str: String) => { socket.send(str); };
+        term.reportEvent = this.handleReportEvent;
+        /*
+        (name: String, data: String) => {
+             // FIXME
+        };
+        */
         socket.onopen = () => {
-            (this.term as any).attach(socket);
+            term.reportEvent("VERSION", DomTerm.versionInfo);
+            // (this.term as any).attach(socket);
             (this.term as any)._initialized = true;
         };
 
@@ -362,13 +409,16 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             this.shellTerminalServer.close(this.terminalId);
         }
 
+        /*
         if (this.resizeTimer !== undefined) {
             clearTimeout(this.resizeTimer);
         }
+        */
 
         super.dispose();
     }
 
+    /*
     private doResize() {
         if (this.term === undefined) {
             clearTimeout(this.resizeTimer);
@@ -379,4 +429,5 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         this.rows = geo.rows - 1; // subtract one row for margin
         this.term.resize(this.cols, this.rows);
     }
+    */
 }

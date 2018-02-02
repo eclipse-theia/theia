@@ -17,7 +17,9 @@ import { IShellTerminalServer, shellTerminalPath } from '../common/shell-termina
 import { ApplicationShell } from '@theia/core/lib/browser';
 
 import '../../src/browser/terminal.css';
-import 'xterm/lib/xterm.css';
+import '../../src/domterm/domterm-core.css';
+import '../../src/domterm/domterm-standard.css';
+import '../../src/domterm/domterm-default.css';
 
 export default new ContainerModule(bind => {
     bind(TerminalWidget).toSelf().inTransientScope();

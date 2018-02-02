@@ -1,0 +1,101 @@
+/* Optional - user-overridable styling */
+
+/* "\2936" is "arrow pointing downwards then curving leftward".
+It is used to indicate a wrapped line, rather like a hyphen. */
+span[breaking="yes"][line="soft"]:before {content: "\2936" "\A"; }
+div.domterm {
+    /* A light color used for the default background in normal mode,
+       or used for default foreground (text) in reverse-video mode.
+       This value suggested by Tufte CSS - less harsh than pure white. */
+    --main-light-color: #fffff8;
+    /* A dark color used for the default foreground (text) in normal mode,
+       or used for default background in reverse-video mode. */
+    --main-dark-color: black;
+}
+div.domterm {
+    color: black; background-color: #fffff8; /* fallback if var not handled */
+    --background-color: var(--main-light-color);
+    --foreground-color: var(--main-dark-color);
+    background-color: var(--background-color);
+    color: var(--foreground-color);
+    --spacer-color:  #F0F0F8;
+}
+div.domterm[reverse-video] {
+    color: #fffff8; background-color: black; /* fallback if var not handled */
+    --background-color: var(--main-dark-color);
+    --foreground-color: var(--main-light-color);
+    background-color: var(--background-color);
+    color: var(--foreground-color);
+    --spacer-color:  #101040;
+}
+div.domterm-spacer {
+  background-image: repeating-linear-gradient(
+      45deg,
+      var(--spacer-color),
+      var(--spacer-color) 5px,
+      transparent 5px,
+      transparent 15px
+  );
+}
+
+/* Tufte CSS suggests: Consolas, "Liberation Mono", Menlo, Courier, monospace
+   However, the first four in that list cause some vertical spacing issues,
+   including background-color not being full-height.
+   Check with tests/256-colors.sh. */
+div.domterm { --monospace-family: "DejaVu Sans Mono","Everson Mono",FreeMono,Menlo,Terminal; }
+div.domterm-pre, span.docutils.literal { font-family: var(--monospace-family),monospace }
+div.domterm[reverse-video] span[std="input"] { background-color: #404000 } /* a dark yellow */
+div.domterm[reverse-video] span[std="prompt"] { background-color: #006000 } /* a dark green */
+span[std="input"] { background-color: #F8F8D0 } /* a pale yellow */
+span[std="prompt"] { background-color: #E0FFE0 } /* a pale green */
+span[std="error"] { color: red; }
+span[std="hider"]:hover { background-color: yellow; color: red; cursor: pointer }
+div.input-line { background-color: #FFFFE8}
+div.domterm[reverse-video] div.input-line { background-color: #181800 }
+div.domterm-show-info {
+    bottom: 0px;
+    right: 2px;
+    padding: 1px 4px;
+    border: 2px solid blue;
+}
+
+/* FUTURE POPUP
+div.domterm-main-popup {
+}
+div.domterm-main-popup div {
+    border:  thin solid black;
+}
+div.domterm-popup-action:hover {
+    background-color: lightblue
+}
+*/
+
+div.domterm span[caret="block"][std="input"], div.domterm span[caret="blinking-block"][std="input"] {
+    color: #fffff8; background-color: black; /* fallback if var not handled */
+    background-color: var(--foreground-color); color: var(--background-color);
+}
+div.domterm div.domterm span[caret="underline"][std="input"], div.domterm span[caret="blinking-underline"][std="input"]  {
+    text-decoration: underline
+}
+div.domterm-active span[caret="blinking-block"][std="input"],
+div.domterm-active span[caret="blinking-underline"][std="input"] {
+    animation: blinking-caret 1.5s steps(1) 0s 20;
+}
+span[caret][std="input"][value]:after {
+    content: attr(value);
+}
+@keyframes blinking-caret {
+    0% { }
+    30% {background-color: inherit; color: inherit; text-decoration: inherit }
+    100% {}
+}
+div.domterm a.subtle:not(:hover) { text-decoration: inherit; }
+div.domterm a.matched:not(:hover) { color: inherit; text-decoration: inherit; }
+div.domterm h2,
+div.domterm h3,
+div.domterm p,
+div.domterm dl {
+    margin-top: 0.2ex; margin-bottom: 0.3ex; }
+div.domterm h1 {
+    margin-top: 0.2ex;
+    margin-bottom: 0.4ex; }
