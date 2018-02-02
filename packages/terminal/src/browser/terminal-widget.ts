@@ -293,7 +293,6 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         this.registerResize();
         this.term.initializeTerminal(topNode);
         this.term.setMiscOptions(this.getCSSPropertiesFromPage());
-        this.term.setInputMode(99); // 'c' char mode
         this.connectSocket(this.terminalId);
         this.monitorTerminal(this.terminalId);
 
@@ -369,8 +368,33 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         }));
     }
 
+    protected isCanonicalMode() { return false; } // TODO
+    protected isEchoingMode() { return false; } // TODO
+
     protected handleReportEvent(name: String, data: String) {
-        console.log("handleReportEvent " + name);
+        switch (name) {
+        case "KEY":
+            let q = data.indexOf('"');
+            let kstr = JSON.parse(data.substring(q));
+            let k0 = kstr.length === 1 ? kstr.charCodeAt(0) : -1;
+            if (this.isCanonicalMode()
+                // neither ctrl-C, ctrl-D, or ctrl-Z
+                && k0 !== 3 && k0 !== 4 && k0 !== 26) {
+                let cmd = this.isEchoingMode() ? 74 : 73;
+                DomTerm._handleOutputData(this.term,
+                                          "\x1b]" + cmd + ";" + data + "\x07");
+            } else {
+                this.term.processInputCharacters(kstr);
+            }
+            break;
+        case "LINK":
+            // TODO: handleLink(JSON.parse(data));
+            break;
+        case "SESSION-NAME": // TODO
+            break;
+        // default:
+        //    console.log("handleReportEvent " + name);
+        }
     }
 
     protected connectSocket(id: number) {
@@ -381,12 +405,9 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             DomTerm._handleOutputData(term, evt.data);
         };
         term.processInputCharacters = (str: String) => { socket.send(str); };
-        term.reportEvent = this.handleReportEvent;
-        /*
-        (name: String, data: String) => {
-             // FIXME
+        term.reportEvent = (name: String, data: String) => {
+            this.handleReportEvent(name, data);
         };
-        */
         socket.onopen = () => {
             term.reportEvent("VERSION", DomTerm.versionInfo);
             // (this.term as any).attach(socket);
