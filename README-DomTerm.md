@@ -11,10 +11,10 @@ You can embed graphics, html text, and more in the output.
 For example help text can be rich html text.
 (`domterm help` by default emits rich text on DomTerm.)
 
-Output folding (show/hide byttons).
+Output folding (show/hide buttons).
 
-Compiler and other error messages (of the form FILE:LINE) are clickable.
-(Needs hooking up for theia.)
+Compiler and other error messages (of the form *filename*:*line*) are clickable.
+(Needs hooking in Theia.)
 
 Move cursor in bash or other readline-based program with mouse.
 (Requires setting of special escape sequences in prompt.)
@@ -38,15 +38,16 @@ The domterm program (see [build instructions](http://domterm.org/Downloading-and
 provides a number of useful features beyond just starting a terminal emulator.
 For example the `domterm imgcat` sub-command lets you "print"
 an image to the current terminal.
-This and similar "client" sub-commands work.
+This and similar "client" sub-commands work under Theia's domterm embedding.
 
-The "server-side" features of the domterm program could be
+The domterm program has useful "server-side" features that could be
 re-implemented in typescript/node, but it may make more sense
-to use the domterm command itself from theia.  That gives us
-a lot of features already impleted: Session management (attach/save/detach);
+to use the domterm command itself from Theia.  That gives us
+a lot of features already implented: Session management (attach/save/detach);
 handling of clicked links; flow control; watching and parsing the
-`setting.ini' preferences file (a more friendly syntax that JSON).
+`settings.ini` preferences file (a more friendly syntax that JSON).
 
 Communication between the DomTerm JavaScript code and the domterm
-program usea a WebSocket, so it seems reasonable to provide
-a mode for the theia terminal to use the domterm program.
+program usea a WebSocket, so it shouldn't be to hard to provide
+a mode for the Theia terminal to use the domterm program.
+(Using external `domterm`, if available, should be a user preference.)
