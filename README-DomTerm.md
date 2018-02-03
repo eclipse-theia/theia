@@ -32,6 +32,16 @@ A styling problem with the scroll-bar - it's almost invisible.
 
 Should set DOMTERM environment variable.  That requires domterm-version.js.
 
+Automatic input mode (swiching between characater-at-a-time and
+line-editing mode based on therm state) is not implemented.
+That requires a cll to `tcgetattr`.
+
+Handling of clicked links is not implemented.
+File links with line numbers should open a file in the editor;
+other links should by default open the link in a browser.
+(The domterm program supports a flexible if complex way
+to specify how such links are handled.)
+
 ## Using domterm program
 
 The domterm program (see [build instructions](http://domterm.org/Downloading-and-building.html))
@@ -43,7 +53,7 @@ This and similar "client" sub-commands work under Theia's domterm embedding.
 The domterm program has useful "server-side" features that could be
 re-implemented in typescript/node, but it may make more sense
 to use the domterm command itself from Theia.  That gives us
-a lot of features already implented: Session management (attach/save/detach);
+a lot of features already implemented: Session management (attach/save/detach);
 handling of clicked links; flow control; watching and parsing the
 `settings.ini` preferences file (a more friendly syntax that JSON).
 
