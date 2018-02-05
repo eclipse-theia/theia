@@ -9,7 +9,7 @@ import { inject, injectable } from 'inversify';
 import { TaskOptions } from '../common/task-protocol';
 import { ILogger, Disposable, DisposableCollection } from '@theia/core/lib/common/';
 import URI from "@theia/core/lib/common/uri";
-import { FileSystemWatcherServer, DidFilesChangedParams, FileChange } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
+import { FileSystemWatcherServer, FileChange, FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import * as jsoncparser from 'jsonc-parser';
 import { ParseError } from 'jsonc-parser';
@@ -47,11 +47,14 @@ export class TaskConfigurations implements Disposable {
         this.toDispose.push(watcherServer);
 
         watcherServer.setClient({
-            onDidFilesChanged: async changes => {
+            onDidFilesChanged: async event => {
                 try {
-                    await this.onDidTaskFileChange(changes);
-                    if (this.client) {
-                        this.client.taskConfigurationChanged(this.getTaskLabels());
+                    const watchedConfigFileChange = event.changes.find(change => change.uri === this.watchedConfigFileUri);
+                    if (watchedConfigFileChange) {
+                        await this.onDidTaskFileChange(watchedConfigFileChange);
+                        if (this.client) {
+                            this.client.taskConfigurationChanged(this.getTaskLabels());
+                        }
                     }
                 } catch (err) {
                     this.logger.error(err);
@@ -115,24 +118,16 @@ export class TaskConfigurations implements Disposable {
     }
 
     /**
-     * Called when a potential change, to a config file we watch, is detected.
+     * Called when a change, to a config file we watch, is detected.
      * Triggers a reparse, if appropriate.
      */
-    protected async onDidTaskFileChange(changes: DidFilesChangedParams): Promise<void> {
-        if (this.hasWatchedFileChanged(changes.changes)) {
+    protected async onDidTaskFileChange(fileChange: FileChange): Promise<void> {
+        if (fileChange.type === FileChangeType.DELETED) {
+            this.tasksMap.clear();
+        } else {
             // re-parse the config file
             this.refreshTasks();
         }
-    }
-
-    /** Returns whether, among the files detected to have changed, is the config file we are watching */
-    protected hasWatchedFileChanged(changes: FileChange[]): boolean {
-        for (const change of changes) {
-            if (change.uri === this.watchedConfigFileUri) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
