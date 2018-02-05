@@ -18,15 +18,42 @@ export enum LogLevel {
     TRACE = 10
 }
 
-/* This is to be initialized from container composition root.
-It can be used outside of the inversify context.  */
-export let logger: ILogger;
-
 type ConsoleLog = typeof console.log;
-export function setRootLogger(aLogger: ILogger) {
-    logger = aLogger;
+type ConsoleInfo = typeof console.info;
+type ConsoleWarn = typeof console.warn;
+type ConsoleError = typeof console.error;
 
-    const frontend = !!window && typeof (window as any).process === 'undefined';
+let originalConsoleLog: ConsoleLog;
+let originalConsoleInfo: ConsoleInfo;
+let originalConsoleWarn: ConsoleWarn;
+let originalConsoleError: ConsoleError;
+
+/* This is to be initialized from container composition root. It can be used outside of the inversify context.  */
+export let logger: ILogger;
+/**
+ * Counterpart of the `#setRootLogger(ILogger)`. Restores the `console.xxx` bindings to the original one.
+ * Invoking has no side-effect if `setRootLogger` was not called before. Multiple function invocation has
+ * no side-effect either.
+ */
+export function unsetRootLogger() {
+    if (logger !== undefined) {
+        console.log = originalConsoleLog;
+        console.info = originalConsoleInfo;
+        console.warn = originalConsoleWarn;
+        console.error = originalConsoleError;
+        (<any>logger) = undefined;
+    }
+}
+
+export function setRootLogger(aLogger: ILogger) {
+    if (logger === undefined) {
+        originalConsoleLog = console.log;
+        originalConsoleInfo = console.info;
+        originalConsoleWarn = console.warn;
+        originalConsoleError = console.error;
+    }
+    logger = aLogger;
+    const frontend = typeof window !== 'undefined' && typeof (window as any).process === 'undefined';
     const log = (logLevel: number, consoleLog: ConsoleLog, message?: any, ...optionalParams: any[]) => {
         aLogger.log(logLevel, String(message), ...optionalParams);
         if (frontend) {
