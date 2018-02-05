@@ -4,7 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-import { cleanupJSDOM } from '../browser/test/jsdom';
+import { enableJSDOM } from '../browser/test/jsdom';
+
+let disableJSDOM = enableJSDOM();
 
 import { Container, injectable, inject, ContainerModule } from 'inversify';
 import { bindContributionProvider } from './contribution-provider';
@@ -19,6 +21,8 @@ import { MockLogger } from './test/mock-logger';
 import * as os from './os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
+
+disableJSDOM();
 
 /* tslint:disable:no-unused-expression */
 
@@ -63,11 +67,15 @@ before(async () => {
 
 });
 
-after(() => {
-    cleanupJSDOM();
-});
-
 describe('keybindings', () => {
+    before(() => {
+        disableJSDOM = enableJSDOM();
+    });
+
+    after(() => {
+        disableJSDOM();
+    });
+
     beforeEach(() => {
         keybindingRegistry = testContainer.get<KeybindingRegistry>(KeybindingRegistry);
         keybindingRegistry.onStart();
@@ -236,6 +244,14 @@ describe('keybindings', () => {
 });
 
 describe("keys api", () => {
+    before(() => {
+        disableJSDOM = enableJSDOM();
+    });
+
+    after(() => {
+        disableJSDOM();
+    });
+
     it("should parse a string to a KeyCode correctly", () => {
 
         const keycode = KeyCode.parse("ctrl+b");

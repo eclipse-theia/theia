@@ -4,7 +4,10 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-import { cleanupJSDOM } from '@theia/core/lib/browser/test/jsdom';
+
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+
+let disableJSDOM = enableJSDOM();
 
 import { Container } from 'inversify';
 import * as chai from 'chai';
@@ -27,6 +30,8 @@ import { MockWorkspaceServer } from '@theia/workspace/lib/common/test/mock-works
 import { MockWindowService } from '@theia/core/lib/browser/window/test/mock-window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import * as sinon from 'sinon';
+
+disableJSDOM();
 
 const expect = chai.expect;
 let testContainer: Container;
@@ -89,16 +94,14 @@ before(async () => {
     testContainer.bind(ILogger).to(MockLogger);
 });
 
-after(() => {
-    cleanupJSDOM();
-});
-
 describe('Preference Service', function () {
 
     before(() => {
+        disableJSDOM = enableJSDOM();
     });
 
     after(() => {
+        disableJSDOM();
     });
 
     beforeEach(() => {
