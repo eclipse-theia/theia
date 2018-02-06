@@ -8125,3 +8125,21 @@ DomTerm.prototype._pauseNeeded = function() {
 
 if (typeof exports === "object")
     module.exports = DomTerm;
+DomTerm.versionString = "0.96";
+DomTerm.copyrightYear = 2018;
+DomTerm.inAtomFlag = false;
+
+DomTerm.isElectron = function() {
+    return typeof process !== 'undefined' && process.versions
+        && process.versions.electron !== undefined;
+}
+
+DomTerm.isAtom = function() { return DomTerm.inAtomFlag; }
+
+DomTerm.isInIFrame = function() { return window.parent != window; }
+
+DomTerm.versionInfo = "version="+DomTerm.versionString;
+
+if (DomTerm.isElectron())
+    DomTerm.versionInfo =
+        DomTerm.versionInfo + ';electron=' + process.versions.electron;
