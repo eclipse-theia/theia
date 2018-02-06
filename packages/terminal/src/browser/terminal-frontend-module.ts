@@ -16,7 +16,6 @@ import { TerminalWatcher } from '../common/terminal-watcher';
 import { IShellTerminalServer, shellTerminalPath } from '../common/shell-terminal-protocol';
 import { ApplicationShell } from '@theia/core/lib/browser';
 
-import '../../src/browser/terminal.css';
 import '../../src/domterm/domterm-core.css';
 import '../../src/domterm/domterm-standard.css';
 import '../../src/domterm/domterm-default.css';
