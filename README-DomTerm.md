@@ -42,6 +42,9 @@ other links should by default open the link in a browser.
 (The domterm program supports a flexible if complex way
 to specify how such links are handled.)
 
+Flow-control (output rate limitation) is not implemented.
+This is related to the paging/pause support.
+
 ## Using domterm program
 
 The domterm program (see [build instructions](http://domterm.org/Downloading-and-building.html))
