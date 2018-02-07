@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import { Command, CommandHandler, CommandRegistry, SelectionService } from '@theia/core';
 import { EditorManager, TextEditorSelection } from '@theia/editor/lib/browser';
-import { getCurrent, MonacoEditor } from './monaco-editor';
+import { MonacoEditor } from './monaco-editor';
 
 export interface MonacoEditorCommandHandler {
     execute(editor: MonacoEditor, ...args: any[]): any;
@@ -54,7 +54,7 @@ export class MonacoCommandRegistry {
     }
 
     protected execute(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): any {
-        const editor = getCurrent(this.editorManager);
+        const editor = MonacoEditor.getCurrent(this.editorManager);
         if (editor) {
             editor.focus();
             return Promise.resolve(monacoHandler.execute(editor, ...args));
@@ -63,7 +63,7 @@ export class MonacoCommandRegistry {
     }
 
     protected isEnabled(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): boolean {
-        const editor = getCurrent(this.editorManager);
+        const editor = MonacoEditor.getCurrent(this.editorManager);
         return !!editor && (!monacoHandler.isEnabled || monacoHandler.isEnabled(editor, ...args));
     }
 

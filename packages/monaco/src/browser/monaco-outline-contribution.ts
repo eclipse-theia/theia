@@ -16,7 +16,7 @@ import { DisposableCollection } from "@theia/core";
 import { OutlineViewService } from '@theia/outline-view/lib/browser/outline-view-service';
 import { OutlineSymbolInformationNode } from '@theia/outline-view/lib/browser/outline-view-widget';
 import URI from "@theia/core/lib/common/uri";
-import { get } from './monaco-editor';
+import { MonacoEditor } from './monaco-editor';
 
 @injectable()
 export class MonacoOutlineContribution implements FrontendApplicationContribution {
@@ -89,7 +89,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
     }
 
     protected async getModel(editor: EditorWidget): Promise<monaco.editor.IModel> {
-        const monacoEditor = get(editor);
+        const monacoEditor = MonacoEditor.get(editor);
         const model = monacoEditor!.getControl().getModel();
         this.toDispose.dispose();
         this.toDispose.push(model.onDidChangeContent(async ev => {

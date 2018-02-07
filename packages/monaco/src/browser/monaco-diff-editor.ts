@@ -35,6 +35,7 @@ export class MonacoDiffEditor extends MonacoEditor {
         override?: IEditorOverrideServices,
     ) {
         super(new URI(''), modifiedModel, node, m2p, p2m, options, override);
+        this.documents.add(originalModel);
         const original = originalModel.textEditorModel;
         const modified = modifiedModel.textEditorModel;
         this.diffEditor.setModel({ original, modified });
