@@ -19,7 +19,7 @@ import { Emitter, Event, TextDocument, TextDocumentWillSaveEvent, TextEdit } fro
 import { MonacoTextModelService } from "./monaco-text-model-service";
 import { WillSaveModelEvent } from "./monaco-editor-model";
 import URI from "@theia/core/lib/common/uri";
-import { get } from "./monaco-editor";
+import { MonacoEditor } from "./monaco-editor";
 
 decorate(injectable(), BaseMonacoWorkspace);
 decorate(inject(MonacoToProtocolConverter), BaseMonacoWorkspace, 0);
@@ -65,7 +65,7 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
         monaco.editor.onDidCreateModel(model => {
             this.textModelService.createModelReference(model.uri).then(reference => {
                 reference.object.onDirtyChanged(() => {
-                    if (reference.object.dirty) {
+                    if (reference.object.dirty && MonacoEditor.findByDocument(this.editorManager, reference.object).length === 0) {
                         // create a new reference to make sure the model is not disposed before it is
                         // acquired by the editor, thus losing the changes that made it dirty.
                         this.textModelService.createModelReference(model.uri).then(ref => {
@@ -162,7 +162,7 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
         const uri2Edits = this.groupEdits(workspaceEdit);
         for (const uri of uri2Edits.keys()) {
             const editorWidget = await this.editorManager.open(new URI(uri));
-            const editor = get(editorWidget);
+            const editor = MonacoEditor.get(editorWidget);
             if (editor) {
                 const model = editor.document.textEditorModel;
                 const currentSelections = editor.getControl().getSelections();
