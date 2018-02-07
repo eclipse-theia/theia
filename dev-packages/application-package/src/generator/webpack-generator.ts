@@ -32,7 +32,7 @@ const CircularDependencyPlugin = require('circular-dependency-plugin');
 const outputPath = path.resolve(__dirname, 'lib');
 const development = process.env.NODE_ENV === 'development';${this.ifMonaco(() => `
 
-const monacoEditorPath = development ? '${this.resolve('monaco-editor-core', 'dev/vs')}' : '${this.resolve('monaco-editor-core', 'min/vs')}';
+const monacoEditorPath = development ? '${this.resolve('monaco-editor', 'dev/vs')}' : '${this.resolve('monaco-editor', 'min/vs')}';
 const monacoLanguagesPath = '${this.resolve('monaco-languages', 'release')}';
 const monacoCssLanguagePath = '${this.resolve('monaco-css', 'release/min')}';
 const monacoJsonLanguagePath = '${this.resolve('monaco-json', 'release/min')}';
