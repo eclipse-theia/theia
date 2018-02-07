@@ -169,7 +169,7 @@ describe("node-extension-server", function () {
     });
 
     it("list with search", function () {
-        this.timeout(30000);
+        this.timeout(50000);
 
         return server.list({
             query: "scope:theia"
