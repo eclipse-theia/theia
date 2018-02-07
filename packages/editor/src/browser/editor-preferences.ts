@@ -12,8 +12,7 @@ import {
     PreferenceService,
     PreferenceContribution,
     PreferenceSchema,
-    PreferenceChangeEvent,
-    Configuration
+    PreferenceChangeEvent
 } from '@theia/core/lib/browser/preferences';
 
 export const editorPreferenceSchema: PreferenceSchema = {
@@ -289,13 +288,76 @@ export const editorPreferenceSchema: PreferenceSchema = {
     }
 };
 
-export type EditorPreferenceChange = PreferenceChangeEvent<PreferenceSchema>;
+export interface EditorConfiguration {
+    'editor.tabSize': number
+    'editor.autoSave': 'on' | 'off'
+    'editor.autoSaveDelay': number
+    'editor.lineNumbers'?: 'on' | 'off'
+    'editor.renderWhitespace'?: 'none' | 'boundary' | 'all'
+    'editor.rulers'?: number[]
+    'editor.wordSeparators'?: string
+    'editor.glyphMargin'?: boolean
+    'editor.roundedSelection'?: boolean
+    'editor.minimap.enabled'?: boolean,
+    'editor.minimap.showSlider'?: string,
+    'editor.minimap.renderCharacters'?: boolean,
+    'editor.minimap.maxColumn'?: number,
+    'editor.overviewRulerLanes'?: number
+    'editor.overviewRulerBorder'?: boolean
+    'editor.cursorBlinking'?: string
+    'editor.mouseWheelZoom'?: boolean
+    'editor.cursorStyle'?: string
+    'editor.fontLigatures'?: boolean
+    'editor.hideCursorInOverviewRuler'?: boolean
+    'editor.scrollBeyondLastLine'?: boolean
+    'editor.wordWrap'?: 'off' | 'on' | 'wordWrapColumn' | 'bounded'
+    'editor.wordWrapColumn'?: number
+    'editor.wrappingIndent'?: string
+    'editor.links'?: boolean
+    'editor.mouseWheelScrollSensitivity'?: number
+    'editor.multiCursorModifier'?: 'ctrlCmd' | 'alt'
+    'editor.accessibilitySupport'?: 'auto' | 'off' | 'on'
+    'editor.quickSuggestions'?: boolean
+    'editor.quickSuggestionsDelay'?: number
+    'editor.parameterHints'?: boolean
+    'editor.autoClosingBrackets'?: boolean
+    'editor.autoIndent'?: boolean
+    'editor.formatOnType'?: boolean
+    'editor.formatOnPaste'?: boolean
+    'editor.dragAndDrop'?: boolean
+    'editor.suggestOnTriggerCharacters'?: boolean
+    'editor.acceptSuggestionOnEnter'?: 'on' | 'smart' | 'off'
+    'editor.acceptSuggestionOnCommitCharacter'?: boolean
+    'editor.snippetSuggestions'?: 'top' | 'bottom' | 'inline' | 'none'
+    'editor.emptySelectionClipboard'?: boolean
+    'editor.wordBasedSuggestions'?: boolean
+    'editor.selectionHighlight'?: boolean
+    'editor.occurrencesHighlight'?: boolean
+    'editor.codeLens'?: boolean
+    'editor.folding'?: boolean
+    'editor.showFoldingControls'?: 'always' | 'mouseover'
+    'editor.matchBrackets'?: boolean
+    'editor.renderControlCharacters'?: boolean
+    'editor.renderIndentGuides'?: boolean
+    'editor.renderLineHighlight'?: 'none' | 'gutter' | 'line' | 'all'
+    'editor.useTabStops'?: boolean
+}
+export type EditorPreferenceChange = PreferenceChangeEvent<EditorConfiguration>;
+
+export const defaultEditorConfiguration: EditorConfiguration = {
+    'editor.autoSave': editorPreferenceSchema.properties['editor.autoSave'].default,
+    'editor.autoSaveDelay': editorPreferenceSchema.properties['editor.autoSaveDelay'].default,
+    'editor.tabSize': editorPreferenceSchema.properties['editor.tabSize'].default,
+    'editor.minimap.enabled': editorPreferenceSchema.properties['editor.enabled'].default,
+    'editor.glyphMargin': editorPreferenceSchema.properties['editor.glyphMargin'].default,
+    'editor.wrappingIndent': editorPreferenceSchema.properties['editor.wrappingIndent'].default
+};
 
 export const EditorPreferences = Symbol('EditorPreferences');
-export type EditorPreferences = PreferenceProxy<Configuration>;
+export type EditorPreferences = PreferenceProxy<EditorConfiguration>;
 
 export function createEditorPreferences(preferences: PreferenceService): EditorPreferences {
-    return createPreferenceProxy(preferences, editorPreferenceSchema);
+    return createPreferenceProxy(preferences, defaultEditorConfiguration, editorPreferenceSchema);
 }
 
 export function bindEditorPreferences(bind: interfaces.Bind): void {

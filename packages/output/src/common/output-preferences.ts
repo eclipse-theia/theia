@@ -11,8 +11,7 @@ import {
     PreferenceProxy,
     PreferenceService,
     PreferenceContribution,
-    PreferenceSchema,
-    Configuration
+    PreferenceSchema
 } from '@theia/core/lib/browser/preferences';
 
 export const OutputConfigSchema: PreferenceSchema = {
@@ -20,16 +19,25 @@ export const OutputConfigSchema: PreferenceSchema = {
     "properties": {
         "output.maxChannelHistory": {
             "type": "number",
+            "default": 1000,
             "description": "The maximum number of entries in an output channel."
         }
     }
 };
 
+export interface OutputConfiguration {
+    'output.maxChannelHistory': number
+}
+
+export const defaultOutputConfiguration: OutputConfiguration = {
+    'output.maxChannelHistory': OutputConfigSchema.properties['output.maxChannelHistory'].default
+};
+
 export const OutputPreferences = Symbol('OutputPreferences');
-export type OutputPreferences = PreferenceProxy<Configuration>;
+export type OutputPreferences = PreferenceProxy<OutputConfiguration>;
 
 export function createOutputPreferences(preferences: PreferenceService): OutputPreferences {
-    return createPreferenceProxy(preferences, OutputConfigSchema);
+    return createPreferenceProxy(preferences, defaultOutputConfiguration, OutputConfigSchema);
 }
 
 export function bindOutputPreferences(bind: interfaces.Bind): void {

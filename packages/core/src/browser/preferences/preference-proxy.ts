@@ -26,14 +26,13 @@ export interface PreferenceEventEmitter<T> {
 }
 
 export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T>;
-export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, schema: PreferenceSchema): PreferenceProxy<T> {
+export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, configuration: T, schema: PreferenceSchema): PreferenceProxy<T> {
     const toDispose = new DisposableCollection();
     const onPreferenceChangedEmitter = new Emitter<PreferenceChange>();
     toDispose.push(onPreferenceChangedEmitter);
     toDispose.push(preferences.onPreferenceChanged(change => {
         if (change.preferenceName in schema.properties) {
-            /* Can't simply use change.newValue as this could be a boolean */
-            if (change.newValue !== undefined) {
+            if (change.newValue) {
                 // Fire the pref if it's valid according to the schema
                 if (validatePreference(schema, {
                     [change.preferenceName]: change.newValue
@@ -43,42 +42,36 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
                     // Fire the default preference
                     onPreferenceChangedEmitter.fire({
                         preferenceName: change.preferenceName,
-                        newValue: schema.properties[change.preferenceName].default || undefined
+                        newValue: configuration[change.preferenceName]
                     });
                 }
             } else {
                 /* Deleted preference, fire the default preference */
                 onPreferenceChangedEmitter.fire({
                     preferenceName: change.preferenceName,
-                    newValue: schema.properties[change.preferenceName].default || undefined,
+                    newValue: schema.properties[change.preferenceName].default,
                     oldValue: change.oldValue
                 });
             }
         }
     }));
-
-    /* Create a targer object with only the property names as properties, removing "type" and other stuff from the schema */
-    const targetConfig: Configuration = {};
-    Object.keys(schema.properties).forEach(prop => {
-        targetConfig[prop];
-    });
     // tslint:disable-next-line:no-any
-    return new Proxy((targetConfig as any), {
+    return new Proxy(configuration as any, {
         get: (_, p: string) => {
             if (p in schema.properties) {
-                const preference = preferences.get(p, schema.properties[p].default);
-                if (preference) {
+                if (p in configuration) {
+                    const preference = preferences.get(p, configuration[p]);
                     if (validatePreference(schema, {
                         [p]: preference
                     })) {
                         return preference;
                     } else {
-                        return schema.properties[p].default || undefined;
+                        return configuration[p];
                     }
+                } else {
+                    return schema.properties[p].default;
                 }
-                return undefined;
             }
-
             if (p === 'onPreferenceChanged') {
                 return onPreferenceChangedEmitter.event;
             }
