@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+// tslint:disable:no-any
 import { DisposableCollection } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { EditorPreferenceChange, EditorPreferences } from '@theia/editor/lib/browser';
@@ -54,8 +55,9 @@ export class MonacoEditorProvider {
         return reference.object;
     }
 
-    protected createEditor(create: (n: HTMLDivElement, o: IEditorOverrideServices) => MonacoEditor, toDispose: DisposableCollection): MonacoEditor {
-        const node = document.createElement('div');
+    async get(uri: URI): Promise<MonacoEditor> {
+        await this.editorPreferences.ready;
+
         const commandService = this.commandServiceFactory();
         const { editorService, textModelService, contextMenuService } = this;
         const override = {
@@ -65,10 +67,10 @@ export class MonacoEditorProvider {
             commandService
         };
 
-        const editor = create(node, override);
-
-        toDispose.push(this.editorPreferences.onPreferenceChanged(e => this.updateOptions(e, editor)));
+        const toDispose = new DisposableCollection();
+        const editor = await this.createEditor(uri, override, toDispose);
         editor.onDispose(() => toDispose.dispose());
+
         const standaloneCommandService = new monaco.services.StandaloneCommandService(editor.instantiationService);
         commandService.setDelegate(standaloneCommandService);
         this.installQuickOpenService(editor);
@@ -76,81 +78,89 @@ export class MonacoEditorProvider {
         return editor;
     }
 
-    async get(uri: URI): Promise<MonacoEditor> {
-        await this.editorPreferences.ready;
-
-        let editor: MonacoEditor;
-        const toDispose = new DisposableCollection();
-
-        if (!DiffUris.isDiffUri(uri)) {
-            const model = await this.getModel(uri, toDispose);
-
-            editor = this.createEditor((node, override) => new MonacoEditor(
-                uri, model, node, this.m2p, this.p2m, this.getEditorOptions(model), override
-            ), toDispose);
-
-        } else {
-            const [original, modified] = DiffUris.decode(uri);
-
-            const originalModel = await this.getModel(original, toDispose);
-            const modifiedModel = await this.getModel(modified, toDispose);
-
-            editor = this.createEditor((node, override) => new MonacoDiffEditor(
-                node,
-                originalModel,
-                modifiedModel,
-                this.m2p,
-                this.p2m,
-                this.getDiffEditorOptions(originalModel, modifiedModel),
-                override
-            ), toDispose);
+    protected createEditor(uri: URI, override: IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoEditor> {
+        if (DiffUris.isDiffUri(uri)) {
+            return this.createMonacoDiffEditor(uri, override, toDispose);
         }
-
-        return Promise.resolve(editor);
+        return this.createMonacoEditor(uri, override, toDispose);
     }
 
-    protected setOption(pref: string, value: any, options: any) {
-        const prefix = "editor.";
-        const option = pref.startsWith(prefix) ? pref.substr(prefix.length) : pref;
-        const _setOption = (obj: { [n: string]: any }, value: any, names: string[], idx: number = 0) => {
-            const name = names[idx];
-            if (!obj[name]) {
-                if (names.length > (idx + 1)) {
-                    obj[name] = {};
-                    _setOption(obj[name], value, names, (idx + 1));
-                } else {
-                    obj[name] = value;
-                }
+    protected get preferencePrefixes(): string[] {
+        return ['editor.'];
+    }
+    protected async createMonacoEditor(uri: URI, override: IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoEditor> {
+        const model = await this.getModel(uri, toDispose);
+        const options = this.createMonacoEditorOptions(model);
+        const editor = new MonacoEditor(uri, model, document.createElement('div'), this.m2p, this.p2m, options, override);
+        toDispose.push(this.editorPreferences.onPreferenceChanged(event => this.updateMonacoEditorOptions(editor, event)));
+        return editor;
+    }
+    protected createMonacoEditorOptions(model: MonacoEditorModel): MonacoEditor.IOptions {
+        const options = this.createOptions(this.preferencePrefixes);
+        options.model = model.textEditorModel;
+        options.readOnly = model.readOnly;
+        return options;
+    }
+    protected updateMonacoEditorOptions(editor: MonacoEditor, event: EditorPreferenceChange): void {
+        const { preferenceName, newValue } = event;
+        editor.getControl().updateOptions(this.setOption(preferenceName, newValue, this.preferencePrefixes));
+    }
+
+    protected get diffPreferencePrefixes(): string[] {
+        return [...this.preferencePrefixes, 'diffEditor.'];
+    }
+    protected async createMonacoDiffEditor(uri: URI, override: IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoDiffEditor> {
+        const [original, modified] = DiffUris.decode(uri);
+
+        const originalModel = await this.getModel(original, toDispose);
+        const modifiedModel = await this.getModel(modified, toDispose);
+
+        const options = this.createMonacoDiffEditorOptions(originalModel, modifiedModel);
+        const editor = new MonacoDiffEditor(document.createElement('div'), originalModel, modifiedModel, this.m2p, this.p2m, options, override);
+        toDispose.push(this.editorPreferences.onPreferenceChanged(event => this.updateMonacoDiffEditorOptions(editor, event)));
+        return editor;
+    }
+    protected createMonacoDiffEditorOptions(original: MonacoEditorModel, modified: MonacoEditorModel): MonacoDiffEditor.IOptions {
+        const options = this.createOptions(this.diffPreferencePrefixes);
+        options.originalEditable = !original.readOnly;
+        options.readOnly = modified.readOnly;
+        return options;
+    }
+    protected updateMonacoDiffEditorOptions(editor: MonacoDiffEditor, event: EditorPreferenceChange): void {
+        const { preferenceName, newValue } = event;
+        editor.diffEditor.updateOptions(this.setOption(preferenceName, newValue, this.diffPreferencePrefixes));
+    }
+
+    protected createOptions(prefixes: string[]): { [name: string]: any } {
+        return Object.keys(this.editorPreferences).reduce((options, preferenceName) => {
+            const value = (<any>this.editorPreferences)[preferenceName];
+            return this.setOption(preferenceName, value, prefixes, options);
+        }, {});
+    }
+
+    protected setOption(preferenceName: string, value: any, prefixes: string[], options: { [name: string]: any } = {}) {
+        const optionName = this.toOptionName(preferenceName, prefixes);
+        this.doSetOption(options, value, optionName.split('.'));
+        return options;
+    }
+    protected toOptionName(preferenceName: string, prefixes: string[]): string {
+        for (const prefix of prefixes) {
+            if (preferenceName.startsWith(prefix)) {
+                return preferenceName.substr(prefix.length);
             }
-        };
-        _setOption(options, value, option.split('.'));
+        }
+        return preferenceName;
     }
-
-    protected getEditorOptions(model: MonacoEditorModel): MonacoEditor.IOptions {
-        const editorOptions: { [name: string]: any } = {
-            model: model.textEditorModel,
-            readOnly: model.readOnly
-        };
-
-        Object.keys(this.editorPreferences).forEach(key => {
-            const value: any = (<any>this.editorPreferences)[key];
-            this.setOption(key, value, editorOptions);
-        });
-
-        return editorOptions;
-    }
-
-    protected getDiffEditorOptions(original: MonacoEditorModel, modified: MonacoEditorModel): MonacoDiffEditor.IOptions {
-        return {
-            originalEditable: !original.readOnly,
-            readOnly: modified.readOnly
-        };
-    }
-
-    protected updateOptions(change: EditorPreferenceChange, editor: MonacoEditor): void {
-        const options: monaco.editor.IEditorOptions = {};
-        this.setOption(change.preferenceName, change.newValue, options);
-        editor.getControl().updateOptions(options);
+    protected doSetOption(obj: { [name: string]: any }, value: any, names: string[], idx: number = 0): void {
+        const name = names[idx];
+        if (!obj[name]) {
+            if (names.length > (idx + 1)) {
+                obj[name] = {};
+                this.doSetOption(obj[name], value, names, (idx + 1));
+            } else {
+                obj[name] = value;
+            }
+        }
     }
 
     protected installQuickOpenService(editor: MonacoEditor): void {
