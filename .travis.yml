@@ -20,7 +20,7 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - g++-4.8
-    - oracle-java8-set-default
+    - oracle-java9-set-default
     - libsecret-1-dev
     chrome: stable
 before_script:
