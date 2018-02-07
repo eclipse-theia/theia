@@ -283,6 +283,21 @@ export const editorPreferenceSchema: PreferenceSchema = {
         "editor.useTabStops": {
             "type": "boolean",
             "description": "Inserting and deleting whitespace follows tab stops."
+        },
+        "diffEditor.renderSideBySide": {
+            "type": "boolean",
+            "description": "Render the differences in two side-by-side editors.",
+            "default": true
+        },
+        "diffEditor.ignoreTrimWhitespace": {
+            "type": "boolean",
+            "description": "Compute the diff by ignoring leading/trailing whitespace.",
+            "default": true
+        },
+        "diffEditor.renderIndicators": {
+            "type": "boolean",
+            "description": "Render +/- indicators for added/deleted changes.",
+            "default": true
         }
     }
 };
@@ -340,6 +355,9 @@ export interface EditorConfiguration {
     'editor.renderIndentGuides'?: boolean
     'editor.renderLineHighlight'?: 'none' | 'gutter' | 'line' | 'all'
     'editor.useTabStops'?: boolean
+    'diffEditor.renderSideBySide'?: boolean
+    'diffEditor.ignoreTrimWhitespace'?: boolean
+    'diffEditor.renderIndicators'?: boolean
 }
 export type EditorPreferenceChange = PreferenceChangeEvent<EditorConfiguration>;
 
@@ -349,7 +367,10 @@ export const defaultEditorConfiguration: EditorConfiguration = {
     'editor.tabSize': 4,
     'editor.minimap.enabled': false,
     'editor.glyphMargin': true,
-    'editor.wrappingIndent': 'same'
+    'editor.wrappingIndent': 'same',
+    'diffEditor.renderSideBySide': true,
+    'diffEditor.ignoreTrimWhitespace': true,
+    'diffEditor.renderIndicators': true
 };
 
 export const EditorPreferences = Symbol('EditorPreferences');

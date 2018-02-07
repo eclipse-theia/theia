@@ -23,7 +23,7 @@ export namespace MonacoDiffEditor {
 }
 
 export class MonacoDiffEditor extends MonacoEditor {
-    protected diffEditor: IStandaloneDiffEditor;
+    protected _diffEditor: IStandaloneDiffEditor;
 
     constructor(
         readonly node: HTMLElement,
@@ -38,16 +38,20 @@ export class MonacoDiffEditor extends MonacoEditor {
         this.documents.add(originalModel);
         const original = originalModel.textEditorModel;
         const modified = modifiedModel.textEditorModel;
-        this.diffEditor.setModel({ original, modified });
+        this._diffEditor.setModel({ original, modified });
+    }
+
+    get diffEditor(): IStandaloneDiffEditor {
+        return this._diffEditor;
     }
 
     protected create(options?: IDiffEditorConstructionOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {
-        this.diffEditor = monaco.editor.createDiffEditor(this.node, {
+        this._diffEditor = monaco.editor.createDiffEditor(this.node, {
             ...options,
             fixedOverflowWidgets: true
         });
-        this.editor = this.diffEditor.getModifiedEditor();
-        return this.diffEditor;
+        this.editor = this._diffEditor.getModifiedEditor();
+        return this._diffEditor;
     }
 
     protected addOnDidFocusHandler(codeEditor: IStandaloneCodeEditor) {
@@ -55,12 +59,12 @@ export class MonacoDiffEditor extends MonacoEditor {
         this.toDispose.push(codeEditor.onDidFocusEditor(() => {
             const z = '1';
             // already increased? -> do nothing
-            if (this.diffEditor.getDomNode().style.zIndex === z) {
+            if (this._diffEditor.getDomNode().style.zIndex === z) {
                 return;
             }
             const toDisposeOnBlur = new DisposableCollection();
             this.editor = codeEditor;
-            this.increaseZIndex(this.diffEditor.getDomNode(), z, toDisposeOnBlur);
+            this.increaseZIndex(this._diffEditor.getDomNode(), z, toDisposeOnBlur);
             toDisposeOnBlur.push(codeEditor.onDidBlurEditor(() =>
                 toDisposeOnBlur.dispose()
             ));
@@ -70,12 +74,12 @@ export class MonacoDiffEditor extends MonacoEditor {
     protected resize(dimension: Dimension | null): void {
         if (this.node) {
             const layoutSize = this.computeLayoutSize(this.node, dimension);
-            this.diffEditor.layout(layoutSize);
+            this._diffEditor.layout(layoutSize);
         }
     }
 
     isActionSupported(id: string): boolean {
-        const action = this.diffEditor.getActions().find(a => a.id === id);
+        const action = this._diffEditor.getActions().find(a => a.id === id);
         return !!action && action.isSupported() && super.isActionSupported(id);
     }
 }
