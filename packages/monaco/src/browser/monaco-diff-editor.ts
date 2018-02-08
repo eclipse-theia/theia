@@ -26,6 +26,7 @@ export class MonacoDiffEditor extends MonacoEditor {
     protected _diffEditor: IStandaloneDiffEditor;
 
     constructor(
+        readonly uri: URI,
         readonly node: HTMLElement,
         readonly originalModel: MonacoEditorModel,
         readonly modifiedModel: MonacoEditorModel,
@@ -34,7 +35,7 @@ export class MonacoDiffEditor extends MonacoEditor {
         options?: MonacoDiffEditor.IOptions,
         override?: IEditorOverrideServices,
     ) {
-        super(new URI(''), modifiedModel, node, m2p, p2m, options, override);
+        super(uri, modifiedModel, node, m2p, p2m, options, override);
         this.documents.add(originalModel);
         const original = originalModel.textEditorModel;
         const modified = modifiedModel.textEditorModel;
