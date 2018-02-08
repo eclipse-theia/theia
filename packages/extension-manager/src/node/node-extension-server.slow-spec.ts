@@ -172,19 +172,19 @@ describe("node-extension-server", function () {
         this.timeout(50000);
 
         return server.list({
-            query: "scope:theia"
+            query: "scope:theia file"
         }).then(extensions => {
-            const filtered = extensions.filter(e => ['@theia/core', '@theia/editor'].indexOf(e.name) !== -1);
+            const filtered = extensions.filter(e => ['@theia/filesystem', '@theia/file-search'].indexOf(e.name) !== -1);
 
             assertExtension({
-                name: '@theia/core',
+                name: '@theia/filesystem',
                 installed: true,
-                outdated: true,
-                dependent: undefined
+                outdated: false,
+                dependent: "@theia/extension-manager"
             }, filtered);
 
             assertExtension({
-                name: '@theia/editor',
+                name: '@theia/file-search',
                 installed: false,
                 outdated: false,
                 dependent: undefined
