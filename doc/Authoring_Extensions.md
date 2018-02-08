@@ -8,7 +8,7 @@ A Theia app is composed of so called _extensions_. An extension provides a set o
 
 Theia defines a plethora of contribution interfaces that allow extensions to add their behaviour to various aspects of the application. Just search for interfaces with the name `*Contribution` to get an idea. An extension implements the contribution interfaces belonging to the functionality it wants to deliver. In this example, we are going to implement a `CommandContribution` and a `MenuContribution`. Other ways for extensions to interact with a Theia application are via one of the various _services_ or _managers_.
 
-In Theia, everything is wired up via [dependency injection](Architecture.md#dependency-injection-di). An extension defines one ore more dependency injection modules. This is where it binds its contribution implementations to the respective contribution interface. The modules are listed in the `package.json` of the extension package. An extension can contribute to the frontend, e.g. providing a UI extension, as well as to the backend, e.g. contributing a language server. When the application starts, the union of all these modules is used to configure a single, global dependency injection container on each, the frontend and the backend. The runtime will then collect all contributions of a specific kind by means of a multi-inject.
+In Theia, everything is wired up via [dependency injection](Architecture.md#dependency-injection-di). An extension defines one or more dependency injection modules. This is where it binds its contribution implementations to the respective contribution interface. The modules are listed in the `package.json` of the extension package. An extension can contribute to the frontend, e.g. providing a UI extension, as well as to the backend, e.g. contributing a language server. When the application starts, the union of all these modules is used to configure a single, global dependency injection container on each, the frontend and the backend. The runtime will then collect all contributions of a specific kind by means of a multi-inject.
 
 ## Prerequisites
 
@@ -40,7 +40,7 @@ cd theia-hello-world-extension
 yo theia-extension hello-world
 ```
 
-Let's have look at the generated code now. The root `package.json` defines the workspaces, the dependencies to `lerna`, `typescript` and `rimraf` and some scripts to rebuild the native packages for browser or electron.
+Let's have look at the generated code now. The root `package.json` defines the workspaces, the dependency to `lerna` and some scripts to rebuild the native packages for browser or electron.
 
 ```json
 {
@@ -51,9 +51,7 @@ Let's have look at the generated code now. The root `package.json` defines the w
     "rebuild:electron": "theia rebuild:electron"
   },
   "devDependencies": {
-    "lerna": "2.4.0",
-    "rimraf": "latest",
-    "typescript": "latest"
+    "lerna": "2.4.0"
   },
   "workspaces": [
     "hello-world-extension", "browser-app", "electron-app"
@@ -79,7 +77,7 @@ We also got a `lerna.json` file to configure `lerna`:
 
 ## Implementing the Extension
 
-Next let's look at the generated code for our extension in the `hello-world-extension` folder. Let’s start with the `package.json`. It specifies the package’s metadata, its dependencies to the (bleeding edge) theia core package, a few scripts and dev dependencies, and the theia-extensions.
+Next let's look at the generated code for our extension in the `hello-world-extension` folder. Let’s start with the `package.json`. It specifies the package’s metadata, its dependencies to the (bleeding edge) Theia core package, a few scripts and dev dependencies, and the theia-extensions.
 
 The keyword `theia-extension` is important: It allows a Theia app to identify and install Theia extensions from `npm`.
 
@@ -95,7 +93,11 @@ The keyword `theia-extension` is important: It allows a Theia app to identify an
     "src"
   ],
   "dependencies": {     
-    "@theia/core": "next"
+    "@theia/core": "latest"
+  },
+  "devDependencies": {     
+    "rimraf": "latest",
+    "typescript": "latest"
   },
   "scripts": {
     "prepare": "yarn run clean && yarn run build",
@@ -139,13 +141,8 @@ export class HelloWorldCommandContribution implements CommandContribution {
     ) { }
 
     registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand(HelloWorldCommand);
-        registry.registerHandler(HelloWorldCommand.id, {
-            execute: (): any => {
-                this.messageService.info('Hello World!');
-                return null;
-            },
-            isEnabled: () => true
+        registry.registerCommand(HelloWorldCommand, {
+            execute: () => this.messageService.info('Hello World!')
         });
     }
 }
@@ -162,11 +159,7 @@ To make it accessible by the UI, we implement a `MenuContribution`, adding an it
 export class HelloWorldMenuContribution implements MenuContribution {
 
     registerMenus(menus: MenuModelRegistry): void {
-        menus.registerMenuAction([
-            MAIN_MENU_BAR,
-            CommonMenus.EDIT_MENU,
-            CommonMenus.EDIT_MENU_FIND_REPLACE_GROUP
-        ], {
+        menus.registerMenuAction(CommonMenus.EDIT_FIND, {
                 commandId: HelloWorldCommand.id,
                 label: 'Say Hello'
             });
@@ -183,22 +176,23 @@ Now we want to see our extension in action. For this purpose, the generator has 
   "name": "browser-app",
   "version": "0.1.0",
   "dependencies": {
-    "@theia/core": "next",
-    "@theia/filesystem": "next",
-    "@theia/workspace": "next",
-    "@theia/preferences": "next",
-    "@theia/navigator": "next",
-    "@theia/process": "next",
-    "@theia/terminal": "next",
-    "@theia/editor": "next",
-    "@theia/languages": "next",
-    "@theia/markers": "next",
-    "@theia/monaco": "next",
-    "@theia/typescript": "next",
+    "@theia/core": "latest",
+    "@theia/filesystem": "latest",
+    "@theia/workspace": "latest",
+    "@theia/preferences": "latest",
+    "@theia/navigator": "latest",
+    "@theia/process": "latest",
+    "@theia/terminal": "latest",
+    "@theia/editor": "latest",
+    "@theia/languages": "latest",
+    "@theia/markers": "latest",
+    "@theia/monaco": "latest",
+    "@theia/typescript": "latest",
+    "@theia/messages": "latest",
     "hello-world-extension": "0.1.0"
   },
   "devDependencies": {
-    "@theia/cli": "next"
+    "@theia/cli": "latest"
   },
   "scripts": {
     "prepare": "theia build",    
