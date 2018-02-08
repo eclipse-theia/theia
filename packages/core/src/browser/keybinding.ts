@@ -416,6 +416,8 @@ export class KeybindingRegistry {
             this.keySequence = [];
         } else if (bindings.partial.length > 0) {
             /* Accumulate the keysequence */
+            event.preventDefault();
+            event.stopPropagation();
         } else {
             this.keySequence = [];
         }
