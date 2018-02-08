@@ -116,7 +116,7 @@ export class MonacoEditorProvider {
         const modifiedModel = await this.getModel(modified, toDispose);
 
         const options = this.createMonacoDiffEditorOptions(originalModel, modifiedModel);
-        const editor = new MonacoDiffEditor(document.createElement('div'), originalModel, modifiedModel, this.m2p, this.p2m, options, override);
+        const editor = new MonacoDiffEditor(uri, document.createElement('div'), originalModel, modifiedModel, this.m2p, this.p2m, options, override);
         toDispose.push(this.editorPreferences.onPreferenceChanged(event => this.updateMonacoDiffEditorOptions(editor, event)));
         return editor;
     }
