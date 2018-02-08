@@ -80,6 +80,55 @@ export namespace KeySequence {
         }
         return keyCodes;
     }
+
+    export function acceleratorFor(keysequence: KeySequence, separator: string = " ") {
+        const result: string[] = [];
+        for (const keyCode of keysequence) {
+            let keyCodeResult = "";
+            let previous = false;
+
+            if (keyCode.meta && isOSX) {
+                if (isOSX) {
+                    keyCodeResult += "Cmd";
+                    previous = true;
+                }
+            }
+
+            if (keyCode.ctrl) {
+                if (previous) {
+                    keyCodeResult += separator;
+                }
+                keyCodeResult += "Ctrl";
+                previous = true;
+            }
+
+            if (keyCode.alt) {
+                if (previous) {
+                    keyCodeResult += separator;
+                }
+                keyCodeResult += "Alt";
+                previous = true;
+            }
+
+            if (keyCode.shift) {
+                if (previous) {
+                    keyCodeResult += separator;
+                }
+                keyCodeResult += "Shift";
+                previous = true;
+            }
+
+            if (keyCode.key) {
+
+                if (previous) {
+                    keyCodeResult += separator;
+                }
+                keyCodeResult += Key.getEasyKey(keyCode.key).easyString.toUpperCase();
+            }
+            result.push(keyCodeResult);
+        }
+        return result;
+    }
 }
 
 /**

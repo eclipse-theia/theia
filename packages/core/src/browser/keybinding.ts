@@ -7,10 +7,10 @@
 
 import { injectable, inject, named } from 'inversify';
 import { CommandRegistry } from '../common/command';
-import { Key, KeyCode, KeySequence } from './keys';
+import { KeyCode, KeySequence } from './keys';
 import { ContributionProvider } from '../common/contribution-provider';
 import { ILogger } from "../common/logger";
-import { isOSX } from './../common/os';
+import { StatusBarAlignment, StatusBar } from './status-bar/status-bar';
 
 export enum KeybindingScope {
     DEFAULT,
@@ -42,54 +42,7 @@ export namespace Keybinding {
     /* Return a user visble representation of a keybinding.  */
     export function acceleratorFor(keybinding: Keybinding) {
         const keyCodesString = keybinding.keybinding.split(" ");
-        const result: string[] = [];
-        for (const keyCodeString of keyCodesString) {
-            let keyCodeResult = "";
-            const keyCode = KeyCode.parse(keyCodeString);
-            let previous = false;
-            const separator = " ";
-
-            if (keyCode.meta && isOSX) {
-                if (isOSX) {
-                    keyCodeResult += "Cmd";
-                    previous = true;
-                }
-            }
-
-            if (keyCode.ctrl) {
-                if (previous) {
-                    keyCodeResult += separator;
-                }
-                keyCodeResult += "Ctrl";
-                previous = true;
-            }
-
-            if (keyCode.alt) {
-                if (previous) {
-                    keyCodeResult += separator;
-                }
-                keyCodeResult += "Alt";
-                previous = true;
-            }
-
-            if (keyCode.shift) {
-                if (previous) {
-                    keyCodeResult += separator;
-                }
-                keyCodeResult += "Shift";
-                previous = true;
-            }
-
-            if (keyCode.key) {
-
-                if (previous) {
-                    keyCodeResult += separator;
-                }
-                keyCodeResult += Key.getEasyKey(keyCode.key).easyString.toUpperCase();
-            }
-            result.push(keyCodeResult);
-        }
-        return result;
+        return KeySequence.acceleratorFor(keyCodesString.map(k => KeyCode.parse(k)));
     }
 }
 
