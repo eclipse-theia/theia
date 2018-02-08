@@ -75,6 +75,14 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     /**
+     * Returns `true` if current workspace root is set.
+     * @returns {boolean}
+     */
+    get opened(): boolean {
+        return !!this._root;
+    }
+
+    /**
      * Opens the given URI as the current workspace root.
      */
     open(uri: URI, options?: WorkspaceInput): void {
@@ -92,6 +100,19 @@ export class WorkspaceService implements FrontendApplicationContribution {
             return;
         }
         throw new Error(`Invalid workspace root URI. Expected an existing directory location. URI: ${rootUri}.`);
+    }
+
+    /**
+     * Clears current workspace root and reloads window.
+     */
+    close(): void {
+        this.doClose();
+    }
+
+    protected async doClose(): Promise<void> {
+        this._root = undefined;
+        await this.server.setRoot('');
+        this.reloadWindow();
     }
 
     /**
