@@ -9,6 +9,7 @@ import { injectable, inject } from "inversify";
 import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
 import { open, OpenerService, CommonMenus, StorageService } from '@theia/core/lib/browser';
+import { ConfirmDialog } from "@theia/core/lib/browser/dialogs";
 import { DirNode, FileDialogFactory, FileStatNode } from '@theia/filesystem/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from './workspace-service';
@@ -18,6 +19,11 @@ export namespace WorkspaceCommands {
     export const OPEN: Command = {
         id: 'workspace:open',
         label: 'Open...'
+    };
+
+    export const CLOSE: Command = {
+        id: 'workspace:close',
+        label: 'Close Workspace'
     };
 }
 
@@ -38,11 +44,18 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
             isEnabled: () => true,
             execute: () => this.showFileDialog()
         });
+        commands.registerCommand(WorkspaceCommands.CLOSE, {
+            isEnabled: () => this.workspaceService.opened,
+            execute: () => this.closeWorkspace()
+        });
     }
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(CommonMenus.FILE_OPEN, {
             commandId: WorkspaceCommands.OPEN.id
+        });
+        menus.registerMenuAction(CommonMenus.FILE_CLOSE, {
+            commandId: WorkspaceCommands.CLOSE.id
         });
     }
 
@@ -71,6 +84,16 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
             this.workspaceService.open(node.uri);
         } else {
             open(this.openerService, node.uri);
+        }
+    }
+
+    protected async closeWorkspace(): Promise<void> {
+        const dialog = new ConfirmDialog({
+            title: 'Close Workspace',
+            msg: 'Do you really want to close the workspace?'
+        });
+        if (await dialog.open()) {
+            this.workspaceService.close();
         }
     }
 
