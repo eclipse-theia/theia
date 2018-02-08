@@ -13,9 +13,7 @@ import {
     MenuModelRegistry, MAIN_MENU_BAR, MenuPath
 } from "../../common";
 import { KeybindingRegistry, Keybinding } from "../keybinding";
-import { Key, KeyCode } from "../keys";
 import { FrontendApplicationContribution, FrontendApplication } from "../frontend-application";
-import { isOSX } from '../../common/os';
 
 @injectable()
 export class BrowserMainMenuFactory {
@@ -85,66 +83,13 @@ export class BrowserMainMenuFactory {
         /* Only consider the first keybinding. */
         if (bindings.length > 0) {
             const binding = bindings[0];
-            const keys = this.acceleratorFor(binding);
+            const keys = Keybinding.acceleratorFor(binding);
             commands.addKeyBinding({
                 command: command.id,
                 keys,
                 selector: '.p-Widget' // We have the Phosphor.JS dependency anyway.
             });
         }
-    }
-
-    /* Return a user visble representation of a keybinding.  */
-    protected acceleratorFor(keybinding: Keybinding) {
-        const keyCodesString = keybinding.keybinding.split(" ");
-        const result: string[] = [];
-        for (const keyCodeString of keyCodesString) {
-            let keyCodeResult = "";
-            const keyCode = KeyCode.parse(keyCodeString);
-            let previous = false;
-            const separator = " ";
-
-            if (keyCode.meta && isOSX) {
-                if (isOSX) {
-                    keyCodeResult += "Cmd";
-                    previous = true;
-                }
-            }
-
-            if (keyCode.ctrl) {
-                if (previous) {
-                    keyCodeResult += separator;
-                }
-                keyCodeResult += "Ctrl";
-                previous = true;
-            }
-
-            if (keyCode.alt) {
-                if (previous) {
-                    keyCodeResult += separator;
-                }
-                keyCodeResult += "Alt";
-                previous = true;
-            }
-
-            if (keyCode.shift) {
-                if (previous) {
-                    keyCodeResult += separator;
-                }
-                keyCodeResult += "Shift";
-                previous = true;
-            }
-
-            if (keyCode.key) {
-
-                if (previous) {
-                    keyCodeResult += separator;
-                }
-                keyCodeResult += Key.getEasyKey(keyCode.key).easyString.toUpperCase();
-            }
-            result.push(keyCodeResult);
-        }
-        return result;
     }
 }
 
