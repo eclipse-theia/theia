@@ -367,12 +367,11 @@ describe("keys api", () => {
         a = KeySequence.parse("ctrlcmd+a t");
         b = KeySequence.parse("ctrlcmd+a");
 
-        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.PARTIAL);
+        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.SHADOW);
 
-        a = KeySequence.parse("ctrlcmd+a t c");
-        b = KeySequence.parse("ctrlcmd+a t");
-
-        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.PARTIAL);
+        a = KeySequence.parse("ctrlcmd+a t");
+        b = KeySequence.parse("ctrlcmd+a b c");
+        expect(KeySequence.compare(a, b)).to.be.equal(KeySequence.CompareResult.NONE);
 
         a = KeySequence.parse("ctrlcmd+a t");
         b = KeySequence.parse("ctrlcmd+a a");

@@ -10,7 +10,6 @@ import { CommandRegistry } from '../common/command';
 import { KeyCode, KeySequence } from './keys';
 import { ContributionProvider } from '../common/contribution-provider';
 import { ILogger } from "../common/logger";
-import { StatusBarAlignment, StatusBar } from './status-bar/status-bar';
 
 export enum KeybindingScope {
     DEFAULT,
@@ -19,7 +18,7 @@ export enum KeybindingScope {
     END
 }
 
-export interface KeybindingsResult { full: Keybinding[], partial: Keybinding[] }
+export interface KeybindingsResult { full: Keybinding[], partial: Keybinding[], shadow: Keybinding[] }
 
 export namespace Keybinding {
 
@@ -182,6 +181,17 @@ export class KeybindingRegistry {
                     return;
                 }
             }
+
+            if (existingBindings.shadow.length > 0) {
+                const shadows = existingBindings.shadow.filter(b => b.context === binding.context);
+                if (shadows.length > 0) {
+                    this.logger.warn('Shadowed keybinding is ignored; ',
+                        Keybinding.stringify(binding), ' would be shadowed by ',
+                        shadows.map(b => Keybinding.stringify(b)).join(', '));
+                    return;
+                }
+            }
+
             this.keymaps[KeybindingScope.DEFAULT].push(binding);
         } catch (error) {
             this.logger.warn(`Could not register keybinding ${Keybinding.stringify(binding)}`);
@@ -220,13 +230,13 @@ export class KeybindingRegistry {
      * @param keySequence The key sequence for which we are looking for keybindings.
      */
     getKeybindingsForKeySequence(keySequence: KeySequence): KeybindingsResult {
-        const result = { full: [] as Keybinding[], partial: [] as Keybinding[] };
+        const result = { full: [] as Keybinding[], partial: [] as Keybinding[], shadow: [] as Keybinding[] };
 
         for (let scope = KeybindingScope.DEFAULT; scope < KeybindingScope.END; scope++) {
             this.keymaps[scope].forEach(binding => {
                 try {
                     const bindingKeySequence = KeySequence.parse(binding.keybinding);
-                    const compareResult = KeySequence.compare(bindingKeySequence, keySequence);
+                    const compareResult = KeySequence.compare(keySequence, bindingKeySequence);
                     switch (compareResult) {
                         case KeySequence.CompareResult.FULL: {
                             if (!this.isKeybindingShadowed(scope, binding)) {
@@ -238,6 +248,10 @@ export class KeybindingRegistry {
                             if (!this.isKeybindingShadowed(scope, binding)) {
                                 result.partial.push(binding);
                             }
+                            break;
+                        }
+                        case KeySequence.CompareResult.SHADOW: {
+                            result.shadow.push(binding);
                             break;
                         }
                         default: {
