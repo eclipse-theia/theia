@@ -35,7 +35,7 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
     toDispose.push(onPreferenceChangedEmitter);
     toDispose.push(preferences.onPreferenceChanged(e => {
         if (e.preferenceName in configuration) {
-            if (e.newValue) {
+            if (e.newValue !== undefined) {
                 if (validate(e.preferenceName, e.newValue)) {
                     onPreferenceChangedEmitter.fire(e);
                 } else {
