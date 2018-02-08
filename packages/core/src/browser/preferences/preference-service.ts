@@ -45,6 +45,10 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
     @inject(PreferenceProviders)
     protected readonly createPreferenceProviders: PreferenceProviders;
 
+    constructor() {
+        this.toDispose.push(this.onPreferenceChangedEmitter);
+    }
+
     protected _preferenceProviders: PreferenceProvider[] | undefined;
     protected get preferenceProviders(): PreferenceProvider[] {
         if (!this._preferenceProviders) {
