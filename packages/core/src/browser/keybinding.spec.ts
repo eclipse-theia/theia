@@ -16,8 +16,10 @@ import {
     Keybinding, KeybindingContribution, KeybindingScope
 } from './keybinding';
 import { KeyCode, Key, Modifier, KeySequence } from './keys';
-import { CommandRegistry, CommandContribution, Command } from '../common/command';
+import { CommandRegistry, CommandService, CommandContribution, Command } from '../common/command';
+import { LabelParser } from './label-parser';
 import { MockLogger } from '../common/test/mock-logger';
+import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
 import * as os from '../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -58,6 +60,12 @@ before(async () => {
 
         bind(TestContext).toSelf().inSingletonScope();
         bind(KeybindingContext).toDynamicValue(context => context.container.get(TestContext)).inSingletonScope();
+
+        bind(StatusBarImpl).toSelf().inSingletonScope();
+        bind(StatusBar).toDynamicValue(ctx => ctx.container.get(StatusBarImpl)).inSingletonScope();
+        bind(CommandService).toDynamicValue(context => context.container.get(CommandRegistry));
+        bind(LabelParser).toSelf().inSingletonScope();
+
     });
 
     testContainer.load(module);

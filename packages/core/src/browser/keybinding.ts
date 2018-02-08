@@ -10,6 +10,7 @@ import { CommandRegistry } from '../common/command';
 import { KeyCode, KeySequence } from './keys';
 import { ContributionProvider } from '../common/contribution-provider';
 import { ILogger } from "../common/logger";
+import { StatusBarAlignment, StatusBar } from './status-bar/status-bar';
 
 export enum KeybindingScope {
     DEFAULT,
@@ -135,6 +136,7 @@ export class KeybindingRegistry {
         @inject(KeybindingContextRegistry) protected readonly contextRegistry: KeybindingContextRegistry,
         @inject(ContributionProvider) @named(KeybindingContribution)
         protected readonly contributions: ContributionProvider<KeybindingContribution>,
+        @inject(StatusBar) protected readonly statusBar: StatusBar,
         @inject(ILogger) protected readonly logger: ILogger
     ) {
         for (let i = KeybindingScope.DEFAULT; i < KeybindingScope.END; i++) { this.keymaps.push([]); }
@@ -414,12 +416,20 @@ export class KeybindingRegistry {
 
         if (this.tryKeybindingExecution(bindings.full, event)) {
             this.keySequence = [];
+            this.statusBar.removeElement('keybinding-status');
         } else if (bindings.partial.length > 0) {
             /* Accumulate the keysequence */
             event.preventDefault();
             event.stopPropagation();
+
+            this.statusBar.setElement('keybinding-status', {
+                text: `(${KeySequence.acceleratorFor(this.keySequence, "+")}) was pressed, waiting for more keys`,
+                alignment: StatusBarAlignment.LEFT,
+                priority: 2
+            });
         } else {
             this.keySequence = [];
+            this.statusBar.removeElement('keybinding-status');
         }
     }
 
