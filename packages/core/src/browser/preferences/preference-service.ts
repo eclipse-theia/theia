@@ -93,7 +93,7 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
                 deleted.delete(preferenceName);
                 const oldValue = this.preferences[preferenceName];
                 const newValue = deepFreeze(preferences[preferenceName]);
-                if (oldValue) {
+                if (oldValue !== undefined) {
                     /* Value changed */
                     if (!JSONExt.deepEqual(oldValue, newValue)) {
                         preferenceChanges[preferenceName] = { preferenceName, newValue, oldValue };
