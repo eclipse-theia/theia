@@ -91,9 +91,12 @@ module.exports = {
             {
                 test: /\\.woff(2)?(\\?v=[0-9]\\.[0-9]\\.[0-9])?$/,
                 loader: "url-loader?limit=10000&mimetype=application/font-woff"
+            },
+            {
+                test: /node_modules[\\\\|\/](vscode-languageserver-types|vscode-uri|jsonc-parser)/,
+                use: { loader: 'umd-compat-loader' }
             }
-        ],
-        noParse: /vscode-languageserver-types|vscode-uri|jsonc-parser/
+        ]
     },
     resolve: {
         extensions: ['.js']${this.ifMonaco(() => `,

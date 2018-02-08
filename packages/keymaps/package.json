@@ -7,7 +7,7 @@
     "@theia/userstorage": "^0.3.4",
     "@theia/workspace": "^0.3.4",
     "ajv": "^5.2.2",
-    "jsonc-parser": "^1.0.0"
+    "jsonc-parser": "^1.0.1"
   },
   "devDependencies": {
     "@theia/ext-scripts": "0.2.0",
