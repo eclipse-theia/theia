@@ -128,10 +128,7 @@ export class KeybindingRegistry {
 
     private keymaps: Keybinding[][] = [];
     static readonly PASSTHROUGH_PSEUDO_COMMAND = "passthrough";
-    /* Key Sequence time-out in MS.  */
-    protected readonly keySequenceTimeout = 1000;
     protected keySequence: KeySequence = [];
-    protected timeoutTimer: any = undefined;
 
     constructor(
         @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
@@ -412,19 +409,13 @@ export class KeybindingRegistry {
             return;
         }
 
-        if (this.timeoutTimer) {
-            clearTimeout(this.timeoutTimer);
-        }
-
         this.keySequence.push(keyCode);
         const bindings = this.getKeybindingsForKeySequence(this.keySequence);
 
         if (this.tryKeybindingExecution(bindings.full, event)) {
             this.keySequence = [];
         } else if (bindings.partial.length > 0) {
-            this.timeoutTimer = setTimeout(() => {
-                this.keySequence = [];
-            }, this.keySequenceTimeout);
+            /* Accumulate the keysequence */
         } else {
             this.keySequence = [];
         }
