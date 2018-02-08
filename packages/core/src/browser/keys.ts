@@ -34,37 +34,38 @@ export namespace KeySequence {
     export enum CompareResult {
         NONE = 0,
         PARTIAL,
+        SHADOW,
         FULL
     }
 
     /* Compares two KeySequences, returns:
      * FULL if the KeySequences are the same.
-     * PARTIAL if the KeySequence is part of the other.
+     * PARTIAL if the KeySequence a part of b.
+     * SHADOW if the KeySequence b part of a.
      * NONE if the KeySequences are not the same at all.
      */
     export function compare(a: KeySequence, b: KeySequence): CompareResult {
-        let partial = false;
         let first = a;
         let second = b;
+        let shadow = false;
 
         if (b.length < a.length) {
             first = b;
             second = a;
+            shadow = true;
         }
 
         for (let i = 0; i < first.length; i++) {
             if (first[i].equals(second[i]) === false) {
-                if (partial === true && first.length !== second.length) {
-                    return KeySequence.CompareResult.PARTIAL;
-                } else {
-                    return KeySequence.CompareResult.NONE;
-                }
-            } else {
-                partial = true;
+                return KeySequence.CompareResult.NONE;
             }
         }
         if (first.length < second.length) {
-            return KeySequence.CompareResult.PARTIAL;
+            if (shadow === false) {
+                return KeySequence.CompareResult.PARTIAL;
+            } else {
+                return KeySequence.CompareResult.SHADOW;
+            }
         }
         return KeySequence.CompareResult.FULL;
     }
