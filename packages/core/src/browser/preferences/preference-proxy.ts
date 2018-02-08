@@ -5,13 +5,14 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+// tslint:disable:no-any
+
 import { Disposable, DisposableCollection, Event, Emitter, deepFreeze } from '../../common';
 import { PreferenceService, PreferenceChange } from "./preference-service";
 import { PreferenceSchema } from "./preference-contribution";
 import * as Ajv from "ajv";
 
 export interface Configuration {
-    // tslint:disable-next-line:no-any
     [preferenceName: string]: any;
 }
 export interface PreferenceChangeEvent<T> {
@@ -21,67 +22,74 @@ export interface PreferenceChangeEvent<T> {
 }
 export interface PreferenceEventEmitter<T> {
     readonly onPreferenceChanged: Event<PreferenceChangeEvent<T>>;
-
     readonly ready: Promise<void>;
 }
 
 export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T>;
-export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, configuration: T, schema: PreferenceSchema): PreferenceProxy<T> {
-    configuration = deepFreeze(configuration);
-    schema = deepFreeze(schema);
+export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, schema: PreferenceSchema): PreferenceProxy<T> {
+    const configuration = createConfiguration<T>(schema);
+    const validate = (name: string, value: any) => validatePreference(schema, { [name]: value });
+
     const toDispose = new DisposableCollection();
     const onPreferenceChangedEmitter = new Emitter<PreferenceChange>();
     toDispose.push(onPreferenceChangedEmitter);
     toDispose.push(preferences.onPreferenceChanged(e => {
-        if (e.preferenceName in schema.properties) {
+        if (e.preferenceName in configuration) {
             if (e.newValue) {
-                // Fire the pref if it's valid according to the schema
-                if (validatePreference(schema, {
-                    [e.preferenceName]: e.newValue
-                })) {
+                if (validate(e.preferenceName, e.newValue)) {
                     onPreferenceChangedEmitter.fire(e);
                 } else {
-                    // Fire the default preference
                     onPreferenceChangedEmitter.fire({
                         preferenceName: e.preferenceName,
                         newValue: configuration[e.preferenceName]
                     });
                 }
             } else {
-                // TODO If it's deleted, fire the default preference
-                onPreferenceChangedEmitter.fire(e);
+                onPreferenceChangedEmitter.fire({
+                    preferenceName: e.preferenceName,
+                    newValue: configuration[e.preferenceName],
+                    oldValue: e.oldValue
+                });
             }
         }
     }));
-    // tslint:disable-next-line:no-any
+    const unsupportedOperation = (_: any, property: string) => {
+        throw new Error('Unsupported operation');
+    };
     return new Proxy(configuration as any, {
-        get: (_, p: string) => {
-            if (p in schema.properties) {
-                if (p in configuration) {
-                    const preference = preferences.get(p, configuration[p]);
-                    if (validatePreference(schema, {
-                        [p]: preference
-                    })) {
-                        return preference;
-                    } else {
-                        return configuration[p];
-                    }
+        get: (_, property: string) => {
+            if (property in configuration) {
+                const preference = preferences.get(property, configuration[property]);
+                if (validate(property, preference)) {
+                    return preference;
                 } else {
-                    return schema.properties[p].default || undefined;
+                    return configuration[property];
                 }
             }
-            if (p === 'onPreferenceChanged') {
+            if (property === 'onPreferenceChanged') {
                 return onPreferenceChangedEmitter.event;
             }
-            if (p === 'dispose') {
+            if (property === 'dispose') {
                 return () => toDispose.dispose();
             }
-            if (p === 'ready') {
+            if (property === 'ready') {
                 return () => preferences.ready;
             }
-            throw new Error('unexpected property: ' + p);
-        }
+            throw new Error('unexpected property: ' + property);
+        },
+        set: unsupportedOperation,
+        deleteProperty: unsupportedOperation,
+        defineProperty: unsupportedOperation
     });
+}
+
+function createConfiguration<T extends Configuration>(schema: PreferenceSchema): T {
+    const configuration = {} as T;
+    // tslint:disable-next-line:forin
+    for (const property in schema.properties) {
+        configuration[property] = deepFreeze(schema.properties[property].default);
+    }
+    return configuration;
 }
 
 function validatePreference(schema: PreferenceSchema, preference: Object): boolean {

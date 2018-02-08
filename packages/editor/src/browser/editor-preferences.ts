@@ -21,6 +21,7 @@ export const editorPreferenceSchema: PreferenceSchema = {
         "editor.tabSize": {
             "type": "number",
             "minimum": 1,
+            "default": 4,
             "description": "Configure the tab size in the editor"
         },
         "editor.lineNumbers": {
@@ -361,23 +362,11 @@ export interface EditorConfiguration {
 }
 export type EditorPreferenceChange = PreferenceChangeEvent<EditorConfiguration>;
 
-export const defaultEditorConfiguration: EditorConfiguration = {
-    'editor.autoSave': 'on',
-    'editor.autoSaveDelay': 500,
-    'editor.tabSize': 4,
-    'editor.minimap.enabled': false,
-    'editor.glyphMargin': true,
-    'editor.wrappingIndent': 'same',
-    'diffEditor.renderSideBySide': true,
-    'diffEditor.ignoreTrimWhitespace': true,
-    'diffEditor.renderIndicators': true
-};
-
 export const EditorPreferences = Symbol('EditorPreferences');
 export type EditorPreferences = PreferenceProxy<EditorConfiguration>;
 
 export function createEditorPreferences(preferences: PreferenceService): EditorPreferences {
-    return createPreferenceProxy(preferences, defaultEditorConfiguration, editorPreferenceSchema);
+    return createPreferenceProxy(preferences, editorPreferenceSchema);
 }
 
 export function bindEditorPreferences(bind: interfaces.Bind): void {
