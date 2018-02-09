@@ -7,7 +7,8 @@
 
 import { injectable, inject } from "inversify";
 import { Message } from '@phosphor/messaging';
-import { Disposable, Key } from "@theia/core/lib/common";
+import { Disposable } from "@theia/core/lib/common";
+import { Key } from "@theia/core/lib/browser";
 import { AbstractDialog, DialogProps, setEnabled, createIconButton, Widget } from "@theia/core/lib/browser";
 import { FileStatNode } from '../file-tree';
 import { LocationListRenderer } from '../location';

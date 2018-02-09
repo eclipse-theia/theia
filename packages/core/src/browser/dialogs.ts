@@ -6,7 +6,8 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Disposable, Key } from "../common";
+import { Disposable } from "../common";
+import { Key } from "./keys";
 import { Widget, BaseWidget, Message } from './widgets';
 
 @injectable()

@@ -12,7 +12,7 @@ import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { FrontendApplicationContribution, createTreeContainer, TreeWidget } from '@theia/core/lib/browser';
 import { OutlineViewWidgetFactory, OutlineViewWidget } from './outline-view-widget';
 import { CommandContribution } from '@theia/core/lib/common/command';
-import { KeybindingContribution } from '@theia/core/lib/common/keybinding';
+import { KeybindingContribution } from '@theia/core/lib/browser/keybinding';
 import { MenuContribution } from '@theia/core/lib/common/menu';
 
 export default new ContainerModule(bind => {

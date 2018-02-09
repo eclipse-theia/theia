@@ -8,8 +8,11 @@
 import URI from '@theia/core/lib/common/uri';
 import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenItemOptions } from '@theia/core/lib/browser/quick-open/';
 import { injectable, inject } from 'inversify';
-import { MenuModelRegistry, MenuContribution, CommandContribution, CommandRegistry, KeybindingContribution, KeybindingRegistry, ILogger } from '@theia/core';
-import { CommonMenus, QuickOpenMode, OpenerService, open, Highlight, QuickOpenOptions } from '@theia/core/lib/browser';
+import { MenuModelRegistry, MenuContribution, CommandContribution, CommandRegistry, ILogger } from '@theia/core';
+import {
+    CommonMenus, QuickOpenMode, OpenerService, open, Highlight, QuickOpenOptions,
+    KeybindingContribution, KeybindingRegistry
+} from '@theia/core/lib/browser';
 import { SearchInWorkspaceService } from './search-in-workspace-service';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
 import { Range } from '@theia/editor/lib/browser';

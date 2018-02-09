@@ -7,10 +7,13 @@
 
 import { inject, injectable } from "inversify";
 import {
-    CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry, KeybindingContext,
-    Keybinding, KeybindingContextRegistry, KeybindingContribution, KeybindingRegistry
+    CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry
 } from '@theia/core/lib/common';
 import { EditorCommands, EditorManager, EDITOR_CONTEXT_MENU } from "@theia/editor/lib/browser";
+import {
+    KeybindingContext, Keybinding, KeybindingContextRegistry,
+    KeybindingContribution, KeybindingRegistry
+} from "@theia/core/lib/browser";
 import { WorkspaceEdit, Workspace } from "@theia/languages/lib/common";
 import { JavaClientContribution } from "./java-client-contribution";
 import { ExecuteCommandRequest } from "monaco-languageclient/lib";

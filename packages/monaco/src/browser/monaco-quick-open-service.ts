@@ -6,9 +6,12 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { QuickOpenService, QuickOpenModel, QuickOpenOptions, QuickOpenItem, QuickOpenGroupItem, QuickOpenMode } from "@theia/core/lib/browser";
+import {
+    QuickOpenService, QuickOpenModel, QuickOpenOptions,
+    QuickOpenItem, QuickOpenGroupItem, QuickOpenMode, KeySequence
+} from "@theia/core/lib/browser";
 import { KEY_CODE_MAP } from './monaco-keycode-map';
-import { KeySequence, ILogger } from '@theia/core';
+import { ILogger } from '@theia/core';
 
 export interface MonacoQuickOpenControllerOpts extends monaco.quickOpen.IQuickOpenControllerOpts {
     readonly prefix?: string;

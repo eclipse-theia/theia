@@ -8,7 +8,8 @@
 import { injectable, decorate, unmanaged } from "inversify";
 import { Widget } from "@phosphor/widgets";
 import { Message } from "@phosphor/messaging";
-import { Disposable, DisposableCollection, Key, KeyCode } from '../../common';
+import { Disposable, DisposableCollection } from '../../common';
+import { Key, KeyCode } from '../keys';
 
 decorate(injectable(), Widget);
 decorate(unmanaged(), Widget, 0);

@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import { EditorManager } from "./editor-manager";
-import { KeybindingContext, Keybinding, KeybindingContribution, KeybindingRegistry } from "@theia/core/lib/common/keybinding";
+import { KeybindingContext, Keybinding, KeybindingContribution, KeybindingRegistry } from "@theia/core/lib/browser/keybinding";
 
 @injectable()
 export class EditorKeybindingContext implements KeybindingContext {

@@ -9,16 +9,16 @@ import { enableJSDOM } from '../browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
 import { Container, injectable, inject, ContainerModule } from 'inversify';
-import { bindContributionProvider } from './contribution-provider';
-import { ILogger } from './logger';
+import { bindContributionProvider } from '../common/contribution-provider';
+import { ILogger } from '../common/logger';
 import {
     KeybindingRegistry, KeybindingContext, KeybindingContextRegistry,
     Keybinding, KeybindingContribution, KeybindingScope
 } from './keybinding';
 import { KeyCode, Key, Modifier, KeySequence } from './keys';
-import { CommandRegistry, CommandContribution, Command } from './command';
-import { MockLogger } from './test/mock-logger';
-import * as os from './os';
+import { CommandRegistry, CommandContribution, Command } from '../common/command';
+import { MockLogger } from '../common/test/mock-logger';
+import * as os from '../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
 

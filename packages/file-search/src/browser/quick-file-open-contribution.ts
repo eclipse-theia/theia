@@ -7,7 +7,8 @@
 
 import { injectable, inject } from 'inversify';
 import { QuickFileOpenService } from './quick-file-open';
-import { Command, CommandRegistry, CommandContribution, KeybindingRegistry, KeybindingContribution } from '@theia/core/lib/common';
+import { Command, CommandRegistry, CommandContribution } from '@theia/core/lib/common';
+import { KeybindingRegistry, KeybindingContribution } from '@theia/core/lib/browser';
 
 export const quickFileOpen: Command = {
     id: 'file-search.openFile',

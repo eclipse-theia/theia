@@ -9,9 +9,9 @@ import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
 import {
     CommandRegistry, isOSX, ActionMenuNode, CompositeMenuNode,
-    MAIN_MENU_BAR, MenuModelRegistry, MenuPath, KeybindingRegistry,
-    Keybinding, KeyCode, Key
+    MAIN_MENU_BAR, MenuModelRegistry, MenuPath
 } from '../../common';
+import { KeybindingRegistry, Keybinding, KeyCode, Key } from '../../browser';
 
 @injectable()
 export class ElectronMainMenuFactory {

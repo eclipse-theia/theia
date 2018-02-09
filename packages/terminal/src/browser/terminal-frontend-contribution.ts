@@ -8,20 +8,16 @@
 import { inject, injectable } from "inversify";
 import {
     CommandContribution,
-    KeybindingContribution,
-    KeyCode,
-    Key,
-    Modifier,
-    KeybindingRegistry,
     Command,
     CommandRegistry,
     MenuContribution,
     MenuModelRegistry,
-    Keybinding,
-    KeybindingContextRegistry,
     isOSX
 } from '@theia/core/lib/common';
-import { CommonMenus, ApplicationShell } from '@theia/core/lib/browser';
+import {
+    CommonMenus, ApplicationShell, KeybindingContribution, KeyCode, Key,
+    Modifier, KeybindingRegistry, Keybinding, KeybindingContextRegistry,
+} from '@theia/core/lib/browser';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidget } from './terminal-widget';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';

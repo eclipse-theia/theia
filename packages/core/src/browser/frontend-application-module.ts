@@ -12,12 +12,13 @@ import {
     ResourceProvider, ResourceResolver, DefaultResourceProvider,
     CommandContribution, CommandRegistry, CommandService,
     MenuModelRegistry, MenuContribution,
-    KeybindingContextRegistry, KeybindingRegistry,
-    KeybindingContext,
-    KeybindingContribution,
     MessageService,
     MessageClient
 } from "../common";
+import {
+    KeybindingContextRegistry, KeybindingRegistry, KeybindingContext,
+    KeybindingContribution,
+} from "./keybinding";
 import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application';
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 import { HttpOpenHandler } from './http-open-handler';

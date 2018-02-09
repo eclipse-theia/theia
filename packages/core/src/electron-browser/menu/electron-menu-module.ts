@@ -6,8 +6,8 @@
  */
 
 import { ContainerModule } from 'inversify';
-import { KeybindingContribution, CommandContribution, KeybindingContext, MenuContribution } from "../../common";
-import { FrontendApplicationContribution, ContextMenuRenderer } from '../../browser';
+import { CommandContribution, MenuContribution } from "../../common";
+import { FrontendApplicationContribution, ContextMenuRenderer, KeybindingContribution, KeybindingContext } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { ElectronContextMenuRenderer } from "./electron-context-menu-renderer";
 import { ElectronMenuContribution } from "./electron-menu-contribution";

@@ -6,10 +6,10 @@
  */
 
 import { injectable, inject, named } from 'inversify';
-import { CommandRegistry } from './command';
+import { CommandRegistry } from '../common/command';
 import { KeyCode, KeySequence } from './keys';
-import { ContributionProvider } from './contribution-provider';
-import { ILogger } from "./logger";
+import { ContributionProvider } from '../common/contribution-provider';
+import { ILogger } from "../common/logger";
 
 export enum KeybindingScope {
     DEFAULT,
