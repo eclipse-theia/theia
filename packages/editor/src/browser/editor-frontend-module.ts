@@ -6,11 +6,11 @@
  */
 
 import { ContainerModule } from 'inversify';
+import { CommandContribution, MenuContribution } from "@theia/core/lib/common";
 import {
-    CommandContribution, MenuContribution,
+    OpenHandler, WidgetFactory, FrontendApplicationContribution,
     KeybindingContribution, KeybindingContext
-} from "@theia/core/lib/common";
-import { OpenHandler, WidgetFactory, FrontendApplicationContribution } from '@theia/core/lib/browser';
+} from '@theia/core/lib/browser';
 import { EditorManagerImpl, EditorManager } from './editor-manager';
 import { EditorContribution } from './editor-contribution';
 import { EditorMenuContribution } from './editor-menu';

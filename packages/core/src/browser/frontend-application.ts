@@ -6,7 +6,8 @@
  */
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, CommandRegistry, KeybindingRegistry, MenuModelRegistry } from '../common';
+import { ContributionProvider, CommandRegistry, MenuModelRegistry } from '../common';
+import { KeybindingRegistry } from './keybinding';
 import { ApplicationShell, ShellLayoutRestorer } from './shell';
 import { Widget } from "./widgets";
 import { ILogger } from '../common';

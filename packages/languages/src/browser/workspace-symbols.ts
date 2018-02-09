@@ -7,11 +7,14 @@
 
 import { injectable, inject } from 'inversify';
 import { Languages } from '../common';
-import { QuickOpenService, QuickOpenModel, QuickOpenItem, OpenerService, QuickOpenMode } from '@theia/core/lib/browser';
+import {
+    QuickOpenService, QuickOpenModel, QuickOpenItem, OpenerService,
+    QuickOpenMode, KeybindingContribution, KeybindingRegistry
+} from '@theia/core/lib/browser';
 import { WorkspaceSymbolParams, SymbolInformation } from 'vscode-base-languageclient/lib/base';
 import { CancellationTokenSource, CommandRegistry, CommandHandler, Command, SelectionService } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { CommandContribution, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/common';
+import { CommandContribution } from '@theia/core/lib/common';
 import { Range } from 'vscode-languageserver-types';
 
 @injectable()

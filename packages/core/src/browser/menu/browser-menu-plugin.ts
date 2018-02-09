@@ -9,9 +9,11 @@ import { injectable, inject } from "inversify";
 import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget } from "@phosphor/widgets";
 import { CommandRegistry as PhosphorCommandRegistry } from "@phosphor/commands";
 import {
-    CommandRegistry, KeybindingRegistry, ActionMenuNode, CompositeMenuNode,
-    MenuModelRegistry, MAIN_MENU_BAR, MenuPath, KeyCode, Key, Keybinding
+    CommandRegistry, ActionMenuNode, CompositeMenuNode,
+    MenuModelRegistry, MAIN_MENU_BAR, MenuPath
 } from "../../common";
+import { KeybindingRegistry, Keybinding } from "../keybinding";
+import { Key, KeyCode } from "../keys";
 import { FrontendApplicationContribution, FrontendApplication } from "../frontend-application";
 import { isOSX } from '../../common/os';
 

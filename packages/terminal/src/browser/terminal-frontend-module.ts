@@ -6,7 +6,7 @@
  */
 
 import { ContainerModule, Container } from 'inversify';
-import { CommandContribution, MenuContribution, KeybindingContribution } from '@theia/core/lib/common';
+import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalWidget, TerminalWidgetOptions, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
@@ -14,7 +14,7 @@ import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { IShellTerminalServer, shellTerminalPath } from '../common/shell-terminal-protocol';
-import { ApplicationShell } from '@theia/core/lib/browser';
+import { ApplicationShell, KeybindingContribution } from '@theia/core/lib/browser';
 
 import '../../src/browser/terminal.css';
 import 'xterm/lib/xterm.css';

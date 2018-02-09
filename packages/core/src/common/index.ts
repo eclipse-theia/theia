@@ -11,8 +11,6 @@ export * from './event';
 export * from './cancellation';
 export * from './command';
 export * from './menu';
-export * from './keys';
-export * from './keybinding';
 export * from './selection-service';
 export * from './objects';
 export * from './os';

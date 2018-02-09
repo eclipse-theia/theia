@@ -21,3 +21,5 @@ export * from './widget-manager';
 export * from './saveable';
 export * from './storage-service';
 export * from './preferences';
+export * from './keybinding';
+export * from './keys';

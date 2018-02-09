@@ -7,15 +7,13 @@
 
 import { ContainerModule } from 'inversify';
 import { MenuContribution } from '@theia/core/lib/common';
-import { FrontendApplicationContribution } from "@theia/core/lib/browser";
+import { FrontendApplicationContribution, KeybindingContribution } from "@theia/core/lib/browser";
 import { FileNavigatorWidget, FILE_NAVIGATOR_ID } from "./navigator-widget";
 import { NavigatorMenuContribution } from './navigator-menu';
 import { FileNavigatorContribution } from './navigator-contribution';
 import { createFileNavigatorWidget } from "./navigator-container";
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { CommandContribution } from '@theia/core/lib/common/command';
-import { KeybindingContribution } from '@theia/core/lib/common/keybinding';
-
 import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {

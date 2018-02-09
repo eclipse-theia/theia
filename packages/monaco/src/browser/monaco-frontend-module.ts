@@ -6,8 +6,8 @@
  */
 
 import { ContainerModule, decorate, injectable } from "inversify";
-import { MenuContribution, CommandContribution, KeybindingContribution } from "@theia/core/lib/common";
-import { QuickOpenService, FrontendApplicationContribution } from "@theia/core/lib/browser";
+import { MenuContribution, CommandContribution } from "@theia/core/lib/common";
+import { QuickOpenService, FrontendApplicationContribution, KeybindingContribution } from "@theia/core/lib/browser";
 import { Languages, Workspace } from "@theia/languages/lib/common";
 import { TextEditorProvider } from "@theia/editor/lib/browser";
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";

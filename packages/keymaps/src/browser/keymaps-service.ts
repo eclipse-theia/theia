@@ -6,9 +6,8 @@
  */
 
 import { inject, injectable } from 'inversify';
-import { FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
-import { Disposable, DisposableCollection, CommandRegistry, KeybindingRegistry, ILogger, ResourceProvider, Resource } from '@theia/core/lib/common';
-import { Keybinding, KeybindingScope } from '@theia/core/lib/common';
+import { FrontendApplicationContribution, FrontendApplication, KeybindingRegistry, Keybinding, KeybindingScope } from '@theia/core/lib/browser';
+import { Disposable, DisposableCollection, CommandRegistry, ILogger, ResourceProvider, Resource } from '@theia/core/lib/common';
 import { UserStorageUri } from '@theia/userstorage/lib/browser/';
 import URI from '@theia/core/lib/common/uri';
 import * as ajv from 'ajv';

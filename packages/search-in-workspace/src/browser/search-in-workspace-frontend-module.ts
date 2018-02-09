@@ -8,9 +8,9 @@
 import { ContainerModule } from "inversify";
 import { SearchInWorkspaceService, SearchInWorkspaceClientImpl } from './search-in-workspace-service';
 import { SearchInWorkspaceServer } from '../common/search-in-workspace-interface';
-import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, KeybindingContribution } from '@theia/core/lib/browser';
 import { QuickSearchInWorkspace, SearchInWorkspaceContributions } from './quick-search-in-workspace';
-import { CommandContribution, MenuContribution, KeybindingContribution } from "@theia/core";
+import { CommandContribution, MenuContribution } from "@theia/core";
 
 export default new ContainerModule(bind => {
     bind(QuickSearchInWorkspace).toSelf().inSingletonScope();

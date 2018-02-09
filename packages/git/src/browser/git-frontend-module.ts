@@ -8,7 +8,7 @@
 import { Git, GitPath } from '../common/git';
 import { ContainerModule } from 'inversify';
 import { bindGitDiffModule } from './diff/git-diff-frontend-module';
-import { WebSocketConnectionProvider, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, FrontendApplicationContribution, WidgetFactory, KeybindingContribution } from '@theia/core/lib/browser';
 import { GitCommandHandlers } from './git-command';
 import { CommandContribution, MenuContribution, ResourceResolver } from "@theia/core/lib/common";
 import { GitWatcher, GitWatcherPath, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common/git-watcher';
@@ -20,8 +20,6 @@ import { GitRepositoryProvider } from './git-repository-provider';
 import { GitQuickOpenService } from './git-quick-open-service';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { GitUriLabelProviderContribution } from './git-uri-label-contribution';
-import { KeybindingContribution } from '@theia/core/lib/common/keybinding';
-
 import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {

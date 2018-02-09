@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../common/menu';
-import { KeybindingContribution, KeybindingRegistry } from '../common/keybinding';
+import { KeybindingContribution, KeybindingRegistry } from './keybinding';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
 import { MessageService } from '../common/message-service';
 import { ApplicationShell } from './shell/application-shell';

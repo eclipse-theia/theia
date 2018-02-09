@@ -8,9 +8,9 @@
 import { injectable, inject } from "inversify";
 import {
     MenuModelRegistry, Command, CommandContribution,
-    MenuContribution, KeybindingContribution, KeybindingRegistry,
-    CommandRegistry
+    MenuContribution, CommandRegistry
 } from '../../common';
+import { KeybindingContribution, KeybindingRegistry } from "../keybinding";
 import { WidgetManager } from '../widget-manager';
 import { Widget } from '@phosphor/widgets';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';

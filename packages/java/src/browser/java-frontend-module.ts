@@ -6,7 +6,8 @@
  */
 
 import { ContainerModule } from "inversify";
-import { ResourceResolver, CommandContribution, KeybindingContribution, MenuContribution } from '@theia/core/lib/common';
+import { ResourceResolver, CommandContribution, MenuContribution } from '@theia/core/lib/common';
+import { KeybindingContribution } from '@theia/core/lib/browser';
 import { LanguageClientContribution } from "@theia/languages/lib/browser";
 import { LabelProviderContribution } from "@theia/core/lib/browser/label-provider";
 

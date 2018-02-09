@@ -6,8 +6,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/common/keybinding';
-import { Key, KeyCode, Keystroke, Modifier } from '@theia/core/lib/common/keys';
+import { KeybindingContribution, KeybindingRegistry, Key, KeyCode, Keystroke, Modifier } from '@theia/core/lib/browser';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { KEY_CODE_MAP } from './monaco-keycode-map';

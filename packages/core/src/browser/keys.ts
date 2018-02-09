@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { isOSX } from './os';
+import { isOSX } from '../common/os';
 
 /**
  * The key sequence for this binding. This key sequence should consist of one or more key strokes. Key strokes
