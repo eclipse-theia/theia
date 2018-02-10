@@ -326,15 +326,15 @@ export namespace MonacoEditor {
     export interface IOptions extends ICommonOptions, IEditorConstructionOptions { }
 
     export function getAll(manager: EditorManager): MonacoEditor[] {
-        return manager.editors.map(e => get(e)).filter(e => !!e) as MonacoEditor[];
+        return manager.all.map(e => get(e)).filter(e => !!e) as MonacoEditor[];
     }
 
     export function getCurrent(manager: EditorManager): MonacoEditor | undefined {
-        return get(manager.currentEditor);
+        return get(manager.current);
     }
 
     export function getActive(manager: EditorManager): MonacoEditor | undefined {
-        return get(manager.activeEditor);
+        return get(manager.active);
     }
 
     export function get(editorWidget: EditorWidget | undefined) {

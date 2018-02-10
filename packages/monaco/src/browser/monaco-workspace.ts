@@ -70,7 +70,8 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
                         // acquired by the editor, thus losing the changes that made it dirty.
                         this.textModelService.createModelReference(model.uri).then(ref => {
                             this.editorManager.open(new URI(model.uri.toString()), {
-                                revealIfVisible: false
+                                reveal: false,
+                                activate: false
                             }).then(editor => ref.dispose());
                         });
                     }

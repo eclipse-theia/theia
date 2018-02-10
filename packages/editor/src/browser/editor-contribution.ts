@@ -29,7 +29,7 @@ export class EditorContribution implements FrontendApplicationContribution {
     }
 
     protected async addStatusBarWidgets() {
-        this.editorManager.onCurrentEditorChanged(async e => {
+        this.editorManager.onCurrentChanged(async e => {
             if (e) {
                 const langId = e.editor.document.languageId;
                 const languages = this.languages.languages;
@@ -49,7 +49,7 @@ export class EditorContribution implements FrontendApplicationContribution {
                 this.toDispose.push(e.editor.onCursorPositionChanged(position => {
                     this.setCursorPositionStatus(position);
                 }));
-            } else if (this.editorManager.editors.length === 0) {
+            } else if (this.editorManager.all.length === 0) {
                 this.statusBar.removeElement('editor-status-language');
                 this.statusBar.removeElement('editor-status-cursor-position');
             }

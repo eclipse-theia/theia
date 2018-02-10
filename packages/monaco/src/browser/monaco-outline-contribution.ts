@@ -38,8 +38,8 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         // let's skip the initial current Editor change event, as on reload it comes before the language sevrers have started,
         // resulting in an empty outline.
         setTimeout(() => {
-            this.editorManager.onCurrentEditorChanged(async editor => {
-                const visibleEditor = editor || this.editorManager.editors.filter(e => e.isVisible)[0];
+            this.editorManager.onCurrentChanged(async editor => {
+                const visibleEditor = editor || this.editorManager.all.filter(e => e.isVisible)[0];
                 this.updateOutlineForEditor(visibleEditor);
             });
         }, 3000);
@@ -50,7 +50,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
 
         this.outlineViewService.onDidSelect(async node => {
             if (MonacoOutlineSymbolInformationNode.is(node) && node.parent) {
-                let widget = this.editorManager.editors.find(editor => editor.editor.uri.toString() === node.uri);
+                let widget = this.editorManager.all.find(editor => editor.editor.uri.toString() === node.uri);
                 if (!widget) {
                     widget = await this.editorManager.open(new URI(node.uri));
                 }
@@ -71,7 +71,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
     }
 
     protected updateOutline() {
-        const editor = this.editorManager.currentEditor;
+        const editor = this.editorManager.current;
         if (editor) {
             this.updateOutlineForEditor(editor);
         }

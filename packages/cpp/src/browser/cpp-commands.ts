@@ -29,8 +29,8 @@ export const FILE_OPEN_PATH = (path: string): Command => <Command>{
 };
 
 export function editorContainsCppFiles(editorManager: EditorManager | undefined): boolean {
-    if (editorManager && editorManager.activeEditor) {
-        const uri = editorManager.activeEditor.editor.document.uri;
+    if (editorManager && editorManager.active) {
+        const uri = editorManager.active.editor.document.uri;
         return HEADER_AND_SOURCE_FILE_EXTENSIONS.some(value => uri.endsWith("." + value));
     }
     return false;
