@@ -23,3 +23,5 @@ export * from './storage-service';
 export * from './preferences';
 export * from './keybinding';
 export * from './keys';
+export * from './label-provider';
+export * from './widget-open-handler';

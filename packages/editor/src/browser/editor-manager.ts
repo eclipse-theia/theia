@@ -5,138 +5,98 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
+import { injectable, postConstruct, } from "inversify";
 import URI from "@theia/core/lib/common/uri";
-import { Emitter, Event, RecursivePartial, SelectionService } from '@theia/core/lib/common';
-import { OpenHandler, OpenerOptions, FrontendApplication, ApplicationShell } from "@theia/core/lib/browser";
+import { RecursivePartial, Emitter, Event } from '@theia/core/lib/common';
+import { WidgetOpenHandler, WidgetOpenerOptions } from "@theia/core/lib/browser";
 import { EditorWidget } from "./editor-widget";
-import { TextEditorProvider, Range, Position } from "./editor";
-import { WidgetFactory, WidgetManager } from '@theia/core/lib/browser/widget-manager';
-import { Widget } from '@phosphor/widgets';
-import { LabelProvider } from "@theia/core/lib/browser/label-provider";
+import { Range, Position } from "./editor";
+import { EditorWidgetFactory } from "./editor-widget-factory";
 
-export const EditorManager = Symbol("EditorManager");
-
-export interface EditorManager extends OpenHandler {
-    /**
-     * All opened editors.
-     */
-    readonly editors: EditorWidget[];
-    /**
-     * Open an editor for the given uri and options.
-     * Reject if the given options is not an editor input or an editor cannot be opened.
-     */
-    open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget>;
-    /**
-     * The most recently focused editor.
-     */
-    readonly currentEditor: EditorWidget | undefined;
-    /**
-     * Emit when the current editor changed.
-     */
-    readonly onCurrentEditorChanged: Event<EditorWidget | undefined>;
-    /**
-     * The currently focused editor.
-     */
-    readonly activeEditor: EditorWidget | undefined;
-    /**
-     * Emit when the active editor changed.
-     */
-    readonly onActiveEditorChanged: Event<EditorWidget | undefined>;
-}
-
-export interface EditorInput {
-    revealIfVisible?: boolean;
+export interface EditorOpenerOptions extends WidgetOpenerOptions {
     selection?: RecursivePartial<Range>;
 }
 
-export interface EditorOpenerOptions extends OpenerOptions, EditorInput {
-    widgetOptions?: ApplicationShell.WidgetOptions;
-}
-
 @injectable()
-export class EditorManagerImpl implements EditorManager, WidgetFactory {
+export class EditorManager extends WidgetOpenHandler<EditorWidget> {
 
-    readonly id = "code-editor-opener";
+    readonly id = EditorWidgetFactory.ID;
+
     readonly label = "Code Editor";
 
-    protected readonly currentObserver: EditorManagerImpl.Observer;
-    protected readonly activeObserver: EditorManagerImpl.Observer;
+    protected readonly onActiveEditorChangedEmitter = new Emitter<EditorWidget | undefined>();
+    /**
+     * Emit when the active editor is changed.
+     */
+    readonly onActiveEditorChanged: Event<EditorWidget | undefined> = this.onActiveEditorChangedEmitter.event;
 
-    constructor(
-        @inject(TextEditorProvider) protected readonly editorProvider: TextEditorProvider,
-        @inject(SelectionService) protected readonly selectionService: SelectionService,
-        @inject(FrontendApplication) protected readonly app: FrontendApplication,
-        @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
-        @inject(LabelProvider) protected readonly labelProvider: LabelProvider
-    ) {
-        this.currentObserver = new EditorManagerImpl.Observer('current', app);
-        this.activeObserver = new EditorManagerImpl.Observer('active', app);
+    protected readonly onCurrentEditorChangedEmitter = new Emitter<EditorWidget | undefined>();
+    /**
+     * Emit when the current editor is changed.
+     */
+    readonly onCurrentEditorChanged: Event<EditorWidget | undefined> = this.onCurrentEditorChangedEmitter.event;
+
+    @postConstruct()
+    protected init(): void {
+        super.init();
+        this.shell.activeChanged.connect(() => this.updateActiveEditor());
+        this.shell.currentChanged.connect(() => this.updateCurrentEditor());
+        this.onCreated(widget => widget.disposed.connect(() => this.updateCurrentEditor()));
     }
 
-    get editors() {
-        return this.widgetManager.getWidgets(this.id) as EditorWidget[];
+    protected _activeEditor: EditorWidget | undefined;
+    /**
+     * The active editor.
+     */
+    get activeEditor(): EditorWidget | undefined {
+        return this._activeEditor;
     }
-
-    get currentEditor() {
-        return this.currentObserver.getEditor();
+    protected setActiveEditor(active: EditorWidget | undefined): void {
+        if (this._activeEditor !== active) {
+            this._activeEditor = active;
+            this.onActiveEditorChangedEmitter.fire(this._activeEditor);
+        }
     }
-
-    get onCurrentEditorChanged() {
-        return this.currentObserver.onEditorChanged();
-    }
-
-    get activeEditor() {
-        return this.activeObserver.getEditor();
-    }
-
-    get onActiveEditorChanged() {
-        return this.activeObserver.onEditorChanged();
-    }
-
-    canHandle(uri: URI, options?: EditorOpenerOptions): number {
-        return 100;
-    }
-
-    open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
-        const trimmedUri = uri.withoutFragment();
-        return this.widgetManager.getOrCreateWidget<EditorWidget>(this.id, trimmedUri.toString()).then(editor => {
-            if (!editor.isAttached) {
-                const widgetOptions: ApplicationShell.WidgetOptions = options && options.widgetOptions || { area: 'main' };
-                this.app.shell.addWidget(editor, widgetOptions);
-            }
-            this.revealIfVisible(editor, options);
-            this.revealSelection(editor, options);
-            return editor;
-        });
-    }
-
-    // don't call directly, but use WidgetManager
-    createWidget(uriAsString: string): Promise<Widget> {
-        const uri = new URI(uriAsString);
-        return this.createEditor(uri);
-    }
-
-    protected async createEditor(uri: URI): Promise<EditorWidget> {
-        const icon = await this.labelProvider.getIcon(uri);
-        return this.editorProvider(uri).then(textEditor => {
-            const newEditor = new EditorWidget(textEditor, this.selectionService);
-            newEditor.id = this.id + ":" + uri.toString();
-            newEditor.title.closable = true;
-            newEditor.title.label = this.labelProvider.getName(uri);
-            newEditor.title.iconClass = icon + ' file-icon';
-            newEditor.title.caption = this.labelProvider.getLongName(uri);
-            return newEditor;
-        });
-    }
-
-    protected revealIfVisible(editor: EditorWidget, input?: EditorInput): void {
-        if (input === undefined || input.revealIfVisible === undefined || input.revealIfVisible) {
-            this.app.shell.activateWidget(editor.id);
+    protected updateActiveEditor(): void {
+        const widget = this.shell.activeWidget;
+        if (widget instanceof EditorWidget) {
+            this.setActiveEditor(widget);
         }
     }
 
-    protected revealSelection(widget: EditorWidget, input?: EditorInput): void {
+    protected _currentEditor: EditorWidget | undefined;
+    /**
+     * The most recently activated editor.
+     */
+    get currentEditor(): EditorWidget | undefined {
+        return this._currentEditor;
+    }
+    protected setCurrentEditor(current: EditorWidget | undefined): void {
+        if (this._currentEditor !== current) {
+            this._currentEditor = current;
+            this.onCurrentEditorChangedEmitter.fire(this._currentEditor);
+        }
+    }
+    protected updateCurrentEditor(): void {
+        const widget = this.shell.currentWidget;
+        if (widget instanceof EditorWidget) {
+            this.setCurrentEditor(widget);
+        } else if (!this._currentEditor || !this._currentEditor.isVisible) {
+            this.setCurrentEditor(undefined);
+        }
+    }
+
+    canHandle(uri: URI, options?: WidgetOpenerOptions): number | Promise<number> {
+        return 100;
+    }
+
+    async open(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+        const editor = await super.open(uri, options);
+        this.revealSelection(editor, options);
+        return editor;
+    }
+
+    protected revealSelection(widget: EditorWidget, input?: EditorOpenerOptions): void {
         if (input && input.selection) {
             const editor = widget.editor;
             const selection = this.getSelection(input.selection);
@@ -164,37 +124,4 @@ export class EditorManagerImpl implements EditorManager, WidgetFactory {
         return undefined;
     }
 
-}
-
-export namespace EditorManagerImpl {
-    export class Observer {
-        protected readonly onEditorChangedEmitter = new Emitter<EditorWidget | undefined>();
-
-        constructor(
-            protected readonly kind: 'current' | 'active',
-            protected readonly app: FrontendApplication
-        ) {
-            const key = this.kind === 'current' ? 'currentChanged' : 'activeChanged';
-            app.shell[key].connect((shell, arg) => {
-                if (arg.newValue instanceof EditorWidget || arg.oldValue instanceof EditorWidget) {
-                    this.onEditorChangedEmitter.fire(this.getEditor());
-                }
-            });
-        }
-
-        getEditor(): EditorWidget | undefined {
-            if (this.app) {
-                const key = this.kind === 'current' ? 'currentWidget' : 'activeWidget';
-                const widget = this.app.shell[key];
-                if (widget instanceof EditorWidget) {
-                    return widget;
-                }
-            }
-            return undefined;
-        }
-
-        onEditorChanged() {
-            return this.onEditorChangedEmitter.event;
-        }
-    }
 }
