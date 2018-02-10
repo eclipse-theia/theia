@@ -152,7 +152,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         if (location) {
             this.editorManager.open(
                 new URI(location.uri), {
-                    revealIfVisible: !keepFocus,
+                    mode: keepFocus ? 'reveal' : 'activate',
                     selection: Range.create(location.range.start, location.range.end)
                 }
             ).then(editorWidget => {

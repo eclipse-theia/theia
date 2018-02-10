@@ -63,12 +63,12 @@ export class PreviewContribution implements CommandContribution, MenuContributio
 
     protected readonly defaultOpenFromEditorOptions: PreviewOpenerOptions = {
         widgetOptions: { area: 'main', mode: 'split-right' },
-        activate: false
+        mode: 'reveal'
     };
 
     protected readonly defaultOpenOptions: PreviewOpenerOptions = {
         widgetOptions: { area: 'main', mode: 'tab-after' },
-        activate: true
+        mode: 'activate'
     };
 
     onStart() {
@@ -76,7 +76,7 @@ export class PreviewContribution implements CommandContribution, MenuContributio
             this.registerOpenOnDoubleClick(previewWidget);
             this.registerEditorAndPreviewSync(previewWidget);
         });
-        this.editorManager.onActiveEditorChanged(editorWidget => {
+        this.editorManager.onActiveChanged(editorWidget => {
             if (editorWidget) {
                 this.registerEditorAndPreviewSync(editorWidget);
             }
@@ -94,7 +94,7 @@ export class PreviewContribution implements CommandContribution, MenuContributio
         } else {
             previewWidget = source as PreviewWidget;
             uri = previewWidget.getUri().toString();
-            editorWidget = this.editorManager.editors.find(widget => widget.editor.uri.toString() === uri);
+            editorWidget = this.editorManager.all.find(widget => widget.editor.uri.toString() === uri);
         }
         if (!previewWidget || !editorWidget || !uri) {
             return;
@@ -261,15 +261,15 @@ export class PreviewContribution implements CommandContribution, MenuContributio
     }
 
     protected getCurrentEditorUri(): URI | undefined {
-        const activeEditor = this.editorManager.currentEditor;
-        if (activeEditor) {
-            return activeEditor.editor.uri;
+        const active = this.editorManager.current;
+        if (active) {
+            return active.editor.uri;
         }
         return undefined;
     }
 
     protected async openForEditor(): Promise<void> {
-        const editorWidget = this.editorManager.currentEditor;
+        const editorWidget = this.editorManager.current;
         if (!editorWidget) {
             return;
         }

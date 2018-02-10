@@ -38,10 +38,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         // let's skip the initial current Editor change event, as on reload it comes before the language sevrers have started,
         // resulting in an empty outline.
         setTimeout(() => {
-            this.editorManager.onCurrentEditorChanged(async editor => {
-                const visibleEditor = editor || this.editorManager.editors.filter(e => e.isVisible)[0];
-                this.updateOutlineForEditor(visibleEditor);
-            });
+            this.editorManager.onCurrentEditorChanged(widget => this.updateOutlineForEditor(widget));
         }, 3000);
 
         DocumentSymbolProviderRegistry.onDidChange(event => {
@@ -50,12 +47,11 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
 
         this.outlineViewService.onDidSelect(async node => {
             if (MonacoOutlineSymbolInformationNode.is(node) && node.parent) {
-                let widget = this.editorManager.editors.find(editor => editor.editor.uri.toString() === node.uri);
-                if (!widget) {
-                    widget = await this.editorManager.open(new URI(node.uri));
-                }
-                widget.editor.selection = node.range;
-                widget.editor.revealRange(node.range);
+                const uri = new URI(node.uri);
+                await this.editorManager.open(uri, {
+                    mode: 'reveal',
+                    selection: node.range
+                });
             }
         });
 

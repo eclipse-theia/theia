@@ -9,35 +9,36 @@ import { ContainerModule } from 'inversify';
 import { CommandContribution, MenuContribution, bindContributionProvider } from "@theia/core/lib/common";
 import {
     OpenHandler, WidgetFactory, FrontendApplicationContribution,
-    KeybindingContribution, KeybindingContext
+    KeybindingContribution, KeybindingContext, LabelProviderContribution
 } from '@theia/core/lib/browser';
-import { EditorManagerImpl, EditorManager } from './editor-manager';
+import { EditorManager } from './editor-manager';
 import { EditorContribution } from './editor-contribution';
 import { EditorMenuContribution } from './editor-menu';
 import { EditorCommandContribution } from './editor-command';
 import { EditorKeybindingContribution, EditorKeybindingContext } from "./editor-keybinding";
 import { bindEditorPreferences } from './editor-preferences';
-import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { DiffUriLabelProviderContribution } from './diff-uris';
 import { EditorDecorationsService, EditorDecorationTypeProvider } from './editor-decorations-service';
+import { EditorWidgetFactory } from './editor-widget-factory';
 
 export default new ContainerModule(bind => {
     bindEditorPreferences(bind);
 
-    bind(EditorManagerImpl).toSelf().inSingletonScope();
-    bind(EditorManager).toDynamicValue(c => c.container.get(EditorManagerImpl)).inSingletonScope();
-    bind(WidgetFactory).toDynamicValue(c => c.container.get(EditorManagerImpl)).inSingletonScope();
-    bind(OpenHandler).toDynamicValue(context => context.container.get(EditorManager)).inSingletonScope();
+    bind(WidgetFactory).to(EditorWidgetFactory).inSingletonScope();
+
+    bind(EditorManager).toSelf().inSingletonScope();
+    bind(OpenHandler).toService(EditorManager);
 
     bind(CommandContribution).to(EditorCommandContribution).inSingletonScope();
     bind(MenuContribution).to(EditorMenuContribution).inSingletonScope();
-    bind(EditorKeybindingContext).toSelf().inSingletonScope();
 
-    bind(KeybindingContext).toDynamicValue(context => context.container.get(EditorKeybindingContext)).inSingletonScope();
+    bind(EditorKeybindingContext).toSelf().inSingletonScope();
+    bind(KeybindingContext).toService(EditorKeybindingContext);
+
     bind(KeybindingContribution).to(EditorKeybindingContribution).inSingletonScope();
 
     bind(EditorContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(EditorContribution));
+    bind(FrontendApplicationContribution).toService(EditorContribution);
 
     bind(LabelProviderContribution).to(DiffUriLabelProviderContribution).inSingletonScope();
 

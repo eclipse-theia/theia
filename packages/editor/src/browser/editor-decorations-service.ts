@@ -28,7 +28,7 @@ export class EditorDecorationsService {
      * To remove decorations of a type, pass an empty options array.
      */
     setDecorations(uri: string, type: string, options: DecorationOptions[]): void {
-        this.editorManager.editors.forEach(editorWidget => {
+        this.editorManager.all.forEach(editorWidget => {
             if (!editorWidget.isVisible) {
                 return;
             }

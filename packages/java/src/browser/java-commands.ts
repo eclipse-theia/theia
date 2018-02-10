@@ -46,7 +46,7 @@ const CONTEXT_ID = 'java.editor.context';
 export class JavaEditorContext implements KeybindingContext {
     readonly id = CONTEXT_ID;
 
-    constructor( @inject(EditorManager) protected readonly editorService: EditorManager) { }
+    constructor(@inject(EditorManager) protected readonly editorService: EditorManager) { }
 
     isEnabled(arg?: Keybinding) {
         return this.editorService && !!this.editorService.currentEditor && (this.editorService.currentEditor.editor.document.uri.endsWith(".java"));

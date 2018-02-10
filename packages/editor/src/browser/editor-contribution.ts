@@ -29,27 +29,24 @@ export class EditorContribution implements FrontendApplicationContribution {
     }
 
     protected async addStatusBarWidgets() {
-        this.editorManager.onCurrentEditorChanged(async e => {
-            if (e) {
-                const langId = e.editor.document.languageId;
-                const languages = this.languages.languages;
-                let languageName: string = '';
-                if (languages) {
-                    const language = languages.find(l => l.id === langId);
-                    languageName = language ? language.name : '';
-                }
+        this.editorManager.onCurrentEditorChanged(async widget => {
+            if (widget) {
+                const languageId = widget.editor.document.languageId;
+                const languages = this.languages.languages || [];
+                const language = languages.find(l => l.id === languageId);
+                const languageName = language ? language.name : '';
                 this.statusBar.setElement('editor-status-language', {
                     text: languageName,
                     alignment: StatusBarAlignment.RIGHT,
                     priority: 1
                 });
 
-                this.setCursorPositionStatus(e.editor.cursor);
+                this.setCursorPositionStatus(widget.editor.cursor);
                 this.toDispose.dispose();
-                this.toDispose.push(e.editor.onCursorPositionChanged(position => {
+                this.toDispose.push(widget.editor.onCursorPositionChanged(position => {
                     this.setCursorPositionStatus(position);
                 }));
-            } else if (this.editorManager.editors.length === 0) {
+            } else if (this.editorManager.all.length === 0) {
                 this.statusBar.removeElement('editor-status-language');
                 this.statusBar.removeElement('editor-status-cursor-position');
             }
