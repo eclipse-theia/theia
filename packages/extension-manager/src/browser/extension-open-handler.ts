@@ -5,22 +5,17 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
+import { injectable } from "inversify";
 import URI from "@theia/core/lib/common/uri";
-import { OpenHandler, WidgetManager, ApplicationShell } from "@theia/core/lib/browser";
+import { WidgetOpenHandler } from "@theia/core/lib/browser";
 import { ExtensionUri } from "./extension-uri";
 import { ExtensionWidgetOptions } from './extension-widget-factory';
 import { ExtensionDetailWidget } from './extension-detail-widget';
 
 @injectable()
-export class ExtensionOpenHandler implements OpenHandler {
+export class ExtensionOpenHandler extends WidgetOpenHandler<ExtensionDetailWidget> {
 
     readonly id = ExtensionUri.scheme;
-
-    constructor(
-        @inject(ApplicationShell) protected readonly shell: ApplicationShell,
-        @inject(WidgetManager) protected readonly widgetManager: WidgetManager
-    ) { }
 
     canHandle(uri: URI): number {
         try {
@@ -31,16 +26,10 @@ export class ExtensionOpenHandler implements OpenHandler {
         }
     }
 
-    async open(uri: URI): Promise<ExtensionDetailWidget> {
-        const options: ExtensionWidgetOptions = {
+    protected createWidgetOptions(uri: URI): ExtensionWidgetOptions {
+        return {
             name: ExtensionUri.toExtensionName(uri)
         };
-        const widget = await this.widgetManager.getOrCreateWidget<ExtensionDetailWidget>(ExtensionUri.scheme, options);
-        if (!widget.isAttached) {
-            this.shell.addWidget(widget, { area: 'main' });
-        }
-        this.shell.activateWidget(widget.id);
-        return widget;
     }
 
 }
