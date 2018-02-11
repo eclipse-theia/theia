@@ -10,7 +10,7 @@
 import { inject, postConstruct, injectable } from "inversify";
 import URI from "../common/uri";
 import { MaybePromise, Emitter, Event } from "../common";
-import { BaseWidget } from "./widgets";
+import { BaseWidget, Widget } from "./widgets";
 import { ApplicationShell } from "./shell";
 import { OpenHandler, OpenerOptions } from "./opener-service";
 import { WidgetManager } from "./widget-manager";
