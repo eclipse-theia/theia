@@ -6,7 +6,6 @@
  */
 
 import { injectable, inject } from "inversify";
-import { PreviewHandler, RenderContentParams, PREVIEW_OPENER_ID } from '../preview-handler';
 import URI from "@theia/core/lib/common/uri";
 import { OpenerService } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common';
@@ -14,6 +13,9 @@ import { isOSX } from '@theia/core/lib/common';
 import * as hljs from 'highlight.js';
 import * as markdownit from 'markdown-it';
 import * as anchor from 'markdown-it-anchor';
+import { PreviewUri } from "../preview-uri";
+import { PreviewHandler, RenderContentParams } from '../preview-handler';
+import { PreviewOpenerOptions } from "../preview-contribution";
 
 @injectable()
 export class MarkdownPreviewHandler implements PreviewHandler {
@@ -47,8 +49,8 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                 if (link.startsWith('#')) {
                     this.revealFragment(contentElement, link);
                 } else {
-                    const query = ((isOSX && event.metaKey) || event.ctrlKey) ? '' : 'opener=' + PREVIEW_OPENER_ID;
-                    const uri = this.resolveUri(link, params.originUri, query);
+                    const preview = !(isOSX ? event.metaKey : event.ctrlKey);
+                    const uri = this.resolveUri(link, params.originUri, preview);
                     this.openLink(uri, params.originUri);
                 }
             }
@@ -71,13 +73,17 @@ export class MarkdownPreviewHandler implements PreviewHandler {
 
     protected async openLink(uri: URI, originUri: URI): Promise<void> {
         const opener = await this.openerService.getOpener(uri);
-        opener.open(uri, { originUri: originUri.toString() });
+        opener.open(uri, <PreviewOpenerOptions>{ originUri });
     }
 
-    protected resolveUri(link: string, uri: URI, query: string = ''): URI {
+    protected resolveUri(link: string, uri: URI, preview: boolean): URI {
         const linkURI = new URI(link);
-        if (!linkURI.path.isAbsolute) {
-            return uri.parent.resolve(linkURI.path).withFragment(linkURI.fragment).withQuery(query);
+        if (!linkURI.path.isAbsolute && (
+            !(linkURI.scheme || linkURI.authority) ||
+            (linkURI.scheme === uri.scheme && linkURI.authority === linkURI.authority)
+        )) {
+            const resolvedUri = uri.parent.resolve(linkURI.path).withFragment(linkURI.fragment).withQuery(linkURI.query);
+            return preview ? PreviewUri.encode(resolvedUri) : resolvedUri;
         }
         return linkURI;
     }
