@@ -29,9 +29,9 @@ export class EditorContribution implements FrontendApplicationContribution {
     }
 
     protected async addStatusBarWidgets() {
-        this.editorManager.onCurrentChanged(async current => {
-            if (current) {
-                const languageId = current.editor.document.languageId;
+        this.editorManager.onCurrentChanged(async widget => {
+            if (widget) {
+                const languageId = widget.editor.document.languageId;
                 const languages = this.languages.languages || [];
                 const language = languages.find(l => l.id === languageId);
                 const languageName = language ? language.name : '';
@@ -41,9 +41,9 @@ export class EditorContribution implements FrontendApplicationContribution {
                     priority: 1
                 });
 
-                this.setCursorPositionStatus(current.editor.cursor);
+                this.setCursorPositionStatus(widget.editor.cursor);
                 this.toDispose.dispose();
-                this.toDispose.push(current.editor.onCursorPositionChanged(position => {
+                this.toDispose.push(widget.editor.onCursorPositionChanged(position => {
                     this.setCursorPositionStatus(position);
                 }));
             } else {

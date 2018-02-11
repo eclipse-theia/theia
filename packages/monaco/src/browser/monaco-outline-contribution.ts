@@ -38,10 +38,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         // let's skip the initial current Editor change event, as on reload it comes before the language sevrers have started,
         // resulting in an empty outline.
         setTimeout(() => {
-            this.editorManager.onCurrentChanged(async editor => {
-                const visibleEditor = editor || this.editorManager.all.filter(e => e.isVisible)[0];
-                this.updateOutlineForEditor(visibleEditor);
-            });
+            this.editorManager.onCurrentChanged(widget => this.updateOutlineForEditor(widget));
         }, 3000);
 
         DocumentSymbolProviderRegistry.onDidChange(event => {
@@ -78,17 +75,15 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
     }
 
     protected async updateOutlineForEditor(editor: EditorWidget | undefined) {
-        if (this.outlineViewService.open) {
-            if (editor) {
-                const model = await this.getModel(editor);
-                this.publish(await this.computeSymbolInformations(model));
-            } else {
-                this.publish([]);
-            }
+        if (editor) {
+            const model = this.getModel(editor);
+            this.publish(await this.computeSymbolInformations(model));
+        } else {
+            this.publish([]);
         }
     }
 
-    protected async getModel(editor: EditorWidget): Promise<monaco.editor.IModel> {
+    protected getModel(editor: EditorWidget): monaco.editor.IModel {
         const monacoEditor = MonacoEditor.get(editor);
         const model = monacoEditor!.getControl().getModel();
         this.toDispose.dispose();
@@ -99,7 +94,6 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
     }
 
     protected async computeSymbolInformations(model: monaco.editor.IModel): Promise<SymbolInformation[]> {
-
         const entries: SymbolInformation[] = [];
         const documentSymbolProviders = await DocumentSymbolProviderRegistry.all(model);
 
@@ -127,7 +121,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         this.outlineViewService.publish(outlineSymbolInformations);
     }
 
-    getRangeFromSymbolInformation(symbolInformation: SymbolInformation): Range {
+    protected getRangeFromSymbolInformation(symbolInformation: SymbolInformation): Range {
         return {
             end: {
                 character: symbolInformation.location.range.endColumn - 1,
@@ -140,7 +134,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         };
     }
 
-    getId(name: string, counter: number): string {
+    protected getId(name: string, counter: number): string {
         let uniqueId: string = name + counter;
         if (this.ids.find(id => id === uniqueId)) {
             uniqueId = this.getId(name, ++counter);

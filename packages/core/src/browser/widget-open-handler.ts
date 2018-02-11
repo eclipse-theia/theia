@@ -10,7 +10,7 @@
 import { inject, postConstruct, injectable } from "inversify";
 import URI from "../common/uri";
 import { MaybePromise, Emitter, Event } from "../common";
-import { BaseWidget, Widget } from "./widgets";
+import { BaseWidget } from "./widgets";
 import { ApplicationShell } from "./shell";
 import { OpenHandler, OpenerOptions } from "./opener-service";
 import { WidgetManager } from "./widget-manager";
@@ -66,10 +66,11 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
 
     @postConstruct()
     protected init(): void {
-        this.shell.activeChanged.connect((_, arg) => this.updateActive(arg.newValue));
-        this.shell.currentChanged.connect((_, arg) => this.updateCurrent(arg.newValue));
+        this.shell.activeChanged.connect(() => this.updateActive());
+        this.shell.currentChanged.connect(() => this.updateCurrent());
         this.widgetManager.onDidCreateWidget(({ factoryId, widget }) => {
             if (factoryId === this.id && widget instanceof this.widgetConstructor) {
+                widget.disposed.connect(() => this.updateCurrent());
                 this.onCreatedEmitter.fire(widget as W);
             }
         });
@@ -100,11 +101,16 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
     get active(): W | undefined {
         return this._active;
     }
-    protected updateActive(widget: Widget | null): void {
-        const active = widget instanceof this.widgetConstructor ? widget as W : undefined;
+    protected setActive(active: W | undefined): void {
         if (this._active !== active) {
             this._active = active;
             this.onActiveChangedEmitter.fire(this._active);
+        }
+    }
+    protected updateActive(): void {
+        const widget = this.shell.activeWidget;
+        if (widget instanceof this.widgetConstructor) {
+            this.setActive(widget as W);
         }
     }
 
@@ -115,14 +121,18 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
     get current(): W | undefined {
         return this._current;
     }
-    protected updateCurrent(widget: Widget | null): void {
-        let current = this._current && !this._current.isDisposed ? this._current : undefined;
-        if (widget instanceof this.widgetConstructor) {
-            current = widget as W;
-        }
+    protected setCurrent(current: W | undefined): void {
         if (this._current !== current) {
             this._current = current;
             this.onCurrentChangedEmitter.fire(this._current);
+        }
+    }
+    protected updateCurrent(): void {
+        const widget = this.shell.currentWidget;
+        if (widget instanceof this.widgetConstructor) {
+            this.setCurrent(widget as W);
+        } else if (!this._current || !this._current.isVisible) {
+            this.setCurrent(undefined);
         }
     }
 
