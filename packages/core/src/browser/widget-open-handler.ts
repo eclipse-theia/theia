@@ -55,7 +55,7 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
     }
 
     /**
-     * The widget opeh handler id.
+     * The widget open handler id.
      *
      * #### Implementation
      * - A widget factory for this id should be registered.

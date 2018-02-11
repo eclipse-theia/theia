@@ -5,5 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+export * from './preview-uri';
 export * from './preview-handler';
 export { PreviewOpenerOptions } from './preview-contribution';

@@ -25,7 +25,7 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
         label: 'Open Workspace Symbol ...'
     };
 
-    constructor( @inject(Languages) protected languages: Languages,
+    constructor(@inject(Languages) protected languages: Languages,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(QuickOpenService) protected quickOpenService: QuickOpenService,
         @inject(SelectionService) protected selectionService: SelectionService) { }
@@ -89,7 +89,6 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
         parent = (parent || '') + uri.displayName;
         return new SimpleOpenItem(sym.name, icon, parent, uri.toString(), () => {
             this.openerService.getOpener(uri).then(opener => opener.open(uri, {
-                revealIfVisible: true,
                 selection: Range.create(sym.location.range.start, sym.location.range.start)
             }));
         });
