@@ -6,12 +6,13 @@
  */
 
 import { ContainerModule } from 'inversify';
-import { CommandContribution, MenuContribution, bindContributionProvider } from '@theia/core/lib/common';
+import URI from '@theia/core/lib/common/uri';
+import { CommandContribution, MenuContribution, bindContributionProvider, ResourceProvider } from '@theia/core/lib/common';
 import { OpenHandler, WidgetFactory, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { PreviewContribution } from './preview-contribution';
-import { PreviewWidget } from './preview-widget';
-import { PreviewWidgetManager } from './preview-widget-manager';
+import { PreviewWidget, PreviewWidgetOptions } from './preview-widget';
 import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
+import { PreviewUri } from './preview-uri';
 import { MarkdownPreviewHandler } from './markdown';
 
 import '../../src/browser/style/index.css';
@@ -21,14 +22,22 @@ export default new ContainerModule(bind => {
     bind(PreviewHandlerProvider).toSelf().inSingletonScope();
     bindContributionProvider(bind, PreviewHandler);
     bind(MarkdownPreviewHandler).toSelf().inSingletonScope();
-    bind(PreviewHandler).toDynamicValue(ctx => ctx.container.get(MarkdownPreviewHandler));
+    bind(PreviewHandler).toService(MarkdownPreviewHandler);
 
     bind(PreviewWidget).toSelf();
-    bind(PreviewWidgetManager).toDynamicValue(ctx => new PreviewWidgetManager(ctx.container)).inSingletonScope();
-    bind(WidgetFactory).toDynamicValue(ctx => ctx.container.get(PreviewWidgetManager));
+    bind<WidgetFactory>(WidgetFactory).toDynamicValue(ctx => ({
+        id: PreviewUri.id,
+        async createWidget(uri: string): Promise<PreviewWidget> {
+            const { container } = ctx;
+            const resource = await container.get<ResourceProvider>(ResourceProvider)(new URI(uri));
+            const child = container.createChild();
+            child.bind<PreviewWidgetOptions>(PreviewWidgetOptions).toConstantValue({ resource });
+            return child.get(PreviewWidget);
+        }
+    })).inSingletonScope();
 
     bind(PreviewContribution).toSelf().inSingletonScope();
     [CommandContribution, MenuContribution, OpenHandler, FrontendApplicationContribution].forEach(serviceIdentifier =>
-        bind(serviceIdentifier).toDynamicValue(c => c.container.get(PreviewContribution)).inSingletonScope()
+        bind(serviceIdentifier).toService(PreviewContribution)
     );
 });

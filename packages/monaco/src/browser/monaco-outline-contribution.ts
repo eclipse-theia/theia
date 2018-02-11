@@ -50,12 +50,12 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
 
         this.outlineViewService.onDidSelect(async node => {
             if (MonacoOutlineSymbolInformationNode.is(node) && node.parent) {
-                let widget = this.editorManager.all.find(editor => editor.editor.uri.toString() === node.uri);
-                if (!widget) {
-                    widget = await this.editorManager.open(new URI(node.uri));
-                }
-                widget.editor.selection = node.range;
-                widget.editor.revealRange(node.range);
+                const uri = new URI(node.uri);
+                await this.editorManager.open(uri, {
+                    reveal: true,
+                    activate: false,
+                    selection: node.range
+                });
             }
         });
 

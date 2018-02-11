@@ -48,15 +48,21 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
 
     protected readonly onActiveChangedEmitter = new Emitter<W | undefined>();
     /**
-     * Emit when the active widget changed.
+     * Emit when the active widget is changed.
      */
     readonly onActiveChanged: Event<W | undefined> = this.onActiveChangedEmitter.event;
 
     protected readonly onCurrentChangedEmitter = new Emitter<W | undefined>();
     /**
-     * Emit when the current widget changed.
+     * Emit when the current widget is changed.
      */
     readonly onCurrentChanged: Event<W | undefined> = this.onCurrentChangedEmitter.event;
+
+    protected readonly onCreatedEmitter = new Emitter<W>();
+    /**
+     * Emit when a new widget is created.
+     */
+    readonly onCreated: Event<W> = this.onCreatedEmitter.event;
 
     @postConstruct()
     protected init(): void {
@@ -70,10 +76,15 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
                 this.onCurrentChangedEmitter.fire(this.current);
             }
         });
+        this.widgetManager.onDidCreateWidget(({ factoryId, widget }) => {
+            if (factoryId === this.id && widget instanceof this.widgetConstructor) {
+                this.onCreatedEmitter.fire(widget as W);
+            }
+        });
     }
 
     /**
-     * The widget opeh handler id.
+     * The widget open handler id.
      *
      * #### Implementation
      * - A widget factory for this id should be registered.
@@ -107,8 +118,9 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
         }
     }
 
+    protected readonly defaultPriority = 100;
     canHandle(uri: URI, options?: WidgetOpenerOptions): MaybePromise<number> {
-        return 100;
+        return this.defaultPriority;
     }
 
     /**
@@ -134,6 +146,18 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
         } else if (op.reveal) {
             this.shell.revealWidget(widget.id);
         }
+    }
+
+    /**
+     * Return an opened widget for the given uri.
+     */
+    getByUri(uri: URI): Promise<W | undefined> {
+        return this.getWidget(uri);
+    }
+
+    protected getWidget(uri: URI, options?: WidgetOpenerOptions): Promise<W | undefined> {
+        const widgetOptions = this.createWidgetOptions(uri, options);
+        return this.widgetManager.getWidget(this.id, widgetOptions) as Promise<W | undefined>;
     }
 
     protected getOrCreateWidget(uri: URI, options?: WidgetOpenerOptions): Promise<W> {
