@@ -17,7 +17,7 @@ export class ExtensionDetailWidget extends VirtualWidget {
     ) {
         super();
         this.addClass('theia-extension-detail');
-
+        this.node.tabIndex = 0;
         resolvedExtension.onDidChange(change => {
             if (change.name === this.resolvedExtension.name) {
                 this.update();
@@ -28,6 +28,7 @@ export class ExtensionDetailWidget extends VirtualWidget {
 
     onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
+        this.node.focus();
         this.update();
     }
 
@@ -93,9 +94,9 @@ export class ExtensionDetailWidget extends VirtualWidget {
 
         buttonArr.push(h.div({
             className: 'extensionButton' +
-            (extension.busy ? ' working' : '') + ' ' +
-            (extension.installed && !extension.busy ? ' installed' : '') + ' ' +
-            (extension.outdated && !extension.busy ? ' outdated' : ''),
+                (extension.busy ? ' working' : '') + ' ' +
+                (extension.installed && !extension.busy ? ' installed' : '') + ' ' +
+                (extension.outdated && !extension.busy ? ' outdated' : ''),
             onclick: event => {
                 if (!extension.busy) {
                     if (extension.installed) {
