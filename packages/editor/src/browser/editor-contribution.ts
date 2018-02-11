@@ -46,14 +46,14 @@ export class EditorContribution implements FrontendApplicationContribution {
                 this.toDispose.push(widget.editor.onCursorPositionChanged(position => {
                     this.setCursorPositionStatus(position);
                 }));
-            } else if (this.editorManager.all.length === 0) {
+            } else {
                 this.statusBar.removeElement('editor-status-language');
                 this.statusBar.removeElement('editor-status-cursor-position');
             }
         });
     }
 
-    protected setCursorPositionStatus(position: Position) {
+    protected setCursorPositionStatus(position: Position): void {
         this.statusBar.setElement('editor-status-cursor-position', {
             text: `Ln ${position.line + 1}, Col ${position.character + 1}`,
             alignment: StatusBarAlignment.RIGHT,
