@@ -10,7 +10,7 @@
 import { inject, postConstruct, injectable } from "inversify";
 import URI from "../common/uri";
 import { MaybePromise, Emitter, Event } from "../common";
-import { BaseWidget } from "./widgets";
+import { BaseWidget, Widget } from "./widgets";
 import { ApplicationShell } from "./shell";
 import { OpenHandler, OpenerOptions } from "./opener-service";
 import { WidgetManager } from "./widget-manager";
@@ -66,16 +66,8 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
 
     @postConstruct()
     protected init(): void {
-        this.shell.activeChanged.connect((_, arg) => {
-            if (arg.newValue instanceof this.widgetConstructor || arg.oldValue instanceof this.widgetConstructor) {
-                this.onActiveChangedEmitter.fire(this.current);
-            }
-        });
-        this.shell.currentChanged.connect((_, arg) => {
-            if (arg.newValue instanceof this.widgetConstructor || arg.oldValue instanceof this.widgetConstructor) {
-                this.onCurrentChangedEmitter.fire(this.current);
-            }
-        });
+        this.shell.activeChanged.connect((_, arg) => this.updateActive(arg.newValue));
+        this.shell.currentChanged.connect((_, arg) => this.updateCurrent(arg.newValue));
         this.widgetManager.onDidCreateWidget(({ factoryId, widget }) => {
             if (factoryId === this.id && widget instanceof this.widgetConstructor) {
                 this.onCreatedEmitter.fire(widget as W);
@@ -101,20 +93,36 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
         return this.widgetManager.getWidgets(this.id) as W[];
     }
 
+    protected _active: W | undefined;
+    /**
+     * The active widget.
+     */
     get active(): W | undefined {
-        const widget = this.shell.activeWidget;
-        if (widget instanceof this.widgetConstructor) {
-            return widget as W;
+        return this._active;
+    }
+    protected updateActive(widget: Widget | null): void {
+        const active = widget instanceof this.widgetConstructor ? widget as W : undefined;
+        if (this._active !== active) {
+            this._active = active;
+            this.onActiveChangedEmitter.fire(this._active);
         }
     }
 
+    protected _current: W | undefined;
     /**
      * The most recently activated widget.
      */
     get current(): W | undefined {
-        const widget = this.shell.currentWidget;
+        return this._current;
+    }
+    protected updateCurrent(widget: Widget | null): void {
+        let current = this._current && !this._current.isDisposed ? this._current : undefined;
         if (widget instanceof this.widgetConstructor) {
-            return widget as W;
+            current = widget as W;
+        }
+        if (this._current !== current) {
+            this._current = current;
+            this.onCurrentChangedEmitter.fire(this._current);
         }
     }
 

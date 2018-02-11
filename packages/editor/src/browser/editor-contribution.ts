@@ -29,34 +29,31 @@ export class EditorContribution implements FrontendApplicationContribution {
     }
 
     protected async addStatusBarWidgets() {
-        this.editorManager.onCurrentChanged(async e => {
-            if (e) {
-                const langId = e.editor.document.languageId;
-                const languages = this.languages.languages;
-                let languageName: string = '';
-                if (languages) {
-                    const language = languages.find(l => l.id === langId);
-                    languageName = language ? language.name : '';
-                }
+        this.editorManager.onCurrentChanged(async current => {
+            if (current) {
+                const languageId = current.editor.document.languageId;
+                const languages = this.languages.languages || [];
+                const language = languages.find(l => l.id === languageId);
+                const languageName = language ? language.name : '';
                 this.statusBar.setElement('editor-status-language', {
                     text: languageName,
                     alignment: StatusBarAlignment.RIGHT,
                     priority: 1
                 });
 
-                this.setCursorPositionStatus(e.editor.cursor);
+                this.setCursorPositionStatus(current.editor.cursor);
                 this.toDispose.dispose();
-                this.toDispose.push(e.editor.onCursorPositionChanged(position => {
+                this.toDispose.push(current.editor.onCursorPositionChanged(position => {
                     this.setCursorPositionStatus(position);
                 }));
-            } else if (this.editorManager.all.length === 0) {
+            } else {
                 this.statusBar.removeElement('editor-status-language');
                 this.statusBar.removeElement('editor-status-cursor-position');
             }
         });
     }
 
-    protected setCursorPositionStatus(position: Position) {
+    protected setCursorPositionStatus(position: Position): void {
         this.statusBar.setElement('editor-status-cursor-position', {
             text: `Ln ${position.line + 1}, Col ${position.character + 1}`,
             alignment: StatusBarAlignment.RIGHT,
