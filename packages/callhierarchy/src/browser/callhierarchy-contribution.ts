@@ -6,8 +6,8 @@
  */
 
 import { injectable, inject } from "inversify";
-import { MenuModelRegistry, Command, CommandRegistry, KeybindingRegistry } from "@theia/core/lib/common";
-import { AbstractViewContribution, OpenViewArguments } from '@theia/core/lib/browser';
+import { MenuModelRegistry, Command, CommandRegistry } from "@theia/core/lib/common";
+import { AbstractViewContribution, OpenViewArguments, KeybindingRegistry } from '@theia/core/lib/browser';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { CallHierarchyTreeWidget } from './callhierarchy-tree/callhierarchy-tree-widget';
 import { CALLHIERARCHY_ID } from './callhierarchy';
