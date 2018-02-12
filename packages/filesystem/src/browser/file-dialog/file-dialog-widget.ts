@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from "inversify";
-import { ContextMenuRenderer, TreeProps } from "@theia/core/lib/browser";
+import { ContextMenuRenderer, TreeProps, TreeDecoratorService } from "@theia/core/lib/browser";
 import { FileTreeWidget } from "../file-tree";
 import { FileDialogModel } from "./file-dialog-model";
 
@@ -18,9 +18,10 @@ export class FileDialogWidget extends FileTreeWidget {
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
         @inject(FileDialogModel) readonly model: FileDialogModel,
-        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
+        @inject(TreeDecoratorService) protected readonly decoratorService: TreeDecoratorService
     ) {
-        super(props, model, contextMenuRenderer);
+        super(props, model, contextMenuRenderer, decoratorService);
         this.addClass(FILE_DIALOG_CLASS);
     }
 

@@ -6,12 +6,14 @@
  */
 
 import { Container, interfaces } from 'inversify';
-import { ITree, ITreeModel, TreeProps, defaultTreeProps } from "@theia/core/lib/browser";
+import { ITree, ITreeModel, TreeProps, defaultTreeProps, TreeDecorator, TreeDecoratorService } from "@theia/core/lib/browser";
 import { createFileTreeContainer, FileTree, FileTreeModel, FileTreeWidget, FileTreeServices } from '@theia/filesystem/lib/browser';
+import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { FileNavigatorTree } from "./navigator-tree";
 import { FileNavigatorModel, FileNavigatorServices } from "./navigator-model";
 import { FileNavigatorWidget } from "./navigator-widget";
 import { NAVIGATOR_CONTEXT_MENU } from "./navigator-menu";
+import { NavigatorDecoratorService } from './navigator-decorator-service';
 
 export const FILE_NAVIGATOR_PROPS = <TreeProps>{
     ...defaultTreeProps,
@@ -36,6 +38,10 @@ export function createFileNavigatorContainer(parent: interfaces.Container): Cont
     child.bind(FileNavigatorWidget).toSelf();
 
     child.rebind(TreeProps).toConstantValue(FILE_NAVIGATOR_PROPS);
+
+    child.bind(NavigatorDecoratorService).toSelf().inSingletonScope();
+    child.rebind(TreeDecoratorService).toDynamicValue(ctx => ctx.container.get(NavigatorDecoratorService)).inSingletonScope();
+    bindContributionProvider(child, TreeDecorator);
 
     return child;
 }

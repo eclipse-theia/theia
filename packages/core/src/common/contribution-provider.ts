@@ -39,8 +39,16 @@ class ContainerBasedContributionProvider<T extends object> implements Contributi
     }
 }
 
-export function bindContributionProvider(bind: interfaces.Bind, id: symbol): void {
-    bind(ContributionProvider)
+export type Bindable = interfaces.Bind | interfaces.Container;
+export namespace Bindable {
+    export function isContainer(arg: Bindable): arg is interfaces.Container {
+        return 'guid' in arg;
+    }
+}
+
+export function bindContributionProvider(bindable: Bindable, id: symbol): void {
+    const bindingToSyntax = (Bindable.isContainer(bindable) ? bindable.bind(ContributionProvider) : bindable(ContributionProvider));
+    bindingToSyntax
         .toDynamicValue(ctx => new ContainerBasedContributionProvider(id, ctx.container))
         .inSingletonScope().whenTargetNamed(id);
 }
