@@ -2190,6 +2190,10 @@ domhandler@^2.3.0:
   dependencies:
     domelementtype "1"
 
+"domterm@git+https://git@github.com/PerBothner/DomTerm.git":
+  version "0.96.0"
+  resolved "git+https://git@github.com/PerBothner/DomTerm.git#bb4ee14af9fc39e42aebeb2bd646430a3efab8db"
+
 domutils@^1.5.1:
   version "1.6.2"
   resolved "https://registry.yarnpkg.com/domutils/-/domutils-1.6.2.tgz#1958cc0b4c9426e9ed367fb1c8e854891b0fa3ff"

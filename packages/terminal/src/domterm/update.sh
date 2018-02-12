@@ -1,4 +1,5 @@
-DOMTERM_CLONE_DIR=${DOMTERM_CLONE_DIR-`pwd`/domterm-git}
+# DOMTERM_CLONE_DIR=${DOMTERM_CLONE_DIR-`pwd`/domterm-git}
+DOMTERM_CLONE_DIR=`pwd`/../../../../node_modules/domterm
 DOMVERSION_LOCAL_DIR="."
 
 TMP_VERSION=$DOMVERSION_LOCAL_DIR/domterm-version.js
@@ -6,7 +7,7 @@ FILES_TO_COPY="domterm-core.css domterm-default.css domterm-standard.css  Resize
 
 if test -d $DOMTERM_CLONE_DIR
 then
-    (cd $DOMTERM_CLONE_DIR && git pull)
+     (cd $DOMTERM_CLONE_DIR && test -d .git && git pull)
 else
     git clone https://github.com/PerBothner/DomTerm.git $DOMTERM_CLONE_DIR
 fi
