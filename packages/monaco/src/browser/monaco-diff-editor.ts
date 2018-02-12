@@ -8,22 +8,25 @@
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
-import { Dimension, EditorDecorationsService, SetDecorationParams } from '@theia/editor/lib/browser';
+import { Dimension, EditorDecorationsService, SetDecorationParams, DiffNavigator } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
+import { MonacoDiffNavigatorFactory } from './monaco-diff-nagivator-factory';
 
 import IStandaloneDiffEditor = monaco.editor.IStandaloneDiffEditor;
 import IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor;
 import IDiffEditorConstructionOptions = monaco.editor.IDiffEditorConstructionOptions;
+import IDiffNavigatorOptions = monaco.editor.IDiffNavigatorOptions;
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 
 export namespace MonacoDiffEditor {
-    export interface IOptions extends MonacoEditor.ICommonOptions, IDiffEditorConstructionOptions {
+    export interface IOptions extends MonacoEditor.ICommonOptions, IDiffEditorConstructionOptions, IDiffNavigatorOptions {
     }
 }
 
 export class MonacoDiffEditor extends MonacoEditor {
     protected _diffEditor: IStandaloneDiffEditor;
+    protected _diffNavigator: DiffNavigator;
 
     constructor(
         readonly uri: URI,
@@ -33,6 +36,7 @@ export class MonacoDiffEditor extends MonacoEditor {
         protected readonly m2p: MonacoToProtocolConverter,
         protected readonly p2m: ProtocolToMonacoConverter,
         protected readonly decorationsService: EditorDecorationsService,
+        protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory,
         options?: MonacoDiffEditor.IOptions,
         override?: IEditorOverrideServices,
     ) {
@@ -41,14 +45,19 @@ export class MonacoDiffEditor extends MonacoEditor {
         const original = originalModel.textEditorModel;
         const modified = modifiedModel.textEditorModel;
         this._diffEditor.setModel({ original, modified });
+        this._diffNavigator = diffNavigatorFactory.createdDiffNavigator(this._diffEditor, options);
     }
 
     get diffEditor(): IStandaloneDiffEditor {
         return this._diffEditor;
     }
 
+    get diffNavigator(): DiffNavigator {
+        return this._diffNavigator;
+    }
+
     protected create(options?: IDiffEditorConstructionOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {
-        this._diffEditor = monaco.editor.createDiffEditor(this.node, {
+        this._diffEditor = monaco.editor.createDiffEditor(this.node, <IDiffEditorConstructionOptions>{
             ...options,
             fixedOverflowWidgets: true
         });

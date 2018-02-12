@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -9,7 +9,7 @@ import { ContainerModule, decorate, injectable } from "inversify";
 import { MenuContribution, CommandContribution } from "@theia/core/lib/common";
 import { QuickOpenService, FrontendApplicationContribution, KeybindingContribution } from "@theia/core/lib/browser";
 import { Languages, Workspace } from "@theia/languages/lib/common";
-import { TextEditorProvider } from "@theia/editor/lib/browser";
+import { TextEditorProvider, DiffNavigatorProvider } from "@theia/editor/lib/browser";
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
 import { MonacoEditorProvider } from './monaco-editor-provider';
 import { MonacoEditorMenuContribution } from './monaco-menu';
@@ -24,6 +24,7 @@ import { MonacoOutlineContribution } from './monaco-outline-contribution';
 import { MonacoCommandService, MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
+import { MonacoDiffNavigatorFactory } from './monaco-diff-nagivator-factory';
 
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
@@ -50,6 +51,10 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoCommandServiceFactory).toAutoFactory(MonacoCommandService);
     bind(TextEditorProvider).toProvider(context =>
         uri => context.container.get(MonacoEditorProvider).get(uri)
+    );
+    bind(MonacoDiffNavigatorFactory).toSelf().inSingletonScope();
+    bind(DiffNavigatorProvider).toFactory(context =>
+        editor => context.container.get(MonacoEditorProvider).getDiffNavigator(editor)
     );
 
     bind(MonacoOutlineContribution).toSelf().inSingletonScope();

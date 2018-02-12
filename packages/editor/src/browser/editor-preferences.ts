@@ -299,6 +299,21 @@ export const editorPreferenceSchema: PreferenceSchema = {
             "type": "boolean",
             "description": "Render +/- indicators for added/deleted changes.",
             "default": true
+        },
+        "diffEditor.followsCaret": {
+            "type": "boolean",
+            "description": "Resets the navigator state when the user selects something in the editor.",
+            "default": true
+        },
+        "diffEditor.ignoreCharChanges": {
+            "type": "boolean",
+            "description": "Jump from line to line.",
+            "default": true
+        },
+        "diffEditor.alwaysRevealFirst": {
+            "type": "boolean",
+            "description": "Reveal first change.",
+            "default": true
         }
     }
 };
@@ -359,6 +374,9 @@ export interface EditorConfiguration {
     'diffEditor.renderSideBySide'?: boolean
     'diffEditor.ignoreTrimWhitespace'?: boolean
     'diffEditor.renderIndicators'?: boolean
+    'diffEditor.followsCaret'?: boolean
+    'diffEditor.ignoreCharChanges'?: boolean
+    'diffEditor.alwaysRevealFirst'?: boolean
 }
 export type EditorPreferenceChange = PreferenceChangeEvent<EditorConfiguration>;
 

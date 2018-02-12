@@ -7,6 +7,16 @@ declare module monaco.instantiation {
 
 declare module monaco.editor {
 
+    export interface IDiffNavigator {
+        readonly ranges: IDiffRange[];
+        readonly nextIdx: number;
+        _initIdx(fwd: boolean): void;
+    }
+
+    export interface IDiffRange {
+        readonly range: Range;
+    }
+
     export interface ICommonCodeEditor {
         readonly _codeEditorService: monaco.services.ICodeEditorService;
         readonly _commandService: monaco.commands.ICommandService;
