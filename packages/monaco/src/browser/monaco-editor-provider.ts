@@ -8,7 +8,7 @@
 // tslint:disable:no-any
 import { DisposableCollection } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { EditorPreferenceChange, EditorPreferences, EditorDecorationsService } from '@theia/editor/lib/browser';
+import { EditorPreferenceChange, EditorPreferences, EditorDecorationsService, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
 import { inject, injectable } from 'inversify';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
@@ -16,6 +16,7 @@ import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-lan
 import { MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoContextMenuService } from './monaco-context-menu';
 import { MonacoDiffEditor } from './monaco-diff-editor';
+import { MonacoDiffNavigatorFactory } from './monaco-diff-nagivator-factory';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditorService } from './monaco-editor-service';
@@ -48,6 +49,7 @@ export class MonacoEditorProvider {
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
         @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService,
         @inject(EditorDecorationsService) protected readonly decorationsService: EditorDecorationsService,
+        @inject(MonacoDiffNavigatorFactory) protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory,
     ) { }
 
     protected async getModel(uri: URI, toDispose: DisposableCollection): Promise<MonacoEditorModel> {
@@ -117,7 +119,15 @@ export class MonacoEditorProvider {
         const modifiedModel = await this.getModel(modified, toDispose);
 
         const options = this.createMonacoDiffEditorOptions(originalModel, modifiedModel);
-        const editor = new MonacoDiffEditor(uri, document.createElement('div'), originalModel, modifiedModel, this.m2p, this.p2m, this.decorationsService, options, override);
+        const editor = new MonacoDiffEditor(
+            uri,
+            document.createElement('div'),
+            originalModel, modifiedModel,
+            this.m2p, this.p2m,
+            this.decorationsService,
+            this.diffNavigatorFactory,
+            options,
+            override);
         toDispose.push(this.editorPreferences.onPreferenceChanged(event => this.updateMonacoDiffEditorOptions(editor, event)));
         return editor;
     }
@@ -182,6 +192,13 @@ export class MonacoEditorProvider {
                 }
             });
         };
+    }
+
+    getDiffNavigator(editor: TextEditor): DiffNavigator {
+        if (editor instanceof MonacoDiffEditor) {
+            return editor.diffNavigator;
+        }
+        return MonacoDiffNavigatorFactory.nullNavigator;
     }
 
 }
