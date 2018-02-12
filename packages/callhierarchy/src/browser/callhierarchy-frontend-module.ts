@@ -11,14 +11,14 @@ import { CallHierarchyService, CallHierarchyServiceProvider } from "./callhierar
 import { WidgetFactory, KeybindingContribution } from '@theia/core/lib/browser';
 import { CALLHIERARCHY_ID } from './callhierarchy';
 import { createHierarchyTreeWidget } from './callhierarchy-tree';
-import { ActiveEditorAccess } from './active-editor-access';
+import { CurrentEditorAccess } from './current-editor-access';
 
 import { ContainerModule } from "inversify";
 
 import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
-    bind(ActiveEditorAccess).toSelf().inSingletonScope();
+    bind(CurrentEditorAccess).toSelf().inSingletonScope();
 
     bindContributionProvider(bind, CallHierarchyService);
     bind(CallHierarchyServiceProvider).to(CallHierarchyServiceProvider).inSingletonScope();
