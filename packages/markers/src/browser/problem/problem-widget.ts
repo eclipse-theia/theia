@@ -78,16 +78,16 @@ export class ProblemWidget extends TreeWidget {
         return super.renderTree(model) || h.div({ className: 'noMarkers' }, 'No problems have been detected in the workspace so far.');
     }
 
-    protected decorateCaption(node: ITreeNode, caption: h.Child, props: NodeProps): h.Child {
+    protected renderCaption(node: ITreeNode, props: NodeProps): h.Child {
         if (MarkerInfoNode.is(node)) {
-            return super.decorateExpandableCaption(node, this.decorateMarkerFileNode(node, caption), props);
+            return this.decorateMarkerFileNode(node);
         } else if (MarkerNode.is(node)) {
-            return super.decorateCaption(node, this.decorateMarkerNode(node, caption), props);
+            return this.decorateMarkerNode(node);
         }
-        return h.div({}, 'caption');
+        return 'caption';
     }
 
-    protected decorateMarkerNode(node: MarkerNode, caption: h.Child): h.Child {
+    protected decorateMarkerNode(node: MarkerNode): h.Child {
         if (ProblemMarker.is(node.marker)) {
             let severityClass: string = '';
             const problemMarker = node.marker;
@@ -113,7 +113,7 @@ export class ProblemWidget extends TreeWidget {
         }
     }
 
-    protected decorateMarkerFileNode(node: MarkerInfoNode, caption: h.Child): h.Child {
+    protected decorateMarkerFileNode(node: MarkerInfoNode): h.Child {
         const filenameDiv = h.div({ className: (node.icon || '') + ' file-icon' }, node.name);
         const pathDiv = h.div({ className: 'path' }, node.description || '');
         const counterDiv = h.div({ className: 'counter' }, node.numberOfMarkers.toString());

@@ -9,7 +9,7 @@ import { injectable, inject } from "inversify";
 import { Message } from "@phosphor/messaging";
 import URI from "@theia/core/lib/common/uri";
 import { CommandService } from '@theia/core/lib/common/command';
-import { ContextMenuRenderer, TreeProps, ITreeModel, ITreeNode } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, TreeProps, ITreeModel, ITreeNode, TreeDecoratorService } from '@theia/core/lib/browser';
 import { FileTreeWidget, DirNode } from "@theia/filesystem/lib/browser";
 import { FileNavigatorModel } from "./navigator-model";
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-frontend-contribution';
@@ -36,9 +36,10 @@ export class FileNavigatorWidget extends FileTreeWidget {
         @inject(CommandService) protected readonly commandService: CommandService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(LabelProvider) protected readonly labelProvider: LabelProvider
+        @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
+        @inject(TreeDecoratorService) protected readonly decoratorService: TreeDecoratorService
     ) {
-        super(props, model, contextMenuRenderer);
+        super(props, model, contextMenuRenderer, decoratorService);
         this.id = FILE_NAVIGATOR_ID;
         this.title.label = LABEL;
         this.addClass(CLASS);

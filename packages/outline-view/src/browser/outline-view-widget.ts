@@ -14,12 +14,13 @@ import {
     TreeProps,
     ContextMenuRenderer,
     TreeModel,
-    IExpandableTreeNode
+    IExpandableTreeNode,
+    TreeDecoratorService
 } from "@theia/core/lib/browser";
 import { h } from "@phosphor/virtualdom/lib";
 import { Message } from '@phosphor/messaging';
 import { Emitter } from '@theia/core';
-import { ICompositeTreeNode, VirtualRenderer } from '@theia/core/lib/browser';
+import { ICompositeTreeNode } from '@theia/core/lib/browser';
 
 export interface OutlineSymbolInformationNode extends ICompositeTreeNode, ISelectableTreeNode, IExpandableTreeNode {
     iconClass: string;
@@ -42,9 +43,10 @@ export class OutlineViewWidget extends TreeWidget {
     constructor(
         @inject(TreeProps) protected readonly treeProps: TreeProps,
         @inject(TreeModel) model: TreeModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
+        @inject(TreeDecoratorService) protected readonly decoratorService: TreeDecoratorService
     ) {
-        super(treeProps, model, contextMenuRenderer);
+        super(treeProps, model, contextMenuRenderer, decoratorService);
 
         this.id = 'outline-view';
         this.title.label = 'Outline';
@@ -93,13 +95,11 @@ export class OutlineViewWidget extends TreeWidget {
         super.onUpdateRequest(msg);
     }
 
-    protected decorateCaption(node: ITreeNode, caption: h.Child, props: NodeProps): h.Child {
-        let newCaption = caption;
+    renderIcon(node: ITreeNode, props: NodeProps): h.Child {
         if (OutlineSymbolInformationNode.is(node)) {
-            const icon = h.span({ className: "symbol-icon " + node.iconClass });
-            newCaption = VirtualRenderer.merge(icon, caption);
+            return h.span({ className: "symbol-icon " + node.iconClass });
         }
-        return super.decorateCaption(node, newCaption, props);
+        return null;
     }
 
     protected isExpandable(node: ITreeNode): node is IExpandableTreeNode {

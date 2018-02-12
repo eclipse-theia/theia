@@ -104,7 +104,7 @@ export class TreeModel implements ITreeModel, SelectionProvider<Readonly<ISelect
         this.toDispose.push(this.selection.onSelectionChanged(() => this.fireChanged()));
 
         this.toDispose.push(this.expansion);
-        this.toDispose.push(this.expansion.onExpansionChanged((node) => {
+        this.toDispose.push(this.expansion.onExpansionChanged(node => {
             this.fireChanged();
             if (!node.expanded && ICompositeTreeNode.isAncestor(node, this.selectedNode)) {
                 this.selectNode(ISelectableTreeNode.isVisible(node) ? node : undefined);

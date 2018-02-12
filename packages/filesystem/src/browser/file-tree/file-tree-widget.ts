@@ -9,8 +9,8 @@ import { injectable, inject } from "inversify";
 import { h } from "@phosphor/virtualdom";
 import { Message } from "@phosphor/messaging";
 import {
-    ContextMenuRenderer, VirtualRenderer,
-    TreeWidget, NodeProps, TreeProps, ITreeNode
+    ContextMenuRenderer,
+    TreeWidget, NodeProps, TreeProps, ITreeNode, TreeDecoratorService
 } from "@theia/core/lib/browser";
 import { ElementAttrs } from "@phosphor/virtualdom";
 import { DirNode, FileStatNode } from "./file-tree";
@@ -30,9 +30,10 @@ export class FileTreeWidget extends TreeWidget {
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
         @inject(FileTreeModel) readonly model: FileTreeModel,
-        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
+        @inject(TreeDecoratorService) protected readonly decoratorService: TreeDecoratorService
     ) {
-        super(props, model, contextMenuRenderer);
+        super(props, model, contextMenuRenderer, decoratorService);
         this.addClass(FILE_TREE_CLASS);
         this.toDispose.push(this.toCancelNodeExpansion);
     }
@@ -48,18 +49,13 @@ export class FileTreeWidget extends TreeWidget {
         return classNames;
     }
 
-    protected decorateCaption(node: ITreeNode, caption: h.Child, props: NodeProps): h.Child {
+    renderIcon(node: ITreeNode, props: NodeProps): h.Child {
         if (FileStatNode.is(node)) {
-            return this.decorateFileStatCaption(node, caption, props);
+            return h.span({
+                className: (node.icon || '') + ' file-icon'
+            });
         }
-        return super.decorateCaption(node, caption, props);
-    }
-
-    protected decorateFileStatCaption(node: FileStatNode, caption: h.Child, props: NodeProps): h.Child {
-        const icon = h.span({
-            className: (node.icon || '') + ' file-icon'
-        });
-        return super.decorateCaption(node, VirtualRenderer.merge(icon, caption), props);
+        return null;
     }
 
     protected onAfterAttach(msg: Message): void {

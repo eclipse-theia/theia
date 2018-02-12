@@ -6,12 +6,13 @@
  */
 
 import { interfaces, Container } from 'inversify';
-import { TreeWidget, TreeProps, defaultTreeProps } from "./tree-widget";
-import { TreeModel, ITreeModel, TreeServices } from "./tree-model";
-import { Tree, ITree } from "./tree";
-import { ITreeSelectionService, TreeSelectionService } from "./tree-selection";
-import { ITreeExpansionService, TreeExpansionService } from "./tree-expansion";
+import { TreeWidget, TreeProps, defaultTreeProps } from './tree-widget';
+import { TreeModel, ITreeModel, TreeServices } from './tree-model';
+import { Tree, ITree } from './tree';
+import { ITreeSelectionService, TreeSelectionService } from './tree-selection';
+import { ITreeExpansionService, TreeExpansionService } from './tree-expansion';
 import { TreeNavigationService } from './tree-navigation';
+import { TreeDecoratorService, NoopTreeDecoratorService } from './tree-decorator';
 
 export function createTreeContainer(parent: interfaces.Container): Container {
     const child = new Container({ defaultScope: 'Singleton' });
@@ -34,5 +35,8 @@ export function createTreeContainer(parent: interfaces.Container): Container {
 
     child.bind(TreeWidget).toSelf();
     child.bind(TreeProps).toConstantValue(defaultTreeProps);
+
+    child.bind(NoopTreeDecoratorService).toSelf().inSingletonScope();
+    child.bind(TreeDecoratorService).toDynamicValue(ctx => ctx.container.get(NoopTreeDecoratorService)).inSingletonScope();
     return child;
 }
