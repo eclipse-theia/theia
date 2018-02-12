@@ -573,6 +573,25 @@ WcWidth.prototype.strWidthInContext = function(str, context) {
   return rv;
 };
 
+WcWidth.prototype.columnToIndexInContext = function(str, startIndex, column, context) {
+    var preferWide = this.ambiguousCharsAreWide(context);
+
+    var width, rv = 0;
+    for (var i = startIndex; ;) {
+	if (i >= str.length)
+	    return i;
+	var codePoint = str.codePointAt(i);
+	width = preferWide ? this.charWidthRegardAmbiguous(codePoint)
+            : this.charWidthDisregardAmbiguous(codePoint);
+	if (width < 0)
+	    return i;
+	if (rv + width > column)
+	    return i;
+	rv += width;
+	i += (codePoint <= 0xffff) ? 1 : 2;
+    }
+}
+
 /**
  * Get the substring at the given column offset of the given column width.
  *
@@ -582,25 +601,13 @@ WcWidth.prototype.strWidthInContext = function(str, context) {
  *
  * @return {string} The substring.
  */
-WcWidth.prototype.substr = function(str, start, opt_width) {
-  var startIndex, endIndex, width;
-
-  for (startIndex = 0, width = 0; startIndex < str.length; startIndex++) {
-    width += this.wcwidth(str.charCodeAt(startIndex));
-    if (width > start)
-      break;
-  }
-
-  if (opt_width != undefined) {
-    for (endIndex = startIndex, width = 0;
-         endIndex < str.length && width < opt_width; endIndex++)
-        width += this.wcwidth(str.charCodeAt(endIndex));
-    if (width > opt_width)
-      endIndex--;
-    return str.substring(startIndex, endIndex);
-  }
-
-  return str.substr(startIndex);
+WcWidth.prototype.substr = function(str, start, opt_width)
+{
+    var i = this.columnToIndexInContext(str, 0, start, null);
+    if (opt_width == undefined)
+	return str.substr(i);
+    var j = this.columnToIndexInContext(str, i, opt_width, null);
+    return str.substring(i, j);
 };
 
 /**

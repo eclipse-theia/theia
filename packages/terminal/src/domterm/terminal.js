@@ -595,6 +595,11 @@ DomTerm.SEEN_ESC_SS2 = 14;
 DomTerm.SEEN_ESC_SS3 = 15;
 DomTerm.SEEN_SURROGATE_HIGH = 16;
 
+// values for _widthMode field of lineStarts
+DomTerm._WIDTH_MODE_NORMAL = 0;
+DomTerm._WIDTH_MODE_TAB_SEEN = 1; // tab *or* pprint-node seen
+DomTerm._WIDTH_MODE_VARIABLE_SEEN = 2; // HTML or variable-width font
+
 // On older JS implementations use implementation of repeat from:
 // http://stackoverflow.com/questions/202605/repeat-string-javascript
 // Needed for Chrome 39.
@@ -850,11 +855,13 @@ DomTerm.prototype._restoreLineTables = function(startNode, startLine) {
                 }
                 if (hasData) {
                     start = cur;
+                    start._widthMode = DomTerm._WIDTH_MODE_NORMAL;
                     if (tag != "pre"
                         && (tag != "div"
                             || ! cur.classList.contains("domterm-pre"))) {
                         cur.classList.add("domterm-opaque");
                         descend = false;
+                        start._widthMode = DomTerm._WIDTH_MODE_VARIABLE_SEEN;
                     }
                     this.lineStarts[startLine] = start;
                     this.lineEnds[startLine] = null;
@@ -881,12 +888,14 @@ DomTerm.prototype._restoreLineTables = function(startNode, startLine) {
                             start = cur;
                         }
                     } else {
+                        start._widthMode = DomTerm._WIDTH_MODE_TAB_SEEN;
                         cur._needSectionEndNext = this._needSectionEndList;
                         this._needSectionEndList = cur;
                     }
                 } else if (cls == "wc-node") {
                     descend = false;
                 } else if (cls == "pprint-group") {
+                    start._widthMode = DomTerm._WIDTH_MODE_TAB_SEEN;
                     this._pushPprintGroup(cur);
                 }
             }
@@ -1073,6 +1082,8 @@ DomTerm.prototype.moveToAbs = function(goalAbsLine, goalColumn, addSpaceAsNeeded
             var next = this._createLineNode("hard", "\n");
             preNode.appendChild(next);
             this._setPendingSectionEnds(this.lineEnds[lineCount-1]);
+            preNode._widthMode = DomTerm._WIDTH_MODE_NORMAL;
+            preNode._widthColumns = 0;
             this.lineStarts[lineCount] = preNode;
             this.lineEnds[lineCount] = next;
             var nextLine = lineCount;
@@ -1831,6 +1842,8 @@ DomTerm.prototype._addBlankLines = function(count, absLine, parent, oldStart) {
         var newLine = this._createLineNode("hard", "\n");
         preNode.appendChild(newLine);
         parent.insertBefore(preNode, oldStart);
+        preNode._widthMode = DomTerm._WIDTH_MODE_NORMAL;
+        preNode._widthColumns = 0;
         this.lineStarts[absLine+i] = preNode;
         this.lineEnds[absLine+i] = newLine;
     }
@@ -2222,6 +2235,8 @@ DomTerm.prototype._initializeDomTerm = function(topNode) {
     var dt = this;
     this.attachResizeSensor();
     this.measureWindow();
+    // Should be zero - support for topNode.offsetLeft!=0 is broken
+    this._topLeft = dt.topNode.offsetLeft;
 
     this.topNode.addEventListener("mousedown", this._mouseEventHandler, true);
     this.topNode.addEventListener("mouseup", this._mouseEventHandler, true);
@@ -3466,6 +3481,16 @@ DomTerm.prototype._clearWrap = function(absLine=this.getAbsCursorLine()) {
         }
         // otherwise we have a non-standard line
         // Regardless, do:
+        var lineStart = this.lineStarts[absLine];
+        if (lineEnd._widthMode == DomTerm._WIDTH_MODE_NORMAL
+            && lineEnd._widthColumns !== undefined
+            && lineStart._widthColumns !== undefined) {
+            this.lineStart._widthColumns += lineEnd._widthColumns;
+        } else {
+            if (lineEnd._widthMode > lineStart._widthMode)
+                lineStart._widthMode = lineEnd._widthMode;
+            lineStart._widthColumns = undefined;
+        }
         lineEnd.setAttribute("line", "hard");
         lineEnd.removeAttribute("breaking");
         var child = lineEnd.firstChild;
@@ -3521,7 +3546,9 @@ DomTerm.prototype.deleteCharactersRight = function(count) {
     // Note that the traversal logic is similar to move.
     var current = this.outputBefore;
     var parent = this.outputContainer;
-    var lineEnd = this.lineEnds[this.getAbsCursorLine()];
+    var lineNo = this.getAbsCursorLine();
+    var lineEnd = this.lineEnds[lineNo];
+    var colNo = this.getCursorColumn();
     var previous = current == null ? parent.lastChild
         : current.previousSibling;
     var curColumn = -1;
@@ -3594,6 +3621,10 @@ DomTerm.prototype.deleteCharactersRight = function(count) {
     }
     this.outputBefore = previous != null ? previous.nextSibling
         : this.outputContainer.firstChild;
+    if (count < 0)
+	this.lineStarts[lineNo]._widthColumns = colNo;
+    else if (this.lineStarts[lineNo] !== undefined)
+	this.lineStarts[lineNo]._widthColumns -= count - todo;
     return todo <= 0;
 };
 
@@ -4856,6 +4887,7 @@ DomTerm.prototype._scrubAndInsertHTML = function(str) {
     var ok = 0;
     var i = 0;
     var startLine = this.getAbsCursorLine();
+    this.lineStarts[startLine]._widthMode = DomTerm._WIDTH_MODE_VARIABLE_SEEN;
     var activeTags = new Array();
     loop:
     for (;;) {
@@ -4869,8 +4901,10 @@ DomTerm.prototype._scrubAndInsertHTML = function(str) {
         case 12:
         case 13:
             if (activeTags.length == 0) {
-                this._unsafeInsertHTML(str.substring(start, i-1)); 
+                this._unsafeInsertHTML(str.substring(start, i-1));
                 this.cursorLineStart(1);
+                this.lineStarts[this.getAbsCursorLine()]._widthMode =
+                    DomTerm._WIDTH_MODE_VARIABLE_SEEN;
                 if (ch == 13 && i < len && str.charCodeAt(i) == 10)
                     i++;
                 start = i;
@@ -5260,6 +5294,7 @@ DomTerm.prototype.handleOperatingSystemControl = function(code, text) {
             this._restoreLineTables(this.topNode, 0);
             dt._restoreSaveLastLine();
             DomTerm._addMouseEnterHandlers(this);
+            dt._breakAllLines();
             var home_node; // FIXME
             var home_offset = -1;
             dt.homeLine = dt._computeHomeLine(home_node, home_offset,
@@ -5286,6 +5321,11 @@ DomTerm.prototype.handleOperatingSystemControl = function(code, text) {
             && this.outputContainer.classList.contains("term-style"))
             this._popStyleSpan();
         //this._adjustStyle();
+        {
+            let lineStart = this.lineStarts[this.getAbsCursorLine()];
+            if (lineStart._widthMode < DomTerm._WIDTH_MODE_TAB_SEEN)
+	        lineStart._widthMode = DomTerm._WIDTH_MODE_TAB_SEEN;
+        }
         var ppgroup = this._createSpanNode();
         ppgroup.setAttribute("class", "pprint-group");
         text = text.trim();
@@ -5361,6 +5401,11 @@ DomTerm.prototype.handleOperatingSystemControl = function(code, text) {
             } catch (e) {
                 this.log("bad line-break specifier '"+text+"' - caught "+e);
             }
+        }
+        {
+            let lineStart = this.lineStarts[this.getAbsCursorLine()];
+            if (lineStart._widthMode < DomTerm._WIDTH_MODE_TAB_SEEN)
+	        lineStart._widthMode = DomTerm._WIDTH_MODE_TAB_SEEN;
         }
         this.insertNode(line);
         if (this._needSectionEndList) {
@@ -5956,7 +6001,7 @@ DomTerm.prototype.insertString = function(str) {
             this.controlSequenceState = DomTerm.INITIAL_STATE;
             break;
         case DomTerm.INITIAL_STATE:
-            if (DomTerm.isDelimiter(ch)
+            if (DomTerm._doLinkify && DomTerm.isDelimiter(ch)
                 && this.linkify(str, prevEnd, i, columnWidth, ch)) {
                 prevEnd = i;
                 columnWidth = 0;
@@ -6023,7 +6068,16 @@ DomTerm.prototype.insertString = function(str) {
             case 9 /*'\t'*/:
                 this.insertSimpleOutput(str, prevEnd, i, columnWidth);
                 this._breakDeferredLines();
-                this.tabToNextStop(true);
+		{
+                    this.tabToNextStop(true);
+		    let lineStart = this.lineStarts[this.getAbsCursorLine()];
+		    if (lineStart._widthMode < DomTerm._WIDTH_MODE_TAB_SEEN)
+			lineStart._widthMode = DomTerm._WIDTH_MODE_TAB_SEEN;
+                    let col = this.getCursorColumn();
+		    if (lineStart._widthColumns !== undefined
+                        && col > lineStart._widthColumns)
+                        lineStart._widthColumns = col;
+		}
                 prevEnd = i + 1;  columnWidth = 0;
                 break;
             case 7 /*'\a'*/:
@@ -6160,13 +6214,16 @@ DomTerm.prototype._breakDeferredLines = function() {
     }
 };
 
+DomTerm._doLinkify = true;
+DomTerm._forceMeasureBreaks = false;
+
 DomTerm.prototype._breakAllLines = function(startLine = -1) {
     // The indentation array is a stack of the following:
     // - a <span> node containing pre-line prefixes; or
     // - an absolute x-position (in pixels)
     var indentation = new Array();
 
-    function addIndentation(dt, el) {
+    function addIndentation(dt, el, countColumns) {
         var n = indentation.length;
         var curPosition = 0;
         var goalPosition = 0;
@@ -6181,8 +6238,9 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
                 && goalPosition > curPosition) {
                 var span = dt._createSpanNode();
                 span.setAttribute("class", "pprint-indentation");
+                var left = goalPosition-curPosition;
                 span.setAttribute("style",
-                                  "padding-left: "+(goalPosition-curPosition)+"px");
+                                  "padding-left: "+left+"px");
                 el.insertBefore(span, insertPosition);
                 curPosition = goalPosition;
             }
@@ -6191,7 +6249,11 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
             if (indent instanceof Element) {
                 indent = indent.cloneNode(false);
                 el.insertBefore(indent, insertPosition);
-                curPosition = el.offsetLeft + el.offsetWidth;
+		if (countColumns)
+                    curPosition +=
+                        dt.strWidthInContext(el.textContent, el) * dt.charWidth;
+                else
+                    curPosition = el.offsetLeft + el.offsetWidth;
                 goalPosition = curPosition;
             }
             else
@@ -6228,32 +6290,46 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
         }
     };
 
-    function breakLine (dt, start, beforePos, availWidth) {
+    // Using two passes is an optimization, because mixing offsetLeft
+    // calls with DOM mutation is very expensive.
+    // (This is not an issue when countColums us true.)
+    //
+    // First pass - measure (call offsetLeft) but do not change DOM
+    function breakLine1 (dt, start, beforePos, availWidth, countColumns) {
         var pprintGroup = null; // FIXME if starting inside a group
 
-        // Using two passes is an optimization, because mixing offsetLeft
-        // calls with DOM mutation is very expensive.
-        var topLeft = dt.topNode.getBoundingClientRect().left;
-        for (var el = start.parentNode;
-             el != null && el.nodeName == "SPAN"; el = el.parentNode) {
-            // This is needed when we start with an existing soft break
-            var rects = el.getClientRects();
-            var nrects = rects.length;
-            if (nrects == 0) {
-                el.measureLeft = 0;
-                el.measureWidth = 0;
-            } else {
-                var measureLeft = rects[nrects-1].left;
-                el.measureLeft = measureLeft - topLeft;
-                el.measureWidth = rects[nrects-1].right - measureLeft;
+        if (! countColumns) {
+            for (var el = start.parentNode;
+                 el != null && el.nodeName == "SPAN"; el = el.parentNode) {
+                // This is needed when we start with an existing soft break
+                var rects = el.getClientRects();
+                var nrects = rects.length;
+                if (nrects == 0) {
+                    el.measureLeft = 0;
+                    el.measureWidth = 0;
+                } else {
+                    var measureLeft = rects[nrects-1].left;
+                    el.measureLeft = measureLeft - dt._topLeft;
+                    el.measureWidth = rects[nrects-1].right - measureLeft;
+                }
             }
         }
-        // First pass - measure (call offsetLeft) but do not change DOM
+        var beforeCol = dt._topLeft;
         for (var el = start; el != null; ) {
             var lineAttr;
             var skipChildren = false;
-            if (el instanceof Text || dt.isObjectElement(el)
-                || el.classList.contains("wc-node")) {
+            if (el instanceof Text) {
+                if (! countColumns)
+                    skipChildren = true;
+                else if (el.data == '\t')
+                    beforeCol = dt.nextTabCol(beforeCol);
+                else
+                    beforeCol += dt.strWidthInContext(el.data, el);
+            } else if (el.classList.contains("wc-node")) {
+	        if (countColumns)
+	            beforeCol += 2;
+                skipChildren = true;
+	    } else if (dt.isObjectElement(el)) {
                 skipChildren = true;
             } else if (el.nodeName == "SPAN"
                        && (lineAttr = el.getAttribute("line")) != null) {
@@ -6274,8 +6350,12 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
                 pprintGroup = el;
             }
             if (el instanceof Element) {
-                el.measureLeft = el.offsetLeft;
-                el.measureWidth = el.offsetWidth;
+                if (countColumns) {
+	            el.measureLeft = beforeCol * dt.charWidth;
+	        } else {
+                    el.measureLeft = el.offsetLeft;
+                    el.measureWidth = el.offsetWidth;
+	        }
             }
             if (el.firstChild != null && ! skipChildren)
                 el = el.firstChild;
@@ -6287,6 +6367,9 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
                         pprintGroup = pprintGroup.outerPprintGroup;
                     }
                     var next = el.nextSibling;
+                    if (countColumns && el instanceof Element)
+                        el.measureWidth =
+                            beforeCol * dt.charWidth - el.measureLeft;
                     if (next != null) {
                         el = next;
                         break;
@@ -6296,10 +6379,14 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
             }
         }
         var end = dt.lineEnds[line];
-        end.measureLeft = end.offsetLeft;
-        end.measureWidth = end.offsetWidth;
+        end.measureLeft =
+            countColumns ?  beforeCol * dt.charWidth : end.offsetLeft;
+        end.measureWidth = 0; // end.offsetWidth;
+    }
 
+    function breakLine2 (dt, start, beforePos, availWidth, countColumns) {
         // second pass - edit DOM, but don't look at offsetLeft
+        var pprintGroup = null; // FIXME if starting inside a group
         // beforePos is typically el.offsetLeft (if el is an element).
         var beforePos = 0;
         // startOffset is the difference (beforePos - beforeMeasure),
@@ -6329,43 +6416,45 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
                     var p = el instanceof Element ? el : el.parentNode;
                     afterMeasure = p.measureLeft+p.measureWidth;
                 }
+                var beforeMeasure = beforePos + startOffset;
+                measureWidth = afterMeasure - beforeMeasure;
                 var right = afterMeasure - startOffset;
                 if (right > availWidth) {
-                    var beforeMeasure = beforePos + startOffset;
                     var lineNode = dt._createLineNode("soft");
                     var indentWidth;
                     if (el instanceof Text) {
                         el.parentNode.insertBefore(lineNode, el.nextSibling);
                         var rest = dt._breakString(el, lineNode, beforePos,
-                                                   right, availWidth, didbreak);
+                                                   right, availWidth, didbreak,
+                                                   countColumns);
                         if (rest == "") {
-                            // It all "fit", after all.  Can happen in
+                            // It all "fits", after all.  Can happen in
                             // pathological cases when there isn't room for
                             // even a single character but didbreak forces
-                            // as to include one character on each line.
+                            // us to include one character on each line.
                             beforePos = right;
+                            el.parentNode.removeChild(lineNode);
                             break check_fits;
                         }
                         insertIntoLines(dt, lineNode);
                         el = lineNode;
-                        indentWidth = addIndentation(dt, el);
+                        indentWidth = addIndentation(dt, el, countColumns);
                         var oldWidth = afterMeasure - beforeMeasure;
-                        var beforeWidth = lineNode.offsetLeft;
                         rest = document.createTextNode(rest);
                         el.parentNode.insertBefore(rest, el.nextSibling);
                         next = rest;
                     } else { // dt.isObjectElement(el) or wc-node
                         insertIntoLines(dt, lineNode);
                         el.parentNode.insertBefore(lineNode, el);
-                        indentWidth = addIndentation(dt, lineNode);
+                        indentWidth = addIndentation(dt, lineNode, countColumns);
                     }
                     line++;
-                    beforeMeasure += lineNode.offsetLeft - beforePos;
+                    beforeMeasure +=
+                        (countColumns ? dt.numColumns : lineNode.offsetLeft)
+                        - beforePos;
                     beforePos = indentWidth;
                     startOffset = beforeMeasure - beforePos;
                     dobreak = true;
-                } else {
-                    beforePos = right;
                 }
             } else if (el.nodeName == "SPAN"
                        && (lineAttr = el.getAttribute("line")) != null) {
@@ -6396,13 +6485,14 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
                 }
                 if (dobreak) {
                     startOffset = el.measureLeft + el.measureWidth;
-                    var indentWidth = addIndentation(dt, el);
+                    var indentWidth = addIndentation(dt, el, countColumns);
                     startOffset -= indentWidth;
                     beforePos = indentWidth;
                     if (lineAttr != "hard") {
                         insertIntoLines(dt, el);
                         line++;
                     }
+                    measureWidth = 0;
                 }
                 sectionStartLine = line;
             } else if (el.classList.contains("pprint-indent")) {
@@ -6447,12 +6537,13 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
                 for (var g = pprintGroup; g != null; g = g.outerPprintGroup)
                     g.breakSeen = true;
             } else {
-                beforePos += measureWidth;
             }
             didbreak = dobreak;
             if (el.firstChild != null && ! skipChildren)
                 el = el.firstChild;
             else {
+                if (! didbreak)
+                    beforePos += measureWidth;
                 for (;;) {
                     if (el == null)
                         break;
@@ -6472,6 +6563,17 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
         }
     };
 
+    function breakNeeded(dt, lineNo, lineStart) {
+	var wmode = lineStart._widthMode;
+        if (! DomTerm._forceMeasureBreaks
+            && wmode < DomTerm._WIDTH_MODE_VARIABLE_SEEN
+            && lineStart._widthColumns !== undefined) {
+            return lineStart._widthColumns > dt.numColumns;
+        }
+	var end = dt.lineEnds[lineNo];
+	return end != null && end.offsetLeft > dt.availWidth;
+    }
+
     if (startLine < 0) {
         startLine = 0;
         if (this.usingAlternateScreenBuffer) {
@@ -6483,6 +6585,7 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
     }
 
     var delta = 0;
+    var prevLine = null;
     // First remove any existing soft line breaks.
     for (var line = startLine+1;  line < this.lineStarts.length;  line++) {
         var lineStart = this.lineStarts[line];
@@ -6514,10 +6617,17 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
                 lineStart.parentNode.removeChild(lineStart);
                 if (prev instanceof Text)
                     this._normalize1(prev);
+                if (prevLine) {
+                    if (prevLine._widthColumns)
+                        prevLine._widthColumns += lineStart._widthColumns;
+                    if (lineStart._widthMode > prevLine._widthMode)
+                        prevLine._widthMode = lineStart._widthMode;
+                }
             }
             // Remove "soft" "fill" "miser" "space" breaks from the line-table
             delta++;
-        }
+        } else
+	    prevLine = lineStart;
     }
     var changed = false;
     if (delta > 0) {
@@ -6534,9 +6644,9 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
         if (start.classList.contains("domterm-opaque"))
             continue;
         var end = this.lineEnds[line];
-        if (start.alwaysMeasureForBreak
-            || (end != null && end.offsetLeft > this.availWidth)) {
+        if (start.alwaysMeasureForBreak || breakNeeded(this, line, start)) {
             changed = true; // FIXME needlessly conservative
+            start.breakNeeded = true;
             var first;
             if (this.isBlockNode(start))
                 first = start.firstChild;
@@ -6545,9 +6655,29 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
                     start = start.parentNode;
                 first = start.nextSibling;
             }
-            breakLine(this, first, 0, this.availWidth);
+            var countColumns = ! DomTerm._forceMeasureBreaks
+                && start._widthMode < DomTerm._WIDTH_MODE_VARIABLE_SEEN;
+            breakLine1(this, first, 0, this.availWidth, countColumns);
         }
     }
+    for (var line = startLine;  line < this.lineStarts.length;  line++) {
+        var start = this.lineStarts[line];
+        if (start.breakNeeded) {
+            start.breakNeeded = false;
+            var first;
+            if (this.isBlockNode(start))
+                first = start.firstChild;
+            else {
+                while (start.nextSibling == null)
+                    start = start.parentNode;
+                first = start.nextSibling;
+            }
+            var countColumns = !DomTerm._forceMeasureBreaks
+                && start._widthMode < DomTerm._WIDTH_MODE_VARIABLE_SEEN;
+            breakLine2(this, first, 0, this.availWidth, countColumns);
+        }
+    }
+
     if (changed)
         this.resetCursorCache();
     if (this.lineStarts.length - this.homeLine > this.numRows) {
@@ -6560,7 +6690,7 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
     }
 }
 
-DomTerm.prototype._breakString = function(textNode, lineNode, beforePos, afterPos, availWidth, forceSomething) {
+DomTerm.prototype._breakString = function(textNode, lineNode, beforePos, afterPos, availWidth, forceSomething, countColumns) {
     var dt = this;
     var textData = textNode.data;
     var textLength = textData.length;
@@ -6572,7 +6702,13 @@ DomTerm.prototype._breakString = function(textNode, lineNode, beforePos, afterPo
     // Width in pixels corresponding to badLength:
     //var afterPos = right; // FIXME combine
     var badWidth = afterPos;
-    // Binary search for split point
+    if (countColumns) {
+        var col = Math.floor((availWidth-beforePos) / dt.charWidth);
+        goodLength = this.wcwidth.columnToIndexInContext(textData, 0, col,
+                                                         textNode);
+        badLength = 0;
+    }
+    // Binary search for split point (only if !countColumns)
     while (goodLength + 1 < badLength) {
         // instead of the midpoint between goodLength and badLength
         // we try to find the fraction of the string corresponding
@@ -6691,7 +6827,7 @@ DomTerm.prototype.insertSimpleOutput = function(str, beginIndex, endIndex,
             if (this.getCursorColumn() + widthInColumns <= this.numColumns)
                 break;
             var right = this.availWidth;
-            str = this._breakString(textNode, this.lineEnds[absLine], 0, right, this.availWidth, false);
+            str = this._breakString(textNode, this.lineEnds[absLine], 0, right, this.availWidth, false, false/*FIXME-countColumns*/);
             //current is after inserted textNode;
             var oldContainer = this.outputContainer;
             var oldLine = this.lineEnds[absLine];
@@ -6719,9 +6855,15 @@ DomTerm.prototype.insertSimpleOutput = function(str, beginIndex, endIndex,
         this._updateLinebreaksStart(absLine);
     }
     this.currentAbsLine = absLine;
-    this.currentCursorColumn =
-        this.currentCursorColumn < 0 || widthInColumns < 0 ? -1
-        : this.currentCursorColumn + widthInColumns;
+    let column = this.currentCursorColumn;
+    if (column >= 0)
+	this.currentCursorColumn = (column += widthInColumns);
+    else
+	column = this.getCursorColumn();
+    let lineStart = this.lineStarts[absLine];
+    if (lineStart._widthColumns !== undefined
+	&& lineStart._widthColumns < column)
+	lineStart._widthColumns = column;
 };
 
 DomTerm.prototype._updateLinebreaksStart = function(absLine) {
@@ -6733,6 +6875,7 @@ DomTerm.prototype._updateLinebreaksStart = function(absLine) {
     if (this._deferredLinebreaksStart < 0
         && (absLine == this.lineEnds.length - 1
             || (this.lineEnds[absLine] != null
+                // FIXME maybe use _widthColumns
                 && this.lineEnds[absLine].offsetLeft > this.availWidth)))
         this._deferredLinebreaksStart = absLine;
 }
@@ -7561,8 +7704,9 @@ DomTerm.prototype._checkTree = function() {
     var istart = 0;
     var iend = 0;
     var nlines = this.lineStarts.length;
-    if (this.currentAbsLine >= 0
-        && this.currentAbsLine >= nlines)
+    if ((typeof this.currentAbsLine != "number")
+       || (this.currentAbsLine >= 0
+           && this.currentAbsLine >= nlines))
         error("bad currentAbsLine");
     var isSavedSession = this.isSavedSession();
     if ((this.outputBefore
@@ -7734,7 +7878,7 @@ DomTerm.connectWS = function(name, wspath, wsprotocol, topNode=null) {
     wt.closeConnection = function() { wsocket.close(); };
     wt.processInputCharacters = function(str) { wsocket.send(str); };
     wsocket.onmessage = function(evt) {
-	DomTerm._handleOutputData(wt, evt.data);
+        DomTerm._handleOutputData(wt, evt.data);
     }
     wsocket.onopen = function(e) {
         wt.reportEvent("VERSION", DomTerm.versionInfo);
@@ -7766,15 +7910,30 @@ DomTerm.connectHttp = function(node, query=null) {
     DomTerm.connectWS(null, url, "domterm", node);
 }
 
-DomTerm.isDelimiter = function(ch) {
-    if (ch <= 32)
-        return true;
-    let str = '()<>[]{}`;|\'"';
-    for (let i = str.length; --i >= 0; )
-        if (str.charCodeAt(i) == ch)
-            return true;
-    return false;
-}
+DomTerm.isDelimiter = (function() {
+    let delimiterChars = '()<>[]{}`;|\'"';
+    let mask1 = 0; // mask for char values 32..63
+    let mask2 = 0; // mask for char values 64..95
+    let mask3 = 0; // mask for char values 96..127
+    for (let i = delimiterChars.length; --i >= 0; ) {
+	let ch = delimiterChars.charCodeAt(i);
+	if (ch >= 32 && ch < 64)
+	    mask1 |= 1 << (ch - 32);
+	else if (ch >= 64 && ch < 96)
+	    mask2 |= 1 << (ch - 64);
+	else if (ch >= 96 && ch < 128)
+	    mask3 |= 1 << (ch - 96);
+    }
+    return function(ch) {
+	if (ch < 64)
+	    return ch <= 32 ? true : (mask1 & (1 << (ch - 32))) != 0;
+	else if (ch < 128)
+	    return ch < 96 ? (mask2 & (1 << (ch - 64))) != 0
+	    : (mask3 & (1 << (ch - 96))) != 0;
+	else
+	    return false;
+    }
+})();
 
 DomTerm.prototype.linkify = function(str, start, end, columnWidth, delimiter) {
     function rindexDelimiter(str, start, end) {
@@ -7822,8 +7981,17 @@ DomTerm.prototype.linkify = function(str, start, end, columnWidth, delimiter) {
             }
             fragment = pfragment + fragment;
         }
-        if (previous == null && this.outputContainer.offsetLeft > 0)
-            return false;
+        if (previous == null) {
+            // Check if we're at start of line
+            // Roughly equivalue to: this.outputContainer.offsetLeft
+            // - but that causes expensive re-flow
+            for (let p = this.outputContainer; ! this.isBlockNode(p); ) {
+                let pp = p.parentNode;
+                if (pp.firstChild != p)
+                    return false;
+                p = pp;
+            }
+        }
     }
     let flength = fragment.length;
     if (flength <= 1)
