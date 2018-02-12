@@ -18,6 +18,7 @@ import * as https from 'https';
 import { isWindows } from '@theia/core/lib/common/os';
 import URI from "@theia/core/lib/common/uri";
 import { FileUri } from "@theia/core/lib/node";
+import { terminalsPath } from '@theia/terminal/lib/common/terminal-protocol';
 
 chai.use(chaiAsPromised);
 
@@ -75,7 +76,7 @@ describe('Task server / back-end', function () {
 
         // hook-up to terminal's ws and confirm that it outputs expected tasks' output
         const p = new Promise((resolve, reject) => {
-            const socket = new ws(`ws://localhost:${server.address().port}/services/terminals/${terminalId}`);
+            const socket = new ws(`ws://localhost:${server.address().port}${terminalsPath}/${terminalId}`);
             socket.on('message', msg => {
                 // check output of task on terminal is what we expect
                 const expected = `tasking... ${someString}`;
