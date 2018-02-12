@@ -256,7 +256,7 @@ Here we're creating a watcher, this is used to get notified about events
 from the backend by using the loggerWatcher client
 (loggerWatcher.getLoggerClient())
 
-See more information about how events works in theia [here](events).
+See more information about how events work in theia [here](#events).
 
 ``` typescript
         const connection = ctx.container.get(WebSocketConnectionProvider);
