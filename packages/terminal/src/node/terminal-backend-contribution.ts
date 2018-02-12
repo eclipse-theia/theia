@@ -13,6 +13,7 @@ import { ILogger } from "@theia/core/lib/common";
 import { TerminalProcess, ProcessManager, MultiRingBufferReadableStream } from "@theia/process/lib/node";
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { openSocket } from '@theia/core/lib/node';
+import { terminalsPath } from '../common/terminal-protocol';
 
 @injectable()
 export class TerminalBackendContribution implements BackendApplicationContribution {
@@ -27,7 +28,7 @@ export class TerminalBackendContribution implements BackendApplicationContributi
             server,
             matches: request => {
                 const uri = new URI(request.url!);
-                return uri.path.toString().startsWith('/services/terminals/');
+                return uri.path.toString().startsWith(`${terminalsPath}/`);
             }
         }, (ws, request) => {
             const uri = new URI(request.url!);
