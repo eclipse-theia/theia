@@ -285,9 +285,13 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         }
 
         // See comment in domterm-core.css.
+        // This extra div wrapper (compared to:
+        //     const outer = this.node;
+        // ) may be unneeded; more testing is needed. FIXME
         const outer = document.createElement("div");
         outer.setAttribute("style", "position:relative;width:100%;height:100%");
         this.node.appendChild(outer);
+
         const topNode = DomTerm.makeElement(outer, DomTerm.freshName());
         // this.term.topNode = topNode;
         this.registerResize();
