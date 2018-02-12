@@ -11,7 +11,7 @@ import { AbstractViewContribution, OpenViewArguments, KeybindingRegistry } from 
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { CallHierarchyTreeWidget } from './callhierarchy-tree/callhierarchy-tree-widget';
 import { CALLHIERARCHY_ID } from './callhierarchy';
-import { ActiveEditorAccess } from './active-editor-access';
+import { CurrentEditorAccess } from './current-editor-access';
 import { CallHierarchyServiceProvider } from "./callhierarchy-service";
 
 export const CALL_HIERARCHY_TOGGLE_COMMAND_ID = 'callhierachy:toggle';
@@ -27,7 +27,7 @@ export namespace CallHierarchyCommands {
 @injectable()
 export class CallHierarchyContribution extends AbstractViewContribution<CallHierarchyTreeWidget> {
 
-    @inject(ActiveEditorAccess) protected readonly editorAccess: ActiveEditorAccess;
+    @inject(CurrentEditorAccess) protected readonly editorAccess: CurrentEditorAccess;
     @inject(CallHierarchyServiceProvider) protected readonly callHierarchyServiceProvider: CallHierarchyServiceProvider;
     constructor() {
         super({

@@ -10,12 +10,12 @@ import { EditorManager, TextEditor } from '@theia/editor/lib/browser';
 import { Location } from 'vscode-languageserver-types';
 
 @injectable()
-export class ActiveEditorAccess {
+export class CurrentEditorAccess {
 
     @inject(EditorManager) protected readonly editorManager: EditorManager;
 
     getSelection(): Location | undefined {
-        const activeEditor = this.getActiveEditor();
+        const activeEditor = this.getCurrentEditor();
         if (!activeEditor) {
             return;
         }
@@ -25,15 +25,15 @@ export class ActiveEditorAccess {
     }
 
     getLanguageId(): string | undefined {
-        const activeEditor = this.getActiveEditor();
+        const activeEditor = this.getCurrentEditor();
         if (!activeEditor) {
             return;
         }
         return activeEditor.document.languageId;
     }
 
-    protected getActiveEditor(): TextEditor | undefined {
-        const activeEditor = this.editorManager.activeEditor;
+    protected getCurrentEditor(): TextEditor | undefined {
+        const activeEditor = this.editorManager.currentEditor;
         if (activeEditor) {
             return activeEditor.editor;
         }
