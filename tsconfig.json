@@ -72,6 +72,9 @@
       "@theia/messages/lib/*": [
         "packages/messages/src/*"
       ],
+      "@theia/merge-conflicts/lib/*": [
+        "packages/merge-conflicts/src/*"
+      ],
       "@theia/output/lib/*": [
         "packages/output/src/*"
       ],
