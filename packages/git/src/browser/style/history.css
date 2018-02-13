@@ -50,16 +50,6 @@
     color: var(--theia-ui-expand-button-font-color);
 }
 
-.theia-git:focus .commitListElement .containerHead.theia-mod-selected,
-.theia-git:focus .commitListElement .commitBody .gitItem.theia-mod-selected{
-    background: var(--theia-accent-color3);
-}
-
-.theia-git .commitListElement .containerHead.theia-mod-selected,
-.theia-git .commitListElement .commitBody .gitItem.theia-mod-selected{
-    background: var(--theia-accent-color5);
-}
-
 .theia-git .commitBody {
     padding-bottom: 10px;
 }

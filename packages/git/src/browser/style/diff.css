@@ -40,3 +40,15 @@
     background-color: inherit !important;
     cursor: inherit !important;
 }
+
+.theia-git .lrBtns {
+    display:flex;
+    align-items: center;
+    margin-right: 2px;
+}
+
+.theia-git .lrBtns span {
+    display: inline-block;
+    margin-left: 10px;
+    cursor: pointer;
+}

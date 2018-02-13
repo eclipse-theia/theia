@@ -9,31 +9,32 @@ import { injectable, inject } from "inversify";
 import { h } from "@phosphor/virtualdom";
 import { GIT_DIFF } from "./git-diff-contribution";
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
-import { VirtualRenderer, open, OpenerService, StatefulWidget } from "@theia/core/lib/browser";
-import { GitRepositoryProvider } from '../git-repository-provider';
+import { VirtualRenderer, open, OpenerService, StatefulWidget, SELECTED_CLASS } from "@theia/core/lib/browser";
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import URI from "@theia/core/lib/common/uri";
 import { GitFileChange, GitFileStatus, Git } from '../../common';
-import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { GitBaseWidget } from "../git-base-widget";
-import { GitFileChangeNode } from "../git-widget";
+import { GitBaseWidget, GitFileChangeNode } from "../git-base-widget";
+import { DiffNavigatorProvider, DiffNavigator } from "@theia/editor/lib/browser/diff-navigator";
+import { EditorManager } from "@theia/editor/lib/browser";
 
 @injectable()
-export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
+export class GitDiffWidget extends GitBaseWidget<GitFileChangeNode> implements StatefulWidget {
 
     protected fileChangeNodes: GitFileChangeNode[];
     protected options: Git.Options.Diff;
 
     constructor(
         @inject(Git) protected readonly git: Git,
-        @inject(GitRepositoryProvider) protected repositoryProvider: GitRepositoryProvider,
-        @inject(LabelProvider) protected labelProvider: LabelProvider,
-        @inject(OpenerService) protected openerService: OpenerService) {
-        super(repositoryProvider, labelProvider);
+        @inject(DiffNavigatorProvider) protected diffNavigatorProvider: DiffNavigatorProvider,
+        @inject(OpenerService) protected openerService: OpenerService,
+        @inject(EditorManager) protected editorManager: EditorManager) {
+        super();
         this.id = GIT_DIFF;
+        this.scrollContainer = "git-diff-list-container";
         this.title.label = "Diff";
 
         this.addClass('theia-git');
+
     }
 
     protected get toRevision() {
@@ -87,6 +88,7 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
     }
 
     protected render(): h.Child {
+        this.gitNodes = this.fileChangeNodes;
         const commitishBar = this.renderDiffListHeader();
         const fileChangeList = this.renderFileChangeList();
         return h.div({ className: "git-diff-container" }, VirtualRenderer.flatten([commitishBar, fileChangeList]));
@@ -114,8 +116,20 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
                 revision));
         }
         const header = h.div({ className: 'theia-header' }, 'Files changed');
+        const leftButton = h.span({
+            className: "fa fa-arrow-left",
+            title: "Previous Change",
+            onclick: () => this.handleLeft()
+        });
+        const rightButton = h.span({
+            className: "fa fa-arrow-right",
+            title: "Next Change",
+            onclick: () => this.handleRight()
+        });
+        const lrBtns = h.div({ className: 'lrBtns' }, leftButton, rightButton);
+        const headerRow = h.div({ className: 'header-row space-between' }, header, lrBtns);
 
-        return h.div({ className: "diff-header" }, ...elements, header);
+        return h.div({ className: "diff-header" }, ...elements, headerRow);
     }
 
     protected renderFileChangeList(): h.Child {
@@ -125,7 +139,7 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
             const fileChangeElement: h.Child = this.renderGitItem(fileChange);
             files.push(fileChangeElement);
         }
-        return h.div({ className: "listContainer" }, ...files);
+        return h.div({ className: "listContainer", id: this.scrollContainer }, ...files);
     }
 
     protected renderGitItem(change: GitFileChangeNode): h.Child {
@@ -136,40 +150,11 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
         elements.push(h.div({
             title: change.caption,
             className: 'noWrapInfo',
+            onclick: () => {
+                this.selectNode(change);
+            },
             ondblclick: () => {
-                const uri: URI = new URI(change.uri);
-
-                let fromURI = uri;
-                if (change.oldUri) { // set on renamed and copied
-                    fromURI = new URI(change.oldUri);
-                }
-                if (this.fromRevision !== undefined) {
-                    if (typeof this.fromRevision !== 'number') {
-                        fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.fromRevision);
-                    } else {
-                        fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + "~" + this.fromRevision);
-                    }
-                } else {
-                    // default is to compare with previous revision
-                    fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + "~1");
-                }
-
-                let toURI = uri;
-                if (this.toRevision) {
-                    toURI = toURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision);
-                }
-
-                let uriToOpen = uri;
-                if (change.status === GitFileStatus.Deleted) {
-                    uriToOpen = fromURI;
-                } else if (change.status === GitFileStatus.New) {
-                    uriToOpen = toURI;
-                } else {
-                    uriToOpen = DiffUris.encode(fromURI, toURI, uri.displayName);
-                }
-                open(this.openerService, uriToOpen).catch(e => {
-                    console.error(e);
-                });
+                this.openFile(change);
             }
         }, iconSpan, nameSpan, pathSpan));
         if (change.extraIconClassName) {
@@ -182,6 +167,99 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
             title: change.caption,
             className: 'status staged ' + GitFileStatus[change.status].toLowerCase()
         }, this.getStatusCaption(change.status, true).charAt(0)));
-        return h.div({ className: 'gitItem noselect' }, ...elements);
+        return h.div({ className: `gitItem noselect${change.selected ? ' ' + SELECTED_CLASS : ''}` }, ...elements);
+    }
+
+    protected handleRight(): void {
+        const selected = this.getSelected();
+        if (selected && GitFileChangeNode.is(selected)) {
+            const uri = this.getUriToOpen(selected);
+            this.editorManager.getByUri(uri).then(widget => {
+                if (widget) {
+                    const diffNavigator: DiffNavigator = this.diffNavigatorProvider(widget.editor);
+                    if (diffNavigator.canNavigate() && diffNavigator.hasNext()) {
+                        diffNavigator.next();
+                    } else {
+                        this.selectNextNode();
+                        this.openSelected();
+                    }
+                } else {
+                    this.openFile(selected);
+                }
+            });
+        } else if (this.gitNodes.length > 0) {
+            this.selectNode(this.gitNodes[0]);
+            this.openSelected();
+        }
+    }
+
+    protected handleLeft(): void {
+        const selected = this.getSelected();
+        if (GitFileChangeNode.is(selected)) {
+            const uri = this.getUriToOpen(selected);
+            this.editorManager.getByUri(uri).then(widget => {
+                if (widget) {
+                    const diffNavigator: DiffNavigator = this.diffNavigatorProvider(widget.editor);
+                    if (diffNavigator.canNavigate() && diffNavigator.hasPrevious()) {
+                        diffNavigator.previous();
+                    } else {
+                        this.selectPreviousNode();
+                        this.openSelected();
+                    }
+                } else {
+                    this.openFile(selected);
+                }
+            });
+        }
+    }
+
+    protected handleEnter(): void {
+        this.openSelected();
+    }
+
+    protected openSelected(): void {
+        const selected = this.getSelected();
+        if (selected) {
+            this.openFile(selected);
+        }
+    }
+
+    protected getUriToOpen(change: GitFileChange): URI {
+        const uri: URI = new URI(change.uri);
+
+        let fromURI = uri;
+        if (change.oldUri) { // set on renamed and copied
+            fromURI = new URI(change.oldUri);
+        }
+        if (this.fromRevision !== undefined) {
+            if (typeof this.fromRevision !== 'number') {
+                fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.fromRevision);
+            } else {
+                fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + "~" + this.fromRevision);
+            }
+        } else {
+            // default is to compare with previous revision
+            fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + "~1");
+        }
+
+        let toURI = uri;
+        if (this.toRevision) {
+            toURI = toURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision);
+        }
+
+        let uriToOpen = uri;
+        if (change.status === GitFileStatus.Deleted) {
+            uriToOpen = fromURI;
+        } else if (change.status === GitFileStatus.New) {
+            uriToOpen = toURI;
+        } else {
+            uriToOpen = DiffUris.encode(fromURI, toURI, uri.displayName);
+        }
+        return uriToOpen;
+    }
+
+    protected openFile(change: GitFileChange) {
+        const uriToOpen = this.getUriToOpen(change);
+        open(this.openerService, uriToOpen, { mode: 'reveal' });
     }
 }
