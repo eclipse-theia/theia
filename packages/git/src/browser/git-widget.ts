@@ -193,7 +193,7 @@ export class GitWidget extends GitBaseWidget {
         }, h.i({ className: 'fa fa-ellipsis-h' })) : '';
         const commandsContainer = h.div({ className: 'buttons' }, refresh, more);
         const commitButton = h.button({
-            className: 'button',
+            className: 'theia-button',
             title: 'Commit all the staged changes',
             onclick: () => commit()
         }, 'Commit');

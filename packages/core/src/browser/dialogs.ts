@@ -89,7 +89,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
 
     protected createButton(text: string): HTMLButtonElement {
         const button = document.createElement("button");
-        button.classList.add('button');
+        button.classList.add('theia-button');
         button.textContent = text;
         return button;
     }
