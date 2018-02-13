@@ -99,7 +99,8 @@ export enum CommitPlaceholders {
     AUTHOR_NAME = '%aN',
     AUTHOR_DATE = '%ad',
     AUTHOR_RELATIVE_DATE = '%ar',
-    SUBJECT = '%s'
+    SUBJECT = '%s',
+    BODY = '%b'
 }
 
 /**
@@ -116,7 +117,8 @@ export class CommitDetailsParser extends OutputParser<CommitWithChanges> {
         CommitPlaceholders.AUTHOR_NAME,
         CommitPlaceholders.AUTHOR_DATE,
         CommitPlaceholders.AUTHOR_RELATIVE_DATE,
-        CommitPlaceholders.SUBJECT];
+        CommitPlaceholders.SUBJECT,
+        CommitPlaceholders.BODY];
 
     @inject(NameStatusParser)
     protected readonly nameStatusParser: NameStatusParser;
@@ -125,7 +127,7 @@ export class CommitDetailsParser extends OutputParser<CommitWithChanges> {
         const chunks = this.split(input, delimiter);
         const changes: CommitWithChanges[] = [];
         for (const chunk of chunks) {
-            const [sha, email, name, timestamp, authorDateRelative, summary, rawChanges] = chunk.trim().split(CommitDetailsParser.ENTRY_DELIMITER);
+            const [sha, email, name, timestamp, authorDateRelative, summary, body, rawChanges] = chunk.trim().split(CommitDetailsParser.ENTRY_DELIMITER);
             const date = this.toDate(timestamp);
             const fileChanges = this.nameStatusParser.parse(repositoryUri, (rawChanges || '').trim());
             changes.push({
@@ -135,6 +137,7 @@ export class CommitDetailsParser extends OutputParser<CommitWithChanges> {
                 },
                 authorDateRelative,
                 summary,
+                body,
                 fileChanges
             });
         }

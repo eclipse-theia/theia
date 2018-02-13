@@ -9,7 +9,7 @@ import { CommandRegistry, Command, MenuModelRegistry, SelectionService, MessageS
 import { FrontendApplication, AbstractViewContribution } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { injectable, inject } from "inversify";
-import { GitDiffWidget } from './git-diff-widget';
+import { GitDiffWidget, GIT_DIFF } from './git-diff-widget';
 import { open, OpenerService } from "@theia/core/lib/browser";
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-menu';
 import { UriCommandHandler, FileSystemCommandHandler } from '@theia/workspace/lib/browser/workspace-commands';
@@ -25,8 +25,6 @@ export namespace GitDiffCommands {
         label: 'Compare with ...'
     };
 }
-
-export const GIT_DIFF = "git-diff";
 
 @injectable()
 export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget> {

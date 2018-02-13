@@ -14,6 +14,11 @@
     flex-direction: column;
 }
 
+.theia-git:focus {
+    outline: 0;
+    box-shadow: none;
+}
+
 #theia-gitContainer .flexcontainer {
     display: flex;
 }
