@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -18,7 +18,9 @@ import {
     TextEditorDocument,
     TextEditor,
     RevealRangeOptions,
-    RevealPositionOptions
+    RevealPositionOptions,
+    EditorDecorationsService,
+    SetDecorationParams,
 } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from "./monaco-editor-model";
 
@@ -49,6 +51,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         readonly node: HTMLElement,
         protected readonly m2p: MonacoToProtocolConverter,
         protected readonly p2m: ProtocolToMonacoConverter,
+        protected readonly decorationsService: EditorDecorationsService,
         options?: MonacoEditor.IOptions,
         override?: IEditorOverrideServices,
     ) {
@@ -57,6 +60,13 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         this.minHeight = options && options.minHeight !== undefined ? options.minHeight : -1;
         this.toDispose.push(this.create(options, override));
         this.addHandlers(this.editor);
+        this.registerDecorationTypes();
+    }
+
+    protected registerDecorationTypes(): void {
+        const decoarationTypes = this.decorationsService.getDecorationTypes();
+        const codeEditorService = this.editor._codeEditorService;
+        decoarationTypes.forEach(decoarationType => codeEditorService.registerDecorationType(decoarationType.type, decoarationType));
     }
 
     protected create(options?: IEditorConstructionOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {
@@ -302,6 +312,20 @@ export class MonacoEditor implements TextEditor, IEditorReference {
 
     get instantiationService(): monaco.instantiation.IInstantiationService {
         return this.editor._instantiationService;
+    }
+
+    get codeEditorService(): monaco.services.ICodeEditorService {
+        return this.editor._codeEditorService;
+    }
+
+    setDecorations(params: SetDecorationParams): void {
+        const options = params.options;
+        const type = params.type;
+        const decorationOptions = options.map(d => <monaco.editor.IDecorationOptions>{
+            ...d,
+            range: this.p2m.asRange(d.range)
+        });
+        this.editor.setDecorations(type, decorationOptions);
     }
 
 }
