@@ -12,16 +12,9 @@ import { OpenerService, open, StatefulWidget, SELECTED_CLASS } from "@theia/core
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import URI from "@theia/core/lib/common/uri";
 import { GIT_HISTORY, GIT_HISTORY_MAX_COUNT } from './git-history-contribution';
-import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { GitRepositoryProvider } from '../git-repository-provider';
 import { GitFileStatus, Git, GitFileChange } from '../../common';
-import { GitBaseWidget } from "../git-base-widget";
-import { GitFileChangeNode } from "../git-widget";
-import { SelectionService } from "@theia/core";
-import { Message } from "@phosphor/messaging";
-import { ElementExt } from "@phosphor/domutils";
+import { GitBaseWidget, GitFileChangeNode } from "../git-base-widget";
 import { FileSystem } from "@theia/filesystem/lib/common";
-import { Key } from "@theia/core/lib/browser/keys";
 
 export interface GitCommitNode {
     readonly authorName: string;
@@ -42,48 +35,24 @@ export namespace GitCommitNode {
     }
 }
 
-export enum SelectDirection {
-    NEXT, PREVIOUS
-}
-
 export type GitHistoryListNode = (GitCommitNode | GitFileChangeNode);
 
 @injectable()
-export class GitHistoryWidget extends GitBaseWidget implements StatefulWidget {
+export class GitHistoryWidget extends GitBaseWidget<GitHistoryListNode> implements StatefulWidget {
     protected options: Git.Options.Log;
     protected commits: GitCommitNode[];
-    protected historyList: GitHistoryListNode[];
     protected ready: boolean;
     protected singleFileMode: boolean;
 
     constructor(
-        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
-        @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
         @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(Git) protected readonly git: Git) {
-        super(repositoryProvider, labelProvider);
+        super();
         this.id = GIT_HISTORY;
+        this.scrollContainer = 'git-history-list-container';
         this.title.label = "Git History";
         this.addClass('theia-git');
-
-        this.node.tabIndex = 0;
-
-        selectionService.onSelectionChanged((c: GitHistoryListNode) => {
-            c.selected = true;
-            this.update();
-        });
-    }
-
-    protected onUpdateRequest(msg: Message): void {
-        super.onUpdateRequest(msg);
-
-        const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
-        const scrollArea = document.getElementById('git-history-list-container');
-        if (selected && scrollArea) {
-            ElementExt.scrollIntoViewIfNeeded(scrollArea, selected);
-        }
     }
 
     async setContent(options?: Git.Options.Log) {
@@ -135,9 +104,9 @@ export class GitHistoryWidget extends GitBaseWidget implements StatefulWidget {
                         });
                     }
                     this.commits.push(...commits);
-                    this.ready = true;
-                    this.update();
                 }
+                this.ready = true;
+                this.update();
                 const ll = this.node.getElementsByClassName('history-lazy-loading')[0];
                 if (ll && ll.className === "history-lazy-loading show") {
                     ll.className = "history-lazy-loading hide";
@@ -165,7 +134,7 @@ export class GitHistoryWidget extends GitBaseWidget implements StatefulWidget {
     }
 
     protected render(): h.Child {
-        this.historyList = [];
+        this.gitNodes = [];
         const containers = [];
         if (this.ready) {
             containers.push(this.renderHistoryHeader());
@@ -203,7 +172,7 @@ export class GitHistoryWidget extends GitBaseWidget implements StatefulWidget {
         const commitList = h.div({ className: "commitList" }, ...theList);
         return h.div({
             className: "listContainer",
-            id: "git-history-list-container",
+            id: this.scrollContainer,
             onscroll: e => {
                 const el = (e.srcElement as HTMLElement);
                 if (el.scrollTop + el.clientHeight > el.scrollHeight - 5) {
@@ -221,7 +190,7 @@ export class GitHistoryWidget extends GitBaseWidget implements StatefulWidget {
     }
 
     protected renderCommit(commit: GitCommitNode): h.Child {
-        this.historyList.push(commit);
+        this.gitNodes.push(commit);
         let expansionToggleIcon = "caret-right";
         if (commit && commit.expanded) {
             expansionToggleIcon = "caret-down";
@@ -273,7 +242,7 @@ export class GitHistoryWidget extends GitBaseWidget implements StatefulWidget {
 
     protected renderFileChangeList(fileChanges: GitFileChangeNode[], commitSha: string): h.Child {
 
-        this.historyList.push(...fileChanges);
+        this.gitNodes.push(...fileChanges);
 
         const files: h.Child[] = [];
 
@@ -313,15 +282,6 @@ export class GitHistoryWidget extends GitBaseWidget implements StatefulWidget {
         return h.div({ className: `gitItem noselect${change.selected ? ' ' + SELECTED_CLASS : ''}` }, ...elements);
     }
 
-    protected onAfterAttach(msg: Message): void {
-        super.onAfterAttach(msg);
-        this.addKeyListener(this.node, Key.ARROW_LEFT, () => this.handleLeft());
-        this.addKeyListener(this.node, Key.ARROW_RIGHT, () => this.handleRight());
-        this.addKeyListener(this.node, Key.ARROW_UP, () => this.handleUp());
-        this.addKeyListener(this.node, Key.ARROW_DOWN, () => this.handleDown());
-        this.addKeyListener(this.node, Key.ENTER, () => this.handleEnter());
-    }
-
     protected handleLeft(): void {
         const selected = this.getSelected();
         if (selected) {
@@ -347,18 +307,10 @@ export class GitHistoryWidget extends GitBaseWidget implements StatefulWidget {
             if (GitCommitNode.is(selected) && !selected.expanded && !this.singleFileMode) {
                 selected.expanded = true;
             } else {
-                this.selectNodeByDirection(SelectDirection.NEXT);
+                this.selectNextNode();
             }
         }
         this.update();
-    }
-
-    protected handleUp(): void {
-        this.selectNodeByDirection(SelectDirection.PREVIOUS);
-    }
-
-    protected handleDown(): void {
-        this.selectNodeByDirection(SelectDirection.NEXT);
     }
 
     protected handleEnter(): void {
@@ -377,34 +329,6 @@ export class GitHistoryWidget extends GitBaseWidget implements StatefulWidget {
         this.update();
     }
 
-    protected onActivateRequest(msg: Message): void {
-        super.onActivateRequest(msg);
-        this.node.focus();
-    }
-
-    protected getSelected(): GitHistoryListNode | undefined {
-        return this.historyList ? this.historyList.find(c => c.selected || false) : undefined;
-    }
-
-    protected selectNode(node: GitHistoryListNode) {
-        const n = this.getSelected();
-        if (n) {
-            n.selected = false;
-        }
-        this.selectionService.selection = node;
-    }
-
-    protected selectNodeByDirection(dir: SelectDirection) {
-        const selIdx = this.historyList.findIndex(c => c.selected || false);
-        let nodeIdx = selIdx;
-        if (dir === SelectDirection.NEXT && selIdx < this.historyList.length - 1) {
-            nodeIdx = selIdx + 1;
-        } else if (dir === SelectDirection.PREVIOUS && selIdx > 0) {
-            nodeIdx = selIdx - 1;
-        }
-        this.selectNode(this.historyList[nodeIdx]);
-    }
-
     protected openFile(change: GitFileChange, commitSha: string) {
         const uri: URI = new URI(change.uri);
         let fromURI = change.oldUri ? new URI(change.oldUri) : uri; // set oldUri on renamed and copied
@@ -418,7 +342,7 @@ export class GitHistoryWidget extends GitBaseWidget implements StatefulWidget {
         } else {
             uriToOpen = DiffUris.encode(fromURI, toURI, uri.displayName);
         }
-        open(this.openerService, uriToOpen);
+        open(this.openerService, uriToOpen, { mode: 'reveal' });
     }
 
 }

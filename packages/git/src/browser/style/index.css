@@ -30,6 +30,10 @@
     width: 100%;
 }
 
+.theia-git .space-between {
+    justify-content: space-between;
+}
+
 .theia-git .gitItem {
     margin: 1px 0 1px 3px;
     padding: 2px;
@@ -169,4 +173,12 @@
 
 #theia-gitContainer .placeholder {
     width: 100%;
+}
+
+.theia-git:focus .theia-mod-selected{
+    background: var(--theia-accent-color3);
+}
+
+.theia-git .theia-mod-selected{
+    background: var(--theia-accent-color5);
 }
