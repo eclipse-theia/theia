@@ -300,6 +300,8 @@ export class GitWidget extends GitBaseWidget {
                             changeUri.withScheme(GIT_RESOURCE_SCHEME),
                             changeUri,
                             changeUri.displayName + ' (Working tree)');
+                    } else if (this.mergeChanges.find(c => c.uri === change.uri)) {
+                        uri = changeUri;
                     } else {
                         uri = DiffUris.encode(
                             changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
