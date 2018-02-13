@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -8,7 +8,7 @@
 // tslint:disable:no-any
 import { DisposableCollection } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { EditorPreferenceChange, EditorPreferences } from '@theia/editor/lib/browser';
+import { EditorPreferenceChange, EditorPreferences, EditorDecorationsService } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
 import { inject, injectable } from 'inversify';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
@@ -46,7 +46,8 @@ export class MonacoEditorProvider {
         @inject(MonacoWorkspace) protected readonly workspace: MonacoWorkspace,
         @inject(MonacoCommandServiceFactory) protected readonly commandServiceFactory: MonacoCommandServiceFactory,
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
-        @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService
+        @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService,
+        @inject(EditorDecorationsService) protected readonly decorationsService: EditorDecorationsService,
     ) { }
 
     protected async getModel(uri: URI, toDispose: DisposableCollection): Promise<MonacoEditorModel> {
@@ -91,7 +92,7 @@ export class MonacoEditorProvider {
     protected async createMonacoEditor(uri: URI, override: IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoEditor> {
         const model = await this.getModel(uri, toDispose);
         const options = this.createMonacoEditorOptions(model);
-        const editor = new MonacoEditor(uri, model, document.createElement('div'), this.m2p, this.p2m, options, override);
+        const editor = new MonacoEditor(uri, model, document.createElement('div'), this.m2p, this.p2m, this.decorationsService, options, override);
         toDispose.push(this.editorPreferences.onPreferenceChanged(event => this.updateMonacoEditorOptions(editor, event)));
         return editor;
     }
@@ -116,7 +117,7 @@ export class MonacoEditorProvider {
         const modifiedModel = await this.getModel(modified, toDispose);
 
         const options = this.createMonacoDiffEditorOptions(originalModel, modifiedModel);
-        const editor = new MonacoDiffEditor(uri, document.createElement('div'), originalModel, modifiedModel, this.m2p, this.p2m, options, override);
+        const editor = new MonacoDiffEditor(uri, document.createElement('div'), originalModel, modifiedModel, this.m2p, this.p2m, this.decorationsService, options, override);
         toDispose.push(this.editorPreferences.onPreferenceChanged(event => this.updateMonacoDiffEditorOptions(editor, event)));
         return editor;
     }

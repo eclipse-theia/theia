@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -8,7 +8,7 @@
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
-import { Dimension } from '@theia/editor/lib/browser';
+import { Dimension, EditorDecorationsService, SetDecorationParams } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
 
@@ -32,10 +32,11 @@ export class MonacoDiffEditor extends MonacoEditor {
         readonly modifiedModel: MonacoEditorModel,
         protected readonly m2p: MonacoToProtocolConverter,
         protected readonly p2m: ProtocolToMonacoConverter,
+        protected readonly decorationsService: EditorDecorationsService,
         options?: MonacoDiffEditor.IOptions,
         override?: IEditorOverrideServices,
     ) {
-        super(uri, modifiedModel, node, m2p, p2m, options, override);
+        super(uri, modifiedModel, node, m2p, p2m, decorationsService, options, override);
         this.documents.add(originalModel);
         const original = originalModel.textEditorModel;
         const modified = modifiedModel.textEditorModel;
@@ -82,5 +83,20 @@ export class MonacoDiffEditor extends MonacoEditor {
     isActionSupported(id: string): boolean {
         const action = this._diffEditor.getActions().find(a => a.id === id);
         return !!action && action.isSupported() && super.isActionSupported(id);
+    }
+
+    setDecorations(params: SetDecorationParams): void {
+        const options = params.options;
+        const type = params.type;
+        const uri = params.uri;
+        const decorationOptions = options.map(d => <monaco.editor.IDecorationOptions>{
+            ...d,
+            range: this.p2m.asRange(d.range)
+        });
+        for (const editor of [this._diffEditor.getOriginalEditor(), this._diffEditor.getModifiedEditor()]) {
+            if (editor.getModel().uri.toString() === uri) {
+                editor.setDecorations(type, decorationOptions);
+            }
+        }
     }
 }
