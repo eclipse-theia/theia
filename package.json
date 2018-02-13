@@ -9,6 +9,7 @@
   "devDependencies": {
     "@types/chai": "^4.0.1",
     "@types/chai-as-promised": "0.0.31",
+    "@types/chai-string": "^1.4.0",
     "@types/jsdom": "^11.0.4",
     "@types/mocha": "^2.2.41",
     "@types/sinon": "^2.3.5",
@@ -16,6 +17,7 @@
     "@types/webdriverio": "^4.7.0",
     "chai": "^4.1.0",
     "chai-as-promised": "^7.1.1",
+    "chai-string": "^1.4.0",
     "concurrently": "^3.5.0",
     "electron-mocha": "^3.5.0",
     "istanbul": "^0.4.5",

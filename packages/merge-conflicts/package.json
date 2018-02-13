@@ -1,26 +1,18 @@
 {
-  "name": "@theia/preview",
+  "name": "@theia/merge-conflicts",
   "version": "0.3.4",
-  "description": "Theia - Preview Extension",
+  "description": "Theia - Merge Conflicts Extension",
   "dependencies": {
     "@theia/core": "^0.3.3",
     "@theia/editor": "^0.3.4",
-    "@theia/languages": "^0.3.3",
-    "@types/highlight.js": "^9.12.2",
-    "@types/markdown-it": "^0.0.4",
-    "@types/markdown-it-anchor": "^4.0.1",
-    "@types/throttle-debounce": "^1.0.0",
-    "highlight.js": "^9.12.0",
-    "markdown-it": "^8.4.0",
-    "markdown-it-anchor": "^4.0.0",
-    "throttle-debounce": "^1.0.1"
+    "@theia/languages": "^0.3.3"
   },
   "publishConfig": {
     "access": "public"
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/preview-frontend-module"
+      "frontend": "lib/browser/merge-conflicts-frontend-module"
     }
   ],
   "keywords": [

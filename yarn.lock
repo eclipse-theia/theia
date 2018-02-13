@@ -121,9 +121,9 @@
   dependencies:
     "@types/chai" "*"
 
-"@types/chai-string@^1.1.31":
-  version "1.1.31"
-  resolved "https://registry.yarnpkg.com/@types/chai-string/-/chai-string-1.1.31.tgz#a22f75d713f69da8c5cf34f8bc808a62cd249405"
+"@types/chai-string@^1.4.0":
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@types/chai-string/-/chai-string-1.4.0.tgz#c8b78deb9ae53e86c05a446c256138faeaff53c1"
   dependencies:
     "@types/chai" "*"
 
