@@ -5,6 +5,8 @@
 .theia-git .git-diff-container {
     display: flex;
     flex-direction: column;
+    position: relative;
+    height: 100%;
 }
 
 .theia-git .revision .row-title {
@@ -25,7 +27,7 @@
     margin: 8px 0px 5px 5px;
 }
 
-.theia-git .commitFileListContainer {
+.theia-git .listContainer {
     overflow-y: auto;
 }
 

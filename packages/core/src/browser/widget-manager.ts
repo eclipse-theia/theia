@@ -7,8 +7,7 @@
 
 import { inject, named, injectable } from 'inversify';
 import { Widget } from '@phosphor/widgets';
-import { ContributionProvider } from '../common/contribution-provider';
-import { ILogger } from '../common';
+import { ILogger, Emitter, Event, ContributionProvider, MaybePromise } from '../common';
 
 // tslint:disable:no-any
 export const WidgetFactory = Symbol("WidgetFactory");
@@ -26,7 +25,7 @@ export interface WidgetFactory {
      * Creates a widget and attaches it to the shell
      * The options need to be serializable JSON data.
      */
-    createWidget(options?: any): Promise<Widget>;
+    createWidget(options?: any): MaybePromise<Widget>;
 }
 
 /*
@@ -44,20 +43,29 @@ export interface WidgetConstructionOptions {
     options?: any
 }
 
+export interface DidCreateWidgetEvent {
+    readonly widget: Widget;
+    readonly factoryId: string;
+}
+
 /**
  * Creates and manages widgets.
  */
 @injectable()
 export class WidgetManager {
 
-    private _cachedfactories: Map<string, WidgetFactory>;
-    private widgets = new Map<string, Widget>();
-    private widgetPromises = new Map<string, Promise<Widget>>();
+    protected _cachedFactories: Map<string, WidgetFactory>;
+    protected readonly widgets = new Map<string, Widget>();
+    protected readonly widgetPromises = new Map<string, MaybePromise<Widget>>();
 
-    constructor(
-        @inject(ContributionProvider) @named(WidgetFactory) protected readonly factoryProvider: ContributionProvider<WidgetFactory>,
-        @inject(ILogger) protected logger: ILogger) {
-    }
+    @inject(ContributionProvider) @named(WidgetFactory)
+    protected readonly factoryProvider: ContributionProvider<WidgetFactory>;
+
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
+    protected readonly onDidCreateWidgetEmitter = new Emitter<DidCreateWidgetEvent>();
+    readonly onDidCreateWidget: Event<DidCreateWidgetEvent> = this.onDidCreateWidgetEmitter.event;
 
     getWidgets(factoryId: string): Widget[] {
         const result: Widget[] = [];
@@ -69,14 +77,31 @@ export class WidgetManager {
         return result;
     }
 
+    /**
+     * return the widget for the given description
+     */
+    getWidget<T extends Widget>(factoryId: string, options?: any): Promise<T | undefined> {
+        const key = this.toKey({ factoryId, options });
+        return this.doGetWidget<T>(key);
+    }
+
+    protected async doGetWidget<T extends Widget>(key: string): Promise<T | undefined> {
+        const existingWidgetPromise = this.widgetPromises.get(key);
+        if (existingWidgetPromise) {
+            const existingWidget = await existingWidgetPromise;
+            return existingWidget as T;
+        }
+        return undefined;
+    }
+
     /*
      * creates or returns the widget for the given description.
      */
     async getOrCreateWidget<T extends Widget>(factoryId: string, options?: any): Promise<T> {
         const key = this.toKey({ factoryId, options });
-        const existingWidget = this.widgetPromises.get(key);
+        const existingWidget = await this.doGetWidget<T>(key);
         if (existingWidget) {
-            return existingWidget as Promise<T>;
+            return existingWidget;
         }
         const factory = this.factories.get(factoryId);
         if (!factory) {
@@ -89,6 +114,9 @@ export class WidgetManager {
         widget.disposed.connect(() => {
             this.widgets.delete(key);
             this.widgetPromises.delete(key);
+        });
+        this.onDidCreateWidgetEmitter.fire({
+            factoryId, widget
         });
         return widget as T;
     }
@@ -113,18 +141,18 @@ export class WidgetManager {
         return JSON.parse(key);
     }
 
-    private get factories(): Map<string, WidgetFactory> {
-        if (!this._cachedfactories) {
-            this._cachedfactories = new Map();
-            for (const f of this.factoryProvider.getContributions()) {
-                if (f.id) {
-                    this._cachedfactories.set(f.id, f);
+    protected get factories(): Map<string, WidgetFactory> {
+        if (!this._cachedFactories) {
+            this._cachedFactories = new Map();
+            for (const factory of this.factoryProvider.getContributions()) {
+                if (factory.id) {
+                    this._cachedFactories.set(factory.id, factory);
                 } else {
-                    this.logger.error("Factory id cannot be undefined : " + f);
+                    this.logger.error("Factory id cannot be undefined : " + factory);
                 }
             }
         }
-        return this._cachedfactories;
+        return this._cachedFactories;
     }
 
 }

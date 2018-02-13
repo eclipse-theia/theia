@@ -6,7 +6,8 @@
  */
 
 import { injectable, inject } from "inversify";
-import { FrontendApplicationContribution, FrontendApplication, OpenHandler, OpenerOptions, ApplicationShell, WidgetManager } from "@theia/core/lib/browser";
+import { Widget } from "@phosphor/widgets";
+import { FrontendApplicationContribution, WidgetOpenerOptions, WidgetOpenHandler } from "@theia/core/lib/browser";
 import { EDITOR_CONTEXT_MENU, EditorManager, TextEditor, EditorWidget } from '@theia/editor/lib/browser';
 import {
     ResourceProvider, DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry,
@@ -14,10 +15,9 @@ import {
 } from "@theia/core/lib/common";
 import URI from '@theia/core/lib/common/uri';
 import { Position } from 'vscode-languageserver-types';
-import { PreviewWidget, PREVIEW_WIDGET_FACTORY_ID, PreviewWidgetOptions } from './preview-widget';
-import { PreviewWidgetManager } from './preview-widget-manager';
-import { PreviewHandlerProvider, PREVIEW_OPENER_ID } from './preview-handler';
-import { Widget } from "@phosphor/widgets";
+import { PreviewWidget } from './preview-widget';
+import { PreviewHandlerProvider, } from './preview-handler';
+import { PreviewUri } from "./preview-uri";
 
 export namespace PreviewCommands {
     export const OPEN: Command = {
@@ -26,32 +26,22 @@ export namespace PreviewCommands {
     };
 }
 
-export interface PreviewOpenerOptions extends OpenerOptions {
-    originUri?: string;
-    widgetOptions?: ApplicationShell.WidgetOptions;
-    activate?: boolean;
+export interface PreviewOpenerOptions extends WidgetOpenerOptions {
+    originUri?: URI;
 }
 
 @injectable()
-export class PreviewContribution implements CommandContribution, MenuContribution, OpenHandler, FrontendApplicationContribution {
+export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implements CommandContribution, MenuContribution, FrontendApplicationContribution {
 
-    readonly id = PREVIEW_OPENER_ID;
+    readonly id = PreviewUri.id;
     readonly label = 'Preview';
-
-    @inject(FrontendApplication)
-    protected readonly app: FrontendApplication;
-
-    @inject(WidgetManager)
-    protected readonly widgetManager: WidgetManager;
+    protected readonly widgetConstructor = PreviewWidget;
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
     @inject(PreviewHandlerProvider)
     protected readonly previewHandlerProvider: PreviewHandlerProvider;
-
-    @inject(PreviewWidgetManager)
-    protected readonly previewWidgetManager: PreviewWidgetManager;
 
     @inject(ResourceProvider)
     protected readonly resourceProvider: ResourceProvider;
@@ -72,14 +62,12 @@ export class PreviewContribution implements CommandContribution, MenuContributio
     };
 
     onStart() {
-        this.previewWidgetManager.onWidgetCreated(previewWidget => {
+        this.onCreated(previewWidget => {
             this.registerOpenOnDoubleClick(previewWidget);
             this.registerEditorAndPreviewSync(previewWidget);
         });
-        this.editorManager.onActiveEditorChanged(editorWidget => {
-            if (editorWidget) {
-                this.registerEditorAndPreviewSync(editorWidget);
-            }
+        this.editorManager.onCreated(editorWidget => {
+            this.registerEditorAndPreviewSync(editorWidget);
         });
     }
 
@@ -88,13 +76,13 @@ export class PreviewContribution implements CommandContribution, MenuContributio
         let editorWidget: EditorWidget | undefined;
         let previewWidget: PreviewWidget | undefined;
         if (source instanceof EditorWidget) {
-            editorWidget = source as EditorWidget;
+            editorWidget = source;
             uri = editorWidget.editor.uri.toString();
-            previewWidget = this.previewWidgetManager.get(uri);
+            previewWidget = await this.getWidget(editorWidget.editor.uri);
         } else {
-            previewWidget = source as PreviewWidget;
+            previewWidget = source;
             uri = previewWidget.getUri().toString();
-            editorWidget = this.editorManager.editors.find(widget => widget.editor.uri.toString() === uri);
+            editorWidget = await this.editorManager.getByUri(previewWidget.getUri());
         }
         if (!previewWidget || !editorWidget || !uri) {
             return;
@@ -103,25 +91,15 @@ export class PreviewContribution implements CommandContribution, MenuContributio
             return;
         }
         const syncDisposables = new DisposableCollection();
+        previewWidget.disposed.connect(() => syncDisposables.dispose());
+        editorWidget.disposed.connect(() => syncDisposables.dispose());
+
         const editor = editorWidget.editor;
-        const thatPreviewWidget = previewWidget;
-        syncDisposables.push(editor.onCursorPositionChanged(position =>
-            this.revealSourceLineInPreview(thatPreviewWidget, position))
-        );
+        syncDisposables.push(editor.onCursorPositionChanged(position => this.revealSourceLineInPreview(previewWidget!, position)));
         syncDisposables.push(this.synchronizeScrollToEditor(previewWidget, editor));
-        if (!previewWidget) {
-            window.setTimeout(() => {
-                this.revealSourceLineInPreview(thatPreviewWidget, editor.cursor);
-            }, 100);
-        }
-        previewWidget.disposed.connect(() => {
-            syncDisposables.dispose();
-        });
-        editorWidget.disposed.connect(() => {
-            syncDisposables.dispose();
-        });
-        syncDisposables.push(Disposable.create(() => this.syncronizedUris.delete(uri)));
+
         this.syncronizedUris.add(uri);
+        syncDisposables.push(Disposable.create(() => this.syncronizedUris.delete(uri)));
     }
 
     protected revealSourceLineInPreview(previewWidget: PreviewWidget, position: Position): void {
@@ -145,95 +123,70 @@ export class PreviewContribution implements CommandContribution, MenuContributio
     }
 
     protected registerOpenOnDoubleClick(previewWidget: PreviewWidget): void {
-        if (!previewWidget) {
-            return;
-        }
-        const disposable = previewWidget.onDidDoubleClick(location => {
-            const refWidget = this.findWidgetInMainAreaToAddAfter();
-            const widgetOptions: ApplicationShell.WidgetOptions = (refWidget)
-                ? { area: 'main', mode: 'tab-after', ref: refWidget }
-                : { area: 'main', mode: 'split-left' };
-            this.editorManager.open(new URI(location.uri), { widgetOptions })
-                .then(widget => {
-                    if (widget) {
-                        widget.editor.revealPosition(location.range.start);
-                        return widget.editor;
-                    }
-                }).then(editor => {
-                    if (editor) {
-                        editor.selection = location.range;
-                    }
-                });
+        const disposable = previewWidget.onDidDoubleClick(async location => {
+            const ref = this.findWidgetInMainAreaToAddAfter();
+            const { editor } = await this.editorManager.open(new URI(location.uri), {
+                widgetOptions: ref ?
+                    { area: 'main', mode: 'tab-after', ref } :
+                    { area: 'main', mode: 'split-left' }
+            });
+            editor.revealPosition(location.range.start);
+            editor.selection = location.range;
         });
         previewWidget.disposed.connect(() => disposable.dispose());
     }
 
-    canHandle(uri: URI, options?: OpenerOptions): number {
-        let canHandle = (this.previewHandlerProvider.canHandle(uri)) ? 50 : 0;
-        if (canHandle && uri.query.indexOf(this.id) >= 0) {
-            canHandle = 200;
+    async canHandle(uri: URI): Promise<number> {
+        if (!this.previewHandlerProvider.canHandle(uri)) {
+            return 0;
         }
-        return canHandle;
+        const editorPriority = await this.editorManager.canHandle(uri);
+        if (PreviewUri.match(uri)) {
+            return 2 * editorPriority;
+        }
+        return editorPriority / 2;
     }
 
-    async open(uri: URI, options?: PreviewOpenerOptions): Promise<PreviewWidget | undefined> {
-        try {
-            await this.resourceProvider(uri);
-        } catch (error) {
-            this.messageService.warn(`'${uri.path.base}' is missing.`);
-            return;
-        }
-        const openerOptions = this.updateOpenerOptions(options);
-        const previewWidget = <PreviewWidget>await this.widgetManager.getOrCreateWidget(
-            PREVIEW_WIDGET_FACTORY_ID,
-            <PreviewWidgetOptions>{ uri: uri.toString() });
-        if (!previewWidget.isAttached) {
-            this.app.shell.addWidget(previewWidget, openerOptions.widgetOptions || this.defaultOpenOptions.widgetOptions!);
-        }
-        if (openerOptions.activate) {
-            this.app.shell.activateWidget(previewWidget.id);
-        } else {
-            const tabBar = this.app.shell.getTabBarFor(previewWidget);
-            if (tabBar) {
-                tabBar.currentIndex = tabBar.titles.findIndex(title => title.owner === previewWidget);
-            }
-        }
-        return previewWidget;
+    async open(uri: URI, options?: PreviewOpenerOptions): Promise<PreviewWidget> {
+        const resolvedOptions = await this.resolveOpenerOptions(options);
+        return super.open(uri, resolvedOptions);
+    }
+    protected createWidgetOptions(uri: URI, options?: PreviewOpenerOptions): string {
+        return PreviewUri.decode(uri).withoutFragment().toString();
     }
 
-    protected updateOpenerOptions(options?: PreviewOpenerOptions): PreviewOpenerOptions {
+    protected async resolveOpenerOptions(options?: PreviewOpenerOptions): Promise<PreviewOpenerOptions> {
         if (!options) {
-            const refWidget = this.findWidgetInMainAreaToAddAfter();
-            if (refWidget) {
-                return { ...this.defaultOpenOptions, widgetOptions: { area: 'main', mode: 'tab-after', ref: refWidget } };
+            const ref = this.findWidgetInMainAreaToAddAfter();
+            if (ref) {
+                return { ...this.defaultOpenOptions, widgetOptions: { area: 'main', mode: 'tab-after', ref } };
             }
             return this.defaultOpenOptions;
         }
         if (options.originUri) {
-            const originPreviewWidget = this.previewWidgetManager.get(options.originUri);
-            if (originPreviewWidget) {
-                return { ...this.defaultOpenOptions, widgetOptions: { area: 'main', mode: 'tab-after', ref: originPreviewWidget } };
+            const ref = await this.getWidget(options.originUri);
+            if (ref) {
+                return { ...this.defaultOpenOptions, widgetOptions: { area: 'main', mode: 'tab-after', ref } };
             }
         }
         return { ...this.defaultOpenOptions, ...options };
     }
 
     protected findWidgetInMainAreaToAddAfter(): Widget | undefined {
-        const mainTabBars = this.app.shell.mainAreaTabBars;
-        const defaultTabBar = this.app.shell.getTabBarFor('main');
+        const mainTabBars = this.shell.mainAreaTabBars;
+        const defaultTabBar = this.shell.getTabBarFor('main');
         if (mainTabBars.length > 1 && defaultTabBar) {
-            const currentTabArea = this.app.shell.currentTabArea;
-            const currentTabBar = (currentTabArea === 'main') ? this.app.shell.currentTabBar || defaultTabBar : defaultTabBar;
+            const currentTabArea = this.shell.currentTabArea;
+            const currentTabBar = (currentTabArea === 'main') ? this.shell.currentTabBar || defaultTabBar : defaultTabBar;
             const currentIndex = mainTabBars.indexOf(currentTabBar);
             const targetIndex = (mainTabBars.length === currentIndex + 1) ? currentIndex - 1 : currentIndex + 1;
             const targetTabBar = mainTabBars[targetIndex];
             const currentTitle = targetTabBar.currentTitle;
             if (currentTitle) {
-                const refWidget = currentTitle.owner;
-                return refWidget;
+                return currentTitle.owner;
             }
         }
-        return;
+        return undefined;
     }
 
     registerCommands(registry: CommandRegistry): void {
@@ -254,32 +207,25 @@ export class PreviewContribution implements CommandContribution, MenuContributio
 
     protected canHandleEditorUri(): boolean {
         const uri = this.getCurrentEditorUri();
-        if (uri) {
-            return this.previewHandlerProvider.canHandle(uri);
-        }
-        return false;
+        return !!uri && this.previewHandlerProvider.canHandle(uri);
     }
-
     protected getCurrentEditorUri(): URI | undefined {
-        const activeEditor = this.editorManager.currentEditor;
-        if (activeEditor) {
-            return activeEditor.editor.uri;
-        }
-        return undefined;
+        const current = this.editorManager.current;
+        return current && current.editor.uri;
     }
 
     protected async openForEditor(): Promise<void> {
-        const editorWidget = this.editorManager.currentEditor;
-        if (!editorWidget) {
+        const uri = this.getCurrentEditorUri();
+        if (!uri) {
             return;
         }
-        const editor = editorWidget.editor;
-        const uri = editor.uri;
-        const refWidget = this.findWidgetInMainAreaToAddAfter();
-        const widgetOptions: ApplicationShell.WidgetOptions = (refWidget)
-            ? { area: 'main', mode: 'tab-after', ref: refWidget }
-            : { area: 'main', mode: 'split-right' };
-        this.open(uri, { ... this.defaultOpenFromEditorOptions, widgetOptions });
+        const ref = this.findWidgetInMainAreaToAddAfter();
+        await this.open(uri, {
+            ... this.defaultOpenFromEditorOptions,
+            widgetOptions: ref ?
+                { area: 'main', mode: 'tab-after', ref } :
+                { area: 'main', mode: 'split-right' }
+        });
     }
 
 }

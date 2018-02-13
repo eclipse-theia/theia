@@ -32,7 +32,7 @@
 
 .theia-git .gitItem {
     margin: 1px 0 1px 3px;
-    padding: 2px 0;
+    padding: 2px;
     font-size: var(--theia-ui-font-size1);
     display: flex;
     justify-content: space-between;
@@ -169,4 +169,12 @@
 
 #theia-gitContainer .placeholder {
     width: 100%;
+}
+
+.theia-git:focus .theia-mod-selected{
+    background: var(--theia-accent-color3);
+}
+
+.theia-git .theia-mod-selected{
+    background: var(--theia-accent-color5);
 }

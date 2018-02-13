@@ -12,12 +12,12 @@ import { KeybindingContext, Keybinding, KeybindingContribution, KeybindingRegist
 @injectable()
 export class EditorKeybindingContext implements KeybindingContext {
 
-    constructor( @inject(EditorManager) protected readonly editorService: EditorManager) { }
+    constructor(@inject(EditorManager) protected readonly editorService: EditorManager) { }
 
     id = 'editor.keybinding.context';
 
     isEnabled(arg?: Keybinding) {
-        return this.editorService && !!this.editorService.activeEditor;
+        return this.editorService && !!this.editorService.active;
     }
 
 }

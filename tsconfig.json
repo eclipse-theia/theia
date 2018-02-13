@@ -66,8 +66,8 @@
       "@theia/markers/lib/*": [
         "packages/markers/src/*"
       ],
-      "@theia/outline/lib/*": [
-        "packages/outline/src/*"
+      "@theia/outline-view/lib/*": [
+        "packages/outline-view/src/*"
       ],
       "@theia/messages/lib/*": [
         "packages/messages/src/*"
