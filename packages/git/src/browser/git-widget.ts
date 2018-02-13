@@ -11,7 +11,7 @@ import { GIT_CONTEXT_MENU } from './git-context-menu';
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { GitRepositoryProvider } from './git-repository-provider';
-import { MessageService, ResourceProvider, CommandService, DisposableCollection } from '@theia/core';
+import { MessageService, ResourceProvider, CommandService, DisposableCollection, SelectionService } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { VirtualRenderer, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
 import { h } from '@phosphor/virtualdom/lib';
@@ -20,27 +20,12 @@ import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { GitBaseWidget } from './git-base-widget';
-
-export interface GitFileChangeNode extends GitFileChange {
-    readonly icon: string;
-    readonly label: string;
-    readonly description: string;
-    readonly caption?: string;
-    readonly extraIconClassName?: string;
-    readonly commitSha?: string;
-    selected?: boolean;
-}
-
-export namespace GitFileChangeNode {
-    export function is(node: any): node is GitFileChangeNode {
-        return 'uri' in node && 'status' in node && 'description' in node && 'label' in node && 'icon' in node;
-    }
-}
+import { GitBaseWidget, GitFileChangeNode } from './git-base-widget';
 
 @injectable()
-export class GitWidget extends GitBaseWidget {
+export class GitWidget extends GitBaseWidget<GitFileChangeNode> {
 
+    protected readonly scrollContainer: string = 'changesOuterContainer';
     protected stagedChanges: GitFileChangeNode[] = [];
     protected unstagedChanges: GitFileChangeNode[] = [];
     protected mergeChanges: GitFileChangeNode[] = [];
@@ -60,8 +45,9 @@ export class GitWidget extends GitBaseWidget {
         @inject(MessageService) protected readonly messageService: MessageService,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
         @inject(CommandService) protected readonly commandService: CommandService,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService) {
-        super(repositoryProvider, labelProvider);
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
+        @inject(SelectionService) protected readonly selectionService: SelectionService) {
+        super(repositoryProvider, labelProvider, selectionService);
         this.id = 'theia-gitContainer';
         this.title.label = 'Git';
 

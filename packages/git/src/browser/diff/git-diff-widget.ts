@@ -9,18 +9,19 @@ import { injectable, inject } from "inversify";
 import { h } from "@phosphor/virtualdom";
 import { GIT_DIFF } from "./git-diff-contribution";
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
-import { VirtualRenderer, open, OpenerService, StatefulWidget } from "@theia/core/lib/browser";
+import { VirtualRenderer, open, OpenerService, StatefulWidget, SELECTED_CLASS } from "@theia/core/lib/browser";
 import { GitRepositoryProvider } from '../git-repository-provider';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import URI from "@theia/core/lib/common/uri";
 import { GitFileChange, GitFileStatus, Git } from '../../common';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { GitBaseWidget } from "../git-base-widget";
-import { GitFileChangeNode } from "../git-widget";
+import { GitBaseWidget, GitFileChangeNode } from "../git-base-widget";
+import { SelectionService } from "@theia/core";
 
 @injectable()
-export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
+export class GitDiffWidget extends GitBaseWidget<GitFileChangeNode> implements StatefulWidget {
 
+    protected readonly scrollContainer: string = "git-diff-list-container";
     protected fileChangeNodes: GitFileChangeNode[];
     protected options: Git.Options.Diff;
 
@@ -28,12 +29,14 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
         @inject(Git) protected readonly git: Git,
         @inject(GitRepositoryProvider) protected repositoryProvider: GitRepositoryProvider,
         @inject(LabelProvider) protected labelProvider: LabelProvider,
-        @inject(OpenerService) protected openerService: OpenerService) {
-        super(repositoryProvider, labelProvider);
+        @inject(OpenerService) protected openerService: OpenerService,
+        @inject(SelectionService) protected readonly selectionService: SelectionService) {
+        super(repositoryProvider, labelProvider, selectionService);
         this.id = GIT_DIFF;
         this.title.label = "Diff";
 
         this.addClass('theia-git');
+
     }
 
     protected get toRevision() {
@@ -87,6 +90,7 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
     }
 
     protected render(): h.Child {
+        this.gitNodes = this.fileChangeNodes;
         const commitishBar = this.renderDiffListHeader();
         const fileChangeList = this.renderFileChangeList();
         return h.div({ className: "git-diff-container" }, VirtualRenderer.flatten([commitishBar, fileChangeList]));
@@ -125,7 +129,7 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
             const fileChangeElement: h.Child = this.renderGitItem(fileChange);
             files.push(fileChangeElement);
         }
-        return h.div({ className: "listContainer" }, ...files);
+        return h.div({ className: "listContainer", id: this.scrollContainer }, ...files);
     }
 
     protected renderGitItem(change: GitFileChangeNode): h.Child {
@@ -136,40 +140,11 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
         elements.push(h.div({
             title: change.caption,
             className: 'noWrapInfo',
+            onclick: () => {
+                this.selectNode(change);
+            },
             ondblclick: () => {
-                const uri: URI = new URI(change.uri);
-
-                let fromURI = uri;
-                if (change.oldUri) { // set on renamed and copied
-                    fromURI = new URI(change.oldUri);
-                }
-                if (this.fromRevision !== undefined) {
-                    if (typeof this.fromRevision !== 'number') {
-                        fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.fromRevision);
-                    } else {
-                        fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + "~" + this.fromRevision);
-                    }
-                } else {
-                    // default is to compare with previous revision
-                    fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + "~1");
-                }
-
-                let toURI = uri;
-                if (this.toRevision) {
-                    toURI = toURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision);
-                }
-
-                let uriToOpen = uri;
-                if (change.status === GitFileStatus.Deleted) {
-                    uriToOpen = fromURI;
-                } else if (change.status === GitFileStatus.New) {
-                    uriToOpen = toURI;
-                } else {
-                    uriToOpen = DiffUris.encode(fromURI, toURI, uri.displayName);
-                }
-                open(this.openerService, uriToOpen).catch(e => {
-                    console.error(e);
-                });
+                this.openFile(change);
             }
         }, iconSpan, nameSpan, pathSpan));
         if (change.extraIconClassName) {
@@ -182,6 +157,50 @@ export class GitDiffWidget extends GitBaseWidget implements StatefulWidget {
             title: change.caption,
             className: 'status staged ' + GitFileStatus[change.status].toLowerCase()
         }, this.getStatusCaption(change.status, true).charAt(0)));
-        return h.div({ className: 'gitItem noselect' }, ...elements);
+        return h.div({ className: `gitItem noselect${change.selected ? ' ' + SELECTED_CLASS : ''}` }, ...elements);
+    }
+
+    protected handleEnter(): void {
+        const selected = this.getSelected();
+        if (selected) {
+            this.openFile(selected);
+        }
+        this.update();
+    }
+
+    protected openFile(change: GitFileChange) {
+        const uri: URI = new URI(change.uri);
+
+        let fromURI = uri;
+        if (change.oldUri) { // set on renamed and copied
+            fromURI = new URI(change.oldUri);
+        }
+        if (this.fromRevision !== undefined) {
+            if (typeof this.fromRevision !== 'number') {
+                fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.fromRevision);
+            } else {
+                fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + "~" + this.fromRevision);
+            }
+        } else {
+            // default is to compare with previous revision
+            fromURI = fromURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision + "~1");
+        }
+
+        let toURI = uri;
+        if (this.toRevision) {
+            toURI = toURI.withScheme(GIT_RESOURCE_SCHEME).withQuery(this.toRevision);
+        }
+
+        let uriToOpen = uri;
+        if (change.status === GitFileStatus.Deleted) {
+            uriToOpen = fromURI;
+        } else if (change.status === GitFileStatus.New) {
+            uriToOpen = toURI;
+        } else {
+            uriToOpen = DiffUris.encode(fromURI, toURI, uri.displayName);
+        }
+        open(this.openerService, uriToOpen, { activate: false }).catch(e => {
+            console.error(e);
+        });
     }
 }

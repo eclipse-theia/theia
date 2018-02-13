@@ -170,3 +170,11 @@
 #theia-gitContainer .placeholder {
     width: 100%;
 }
+
+.theia-git:focus .theia-mod-selected{
+    background: var(--theia-accent-color3);
+}
+
+.theia-git .theia-mod-selected{
+    background: var(--theia-accent-color5);
+}
