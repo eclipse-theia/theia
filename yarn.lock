@@ -5066,9 +5066,9 @@ monaco-css@^1.3.3:
   version "1.3.3"
   resolved "https://registry.yarnpkg.com/monaco-css/-/monaco-css-1.3.3.tgz#1463973676102cf00d931bcf1296b05177fa5b8b"
 
-monaco-editor@^0.10.0:
+monaco-editor-core@^0.10.1:
   version "0.10.1"
-  resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.10.1.tgz#8c96c4f15b6b5258bf92cbde93cad8a7e3007e14"
+  resolved "https://registry.yarnpkg.com/monaco-editor-core/-/monaco-editor-core-0.10.1.tgz#15121d9e28e51f094d9c556bf852dc9c13dc42a1"
 
 monaco-html@^1.3.2:
   version "1.3.2"
@@ -5078,19 +5078,19 @@ monaco-json@^1.3.2:
   version "1.3.2"
   resolved "https://registry.yarnpkg.com/monaco-json/-/monaco-json-1.3.2.tgz#92ecca1ef4090e9db48fb0bac2af02e32882a955"
 
-monaco-languageclient@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.3.0.tgz#d92b43a2faa3fb9acd7d50fc862a799ab15f22ef"
+monaco-languageclient@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.4.0.tgz#5f63f88bcc5df898d7efd1ad3bc088922fb36a7f"
   dependencies:
     glob-to-regexp "^0.3.0"
-    monaco-editor "^0.10.0"
+    monaco-editor-core "^0.10.1"
     vscode-base-languageclient "^0.0.1-alpha.2"
 
 monaco-languages@^0.9.0:
   version "0.9.0"
   resolved "https://registry.yarnpkg.com/monaco-languages/-/monaco-languages-0.9.0.tgz#03ea9c52031b79837e7a389d4fc6211da3f758fd"
 
-monaco-typescript@^2.2.0:
+monaco-typescript@^2.3.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/monaco-typescript/-/monaco-typescript-2.3.0.tgz#ee2e1f6eaad3febb841feb8a4ab90d4abab44b4f"
 
@@ -7798,23 +7798,18 @@ typedoc@^0.8:
     typedoc-default-themes "^0.5.0"
     typescript "2.4.1"
 
-typescript-language-server@^0.1.4:
-  version "0.1.5"
-  resolved "https://registry.yarnpkg.com/typescript-language-server/-/typescript-language-server-0.1.5.tgz#61c2b6d2ff9e15219f8d8662706a8adfce079710"
+typescript-language-server@^0.1.6:
+  version "0.1.6"
+  resolved "https://registry.yarnpkg.com/typescript-language-server/-/typescript-language-server-0.1.6.tgz#3ce37ff4c0a51cad005c1b3bdd76019d51b059a2"
   dependencies:
     command-exists "^1.2.2"
     commander "^2.11.0"
-    typescript "2.6.1"
     vscode-languageserver "^3.4.3"
     vscode-uri "^1.0.1"
 
 typescript@2.4.1:
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.4.1.tgz#c3ccb16ddaa0b2314de031e7e6fee89e5ba346bc"
-
-typescript@2.6.1:
-  version "2.6.1"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.6.1.tgz#ef39cdea27abac0b500242d6726ab90e0c846631"
 
 typescript@^2.7.1:
   version "2.7.1"

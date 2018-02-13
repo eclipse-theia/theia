@@ -1,4 +1,4 @@
-/// <reference types='monaco-editor/monaco'/>
+/// <reference types='monaco-editor-core/monaco'/>
 
 declare module monaco.instantiation {
     export interface IInstantiationService {
