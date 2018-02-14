@@ -24,7 +24,7 @@ export interface Marker<T> {
     kind?: string;
 
     /*
-     * marker kind specfic data
+     * marker kind specific data
      */
     data: T;
 }
