@@ -9,7 +9,7 @@ import { injectable, inject } from "inversify";
 import { Message } from "@phosphor/messaging";
 import {
     ContextMenuRenderer, TreeWidget, NodeProps, TreeProps, ITreeNode,
-    ISelectableTreeNode, ITreeModel, DockPanel
+    ISelectableTreeNode, ITreeModel, DockPanel, TreeDecoratorService
 } from "@theia/core/lib/browser";
 import { ElementAttrs, h } from "@phosphor/virtualdom";
 import { LabelProvider } from "@theia/core/lib/browser/label-provider";
@@ -33,8 +33,9 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
         @inject(EditorManager) readonly editorManager: EditorManager,
+        @inject(TreeDecoratorService) protected readonly decoratorService: TreeDecoratorService
     ) {
-        super(props, model, contextMenuRenderer);
+        super(props, model, contextMenuRenderer, decoratorService);
 
         this.id = CALLHIERARCHY_ID;
         this.title.label = 'Call Hierarchy';
@@ -82,17 +83,17 @@ export class CallHierarchyTreeWidget extends TreeWidget {
             || h.div({ className: 'noCallers' }, 'No callers have been detected.');
     }
 
-    protected decorateCaption(node: ITreeNode, caption: h.Child, props: NodeProps): h.Child {
+    protected renderCaption(node: ITreeNode, props: NodeProps): h.Child {
         if (DefinitionNode.is(node)) {
-            return super.decorateExpandableCaption(node, this.decorateDefinitionCaption(node.definition, caption), props);
+            return this.decorateDefinitionCaption(node.definition);
         }
         if (CallerNode.is(node)) {
-            return super.decorateExpandableCaption(node, this.decorateCallerCaption(node.caller, caption), props);
+            return this.decorateCallerCaption(node.caller);
         }
-        return h.div({}, 'caption');
+        return 'caption';
     }
 
-    protected decorateDefinitionCaption(definition: Definition, caption: h.Child): h.Child {
+    protected decorateDefinitionCaption(definition: Definition): h.Child {
         const containerName = definition.containerName;
         const icon = h.span({ className: "symbol-icon " + this.toIconClass(definition.symbolKind) });
         const symbol = definition.symbolName;
@@ -103,7 +104,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         return h.div({ className: 'definitionNode' }, icon, symbolElement, containerElement);
     }
 
-    protected decorateCallerCaption(caller: Caller, caption: h.Child): h.Child {
+    protected decorateCallerCaption(caller: Caller): h.Child {
         const definition = caller.callerDefinition;
         const icon = h.span({ className: "symbol-icon " + this.toIconClass(definition.symbolKind) });
         const containerName = definition.containerName;
