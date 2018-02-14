@@ -6,11 +6,11 @@
  */
 
 import { interfaces, Container } from 'inversify';
-import { TreeWidget, TreeProps, defaultTreeProps } from './tree-widget';
-import { TreeModel, ITreeModel, TreeServices } from './tree-model';
-import { Tree, ITree } from './tree';
-import { ITreeSelectionService, TreeSelectionService } from './tree-selection';
-import { ITreeExpansionService, TreeExpansionService } from './tree-expansion';
+import { TreeWidget, TreeProps, defaultTreeProps } from "./tree-widget";
+import { TreeModel, ITreeModel, TreeServices } from "./tree-model";
+import { Tree, ITree } from "./tree";
+import { ITreeSelectionService, TreeSelectionService } from "./tree-selection";
+import { ITreeExpansionService, TreeExpansionService } from "./tree-expansion";
 import { TreeNavigationService } from './tree-navigation';
 import { TreeDecoratorService, NoopTreeDecoratorService } from './tree-decorator';
 
