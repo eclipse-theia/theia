@@ -1,9 +1,9 @@
 {
   "name": "@theia/output",
-  "version": "0.3.3",
+  "version": "0.3.7",
   "description": "Theia - Output Extension",
   "dependencies": {
-    "@theia/core": "^0.3.3"
+    "@theia/core": "^0.3.7"
   },
   "publishConfig": {
     "access": "public"
