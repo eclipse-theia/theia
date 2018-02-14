@@ -14,6 +14,8 @@ import { FrontendApplicationContribution, KeybindingContribution } from '@theia/
 import { ProblemManager } from './problem-manager';
 import { PROBLEM_KIND } from '../../common/problem-marker';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
+import { TreeDecorator } from "@theia/core/lib/browser";
+import { ProblemDecorator } from './problem-decorator';
 
 import '../../../src/browser/style/index.css';
 
@@ -34,4 +36,6 @@ export default new ContainerModule(bind => {
             ctx.container.get(ProblemContribution)
         ).inSingletonScope();
     }
+    bind(ProblemDecorator).toSelf().inSingletonScope();
+    bind(TreeDecorator).toDynamicValue(ctx => ctx.container.get(ProblemDecorator)).inSingletonScope();
 });

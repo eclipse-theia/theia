@@ -13,7 +13,7 @@ import { FileSystemWatcher, FileChangeType } from '@theia/filesystem/lib/browser
 import { Marker } from '../common/marker';
 
 /*
- * argument to the `findMarkes` method.
+ * argument to the `findMarkers` method.
  */
 export interface SearchFilter<D> {
     uri?: URI,

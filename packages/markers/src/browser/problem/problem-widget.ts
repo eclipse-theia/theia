@@ -10,7 +10,7 @@ import { ProblemManager } from './problem-manager';
 import { ProblemMarker } from '../../common/problem-marker';
 import { ProblemTreeModel } from './problem-tree-model';
 import { MarkerInfoNode, MarkerNode } from '../marker-tree';
-import { TreeWidget, TreeProps, ContextMenuRenderer, ITreeNode, NodeProps, ITreeModel, ISelectableTreeNode } from "@theia/core/lib/browser";
+import { TreeWidget, TreeProps, ContextMenuRenderer, ITreeNode, NodeProps, ITreeModel, ISelectableTreeNode, TreeDecoratorService } from "@theia/core/lib/browser";
 import { h } from "@phosphor/virtualdom/lib";
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
 import { Message } from '@phosphor/messaging';
@@ -24,9 +24,10 @@ export class ProblemWidget extends TreeWidget {
         @inject(ProblemManager) protected readonly problemManager: ProblemManager,
         @inject(TreeProps) readonly treeProps: TreeProps,
         @inject(ProblemTreeModel) readonly model: ProblemTreeModel,
-        @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer
+        @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer,
+        @inject(TreeDecoratorService) protected readonly decoratorService: TreeDecoratorService
     ) {
-        super(treeProps, model, contextMenuRenderer);
+        super(treeProps, model, contextMenuRenderer, decoratorService);
 
         this.id = 'problems';
         this.title.label = 'Problems';
