@@ -303,9 +303,11 @@ If you have accidentally installed the wrong `yarn` version, you have to remove 
 
 ### macOS
 
-You need to have the xcode command line tools installed in order to build and run Theia. You can install the tools by running
+You need to have the Xcode command line tools installed in order to build and run Theia. You can install the tools by running
 
     xcode-select --install
+
+If you already have Xcode installed, but you see the `xcode-select: error: tool 'xcodebuild' requires Xcode, but active developer directory '/Library/Developer/CommandLineTools' is a command line tools instance` error, you need to run the following command to fix it: `sudo xcode-select --switch /Library/Developer/CommandLineTools`.
  
 ### Root privileges errors
 When trying to install with root privileges, you might encounter errors such as
