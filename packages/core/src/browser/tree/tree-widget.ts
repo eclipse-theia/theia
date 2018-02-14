@@ -326,12 +326,27 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         return classNames;
     }
 
-    protected createNodeStyle(node: ITreeNode, props: NodeProps): ElementInlineStyle | undefined {
+    protected getDefaultNodeStyle(node: ITreeNode, props: NodeProps): ElementInlineStyle | undefined {
         return {
             paddingLeft: `${props.indentSize}px`,
             display: props.visible ? 'flex' : 'none',
             alignItems: 'center'
         };
+    }
+
+    protected createNodeStyle(node: ITreeNode, props: NodeProps): ElementInlineStyle | undefined {
+        return this.decorateNodeStyle(node, this.getDefaultNodeStyle(node, props));
+    }
+
+    protected decorateNodeStyle(node: ITreeNode, style: ElementInlineStyle | undefined): ElementInlineStyle | undefined {
+        const backgroundColor = this.getDecorationData(node, 'backgroundColor').filter(notEmpty).shift();
+        if (backgroundColor) {
+            style = {
+                ...(style || {}),
+                backgroundColor
+            };
+        }
+        return style;
     }
 
     protected isExpandable(node: ITreeNode): node is IExpandableTreeNode {
