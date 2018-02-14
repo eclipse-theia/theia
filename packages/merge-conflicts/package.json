@@ -1,11 +1,11 @@
 {
   "name": "@theia/merge-conflicts",
-  "version": "0.3.4",
+  "version": "0.3.7",
   "description": "Theia - Merge Conflicts Extension",
   "dependencies": {
-    "@theia/core": "^0.3.3",
-    "@theia/editor": "^0.3.4",
-    "@theia/languages": "^0.3.3"
+    "@theia/core": "^0.3.7",
+    "@theia/editor": "^0.3.7",
+    "@theia/languages": "^0.3.7"
   },
   "publishConfig": {
     "access": "public"

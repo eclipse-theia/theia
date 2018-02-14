@@ -1,40 +1,40 @@
 {
   "private": true,
   "name": "@theia/example-electron",
-  "version": "0.3.4",
+  "version": "0.3.7",
   "theia": {
     "target": "electron"
   },
   "dependencies": {
-    "@theia/callhierarchy": "^0.3.4",
-    "@theia/core": "^0.3.3",
-    "@theia/cpp": "^0.3.4",
-    "@theia/editor": "^0.3.4",
-    "@theia/extension-manager": "^0.3.4",
-    "@theia/file-search": "^0.3.4",
-    "@theia/filesystem": "^0.3.4",
-    "@theia/git": "^0.3.4",
-    "@theia/java": "^0.3.4",
-    "@theia/keymaps": "^0.3.4",
-    "@theia/languages": "^0.3.3",
-    "@theia/markers": "^0.3.4",
-    "@theia/merge-conflicts": "^0.3.4",
-    "@theia/messages": "^0.3.3",
-    "@theia/metrics": "^0.3.3",
-    "@theia/monaco": "^0.3.4",
-    "@theia/navigator": "^0.3.4",
-    "@theia/outline-view": "^0.3.4",
-    "@theia/output": "^0.3.3",
-    "@theia/preferences": "^0.3.4",
-    "@theia/preview": "^0.3.4",
-    "@theia/process": "^0.3.3",
-    "@theia/python": "^0.3.3",
-    "@theia/search-in-workspace": "^0.3.4",
-    "@theia/task": "^0.3.4",
-    "@theia/terminal": "^0.3.4",
-    "@theia/typescript": "^0.3.4",
-    "@theia/userstorage": "^0.3.4",
-    "@theia/workspace": "^0.3.4"
+    "@theia/callhierarchy": "^0.3.7",
+    "@theia/core": "^0.3.7",
+    "@theia/cpp": "^0.3.7",
+    "@theia/editor": "^0.3.7",
+    "@theia/extension-manager": "^0.3.7",
+    "@theia/file-search": "^0.3.7",
+    "@theia/filesystem": "^0.3.7",
+    "@theia/git": "^0.3.7",
+    "@theia/java": "^0.3.7",
+    "@theia/keymaps": "^0.3.7",
+    "@theia/languages": "^0.3.7",
+    "@theia/markers": "^0.3.7",
+    "@theia/merge-conflicts": "^0.3.7",
+    "@theia/messages": "^0.3.7",
+    "@theia/metrics": "^0.3.7",
+    "@theia/monaco": "^0.3.7",
+    "@theia/navigator": "^0.3.7",
+    "@theia/outline-view": "^0.3.7",
+    "@theia/output": "^0.3.7",
+    "@theia/preferences": "^0.3.7",
+    "@theia/preview": "^0.3.7",
+    "@theia/process": "^0.3.7",
+    "@theia/python": "^0.3.7",
+    "@theia/search-in-workspace": "^0.3.7",
+    "@theia/task": "^0.3.7",
+    "@theia/terminal": "^0.3.7",
+    "@theia/typescript": "^0.3.7",
+    "@theia/userstorage": "^0.3.7",
+    "@theia/workspace": "^0.3.7"
   },
   "scripts": {
     "prepare": "yarn run clean && yarn build",
@@ -47,6 +47,6 @@
     "test:ui": "wdio wdio.conf.js"
   },
   "devDependencies": {
-    "@theia/cli": "^0.3.3"
+    "@theia/cli": "^0.3.7"
   }
 }
