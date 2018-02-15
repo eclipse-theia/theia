@@ -8,9 +8,9 @@
 import { inject, injectable } from 'inversify';
 import { Diagnostic } from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
-import { notEmpty } from '@theia/core/lib/common/utils';
+import { notEmpty } from '@theia/core/lib/common/objects';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { TreeDecorator, DecorationData, Color, IconOverlayPosition } from '@theia/core/lib/browser/tree/tree-decorator';
+import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
 import { Marker } from '../../common/marker';
 import { ProblemManager } from './problem-manager';
 
@@ -19,24 +19,24 @@ export class ProblemDecorator implements TreeDecorator {
 
     readonly id = 'theia-problem-decorator';
 
-    protected readonly emitter: Emitter<Map<string, DecorationData>>;
+    protected readonly emitter: Emitter<Map<string, TreeDecoration.Data>>;
 
     constructor(@inject(ProblemManager) protected readonly problemManager: ProblemManager) {
         this.emitter = new Emitter();
         this.problemManager.onDidChangeMarkers(() => this.fireDidChangeDecorations(this.collectDecorators()));
     }
 
-    get onDidChangeDecorations(): Event<Map<string, DecorationData>> {
+    get onDidChangeDecorations(): Event<Map<string, TreeDecoration.Data>> {
         return this.emitter.event;
     }
 
-    protected fireDidChangeDecorations(event: Map<string, DecorationData>): void {
+    protected fireDidChangeDecorations(event: Map<string, TreeDecoration.Data>): void {
         this.emitter.fire(event);
     }
 
-    protected collectDecorators(): Map<string, DecorationData> {
+    protected collectDecorators(): Map<string, TreeDecoration.Data> {
         const markers = this.appendContainerMarkers(this.collectMarkers());
-        return new Map(markers.map(m => [m.uri, this.toDecorator(m)] as [string, DecorationData]));
+        return new Map(markers.map(m => [m.uri, this.toDecorator(m)] as [string, TreeDecoration.Data]));
     }
 
     protected appendContainerMarkers(markers: Marker<Diagnostic>[]): Marker<Diagnostic>[] {
@@ -51,7 +51,7 @@ export class ProblemDecorator implements TreeDecorator {
                 const parentUriString = parentUri.toString();
                 const existing = result.get(parentUriString);
                 // Make sure the highest diagnostic severity (smaller number) will be propagated to the container directory.
-                if (existing === undefined || severityCompare(existing, marker) < 0) {
+                if (existing === undefined || this.compare.bind(existing, marker) < 0) {
                     result.set(parentUriString, {
                         data: marker.data,
                         uri: parentUriString,
@@ -72,13 +72,13 @@ export class ProblemDecorator implements TreeDecorator {
         return Array.from(this.problemManager.getUris())
             .map(uri => new URI(uri))
             .map(uri => this.problemManager.findMarkers({ uri }))
-            .map(markers => markers.sort(severityCompare))
+            .map(markers => markers.sort(this.compare.bind(this)))
             .map(markers => markers.shift())
             .filter(notEmpty);
     }
 
-    protected toDecorator(marker: Marker<Diagnostic>): DecorationData {
-        const position = IconOverlayPosition.BOTTOM_RIGHT;
+    protected toDecorator(marker: Marker<Diagnostic>): TreeDecoration.Data {
+        const position = TreeDecoration.IconOverlayPosition.BOTTOM_RIGHT;
         const icon = this.getOverlayIcon(marker);
         const color = this.getOverlayIconColor(marker);
         return {
@@ -100,7 +100,7 @@ export class ProblemDecorator implements TreeDecorator {
         }
     }
 
-    protected getOverlayIconColor(marker: Marker<Diagnostic>): Color {
+    protected getOverlayIconColor(marker: Marker<Diagnostic>): TreeDecoration.Color {
         const { severity } = marker.data;
         switch (severity) {
             case 1: return 'var(--theia-error-color0)';
@@ -110,8 +110,16 @@ export class ProblemDecorator implements TreeDecorator {
         }
     }
 
+    protected compare(left: Marker<Diagnostic>, right: Marker<Diagnostic>): number {
+        return ProblemDecorator.severityCompare(left, right);
+    }
+
 }
 
-// Highest severities (errors) come first, then the others. Undefined severities treated as the last ones.
-const severityCompare = (left: Marker<Diagnostic>, right: Marker<Diagnostic>): number =>
-    (left.data.severity || Number.MAX_SAFE_INTEGER) - (right.data.severity || Number.MAX_SAFE_INTEGER);
+export namespace ProblemDecorator {
+
+    // Highest severities (errors) come first, then the others. Undefined severities treated as the last ones.
+    export const severityCompare = (left: Marker<Diagnostic>, right: Marker<Diagnostic>): number =>
+        (left.data.severity || Number.MAX_SAFE_INTEGER) - (right.data.severity || Number.MAX_SAFE_INTEGER);
+
+}

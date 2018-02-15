@@ -26,3 +26,7 @@ export function deepFreeze<T>(obj: T): T {
 }
 
 const _hasOwnProperty = Object.prototype.hasOwnProperty;
+
+export function notEmpty<T>(arg: T | undefined | null): arg is T {
+    return arg !== undefined && arg !== null;
+}

@@ -37,6 +37,6 @@ export function createTreeContainer(parent: interfaces.Container): Container {
     child.bind(TreeProps).toConstantValue(defaultTreeProps);
 
     child.bind(NoopTreeDecoratorService).toSelf().inSingletonScope();
-    child.bind(TreeDecoratorService).toDynamicValue(ctx => ctx.container.get(NoopTreeDecoratorService)).inSingletonScope();
+    child.bind(TreeDecoratorService).to(NoopTreeDecoratorService).inSingletonScope();
     return child;
 }

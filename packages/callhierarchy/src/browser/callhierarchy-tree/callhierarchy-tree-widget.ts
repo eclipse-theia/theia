@@ -9,7 +9,7 @@ import { injectable, inject } from "inversify";
 import { Message } from "@phosphor/messaging";
 import {
     ContextMenuRenderer, TreeWidget, NodeProps, TreeProps, ITreeNode,
-    ISelectableTreeNode, ITreeModel, DockPanel, TreeDecoratorService
+    ISelectableTreeNode, ITreeModel, DockPanel
 } from "@theia/core/lib/browser";
 import { ElementAttrs, h } from "@phosphor/virtualdom";
 import { LabelProvider } from "@theia/core/lib/browser/label-provider";
@@ -32,10 +32,9 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         @inject(CallHierarchyTreeModel) readonly model: CallHierarchyTreeModel,
         @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
-        @inject(EditorManager) readonly editorManager: EditorManager,
-        @inject(TreeDecoratorService) protected readonly decoratorService: TreeDecoratorService
+        @inject(EditorManager) readonly editorManager: EditorManager
     ) {
-        super(props, model, contextMenuRenderer, decoratorService);
+        super(props, model, contextMenuRenderer);
 
         this.id = CALLHIERARCHY_ID;
         this.title.label = 'Call Hierarchy';

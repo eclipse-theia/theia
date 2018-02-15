@@ -10,7 +10,7 @@ import { h } from "@phosphor/virtualdom";
 import { Message } from "@phosphor/messaging";
 import {
     ContextMenuRenderer,
-    TreeWidget, NodeProps, TreeProps, ITreeNode, TreeDecoratorService
+    TreeWidget, NodeProps, TreeProps, ITreeNode
 } from "@theia/core/lib/browser";
 import { ElementAttrs } from "@phosphor/virtualdom";
 import { DirNode, FileStatNode } from "./file-tree";
@@ -30,10 +30,9 @@ export class FileTreeWidget extends TreeWidget {
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
         @inject(FileTreeModel) readonly model: FileTreeModel,
-        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer,
-        @inject(TreeDecoratorService) protected readonly decoratorService: TreeDecoratorService
+        @inject(ContextMenuRenderer) contextMenuRenderer: ContextMenuRenderer
     ) {
-        super(props, model, contextMenuRenderer, decoratorService);
+        super(props, model, contextMenuRenderer);
         this.addClass(FILE_TREE_CLASS);
         this.toDispose.push(this.toCancelNodeExpansion);
     }
@@ -49,12 +48,13 @@ export class FileTreeWidget extends TreeWidget {
         return classNames;
     }
 
-    renderIcon(node: ITreeNode, props: NodeProps): h.Child {
+    protected enderIcon(node: ITreeNode, props: NodeProps): h.Child {
         if (FileStatNode.is(node)) {
             return h.span({
                 className: (node.icon || '') + ' file-icon'
             });
         }
+        // tslint:disable-next-line:no-null-keyword
         return null;
     }
 
