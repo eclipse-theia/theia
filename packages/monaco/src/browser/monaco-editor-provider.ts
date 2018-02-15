@@ -115,8 +115,7 @@ export class MonacoEditorProvider {
     protected async createMonacoDiffEditor(uri: URI, override: IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoDiffEditor> {
         const [original, modified] = DiffUris.decode(uri);
 
-        const originalModel = await this.getModel(original, toDispose);
-        const modifiedModel = await this.getModel(modified, toDispose);
+        const [originalModel, modifiedModel]  = await Promise.all([this.getModel(original, toDispose), this.getModel(modified, toDispose)]);
 
         const options = this.createMonacoDiffEditorOptions(originalModel, modifiedModel);
         const editor = new MonacoDiffEditor(

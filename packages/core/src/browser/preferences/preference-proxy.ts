@@ -28,8 +28,9 @@ export interface PreferenceEventEmitter<T> {
 export type PreferenceProxy<T> = Readonly<T> & Disposable & PreferenceEventEmitter<T>;
 export function createPreferenceProxy<T extends Configuration>(preferences: PreferenceService, schema: PreferenceSchema): PreferenceProxy<T> {
     const configuration = createConfiguration<T>(schema);
-    const validate = (name: string, value: any) => validatePreference(schema, { [name]: value });
-
+    const ajv = new Ajv();
+    const validateFunction = ajv.compile(schema);
+    const validate = (name: string, value: any) => validateFunction({ [name]: value });
     const toDispose = new DisposableCollection();
     const onPreferenceChangedEmitter = new Emitter<PreferenceChange>();
     toDispose.push(onPreferenceChangedEmitter);
@@ -90,15 +91,4 @@ function createConfiguration<T extends Configuration>(schema: PreferenceSchema):
         configuration[property] = deepFreeze(schema.properties[property].default);
     }
     return configuration;
-}
-
-function validatePreference(schema: PreferenceSchema, preference: Object): boolean {
-    const ajv = new Ajv();
-    const result = ajv.validate(schema, preference);
-    // The return signature of `validate` is `boolean | Thenable<boolean>`.
-    // Since it has never been a thenable and this method is needed in a synchonous context, we throw an error if it is not a boolean.
-    if (typeof result === 'boolean') {
-        return result;
-    }
-    throw new Error(`Ajv#validate return unexpected value ${result}`);
 }
