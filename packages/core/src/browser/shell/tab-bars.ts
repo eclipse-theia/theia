@@ -218,43 +218,53 @@ export class SideTabBar extends TabBar<Widget> {
         return result;
     }
 
+    protected onUpdateRequest(msg: Message): void {
+        this.renderTabBar();
+    }
+
+    protected onAfterAttach(): void {
+        this.renderTabBar();
+    }
+
     /**
      * Render the tab bar in the _hidden content node_ (see `hiddenContentNode` for explanation),
      * then gather size information for labels and render it again in the proper content node.
      */
-    protected onUpdateRequest(msg: Message): void {
-        // Render into the invisible node
-        this.renderTabs(this.hiddenContentNode);
-        // Await a rendering frame
-        window.requestAnimationFrame(() => {
-            const hiddenContent = this.hiddenContentNode;
-            const n = hiddenContent.children.length;
-            const renderData = new Array<Partial<SideBarRenderData>>(n);
-            for (let i = 0; i < n; i++) {
-                const hiddenTab = hiddenContent.children[i];
-                // Extract tab padding from the computed style
-                const tabStyle = window.getComputedStyle(hiddenTab);
-                const rd: Partial<SideBarRenderData> = {
-                    paddingTop: parseFloat(tabStyle.paddingTop!),
-                    paddingBottom: parseFloat(tabStyle.paddingBottom!)
-                };
-                // Extract label size from the DOM
-                const labelElements = hiddenTab.getElementsByClassName('p-TabBar-tabLabel');
-                if (labelElements.length === 1) {
-                    const label = labelElements[0];
-                    rd.labelSize = { width: label.clientWidth, height: label.clientHeight };
+    protected renderTabBar(): void {
+        if (this.isAttached) {
+            // Render into the invisible node
+            this.renderTabs(this.hiddenContentNode);
+            // Await a rendering frame
+            window.requestAnimationFrame(() => {
+                const hiddenContent = this.hiddenContentNode;
+                const n = hiddenContent.children.length;
+                const renderData = new Array<Partial<SideBarRenderData>>(n);
+                for (let i = 0; i < n; i++) {
+                    const hiddenTab = hiddenContent.children[i];
+                    // Extract tab padding from the computed style
+                    const tabStyle = window.getComputedStyle(hiddenTab);
+                    const rd: Partial<SideBarRenderData> = {
+                        paddingTop: parseFloat(tabStyle.paddingTop!),
+                        paddingBottom: parseFloat(tabStyle.paddingBottom!)
+                    };
+                    // Extract label size from the DOM
+                    const labelElements = hiddenTab.getElementsByClassName('p-TabBar-tabLabel');
+                    if (labelElements.length === 1) {
+                        const label = labelElements[0];
+                        rd.labelSize = { width: label.clientWidth, height: label.clientHeight };
+                    }
+                    // Extract icon size from the DOM
+                    const iconElements = hiddenTab.getElementsByClassName('p-TabBar-tabIcon');
+                    if (iconElements.length === 1) {
+                        const icon = iconElements[0];
+                        rd.iconSize = { width: icon.clientWidth, height: icon.clientHeight };
+                    }
+                    renderData[i] = rd;
                 }
-                // Extract icon size from the DOM
-                const iconElements = hiddenTab.getElementsByClassName('p-TabBar-tabIcon');
-                if (iconElements.length === 1) {
-                    const icon = iconElements[0];
-                    rd.iconSize = { width: icon.clientWidth, height: icon.clientHeight };
-                }
-                renderData[i] = rd;
-            }
-            // Render into the visible node
-            this.renderTabs(this.contentNode, renderData);
-        });
+                // Render into the visible node
+                this.renderTabs(this.contentNode, renderData);
+            });
+        }
     }
 
     /**
