@@ -81,14 +81,14 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
 
     @postConstruct()
     protected init() {
-        this.decoratorService.onDidChangeDecorations(decorations => this.updateDecorations(decorations));
+        this.decoratorService.onDidChangeDecorations(op => this.updateDecorations(op(this.model)));
     }
 
     protected updateDecorations(decorations: Map<string, TreeDecoration.Data[]>, storeState: boolean = true) {
         this.decorations = decorations;
         this.update();
         if (storeState) {
-            this.storeState();
+            setTimeout(() => this.storeState(), 0);
         }
     }
 
@@ -553,7 +553,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
             this.model.root = this.inflateFromStorage(root);
         }
         if (decorations) {
-            this.updateDecorations(this.inflateDecorators(decorations));
+            this.updateDecorations(this.inflateDecorators(decorations), false);
         }
     }
 
