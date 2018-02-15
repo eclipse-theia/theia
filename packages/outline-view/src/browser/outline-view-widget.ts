@@ -14,8 +14,7 @@ import {
     TreeProps,
     ContextMenuRenderer,
     TreeModel,
-    IExpandableTreeNode,
-    TreeDecoratorService
+    IExpandableTreeNode
 } from "@theia/core/lib/browser";
 import { h } from "@phosphor/virtualdom/lib";
 import { Message } from '@phosphor/messaging';
@@ -43,10 +42,9 @@ export class OutlineViewWidget extends TreeWidget {
     constructor(
         @inject(TreeProps) protected readonly treeProps: TreeProps,
         @inject(TreeModel) model: TreeModel,
-        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
-        @inject(TreeDecoratorService) protected readonly decoratorService: TreeDecoratorService
+        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer
     ) {
-        super(treeProps, model, contextMenuRenderer, decoratorService);
+        super(treeProps, model, contextMenuRenderer);
 
         this.id = 'outline-view';
         this.title.label = 'Outline';

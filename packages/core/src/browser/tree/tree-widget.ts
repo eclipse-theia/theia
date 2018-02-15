@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
+import { injectable, inject, postConstruct } from "inversify";
 import { Message } from "@phosphor/messaging";
 import { ElementExt } from "@phosphor/domutils";
 import { h, ElementAttrs, ElementInlineStyle } from "@phosphor/virtualdom";
@@ -18,8 +18,8 @@ import { ITreeNode, ICompositeTreeNode } from "./tree";
 import { ITreeModel } from "./tree-model";
 import { IExpandableTreeNode } from "./tree-expansion";
 import { ISelectableTreeNode } from "./tree-selection";
-import { DecorationData, TreeDecoratorService, DecoratorStyles, IconOverlayPosition, IconOverlay, FontData } from "./tree-decorator";
-import { notEmpty } from '../../common/utils';
+import { TreeDecoration, TreeDecoratorService } from "./tree-decorator";
+import { notEmpty } from '../../common/objects';
 
 export const TREE_CLASS = 'theia-Tree';
 export const TREE_NODE_CLASS = 'theia-TreeNode';
@@ -62,25 +62,34 @@ export const defaultTreeProps: TreeProps = {
 @injectable()
 export class TreeWidget extends VirtualWidget implements StatefulWidget {
 
-    protected decorations: Map<string, DecorationData[]> = new Map();
+    @inject(TreeDecoratorService)
+    protected readonly decoratorService: TreeDecoratorService;
+
+    protected decorations: Map<string, TreeDecoration.Data[]> = new Map();
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
         @inject(ITreeModel) readonly model: ITreeModel,
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
-        @inject(TreeDecoratorService) protected readonly decoratorService: TreeDecoratorService
     ) {
         super();
         this.addClass(TREE_CLASS);
         this.node.tabIndex = 0;
         model.onChanged(() => this.update());
         this.toDispose.push(model);
-        this.decoratorService.onDidChangeDecorations(decorations => {
-            this.decorations = decorations;
-            if (this.render() !== null) {
-                this.update();
-            }
-        });
+    }
+
+    @postConstruct()
+    protected init() {
+        this.decoratorService.onDidChangeDecorations(decorations => this.updateDecorations(decorations));
+    }
+
+    protected updateDecorations(decorations: Map<string, TreeDecoration.Data[]>, storeState: boolean = true) {
+        this.decorations = decorations;
+        this.update();
+        if (storeState) {
+            this.storeState();
+        }
     }
 
     protected onActivateRequest(msg: Message): void {
@@ -185,7 +194,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         };
     }
 
-    protected applyFontStyles(original: ElementInlineStyle, fontData: FontData | undefined) {
+    protected applyFontStyles(original: ElementInlineStyle, fontData: TreeDecoration.FontData | undefined) {
         if (fontData === undefined) {
             return original;
         }
@@ -230,10 +239,10 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
     }
 
     protected renderCaptionSuffixes(node: ITreeNode, props: NodeProps): h.Child[] {
-        return this.getDecorationData(node, 'captionSuffix').filter(notEmpty).reduce((acc, current) => acc.concat(current), []).map(suffix => {
+        return this.getDecorationData(node, 'captionSuffixes').filter(notEmpty).reduce((acc, current) => acc.concat(current), []).map(suffix => {
             const style = this.applyFontStyles({}, suffix.fontData);
             const attrs = {
-                className: DecoratorStyles.CAPTION_SUFFIX,
+                className: TreeDecoration.Styles.CAPTION_SUFFIX_CLASS,
                 style
             };
             return h.div(attrs, suffix.data);
@@ -245,7 +254,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         if (prefix) {
             const style = this.applyFontStyles({}, prefix.fontData);
             const attrs = {
-                className: DecoratorStyles.CAPTION_PREFIX,
+                className: TreeDecoration.Styles.CAPTION_PREFIX_CLASS,
                 style
             };
             return h.div(attrs, prefix.data);
@@ -267,9 +276,9 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
 
         const overlayIcons: h.Child = [];
         new Map(this.getDecorationData(node, 'iconOverlay').reverse().filter(notEmpty)
-            .map(overlay => [overlay.position, overlay] as [IconOverlayPosition, IconOverlay]))
+            .map(overlay => [overlay.position, overlay] as [TreeDecoration.IconOverlayPosition, TreeDecoration.IconOverlay]))
             .forEach((overlay, position) => {
-                const className = ['a', 'fa', `fa-${overlay.icon}`, DecoratorStyles.DECORATOR_SIZE, IconOverlayPosition.getStyle(position)].join(' ');
+                const className = ['a', 'fa', `fa-${overlay.icon}`, TreeDecoration.Styles.DECORATOR_SIZE_CLASS, TreeDecoration.IconOverlayPosition.getStyle(position)].join(' ');
                 const { color } = overlay;
                 let style = {};
                 if (color) {
@@ -282,7 +291,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
             });
 
         if (overlayIcons.length > 0) {
-            return h.div({ className: DecoratorStyles.ICON_WRAPPER }, VirtualRenderer.merge(icon, overlayIcons));
+            return h.div({ className: TreeDecoration.Styles.ICON_WRAPPER_CLASS }, VirtualRenderer.merge(icon, overlayIcons));
         }
 
         return icon;
@@ -391,15 +400,15 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         return Object.assign({}, props, { visible, indentSize });
     }
 
-    protected getDecorations(node: ITreeNode): DecorationData[] {
+    protected getDecorations(node: ITreeNode): TreeDecoration.Data[] {
         const decorations = this.decorations.get(node.id);
         if (decorations) {
-            return decorations.sort(DecorationData.compare);
+            return decorations.sort(TreeDecoration.Data.comparePriority);
         }
         return [];
     }
 
-    protected getDecorationData<K extends keyof DecorationData>(node: ITreeNode, key: K): DecorationData[K][] {
+    protected getDecorationData<K extends keyof TreeDecoration.Data>(node: ITreeNode, key: K): TreeDecoration.Data[K][] {
         return this.getDecorations(node).filter(data => data[key] !== undefined).map(data => data[key]).filter(notEmpty);
     }
 
@@ -503,21 +512,48 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         return node;
     }
 
+    protected deflateDecorators(decorators: Map<string, TreeDecoration.Data[]>) {
+        // tslint:disable-next-line:no-null-keyword
+        const state = Object.create(null);
+        for (const [id, data] of decorators) {
+            // We don’t escape the key '__proto__'
+            // which can cause problems on older engines
+            state[id] = data;
+        }
+        return state;
+    }
+
+    // tslint:disable-next-line:no-any
+    protected inflateDecorators(state: any): Map<string, TreeDecoration.Data[]> {
+        const decorators = new Map<string, TreeDecoration.Data[]>();
+        for (const id of Object.keys(state)) {
+            decorators.set(id, state[id]);
+        }
+        return decorators;
+    }
+
     storeState(): object {
+        const decorations = this.deflateDecorators(this.decorations);
+        let state: object = {
+            decorations
+        };
         if (this.model.root) {
-            return {
+            state = {
+                ...state,
                 root: this.deflateForStorage(this.model.root)
             };
-        } else {
-            return {};
         }
+        return state;
     }
 
     restoreState(oldState: object): void {
         // tslint:disable-next-line:no-any
-        if ((oldState as any).root) {
-            // tslint:disable-next-line:no-any
-            this.model.root = this.inflateFromStorage((oldState as any).root);
+        const { root, decorations } = (oldState as any);
+        if (root) {
+            this.model.root = this.inflateFromStorage(root);
+        }
+        if (decorations) {
+            this.updateDecorations(this.inflateDecorators(decorations));
         }
     }
 
