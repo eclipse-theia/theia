@@ -6,6 +6,7 @@
  */
 
 import { injectable } from 'inversify';
+import { ITree } from './tree';
 import { Event, Emitter } from '../../common/event';
 
 /**
@@ -22,7 +23,7 @@ export interface TreeDecorator {
     /**
      * Fired when this decorator has calculated all the decoration data for the tree nodes. Keys are the unique identifier of the tree nodes.
      */
-    readonly onDidChangeDecorations: Event<Map<string, TreeDecoration.Data>>;
+    readonly onDidChangeDecorations: Event<(tree: ITree) => Map<string, TreeDecoration.Data>>;
 
 }
 
@@ -36,7 +37,7 @@ export interface TreeDecoratorService {
      * Fired when any of the available tree decorators has changes. Keys are the unique tree node IDs and the values
      * are the decoration data collected from all the decorators known by this service.
      */
-    readonly onDidChangeDecorations: Event<Map<string, TreeDecoration.Data[]>>;
+    readonly onDidChangeDecorations: Event<(tree: ITree) => Map<string, TreeDecoration.Data[]>>;
 
 }
 
@@ -47,7 +48,7 @@ export interface TreeDecoratorService {
 @injectable()
 export class NoopTreeDecoratorService implements TreeDecoratorService {
 
-    private emitter: Emitter<Map<string, TreeDecoration.Data[]>> = new Emitter();
+    private emitter: Emitter<(tree: ITree) => Map<string, TreeDecoration.Data[]>> = new Emitter();
 
     readonly onDidChangeDecorations = this.emitter.event;
 
@@ -59,8 +60,8 @@ export class NoopTreeDecoratorService implements TreeDecoratorService {
 @injectable()
 export abstract class AbstractTreeDecoratorService implements TreeDecoratorService {
 
-    protected readonly emitter: Emitter<Map<string, TreeDecoration.Data[]>>;
-    protected readonly decorations: Map<string, Map<string, TreeDecoration.Data>>;
+    protected readonly emitter: Emitter<(tree: ITree) => Map<string, TreeDecoration.Data[]>>;
+    protected readonly decorations: Map<string, (tree: ITree) => Map<string, TreeDecoration.Data>>;
 
     constructor(protected readonly decorators: ReadonlyArray<TreeDecorator>) {
         this.emitter = new Emitter();
@@ -69,24 +70,27 @@ export abstract class AbstractTreeDecoratorService implements TreeDecoratorServi
             const { id } = decorator;
             decorator.onDidChangeDecorations(data => {
                 this.decorations.set(id, data);
-                const changes = new Map();
-                Array.from(this.decorations.values()).forEach(decorations => {
-                    Array.from(decorations.entries()).forEach(keyIdPair => {
-                        const [nodeId, nodeData] = keyIdPair;
-                        if (changes.has(nodeId)) {
-                            changes.get(nodeId)!.push(nodeData);
-                        } else {
-                            changes.set(nodeId, [nodeData]);
-                        }
-                    });
-                });
-                this.emitter.fire(changes);
+                this.emitter.fire(this.calculateDecorators.bind(this));
             });
         });
     }
 
-    get onDidChangeDecorations(): Event<Map<string, TreeDecoration.Data[]>> {
+    get onDidChangeDecorations(): Event<(tree: ITree) => Map<string, TreeDecoration.Data[]>> {
         return this.emitter.event;
+    }
+
+    protected calculateDecorators(tree: ITree): Map<string, TreeDecoration.Data[]> {
+        const changes = new Map();
+        for (const fn of this.decorations.values()) {
+            for (const [id, data] of fn(tree).entries()) {
+                if (changes.has(id)) {
+                    changes.get(id)!.push(data);
+                } else {
+                    changes.set(id, [data]);
+                }
+            }
+        }
+        return changes;
     }
 
 }
