@@ -29,7 +29,7 @@ describe('git-watcher-slow', () => {
     let watcher: GitWatcherServer | undefined;
 
     beforeEach(async function () {
-        this.timeout(5000);
+        this.timeout(20000);
 
         const root = track.mkdirSync('git-watcher-slow');
         const localUri = FileUri.create(root).toString();
@@ -45,7 +45,7 @@ describe('git-watcher-slow', () => {
     });
 
     after(function () {
-        this.timeout(5000);
+        this.timeout(20000);
         track.cleanupSync();
     });
 
