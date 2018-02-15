@@ -10,12 +10,17 @@ import { ContributionProvider } from '@theia/core/lib/common/contribution-provid
 import { TreeDecorator, AbstractTreeDecoratorService } from '@theia/core/lib/browser/tree/tree-decorator';
 
 /**
+ * Symbol for all decorators that would like to contribute into the navigator.
+ */
+export const NavigatorTreeDecorator = Symbol('NavigatorTreeDecorator');
+
+/**
  * Decorator service for the navigator.
  */
 @injectable()
 export class NavigatorDecoratorService extends AbstractTreeDecoratorService {
 
-    constructor(@inject(ContributionProvider) @named(TreeDecorator) protected readonly contributions: ContributionProvider<TreeDecorator>) {
+    constructor(@inject(ContributionProvider) @named(NavigatorTreeDecorator) protected readonly contributions: ContributionProvider<TreeDecorator>) {
         super(contributions.getContributions());
     }
 
