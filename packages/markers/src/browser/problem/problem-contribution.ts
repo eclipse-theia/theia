@@ -37,11 +37,12 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         });
     }
 
-    initializeLayout(app: FrontendApplication) {
+    initializeLayout(app: FrontendApplication): Promise<void> {
         this.setStatusBarElement({
             errors: 0,
             warnings: 0
         });
+        return Promise.resolve();
     }
 
     protected setStatusBarElement(problemStat: ProblemStat) {

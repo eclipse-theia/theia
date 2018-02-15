@@ -81,8 +81,8 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
         return widget;
     }
 
-    initializeLayout(app: FrontendApplication) {
-        this.openView();
+    async initializeLayout(app: FrontendApplication): Promise<void> {
+        await this.openView();
     }
 
     registerCommands(commands: CommandRegistry): void {
