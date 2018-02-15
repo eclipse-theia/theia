@@ -48,7 +48,7 @@ export class FileTreeWidget extends TreeWidget {
         return classNames;
     }
 
-    protected enderIcon(node: ITreeNode, props: NodeProps): h.Child {
+    protected renderIcon(node: ITreeNode, props: NodeProps): h.Child {
         if (FileStatNode.is(node)) {
             return h.span({
                 className: (node.icon || '') + ' file-icon'
