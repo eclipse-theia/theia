@@ -9,8 +9,6 @@ import { injectable } from "inversify";
 import { BaseLanguageServerContribution, IConnection } from "@theia/languages/lib/node";
 import { parseArgs } from '@theia/process/lib/node/utils';
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME } from '../common';
-import { Message, isRequestMessage } from 'vscode-ws-jsonrpc';
-import { InitializeParams, InitializeRequest } from 'vscode-languageserver-protocol';
 
 export const CLANGD_COMMAND_DEFAULT = 'clangd';
 
@@ -19,24 +17,6 @@ export class CppContribution extends BaseLanguageServerContribution {
 
     readonly id = CPP_LANGUAGE_ID;
     readonly name = CPP_LANGUAGE_NAME;
-
-    constructor() {
-        super();
-    }
-
-    protected map(message: Message): Message {
-        if (isRequestMessage(message)) {
-            if (message.method === InitializeRequest.type.method) {
-                const initializeParams = message.params as InitializeParams;
-                initializeParams.processId = process.pid;
-            }
-        }
-        return message;
-    }
-
-    protected forward(clientConnection: IConnection, serverConnection: IConnection): void {
-        super.forward(clientConnection, serverConnection);
-    }
 
     public start(clientConnection: IConnection): void {
         const envCommand = process.env.CPP_CLANGD_COMMAND;
