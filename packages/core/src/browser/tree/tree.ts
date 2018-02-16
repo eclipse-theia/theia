@@ -214,7 +214,7 @@ export class Tree implements ITree {
         if (ICompositeTreeNode.is(parent)) {
             this.resolveChildren(parent).then(children => this.setChildren(parent, children));
         }
-        // FIXME: it shoud not be here
+        // FIXME: it should not be here
         // if the idea was to support refreshing of all kind of nodes, then API should be adapted
         this.fireChanged();
     }

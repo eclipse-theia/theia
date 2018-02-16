@@ -18,10 +18,6 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { h } from "@phosphor/virtualdom/lib";
 
-export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
-export const DIR_NODE_CLASS = 'theia-DirNode';
-export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
-
 export const FILE_NAVIGATOR_ID = 'files';
 export const LABEL = 'Files';
 export const CLASS = 'theia-Files';

@@ -25,6 +25,7 @@
 .theia-marker-container .markerNode,
 .theia-marker-container .markerFileNode {
     display: flex;
+    align-items: center;
 }
 
 .theia-marker-container .markerNode {
@@ -76,10 +77,13 @@
 
 .theia-marker-container .markerFileNode .counter {
     background-color: var(--theia-ui-font-color2);
-    border-radius: 7px;
-    padding: 1px 4px;
+    border-radius: 20px;
+    padding: 0 5px;
     text-align: center;
-    align-self: center;
-    font-size: var(--theia-ui-font-size0);
+    font-size: calc(var(--theia-ui-font-size0) * 0.8);
     color: var(--theia-ui-icon-font-color);
+    font-weight: 400;
+    min-width: 8px;
+    height: calc(var(--theia-private-horizontal-tab-height) * 0.8);
+    line-height: calc(var(--theia-private-horizontal-tab-height) * 0.8);
 }

@@ -23,40 +23,48 @@ import { notEmpty } from '../../common/objects';
 
 export const TREE_CLASS = 'theia-Tree';
 export const TREE_NODE_CLASS = 'theia-TreeNode';
+export const TREE_NODE_TAIL_CLASS = 'theia-TreeNodeTail';
+export const TREE_NODE_SEGMENT_CLASS = 'theia-TreeNodeSegment';
+export const TREE_NODE_SEGMENT_GROW_CLASS = 'theia-TreeNodeSegmentGrow';
+
 export const EXPANDABLE_TREE_NODE_CLASS = 'theia-ExpandableTreeNode';
 export const COMPOSITE_TREE_NODE_CLASS = 'theia-CompositeTreeNode';
 export const TREE_NODE_CAPTION_CLASS = 'theia-TreeNodeCaption';
 export const EXPANSION_TOGGLE_CLASS = 'theia-ExpansionToggle';
 
-export interface Size {
-    readonly width: number
-    readonly height: number
-}
-
 export const TreeProps = Symbol('TreeProps');
 export interface TreeProps {
+
+    /**
+     * The path of the context menu that one can use to contribute context menu items to the tree widget.
+     */
     readonly contextMenuPath?: MenuPath;
-    readonly expansionToggleSize: Size;
+
+    /**
+     * The size of the padding (in pixels) per hierarchy depth. The root element won't have left padding but
+     * the padding for the children will be calculated as `leftPadding * hierarchyDepth` and so on.
+     */
+    readonly leftPadding: number;
 }
 
 export interface NodeProps {
+
     /**
-     * An indentation size relatively to the root node.
+     * A root relative number representing the hierarchical depth of the actual node. Root is `0`, its children have `1` and so on.
      */
-    readonly indentSize: number;
+    readonly depth: number;
+
     /**
-     * Test whether the node should be rendered as hidden.
+     * Tests whether the node should be rendered as hidden.
      *
      * It is different from visibility of a node: an invisible node is not rendered at all.
      */
     readonly visible: boolean;
+
 }
 
 export const defaultTreeProps: TreeProps = {
-    expansionToggleSize: {
-        width: 16,
-        height: 16
-    }
+    leftPadding: 16
 };
 
 @injectable()
@@ -125,7 +133,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
 
     protected createRootProps(node: ITreeNode): NodeProps {
         return {
-            indentSize: 0,
+            depth: 0,
             visible: true
         };
     }
@@ -149,17 +157,15 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
             // tslint:disable-next-line:no-null-keyword
             return null;
         }
-        const classNames = [EXPANSION_TOGGLE_CLASS];
+        const classes = [TREE_NODE_SEGMENT_CLASS, EXPANSION_TOGGLE_CLASS];
         if (!node.expanded) {
-            classNames.push(COLLAPSED_CLASS);
+            classes.push(COLLAPSED_CLASS);
         }
-        const className = classNames.join(' ');
-        const { width, height } = this.props.expansionToggleSize;
-        return h.span({
+        const className = classes.join(' ');
+        return h.div({
             className,
             style: {
-                width: `${width}px`,
-                height: `${height}px`
+                paddingLeft: '4px',
             },
             onclick: event => {
                 this.handleClickEvent(node, event);
@@ -170,8 +176,13 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
 
     protected renderCaption(node: ITreeNode, props: NodeProps): h.Child {
         const tooltip = this.getDecorationData(node, 'tooltip').filter(notEmpty).join(' • ');
+        const classes = [TREE_NODE_SEGMENT_CLASS];
+        if (!this.hasTrailingSuffixes(node)) {
+            classes.push(TREE_NODE_SEGMENT_GROW_CLASS);
+        }
+        const className = classes.join(' ');
         let attrs = this.decorateCaption(node, {
-            className: TREE_NODE_CAPTION_CLASS
+            className
         });
         if (tooltip.length > 0) {
             attrs = {
@@ -193,6 +204,10 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
             ...attrs,
             style
         };
+    }
+
+    protected hasTrailingSuffixes(node: ITreeNode): boolean {
+        return this.getDecorationData(node, 'captionSuffixes').filter(notEmpty).reduce((acc, current) => acc.concat(current), []).length > 0;
     }
 
     protected applyFontStyles(original: ElementInlineStyle, fontData: TreeDecoration.FontData | undefined) {
@@ -239,34 +254,26 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         return modified;
     }
 
-    protected renderCaptionSuffixes(node: ITreeNode, props: NodeProps): h.Child[] {
-        return this.getDecorationData(node, 'captionSuffixes').filter(notEmpty).reduce((acc, current) => acc.concat(current), []).map(suffix => {
-            const style = this.applyFontStyles({}, suffix.fontData);
+    protected renderCaptionAffixes(node: ITreeNode, props: NodeProps, affixKey: 'captionPrefixes' | 'captionSuffixes'): h.Child[] {
+        const suffix = affixKey === 'captionSuffixes';
+        const affixClass = suffix ? TreeDecoration.Styles.CAPTION_SUFFIX_CLASS : TreeDecoration.Styles.CAPTION_PREFIX_CLASS;
+        const classes = [TREE_NODE_SEGMENT_CLASS, affixClass];
+        const affixes = this.getDecorationData(node, affixKey).filter(notEmpty).reduce((acc, current) => acc.concat(current), []);
+        const children: h.Child[] = [];
+        for (let i = 0; i < affixes.length; i++) {
+            const affix = affixes[i];
+            if (suffix && i === affixes.length - 1) {
+                classes.push(TREE_NODE_SEGMENT_GROW_CLASS);
+            }
+            const style = this.applyFontStyles({}, affix.fontData);
+            const className = classes.join(' ');
             const attrs = {
-                className: TreeDecoration.Styles.CAPTION_SUFFIX_CLASS,
+                className,
                 style
             };
-            return h.div(attrs, suffix.data);
-        });
-    }
-
-    protected renderCaptionPrefix(node: ITreeNode, props: NodeProps): h.Child {
-        const prefix = this.getDecorationData(node, 'captionPrefix').filter(notEmpty).shift();
-        if (prefix) {
-            const style = this.applyFontStyles({}, prefix.fontData);
-            const attrs = {
-                className: TreeDecoration.Styles.CAPTION_PREFIX_CLASS,
-                style
-            };
-            return h.div(attrs, prefix.data);
+            children.push(h.div(attrs, affix.data));
         }
-        // tslint:disable-next-line:no-null-keyword
-        return null;
-    }
-
-    protected renderSuffix(node: ITreeNode, props: NodeProps): h.Child {
-        // tslint:disable-next-line:no-null-keyword
-        return null;
+        return children;
     }
 
     protected decorateIcon(node: ITreeNode, icon: h.Child | null): h.Child {
@@ -295,16 +302,27 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         return icon;
     }
 
+    protected renderTailDecorations(node: ITreeNode, props: NodeProps): h.Child[] {
+        const style = (fontData: TreeDecoration.FontData | undefined) => this.applyFontStyles({}, fontData);
+        return this.getDecorationData(node, 'tailDecorations').filter(notEmpty).reduce((acc, current) => acc.concat(current), []).map(decoration => {
+            const { fontData, data, tooltip } = decoration;
+            return h.div({
+                className: [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS].join(' '),
+                style: style(fontData),
+                title: tooltip
+            }, data);
+        });
+    }
+
     protected renderNode(node: ITreeNode, props: NodeProps): h.Child {
         const attributes = this.createNodeAttributes(node, props);
         return h.div(attributes,
             this.renderExpansionToggle(node, props),
             this.decorateIcon(node, this.renderIcon(node, props)),
-            this.renderCaptionPrefix(node, props),
+            ...this.renderCaptionAffixes(node, props, 'captionPrefixes'),
             this.renderCaption(node, props),
-            ...this.renderCaptionSuffixes(node, props),
-            this.renderSuffix(node, props)
-        );
+            ...this.renderCaptionAffixes(node, props, 'captionSuffixes'),
+            ...this.renderTailDecorations(node, props));
     }
 
     protected createNodeAttributes(node: ITreeNode, props: NodeProps): ElementAttrs {
@@ -334,11 +352,16 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
     }
 
     protected getDefaultNodeStyle(node: ITreeNode, props: NodeProps): ElementInlineStyle | undefined {
-        return {
-            paddingLeft: `${props.indentSize}px`,
-            display: props.visible ? 'flex' : 'none',
-            alignItems: 'center'
+        let style: ElementInlineStyle = {
+            paddingLeft: `${props.depth * this.props.leftPadding}px`
         };
+        if (!props.visible) {
+            style = {
+                ...style,
+                display: 'none'
+            };
+        }
+        return style;
     }
 
     protected createNodeStyle(node: ITreeNode, props: NodeProps): ElementInlineStyle | undefined {
@@ -389,13 +412,8 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
             return props;
         }
         const visible = parent.expanded;
-        const { width } = this.props.expansionToggleSize;
-        const parentVisibility = ITreeNode.isVisible(parent) ? 1 : 0;
-        const childExpansion = this.isExpandable(child) ? 0 : 1;
-        const indentMultiplier = parentVisibility + childExpansion;
-        const relativeIndentSize = width * indentMultiplier;
-        const indentSize = props.indentSize + relativeIndentSize;
-        return Object.assign({}, props, { visible, indentSize });
+        const depth = props.depth + 1;
+        return { ...props, visible, depth };
     }
 
     protected getDecorations(node: ITreeNode): TreeDecoration.Data[] {
@@ -510,26 +528,8 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         return node;
     }
 
-    protected deflateDecorators(decorators: Map<string, TreeDecoration.Data[]>) {
-        // tslint:disable-next-line:no-null-keyword
-        const state = Object.create(null);
-        for (const [id, data] of decorators) {
-            state[id] = data;
-        }
-        return state;
-    }
-
-    // tslint:disable-next-line:no-any
-    protected inflateDecorators(state: any): Map<string, TreeDecoration.Data[]> {
-        const decorators = new Map<string, TreeDecoration.Data[]>();
-        for (const id of Object.keys(state)) {
-            decorators.set(id, state[id]);
-        }
-        return decorators;
-    }
-
     storeState(): object {
-        const decorations = this.deflateDecorators(this.decorations);
+        const decorations = this.decoratorService.deflateDecorators(this.decorations);
         let state: object = {
             decorations
         };
@@ -549,7 +549,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
             this.model.root = this.inflateFromStorage(root);
         }
         if (decorations) {
-            this.updateDecorations(this.inflateDecorators(decorations));
+            this.updateDecorations(this.decoratorService.inflateDecorators(decorations));
         }
     }
 

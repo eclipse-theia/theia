@@ -68,16 +68,12 @@ export class GitBaseWidget<T extends { selected?: boolean }> extends VirtualWidg
         }
     }
 
-    protected getStatusCaption(status: GitFileStatus, staged: boolean): string {
-        switch (status) {
-            case GitFileStatus.New: return staged ? 'Added' : 'Unstaged';
-            case GitFileStatus.Renamed: return 'Renamed';
-            case GitFileStatus.Copied: return 'Copied';
-            case GitFileStatus.Modified: return 'Modified';
-            case GitFileStatus.Deleted: return 'Deleted';
-            case GitFileStatus.Conflicted: return 'Conflicted';
-        }
-        return '';
+    protected getStatusCaption(status: GitFileStatus, staged?: boolean): string {
+        return GitFileStatus.toString(status, staged);
+    }
+
+    protected getAbbreviatedStatusCaption(status: GitFileStatus, staged?: boolean): string {
+        return GitFileStatus.toAbbreviation(status, staged);
     }
 
     protected getRepositoryRelativePath(repository: Repository, uri: URI) {
