@@ -45,9 +45,10 @@ export class FileSystemNode implements FileSystem {
         this.client = client;
     }
 
-    async getFileStat(uri: string): Promise<FileStat> {
+    async getFileStat(uri: string, depth = 0): Promise<FileStat> {
         const uri_ = new URI(uri);
-        const stat = await this.doGetStat(uri_, 1);
+        // const stat = await this.doGetStat(uri_, 1);
+        const stat = await this.doGetStat(uri_, depth);
         if (!stat) {
             throw new Error(`Cannot find file under the given URI. URI: ${uri}.`);
         }
@@ -88,7 +89,8 @@ Actual: ${JSON.stringify(file)}.`);
         }
         const encoding = await this.doGetEncoding(options);
         await fs.writeFile(FileUri.fsPath(_uri), content, { encoding });
-        const newStat = await this.doGetStat(_uri, 1);
+        // const newStat = await this.doGetStat(_uri, 1);
+        const newStat = await this.doGetStat(_uri, 0);
         if (newStat) {
             return newStat;
         }

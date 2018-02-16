@@ -62,7 +62,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
                 await this.quickOpenService.chooseTagsAndBranches(
                     async (fromRevision, toRevision) => {
                         const uri = fileUri.toString();
-                        const fileStat = await this.fileSystem.getFileStat(uri);
+                        const fileStat = await this.fileSystem.getFileStat(uri, 1);
                         const options: Git.Options.Diff = {
                             uri,
                             range: {

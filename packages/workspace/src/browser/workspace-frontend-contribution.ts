@@ -64,7 +64,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
             const root = resolvedRoot || await this.fileSystem.getCurrentUserHome();
             if (root) {
                 const rootUri = new URI(root.uri).parent;
-                const rootStat = await this.fileSystem.getFileStat(rootUri.toString());
+                const rootStat = await this.fileSystem.getFileStat(rootUri.toString(), 1);
                 const name = this.labelProvider.getName(rootUri);
                 const label = await this.labelProvider.getIcon(root);
                 const rootNode = DirNode.createRoot(rootStat, name, label);

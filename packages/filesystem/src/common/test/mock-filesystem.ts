@@ -19,7 +19,7 @@ export class MockFilesystem implements FileSystem {
 
     dispose() { }
 
-    getFileStat(uri: string): Promise<FileStat> {
+    getFileStat(uri: string, depth: number): Promise<FileStat> {
         return Promise.resolve(mockFileStat);
     }
 

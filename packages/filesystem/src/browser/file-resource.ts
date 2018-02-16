@@ -61,7 +61,7 @@ export class FileResource implements Resource {
         if (!await this.fileSystem.exists(this.uriString)) {
             return this.fileSystem.createFile(this.uriString, { content });
         }
-        const stat = this.state.stat || await this.fileSystem.getFileStat(this.uriString);
+        const stat = this.state.stat || await this.fileSystem.getFileStat(this.uriString, 1);
         return this.fileSystem.setContent(stat, content, options);
     }
 
@@ -96,7 +96,7 @@ export class FileResourceResolver implements ResourceResolver {
     protected async getFileStat(uri: URI): Promise<FileStat | undefined> {
         try {
             if (await this.fileSystem.exists(uri.toString())) {
-                return await this.fileSystem.getFileStat(uri.toString());
+                return await this.fileSystem.getFileStat(uri.toString(), 1);
             }
             return undefined;
         } catch {

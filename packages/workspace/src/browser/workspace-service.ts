@@ -123,7 +123,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
             return false;
         }
         try {
-            const fileStat = await this.fileSystem.getFileStat(uri);
+            const fileStat = await this.fileSystem.getFileStat(uri, 1);
             return fileStat.isDirectory;
         } catch (error) {
             return false;
@@ -136,7 +136,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
     protected async toFileStat(uri: string): Promise<FileStat> {
         const valid = await this.isValidRoot(uri);
         if (valid) {
-            return this.fileSystem.getFileStat(uri);
+            return this.fileSystem.getFileStat(uri, 1);
         }
         throw new Error(`Invalid workspace root URI. Expected an existing directory location. URI: ${uri}.`);
     }

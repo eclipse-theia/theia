@@ -91,7 +91,7 @@ export class GitHistoryWidget extends GitBaseWidget implements StatefulWidget {
         this.commits = [];
         this.ready = false;
         if (options && options.uri) {
-            const fileStat = await this.fileSystem.getFileStat(options.uri);
+            const fileStat = await this.fileSystem.getFileStat(options.uri, 1);
             this.singleFileMode = !fileStat.isDirectory;
         }
         this.addCommits(options);

@@ -170,7 +170,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
     }
 
     protected async getDirectory(candidate: URI): Promise<FileStat> {
-        const stat = await this.fileSystem.getFileStat(candidate.toString());
+        const stat = await this.fileSystem.getFileStat(candidate.toString(), 1);
         if (stat.isDirectory) {
             return stat;
         }
@@ -178,7 +178,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
     }
 
     protected getParent(candidate: URI): Promise<FileStat> {
-        return this.fileSystem.getFileStat(candidate.parent.toString());
+        return this.fileSystem.getFileStat(candidate.parent.toString(), 1);
     }
 
     protected findVacantChildUri(parentUri: URI, parent: FileStat, name: string, ext: string = ''): URI {

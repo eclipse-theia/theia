@@ -17,10 +17,11 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
      * Returns the filestat for the given uri.
      *
      * If the uri points to a folder it will contain one level of unresolved children.
+     * The depth define the number of level for unresolved children. Default value is 0
      *
      * Reject if a file for the given uri does not exist.
      */
-    getFileStat(uri: string): Promise<FileStat>;
+    getFileStat(uri: string, depth?: number | 0): Promise<FileStat>;
 
     /**
      * Finds out if a file identified by the resource exists.

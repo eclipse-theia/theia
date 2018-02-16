@@ -30,7 +30,7 @@ export class FileTree extends Tree {
     }
 
     protected resolveFileStat(node: FileStatNode): Promise<FileStat> {
-        return this.fileSystem.getFileStat(node.fileStat.uri).then(fileStat => {
+        return this.fileSystem.getFileStat(node.fileStat.uri, 1).then(fileStat => {
             node.fileStat = fileStat;
             return fileStat;
         });
