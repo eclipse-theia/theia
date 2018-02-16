@@ -1,18 +1,20 @@
 Theia has a preference service which allows modules to get preference values, contribute default preferences and listen for preference changes.
 
-Preferences can be saved in the root of the workspace under `.theia/settings.json` or under `$HOME/.theia/settings.json` on Linux systems. For Windows systems, the user settings will by default be in the `%USERPROFILE%/.theia/settings.json` (something like `C:\Users\epatpol\.theia/settings.json`)
+Preferences can be saved in the root of the workspace under `.theia/settings.json` or under `$HOME/.theia/settings.json` on Linux systems. For Windows systems, the user settings will by default be in the `%USERPROFILE%\.theia\settings.json` (something like `C:\Users\epatpol\.theia\settings.json`). Note that preferences defined in the workspace will override any preferences defined in the user directory, so it's possible to have different preferences per workspaces.
 
 As of right now the files must contain a valid a JSON containing the names and values of preferences (note that the following preference names are not official and only used as an example). You can also add comments to the settings.json file if needed i.e
 
-```
+```typescript
 {
     // Enable/Disable the line numbers in the monaco editor
-	"monaco.lineNumbers": "off",
+	"editor.lineNumbers": "off",
     // Tab width in the editor
-	"monaco.tabWidth": 4,
-	"fs.watcherExcludes": "path/to/file"
+	"editor.tabSize": 4,
+	"files.watcherExclude": "path/to/file"
 }
 ```
+
+# How to contribute and use preferences
 
 Let's take the filesystem as an example of a module using the preference service
 
@@ -42,6 +44,11 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
             "description": "List of paths to exclude from the filesystem watcher",
             "additionalProperties": {
                 "type": "boolean"
+            },
+            "default": {
+                "**/.git/objects/**": true,
+                "**/.git/subtree-cache/**": true,
+                "**/node_modules/**": true
             }
         }
     }
@@ -78,6 +85,9 @@ where the event received `e` is like this:
 
 ```typescript
 export interface PreferenceChangedEvent {
+    changes: PreferenceChange[]
+}
+export interface PreferenceChange {
     readonly preferenceName: string;
     readonly newValue?: any;
     readonly oldValue?: any;
@@ -176,8 +186,9 @@ In the case of the filesystem, one would use the same proxied config as above to
 })
 ```
 
+If the preference isn't defined in any `settings.json` mentioned above, then the preference service will try to return the default value of the said preference, if it exists, otherwise `undefined` will be returned.
+
 This works because, as we have seen it above, the proxy will simply call prefService.get('preferenceName').
 
 ## TODO/FIXME for preferences
-* Add scopes with server priority in CompoundPreferenceServer
 * Add autocomplete/description when modifying the settings.json from within theia
