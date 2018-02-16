@@ -65,37 +65,35 @@
 
 .theia-git .gitItem .status {
     padding: 2px 4px;
-    border-radius: 6px;
     font-size: var(--theia-ui-font-size0);
-    color: var(--theia-ui-icon-font-color);
 }
 
 .theia-git .gitItem .status.new {
-    background-color: var(--theia-disabled-color0);
+    color: var(--theia-disabled-color0);
 }
 
 .theia-git .gitItem .status.new.staged {
-    background-color: var(--theia-success-color0);
+    color: var(--theia-success-color0);
 }
 
 .theia-git .gitItem .status.modified {
-    background-color: var(--theia-brand-color0);
+    color: var(--theia-brand-color0);
 }
 
 .theia-git .gitItem .status.deleted {
-    background-color: var(--theia-warn-color0);
+    color: var(--theia-warn-color0);
 }
 
 .theia-git .gitItem .status.renamed {
-    background-color: var(--theia-disabled-color0);
+    color: var(--theia-disabled-color0);
 }
 
 .theia-git .gitItem .status.conflicted {
-    background-color: var(--theia-error-color0);
+    color: var(--theia-error-color0);
 }
 
 .theia-git .gitItem .status.copied {
-    background-color: var(--theia-disabled-color0);
+    color: var(--theia-disabled-color0);
 }
 
 #theia-gitContainer .buttons {

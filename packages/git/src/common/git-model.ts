@@ -66,11 +66,41 @@ export namespace WorkingDirectoryStatus {
  */
 export enum GitFileStatus {
     'New',
+    'Copied',
     'Modified',
-    'Deleted',
     'Renamed',
+    'Deleted',
     'Conflicted',
-    'Copied'
+}
+
+export namespace GitFileStatus {
+
+    /**
+     * Compares the statuses based on the natural order of the enumeration.
+     */
+    export const statusCompare = (left: GitFileStatus, right: GitFileStatus): number => left - right;
+
+    /**
+     * Returns with human readable representation of the Git file status argument. If the `staged` argument is `undefined`,
+     * it will be treated as `false`.
+     */
+    export const toString = (status: GitFileStatus, staged?: boolean): string => {
+        switch (status) {
+            case GitFileStatus.New: return !!staged ? 'Added' : 'Unstaged';
+            case GitFileStatus.Renamed: return 'Renamed';
+            case GitFileStatus.Copied: return 'Copied';
+            case GitFileStatus.Modified: return 'Modified';
+            case GitFileStatus.Deleted: return 'Deleted';
+            case GitFileStatus.Conflicted: return 'Conflicted';
+            default: throw new Error(`Unexpected Git file stats: ${status}.`);
+        }
+    };
+
+    /**
+     * Returns with the human readable abbreviation of the Git file status argument. `staged` argument defaults to `false`.
+     */
+    export const toAbbreviation = (status: GitFileStatus, staged?: boolean): string => GitFileStatus.toString(status, staged).charAt(0);
+
 }
 
 /**

@@ -50,7 +50,7 @@ export class FileTreeWidget extends TreeWidget {
 
     protected renderIcon(node: ITreeNode, props: NodeProps): h.Child {
         if (FileStatNode.is(node)) {
-            return h.span({
+            return h.div({
                 className: (node.icon || '') + ' file-icon'
             });
         }

@@ -318,9 +318,9 @@ export class GitWidget extends GitBaseWidget<GitFileChangeNode> {
         const buttonsDiv = this.renderGitItemButtons(repository, change);
         const staged = change.staged ? 'staged ' : '';
         const statusDiv = h.div({
-            title: this.getStatusCaption(change.status, change.staged || false),
+            title: this.getStatusCaption(change.status, change.staged),
             className: 'status ' + staged + GitFileStatus[change.status].toLowerCase()
-        }, this.getStatusCaption(change.status, change.staged || false).charAt(0));
+        }, this.getAbbreviatedStatusCaption(change.status, change.staged));
         const itemButtonsAndStatusDiv = h.div({ className: 'itemButtonsContainer' }, buttonsDiv, statusDiv);
         return h.div({ className: 'gitItem noselect' }, nameAndPathDiv, itemButtonsAndStatusDiv);
     }

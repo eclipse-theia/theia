@@ -10,7 +10,7 @@ import { ITree } from './tree';
 import { Event, Emitter } from '../../common/event';
 
 /**
- * Tree decorator that can change the outlook and the style of the tree items within a widget.
+ * Tree decorator that can change the look and the style of the tree items within a widget.
  */
 export interface TreeDecorator {
 
@@ -43,6 +43,17 @@ export interface TreeDecoratorService {
      */
     getDecorations(tree: ITree): Map<string, TreeDecoration.Data[]>;
 
+    /**
+     * Transforms the decorators argument into an object, so that it can be safely serialized into JSON.
+     */
+    deflateDecorators(decorations: Map<string, TreeDecoration.Data[]>): object;
+
+    /**
+     * Counterpart of the [deflateDecorators](#deflateDecorators) method. Restores the argument into a Map
+     * of tree node IDs and the corresponding decorations data array.
+     */
+    inflateDecorators(state: any): Map<string, TreeDecoration.Data[]>;
+
 }
 
 /**
@@ -57,6 +68,15 @@ export class NoopTreeDecoratorService implements TreeDecoratorService {
     readonly onDidChangeDecorations = this.emitter.event;
 
     getDecorations() {
+        return new Map();
+    }
+
+    deflateDecorators(decorations: Map<string, TreeDecoration.Data[]>): object {
+        return {};
+    }
+
+    // tslint:disable-next-line:no-any
+    inflateDecorators(state: any): Map<string, TreeDecoration.Data[]> {
         return new Map();
     }
 
@@ -101,6 +121,24 @@ export abstract class AbstractTreeDecoratorService implements TreeDecoratorServi
         return changes;
     }
 
+    deflateDecorators(decorations: Map<string, TreeDecoration.Data[]>): object {
+        // tslint:disable-next-line:no-null-keyword
+        const state = Object.create(null);
+        for (const [id, data] of decorations) {
+            state[id] = data;
+        }
+        return state;
+    }
+
+    // tslint:disable-next-line:no-any
+    inflateDecorators(state: any): Map<string, TreeDecoration.Data[]> {
+        const decorators = new Map<string, TreeDecoration.Data[]>();
+        for (const id of Object.keys(state)) {
+            decorators.set(id, state[id]);
+        }
+        return decorators;
+    }
+
 }
 
 /**
@@ -123,7 +161,7 @@ export namespace TreeDecoration {
     }
 
     /**
-     * Here we have merged the `font-style`, `font-weight`, and the `text-decoration` together.
+     * For the sake of simplicity, we have merged the `font-style`, `font-weight`, and the `text-decoration` together.
      */
     export type FontStyle = 'normal' | 'bold' | 'italic' | 'oblique' | 'underline' | 'line-through';
 
@@ -142,7 +180,7 @@ export namespace TreeDecoration {
     export type Color = string;
 
     /**
-     * Encapsulates styling and outlook information of the font.
+     * Encapsulates styling information of the font.
      */
     export interface FontData {
 
@@ -172,6 +210,18 @@ export namespace TreeDecoration {
          * Font data for customizing the prefix of the suffix.
          */
         readonly fontData?: FontData;
+
+    }
+
+    /**
+     * Unlike caption suffixes, tail decorations appears right-aligned after the caption and the caption suffixes (is any).
+     */
+    export interface TailDecoration extends CaptionAffix {
+
+        /**
+         * Optional tooltip for the tail decoration.
+         */
+        readonly tooltip?: string;
 
     }
 
@@ -263,7 +313,7 @@ export namespace TreeDecoration {
     }
 
     /**
-     * Encapsulates outlook and styling information that has to be applied on the tree node which we decorate.
+     * Encapsulates styling information that has to be applied on the tree node which we decorate.
      */
     export interface Data {
 
@@ -285,14 +335,19 @@ export namespace TreeDecoration {
         readonly backgroundColor?: Color;
 
         /**
-         * Optional prefix of the caption.
+         * Optional, leading prefixes right before the caption.
          */
-        readonly captionPrefix?: CaptionAffix;
+        readonly captionPrefixes?: CaptionAffix[];
 
         /**
          * Suffixes that might come after the caption as an additional information.
          */
         readonly captionSuffixes?: CaptionAffix[];
+
+        /**
+         * Optional right-aligned decorations that appear after the node caption and after the caption suffixes (is any).
+         */
+        readonly tailDecorations?: TailDecoration[];
 
         /**
          * Custom tooltip for the decorated item. Tooltip will be appended to the original tooltip, if any.

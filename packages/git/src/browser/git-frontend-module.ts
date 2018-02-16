@@ -22,9 +22,14 @@ import { GitRepositoryProvider } from './git-repository-provider';
 import { GitQuickOpenService } from './git-quick-open-service';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { GitUriLabelProviderContribution } from './git-uri-label-contribution';
+import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser/navigator-decorator-service';
+import { GitDecorator } from './git-decorator';
+import { bindGitDecorationsPreferences } from './git-decorator-preferences';
+
 import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
+    bindGitDecorationsPreferences(bind);
     bindGitDiffModule(bind);
     bindGitHistoryModule(bind);
     bind(GitWatcherServerProxy).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitWatcherPath)).inSingletonScope();
@@ -53,4 +58,5 @@ export default new ContainerModule(bind => {
     bind(GitQuickOpenService).toSelf().inSingletonScope();
 
     bind(LabelProviderContribution).to(GitUriLabelProviderContribution).inSingletonScope();
+    bind(NavigatorTreeDecorator).to(GitDecorator).inSingletonScope();
 });
