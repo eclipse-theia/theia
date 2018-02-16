@@ -39,6 +39,11 @@ export interface TreeDecoratorService {
      */
     readonly onDidChangeDecorations: Event<(tree: ITree) => Map<string, TreeDecoration.Data[]>>;
 
+    /**
+     * Returns with the decorators for the tree based on the actual state of this decorator service.
+     */
+    getDecorations(tree: ITree): Map<string, TreeDecoration.Data[]>;
+
 }
 
 /**
@@ -51,6 +56,10 @@ export class NoopTreeDecoratorService implements TreeDecoratorService {
     private emitter: Emitter<(tree: ITree) => Map<string, TreeDecoration.Data[]>> = new Emitter();
 
     readonly onDidChangeDecorations = this.emitter.event;
+
+    getDecorations() {
+        return new Map();
+    }
 
 }
 
@@ -70,7 +79,7 @@ export abstract class AbstractTreeDecoratorService implements TreeDecoratorServi
             const { id } = decorator;
             decorator.onDidChangeDecorations(data => {
                 this.decorations.set(id, data);
-                this.emitter.fire(this.calculateDecorators.bind(this));
+                this.emitter.fire(this.getDecorations.bind(this));
             });
         });
     }
@@ -79,7 +88,7 @@ export abstract class AbstractTreeDecoratorService implements TreeDecoratorServi
         return this.emitter.event;
     }
 
-    protected calculateDecorators(tree: ITree): Map<string, TreeDecoration.Data[]> {
+    getDecorations(tree: ITree): Map<string, TreeDecoration.Data[]> {
         const changes = new Map();
         for (const fn of this.decorations.values()) {
             for (const [id, data] of fn(tree).entries()) {
