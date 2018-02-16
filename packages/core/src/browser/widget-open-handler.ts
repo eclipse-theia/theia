@@ -8,6 +8,7 @@
 // tslint:disable:no-any
 
 import { inject, postConstruct, injectable } from "inversify";
+import { Widget, FocusTracker } from "@phosphor/widgets";
 import URI from "../common/uri";
 import { MaybePromise, Emitter, Event } from "../common";
 import { BaseWidget } from "./widgets";
@@ -71,10 +72,10 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
      */
     async open(uri: URI, options?: WidgetOpenerOptions): Promise<W> {
         const widget = await this.getOrCreateWidget(uri, options);
-        this.doOpen(widget, options);
+        await this.doOpen(widget, options);
         return widget;
     }
-    protected doOpen(widget: W, options?: WidgetOpenerOptions): void {
+    protected async doOpen(widget: W, options?: WidgetOpenerOptions): Promise<void> {
         const op: WidgetOpenerOptions = {
             mode: 'activate',
             ...options
@@ -82,11 +83,45 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
         if (!widget.isAttached) {
             this.shell.addWidget(widget, op.widgetOptions || { area: 'main' });
         }
+        const promises: Promise<void>[] = [];
         if (op.mode === 'activate') {
+            promises.push(this.onActive(widget));
+            promises.push(this.onReveal(widget));
             this.shell.activateWidget(widget.id);
         } else if (op.mode === 'reveal') {
+            promises.push(this.onReveal(widget));
             this.shell.revealWidget(widget.id);
         }
+        await Promise.all(promises);
+    }
+    protected onActive(widget: W): Promise<void> {
+        if (this.shell.activeWidget === widget) {
+            return Promise.resolve();
+        }
+        return new Promise(resolve => {
+            const listener = (shell: ApplicationShell, args: FocusTracker.IChangedArgs<Widget>) => {
+                if (args.newValue === widget) {
+                    this.shell.activeChanged.disconnect(listener);
+                    resolve();
+                }
+            };
+            this.shell.activeChanged.connect(listener);
+        });
+    }
+    protected onReveal(widget: W): Promise<void> {
+        if (widget.isVisible) {
+            return new Promise(resolve => window.requestAnimationFrame(() => resolve()));
+        }
+        return new Promise(resolve => {
+            const waitForVisible = () => window.requestAnimationFrame(() => {
+                if (widget.isVisible) {
+                    window.requestAnimationFrame(() => resolve());
+                } else {
+                    waitForVisible();
+                }
+            });
+            waitForVisible();
+        });
     }
 
     /**
