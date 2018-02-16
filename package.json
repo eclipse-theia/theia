@@ -34,7 +34,7 @@
     "ts-node": "^3.2.0",
     "tslint": "^5.7.0",
     "typedoc": "^0.8",
-    "typescript": "^2.7.1",
+    "typescript": "^2.7.2",
     "uuid": "^3.1.0",
     "wdio-mocha-framework": "^0.5.9",
     "wdio-phantomjs-service": "^0.2.2",
