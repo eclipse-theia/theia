@@ -17,6 +17,11 @@ export class EditorWidget extends BaseWidget implements SaveableSource {
     ) {
         super(editor);
         this.toDispose.push(this.editor);
+        this.editor.onSelectionChanged(() => {
+            if (this.editor.isFocused()) {
+                this.selectionService.selection = this.editor;
+            }
+        });
     }
 
     get saveable(): Saveable {
