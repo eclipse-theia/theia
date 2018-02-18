@@ -17,7 +17,7 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
 
     wsRoot: string;
 
-    constructor( @inject(WorkspaceService) wsService: WorkspaceService,
+    constructor(@inject(WorkspaceService) wsService: WorkspaceService,
         @inject(FileSystem) protected fileSystem: FileSystem) {
         super();
         wsService.root.then(root => {
@@ -45,7 +45,7 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
         if (FileStat.is(element)) {
             return element;
         }
-        return this.fileSystem.getFileStat(element.toString());
+        return this.fileSystem.getFileStat(element.toString(), 1);
     }
 
     async getIcon(element: URI | FileStat): Promise<string> {

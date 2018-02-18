@@ -48,7 +48,7 @@ export class FileTreeModel extends TreeModel implements LocationService {
 
     set location(uri: URI | undefined) {
         if (uri) {
-            this.fileSystem.getFileStat(uri.toString()).then(async fileStat => {
+            this.fileSystem.getFileStat(uri.toString(), 1).then(async fileStat => {
                 const label = this.labelProvider.getName(uri);
                 const icon = await this.labelProvider.getIcon(fileStat);
                 const node = DirNode.createRoot(fileStat, label, icon);
@@ -202,7 +202,7 @@ export class FileTreeModel extends TreeModel implements LocationService {
         const encoding = 'base64';
         const content = base64.fromByteArray(new Uint8Array(fileContent));
         if (await this.fileSystem.exists(uri)) {
-            const stat = await this.fileSystem.getFileStat(uri);
+            const stat = await this.fileSystem.getFileStat(uri, 1);
             if (!stat.isDirectory) {
                 await this.fileSystem.setContent(stat, content, { encoding });
             }

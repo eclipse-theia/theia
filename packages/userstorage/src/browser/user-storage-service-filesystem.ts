@@ -75,7 +75,7 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
         const exists = await this.fileSystem.exists(filesystemUri.toString());
 
         if (exists) {
-            this.fileSystem.getFileStat(filesystemUri.toString()).then(fileStat => {
+            this.fileSystem.getFileStat(filesystemUri.toString(), 1).then(fileStat => {
                 this.fileSystem.setContent(fileStat, content).then(() => Promise.resolve());
             });
         } else {

@@ -49,7 +49,7 @@ describe("NodeFileSystem", function () {
             const uri = root.resolve("foo.txt");
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            return fileSystem.getFileStat(uri.toString()).should.eventually.be.rejectedWith(Error);
+            return fileSystem.getFileStat(uri.toString(), 1).should.eventually.be.rejectedWith(Error);
         });
 
         it("Should return a proper result for a file.", () => {
@@ -57,7 +57,7 @@ describe("NodeFileSystem", function () {
             fs.writeFileSync(FileUri.fsPath(uri), "foo");
             expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
 
-            return fileSystem.getFileStat(uri.toString()).then(stat => {
+            return fileSystem.getFileStat(uri.toString(), 1).then(stat => {
                 expect(stat.isDirectory).to.be.false;
                 expect(stat.uri).to.eq(uri.toString());
             });
@@ -71,7 +71,7 @@ describe("NodeFileSystem", function () {
             expect(fs.statSync(FileUri.fsPath(uri_1)).isFile()).to.be.true;
             expect(fs.statSync(FileUri.fsPath(uri_2)).isFile()).to.be.true;
 
-            return fileSystem.getFileStat(root.toString()).then(stat => {
+            return fileSystem.getFileStat(root.toString(), 1).then(stat => {
                 expect(stat.children!.length).to.equal(2);
             });
         });
@@ -158,7 +158,7 @@ describe("NodeFileSystem", function () {
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.true;
             expect(fs.statSync(FileUri.fsPath(uri)).isDirectory()).to.be.true;
 
-            return fileSystem.getFileStat(uri.toString()).then(stat => {
+            return fileSystem.getFileStat(uri.toString(), 1).then(stat => {
                 fileSystem.setContent(stat, "foo").should.be.eventually.be.rejectedWith(Error);
             });
         });
@@ -170,7 +170,7 @@ describe("NodeFileSystem", function () {
             expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
             expect(fs.readFileSync(FileUri.fsPath(uri), { encoding: "utf8" })).to.be.equal("foo");
 
-            return fileSystem.getFileStat(uri.toString()).then(stat => {
+            return fileSystem.getFileStat(uri.toString(), 1).then(stat => {
                 // Make sure current file stat is out-of-sync.
                 // Here the content is modified in the way that file sizes will differ.
                 fs.writeFileSync(FileUri.fsPath(uri), "longer", { encoding: "utf8" });
@@ -187,7 +187,7 @@ describe("NodeFileSystem", function () {
             expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
             expect(fs.readFileSync(FileUri.fsPath(uri), { encoding: "utf8" })).to.be.equal("foo");
 
-            return fileSystem.getFileStat(uri.toString()).then(stat => {
+            return fileSystem.getFileStat(uri.toString(), 1).then(stat => {
                 fileSystem.setContent(stat, "baz", { encoding: "unknownEncoding" }).should.be.eventually.be.rejectedWith(Error);
             });
         });
@@ -199,7 +199,7 @@ describe("NodeFileSystem", function () {
             expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
             expect(fs.readFileSync(FileUri.fsPath(uri), { encoding: "utf8" })).to.be.equal("foo");
 
-            return fileSystem.getFileStat(uri.toString()).then(currentStat =>
+            return fileSystem.getFileStat(uri.toString(), 1).then(currentStat =>
                 fileSystem.setContent(currentStat, "baz")
             ).then(newStat => {
                 expect(fs.readFileSync(FileUri.fsPath(uri), { encoding: "utf8" })).to.be.equal("baz");
@@ -616,7 +616,7 @@ describe("NodeFileSystem", function () {
             fs.writeFileSync(FileUri.fsPath(uri), "foo");
             expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
 
-            fileSystem.getFileStat(uri.toString()).then(initialStat => {
+            fileSystem.getFileStat(uri.toString(), 1).then(initialStat => {
                 expect(initialStat).is.an("object");
                 expect(initialStat).has.property("uri").that.equals(uri.toString());
                 expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
