@@ -128,7 +128,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
 
     restoreState(oldState: object) {
         if (this.restored === false) {
-            const state = oldState as any;
+            const state = oldState as { terminalId: number, titleLabel: string };
             /* This is a workaround to issue #879 */
             this.restored = true;
             this.title.label = state.titleLabel;
@@ -138,11 +138,9 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
 
     /* Get the font family and size from the CSS custom properties defined in
        the root element.  */
-
     private getCSSPropertiesFromPage(): TerminalCSSProperties {
         /* Helper to look up a CSS property value and throw an error if it's
            not defined.  */
-
         function lookup(props: CSSStyleDeclaration, name: string): string {
             /* There is sometimes an extra space in the front, remove it.  */
             const value = htmlElementProps.getPropertyValue(name).trim();
@@ -190,10 +188,6 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
     }
 
     protected registerResize(): void {
-        const initialGeometry = (this.term as any).proposeGeometry();
-        this.cols = initialGeometry.cols;
-        this.rows = initialGeometry.rows;
-
         this.term.on('resize', size => {
             if (this.terminalId === undefined) {
                 return;
@@ -207,7 +201,6 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             this.rows = size.rows;
             this.shellTerminalServer.resize(this.terminalId, this.cols, this.rows);
         });
-        (this.term as any).fit();
     }
 
     /**
@@ -272,6 +265,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         this.isTermOpen = true;
         return Promise.resolve();
     }
+
     protected createWebSocket(pid: string): WebSocket {
         const url = this.endpoint.getWebSocketUrl().resolve(pid);
         return this.webSocketConnectionProvider.createWebSocket(url.toString(), { reconnecting: false });
@@ -313,6 +307,8 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             this.openAfterShow = true;
         }
     }
+
+    // tslint:disable-next-line:no-any
     private resizeTimer: any;
 
     protected onResize(msg: Widget.ResizeMessage): void {
@@ -342,8 +338,8 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
     protected connectSocket(id: number) {
         const socket = this.createWebSocket(id.toString());
         socket.onopen = () => {
-            (this.term as any).attach(socket);
-            (this.term as any)._initialized = true;
+            this.term.attach(socket);
+            this.term._initialized = true;
         };
 
         socket.onerror = err => {
@@ -374,7 +370,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             clearTimeout(this.resizeTimer);
             return;
         }
-        const geo = (this.term as any).proposeGeometry();
+        const geo = this.term.proposeGeometry();
         this.cols = geo.cols;
         this.rows = geo.rows - 1; // subtract one row for margin
         this.term.resize(this.cols, this.rows);
