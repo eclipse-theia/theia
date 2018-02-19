@@ -12,7 +12,6 @@ import { Event, Emitter } from '../../common/event';
 /**
  * Tree decorator that can change the outlook and the style of the tree items within a widget.
  */
-export const TreeDecorator = Symbol('TreeDecorator');
 export interface TreeDecorator {
 
     /**
@@ -220,6 +219,22 @@ export namespace TreeDecoration {
     }
 
     /**
+     * A shape that can be optionally rendered behind the overlay icon. Can be used to further refine colors.
+     */
+    export interface IconOverlayBackground {
+
+        /**
+         * Either `circle` or `square`.
+         */
+        readonly shape: 'circle' | 'square';
+
+        /**
+         * The color of the background shape.
+         */
+        readonly color?: Color;
+    }
+
+    /**
      * Has not effect if the tree node being decorated has no associated icon.
      */
     export interface IconOverlay {
@@ -239,6 +254,11 @@ export namespace TreeDecoration {
          * The color of the overlaying icon. If not specified, then the default icon color will be used.
          */
         readonly color?: Color;
+
+        /**
+         * The optional background color of the overlay icon.
+         */
+        readonly background?: IconOverlayBackground;
 
     }
 

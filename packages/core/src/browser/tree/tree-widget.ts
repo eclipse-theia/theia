@@ -88,12 +88,9 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         ]);
     }
 
-    protected updateDecorations(decorations: Map<string, TreeDecoration.Data[]>, storeState: boolean = true) {
+    protected updateDecorations(decorations: Map<string, TreeDecoration.Data[]>) {
         this.decorations = decorations;
         this.update();
-        if (storeState) {
-            setTimeout(() => this.storeState(), 0);
-        }
     }
 
     protected onActivateRequest(msg: Message): void {
@@ -282,16 +279,13 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         new Map(this.getDecorationData(node, 'iconOverlay').reverse().filter(notEmpty)
             .map(overlay => [overlay.position, overlay] as [TreeDecoration.IconOverlayPosition, TreeDecoration.IconOverlay]))
             .forEach((overlay, position) => {
-                const className = ['a', 'fa', `fa-${overlay.icon}`, TreeDecoration.Styles.DECORATOR_SIZE_CLASS, TreeDecoration.IconOverlayPosition.getStyle(position)].join(' ');
-                const { color } = overlay;
-                let style = {};
-                if (color) {
-                    style = {
-                        ...style,
-                        color
-                    };
+                const overlayClass = (iconName: string) =>
+                    ['a', 'fa', `fa-${iconName}`, TreeDecoration.Styles.DECORATOR_SIZE_CLASS, TreeDecoration.IconOverlayPosition.getStyle(position)].join(' ');
+                const style = (color?: string) => color === undefined ? {} : { color };
+                if (overlay.background) {
+                    overlayIcons.push(h.span({ className: overlayClass(overlay.background.shape), style: style(overlay.background.color) }));
                 }
-                overlayIcons.push(h.span({ className, style }));
+                overlayIcons.push(h.span({ className: overlayClass(overlay.icon), style: style(overlay.color) }));
             });
 
         if (overlayIcons.length > 0) {
@@ -304,8 +298,8 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
     protected renderNode(node: ITreeNode, props: NodeProps): h.Child {
         const attributes = this.createNodeAttributes(node, props);
         return h.div(attributes,
-            this.decorateIcon(node, this.renderIcon(node, props)),
             this.renderExpansionToggle(node, props),
+            this.decorateIcon(node, this.renderIcon(node, props)),
             this.renderCaptionPrefix(node, props),
             this.renderCaption(node, props),
             ...this.renderCaptionSuffixes(node, props),
@@ -520,8 +514,6 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         // tslint:disable-next-line:no-null-keyword
         const state = Object.create(null);
         for (const [id, data] of decorators) {
-            // We don’t escape the key '__proto__'
-            // which can cause problems on older engines
             state[id] = data;
         }
         return state;
@@ -557,7 +549,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
             this.model.root = this.inflateFromStorage(root);
         }
         if (decorations) {
-            this.updateDecorations(this.inflateDecorators(decorations), false);
+            this.updateDecorations(this.inflateDecorators(decorations));
         }
     }
 

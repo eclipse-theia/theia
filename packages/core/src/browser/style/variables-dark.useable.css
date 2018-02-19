@@ -121,10 +121,10 @@ all of MD as it is not optimized for dense, information rich UIs.
 
   /* State colors (warn, error, success, info) */
 
-  --theia-warn-color0: var(--md-orange-700);
-  --theia-warn-color1: var(--md-orange-500);
-  --theia-warn-color2: var(--md-orange-300);
-  --theia-warn-color3: var(--md-orange-100);
+  --theia-warn-color0: var(--md-amber-600);
+  --theia-warn-color1: var(--md-amber-500);
+  --theia-warn-color2: var(--md-amber-400);
+  --theia-warn-color3: var(--md-amber-300);
 
   --theia-error-color0: var(--md-red-700);
   --theia-error-color1: var(--md-red-500);

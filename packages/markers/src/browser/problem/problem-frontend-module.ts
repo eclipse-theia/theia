@@ -37,5 +37,5 @@ export default new ContainerModule(bind => {
         ).inSingletonScope();
     }
     bind(ProblemDecorator).toSelf().inSingletonScope();
-    bind(NavigatorTreeDecorator).toDynamicValue(ctx => ctx.container.get(ProblemDecorator)).inSingletonScope();
+    bind(NavigatorTreeDecorator).to(ProblemDecorator).inSingletonScope();
 });

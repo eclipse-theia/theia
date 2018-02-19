@@ -107,7 +107,11 @@ export class ProblemDecorator implements TreeDecorator {
             iconOverlay: {
                 position,
                 icon,
-                color
+                color,
+                background: {
+                    shape: 'circle',
+                    color: 'var(--theia-layout-color1)'
+                }
             }
         };
     }

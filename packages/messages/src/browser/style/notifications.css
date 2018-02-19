@@ -63,7 +63,7 @@
 }
 
 .theia-Notification .icon .warning {
-    color: var(--theia-warn-color1);
+    color: var(--theia-warn-color0);
 }
 
 .theia-Notification .text {
