@@ -23,7 +23,7 @@ export class OutlineViewContribution extends AbstractViewContribution<OutlineVie
                 rank: 500
             },
             toggleCommandId: 'outlineView:toggle',
-            toggleKeybinding: 'ctrl+shift+o'
+            toggleKeybinding: 'ctrlcmd+shift+o'
         });
     }
 }
