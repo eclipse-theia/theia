@@ -33,7 +33,8 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
     }
 
     async watchGitChanges(repository: Repository): Promise<number> {
-        const watcher = this.manager.getWatcher(repository);
+        const reference = await this.manager.getWatcher(repository);
+        const watcher = reference.object;
 
         const repositoryUri = repository.localUri;
         let subscriptions = this.subscriptions.get(repositoryUri);
@@ -51,10 +52,10 @@ export class DugiteGitWatcherServer implements GitWatcherServer {
             this.subscriptions.set(repositoryUri, subscriptions);
         }
 
-        const disposable = watcher.watch();
-        subscriptions.push(disposable);
+        watcher.watch();
+        subscriptions.push(reference);
         const watcherId = this.watcherSequence++;
-        this.watchers.set(watcherId, disposable);
+        this.watchers.set(watcherId, reference);
         return watcherId;
     }
 

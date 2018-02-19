@@ -7,6 +7,7 @@
 
 export * from './types';
 export * from './disposable';
+export * from './reference';
 export * from './event';
 export * from './cancellation';
 export * from './command';

@@ -19,7 +19,7 @@ export class GitRepositoryWatcherOptions {
 }
 
 @injectable()
-export class GitRepositoryWatcher {
+export class GitRepositoryWatcher implements Disposable {
 
     protected readonly onStatusChangedEmitter = new Emitter<GitStatusChangeEvent>();
     readonly onStatusChanged: Event<GitStatusChangeEvent> = this.onStatusChangedEmitter.event;
@@ -33,31 +33,19 @@ export class GitRepositoryWatcher {
     @inject(GitRepositoryWatcherOptions)
     protected readonly options: GitRepositoryWatcherOptions;
 
-    sync(): Promise<void> {
-        return new Promise<void>(resolve => {
-            const toDispose = new DisposableCollection();
-            toDispose.push(this.onStatusChanged(() => {
-                toDispose.dispose();
-                resolve();
-            }));
-            toDispose.push(this.watch());
-        });
-    }
-
-    protected references = 0;
-    watch(): Disposable {
-        this.schedule(true);
-        if (this.references === 0) {
+    protected readonly toDispose = new DisposableCollection();
+    watch(): void {
+        if (this.toDispose.disposed) {
             this.logger.info('Started watching the git repository:', this.options.repository.localUri);
-        }
-        this.references++;
-        return Disposable.create(() => {
-            this.references--;
-            if (this.references === 0) {
+            this.toDispose.push(Disposable.create(() => {
                 this.logger.info('Stopped watching the git repository:', this.options.repository.localUri);
                 this.clear();
-            }
-        });
+            }));
+        }
+        this.schedule(true);
+    }
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     protected initial: boolean = true;

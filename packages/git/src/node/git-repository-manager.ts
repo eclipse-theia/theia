@@ -6,6 +6,7 @@
  */
 
 import { injectable, inject } from "inversify";
+import { ReferenceCollection, Reference } from "@theia/core";
 import { Repository } from '../common';
 import { GitRepositoryWatcher, GitRepositoryWatcherFactory } from "./git-repository-watcher";
 
@@ -14,7 +15,9 @@ export class GitRepositoryManager {
 
     @inject(GitRepositoryWatcherFactory)
     protected readonly watcherFactory: GitRepositoryWatcherFactory;
-    protected readonly watchers = new Map<string, GitRepositoryWatcher>();
+    protected readonly watchers = new ReferenceCollection<Repository, GitRepositoryWatcher>(
+        repository => this.watcherFactory({ repository })
+    );
 
     run<T>(repository: Repository, op: () => Promise<T>): Promise<T> {
         const result = op();
@@ -22,19 +25,20 @@ export class GitRepositoryManager {
         return result;
     }
 
-    getWatcher(repository: Repository): GitRepositoryWatcher {
-        const existing = this.watchers.get(repository.localUri);
-        if (existing) {
-            return existing;
-        }
-        const watcher = this.watcherFactory({ repository });
-        this.watchers.set(repository.localUri, watcher);
-        return watcher;
+    getWatcher(repository: Repository): Promise<Reference<GitRepositoryWatcher>> {
+        return this.watchers.acquire(repository);
     }
 
     protected async ensureSync<T>(repository: Repository, result: Promise<T>): Promise<T> {
-        result.then(() => this.getWatcher(repository).sync());
+        result.then(() => this.sync(repository));
         return result;
+    }
+
+    async sync(repository: Repository): Promise<void> {
+        const reference = await this.getWatcher(repository);
+        const watcher = reference.object;
+        watcher.onStatusChanged(() => reference.dispose());
+        watcher.watch();
     }
 
 }
