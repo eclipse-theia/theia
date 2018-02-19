@@ -36,7 +36,6 @@ export function createTreeContainer(parent: interfaces.Container): Container {
     child.bind(TreeWidget).toSelf();
     child.bind(TreeProps).toConstantValue(defaultTreeProps);
 
-    child.bind(NoopTreeDecoratorService).toSelf().inSingletonScope();
     child.bind(TreeDecoratorService).to(NoopTreeDecoratorService).inSingletonScope();
     return child;
 }
