@@ -10,7 +10,7 @@ import URI from '@theia/core/lib/common/uri';
 import { ICompositeTreeNode, TreeModel, TreeServices, ITreeNode, ConfirmDialog } from "@theia/core/lib/browser";
 import { FileSystem, } from "../../common";
 import { FileSystemWatcher, FileChangeType, FileChange } from '../filesystem-watcher';
-import { FileStatNode, DirNode, FileTree } from "./file-tree";
+import { FileStatNode, DirNode, FileTree, FileNode } from "./file-tree";
 import { LocationService } from '../location';
 import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 import * as base64 from 'base64-js';
@@ -87,15 +87,24 @@ export class FileTreeModel extends TreeModel implements LocationService {
     }
 
     protected getAffectedNodes(changes: FileChange[]): ICompositeTreeNode[] {
-        const nodes: DirNode[] = [];
+        const nodes = new Map<string, ICompositeTreeNode>();
         for (const change of changes) {
-            const id = change.uri.parent.toString();
-            const node = this.getNode(id);
-            if (DirNode.is(node) && node.expanded) {
-                nodes.push(node);
-            }
+            this.collectAffectedNodes(change, node => nodes.set(node.id, node));
         }
-        return nodes;
+        return [...nodes.values()];
+    }
+
+    protected collectAffectedNodes(change: FileChange, accept: (node: ICompositeTreeNode) => void): void {
+        if (this.isFileContentChanged(change)) {
+            return;
+        }
+        const parent = this.getNode(change.uri.parent.toString());
+        if (DirNode.is(parent) && parent.expanded) {
+            accept(parent);
+        }
+    }
+    protected isFileContentChanged(change: FileChange): boolean {
+        return change.type === FileChangeType.UPDATED && FileNode.is(this.getNode(change.uri.toString()));
     }
 
     copy(uri: URI): boolean {
