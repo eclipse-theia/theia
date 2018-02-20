@@ -69,7 +69,7 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
 
         keybindings.registerKeybinding({
             command: TerminalCommands.NEW.id,
-            keybinding: "ctrlcmd+`"
+            keybinding: "ctrl+`"
         });
 
         /* Register passthrough keybindings for combinations recognized by
