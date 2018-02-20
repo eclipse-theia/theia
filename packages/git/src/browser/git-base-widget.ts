@@ -26,7 +26,7 @@ export class GitBaseWidget extends VirtualWidget {
             case GitFileStatus.Copied: return 'Copied';
             case GitFileStatus.Modified: return 'Modified';
             case GitFileStatus.Deleted: return 'Deleted';
-            case GitFileStatus.Conflicted: return 'Conficted';
+            case GitFileStatus.Conflicted: return 'Conflicted';
         }
         return '';
     }
