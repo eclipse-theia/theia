@@ -15,7 +15,7 @@ import {
     KeybindingRegistry, KeybindingContext, KeybindingContextRegistry,
     Keybinding, KeybindingContribution, KeybindingScope
 } from './keybinding';
-import { KeyCode, Key, Modifier, KeySequence } from './keys';
+import { KeyCode, Key, Modifier, KeySequence, EasyKey } from './keys';
 import { CommandRegistry, CommandService, CommandContribution, Command } from '../common/command';
 import { LabelParser } from './label-parser';
 import { MockLogger } from '../common/test/mock-logger';
@@ -349,6 +349,18 @@ describe("keys api", () => {
 
         expect(KeySequence.compare([KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M2, Modifier.M3] })], right)).to.be.equal(KeySequence.CompareResult.FULL);
         expect(KeySequence.compare(left, [KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M2, Modifier.M3] })])).to.be.equal(KeySequence.CompareResult.FULL);
+    });
+
+    it("it should parse ctrl key properly on both OS X and other platforms", () => {
+        const event = new KeyboardEvent('keydown', {
+            key: EasyKey.BACKQUOTE.easyString,
+            code: Key.BACKQUOTE.code,
+            ctrlKey: true,
+        });
+        stub = sinon.stub(os, 'isOSX').value(true);
+        expect(KeyCode.createKeyCode(event).keystroke).to.be.equal('Backquote+M4');
+        stub = sinon.stub(os, 'isOSX').value(false);
+        expect(KeyCode.createKeyCode(event).keystroke).to.be.equal('Backquote+M1');
     });
 
     it("it should serialize a keycode properly with a + M4", () => {
