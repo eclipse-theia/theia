@@ -258,7 +258,7 @@ export class KeyCode {
             }
 
             // CTRL + COMMAND (M1)
-            if ((isOSX && event.metaKey) || event.ctrlKey) {
+            if ((isOSX && event.metaKey) || (!isOSX && event.ctrlKey)) {
                 sequence.push(`${Modifier.M1}`);
             }
 
@@ -531,7 +531,7 @@ export namespace EasyKey {
     export const QUOTE: EasyKey = { keyCode: 222, easyString: '\'' };
     export const BRACKET_LEFT: EasyKey = { keyCode: 219, easyString: '[' };
     export const BRACKET_RIGHT: EasyKey = { keyCode: 221, easyString: ']' };
-    export const BACKQUOTE: EasyKey = { keyCode: 192, easyString: '\`' };
+    export const BACKQUOTE: EasyKey = { keyCode: 192, easyString: '`' };
     export const BACKSLASH: EasyKey = { keyCode: 220, easyString: '\\' };
     export const MINUS: EasyKey = { keyCode: 189, easyString: '-' };
     export const EQUAL: EasyKey = { keyCode: 187, easyString: '=' };
