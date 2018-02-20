@@ -166,7 +166,7 @@ class QuickSearchInWorkspaceResultItem extends QuickOpenItem {
 
 const OpenQuickSearchInWorkspaceCommand = {
     id: 'QuickSearchInWorkspace.open',
-    label: "Search in workspace..."
+    label: "Search in Workspace..."
 };
 
 @injectable()
