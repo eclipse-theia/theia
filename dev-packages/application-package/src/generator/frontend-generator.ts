@@ -35,12 +35,12 @@ export class FrontendGenerator extends AbstractGenerator {
 
     protected compileIndexHead(frontendModules: Map<string, string>): string {
         return `
-  <meta charset="UTF-8">
-  <script type="text/javascript" src="https://www.promisejs.org/polyfills/promise-6.1.0.js" charset="utf-8"></script>`;
+  <meta charset="UTF-8">`;
     }
 
     protected compileIndexJs(frontendModules: Map<string, string>): string {
         return `// @ts-check
+${this.ifBrowser("require('es6-promise/auto');")}
 require('reflect-metadata');
 const { Container } = require('inversify');
 const { FrontendApplication } = require('@theia/core/lib/browser');
