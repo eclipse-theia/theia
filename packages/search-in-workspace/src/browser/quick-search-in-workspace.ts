@@ -31,6 +31,10 @@ export class QuickSearchInWorkspace implements QuickOpenModel {
         @inject(ILogger) protected readonly logger: ILogger,
     ) { }
 
+    isEnabled(): boolean {
+        return this.searchInWorkspaceService.isEnabled();
+    }
+
     onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
         // If we have a search pending, it's not relevant anymore, cancel it.
         this.cancelCurrentSeach();
@@ -177,7 +181,8 @@ export class SearchInWorkspaceContributions implements CommandContribution, Menu
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(OpenQuickSearchInWorkspaceCommand, {
-            execute: what => this.quickSeachInWorkspace.open()
+            execute: what => this.quickSeachInWorkspace.open(),
+            isEnabled: () => this.quickSeachInWorkspace.isEnabled(),
         });
     }
 
