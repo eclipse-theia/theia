@@ -22,8 +22,7 @@ export class FrontendGenerator extends AbstractGenerator {
         return `<!DOCTYPE html>
 <html>
 
-<head>${this.compileIndexHead(frontendModules)}${this.ifBrowser(`
-  <script type="text/javascript" src="./require.js" charset="utf-8"></script>`)}
+<head>${this.compileIndexHead(frontendModules)}
   <script type="text/javascript" src="./bundle.js" charset="utf-8"></script>
 </head>
 
