@@ -315,7 +315,7 @@ describe("keys api", () => {
         stub.restore();
     });
 
-    it("it should seralize a keycode properly with BACKQUOTE + M1", () => {
+    it("it should serialize a keycode properly with BACKQUOTE + M1", () => {
         stub = sinon.stub(os, 'isOSX').value(true);
         let keyCode = KeyCode.createKeyCode({ first: Key.BACKQUOTE, modifiers: [Modifier.M1] });
         let keyCodeString = keyCode.toString();
@@ -331,7 +331,7 @@ describe("keys api", () => {
         expect(KeyCode.equals(parsedKeyCode, keyCode)).to.be.true;
     });
 
-    it("it should seralize a keycode properly with a + M2 + M3", () => {
+    it("it should serialize a keycode properly with a + M2 + M3", () => {
         const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M2, Modifier.M3] });
         const keyCodeString = keyCode.toString();
         expect(keyCodeString).to.be.equal("shift+alt+a");
@@ -339,7 +339,19 @@ describe("keys api", () => {
         expect(KeyCode.equals(parsedKeyCode, keyCode)).to.be.true;
     });
 
-    it("it should seralize a keycode properly with a + M4", () => {
+    it("the order of the modifiers should not matter when parsing the key code", () => {
+        const left = KeySequence.parse("shift+alt+a");
+        const right = KeySequence.parse("alt+shift+a");
+        expect(KeySequence.compare(left, right)).to.be.equal(KeySequence.CompareResult.FULL);
+
+        expect(KeySequence.compare([KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M3, Modifier.M2] })], right)).to.be.equal(KeySequence.CompareResult.FULL);
+        expect(KeySequence.compare(left, [KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M3, Modifier.M2] })])).to.be.equal(KeySequence.CompareResult.FULL);
+
+        expect(KeySequence.compare([KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M2, Modifier.M3] })], right)).to.be.equal(KeySequence.CompareResult.FULL);
+        expect(KeySequence.compare(left, [KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M2, Modifier.M3] })])).to.be.equal(KeySequence.CompareResult.FULL);
+    });
+
+    it("it should serialize a keycode properly with a + M4", () => {
         stub = sinon.stub(os, 'isOSX').value(true);
         const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [Modifier.M4] });
         const keyCodeString = keyCode.toString();
@@ -424,7 +436,7 @@ const TEST_COMMAND_SHADOW: Command = {
 @injectable()
 export class TestContribution implements CommandContribution, KeybindingContribution {
 
-    constructor( @inject(KeybindingContextRegistry) protected readonly contextRegistry: KeybindingContextRegistry) {
+    constructor(@inject(KeybindingContextRegistry) protected readonly contextRegistry: KeybindingContextRegistry) {
     }
 
     registerCommands(commands: CommandRegistry): void {

@@ -176,7 +176,7 @@ export class KeyCode {
     }
 
     /**
-     * Returns true KeyCode only contains modifers.
+     * Returns true KeyCode only contains modifiers.
      */
     public isModifierOnly() {
         if (this.key === undefined) {
@@ -241,6 +241,9 @@ export class KeyCode {
             }
         }
 
+        // We need to sort the modifier keys, but on the modifiers, so it always keeps the M1 less than M2, M2 less than M3 and so on order.
+        // We intentionally ignore other cases.
+        sequence.sort((left: string, right: string) => Modifier.isModifier(left) && Modifier.isModifier(right) ? left.localeCompare(right) : 0);
         KeyCode.keybindings[keybinding] = new KeyCode(sequence.join('+'));
         return KeyCode.keybindings[keybinding];
     }
@@ -391,6 +394,22 @@ export namespace Modifier {
      * An alias for the SHIFT key (`Modifier.M2`).
      */
     export const SHIFT = Modifier.M2;
+
+    /**
+     * `true` if the argument represents a modifier. Otherwise, `false`.
+     */
+    export function isModifier(key: string | undefined): boolean {
+        if (key) {
+            switch (key) {
+                case 'M1': // Fall through.
+                case 'M2': // Fall through.
+                case 'M3': // Fall through.
+                case 'M4': return true;
+                default: return false;
+            }
+        }
+        return false;
+    }
 }
 
 export declare type Key = { readonly code: string, readonly keyCode: number };
