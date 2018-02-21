@@ -15,6 +15,7 @@ import { IBaseTerminalErrorEvent, IBaseTerminalExitEvent } from '../common/base-
 import { TerminalWatcher } from '../common/terminal-watcher';
 import * as Xterm from 'xterm';
 import { ThemeService } from "@theia/core/lib/browser/theming";
+import { Deferred } from "@theia/core/lib/common/promise-util";
 
 Xterm.Terminal.applyAddon(require('xterm/lib/addons/fit/fit'));
 Xterm.Terminal.applyAddon(require('xterm/lib/addons/attach/attach'));
@@ -54,16 +55,17 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
 
     private terminalId: number | undefined;
     private term: Xterm.Terminal;
-    private cols: number = 80;
-    private rows: number = 40;
+    private cols: number;
+    private rows: number;
     private endpoint: Endpoint;
     protected restored = false;
     protected closeOnDispose = true;
-    protected waitForStarted: Promise<void>;
-    protected started: Function;
     protected openAfterShow = false;
     protected isOpeningTerm = false;
     protected isTermOpen = false;
+
+    protected waitForResized = new Deferred<void>();
+    protected waitForTermOpened = new Deferred<void>();
 
     constructor(
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
@@ -79,10 +81,6 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         this.title.caption = options.caption;
         this.title.label = options.label;
         this.title.iconClass = "fa fa-terminal";
-
-        this.waitForStarted = new Promise(resolve => {
-            this.started = resolve;
-        });
 
         if (options.destroyTermOnClose === true) {
             this.toDispose.push(Disposable.create(() =>
@@ -209,12 +207,12 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
      * If id is provided attach to the terminal for this id.
      */
     public async start(id?: number): Promise<void> {
+        await this.waitForResized.promise;
         if (id === undefined) {
             const root = await this.workspaceService.root;
             const rootURI = root !== undefined ? root.uri : undefined;
             this.terminalId = await this.shellTerminalServer.create(
                 { rootURI, cols: this.cols, rows: this.rows });
-
         } else {
             this.terminalId = await this.shellTerminalServer.attach(id);
         }
@@ -230,7 +228,8 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             }
             return;
         }
-        this.started();
+        await this.doResize();
+        this.connectTerminalProcess(this.terminalId);
     }
 
     protected async openTerm(): Promise<void> {
@@ -241,16 +240,6 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             return Promise.reject("Already open");
         }
 
-        /* Wait for the backend terminal to be requested before opening the xterm terminal.  */
-        await this.waitForStarted;
-
-        if (this.terminalId === undefined) {
-            /* Don't retry to open, something is permanently wrong.  */
-            this.isOpeningTerm = false;
-            this.isTermOpen = true;
-            return Promise.reject("No terminal");
-        }
-
         /* This may have changed since we waited for waitForStarted. Test it again.  */
         if (this.isVisible === false) {
             this.isOpeningTerm = false;
@@ -259,11 +248,9 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
 
         this.term.open(this.node);
         this.registerResize();
-        this.connectSocket(this.terminalId);
-        this.monitorTerminal(this.terminalId);
-
         this.isTermOpen = true;
-        return Promise.resolve();
+        this.waitForTermOpened.resolve();
+        return this.waitForTermOpened.promise;
     }
 
     protected createWebSocket(pid: string): WebSocket {
@@ -313,12 +300,18 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
 
     protected onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
-        if (this.isTermOpen) {
-            clearTimeout(this.resizeTimer);
-            this.resizeTimer = setTimeout(() => {
+        this.waitForResized.resolve();
+        clearTimeout(this.resizeTimer);
+        this.resizeTimer = setTimeout(() => {
+            this.waitForTermOpened.promise.then(() => {
                 this.doResize();
-            }, 500);
-        }
+            });
+        }, 50);
+    }
+
+    protected connectTerminalProcess(id: number) {
+        this.monitorTerminal(id);
+        this.connectSocket(id);
     }
 
     protected monitorTerminal(id: number) {
@@ -351,25 +344,16 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
     }
 
     dispose(): void {
-
-        /* Close the backend terminal only when explicitly closting the terminal
+        /* Close the backend terminal only when explicitly closing the terminal
          * a refresh for example won't close it.  */
         if (this.closeOnDispose === true && this.terminalId !== undefined) {
             this.shellTerminalServer.close(this.terminalId);
         }
-
-        if (this.resizeTimer !== undefined) {
-            clearTimeout(this.resizeTimer);
-        }
-
         super.dispose();
     }
 
-    private doResize() {
-        if (this.term === undefined) {
-            clearTimeout(this.resizeTimer);
-            return;
-        }
+    private async doResize() {
+        await Promise.all([this.waitForResized.promise, this.waitForTermOpened.promise]);
         const geo = this.term.proposeGeometry();
         this.cols = geo.cols;
         this.rows = geo.rows - 1; // subtract one row for margin
