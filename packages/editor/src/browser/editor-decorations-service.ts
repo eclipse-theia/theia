@@ -6,10 +6,11 @@
  */
 
 import { injectable, inject, named } from "inversify";
-import { Range } from "./editor";
+import { Range, DeltaDecorationParams, SetDecorationParams, TextEditor } from "./editor";
 import { EditorManager } from "./editor-manager";
 import { ContributionProvider } from "@theia/core";
 import { DiffUris } from "./diff-uris";
+import URI from "@theia/core/lib/common/uri";
 
 export const EditorDecorationTypeProvider = Symbol('EditorDecorationTypeProvider');
 
@@ -25,23 +26,41 @@ export class EditorDecorationsService {
     /**
      * Applies decorations for given type and options in all visible editors, which opened a resource of the given uri.
      * Previous decoration of the same type are not preserved.
+     *
      * To remove decorations of a type, pass an empty options array.
      */
-    setDecorations(uri: string, type: string, options: DecorationOptions[]): void {
-        this.editorManager.all.forEach(editorWidget => {
-            if (!editorWidget.isVisible) {
-                return;
-            }
+    async setDecorations(params: SetDecorationParams): Promise<void> {
+        const editor = await this.findEditorByUri(params.uri);
+        if (editor) {
+            editor.setDecorations(params);
+        }
+    }
+
+    /**
+     * Removes old decorations and applies new decorations in all visible editors, which opened a resource of the given uri.
+     *
+     * @returns identifiers of applied decorations, which can be used for removal in next call,
+     * or `undefined` if no visible editor could be found for the given uri.
+     */
+    async deltaDecorations(params: DeltaDecorationParams): Promise<string[] | undefined> {
+        const editor = await this.findEditorByUri(params.uri);
+        if (editor) {
+            return editor.deltaDecorations(params);
+        }
+        return undefined;
+    }
+
+    protected async findEditorByUri(uri: string): Promise<TextEditor | undefined> {
+        const editorWidget = await this.editorManager.getByUri(new URI(uri));
+        if (editorWidget) {
             const editorUri = editorWidget.editor.uri;
-            if (editorUri.toString() === uri) {
-                editorWidget.editor.setDecorations({ type, uri, options });
-            } else if (DiffUris.isDiffUri(editorUri)) {
-                const [uriLeft, uriRight] = DiffUris.decode(editorUri);
-                if (uriLeft.toString() === uri || uriRight.toString() === uri) {
-                    editorWidget.editor.setDecorations({ type, uri, options });
-                }
+            const openedInEditor = editorUri.toString() === uri;
+            const openedInDiffEditor = DiffUris.isDiffUri(editorUri) && DiffUris.decode(editorUri).some(u => u.toString() === uri);
+            if (openedInEditor || openedInDiffEditor) {
+                return editorWidget.editor;
             }
-        });
+        }
+        return undefined;
     }
 
     protected _decorationTypes: DecorationType[] | undefined;
@@ -79,9 +98,33 @@ export interface DecorationType {
      */
     outline?: string;
     /**
+     * CSS property `outline-color`, to be applied to the text within a decoration.
+     */
+    outlineColor?: string;
+    /**
+     * CSS property `outline-style`, to be applied to the text within a decoration.
+     */
+    outlineStyle?: string;
+    /**
+     * CSS property `outline-width`, to be applied to the text within a decoration.
+     */
+    outlineWidth?: string;
+    /**
      * CSS property `border`, to be applied to the text within a decoration.
      */
     border?: string;
+    /**
+     * CSS property `border-color`, to be applied to the text within a decoration.
+     */
+    borderColor?: string;
+    /**
+     * CSS property `border-style`, to be applied to the text within a decoration.
+     */
+    borderStyle?: string;
+    /**
+     * CSS property `border-width`, to be applied to the text within a decoration.
+     */
+    borderWidth?: string;
     /**
      * CSS property `color`.
      */
@@ -103,14 +146,9 @@ export interface DecorationType {
      */
     textDecoration?: string;
     /**
-     * color of the decoration in the overview ruler.
-     * use `rgba` values to play well with other decorations.
+     * render this decoration in the overview ruler.
      */
-    overviewRulerColor?: string;
-    /**
-     * position in the overview ruler.
-     */
-    overviewRulerLane?: OverviewRulerLane;
+    overviewRuler?: DecorationOverviewRulerOptions;
     /**
      * behavior of decorations when typing/editing near their edges.
      */
@@ -207,4 +245,79 @@ export enum TrackedRangeStickiness {
     NeverGrowsWhenTypingAtEdges = 1,
     GrowsOnlyWhenTypingBefore = 2,
     GrowsOnlyWhenTypingAfter = 3,
+}
+
+export interface DeltaDecoration {
+    /**
+     * range to which this decoration instance is applied.
+     */
+    range: Range;
+    /**
+     * options to be applied with this decoration.
+     */
+    options: ModelDecorationOptions
+}
+
+export interface ModelDecorationOptions {
+    /**
+     * behavior of decorations when typing/editing near their edges.
+     */
+    stickiness?: TrackedRangeStickiness;
+    /**
+     * CSS class name of this decoration.
+     */
+    className?: string;
+    /**
+     * hover message for this decoration.
+     */
+    hoverMessage?: string;
+    /**
+     * the decoration will be rendered in the glyph margin with this class name.
+     */
+    glyphMarginClassName?: string;
+    /**
+     * hover message for the glyph margin of this decoration.
+     */
+    glyphMarginHoverMessage?: string;
+    /**
+     * should the decoration be rendered for the whole line.
+     */
+    isWholeLine?: boolean;
+    /**
+     * the decoration will be rendered in the lines decorations with this class name.
+     */
+    linesDecorationsClassName?: string;
+    /**
+     * the decoration will be rendered in the margin in full width with this class name.
+     */
+    marginClassName?: string;
+    /**
+     * the decoration will be rendered inline with this class name.
+     * to be used only to change text, otherwise use `className`.
+     */
+    inlineClassName?: string;
+    /**
+     * the decoration will be rendered before the text with this class name.
+     */
+    beforeContentClassName?: string;
+    /**
+     * the decoration will be rendered after the text with this class name.
+     */
+    afterContentClassName?: string;
+    /**
+     * render this decoration in the overview ruler.
+     */
+    overviewRuler?: DecorationOverviewRulerOptions;
+}
+
+export interface DecorationOverviewRulerOptions {
+    /**
+     * color of the decoration in the overview ruler.
+     * use `rgba` values to play well with other decorations.
+     */
+    color: string;
+    /**
+     * position in the overview ruler.
+     */
+    position?: OverviewRulerLane;
 }
