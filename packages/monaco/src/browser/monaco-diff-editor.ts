@@ -8,7 +8,7 @@
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common';
-import { Dimension, EditorDecorationsService, SetDecorationParams, DiffNavigator } from '@theia/editor/lib/browser';
+import { Dimension, EditorDecorationsService, SetDecorationParams, DiffNavigator, DeltaDecorationParams } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoDiffNavigatorFactory } from './monaco-diff-nagivator-factory';
@@ -95,17 +95,25 @@ export class MonacoDiffEditor extends MonacoEditor {
     }
 
     setDecorations(params: SetDecorationParams): void {
-        const options = params.options;
         const type = params.type;
         const uri = params.uri;
-        const decorationOptions = options.map(d => <monaco.editor.IDecorationOptions>{
-            ...d,
-            range: this.p2m.asRange(d.range)
-        });
+        const decorationOptions = this.toDecorationOptions(params);
         for (const editor of [this._diffEditor.getOriginalEditor(), this._diffEditor.getModifiedEditor()]) {
             if (editor.getModel().uri.toString() === uri) {
                 editor.setDecorations(type, decorationOptions);
             }
         }
+    }
+
+    deltaDecorations(params: DeltaDecorationParams): string[] {
+        const uri = params.uri;
+        const oldDecorations = params.oldDecorations;
+        const newDecorations = this.toDeltaDecorations(params);
+        for (const editor of [this._diffEditor.getOriginalEditor(), this._diffEditor.getModifiedEditor()]) {
+            if (editor.getModel().uri.toString() === uri) {
+                return editor.deltaDecorations(oldDecorations, newDecorations);
+            }
+        }
+        return [];
     }
 }

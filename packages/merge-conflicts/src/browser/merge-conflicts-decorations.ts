@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from "inversify";
-import { EditorDecorationsService, OverviewRulerLane, Range, DecorationType, EditorDecorationTypeProvider } from "@theia/editor/lib/browser";
+import { EditorDecorationsService, OverviewRulerLane, Range, DecorationType, EditorDecorationTypeProvider, DecorationOptions } from "@theia/editor/lib/browser";
 import { MergeConflictUpdateParams } from "./merge-conflicts-service";
 
 export enum MergeConflictsDecorationType {
@@ -38,8 +38,10 @@ export class MergeConflictsDecorations implements EditorDecorationTypeProvider {
                 type: Type.CurrentContent,
                 backgroundColor: 'rgba(0, 255, 0, 0.3)',
                 isWholeLine: true,
-                overviewRulerColor: 'rgba(0, 255, 0, 0.3)',
-                overviewRulerLane: OverviewRulerLane.Full
+                overviewRuler: {
+                    position: OverviewRulerLane.Full,
+                    color: 'rgba(0, 255, 0, 0.3)',
+                }
             },
             {
                 type: Type.BaseMarker,
@@ -50,8 +52,10 @@ export class MergeConflictsDecorations implements EditorDecorationTypeProvider {
                 type: Type.BaseContent,
                 backgroundColor: 'rgba(125, 125, 125, 0.3)',
                 isWholeLine: true,
-                overviewRulerColor: 'rgba(125, 125, 125, 0.3)',
-                overviewRulerLane: OverviewRulerLane.Full
+                overviewRuler: {
+                    position: OverviewRulerLane.Full,
+                    color: 'rgba(125, 125, 125, 0.3)',
+                }
             },
             {
                 type: Type.IncomingMarker,
@@ -62,8 +66,10 @@ export class MergeConflictsDecorations implements EditorDecorationTypeProvider {
                 type: Type.IncomingContent,
                 backgroundColor: 'rgba(0, 0, 255, 0.3)',
                 isWholeLine: true,
-                overviewRulerColor: 'rgba(0, 0, 255, 0.3)',
-                overviewRulerLane: OverviewRulerLane.Full
+                overviewRuler: {
+                    position: OverviewRulerLane.Full,
+                    color: 'rgba(0, 0, 255, 0.3)',
+                }
             }
         ];
     }
@@ -71,10 +77,10 @@ export class MergeConflictsDecorations implements EditorDecorationTypeProvider {
     onMergeConflictUpdate(params: MergeConflictUpdateParams): void {
         const uri = params.uri;
         const mergeConflicts = params.mergeConflicts;
-        this.decorationsService.setDecorations(uri, Type.CurrentMarker, mergeConflicts.map(mergeConflict => ({ range: mergeConflict.current.marker! })));
-        this.decorationsService.setDecorations(uri, Type.CurrentContent, mergeConflicts.map(mergeConflict => ({ range: mergeConflict.current.content! })));
-        this.decorationsService.setDecorations(uri, Type.IncomingMarker, mergeConflicts.map(mergeConflict => ({ range: mergeConflict.incoming.marker! })));
-        this.decorationsService.setDecorations(uri, Type.IncomingContent, mergeConflicts.map(mergeConflict => ({ range: mergeConflict.incoming.content! })));
+        this.setDecorations(uri, Type.CurrentMarker, mergeConflicts.map(mergeConflict => ({ range: mergeConflict.current.marker! })));
+        this.setDecorations(uri, Type.CurrentContent, mergeConflicts.map(mergeConflict => ({ range: mergeConflict.current.content! })));
+        this.setDecorations(uri, Type.IncomingMarker, mergeConflicts.map(mergeConflict => ({ range: mergeConflict.incoming.marker! })));
+        this.setDecorations(uri, Type.IncomingContent, mergeConflicts.map(mergeConflict => ({ range: mergeConflict.incoming.content! })));
 
         const baseMarkerRanges: Range[] = [];
         const baseContentRanges: Range[] = [];
@@ -86,8 +92,12 @@ export class MergeConflictsDecorations implements EditorDecorationTypeProvider {
                 baseContentRanges.push(b.content);
             }
         }));
-        this.decorationsService.setDecorations(uri, Type.BaseMarker, baseMarkerRanges.map(range => ({ range })));
-        this.decorationsService.setDecorations(uri, Type.BaseContent, baseContentRanges.map(range => ({ range })));
+        this.setDecorations(uri, Type.BaseMarker, baseMarkerRanges.map(range => ({ range })));
+        this.setDecorations(uri, Type.BaseContent, baseContentRanges.map(range => ({ range })));
+    }
+
+    protected setDecorations(uri: string, type: string, options: DecorationOptions[]) {
+        this.decorationsService.setDecorations({ uri, type, options });
     }
 
 }
