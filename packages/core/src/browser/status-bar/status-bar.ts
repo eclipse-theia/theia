@@ -5,14 +5,16 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { VirtualRenderer, VirtualWidget } from '../widgets';
+import { VirtualRenderer, VirtualWidget, Message } from '../widgets';
 import { CommandService } from '../../common';
 import { h } from '@phosphor/virtualdom';
 import { LabelParser, LabelIcon } from '../label-parser';
 import { injectable, inject } from 'inversify';
+import { Deferred } from '../../common/promise-util';
 
 export interface StatusBarLayoutData {
     entries: StatusBarEntryData[]
+    backgroundColor?: string
 }
 
 export interface StatusBarEntryData {
@@ -36,6 +38,7 @@ export interface StatusBarEntry {
     alignment: StatusBarAlignment;
     tooltip?: string;
     command?: string;
+    // tslint:disable-next-line:no-any
     arguments?: any[];
     priority?: number;
 }
@@ -57,14 +60,17 @@ export const STATUSBAR_WIDGET_FACTORY_ID = 'statusBar';
 export const StatusBar = Symbol('StatusBar');
 
 export interface StatusBar {
-    setElement(id: string, entry: StatusBarEntry): void;
-    removeElement(id: string): void;
+    setBackgroundColor(color?: string): Promise<void>;
+    setElement(id: string, entry: StatusBarEntry): Promise<void>;
+    removeElement(id: string): Promise<void>;
 }
 
 @injectable()
 export class StatusBarImpl extends VirtualWidget implements StatusBar {
 
+    protected backgroundColor: string | undefined;
     protected entries: Map<string, StatusBarEntry> = new Map();
+    protected attached = new Deferred<void>();
 
     constructor(
         @inject(CommandService) protected readonly commands: CommandService,
@@ -74,14 +80,32 @@ export class StatusBarImpl extends VirtualWidget implements StatusBar {
         this.id = 'theia-statusBar';
     }
 
-    setElement(id: string, entry: StatusBarEntry) {
+    onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        this.attached.resolve();
+    }
+
+    async setElement(id: string, entry: StatusBarEntry) {
+        await this.attached.promise;
         this.entries.set(id, entry);
         this.update();
     }
 
-    removeElement(id: string) {
+    async removeElement(id: string) {
+        await this.attached.promise;
         this.entries.delete(id);
         this.update();
+    }
+
+    async setBackgroundColor(color?: string) {
+        await this.attached.promise;
+        this.internalSetBackgroundColor(color);
+    }
+
+    protected internalSetBackgroundColor(color?: string) {
+        this.backgroundColor = color;
+        // tslint:disable-next-line:no-null-keyword
+        this.node.style.backgroundColor = this.backgroundColor ? this.backgroundColor : null;
     }
 
     getLayoutData(): StatusBarLayoutData {
@@ -89,7 +113,7 @@ export class StatusBarImpl extends VirtualWidget implements StatusBar {
         this.entries.forEach((entry, id) => {
             entries.push({ id, entry });
         });
-        return { entries };
+        return { entries, backgroundColor: this.backgroundColor };
     }
 
     setLayoutData(data: StatusBarLayoutData) {
@@ -99,6 +123,7 @@ export class StatusBarImpl extends VirtualWidget implements StatusBar {
             });
             this.update();
         }
+        this.internalSetBackgroundColor(data.backgroundColor);
     }
 
     protected render(): h.Child {

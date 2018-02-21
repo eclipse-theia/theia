@@ -9,8 +9,8 @@ import { inject, injectable, optional } from 'inversify';
 import { ILogger } from '../common/logger';
 import { Endpoint } from './endpoint';
 import { Event, Emitter } from '../common/event';
-import { AbstractDialog, DialogProps } from './dialogs';
 import { FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application';
+import { StatusBar, StatusBarAlignment } from './status-bar/status-bar';
 
 /**
  * Service for listening on backend connection changes.
@@ -207,10 +207,9 @@ export class FrontendConnectionStatusService implements ConnectionStatusService,
 @injectable()
 export class ApplicationConnectionStatusContribution extends DefaultFrontendApplicationContribution {
 
-    private dialog: ConnectionStatusDialog | undefined;
-
     constructor(
         @inject(ConnectionStatusService) protected readonly connectionStatusService: ConnectionStatusService,
+        @inject(StatusBar) protected readonly statusBar: StatusBar,
         @inject(ILogger) protected readonly logger: ILogger
     ) {
         super();
@@ -230,33 +229,22 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
         }
     }
 
-    protected getOrCreateDialog(content: string): ConnectionStatusDialog {
-        if (this.dialog === undefined) {
-            this.dialog = new ConnectionStatusDialog({
-                title: 'Not connected',
-                content
-            });
-        }
-        return this.dialog;
-    }
+    private statusbarId = 'connection-status';
 
     protected handleOnline() {
-        const message = 'Successfully reconnected to the backend.';
-        this.logger.info(message);
-        if (this.dialog !== undefined) {
-            this.dialog.dispose();
-            this.dialog = undefined;
-        }
+        this.statusBar.setBackgroundColor(undefined);
+        this.statusBar.removeElement(this.statusbarId);
     }
 
     protected handleOffline() {
-        if (this.dialog === undefined) {
-            const message = 'The application connection to the backend is lost. Attempting to reconnect...';
-            this.logger.error(message);
-            this.getOrCreateDialog(message).open();
-        }
+        this.statusBar.setBackgroundColor('var(--theia-warn-color0)');
+        this.statusBar.setElement(this.statusbarId, {
+            alignment: StatusBarAlignment.LEFT,
+            text: 'Offline',
+            tooltip: 'Cannot connect to backend.',
+            priority: 5000
+        });
     }
-
 }
 
 export class ConnectionStatusImpl implements ConnectionStatus {
@@ -286,24 +274,6 @@ export class ConnectionStatusImpl implements ConnectionStatus {
             updated.shift();
         }
         return updated;
-    }
-
-}
-
-export class ConnectionStatusDialog extends AbstractDialog<void> {
-
-    public readonly value: void;
-
-    constructor(dialogProps: DialogProps & { content: string }) {
-        super(dialogProps);
-        // Just to remove the X, so that the dialog cannot be closed by the user.
-        this.closeCrossNode.remove();
-        this.contentNode.appendChild(document.createTextNode(dialogProps.content));
-    }
-
-    protected onAfterAttach() {
-        // NOOP.
-        // We need disable the key listener for escape and return so that the dialog cannot be closed by the user.
     }
 
 }
