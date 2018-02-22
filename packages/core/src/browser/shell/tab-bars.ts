@@ -328,7 +328,7 @@ export class SideTabBar extends TabBar<Widget> {
         // Check whether the mouse went down on the current tab
         const tabs = this.contentNode.children;
         const index = ArrayExt.findFirstIndex(tabs, tab => ElementExt.hitTest(tab, event.clientX, event.clientY));
-        if (index !== this.currentIndex) {
+        if (index < 0 || index !== this.currentIndex) {
             return;
         }
 
