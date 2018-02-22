@@ -10,7 +10,7 @@ declare module monaco.editor {
     export interface IDiffNavigator {
         readonly ranges: IDiffRange[];
         readonly nextIdx: number;
-        _initIdx(fwd: boolean): void;
+        initIdx(fwd: boolean): void;
     }
 
     export interface IDiffRange {

@@ -44,8 +44,8 @@ export class MonacoDiffEditor extends MonacoEditor {
         this.documents.add(originalModel);
         const original = originalModel.textEditorModel;
         const modified = modifiedModel.textEditorModel;
-        this._diffEditor.setModel({ original, modified });
         this._diffNavigator = diffNavigatorFactory.createdDiffNavigator(this._diffEditor, options);
+        this._diffEditor.setModel({ original, modified });
     }
 
     get diffEditor(): IStandaloneDiffEditor {
