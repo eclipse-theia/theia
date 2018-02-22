@@ -479,7 +479,8 @@ export namespace SidePanel {
      * Data structure used to save and restore the side panel layout.
      */
     export interface WidgetItem extends WidgetOptions {
-        widget: Widget;
+        /** Can be undefined in case the widget could not be restored. */
+        widget?: Widget;
         expanded?: boolean;
     }
 
