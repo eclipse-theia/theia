@@ -4,6 +4,7 @@
   "description": "Theia - Metrics Extension",
   "dependencies": {
     "@theia/core": "^0.3.8",
+    "@theia/application-package": "^0.3.8",
     "prom-client": "^10.2.0"
   },
   "publishConfig": {
