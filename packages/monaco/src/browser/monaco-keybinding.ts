@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { KeybindingContribution, KeybindingRegistry, Key, KeyCode, Keystroke, Modifier } from '@theia/core/lib/browser';
+import { KeybindingContribution, KeybindingRegistry, Key, KeyCode, Keystroke, KeyModifier } from '@theia/core/lib/browser';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
@@ -62,16 +62,16 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             modifiers: []
         };
         if (keybinding.ctrlKey) {
-            sequence.modifiers!.push(Modifier.M1);
+            sequence.modifiers!.push(KeyModifier.CtrlCmd);
         }
         if (keybinding.shiftKey) {
-            sequence.modifiers!.push(Modifier.M2);
+            sequence.modifiers!.push(KeyModifier.Shift);
         }
         if (keybinding.altKey) {
-            sequence.modifiers!.push(Modifier.M3);
+            sequence.modifiers!.push(KeyModifier.Alt);
         }
         if (keybinding.metaKey) {
-            sequence.modifiers!.push(Modifier.M4);
+            sequence.modifiers!.push(KeyModifier.MacCtrl);
         }
         return KeyCode.createKeyCode(sequence);
     }
