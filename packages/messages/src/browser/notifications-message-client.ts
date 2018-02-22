@@ -5,18 +5,20 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import {
     MessageClient,
     MessageType,
     Message
 } from '@theia/core/lib/common';
 import { Notifications, NotificationAction } from './notifications';
+import { NotificationPreferences } from "./notification-preferences";
 
 @injectable()
 export class NotificationsMessageClient extends MessageClient {
 
     protected notifications: Notifications = new Notifications();
+    @inject(NotificationPreferences) protected preferences: NotificationPreferences;
 
     showMessage(message: Message): Promise<string | undefined> {
         return this.show(message);
@@ -35,6 +37,12 @@ export class NotificationsMessageClient extends MessageClient {
             label: action,
             fn: element => onCloseFn(action)
         });
+
+        const timeout = actions.length > 0 ? undefined
+            : (!!message.options && message.options.timeout !== undefined
+                ? message.options.timeout
+                : this.preferences['notification.timeout']);
+
         actions.push(<NotificationAction>{
             label: 'Close',
             fn: element => onCloseFn(undefined)
@@ -42,7 +50,8 @@ export class NotificationsMessageClient extends MessageClient {
         this.notifications.show({
             icon,
             text,
-            actions
+            actions,
+            timeout
         });
     }
 

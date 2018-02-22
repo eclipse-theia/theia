@@ -20,6 +20,7 @@ export interface NotificationProperties {
     icon: string;
     text: string;
     actions?: NotificationAction[];
+    timeout: number | undefined;
 }
 
 export interface Notification {
@@ -65,11 +66,20 @@ export class Notifications {
         const handler = <Notification>{ element, properties };
         const buttons = element.appendChild(document.createElement('div'));
         buttons.classList.add(BUTTONS);
+
+        const closeTimer = (!!properties.timeout && properties.timeout > 0) ?
+            window.setTimeout(() => {
+                close();
+            }, properties.timeout) : undefined;
+
         if (!!properties.actions) {
             for (const action of properties.actions) {
                 const button = buttons.appendChild(document.createElement('button'));
                 button.innerText = action.label;
                 button.addEventListener('click', () => {
+                    if (closeTimer) {
+                        window.clearTimeout(closeTimer);
+                    }
                     action.fn(handler);
                     close();
                 });

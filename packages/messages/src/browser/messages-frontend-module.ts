@@ -12,8 +12,10 @@ import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
 import { NotificationsMessageClient } from './notifications-message-client';
 
 import '../../src/browser/style/index.css';
+import { bindNotificationPreferences } from './notification-preferences';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    bindNotificationPreferences(bind);
     bind(NotificationsMessageClient).toSelf().inSingletonScope();
     rebind(MessageClient).toDynamicValue(context => {
         const notificationsClient = context.container.get(NotificationsMessageClient);
