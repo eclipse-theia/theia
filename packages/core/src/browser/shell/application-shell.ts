@@ -423,7 +423,9 @@ export class ApplicationShell extends Widget {
         if (data) {
             if (data.type === 'tab-area') {
                 for (const widget of data.widgets) {
-                    this.track(widget);
+                    if (widget) {
+                        this.track(widget);
+                    }
                 }
             } else if (data.type === 'split-area') {
                 for (const child of data.children) {
@@ -431,7 +433,9 @@ export class ApplicationShell extends Widget {
                 }
             } else if (data.type === 'sidepanel' && data.items) {
                 for (const item of data.items) {
-                    this.track(item.widget);
+                    if (item.widget) {
+                        this.track(item.widget);
+                    }
                 }
             }
         }
