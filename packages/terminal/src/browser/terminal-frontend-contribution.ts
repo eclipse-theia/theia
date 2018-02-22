@@ -16,7 +16,7 @@ import {
 } from '@theia/core/lib/common';
 import {
     CommonMenus, ApplicationShell, KeybindingContribution, KeyCode, Key,
-    Modifier, KeybindingRegistry, Keybinding, KeybindingContextRegistry,
+    KeyModifier, KeybindingRegistry, Keybinding, KeybindingContextRegistry,
 } from '@theia/core/lib/browser';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidget } from './terminal-widget';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
@@ -82,7 +82,7 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
         const regCtrl = (k: Key) => {
             keybindings.registerKeybindings({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-                keybinding: KeyCode.createKeyCode({ first: k, modifiers: [Modifier.CTRL] }).toString(),
+                keybinding: KeyCode.createKeyCode({ first: k, modifiers: [KeyModifier.CTRL] }).toString(),
                 context: TERMINAL_ACTIVE_CONTEXT,
             });
         };
@@ -92,7 +92,7 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
         const regAlt = (k: Key) => {
             keybindings.registerKeybinding({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
-                keybinding: KeyCode.createKeyCode({ first: k, modifiers: [Modifier.M3] }).toString(),
+                keybinding: KeyCode.createKeyCode({ first: k, modifiers: [KeyModifier.Alt] }).toString(),
                 context: TERMINAL_ACTIVE_CONTEXT,
             });
         };

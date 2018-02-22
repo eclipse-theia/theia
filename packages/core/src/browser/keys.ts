@@ -13,7 +13,7 @@ import { isOSX } from '../common/os';
  * Since `M2+M3+<Key>` (Alt+Shift+<Key>) is reserved on MacOS X for writing special characters, such bindings are commonly
  * undefined for platform MacOS X and redefined as `M1+M3+<Key>`. The rule applies on the `M3+M2+<Key>` sequence.
  */
-export declare type Keystroke = { first?: Key, modifiers?: Modifier[] };
+export declare type Keystroke = { first?: Key, modifiers?: KeyModifier[] };
 
 export type KeySequence = KeyCode[];
 export namespace KeySequence {
@@ -152,24 +152,24 @@ export class KeyCode {
         }
 
         if (isOSX) {
-            this.meta = parts.some(part => part === Modifier.M1);
-            this.shift = parts.some(part => part === Modifier.M2);
-            this.alt = parts.some(part => part === Modifier.M3);
-            this.ctrl = parts.some(part => part === Modifier.M4);
+            this.meta = parts.some(part => part === KeyModifier.CtrlCmd);
+            this.shift = parts.some(part => part === KeyModifier.Shift);
+            this.alt = parts.some(part => part === KeyModifier.Alt);
+            this.ctrl = parts.some(part => part === KeyModifier.MacCtrl);
         } else {
             this.meta = false;
-            this.ctrl = parts.some(part => part === Modifier.M1);
-            this.shift = parts.some(part => part === Modifier.M2);
-            this.alt = parts.some(part => part === Modifier.M3);
+            this.ctrl = parts.some(part => part === KeyModifier.CtrlCmd);
+            this.shift = parts.some(part => part === KeyModifier.Shift);
+            this.alt = parts.some(part => part === KeyModifier.Alt);
         }
     }
 
     /* Return true of string is a modifier M1 to M4 */
     public static isModifierString(key: string) {
-        if (key === Modifier.M1
-            || key === Modifier.M2
-            || key === Modifier.M3
-            || key === Modifier.M4) {
+        if (key === KeyModifier.CtrlCmd
+            || key === KeyModifier.Shift
+            || key === KeyModifier.Alt
+            || key === KeyModifier.MacCtrl) {
             return true;
         }
         return false;
@@ -212,26 +212,26 @@ export class KeyCode {
             /* meta only works on macOS */
             if (keyString === SpecialCases.META) {
                 if (isOSX) {
-                    sequence.push(`${Modifier.M1}`);
+                    sequence.push(`${KeyModifier.CtrlCmd}`);
                 } else {
                     throw new Error(`Can't parse keybinding ${keybinding} meta is for OSX only`);
                 }
                 /* ctrlcmd for M1 keybindings that work on both macOS and other platforms */
             } else if (keyString === SpecialCases.CTRLCMD) {
-                sequence.push(`${Modifier.M1}`);
+                sequence.push(`${KeyModifier.CtrlCmd}`);
             } else if (Key.isKey(key)) {
                 if (Key.isModifier(key.code)) {
                     if (key.keyCode === EasyKey.CONTROL.keyCode) {
                         // CTRL on MacOS X (M4)
                         if (isOSX) {
-                            sequence.push(`${Modifier.M4}`);
+                            sequence.push(`${KeyModifier.MacCtrl}`);
                         } else {
-                            sequence.push(`${Modifier.M1}`);
+                            sequence.push(`${KeyModifier.CtrlCmd}`);
                         }
                     } else if (key.keyCode === EasyKey.SHIFT.keyCode) {
-                        sequence.push(`${Modifier.M2}`);
+                        sequence.push(`${KeyModifier.Shift}`);
                     } else if (key.keyCode === EasyKey.ALT.keyCode) {
-                        sequence.push(`${Modifier.M3}`);
+                        sequence.push(`${KeyModifier.Alt}`);
                     }
                 } else {
                     sequence.unshift(key.code);
@@ -243,7 +243,7 @@ export class KeyCode {
 
         // We need to sort the modifier keys, but on the modifiers, so it always keeps the M1 less than M2, M2 less than M3 and so on order.
         // We intentionally ignore other cases.
-        sequence.sort((left: string, right: string) => Modifier.isModifier(left) && Modifier.isModifier(right) ? left.localeCompare(right) : 0);
+        sequence.sort((left: string, right: string) => KeyModifier.isModifier(left) && KeyModifier.isModifier(right) ? left.localeCompare(right) : 0);
         KeyCode.keybindings[keybinding] = new KeyCode(sequence.join('+'));
         return KeyCode.keybindings[keybinding];
     }
@@ -259,22 +259,22 @@ export class KeyCode {
 
             // CTRL + COMMAND (M1)
             if ((isOSX && event.metaKey) || (!isOSX && event.ctrlKey)) {
-                sequence.push(`${Modifier.M1}`);
+                sequence.push(`${KeyModifier.CtrlCmd}`);
             }
 
             // SHIFT (M2)
             if (event.shiftKey) {
-                sequence.push(`${Modifier.M2}`);
+                sequence.push(`${KeyModifier.Shift}`);
             }
 
             // ALT (M3)
             if (event.altKey) {
-                sequence.push(`${Modifier.M3}`);
+                sequence.push(`${KeyModifier.Alt}`);
             }
 
             // CTRL on MacOS X (M4)
             if (isOSX && !event.metaKey && event.ctrlKey) {
-                sequence.push(`${Modifier.M4}`);
+                sequence.push(`${KeyModifier.MacCtrl}`);
             }
 
             return new KeyCode(sequence.join('+'));
@@ -365,35 +365,35 @@ export class KeyCode {
     }
 }
 
-export enum Modifier {
+export enum KeyModifier {
     /**
      * M1 is the COMMAND key on MacOS X, and the CTRL key on most other platforms.
      */
-    M1 = "M1",
+    CtrlCmd = "M1",
     /**
      * M2 is the SHIFT key.
      */
-    M2 = "M2",
+    Shift = "M2",
     /**
      * M3 is the Option key on MacOS X, and the ALT key on most other platforms.
      */
-    M3 = "M3",
+    Alt = "M3",
     /**
      * M4 is the CTRL key on MacOS X, and is undefined on other platforms.
      */
-    M4 = "M4"
+    MacCtrl = "M4"
 }
 
-export namespace Modifier {
+export namespace KeyModifier {
     /**
      * The CTRL key, independently of the platform.
-     * _Note:_ In general `Modifier.M1` should be preferred over this constant.
+     * _Note:_ In general `KeyModifier.CtrlCmd` should be preferred over this constant.
      */
-    export const CTRL = isOSX ? Modifier.M4 : Modifier.M1;
+    export const CTRL = isOSX ? KeyModifier.MacCtrl : KeyModifier.CtrlCmd;
     /**
-     * An alias for the SHIFT key (`Modifier.M2`).
+     * An alias for the SHIFT key (`KeyModifier.Shift`).
      */
-    export const SHIFT = Modifier.M2;
+    export const SHIFT = KeyModifier.Shift;
 
     /**
      * `true` if the argument represents a modifier. Otherwise, `false`.
