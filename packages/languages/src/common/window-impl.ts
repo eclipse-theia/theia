@@ -28,16 +28,16 @@ export class WindowImpl implements Window {
             return undefined;
         };
         if (type === MessageType.Error) {
-            return this.messageService.error(message, ...actionTitles).then(mapActionType);
+            return this.messageService.error(message, { actions: actionTitles }).then(mapActionType);
         }
         if (type === MessageType.Warning) {
-            return this.messageService.warn(message, ...actionTitles).then(mapActionType);
+            return this.messageService.warn(message, { actions: actionTitles }).then(mapActionType);
         }
         if (type === MessageType.Info) {
-            return this.messageService.info(message, ...actionTitles).then(mapActionType);
+            return this.messageService.info(message, { actions: actionTitles }).then(mapActionType);
         }
         if (type === MessageType.Log) {
-            return this.messageService.log(message, ...actionTitles).then(mapActionType);
+            return this.messageService.log(message, { actions: actionTitles }).then(mapActionType);
         }
         return Promise.resolve(undefined);
     }
