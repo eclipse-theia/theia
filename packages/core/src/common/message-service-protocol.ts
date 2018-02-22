@@ -21,12 +21,17 @@ export interface Message {
     type: MessageType;
     text: string;
     actions?: string[];
+    options?: MessageOptions;
+}
+
+export interface MessageOptions {
+    timeout?: number;
 }
 
 @injectable()
 export class MessageClient {
 
-    constructor( @inject(ILogger) protected readonly logger: ILogger) { }
+    constructor(@inject(ILogger) protected readonly logger: ILogger) { }
 
     /**
      * Show a message of the given type and possible actions to the user.
