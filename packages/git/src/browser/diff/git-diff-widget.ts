@@ -12,10 +12,11 @@ import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
 import { VirtualRenderer, open, OpenerService, StatefulWidget, SELECTED_CLASS } from "@theia/core/lib/browser";
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import URI from "@theia/core/lib/common/uri";
-import { GitFileChange, GitFileStatus, Git } from '../../common';
+import { GitFileChange, GitFileStatus, Git, WorkingDirectoryStatus } from '../../common';
 import { GitBaseWidget, GitFileChangeNode } from "../git-base-widget";
 import { DiffNavigatorProvider, DiffNavigator } from "@theia/editor/lib/browser/diff-navigator";
 import { EditorManager } from "@theia/editor/lib/browser";
+import { GitWatcher, GitStatusChangeEvent } from "../../common/git-watcher";
 
 @injectable()
 export class GitDiffWidget extends GitBaseWidget<GitFileChangeNode> implements StatefulWidget {
@@ -23,8 +24,11 @@ export class GitDiffWidget extends GitBaseWidget<GitFileChangeNode> implements S
     protected fileChangeNodes: GitFileChangeNode[];
     protected options: Git.Options.Diff;
 
+    protected gitStatus: WorkingDirectoryStatus | undefined;
+
     constructor(
         @inject(Git) protected readonly git: Git,
+        @inject(GitWatcher) protected readonly gitWatcher: GitWatcher,
         @inject(DiffNavigatorProvider) protected diffNavigatorProvider: DiffNavigatorProvider,
         @inject(OpenerService) protected openerService: OpenerService,
         @inject(EditorManager) protected editorManager: EditorManager) {
@@ -35,6 +39,17 @@ export class GitDiffWidget extends GitBaseWidget<GitFileChangeNode> implements S
 
         this.addClass('theia-git');
 
+        this.toDispose.push(this.gitWatcher.onGitEvent(async gitEvent => {
+            if (GitStatusChangeEvent.is(gitEvent)) {
+                const oldStatus = this.gitStatus;
+                if (!WorkingDirectoryStatus.equals(gitEvent.status, oldStatus)) {
+                    this.gitStatus = gitEvent.status;
+                    if (this.options) {
+                        this.setContent(this.options);
+                    }
+                }
+            }
+        }));
     }
 
     protected get toRevision() {
