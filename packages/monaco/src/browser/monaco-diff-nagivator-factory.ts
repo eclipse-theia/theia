@@ -21,7 +21,6 @@ export class MonacoDiffNavigatorFactory {
         next: () => { },
         previous: () => { },
         revealFirst: false,
-        dispose: () => { },
     };
 
     createdDiffNavigator(editor: IStandaloneDiffEditor, options?: IDiffNavigatorOptions): DiffNavigator {
@@ -44,7 +43,6 @@ export class MonacoDiffNavigatorFactory {
             next: () => navigator.next(),
             previous: () => navigator.previous(),
             revealFirst: navigator.revealFirst,
-            dispose: () => navigator.dispose(),
         };
     }
 }

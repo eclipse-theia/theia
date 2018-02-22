@@ -6,9 +6,8 @@
  */
 
 import { TextEditor } from './editor';
-import { Disposable } from '@theia/core/lib/common';
 
-export interface DiffNavigator extends Disposable {
+export interface DiffNavigator {
     revealFirst: boolean;
     canNavigate(): boolean;
     hasNext(): boolean;
