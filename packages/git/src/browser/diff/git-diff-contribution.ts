@@ -90,7 +90,6 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
         const widget = await this.widget;
         await widget.setContent(options);
         this.openView({
-            toggle: true,
             activate: true
         });
     }
