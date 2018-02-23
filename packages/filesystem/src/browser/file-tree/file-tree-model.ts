@@ -126,12 +126,17 @@ export class FileTreeModel extends TreeModel implements LocationService {
     async move(source: ITreeNode, target: ITreeNode) {
         if (DirNode.is(target) && FileStatNode.is(source)) {
             const sourceUri = source.uri.toString();
+            if (target.uri.toString() === sourceUri) { /*  Folder on itself */
+                return;
+            }
             const targetUri = target.uri.resolve(source.name).toString();
-            const fileExistsInTarget = await this.fileSystem.exists(targetUri);
-            if (!fileExistsInTarget || await this.shouldReplace(source.name)) {
-                await this.fileSystem.move(sourceUri, targetUri, { overwrite: true });
-                // to workaround https://github.com/Axosoft/nsfw/issues/42
-                this.refresh(target);
+            if (sourceUri !== targetUri) { /*  File not on itself */
+                const fileExistsInTarget = await this.fileSystem.exists(targetUri);
+                if (!fileExistsInTarget || await this.shouldReplace(source.name)) {
+                    await this.fileSystem.move(sourceUri, targetUri, { overwrite: true });
+                    // to workaround https://github.com/Axosoft/nsfw/issues/42
+                    this.refresh(target);
+                }
             }
         }
     }
