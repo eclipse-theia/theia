@@ -10,6 +10,7 @@ import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal
 export const ITerminalServer = Symbol('ITerminalServer');
 
 export const terminalPath = '/services/terminal';
+export const terminalsPath = "/services/terminals";
 
 export interface ITerminalServer extends IBaseTerminalServer {
     create(ITerminalServerOptions: object): Promise<number>;

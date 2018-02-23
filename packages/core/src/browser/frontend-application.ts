@@ -6,7 +6,8 @@
  */
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, CommandRegistry, KeybindingRegistry, MenuModelRegistry } from '../common';
+import { ContributionProvider, CommandRegistry, MenuModelRegistry } from '../common';
+import { KeybindingRegistry } from './keybinding';
 import { ApplicationShell, ShellLayoutRestorer } from './shell';
 import { Widget } from "./widgets";
 import { ILogger } from '../common';
@@ -41,6 +42,19 @@ export interface FrontendApplicationContribution {
      * Should return a promise if it runs asynchronously.
      */
     initializeLayout?(app: FrontendApplication): MaybePromise<void>;
+}
+
+/**
+ * Default frontend contribution that can be extended by clients if they do not want to implement any of the
+ * methods from the interface but still want to contribute to the frontend application.
+ */
+@injectable()
+export abstract class DefaultFrontendApplicationContribution implements FrontendApplicationContribution {
+
+    initialize() {
+        // NOOP
+    }
+
 }
 
 @injectable()

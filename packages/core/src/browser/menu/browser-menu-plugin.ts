@@ -9,11 +9,11 @@ import { injectable, inject } from "inversify";
 import { MenuBar as MenuBarWidget, Menu as MenuWidget, Widget } from "@phosphor/widgets";
 import { CommandRegistry as PhosphorCommandRegistry } from "@phosphor/commands";
 import {
-    CommandRegistry, KeybindingRegistry, ActionMenuNode, CompositeMenuNode,
-    MenuModelRegistry, MAIN_MENU_BAR, MenuPath, KeyCode, Key, Keybinding
+    CommandRegistry, ActionMenuNode, CompositeMenuNode,
+    MenuModelRegistry, MAIN_MENU_BAR, MenuPath
 } from "../../common";
+import { KeybindingRegistry, Keybinding } from "../keybinding";
 import { FrontendApplicationContribution, FrontendApplication } from "../frontend-application";
-import { isOSX } from '../../common/os';
 
 @injectable()
 export class BrowserMainMenuFactory {
@@ -83,7 +83,7 @@ export class BrowserMainMenuFactory {
         /* Only consider the first keybinding. */
         if (bindings.length > 0) {
             const binding = bindings[0];
-            const keys = [this.acceleratorFor(binding)];
+            const keys = Keybinding.acceleratorFor(binding);
             commands.addKeyBinding({
                 command: command.id,
                 keys,
@@ -91,53 +91,8 @@ export class BrowserMainMenuFactory {
             });
         }
     }
-
-    /* Return a user visble representation of a keybinding.  */
-    protected acceleratorFor(keybinding: Keybinding) {
-        const keyCode = KeyCode.parse(keybinding.keybinding);
-        let result = "";
-        let previous = false;
-        const separator = " ";
-
-        if (keyCode.meta && isOSX) {
-            if (isOSX) {
-                result += "Cmd";
-                previous = true;
-            }
-        }
-
-        if (keyCode.ctrl) {
-            if (previous) {
-                result += separator;
-            }
-            result += "Ctrl";
-            previous = true;
-        }
-
-        if (keyCode.alt) {
-            if (previous) {
-                result += separator;
-            }
-            result += "Alt";
-            previous = true;
-        }
-
-        if (keyCode.shift) {
-            if (previous) {
-                result += separator;
-            }
-            result += "Shift";
-            previous = true;
-        }
-
-        if (previous) {
-            result += separator;
-        }
-
-        result += Key.getEasyKey(keyCode.key).easyString.toUpperCase();
-        return result;
-    }
 }
+
 class DynamicMenuBarWidget extends MenuBarWidget {
 
     constructor() {

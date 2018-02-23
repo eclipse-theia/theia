@@ -6,7 +6,8 @@
  */
 
 import { ContainerModule } from "inversify";
-import { CommandContribution, KeybindingContribution, KeybindingContext } from '@theia/core/lib/common';
+import { CommandContribution } from '@theia/core/lib/common';
+import { KeybindingContribution, KeybindingContext } from '@theia/core/lib/browser';
 import { CppCommandContribution } from './cpp-commands';
 
 import { LanguageClientContribution } from "@theia/languages/lib/browser";

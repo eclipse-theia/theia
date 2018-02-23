@@ -63,7 +63,7 @@ body {
                                   supported by Chrome and Opera */
 }
 
-.button {
+.theia-button {
   border: 1px solid var(--theia-border-color1);
   font-size: var(--theia-ui-font-size1);
   border-radius: 0;
@@ -79,12 +79,12 @@ body {
   margin-left: calc(var(--theia-ui-padding)*2);
 }
 
-.button.secondary {
+.theia-button.secondary {
   color: var(--theia-ui-button-font-color-secondary);
   background-color: var(--theia-ui-button-color-secondary);
 }
 
-.button[disabled] {
+.theia-button[disabled] {
   color: var(--theia-ui-button-font-color-disabled);
   background-color: var(--theia-ui-button-color-disabled);
   cursor: default;
@@ -103,3 +103,4 @@ body {
 @import './scrollbars.css';
 @import './tree.css';
 @import './status-bar.css';
+@import './tree-decorators.css';

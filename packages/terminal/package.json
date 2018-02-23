@@ -1,13 +1,14 @@
 {
   "name": "@theia/terminal",
-  "version": "0.3.4",
+  "version": "0.3.7",
   "description": "Theia - Terminal Extension",
   "dependencies": {
     "domterm": "git+https://git@github.com/PerBothner/DomTerm.git",
-    "@theia/core": "^0.3.3",
-    "@theia/filesystem": "^0.3.4",
-    "@theia/process": "^0.3.3",
-    "@theia/workspace": "^0.3.4"
+    "@theia/core": "^0.3.7",
+    "@theia/filesystem": "^0.3.7",
+    "@theia/process": "^0.3.7",
+    "@theia/workspace": "^0.3.7",
+    "xterm": "^3.0.1"
   },
   "publishConfig": {
     "access": "public"

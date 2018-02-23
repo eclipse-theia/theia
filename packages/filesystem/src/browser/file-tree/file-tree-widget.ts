@@ -9,7 +9,7 @@ import { injectable, inject } from "inversify";
 import { h } from "@phosphor/virtualdom";
 import { Message } from "@phosphor/messaging";
 import {
-    ContextMenuRenderer, VirtualRenderer,
+    ContextMenuRenderer,
     TreeWidget, NodeProps, TreeProps, ITreeNode
 } from "@theia/core/lib/browser";
 import { ElementAttrs } from "@phosphor/virtualdom";
@@ -48,18 +48,14 @@ export class FileTreeWidget extends TreeWidget {
         return classNames;
     }
 
-    protected decorateCaption(node: ITreeNode, caption: h.Child, props: NodeProps): h.Child {
+    protected renderIcon(node: ITreeNode, props: NodeProps): h.Child {
         if (FileStatNode.is(node)) {
-            return this.decorateFileStatCaption(node, caption, props);
+            return h.span({
+                className: (node.icon || '') + ' file-icon'
+            });
         }
-        return super.decorateCaption(node, caption, props);
-    }
-
-    protected decorateFileStatCaption(node: FileStatNode, caption: h.Child, props: NodeProps): h.Child {
-        const icon = h.span({
-            className: (node.icon || '') + ' file-icon'
-        });
-        return super.decorateCaption(node, VirtualRenderer.merge(icon, caption), props);
+        // tslint:disable-next-line:no-null-keyword
+        return null;
     }
 
     protected onAfterAttach(msg: Message): void {

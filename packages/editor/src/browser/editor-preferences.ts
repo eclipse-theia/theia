@@ -13,7 +13,7 @@ import {
     PreferenceContribution,
     PreferenceSchema,
     PreferenceChangeEvent
-} from '@theia/preferences-api';
+} from '@theia/core/lib/browser/preferences';
 
 export const editorPreferenceSchema: PreferenceSchema = {
     "type": "object",
@@ -21,6 +21,7 @@ export const editorPreferenceSchema: PreferenceSchema = {
         "editor.tabSize": {
             "type": "number",
             "minimum": 1,
+            "default": 4,
             "description": "Configure the tab size in the editor"
         },
         "editor.lineNumbers": {
@@ -283,6 +284,36 @@ export const editorPreferenceSchema: PreferenceSchema = {
         "editor.useTabStops": {
             "type": "boolean",
             "description": "Inserting and deleting whitespace follows tab stops."
+        },
+        "diffEditor.renderSideBySide": {
+            "type": "boolean",
+            "description": "Render the differences in two side-by-side editors.",
+            "default": true
+        },
+        "diffEditor.ignoreTrimWhitespace": {
+            "type": "boolean",
+            "description": "Compute the diff by ignoring leading/trailing whitespace.",
+            "default": true
+        },
+        "diffEditor.renderIndicators": {
+            "type": "boolean",
+            "description": "Render +/- indicators for added/deleted changes.",
+            "default": true
+        },
+        "diffEditor.followsCaret": {
+            "type": "boolean",
+            "description": "Resets the navigator state when the user selects something in the editor.",
+            "default": true
+        },
+        "diffEditor.ignoreCharChanges": {
+            "type": "boolean",
+            "description": "Jump from line to line.",
+            "default": true
+        },
+        "diffEditor.alwaysRevealFirst": {
+            "type": "boolean",
+            "description": "Reveal first change.",
+            "default": true
         }
     }
 };
@@ -340,23 +371,20 @@ export interface EditorConfiguration {
     'editor.renderIndentGuides'?: boolean
     'editor.renderLineHighlight'?: 'none' | 'gutter' | 'line' | 'all'
     'editor.useTabStops'?: boolean
+    'diffEditor.renderSideBySide'?: boolean
+    'diffEditor.ignoreTrimWhitespace'?: boolean
+    'diffEditor.renderIndicators'?: boolean
+    'diffEditor.followsCaret'?: boolean
+    'diffEditor.ignoreCharChanges'?: boolean
+    'diffEditor.alwaysRevealFirst'?: boolean
 }
 export type EditorPreferenceChange = PreferenceChangeEvent<EditorConfiguration>;
-
-export const defaultEditorConfiguration: EditorConfiguration = {
-    'editor.autoSave': 'on',
-    'editor.autoSaveDelay': 500,
-    'editor.tabSize': 4,
-    'editor.minimap.enabled': false,
-    'editor.glyphMargin': true,
-    'editor.wrappingIndent': 'same'
-};
 
 export const EditorPreferences = Symbol('EditorPreferences');
 export type EditorPreferences = PreferenceProxy<EditorConfiguration>;
 
 export function createEditorPreferences(preferences: PreferenceService): EditorPreferences {
-    return createPreferenceProxy(preferences, defaultEditorConfiguration, editorPreferenceSchema);
+    return createPreferenceProxy(preferences, editorPreferenceSchema);
 }
 
 export function bindEditorPreferences(bind: interfaces.Bind): void {

@@ -1,13 +1,12 @@
 {
   "name": "@theia/git",
-  "version": "0.3.4",
+  "version": "0.3.7",
   "description": "Theia - Git Integration",
   "dependencies": {
-    "@theia/core": "^0.3.3",
-    "@theia/editor": "^0.3.4",
-    "@theia/filesystem": "^0.3.4",
-    "@theia/preferences-api": "^0.3.3",
-    "@theia/workspace": "^0.3.4",
+    "@theia/core": "^0.3.7",
+    "@theia/editor": "^0.3.7",
+    "@theia/filesystem": "^0.3.7",
+    "@theia/workspace": "^0.3.7",
     "@types/fs-extra": "^4.0.2",
     "dugite-extra": "0.0.1-alpha.15",
     "find-git-repositories": "^0.1.0",

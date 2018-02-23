@@ -30,12 +30,6 @@
       "@theia/navigator/lib/*": [
         "packages/navigator/src/*"
       ],
-      "@theia/preferences-api": [
-        "packages/preferences-api/src/common"
-      ],
-      "@theia/preferences-api/lib/*": [
-        "packages/preferences-api/src/*"
-      ],
       "@theia/preferences/lib/*": [
         "packages/preferences/src/*"
       ],
@@ -72,14 +66,20 @@
       "@theia/markers/lib/*": [
         "packages/markers/src/*"
       ],
-      "@theia/outline/lib/*": [
-        "packages/outline/src/*"
+      "@theia/outline-view/lib/*": [
+        "packages/outline-view/src/*"
       ],
       "@theia/messages/lib/*": [
         "packages/messages/src/*"
       ],
+      "@theia/merge-conflicts/lib/*": [
+        "packages/merge-conflicts/src/*"
+      ],
       "@theia/output/lib/*": [
         "packages/output/src/*"
+      ],
+      "@theia/callhierarchy/lib/*": [
+        "packages/callhierarchy/src/*"
       ]
     }
   },

@@ -6,8 +6,5 @@
   },
   "include": [
     "src"
-  ],
-  "files": [
-    "../../node_modules/monaco-editor-core/monaco.d.ts"
   ]
 }

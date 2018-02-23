@@ -6,7 +6,10 @@
  */
 
 import { ContainerModule } from 'inversify';
-import { FrontendApplicationContribution, WebSocketConnectionProvider, WidgetFactory, OpenHandler } from '@theia/core/lib/browser';
+import {
+    FrontendApplicationContribution, WebSocketConnectionProvider, WidgetFactory,
+    OpenHandler, KeybindingContribution
+} from '@theia/core/lib/browser';
 import { ExtensionServer, extensionPath } from '../common/extension-protocol';
 import { ExtensionManager } from '../common';
 import { ExtensionContribution, EXTENSIONS_WIDGET_FACTORY_ID } from './extension-contribution';
@@ -14,7 +17,6 @@ import { ExtensionWidget } from './extension-widget';
 import { ExtensionWidgetFactory } from './extension-widget-factory';
 import { ExtensionOpenHandler } from './extension-open-handler';
 import { CommandContribution } from '@theia/core/lib/common/command';
-import { KeybindingContribution } from '@theia/core/lib/common/keybinding';
 import { MenuContribution } from '@theia/core/lib/common/menu';
 
 import '../../src/browser/style/index.css';

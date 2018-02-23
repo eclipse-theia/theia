@@ -14,6 +14,7 @@ import { IShellTerminalServer } from '../common/shell-terminal-protocol';
 import * as ws from 'ws';
 import * as http from 'http';
 import * as https from 'https';
+import { terminalsPath } from '../common/terminal-protocol';
 
 chai.use(chaiAsPromised);
 
@@ -38,7 +39,7 @@ describe('Terminal Backend Contribution', function () {
     it("is data received from the terminal ws server", async function () {
         const terminalId = await shellTerminalServer.create({});
         const p = new Promise((resolve, reject) => {
-            const socket = new ws(`ws://localhost:${server.address().port}/services/terminals/${terminalId}`);
+            const socket = new ws(`ws://localhost:${server.address().port}${terminalsPath}/${terminalId}`);
             socket.on('message', msg => {
                 resolve();
                 socket.close();

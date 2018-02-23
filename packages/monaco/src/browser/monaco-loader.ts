@@ -19,7 +19,9 @@ export function loadVsRequire(context: any): Promise<any> {
             vsLoader.addEventListener('load', () => {
                 // Save Monaco's amd require and restore the original require
                 const amdRequire = context.require;
-                context.require = originalRequire;
+                if (originalRequire) {
+                    context.require = originalRequire;
+                }
                 resolve(amdRequire);
             });
             document.body.appendChild(vsLoader);

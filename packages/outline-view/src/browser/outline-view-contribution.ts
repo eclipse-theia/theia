@@ -20,10 +20,10 @@ export class OutlineViewContribution extends AbstractViewContribution<OutlineVie
             widgetName: 'Outline',
             defaultWidgetOptions: {
                 area: 'right',
-                rank: 100
+                rank: 500
             },
             toggleCommandId: 'outlineView:toggle',
-            toggleKeybinding: 'ctrl+shift+o'
+            toggleKeybinding: 'ctrlcmd+shift+o'
         });
     }
 }

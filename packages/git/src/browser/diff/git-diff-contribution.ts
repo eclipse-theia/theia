@@ -73,7 +73,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
                             this.showWidget(options);
                         } else {
                             const fromURI = fileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery(fromRevision);
-                            const toURI = fileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('');
+                            const toURI = fileUri;
                             const diffuri = DiffUris.encode(fromURI, toURI, fileUri.displayName);
                             if (diffuri) {
                                 open(this.openerService, diffuri).catch(e => {
@@ -90,7 +90,6 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
         const widget = await this.widget;
         await widget.setContent(options);
         this.openView({
-            toggle: true,
             activate: true
         });
     }

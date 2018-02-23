@@ -1,0 +1,62 @@
+/*
+ * Copyright (C) 2018 TypeFox and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+.theia-caption-prefix {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    user-select: none;
+    height: var(--theia-private-horizontal-tab-height);
+    white-space: nowrap;
+    padding-right: 5px;
+}
+
+.theia-caption-suffix {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    user-select: none;
+    height: var(--theia-private-horizontal-tab-height);
+    white-space: nowrap;
+    padding-left: 5px;
+}
+
+.theia-icon-wrapper {
+    position: relative;
+    display: inline-block
+}
+
+.theia-decorator-size {
+    transform: scale(0.7);
+    text-align: center;
+    height: 100%;
+    width: 100%;
+}
+
+.theia-top-right {
+    position: absolute;
+    bottom: 25%;
+    left: 25%;
+}
+
+.theia-bottom-right {
+    position: absolute;
+    top: 25%;
+    left: 25%;
+}
+
+.theia-bottom-left {
+    position: absolute;
+    top: 25%;
+    right: 25%;
+}
+
+.theia-top-left {
+    position: absolute;
+    bottom: 25%;
+    right: 25%;
+}

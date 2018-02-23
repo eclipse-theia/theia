@@ -7,11 +7,14 @@
 
 import { injectable, inject } from 'inversify';
 import { Languages } from '../common';
-import { QuickOpenService, QuickOpenModel, QuickOpenItem, OpenerService, QuickOpenMode } from '@theia/core/lib/browser';
+import {
+    QuickOpenService, QuickOpenModel, QuickOpenItem, OpenerService,
+    QuickOpenMode, KeybindingContribution, KeybindingRegistry
+} from '@theia/core/lib/browser';
 import { WorkspaceSymbolParams, SymbolInformation } from 'vscode-base-languageclient/lib/base';
 import { CancellationTokenSource, CommandRegistry, CommandHandler, Command, SelectionService } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { CommandContribution, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/common';
+import { CommandContribution } from '@theia/core/lib/common';
 import { Range } from 'vscode-languageserver-types';
 
 @injectable()
@@ -22,7 +25,7 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
         label: 'Open Workspace Symbol ...'
     };
 
-    constructor( @inject(Languages) protected languages: Languages,
+    constructor(@inject(Languages) protected languages: Languages,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(QuickOpenService) protected quickOpenService: QuickOpenService,
         @inject(SelectionService) protected selectionService: SelectionService) { }
@@ -86,7 +89,6 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
         parent = (parent || '') + uri.displayName;
         return new SimpleOpenItem(sym.name, icon, parent, uri.toString(), () => {
             this.openerService.getOpener(uri).then(opener => opener.open(uri, {
-                revealIfVisible: true,
                 selection: Range.create(sym.location.range.start, sym.location.range.start)
             }));
         });

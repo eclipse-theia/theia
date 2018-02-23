@@ -6,7 +6,7 @@
  */
 
 import URI from "../../common/uri";
-import { Keybinding } from '../../common/keybinding';
+import { Keybinding } from '../keybinding';
 
 export interface Highlight {
     start: number

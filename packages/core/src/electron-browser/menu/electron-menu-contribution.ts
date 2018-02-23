@@ -9,9 +9,9 @@ import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
 import {
     Command, CommandContribution, CommandRegistry,
-    KeybindingContribution, KeybindingRegistry,
     MenuModelRegistry, MenuContribution
 } from '../../common';
+import { KeybindingContribution, KeybindingRegistry } from '../../browser';
 import { FrontendApplication, FrontendApplicationContribution, CommonMenus } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 

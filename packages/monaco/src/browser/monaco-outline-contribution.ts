@@ -16,7 +16,7 @@ import { DisposableCollection } from "@theia/core";
 import { OutlineViewService } from '@theia/outline-view/lib/browser/outline-view-service';
 import { OutlineSymbolInformationNode } from '@theia/outline-view/lib/browser/outline-view-widget';
 import URI from "@theia/core/lib/common/uri";
-import { get } from './monaco-editor';
+import { MonacoEditor } from './monaco-editor';
 
 @injectable()
 export class MonacoOutlineContribution implements FrontendApplicationContribution {
@@ -38,10 +38,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         // let's skip the initial current Editor change event, as on reload it comes before the language sevrers have started,
         // resulting in an empty outline.
         setTimeout(() => {
-            this.editorManager.onCurrentEditorChanged(async editor => {
-                const visibleEditor = editor || this.editorManager.editors.filter(e => e.isVisible)[0];
-                this.updateOutlineForEditor(visibleEditor);
-            });
+            this.editorManager.onCurrentEditorChanged(widget => this.updateOutlineForEditor(widget));
         }, 3000);
 
         DocumentSymbolProviderRegistry.onDidChange(event => {
@@ -50,12 +47,11 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
 
         this.outlineViewService.onDidSelect(async node => {
             if (MonacoOutlineSymbolInformationNode.is(node) && node.parent) {
-                let widget = this.editorManager.editors.find(editor => editor.editor.uri.toString() === node.uri);
-                if (!widget) {
-                    widget = await this.editorManager.open(new URI(node.uri));
-                }
-                widget.editor.selection = node.range;
-                widget.editor.revealRange(node.range);
+                const uri = new URI(node.uri);
+                await this.editorManager.open(uri, {
+                    mode: 'reveal',
+                    selection: node.range
+                });
             }
         });
 
@@ -78,18 +74,16 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
     }
 
     protected async updateOutlineForEditor(editor: EditorWidget | undefined) {
-        if (this.outlineViewService.open) {
-            if (editor) {
-                const model = await this.getModel(editor);
-                this.publish(await this.computeSymbolInformations(model));
-            } else {
-                this.publish([]);
-            }
+        if (editor) {
+            const model = this.getModel(editor);
+            this.publish(await this.computeSymbolInformations(model));
+        } else {
+            this.publish([]);
         }
     }
 
-    protected async getModel(editor: EditorWidget): Promise<monaco.editor.IModel> {
-        const monacoEditor = get(editor);
+    protected getModel(editor: EditorWidget): monaco.editor.IModel {
+        const monacoEditor = MonacoEditor.get(editor);
         const model = monacoEditor!.getControl().getModel();
         this.toDispose.dispose();
         this.toDispose.push(model.onDidChangeContent(async ev => {
@@ -99,7 +93,6 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
     }
 
     protected async computeSymbolInformations(model: monaco.editor.IModel): Promise<SymbolInformation[]> {
-
         const entries: SymbolInformation[] = [];
         const documentSymbolProviders = await DocumentSymbolProviderRegistry.all(model);
 
@@ -127,7 +120,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         this.outlineViewService.publish(outlineSymbolInformations);
     }
 
-    getRangeFromSymbolInformation(symbolInformation: SymbolInformation): Range {
+    protected getRangeFromSymbolInformation(symbolInformation: SymbolInformation): Range {
         return {
             end: {
                 character: symbolInformation.location.range.endColumn - 1,
@@ -140,7 +133,7 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         };
     }
 
-    getId(name: string, counter: number): string {
+    protected getId(name: string, counter: number): string {
         let uniqueId: string = name + counter;
         if (this.ids.find(id => id === uniqueId)) {
             uniqueId = this.getId(name, ++counter);

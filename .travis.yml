@@ -20,7 +20,7 @@ addons:
     - ubuntu-toolchain-r-test
     packages:
     - g++-4.8
-    - oracle-java8-set-default
+    - oracle-java9-set-default
     - libsecret-1-dev
     chrome: stable
 before_script:
@@ -40,6 +40,8 @@ notifications:
     on_start: never
 jobs:
   fast_finish: true
+  allow_failures:
+    - os: osx
   include:
   - state: test
     os: linux
@@ -57,3 +59,8 @@ jobs:
       on:
         branch: master
       skip_cleanup: true
+  - stage: OSx test
+    os: osx
+    env: CXX=c++
+    before_script: skip
+    script: travis_retry yarn test:theia ;

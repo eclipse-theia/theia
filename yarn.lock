@@ -121,9 +121,9 @@
   dependencies:
     "@types/chai" "*"
 
-"@types/chai-string@^1.1.31":
-  version "1.1.31"
-  resolved "https://registry.yarnpkg.com/@types/chai-string/-/chai-string-1.1.31.tgz#a22f75d713f69da8c5cf34f8bc808a62cd249405"
+"@types/chai-string@^1.4.0":
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@types/chai-string/-/chai-string-1.4.0.tgz#c8b78deb9ae53e86c05a446c256138faeaff53c1"
   dependencies:
     "@types/chai" "*"
 
@@ -597,6 +597,14 @@ assertion-error@^1.0.1:
 assign-symbols@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/assign-symbols/-/assign-symbols-1.0.0.tgz#59667f41fadd4f20ccbc2bb96b8d4f7f78ec0367"
+
+ast-types@0.9.6:
+  version "0.9.6"
+  resolved "https://registry.yarnpkg.com/ast-types/-/ast-types-0.9.6.tgz#102c9e9e9005d3e7e3829bf0c4fa24ee862ee9b9"
+
+ast-types@^0.9.2:
+  version "0.9.14"
+  resolved "https://registry.yarnpkg.com/ast-types/-/ast-types-0.9.14.tgz#d34ba5dffb9d15a44351fd2a9d82e4ab2838b5ba"
 
 async-each@^1.0.0:
   version "1.0.1"
@@ -2400,6 +2408,10 @@ es6-promise@^4.0.3, es6-promise@^4.0.5:
   version "4.2.1"
   resolved "https://registry.yarnpkg.com/es6-promise/-/es6-promise-4.2.1.tgz#3b98a6714ba1b9267428b2c00e6265b16dab0205"
 
+es6-promise@^4.2.4:
+  version "4.2.4"
+  resolved "https://registry.yarnpkg.com/es6-promise/-/es6-promise-4.2.4.tgz#dc4221c2b16518760bd8c39a52d8f356fc00ed29"
+
 escape-html@~1.0.3:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/escape-html/-/escape-html-1.0.3.tgz#0258eae4d3d0c0974de1c169188ef0051d1d1988"
@@ -2438,7 +2450,7 @@ esprima@2.7.x, esprima@^2.6.0, esprima@^2.7.1:
   version "2.7.3"
   resolved "https://registry.yarnpkg.com/esprima/-/esprima-2.7.3.tgz#96e3b70d5779f6ad49cd032673d1c312767ba581"
 
-esprima@^3.1.3:
+esprima@^3.1.3, esprima@~3.1.0:
   version "3.1.3"
   resolved "https://registry.yarnpkg.com/esprima/-/esprima-3.1.3.tgz#fdca51cee6133895e3c88d535ce49dbff62a4633"
 
@@ -4246,9 +4258,9 @@ json5@^0.5.0, json5@^0.5.1:
   version "0.5.1"
   resolved "https://registry.yarnpkg.com/json5/-/json5-0.5.1.tgz#1eade7acc012034ad84e2396767ead9fa5495821"
 
-jsonc-parser@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/jsonc-parser/-/jsonc-parser-1.0.0.tgz#ddcc864ae708e60a7a6dd36daea00172fa8d9272"
+jsonc-parser@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/jsonc-parser/-/jsonc-parser-1.0.1.tgz#7f8f296414e6e7c4a33b9e4914fc8c47e4421675"
 
 jsonfile@^2.1.0:
   version "2.4.0"
@@ -4487,7 +4499,7 @@ loader-utils@^0.2.15, loader-utils@^0.2.16, loader-utils@^0.2.5, loader-utils@~0
     json5 "^0.5.0"
     object-assign "^4.0.1"
 
-loader-utils@^1.0.2, loader-utils@^1.1.0:
+loader-utils@^1.0.2, loader-utils@^1.0.3, loader-utils@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/loader-utils/-/loader-utils-1.1.0.tgz#c98aef488bcceda2ffb5e2de646d6a754429f5cd"
   dependencies:
@@ -5062,13 +5074,9 @@ monaco-css@^1.3.3:
   version "1.3.3"
   resolved "https://registry.yarnpkg.com/monaco-css/-/monaco-css-1.3.3.tgz#1463973676102cf00d931bcf1296b05177fa5b8b"
 
-monaco-editor-core@^0.10.0:
+monaco-editor-core@^0.10.1:
   version "0.10.1"
   resolved "https://registry.yarnpkg.com/monaco-editor-core/-/monaco-editor-core-0.10.1.tgz#15121d9e28e51f094d9c556bf852dc9c13dc42a1"
-
-monaco-editor@^0.10.0:
-  version "0.10.1"
-  resolved "https://registry.yarnpkg.com/monaco-editor/-/monaco-editor-0.10.1.tgz#8c96c4f15b6b5258bf92cbde93cad8a7e3007e14"
 
 monaco-html@^1.3.2:
   version "1.3.2"
@@ -5078,20 +5086,19 @@ monaco-json@^1.3.2:
   version "1.3.2"
   resolved "https://registry.yarnpkg.com/monaco-json/-/monaco-json-1.3.2.tgz#92ecca1ef4090e9db48fb0bac2af02e32882a955"
 
-monaco-languageclient@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.2.0.tgz#df2f4ff61500c515808afdf1bce8e1f6baba4973"
+monaco-languageclient@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.4.0.tgz#5f63f88bcc5df898d7efd1ad3bc088922fb36a7f"
   dependencies:
     glob-to-regexp "^0.3.0"
-    monaco-editor "^0.10.0"
-    monaco-editor-core "^0.10.0"
+    monaco-editor-core "^0.10.1"
     vscode-base-languageclient "^0.0.1-alpha.2"
 
 monaco-languages@^0.9.0:
   version "0.9.0"
   resolved "https://registry.yarnpkg.com/monaco-languages/-/monaco-languages-0.9.0.tgz#03ea9c52031b79837e7a389d4fc6211da3f758fd"
 
-monaco-typescript@^2.2.0:
+monaco-typescript@^2.3.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/monaco-typescript/-/monaco-typescript-2.3.0.tgz#ee2e1f6eaad3febb841feb8a4ab90d4abab44b4f"
 
@@ -6123,6 +6130,10 @@ pretty-hrtime@^1.0.0:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/pretty-hrtime/-/pretty-hrtime-1.0.3.tgz#b7e3ea42435a4c9b2759d99e0f201eb195802ee1"
 
+private@~0.1.5:
+  version "0.1.8"
+  resolved "https://registry.yarnpkg.com/private/-/private-0.1.8.tgz#2381edb3689f7a53d653190060fcf822d2f368ff"
+
 process-nextick-args@~1.0.6:
   version "1.0.7"
   resolved "https://registry.yarnpkg.com/process-nextick-args/-/process-nextick-args-1.0.7.tgz#150e20b756590ad3f91093f25a4f2ad8bff30ba3"
@@ -6383,6 +6394,15 @@ readdirp@^2.0.0:
     readable-stream "^2.0.2"
     set-immediate-shim "^1.0.1"
 
+recast@^0.11.17:
+  version "0.11.23"
+  resolved "https://registry.yarnpkg.com/recast/-/recast-0.11.23.tgz#451fd3004ab1e4df9b4e4b66376b2a21912462d3"
+  dependencies:
+    ast-types "0.9.6"
+    esprima "~3.1.0"
+    private "~0.1.5"
+    source-map "~0.5.0"
+
 rechoir@^0.6.2:
   version "0.6.2"
   resolved "https://registry.yarnpkg.com/rechoir/-/rechoir-0.6.2.tgz#85204b54dba82d5742e28c96756ef43af50e3384"
@@ -6614,10 +6634,6 @@ require-directory@^2.1.1:
 require-main-filename@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/require-main-filename/-/require-main-filename-1.0.1.tgz#97f717b69d48784f5f526a6c5aa8ffdda055a4d1"
-
-requirejs@^2.3.3:
-  version "2.3.5"
-  resolved "https://registry.yarnpkg.com/requirejs/-/requirejs-2.3.5.tgz#617b9acbbcb336540ef4914d790323a8d4b861b0"
 
 resolve-dir@^1.0.0, resolve-dir@^1.0.1:
   version "1.0.1"
@@ -7069,7 +7085,7 @@ source-map@^0.4.4:
   dependencies:
     amdefine ">=0.0.4"
 
-source-map@^0.5.3, source-map@^0.5.6, source-map@~0.5.1, source-map@~0.5.6:
+source-map@^0.5.3, source-map@^0.5.6, source-map@~0.5.0, source-map@~0.5.1, source-map@~0.5.6:
   version "0.5.7"
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.5.7.tgz#8a039d2d1021d22d1ea14c80d8ea468ba2ef3fcc"
 
@@ -7669,6 +7685,10 @@ trim-right@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/trim-right/-/trim-right-1.0.1.tgz#cb2e1203067e0c8de1f614094b9fe45704ea6003"
 
+ts-md5@^1.2.2:
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/ts-md5/-/ts-md5-1.2.3.tgz#52cbee6a231213b0eab8ae8cbe743b333e8c6d01"
+
 ts-node@^3.2.0:
   version "3.3.0"
   resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-3.3.0.tgz#c13c6a3024e30be1180dd53038fc209289d4bf69"
@@ -7782,13 +7802,12 @@ typedoc@^0.8:
     typedoc-default-themes "^0.5.0"
     typescript "2.4.1"
 
-typescript-language-server@^0.1.4:
-  version "0.1.5"
-  resolved "https://registry.yarnpkg.com/typescript-language-server/-/typescript-language-server-0.1.5.tgz#61c2b6d2ff9e15219f8d8662706a8adfce079710"
+typescript-language-server@^0.1.9:
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/typescript-language-server/-/typescript-language-server-0.1.9.tgz#a0b1d7b1a1956abac8ffca5256d6eebcef659a3d"
   dependencies:
     command-exists "^1.2.2"
     commander "^2.11.0"
-    typescript "2.6.1"
     vscode-languageserver "^3.4.3"
     vscode-uri "^1.0.1"
 
@@ -7796,13 +7815,9 @@ typescript@2.4.1:
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.4.1.tgz#c3ccb16ddaa0b2314de031e7e6fee89e5ba346bc"
 
-typescript@2.6.1:
-  version "2.6.1"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.6.1.tgz#ef39cdea27abac0b500242d6726ab90e0c846631"
-
-typescript@^2.6.1:
-  version "2.6.2"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.6.2.tgz#3c5b6fd7f6de0914269027f03c0946758f7673a4"
+typescript@^2.7.2:
+  version "2.7.2"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-2.7.2.tgz#2d615a1ef4aee4f574425cdff7026edf81919836"
 
 uc.micro@^1.0.1, uc.micro@^1.0.3:
   version "1.0.3"
@@ -7832,6 +7847,14 @@ uid-number@^0.0.6:
 ultron@~1.1.0:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/ultron/-/ultron-1.1.1.tgz#9fe1536a10a664a65266a1e3ccf85fd36302bc9c"
+
+umd-compat-loader@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/umd-compat-loader/-/umd-compat-loader-2.1.1.tgz#1a44674f57deeb429f4d1533668453a3cf322422"
+  dependencies:
+    ast-types "^0.9.2"
+    loader-utils "^1.0.3"
+    recast "^0.11.17"
 
 unbzip2-stream@^1.0.9:
   version "1.2.5"
@@ -8393,6 +8416,10 @@ xtend@~2.1.1:
   resolved "https://registry.yarnpkg.com/xtend/-/xtend-2.1.2.tgz#6efecc2a4dad8e6962c4901b337ce7ba87b5d28b"
   dependencies:
     object-keys "~0.4.0"
+
+xterm@^3.0.1:
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/xterm/-/xterm-3.1.0.tgz#7f7e1c8cf4b80bd881a4e8891213b851423e90c9"
 
 y18n@^3.2.1:
   version "3.2.1"

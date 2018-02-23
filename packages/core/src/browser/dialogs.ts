@@ -6,7 +6,8 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Disposable, Key } from "../common";
+import { Disposable } from "../common";
+import { Key } from "./keys";
 import { Widget, BaseWidget, Message } from './widgets';
 
 @injectable()
@@ -88,7 +89,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
 
     protected createButton(text: string): HTMLButtonElement {
         const button = document.createElement("button");
-        button.classList.add('button');
+        button.classList.add('theia-button');
         button.textContent = text;
         return button;
     }

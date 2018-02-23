@@ -36,9 +36,7 @@ const monacoEditorPath = development ? '${this.resolve('monaco-editor-core', 'de
 const monacoLanguagesPath = '${this.resolve('monaco-languages', 'release')}';
 const monacoCssLanguagePath = '${this.resolve('monaco-css', 'release/min')}';
 const monacoJsonLanguagePath = '${this.resolve('monaco-json', 'release/min')}';
-const monacoHtmlLanguagePath = '${this.resolve('monaco-html', 'release/min')}';`)}${this.ifBrowser(`
-
-const requirePath = '${this.resolve('requirejs', 'require.js')}';`)}
+const monacoHtmlLanguagePath = '${this.resolve('monaco-html', 'release/min')}';`)}
 
 module.exports = {
     entry: path.resolve(__dirname, 'src-gen/frontend/index.js'),
@@ -91,9 +89,12 @@ module.exports = {
             {
                 test: /\\.woff(2)?(\\?v=[0-9]\\.[0-9]\\.[0-9])?$/,
                 loader: "url-loader?limit=10000&mimetype=application/font-woff"
+            },
+            {
+                test: /node_modules[\\\\|\/](vscode-languageserver-types|vscode-uri|jsonc-parser)/,
+                use: { loader: 'umd-compat-loader' }
             }
-        ],
-        noParse: /vscode-languageserver-types|vscode-uri|jsonc-parser/
+        ]
     },
     resolve: {
         extensions: ['.js']${this.ifMonaco(() => `,
@@ -104,11 +105,7 @@ module.exports = {
     devtool: 'source-map',
     plugins: [
         new webpack.HotModuleReplacementPlugin(),
-        new CopyWebpackPlugin([${this.ifBrowser(`
-            {
-                from: requirePath,
-                to: '.'
-            },`)}${this.ifMonaco(() => `
+        new CopyWebpackPlugin([${this.ifMonaco(() => `
             {
                 from: monacoEditorPath,
                 to: 'vs'

@@ -8,8 +8,11 @@
 import URI from '@theia/core/lib/common/uri';
 import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenItemOptions } from '@theia/core/lib/browser/quick-open/';
 import { injectable, inject } from 'inversify';
-import { MenuModelRegistry, MenuContribution, CommandContribution, CommandRegistry, KeybindingContribution, KeybindingRegistry, ILogger } from '@theia/core';
-import { CommonMenus, QuickOpenMode, OpenerService, open, Highlight, QuickOpenOptions } from '@theia/core/lib/browser';
+import { MenuModelRegistry, MenuContribution, CommandContribution, CommandRegistry, ILogger } from '@theia/core';
+import {
+    CommonMenus, QuickOpenMode, OpenerService, open, Highlight, QuickOpenOptions,
+    KeybindingContribution, KeybindingRegistry
+} from '@theia/core/lib/browser';
 import { SearchInWorkspaceService } from './search-in-workspace-service';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '../common/search-in-workspace-interface';
 import { Range } from '@theia/editor/lib/browser';
@@ -27,6 +30,10 @@ export class QuickSearchInWorkspace implements QuickOpenModel {
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
         @inject(ILogger) protected readonly logger: ILogger,
     ) { }
+
+    isEnabled(): boolean {
+        return this.searchInWorkspaceService.isEnabled();
+    }
 
     onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
         // If we have a search pending, it's not relevant anymore, cancel it.
@@ -163,7 +170,7 @@ class QuickSearchInWorkspaceResultItem extends QuickOpenItem {
 
 const OpenQuickSearchInWorkspaceCommand = {
     id: 'QuickSearchInWorkspace.open',
-    label: "Search in workspace..."
+    label: "Search in Workspace..."
 };
 
 @injectable()
@@ -174,7 +181,8 @@ export class SearchInWorkspaceContributions implements CommandContribution, Menu
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(OpenQuickSearchInWorkspaceCommand, {
-            execute: what => this.quickSeachInWorkspace.open()
+            execute: what => this.quickSeachInWorkspace.open(),
+            isEnabled: () => this.quickSeachInWorkspace.isEnabled(),
         });
     }
 

@@ -12,13 +12,14 @@ import {
     ResourceProvider, ResourceResolver, DefaultResourceProvider,
     CommandContribution, CommandRegistry, CommandService,
     MenuModelRegistry, MenuContribution,
-    KeybindingContextRegistry, KeybindingRegistry,
-    KeybindingContext,
-    KeybindingContribution,
     MessageService,
     MessageClient
 } from "../common";
-import { FrontendApplication, FrontendApplicationContribution } from './frontend-application';
+import {
+    KeybindingContextRegistry, KeybindingRegistry, KeybindingContext,
+    KeybindingContribution,
+} from "./keybinding";
+import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application';
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 import { HttpOpenHandler } from './http-open-handler';
 import { CommonFrontendContribution } from './common-frontend-contribution';
@@ -32,14 +33,18 @@ import {
 import { StatusBar, StatusBarImpl } from "./status-bar/status-bar";
 import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from "./label-provider";
+import { PreferenceService, PreferenceServiceImpl, PreferenceProviders } from './preferences';
+import { ContextMenuRenderer } from './context-menu-renderer';
+import { ThemingCommandContribution, ThemeService } from './theming';
+import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution } from './connection-status-service';
 
 import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
 import "file-icons-js/css/style.css";
-import { ThemingCommandContribution, ThemeService } from './theming';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplication).toSelf().inSingletonScope();
+    bind(DefaultFrontendApplicationContribution).toSelf();
     bindContributionProvider(bind, FrontendApplicationContribution);
 
     bind(ApplicationShellOptions).toConstantValue({});
@@ -48,8 +53,10 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(SidePanelHandler).toSelf();
 
     bind(DockPanelRenderer).toSelf();
-    bind(TabBarRendererFactory).toAutoFactory(TabBarRenderer);
-    bind(TabBarRenderer).toSelf();
+    bind(TabBarRendererFactory).toFactory(context => () => {
+        const contextMenuRenderer = context.container.get<ContextMenuRenderer>(ContextMenuRenderer);
+        return new TabBarRenderer(contextMenuRenderer);
+    });
 
     bindContributionProvider(bind, OpenHandler);
     bind(DefaultOpenerService).toSelf().inSingletonScope();
@@ -108,6 +115,18 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(LabelProviderContribution).to(DefaultUriLabelProviderContribution).inSingletonScope();
 
     bind(CommandContribution).to(ThemingCommandContribution).inSingletonScope();
+
+    bind(PreferenceProviders).toFactory(ctx => () => []);
+    bind(PreferenceServiceImpl).toSelf().inSingletonScope();
+    for (const serviceIdentifier of [PreferenceService, FrontendApplicationContribution]) {
+        bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(PreferenceServiceImpl)).inSingletonScope();
+    }
+
+    bind(FrontendConnectionStatusService).toSelf().inSingletonScope();
+    bind(ConnectionStatusService).toDynamicValue(ctx => ctx.container.get(FrontendConnectionStatusService)).inSingletonScope();
+    bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(FrontendConnectionStatusService)).inSingletonScope();
+    bind(ApplicationConnectionStatusContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(ApplicationConnectionStatusContribution)).inSingletonScope();
 });
 
 const theme = ThemeService.get().getCurrentTheme().id;

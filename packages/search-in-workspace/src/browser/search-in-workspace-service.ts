@@ -65,6 +65,10 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
         client.setService(this);
     }
 
+    isEnabled(): boolean {
+        return this.workspaceService.opened;
+    }
+
     onResult(searchId: number, result: SearchInWorkspaceResult): void {
         const callbacks = this.pendingSearches.get(searchId);
 

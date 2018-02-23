@@ -9,11 +9,13 @@ import { ContainerModule } from 'inversify';
 import { ProblemWidget } from './problem-widget';
 import { ProblemContribution } from './problem-contribution';
 import { createProblemWidget } from './problem-container';
-import { CommandContribution, MenuContribution, KeybindingContribution } from "@theia/core/lib/common";
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { CommandContribution, MenuContribution } from "@theia/core/lib/common";
+import { FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
 import { ProblemManager } from './problem-manager';
 import { PROBLEM_KIND } from '../../common/problem-marker';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
+import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser/navigator-decorator-service';
+import { ProblemDecorator } from './problem-decorator';
 
 import '../../../src/browser/style/index.css';
 
@@ -34,4 +36,6 @@ export default new ContainerModule(bind => {
             ctx.container.get(ProblemContribution)
         ).inSingletonScope();
     }
+    bind(ProblemDecorator).toSelf().inSingletonScope();
+    bind(NavigatorTreeDecorator).to(ProblemDecorator).inSingletonScope();
 });

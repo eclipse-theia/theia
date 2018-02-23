@@ -94,7 +94,7 @@ input {
     color: var(--theia-error-color1);
     border-color: var(--theia-error-color1);
 }
-.p-Widget.dialogOverlay .error > .button.main {
+.p-Widget.dialogOverlay .error > .theia-button.main {
     background-color: var(--theia-error-color1);
     color: var(--theia-ui-font-color1);
 }

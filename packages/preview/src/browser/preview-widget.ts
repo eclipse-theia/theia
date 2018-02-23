@@ -9,7 +9,7 @@ import { inject, injectable } from "inversify";
 import { Resource, MaybePromise } from '@theia/core';
 import { BaseWidget, Message } from '@theia/core/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import { ResourceProvider, Event, Emitter } from '@theia/core/lib/common';
+import { Event, Emitter } from '@theia/core/lib/common';
 import { Workspace, Location, Range } from "@theia/languages/lib/common";
 import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
 import { throttle } from 'throttle-debounce';
@@ -17,22 +17,20 @@ import { ThemeService } from '@theia/core/lib/browser/theming';
 
 export const PREVIEW_WIDGET_CLASS = 'theia-preview-widget';
 
-export const PREVIEW_WIDGET_FACTORY_ID = 'preview-widget';
-
 const DEFAULT_ICON = 'fa fa-eye';
 
 let widgetCounter: number = 0;
 
 export const PreviewWidgetOptions = Symbol('PreviewWidgetOptions');
 export interface PreviewWidgetOptions {
-    uri: string
+    resource: Resource
 }
 
 @injectable()
 export class PreviewWidget extends BaseWidget {
 
-    protected uri: URI;
-    protected resource: Resource | undefined;
+    protected readonly uri: URI;
+    protected readonly resource: Resource;
     protected previewHandler: PreviewHandler | undefined;
     protected firstUpdate: (() => void) | undefined = undefined;
     protected readonly onDidScrollEmitter = new Emitter<number>();
@@ -41,11 +39,11 @@ export class PreviewWidget extends BaseWidget {
     constructor(
         @inject(PreviewWidgetOptions) protected readonly options: PreviewWidgetOptions,
         @inject(PreviewHandlerProvider) protected readonly previewHandlerProvider: PreviewHandlerProvider,
-        @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
         @inject(Workspace) protected readonly workspace: Workspace,
     ) {
         super();
-        this.uri = new URI(options.uri);
+        this.resource = this.options.resource;
+        this.uri = this.resource.uri;
         this.id = 'preview-widget-' + widgetCounter++;
         this.title.closable = true;
         this.title.label = `Preview ${this.uri.path.base}`;
@@ -63,14 +61,12 @@ export class PreviewWidget extends BaseWidget {
     }
 
     async initialize(): Promise<void> {
-        const trimmedUri = this.uri.withoutFragment();
-        const resource = this.resource = await this.resourceProvider(trimmedUri);
-        this.toDispose.push(resource);
-        if (resource.onDidChangeContents) {
-            this.toDispose.push(resource.onDidChangeContents(() => this.update()));
+        this.toDispose.push(this.resource);
+        if (this.resource.onDidChangeContents) {
+            this.toDispose.push(this.resource.onDidChangeContents(() => this.update()));
         }
         const updateIfAffected = (affectedUri?: string) => {
-            if (!affectedUri || affectedUri === trimmedUri.toString()) {
+            if (!affectedUri || affectedUri === this.uri.toString()) {
                 this.update();
             }
         };

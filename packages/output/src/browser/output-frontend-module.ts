@@ -8,7 +8,7 @@
 import { ContainerModule, interfaces } from "inversify";
 import { OutputWidget, OUTPUT_WIDGET_KIND } from "./output-widget";
 import { WidgetFactory } from "@theia/core/lib/browser";
-import { KeybindingContribution } from '@theia/core/lib/common';
+import { KeybindingContribution } from '@theia/core/lib/browser';
 import { MenuContribution, CommandContribution } from "@theia/core";
 import { OutputContribution } from "./output-contribution";
 import { OutputChannelManager } from "../common/output-channel";

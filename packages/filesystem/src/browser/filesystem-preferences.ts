@@ -12,7 +12,7 @@ import {
     PreferenceService,
     PreferenceSchema,
     PreferenceContribution
-} from '@theia/preferences-api';
+} from '@theia/core/lib/browser/preferences';
 
 export const filesystemPreferenceSchema: PreferenceSchema = {
     "type": "object",
@@ -21,6 +21,11 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
             "description": "List of paths to exclude from the filesystem watcher",
             "additionalProperties": {
                 "type": "boolean"
+            },
+            "default": {
+                "**/.git/objects/**": true,
+                "**/.git/subtree-cache/**": true,
+                "**/node_modules/**": true
             }
         }
     }
@@ -29,19 +34,12 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
 export interface FileSystemConfiguration {
     'files.watcherExclude': { [globPattern: string]: boolean }
 }
-export const defaultFileSystemConfiguration: FileSystemConfiguration = {
-    'files.watcherExclude': {
-        "**/.git/objects/**": true,
-        "**/.git/subtree-cache/**": true,
-        "**/node_modules/**": true
-    }
-};
 
 export const FileSystemPreferences = Symbol('FileSystemPreferences');
 export type FileSystemPreferences = PreferenceProxy<FileSystemConfiguration>;
 
 export function createFileSystemPreferences(preferences: PreferenceService): FileSystemPreferences {
-    return createPreferenceProxy(preferences, defaultFileSystemConfiguration, filesystemPreferenceSchema);
+    return createPreferenceProxy(preferences, filesystemPreferenceSchema);
 }
 
 export function bindFileSystemPreferences(bind: interfaces.Bind): void {

@@ -7,12 +7,12 @@
 
 import { injectable, inject } from "inversify";
 import { EditorManager } from "./editor-manager";
-import { KeybindingContext, Keybinding, KeybindingContribution, KeybindingRegistry } from "@theia/core/lib/common/keybinding";
+import { KeybindingContext, Keybinding, KeybindingContribution, KeybindingRegistry } from "@theia/core/lib/browser/keybinding";
 
 @injectable()
 export class EditorKeybindingContext implements KeybindingContext {
 
-    constructor( @inject(EditorManager) protected readonly editorService: EditorManager) { }
+    constructor(@inject(EditorManager) protected readonly editorService: EditorManager) { }
 
     id = 'editor.keybinding.context';
 

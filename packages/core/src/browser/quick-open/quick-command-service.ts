@@ -6,7 +6,8 @@
  */
 
 import { inject, injectable } from "inversify";
-import { Command, CommandRegistry, Keybinding, KeybindingRegistry } from '../../common';
+import { Command, CommandRegistry } from '../../common';
+import { Keybinding, KeybindingRegistry } from '../keybinding';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from './quick-open-model';
 import { QuickOpenService } from "./quick-open-service";
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -10,6 +10,7 @@ import * as lsp from 'vscode-languageserver-types';
 import URI from "@theia/core/lib/common/uri";
 import { Event, Disposable } from '@theia/core/lib/common';
 import { Saveable } from '@theia/core/lib/browser';
+import { DecorationOptions } from './editor-decorations-service';
 
 export {
     Position, Range
@@ -51,6 +52,13 @@ export interface TextEditor extends Disposable, TextEditorSelection {
      */
     resizeToFit(): void;
     setSize(size: Dimension): void;
+
+    /**
+     * Applies decorations for given type and options.
+     * Previous decoration of the same type are not preserved.
+     * To remove decorations of a type, pass an empty options array.
+     */
+    setDecorations(params: SetDecorationParams): void;
 }
 
 export interface Dimension {
@@ -71,6 +79,12 @@ export interface RevealPositionOptions {
 
 export interface RevealRangeOptions {
     at: 'auto' | 'center' | 'top' | 'centerIfOutsideViewport';
+}
+
+export interface SetDecorationParams {
+    uri: string;
+    type: string;
+    options: DecorationOptions[];
 }
 
 export namespace TextEditorSelection {

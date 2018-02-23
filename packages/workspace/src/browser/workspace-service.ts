@@ -12,6 +12,7 @@ import { FileSystemWatcher } from '@theia/filesystem/lib/browser';
 import { WorkspaceServer } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 /**
  * The workspace service.
@@ -20,6 +21,10 @@ import { FrontendApplication, FrontendApplicationContribution } from '@theia/cor
 export class WorkspaceService implements FrontendApplicationContribution {
 
     private _root: FileStat | undefined;
+
+    private readonly deferredRoot = new Deferred<FileStat | undefined>();
+
+    readonly root = this.deferredRoot.promise;
 
     @inject(FileSystem)
     protected readonly fileSystem: FileSystem;
@@ -35,12 +40,14 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     @postConstruct()
     protected async init(): Promise<void> {
-        const root = await this.root;
-        if (root) {
-            const uri = new URI(root.uri);
+        const rootUri = await this.server.getRoot();
+        this._root = await this.toValidRoot(rootUri);
+        if (this._root) {
+            const uri = new URI(this._root.uri);
             this.updateTitle(uri);
             this.watcher.watchFileChanges(uri);
         }
+        this.deferredRoot.resolve(this._root);
     }
 
     protected updateTitle(uri: URI): void {
@@ -58,20 +65,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     /**
-     * returns the most recently used workspace root or undefined if no root is known.
+     * Returns `true` if current workspace root is set.
+     * @returns {boolean}
      */
-    get root(): Promise<FileStat | undefined> {
-        if (this._root) {
-            return Promise.resolve(this._root);
-        }
-        return new Promise(async resolve => {
-            const root = await this.server.getRoot();
-            const validRoot = await this.isValidRoot(root);
-            if (validRoot) {
-                this._root = await this.toFileStat(root!);
-            }
-            resolve(this._root);
-        });
+    get opened(): boolean {
+        return !!this._root;
     }
 
     /**
@@ -83,7 +81,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     protected async doOpen(uri: URI, options?: WorkspaceInput): Promise<void> {
         const rootUri = uri.toString();
-        const valid = await this.isValidRoot(rootUri);
+        const valid = await this.toValidRoot(rootUri);
         if (valid) {
             // The same window has to be preserved too (instead of opening a new one), if the workspace root is not yet available and we are setting it for the first time.
             const preserveWindow = !(await this.root);
@@ -95,29 +93,34 @@ export class WorkspaceService implements FrontendApplicationContribution {
     }
 
     /**
-     * `true` if the argument URI points to an existing directory. Otherwise, `false`.
+     * Clears current workspace root and reloads window.
      */
-    protected async isValidRoot(uri: string | undefined): Promise<boolean> {
-        if (!uri) {
-            return false;
-        }
-        try {
-            const fileStat = await this.fileSystem.getFileStat(uri);
-            return fileStat.isDirectory;
-        } catch (error) {
-            return false;
-        }
+    close(): void {
+        this.doClose();
+    }
+
+    protected async doClose(): Promise<void> {
+        this._root = undefined;
+        await this.server.setRoot('');
+        this.reloadWindow();
     }
 
     /**
-     * Transforms the `uri` argument into a [FileStat](FileStat). If the given URI argument is invalid, then the promise will be rejected.
+     * returns a FileStat if the argument URI points to an existing directory. Otherwise, `undefined`.
      */
-    protected async toFileStat(uri: string): Promise<FileStat> {
-        const valid = await this.isValidRoot(uri);
-        if (valid) {
-            return this.fileSystem.getFileStat(uri);
+    protected async toValidRoot(uri: string | undefined): Promise<FileStat | undefined> {
+        if (!uri) {
+            return undefined;
         }
-        throw new Error(`Invalid workspace root URI. Expected an existing directory location. URI: ${uri}.`);
+        try {
+            const fileStat = await this.fileSystem.getFileStat(uri);
+            if (fileStat.isDirectory) {
+                return fileStat;
+            }
+            return undefined;
+        } catch (error) {
+            return undefined;
+        }
     }
 
     protected openWindow(uri: URI, options?: WorkspaceInput): void {

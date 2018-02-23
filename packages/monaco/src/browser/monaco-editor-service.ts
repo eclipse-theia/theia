@@ -8,8 +8,8 @@
 import { injectable, inject } from 'inversify';
 import { MonacoToProtocolConverter } from "monaco-languageclient";
 import URI from "@theia/core/lib/common/uri";
-import { OpenerService, open } from '@theia/core/lib/browser';
-import { EditorInput, EditorWidget } from '@theia/editor/lib/browser';
+import { OpenerService, open, WidgetOpenMode } from '@theia/core/lib/browser';
+import { EditorWidget, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 
 import IEditorService = monaco.editor.IEditorService;
@@ -26,8 +26,8 @@ export class MonacoEditorService implements IEditorService {
 
     openEditor(input: IResourceInput, sideBySide?: boolean | undefined): monaco.Promise<IEditorReference | undefined> {
         const uri = new URI(input.resource.toString());
-        const editorInput = this.createEditorInput(input);
-        return monaco.Promise.wrap(open(this.openerService, uri, editorInput).then(widget => {
+        const openerOptions = this.createEditorOpenerOptions(input);
+        return monaco.Promise.wrap(open(this.openerService, uri, openerOptions).then(widget => {
             if (widget instanceof EditorWidget && widget.editor instanceof MonacoEditor) {
                 return widget.editor;
             }
@@ -35,13 +35,21 @@ export class MonacoEditorService implements IEditorService {
         }));
     }
 
-    protected createEditorInput(input: IResourceInput, sideBySide?: boolean | undefined): EditorInput {
-        const revealIfVisible = !input.options || input.options.revealIfVisible === undefined || input.options.revealIfVisible;
-        const selection = !input.options ? undefined : this.m2p.asRange(input.options.selection);
-        return {
-            revealIfVisible,
-            selection
+    protected createEditorOpenerOptions(input: IResourceInput, sideBySide?: boolean | undefined): EditorOpenerOptions {
+        const mode = this.getEditorOpenMode(input);
+        const selection = input.options && this.m2p.asRange(input.options.selection);
+        return { mode, selection };
+    }
+    protected getEditorOpenMode(input: IResourceInput): WidgetOpenMode {
+        const options = {
+            preserveFocus: false,
+            revealIfVisible: true,
+            ...input.options
         };
+        if (options.preserveFocus) {
+            return 'reveal';
+        }
+        return options.revealIfVisible ? 'activate' : 'open';
     }
 
 }

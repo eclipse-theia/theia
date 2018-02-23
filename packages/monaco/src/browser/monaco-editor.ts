@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -18,7 +18,9 @@ import {
     TextEditorDocument,
     TextEditor,
     RevealRangeOptions,
-    RevealPositionOptions
+    RevealPositionOptions,
+    EditorDecorationsService,
+    SetDecorationParams,
 } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from "./monaco-editor-model";
 
@@ -27,46 +29,6 @@ import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 import IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor;
 import IBoxSizing = ElementExt.IBoxSizing;
 import IEditorReference = monaco.editor.IEditorReference;
-
-export namespace MonacoEditor {
-    export interface ICommonOptions {
-        /**
-         * Whether an editor should be auto resized on a content change.
-         *
-         * #### Fixme
-         * remove when https://github.com/Microsoft/monaco-editor/issues/103 is resolved
-         */
-        autoSizing?: boolean;
-        /**
-         * A minimal height of an editor.
-         *
-         * #### Fixme
-         * remove when https://github.com/Microsoft/monaco-editor/issues/103 is resolved
-         */
-        minHeight?: number;
-    }
-
-    export interface IOptions extends ICommonOptions, IEditorConstructionOptions { }
-}
-
-export function getAll(manager: EditorManager): MonacoEditor[] {
-    return manager.editors.map(e => get(e)).filter(e => !!e) as MonacoEditor[];
-}
-
-export function getCurrent(manager: EditorManager): MonacoEditor | undefined {
-    return get(manager.currentEditor);
-}
-
-export function getActive(manager: EditorManager): MonacoEditor | undefined {
-    return get(manager.activeEditor);
-}
-
-export function get(editorWidget: EditorWidget | undefined) {
-    if (editorWidget && editorWidget.editor instanceof MonacoEditor) {
-        return editorWidget.editor;
-    }
-    return undefined;
-}
 
 export class MonacoEditor implements TextEditor, IEditorReference {
 
@@ -81,19 +43,30 @@ export class MonacoEditor implements TextEditor, IEditorReference {
     protected readonly onFocusChangedEmitter = new Emitter<boolean>();
     protected readonly onDocumentContentChangedEmitter = new Emitter<TextEditorDocument>();
 
+    readonly documents = new Set<MonacoEditorModel>();
+
     constructor(
         readonly uri: URI,
         readonly document: MonacoEditorModel,
         readonly node: HTMLElement,
         protected readonly m2p: MonacoToProtocolConverter,
         protected readonly p2m: ProtocolToMonacoConverter,
+        protected readonly decorationsService: EditorDecorationsService,
         options?: MonacoEditor.IOptions,
         override?: IEditorOverrideServices,
     ) {
+        this.documents.add(document);
         this.autoSizing = options && options.autoSizing !== undefined ? options.autoSizing : false;
         this.minHeight = options && options.minHeight !== undefined ? options.minHeight : -1;
         this.toDispose.push(this.create(options, override));
         this.addHandlers(this.editor);
+        this.registerDecorationTypes();
+    }
+
+    protected registerDecorationTypes(): void {
+        const decoarationTypes = this.decorationsService.getDecorationTypes();
+        const codeEditorService = this.editor._codeEditorService;
+        decoarationTypes.forEach(decoarationType => codeEditorService.registerDecorationType(decoarationType.type, decoarationType));
     }
 
     protected create(options?: IEditorConstructionOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {
@@ -341,4 +314,61 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         return this.editor._instantiationService;
     }
 
+    get codeEditorService(): monaco.services.ICodeEditorService {
+        return this.editor._codeEditorService;
+    }
+
+    setDecorations(params: SetDecorationParams): void {
+        const options = params.options;
+        const type = params.type;
+        const decorationOptions = options.map(d => <monaco.editor.IDecorationOptions>{
+            ...d,
+            range: this.p2m.asRange(d.range)
+        });
+        this.editor.setDecorations(type, decorationOptions);
+    }
+
+}
+export namespace MonacoEditor {
+    export interface ICommonOptions {
+        /**
+         * Whether an editor should be auto resized on a content change.
+         *
+         * #### Fixme
+         * remove when https://github.com/Microsoft/monaco-editor/issues/103 is resolved
+         */
+        autoSizing?: boolean;
+        /**
+         * A minimal height of an editor.
+         *
+         * #### Fixme
+         * remove when https://github.com/Microsoft/monaco-editor/issues/103 is resolved
+         */
+        minHeight?: number;
+    }
+
+    export interface IOptions extends ICommonOptions, IEditorConstructionOptions { }
+
+    export function getAll(manager: EditorManager): MonacoEditor[] {
+        return manager.all.map(e => get(e)).filter(e => !!e) as MonacoEditor[];
+    }
+
+    export function getCurrent(manager: EditorManager): MonacoEditor | undefined {
+        return get(manager.currentEditor);
+    }
+
+    export function getActive(manager: EditorManager): MonacoEditor | undefined {
+        return get(manager.activeEditor);
+    }
+
+    export function get(editorWidget: EditorWidget | undefined) {
+        if (editorWidget && editorWidget.editor instanceof MonacoEditor) {
+            return editorWidget.editor;
+        }
+        return undefined;
+    }
+
+    export function findByDocument(manager: EditorManager, document: MonacoEditorModel): MonacoEditor[] {
+        return getAll(manager).filter(editor => editor.documents.has(document));
+    }
 }

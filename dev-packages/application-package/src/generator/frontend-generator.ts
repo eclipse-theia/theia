@@ -22,8 +22,7 @@ export class FrontendGenerator extends AbstractGenerator {
         return `<!DOCTYPE html>
 <html>
 
-<head>${this.compileIndexHead(frontendModules)}${this.ifBrowser(`
-  <script type="text/javascript" src="./require.js" charset="utf-8"></script>`)}
+<head>${this.compileIndexHead(frontendModules)}
   <script type="text/javascript" src="./bundle.js" charset="utf-8"></script>
 </head>
 
@@ -35,12 +34,12 @@ export class FrontendGenerator extends AbstractGenerator {
 
     protected compileIndexHead(frontendModules: Map<string, string>): string {
         return `
-  <meta charset="UTF-8">
-  <script type="text/javascript" src="https://www.promisejs.org/polyfills/promise-6.1.0.js" charset="utf-8"></script>`;
+  <meta charset="UTF-8">`;
     }
 
     protected compileIndexJs(frontendModules: Map<string, string>): string {
         return `// @ts-check
+${this.ifBrowser("require('es6-promise/auto');")}
 require('reflect-metadata');
 const { Container } = require('inversify');
 const { FrontendApplication } = require('@theia/core/lib/browser');

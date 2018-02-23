@@ -4,12 +4,17 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-import { cleanupJSDOM } from '@theia/core/lib/browser/test/jsdom';
+
+// tslint:disable:no-unused-expression
+
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+
+let disableJSDOM = enableJSDOM();
 
 import { Container } from 'inversify';
 import * as chai from 'chai';
 import { Emitter } from '@theia/core/lib/common';
-import { PreferenceService, PreferenceProviders, PreferenceServiceImpl } from '@theia/preferences-api';
+import { PreferenceService, PreferenceProviders, PreferenceServiceImpl } from '@theia/core/lib/browser/preferences';
 import { FileSystem } from '@theia/filesystem/lib/common/';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
@@ -27,6 +32,8 @@ import { MockWorkspaceServer } from '@theia/workspace/lib/common/test/mock-works
 import { MockWindowService } from '@theia/core/lib/browser/window/test/mock-window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import * as sinon from 'sinon';
+
+disableJSDOM();
 
 const expect = chai.expect;
 let testContainer: Container;
@@ -89,16 +96,14 @@ before(async () => {
     testContainer.bind(ILogger).to(MockLogger);
 });
 
-after(() => {
-    cleanupJSDOM();
-});
-
 describe('Preference Service', function () {
 
     before(() => {
+        disableJSDOM = enableJSDOM();
     });
 
     after(() => {
+        disableJSDOM();
     });
 
     beforeEach(() => {
@@ -115,18 +120,16 @@ describe('Preference Service', function () {
 
         const prefValue = true;
         prefService.onPreferenceChanged(pref => {
-            if (pref.preferenceName === 'testPref') {
-                try {
-                    expect(pref.preferenceName).eq('testPref');
-                } catch (e) {
-                    stubGet.restore();
-                    done(e);
-                    return;
-                }
-                expect(pref.newValue).eq(prefValue);
+            try {
+                expect(pref.preferenceName).eq('testPref');
+            } catch (e) {
                 stubGet.restore();
-                done();
+                done(e);
+                return;
             }
+            expect(pref.newValue).eq(prefValue);
+            stubGet.restore();
+            done();
         });
 
         const userProvider = testContainer.get(UserPreferenceProvider);
@@ -141,11 +144,11 @@ describe('Preference Service', function () {
     it('Should return the preference from the more specific scope (user > workspace)', () => {
         const userProvider = testContainer.get(UserPreferenceProvider);
         const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
-        const stubGet = sinon.stub(userProvider, 'getPreferences').returns({
+        const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
             'test.boolean': true,
             'test.number': 1
         });
-        const stubGet2 = sinon.stub(workspaceProvider, 'getPreferences').returns({
+        const stubWorkspace = sinon.stub(workspaceProvider, 'getPreferences').returns({
             'test.boolean': false,
             'test.number': 0
         });
@@ -157,7 +160,7 @@ describe('Preference Service', function () {
         value = prefService.get('test.number');
         expect(value).equals(0);
 
-        [stubGet, stubGet2].forEach(stub => {
+        [stubUser, stubWorkspace].forEach(stub => {
             stub.restore();
         });
     });
@@ -185,5 +188,55 @@ describe('Preference Service', function () {
         expect(value).to.be.true;
 
         stubUser.restore();
+    });
+
+    it('Should throw a TypeError if the preference (reference object) is modified', () => {
+        const userProvider = testContainer.get(UserPreferenceProvider);
+        const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
+            'test.immutable': [
+                'test', 'test', 'test'
+            ]
+        });
+        mockUserPreferenceEmitter.fire(undefined);
+
+        const immutablePref: string[] | undefined = prefService.get('test.immutable');
+        expect(immutablePref).to.not.be.undefined;
+        if (immutablePref !== undefined) {
+            expect(() => {
+                immutablePref.push('fails');
+            }).to.throw(TypeError);
+        }
+        stubUser.restore();
+    });
+
+    it('Should still report the more specific preference even though the less specific one changed', () => {
+        const userProvider = testContainer.get(UserPreferenceProvider);
+        const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
+        let stubUser = sinon.stub(userProvider, 'getPreferences').returns({
+            'test.boolean': true,
+            'test.number': 1
+        });
+        const stubWorkspace = sinon.stub(workspaceProvider, 'getPreferences').returns({
+            'test.boolean': false,
+            'test.number': 0
+        });
+        mockUserPreferenceEmitter.fire(undefined);
+
+        let value = prefService.get('test.number');
+        expect(value).equals(0);
+        stubUser.restore();
+
+        stubUser = sinon.stub(userProvider, 'getPreferences').returns({
+            'test.boolean': true,
+            'test.number': 4
+        });
+        mockUserPreferenceEmitter.fire(undefined);
+
+        value = prefService.get('test.number');
+        expect(value).equals(0);
+
+        [stubUser, stubWorkspace].forEach(stub => {
+            stub.restore();
+        });
     });
 });

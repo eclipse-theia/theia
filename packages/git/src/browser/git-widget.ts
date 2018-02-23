@@ -5,12 +5,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus } from '../common';
 import { GIT_CONTEXT_MENU } from './git-context-menu';
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
-import { GitRepositoryProvider } from './git-repository-provider';
 import { MessageService, ResourceProvider, CommandService, DisposableCollection } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { VirtualRenderer, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
@@ -19,19 +18,10 @@ import { Message } from '@phosphor/messaging';
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { GitBaseWidget } from './git-base-widget';
-
-export interface GitFileChangeNode extends GitFileChange {
-    readonly icon: string;
-    readonly label: string;
-    readonly description: string;
-    readonly caption?: string;
-    readonly extraIconClassName?: string;
-}
+import { GitBaseWidget, GitFileChangeNode } from './git-base-widget';
 
 @injectable()
-export class GitWidget extends GitBaseWidget {
+export class GitWidget extends GitBaseWidget<GitFileChangeNode> {
 
     protected stagedChanges: GitFileChangeNode[] = [];
     protected unstagedChanges: GitFileChangeNode[] = [];
@@ -44,25 +34,29 @@ export class GitWidget extends GitBaseWidget {
 
     constructor(
         @inject(Git) protected readonly git: Git,
-        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
         @inject(GitWatcher) protected readonly gitWatcher: GitWatcher,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
         @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
         @inject(MessageService) protected readonly messageService: MessageService,
-        @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
         @inject(CommandService) protected readonly commandService: CommandService,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService) {
         super();
         this.id = 'theia-gitContainer';
         this.title.label = 'Git';
+        this.scrollContainer = 'changesOuterContainer';
 
         this.addClass('theia-git');
-        this.update();
 
+    }
+
+    @postConstruct()
+    protected init() {
         this.repositoryProvider.onDidChangeRepository(repository => {
             this.initialize(repository);
         });
+        this.initialize(this.repositoryProvider.selectedRepository);
+        this.update();
     }
 
     protected onActivateRequest(msg: Message): void {
@@ -141,7 +135,7 @@ export class GitWidget extends GitBaseWidget {
         const mergeChanges = this.renderMergeChanges(repository) || '';
         const stagedChanges = this.renderStagedChanges(repository) || '';
         const unstagedChanges = this.renderUnstagedChanges(repository) || '';
-        const changesContainer = h.div({ className: "changesOuterContainer" }, mergeChanges, stagedChanges, unstagedChanges);
+        const changesContainer = h.div({ className: "changesOuterContainer", id: this.scrollContainer }, mergeChanges, stagedChanges, unstagedChanges);
 
         return [headerContainer, changesContainer];
     }
@@ -193,7 +187,7 @@ export class GitWidget extends GitBaseWidget {
         }, h.i({ className: 'fa fa-ellipsis-h' })) : '';
         const commandsContainer = h.div({ className: 'buttons' }, refresh, more);
         const commitButton = h.button({
-            className: 'button',
+            className: 'theia-button',
             title: 'Commit all the staged changes',
             onclick: () => commit()
         }, 'Commit');
@@ -300,6 +294,8 @@ export class GitWidget extends GitBaseWidget {
                             changeUri.withScheme(GIT_RESOURCE_SCHEME),
                             changeUri,
                             changeUri.displayName + ' (Working tree)');
+                    } else if (this.mergeChanges.find(c => c.uri === change.uri)) {
+                        uri = changeUri;
                     } else {
                         uri = DiffUris.encode(
                             changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
@@ -384,5 +380,4 @@ export class GitWidget extends GitBaseWidget {
         const message = error instanceof Error ? error.message : error;
         this.messageService.error(message);
     }
-
 }

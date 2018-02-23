@@ -7,7 +7,8 @@
 
 import { injectable, inject } from 'inversify';
 import { QuickCommandService } from './quick-command-service';
-import { Command, CommandRegistry, CommandContribution, KeybindingRegistry, KeybindingContribution } from '../../common';
+import { Command, CommandRegistry, CommandContribution } from '../../common';
+import { KeybindingRegistry, KeybindingContribution } from "../keybinding";
 
 export const quickCommand: Command = {
     id: 'quickCommand',

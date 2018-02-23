@@ -5,12 +5,16 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { cleanupJSDOM } from '@theia/core/lib/browser/test/jsdom';
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+
+let disableJSDOM = enableJSDOM();
 
 import * as chai from 'chai';
 import { expect } from 'chai';
 import URI from "@theia/core/lib/common/uri";
 import { MarkdownPreviewHandler } from './markdown-preview-handler';
+
+disableJSDOM();
 
 chai.use(require('chai-string'));
 
@@ -20,11 +24,15 @@ before(() => {
     previewHandler = new MarkdownPreviewHandler();
 });
 
-after(() => {
-    cleanupJSDOM();
-});
-
 describe("markdown-preview-handler", () => {
+
+    before(() => {
+        disableJSDOM = enableJSDOM();
+    });
+
+    after(() => {
+        disableJSDOM();
+    });
 
     it("renders html with line information", async () => {
         const contentElement = await previewHandler.renderContent({ content: exampleMarkdown1, originUri: new URI('') });
