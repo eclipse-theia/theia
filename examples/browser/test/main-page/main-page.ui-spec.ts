@@ -19,6 +19,8 @@ describe('theia main page', () => {
         driver = browser;
         driver.url(url);
         mainPage = new MainPage(driver);
+        // Make sure that the application shell is loaded
+        mainPage.waitForStartup();
     });
 
     it('should show the application shell', () => {

@@ -19,8 +19,8 @@ before(() => {
     driver.url(url);
     leftPanel = new LeftPanel(driver);
     mainPage = new MainPage(driver);
-    /* Make sure that the application shell is loaded */
-    expect(mainPage.applicationShellExists()).to.be.true;
+    // Make sure that the application shell is loaded
+    mainPage.waitForStartup();
 });
 
 describe('theia left panel', () => {

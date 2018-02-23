@@ -22,8 +22,8 @@ before(() => {
     topPanel = new TopPanel(driver);
     bottomPanel = new BottomPanel(driver);
     mainPage = new MainPage(driver);
-    /* Make sure that the application shell is loaded */
-    expect(mainPage.applicationShellExists()).to.be.true;
+    // Make sure that the application shell is loaded
+    mainPage.waitForStartup();
 });
 
 describe('theia top panel (menubar)', () => {

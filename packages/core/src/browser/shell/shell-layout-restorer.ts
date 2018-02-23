@@ -67,20 +67,25 @@ export class ShellLayoutRestorer implements CommandContribution {
 
     async initializeLayout(app: FrontendApplication, contributions: FrontendApplicationContribution[]): Promise<void> {
         try {
+            // Try to restore the shell layout from the storage service
             const serializedLayoutData = await this.storageService.getData<string>(this.storageKey);
             if (serializedLayoutData !== undefined) {
                 const layoutData = await this.inflate(serializedLayoutData);
                 app.shell.setLayoutData(layoutData);
+                await app.shell.pendingUpdates;
                 return;
             }
         } catch (e) {
             this.logger.debug(e);
         }
+
+        // Fallback: Let the frontend application contributions initialize the layout
         for (const initializer of contributions) {
             if (initializer.initializeLayout) {
                 await initializer.initializeLayout(app);
             }
         }
+        await app.shell.pendingUpdates;
     }
 
     storeLayout(app: FrontendApplication): void {

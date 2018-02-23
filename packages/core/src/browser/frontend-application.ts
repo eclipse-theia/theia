@@ -25,7 +25,7 @@ export interface FrontendApplicationContribution {
     initialize?(): void;
 
     /**
-     * Called when the application is started.
+     * Called when the application is started. The application shell is not attached yet when this method runs.
      * Should return a promise if it runs asynchronously.
      */
     onStart?(app: FrontendApplication): MaybePromise<void>;
@@ -33,12 +33,13 @@ export interface FrontendApplicationContribution {
     /**
      * Called when an application is stopped or unloaded.
      *
-     * Note that this is implemented using `window.unload` which doesn't allow any asynchronous code anymore. I.e. this is the last tick.
+     * Note that this is implemented using `window.unload` which doesn't allow any asynchronous code anymore.
+     * I.e. this is the last tick.
      */
     onStop?(app: FrontendApplication): void;
 
     /**
-     * called after start, when there is no previous workbench layout state.
+     * Called after the application shell has been attached in case there is no previous workbench layout state.
      * Should return a promise if it runs asynchronously.
      */
     initializeLayout?(app: FrontendApplication): MaybePromise<void>;
@@ -79,40 +80,97 @@ export class FrontendApplication {
      * Start the frontend application.
      *
      * Start up consists of the following steps:
-     * - create the application shell
      * - start frontend contributions
-     * - display the application shell
+     * - attach the application shell to the host element
+     * - initialize the application shell layout
+     * - reveal the application shell if it was hidden by a startup indicator
      */
     async start(): Promise<void> {
         await this.startContributions();
+        const host = await this.getHost();
+        this.attachShell(host);
         await this.layoutRestorer.initializeLayout(this, this.contributions.getContributions());
-        this.ensureLoaded().then(() =>
-            this.attachShell()
-        );
-    }
+        await this.revealShell(host);
 
-    protected attachShell(): void {
-        const host = this.getHost();
-        Widget.attach(this.shell, host);
         window.addEventListener('resize', () => this.shell.update());
         document.addEventListener('keydown', event => this.keybindings.run(event), true);
     }
 
-    protected getHost(): HTMLElement {
-        return document.body;
-    }
-
-    protected ensureLoaded(): Promise<void> {
+    /**
+     * Return a promise to the host element to which the application shell is attached.
+     */
+    protected getHost(): Promise<HTMLElement> {
         if (document.body) {
-            return Promise.resolve();
+            return Promise.resolve(document.body);
         }
-        return new Promise<void>(resolve =>
-            window.onload = () => resolve()
+        return new Promise<HTMLElement>(resolve =>
+            window.onload = () => resolve(document.body)
         );
     }
 
-    protected async startContributions(): Promise<void> {
+    /**
+     * Return an HTML element that indicates the startup phase, e.g. with an animation or a splash screen.
+     */
+    protected getStartupIndicator(host: HTMLElement): HTMLElement | undefined {
+        const startupElements = host.getElementsByClassName('theia-preload');
+        return startupElements.length === 0 ? undefined : startupElements[0] as HTMLElement;
+    }
 
+    /**
+     * Attach the application shell to the host element. If a startup indicator is present, the shell is
+     * inserted before that indicator so it is not visible yet.
+     */
+    protected attachShell(host: HTMLElement): void {
+        const ref = this.getStartupIndicator(host);
+        Widget.attach(this.shell, host, ref);
+    }
+
+    /**
+     * If a startup indicator is present, it is first hidden with the `theia-hidden` CSS class and then
+     * removed after a while. The delay until removal is taken from the CSS transition duration.
+     */
+    protected revealShell(host: HTMLElement): Promise<void> {
+        const startupElem = this.getStartupIndicator(host);
+        if (startupElem) {
+            return new Promise(resolve => {
+                window.requestAnimationFrame(() => {
+                    startupElem.classList.add('theia-hidden');
+                    const preloadStyle = window.getComputedStyle(startupElem);
+                    const transitionDuration = this.parseCssTime(preloadStyle.transitionDuration);
+                    setTimeout(() => {
+                        const parent = startupElem.parentElement;
+                        if (parent) {
+                            parent.removeChild(startupElem);
+                        }
+                        resolve();
+                    }, transitionDuration);
+                });
+            });
+        } else {
+            return Promise.resolve();
+        }
+    }
+
+    /**
+     * Parse the number of milliseconds from a CSS time value.
+     */
+    private parseCssTime(time: string | null): number {
+        if (time) {
+            if (time.endsWith('ms')) {
+                return parseFloat(time.substring(0, time.length - 2));
+            } else if (time.endsWith('s')) {
+                return parseFloat(time.substring(0, time.length - 1)) * 1000;
+            } else {
+                return parseFloat(time);
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Initialize and start the frontend application contributions.
+     */
+    protected async startContributions(): Promise<void> {
         for (const contribution of this.contributions.getContributions()) {
             if (contribution.initialize) {
                 try {
