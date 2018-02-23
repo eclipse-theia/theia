@@ -169,6 +169,7 @@ function DomTerm(name, topNode) {
     this._replayMode = false;
 
     this.caretStyle = 1; // only if *not* isLineEditing()
+    this.caretStyleFromSettings = -1;
 
     this.verbosity = 0;
 
@@ -1374,6 +1375,8 @@ DomTerm.prototype._removeInputLine = function() {
 };
 
 DomTerm.prototype.setCaretStyle = function(style) {
+    if (style == 1 && this.caretStyleFromSettings >= 0)
+        style = this.caretStyleFromSettings;
     this.caretStyle = style;
 };
 
@@ -4580,6 +4583,21 @@ DomTerm.prototype.setSettings = function(obj) {
         return;
     DomTerm._settingsCounter = settingsCounter;
 
+    this.linkAllowedUrlSchemes = DomTerm.prototype.linkAllowedUrlSchemes;
+    var link_conditions = "";
+    var val = obj["open.file.application"];
+    var a = val ? val : "";
+    val = obj["open.link.application"];
+    if (val)
+        a += val;
+    for (;;) {
+        var m = a.match(/^[^{]*{([^:}]*)\b([a-zA-Z][-a-zA-Z0-9+.]*:)([^]*)$/);
+        if (! m)
+            break;
+        this.linkAllowedUrlSchemes += m[2];
+        a = m[1]+m[3];
+    }
+
     var style_dark = obj["style.dark"];
     if (style_dark) {
         this.setReverseVideo(this._asBoolean(style_dark));
@@ -4587,6 +4605,26 @@ DomTerm.prototype.setSettings = function(obj) {
     } else if (this._style_dark_set) {
         this.setReverseVideo(false);
         this._style_dark_set = false;
+    }
+    var cstyle = obj["style.caret"];
+    if (cstyle) {
+        cstyle = String(cstyle).trim();
+        switch (cstyle) {
+        case "blinking-block": cstyle = 0; break;
+        case "block": cstyle = 2; break;
+        case "blinking-underline": cstyle = 3; break;
+        case "underline": cstyle = 4; break;
+        case "blinking-bar": cstyle = 5; break;
+        case "bar": cstyle = 6; break;
+        default: cstyle = Number(cstyle); break;
+        }
+    }
+    if (cstyle >= 0 && cstyle <= 6) {
+        if (this.caretStyleFromSettings != cstyle)
+            this.caretStyle = cstyle;
+        this.caretStyleFromSettings = cstyle;
+    } else {
+        this.caretStyleFromSettings = -1;
     }
 
     var style_user = obj["style.user"];
@@ -6318,6 +6356,14 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
         for (var el = start; el != null; ) {
             var lineAttr;
             var skipChildren = false;
+            if (el instanceof Element) {
+                if (countColumns) {
+                    el.measureLeft = beforeCol * dt.charWidth;
+                } else {
+                    el.measureLeft = el.offsetLeft;
+                    el.measureWidth = el.offsetWidth;
+                }
+            }
             if (el instanceof Text) {
                 if (! countColumns)
                     skipChildren = true;
@@ -6348,14 +6394,6 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
                 el.pprintGroup = pprintGroup;
             } else if (el.classList.contains("pprint-group")) {
                 pprintGroup = el;
-            }
-            if (el instanceof Element) {
-                if (countColumns) {
-	            el.measureLeft = beforeCol * dt.charWidth;
-	        } else {
-                    el.measureLeft = el.offsetLeft;
-                    el.measureWidth = el.offsetWidth;
-	        }
             }
             if (el.firstChild != null && ! skipChildren)
                 el = el.firstChild;
@@ -6419,7 +6457,8 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
                 var beforeMeasure = beforePos + startOffset;
                 measureWidth = afterMeasure - beforeMeasure;
                 var right = afterMeasure - startOffset;
-                if (right > availWidth) {
+                if (right > availWidth
+                    && (beforePos > 0 || el instanceof Text)) {
                     var lineNode = dt._createLineNode("soft");
                     var indentWidth;
                     if (el instanceof Text) {
@@ -6439,7 +6478,6 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
                         insertIntoLines(dt, lineNode);
                         el = lineNode;
                         indentWidth = addIndentation(dt, el, countColumns);
-                        var oldWidth = afterMeasure - beforeMeasure;
                         rest = document.createTextNode(rest);
                         el.parentNode.insertBefore(rest, el.nextSibling);
                         next = rest;
@@ -6449,9 +6487,13 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
                         indentWidth = addIndentation(dt, lineNode, countColumns);
                     }
                     line++;
-                    beforeMeasure +=
-                        (countColumns ? dt.numColumns : lineNode.offsetLeft)
-                        - beforePos;
+                    if (! countColumns)
+                        beforeMeasure += lineNode.offsetLeft - beforePos;
+                    else if (el instanceof Element)
+                        beforeMeasure = el.measureLeft;
+                    else
+                        beforeMeasure += dt.charWidth
+                          * dt.strWidthInContext(el.previousSibgling.data, el);
                     beforePos = indentWidth;
                     startOffset = beforeMeasure - beforePos;
                     dobreak = true;
@@ -7546,16 +7588,16 @@ DomTerm.prototype.keyDownHandler = function(event) {
             this.nextInputMode();
             event.preventDefault();
             return;
-        case 78: // Control-Shift-N
-            DomTerm.openNewWindow(this);
-            event.preventDefault();
-            return;
-       case 80: // Control-Shift-P
+        case 77: // Control-Shift-M
             if (this._currentlyPagingOrPaused()) {
                 this._pauseContinue();
                 this._exitPaging();
             } else
                 this._enterPaging(true);
+            event.preventDefault();
+            return;
+        case 78: // Control-Shift-N
+            DomTerm.openNewWindow(this);
             event.preventDefault();
             return;
         case 83: // Control-Shift-S
@@ -7935,7 +7977,10 @@ DomTerm.isDelimiter = (function() {
     }
 })();
 
+DomTerm.prototype.linkAllowedUrlSchemes = ":http:https:file:ftp:mailto:";
+
 DomTerm.prototype.linkify = function(str, start, end, columnWidth, delimiter) {
+    const dt = this;
     function rindexDelimiter(str, start, end) {
         for (let i = end; --i >= start; )
             if (DomTerm.isDelimiter(str.charCodeAt(i)))
@@ -7943,7 +7988,8 @@ DomTerm.prototype.linkify = function(str, start, end, columnWidth, delimiter) {
         return -1;
     }
     function isURL(str) {
-        return str.match(/^[-a-z][a-z0-9+.]*:[/]*[^/:].*/);
+        const m = str.match(/^([a-zA-Z][-a-zA-Z0-9+.]*:)[/]*[^/:].*/);
+        return m && dt.linkAllowedUrlSchemes.indexOf(":"+m[1]) >= 0;
     }
     function isEmail(str) {
         return str.match(/^[^@]+@[^@]+\.[^@]+$/);
@@ -7998,14 +8044,19 @@ DomTerm.prototype.linkify = function(str, start, end, columnWidth, delimiter) {
         return false;
     let href = null;
     let m = null;
-    let colons = 0;
-    if (fragment.charCodeAt(flength-1)==58
+    let afterLen = 0;
+    let afterStr = "";
+    // FIXME Only handles "GNU-style" (including javac) error messages.
+    // See problemMatcher.ts in vscode source and compile.el in emacs source
+    // for a list of other patterns we might consider supporting.
+    if (fragment.charCodeAt(flength-1)==58/*':'*/
         // FIXME should handle windows-style filename C:\XXXX
         && ((m = fragment.match(/^([^:]+):([0-9]+:[0-9]+-[0-9]+:[0-9]+):$/)) != null
             || (m = fragment.match(/^([^:]+):([0-9]+:[0-9]+-[0-9]+):$/)) != null
             || (m = fragment.match(/^([^:]+):([0-9]+:[0-9]+):$/)) != null
             || (m = fragment.match(/^([^:]+):([0-9]+):$/)) != null)) {
-        colons = 1;
+        afterLen = 1;
+        afterStr = ":";
         let fname = m[1];
         let position = m[2];
         if (fname.charCodeAt(0) != 47 /*'/'*/) {
@@ -8024,15 +8075,28 @@ DomTerm.prototype.linkify = function(str, start, end, columnWidth, delimiter) {
         encoded = encoded + encodeURIComponent(fname);
         href= "file://" + encoded+ "#position=" + position;
     }
-    else if (isURL(fragment))
-        href = fragment;
-    else if (fragment.startsWith("www.") && isURL("http://"+fragment))
-        href = "http://"+fragment;
-    else if (isEmail(fragment)) {
-        href = "mailto:"+fragment;
-    } else
-        return false;
-    columnWidth -= colons;
+    else {
+        if (flength > 1) {
+            // The characters '.' ',' '?' '!' are allowed in a link,
+            // but not as the final character.
+            let last = fragment.charCodeAt(flength-1);
+            if (last == 46/*'.'*/ || last == 44/*','*/
+                || last == 33/*'!'*/ || last == 63/*'?'*/) {
+                afterStr = fragment.substring(flength-1, flength);
+                fragment = fragment.substring(0, flength-1);
+                afterLen = 1;
+            }
+        }
+        if (isURL(fragment))
+            href = fragment;
+        else if (fragment.startsWith("www.") && isURL("http://"+fragment))
+            href = "http://"+fragment;
+        else if (isEmail(fragment)) {
+            href = "mailto:"+fragment;
+        } else
+            return false;
+    }
+    columnWidth -= afterLen;
     if (fstart > start && firstToMove == null) {
         this.insertSimpleOutput(str, start, fstart, -1);
         start = fstart;
@@ -8042,8 +8106,8 @@ DomTerm.prototype.linkify = function(str, start, end, columnWidth, delimiter) {
     alink.setAttribute("class", "matched subtle");
     alink.setAttribute("href", href);
     this._pushIntoElement(alink);
-    if (end-colons > start)
-        this.insertSimpleOutput(str, start, end-colons, columnWidth);
+    if (end-afterLen > start)
+        this.insertSimpleOutput(str, start, end-afterLen, columnWidth);
     this.outputContainer = alink.parentNode;
     this.outputBefore = alink.nextSibling;
     let old = alink.firstChild;
@@ -8056,16 +8120,17 @@ DomTerm.prototype.linkify = function(str, start, end, columnWidth, delimiter) {
         n = next;
     }
     DomTerm._addMouseEnterHandlers(this, alink.parentNode);
-    if (colons > 0) {
+    if (afterLen > 0) {
         if (end == start && alink.lastChild instanceof Text) {
             let data = alink.lastChild.data;
-            if (data.length > 1 && data.charAt(data.length-1) == ':')
-                alink.lastChild.deleteData(data.length-1, 1);
+            if (data.length > afterLen
+                && data.charAt(data.length-afterLen) == afterStr)
+                alink.lastChild.deleteData(data.length-afterLen, afterLen);
             else
-                colons = 0;
+                afterLen = 0;
         }
-        if (colons > 0)
-            this.insertSimpleOutput(":", 0, 1, 1);
+        if (afterLen > 0)
+            this.insertSimpleOutput(afterStr, 0, afterLen, afterLen);
     }
     alink.normalize();
     return true;
@@ -8080,7 +8145,7 @@ function _pagerModeInfo(dt) {
     if (dt._pageNumericArgument) {
         return prefix+": numeric argument: "+st._pageNumericArgument;
     }
-    return prefix+": type SPACE for more; Ctrl-Shift-P to exit paging";
+    return prefix+": type SPACE for more; Ctrl-Shift-M to exit paging";
 }
 
 DomTerm.prototype._updatePagerInfo = function() {
@@ -8186,7 +8251,7 @@ DomTerm.prototype._pageNumericArgumentAndClear = function(def = 1) {
 
 DomTerm.prototype._pageKeyHandler = function(event, key, press) {
     var arg = this._pageNumericArgument;
-    // Shift-PagUp and Shift-PageDown should maybe work in all modes?
+    // Shift-PageUp and Shift-PageDown should maybe work in all modes?
     // Ctrl-Shift-Up / C-S-Down to scroll by one line, in all modes?
     if (this.verbosity >= 2)
         this.log("page-key key:"+key+" event:"+event+" press:"+press);
@@ -8223,7 +8288,7 @@ DomTerm.prototype._pageKeyHandler = function(event, key, press) {
         this._pageLine(key == 38 ? -1 : 1);
         event.preventDefault();
         break;
-    case 80: // 'P'
+    case 77: // 'M'
         var oldMode = this._pagingMode;
         if (oldMode==2)
             this._pauseContinue();
@@ -8293,7 +8358,7 @@ DomTerm.prototype._pauseNeeded = function() {
 
 if (typeof exports === "object")
     module.exports = DomTerm;
-DomTerm.versionString = "0.96";
+DomTerm.versionString = "0.98";
 DomTerm.copyrightYear = 2018;
 DomTerm.inAtomFlag = false;
 
