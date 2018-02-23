@@ -9,7 +9,8 @@ import * as os from 'os';
 import * as paths from 'path';
 import * as fs from 'fs-extra';
 import { injectable, inject } from 'inversify';
-import { ApplicationPackageManager, ApplicationPackageOptions, NpmRegistry } from '@theia/application-package';
+import { ApplicationPackageOptions, NpmRegistry } from '@theia/application-package';
+import { ApplicationPackageManager } from '@theia/application-manager';
 import {
     Disposable, DisposableCollection, Event, Emitter, ILogger,
     CancellationTokenSource, CancellationToken, isCancelled, checkCancelled

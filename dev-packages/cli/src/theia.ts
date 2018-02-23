@@ -6,7 +6,8 @@
  */
 
 import * as yargs from 'yargs';
-import { ApplicationPackageTarget, ApplicationPackageManager, rebuild } from '@theia/application-package';
+import { ApplicationPackageTarget } from '@theia/application-package';
+import { ApplicationPackageManager, rebuild } from '@theia/application-manager';
 
 process.on('unhandledRejection', (reason, promise) => {
     throw reason;
