@@ -62,6 +62,10 @@ export class SidePanelHandler {
      * the size of that panel is restored, e.g. when expanding the panel or reloading the page layout.
      */
     maxPanelSizeRatio = 1;
+    /**
+     * A promise that is resolved when the currently pending side panel updates are done.
+     */
+    pendingUpdate: Promise<void> = Promise.resolve();
 
     /**
      * The shell area where the panel is placed. This property should not be modified directly, but
@@ -129,12 +133,6 @@ export class SidePanelHandler {
         });
         sidePanel.id = 'theia-' + this.side + '-side-panel';
 
-        sidePanel.panelAttached.connect(sender => {
-            // Try to restore the last known panel size once it is attached
-            if (!sidePanel.isHidden && this.lastPanelSize) {
-                this.setPanelSize(this.lastPanelSize);
-            }
-        }, this);
         sidePanel.widgetActivated.connect((sender, widget) => {
             this.tabBar.currentTitle = widget.title;
         }, this);
@@ -370,7 +368,8 @@ export class SidePanelHandler {
                 position = parentWidth - Math.min(size, maxWidth);
             }
 
-            SidePanel.moveSplitPos(parent, index, position);
+            const promise = SidePanel.moveSplitPos(parent, index, position);
+            this.pendingUpdate = this.pendingUpdate.then(() => promise);
         }
     }
 
@@ -522,25 +521,28 @@ export namespace SidePanel {
         }
     }
 
-    const splitMoves: { parent: SplitPanel, index: number, position: number }[] = [];
+    const splitMoves: { parent: SplitPanel, index: number, position: number, resolve: () => void }[] = [];
 
     /**
      * Move a handle of a split panel to the given position asynchronously. This function makes sure
      * that only one such movement is done in each animation frame in order to prevent the movements
      * from overriding each other.
      */
-    export function moveSplitPos(parent: SplitPanel, index: number, position: number) {
-        if (splitMoves.length === 0) {
-            const callback = () => {
-                const move = splitMoves.splice(0, 1)[0];
-                (move.parent.layout as SplitLayout).moveHandle(move.index, move.position);
-                if (splitMoves.length > 0) {
-                    window.requestAnimationFrame(callback);
-                }
-            };
-            window.requestAnimationFrame(callback);
-        }
-        splitMoves.push({ parent, index, position });
+    export function moveSplitPos(parent: SplitPanel, index: number, position: number): Promise<void> {
+        return new Promise<void>(resolve => {
+            if (splitMoves.length === 0) {
+                const callback = () => {
+                    const move = splitMoves.splice(0, 1)[0];
+                    (move.parent.layout as SplitLayout).moveHandle(move.index, move.position);
+                    move.resolve();
+                    if (splitMoves.length > 0) {
+                        window.requestAnimationFrame(callback);
+                    }
+                };
+                window.requestAnimationFrame(callback);
+            }
+            splitMoves.push({ parent, index, position, resolve });
+        });
     }
 }
 
@@ -551,7 +553,6 @@ export namespace SidePanel {
 export class TheiaDockPanel extends DockPanel {
 
     private __drag?: Drag;
-    private attachDone = false;
 
     constructor(options?: DockPanel.IOptions) {
         super(options);
@@ -571,10 +572,6 @@ export class TheiaDockPanel extends DockPanel {
         });
     }
 
-    /**
-     * Emitted when the panel is fitted for the first time after it has been attached.
-     */
-    readonly panelAttached = new Signal<this, void>(this);
     /**
      * Emitted when a widget is added to the panel.
      */
@@ -614,15 +611,6 @@ export class TheiaDockPanel extends DockPanel {
             this.node.style.minWidth = minSizeValue;
             this.node.style.minHeight = minSizeValue;
         }
-        if (!this.attachDone && this.isAttached) {
-            this.panelAttached.emit(undefined);
-            this.attachDone = true;
-        }
-    }
-
-    protected onAfterDetach(msg: Message): void {
-        super.onAfterDetach(msg);
-        this.attachDone = false;
     }
 
 }

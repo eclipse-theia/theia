@@ -92,6 +92,10 @@ export class ApplicationShell extends Widget {
      * to restore its height to this value is made.
      */
     protected lastBottomPanelSize?: number;
+    /**
+     * A promise that is resolved when the currently pending updates of the bottom panel are done.
+     */
+    protected pendingUpdate: Promise<void> = Promise.resolve();
 
     private readonly tracker = new FocusTracker<Widget>();
     private widgetDragListener?: (event: Event) => void;
@@ -165,11 +169,6 @@ export class ApplicationShell extends Widget {
         dockPanel.widgetRemoved.connect((sender, widget) => {
             if (dockPanel.isEmpty) {
                 this.collapseBottomPanel();
-            }
-        }, this);
-        dockPanel.panelAttached.connect(sender => {
-            if (!this.bottomPanel.isHidden && this.lastBottomPanelSize) {
-                this.setBottomPanelSize(this.lastBottomPanelSize);
             }
         }, this);
         dockPanel.hide();
@@ -411,9 +410,22 @@ export class ApplicationShell extends Widget {
                 const parentHeight = parent.node.clientHeight;
                 const maxHeight = parentHeight * this.options.maxBottomPanelRatio;
                 const position = parentHeight - Math.min(size, maxHeight);
-                SidePanel.moveSplitPos(parent, index, position);
+
+                const promise = SidePanel.moveSplitPos(parent, index, position);
+                this.pendingUpdate = this.pendingUpdate.then(() => promise);
             }
         }
+    }
+
+    /**
+     * A promise that is resolved when all currently pending updates are done.
+     */
+    get pendingUpdates(): Promise<void> {
+        return Promise.all([
+            this.pendingUpdate,
+            this.leftPanelHandler.pendingUpdate,
+            this.rightPanelHandler.pendingUpdate
+        ]) as Promise<any>;
     }
 
     /**

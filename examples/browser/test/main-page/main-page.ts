@@ -23,6 +23,10 @@ export class MainPage {
         return this.driver.waitForExist('#theia-app-shell');
     }
 
+    waitForStartup(): void {
+        this.driver.waitUntil(() => !this.driver.isExisting('.theia-preload'));
+    }
+
     mainContentPanelExists(): boolean {
         return this.driver.waitForExist('#theia-main-content-panel');
     }

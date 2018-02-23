@@ -27,6 +27,7 @@ export class FrontendGenerator extends AbstractGenerator {
 </head>
 
 <body>
+  <div class="theia-preload"></div>
 </body>
 
 </html>`;

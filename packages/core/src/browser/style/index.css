@@ -11,11 +11,6 @@ body {
   overflow: hidden;
   font-family: var(--theia-ui-font-family);
   background: var(--theia-layout-color3);
-  background-image: var(--theia-preloader);
-  background-size: 60px 60px;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  background-position: center;
 }
 
 .theia-ApplicationShell {
@@ -25,6 +20,25 @@ body {
   right: 0;
   bottom: 0;
   background: var(--theia-layout-color3);
+}
+
+.theia-preload {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--theia-layout-color3);
+  background-image: var(--theia-preloader);
+  background-size: 60px 60px;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-position: center;
+  transition: opacity 0.8s;
+}
+
+.theia-preload.theia-hidden {
+  opacity: 0;
 }
 
 .theia-icon {
