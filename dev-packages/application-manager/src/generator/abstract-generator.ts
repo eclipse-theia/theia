@@ -7,7 +7,7 @@
 
 import * as os from 'os';
 import * as fs from 'fs-extra';
-import { ApplicationPackage } from '../application-package';
+import { ApplicationPackage } from '@theia/application-package';
 
 export abstract class AbstractGenerator {
 

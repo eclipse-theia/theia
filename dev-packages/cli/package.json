@@ -31,6 +31,6 @@
     "docs": "echo 'skip'"
   },
   "dependencies": {
-    "@theia/application-package": "^0.3.7"
+    "@theia/application-manager": "^0.3.7"
   }
 }

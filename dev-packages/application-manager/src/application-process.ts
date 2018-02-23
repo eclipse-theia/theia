@@ -8,7 +8,7 @@
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as cp from 'child_process';
-import { ApplicationPackage } from './application-package';
+import { ApplicationPackage } from '@theia/application-package';
 
 export class ApplicationProcess {
 

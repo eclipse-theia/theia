@@ -7,7 +7,7 @@
 
 import * as fs from 'fs-extra';
 import * as cp from 'child_process';
-import { ApplicationPackage, ApplicationPackageOptions } from "./application-package";
+import { ApplicationPackage, ApplicationPackageOptions } from "@theia/application-package";
 import { WebpackGenerator, FrontendGenerator, BackendGenerator } from "./generator";
 import { ApplicationProcess } from './application-process';
 
