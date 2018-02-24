@@ -13,6 +13,7 @@ import { isWindows } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
 import { FileUri } from "@theia/core/lib/node/file-uri";
 import { parseArgs } from '@theia/process/lib/node/utils';
+import { DomTermVersionInfo } from "./domterm-version";
 
 export const ShellProcessFactory = Symbol("ShellProcessFactory");
 export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess;
@@ -22,7 +23,8 @@ export interface ShellProcessOptions {
     shell?: string,
     rootURI?: string,
     cols?: number,
-    rows?: number
+    rows?: number,
+    env?: object // ProcessEnv
 }
 
 function getRootPath(rootURI?: string): string {
@@ -32,6 +34,13 @@ function getRootPath(rootURI?: string): string {
     } else {
         return os.homedir();
     }
+}
+
+function makeEnv(opt_env: any) {
+    let env: any = Object.assign({}, opt_env || process.env as any);
+    env["COLORTERM"] = "truecolor";
+    env["DOMTERM"] = DomTermVersionInfo + ";theia";
+    return env;
 }
 
 @injectable()
@@ -50,11 +59,11 @@ export class ShellProcess extends TerminalProcess {
             command: options.shell || ShellProcess.getShellExecutablePath(),
             args: ShellProcess.getShellExecutableArgs(),
             options: {
-                name: 'xterm-color',
+                name: 'xterm-256color',
                 cols: options.cols || ShellProcess.defaultCols,
                 rows: options.rows || ShellProcess.defaultRows,
                 cwd: getRootPath(options.rootURI),
-                env: process.env as any
+                env: makeEnv(options.env)
             }
         }, processManager, ringBuffer, logger);
     }

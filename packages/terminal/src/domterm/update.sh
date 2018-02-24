@@ -2,7 +2,7 @@
 DOMTERM_CLONE_DIR=`pwd`/../../../../node_modules/domterm
 DOMVERSION_LOCAL_DIR="."
 
-TMP_VERSION=$DOMVERSION_LOCAL_DIR/domterm-version.js
+TMP_VERSION=$DOMVERSION_LOCAL_DIR/tmp-domterm-version.js
 FILES_TO_COPY="domterm-core.css domterm-default.css domterm-standard.css  ResizeSensor.js wcwidth.js"
 
 if test -d $DOMTERM_CLONE_DIR
@@ -20,6 +20,15 @@ sed -e "s/@DOMTERM_VERSION@/$DOMTERM_VERSION/" \
     -e '/@configure_input@/d' \
     <$DOMTERM_CLONE_DIR/hlib/domterm-version.js.in > $TMP_VERSION
 cat $DOMTERM_CLONE_DIR/hlib/terminal.js $TMP_VERSION >$DOMVERSION_LOCAL_DIR/terminal.js
+rm $TMP_VERSION
+
+cat >../node/domterm-version.ts <<EOF
+/*
+ * Copyright (C) 2018 Per Bothner THIS FILE IS GENERATED. DO NOT EDIT.
+ */
+const DomTermVersionString = "0.98";
+export const DomTermVersionInfo = "version=" + DomTermVersionString;
+EOF
 
 for file in $FILES_TO_COPY
 do
