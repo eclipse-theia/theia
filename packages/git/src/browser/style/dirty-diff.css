@@ -1,0 +1,29 @@
+/*
+ * Copyright (C) 2018 TypeFox and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+@import 'dirty-diff-decorator.css';
+
+.dirty-diff-added-line {
+	border-left: 3px solid var(--theia-added-color0);
+}
+.dirty-diff-added-line:before {
+	background: var(--theia-added-color0);
+}
+
+.dirty-diff-removed-line:after {
+	border-left: 4px solid var(--theia-removed-color0);
+}
+.dirty-diff-removed-line:before {
+	background: var(--theia-removed-color0);
+}
+
+.dirty-diff-modified-line {
+	border-left: 3px solid var(--theia-modified-color0);
+}
+.dirty-diff-modified-line:before {
+	background: var(--theia-modified-color0);
+}
