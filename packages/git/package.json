@@ -7,6 +7,7 @@
     "@theia/editor": "^0.3.7",
     "@theia/filesystem": "^0.3.7",
     "@theia/workspace": "^0.3.7",
+    "@theia/navigator": "^0.3.7",
     "@types/fs-extra": "^4.0.2",
     "dugite-extra": "0.0.1-alpha.15",
     "find-git-repositories": "^0.1.0",
