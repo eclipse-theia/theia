@@ -137,7 +137,7 @@ export class FrontendApplication {
                     startupElem.classList.add('theia-hidden');
                     const preloadStyle = window.getComputedStyle(startupElem);
                     const transitionDuration = this.parseCssTime(preloadStyle.transitionDuration);
-                    setTimeout(() => {
+                    window.setTimeout(() => {
                         const parent = startupElem.parentElement;
                         if (parent) {
                             parent.removeChild(startupElem);
