@@ -44,13 +44,19 @@ export class GitRepositoryWatcher implements Disposable {
         }
         this.schedule(true);
     }
+
+    sync(): void {
+        this.clear();
+        this.schedule(false, 0);
+    }
+
     dispose(): void {
         this.toDispose.dispose();
     }
 
     protected initial: boolean = true;
     protected watchTimer: NodeJS.Timer | undefined;
-    protected schedule(initial: boolean = false): void {
+    protected schedule(initial: boolean = false, delay = initial ? 0 : 5000): void {
         if (initial && !this.initial) {
             this.initial = true;
             this.clear();
@@ -65,7 +71,7 @@ export class GitRepositoryWatcher implements Disposable {
             if (await this.syncStatus(syncInitial)) {
                 this.schedule();
             }
-        }, initial ? 0 : 5000);
+        }, delay);
     }
     protected clear(): void {
         if (this.watchTimer) {
