@@ -25,6 +25,7 @@ import { GitUriLabelProviderContribution } from './git-uri-label-contribution';
 import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser/navigator-decorator-service';
 import { GitDecorator } from './git-decorator';
 import { bindGitDecorationsPreferences } from './git-decorator-preferences';
+import { GitRepositoryTracker } from './git-repository-tracker';
 
 import '../../src/browser/style/index.css';
 
@@ -32,6 +33,7 @@ export default new ContainerModule(bind => {
     bindGitDecorationsPreferences(bind);
     bindGitDiffModule(bind);
     bindGitHistoryModule(bind);
+    bind(GitRepositoryTracker).toSelf().inSingletonScope();
     bind(GitWatcherServerProxy).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitWatcherPath)).inSingletonScope();
     bind(GitWatcherServer).to(ReconnectingGitWatcherServer).inSingletonScope();
     bind(GitWatcher).toSelf().inSingletonScope();
