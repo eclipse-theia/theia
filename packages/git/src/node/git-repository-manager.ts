@@ -37,8 +37,8 @@ export class GitRepositoryManager {
     async sync(repository: Repository): Promise<void> {
         const reference = await this.getWatcher(repository);
         const watcher = reference.object;
-        watcher.onStatusChanged(() => reference.dispose());
-        watcher.watch();
+        reference.dispose();
+        watcher.sync();
     }
 
 }

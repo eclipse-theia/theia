@@ -16,7 +16,7 @@ import { GitFileChange, GitFileStatus, Git, WorkingDirectoryStatus } from '../..
 import { GitBaseWidget, GitFileChangeNode } from "../git-base-widget";
 import { DiffNavigatorProvider, DiffNavigator } from "@theia/editor/lib/browser/diff-navigator";
 import { EditorManager } from "@theia/editor/lib/browser";
-import { GitWatcher, GitStatusChangeEvent } from "../../common/git-watcher";
+import { GitWatcher } from "../../common/git-watcher";
 
 @injectable()
 export class GitDiffWidget extends GitBaseWidget<GitFileChangeNode> implements StatefulWidget {
@@ -40,14 +40,8 @@ export class GitDiffWidget extends GitBaseWidget<GitFileChangeNode> implements S
         this.addClass('theia-git');
 
         this.toDispose.push(this.gitWatcher.onGitEvent(async gitEvent => {
-            if (GitStatusChangeEvent.is(gitEvent)) {
-                const oldStatus = this.gitStatus;
-                if (!WorkingDirectoryStatus.equals(gitEvent.status, oldStatus)) {
-                    this.gitStatus = gitEvent.status;
-                    if (this.options) {
-                        this.setContent(this.options);
-                    }
-                }
+            if (this.options) {
+                this.setContent(this.options);
             }
         }));
     }
