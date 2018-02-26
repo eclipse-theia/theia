@@ -415,10 +415,7 @@ export class SidePanelHandler {
         drag.start(clientX, clientY).then(() => {
             // The promise is resolved when the drag has ended
             tab.classList.remove('p-mod-hidden');
-            SidePanel.fireDragEnded(drag);
         });
-
-        SidePanel.fireDragStarted(drag);
     }
 
     /*
@@ -486,41 +483,6 @@ export namespace SidePanel {
     /** How large the panel should be when it's expanded and empty. */
     export const EMPTY_PANEL_SIZE = 100;
 
-    const dragStartedCallbacks: ((drag: Drag) => void)[] = [];
-    const dragEndedCallbacks: ((drag: Drag) => void)[] = [];
-
-    /**
-     * Register a listener for widget drag start events that are fired with `fireDragStarted`.
-     */
-    export function onDragStarted(callback: (drag: Drag) => void): void {
-        dragStartedCallbacks.push(callback);
-    }
-
-    /**
-     * Register a listener for widget drag end events that are fired with `fireDragEnded`.
-     */
-    export function onDragEnded(callback: (drag: Drag) => void): void {
-        dragEndedCallbacks.push(callback);
-    }
-
-    /**
-     * Invoked when a widget's title is dragged out of its tab bar somewhere in the shell.
-     */
-    export function fireDragStarted(drag: Drag): void {
-        for (const callback of dragStartedCallbacks) {
-            callback(drag);
-        }
-    }
-
-    /**
-     * Invoked whan the drag of a widget's title has ended.
-     */
-    export function fireDragEnded(drag: Drag): void {
-        for (const callback of dragEndedCallbacks) {
-            callback(drag);
-        }
-    }
-
     const splitMoves: { parent: SplitPanel, index: number, position: number, resolve: () => void }[] = [];
 
     /**
@@ -551,26 +513,6 @@ export namespace SidePanel {
  * side panels of the application shell.
  */
 export class TheiaDockPanel extends DockPanel {
-
-    private __drag?: Drag;
-
-    constructor(options?: DockPanel.IOptions) {
-        super(options);
-        // Override the _drag property from DockPanel with an accessor property
-        Object.defineProperty(this, '_drag', {
-            get: () => this.__drag,
-            set: (drag: Drag) => {
-                if (drag) {
-                    // The _drag value is set: a drag has been started
-                    SidePanel.fireDragStarted(drag);
-                } else if (this.__drag) {
-                    // The _drag value is cleared: a drag has been completed
-                    SidePanel.fireDragEnded(this.__drag);
-                }
-                this.__drag = drag;
-            }
-        });
-    }
 
     /**
      * Emitted when a widget is added to the panel.
