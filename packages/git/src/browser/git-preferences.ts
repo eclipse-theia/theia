@@ -8,7 +8,7 @@
 import { interfaces } from 'inversify';
 import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
 
-export const GitDecorationsConfigSchema: PreferenceSchema = {
+export const GitConfigSchema: PreferenceSchema = {
     'type': 'object',
     'properties': {
         'git.decorations.enabled': {
@@ -21,25 +21,31 @@ export const GitDecorationsConfigSchema: PreferenceSchema = {
             'description': 'Use color decoration in the navigator.',
             'default': false
         },
+        'git.editor.decorations.enabled': {
+            'type': 'boolean',
+            'description': 'Show git decorations in the editor.',
+            'default': true
+        }
     }
 };
 
-export interface GitDecorationsConfiguration {
+export interface GitConfiguration {
     'git.decorations.enabled': boolean,
-    'git.decorations.colors': boolean
+    'git.decorations.colors': boolean,
+    'git.editor.decorations.enabled': boolean,
 }
 
-export const GitDecorationsPreferences = Symbol('GitDecorationsPreferences');
-export type GitDecorationsPreferences = PreferenceProxy<GitDecorationsConfiguration>;
+export const GitPreferences = Symbol('GitPreferences');
+export type GitPreferences = PreferenceProxy<GitConfiguration>;
 
-export function createGitDecorationsPreferences(preferences: PreferenceService): GitDecorationsPreferences {
-    return createPreferenceProxy(preferences, GitDecorationsConfigSchema);
+export function createGitPreferences(preferences: PreferenceService): GitPreferences {
+    return createPreferenceProxy(preferences, GitConfigSchema);
 }
 
-export function bindGitDecorationsPreferences(bind: interfaces.Bind): void {
-    bind(GitDecorationsPreferences).toDynamicValue(ctx => {
+export function bindGitPreferences(bind: interfaces.Bind): void {
+    bind(GitPreferences).toDynamicValue(ctx => {
         const preferences = ctx.container.get<PreferenceService>(PreferenceService);
-        return createGitDecorationsPreferences(preferences);
+        return createGitPreferences(preferences);
     });
-    bind(PreferenceContribution).toConstantValue({ schema: GitDecorationsConfigSchema });
+    bind(PreferenceContribution).toConstantValue({ schema: GitConfigSchema });
 }

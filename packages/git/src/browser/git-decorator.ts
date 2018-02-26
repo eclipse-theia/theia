@@ -19,7 +19,7 @@ import { GitWatcher } from '../common/git-watcher';
 import { WorkingDirectoryStatus } from '../common/git-model';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { GitFileChange, GitFileStatus } from '../common/git-model';
-import { GitDecorationsPreferences, GitDecorationsConfiguration } from './git-decorator-preferences';
+import { GitPreferences, GitConfiguration } from './git-preferences';
 
 @injectable()
 export class GitDecorator implements TreeDecorator {
@@ -36,7 +36,7 @@ export class GitDecorator implements TreeDecorator {
         @inject(Git) protected readonly git: Git,
         @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
         @inject(GitWatcher) protected readonly watcher: GitWatcher,
-        @inject(GitDecorationsPreferences) protected readonly preferences: GitDecorationsPreferences,
+        @inject(GitPreferences) protected readonly preferences: GitPreferences,
         @inject(ILogger) protected readonly logger: ILogger) {
         this.emitter = new Emitter();
         this.toDispose = new DisposableCollection();
@@ -155,7 +155,7 @@ export class GitDecorator implements TreeDecorator {
         }
     }
 
-    protected async handlePreferenceChange(event: PreferenceChangeEvent<GitDecorationsConfiguration>): Promise<void> {
+    protected async handlePreferenceChange(event: PreferenceChangeEvent<GitConfiguration>): Promise<void> {
         let refresh = false;
         const { preferenceName, newValue } = event;
         if (preferenceName === 'git.decorations.enabled') {
