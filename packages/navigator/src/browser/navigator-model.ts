@@ -6,9 +6,12 @@
  */
 
 import { injectable, inject } from "inversify";
-import { OpenerService, open, ITreeNode } from "@theia/core/lib/browser";
+import { OpenerService, open, ITreeNode, ISelectableTreeNode } from "@theia/core/lib/browser";
 import { FileNode, FileTreeModel, FileTreeServices } from "@theia/filesystem/lib/browser";
 import { FileNavigatorTree } from "./navigator-tree";
+import URI from '@theia/core/lib/common/uri';
+import { IExpandableTreeNode } from '@theia/core/lib/browser';
+import { ILogger } from '@theia/core/lib/common/logger';
 
 @injectable()
 export class FileNavigatorServices extends FileTreeServices {
@@ -22,7 +25,8 @@ export class FileNavigatorModel extends FileTreeModel {
 
     constructor(
         @inject(FileNavigatorTree) protected readonly tree: FileNavigatorTree,
-        @inject(FileNavigatorServices) services: FileNavigatorServices
+        @inject(FileNavigatorServices) protected readonly services: FileNavigatorServices,
+        @inject(ILogger) protected readonly logger: ILogger
     ) {
         super(tree, services);
     }
@@ -33,6 +37,48 @@ export class FileNavigatorModel extends FileTreeModel {
         } else {
             super.doOpenNode(node);
         }
+    }
+
+    async tryGetNode(uri: URI): Promise<ITreeNode | undefined> {
+        let node = super.getNode(uri.toString());
+        if (node === undefined) {
+            let currentUri = uri;
+            if (currentUri === undefined) {
+                return undefined;
+            }
+            const uris: string[] = [];
+            let stop = currentUri.path.isRoot;
+            while (!stop) {
+                uris.unshift(currentUri.toString());
+                // Traverse from bottom to up until we reach the root or visit an expanded node.
+                stop = currentUri.path.isRoot || IExpandableTreeNode.isExpanded(this.getNode(currentUri.toString()));
+                currentUri = currentUri.parent;
+            }
+            for (const uri of uris) {
+                node = this.getNode(uri);
+                if (IExpandableTreeNode.is(node)) {
+                    const children = await this.tree.resolveChildren(node);
+                    this.tree.setChildren(node, children);
+                    if (IExpandableTreeNode.isCollapsed(node)) {
+                        this.expandNode(node);
+                    }
+                }
+            }
+        }
+        return node && node.id === uri.toString() ? node : undefined;
+    }
+
+    selectNode(node: ISelectableTreeNode | undefined, expandParents: boolean = false): void {
+        if (node && expandParents) {
+            let parent = node.parent;
+            while (parent !== undefined) {
+                if (IExpandableTreeNode.isCollapsed(parent)) {
+                    this.expandNode(parent);
+                }
+                parent = parent.parent;
+            }
+        }
+        super.selectNode(node);
     }
 
 }

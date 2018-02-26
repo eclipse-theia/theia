@@ -7,6 +7,7 @@
 
 import { SelectionService } from '@theia/core/lib/common';
 import { Widget, BaseWidget, Message, Saveable, SaveableSource } from '@theia/core/lib/browser';
+import URI from '@theia/core/lib/common/uri';
 import { TextEditor } from "./editor";
 
 export class EditorWidget extends BaseWidget implements SaveableSource {
@@ -26,6 +27,10 @@ export class EditorWidget extends BaseWidget implements SaveableSource {
 
     get saveable(): Saveable {
         return this.editor.document;
+    }
+
+    get uri(): URI {
+        return this.editor.uri;
     }
 
     protected onActivateRequest(msg: Message): void {

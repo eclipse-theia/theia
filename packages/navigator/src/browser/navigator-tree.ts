@@ -8,6 +8,7 @@
 import { injectable, inject } from "inversify";
 import { FileSystem } from "@theia/filesystem/lib/common";
 import { FileTree } from "@theia/filesystem/lib/browser";
+import { ICompositeTreeNode, ITreeNode } from '@theia/core/lib/browser/tree/tree';
 
 @injectable()
 export class FileNavigatorTree extends FileTree {
@@ -16,6 +17,10 @@ export class FileNavigatorTree extends FileTree {
         @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) {
         super(fileSystem);
+    }
+
+    setChildren(parent: ICompositeTreeNode, children: ITreeNode[]): void {
+        super.setChildren(parent, children);
     }
 
 }
