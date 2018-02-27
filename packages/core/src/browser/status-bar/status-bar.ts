@@ -77,6 +77,7 @@ export class StatusBarImpl extends VirtualWidget implements StatusBar {
         @inject(LabelParser) protected readonly entryService: LabelParser
     ) {
         super();
+        delete this.scrollOptions;
         this.id = 'theia-statusBar';
     }
 

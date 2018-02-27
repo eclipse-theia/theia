@@ -1,6 +1,15 @@
+/*
+ * Copyright (C) 2017, 2018 TypeFox and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+@import url('~perfect-scrollbar/css/perfect-scrollbar.css');
+
 ::-webkit-scrollbar {
-    height: 9px;
-    width: 9px;
+    height: var(--theia-scrollbar-width);
+    width: var(--theia-scrollbar-width);
     background: var(--theia-scrollbar-color);
 }
 
@@ -10,4 +19,42 @@
 
 ::-webkit-scrollbar-corner {
     background: transparent;
+}
+
+/* perfect scrollbar */
+.ps__rail-x {
+    background: var(--theia-scrollbar-color);
+}
+
+.ps__rail-x .ps__thumb-x {
+    background: var(--theia-scrollbar-thumb-color);
+    width: var(--theia-scrollbar-width);
+    border-radius: 0px;
+}
+
+.ps__rail-y {
+    background: var(--theia-scrollbar-color);
+}
+
+.ps__rail-y .ps__thumb-y {
+    background: var(--theia-scrollbar-thumb-color);
+    width: var(--theia-scrollbar-width);
+    border-radius: 0px;
+}
+/* monaco */
+/* Make horizontal scrollbar, decorations overview ruler and vertical scrollbar arrows opaque */
+.monaco-scrollable-element .scrollbar.horizontal,
+.decorationsOverviewRuler,
+.monaco-scrollable-element .scrollbar.vertical {
+      background: var(--theia-scrollbar-color);
+}
+
+.monaco-scrollable-element .scrollbar.vertical .slider {
+    width: var(--theia-scrollbar-width) !important;
+    background: var(--theia-scrollbar-thumb-color);
+}
+
+.monaco-scrollable-element .scrollbar.horizontal .slider {
+    height: var(--theia-scrollbar-width) !important;
+    background: var(--theia-scrollbar-thumb-color);
 }

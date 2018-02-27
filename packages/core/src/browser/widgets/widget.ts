@@ -8,8 +8,10 @@
 import { injectable, decorate, unmanaged } from "inversify";
 import { Widget } from "@phosphor/widgets";
 import { Message } from "@phosphor/messaging";
-import { Disposable, DisposableCollection } from '../../common';
+import { Disposable, DisposableCollection, MaybePromise } from '../../common';
 import { Key, KeyCode } from '../keys';
+
+import PerfectScrollbar from 'perfect-scrollbar';
 
 decorate(injectable(), Widget);
 decorate(unmanaged(), Widget, 0);
@@ -26,6 +28,8 @@ export class BaseWidget extends Widget {
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly toDisposeOnDetach = new DisposableCollection();
+    protected scrollBar?: PerfectScrollbar;
+    protected scrollOptions?: PerfectScrollbar.Options;
 
     dispose(): void {
         if (this.isDisposed) {
@@ -43,6 +47,39 @@ export class BaseWidget extends Widget {
     protected onBeforeDetach(msg: Message): void {
         this.toDisposeOnDetach.dispose();
         super.onBeforeDetach(msg);
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+        if (this.scrollOptions) {
+            (async () => {
+                const container = await this.getScrollContainer();
+                container.style.overflow = 'hidden';
+                this.scrollBar = new PerfectScrollbar(container, {
+                    suppressScrollX: true
+                });
+
+                this.toDispose.push(Disposable.create(async () => {
+                    if (this.scrollBar) {
+                        this.scrollBar.destroy();
+                        this.scrollBar = undefined;
+                    }
+                    // tslint:disable-next-line:no-null-keyword
+                    container.style.overflow = null;
+                }));
+            })();
+        }
+    }
+
+    protected getScrollContainer(): MaybePromise<HTMLElement> {
+        return this.node;
+    }
+
+    protected onUpdateRequest(msg: Message): void {
+        super.onUpdateRequest(msg);
+        if (this.scrollBar) {
+            this.scrollBar.update();
+        }
     }
 
     protected addUpdateListener<K extends keyof HTMLElementEventMap>(element: HTMLElement, type: K, useCapture?: boolean): void {

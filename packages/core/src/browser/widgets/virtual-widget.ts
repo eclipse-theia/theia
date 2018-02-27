@@ -15,16 +15,29 @@ import { VirtualRenderer } from "./virtual-renderer";
 export class VirtualWidget extends BaseWidget {
 
     protected readonly onRender = new DisposableCollection();
+    protected childContainer?: HTMLElement;
+    protected scrollOptions = {
+        suppressScrollX: true
+    };
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
-
         const child = this.render();
-        VirtualRenderer.render(child, this.node);
+        if (!this.childContainer) {
+            // if we are adding scolling, we need to wrap the contents in its own div, to not conflict with the virtual dom algo.
+            if (this.scrollOptions) {
+                this.childContainer = document.createElement('div');
+                this.node.appendChild(this.childContainer);
+            } else {
+                this.childContainer = this.node;
+            }
+        }
+        VirtualRenderer.render(child, this.childContainer);
         this.onRender.dispose();
     }
 
     protected render(): h.Child {
+        // tslint:disable-next-line:no-null-keyword
         return null;
     }
 
