@@ -6,11 +6,7 @@
  */
 
 import * as chai from 'chai';
-import 'mocha';
-import * as chaiAsPromised from 'chai-as-promised';
 import { MultiRingBuffer } from './multi-ring-buffer';
-
-chai.use(chaiAsPromised);
 
 const expect = chai.expect;
 
@@ -310,7 +306,7 @@ describe('MultiRingBuffer', function () {
         expect(ringBuffer.sizeForReader(reader)).to.be.equal(0);
     });
 
-    it('expect data from stream on enq', function () {
+    it('expect data from stream on enq', async function () {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffer = "abc";
@@ -323,10 +319,11 @@ describe('MultiRingBuffer', function () {
             });
         });
         ringBuffer.enq(buffer);
-        return expect(p).to.be.eventually.fulfilled;
+
+        await p;
     });
 
-    it('expect data from stream when data is already enqed', function () {
+    it('expect data from stream when data is already enqed', async function () {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffer = "abc";
@@ -340,7 +337,7 @@ describe('MultiRingBuffer', function () {
             });
         });
 
-        return expect(p).to.be.eventually.fulfilled;
+        await p;
     });
 
     it('expect disposing of a stream to delete it from the ringbuffer', function () {
@@ -382,7 +379,7 @@ describe('MultiRingBuffer', function () {
         expect(readBuffer).to.equal("test");
     });
 
-    it('expect data from stream in hex when enq in uf8', function () {
+    it('expect data from stream in hex when enq in uf8', async function () {
         const size = 5;
         const ringBuffer = new MultiRingBuffer({ size });
         const buffer = "test";
@@ -396,7 +393,7 @@ describe('MultiRingBuffer', function () {
             });
         });
 
-        return expect(p).to.be.eventually.fulfilled;
+        await p;
     });
 
     it('expect deq a string < ring buffer size with the internal encoding in hex ', function () {

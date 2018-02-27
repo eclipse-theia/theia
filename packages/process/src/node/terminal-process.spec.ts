@@ -5,15 +5,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 import * as chai from 'chai';
-import 'mocha';
-import * as chaiAsPromised from 'chai-as-promised';
 import * as process from 'process';
 import * as stream from 'stream';
 import { testContainer } from './inversify.spec-config';
 import { TerminalProcessFactory } from './terminal-process';
 import { isWindows } from "@theia/core/lib/common";
-
-chai.use(chaiAsPromised);
 
 /**
  * Globals
@@ -26,7 +22,7 @@ describe('TerminalProcess', function () {
     this.timeout(5000);
     const terminalProcessFactory = testContainer.get<TerminalProcessFactory>(TerminalProcessFactory);
 
-    it('test error on non existent path', function () {
+    it('test error on non existent path', async function () {
 
         /* Strangely, Linux returns exited with code 1 when using a non existing path but Windows throws an error.
         This would need to be investigated more.  */
@@ -40,11 +36,11 @@ describe('TerminalProcess', function () {
                 });
             });
 
-            return expect(p).to.be.eventually.fulfilled;
+            await p;
         }
     });
 
-    it('test exit', function () {
+    it('test exit', async function () {
         const args = ['--version'];
         const terminalProcess = terminalProcessFactory({ command: process.execPath, 'args': args });
         const p = new Promise((resolve, reject) => {
@@ -60,10 +56,10 @@ describe('TerminalProcess', function () {
             });
         });
 
-        return expect(p).to.be.eventually.fulfilled;
+        await p;
     });
 
-    it('test pipe stream', function () {
+    it('test pipe stream', async function () {
         const args = ['--version'];
         const terminalProcess = terminalProcessFactory({ command: process.execPath, 'args': args });
 
@@ -84,6 +80,6 @@ describe('TerminalProcess', function () {
         terminalProcess.createOutputStream().pipe(outStream);
 
         /* Avoid using equal since terminal characters can be inserted at the end.  */
-        return expect(p).to.eventually.have.string(process.version);
+        expect(await p).to.have.string(process.version);
     });
 });

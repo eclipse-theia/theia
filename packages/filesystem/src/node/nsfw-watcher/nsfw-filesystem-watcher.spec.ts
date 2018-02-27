@@ -26,12 +26,6 @@ describe("nsfw-filesystem-watcher", function () {
 
     this.timeout(10000);
 
-    before(() => {
-        chai.config.showDiff = true;
-        chai.config.includeStack = true;
-        chai.should();
-    });
-
     beforeEach(async () => {
         root = FileUri.create(fs.realpathSync(temp.mkdirSync('node-fs-root')));
         watcherServer = createNsfwFileSystemWatcherServer();

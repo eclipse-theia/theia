@@ -5,9 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as chai from 'chai';
-import 'mocha';
-import * as chaiAsPromised from 'chai-as-promised';
 import { testContainer } from './test-resources/inversify.spec-config';
 import { BackendApplication } from '@theia/core/lib/node/backend-application';
 import { TaskExitedEvent, TaskInfo, TaskServer, TaskOptions, ProcessType } from '../common/task-protocol';
@@ -19,14 +16,11 @@ import { isWindows } from '@theia/core/lib/common/os';
 import URI from "@theia/core/lib/common/uri";
 import { FileUri } from "@theia/core/lib/node";
 import { terminalsPath } from '@theia/terminal/lib/common/terminal-protocol';
-
-chai.use(chaiAsPromised);
+import { expectThrowsAsync } from '@theia/core/lib/common/test/expect';
 
 /**
  * Globals
  */
-
-const expect = chai.expect;
 
 // test scripts that we bundle with tasks
 const commandShortRunning = './task';
@@ -92,7 +86,8 @@ describe('Task server / back-end', function () {
                 reject(error);
             });
         });
-        return expect(p).to.be.eventually.fulfilled;
+
+        await p;
     });
 
     it("task using raw process - task server success response shall not contain a terminal id", async function () {
@@ -115,7 +110,7 @@ describe('Task server / back-end', function () {
             });
         });
 
-        return expect(p).to.be.eventually.fulfilled;
+        await p;
     });
 
     it("task is executed successfully using terminal process", async function () {
@@ -124,7 +119,7 @@ describe('Task server / back-end', function () {
 
         const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
 
-        return expect(p).to.be.eventually.fulfilled;
+        await p;
     });
 
     it("task is executed successfully using raw process", async function () {
@@ -133,7 +128,7 @@ describe('Task server / back-end', function () {
 
         const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
 
-        return expect(p).to.be.eventually.fulfilled;
+        await p;
     });
 
     it("task can successfully execute command found in system path using a terminal process", async function () {
@@ -144,7 +139,7 @@ describe('Task server / back-end', function () {
 
         const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
 
-        return expect(p).to.be.eventually.fulfilled;
+        await p;
     });
 
     it("task can successfully execute command found in system path using a raw process", async function () {
@@ -153,7 +148,7 @@ describe('Task server / back-end', function () {
 
         const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
 
-        return expect(p).to.be.eventually.fulfilled;
+        await p;
     });
 
     it("task using terminal process can be killed", async function () {
@@ -168,9 +163,10 @@ describe('Task server / back-end', function () {
                 }
             });
         });
+
         await taskServer.kill(taskInfo.taskId);
 
-        return expect(p).to.be.eventually.fulfilled;
+        await p;
     });
 
     it("task using raw process can be killed", async function () {
@@ -185,19 +181,20 @@ describe('Task server / back-end', function () {
                 }
             });
         });
+
         await taskServer.kill(taskInfo.taskId);
 
-        return expect(p).to.be.eventually.fulfilled;
+        await p;
     });
 
     it("task using terminal process can handle command that does not exist", async function () {
         const p = taskServer.run(createTaskOptions2('terminal', bogusCommand, []), wsRoot);
-        return expect(p).to.be.eventually.rejectedWith(`Command not found: ${bogusCommand}`);
+        await expectThrowsAsync(p, `Command not found: ${bogusCommand}`);
     });
 
     it("task using raw process can handle command that does not exist", async function () {
         const p = taskServer.run(createTaskOptions2('raw', bogusCommand, []), wsRoot);
-        return expect(p).to.be.eventually.rejectedWith(`Command not found: ${bogusCommand}`);
+        await expectThrowsAsync(p, `Command not found: ${bogusCommand}`);
     });
 
     it("getTasks(ctx) returns tasks according to created context", async function () {
@@ -241,7 +238,7 @@ describe('Task server / back-end', function () {
         await taskServer.kill(task5.taskId);
         await taskServer.kill(task6.taskId);
 
-        return expect(p).to.be.eventually.fulfilled;
+        await p;
     });
 
     it("creating and killing a bunch of tasks works as expected", async function () {
@@ -278,7 +275,7 @@ describe('Task server / back-end', function () {
             }
         });
 
-        return expect(p).to.be.eventually.fulfilled;
+        await p;
     });
 
 });
@@ -345,5 +342,6 @@ function checkSuccessfullProcessExit(taskInfo: TaskInfo, taskWatcher: TaskWatche
             }
         });
     });
+
     return p;
 }

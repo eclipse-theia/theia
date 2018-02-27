@@ -5,22 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import "mocha";
 import * as chai from "chai";
-import * as chaiAsPromised from "chai-as-promised";
 import { ConsoleLogger } from '../../node/messaging/logger';
 import { JsonRpcProxyFactory } from './proxy-factory';
 import { createMessageConnection } from "vscode-jsonrpc/lib/main";
 import * as stream from "stream";
 
 const expect = chai.expect;
-
-before(() => {
-    chai.config.showDiff = true;
-    chai.config.includeStack = true;
-    chai.should();
-    chai.use(chaiAsPromised);
-});
 
 class NoTransform extends stream.Transform {
 
@@ -53,10 +44,8 @@ class TestClient {
     }
 }
 
-beforeEach(() => {
-});
-
 describe('Proxy-Factory', () => {
+
     it('Should correctly send notifications and requests.', done => {
         const it = getSetup();
         it.clientProxy.notifyThat("hello");
