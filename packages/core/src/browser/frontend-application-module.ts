@@ -39,6 +39,9 @@ import { DiffUriLabelProviderContribution } from './diff-uris';
 import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
 import "file-icons-js/css/style.css";
+import { ApplicationServer, applicationPath } from "../common/application-protocol";
+import { WebSocketConnectionProvider } from "./messaging/connection";
+import { AboutDialog, AboutDialogProps } from "./about-dialog";
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplication).toSelf().inSingletonScope();
@@ -125,6 +128,14 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(FrontendConnectionStatusService)).inSingletonScope();
     bind(ApplicationConnectionStatusContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(ApplicationConnectionStatusContribution)).inSingletonScope();
+
+    bind(ApplicationServer).toDynamicValue(ctx => {
+        const provider = ctx.container.get(WebSocketConnectionProvider);
+        return provider.createProxy<ApplicationServer>(applicationPath);
+    }).inSingletonScope();
+
+    bind(AboutDialog).toSelf().inSingletonScope();
+    bind(AboutDialogProps).toConstantValue({ title: 'Theia' });
 });
 
 const theme = ThemeService.get().getCurrentTheme().id;

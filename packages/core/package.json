@@ -5,6 +5,7 @@
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
   "dependencies": {
+    "@theia/application-package": "^0.3.7",
     "@phosphor/widgets": "^1.5.0",
     "@types/body-parser": "^1.16.4",
     "@types/bunyan": "^1.8.0",
