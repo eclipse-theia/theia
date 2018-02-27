@@ -39,7 +39,7 @@ describe('connection-status', function () {
     });
 
     it('should go from online to offline if the connection is down', async () => {
-        expect(connectionStatusService.currentState.state).to.be.equal(ConnectionState.ONLINE);
+        expect(connectionStatusService.currentState.state).to.be.equal(ConnectionState.INITIAL);
         connectionStatusService.alive = false;
         await pause();
 

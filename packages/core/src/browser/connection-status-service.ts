@@ -55,8 +55,12 @@ export enum ConnectionState {
     /**
      * The connection is lost between the client and the endpoint.
      */
-    OFFLINE
+    OFFLINE,
 
+    /**
+     * Initially we don't know whether we are online or offline.
+     */
+    INITIAL
 }
 
 @injectable()
@@ -253,17 +257,13 @@ export class ConnectionStatusImpl implements ConnectionStatus {
 
     constructor(
         protected readonly props: { readonly threshold: number },
-        public readonly state: ConnectionState = ConnectionState.ONLINE,
+        public readonly state: ConnectionState = ConnectionState.INITIAL,
         protected readonly history: boolean[] = []) {
     }
 
     next(success: boolean): ConnectionStatusImpl {
         const newHistory = this.updateHistory(success);
-        // Initial optimism.
-        let online = true;
-        if (newHistory.length > this.props.threshold) {
-            online = newHistory.slice(-this.props.threshold).some(s => s);
-        }
+        const online = newHistory.slice(-this.props.threshold).some(s => s);
         // Ideally, we do not switch back to online if we see any `true` items but, let's say, after three consecutive `true`s.
         return new ConnectionStatusImpl(this.props, online ? ConnectionState.ONLINE : ConnectionState.OFFLINE, newHistory);
     }
