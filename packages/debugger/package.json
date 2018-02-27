@@ -30,8 +30,7 @@
   },
   "homepage": "https://github.com/theia-ide/theia",
   "files": [
-    "lib",
-    "src"
+    "lib"
   ],
   "scripts": {
     "prepare": "yarn run clean && yarn run build",
