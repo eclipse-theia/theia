@@ -1,6 +1,6 @@
 # Theia - Preferences Extension
 
-Preferences implementation for the preferences-api defined in core. This provides two preference providers, one for the user home directory, and one for the workspace, which has precedence over the previous one. To set preferences, create or edit a `settings.json` under the `theia` folder located either in the user home, or the root of the workspace.
+This package includes preferences implementation for the preferences api defined in `@theia/core`. This provides two preference providers, one for the user home directory, and one for the workspace, which has precedence over the previous one. To set preferences, create or edit a `settings.json` under the `.theia` folder located either in the user home, or the root of the workspace.
 
 Example of a `settings.json` below:
 
