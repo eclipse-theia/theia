@@ -16,7 +16,6 @@
     "@types/temp": "^0.8.29",
     "@types/webdriverio": "^4.7.0",
     "chai": "^4.1.0",
-    "chai-as-promised": "^7.1.1",
     "chai-string": "^1.4.0",
     "concurrently": "^3.5.0",
     "electron-mocha": "^3.5.0",

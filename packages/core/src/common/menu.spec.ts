@@ -7,21 +7,9 @@
 
 import { CommandContribution, CommandRegistry } from './command';
 import { CompositeMenuNode, MenuContribution, MenuModelRegistry } from './menu';
-import "mocha";
 import * as chai from "chai";
-import * as chaiAsPromised from "chai-as-promised";
 
 const expect = chai.expect;
-
-before(() => {
-    chai.config.showDiff = true;
-    chai.config.includeStack = true;
-    chai.should();
-    chai.use(chaiAsPromised);
-});
-
-beforeEach(() => {
-});
 
 describe('menu-model-registry', () => {
 

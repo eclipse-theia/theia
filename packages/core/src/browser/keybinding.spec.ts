@@ -26,8 +26,6 @@ disableJSDOM();
 /* tslint:disable:no-unused-expression */
 
 const expect = chai.expect;
-chai.config.showDiff = true;
-chai.config.includeStack = true;
 
 let keybindingRegistry: KeybindingRegistry;
 let commandRegistry: CommandRegistry;

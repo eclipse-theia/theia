@@ -10,15 +10,6 @@ import URI from "./uri";
 
 const expect = chai.expect;
 
-before(() => {
-    chai.config.showDiff = true;
-    chai.config.includeStack = true;
-    chai.should();
-});
-
-beforeEach(() => {
-});
-
 describe("uri", () => {
 
     describe("#getParent", () => {
@@ -131,7 +122,7 @@ describe("uri", () => {
 
     describe("#Uri.with...()", () => {
         it("produce proper URIs", () => {
-            let uri = new URI().withScheme('file').withPath('/foo/bar.txt').withQuery("x=12").withFragment("baz");
+            const uri = new URI().withScheme('file').withPath('/foo/bar.txt').withQuery("x=12").withFragment("baz");
             expect(uri.toString(true)).equals("file:///foo/bar.txt?x=12#baz");
 
             expect(uri.withoutScheme().toString(true)).equals("/foo/bar.txt?x=12#baz");

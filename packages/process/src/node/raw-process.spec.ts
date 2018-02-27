@@ -5,8 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 import * as chai from 'chai';
-import 'mocha';
-import * as chaiAsPromised from 'chai-as-promised';
 import * as process from 'process';
 import * as stream from 'stream';
 import { testContainer } from './inversify.spec-config';
@@ -17,8 +15,6 @@ import { isWindows } from '@theia/core';
 
 /* Allow to create temporary files, but delete them when we're done.  */
 const track = temp.track();
-
-chai.use(chaiAsPromised);
 
 /**
  * Globals
@@ -31,7 +27,7 @@ describe('RawProcess', function () {
     this.timeout(5000);
     const rawProcessFactory = testContainer.get<RawProcessFactory>(RawProcessFactory);
 
-    it('test error on non-existent path', function () {
+    it('test error on non-existent path', async function () {
         const p = new Promise((resolve, reject) => {
             const rawProcess = rawProcessFactory({ command: '/non-existent' });
             rawProcess.onError(error => {
@@ -41,10 +37,10 @@ describe('RawProcess', function () {
             });
         });
 
-        return expect(p).to.eventually.equal('ENOENT');
+        expect(await p).to.be.equal('ENOENT');
     });
 
-    it('test error on non-executable path', function () {
+    it('test error on non-executable path', async function () {
         /* Create a non-executable file.  */
         const f = track.openSync('non-executable');
         fs.writeSync(f.fd, 'echo bob');
@@ -73,10 +69,10 @@ describe('RawProcess', function () {
             expectedCode = 'UNKNOWN';
         }
 
-        return expect(p).to.eventually.equal(expectedCode);
+        expect(await p).to.equal(expectedCode);
     });
 
-    it('test exit', function () {
+    it('test exit', async function () {
         const args = ['--version'];
         const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
         const p = new Promise((resolve, reject) => {
@@ -93,10 +89,10 @@ describe('RawProcess', function () {
             });
         });
 
-        return expect(p).to.be.eventually.fulfilled;
+        await p;
     });
 
-    it('test pipe stdout stream', function () {
+    it('test pipe stdout stream', async function () {
         const args = ['--version'];
         const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
 
@@ -114,10 +110,10 @@ describe('RawProcess', function () {
 
         rawProcess.output.pipe(outStream);
 
-        return expect(p).to.be.eventually.equal(process.version);
+        expect(await p).to.be.equal(process.version);
     });
 
-    it('test pipe stderr stream', function () {
+    it('test pipe stderr stream', async function () {
         const args = ['invalidarg'];
         const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
 
@@ -135,6 +131,6 @@ describe('RawProcess', function () {
 
         rawProcess.errorOutput.pipe(outStream);
 
-        return expect(p).to.be.eventually.have.string('Error');
+        expect(await p).to.have.string('Error');
     });
 });

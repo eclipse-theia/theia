@@ -12,11 +12,6 @@ const expect = chai.expect;
 
 describe("Endpoint", () => {
 
-    before(() => {
-        chai.config.showDiff = true;
-        chai.config.includeStack = true;
-    });
-
     describe("01 #getWebSocketUrl", () => {
 
         it("Should correctly join root pathname", () => {
