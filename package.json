@@ -38,6 +38,7 @@
     "tslint-language-service": "^0.9.9",
     "typedoc": "^0.8",
     "typescript": "^2.7.2",
+    "vscode-debugprotocol": "^1.22.0",
     "uuid": "^3.1.0",
     "wdio-mocha-framework": "0.5.9",
     "wdio-phantomjs-service": "0.2.2",
