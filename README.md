@@ -10,13 +10,17 @@ Theia is an extensible platform to develop full-fledged multi-language Cloud & D
 
 ![Theia](https://user-images.githubusercontent.com/372735/33182625-0f6575f0-d075-11e7-8ec7-53801e3892bd.jpg)
 
+- [**Website**](#website)
 - [**Scope**](#scope)
 - [**Getting Started**](#getting-started)
-- [**Documentation**](#documentation)
 - [**Contributing**](#contributing)
 - [**Feedback**](#feedback)
 - [**Roadmap**](#roadmap)
 - [**License**](#license)
+
+## Website
+
+[Visit the Theia website](http://www.theia-ide.org) for more [documentation](http://www.theia-ide.org/doc).
 
 ## Scope
 - Establish a platform to build IDE-like products
@@ -27,30 +31,16 @@ Theia is an extensible platform to develop full-fledged multi-language Cloud & D
 
 ## Getting Started
 Here you can find guides and examples for common scenarios:
-- [Develop a new Theia extension](doc/Authoring_Extensions.md)
+- [Develop a new Theia extension](http://www.theia-ide.org/doc/Authoring_Extensions.md)
 - Develop a new Theia application for [Cloud](examples/browser/package.json) or [Desktop](examples/electron/package.json) with [Theia CLI](dev-packages/cli/README.md)
 - [Run Theia IDE for Web Developers with Docker](https://github.com/theia-ide/theia-apps#theia-docker)
 - [Package a desktop Theia application with Electron](https://github.com/theia-ide/yangster-electron)
 
-## Documentation
-
-There are guides to get familiar with Theia architecture and internals:
-- [**Architecture**](doc/Architecture.md#architecture)
-  - [**Dependency Injection**](doc/Architecture.md#dependency-injection-di)
-  - [**Extensions**](doc/Architecture.md#extensions)
-  - [**Services**](doc/Architecture.md#services)
-  - [**Contributions**](doc/Architecture.md#contribution-points)
-- [**Developing an extension**](doc/Authoring_Extensions.md)
-  - [**Frontend-backend communications**](doc/Internals.md#backendfrontend)
-  - [**Events**](doc/Internals.md#events)
-  - [**Commands**](doc/Commands_Keybindings.md)
-  - [**Preferences**](doc/Preferences.md)
-
 ## Contributing
 
 Read below to learn how to take part in improving Theia:
-- Fork the repository and [run the examples from source](doc/Developing.md#quick-start)
-- Get familiar with [the development workflow](doc/Developing.md), [Coding Guidelines](https://github.com/theia-ide/theia/wiki/Coding-Guidelines), [Code of Conduct](CODE_OF_CONDUCT.md) and [learn how to sign your work](CONTRIBUTING.md#sign-your-work)
+- Fork the repository and [run the examples from source](http://www.theia-ide.org/doc/Developing.md#quick-start)
+- Get familiar with [the development workflow](http://www.theia-ide.org/doc/Developing.md), [Coding Guidelines](https://github.com/theia-ide/theia/wiki/Coding-Guidelines), [Code of Conduct](CODE_OF_CONDUCT.md) and [learn how to sign your work](CONTRIBUTING.md#sign-your-work)
 - Find an issue to work on and submit a pull request
   - First time contributing to open source? Pick a [good first issue](https://github.com/theia-ide/theia/labels/good%20first%20issue) to get you familiar with GitHub contributing process.
   - First time contributing to Theia? Pick a [beginner friendly issue](https://github.com/theia-ide/theia/labels/beginners) to get you familiar with codebase and our contributing process.
