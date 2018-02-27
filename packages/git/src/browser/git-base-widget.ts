@@ -5,13 +5,12 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { VirtualWidget, SELECTED_CLASS } from "@theia/core/lib/browser";
+import { VirtualWidget, SELECTED_CLASS, Key } from "@theia/core/lib/browser";
 import { GitFileStatus, Repository, GitFileChange } from '../common';
 import URI from "@theia/core/lib/common/uri";
 import { GitRepositoryProvider } from "./git-repository-provider";
 import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 import { Message } from "@phosphor/messaging";
-import { Key } from "@theia/core/lib/browser/keys";
 import { ElementExt } from "@phosphor/domutils";
 import { inject, injectable } from "inversify";
 
@@ -101,11 +100,13 @@ export class GitBaseWidget<T extends { selected?: boolean }> extends VirtualWidg
 
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        this.addKeyListener(this.node, Key.ARROW_LEFT, () => this.handleLeft());
-        this.addKeyListener(this.node, Key.ARROW_RIGHT, () => this.handleRight());
-        this.addKeyListener(this.node, Key.ARROW_UP, () => this.handleUp());
-        this.addKeyListener(this.node, Key.ARROW_DOWN, () => this.handleDown());
-        this.addKeyListener(this.node, Key.ENTER, () => this.handleEnter());
+
+        const changesOuterContainer = <HTMLElement>this.node.getElementsByClassName('changesOuterContainer')[0];
+        this.addKeyListener(changesOuterContainer, Key.ARROW_LEFT, () => this.handleLeft());
+        this.addKeyListener(changesOuterContainer, Key.ARROW_RIGHT, () => this.handleRight());
+        this.addKeyListener(changesOuterContainer, Key.ARROW_UP, () => this.handleUp());
+        this.addKeyListener(changesOuterContainer, Key.ARROW_DOWN, () => this.handleDown());
+        this.addKeyListener(changesOuterContainer, Key.ENTER, () => this.handleEnter());
     }
 
     protected handleLeft(): void {
