@@ -7,7 +7,7 @@
 
 import { inject, injectable } from "inversify";
 import { Disposable, ILogger } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message, WebSocketConnectionProvider, Endpoint, StatefulWidget } from '@theia/core/lib/browser';
+import { Widget, BaseWidget, Message, WebSocketConnectionProvider, Endpoint, StatefulWidget, isFirefox } from '@theia/core/lib/browser';
 import { WorkspaceService } from "@theia/workspace/lib/browser";
 import { IShellTerminalServer } from '../common/shell-terminal-protocol';
 import { ITerminalServer } from '../common/terminal-protocol';
@@ -117,6 +117,12 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         this.term.on('title', (title: string) => {
             this.title.label = title;
         });
+        if (isFirefox) {
+            // The software scrollbars don't work with xterm.js, so we disable the scrollbar if we are on firefox.
+            this.waitForTermOpened.promise.then(() => {
+                (this.term.element.children.item(0) as HTMLElement).style.overflow = 'hidden';
+            });
+        }
     }
 
     storeState(): object {

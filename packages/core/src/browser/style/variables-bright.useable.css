@@ -153,8 +153,9 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-preloader: url(../icons/spinner.gif);
 
   /* scrollbars */
+  --theia-scrollbar-width: 6px;
   --theia-scrollbar-thumb-color: hsla(0,0%,39%,.4);
-  --theia-scrollbar-color: var(--theia-layout-color3);
+  --theia-scrollbar-color: rgba(0, 0, 0, 0);
 
   /* statusbar */
   --theia-statusbar-color: var(--theia-brand-color0);

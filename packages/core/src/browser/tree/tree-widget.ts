@@ -81,6 +81,9 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
     ) {
         super();
+        this.scrollOptions = {
+            suppressScrollX: true
+        };
         this.addClass(TREE_CLASS);
         this.node.tabIndex = 0;
         model.onChanged(() => this.update());
