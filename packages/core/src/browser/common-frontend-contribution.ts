@@ -12,6 +12,7 @@ import { CommandContribution, CommandRegistry, Command } from '../common/command
 import { MessageService } from '../common/message-service';
 import { ApplicationShell } from './shell/application-shell';
 import { SHELL_TABBAR_CONTEXT_MENU } from './shell/tab-bars';
+import { AboutDialog } from './about-dialog';
 import * as browser from './browser';
 
 export namespace CommonMenus {
@@ -119,6 +120,11 @@ export namespace CommonCommands {
         label: 'Quit'
     };
 
+    export const ABOUT_COMMAND: Command = {
+        id: 'core.about',
+        label: 'About'
+    };
+
 }
 
 export const supportCut = browser.isNative || document.queryCommandSupported('cut');
@@ -133,7 +139,8 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
 
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
-        @inject(MessageService) protected readonly messageService: MessageService
+        @inject(MessageService) protected readonly messageService: MessageService,
+        @inject(AboutDialog) protected readonly aboutDialog: AboutDialog
     ) { }
 
     registerMenus(registry: MenuModelRegistry): void {
@@ -213,6 +220,11 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             commandId: CommonCommands.COLLAPSE_PANEL.id,
             label: 'Collapse',
             order: '4'
+        });
+        registry.registerMenuAction(CommonMenus.HELP, {
+            commandId: CommonCommands.ABOUT_COMMAND.id,
+            label: 'About',
+            order: '9'
         });
     }
 
@@ -343,6 +355,9 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 /* FIXME implement QUIT of innermost command.  */
             }
         });
+        commandRegistry.registerCommand(CommonCommands.ABOUT_COMMAND, {
+            execute: () => this.openAbout()
+        });
     }
 
     registerKeybindings(registry: KeybindingRegistry): void {
@@ -426,5 +441,9 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
                 keybinding: "ctrlcmd+q"
             }
         );
+    }
+
+    protected async openAbout() {
+        this.aboutDialog.open();
     }
 }
