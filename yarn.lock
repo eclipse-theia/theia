@@ -9901,6 +9901,10 @@ vscode-base-languageclient@^0.0.1-alpha.5:
     vscode-languageserver-types "^3.2.0"
     vscode-uri "^1.0.0"
 
+vscode-debugprotocol@^1.22.0:
+  version "1.26.0"
+  resolved "https://registry.yarnpkg.com/vscode-debugprotocol/-/vscode-debugprotocol-1.26.0.tgz#8ab4588ae6a67b2c1cce0d866677a74f96a31c7b"
+
 vscode-jsonrpc@3.5.0:
   version "3.5.0"
   resolved "https://registry.yarnpkg.com/vscode-jsonrpc/-/vscode-jsonrpc-3.5.0.tgz#87239d9e166b2d7352245b8a813597804c1d63aa"
