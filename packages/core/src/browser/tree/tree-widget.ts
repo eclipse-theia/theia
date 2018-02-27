@@ -166,6 +166,8 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
             className,
             style: {
                 paddingLeft: '4px',
+                paddingRight: '4px',
+                width: '0.5em'
             },
             onclick: event => {
                 this.handleClickEvent(node, event);
