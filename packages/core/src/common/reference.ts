@@ -15,6 +15,7 @@ export interface Reference<T> extends Disposable {
 export class ReferenceCollection<K, V extends Disposable> {
 
     protected readonly values = new Map<string, MaybePromise<V>>();
+    protected readonly keyMap = new Map<string, K>();
     protected readonly references = new Map<string, DisposableCollection>();
 
     constructor(protected readonly factory: (key: K) => MaybePromise<V>) { }
@@ -22,6 +23,10 @@ export class ReferenceCollection<K, V extends Disposable> {
     has(args: K): boolean {
         const key = this.toKey(args);
         return this.references.has(key);
+    }
+
+    keys(): K[] {
+        return [...this.keyMap.values()];
     }
 
     async acquire(args: K): Promise<Reference<V>> {
@@ -42,6 +47,7 @@ export class ReferenceCollection<K, V extends Disposable> {
             return existing;
         }
         const value = this.factory(args);
+        this.keyMap.set(key, args);
         this.values.set(key, value);
         return value;
     }
@@ -57,6 +63,7 @@ export class ReferenceCollection<K, V extends Disposable> {
         object.dispose = () => {
             disposeObject();
             this.values.delete(key);
+            this.keyMap.delete(key);
             this.references.delete(key);
             references!.dispose();
         };
