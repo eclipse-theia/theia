@@ -106,7 +106,9 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
             if (token.isCancellationRequested) {
                 return [];
             }
-            entries.push(...symbolInformation);
+            if (Array.isArray(symbolInformation)) {
+                entries.push(...symbolInformation);
+            }
         }
 
         return entries;
