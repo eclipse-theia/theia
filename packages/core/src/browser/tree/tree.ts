@@ -67,8 +67,8 @@ export interface ITreeNode {
      */
     readonly description?: string;
     /**
-     * Test whether this node is visible.
-     * If undefined then visible.
+     * Test whether this node should be rendered.
+     * If undefined then node will be rendered.
      */
     readonly visible?: boolean;
     /**
