@@ -20,14 +20,11 @@ import {
     RevealRangeOptions,
     RevealPositionOptions,
     EditorDecorationsService,
-    SetDecorationParams,
     DeltaDecorationParams,
 } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from "./monaco-editor-model";
 
 import IEditorConstructionOptions = monaco.editor.IEditorConstructionOptions;
-import IDecorationRenderOptions = monaco.editor.IDecorationRenderOptions;
-import IDecorationOptions = monaco.editor.IDecorationOptions;
 import IModelDeltaDecoration = monaco.editor.IModelDeltaDecoration;
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 import IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor;
@@ -64,23 +61,6 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         this.minHeight = options && options.minHeight !== undefined ? options.minHeight : -1;
         this.toDispose.push(this.create(options, override));
         this.addHandlers(this.editor);
-        this.registerDecorationTypes();
-    }
-
-    protected registerDecorationTypes(): void {
-        const decoarationTypes = this.decorationsService.getDecorationTypes();
-        const codeEditorService = this.editor._codeEditorService;
-        decoarationTypes.forEach(decorationType => {
-            const options = <IDecorationRenderOptions>{
-                ...decorationType,
-            };
-            const overviewRulerOptions = decorationType.overviewRuler;
-            if (overviewRulerOptions) {
-                options.overviewRulerColor = overviewRulerOptions.color;
-                options.overviewRulerLane = overviewRulerOptions.position;
-            }
-            codeEditorService.registerDecorationType(decorationType.type, options);
-        });
     }
 
     protected create(options?: IEditorConstructionOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {
@@ -326,23 +306,6 @@ export class MonacoEditor implements TextEditor, IEditorReference {
 
     get instantiationService(): monaco.instantiation.IInstantiationService {
         return this.editor._instantiationService;
-    }
-
-    get codeEditorService(): monaco.services.ICodeEditorService {
-        return this.editor._codeEditorService;
-    }
-
-    setDecorations(params: SetDecorationParams): void {
-        const type = params.type;
-        const decorationOptions = this.toDecorationOptions(params);
-        this.editor.setDecorations(type, decorationOptions);
-    }
-
-    protected toDecorationOptions(params: SetDecorationParams): IDecorationOptions[] {
-        return params.options.map(decorationOptions => <IDecorationOptions>{
-            ...decorationOptions,
-            range: this.p2m.asRange(decorationOptions.range),
-        });
     }
 
     deltaDecorations(params: DeltaDecorationParams): string[] {

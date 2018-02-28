@@ -25,40 +25,6 @@ declare module monaco.editor {
             'editor.controller.quickOpenController': monaco.quickOpen.QuickOpenController
         }
         readonly cursor: ICursor;
-        setDecorations(decorationTypeKey: string, decorationOptions: IDecorationOptions[]): void;
-    }
-
-    export interface IDecorationRenderOptions {
-        isWholeLine?: boolean;
-        backgroundColor?: string | ThemeColor;
-
-        outlineColor?: string | ThemeColor;
-        outlineStyle?: string;
-        outlineWidth?: string;
-
-        color?: string | ThemeColor;
-
-        overviewRulerColor?: string | ThemeColor;
-        overviewRulerLane?: OverviewRulerLane;
-
-        after?: IContentDecorationRenderOptions;
-    }
-
-    export interface IContentDecorationRenderOptions {
-        contentText?: string;
-        color?: string | ThemeColor;
-        backgroundColor?: string | ThemeColor;
-    }
-
-    export interface IDecorationOptions {
-        range: monaco.IRange;
-        hoverMessage?: IMarkdownString | IMarkdownString[];
-        renderOptions?: IContentDecorationRenderOptions;
-    }
-
-    export interface IMarkdownString {
-        value: string;
-        isTrusted?: boolean;
     }
 
     export interface ICursor {
@@ -107,7 +73,6 @@ declare module monaco.editor {
 
     export interface IEditorService {
         openEditor(input: IResourceInput, sideBySide?: boolean): monaco.Promise<IEditorReference | undefined>;
-
     }
 
     export interface IReference<T> extends monaco.IDisposable {
@@ -340,10 +305,6 @@ declare module monaco.services {
     }
 
     export interface IStandaloneThemeService extends monaco.theme.IThemeService { }
-
-    export interface ICodeEditorService {
-        registerDecorationType(key: string, options: monaco.editor.IDecorationRenderOptions, parentTypeKey?: string): void;
-    }
 
     export module StaticServices {
         export const standaloneThemeService: LazyStaticService<IStandaloneThemeService>;
