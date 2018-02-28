@@ -5,42 +5,44 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject, named } from "inversify";
-import { Range, DeltaDecorationParams, SetDecorationParams, TextEditor } from "./editor";
+import { injectable, inject } from "inversify";
+import { Range, SetDecorationParams, DeltaDecorationParams, TextEditor } from "./editor";
 import { EditorManager } from "./editor-manager";
-import { ContributionProvider } from "@theia/core";
 import { DiffUris } from "./diff-uris";
 import URI from "@theia/core/lib/common/uri";
-
-export const EditorDecorationTypeProvider = Symbol('EditorDecorationTypeProvider');
 
 @injectable()
 export class EditorDecorationsService {
 
+    protected readonly appliedDecorations = new Map<string, string[]>();
+
     constructor(
         @inject(EditorManager) protected readonly editorManager: EditorManager,
-        @inject(ContributionProvider) @named(EditorDecorationTypeProvider)
-        protected readonly decorationTypeProviderContributions: ContributionProvider<EditorDecorationTypeProvider>
     ) { }
 
     /**
-     * Applies decorations for given type and options in all visible editors, which opened a resource of the given uri.
-     * Previous decoration of the same type are not preserved.
+     * Applies new decorations of the given kind in an editor opened whith the given uri.
+     * Previously applied decoration of the same kind are removed.
      *
-     * To remove decorations of a type, pass an empty options array.
+     * To remove decorations of a kind, client should pass an empty array for new decorations.
+     *
+     * Clients should create qualified kinds for decorations to avoid colisions.
      */
     async setDecorations(params: SetDecorationParams): Promise<void> {
         const editor = await this.findEditorByUri(params.uri);
         if (editor) {
-            editor.setDecorations(params);
+            const key = `${params.uri}#${params.kind}`;
+            const oldDecorations = this.appliedDecorations.get(key) || [];
+            const appliedDecorations = editor.deltaDecorations(<DeltaDecorationParams & SetDecorationParams>{ oldDecorations, ...params });
+            this.appliedDecorations.set(key, appliedDecorations);
         }
     }
 
     /**
-     * Removes old decorations and applies new decorations in all visible editors, which opened a resource of the given uri.
+     * Removes old decorations and applies new decorations in an editor opened whith the given uri.
      *
-     * @returns identifiers of applied decorations, which can be used for removal in next call,
-     * or `undefined` if no visible editor could be found for the given uri.
+     * @returns identifiers of applied decorations, which can be used to remove them in next call,
+     * or `undefined` if no editor could be found with the given uri.
      */
     async deltaDecorations(params: DeltaDecorationParams): Promise<string[] | undefined> {
         const editor = await this.findEditorByUri(params.uri);
@@ -63,174 +65,6 @@ export class EditorDecorationsService {
         return undefined;
     }
 
-    protected _decorationTypes: DecorationType[] | undefined;
-    getDecorationTypes(): DecorationType[] {
-        if (!this._decorationTypes) {
-            this._decorationTypes = [];
-            const providers = this.decorationTypeProviderContributions.getContributions();
-            for (const provider of providers) {
-                this._decorationTypes.push(...provider.get());
-            }
-        }
-        return this._decorationTypes;
-    }
-}
-
-export interface EditorDecorationTypeProvider {
-    get(): DecorationType[];
-}
-
-export interface DecorationType {
-    type: string;
-
-    /**
-     * should the decoration be rendered for the whole line.
-     * default is `false`.
-     */
-    isWholeLine?: boolean;
-    /**
-     * CSS property `background-color`, to be applied to a decoration.
-     * use `rgba` values to play well with other decorations.
-     */
-    backgroundColor?: string;
-    /**
-     * CSS property `outline`.
-     */
-    outline?: string;
-    /**
-     * CSS property `outline-color`, to be applied to the text within a decoration.
-     */
-    outlineColor?: string;
-    /**
-     * CSS property `outline-style`, to be applied to the text within a decoration.
-     */
-    outlineStyle?: string;
-    /**
-     * CSS property `outline-width`, to be applied to the text within a decoration.
-     */
-    outlineWidth?: string;
-    /**
-     * CSS property `border`, to be applied to the text within a decoration.
-     */
-    border?: string;
-    /**
-     * CSS property `border-color`, to be applied to the text within a decoration.
-     */
-    borderColor?: string;
-    /**
-     * CSS property `border-style`, to be applied to the text within a decoration.
-     */
-    borderStyle?: string;
-    /**
-     * CSS property `border-width`, to be applied to the text within a decoration.
-     */
-    borderWidth?: string;
-    /**
-     * CSS property `color`.
-     */
-    color?: string;
-    /**
-     * CSS property `cursor`.
-     */
-    cursor?: string;
-    /**
-     * CSS property `font-style`.
-     */
-    fontStyle?: string;
-    /**
-     * CSS property `font-weight`.
-     */
-    fontWeight?: string;
-    /**
-     * CSS property `text-decoration`.
-     */
-    textDecoration?: string;
-    /**
-     * render this decoration in the overview ruler.
-     */
-    overviewRuler?: DecorationOverviewRulerOptions;
-    /**
-     * behavior of decorations when typing/editing near their edges.
-     */
-    rangeBehavior?: TrackedRangeStickiness;
-    /**
-     * options of the attachment to be inserted before the decorated text.
-     */
-    before?: AttachmentDecorationOptions;
-    /**
-     * options of the attachment to be inserted after the decorated text.
-     */
-    after?: AttachmentDecorationOptions;
-}
-
-export interface AttachmentDecorationOptions {
-    /**
-     * text content of the attachment to be inserted.
-     */
-    contentText?: string;
-    /**
-     * CSS property `color`, to be applied to the attachment.
-     */
-    color?: string;
-    /**
-     * CSS property `background-color`, to be applied to the attachment.
-     */
-    backgroundColor?: string;
-    /**
-     * CSS property `border`, to be applied to the attachment.
-     */
-    border?: string;
-    /**
-     * CSS property `height`, to be applied to the attachment.
-     */
-    height?: string;
-    /**
-     * CSS property `width`, to be applied to the attachment.
-     */
-    width?: string;
-    /**
-     * CSS property `margin`.
-     */
-    margin?: string;
-    /**
-     * CSS property `font-style`.
-     */
-    fontStyle?: string;
-    /**
-     * CSS property `font-weight`.
-     */
-    fontWeight?: string;
-    /**
-     * CSS property `text-decoration`.
-     */
-    textDecoration?: string;
-}
-
-export interface DecorationOptions {
-    /**
-     * range to which this decoration instance is applied.
-     */
-    range: Range;
-    /**
-     * hover message for this decoration.
-     */
-    hoverMessage?: string;
-    /**
-     * render options to be applied to this decoration instance.
-     * if possible, `DecorationType` render options should be used.
-     */
-    renderOptions?: DecorationInstanceRenderOptions;
-}
-
-export interface DecorationInstanceRenderOptions {
-    /**
-     * options of the attachment to be inserted before the decorated text.
-     */
-    before?: AttachmentDecorationOptions;
-    /**
-     * options of the attachment to be inserted after the decorated text.
-     */
-    after?: AttachmentDecorationOptions;
 }
 
 export enum OverviewRulerLane {
@@ -247,7 +81,7 @@ export enum TrackedRangeStickiness {
     GrowsOnlyWhenTypingAfter = 3,
 }
 
-export interface DeltaDecoration {
+export interface EditorDecoration {
     /**
      * range to which this decoration instance is applied.
      */
@@ -255,10 +89,10 @@ export interface DeltaDecoration {
     /**
      * options to be applied with this decoration.
      */
-    options: ModelDecorationOptions
+    options: EditorDecorationOptions
 }
 
-export interface ModelDecorationOptions {
+export interface EditorDecorationOptions {
     /**
      * behavior of decorations when typing/editing near their edges.
      */

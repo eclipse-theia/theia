@@ -10,7 +10,7 @@ import * as lsp from 'vscode-languageserver-types';
 import URI from "@theia/core/lib/common/uri";
 import { Event, Disposable } from '@theia/core/lib/common';
 import { Saveable } from '@theia/core/lib/browser';
-import { DecorationOptions, DeltaDecoration } from './editor-decorations-service';
+import { EditorDecoration } from './editor-decorations-service';
 
 export {
     Position, Range
@@ -54,13 +54,7 @@ export interface TextEditor extends Disposable, TextEditorSelection {
     setSize(size: Dimension): void;
 
     /**
-     * Applies decorations for given type and options.
-     * Previous decoration of the same type are not preserved.
-     * To remove decorations of a type, pass an empty options array.
-     */
-    setDecorations(params: SetDecorationParams): void;
-    /**
-     * Directly applies new decorations and removes old decorations.
+     * Applies given new decorations and removes old decorations identified by ids.
      *
      * @returns identifiers of applied decorations, which can be removed in next call.
      */
@@ -89,14 +83,14 @@ export interface RevealRangeOptions {
 
 export interface SetDecorationParams {
     uri: string;
-    type: string;
-    options: DecorationOptions[];
+    kind: string;
+    newDecorations: EditorDecoration[];
 }
 
 export interface DeltaDecorationParams {
     uri: string;
     oldDecorations: string[];
-    newDecorations: DeltaDecoration[];
+    newDecorations: EditorDecoration[];
 }
 
 export namespace TextEditorSelection {
