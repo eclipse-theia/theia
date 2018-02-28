@@ -75,7 +75,6 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
         const widget = await this.widget;
         await widget.setContent(options);
         this.openView({
-            toggle: true,
             activate: true
         });
     }
