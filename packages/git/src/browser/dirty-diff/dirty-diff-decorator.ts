@@ -7,8 +7,8 @@
 
 import { inject, injectable } from 'inversify';
 import {
-    EditorManager, EditorDecorationsService, Range, Position, DeltaDecoration,
-    ModelDecorationOptions, OverviewRulerLane
+    EditorManager, EditorDecorationsService, Range, Position, EditorDecoration,
+    EditorDecorationOptions, OverviewRulerLane
 } from '@theia/editor/lib/browser';
 import { DirtyDiffUpdate } from './dirty-diff-manager';
 import { LineRange } from './diff-computer';
@@ -19,7 +19,7 @@ export enum DirtyDiffDecorationType {
     ModifiedLine = 'dirty-diff-modified-line',
 }
 
-const AddedLineDecoration = <ModelDecorationOptions>{
+const AddedLineDecoration = <EditorDecorationOptions>{
     linesDecorationsClassName: 'dirty-diff-glyph dirty-diff-added-line',
     overviewRuler: {
         color: 'rgba(0, 255, 0, 0.8)',
@@ -27,7 +27,7 @@ const AddedLineDecoration = <ModelDecorationOptions>{
     }
 };
 
-const RemovedLineDecoration = <ModelDecorationOptions>{
+const RemovedLineDecoration = <EditorDecorationOptions>{
     linesDecorationsClassName: 'dirty-diff-glyph dirty-diff-removed-line',
     overviewRuler: {
         color: 'rgba(230, 0, 0, 0.8)',
@@ -35,7 +35,7 @@ const RemovedLineDecoration = <ModelDecorationOptions>{
     }
 };
 
-const ModifiedLineDecoration = <ModelDecorationOptions>{
+const ModifiedLineDecoration = <EditorDecorationOptions>{
     linesDecorationsClassName: 'dirty-diff-glyph dirty-diff-modified-line',
     overviewRuler: {
         color: 'rgba(0, 100, 150, 0.8)',
@@ -61,13 +61,13 @@ export class DirtyDiffDecorator {
 
     protected appliedDecorations = new Map<string, string[]>();
 
-    protected async setDecorations(uri: string, newDecorations: DeltaDecoration[]) {
+    protected async setDecorations(uri: string, newDecorations: EditorDecoration[]) {
         const oldDecorations = this.appliedDecorations.get(uri) || [];
         const decorationIds = await this.editorDecorationsService.deltaDecorations({ uri, oldDecorations, newDecorations });
         this.appliedDecorations.set(uri, decorationIds || []);
     }
 
-    protected toDeltaDecoration(from: LineRange | number, options: ModelDecorationOptions): DeltaDecoration {
+    protected toDeltaDecoration(from: LineRange | number, options: EditorDecorationOptions): EditorDecoration {
         const [start, end] = (typeof from === 'number') ? [from, from] : [from.start, from.end];
         const range = Range.create(Position.create(start, 0), Position.create(end, 0));
         return { range, options };

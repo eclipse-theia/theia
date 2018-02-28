@@ -14,14 +14,14 @@ import { MergeConflictsParser } from './merge-conflicts-parser';
 import { MergeConflictResolver } from './merge-conflict-resolver';
 import { MergeConflictsService } from './merge-conflicts-service';
 import { MergeConflictsDecorations } from './merge-conflicts-decorations';
-import { EditorDecorationTypeProvider } from '@theia/editor/lib/browser';
+
+import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
     bind(MergeConflictsParser).toSelf().inSingletonScope();
     bind(MergeConflictResolver).toSelf().inSingletonScope();
     bind(MergeConflictsCodeLensProvider).toSelf().inSingletonScope();
     bind(MergeConflictsDecorations).toSelf().inSingletonScope();
-    bind(EditorDecorationTypeProvider).toDynamicValue(context => context.container.get(MergeConflictsDecorations));
     bind(MergeConflictsFrontendContribution).toSelf().inSingletonScope();
     bind(MergeConflictsService).toSelf().inSingletonScope();
     [CommandContribution, FrontendApplicationContribution].forEach(serviceIdentifier =>
