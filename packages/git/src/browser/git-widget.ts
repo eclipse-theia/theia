@@ -12,7 +12,7 @@ import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { MessageService, ResourceProvider, CommandService, DisposableCollection } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { VirtualRenderer, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
+import { VirtualRenderer, ContextMenuRenderer, OpenerService, open, Key } from '@theia/core/lib/browser';
 import { h } from '@phosphor/virtualdom/lib';
 import { Message } from '@phosphor/messaging';
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
@@ -136,8 +136,32 @@ export class GitWidget extends GitBaseWidget<GitFileChangeNode> {
         const stagedChanges = this.renderStagedChanges(repository) || '';
         const unstagedChanges = this.renderUnstagedChanges(repository) || '';
         const changesContainer = h.div({ className: "changesOuterContainer", id: this.scrollContainer }, mergeChanges, stagedChanges, unstagedChanges);
+        // const container = <HTMLElement>this.node.querySelector('#' + this.scrollContainer);
+
+        // if (container) {
+        //     this.addKeyListener(container, Key.ARROW_LEFT, () => this.handleLeft());
+        //     this.addKeyListener(container, Key.ARROW_RIGHT, () => this.handleRight());
+        //     this.addKeyListener(container, Key.ARROW_UP, () => this.handleUp());
+        //     this.addKeyListener(container, Key.ARROW_DOWN, () => this.handleDown());
+        //     this.addKeyListener(container, Key.ENTER, () => this.handleEnter());
+        // }
 
         return [headerContainer, changesContainer];
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+
+        // const container = <HTMLElement>this.node.getElementsByClassName(this.scrollContainer)[0];
+        const container = <HTMLElement>this.node.querySelector('#' + this.scrollContainer);
+
+        if (container) {
+            this.addKeyListener(container, Key.ARROW_LEFT, () => this.handleLeft());
+            this.addKeyListener(container, Key.ARROW_RIGHT, () => this.handleRight());
+            this.addKeyListener(container, Key.ARROW_UP, () => this.handleUp());
+            this.addKeyListener(container, Key.ARROW_DOWN, () => this.handleDown());
+            this.addKeyListener(container, Key.ENTER, () => this.handleEnter());
+        }
     }
 
     protected renderCommandBar(repository: Repository | undefined): h.Child {

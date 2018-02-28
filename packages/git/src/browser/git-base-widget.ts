@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { VirtualWidget, SELECTED_CLASS, Key } from "@theia/core/lib/browser";
+import { VirtualWidget, SELECTED_CLASS } from "@theia/core/lib/browser";
 import { GitFileStatus, Repository, GitFileChange } from '../common';
 import URI from "@theia/core/lib/common/uri";
 import { GitRepositoryProvider } from "./git-repository-provider";
@@ -101,12 +101,16 @@ export class GitBaseWidget<T extends { selected?: boolean }> extends VirtualWidg
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
 
-        const changesOuterContainer = <HTMLElement>this.node.getElementsByClassName('changesOuterContainer')[0];
-        this.addKeyListener(changesOuterContainer, Key.ARROW_LEFT, () => this.handleLeft());
-        this.addKeyListener(changesOuterContainer, Key.ARROW_RIGHT, () => this.handleRight());
-        this.addKeyListener(changesOuterContainer, Key.ARROW_UP, () => this.handleUp());
-        this.addKeyListener(changesOuterContainer, Key.ARROW_DOWN, () => this.handleDown());
-        this.addKeyListener(changesOuterContainer, Key.ENTER, () => this.handleEnter());
+        // const container = <HTMLElement>this.node.getElementsByClassName(this.scrollContainer)[0];
+        // const container = <HTMLElement>this.node.querySelector('#' + this.scrollContainer);
+
+        // if (container) {
+        //     this.addKeyListener(container, Key.ARROW_LEFT, () => this.handleLeft());
+        //     this.addKeyListener(container, Key.ARROW_RIGHT, () => this.handleRight());
+        //     this.addKeyListener(container, Key.ARROW_UP, () => this.handleUp());
+        //     this.addKeyListener(container, Key.ARROW_DOWN, () => this.handleDown());
+        //     this.addKeyListener(container, Key.ENTER, () => this.handleEnter());
+        // }
     }
 
     protected handleLeft(): void {
