@@ -14,9 +14,14 @@ import { FileNavigatorContribution } from './navigator-contribution';
 import { createFileNavigatorWidget } from "./navigator-container";
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { CommandContribution } from '@theia/core/lib/common/command';
+import { bindFileNavigatorPreferences } from './navigator-preferences';
+import { FileNavigatorFilter } from './navigator-filter';
+
 import '../../src/browser/style/index.css';
 
 export default new ContainerModule(bind => {
+    bindFileNavigatorPreferences(bind);
+    bind(FileNavigatorFilter).toSelf().inSingletonScope();
     bind(FileNavigatorContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(FileNavigatorContribution));
     bind(CommandContribution).toDynamicValue(c => c.container.get(FileNavigatorContribution));
