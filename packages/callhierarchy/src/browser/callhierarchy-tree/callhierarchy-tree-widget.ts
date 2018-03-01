@@ -94,7 +94,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
 
     protected decorateDefinitionCaption(definition: Definition): h.Child {
         const containerName = definition.containerName;
-        const icon = h.span({ className: "symbol-icon " + this.toIconClass(definition.symbolKind) });
+        const icon = h.div({ className: "symbol-icon " + this.toIconClass(definition.symbolKind) });
         const symbol = definition.symbolName;
         const symbolElement = h.div({ className: 'symbol' }, symbol);
         const location = this.labelProvider.getName(new URI(definition.location.uri));
@@ -105,7 +105,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
 
     protected decorateCallerCaption(caller: Caller): h.Child {
         const definition = caller.callerDefinition;
-        const icon = h.span({ className: "symbol-icon " + this.toIconClass(definition.symbolKind) });
+        const icon = h.div({ className: "symbol-icon " + this.toIconClass(definition.symbolKind) });
         const containerName = definition.containerName;
         const symbol = definition.symbolName;
         const symbolElement = h.div({ className: 'symbol' }, symbol);

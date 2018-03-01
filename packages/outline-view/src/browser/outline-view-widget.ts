@@ -95,7 +95,7 @@ export class OutlineViewWidget extends TreeWidget {
 
     renderIcon(node: ITreeNode, props: NodeProps): h.Child {
         if (OutlineSymbolInformationNode.is(node)) {
-            return h.span({ className: "symbol-icon " + node.iconClass });
+            return h.div({ className: "symbol-icon symbol-icon-center " + node.iconClass });
         }
         return null;
     }

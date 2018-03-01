@@ -2,46 +2,48 @@
     background-image: url(symbol-sprite.svg);
     background-repeat: no-repeat;
     overflow: hidden;
-    width: 16px;
+    min-width: 16px;
     height: 16px;
     margin-right: 4px;
-    display: inline-block;
-    vertical-align: middle;
+}
+
+.symbol-icon-center {
+    align-self: center;
 }
 
 .symbol-icon.method {
-    background-position: 0 calc(-2px + var(--theia-sprite-y-offset));
+    background-position: 0 calc(var(--theia-sprite-y-offset));
 }
 
 .symbol-icon.constant,
 .symbol-icon.variable {
-    background-position: -22px calc(-2px + var(--theia-sprite-y-offset));
+    background-position: -22px calc(var(--theia-sprite-y-offset));
 }
 
 .symbol-icon.class {
-    background-position: -43px calc(-1px + var(--theia-sprite-y-offset));
+    background-position: -42px calc(var(--theia-sprite-y-offset));
 }
 
 .symbol-icon.interface {
-    background-position: -63px calc(-2px + var(--theia-sprite-y-offset));
+    background-position: -62px calc(var(--theia-sprite-y-offset));
 }
 
 .symbol-icon.module {
-    background-position: -82px calc(-2px + var(--theia-sprite-y-offset));
+    background-position: -82px calc(var(--theia-sprite-y-offset));
 }
 
 .symbol-icon.property {
-    background-position: -102px calc(-1px + var(--theia-sprite-y-offset));
+    background-position: -102px calc(var(--theia-sprite-y-offset));
 }
 
 .symbol-icon.enum {
-    background-position: -122px calc(-1px + var(--theia-sprite-y-offset));
+    background-position: -122px calc(var(--theia-sprite-y-offset));
 }
 
 .symbol-icon.rule {
-    background-position: -242px calc(-2px + var(--theia-sprite-y-offset));
+    background-position: -242px calc(var(--theia-sprite-y-offset));
 }
 
 .symbol-icon.file {
-    background-position: -262px calc(-2px + var(--theia-sprite-y-offset));
+    background-position: -262px calc(var(--theia-sprite-y-offset));
 }
