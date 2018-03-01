@@ -12,16 +12,31 @@ import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { MessageService, ResourceProvider, CommandService, DisposableCollection } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { VirtualRenderer, ContextMenuRenderer, OpenerService, open } from '@theia/core/lib/browser';
+import { VirtualRenderer, ContextMenuRenderer, OpenerService, open, VirtualWidget, LabelProvider } from '@theia/core/lib/browser';
 import { h } from '@phosphor/virtualdom/lib';
 import { Message } from '@phosphor/messaging';
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { GitBaseWidget, GitFileChangeNode } from './git-base-widget';
+import { GitRepositoryProvider } from './git-repository-provider';
+
+export interface GitFileChangeNode extends GitFileChange {
+    readonly icon: string;
+    readonly label: string;
+    readonly description: string;
+    readonly caption?: string;
+    readonly extraIconClassName?: string;
+    readonly commitSha?: string;
+    selected?: boolean;
+}
+export namespace GitFileChangeNode {
+    export function is(node: Object | undefined): node is GitFileChangeNode {
+        return !!node && 'uri' in node && 'status' in node && 'description' in node && 'label' in node && 'icon' in node;
+    }
+}
 
 @injectable()
-export class GitWidget extends GitBaseWidget<GitFileChangeNode> {
+export class GitWidget extends VirtualWidget {
 
     protected stagedChanges: GitFileChangeNode[] = [];
     protected unstagedChanges: GitFileChangeNode[] = [];
@@ -31,6 +46,7 @@ export class GitWidget extends GitBaseWidget<GitFileChangeNode> {
     protected additionalMessage: string = '';
     protected status: WorkingDirectoryStatus;
     protected toDispose = new DisposableCollection();
+    protected scrollContainer: string;
 
     constructor(
         @inject(Git) protected readonly git: Git,
@@ -40,6 +56,8 @@ export class GitWidget extends GitBaseWidget<GitFileChangeNode> {
         @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
         @inject(MessageService) protected readonly messageService: MessageService,
         @inject(CommandService) protected readonly commandService: CommandService,
+        @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
+        @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService) {
         super();
         this.id = 'theia-gitContainer';
@@ -93,7 +111,7 @@ export class GitWidget extends GitBaseWidget<GitFileChangeNode> {
                 const [icon, label, description] = await Promise.all([
                     this.labelProvider.getIcon(uri),
                     this.labelProvider.getName(uri),
-                    repository ? this.getRepositoryRelativePath(repository, uri.parent) : this.labelProvider.getLongName(uri.parent)
+                    repository ? Repository.relativePath(repository, uri.parent).toString() : this.labelProvider.getLongName(uri.parent)
                 ]);
                 if (GitFileStatus[GitFileStatus.Conflicted.valueOf()] !== GitFileStatus[change.status]) {
                     if (change.staged) {
@@ -379,5 +397,13 @@ export class GitWidget extends GitBaseWidget<GitFileChangeNode> {
     protected logError(error: any): void {
         const message = error instanceof Error ? error.message : error;
         this.messageService.error(message);
+    }
+
+    protected getStatusCaption(status: GitFileStatus, staged?: boolean): string {
+        return GitFileStatus.toString(status, staged);
+    }
+
+    protected getAbbreviatedStatusCaption(status: GitFileStatus, staged?: boolean): string {
+        return GitFileStatus.toAbbreviation(status, staged);
     }
 }

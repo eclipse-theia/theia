@@ -5,34 +5,17 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { VirtualWidget, SELECTED_CLASS } from "@theia/core/lib/browser";
+import { VirtualWidget, SELECTED_CLASS, Key } from "@theia/core/lib/browser";
 import { GitFileStatus, Repository, GitFileChange } from '../common';
 import URI from "@theia/core/lib/common/uri";
 import { GitRepositoryProvider } from "./git-repository-provider";
 import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 import { Message } from "@phosphor/messaging";
-import { Key } from "@theia/core/lib/browser/keys";
 import { ElementExt } from "@phosphor/domutils";
 import { inject, injectable } from "inversify";
 
-export interface GitFileChangeNode extends GitFileChange {
-    readonly icon: string;
-    readonly label: string;
-    readonly description: string;
-    readonly caption?: string;
-    readonly extraIconClassName?: string;
-    readonly commitSha?: string;
-    selected?: boolean;
-}
-
-export namespace GitFileChangeNode {
-    export function is(node: any): node is GitFileChangeNode {
-        return 'uri' in node && 'status' in node && 'description' in node && 'label' in node && 'icon' in node;
-    }
-}
-
 @injectable()
-export class GitBaseWidget<T extends { selected?: boolean }> extends VirtualWidget {
+export class GitNavigableListWidget<T extends { selected?: boolean }> extends VirtualWidget {
 
     protected gitNodes: T[];
     private _scrollContainer: string;
@@ -45,6 +28,11 @@ export class GitBaseWidget<T extends { selected?: boolean }> extends VirtualWidg
         this.node.tabIndex = 0;
     }
 
+    protected onActivateRequest(msg: Message): void {
+        super.onActivateRequest(msg);
+        this.node.focus();
+    }
+
     protected set scrollContainer(id: string) {
         this._scrollContainer = id + Date.now();
     }
@@ -53,19 +41,16 @@ export class GitBaseWidget<T extends { selected?: boolean }> extends VirtualWidg
         return this._scrollContainer;
     }
 
-    protected onActivateRequest(msg: Message): void {
-        super.onActivateRequest(msg);
-        this.node.focus();
-    }
-
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
 
-        const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
-        const scrollArea = document.getElementById(this.scrollContainer);
-        if (selected && scrollArea) {
-            ElementExt.scrollIntoViewIfNeeded(scrollArea, selected);
-        }
+        (async () => {
+            const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
+            const scrollArea = await this.getScrollContainer();
+            if (selected && scrollArea) {
+                ElementExt.scrollIntoViewIfNeeded(scrollArea, selected);
+            }
+        })();
     }
 
     protected getStatusCaption(status: GitFileStatus, staged?: boolean): string {
@@ -76,16 +61,11 @@ export class GitBaseWidget<T extends { selected?: boolean }> extends VirtualWidg
         return GitFileStatus.toAbbreviation(status, staged);
     }
 
-    protected getRepositoryRelativePath(repository: Repository, uri: URI) {
-        const repositoryUri = new URI(repository.localUri);
-        return uri.toString().substr(repositoryUri.toString().length + 1);
-    }
-
     protected relativePath(uri: URI | string): string {
         const parsedUri = typeof uri === 'string' ? new URI(uri) : uri;
         const repo = this.repositoryProvider.selectedRepository;
         if (repo) {
-            return this.getRepositoryRelativePath(repo, parsedUri);
+            return Repository.relativePath(repo, parsedUri).toString();
         } else {
             return this.labelProvider.getLongName(parsedUri);
         }
@@ -101,30 +81,31 @@ export class GitBaseWidget<T extends { selected?: boolean }> extends VirtualWidg
 
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        this.addKeyListener(this.node, Key.ARROW_LEFT, () => this.handleLeft());
-        this.addKeyListener(this.node, Key.ARROW_RIGHT, () => this.handleRight());
-        this.addKeyListener(this.node, Key.ARROW_UP, () => this.handleUp());
-        this.addKeyListener(this.node, Key.ARROW_DOWN, () => this.handleDown());
-        this.addKeyListener(this.node, Key.ENTER, () => this.handleEnter());
+        this.addKeyListener(this.node, Key.ARROW_LEFT, () => this.navigateLeft());
+        this.addKeyListener(this.node, Key.ARROW_RIGHT, () => this.navigateRight());
+        this.addKeyListener(this.node, Key.ARROW_UP, () => this.navigateUp());
+        this.addKeyListener(this.node, Key.ARROW_DOWN, () => this.navigateDown());
+        this.addKeyListener(this.node, Key.ENTER, () => this.handleListEnter());
+
     }
 
-    protected handleLeft(): void {
+    protected navigateLeft(): void {
         this.selectPreviousNode();
     }
 
-    protected handleRight(): void {
+    protected navigateRight(): void {
         this.selectNextNode();
     }
 
-    protected handleUp(): void {
+    protected navigateUp(): void {
         this.selectPreviousNode();
     }
 
-    protected handleDown(): void {
+    protected navigateDown(): void {
         this.selectNextNode();
     }
 
-    protected handleEnter(): void {
+    protected handleListEnter(): void {
 
     }
 
@@ -145,7 +126,7 @@ export class GitBaseWidget<T extends { selected?: boolean }> extends VirtualWidg
         const idx = this.indexOfSelected;
         if (idx >= 0 && idx < this.gitNodes.length - 1) {
             this.selectNode(this.gitNodes[idx + 1]);
-        } else if (this.gitNodes.length > 0) {
+        } else if (this.gitNodes.length > 0 && idx === -1) {
             this.selectNode(this.gitNodes[0]);
         }
     }

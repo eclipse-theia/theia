@@ -11,15 +11,16 @@ import { VirtualRenderer, open, OpenerService, StatefulWidget, SELECTED_CLASS } 
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import URI from "@theia/core/lib/common/uri";
 import { GitFileChange, GitFileStatus, Git, WorkingDirectoryStatus } from '../../common';
-import { GitBaseWidget, GitFileChangeNode } from "../git-base-widget";
+import { GitNavigableListWidget } from "../git-navigable-list-widget";
 import { DiffNavigatorProvider, DiffNavigator } from "@theia/editor/lib/browser/diff-navigator";
 import { EditorManager } from "@theia/editor/lib/browser";
 import { GitWatcher } from "../../common/git-watcher";
 import { inject, injectable, postConstruct } from "inversify";
+import { GitFileChangeNode } from "../git-widget";
 
 export const GIT_DIFF = "git-diff";
 @injectable()
-export class GitDiffWidget extends GitBaseWidget<GitFileChangeNode> implements StatefulWidget {
+export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> implements StatefulWidget {
 
     protected fileChangeNodes: GitFileChangeNode[];
     protected options: Git.Options.Diff;
@@ -132,12 +133,12 @@ export class GitDiffWidget extends GitBaseWidget<GitFileChangeNode> implements S
         const leftButton = h.span({
             className: "fa fa-arrow-left",
             title: "Previous Change",
-            onclick: () => this.handleLeft()
+            onclick: () => this.navigateLeft()
         });
         const rightButton = h.span({
             className: "fa fa-arrow-right",
             title: "Next Change",
-            onclick: () => this.handleRight()
+            onclick: () => this.navigateRight()
         });
         const lrBtns = h.div({ className: 'lrBtns' }, leftButton, rightButton);
         const headerRow = h.div({ className: 'header-row space-between' }, header, lrBtns);
@@ -182,7 +183,7 @@ export class GitDiffWidget extends GitBaseWidget<GitFileChangeNode> implements S
         return h.div({ className: `gitItem noselect${change.selected ? ' ' + SELECTED_CLASS : ''}` }, ...elements);
     }
 
-    protected handleRight(): void {
+    protected navigateRight(): void {
         const selected = this.getSelected();
         if (selected && GitFileChangeNode.is(selected)) {
             const uri = this.getUriToOpen(selected);
@@ -205,7 +206,7 @@ export class GitDiffWidget extends GitBaseWidget<GitFileChangeNode> implements S
         }
     }
 
-    protected handleLeft(): void {
+    protected navigateLeft(): void {
         const selected = this.getSelected();
         if (GitFileChangeNode.is(selected)) {
             const uri = this.getUriToOpen(selected);
@@ -225,7 +226,7 @@ export class GitDiffWidget extends GitBaseWidget<GitFileChangeNode> implements S
         }
     }
 
-    protected handleEnter(): void {
+    protected handleListEnter(): void {
         this.openSelected();
     }
 

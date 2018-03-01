@@ -13,7 +13,7 @@ import { h } from "@phosphor/virtualdom";
 import URI from "@theia/core/lib/common/uri";
 import { injectable, inject } from "inversify";
 import { Widget } from "@phosphor/widgets";
-import { GitFileChangeNode } from "../git-base-widget";
+import { GitFileChangeNode } from "../git-widget";
 
 export const GIT_COMMIT_DETAIL = "git-commit-detail-widget";
 

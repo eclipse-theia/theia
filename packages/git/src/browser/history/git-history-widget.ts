@@ -8,17 +8,19 @@
 import { injectable, inject } from "inversify";
 import { h } from "@phosphor/virtualdom";
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
-import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell } from "@theia/core/lib/browser";
+import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell, Message } from "@theia/core/lib/browser";
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import URI from "@theia/core/lib/common/uri";
 import { GIT_HISTORY, GIT_HISTORY_MAX_COUNT } from './git-history-contribution';
 import { GitFileStatus, Git, GitFileChange } from '../../common';
-import { GitBaseWidget, GitFileChangeNode } from "../git-base-widget";
 import { FileSystem } from "@theia/filesystem/lib/common";
 import { GitDiffContribution } from "../diff/git-diff-contribution";
 import { GitAvatarService } from "./git-avatar-service";
 import { GitCommitDetailUri, GitCommitDetailOpenerOptions, GitCommitDetailOpenHandler } from "./git-commit-detail-open-handler";
 import { GitCommitDetails } from "./git-commit-detail-widget";
+import { GitNavigableListWidget } from "../git-navigable-list-widget";
+import { GitFileChangeNode } from "../git-widget";
+import { Disposable } from "vscode-jsonrpc";
 
 export interface GitCommitNode extends GitCommitDetails {
     expanded: boolean;
@@ -34,7 +36,7 @@ export namespace GitCommitNode {
 export type GitHistoryListNode = (GitCommitNode | GitFileChangeNode);
 
 @injectable()
-export class GitHistoryWidget extends GitBaseWidget<GitHistoryListNode> implements StatefulWidget {
+export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode> implements StatefulWidget {
     protected options: Git.Options.Log;
     protected commits: GitCommitNode[];
     protected ready: boolean;
@@ -54,6 +56,30 @@ export class GitHistoryWidget extends GitBaseWidget<GitHistoryListNode> implemen
         this.scrollContainer = 'git-history-list-container';
         this.title.label = "Git History";
         this.addClass('theia-git');
+    }
+
+    protected onAfterAttach(msg: Message) {
+        super.onAfterAttach(msg);
+        (async () => {
+            const sc = await this.getScrollContainer();
+            const listener = (e: UIEvent) => {
+                const el = (e.srcElement as HTMLElement);
+                if (el.scrollTop + el.clientHeight > el.scrollHeight - 83) {
+                    const ll = this.node.getElementsByClassName('history-lazy-loading')[0];
+                    ll.className = "history-lazy-loading show";
+                    this.addCommits({
+                        range: {
+                            toRevision: this.commits[this.commits.length - 1].commitSha
+                        },
+                        maxCount: GIT_HISTORY_MAX_COUNT
+                    });
+                }
+            };
+            sc.addEventListener("scroll", listener);
+            this.toDispose.push(Disposable.create(() => {
+                sc.removeEventListener("scroll", listener);
+            }));
+        })();
     }
 
     async setContent(options?: Git.Options.Log) {
@@ -176,20 +202,7 @@ export class GitHistoryWidget extends GitBaseWidget<GitHistoryListNode> implemen
         const commitList = h.div({ className: "commitList" }, ...theList);
         return h.div({
             className: "listContainer",
-            id: this.scrollContainer,
-            onscroll: e => {
-                const el = (e.srcElement as HTMLElement);
-                if (el.scrollTop + el.clientHeight > el.scrollHeight - 5) {
-                    const ll = this.node.getElementsByClassName('history-lazy-loading')[0];
-                    ll.className = "history-lazy-loading show";
-                    this.addCommits({
-                        range: {
-                            toRevision: this.commits[this.commits.length - 1].commitSha
-                        },
-                        maxCount: GIT_HISTORY_MAX_COUNT
-                    });
-                }
-            }
+            id: this.scrollContainer
         }, commitList);
     }
 
@@ -300,7 +313,7 @@ export class GitHistoryWidget extends GitBaseWidget<GitHistoryListNode> implemen
         return h.div({ className: `gitItem noselect${change.selected ? ' ' + SELECTED_CLASS : ''}` }, ...elements);
     }
 
-    protected handleLeft(): void {
+    protected navigateLeft(): void {
         const selected = this.getSelected();
         if (selected) {
             const idx = this.commits.findIndex(c => c.commitSha === selected.commitSha);
@@ -319,7 +332,7 @@ export class GitHistoryWidget extends GitBaseWidget<GitHistoryListNode> implemen
         this.update();
     }
 
-    protected handleRight(): void {
+    protected navigateRight(): void {
         const selected = this.getSelected();
         if (selected) {
             if (GitCommitNode.is(selected) && !selected.expanded && !this.singleFileMode) {
@@ -331,7 +344,7 @@ export class GitHistoryWidget extends GitBaseWidget<GitHistoryListNode> implemen
         this.update();
     }
 
-    protected handleEnter(): void {
+    protected handleListEnter(): void {
         const selected = this.getSelected();
         if (selected) {
             if (GitCommitNode.is(selected)) {

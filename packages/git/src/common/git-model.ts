@@ -5,6 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import URI from "@theia/core/lib/common/uri";
+import { Path } from "@theia/core";
+
 export interface WorkingDirectoryStatus {
 
     /**
@@ -162,6 +165,13 @@ export namespace Repository {
             return repository.localUri === repository2.localUri;
         }
         return repository === repository2;
+    }
+    export function is(repository: Object | undefined): repository is Repository {
+        return !!repository && 'localUri' in repository;
+    }
+    export function relativePath(repository: Repository | string, uri: URI | string): Path {
+        const repositoryUri = new URI(Repository.is(repository) ? repository.localUri : repository);
+        return new Path(uri.toString().substr(repositoryUri.toString().length + 1));
     }
 }
 
