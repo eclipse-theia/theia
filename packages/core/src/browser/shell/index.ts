@@ -9,4 +9,5 @@ export * from './application-shell';
 export * from './shell-layout-restorer';
 export * from './view-contribution';
 export * from './side-panel-handler';
+export * from './split-panels';
 export * from './tab-bars';

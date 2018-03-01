@@ -14,10 +14,12 @@ import {
 } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
+import { RecursivePartial } from '../../common';
 import { Saveable } from '../saveable';
 import { StatusBarImpl, StatusBarLayoutData } from '../status-bar/status-bar';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory, TheiaDockPanel } from './side-panel-handler';
 import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU } from './tab-bars';
+import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -55,6 +57,17 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
 }
 
 /**
+ * Data stored while dragging widgets in the shell.
+ */
+interface WidgetDragState {
+    startTime: number;
+    leftExpanded: boolean;
+    rightExpanded: boolean;
+    bottomExpanded: boolean;
+    leaveTimeout?: number;
+}
+
+/**
  * The application shell manages the top-level widgets of the application. Use this class to
  * add, remove, or activate a widget.
  */
@@ -89,17 +102,16 @@ export class ApplicationShell extends Widget {
      */
     protected rightPanelHandler: SidePanelHandler;
     /**
-     * The last known height of the bottom panel. When the bottom panel is expanded, an attempt
-     * to restore its height to this value is made.
+     * The current state of the bottom panel.
      */
-    protected lastBottomPanelSize?: number;
-    /**
-     * A promise that is resolved when the currently pending updates of the bottom panel are done.
-     */
-    protected pendingUpdate: Promise<void> = Promise.resolve();
+    protected readonly bottomPanelState: SidePanel.State = {
+        loading: true,
+        expansion: SidePanel.ExpansionState.collapsed,
+        pendingUpdate: Promise.resolve()
+    };
 
     private readonly tracker = new FocusTracker<Widget>();
-    private readonly dragListener: EventListenerObject;
+    private dragState?: WidgetDragState;
 
     /**
      * Construct a new application shell.
@@ -108,139 +120,190 @@ export class ApplicationShell extends Widget {
         @inject(DockPanelRenderer) protected dockPanelRenderer: DockPanelRenderer,
         @inject(StatusBarImpl) protected readonly statusBar: StatusBarImpl,
         @inject(SidePanelHandlerFactory) sidePanelHandlerFactory: () => SidePanelHandler,
-        @inject(ApplicationShellOptions) @optional() options?: Partial<ApplicationShell.Options>
+        @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler,
+        @inject(ApplicationShellOptions) @optional() options: RecursivePartial<ApplicationShell.Options> = {}
     ) {
-        super(options);
+        super(options as Widget.IOptions);
         this.addClass(APPLICATION_SHELL_CLASS);
         this.id = 'theia-app-shell';
 
-        const defaultOptions: ApplicationShell.Options = {
-            sidePanelExpandThreshold: SidePanel.EMPTY_PANEL_SIZE,
-            maxBottomPanelRatio: 0.67,
-            maxLeftPanelRatio: 0.4,
-            maxRightPanelRatio: 0.4
+        // Merge the user-defined application options with the default options
+        this.options = {
+            bottomPanel: {
+                ...ApplicationShell.DEFAULT_OPTIONS.bottomPanel,
+                ...options.bottomPanel || {}
+            },
+            leftPanel: {
+                ...ApplicationShell.DEFAULT_OPTIONS.leftPanel,
+                ...options.leftPanel || {}
+            },
+            rightPanel: {
+                ...ApplicationShell.DEFAULT_OPTIONS.rightPanel,
+                ...options.rightPanel || {}
+            }
         };
-        if (options) {
-            this.options = { ...defaultOptions, ...options };
-        } else {
-            this.options = defaultOptions;
-        }
 
         this.mainPanel = this.createMainPanel();
         this.topPanel = this.createTopPanel();
         this.bottomPanel = this.createBottomPanel();
         this.leftPanelHandler = sidePanelHandlerFactory();
-        this.leftPanelHandler.create('left');
-        this.leftPanelHandler.maxPanelSizeRatio = this.options.maxLeftPanelRatio;
+        this.leftPanelHandler.create('left', this.options.leftPanel);
         this.rightPanelHandler = sidePanelHandlerFactory();
-        this.rightPanelHandler.create('right');
-        this.rightPanelHandler.maxPanelSizeRatio = this.options.maxRightPanelRatio;
+        this.rightPanelHandler.create('right', this.options.rightPanel);
         this.layout = this.createLayout();
 
         this.tracker.currentChanged.connect(this.onCurrentChanged, this);
         this.tracker.activeChanged.connect(this.onActiveChanged, this);
-
-        this.dragListener = this.createDragEventListener();
     }
 
     protected onBeforeAttach(msg: Message): void {
-        document.addEventListener('p-dragenter', this.dragListener, true);
-        document.addEventListener('p-dragover', this.dragListener, true);
-        document.addEventListener('p-dragleave', this.dragListener, true);
-        document.addEventListener('p-drop', this.dragListener, true);
+        document.addEventListener('p-dragenter', this, true);
+        document.addEventListener('p-dragover', this, true);
+        document.addEventListener('p-dragleave', this, true);
+        document.addEventListener('p-drop', this, true);
     }
 
     protected onAfterDetach(msg: Message): void {
-        document.removeEventListener('p-dragenter', this.dragListener, true);
-        document.removeEventListener('p-dragover', this.dragListener, true);
-        document.removeEventListener('p-dragleave', this.dragListener, true);
-        document.removeEventListener('p-drop', this.dragListener, true);
+        document.removeEventListener('p-dragenter', this, true);
+        document.removeEventListener('p-dragover', this, true);
+        document.removeEventListener('p-dragleave', this, true);
+        document.removeEventListener('p-drop', this, true);
     }
 
-    protected createDragEventListener(): EventListenerObject {
-        interface DragEventListener extends EventListenerObject {
-            modifiedPanelState?: { leftExpanded: boolean, rightExpanded: boolean, bottomExpanded: boolean };
-            leaveTimeout?: number;
+    handleEvent(event: Event): void {
+        switch (event.type) {
+            case 'p-dragenter':
+                this.onDragEnter(event as IDragEvent);
+                break;
+            case 'p-dragover':
+                this.onDragOver(event as IDragEvent);
+                break;
+            case 'p-drop':
+                this.onDrop(event as IDragEvent);
+                break;
+            case 'p-dragleave':
+                this.onDragLeave(event as IDragEvent);
+                break;
         }
-        const shell = this;
-        const listener: DragEventListener = {
-            handleEvent: function (event: Event): void {
-                if (listener.leaveTimeout) {
-                    window.clearTimeout(listener.leaveTimeout);
-                }
-                switch (event.type) {
-                    case 'p-dragenter': {
-                        if (!listener.modifiedPanelState) {
-                            const { mimeData } = event as IDragEvent;
-                            if (mimeData && mimeData.hasData('application/vnd.phosphor.widget-factory')) {
-                                listener.modifiedPanelState = {
-                                    leftExpanded: false,
-                                    rightExpanded: false,
-                                    bottomExpanded: false
-                                };
-                            }
-                        }
-                        break;
-                    }
-                    case 'p-dragover': {
-                        if (listener.modifiedPanelState) {
-                            const { clientX, clientY } = event as IDragEvent;
-                            const threshold = shell.options.sidePanelExpandThreshold;
-                            const statusBarHeight = shell.statusBar.node.clientHeight;
-                            const expLeft = clientX <= threshold;
-                            const expRight = clientX >= window.innerWidth - threshold;
-                            const expBottom = !expLeft && !expRight && clientY >= window.innerHeight - threshold - statusBarHeight;
-                            if (expLeft && !listener.modifiedPanelState.leftExpanded && shell.leftPanelHandler.tabBar.currentTitle === null) {
-                                // The mouse cursor is moved close to the left border
-                                shell.leftPanelHandler.expand();
-                                listener.modifiedPanelState.leftExpanded = true;
-                            }
-                            if (!expLeft && listener.modifiedPanelState.leftExpanded) {
-                                // The mouse cursor is moved away from the left border
-                                shell.leftPanelHandler.collapse();
-                                listener.modifiedPanelState.leftExpanded = false;
-                            }
-                            if (expRight && !listener.modifiedPanelState.rightExpanded && shell.rightPanelHandler.tabBar.currentTitle === null) {
-                                // The mouse cursor is moved close to the right border
-                                shell.rightPanelHandler.expand();
-                                listener.modifiedPanelState.rightExpanded = true;
-                            }
-                            if (!expRight && listener.modifiedPanelState.rightExpanded) {
-                                // The mouse cursor is moved away from the right border
-                                shell.rightPanelHandler.collapse();
-                                listener.modifiedPanelState.rightExpanded = false;
-                            }
-                            if (expBottom && !listener.modifiedPanelState.bottomExpanded && shell.bottomPanel.isHidden) {
-                                // The mouse cursor is close to the bottom border, so expand the bottom panel if necessary
-                                shell.expandBottomPanel();
-                                listener.modifiedPanelState.bottomExpanded = true;
-                            }
-                            if (!expBottom && listener.modifiedPanelState.bottomExpanded) {
-                                // The mouse cursor is moved away from the bottom border
-                                shell.collapseBottomPanel();
-                                listener.modifiedPanelState.bottomExpanded = false;
-                            }
-                        }
-                        break;
-                    }
-                    case 'p-drop':
-                    case 'p-dragleave': {
-                        listener.leaveTimeout = window.setTimeout(() => {
-                            if (listener.modifiedPanelState) {
-                                listener.modifiedPanelState = undefined;
-                                shell.leftPanelHandler.refresh();
-                                shell.rightPanelHandler.refresh();
-                                if (shell.bottomPanel.isEmpty) {
-                                    shell.collapseBottomPanel();
-                                }
-                            }
-                        }, 100);
-                        break;
-                    }
-                }
+    }
+
+    protected onDragEnter({ mimeData }: IDragEvent) {
+        if (!this.dragState) {
+            if (mimeData && mimeData.hasData('application/vnd.phosphor.widget-factory')) {
+                // The drag contains a widget, so we'll track it and expand side panels as needed
+                this.dragState = {
+                    startTime: performance.now(),
+                    leftExpanded: false,
+                    rightExpanded: false,
+                    bottomExpanded: false
+                };
             }
-        };
-        return listener;
+        }
+    }
+
+    protected onDragOver(event: IDragEvent) {
+        const state = this.dragState;
+        if (state) {
+            if (state.leaveTimeout) {
+                window.clearTimeout(state.leaveTimeout);
+                state.leaveTimeout = undefined;
+            }
+            const { clientX, clientY } = event;
+            const { offsetLeft, offsetTop, clientWidth, clientHeight } = this.node;
+
+            // Don't expand any side panels right after the drag has started
+            const allowExpansion = performance.now() - state.startTime >= 500;
+            const expLeft = allowExpansion && clientX >= offsetLeft
+                && clientX <= offsetLeft + this.options.leftPanel.expandThreshold;
+            const expRight = allowExpansion && clientX <= offsetLeft + clientWidth
+                && clientX >= offsetLeft + clientWidth - this.options.rightPanel.expandThreshold;
+            const expBottom = allowExpansion && !expLeft && !expRight && clientY <= offsetTop + clientHeight
+                && clientY >= offsetTop + clientHeight - this.options.bottomPanel.expandThreshold;
+            if (expLeft && !state.leftExpanded && this.leftPanelHandler.tabBar.currentTitle === null) {
+                // The mouse cursor is moved close to the left border
+                this.leftPanelHandler.expand();
+                this.leftPanelHandler.state.pendingUpdate.then(() => this.dispatchMouseMove(event));
+                state.leftExpanded = true;
+            } else if (!expLeft && state.leftExpanded) {
+                // The mouse cursor is moved away from the left border
+                this.leftPanelHandler.collapse();
+                state.leftExpanded = false;
+            }
+            if (expRight && !state.rightExpanded && this.rightPanelHandler.tabBar.currentTitle === null) {
+                // The mouse cursor is moved close to the right border
+                this.rightPanelHandler.expand();
+                this.rightPanelHandler.state.pendingUpdate.then(() => this.dispatchMouseMove(event));
+                state.rightExpanded = true;
+            } else if (!expRight && state.rightExpanded) {
+                // The mouse cursor is moved away from the right border
+                this.rightPanelHandler.collapse();
+                state.rightExpanded = false;
+            }
+            if (expBottom && !state.bottomExpanded && this.bottomPanel.isHidden) {
+                // The mouse cursor is moved close to the bottom border
+                this.expandBottomPanel();
+                this.bottomPanelState.pendingUpdate.then(() => this.dispatchMouseMove(event));
+                state.bottomExpanded = true;
+            } else if (!expBottom && state.bottomExpanded) {
+                // The mouse cursor is moved away from the bottom border
+                this.collapseBottomPanel();
+                state.bottomExpanded = false;
+            }
+        }
+    }
+
+    /**
+     * This method is called after a side panel has been expanded while dragging a widget. It fires
+     * a `mousemove` event so that the drag overlay markers are updated correctly in all dock panels.
+     */
+    private dispatchMouseMove(sourceEvent: MouseEvent): void {
+        const event = document.createEvent('MouseEvent');
+        event.initMouseEvent('mousemove', true, true, window, 0, 0, 0,
+            sourceEvent.clientX, sourceEvent.clientY, false, false, false, false, 0, null);
+        document.dispatchEvent(event);
+    }
+
+    protected onDrop(event: IDragEvent) {
+        const state = this.dragState;
+        if (state) {
+            if (state.leaveTimeout) {
+                window.clearTimeout(state.leaveTimeout);
+            }
+            this.dragState = undefined;
+            window.requestAnimationFrame(() => {
+                // Clean up the side panel state in the next frame
+                if (this.leftPanelHandler.dockPanel.isEmpty) {
+                    this.leftPanelHandler.collapse();
+                }
+                if (this.rightPanelHandler.dockPanel.isEmpty) {
+                    this.rightPanelHandler.collapse();
+                }
+                if (this.bottomPanel.isEmpty) {
+                    this.collapseBottomPanel();
+                }
+            });
+        }
+    }
+
+    protected onDragLeave(event: IDragEvent) {
+        const state = this.dragState;
+        if (state) {
+            if (state.leaveTimeout) {
+                window.clearTimeout(state.leaveTimeout);
+            }
+            state.leaveTimeout = window.setTimeout(() => {
+                this.dragState = undefined;
+                if (state.leftExpanded || this.leftPanelHandler.dockPanel.isEmpty) {
+                    this.leftPanelHandler.collapse();
+                }
+                if (state.rightExpanded || this.rightPanelHandler.dockPanel.isEmpty) {
+                    this.rightPanelHandler.collapse();
+                }
+                if (state.bottomExpanded || this.bottomPanel.isEmpty) {
+                    this.collapseBottomPanel();
+                }
+            }, 100);
+        }
     }
 
     /**
@@ -271,6 +334,10 @@ export class ApplicationShell extends Widget {
                 this.collapseBottomPanel();
             }
         }, this);
+        dockPanel.node.addEventListener('p-dragenter', event => {
+            // Make sure that the main panel hides its overlay when the bottom panel is expanded
+            this.mainPanel.overlay.hide(0);
+        });
         dockPanel.hide();
         return dockPanel;
     }
@@ -345,6 +412,17 @@ export class ApplicationShell extends Widget {
     }
 
     /**
+     * Change the state of the application to currently loading (`true`) or ready (`false`).
+     * This has an impact on the behavior of certain operations, e.g. animations are disabled
+     * while loading.
+     */
+    set loading(value: boolean) {
+        this.bottomPanelState.loading = value;
+        this.leftPanelHandler.state.loading = value;
+        this.rightPanelHandler.state.loading = value;
+    }
+
+    /**
      * Create an object that describes the current shell layout. This object may contain references
      * to widgets; these need to be transformed before the layout can be serialized.
      */
@@ -353,7 +431,7 @@ export class ApplicationShell extends Widget {
             mainPanel: this.mainPanel.saveLayout(),
             bottomPanel: {
                 config: this.bottomPanel.saveLayout(),
-                size: this.bottomPanel.isVisible ? this.getBottomPanelSize() : this.lastBottomPanelSize,
+                size: this.bottomPanel.isVisible ? this.getBottomPanelSize() : this.bottomPanelState.lastPanelSize,
                 expanded: this.isExpanded('bottom')
             },
             leftPanel: this.leftPanelHandler.getLayoutData(),
@@ -381,6 +459,16 @@ export class ApplicationShell extends Widget {
     }
 
     /**
+     * Determine the default size to apply when the bottom panel is expanded for the first time.
+     */
+    protected getDefaultBottomPanelSize(): number | undefined {
+        const parent = this.bottomPanel.parent;
+        if (parent && parent.isVisible) {
+            return parent.node.clientHeight * this.options.bottomPanel.initialSizeRatio;
+        }
+    }
+
+    /**
      * Apply a shell layout that has been previously created with `getLayoutData`.
      */
     setLayoutData({ mainPanel, bottomPanel, leftPanel, rightPanel, statusBar }: ApplicationShell.LayoutData): void {
@@ -394,7 +482,7 @@ export class ApplicationShell extends Widget {
                 this.registerWithFocusTracker(bottomPanel.config.main);
             }
             if (bottomPanel.size) {
-                this.lastBottomPanelSize = bottomPanel.size;
+                this.bottomPanelState.lastPanelSize = bottomPanel.size;
             }
             if (bottomPanel.expanded) {
                 this.expandBottomPanel();
@@ -418,25 +506,25 @@ export class ApplicationShell extends Widget {
     /**
      * Modify the height of the bottom panel. This implementation assumes that the container of the
      * bottom panel is a `SplitPanel`.
-     *
-     * The actual height might differ from the value that is given here. The height of the bottom
-     * panel is limited to a customizable ratio of the total height that is available for widgets
-     * (main area plus bottom area). Further limits may be applied by the browser according to CSS
-     * `minHeight` and `maxHeight` settings.
      */
-    protected setBottomPanelSize(size: number): void {
+    protected setBottomPanelSize(size: number): Promise<void> {
         const parent = this.bottomPanel.parent;
         if (parent instanceof SplitPanel && parent.isVisible) {
             const index = parent.widgets.indexOf(this.bottomPanel) - 1;
             if (index >= 0) {
                 const parentHeight = parent.node.clientHeight;
-                const maxHeight = parentHeight * this.options.maxBottomPanelRatio;
-                const position = parentHeight - Math.min(size, maxHeight);
+                const position = parentHeight - Math.max(Math.min(size, parentHeight), 0);
 
-                const promise = SidePanel.moveSplitPos(parent, index, position);
-                this.pendingUpdate = this.pendingUpdate.then(() => promise);
+                const options: SplitPositionOptions = {
+                    referenceWidget: this.bottomPanel,
+                    duration: this.bottomPanelState.loading ? 0 : this.options.bottomPanel.expandDuration
+                };
+                const promise = this.splitPositionHandler.moveSplitPos(parent, index, position, options);
+                this.bottomPanelState.pendingUpdate = this.bottomPanelState.pendingUpdate.then(() => promise);
+                return promise;
             }
         }
+        return Promise.resolve();
     }
 
     /**
@@ -444,9 +532,9 @@ export class ApplicationShell extends Widget {
      */
     get pendingUpdates(): Promise<void> {
         return Promise.all([
-            this.pendingUpdate,
-            this.leftPanelHandler.pendingUpdate,
-            this.rightPanelHandler.pendingUpdate
+            this.bottomPanelState.pendingUpdate,
+            this.leftPanelHandler.state.pendingUpdate,
+            this.rightPanelHandler.state.pendingUpdate
         ]) as Promise<any>;
     }
 
@@ -685,10 +773,37 @@ export class ApplicationShell extends Widget {
      * Expand the bottom panel. See `expandPanel` regarding the exact behavior.
      */
     protected expandBottomPanel(): void {
-        if (this.bottomPanel.isHidden) {
-            this.bottomPanel.show();
-            if (this.lastBottomPanelSize) {
-                this.setBottomPanelSize(this.lastBottomPanelSize);
+        const bottomPanel = this.bottomPanel;
+        if (bottomPanel.isHidden) {
+            let relativeSizes: number[] | undefined;
+            const parent = bottomPanel.parent;
+            if (parent instanceof SplitPanel) {
+                relativeSizes = parent.relativeSizes();
+            }
+            bottomPanel.show();
+            if (relativeSizes && parent instanceof SplitPanel) {
+                // Make sure that the expansion animation starts at the smallest possible size
+                parent.setRelativeSizes(relativeSizes);
+            }
+
+            let size: number | undefined;
+            if (bottomPanel.isEmpty) {
+                bottomPanel.node.style.minHeight = '0';
+                size = this.options.bottomPanel.emptySize;
+            } else if (this.bottomPanelState.lastPanelSize) {
+                size = this.bottomPanelState.lastPanelSize;
+            } else {
+                size = this.getDefaultBottomPanelSize();
+            }
+            if (size) {
+                this.bottomPanelState.expansion = SidePanel.ExpansionState.expanding;
+                this.setBottomPanelSize(size).then(() => {
+                    if (this.bottomPanelState.expansion === SidePanel.ExpansionState.expanding) {
+                        this.bottomPanelState.expansion = SidePanel.ExpansionState.expanded;
+                    }
+                });
+            } else {
+                this.bottomPanelState.expansion = SidePanel.ExpansionState.expanded;
             }
         }
     }
@@ -718,12 +833,16 @@ export class ApplicationShell extends Widget {
      * They can be restored by calling `expandBottomPanel`.
      */
     protected collapseBottomPanel(): void {
-        if (!this.bottomPanel.isHidden) {
-            const size = this.getBottomPanelSize();
-            if (size) {
-                this.lastBottomPanelSize = size;
+        const bottomPanel = this.bottomPanel;
+        if (!bottomPanel.isHidden) {
+            if (this.bottomPanelState.expansion === SidePanel.ExpansionState.expanded) {
+                const size = this.getBottomPanelSize();
+                if (size) {
+                    this.bottomPanelState.lastPanelSize = size;
+                }
             }
-            this.bottomPanel.hide();
+            this.bottomPanelState.expansion = SidePanel.ExpansionState.collapsed;
+            bottomPanel.hide();
         }
     }
 
@@ -733,11 +852,11 @@ export class ApplicationShell extends Widget {
     isExpanded(area: ApplicationShell.Area): boolean {
         switch (area) {
             case 'bottom':
-                return this.bottomPanel.isVisible;
+                return this.bottomPanelState.expansion === SidePanel.ExpansionState.expanded;
             case 'left':
-                return this.leftPanelHandler.tabBar.currentTitle !== null;
+                return this.leftPanelHandler.state.expansion === SidePanel.ExpansionState.expanded;
             case 'right':
-                return this.rightPanelHandler.tabBar.currentTitle !== null;
+                return this.rightPanelHandler.state.expansion === SidePanel.ExpansionState.expanded;
             default:
                 return true;
         }
@@ -1001,31 +1120,37 @@ export namespace ApplicationShell {
      * through dependency injection (`ApplicationShellOptions` symbol).
      */
     export interface Options extends Widget.IOptions {
-        /**
-         * When a widget is being dragged and the distance of the mouse cursor to the shell border
-         * is below this threshold, the respective side panel is expanded so the widget can be dropped
-         * into that panel.
-         */
-        sidePanelExpandThreshold: number;
-        /**
-         * The maximum ratio of the shell height that can be occupied by the bottom panel. This value
-         * does not limit how much the bottom panel can be manually resized, but it is considered when
-         * the size of that panel is restored, e.g. when expanding the panel or reloading the page layout.
-         */
-        maxBottomPanelRatio: number;
-        /**
-         * The maximum ratio of the shell width that can be occupied by the left side panel. This value
-         * does not limit how much the panel can be manually resized, but it is considered when
-         * the size of that panel is restored, e.g. when expanding the panel or reloading the page layout.
-         */
-        maxLeftPanelRatio: number;
-        /**
-         * The maximum ratio of the shell width that can be occupied by the right side panel. This value
-         * does not limit how much the panel can be manually resized, but it is considered when
-         * the size of that panel is restored, e.g. when expanding the panel or reloading the page layout.
-         */
-        maxRightPanelRatio: number;
+        bottomPanel: BottomPanelOptions;
+        leftPanel: SidePanel.Options;
+        rightPanel: SidePanel.Options;
     }
+
+    export interface BottomPanelOptions extends SidePanel.Options {
+    }
+
+    /**
+     * The default values for application shell options.
+     */
+    export const DEFAULT_OPTIONS = Object.freeze(<Options>{
+        bottomPanel: Object.freeze(<BottomPanelOptions>{
+            emptySize: 140,
+            expandThreshold: 160,
+            expandDuration: 150,
+            initialSizeRatio: 0.382
+        }),
+        leftPanel: Object.freeze(<SidePanel.Options>{
+            emptySize: 140,
+            expandThreshold: 140,
+            expandDuration: 150,
+            initialSizeRatio: 0.191
+        }),
+        rightPanel: Object.freeze(<SidePanel.Options>{
+            emptySize: 140,
+            expandThreshold: 140,
+            expandDuration: 150,
+            initialSizeRatio: 0.191
+        })
+    });
 
     /**
      * Options for adding a widget to the application shell.

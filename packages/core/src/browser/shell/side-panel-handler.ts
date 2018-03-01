@@ -7,13 +7,13 @@
 
 import { injectable, inject } from 'inversify';
 import { find, map, toArray, some } from '@phosphor/algorithm';
-import { TabBar, Widget, DockPanel, Title, Panel, BoxPanel, BoxLayout, SplitPanel, SplitLayout } from '@phosphor/widgets';
+import { TabBar, Widget, DockPanel, Title, Panel, BoxPanel, BoxLayout, SplitPanel } from '@phosphor/widgets';
 import { Signal } from '@phosphor/signaling';
 import { MimeData } from '@phosphor/coreutils';
 import { Drag } from '@phosphor/dragdrop';
 import { AttachedProperty } from '@phosphor/properties';
 import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, SideTabBar } from './tab-bars';
-import { Message } from '@phosphor/messaging';
+import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 
 /** The class name added to the left and right area panels. */
 export const LEFT_RIGHT_AREA_CLASS = 'theia-app-sides';
@@ -57,15 +57,13 @@ export class SidePanelHandler {
      */
     container: Panel;
     /**
-     * The maximum ratio of the shell width that can be occupied by the side panel. This value
-     * does not limit how much the panel can be manually resized, but it is considered when
-     * the size of that panel is restored, e.g. when expanding the panel or reloading the page layout.
+     * The current state of the side panel.
      */
-    maxPanelSizeRatio = 1;
-    /**
-     * A promise that is resolved when the currently pending side panel updates are done.
-     */
-    pendingUpdate: Promise<void> = Promise.resolve();
+    readonly state: SidePanel.State = {
+        loading: true,
+        expansion: SidePanel.ExpansionState.collapsed,
+        pendingUpdate: Promise.resolve()
+    };
 
     /**
      * The shell area where the panel is placed. This property should not be modified directly, but
@@ -73,23 +71,19 @@ export class SidePanelHandler {
      */
     protected side: 'left' | 'right';
     /**
-     * The index of the last tab that was selected. When the panel is expanded, it tries to restore
-     * the tab selection to the previous state.
+     * Options that control the behavior of the side panel.
      */
-    protected lastActiveTabIndex?: number;
-    /**
-     * The width of the panel before it was collapsed. When the panel is expanded, it tries to restore
-     * its width to this value.
-     */
-    protected lastPanelSize?: number;
+    protected options: SidePanel.Options;
 
     @inject(TabBarRendererFactory) protected tabBarRendererFactory: () => TabBarRenderer;
+    @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler;
 
     /**
      * Create the side bar and dock panel widgets.
      */
-    create(side: 'left' | 'right'): void {
+    create(side: 'left' | 'right', options: SidePanel.Options): void {
         this.side = side;
+        this.options = options;
         this.tabBar = this.createSideBar();
         this.dockPanel = this.createSidePanel();
         this.container = this.createContainer();
@@ -175,7 +169,7 @@ export class SidePanelHandler {
             rank: SidePanelHandler.rankProperty.get(title.owner),
             expanded: title === currentTitle
         }));
-        const size = this.tabBar.currentTitle ? this.getPanelSize() : this.lastPanelSize;
+        const size = currentTitle !== null ? this.getPanelSize() : this.state.lastPanelSize;
         return { type: 'sidepanel', items, size };
     }
 
@@ -201,7 +195,7 @@ export class SidePanelHandler {
             }
         }
         if (layoutData.size) {
-            this.lastPanelSize = layoutData.size;
+            this.state.lastPanelSize = layoutData.size;
         }
 
         // If the layout data contains an expanded item, update the currentTitle property
@@ -243,7 +237,7 @@ export class SidePanelHandler {
         } else if (this.tabBar.currentTitle) {
             return this.tabBar.currentTitle.owner;
         } else if (this.tabBar.titles.length > 0) {
-            let index = this.lastActiveTabIndex;
+            let index = this.state.lastActiveTabIndex;
             if (!index) {
                 index = 0;
             } else if (index >= this.tabBar.titles.length) {
@@ -255,11 +249,26 @@ export class SidePanelHandler {
         } else {
             // Reveal the tab bar and dock panel even if there is no widget
             // The next call to `refreshVisibility` will collapse them again
+            this.state.expansion = SidePanel.ExpansionState.expanding;
+            let relativeSizes: number[] | undefined;
+            const parent = this.container.parent;
+            if (parent instanceof SplitPanel) {
+                relativeSizes = parent.relativeSizes();
+            }
             this.container.removeClass(COLLAPSED_CLASS);
             this.container.show();
             this.tabBar.show();
+            this.dockPanel.node.style.minWidth = '0';
             this.dockPanel.show();
-            this.setPanelSize(SidePanel.EMPTY_PANEL_SIZE);
+            if (relativeSizes && parent instanceof SplitPanel) {
+                // Make sure that the expansion animation starts at zero size
+                parent.setRelativeSizes(relativeSizes);
+            }
+            this.setPanelSize(this.options.emptySize).then(() => {
+                if (this.state.expansion === SidePanel.ExpansionState.expanding) {
+                    this.state.expansion = SidePanel.ExpansionState.expanded;
+                }
+            });
         }
     }
 
@@ -291,24 +300,47 @@ export class SidePanelHandler {
      */
     refresh(): void {
         const container = this.container;
+        const parent = container.parent;
         const tabBar = this.tabBar;
         const dockPanel = this.dockPanel;
         const hideSideBar = tabBar.titles.length === 0;
         const currentTitle = tabBar.currentTitle;
         const hideDockPanel = currentTitle === null;
+        let relativeSizes: number[] | undefined;
 
         if (hideDockPanel) {
             container.addClass(COLLAPSED_CLASS);
-            // Update the lastPanelSize property
-            const size = this.getPanelSize();
-            if (size) {
-                this.lastPanelSize = size;
+            if (this.state.expansion === SidePanel.ExpansionState.expanded && !hideSideBar) {
+                // Update the lastPanelSize property
+                const size = this.getPanelSize();
+                if (size) {
+                    this.state.lastPanelSize = size;
+                }
             }
+            this.state.expansion = SidePanel.ExpansionState.collapsed;
         } else {
             container.removeClass(COLLAPSED_CLASS);
-            // Try to restore the panel size
-            if (dockPanel.isHidden && this.lastPanelSize) {
-                this.setPanelSize(this.lastPanelSize);
+            let size: number | undefined;
+            if (this.state.expansion !== SidePanel.ExpansionState.expanded) {
+                if (this.state.lastPanelSize) {
+                    size = this.state.lastPanelSize;
+                } else {
+                    size = this.getDefaultPanelSize();
+                }
+            }
+            if (size) {
+                // Restore the panel size to the last known size or the default size
+                this.state.expansion = SidePanel.ExpansionState.expanding;
+                if (parent instanceof SplitPanel) {
+                    relativeSizes = parent.relativeSizes();
+                }
+                this.setPanelSize(size).then(() => {
+                    if (this.state.expansion === SidePanel.ExpansionState.expanding) {
+                        this.state.expansion = SidePanel.ExpansionState.expanded;
+                    }
+                });
+            } else {
+                this.state.expansion = SidePanel.ExpansionState.expanded;
             }
         }
         container.setHidden(hideSideBar && hideDockPanel);
@@ -316,6 +348,10 @@ export class SidePanelHandler {
         dockPanel.setHidden(hideDockPanel);
         if (currentTitle) {
             dockPanel.selectWidget(currentTitle.owner);
+        }
+        if (relativeSizes && parent instanceof SplitPanel) {
+            // Make sure that the expansion animation starts at the smallest possible size
+            parent.setRelativeSizes(relativeSizes);
         }
     }
 
@@ -343,34 +379,44 @@ export class SidePanelHandler {
     }
 
     /**
+     * Determine the default size to apply when the panel is expanded for the first time.
+     */
+    protected getDefaultPanelSize(): number | undefined {
+        const parent = this.container.parent;
+        if (parent && parent.isVisible) {
+            return parent.node.clientWidth * this.options.initialSizeRatio;
+        }
+    }
+
+    /**
      * Modify the width of the panel. This implementation assumes that the parent of the panel
      * container is a `SplitPanel`.
-     *
-     * The actual width might differ from the value that is given here. The width of the side
-     * panel is limited to a customizable ratio of the total width that is available for widgets
-     * (main area plus left and right areas). Further limits may be applied by the browser according
-     * to CSS `minWidth` and `maxWidth` settings.
      */
-    protected setPanelSize(size: number): void {
+    protected setPanelSize(size: number): Promise<void> {
         const parent = this.container.parent;
-        if (parent instanceof SplitPanel && parent.isVisible && size > 0) {
+        if (parent instanceof SplitPanel && parent.isVisible && size >= 0) {
             let index = parent.widgets.indexOf(this.container);
             if (this.side === 'right') {
                 index--;
             }
 
             const parentWidth = parent.node.clientWidth;
-            const maxWidth = parentWidth * this.maxPanelSizeRatio;
             let position: number = 0;
             if (this.side === 'left') {
-                position = Math.min(size, maxWidth);
+                position = Math.max(Math.min(size, parentWidth), 0);
             } else if (this.side === 'right') {
-                position = parentWidth - Math.min(size, maxWidth);
+                position = parentWidth - Math.max(Math.min(size, parentWidth), 0);
             }
 
-            const promise = SidePanel.moveSplitPos(parent, index, position);
-            this.pendingUpdate = this.pendingUpdate.then(() => promise);
+            const options: SplitPositionOptions = {
+                referenceWidget: this.dockPanel,
+                duration: this.state.loading ? 0 : this.options.expandDuration
+            };
+            const promise = this.splitPositionHandler.moveSplitPos(parent, index, position, options);
+            this.state.pendingUpdate = this.state.pendingUpdate.then(() => promise);
+            return promise;
         }
+        return Promise.resolve();
     }
 
     /**
@@ -379,7 +425,7 @@ export class SidePanelHandler {
      */
     protected onCurrentTabChanged(sender: SideTabBar, { currentTitle, currentIndex }: TabBar.ICurrentChangedArgs<Widget>): void {
         if (currentIndex >= 0) {
-            this.lastActiveTabIndex = currentIndex;
+            this.state.lastActiveTabIndex = currentIndex;
         }
         this.refresh();
     }
@@ -453,6 +499,31 @@ export class SidePanelHandler {
 
 export namespace SidePanel {
     /**
+     * Options that control the behavior of side panels.
+     */
+    export interface Options {
+        /**
+         * When a widget is being dragged and the distance of the mouse cursor to the shell border
+         * is below this threshold, the respective side panel is expanded so the widget can be dropped
+         * into that panel. Set this to `-1` to disable expanding the side panel while dragging.
+         */
+        expandThreshold: number;
+        /**
+         * The duration in milliseconds of the animation shown when a side panel is expanded.
+         * Set this to `0` to disable expansion animation.
+         */
+        expandDuration: number;
+        /**
+         * The ratio of the available shell size to use as initial size for the side panel.
+         */
+        initialSizeRatio: number
+        /**
+         * How large the panel should be when it's expanded and empty.
+         */
+        emptySize: number;
+    }
+
+    /**
      * The options for adding a widget to a side panel.
      */
     export interface WidgetOptions {
@@ -480,31 +551,37 @@ export namespace SidePanel {
         expanded?: boolean;
     }
 
-    /** How large the panel should be when it's expanded and empty. */
-    export const EMPTY_PANEL_SIZE = 100;
+    export interface State {
+        /**
+         * This flag indicates whether the application is loading. This has an impact on the behavior
+         * of side panels, e.g. no animations are shown while loading.
+         */
+        loading: boolean;
+        /**
+         * Indicates whether the panel is expanded, collapsed, or in a transition between the two.
+         */
+        expansion: ExpansionState;
+        /**
+         * A promise that is resolved when the currently pending side panel updates are done.
+         */
+        pendingUpdate: Promise<void>;
+        /**
+         * The index of the last tab that was selected. When the panel is expanded, it tries to restore
+         * the tab selection to the previous state.
+         */
+        lastActiveTabIndex?: number;
+        /**
+         * The width or height of the panel before it was collapsed. When the panel is expanded, it tries
+         * to restore its size to this value.
+         */
+        lastPanelSize?: number;
+    }
 
-    const splitMoves: { parent: SplitPanel, index: number, position: number, resolve: () => void }[] = [];
-
-    /**
-     * Move a handle of a split panel to the given position asynchronously. This function makes sure
-     * that only one such movement is done in each animation frame in order to prevent the movements
-     * from overriding each other.
-     */
-    export function moveSplitPos(parent: SplitPanel, index: number, position: number): Promise<void> {
-        return new Promise<void>(resolve => {
-            if (splitMoves.length === 0) {
-                const callback = () => {
-                    const move = splitMoves.splice(0, 1)[0];
-                    (move.parent.layout as SplitLayout).moveHandle(move.index, move.position);
-                    move.resolve();
-                    if (splitMoves.length > 0) {
-                        window.requestAnimationFrame(callback);
-                    }
-                };
-                window.requestAnimationFrame(callback);
-            }
-            splitMoves.push({ parent, index, position, resolve });
-        });
+    export enum ExpansionState {
+        collapsed = 'collapsed',
+        expanding = 'expanding',
+        expanded = 'expanded',
+        collapsing = 'collapsing'
     }
 }
 
@@ -543,16 +620,6 @@ export class TheiaDockPanel extends DockPanel {
     protected onChildRemoved(msg: Widget.ChildMessage): void {
         super.onChildRemoved(msg);
         this.widgetRemoved.emit(msg.child);
-    }
-
-    protected onFitRequest(msg: Message): void {
-        super.onFitRequest(msg);
-        if (this.isEmpty) {
-            // Set a minimal size explicitly if the panel is empty
-            const minSizeValue = `${SidePanel.EMPTY_PANEL_SIZE}px`;
-            this.node.style.minWidth = minSizeValue;
-            this.node.style.minHeight = minSizeValue;
-        }
     }
 
 }
