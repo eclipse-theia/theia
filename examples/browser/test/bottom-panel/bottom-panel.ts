@@ -31,6 +31,8 @@ export class BottomPanel {
 
     waitForTerminal() {
         this.driver.waitForExist('.p-Widget div.terminal.xterm');
+        // Wait for animations to finish
+        this.driver.pause(200);
     }
 
     isProblemsViewVisible(): boolean {
@@ -39,10 +41,12 @@ export class BottomPanel {
 
     waitForProblemsView() {
         this.driver.waitForExist('.p-Widget div.theia-marker-container');
+        // Wait for animations to finish
+        this.driver.pause(200);
     }
 
     closeCurrentView() {
-        this.driver.click(`#theia-bottom-content-panel .p-TabBar-tab.theia-mod-current .p-TabBar-tabCloseIcon`);
+        this.driver.click('#theia-bottom-content-panel .p-TabBar-tab.theia-mod-current .p-TabBar-tabCloseIcon');
     }
 
 }
