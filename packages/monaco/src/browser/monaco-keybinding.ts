@@ -7,6 +7,7 @@
 
 import { injectable, inject } from 'inversify';
 import { KeybindingContribution, KeybindingRegistry, Key, KeyCode, Keystroke, KeyModifier } from '@theia/core/lib/browser';
+import { EditorKeybindingContexts } from '@theia/editor/lib/browser';
 import { MonacoCommands } from './monaco-command';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { KEY_CODE_MAP } from './monaco-keycode-map';
@@ -24,9 +25,8 @@ function monaco2BrowserKeyCode(keyCode: monaco.KeyCode): number {
 @injectable()
 export class MonacoKeybindingContribution implements KeybindingContribution {
 
-    constructor(
-        @inject(MonacoCommandRegistry) protected readonly commands: MonacoCommandRegistry
-    ) { }
+    @inject(MonacoCommandRegistry)
+    protected readonly commands: MonacoCommandRegistry;
 
     registerKeybindings(registry: KeybindingRegistry): void {
         for (const item of KeybindingsRegistry.getDefaultKeybindings()) {
@@ -38,6 +38,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
                     registry.registerKeybinding({
                         command,
                         keybinding: this.keyCode(keybinding).toString(),
+                        context: EditorKeybindingContexts.editorTextFocus
                     });
                 } else {
                     // FIXME support chord keybindings properly, KeyCode does not allow it right now
@@ -51,6 +52,7 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             registry.registerKeybinding({
                 command: selectAllCommand,
                 keybinding: "ctrlcmd+a",
+                context: EditorKeybindingContexts.editorTextFocus
             });
         }
     }

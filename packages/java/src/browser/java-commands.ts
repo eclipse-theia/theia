@@ -6,17 +6,13 @@
  */
 
 import { inject, injectable } from "inversify";
-import {
-    CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry
-} from '@theia/core/lib/common';
-import { EditorCommands, EditorManager, EDITOR_CONTEXT_MENU } from "@theia/editor/lib/browser";
-import {
-    KeybindingContext, Keybinding, KeybindingContextRegistry,
-    KeybindingContribution, KeybindingRegistry
-} from "@theia/core/lib/browser";
+import { ExecuteCommandRequest } from "monaco-languageclient/lib";
+import { CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
+import { EditorCommands, EDITOR_CONTEXT_MENU, EditorManager } from "@theia/editor/lib/browser";
+import { KeybindingContribution, KeybindingRegistry } from "@theia/core/lib/browser";
 import { WorkspaceEdit, Workspace } from "@theia/languages/lib/common";
 import { JavaClientContribution } from "./java-client-contribution";
-import { ExecuteCommandRequest } from "monaco-languageclient/lib";
+import { JavaKeybindingContexts } from "./java-keybinding-contexts";
 
 /**
  * Show Java references
@@ -40,29 +36,17 @@ export const JAVA_ORGANIZE_IMPORTS: Command = {
     id: 'java.edit.organizeImports'
 };
 
-const CONTEXT_ID = 'java.editor.context';
-
-@injectable()
-export class JavaEditorContext implements KeybindingContext {
-    readonly id = CONTEXT_ID;
-
-    constructor(@inject(EditorManager) protected readonly editorService: EditorManager) { }
-
-    isEnabled(arg?: Keybinding) {
-        return this.editorService && !!this.editorService.currentEditor && (this.editorService.currentEditor.editor.document.uri.endsWith(".java"));
-    }
-}
-
 @injectable()
 export class JavaCommandContribution implements CommandContribution, MenuContribution, KeybindingContribution {
 
-    constructor(
-        @inject(Workspace) protected readonly workspace: Workspace,
-        @inject(JavaEditorContext) protected readonly editorContext: JavaEditorContext,
-        @inject(KeybindingContextRegistry) protected readonly keybindingContextRegistry: KeybindingContextRegistry,
-        @inject(JavaClientContribution) protected readonly javaClientContribution: JavaClientContribution,
-        @inject(EditorManager) protected readonly editorService: EditorManager
-    ) { }
+    @inject(Workspace)
+    protected readonly workspace: Workspace;
+
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
+
+    @inject(JavaClientContribution)
+    protected readonly javaClientContribution: JavaClientContribution;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(SHOW_JAVA_REFERENCES, {
@@ -75,7 +59,7 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
         });
         commands.registerCommand(JAVA_ORGANIZE_IMPORTS, {
             execute: async (changes: WorkspaceEdit) => {
-                const editor = this.editorService.activeEditor;
+                const editor = this.editorManager.currentEditor;
                 if (!editor) {
                     return false;
                 }
@@ -93,11 +77,8 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
                     return false;
                 }
             },
-            isVisible: () => {
-                const result = this.editorContext.isEnabled();
-                return result;
-            },
-            isEnabled: () => this.editorContext.isEnabled()
+            isVisible: () => !!this.editorManager.currentEditor,
+            isEnabled: () => !!this.editorManager.currentEditor
         });
     }
 
@@ -109,10 +90,9 @@ export class JavaCommandContribution implements CommandContribution, MenuContrib
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
-        this.keybindingContextRegistry.registerContext(this.editorContext);
         keybindings.registerKeybinding({
             command: JAVA_ORGANIZE_IMPORTS.id,
-            context: CONTEXT_ID,
+            context: JavaKeybindingContexts.javaEditorTextFocus,
             keybinding: 'ctrlcmd+shift+o'
         });
     }

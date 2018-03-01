@@ -8,13 +8,10 @@ import { enableJSDOM } from '../browser/test/jsdom';
 
 let disableJSDOM = enableJSDOM();
 
-import { Container, injectable, inject, ContainerModule } from 'inversify';
+import { Container, injectable, ContainerModule } from 'inversify';
 import { bindContributionProvider } from '../common/contribution-provider';
 import { ILogger } from '../common/logger';
-import {
-    KeybindingRegistry, KeybindingContext, KeybindingContextRegistry,
-    Keybinding, KeybindingContribution, KeybindingScope
-} from './keybinding';
+import { KeybindingRegistry, KeybindingContext, Keybinding, KeybindingContribution, KeybindingScope } from './keybinding';
 import { KeyCode, Key, KeyModifier, KeySequence, EasyKey } from './keys';
 import { CommandRegistry, CommandService, CommandContribution, Command } from '../common/command';
 import { LabelParser } from './label-parser';
@@ -44,7 +41,6 @@ before(async () => {
         /* Mock logger binding*/
         bind(ILogger).to(MockLogger);
 
-        bind(KeybindingContextRegistry).toSelf();
         bindContributionProvider(bind, KeybindingContext);
 
         bind(CommandRegistry).toSelf().inSingletonScope();
@@ -58,8 +54,12 @@ before(async () => {
             bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(TestContribution)).inSingletonScope()
         );
 
-        bind(TestContext).toSelf().inSingletonScope();
-        bind(KeybindingContext).toDynamicValue(context => context.container.get(TestContext)).inSingletonScope();
+        bind(KeybindingContext).toConstantValue({
+            id: 'testContext',
+            isEnabled(arg?: Keybinding): boolean {
+                return true;
+            }
+        });
 
         bind(StatusBarImpl).toSelf().inSingletonScope();
         bind(StatusBar).toDynamicValue(ctx => ctx.container.get(StatusBarImpl)).inSingletonScope();
@@ -456,31 +456,12 @@ const TEST_COMMAND_SHADOW: Command = {
 @injectable()
 export class TestContribution implements CommandContribution, KeybindingContribution {
 
-    constructor(@inject(KeybindingContextRegistry) protected readonly contextRegistry: KeybindingContextRegistry) {
-    }
-
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(TEST_COMMAND);
         commands.registerCommand(TEST_COMMAND2);
         commands.registerCommand(TEST_COMMAND_SHADOW);
     }
 
-    registerContexts() {
-        this.contextRegistry.registerContext(
-            {
-                id: 'testContext',
-                isEnabled(arg?: Keybinding): boolean {
-                    return true;
-                }
-            },
-            {
-                id: 'testContext',
-                isEnabled(arg?: Keybinding): boolean {
-                    return true;
-                }
-            },
-        );
-    }
     registerKeybindings(keybindings: KeybindingRegistry): void {
         [{
             command: TEST_COMMAND.id,
@@ -502,16 +483,4 @@ export class TestContribution implements CommandContribution, KeybindingContribu
         });
     }
 
-}
-
-@injectable()
-export class TestContext implements KeybindingContext {
-
-    constructor() { }
-
-    id = 'testContext';
-
-    isEnabled(arg?: Keybinding) {
-        return true;
-    }
 }

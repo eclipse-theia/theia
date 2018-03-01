@@ -11,7 +11,7 @@ export * from './editor-widget';
 export * from './editor-manager';
 export * from './editor-command';
 export * from './editor-menu';
-export * from './editor-keybinding';
+export * from './editor-keybinding-contexts';
 export * from './editor-frontend-module';
 export * from './editor-preferences';
 export * from './editor-decorations-service';

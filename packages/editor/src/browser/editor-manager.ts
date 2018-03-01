@@ -59,9 +59,7 @@ export class EditorManager extends WidgetOpenHandler<EditorWidget> {
     }
     protected updateActiveEditor(): void {
         const widget = this.shell.activeWidget;
-        if (widget instanceof EditorWidget) {
-            this.setActiveEditor(widget);
-        }
+        this.setActiveEditor(widget instanceof EditorWidget ? widget : undefined);
     }
 
     protected _currentEditor: EditorWidget | undefined;
