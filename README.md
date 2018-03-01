@@ -31,7 +31,7 @@ Theia is an extensible platform to develop full-fledged multi-language Cloud & D
 
 ## Getting Started
 Here you can find guides and examples for common scenarios:
-- [Develop a new Theia extension](http://www.theia-ide.org/doc/Authoring_Extensions.md)
+- [Develop a new Theia extension](http://www.theia-ide.org/doc/Authoring_Extensions.html)
 - Develop a new Theia application for [Cloud](examples/browser/package.json) or [Desktop](examples/electron/package.json) with [Theia CLI](dev-packages/cli/README.md)
 - [Run Theia IDE for Web Developers with Docker](https://github.com/theia-ide/theia-apps#theia-docker)
 - [Package a desktop Theia application with Electron](https://github.com/theia-ide/yangster-electron)
@@ -39,8 +39,8 @@ Here you can find guides and examples for common scenarios:
 ## Contributing
 
 Read below to learn how to take part in improving Theia:
-- Fork the repository and [run the examples from source](http://www.theia-ide.org/doc/Developing.md#quick-start)
-- Get familiar with [the development workflow](http://www.theia-ide.org/doc/Developing.md), [Coding Guidelines](https://github.com/theia-ide/theia/wiki/Coding-Guidelines), [Code of Conduct](CODE_OF_CONDUCT.md) and [learn how to sign your work](CONTRIBUTING.md#sign-your-work)
+- Fork the repository and [run the examples from source](doc/Developing.md#quick-start)
+- Get familiar with [the development workflow](doc/Developing.md), [Coding Guidelines](https://github.com/theia-ide/theia/wiki/Coding-Guidelines), [Code of Conduct](CODE_OF_CONDUCT.md) and [learn how to sign your work](CONTRIBUTING.md#sign-your-work)
 - Find an issue to work on and submit a pull request
   - First time contributing to open source? Pick a [good first issue](https://github.com/theia-ide/theia/labels/good%20first%20issue) to get you familiar with GitHub contributing process.
   - First time contributing to Theia? Pick a [beginner friendly issue](https://github.com/theia-ide/theia/labels/beginners) to get you familiar with codebase and our contributing process.
