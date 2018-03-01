@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import { h } from "@phosphor/virtualdom";
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
-import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell } from "@theia/core/lib/browser";
+import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell, Key, Message } from "@theia/core/lib/browser";
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import URI from "@theia/core/lib/common/uri";
 import { GIT_HISTORY, GIT_HISTORY_MAX_COUNT } from './git-history-contribution';
@@ -147,7 +147,28 @@ export class GitHistoryWidget extends GitBaseWidget<GitHistoryListNode> implemen
         } else {
             containers.push(h.div({ className: 'spinnerContainer' }, h.span({ className: 'fa fa-spinner fa-pulse fa-3x fa-fw' })));
         }
+
+        // this.addKeyListener(this.node, Key.ARROW_LEFT, () => this.handleLeft());
+        // this.addKeyListener(this.node, Key.ARROW_RIGHT, () => this.handleRight());
+        // this.addKeyListener(this.node, Key.ARROW_UP, () => this.handleUp());
+        // this.addKeyListener(this.node, Key.ARROW_DOWN, () => this.handleDown());
+        // this.addKeyListener(this.node, Key.ENTER, () => this.handleEnter());
         return h.div({ className: "git-diff-container" }, ...containers);
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+
+        // const container = <HTMLElement>this.node.getElementsByClassName(this.scrollContainer)[0];
+        const container = this.node;
+
+        if (container) {
+            this.addKeyListener(container, Key.ARROW_LEFT, () => this.handleLeft());
+            this.addKeyListener(container, Key.ARROW_RIGHT, () => this.handleRight());
+            this.addKeyListener(container, Key.ARROW_UP, () => this.handleUp());
+            this.addKeyListener(container, Key.ARROW_DOWN, () => this.handleDown());
+            this.addKeyListener(container, Key.ENTER, () => this.handleEnter());
+        }
     }
 
     protected renderHistoryHeader(): h.Child {

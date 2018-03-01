@@ -7,7 +7,7 @@
 
 import { h } from "@phosphor/virtualdom";
 import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
-import { VirtualRenderer, open, OpenerService, StatefulWidget, SELECTED_CLASS } from "@theia/core/lib/browser";
+import { VirtualRenderer, open, OpenerService, StatefulWidget, SELECTED_CLASS, Key, Message } from "@theia/core/lib/browser";
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import URI from "@theia/core/lib/common/uri";
 import { GitFileChange, GitFileStatus, Git, WorkingDirectoryStatus } from '../../common';
@@ -58,6 +58,21 @@ export class GitDiffWidget extends GitBaseWidget<GitFileChangeNode> implements S
         return this.options.range && this.options.range.fromRevision;
     }
 
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
+
+        // const container = <HTMLElement>this.node.getElementsByClassName(this.scrollContainer)[0];
+        const container = this.node;
+
+        if (container) {
+            this.addKeyListener(container, Key.ARROW_LEFT, () => this.handleLeft());
+            this.addKeyListener(container, Key.ARROW_RIGHT, () => this.handleRight());
+            this.addKeyListener(container, Key.ARROW_UP, () => this.handleUp());
+            this.addKeyListener(container, Key.ARROW_DOWN, () => this.handleDown());
+            this.addKeyListener(container, Key.ENTER, () => this.handleEnter());
+        }
+    }
+
     async setContent(options: Git.Options.Diff) {
         this.options = options;
         const repository = this.repositoryProvider.selectedRepository;
@@ -104,6 +119,12 @@ export class GitDiffWidget extends GitBaseWidget<GitFileChangeNode> implements S
         this.gitNodes = this.fileChangeNodes;
         const commitishBar = this.renderDiffListHeader();
         const fileChangeList = this.renderFileChangeList();
+
+        // this.addKeyListener(this.node, Key.ARROW_LEFT, () => this.handleLeft());
+        // this.addKeyListener(this.node, Key.ARROW_RIGHT, () => this.handleRight());
+        // this.addKeyListener(this.node, Key.ARROW_UP, () => this.handleUp());
+        // this.addKeyListener(this.node, Key.ARROW_DOWN, () => this.handleDown());
+        // this.addKeyListener(this.node, Key.ENTER, () => this.handleEnter());
         return h.div({ className: "git-diff-container" }, VirtualRenderer.flatten([commitishBar, fileChangeList]));
     }
 

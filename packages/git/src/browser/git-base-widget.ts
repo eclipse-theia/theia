@@ -11,7 +11,6 @@ import URI from "@theia/core/lib/common/uri";
 import { GitRepositoryProvider } from "./git-repository-provider";
 import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 import { Message } from "@phosphor/messaging";
-import { Key } from "@theia/core/lib/browser/keys";
 import { ElementExt } from "@phosphor/domutils";
 import { inject, injectable } from "inversify";
 
@@ -101,11 +100,17 @@ export class GitBaseWidget<T extends { selected?: boolean }> extends VirtualWidg
 
     protected onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
-        this.addKeyListener(this.node, Key.ARROW_LEFT, () => this.handleLeft());
-        this.addKeyListener(this.node, Key.ARROW_RIGHT, () => this.handleRight());
-        this.addKeyListener(this.node, Key.ARROW_UP, () => this.handleUp());
-        this.addKeyListener(this.node, Key.ARROW_DOWN, () => this.handleDown());
-        this.addKeyListener(this.node, Key.ENTER, () => this.handleEnter());
+
+        // const container = <HTMLElement>this.node.getElementsByClassName(this.scrollContainer)[0];
+        // const container = <HTMLElement>this.node.querySelector('#' + this.scrollContainer);
+
+        // if (container) {
+        //     this.addKeyListener(container, Key.ARROW_LEFT, () => this.handleLeft());
+        //     this.addKeyListener(container, Key.ARROW_RIGHT, () => this.handleRight());
+        //     this.addKeyListener(container, Key.ARROW_UP, () => this.handleUp());
+        //     this.addKeyListener(container, Key.ARROW_DOWN, () => this.handleDown());
+        //     this.addKeyListener(container, Key.ENTER, () => this.handleEnter());
+        // }
     }
 
     protected handleLeft(): void {
