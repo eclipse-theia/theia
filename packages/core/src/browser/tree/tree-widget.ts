@@ -169,8 +169,8 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
             className,
             style: {
                 paddingLeft: '4px',
-                paddingRight: '4px',
-                width: '0.5em'
+                paddingRight: '6px',
+                minWidth: '8px'
             },
             onclick: event => {
                 this.handleClickEvent(node, event);
@@ -357,8 +357,10 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
     }
 
     protected getDefaultNodeStyle(node: ITreeNode, props: NodeProps): ElementInlineStyle | undefined {
+        // If the node is a composite, a toggle will be rendered. Otherwise we need to add the width and the left, right padding => 18px
+        const paddingLeft = `${props.depth * this.props.leftPadding + (this.isExpandable(node) ? 0 : 18)}px`;
         let style: ElementInlineStyle = {
-            paddingLeft: `${props.depth * this.props.leftPadding}px`
+            paddingLeft
         };
         if (!props.visible) {
             style = {
