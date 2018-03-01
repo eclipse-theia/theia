@@ -17,12 +17,14 @@ export class LeftPanel {
 
     isTabActive(tabName: string): boolean {
         const tab = this.driver.element(`.p-TabBar.theia-app-left .p-TabBar-content`).element(`div\=${tabName}`);
-        /* Check if the parent li container has the p-mod-current class which makes it active*/
-        return (tab.$(`..`).getAttribute('class').split(' ').indexOf('p-mod-current') > -1);
+        /* Check if the parent li container has the p-mod-current class which makes it active */
+        return (tab.$(`..`).getAttribute('class').split(' ').indexOf('p-mod-current') !== -1);
     }
 
     openCloseTab(tabName: string) {
         this.driver.element(`.p-TabBar.theia-app-left .p-TabBar-content`).click(`div\=${tabName}`);
+        // Wait for animations to finish
+        this.driver.pause(200);
     }
 
     collapseTab(tabName: string) {
@@ -46,6 +48,6 @@ export class LeftPanel {
     }
 
     protected isPanelVisible(): boolean {
-        return (this.driver.element('#theia-left-side-panel').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1)
+        return (this.driver.element('#theia-left-side-panel').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1);
     }
 }
