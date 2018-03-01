@@ -9,7 +9,7 @@ import { injectable, inject, named } from 'inversify';
 import * as os from 'os';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { TerminalProcess, TerminalProcessOptions, ProcessManager, MultiRingBuffer } from '@theia/process/lib/node';
-import { isWindows } from "@theia/core/lib/common";
+import { isWindows, isOSX } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
 import { FileUri } from "@theia/core/lib/node/file-uri";
 import { parseArgs } from '@theia/process/lib/node/utils';
@@ -76,6 +76,11 @@ export class ShellProcess extends TerminalProcess {
         if (args) {
             return parseArgs(args);
         }
-        return [];
+        if (isOSX) {
+            return ['-l'];
+        } else {
+            return [];
+        }
+
     }
 }
