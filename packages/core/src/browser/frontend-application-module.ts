@@ -15,10 +15,7 @@ import {
     MessageService,
     MessageClient
 } from "../common";
-import {
-    KeybindingContextRegistry, KeybindingRegistry, KeybindingContext,
-    KeybindingContribution,
-} from "./keybinding";
+import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from "./keybinding";
 import { FrontendApplication, FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application';
 import { DefaultOpenerService, OpenerService, OpenHandler } from './opener-service';
 import { HttpOpenHandler } from './http-open-handler';
@@ -84,10 +81,8 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bindContributionProvider(bind, MenuContribution);
 
     bind(KeybindingRegistry).toSelf().inSingletonScope();
-    bindContributionProvider(bind, KeybindingContribution);
-
-    bind(KeybindingContextRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, KeybindingContext);
+    bindContributionProvider(bind, KeybindingContribution);
 
     bind(MessageClient).toSelf().inSingletonScope();
     bind(MessageService).toSelf().inSingletonScope();

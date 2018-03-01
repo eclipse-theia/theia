@@ -16,11 +16,12 @@ import {
 } from '@theia/core/lib/common';
 import {
     CommonMenus, ApplicationShell, KeybindingContribution, KeyCode, Key,
-    KeyModifier, KeybindingRegistry, Keybinding, KeybindingContextRegistry,
+    KeyModifier, KeybindingRegistry
 } from '@theia/core/lib/browser';
+import { WidgetManager } from '@theia/core/lib/browser';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidget } from './terminal-widget';
-import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { TerminalKeybindingContexts } from "./terminal-keybinding-contexts";
 
 export namespace TerminalCommands {
     export const NEW: Command = {
@@ -29,16 +30,13 @@ export namespace TerminalCommands {
     };
 }
 
-const TERMINAL_ACTIVE_CONTEXT = "terminalActive";
-
 @injectable()
 export class TerminalFrontendContribution implements CommandContribution, MenuContribution, KeybindingContribution {
 
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(KeybindingContextRegistry) protected readonly keybindingContextRegistry: KeybindingContextRegistry,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
     ) { }
 
     registerCommands(commands: CommandRegistry): void {
@@ -55,18 +53,7 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
         });
     }
 
-    /* Return true if a TerminalWidget widget is currently in focus.  */
-
-    isTerminalFocused(binding: Keybinding): boolean {
-        return this.shell.currentWidget instanceof TerminalWidget;
-    }
-
     registerKeybindings(keybindings: KeybindingRegistry): void {
-        this.keybindingContextRegistry.registerContext({
-            id: TERMINAL_ACTIVE_CONTEXT,
-            isEnabled: (binding: Keybinding) => this.isTerminalFocused(binding),
-        });
-
         keybindings.registerKeybinding({
             command: TerminalCommands.NEW.id,
             keybinding: "ctrl+`"
@@ -83,7 +70,7 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
             keybindings.registerKeybindings({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keybinding: KeyCode.createKeyCode({ first: k, modifiers: [KeyModifier.CTRL] }).toString(),
-                context: TERMINAL_ACTIVE_CONTEXT,
+                context: TerminalKeybindingContexts.terminalActive,
             });
         };
 
@@ -93,7 +80,7 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
             keybindings.registerKeybinding({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keybinding: KeyCode.createKeyCode({ first: k, modifiers: [KeyModifier.Alt] }).toString(),
-                context: TERMINAL_ACTIVE_CONTEXT,
+                context: TerminalKeybindingContexts.terminalActive
             });
         };
 
@@ -152,7 +139,7 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
             keybindings.registerKeybindings({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keybinding: "ctrlcmd+a",
-                context: TERMINAL_ACTIVE_CONTEXT
+                context: TerminalKeybindingContexts.terminalActive
             });
         }
     }

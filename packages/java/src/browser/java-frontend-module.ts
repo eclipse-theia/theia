@@ -7,14 +7,15 @@
 
 import { ContainerModule } from "inversify";
 import { ResourceResolver, CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { KeybindingContribution } from '@theia/core/lib/browser';
+import { KeybindingContribution, KeybindingContext } from '@theia/core/lib/browser';
 import { LanguageClientContribution } from "@theia/languages/lib/browser";
 import { LabelProviderContribution } from "@theia/core/lib/browser/label-provider";
 
 import { JavaClientContribution } from "./java-client-contribution";
-import { JavaCommandContribution, JavaEditorContext } from './java-commands';
+import { JavaCommandContribution } from './java-commands';
 import { JavaLabelProviderContribution } from './java-label-provider';
 import { JavaResourceResolver } from './java-resource';
+import { JavaEditorTextFocusContext } from "./java-keybinding-contexts";
 
 import "./monaco-contribution";
 
@@ -26,7 +27,8 @@ export default new ContainerModule(bind => {
 
     bind(JavaClientContribution).toSelf().inSingletonScope();
     bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(JavaClientContribution));
-    bind(JavaEditorContext).toSelf().inSingletonScope();
+
+    bind(KeybindingContext).to(JavaEditorTextFocusContext).inSingletonScope();
 
     bind(JavaResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(JavaResourceResolver));

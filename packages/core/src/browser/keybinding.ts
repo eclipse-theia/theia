@@ -18,6 +18,9 @@ export enum KeybindingScope {
     WORKSPACE,
     END
 }
+export namespace KeybindingScope {
+    export const length = KeybindingScope.END - KeybindingScope.DEFAULT;
+}
 
 export interface KeybindingsResult { full: Keybinding[], partial: Keybinding[], shadow: Keybinding[] }
 
@@ -64,7 +67,7 @@ export interface KeybindingContribution {
     registerKeybindings(keybindings: KeybindingRegistry): void;
 }
 
-export const KeybindingContext = Symbol("KeybindingContextExtension");
+export const KeybindingContext = Symbol("KeybindingContext");
 export interface KeybindingContext {
     /**
      * The unique ID of the current context.
@@ -87,20 +90,36 @@ export namespace KeybindingContexts {
 }
 
 @injectable()
-export class KeybindingContextRegistry {
+export class KeybindingRegistry {
+
+    static readonly PASSTHROUGH_PSEUDO_COMMAND = "passthrough";
+    protected keySequence: KeySequence = [];
 
     protected readonly contexts: { [id: string]: KeybindingContext } = {};
+    protected readonly keymaps: Keybinding[][] = [...Array(KeybindingScope.length)].map(() => []);
 
-    constructor(
-        @inject(ContributionProvider) @named(KeybindingContext)
-        protected readonly contextProvider: ContributionProvider<KeybindingContext>
-    ) {
+    @inject(ContributionProvider) @named(KeybindingContext)
+    protected readonly contextProvider: ContributionProvider<KeybindingContext>;
+
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
+    @inject(ContributionProvider) @named(KeybindingContribution)
+    protected readonly contributions: ContributionProvider<KeybindingContribution>;
+
+    @inject(StatusBar)
+    protected readonly statusBar: StatusBar;
+
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
+    onStart(): void {
         this.registerContext(KeybindingContexts.NOOP_CONTEXT);
         this.registerContext(KeybindingContexts.DEFAULT_CONTEXT);
-    }
-
-    initialize(): void {
-        this.contextProvider.getContributions().forEach(context => this.registerContext(context));
+        this.registerContext(...this.contextProvider.getContributions());
+        for (const contribution of this.contributions.getContributions()) {
+            contribution.registerKeybindings(this);
+        }
     }
 
     /**
@@ -109,42 +128,14 @@ export class KeybindingContextRegistry {
      *
      * @param contexts the keybinding contexts to register into the application.
      */
-    registerContext(...contexts: KeybindingContext[]) {
+    protected registerContext(...contexts: KeybindingContext[]) {
         for (const context of contexts) {
             const { id } = context;
             if (this.contexts[id]) {
-                throw new Error(`A keybinding context with ID ${id} is already registered.`);
+                console.error(`A keybinding context with ID ${id} is already registered.`);
+            } else {
+                this.contexts[id] = context;
             }
-            this.contexts[id] = context;
-        }
-    }
-
-    getContext(contextId: string): KeybindingContext | undefined {
-        return this.contexts[contextId];
-    }
-}
-
-@injectable()
-export class KeybindingRegistry {
-
-    private keymaps: Keybinding[][] = [];
-    static readonly PASSTHROUGH_PSEUDO_COMMAND = "passthrough";
-    protected keySequence: KeySequence = [];
-
-    constructor(
-        @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
-        @inject(KeybindingContextRegistry) protected readonly contextRegistry: KeybindingContextRegistry,
-        @inject(ContributionProvider) @named(KeybindingContribution)
-        protected readonly contributions: ContributionProvider<KeybindingContribution>,
-        @inject(StatusBar) protected readonly statusBar: StatusBar,
-        @inject(ILogger) protected readonly logger: ILogger
-    ) {
-        for (let i = KeybindingScope.DEFAULT; i < KeybindingScope.END; i++) { this.keymaps.push([]); }
-    }
-
-    onStart(): void {
-        for (const contribution of this.contributions.getContributions()) {
-            contribution.registerKeybindings(this);
         }
     }
 
@@ -320,12 +311,12 @@ export class KeybindingRegistry {
 
             let acontext: KeybindingContext | undefined;
             if (a.context) {
-                acontext = this.contextRegistry.getContext(a.context);
+                acontext = this.contexts[a.context];
             }
 
             let bcontext: KeybindingContext | undefined;
             if (b.context) {
-                bcontext = this.contextRegistry.getContext(b.context);
+                bcontext = this.contexts[b.context];
             }
 
             if (acontext && !bcontext) {
@@ -363,9 +354,7 @@ export class KeybindingRegistry {
         }
 
         for (const binding of bindings) {
-            const context = binding.context
-                ? this.contextRegistry.getContext(binding.context)
-                : undefined;
+            const context = binding.context !== undefined && this.contexts[binding.context];
 
             /* Only execute if it has no context (global context) or if we're in
                that context.  */
