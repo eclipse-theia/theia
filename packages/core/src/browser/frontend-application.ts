@@ -89,6 +89,7 @@ export class FrontendApplication {
         await this.startContributions();
         const host = await this.getHost();
         this.attachShell(host);
+        await new Promise(resolve => requestAnimationFrame(() => resolve()));
         await this.layoutRestorer.initializeLayout(this, this.contributions.getContributions());
         await this.revealShell(host);
 
