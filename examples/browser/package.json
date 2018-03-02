@@ -6,6 +6,7 @@
     "@theia/callhierarchy": "^0.3.12",
     "@theia/core": "^0.3.12",
     "@theia/cpp": "^0.3.12",
+    "@theia/debug": "^0.3.12",
     "@theia/editor": "^0.3.12",
     "@theia/editorconfig": "^0.3.12",
     "@theia/extension-manager": "^0.3.12",

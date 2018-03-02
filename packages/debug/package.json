@@ -1,5 +1,5 @@
 {
-  "name": "@theia/debugger",
+  "name": "@theia/debug",
   "version": "0.3.7",
   "description": "Theia - Debugger Extension",
   "dependencies": {
@@ -13,8 +13,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/filesystem-frontend-module",
-      "backend": "lib/node/filesystem-backend-module"
+      "frontend": "lib/browser/debug-frontend-module",
+      "backend": "lib/node/debug-backend-module"
     }
   ],
   "keywords": [
