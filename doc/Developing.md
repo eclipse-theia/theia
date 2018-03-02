@@ -25,6 +25,7 @@ For Windows instructions [click here](#building-on-windows).
      - [Watch the core and extension packages](#watch-the-core-and-extension-packages)
      - [Watch the examples](#watch-the-examples)
      - [Watch a specific package](#watch-a-specific-package)
+     - [Watch a specific package and its local upstream dependencies](#watch-a-specific-package-and-its-local-upstream-dependencies)
  - [**Debugging**](#debugging)
      - [Debug the browser example's backend](#debug-the-browser-examples-backend)
      - [Debug the browser example's frontend](#debug-the-browser-examples-frontend)
@@ -177,6 +178,12 @@ To rebuild each time a change is detected in frontend or backend you can run:
 You can use `npx` to watch a single package:
 
     npx run watch @theia/the-package-name
+
+### Watch a specific package and its local upstream dependencies
+
+Let assume you have to work for instance in the `@theia/navigator` extension. But you might have to apply changes in any of its upstream dependencies such as `@theia/filesystem` or `@theia/core`, you can either do `yarn watch` which could be super expensive, as it watches all the packages. Or you can do `npx run watch @theia/navigator` and `npx run watch @theia/filesystem` and `npx run watch @theia/core` in three individual shells. Or you can do the following single-liner:
+
+    npx run watch @theia/navigator --include-filtered-dependencies --parallel
 
 ## Debugging
 
