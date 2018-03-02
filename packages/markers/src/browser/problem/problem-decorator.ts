@@ -10,8 +10,8 @@ import { Diagnostic } from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 import { notEmpty } from '@theia/core/lib/common/objects';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { ITree, ITreeNode } from '@theia/core/lib/browser/tree/tree';
-import { TreeNodeIterator } from '@theia/core/lib/browser/tree/tree-iterator';
+import { Tree } from '@theia/core/lib/browser/tree/tree';
+import { DepthFirstTreeIterator } from '@theia/core/lib/browser/tree/tree-iterator';
 import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
 import { Marker } from '../../common/marker';
 import { ProblemManager } from './problem-manager';
@@ -21,47 +21,37 @@ export class ProblemDecorator implements TreeDecorator {
 
     readonly id = 'theia-problem-decorator';
 
-    protected readonly emitter: Emitter<(tree: ITree) => Map<string, TreeDecoration.Data>>;
+    protected readonly emitter: Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>;
 
     constructor(@inject(ProblemManager) protected readonly problemManager: ProblemManager) {
         this.emitter = new Emitter();
-        this.problemManager.onDidChangeMarkers(() => this.fireDidChangeDecorations((tree: ITree) => this.collectDecorators(tree)));
+        this.problemManager.onDidChangeMarkers(() => this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree)));
     }
 
-    get onDidChangeDecorations(): Event<(tree: ITree) => Map<string, TreeDecoration.Data>> {
+    get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, TreeDecoration.Data>> {
         return this.emitter.event;
     }
 
-    protected fireDidChangeDecorations(event: (tree: ITree) => Map<string, TreeDecoration.Data>): void {
+    protected fireDidChangeDecorations(event: (tree: Tree) => Map<string, TreeDecoration.Data>): void {
         this.emitter.fire(event);
     }
 
-    protected collectDecorators(tree: ITree): Map<string, TreeDecoration.Data> {
+    protected collectDecorators(tree: Tree): Map<string, TreeDecoration.Data> {
         const result = new Map();
         if (tree.root === undefined) {
             return result;
         }
-        const processNode = (treeNode: ITreeNode | undefined) => {
-            if (treeNode) {
-                const { id } = treeNode;
-                const marker = markers.get(id);
-                if (marker) {
-                    result.set(id, marker);
-                }
-            }
-        };
         const markers = this.appendContainerMarkers(tree, this.collectMarkers(tree));
-        processNode(tree.root);
-        const itr = new TreeNodeIterator(tree.root);
-        let node = itr.next();
-        while (!node.done) {
-            processNode(node.value);
-            node = itr.next();
+        for (const { id } of new DepthFirstTreeIterator(tree.root)) {
+            const marker = markers.get(id);
+            if (marker) {
+                result.set(id, marker);
+            }
         }
         return new Map(Array.from(result.values()).map(m => [m.uri, this.toDecorator(m)] as [string, TreeDecoration.Data]));
     }
 
-    protected appendContainerMarkers(tree: ITree, markers: Marker<Diagnostic>[]): Map<string, Marker<Diagnostic>> {
+    protected appendContainerMarkers(tree: Tree, markers: Marker<Diagnostic>[]): Map<string, Marker<Diagnostic>> {
         const result: Map<string, Marker<Diagnostic>> = new Map();
         // We traverse up and assign the diagnostic to the container directory.
         // Note, instead of stopping at the WS root, we traverse up the driver root.
@@ -90,7 +80,7 @@ export class ProblemDecorator implements TreeDecorator {
         return result;
     }
 
-    protected collectMarkers(tree: ITree): Marker<Diagnostic>[] {
+    protected collectMarkers(tree: Tree): Marker<Diagnostic>[] {
         return Array.from(this.problemManager.getUris())
             .map(uri => new URI(uri))
             .map(uri => this.problemManager.findMarkers({ uri }))

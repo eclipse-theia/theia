@@ -5,11 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import URI from "@theia/core/lib/common/uri";
-import { LabelProviderContribution, LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
+import URI from '../common/uri';
+import { LabelProviderContribution, LabelProvider } from './label-provider';
 
 export namespace DiffUris {
+
+    export const DIFF_SCHEME = 'diff';
 
     export function encode(left: URI, right: URI, name?: string): URI {
         const diffUris = [
@@ -19,19 +21,19 @@ export namespace DiffUris {
 
         const diffUriStr = JSON.stringify(diffUris);
 
-        return new URI(name || left.displayName).withScheme('diff').withQuery(diffUriStr);
+        return new URI(name || left.displayName).withScheme(DIFF_SCHEME).withQuery(diffUriStr);
     }
 
     export function decode(uri: URI): URI[] {
-        if (uri.scheme !== 'diff') {
-            throw ('URI must have scheme "diff".');
+        if (uri.scheme !== DIFF_SCHEME) {
+            throw (`The URI must have scheme "diff". The URI was: ${uri}.`);
         }
         const diffUris: string[] = JSON.parse(uri.query);
         return diffUris.map(s => new URI(s));
     }
 
     export function isDiffUri(uri: URI): boolean {
-        return uri.scheme === 'diff';
+        return uri.scheme === DIFF_SCHEME;
     }
 
 }
@@ -55,21 +57,21 @@ export class DiffUriLabelProviderContribution implements LabelProviderContributi
         if (leftLongName === rightLongName) {
             return leftLongName;
         }
-        return `${leftLongName} <-> ${rightLongName}`;
+        return `${leftLongName} ⟷ ${rightLongName}`;
     }
 
     getName(uri: URI): string {
         const [left, right] = DiffUris.decode(uri);
 
         if (left.path.toString() === right.path.toString() && left.query && right.query) {
-            return `${left.displayName}: ${left.query} <-> ${right.query}`;
+            return `${left.displayName}: ${left.query} ⟷ ${right.query}`;
         } else {
             const leftLongName = this.labelProvider.getName(left);
             const rightLongName = this.labelProvider.getName(right);
             if (leftLongName === rightLongName) {
                 return leftLongName;
             }
-            return `${leftLongName} <-> ${rightLongName}`;
+            return `${leftLongName} ⟷ ${rightLongName}`;
         }
     }
 

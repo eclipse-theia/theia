@@ -5,10 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { injectable } from 'inversify';
 import { Emitter, Event } from '../common/event';
-import { injectable } from "inversify";
 
-export type SelectionListener = (newSelection: any) => void;
+// tslint:disable:no-any
 
 export interface SelectionProvider<T> {
     onSelectionChanged: Event<T | undefined>;
@@ -16,8 +16,6 @@ export interface SelectionProvider<T> {
 
 @injectable()
 export class SelectionService implements SelectionProvider<any> {
-
-    constructor() { }
 
     private currentSelection: any;
     private selectionListeners: Emitter<any> = new Emitter();
@@ -34,4 +32,5 @@ export class SelectionService implements SelectionProvider<any> {
     get onSelectionChanged(): Event<any> {
         return this.selectionListeners.event;
     }
+
 }

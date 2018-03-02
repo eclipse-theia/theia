@@ -12,10 +12,11 @@ import { injectable, inject } from "inversify";
 import { GitDiffWidget, GIT_DIFF } from './git-diff-widget';
 import { open, OpenerService } from "@theia/core/lib/browser";
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-menu';
-import { UriCommandHandler, FileSystemCommandHandler } from '@theia/workspace/lib/browser/workspace-commands';
+import { UriCommandHandler, UriAwareCommandHandler } from '@theia/workspace/lib/browser/workspace-commands';
 import { GitQuickOpenService } from '../git-quick-open-service';
 import { FileSystem } from "@theia/filesystem/lib/common";
-import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
+import { DiffUris } from '@theia/core/lib/browser/diff-uris';
+import URI from '@theia/core/lib/common/uri';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import { Git } from "../../common";
 
@@ -55,7 +56,7 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
     }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(GitDiffCommands.OPEN_FILE_DIFF, this.newFileHandler({
+        commands.registerCommand(GitDiffCommands.OPEN_FILE_DIFF, this.newUriAwareCommandHandler({
             execute: async fileUri => {
                 await this.quickOpenService.chooseTagsAndBranches(
                     async (fromRevision, toRevision) => {
@@ -72,9 +73,9 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
                         } else {
                             const fromURI = fileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery(fromRevision);
                             const toURI = fileUri;
-                            const diffuri = DiffUris.encode(fromURI, toURI, fileUri.displayName);
-                            if (diffuri) {
-                                open(this.openerService, diffuri).catch(e => {
+                            const diffUri = DiffUris.encode(fromURI, toURI, fileUri.displayName);
+                            if (diffUri) {
+                                open(this.openerService, diffUri).catch(e => {
                                     this.notifications.error(e.message);
                                 });
                             }
@@ -92,8 +93,8 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
         });
     }
 
-    protected newFileHandler(handler: UriCommandHandler): FileSystemCommandHandler {
-        return new FileSystemCommandHandler(this.selectionService, handler);
+    protected newUriAwareCommandHandler(handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {
+        return new UriAwareCommandHandler(this.selectionService, handler);
     }
 
 }

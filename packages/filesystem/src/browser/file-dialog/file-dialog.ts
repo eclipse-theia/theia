@@ -92,7 +92,7 @@ export class FileDialog extends AbstractDialog<Readonly<FileStatNode> | undefine
     }
 
     get value(): Readonly<FileStatNode> | undefined {
-        return this.widget.model.selectedFileStatNode;
+        return this.widget.model.selectedFileStatNodes[0];
     }
 
 }

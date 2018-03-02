@@ -9,7 +9,8 @@ import { MenuModelRegistry, CommandRegistry, Command, SelectionService } from "@
 import { AbstractViewContribution } from "@theia/core/lib/browser";
 import { injectable, inject } from "inversify";
 import { NAVIGATOR_CONTEXT_MENU } from "@theia/navigator/lib/browser/navigator-menu";
-import { UriCommandHandler, FileSystemCommandHandler } from "@theia/workspace/lib/browser/workspace-commands";
+import { UriCommandHandler, UriAwareCommandHandler } from "@theia/workspace/lib/browser/workspace-commands";
+import URI from '@theia/core/lib/common/uri';
 import { GitHistoryWidget } from './git-history-widget';
 import { Git } from "../../common";
 
@@ -51,7 +52,7 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
     }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(GitHistoryCommands.OPEN_FILE_HISTORY, this.newFileHandler({
+        commands.registerCommand(GitHistoryCommands.OPEN_FILE_HISTORY, this.newUriAwareCommandHandler({
             execute: async uri => {
                 const options: Git.Options.Log = {
                     uri: uri.toString(),
@@ -79,7 +80,8 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
         });
     }
 
-    protected newFileHandler(handler: UriCommandHandler): FileSystemCommandHandler {
-        return new FileSystemCommandHandler(this.selectionService, handler);
+    protected newUriAwareCommandHandler(handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {
+        return new UriAwareCommandHandler(this.selectionService, handler);
     }
+
 }

@@ -34,6 +34,7 @@ import { PreferenceService, PreferenceServiceImpl, PreferenceProviders } from '.
 import { ContextMenuRenderer } from './context-menu-renderer';
 import { ThemingCommandContribution, ThemeService } from './theming';
 import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution } from './connection-status-service';
+import { DiffUriLabelProviderContribution } from './diff-uris';
 
 import '../../src/browser/style/index.css';
 import 'font-awesome/css/font-awesome.min.css';
@@ -109,6 +110,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bindContributionProvider(bind, LabelProviderContribution);
     bind(LabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).to(DefaultUriLabelProviderContribution).inSingletonScope();
+    bind(LabelProviderContribution).to(DiffUriLabelProviderContribution).inSingletonScope();
 
     bind(CommandContribution).to(ThemingCommandContribution).inSingletonScope();
 

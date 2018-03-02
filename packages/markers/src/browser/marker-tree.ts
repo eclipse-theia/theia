@@ -6,10 +6,10 @@
  */
 
 import { injectable } from "inversify";
-import { Tree, ICompositeTreeNode, ITreeNode, ISelectableTreeNode, IExpandableTreeNode } from "@theia/core/lib/browser";
+import { TreeImpl, CompositeTreeNode, TreeNode, SelectableTreeNode, ExpandableTreeNode } from "@theia/core/lib/browser";
 import { MarkerManager } from './marker-manager';
 import { Marker } from '../common/marker';
-import { UriSelection } from "@theia/filesystem/lib/common";
+import { UriSelection } from "@theia/core/lib/common/selection";
 import URI from "@theia/core/lib/common/uri";
 import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 
@@ -19,7 +19,7 @@ export interface MarkerOptions {
 }
 
 @injectable()
-export abstract class MarkerTree<T extends object> extends Tree {
+export abstract class MarkerTree<T extends object> extends TreeImpl {
 
     constructor(
         protected readonly markerManager: MarkerManager<T>,
@@ -40,7 +40,7 @@ export abstract class MarkerTree<T extends object> extends Tree {
         };
     }
 
-    resolveChildren(parent: ICompositeTreeNode): Promise<ITreeNode[]> {
+    resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (MarkerRootNode.is(parent)) {
             return this.getMarkerInfoNodes((parent as MarkerRootNode));
         } else if (MarkerInfoNode.is(parent)) {
@@ -110,30 +110,30 @@ export abstract class MarkerTree<T extends object> extends Tree {
     }
 }
 
-export interface MarkerNode extends UriSelection, ISelectableTreeNode {
+export interface MarkerNode extends UriSelection, SelectableTreeNode {
     marker: Marker<object>;
 }
 export namespace MarkerNode {
-    export function is(node: ITreeNode | undefined): node is MarkerNode {
-        return UriSelection.is(node) && ISelectableTreeNode.is(node) && 'marker' in node;
+    export function is(node: TreeNode | undefined): node is MarkerNode {
+        return UriSelection.is(node) && SelectableTreeNode.is(node) && 'marker' in node;
     }
 }
 
-export interface MarkerInfoNode extends UriSelection, ISelectableTreeNode, IExpandableTreeNode {
+export interface MarkerInfoNode extends UriSelection, SelectableTreeNode, ExpandableTreeNode {
     parent: MarkerRootNode;
     numberOfMarkers: number;
 }
 export namespace MarkerInfoNode {
-    export function is(node: ITreeNode | undefined): node is MarkerInfoNode {
-        return IExpandableTreeNode.is(node) && UriSelection.is(node);
+    export function is(node: TreeNode | undefined): node is MarkerInfoNode {
+        return ExpandableTreeNode.is(node) && UriSelection.is(node);
     }
 }
 
-export interface MarkerRootNode extends ICompositeTreeNode {
+export interface MarkerRootNode extends CompositeTreeNode {
     kind: string;
 }
 export namespace MarkerRootNode {
-    export function is(node: ITreeNode | undefined): node is MarkerRootNode {
-        return ICompositeTreeNode.is(node) && 'kind' in node;
+    export function is(node: TreeNode | undefined): node is MarkerRootNode {
+        return CompositeTreeNode.is(node) && 'kind' in node;
     }
 }

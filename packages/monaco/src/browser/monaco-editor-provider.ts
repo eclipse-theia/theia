@@ -9,7 +9,7 @@
 import { DisposableCollection } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { EditorPreferenceChange, EditorPreferences, EditorDecorationsService, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
-import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
+import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { inject, injectable } from 'inversify';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 

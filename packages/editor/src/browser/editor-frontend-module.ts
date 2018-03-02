@@ -7,17 +7,13 @@
 
 import { ContainerModule } from 'inversify';
 import { CommandContribution, MenuContribution } from "@theia/core/lib/common";
-import {
-    OpenHandler, WidgetFactory, FrontendApplicationContribution,
-    KeybindingContext, LabelProviderContribution
-} from '@theia/core/lib/browser';
+import { OpenHandler, WidgetFactory, FrontendApplicationContribution, KeybindingContext } from '@theia/core/lib/browser';
 import { EditorManager } from './editor-manager';
 import { EditorContribution } from './editor-contribution';
 import { EditorMenuContribution } from './editor-menu';
 import { EditorCommandContribution } from './editor-command';
 import { EditorTextFocusContext } from "./editor-keybinding-contexts";
 import { bindEditorPreferences } from './editor-preferences';
-import { DiffUriLabelProviderContribution } from './diff-uris';
 import { EditorDecorationsService } from './editor-decorations-service';
 import { EditorWidgetFactory } from './editor-widget-factory';
 
@@ -36,8 +32,6 @@ export default new ContainerModule(bind => {
 
     bind(EditorContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(EditorContribution);
-
-    bind(LabelProviderContribution).to(DiffUriLabelProviderContribution).inSingletonScope();
 
     bind(EditorDecorationsService).toSelf().inSingletonScope();
 });

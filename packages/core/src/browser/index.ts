@@ -26,3 +26,4 @@ export * from './keys';
 export * from './status-bar';
 export * from './label-provider';
 export * from './widget-open-handler';
+export * from './diff-uris';

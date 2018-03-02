@@ -8,26 +8,26 @@
 import { injectable, inject } from 'inversify';
 import {
     TreeWidget,
-    ITreeNode,
+    TreeNode,
     NodeProps,
-    ISelectableTreeNode,
+    SelectableTreeNode,
     TreeProps,
     ContextMenuRenderer,
     TreeModel,
-    IExpandableTreeNode
+    ExpandableTreeNode
 } from "@theia/core/lib/browser";
 import { h } from "@phosphor/virtualdom/lib";
 import { Message } from '@phosphor/messaging';
 import { Emitter } from '@theia/core';
-import { ICompositeTreeNode } from '@theia/core/lib/browser';
+import { CompositeTreeNode } from '@theia/core/lib/browser';
 
-export interface OutlineSymbolInformationNode extends ICompositeTreeNode, ISelectableTreeNode, IExpandableTreeNode {
+export interface OutlineSymbolInformationNode extends CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode {
     iconClass: string;
 }
 
 export namespace OutlineSymbolInformationNode {
-    export function is(node: ITreeNode): node is OutlineSymbolInformationNode {
-        return !!node && ISelectableTreeNode.is(node) && 'iconClass' in node;
+    export function is(node: TreeNode): node is OutlineSymbolInformationNode {
+        return !!node && SelectableTreeNode.is(node) && 'iconClass' in node;
     }
 }
 
@@ -53,7 +53,7 @@ export class OutlineViewWidget extends TreeWidget {
 
     public setOutlineTree(roots: OutlineSymbolInformationNode[]) {
         const nodes = this.reconcileTreeState(roots);
-        this.model.root = <ICompositeTreeNode>{
+        this.model.root = <CompositeTreeNode>{
             id: 'outline-view-root',
             name: 'Outline Root',
             visible: false,
@@ -62,7 +62,7 @@ export class OutlineViewWidget extends TreeWidget {
         };
     }
 
-    protected reconcileTreeState(nodes: ITreeNode[]): ITreeNode[] {
+    protected reconcileTreeState(nodes: TreeNode[]): TreeNode[] {
         nodes.forEach(node => {
             if (OutlineSymbolInformationNode.is(node)) {
                 const treeNode = this.model.getNode(node.id);
@@ -87,20 +87,21 @@ export class OutlineViewWidget extends TreeWidget {
     }
 
     protected onUpdateRequest(msg: Message): void {
-        if (!this.model.selectedNode && ISelectableTreeNode.is(this.model.root)) {
+        if (!this.model.selectedNodes && SelectableTreeNode.is(this.model.root)) {
             this.model.selectNode(this.model.root);
         }
         super.onUpdateRequest(msg);
     }
 
-    renderIcon(node: ITreeNode, props: NodeProps): h.Child {
+    renderIcon(node: TreeNode, props: NodeProps): h.Child {
         if (OutlineSymbolInformationNode.is(node)) {
             return h.div({ className: "symbol-icon symbol-icon-center " + node.iconClass });
         }
+        // tslint:disable-next-line:no-null-keyword
         return null;
     }
 
-    protected isExpandable(node: ITreeNode): node is IExpandableTreeNode {
+    protected isExpandable(node: TreeNode): node is ExpandableTreeNode {
         return OutlineSymbolInformationNode.is(node) && node.children.length > 0;
     }
 

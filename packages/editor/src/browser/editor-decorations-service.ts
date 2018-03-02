@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import { Range, SetDecorationParams, DeltaDecorationParams, TextEditor } from "./editor";
 import { EditorManager } from "./editor-manager";
-import { DiffUris } from "./diff-uris";
+import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import URI from "@theia/core/lib/common/uri";
 
 @injectable()

@@ -7,8 +7,8 @@
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { DisposableCollection, CommandRegistry, MenuModelRegistry } from '@theia/core';
-import { AbstractViewContribution, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
-import { EditorManager, DiffUris, EditorWidget, EditorOpenerOptions, EditorContextMenu } from '@theia/editor/lib/browser';
+import { AbstractViewContribution, StatusBar, StatusBarAlignment, DiffUris } from '@theia/core/lib/browser';
+import { EditorManager, EditorWidget, EditorOpenerOptions, EditorContextMenu } from '@theia/editor/lib/browser';
 import { GitFileChange } from '../common';
 import { GitWidget, GIT_WIDGET_CONTEXT_MENU } from './git-widget';
 import { GitRepositoryTracker } from './git-repository-tracker';

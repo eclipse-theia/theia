@@ -8,9 +8,9 @@
 import { ProblemMarker } from '../../common/problem-marker';
 import { ProblemManager } from './problem-manager';
 import { MarkerNode, MarkerTree, MarkerOptions } from '../marker-tree';
-import { MarkerTreeModel, MarkerTreeServices } from '../marker-tree-model';
+import { MarkerTreeModel } from '../marker-tree-model';
 import { injectable, inject } from "inversify";
-import { OpenerService, OpenerOptions } from '@theia/core/lib/browser';
+import { OpenerOptions } from '@theia/core/lib/browser';
 import { Diagnostic } from "vscode-languageserver-types";
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 
@@ -25,16 +25,7 @@ export class ProblemTree extends MarkerTree<Diagnostic> {
 }
 
 @injectable()
-export class ProblemTreeModel extends MarkerTreeModel<Diagnostic> {
-
-    protected readonly openerService: OpenerService;
-
-    constructor(
-        @inject(ProblemTree) protected readonly tree: ProblemTree,
-        @inject(MarkerTreeServices) readonly services: MarkerTreeServices,
-    ) {
-        super(tree, services);
-    }
+export class ProblemTreeModel extends MarkerTreeModel {
 
     protected getOpenerOptionsByMarker(node: MarkerNode): OpenerOptions | undefined {
         if (ProblemMarker.is(node.marker)) {
