@@ -14,6 +14,7 @@ import { AbstractDialog } from './dialogs';
 export interface Saveable {
     readonly dirty: boolean;
     readonly onDirtyChanged: Event<void>;
+    readonly autoSave: "on" | "off";
     save(): MaybePromise<void>;
 }
 
@@ -58,13 +59,16 @@ export namespace Saveable {
         if (saveable) {
             setDirty(widget, saveable.dirty);
             saveable.onDirtyChanged(() => setDirty(widget, saveable.dirty));
-
             const close = widget.close.bind(widget);
             widget.close = async () => {
                 if (saveable.dirty) {
-                    const dialog = new ShouldSaveDialog(widget);
-                    if (await dialog.open()) {
+                    if (saveable.autoSave === 'on') {
                         await Saveable.save(widget);
+                    } else {
+                        const dialog = new ShouldSaveDialog(widget);
+                        if (await dialog.open()) {
+                            await Saveable.save(widget);
+                        }
                     }
                 }
                 close();
@@ -99,9 +103,16 @@ export class ShouldSaveDialog extends AbstractDialog<boolean> {
         messageNode.textContent = "Your change will be lost if you don't save them.";
         messageNode.setAttribute('style', 'flex: 1 100%; padding-bottom: calc(var(--theia-ui-padding)*3);');
         this.contentNode.appendChild(messageNode);
-        this.contentNode.appendChild(this.dontSaveButton = this.createButton("Don't Save"));
+        this.dontSaveButton = this.appendDontSaveButton();
         this.appendCloseButton();
         this.appendAcceptButton('Save');
+    }
+
+    protected appendDontSaveButton() {
+        const button = this.createButton("Don't save");
+        this.controlPanel.appendChild(button);
+        button.classList.add('secondary');
+        return button;
     }
 
     protected onAfterAttach(msg: Message): void {
