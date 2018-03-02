@@ -7,7 +7,7 @@
 
 import { ChildProcess } from 'child_process';
 import { Disposable } from '@theia/core';
-import { Repository, WorkingDirectoryStatus, Branch, GitResult, GitError, GitFileStatus, GitFileChange, CommitWithChanges } from './git-model';
+import { Repository, WorkingDirectoryStatus, Branch, GitResult, GitError, GitFileStatus, GitFileChange, CommitWithChanges, GitFileBlame } from './git-model';
 
 /**
  * The WS endpoint path to the Git service.
@@ -462,6 +462,16 @@ export namespace Git {
 
         }
 
+        /**
+         * Optional configuration for the `git blame` command.
+         */
+        export interface Blame {
+            /**
+             * Dirty state content.
+             */
+            readonly content?: string;
+        }
+
     }
 
 }
@@ -637,7 +647,16 @@ export interface Git extends Disposable {
      * @param repository the repository where the log has to be calculated.
      * @param options optional configuration for further refining the `git log` command execution.
      */
-    log(repository: Repository, options?: Git.Options.Log): Promise<CommitWithChanges[]>
+    log(repository: Repository, options?: Git.Options.Log): Promise<CommitWithChanges[]>;
+
+    /**
+     * Returns the annotations of each line in the given file.
+     *
+     * @param repository the repository which contains the given file.
+     * @param uri the URI of the file to get the annotations for.
+     * @param options more options refining the `git blame`.
+     */
+    blame(repository: Repository, uri: string, options?: Git.Options.Blame): Promise<GitFileBlame | undefined>;
 
 }
 

@@ -23,3 +23,4 @@ export * from './messaging';
 export * from './message-service';
 export * from './message-service-protocol';
 export * from './selection';
+export * from './strings';
