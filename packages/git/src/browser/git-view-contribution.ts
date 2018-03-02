@@ -8,7 +8,7 @@ import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { DisposableCollection, CommandRegistry, MenuModelRegistry } from '@theia/core';
 import { AbstractViewContribution, StatusBar, StatusBarAlignment, DiffUris } from '@theia/core/lib/browser';
-import { EditorManager, EditorWidget, EditorOpenerOptions, EditorContextMenu } from '@theia/editor/lib/browser';
+import { EditorManager, EditorWidget, EditorOpenerOptions, EditorContextMenu, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { GitFileChange } from '../common';
 import { GitWidget, GIT_WIDGET_CONTEXT_MENU } from './git-widget';
 import { GitRepositoryTracker } from './git-repository-tracker';
@@ -19,6 +19,8 @@ export const GIT_WIDGET_FACTORY_ID = 'git';
 const GIT_SELECTED_REPOSITORY = 'git-selected-repository';
 const GIT_REPOSITORY_STATUS = 'git-repository-status';
 const GIT_AHEAD_BEHIND = 'git-ahead-behind';
+
+export const EDITOR_CONTEXT_MENU_GIT = [...EDITOR_CONTEXT_MENU, '3_git'];
 
 export namespace GIT_COMMANDS {
     export const FETCH = {

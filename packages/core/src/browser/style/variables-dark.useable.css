@@ -55,6 +55,8 @@ all of MD as it is not optimized for dense, information rich UIs.
     --theia-ui-font-color1: var(--md-grey-300);
     --theia-ui-font-color2: var(--md-grey-600);
     --theia-ui-font-color3: var(--md-grey-700);
+    --theia-ui-font-color4: var(--md-grey-800);
+    --theia-ui-font-color5: var(--md-grey-900);
 
     /* Special font colors */
     --theia-ui-icon-font-color: #D4D4D4;

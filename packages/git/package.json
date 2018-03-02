@@ -5,6 +5,7 @@
   "dependencies": {
     "@theia/core": "^0.3.7",
     "@theia/editor": "^0.3.7",
+    "@theia/languages": "^0.3.7",
     "@theia/filesystem": "^0.3.7",
     "@theia/workspace": "^0.3.7",
     "@theia/navigator": "^0.3.7",
@@ -15,6 +16,7 @@
     "find-git-repositories": "^0.1.0",
     "fs-extra": "^4.0.2",
     "ts-md5": "^1.2.2",
+    "moment": "^2.21.0",
     "octicons": "^7.1.0"
   },
   "publishConfig": {
