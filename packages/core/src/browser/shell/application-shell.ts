@@ -64,6 +64,7 @@ interface WidgetDragState {
     leftExpanded: boolean;
     rightExpanded: boolean;
     bottomExpanded: boolean;
+    lastDragOver?: IDragEvent;
     leaveTimeout?: number;
 }
 
@@ -204,6 +205,7 @@ export class ApplicationShell extends Widget {
     protected onDragOver(event: IDragEvent) {
         const state = this.dragState;
         if (state) {
+            state.lastDragOver = event;
             if (state.leaveTimeout) {
                 window.clearTimeout(state.leaveTimeout);
                 state.leaveTimeout = undefined;
@@ -222,7 +224,7 @@ export class ApplicationShell extends Widget {
             if (expLeft && !state.leftExpanded && this.leftPanelHandler.tabBar.currentTitle === null) {
                 // The mouse cursor is moved close to the left border
                 this.leftPanelHandler.expand();
-                this.leftPanelHandler.state.pendingUpdate.then(() => this.dispatchMouseMove(event));
+                this.leftPanelHandler.state.pendingUpdate.then(() => this.dispatchMouseMove());
                 state.leftExpanded = true;
             } else if (!expLeft && state.leftExpanded) {
                 // The mouse cursor is moved away from the left border
@@ -232,7 +234,7 @@ export class ApplicationShell extends Widget {
             if (expRight && !state.rightExpanded && this.rightPanelHandler.tabBar.currentTitle === null) {
                 // The mouse cursor is moved close to the right border
                 this.rightPanelHandler.expand();
-                this.rightPanelHandler.state.pendingUpdate.then(() => this.dispatchMouseMove(event));
+                this.rightPanelHandler.state.pendingUpdate.then(() => this.dispatchMouseMove());
                 state.rightExpanded = true;
             } else if (!expRight && state.rightExpanded) {
                 // The mouse cursor is moved away from the right border
@@ -242,7 +244,7 @@ export class ApplicationShell extends Widget {
             if (expBottom && !state.bottomExpanded && this.bottomPanel.isHidden) {
                 // The mouse cursor is moved close to the bottom border
                 this.expandBottomPanel();
-                this.bottomPanelState.pendingUpdate.then(() => this.dispatchMouseMove(event));
+                this.bottomPanelState.pendingUpdate.then(() => this.dispatchMouseMove());
                 state.bottomExpanded = true;
             } else if (!expBottom && state.bottomExpanded) {
                 // The mouse cursor is moved away from the bottom border
@@ -256,11 +258,14 @@ export class ApplicationShell extends Widget {
      * This method is called after a side panel has been expanded while dragging a widget. It fires
      * a `mousemove` event so that the drag overlay markers are updated correctly in all dock panels.
      */
-    private dispatchMouseMove(sourceEvent: MouseEvent): void {
-        const event = document.createEvent('MouseEvent');
-        event.initMouseEvent('mousemove', true, true, window, 0, 0, 0,
-            sourceEvent.clientX, sourceEvent.clientY, false, false, false, false, 0, null);
-        document.dispatchEvent(event);
+    private dispatchMouseMove(): void {
+        if (this.dragState && this.dragState.lastDragOver) {
+            const { clientX, clientY } = this.dragState.lastDragOver;
+            const event = document.createEvent('MouseEvent');
+            event.initMouseEvent('mousemove', true, true, window, 0, 0, 0,
+                clientX, clientY, false, false, false, false, 0, null);
+            document.dispatchEvent(event);
+        }
     }
 
     protected onDrop(event: IDragEvent) {
@@ -288,6 +293,7 @@ export class ApplicationShell extends Widget {
     protected onDragLeave(event: IDragEvent) {
         const state = this.dragState;
         if (state) {
+            state.lastDragOver = undefined;
             if (state.leaveTimeout) {
                 window.clearTimeout(state.leaveTimeout);
             }
@@ -508,23 +514,18 @@ export class ApplicationShell extends Widget {
      * bottom panel is a `SplitPanel`.
      */
     protected setBottomPanelSize(size: number): Promise<void> {
-        const parent = this.bottomPanel.parent;
-        if (parent instanceof SplitPanel && parent.isVisible) {
-            const index = parent.widgets.indexOf(this.bottomPanel) - 1;
-            if (index >= 0) {
-                const parentHeight = parent.node.clientHeight;
-                const position = parentHeight - Math.max(Math.min(size, parentHeight), 0);
-
-                const options: SplitPositionOptions = {
-                    referenceWidget: this.bottomPanel,
-                    duration: this.bottomPanelState.loading ? 0 : this.options.bottomPanel.expandDuration
-                };
-                const promise = this.splitPositionHandler.moveSplitPos(parent, index, position, options);
-                this.bottomPanelState.pendingUpdate = this.bottomPanelState.pendingUpdate.then(() => promise);
-                return promise;
-            }
-        }
-        return Promise.resolve();
+        const options: SplitPositionOptions = {
+            side: 'bottom',
+            duration: this.bottomPanelState.loading ? 0 : this.options.bottomPanel.expandDuration,
+            referenceWidget: this.bottomPanel
+        };
+        const promise = this.splitPositionHandler.setSidePanelSize(this.bottomPanel, size, options);
+        const result = new Promise<void>(resolve => {
+            // Resolve the resulting promise in any case, regardless of whether resizing was successful
+            promise.then(() => resolve(), () => resolve());
+        });
+        this.bottomPanelState.pendingUpdate = this.bottomPanelState.pendingUpdate.then(() => result);
+        return result;
     }
 
     /**

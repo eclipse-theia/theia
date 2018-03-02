@@ -393,30 +393,18 @@ export class SidePanelHandler {
      * container is a `SplitPanel`.
      */
     protected setPanelSize(size: number): Promise<void> {
-        const parent = this.container.parent;
-        if (parent instanceof SplitPanel && parent.isVisible && size >= 0) {
-            let index = parent.widgets.indexOf(this.container);
-            if (this.side === 'right') {
-                index--;
-            }
-
-            const parentWidth = parent.node.clientWidth;
-            let position: number = 0;
-            if (this.side === 'left') {
-                position = Math.max(Math.min(size, parentWidth), 0);
-            } else if (this.side === 'right') {
-                position = parentWidth - Math.max(Math.min(size, parentWidth), 0);
-            }
-
-            const options: SplitPositionOptions = {
-                referenceWidget: this.dockPanel,
-                duration: this.state.loading ? 0 : this.options.expandDuration
-            };
-            const promise = this.splitPositionHandler.moveSplitPos(parent, index, position, options);
-            this.state.pendingUpdate = this.state.pendingUpdate.then(() => promise);
-            return promise;
-        }
-        return Promise.resolve();
+        const options: SplitPositionOptions = {
+            side: this.side,
+            duration: this.state.loading ? 0 : this.options.expandDuration,
+            referenceWidget: this.dockPanel
+        };
+        const promise = this.splitPositionHandler.setSidePanelSize(this.container, size, options);
+        const result = new Promise<void>(resolve => {
+            // Resolve the resulting promise in any case, regardless of whether resizing was successful
+            promise.then(() => resolve(), () => resolve());
+        });
+        this.state.pendingUpdate = this.state.pendingUpdate.then(() => result);
+        return result;
     }
 
     /**
