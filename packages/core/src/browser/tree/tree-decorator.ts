@@ -6,7 +6,7 @@
  */
 
 import { injectable } from 'inversify';
-import { ITree } from './tree';
+import { Tree } from './tree';
 import { Event, Emitter } from '../../common/event';
 
 /**
@@ -22,7 +22,7 @@ export interface TreeDecorator {
     /**
      * Fired when this decorator has calculated all the decoration data for the tree nodes. Keys are the unique identifier of the tree nodes.
      */
-    readonly onDidChangeDecorations: Event<(tree: ITree) => Map<string, TreeDecoration.Data>>;
+    readonly onDidChangeDecorations: Event<(tree: Tree) => Map<string, TreeDecoration.Data>>;
 
 }
 
@@ -36,12 +36,12 @@ export interface TreeDecoratorService {
      * Fired when any of the available tree decorators has changes. Keys are the unique tree node IDs and the values
      * are the decoration data collected from all the decorators known by this service.
      */
-    readonly onDidChangeDecorations: Event<(tree: ITree) => Map<string, TreeDecoration.Data[]>>;
+    readonly onDidChangeDecorations: Event<(tree: Tree) => Map<string, TreeDecoration.Data[]>>;
 
     /**
      * Returns with the decorators for the tree based on the actual state of this decorator service.
      */
-    getDecorations(tree: ITree): Map<string, TreeDecoration.Data[]>;
+    getDecorations(tree: Tree): Map<string, TreeDecoration.Data[]>;
 
     /**
      * Transforms the decorators argument into an object, so that it can be safely serialized into JSON.
@@ -52,6 +52,7 @@ export interface TreeDecoratorService {
      * Counterpart of the [deflateDecorators](#deflateDecorators) method. Restores the argument into a Map
      * of tree node IDs and the corresponding decorations data array.
      */
+    // tslint:disable-next-line:no-any
     inflateDecorators(state: any): Map<string, TreeDecoration.Data[]>;
 
 }
@@ -63,7 +64,7 @@ export interface TreeDecoratorService {
 @injectable()
 export class NoopTreeDecoratorService implements TreeDecoratorService {
 
-    private emitter: Emitter<(tree: ITree) => Map<string, TreeDecoration.Data[]>> = new Emitter();
+    private emitter: Emitter<(tree: Tree) => Map<string, TreeDecoration.Data[]>> = new Emitter();
 
     readonly onDidChangeDecorations = this.emitter.event;
 
@@ -88,8 +89,8 @@ export class NoopTreeDecoratorService implements TreeDecoratorService {
 @injectable()
 export abstract class AbstractTreeDecoratorService implements TreeDecoratorService {
 
-    protected readonly emitter: Emitter<(tree: ITree) => Map<string, TreeDecoration.Data[]>>;
-    protected readonly decorations: Map<string, (tree: ITree) => Map<string, TreeDecoration.Data>>;
+    protected readonly emitter: Emitter<(tree: Tree) => Map<string, TreeDecoration.Data[]>>;
+    protected readonly decorations: Map<string, (tree: Tree) => Map<string, TreeDecoration.Data>>;
 
     constructor(protected readonly decorators: ReadonlyArray<TreeDecorator>) {
         this.emitter = new Emitter();
@@ -103,11 +104,11 @@ export abstract class AbstractTreeDecoratorService implements TreeDecoratorServi
         });
     }
 
-    get onDidChangeDecorations(): Event<(tree: ITree) => Map<string, TreeDecoration.Data[]>> {
+    get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, TreeDecoration.Data[]>> {
         return this.emitter.event;
     }
 
-    getDecorations(tree: ITree): Map<string, TreeDecoration.Data[]> {
+    getDecorations(tree: Tree): Map<string, TreeDecoration.Data[]> {
         const changes = new Map();
         for (const fn of this.decorations.values()) {
             for (const [id, data] of fn(tree).entries()) {

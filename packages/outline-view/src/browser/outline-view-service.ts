@@ -22,7 +22,7 @@ export class OutlineViewService implements WidgetFactory {
     protected readonly onDidSelectEmitter = new Emitter<OutlineSymbolInformationNode>();
     protected readonly onDidOpenEmitter = new Emitter<OutlineSymbolInformationNode>();
 
-    constructor( @inject(OutlineViewWidgetFactory) protected factory: OutlineViewWidgetFactory) { }
+    constructor(@inject(OutlineViewWidgetFactory) protected factory: OutlineViewWidgetFactory) { }
 
     get onDidSelect(): Event<OutlineSymbolInformationNode> {
         return this.onDidSelectEmitter.event;
@@ -56,7 +56,7 @@ export class OutlineViewService implements WidgetFactory {
         const disposables = new DisposableCollection();
         disposables.push(this.widget.onDidChangeOpenStateEmitter.event(open => this.onDidChangeOpenStateEmitter.fire(open)));
         disposables.push(this.widget.model.onOpenNode(node => this.onDidOpenEmitter.fire(node as OutlineSymbolInformationNode)));
-        disposables.push(this.widget.model.onSelectionChanged(node => this.onDidSelectEmitter.fire(node as OutlineSymbolInformationNode)));
+        disposables.push(this.widget.model.onSelectionChanged(selection => this.onDidSelectEmitter.fire(selection[0] as OutlineSymbolInformationNode)));
         this.widget.disposed.connect(() => {
             this.widget = undefined;
             disposables.dispose();

@@ -7,12 +7,13 @@
 
 import { injectable, inject } from "inversify";
 import URI from '@theia/core/lib/common/uri';
-import { ITreeNode, ICompositeTreeNode, ISelectableTreeNode, IExpandableTreeNode, Tree } from "@theia/core/lib/browser";
-import { FileSystem, FileStat, UriSelection } from "../../common";
+import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from "@theia/core/lib/browser";
+import { FileSystem, FileStat } from "../../common";
 import { LabelProvider } from "@theia/core/lib/browser/label-provider";
+import { UriSelection } from '@theia/core/lib/common//selection';
 
 @injectable()
-export class FileTree extends Tree {
+export class FileTree extends TreeImpl {
 
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
 
@@ -21,7 +22,7 @@ export class FileTree extends Tree {
         super();
     }
 
-    async resolveChildren(parent: ICompositeTreeNode): Promise<ITreeNode[]> {
+    async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (FileStatNode.is(parent)) {
             const fileStat = await this.resolveFileStat(parent);
             return this.toNodes(fileStat, parent);
@@ -36,7 +37,7 @@ export class FileTree extends Tree {
         });
     }
 
-    protected async toNodes(fileStat: FileStat, parent: ICompositeTreeNode): Promise<ITreeNode[]> {
+    protected async toNodes(fileStat: FileStat, parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (!fileStat.children) {
             return [];
         }
@@ -46,7 +47,7 @@ export class FileTree extends Tree {
         return result.sort(DirNode.compare);
     }
 
-    protected async toNode(fileStat: FileStat, parent: ICompositeTreeNode): Promise<FileNode | DirNode> {
+    protected async toNode(fileStat: FileStat, parent: CompositeTreeNode): Promise<FileNode | DirNode> {
         const uri = new URI(fileStat.uri);
         const name = await this.labelProvider.getName(uri);
         const icon = await this.labelProvider.getIcon(fileStat);
@@ -76,33 +77,33 @@ export class FileTree extends Tree {
 
 }
 
-export interface FileStatNode extends ISelectableTreeNode, UriSelection {
+export interface FileStatNode extends SelectableTreeNode, UriSelection {
     fileStat: FileStat;
 }
 export namespace FileStatNode {
-    export function is(node: ITreeNode | undefined): node is FileStatNode {
+    export function is(node: TreeNode | undefined): node is FileStatNode {
         return !!node && 'fileStat' in node;
     }
 }
 
 export type FileNode = FileStatNode;
 export namespace FileNode {
-    export function is(node: ITreeNode | undefined): node is FileNode {
+    export function is(node: TreeNode | undefined): node is FileNode {
         return FileStatNode.is(node) && !node.fileStat.isDirectory;
     }
 }
 
-export type DirNode = FileStatNode & IExpandableTreeNode;
+export type DirNode = FileStatNode & ExpandableTreeNode;
 export namespace DirNode {
-    export function is(node: ITreeNode | undefined): node is DirNode {
+    export function is(node: TreeNode | undefined): node is DirNode {
         return FileStatNode.is(node) && node.fileStat.isDirectory;
     }
 
-    export function compare(node: ITreeNode, node2: ITreeNode): number {
+    export function compare(node: TreeNode, node2: TreeNode): number {
         return DirNode.dirCompare(node, node2) || node.name.localeCompare(node2.name);
     }
 
-    export function dirCompare(node: ITreeNode, node2: ITreeNode): number {
+    export function dirCompare(node: TreeNode, node2: TreeNode): number {
         const a = DirNode.is(node) ? 1 : 0;
         const b = DirNode.is(node2) ? 1 : 0;
         return b - a;
@@ -123,7 +124,7 @@ export namespace DirNode {
         };
     }
 
-    export function getContainingDir(node: ITreeNode | undefined): DirNode | undefined {
+    export function getContainingDir(node: TreeNode | undefined): DirNode | undefined {
         let containing = node;
         while (!!containing && !is(containing)) {
             containing = containing.parent;

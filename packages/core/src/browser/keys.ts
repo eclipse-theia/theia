@@ -686,3 +686,20 @@ export namespace Key {
         KEY_CODE_TO_EASY[easykey.keyCode] = easykey;
     });
 })();
+
+export type KeysOrKeyCodes = Key | KeyCode | (Key | KeyCode)[];
+export namespace KeysOrKeyCodes {
+
+    export const toKeyCode = (keyOrKeyCode: Key | KeyCode) =>
+        keyOrKeyCode instanceof KeyCode ? keyOrKeyCode : KeyCode.createKeyCode({ first: keyOrKeyCode });
+
+    export const toKeyCodes = (keysOrKeyCodes: KeysOrKeyCodes) => {
+        if (keysOrKeyCodes instanceof KeyCode) {
+            return [keysOrKeyCodes];
+        } else if (Array.isArray(keysOrKeyCodes)) {
+            return keysOrKeyCodes.slice().map(toKeyCode);
+        }
+        return [toKeyCode(keysOrKeyCodes)];
+    };
+
+}

@@ -6,7 +6,7 @@
  */
 
 import { injectable } from "inversify";
-import { ITreeNode, ICompositeTreeNode, ISelectableTreeNode, IExpandableTreeNode, Tree } from "@theia/core/lib/browser";
+import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from "@theia/core/lib/browser";
 
 import { Definition, Caller } from '../callhierarchy';
 import { CallHierarchyService } from '../callhierarchy-service';
@@ -14,7 +14,7 @@ import { CallHierarchyService } from '../callhierarchy-service';
 import { Md5 } from 'ts-md5/dist/md5';
 
 @injectable()
-export class CallHierarchyTree extends Tree {
+export class CallHierarchyTree extends TreeImpl {
 
     protected _callHierarchyService: CallHierarchyService | undefined;
 
@@ -26,7 +26,7 @@ export class CallHierarchyTree extends Tree {
         return this._callHierarchyService;
     }
 
-    async resolveChildren(parent: ICompositeTreeNode): Promise<ITreeNode[]> {
+    async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (!this.callHierarchyService) {
             return Promise.resolve([]);
         }
@@ -49,25 +49,25 @@ export class CallHierarchyTree extends Tree {
         return Promise.resolve([]);
     }
 
-    protected toNodes(callers: Caller[], parent: ICompositeTreeNode): ITreeNode[] {
+    protected toNodes(callers: Caller[], parent: CompositeTreeNode): TreeNode[] {
         return callers.map(caller => this.toNode(caller, parent));
     }
 
-    protected toNode(caller: Caller, parent: ICompositeTreeNode | undefined): ITreeNode {
-        return CallerNode.create(caller, parent as ITreeNode);
+    protected toNode(caller: Caller, parent: CompositeTreeNode | undefined): TreeNode {
+        return CallerNode.create(caller, parent as TreeNode);
     }
 }
 
-export interface DefinitionNode extends ISelectableTreeNode, IExpandableTreeNode {
+export interface DefinitionNode extends SelectableTreeNode, ExpandableTreeNode {
     definition: Definition;
 }
 
 export namespace DefinitionNode {
-    export function is(node: ITreeNode | undefined): node is DefinitionNode {
+    export function is(node: TreeNode | undefined): node is DefinitionNode {
         return !!node && 'definition' in node;
     }
 
-    export function create(definition: Definition, parent: ITreeNode | undefined): DefinitionNode {
+    export function create(definition: Definition, parent: TreeNode | undefined): DefinitionNode {
         const name = definition.symbolName;
         const id = createId(definition, parent);
         return <DefinitionNode>{
@@ -80,16 +80,16 @@ export namespace DefinitionNode {
     }
 }
 
-export interface CallerNode extends ISelectableTreeNode, IExpandableTreeNode {
+export interface CallerNode extends SelectableTreeNode, ExpandableTreeNode {
     caller: Caller;
 }
 
 export namespace CallerNode {
-    export function is(node: ITreeNode | undefined): node is CallerNode {
+    export function is(node: TreeNode | undefined): node is CallerNode {
         return !!node && 'caller' in node;
     }
 
-    export function create(caller: Caller, parent: ITreeNode | undefined): CallerNode {
+    export function create(caller: Caller, parent: TreeNode | undefined): CallerNode {
         const callerDefinition = caller.callerDefinition;
         const name = callerDefinition.symbolName;
         const id = createId(callerDefinition, parent);
@@ -103,7 +103,7 @@ export namespace CallerNode {
     }
 }
 
-function createId(definition: Definition, parent: ITreeNode | undefined): string {
+function createId(definition: Definition, parent: TreeNode | undefined): string {
     const idPrefix = (parent) ? parent.id + '/' : '';
     const id = idPrefix + Md5.hashStr(JSON.stringify(definition));
     return id;

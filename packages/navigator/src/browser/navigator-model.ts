@@ -6,28 +6,17 @@
  */
 
 import { injectable, inject } from "inversify";
-import { OpenerService, open, ITreeNode } from "@theia/core/lib/browser";
-import { FileNode, FileTreeModel, FileTreeServices } from "@theia/filesystem/lib/browser";
+import { OpenerService, open, TreeNode } from "@theia/core/lib/browser";
+import { FileNode, FileTreeModel } from "@theia/filesystem/lib/browser";
 import { FileNavigatorTree } from "./navigator-tree";
-
-@injectable()
-export class FileNavigatorServices extends FileTreeServices {
-    @inject(OpenerService) readonly openerService: OpenerService;
-}
 
 @injectable()
 export class FileNavigatorModel extends FileTreeModel {
 
-    protected readonly openerService: OpenerService;
+    @inject(OpenerService) protected readonly openerService: OpenerService;
+    @inject(FileNavigatorTree) protected readonly tree: FileNavigatorTree;
 
-    constructor(
-        @inject(FileNavigatorTree) protected readonly tree: FileNavigatorTree,
-        @inject(FileNavigatorServices) services: FileNavigatorServices
-    ) {
-        super(tree, services);
-    }
-
-    protected doOpenNode(node: ITreeNode): void {
+    protected doOpenNode(node: TreeNode): void {
         if (FileNode.is(node)) {
             open(this.openerService, node.uri);
         } else {

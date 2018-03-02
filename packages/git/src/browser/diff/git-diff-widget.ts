@@ -6,7 +6,7 @@
  */
 
 import { h } from "@phosphor/virtualdom";
-import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
+import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { VirtualRenderer, open, OpenerService, StatefulWidget, SELECTED_CLASS } from "@theia/core/lib/browser";
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import URI from "@theia/core/lib/common/uri";

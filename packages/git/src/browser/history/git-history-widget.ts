@@ -7,7 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import { h } from "@phosphor/virtualdom";
-import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
+import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell, Message } from "@theia/core/lib/browser";
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import URI from "@theia/core/lib/common/uri";

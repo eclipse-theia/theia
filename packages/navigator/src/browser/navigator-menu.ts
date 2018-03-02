@@ -18,6 +18,7 @@ export namespace NavigatorContextMenu {
     export const CLIPBOARD = [...NAVIGATOR_CONTEXT_MENU, '2_clipboard'];
     export const MOVE = [...NAVIGATOR_CONTEXT_MENU, '3_move'];
     export const NEW = [...NAVIGATOR_CONTEXT_MENU, '4_new'];
+    export const DIFF = [...NAVIGATOR_CONTEXT_MENU, '5_diff'];
 }
 
 @injectable()
@@ -63,6 +64,9 @@ export class NavigatorMenuContribution implements MenuContribution {
         });
         registry.registerMenuAction(NavigatorContextMenu.NEW, {
             commandId: WorkspaceCommands.NEW_FOLDER.id
+        });
+        registry.registerMenuAction(NavigatorContextMenu.DIFF, {
+            commandId: WorkspaceCommands.FILE_COMPARE.id
         });
     }
 }

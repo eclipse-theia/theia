@@ -50,6 +50,14 @@
     background: var(--theia-accent-color5);
 }
 
+.theia-Tree:focus .theia-TreeNode.theia-mod-focus {
+    background: var(--theia-accent-color3);
+}
+
+.theia-Tree:not(:focus) .theia-TreeNode.theia-mod-focus {
+    background: var(--theia-accent-color5);
+}
+
 .theia-TreeNodeSegment {
     flex-grow: 0;
     user-select: none;

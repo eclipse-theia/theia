@@ -7,10 +7,10 @@
 
 import { interfaces, Container } from 'inversify';
 import { TreeWidget, TreeProps, defaultTreeProps } from "./tree-widget";
-import { TreeModel, ITreeModel, TreeServices } from "./tree-model";
-import { Tree, ITree } from "./tree";
-import { ITreeSelectionService, TreeSelectionService } from "./tree-selection";
-import { ITreeExpansionService, TreeExpansionService } from "./tree-expansion";
+import { TreeModelImpl, TreeModel } from "./tree-model";
+import { TreeImpl, Tree } from "./tree";
+import { TreeSelectionService, TreeSelectionServiceImpl } from "./tree-selection";
+import { TreeExpansionService, TreeExpansionServiceImpl } from "./tree-expansion";
 import { TreeNavigationService } from './tree-navigation';
 import { TreeDecoratorService, NoopTreeDecoratorService } from './tree-decorator';
 
@@ -18,20 +18,19 @@ export function createTreeContainer(parent: interfaces.Container): Container {
     const child = new Container({ defaultScope: 'Singleton' });
     child.parent = parent;
 
-    child.bind(Tree).toSelf();
-    child.bind(ITree).toDynamicValue(ctx => ctx.container.get(Tree));
+    child.bind(TreeImpl).toSelf();
+    child.bind(Tree).toDynamicValue(ctx => ctx.container.get(TreeImpl));
 
-    child.bind(TreeSelectionService).toSelf();
-    child.bind(ITreeSelectionService).toDynamicValue(ctx => ctx.container.get(TreeSelectionService));
+    child.bind(TreeSelectionServiceImpl).toSelf();
+    child.bind(TreeSelectionService).toDynamicValue(ctx => ctx.container.get(TreeSelectionServiceImpl));
 
-    child.bind(TreeExpansionService).toSelf();
-    child.bind(ITreeExpansionService).toDynamicValue(ctx => ctx.container.get(TreeExpansionService));
+    child.bind(TreeExpansionServiceImpl).toSelf();
+    child.bind(TreeExpansionService).toDynamicValue(ctx => ctx.container.get(TreeExpansionServiceImpl));
 
     child.bind(TreeNavigationService).toSelf();
-    child.bind(TreeServices).toSelf();
 
-    child.bind(TreeModel).toSelf();
-    child.bind(ITreeModel).toDynamicValue(ctx => ctx.container.get(TreeModel));
+    child.bind(TreeModelImpl).toSelf();
+    child.bind(TreeModel).toDynamicValue(ctx => ctx.container.get(TreeModelImpl));
 
     child.bind(TreeWidget).toSelf();
     child.bind(TreeProps).toConstantValue(defaultTreeProps);

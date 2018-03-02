@@ -9,8 +9,8 @@ import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { ITree, ITreeNode } from '@theia/core/lib/browser/tree/tree';
-import { TreeNodeIterator } from '@theia/core/lib/browser/tree/tree-iterator';
+import { Tree } from '@theia/core/lib/browser/tree/tree';
+import { DepthFirstTreeIterator } from '@theia/core/lib/browser/tree/tree-iterator';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { PreferenceChangeEvent } from '@theia/core/lib/browser/preferences/preference-proxy';
 import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
@@ -27,7 +27,7 @@ export class GitDecorator implements TreeDecorator {
     readonly id = 'theia-git-decorator';
 
     protected readonly toDispose: DisposableCollection;
-    protected readonly emitter: Emitter<(tree: ITree) => Map<string, TreeDecoration.Data>>;
+    protected readonly emitter: Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>;
 
     protected enabled: boolean;
     protected showColors: boolean;
@@ -45,7 +45,7 @@ export class GitDecorator implements TreeDecorator {
             if (repository) {
                 this.toDispose.pushAll([
                     await this.watcher.watchGitChanges(repository),
-                    this.watcher.onGitEvent(event => this.fireDidChangeDecorations((tree: ITree) => this.collectDecorators(tree, event.status)))
+                    this.watcher.onGitEvent(event => this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree, event.status)))
                 ]);
             }
         });
@@ -54,40 +54,30 @@ export class GitDecorator implements TreeDecorator {
         this.showColors = this.preferences['git.decorations.colors'];
     }
 
-    get onDidChangeDecorations(): Event<(tree: ITree) => Map<string, TreeDecoration.Data>> {
+    get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, TreeDecoration.Data>> {
         return this.emitter.event;
     }
 
-    protected fireDidChangeDecorations(event: (tree: ITree) => Map<string, TreeDecoration.Data>): void {
+    protected fireDidChangeDecorations(event: (tree: Tree) => Map<string, TreeDecoration.Data>): void {
         this.emitter.fire(event);
     }
 
-    protected collectDecorators(tree: ITree, status: WorkingDirectoryStatus): Map<string, TreeDecoration.Data> {
+    protected collectDecorators(tree: Tree, status: WorkingDirectoryStatus): Map<string, TreeDecoration.Data> {
         const result = new Map();
         if (tree.root === undefined || !this.enabled) {
             return result;
         }
-        const processNode = (treeNode: ITreeNode | undefined) => {
-            if (treeNode) {
-                const { id } = treeNode;
-                const marker = markers.get(id);
-                if (marker) {
-                    result.set(id, marker);
-                }
-            }
-        };
         const markers = this.appendContainerChanges(tree, status.changes);
-        processNode(tree.root);
-        const itr = new TreeNodeIterator(tree.root);
-        let node = itr.next();
-        while (!node.done) {
-            processNode(node.value);
-            node = itr.next();
+        for (const { id } of new DepthFirstTreeIterator(tree.root)) {
+            const marker = markers.get(id);
+            if (marker) {
+                result.set(id, marker);
+            }
         }
         return new Map(Array.from(result.values()).map(m => [m.uri, this.toDecorator(m)] as [string, TreeDecoration.Data]));
     }
 
-    protected appendContainerChanges(tree: ITree, changes: GitFileChange[]): Map<string, GitFileChange> {
+    protected appendContainerChanges(tree: Tree, changes: GitFileChange[]): Map<string, GitFileChange> {
         const result: Map<string, GitFileChange> = new Map();
         // We traverse up and assign the highest Git file change status the container directory.
         // Note, instead of stopping at the WS root, we traverse up the driver root.
@@ -175,7 +165,7 @@ export class GitDecorator implements TreeDecorator {
         const repository = this.repositoryProvider.selectedRepository;
         if (refresh && repository) {
             const status = await this.git.status(repository);
-            this.fireDidChangeDecorations((tree: ITree) => this.collectDecorators(tree, status));
+            this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree, status));
         }
     }
 

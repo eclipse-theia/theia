@@ -6,24 +6,21 @@
  */
 
 import { interfaces, Container } from 'inversify';
-import { createTreeContainer, ITree, Tree, ITreeModel, TreeModel, TreeServices, TreeWidget } from "@theia/core/lib/browser";
+import { createTreeContainer, Tree, TreeImpl, TreeModel, TreeModelImpl, TreeWidget } from "@theia/core/lib/browser";
 import { FileTree } from "./file-tree";
-import { FileTreeModel, FileTreeServices } from './file-tree-model';
+import { FileTreeModel } from './file-tree-model';
 import { FileTreeWidget } from "./file-tree-widget";
 
 export function createFileTreeContainer(parent: interfaces.Container): Container {
     const child = createTreeContainer(parent);
 
-    child.unbind(Tree);
+    child.unbind(TreeImpl);
     child.bind(FileTree).toSelf();
-    child.rebind(ITree).toDynamicValue(ctx => ctx.container.get(FileTree));
+    child.rebind(Tree).toDynamicValue(ctx => ctx.container.get(FileTree));
 
-    child.unbind(TreeServices);
-    child.bind(FileTreeServices).toSelf();
-
-    child.unbind(TreeModel);
+    child.unbind(TreeModelImpl);
     child.bind(FileTreeModel).toSelf();
-    child.rebind(ITreeModel).toDynamicValue(ctx => ctx.container.get(FileTreeModel));
+    child.rebind(TreeModel).toDynamicValue(ctx => ctx.container.get(FileTreeModel));
 
     child.unbind(TreeWidget);
     child.bind(FileTreeWidget).toSelf();

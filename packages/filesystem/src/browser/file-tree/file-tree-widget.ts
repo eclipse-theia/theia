@@ -10,7 +10,7 @@ import { h } from "@phosphor/virtualdom";
 import { Message } from "@phosphor/messaging";
 import {
     ContextMenuRenderer,
-    TreeWidget, NodeProps, TreeProps, ITreeNode
+    TreeWidget, NodeProps, TreeProps, TreeNode
 } from "@theia/core/lib/browser";
 import { ElementAttrs } from "@phosphor/virtualdom";
 import { DirNode, FileStatNode } from "./file-tree";
@@ -37,7 +37,7 @@ export class FileTreeWidget extends TreeWidget {
         this.toDispose.push(this.toCancelNodeExpansion);
     }
 
-    protected createNodeClassNames(node: ITreeNode, props: NodeProps): string[] {
+    protected createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
         const classNames = super.createNodeClassNames(node, props);
         if (FileStatNode.is(node)) {
             classNames.push(FILE_STAT_NODE_CLASS);
@@ -48,7 +48,7 @@ export class FileTreeWidget extends TreeWidget {
         return classNames;
     }
 
-    protected renderIcon(node: ITreeNode, props: NodeProps): h.Child {
+    protected renderIcon(node: TreeNode, props: NodeProps): h.Child {
         if (FileStatNode.is(node)) {
             return h.div({
                 className: (node.icon || '') + ' file-icon'
@@ -66,7 +66,7 @@ export class FileTreeWidget extends TreeWidget {
         this.addEventListener(this.node, 'drop', event => this.handleDropEvent(this.model.root, event));
     }
 
-    protected createNodeAttributes(node: ITreeNode, props: NodeProps): ElementAttrs {
+    protected createNodeAttributes(node: TreeNode, props: NodeProps): ElementAttrs {
         const elementAttrs = super.createNodeAttributes(node, props);
         return {
             ...elementAttrs,
@@ -78,12 +78,12 @@ export class FileTreeWidget extends TreeWidget {
             ondrop: event => this.handleDropEvent(node, event)
         };
     }
-    protected handleDragStartEvent(node: ITreeNode, event: DragEvent): void {
+    protected handleDragStartEvent(node: TreeNode, event: DragEvent): void {
         event.stopPropagation();
         this.setTreeNodeAsData(event.dataTransfer, node);
     }
 
-    protected handleDragEnterEvent(node: ITreeNode | undefined, event: DragEvent): void {
+    protected handleDragEnterEvent(node: TreeNode | undefined, event: DragEvent): void {
         event.preventDefault();
         event.stopPropagation();
         this.toCancelNodeExpansion.dispose();
@@ -93,7 +93,7 @@ export class FileTreeWidget extends TreeWidget {
         }
     }
 
-    protected handleDragOverEvent(node: ITreeNode | undefined, event: DragEvent): void {
+    protected handleDragOverEvent(node: TreeNode | undefined, event: DragEvent): void {
         event.preventDefault();
         event.stopPropagation();
         if (!this.toCancelNodeExpansion.disposed) {
@@ -108,13 +108,13 @@ export class FileTreeWidget extends TreeWidget {
         this.toCancelNodeExpansion.push(Disposable.create(() => clearTimeout(timer)));
     }
 
-    protected handleDragLeaveEvent(node: ITreeNode | undefined, event: DragEvent): void {
+    protected handleDragLeaveEvent(node: TreeNode | undefined, event: DragEvent): void {
         event.preventDefault();
         event.stopPropagation();
         this.toCancelNodeExpansion.dispose();
     }
 
-    protected handleDropEvent(node: ITreeNode | undefined, event: DragEvent): void {
+    protected handleDropEvent(node: TreeNode | undefined, event: DragEvent): void {
         event.preventDefault();
         event.stopPropagation();
         event.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
@@ -129,10 +129,10 @@ export class FileTreeWidget extends TreeWidget {
         }
     }
 
-    protected setTreeNodeAsData(data: DataTransfer, node: ITreeNode): void {
+    protected setTreeNodeAsData(data: DataTransfer, node: TreeNode): void {
         data.setData('tree-node', node.id);
     }
-    protected getTreeNodeFromData(data: DataTransfer): ITreeNode | undefined {
+    protected getTreeNodeFromData(data: DataTransfer): TreeNode | undefined {
         const id = data.getData('tree-node');
         return this.model.getNode(id);
     }

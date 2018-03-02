@@ -176,7 +176,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
 
 @injectable()
 export class ConfirmDialogProps extends DialogProps {
-    readonly msg: string;
+    readonly msg: string | HTMLElement;
     readonly cancel?: string;
     readonly ok?: string;
 }
@@ -188,11 +188,7 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
     ) {
         super(props);
 
-        const messageNode = document.createElement("div");
-        messageNode.textContent = props.msg;
-
-        this.contentNode.appendChild(messageNode);
-
+        this.contentNode.appendChild(this.createMessageNode(this.props.msg));
         this.appendCloseButton(props.cancel);
         this.appendAcceptButton(props.ok);
     }
@@ -206,6 +202,15 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
     protected confirmed = true;
     get value(): boolean {
         return this.confirmed;
+    }
+
+    protected createMessageNode(msg: string | HTMLElement): HTMLElement {
+        if (typeof msg === 'string') {
+            const messageNode = document.createElement("div");
+            messageNode.textContent = msg;
+            return messageNode;
+        }
+        return msg;
     }
 
 }

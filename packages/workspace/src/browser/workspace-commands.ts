@@ -6,18 +6,20 @@
  */
 
 import { inject, injectable } from 'inversify';
-import URI from "@theia/core/lib/common/uri";
-import { SelectionService } from '@theia/core/lib/common';
+import URI from '@theia/core/lib/common/uri';
+import { DiffUris } from '@theia/core/lib/browser/diff-uris';
+import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { Command, CommandContribution, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
-import { CommonMenus } from "@theia/core/lib/browser/common-frontend-contribution";
+import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
-import { UriSelection } from '@theia/filesystem/lib/common/filesystem-selection';
-import { SingleTextInputDialog, ConfirmDialog } from "@theia/core/lib/browser/dialogs";
-import { OpenerService, OpenHandler, open, FrontendApplication } from "@theia/core/lib/browser";
+import { UriSelection } from '@theia/core/lib/common/selection';
+import { SingleTextInputDialog, ConfirmDialog } from '@theia/core/lib/browser/dialogs';
+import { OpenerService, OpenHandler, open, FrontendApplication } from '@theia/core/lib/browser';
 import { WorkspaceService } from './workspace-service';
+import { MessageService } from '@theia/core/lib/common/message-service';
 
-const validFilename = require('valid-filename');
+const validFilename: (arg: string) => boolean = require('valid-filename');
 
 export namespace WorkspaceCommands {
     export const OPEN: Command = {
@@ -53,6 +55,10 @@ export namespace WorkspaceCommands {
         id: 'file.delete',
         label: 'Delete'
     };
+    export const FILE_COMPARE: Command = {
+        id: 'file.compare',
+        label: 'Compare with Each Other'
+    };
 }
 
 @injectable()
@@ -66,34 +72,36 @@ export class FileMenuContribution implements MenuContribution {
             commandId: WorkspaceCommands.NEW_FOLDER.id
         });
     }
+
 }
 
 @injectable()
 export class WorkspaceCommandContribution implements CommandContribution {
+
     constructor(
         @inject(FileSystem) protected readonly fileSystem: FileSystem,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(FrontendApplication) protected readonly app: FrontendApplication
+        @inject(FrontendApplication) protected readonly app: FrontendApplication,
+        @inject(MessageService) protected readonly messageService: MessageService,
     ) { }
 
     registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand(WorkspaceCommands.FILE_OPEN, this.newFileHandler({
+        registry.registerCommand(WorkspaceCommands.FILE_OPEN, this.newUriAwareCommandHandler({
             execute: uri => open(this.openerService, uri)
         }));
         this.openerService.getOpeners().then(openers => {
             for (const opener of openers) {
                 const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
-                registry.registerCommand(openWithCommand, this.newFileHandler({
+                registry.registerCommand(openWithCommand, this.newUriAwareCommandHandler({
                     execute: uri => opener.open(uri),
                     isEnabled: uri => opener.canHandle(uri) !== 0,
                     isVisible: uri => opener.canHandle(uri) !== 0
                 }));
             }
         });
-
-        registry.registerCommand(WorkspaceCommands.NEW_FILE, this.newWorkspaceHandler({
+        registry.registerCommand(WorkspaceCommands.NEW_FILE, this.newWorkspaceRootUriAwareCommandHandler({
             execute: uri => this.getDirectory(uri).then(parent => {
                 const parentUri = new URI(parent.uri);
                 const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled', '.txt');
@@ -110,7 +118,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 });
             })
         }));
-        registry.registerCommand(WorkspaceCommands.NEW_FOLDER, this.newWorkspaceHandler({
+        registry.registerCommand(WorkspaceCommands.NEW_FOLDER, this.newWorkspaceRootUriAwareCommandHandler({
             execute: uri => this.getDirectory(uri).then(parent => {
                 const parentUri = new URI(parent.uri);
                 const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled');
@@ -124,8 +132,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 );
             })
         }));
-
-        registry.registerCommand(WorkspaceCommands.FILE_RENAME, this.newFileHandler({
+        registry.registerCommand(WorkspaceCommands.FILE_RENAME, this.newUriAwareCommandHandler({
             execute: uri => this.getParent(uri).then(parent => {
                 const dialog = new SingleTextInputDialog({
                     title: 'Rename File',
@@ -137,31 +144,91 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 );
             })
         }));
-        registry.registerCommand(WorkspaceCommands.FILE_DELETE, this.newFileHandler({
-            execute: async uri => {
+        registry.registerCommand(WorkspaceCommands.FILE_DELETE, this.newMultiUriAwareCommandHandler({
+            execute: async uris => {
+                const msg = (() => {
+                    if (uris.length === 1) {
+                        return `Do you really want to delete ${uris[0].path.base}?`;
+                    }
+                    if (uris.length > 10) {
+                        return `Do you really want to delete all the ${uris.length} selected files?`;
+                    }
+                    const messageContainer = document.createElement('div');
+                    messageContainer.textContent = 'Do you really want to delete the following files?';
+                    const list = document.createElement('ul');
+                    list.style.listStyleType = 'none';
+                    for (const uri of uris) {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = uri.path.base;
+                        list.appendChild(listItem);
+                    }
+                    messageContainer.appendChild(list);
+                    return messageContainer;
+                })();
                 const dialog = new ConfirmDialog({
-                    title: 'Delete File',
-                    msg: `Do you really want to delete '${uri.path.base}'?`
+                    title: `Delete File${uris.length === 1 ? '' : 's'}`,
+                    msg,
                 });
                 if (await dialog.open()) {
-                    await this.fileSystem.delete(uri.toString());
+                    // Make sure we delete the longest paths first, they might be nested. Longer paths come first.
+                    uris.sort((left, right) => right.toString().length - left.toString().length);
+                    await Promise.all(uris.map(uri => uri.toString()).map(uri => this.fileSystem.delete(uri)));
                 }
             }
         }));
+        registry.registerCommand(WorkspaceCommands.FILE_COMPARE, this.newMultiUriAwareCommandHandler({
+            execute: async uris => {
+                const [left, right] = uris;
+                const [leftExists, rightExists] = await Promise.all([
+                    this.fileSystem.exists(left.toString()),
+                    this.fileSystem.exists(right.toString())
+                ]);
+                if (leftExists && rightExists) {
+                    const [leftStat, rightStat] = await Promise.all([
+                        this.fileSystem.getFileStat(left.toString()),
+                        this.fileSystem.getFileStat(right.toString()),
+                    ]);
+                    if (!leftStat.isDirectory && !rightStat.isDirectory) {
+                        const uri = DiffUris.encode(left, right);
+                        const opener = await this.openerService.getOpener(uri);
+                        opener.open(uri);
+                    } else {
+                        const details = (() => {
+                            if (leftStat.isDirectory && rightStat.isDirectory) {
+                                return 'Both resource were a directory.';
+                            } else {
+                                if (leftStat.isDirectory) {
+                                    return `'${left.path.base}' was a directory.`;
+                                } else {
+                                    return `'${right.path.base}' was a directory.`;
+                                }
+                            }
+                        });
+                        this.messageService.warn(`Directories cannot be compared. ${details()}`);
+                    }
+                }
+            }
+            // Ideally, we would have to check whether both the URIs represent an individual file, but we cannot make synchronous validation here :(
+        }, uris => uris.length === 2));
     }
 
-    protected newFileHandler(handler: UriCommandHandler): FileSystemCommandHandler {
-        return new FileSystemCommandHandler(this.selectionService, handler);
+    protected newUriAwareCommandHandler(handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {
+        return new UriAwareCommandHandler(this.selectionService, handler);
     }
 
-    protected newWorkspaceHandler(handler: UriCommandHandler): WorkspaceRootAwareCommandHandler {
-        return new WorkspaceRootAwareCommandHandler(this.workspaceService, this.selectionService, handler);
+    protected newMultiUriAwareCommandHandler(handler: UriCommandHandler<URI[]>, isValid: (uris: URI[]) => boolean = uris => uris.length > 0): UriAwareCommandHandler<URI[]> {
+        return new UriAwareCommandHandler(this.selectionService, handler, { multi: true, isValid });
+    }
+
+    protected newWorkspaceRootUriAwareCommandHandler(handler: UriCommandHandler<URI>): WorkspaceRootUriAwareCommandHandler {
+        return new WorkspaceRootUriAwareCommandHandler(this.workspaceService, this.selectionService, handler);
     }
 
     /**
-     * returns an error message or an empty string if the file name is valid
-     * @param name the simple file name to validate
-     * @param parent the parent directory's file stat
+     * Returns an error message if the file name is invalid. Otherwise, an empty string.
+     *
+     * @param name the simple file name of the file to validate.
+     * @param parent the parent directory's file stat.
      */
     protected validateFileName(name: string, parent: FileStat): string {
         if (!validFilename(name)) {
@@ -202,61 +269,143 @@ export class WorkspaceCommandContribution implements CommandContribution {
     }
 }
 
-export interface UriCommandHandler {
-    execute(uri: URI, ...args: any[]): any;
-    isEnabled?(uri: URI, ...args: any[]): boolean;
-    isVisible?(uri: URI, ...args: any[]): boolean;
-}
-export class FileSystemCommandHandler implements CommandHandler {
-    constructor(
-        protected readonly selectionService: SelectionService,
-        protected readonly handler: UriCommandHandler
-    ) { }
+export interface UriCommandHandler<T extends URI | URI[]> {
 
-    protected getUri(...args: any[]): URI | undefined {
-        if (args && args[0] instanceof URI) {
-            return args[0];
-        }
-        return UriSelection.getUri(this.selectionService.selection);
+    // tslint:disable-next-line:no-any
+    execute(uri: T, ...args: any[]): any;
+
+    // tslint:disable-next-line:no-any
+    isEnabled?(uri: URI, ...args: any[]): boolean;
+
+    // tslint:disable-next-line:no-any
+    isVisible?(uri: URI, ...args: any[]): boolean;
+
+}
+
+/**
+ * Handler for a single URI-based selection.
+ */
+export interface SingleUriCommandHandler extends UriCommandHandler<URI> {
+
+}
+
+/**
+ * Handler for multiple URIs.
+ */
+export interface MultiUriCommandHandler extends UriCommandHandler<URI[]> {
+
+}
+
+export namespace UriAwareCommandHandler {
+
+    /**
+     * Further options for the URI aware command handler instantiation.
+     */
+    export interface Options {
+
+        /**
+         * `true` if the handler supports multiple selection. Otherwise, `false`. Defaults to `false`.
+         */
+        readonly multi?: boolean,
+
+        /**
+         * Additional validation callback on the URIs.
+         */
+        readonly isValid?: (uris: URI[]) => boolean;
+
     }
 
+}
+
+export class UriAwareCommandHandler<T extends URI | URI[]> implements CommandHandler {
+
+    constructor(
+        protected readonly selectionService: SelectionService,
+        protected readonly handler: UriCommandHandler<T>,
+        protected readonly options?: UriAwareCommandHandler.Options
+    ) { }
+
+    // tslint:disable-next-line:no-any
+    protected getUri(...args: any[]): T | undefined {
+        if (args && args[0] instanceof URI) {
+            return this.isMulti() ? [args[0]] : args[0];
+        }
+        const { selection } = this.selectionService;
+        if (UriSelection.is(selection)) {
+            return (this.isMulti() ? [selection.uri] : selection.uri) as T;
+        }
+        if (Array.isArray(selection)) {
+            if (this.isMulti()) {
+                const uris: URI[] = [];
+                for (const item of selection) {
+                    if (UriSelection.is(item)) {
+                        uris.push(item.uri);
+                    }
+                }
+                if (this.options && this.options.isValid) {
+                    return (this.options.isValid(uris) ? uris : undefined) as T;
+                }
+                return uris as T;
+            } else if (selection.length === 1) {
+                const firstItem = selection[0];
+                if (UriSelection.is(firstItem)) {
+                    return firstItem.uri as T;
+                }
+            }
+        }
+        return undefined;
+    }
+
+    // tslint:disable-next-line:no-any
     execute(...args: any[]): object | undefined {
         const uri = this.getUri(...args);
         return uri ? this.handler.execute(uri, ...args) : undefined;
     }
 
+    // tslint:disable-next-line:no-any
     isVisible(...args: any[]): boolean {
         const uri = this.getUri(...args);
         if (uri) {
             if (this.handler.isVisible) {
-                return this.handler.isVisible(uri, ...args);
+                if (this.isMulti() && Array.isArray(uri)) {
+                    return uri.every(u => this.handler.isVisible!(u, ...args));
+                }
+                return this.handler.isVisible(uri as URI, ...args);
             }
             return true;
         }
         return false;
     }
 
+    // tslint:disable-next-line:no-any
     isEnabled(...args: any[]): boolean {
         const uri = this.getUri(...args);
         if (uri) {
             if (this.handler.isEnabled) {
-                return this.handler.isEnabled(uri, ...args);
+                if (this.isMulti() && Array.isArray(uri)) {
+                    return uri.every(u => this.handler.isEnabled!(u, ...args));
+                }
+                return this.handler.isEnabled(uri as URI, ...args);
             }
             return true;
         }
         return false;
     }
 
+    protected isMulti() {
+        return this.options && !!this.options.multi;
+    }
+
 }
 
-export class WorkspaceRootAwareCommandHandler extends FileSystemCommandHandler {
+export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<URI> {
 
     protected rootUri: URI | undefined;
 
     constructor(
         protected readonly workspaceService: WorkspaceService,
         protected readonly selectionService: SelectionService,
-        protected readonly handler: UriCommandHandler
+        protected readonly handler: UriCommandHandler<URI>
     ) {
         super(selectionService, handler);
         workspaceService.root.then(root => {
@@ -269,4 +418,5 @@ export class WorkspaceRootAwareCommandHandler extends FileSystemCommandHandler {
     protected getUri(): URI | undefined {
         return UriSelection.getUri(this.selectionService.selection) || this.rootUri;
     }
+
 }

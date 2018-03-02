@@ -8,8 +8,8 @@
 import { injectable, inject } from "inversify";
 import { Message } from "@phosphor/messaging";
 import {
-    ContextMenuRenderer, TreeWidget, NodeProps, TreeProps, ITreeNode,
-    ISelectableTreeNode, ITreeModel, DockPanel
+    ContextMenuRenderer, TreeWidget, NodeProps, TreeProps, TreeNode,
+    SelectableTreeNode, TreeModel, DockPanel
 } from "@theia/core/lib/browser";
 import { ElementAttrs, h } from "@phosphor/virtualdom";
 import { LabelProvider } from "@theia/core/lib/browser/label-provider";
@@ -41,12 +41,13 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         this.title.iconClass = 'fa fa-arrow-circle-down';
         this.title.closable = true;
         this.addClass(HIERARCHY_TREE_CLASS);
-        this.model.onSelectionChanged((node: Readonly<ISelectableTreeNode> | undefined) => {
+        this.model.onSelectionChanged(selection => {
+            const node = selection[0];
             if (node) {
                 this.openEditor(node, true);
             }
         });
-        this.model.onOpenNode((node: ITreeNode) => {
+        this.model.onOpenNode((node: TreeNode) => {
             this.openEditor(node, false);
         });
     }
@@ -55,7 +56,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         this.model.initializeCallHierarchy(languageId, selection);
     }
 
-    protected createNodeClassNames(node: ITreeNode, props: NodeProps): string[] {
+    protected createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
         const classNames = super.createNodeClassNames(node, props);
         if (DefinitionNode.is(node)) {
             classNames.push(DEFINITION_NODE_CLASS);
@@ -64,25 +65,25 @@ export class CallHierarchyTreeWidget extends TreeWidget {
     }
 
     protected onUpdateRequest(msg: Message) {
-        if (!this.model.selectedNode && ISelectableTreeNode.is(this.model.root)) {
+        if (!this.model.selectedNodes && SelectableTreeNode.is(this.model.root)) {
             this.model.selectNode(this.model.root);
         }
         super.onUpdateRequest(msg);
     }
 
-    protected createNodeAttributes(node: ITreeNode, props: NodeProps): ElementAttrs {
+    protected createNodeAttributes(node: TreeNode, props: NodeProps): ElementAttrs {
         const elementAttrs = super.createNodeAttributes(node, props);
         return {
             ...elementAttrs,
         };
     }
 
-    protected renderTree(model: ITreeModel): h.Child {
+    protected renderTree(model: TreeModel): h.Child {
         return super.renderTree(model)
             || h.div({ className: 'noCallers' }, 'No callers have been detected.');
     }
 
-    protected renderCaption(node: ITreeNode, props: NodeProps): h.Child {
+    protected renderCaption(node: TreeNode, props: NodeProps): h.Child {
         if (DefinitionNode.is(node)) {
             return this.decorateDefinitionCaption(node.definition);
         }
@@ -141,7 +142,7 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         }
     }
 
-    private openEditor(node: ITreeNode, keepFocus: boolean) {
+    private openEditor(node: TreeNode, keepFocus: boolean) {
         let location: Location | undefined;
         if (DefinitionNode.is(node)) {
             location = node.definition.location;

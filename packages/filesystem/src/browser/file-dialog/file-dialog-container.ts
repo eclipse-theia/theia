@@ -6,7 +6,7 @@
  */
 
 import { interfaces, Container } from "inversify";
-import { ITreeModel } from "@theia/core/lib/browser";
+import { TreeModel } from "@theia/core/lib/browser";
 import { createFileTreeContainer, FileTreeModel, FileTreeWidget } from '../file-tree';
 import { FileDialog, FileDialogProps } from "./file-dialog";
 import { FileDialogModel } from "./file-dialog-model";
@@ -17,7 +17,7 @@ export function createFileDialogContainer(parent: interfaces.Container): Contain
 
     child.unbind(FileTreeModel);
     child.bind(FileDialogModel).toSelf();
-    child.rebind(ITreeModel).toDynamicValue(ctx => ctx.container.get(FileDialogModel));
+    child.rebind(TreeModel).toDynamicValue(ctx => ctx.container.get(FileDialogModel));
 
     child.unbind(FileTreeWidget);
     child.bind(FileDialogWidget).toSelf();

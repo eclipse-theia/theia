@@ -5,36 +5,26 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
+import { injectable, inject, postConstruct } from "inversify";
 import URI from '@theia/core/lib/common/uri';
-import { ICompositeTreeNode, TreeModel, TreeServices, ITreeNode, ConfirmDialog } from "@theia/core/lib/browser";
+import { CompositeTreeNode, TreeModelImpl, TreeNode, ConfirmDialog } from "@theia/core/lib/browser";
 import { FileSystem, } from "../../common";
 import { FileSystemWatcher, FileChangeType, FileChange } from '../filesystem-watcher';
-import { FileStatNode, DirNode, FileTree, FileNode } from "./file-tree";
+import { FileStatNode, DirNode, FileNode } from "./file-tree";
 import { LocationService } from '../location';
 import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 import * as base64 from 'base64-js';
 
 @injectable()
-export class FileTreeServices extends TreeServices {
-    @inject(FileSystem) readonly fileSystem: FileSystem;
-    @inject(FileSystemWatcher) readonly watcher: FileSystemWatcher;
-}
+export class FileTreeModel extends TreeModelImpl implements LocationService {
 
-@injectable()
-export class FileTreeModel extends TreeModel implements LocationService {
+    @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    @inject(FileSystem) protected readonly fileSystem: FileSystem;
+    @inject(FileSystemWatcher) protected readonly watcher: FileSystemWatcher;
 
-    protected readonly fileSystem: FileSystem;
-    protected readonly watcher: FileSystemWatcher;
-
-    @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
-
-    constructor(
-        @inject(FileTree) protected readonly tree: FileTree,
-        @inject(FileTreeServices) services: FileTreeServices
-    ) {
-        super(tree, services);
+    @postConstruct()
+    protected init(): void {
+        super.init();
         this.toDispose.push(this.watcher.onFilesChanged(changes => this.onFilesChanged(changes)));
     }
 
@@ -59,12 +49,8 @@ export class FileTreeModel extends TreeModel implements LocationService {
         }
     }
 
-    get selectedFileStatNode(): Readonly<FileStatNode> | undefined {
-        const selectedNode = this.selectedNode;
-        if (FileStatNode.is(selectedNode)) {
-            return selectedNode;
-        }
-        return undefined;
+    get selectedFileStatNodes(): Readonly<FileStatNode>[] {
+        return this.selectedNodes.filter(FileStatNode.is);
     }
 
     protected onFilesChanged(changes: FileChange[]): void {
@@ -86,15 +72,15 @@ export class FileTreeModel extends TreeModel implements LocationService {
         return false;
     }
 
-    protected getAffectedNodes(changes: FileChange[]): ICompositeTreeNode[] {
-        const nodes = new Map<string, ICompositeTreeNode>();
+    protected getAffectedNodes(changes: FileChange[]): CompositeTreeNode[] {
+        const nodes = new Map<string, CompositeTreeNode>();
         for (const change of changes) {
             this.collectAffectedNodes(change, node => nodes.set(node.id, node));
         }
         return [...nodes.values()];
     }
 
-    protected collectAffectedNodes(change: FileChange, accept: (node: ICompositeTreeNode) => void): void {
+    protected collectAffectedNodes(change: FileChange, accept: (node: CompositeTreeNode) => void): void {
         if (this.isFileContentChanged(change)) {
             return;
         }
@@ -111,7 +97,7 @@ export class FileTreeModel extends TreeModel implements LocationService {
         if (uri.scheme !== 'file') {
             return false;
         }
-        const node = this.selectedFileStatNode;
+        const node = this.selectedFileStatNodes[0];
         if (!node) {
             return false;
         }
@@ -123,7 +109,7 @@ export class FileTreeModel extends TreeModel implements LocationService {
     /**
      * Move the given source file or directory to the given target directory.
      */
-    async move(source: ITreeNode, target: ITreeNode) {
+    async move(source: TreeNode, target: TreeNode) {
         if (DirNode.is(target) && FileStatNode.is(source)) {
             const sourceUri = source.uri.toString();
             if (target.uri.toString() === sourceUri) { /*  Folder on itself */

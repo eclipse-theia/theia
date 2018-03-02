@@ -8,18 +8,18 @@
 import { injectable } from "inversify";
 import { Event, Emitter, Disposable, DisposableCollection } from "../../common";
 
-export const ITree = Symbol("ITree");
+export const Tree = Symbol("Tree");
 
 /**
  * The tree - an abstract data type.
  */
-export interface ITree extends Disposable {
+export interface Tree extends Disposable {
     /**
      * A root node of this tree.
      * Undefined if there is no root node.
      * Setting a root node refreshes the tree.
      */
-    root: ITreeNode | undefined;
+    root: TreeNode | undefined;
     /**
      * Emit when the tree is changed.
      */
@@ -27,11 +27,11 @@ export interface ITree extends Disposable {
     /**
      * Return a node for the given identifier or undefined if such does not exist.
      */
-    getNode(id: string | undefined): ITreeNode | undefined;
+    getNode(id: string | undefined): TreeNode | undefined;
     /**
      * Return a valid node in this tree matching to the given; otherwise undefined.
      */
-    validateNode(node: ITreeNode | undefined): ITreeNode | undefined;
+    validateNode(node: TreeNode | undefined): TreeNode | undefined;
     /**
      * Refresh children of the root node.
      */
@@ -39,17 +39,17 @@ export interface ITree extends Disposable {
     /**
      * Refresh children of the given node if it is valid.
      */
-    refresh(parent: Readonly<ICompositeTreeNode>): void;
+    refresh(parent: Readonly<CompositeTreeNode>): void;
     /**
      * Emit when the children of the give node are refreshed.
      */
-    readonly onNodeRefreshed: Event<Readonly<ICompositeTreeNode>>;
+    readonly onNodeRefreshed: Event<Readonly<CompositeTreeNode>>;
 }
 
 /**
  * The tree node.
  */
-export interface ITreeNode {
+export interface TreeNode {
     /**
      * An unique id of this node.
      */
@@ -75,33 +75,33 @@ export interface ITreeNode {
      * A parent node of this tree node.
      * Undefined if this node is root.
      */
-    readonly parent: Readonly<ICompositeTreeNode> | undefined;
+    readonly parent: Readonly<CompositeTreeNode> | undefined;
 }
 
-export namespace ITreeNode {
-    export function equals(left: ITreeNode | undefined, right: ITreeNode | undefined): boolean {
+export namespace TreeNode {
+    export function equals(left: TreeNode | undefined, right: TreeNode | undefined): boolean {
         return left === right || (!!left && !!right && left.id === right.id);
     }
 
-    export function isVisible(node: ITreeNode | undefined): boolean {
+    export function isVisible(node: TreeNode | undefined): boolean {
         return !!node && (node.visible === undefined || node.visible);
     }
 
-    export function getPrevSibling(node: ITreeNode | undefined): ITreeNode | undefined {
+    export function getPrevSibling(node: TreeNode | undefined): TreeNode | undefined {
         if (!node || !node.parent) {
             return undefined;
         }
         const parent = node.parent;
-        const index = ICompositeTreeNode.indexOf(parent, node);
+        const index = CompositeTreeNode.indexOf(parent, node);
         return parent.children[index - 1];
     }
 
-    export function getNextSibling(node: ITreeNode | undefined): ITreeNode | undefined {
+    export function getNextSibling(node: TreeNode | undefined): TreeNode | undefined {
         if (!node || !node.parent) {
             return undefined;
         }
         const parent = node.parent;
-        const index = ICompositeTreeNode.indexOf(parent, node);
+        const index = CompositeTreeNode.indexOf(parent, node);
         return parent.children[index + 1];
     }
 }
@@ -109,41 +109,41 @@ export namespace ITreeNode {
 /**
  * The composite tree node.
  */
-export interface ICompositeTreeNode extends ITreeNode {
+export interface CompositeTreeNode extends TreeNode {
     /**
      * Child nodes of this tree node.
      */
-    children: ReadonlyArray<ITreeNode>;
+    children: ReadonlyArray<TreeNode>;
 }
 
-export namespace ICompositeTreeNode {
-    export function is(node: ITreeNode | undefined): node is ICompositeTreeNode {
+export namespace CompositeTreeNode {
+    export function is(node: TreeNode | undefined): node is CompositeTreeNode {
         return !!node && 'children' in node;
     }
 
-    export function getFirstChild(parent: ICompositeTreeNode): ITreeNode | undefined {
+    export function getFirstChild(parent: CompositeTreeNode): TreeNode | undefined {
         return parent.children[0];
     }
 
-    export function getLastChild(parent: ICompositeTreeNode): ITreeNode | undefined {
+    export function getLastChild(parent: CompositeTreeNode): TreeNode | undefined {
         return parent.children[parent.children.length - 1];
     }
 
-    export function isAncestor(parent: ICompositeTreeNode, child: ITreeNode | undefined): boolean {
+    export function isAncestor(parent: CompositeTreeNode, child: TreeNode | undefined): boolean {
         if (!child) {
             return false;
         }
-        if (ITreeNode.equals(parent, child.parent)) {
+        if (TreeNode.equals(parent, child.parent)) {
             return true;
         }
         return isAncestor(parent, child.parent);
     }
 
-    export function indexOf(parent: ICompositeTreeNode, node: ITreeNode | undefined): number {
+    export function indexOf(parent: CompositeTreeNode, node: TreeNode | undefined): number {
         if (!node) {
             return -1;
         }
-        return parent.children.findIndex(child => ITreeNode.equals(node, child));
+        return parent.children.findIndex(child => TreeNode.equals(node, child));
     }
 }
 
@@ -151,15 +151,15 @@ export namespace ICompositeTreeNode {
  * A default implementation of the tree.
  */
 @injectable()
-export class Tree implements ITree {
+export class TreeImpl implements Tree {
 
-    protected _root: ITreeNode | undefined;
+    protected _root: TreeNode | undefined;
     protected readonly onChangedEmitter = new Emitter<void>();
-    protected readonly onNodeRefreshedEmitter = new Emitter<ICompositeTreeNode>();
+    protected readonly onNodeRefreshedEmitter = new Emitter<CompositeTreeNode>();
     protected readonly toDispose = new DisposableCollection();
 
     protected nodes: {
-        [id: string]: ITreeNode | undefined
+        [id: string]: TreeNode | undefined
     } = {};
 
     constructor() {
@@ -172,11 +172,11 @@ export class Tree implements ITree {
         this.toDispose.dispose();
     }
 
-    get root(): ITreeNode | undefined {
+    get root(): TreeNode | undefined {
         return this._root;
     }
 
-    set root(root: ITreeNode | undefined) {
+    set root(root: TreeNode | undefined) {
         this.nodes = {};
         this._root = root;
         this.addNode(root);
@@ -191,27 +191,27 @@ export class Tree implements ITree {
         this.onChangedEmitter.fire(undefined);
     }
 
-    get onNodeRefreshed(): Event<ICompositeTreeNode> {
+    get onNodeRefreshed(): Event<CompositeTreeNode> {
         return this.onNodeRefreshedEmitter.event;
     }
 
-    protected fireNodeRefreshed(parent: ICompositeTreeNode): void {
+    protected fireNodeRefreshed(parent: CompositeTreeNode): void {
         this.onNodeRefreshedEmitter.fire(parent);
         this.fireChanged();
     }
 
-    getNode(id: string | undefined): ITreeNode | undefined {
+    getNode(id: string | undefined): TreeNode | undefined {
         return id !== undefined ? this.nodes[id] : undefined;
     }
 
-    validateNode(node: ITreeNode | undefined): ITreeNode | undefined {
+    validateNode(node: TreeNode | undefined): TreeNode | undefined {
         const id = !!node ? node.id : undefined;
         return this.getNode(id);
     }
 
-    refresh(raw?: ICompositeTreeNode): void {
+    refresh(raw?: CompositeTreeNode): void {
         const parent = !raw ? this._root : this.validateNode(raw);
-        if (ICompositeTreeNode.is(parent)) {
+        if (CompositeTreeNode.is(parent)) {
             this.resolveChildren(parent).then(children => this.setChildren(parent, children));
         }
         // FIXME: it should not be here
@@ -219,19 +219,19 @@ export class Tree implements ITree {
         this.fireChanged();
     }
 
-    protected resolveChildren(parent: ICompositeTreeNode): Promise<ITreeNode[]> {
+    protected resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         return Promise.resolve(Array.from(parent.children));
     }
 
-    protected setChildren(parent: ICompositeTreeNode, children: ITreeNode[]): void {
+    protected setChildren(parent: CompositeTreeNode, children: TreeNode[]): void {
         this.removeNode(parent);
         parent.children = children;
         this.addNode(parent);
         this.fireNodeRefreshed(parent);
     }
 
-    protected removeNode(node: ITreeNode | undefined): void {
-        if (ICompositeTreeNode.is(node)) {
+    protected removeNode(node: TreeNode | undefined): void {
+        if (CompositeTreeNode.is(node)) {
             node.children.forEach(child => this.removeNode(child));
         }
         if (node) {
@@ -239,11 +239,11 @@ export class Tree implements ITree {
         }
     }
 
-    protected addNode(node: ITreeNode | undefined): void {
+    protected addNode(node: TreeNode | undefined): void {
         if (node) {
             this.nodes[node.id] = node;
         }
-        if (ICompositeTreeNode.is(node)) {
+        if (CompositeTreeNode.is(node)) {
             node.children.forEach(child => this.addNode(child));
         }
     }
