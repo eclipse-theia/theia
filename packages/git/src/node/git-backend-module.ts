@@ -9,7 +9,7 @@ import * as cluster from 'cluster';
 import { ContainerModule, Container, interfaces } from 'inversify';
 import { Git, GitPath } from '../common/git';
 import { GitWatcherPath, GitWatcherClient, GitWatcherServer } from '../common/git-watcher';
-import { DugiteGit, OutputParser, NameStatusParser, CommitDetailsParser } from './dugite-git';
+import { DugiteGit, OutputParser, NameStatusParser, CommitDetailsParser, GitBlameParser } from './dugite-git';
 import { DugiteGitWatcherServer } from './dugite-git-watcher';
 import { ConnectionHandler, JsonRpcConnectionHandler, ILogger } from "@theia/core/lib/common";
 import { GitRepositoryManager } from './git-repository-manager';
@@ -54,6 +54,7 @@ export function bindGit(bind: interfaces.Bind, bindingOptions: GitBindingOptions
     bind(OutputParser).toSelf();
     bind(NameStatusParser).toSelf();
     bind(CommitDetailsParser).toSelf();
+    bind(GitBlameParser).toSelf();
     bind(Git).toDynamicValue(ctx => ctx.container.get(DugiteGit));
 }
 

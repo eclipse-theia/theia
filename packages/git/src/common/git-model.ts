@@ -386,3 +386,14 @@ export declare enum GitError {
     ProtectedBranchForcePush = 35,
     PushWithPrivateEmail = 36
 }
+
+export interface GitFileBlame {
+    readonly uri: string;
+    readonly commits: Commit[];
+    readonly lines: CommitLine[];
+}
+
+export interface CommitLine {
+    readonly sha: string;
+    readonly line: number;
+}
