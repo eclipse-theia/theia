@@ -40,9 +40,7 @@ export class LanguageClientFactory {
                                 const connection = createConnection(messageConnection, errorHandler, closeHandler);
                                 resolve(connection);
                             }
-                        },
-                            { reconnecting: false }
-                        );
+                        });
                     })
             }
         });

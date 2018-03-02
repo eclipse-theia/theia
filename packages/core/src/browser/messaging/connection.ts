@@ -9,14 +9,7 @@ import { injectable, interfaces } from "inversify";
 import { listen as doListen, Logger, ConsoleLogger } from "vscode-ws-jsonrpc";
 import { ConnectionHandler, JsonRpcProxyFactory, JsonRpcProxy } from "../../common";
 import { Endpoint } from "../endpoint";
-const ReconnectingWebSocket = require('reconnecting-websocket');
-
-export interface WebSocketOptions {
-    /**
-     * True by default.
-     */
-    reconnecting?: boolean;
-}
+const WebSocketKeepAlive = require('wska');
 
 @injectable()
 export class WebSocketConnectionProvider {
@@ -32,21 +25,21 @@ export class WebSocketConnectionProvider {
      * An optional target can be provided to handle
      * notifications and requests from a remote side.
      */
-    createProxy<T extends object>(path: string, target?: object, options?: WebSocketOptions): JsonRpcProxy<T> {
+    createProxy<T extends object>(path: string, target?: object): JsonRpcProxy<T> {
         const factory = new JsonRpcProxyFactory<T>(target);
         this.listen({
             path,
             onConnection: c => factory.listen(c)
-        }, options);
+        });
         return factory.createProxy();
     }
 
     /**
      * Install a connection handler for the given path.
      */
-    listen(handler: ConnectionHandler, options?: WebSocketOptions): void {
+    listen(handler: ConnectionHandler): void {
         const url = this.createWebSocketUrl(handler.path);
-        const webSocket = this.createWebSocket(url, options);
+        const webSocket = this.createWebSocket(url);
 
         const logger = this.createLogger();
         webSocket.onerror = function (error: Event) {
@@ -75,19 +68,8 @@ export class WebSocketConnectionProvider {
     /**
      * Creates a web socket for the given url
      */
-    createWebSocket(url: string, options?: WebSocketOptions): WebSocket {
-        if (options === undefined || options.reconnecting) {
-            const socketOptions = {
-                maxReconnectionDelay: 10000,
-                minReconnectionDelay: 1000,
-                reconnectionDelayGrowFactor: 1.3,
-                connectionTimeout: 10000,
-                maxRetries: Infinity,
-                debug: false
-            };
-            return new ReconnectingWebSocket(url, undefined, socketOptions);
-        }
-        return new WebSocket(url);
+    createWebSocket(url: string): WebSocket {
+        return new WebSocketKeepAlive(url, null, null, { pingMessage: 'ping' });
     }
 
 }
