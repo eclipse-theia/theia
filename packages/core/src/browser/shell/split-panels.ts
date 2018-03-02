@@ -8,23 +8,26 @@
 import { injectable } from 'inversify';
 import { SplitPanel, SplitLayout, Widget } from '@phosphor/widgets';
 
-interface MoveEntry {
-    referenceWidget?: Widget;
-    layout: SplitLayout;
-    index: number;
-    position: number;
+export interface SplitPositionOptions {
+    /** The side of the side panel that shall be resized. */
+    side: 'left' | 'right' | 'top' | 'bottom';
+    /** The duration in milliseconds, or 0 for no animation. */
     duration: number;
-    started: boolean;
-    ended: boolean;
-    startPos?: number;
-    startTime?: number
-    resolve(): void;
+    /** When this widget is hidden, the animation is canceled. */
+    referenceWidget?: Widget;
 }
 
-export interface SplitPositionOptions {
-    referenceWidget?: Widget;
-    duration?: number;
-    immediate?: boolean;
+export interface MoveEntry extends SplitPositionOptions {
+    parent: SplitPanel;
+    index: number;
+    started: boolean;
+    ended: boolean;
+    targetSize: number;
+    targetPosition?: number;
+    startPosition?: number;
+    startTime?: number
+    resolve?: (position: number) => void;
+    reject?: (reason: string) => void;
 }
 
 @injectable()
@@ -34,69 +37,118 @@ export class SplitPositionHandler {
     private currentMoveIndex: number = 0;
 
     /**
-     * Move a handle of a split panel to the given position asynchronously. Unless the option `immediate`
-     * is set to `true`, this function makes sure that such movements are performed one after another in
-     * order to prevent the movements from overriding each other.
+     * Resize a side panel asynchronously. This function makes sure that such movements are performed
+     * one after another in order to prevent the movements from overriding each other.
+     * When resolved, the returned promise yields the final position of the split handle.
      */
-    moveSplitPos(parent: SplitPanel, index: number, position: number, options: SplitPositionOptions = {}): Promise<void> {
-        return new Promise<void>(resolve => {
-            const move: MoveEntry = {
-                index, position, resolve,
-                referenceWidget: options.referenceWidget,
-                layout: parent.layout as SplitLayout,
-                duration: options.duration || 0,
-                started: false,
-                ended: false
-            };
-            if (options.immediate) {
-                this.endMove(move);
-            } else {
-                if (this.splitMoves.length === 0) {
-                    window.requestAnimationFrame(this.animationFrame.bind(this));
-                }
-                this.splitMoves.push(move);
+    setSidePanelSize(sidePanel: Widget, targetSize: number, options: SplitPositionOptions): Promise<number> {
+        if (targetSize < 0) {
+            return Promise.reject('Cannot resize to negative value.');
+        }
+        const parent = sidePanel.parent;
+        if (!(parent instanceof SplitPanel)) {
+            return Promise.reject('Widget must be contained in a SplitPanel.');
+        }
+        let index = parent.widgets.indexOf(sidePanel);
+        if (index > 0 && (options.side === 'right' || options.side === 'bottom')) {
+            index--;
+        }
+        const move: MoveEntry = {
+            ...options,
+            parent, targetSize, index,
+            started: false,
+            ended: false
+        };
+        return this.moveSplitPos(move);
+    }
+
+    protected moveSplitPos(move: MoveEntry): Promise<number> {
+        return new Promise<number>((resolve, reject) => {
+            move.resolve = resolve;
+            move.reject = reject;
+            if (this.splitMoves.length === 0) {
+                window.requestAnimationFrame(this.animationFrame.bind(this));
             }
+            this.splitMoves.push(move);
         });
     }
 
     protected animationFrame(time: number): void {
         const move = this.splitMoves[this.currentMoveIndex];
+        let rejectedOrResolved = false;
         if (move.ended || move.referenceWidget && move.referenceWidget.isHidden) {
             this.splitMoves.splice(this.currentMoveIndex, 1);
-            move.resolve();
-        } else if (move.duration <= 0) {
-            this.endMove(move);
+            if (move.startPosition === undefined || move.targetPosition === undefined) {
+                move.reject!('Panel is not visible.');
+            } else {
+                move.resolve!(move.targetPosition);
+            }
+            rejectedOrResolved = true;
         } else if (!move.started) {
-            move.startPos = this.getCurrentPosition(move);
-            move.startTime = time;
-            move.started = true;
-            if (move.startPos === undefined || move.startPos === move.position) {
+            this.startMove(move, time);
+            if (move.duration <= 0 || move.startPosition === undefined || move.targetPosition === undefined
+                || move.startPosition === move.targetPosition) {
                 this.endMove(move);
             }
-        } else if (move.startTime !== undefined && move.startPos !== undefined) {
-            const elapsedTime = time - move.startTime;
+        } else {
+            const elapsedTime = time - move.startTime!;
             if (elapsedTime >= move.duration) {
                 this.endMove(move);
             } else {
                 const t = elapsedTime / move.duration;
-                const pos = move.startPos + (move.position - move.startPos) * t;
-                move.layout.moveHandle(move.index, pos);
+                const start = move.startPosition || 0;
+                const target = move.targetPosition || 0;
+                const pos = start + (target - start) * t;
+                (move.parent.layout as SplitLayout).moveHandle(move.index, pos);
             }
         }
-        if (!move.ended) {
-            if (this.currentMoveIndex < this.splitMoves.length - 1) {
-                this.currentMoveIndex++;
-            } else {
-                this.currentMoveIndex = 0;
-            }
+        if (!rejectedOrResolved) {
+            this.currentMoveIndex++;
+        }
+        if (this.currentMoveIndex >= this.splitMoves.length) {
+            this.currentMoveIndex = 0;
         }
         if (this.splitMoves.length > 0) {
             window.requestAnimationFrame(this.animationFrame.bind(this));
         }
     }
 
-    private getCurrentPosition(move: MoveEntry): number | undefined {
-        const layout = move.layout;
+    protected startMove(move: MoveEntry, time: number): void {
+        if (move.targetPosition === undefined) {
+            const { clientWidth, clientHeight } = move.parent.node;
+            if (clientWidth && clientHeight) {
+                switch (move.side) {
+                    case 'left':
+                        move.targetPosition = Math.max(Math.min(move.targetSize, clientWidth), 0);
+                        break;
+                    case 'right':
+                        move.targetPosition = Math.max(Math.min(clientWidth - move.targetSize, clientWidth), 0);
+                        break;
+                    case 'top':
+                        move.targetPosition = Math.max(Math.min(move.targetSize, clientHeight), 0);
+                        break;
+                    case 'bottom':
+                        move.targetPosition = Math.max(Math.min(clientHeight - move.targetSize, clientHeight), 0);
+                        break;
+                }
+            }
+        }
+        if (move.startPosition === undefined) {
+            move.startPosition = this.getCurrentPosition(move);
+        }
+        move.startTime = time;
+        move.started = true;
+    }
+
+    protected endMove(move: MoveEntry): void {
+        if (move.targetPosition !== undefined) {
+            (move.parent.layout as SplitLayout).moveHandle(move.index, move.targetPosition);
+        }
+        move.ended = true;
+    }
+
+    protected getCurrentPosition(move: MoveEntry): number | undefined {
+        const layout = move.parent.layout as SplitLayout;
         let pos: number | null;
         if (layout.orientation === 'horizontal') {
             pos = layout.handles[move.index].offsetLeft;
@@ -108,11 +160,6 @@ export class SplitPositionHandler {
         } else {
             return undefined;
         }
-    }
-
-    private endMove(move: MoveEntry): void {
-        move.layout.moveHandle(move.index, move.position);
-        move.ended = true;
     }
 
 }
