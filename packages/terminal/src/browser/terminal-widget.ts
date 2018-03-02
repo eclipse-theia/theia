@@ -261,7 +261,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
 
     protected createWebSocket(pid: string): WebSocket {
         const url = this.endpoint.getWebSocketUrl().resolve(pid);
-        return this.webSocketConnectionProvider.createWebSocket(url.toString(), { reconnecting: false });
+        return this.webSocketConnectionProvider.createWebSocket(url.toString());
     }
 
     protected onActivateRequest(msg: Message): void {
