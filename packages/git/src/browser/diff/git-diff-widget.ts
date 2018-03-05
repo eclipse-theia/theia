@@ -226,6 +226,24 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         }
     }
 
+    protected selectNextNode() {
+        const idx = this.indexOfSelected;
+        if (idx >= 0 && idx < this.gitNodes.length - 1) {
+            this.selectNode(this.gitNodes[idx + 1]);
+        } else if (this.gitNodes.length > 0 && (idx === -1 || idx === this.gitNodes.length - 1)) {
+            this.selectNode(this.gitNodes[0]);
+        }
+    }
+
+    protected selectPreviousNode() {
+        const idx = this.indexOfSelected;
+        if (idx > 0) {
+            this.selectNode(this.gitNodes[idx - 1]);
+        } else if (idx === 0) {
+            this.selectNode(this.gitNodes[this.gitNodes.length - 1]);
+        }
+    }
+
     protected handleListEnter(): void {
         this.openSelected();
     }
