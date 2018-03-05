@@ -23,6 +23,7 @@ import { GitFileChangeNode } from "../git-widget";
 import { Disposable } from "vscode-jsonrpc";
 
 export interface GitCommitNode extends GitCommitDetails {
+    fileChanges?: GitFileChange[];
     expanded: boolean;
     selected: boolean;
 }
@@ -106,18 +107,6 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                     const commits: GitCommitNode[] = [];
                     for (const commit of changes) {
                         const fileChangeNodes: GitFileChangeNode[] = [];
-                        for (const fileChange of commit.fileChanges) {
-                            const fileChangeUri = new URI(fileChange.uri);
-                            const [icon, label, description] = await Promise.all([
-                                this.labelProvider.getIcon(fileChangeUri),
-                                this.labelProvider.getName(fileChangeUri),
-                                this.relativePath(fileChangeUri.parent)
-                            ]);
-                            const caption = this.computeCaption(fileChange);
-                            fileChangeNodes.push({
-                                ...fileChange, icon, label, description, caption, commitSha: commit.sha
-                            });
-                        }
                         const avatarUrl = await this.avartarService.getAvatar(commit.author.email);
                         commits.push({
                             authorName: commit.author.name,
@@ -129,6 +118,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                             commitMessage: commit.summary,
                             messageBody: commit.body,
                             fileChangeNodes,
+                            fileChanges: commit.fileChanges,
                             expanded: false,
                             selected: false
                         });
@@ -142,6 +132,23 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                     ll.className = "history-lazy-loading hide";
                 }
             });
+        }
+    }
+
+    protected async addFileChangeNodesToCommit(commit: GitCommitNode) {
+        if (commit.fileChanges) {
+            await Promise.all(commit.fileChanges.map(async fileChange => {
+                const fileChangeUri = new URI(fileChange.uri);
+                const icon = await this.labelProvider.getIcon(fileChangeUri);
+                const label = this.labelProvider.getName(fileChangeUri);
+                const description = this.relativePath(fileChangeUri.parent);
+                const caption = this.computeCaption(fileChange);
+                commit.fileChangeNodes.push({
+                    ...fileChange, icon, label, description, caption, commitSha: commit.commitSha
+                });
+            }));
+            delete commit.fileChanges;
+            this.update();
         }
     }
 
@@ -196,7 +203,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
 
         for (const commit of this.commits) {
             const head = this.renderCommit(commit);
-            const body = commit.expanded ? this.renderFileChangeList(commit.fileChangeNodes, commit.commitSha) : "";
+            const body = commit.expanded ? this.renderFileChangeList(commit) : "";
             theList.push(h.div({ className: "commitListElement" }, head, body));
         }
         const commitList = h.div({ className: "commitList" }, ...theList);
@@ -221,7 +228,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                 className: "expansionToggle noselect"
             },
             h.div({ className: "toggle" },
-                h.div({ className: "number" }, commit.fileChangeNodes.length.toString()),
+                h.div({ className: "number" }, (commit.fileChanges && commit.fileChanges.length || commit.fileChangeNodes.length).toString()),
                 h.div({ className: "icon fa fa-" + expansionToggleIcon }))
         );
         const label = h.div({ className: `headLabelContainer${this.singleFileMode ? ' singleFileMode' : ''}` },
@@ -251,6 +258,9 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
             onclick: () => {
                 if (commit.selected && !this.singleFileMode) {
                     commit.expanded = !commit.expanded;
+                    if (commit.expanded) {
+                        this.addFileChangeNodesToCommit(commit);
+                    }
                     this.update();
                 } else {
                     this.selectNode(commit);
@@ -271,14 +281,15 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         });
     }
 
-    protected renderFileChangeList(fileChanges: GitFileChangeNode[], commitSha: string): h.Child {
+    protected renderFileChangeList(commit: GitCommitNode): h.Child {
+        const fileChanges = commit.fileChangeNodes;
 
         this.gitNodes.push(...fileChanges);
 
         const files: h.Child[] = [];
 
         for (const fileChange of fileChanges) {
-            const fileChangeElement: h.Child = this.renderGitItem(fileChange, commitSha);
+            const fileChangeElement: h.Child = this.renderGitItem(fileChange, commit.commitSha);
             files.push(fileChangeElement);
         }
         const commitFiles = h.div({ className: "commitFileList" }, ...files);
@@ -337,6 +348,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         if (selected) {
             if (GitCommitNode.is(selected) && !selected.expanded && !this.singleFileMode) {
                 selected.expanded = true;
+                this.addFileChangeNodesToCommit(selected);
             } else {
                 this.selectNextNode();
             }
@@ -352,7 +364,6 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                     this.openFile(selected.fileChangeNodes[0], selected.commitSha);
                 } else {
                     this.openDetailWidget(selected);
-                    // selected.expanded = !selected.expanded;
                 }
             } else if (GitFileChangeNode.is(selected)) {
                 this.openFile(selected, selected.commitSha || "");
