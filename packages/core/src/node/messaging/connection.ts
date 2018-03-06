@@ -44,6 +44,36 @@ export function openSocket(options: IServerOptions, onOpen: OnOpen): void {
         noServer: true,
         perMessageDeflate: false
     });
+    interface ExtWebSocket extends ws {
+        isAlive: boolean;
+    }
+
+    wss.on('connection', (ws: ws) => {
+
+        const extWs = ws as ExtWebSocket;
+        extWs.isAlive = true;
+
+    });
+
+    setInterval(() => {
+        wss.clients.forEach((ws: ws) => {
+
+            const extWs = ws as ExtWebSocket;
+
+            ws.on('pong', () => {
+                extWs.isAlive = true;
+            });
+
+            if (extWs.isAlive === false) {
+                ws.terminate();
+                return;
+            }
+            ws.ping();
+            extWs.isAlive = false;
+
+        });
+    }, 30000);
+
     options.server.on('upgrade', (request: http.IncomingMessage, socket: net.Socket, head: Buffer) => {
         const pathname = request.url ? url.parse(request.url).pathname : undefined;
         if (options.path && pathname === options.path || options.matches && options.matches(request)) {
