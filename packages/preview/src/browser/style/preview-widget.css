@@ -10,6 +10,10 @@
     overflow-x: hidden;
 }
 
+.theia-preview-widget .scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
 .theia-preview-widget:focus {
     outline: 0;
     box-shadow: none;

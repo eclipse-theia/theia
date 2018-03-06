@@ -14,6 +14,7 @@ import { Workspace, Location, Range } from "@theia/languages/lib/common";
 import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
 import { throttle } from 'throttle-debounce';
 import { ThemeService } from '@theia/core/lib/browser/theming';
+import { EditorPreferences } from "@theia/editor/lib/browser";
 
 export const PREVIEW_WIDGET_CLASS = 'theia-preview-widget';
 
@@ -35,11 +36,13 @@ export class PreviewWidget extends BaseWidget {
     protected firstUpdate: (() => void) | undefined = undefined;
     protected readonly onDidScrollEmitter = new Emitter<number>();
     protected readonly onDidDoubleClickEmitter = new Emitter<Location>();
+    protected scrollBeyondLastLine: boolean;
 
     constructor(
         @inject(PreviewWidgetOptions) protected readonly options: PreviewWidgetOptions,
         @inject(PreviewHandlerProvider) protected readonly previewHandlerProvider: PreviewHandlerProvider,
         @inject(Workspace) protected readonly workspace: Workspace,
+        @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
     ) {
         super();
         this.resource = this.options.resource;
@@ -61,6 +64,13 @@ export class PreviewWidget extends BaseWidget {
     }
 
     async initialize(): Promise<void> {
+        this.scrollBeyondLastLine = !!this.editorPreferences['editor.scrollBeyondLastLine'];
+        this.toDispose.push(this.editorPreferences.onPreferenceChanged(e => {
+            if (e.preferenceName === 'editor.scrollBeyondLastLine') {
+                this.scrollBeyondLastLine = !!e.newValue;
+                this.forceUpdate();
+            }
+        }));
         this.toDispose.push(this.resource);
         if (this.resource.onDidChangeContents) {
             this.toDispose.push(this.resource.onDidChangeContents(() => this.update()));
@@ -131,6 +141,11 @@ export class PreviewWidget extends BaseWidget {
         this.performUpdate();
     }
 
+    protected forceUpdate() {
+        this.previousContent = '';
+        this.update();
+    }
+
     protected previousContent: string = '';
     protected async performUpdate(): Promise<void> {
         if (!this.resource) {
@@ -146,6 +161,9 @@ export class PreviewWidget extends BaseWidget {
         const contentElement = await this.render(content, uri);
         this.node.innerHTML = '';
         if (contentElement) {
+            if (this.scrollBeyondLastLine) {
+                contentElement.classList.add('scrollBeyondLastLine');
+            }
             this.node.appendChild(contentElement);
             if (this.firstUpdate) {
                 this.firstUpdate();
