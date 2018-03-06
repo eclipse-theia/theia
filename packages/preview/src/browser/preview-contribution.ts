@@ -8,7 +8,7 @@
 import { injectable, inject } from "inversify";
 import { Widget } from "@phosphor/widgets";
 import { FrontendApplicationContribution, WidgetOpenerOptions, WidgetOpenHandler } from "@theia/core/lib/browser";
-import { EDITOR_CONTEXT_MENU, EditorManager, TextEditor, EditorWidget } from '@theia/editor/lib/browser';
+import { EditorManager, TextEditor, EditorWidget, EditorContextMenu } from '@theia/editor/lib/browser';
 import {
     ResourceProvider, DisposableCollection, CommandContribution, CommandRegistry, Command, MenuContribution, MenuModelRegistry,
     CommandHandler, Disposable, MessageService
@@ -200,8 +200,7 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        const menuPath = [...EDITOR_CONTEXT_MENU, 'navigation'];
-        menus.registerMenuAction(menuPath, {
+        menus.registerMenuAction(EditorContextMenu.NAVIGATION, {
             commandId: PreviewCommands.OPEN.id,
             label: PreviewCommands.OPEN.label,
         });

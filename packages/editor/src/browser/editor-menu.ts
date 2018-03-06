@@ -13,6 +13,7 @@ export const EDITOR_CONTEXT_MENU: MenuPath = ['editor_context_menu'];
 
 export namespace EditorContextMenu {
     export const UNDO_REDO = [...EDITOR_CONTEXT_MENU, '1_undo'];
+    export const NAVIGATION = [...EDITOR_CONTEXT_MENU, 'navigation'];
 }
 
 @injectable()

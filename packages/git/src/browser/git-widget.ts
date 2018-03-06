@@ -6,19 +6,19 @@
  */
 
 import { injectable, inject, postConstruct } from 'inversify';
+import { h } from '@phosphor/virtualdom';
+import { Message } from '@phosphor/messaging';
+import URI from '@theia/core/lib/common/uri';
+import { MessageService, ResourceProvider, CommandService, DisposableCollection, MenuPath } from '@theia/core';
+import { VirtualRenderer, ContextMenuRenderer, VirtualWidget, LabelProvider } from '@theia/core/lib/browser';
+import { EditorManager, EditorWidget, DiffUris, EditorOpenerOptions } from '@theia/editor/lib/browser';
+import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus } from '../common';
-import { GIT_CONTEXT_MENU } from './git-context-menu';
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
-import { MessageService, ResourceProvider, CommandService, DisposableCollection } from '@theia/core';
-import URI from '@theia/core/lib/common/uri';
-import { VirtualRenderer, ContextMenuRenderer, OpenerService, open, VirtualWidget, LabelProvider } from '@theia/core/lib/browser';
-import { h } from '@phosphor/virtualdom/lib';
-import { Message } from '@phosphor/messaging';
-import { DiffUris } from '@theia/editor/lib/browser/diff-uris';
-import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { GitRepositoryProvider } from './git-repository-provider';
+
+export const GIT_WIDGET_CONTEXT_MENU: MenuPath = ['git-widget-context-menu'];
 
 export interface GitFileChangeNode extends GitFileChange {
     readonly icon: string;
@@ -44,14 +44,16 @@ export class GitWidget extends VirtualWidget {
     protected message: string = '';
     protected messageInputHighlighted: boolean = false;
     protected additionalMessage: string = '';
-    protected status: WorkingDirectoryStatus;
+    protected status: WorkingDirectoryStatus | undefined;
     protected toDispose = new DisposableCollection();
     protected scrollContainer: string;
+
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
 
     constructor(
         @inject(Git) protected readonly git: Git,
         @inject(GitWatcher) protected readonly gitWatcher: GitWatcher,
-        @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
         @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
         @inject(MessageService) protected readonly messageService: MessageService,
@@ -196,7 +198,7 @@ export class GitWidget extends VirtualWidget {
             onclick: event => {
                 const el = (event.target as HTMLElement).parentElement;
                 if (el) {
-                    this.contextMenuRenderer.render(GIT_CONTEXT_MENU, {
+                    this.contextMenuRenderer.render(GIT_WIDGET_CONTEXT_MENU, {
                         x: el.getBoundingClientRect().left,
                         y: el.getBoundingClientRect().top + el.offsetHeight
                     });
@@ -293,45 +295,12 @@ export class GitWidget extends VirtualWidget {
         if (!repository) {
             return '';
         }
-        const changeUri: URI = new URI(change.uri);
         const iconSpan = h.span({ className: change.icon + ' file-icon' });
         const nameSpan = h.span({ className: 'name' }, change.label + ' ');
         const pathSpan = h.span({ className: 'path' }, change.description);
         const nameAndPathDiv = h.div({
             className: 'noWrapInfo',
-            onclick: () => {
-                let uri: URI;
-                if (change.status !== GitFileStatus.New) {
-                    if (change.staged) {
-                        uri = DiffUris.encode(
-                            changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
-                            changeUri.withScheme(GIT_RESOURCE_SCHEME),
-                            changeUri.displayName + ' (Index)');
-                    } else if (this.stagedChanges.find(c => c.uri === change.uri)) {
-                        uri = DiffUris.encode(
-                            changeUri.withScheme(GIT_RESOURCE_SCHEME),
-                            changeUri,
-                            changeUri.displayName + ' (Working tree)');
-                    } else if (this.mergeChanges.find(c => c.uri === change.uri)) {
-                        uri = changeUri;
-                    } else {
-                        uri = DiffUris.encode(
-                            changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
-                            changeUri,
-                            changeUri.displayName + ' (Working tree)');
-                    }
-                } else if (change.staged) {
-                    uri = changeUri.withScheme(GIT_RESOURCE_SCHEME);
-                } else if (this.stagedChanges.find(c => c.uri === change.uri)) {
-                    uri = DiffUris.encode(
-                        changeUri.withScheme(GIT_RESOURCE_SCHEME),
-                        changeUri,
-                        changeUri.displayName + ' (Working tree)');
-                } else {
-                    uri = changeUri;
-                }
-                open(this.openerService, uri);
-            }
+            onclick: () => this.openChange(change)
         }, iconSpan, nameSpan, pathSpan);
         const buttonsDiv = this.renderGitItemButtons(repository, change);
         const staged = change.staged ? 'staged ' : '';
@@ -406,4 +375,56 @@ export class GitWidget extends VirtualWidget {
     protected getAbbreviatedStatusCaption(status: GitFileStatus, staged?: boolean): string {
         return GitFileStatus.toAbbreviation(status, staged);
     }
+
+    findChange(uri: URI): GitFileChange | undefined {
+        const stringUri = uri.toString();
+        const merge = this.mergeChanges.find(c => c.uri.toString() === stringUri);
+        if (merge) {
+            return merge;
+        }
+        const unstaged = this.unstagedChanges.find(c => c.uri.toString() === stringUri);
+        if (unstaged) {
+            return unstaged;
+        }
+        return this.stagedChanges.find(c => c.uri.toString() === stringUri);
+    }
+    async openChange(change: GitFileChange, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
+        const changeUri = this.createChangeUri(change);
+        return this.editorManager.open(changeUri, options);
+    }
+    protected createChangeUri(change: GitFileChange): URI {
+        const changeUri: URI = new URI(change.uri);
+        if (change.status !== GitFileStatus.New) {
+            if (change.staged) {
+                return DiffUris.encode(
+                    changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
+                    changeUri.withScheme(GIT_RESOURCE_SCHEME),
+                    changeUri.displayName + ' (Index)');
+            }
+            if (this.stagedChanges.find(c => c.uri === change.uri)) {
+                return DiffUris.encode(
+                    changeUri.withScheme(GIT_RESOURCE_SCHEME),
+                    changeUri,
+                    changeUri.displayName + ' (Working tree)');
+            }
+            if (this.mergeChanges.find(c => c.uri === change.uri)) {
+                return changeUri;
+            }
+            return DiffUris.encode(
+                changeUri.withScheme(GIT_RESOURCE_SCHEME).withQuery('HEAD'),
+                changeUri,
+                changeUri.displayName + ' (Working tree)');
+        }
+        if (change.staged) {
+            return changeUri.withScheme(GIT_RESOURCE_SCHEME);
+        }
+        if (this.stagedChanges.find(c => c.uri === change.uri)) {
+            return DiffUris.encode(
+                changeUri.withScheme(GIT_RESOURCE_SCHEME),
+                changeUri,
+                changeUri.displayName + ' (Working tree)');
+        }
+        return changeUri;
+    }
+
 }

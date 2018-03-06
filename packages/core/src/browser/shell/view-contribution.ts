@@ -5,14 +5,14 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
+import { injectable, inject, interfaces } from "inversify";
+import { Widget } from '@phosphor/widgets';
 import {
     MenuModelRegistry, Command, CommandContribution,
     MenuContribution, CommandRegistry
 } from '../../common';
 import { KeybindingContribution, KeybindingRegistry } from "../keybinding";
 import { WidgetManager } from '../widget-manager';
-import { Widget } from '@phosphor/widgets';
 import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
 import { CommonMenus } from '../common-frontend-contribution';
 import { ApplicationShell } from './application-shell';
@@ -29,6 +29,16 @@ export interface ViewContributionOptions {
     defaultWidgetOptions: ApplicationShell.WidgetOptions;
     toggleCommandId?: string;
     toggleKeybinding?: string;
+}
+
+// tslint:disable-next-line:no-any
+export function bindViewContribution<T extends AbstractViewContribution<any>>(bind: interfaces.Bind, identifier: interfaces.Newable<T>): interfaces.BindingWhenOnSyntax<T> {
+    const syntax = bind<T>(identifier).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(identifier);
+    bind(CommandContribution).toService(identifier);
+    bind(KeybindingContribution).toService(identifier);
+    bind(MenuContribution).toService(identifier);
+    return syntax;
 }
 
 /**
@@ -55,6 +65,10 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
 
     get widget(): Promise<T> {
         return this.widgetManager.getOrCreateWidget<T>(this.options.widgetId);
+    }
+
+    tryGetWidget(): T | undefined {
+        return this.widgetManager.tryGetWidget(this.options.widgetId);
     }
 
     async openView(args: Partial<OpenViewArguments> = {}): Promise<T> {
