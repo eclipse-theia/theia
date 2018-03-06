@@ -313,7 +313,7 @@ export interface CommitIdentity {
     /**
      * The date of the commit.
      */
-    readonly date: Date;
+    readonly timestamp: number;
 
     /**
      * The time-zone offset.
