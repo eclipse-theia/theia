@@ -13,7 +13,7 @@ import URI from "@theia/core/lib/common/uri";
 import { GitFileChange, GitFileStatus, Git, WorkingDirectoryStatus } from '../../common';
 import { GitNavigableListWidget } from "../git-navigable-list-widget";
 import { DiffNavigatorProvider, DiffNavigator } from "@theia/editor/lib/browser/diff-navigator";
-import { EditorManager } from "@theia/editor/lib/browser";
+import { EditorManager, EditorOpenerOptions, EditorWidget } from "@theia/editor/lib/browser";
 import { GitWatcher } from "../../common/git-watcher";
 import { inject, injectable, postConstruct } from "inversify";
 import { GitFileChangeNode } from "../git-widget";
@@ -167,7 +167,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
                 this.selectNode(change);
             },
             ondblclick: () => {
-                this.openFile(change);
+                this.openChange(change);
             }
         }, iconSpan, nameSpan, pathSpan));
         if (change.extraIconClassName) {
@@ -197,7 +197,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
                         this.openSelected();
                     }
                 } else {
-                    this.openFile(selected);
+                    this.openChange(selected);
                 }
             });
         } else if (this.gitNodes.length > 0) {
@@ -220,7 +220,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
                         this.openSelected();
                     }
                 } else {
-                    this.openFile(selected);
+                    this.openChange(selected);
                 }
             });
         }
@@ -251,7 +251,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     protected openSelected(): void {
         const selected = this.getSelected();
         if (selected) {
-            this.openFile(selected);
+            this.openChange(selected);
         }
     }
 
@@ -289,9 +289,15 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         return uriToOpen;
     }
 
-    protected openFile(change: GitFileChange) {
+    async openChanges(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
+        const stringUri = uri.toString();
+        const change = this.fileChangeNodes.find(n => n.uri.toString() === stringUri);
+        return change && this.openChange(change, options);
+    }
+
+    protected openChange(change: GitFileChange, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
         const uriToOpen = this.getUriToOpen(change);
-        this.doOpen(uriToOpen);
+        return this.editorManager.open(uriToOpen, options);
     }
 
     protected doOpen(uriToOpen: URI) {
