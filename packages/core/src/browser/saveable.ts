@@ -7,7 +7,7 @@
 
 import { Widget } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
-import { Event, MaybePromise } from '../common';
+import { Event, MaybePromise, isCancelled, cancelled } from '../common';
 import { Key } from './keys';
 import { AbstractDialog } from './dialogs';
 
@@ -60,20 +60,36 @@ export namespace Saveable {
             setDirty(widget, saveable.dirty);
             saveable.onDirtyChanged(() => setDirty(widget, saveable.dirty));
             const close = widget.close.bind(widget);
+            let closing = false;
             widget.close = async () => {
-                if (saveable.dirty) {
-                    if (saveable.autoSave === 'on') {
-                        await Saveable.save(widget);
-                    } else {
-                        const dialog = new ShouldSaveDialog(widget);
-                        if (await dialog.open()) {
-                            await Saveable.save(widget);
-                        }
-                    }
+                if (closing) {
+                    return;
                 }
-                close();
+                closing = true;
+                try {
+                    if (await shouldSave(saveable, widget)) {
+                        await Saveable.save(widget);
+                    }
+                    close();
+                } catch (e) {
+                    if (!isCancelled(e)) {
+                        throw e;
+                    }
+                } finally {
+                    closing = false;
+                }
             };
         }
+    }
+    export async function shouldSave(saveable: Saveable, widget: Widget): Promise<boolean> {
+        if (!saveable.dirty) {
+            return false;
+        }
+        if (saveable.autoSave === 'on') {
+            return true;
+        }
+        const dialog = new ShouldSaveDialog(widget);
+        return dialog.open();
     }
 }
 
@@ -100,7 +116,7 @@ export class ShouldSaveDialog extends AbstractDialog<boolean> {
         });
 
         const messageNode = document.createElement("div");
-        messageNode.textContent = "Your change will be lost if you don't save them.";
+        messageNode.textContent = "Your changes will be lost if you don't save them.";
         messageNode.setAttribute('style', 'flex: 1 100%; padding-bottom: calc(var(--theia-ui-padding)*3);');
         this.contentNode.appendChild(messageNode);
         this.dontSaveButton = this.appendDontSaveButton();
@@ -126,4 +142,12 @@ export class ShouldSaveDialog extends AbstractDialog<boolean> {
     get value(): boolean {
         return this.shouldSave;
     }
+
+    close(): void {
+        if (this.reject) {
+            this.reject(cancelled());
+        }
+        super.close();
+    }
+
 }
