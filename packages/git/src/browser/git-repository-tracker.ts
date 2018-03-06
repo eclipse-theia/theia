@@ -84,4 +84,27 @@ export class GitRepositoryTracker {
         return this.onGitEventEmitter.event;
     }
 
+    getPath(uri: URI): string | undefined {
+        const repository = this.selectedRepository;
+        if (!repository) {
+            return undefined;
+        }
+        const repositoryUri = new URI(repository.localUri);
+        const repositoryPath = repositoryUri.path.toString();
+        const path = uri.path.toString();
+        if (!path.startsWith(repositoryPath)) {
+            return undefined;
+        }
+        const relativePath = path.substr(repositoryPath.length);
+        return relativePath[0] === '/' ? relativePath.substr(1) : relativePath;
+    }
+
+    getUri(path: string): URI | undefined {
+        const repository = this.selectedRepository;
+        if (!repository) {
+            return undefined;
+        }
+        return new URI(repository.localUri).resolve(path);
+    }
+
 }
