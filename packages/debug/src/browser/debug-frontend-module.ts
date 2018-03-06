@@ -9,16 +9,15 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 
-import {ContainerModule, interfaces} from 'inversify';
-import {DebugCommandHandlers} from "./debug-command";
-import {MenuContribution} from "@theia/core/lib/common/menu";
-import {CommandContribution} from "@theia/core/lib/common/command";
-import {WebSocketConnectionProvider} from "@theia/core/lib/browser/messaging/connection";
-import {DebugPath, Debug} from "../common/debug-model";
+import { ContainerModule, interfaces } from 'inversify';
+import { DebugCommandHandlers } from "./debug-command";
+import { MenuContribution } from "@theia/core/lib/common/menu";
+import { CommandContribution } from "@theia/core/lib/common/command";
+import { WebSocketConnectionProvider } from "@theia/core/lib/browser/messaging/connection";
+import { DebugPath, DebugServer } from "../common/debug-server";
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bind(MenuContribution).to(DebugCommandHandlers);
     bind(CommandContribution).to(DebugCommandHandlers);
-
-    bind(Debug).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, DebugPath)).inSingletonScope();
+    bind(DebugServer).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, DebugPath)).inSingletonScope();
 });

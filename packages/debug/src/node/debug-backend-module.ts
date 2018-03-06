@@ -9,16 +9,25 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 
-import {ConnectionHandler, JsonRpcConnectionHandler} from "@theia/core/lib/common";
-import {ContainerModule} from 'inversify';
-import {DebugImpl} from "./debug";
-import {DebugPath, Debug} from "../common/debug-model";
+import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common";
+import { ContainerModule } from 'inversify';
+import {
+    DebugConfigurationManager,
+    DebugConfigurationManagerImpl,
+    DebugServerImpl,
+    DebugSessionManager,
+    DebugSessionManagerImpl
+} from "./debug";
+import { DebugPath, DebugServer, DebugConfigurationRegistry } from "../common/debug-server";
 
 export default new ContainerModule(bind => {
-    bind(Debug).to(DebugImpl).inSingletonScope();
+    bind(DebugConfigurationManager).to(DebugConfigurationManagerImpl).inSingletonScope();
+    bind(DebugConfigurationRegistry).to(DebugConfigurationManagerImpl).inSingletonScope();
+    bind(DebugSessionManager).to(DebugSessionManagerImpl).inSingletonScope();
+    bind(DebugServer).to(DebugServerImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(context =>
         new JsonRpcConnectionHandler(DebugPath, client => {
-            const server = context.container.get<Debug>(Debug);
+            const server = context.container.get<DebugServer>(DebugServer);
             client.onDidCloseConnection(() => server.dispose());
             return server;
         })
