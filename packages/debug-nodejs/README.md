@@ -1,4 +1,4 @@
-# Theia - Debug Extension
+# Theia - NodeJS Debug Extension
 
 See [here](https://github.com/theia-ide/theia) for a detailed documentation.
 
