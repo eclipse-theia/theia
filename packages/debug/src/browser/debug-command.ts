@@ -9,10 +9,10 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 
-import {injectable, inject} from "inversify";
-import {CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry} from "@theia/core/lib/common";
-import {MAIN_MENU_BAR} from "@theia/core/lib/common/menu";
-import {Debug} from "../common/debug-model";
+import { injectable, inject } from "inversify";
+import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
+import { MAIN_MENU_BAR } from "@theia/core/lib/common/menu";
+import { DebugServer } from "../common/debug-server";
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, "4_debug"];
@@ -35,8 +35,8 @@ export namespace DEBUG_COMMANDS {
 @injectable()
 export class DebugCommandHandlers implements MenuContribution, CommandContribution {
 
-    @inject(Debug)
-    protected readonly debug: Debug;
+    @inject(DebugServer)
+    protected readonly debug: DebugServer;
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerSubmenu(DebugMenus.DEBUG, 'Debug');
@@ -51,18 +51,14 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(DEBUG_COMMANDS.START);
         registry.registerHandler(DEBUG_COMMANDS.START.id, {
-            execute: () => {
-                this.debug.doSomething("start");
-            },
+            execute: () => { this.debug.listDebugConfigurationProviders(); },
             isEnabled: () => true,
             isVisible: () => true
         });
 
         registry.registerCommand(DEBUG_COMMANDS.STOP);
         registry.registerHandler(DEBUG_COMMANDS.STOP.id, {
-            execute: () => {
-                this.debug.doSomething("stop");
-            },
+            execute: () => { },
             isEnabled: () => true,
             isVisible: () => true
         });

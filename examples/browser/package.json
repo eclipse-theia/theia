@@ -7,6 +7,7 @@
     "@theia/core": "^0.3.10",
     "@theia/cpp": "^0.3.10",
     "@theia/debug": "^0.3.8",
+    "@theia/debug-nodejs": "^0.3.8",
     "@theia/editor": "^0.3.10",
     "@theia/editorconfig": "^0.3.10",
     "@theia/extension-manager": "^0.3.10",
