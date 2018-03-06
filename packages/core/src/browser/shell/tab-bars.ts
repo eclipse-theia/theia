@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import PerfectScrollbar from 'perfect-scrollbar';
 import { TabBar, Title, Widget } from '@phosphor/widgets';
 import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@phosphor/virtualdom';
 import { MenuPath } from '../../common';
@@ -167,9 +168,106 @@ export class TabBarRenderer extends TabBar.Renderer {
 }
 
 /**
+ * A specialized tab bar for the main and bottom areas.
+ */
+export class ScrollableTabBar extends TabBar<Widget> {
+
+    protected scrollBar?: PerfectScrollbar;
+
+    private scrollBarFactory: () => PerfectScrollbar;
+    private pendingReveal?: Promise<void>;
+
+    constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
+        super(options);
+        this.scrollBarFactory = () => new PerfectScrollbar(this.node, options);
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        if (!this.scrollBar) {
+            this.scrollBar = this.scrollBarFactory();
+        }
+        super.onAfterAttach(msg);
+    }
+
+    protected onBeforeDetach(msg: Message): void {
+        super.onBeforeDetach(msg);
+        if (this.scrollBar) {
+            this.scrollBar.destroy();
+            this.scrollBar = undefined;
+        }
+    }
+
+    protected onUpdateRequest(msg: Message): void {
+        super.onUpdateRequest(msg);
+        if (this.scrollBar) {
+            this.scrollBar.update();
+        }
+    }
+
+    protected onResize(msg: Widget.ResizeMessage): void {
+        super.onResize(msg);
+        if (this.scrollBar) {
+            if (this.currentIndex >= 0) {
+                this.revealTab(this.currentIndex);
+            }
+            this.scrollBar.update();
+        }
+    }
+
+    /**
+     * Reveal the tab with the given index by moving the scroll bar if necessary.
+     */
+    revealTab(index: number): Promise<void> {
+        if (this.pendingReveal) {
+            // A reveal has already been scheduled
+            return this.pendingReveal;
+        }
+        const result = new Promise<void>((resolve, reject) => {
+            // The tab might not have been created yet, so wait until the next frame
+            window.requestAnimationFrame(() => {
+                const tab = this.contentNode.children[index] as HTMLElement;
+                if (tab && this.isVisible) {
+                    const parent = this.node;
+                    if (this.orientation === 'horizontal') {
+                        const scroll = parent.scrollLeft;
+                        const left = tab.offsetLeft;
+                        if (scroll > left) {
+                            parent.scrollLeft = left;
+                        } else {
+                            const right = left + tab.clientWidth - parent.clientWidth;
+                            if (scroll < right && tab.clientWidth < parent.clientWidth) {
+                                parent.scrollLeft = right;
+                            }
+                        }
+                    } else {
+                        const scroll = parent.scrollTop;
+                        const top = tab.offsetTop;
+                        if (scroll > top) {
+                            parent.scrollTop = top;
+                        } else {
+                            const bottom = top + tab.clientHeight - parent.clientHeight;
+                            if (scroll < bottom && tab.clientHeight < parent.clientHeight) {
+                                parent.scrollTop = bottom;
+                            }
+                        }
+                    }
+                }
+                if (this.pendingReveal === result) {
+                    this.pendingReveal = undefined;
+                }
+                resolve();
+            });
+        });
+        this.pendingReveal = result;
+        return result;
+    }
+
+}
+
+/**
  * A specialized tab bar for side areas.
  */
-export class SideTabBar extends TabBar<Widget> {
+export class SideTabBar extends ScrollableTabBar {
 
     private static readonly DRAG_THRESHOLD = 5;
 
@@ -189,7 +287,7 @@ export class SideTabBar extends TabBar<Widget> {
         mouseDownTabIndex: number
     };
 
-    constructor(options?: TabBar.IOptions<Widget>) {
+    constructor(options?: TabBar.IOptions<Widget> & PerfectScrollbar.Options) {
         super(options);
 
         // Create the hidden content node (see `hiddenContentNode` for explanation)
@@ -218,12 +316,16 @@ export class SideTabBar extends TabBar<Widget> {
         return result;
     }
 
-    protected onUpdateRequest(msg: Message): void {
+    protected onAfterAttach(msg: Message): void {
+        super.onAfterAttach(msg);
         this.renderTabBar();
     }
 
-    protected onAfterAttach(): void {
+    protected onUpdateRequest(msg: Message): void {
         this.renderTabBar();
+        if (this.scrollBar) {
+            this.scrollBar.update();
+        }
     }
 
     /**

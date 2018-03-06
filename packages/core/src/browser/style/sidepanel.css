@@ -11,6 +11,8 @@
 
 :root {
   --theia-private-sidebar-tab-width: 32px;
+  --theia-private-sidebar-scrollbar-rail-width: 7px;
+  --theia-private-sidebar-scrollbar-width: 5px;
 }
 
 
@@ -25,6 +27,10 @@
   font-size: var(--theia-ui-font-size1);
   min-width: var(--theia-private-sidebar-tab-width); 
   max-width: var(--theia-private-sidebar-tab-width);
+}
+
+.p-TabBar.theia-app-sides .p-TabBar-content {
+  z-index: 0;
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-tab {
@@ -85,6 +91,32 @@
 
 
 /*-----------------------------------------------------------------------------
+| Perfect scrollbar
+|----------------------------------------------------------------------------*/
+
+.p-TabBar.theia-app-sides > .ps__rail-y {
+  width: var(--theia-private-sidebar-scrollbar-rail-width);
+  z-index: 100;
+}
+
+.p-TabBar.theia-app-sides > .ps__rail-y  >.ps__thumb-y {
+  width: var(--theia-private-sidebar-scrollbar-width);
+  right: calc((var(--theia-private-sidebar-scrollbar-rail-width) - var(--theia-private-sidebar-scrollbar-width)) / 2);
+}
+
+.p-TabBar.theia-app-sides > .ps__rail-y:hover,
+.p-TabBar.theia-app-sides > .ps__rail-y:focus {
+  width: var(--theia-private-sidebar-scrollbar-rail-width);
+}
+
+.p-TabBar.theia-app-sides > .ps__rail-y:hover > .ps__thumb-y,
+.p-TabBar.theia-app-sides > .ps__rail-y:focus > .ps__thumb-y {
+  width: var(--theia-private-sidebar-scrollbar-width);
+  right: calc((var(--theia-private-sidebar-scrollbar-rail-width) - var(--theia-private-sidebar-scrollbar-width)) / 2);
+}
+
+
+/*-----------------------------------------------------------------------------
 | Bottom content panel
 |----------------------------------------------------------------------------*/
 
@@ -103,14 +135,14 @@
   visibility: hidden;
 }
 
-.p-TabBar.theia-app-sides .theia-TabBar-hidden-content .p-TabBar-tab {
+.p-TabBar.theia-app-sides > .theia-TabBar-hidden-content .p-TabBar-tab {
   line-height: var(--theia-private-sidebar-tab-width);
 }
 
-.p-TabBar.theia-app-left .theia-TabBar-hidden-content .p-TabBar-tabLabel {
+.p-TabBar.theia-app-left > .theia-TabBar-hidden-content .p-TabBar-tabLabel {
   transform: none;
 }
 
-.p-TabBar.theia-app-right .theia-TabBar-hidden-content .p-TabBar-tabLabel {
+.p-TabBar.theia-app-right > .theia-TabBar-hidden-content .p-TabBar-tabLabel {
   transform: none;
 }
