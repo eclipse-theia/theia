@@ -10,6 +10,7 @@ import { Range, SetDecorationParams, DeltaDecorationParams, TextEditor } from ".
 import { EditorManager } from "./editor-manager";
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import URI from "@theia/core/lib/common/uri";
+import { Disposable } from "@theia/core";
 
 @injectable()
 export class EditorDecorationsService {
@@ -154,4 +155,78 @@ export interface DecorationOverviewRulerOptions {
      * position in the overview ruler.
      */
     position?: OverviewRulerLane;
+}
+
+export class EditorDecorationStyle implements Disposable {
+
+    constructor(
+        readonly selector: string,
+        styleProvider: (style: CSSStyleDeclaration) => void,
+    ) {
+        EditorDecorationStyle.createRule(selector, styleProvider);
+    }
+
+    get className(): string {
+        return this.selector.split('::')[0];
+    }
+
+    dispose(): void {
+        EditorDecorationStyle.deleteRule(this.selector);
+    }
+
+}
+
+export namespace EditorDecorationStyle {
+
+    export function copyStyle(from: CSSStyleDeclaration, to: CSSStyleDeclaration): void {
+        Object.keys(from).forEach(key => {
+            // tslint:disable-next-line:no-any
+            (<any>to)[key] = (<any>from)[key];
+        });
+    }
+
+    export function createStyleSheet(container: HTMLElement = document.getElementsByTagName('head')[0]): CSSStyleSheet | undefined {
+        if (!container) {
+            return undefined;
+        }
+        const style = document.createElement('style');
+        style.id = 'editorDecorationsStyle';
+        style.type = 'text/css';
+        style.media = 'screen';
+        style.appendChild(document.createTextNode("")); // trick for webkit
+        container.appendChild(style);
+        return <CSSStyleSheet>style.sheet;
+    }
+
+    const editorDecorationsStyleSheet: CSSStyleSheet | undefined = createStyleSheet();
+
+    export function createRule(selector: string, styleProvider: (style: CSSStyleDeclaration) => void,
+        styleSheet: CSSStyleSheet | undefined = editorDecorationsStyleSheet
+    ): void {
+        if (!styleSheet) {
+            return;
+        }
+        const index = styleSheet.insertRule('.' + selector + '{}', 0);
+        const rules = styleSheet.cssRules || styleSheet.rules;
+        const rule = rules.item(index);
+        if (rule.type === CSSRule.STYLE_RULE) {
+            const styleRule = rule as CSSStyleRule;
+            styleProvider(styleRule.style);
+        }
+    }
+
+    export function deleteRule(selector: string, styleSheet: CSSStyleSheet | undefined = editorDecorationsStyleSheet): void {
+        if (!styleSheet) {
+            return;
+        }
+        const rules = styleSheet.cssRules || styleSheet.rules;
+        for (let i = 0; i < rules.length; i++) {
+            if (rules[i].type === CSSRule.STYLE_RULE) {
+                if ((rules[i] as CSSStyleRule).selectorText === selector) {
+                    styleSheet.removeRule(i);
+                }
+            }
+        }
+    }
+
 }
