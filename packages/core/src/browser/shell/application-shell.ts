@@ -18,7 +18,7 @@ import { RecursivePartial } from '../../common';
 import { Saveable } from '../saveable';
 import { StatusBarImpl, StatusBarLayoutData } from '../status-bar/status-bar';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory, TheiaDockPanel } from './side-panel-handler';
-import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU } from './tab-bars';
+import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar } from './tab-bars';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 
 /** The class name added to ApplicationShell instances. */
@@ -44,15 +44,29 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
 
     createTabBar(): TabBar<Widget> {
         const renderer = this.tabBarRendererFactory();
-        const tabBar = new TabBar<Widget>({ renderer });
+        const tabBar = new ScrollableTabBar({
+            renderer,
+            // Scroll bar options
+            handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
+            useBothWheelAxes: true,
+            scrollXMarginOffset: 4,
+            suppressScrollY: true
+        });
         tabBar.addClass(MAIN_BOTTOM_AREA_CLASS);
         renderer.tabBar = tabBar;
         renderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
+        tabBar.currentChanged.connect(this.onCurrentTabChanged, this);
         return tabBar;
     }
 
     createHandle(): HTMLDivElement {
         return DockPanel.defaultRenderer.createHandle();
+    }
+
+    protected onCurrentTabChanged(sender: ScrollableTabBar, { currentIndex }: TabBar.ICurrentChangedArgs<Widget>): void {
+        if (currentIndex >= 0) {
+            sender.revealTab(currentIndex);
+        }
     }
 }
 
@@ -650,11 +664,12 @@ export class ApplicationShell extends Widget {
      * Handle a change to the current widget.
      */
     private onCurrentChanged(sender: any, args: FocusTracker.IChangedArgs<Widget>): void {
-        if (args.newValue) {
-            args.newValue.title.className += ` ${CURRENT_CLASS}`;
+        const { newValue, oldValue } = args;
+        if (newValue) {
+            newValue.title.className += ` ${CURRENT_CLASS}`;
         }
-        if (args.oldValue) {
-            args.oldValue.title.className = args.oldValue.title.className.replace(CURRENT_CLASS, '');
+        if (oldValue) {
+            oldValue.title.className = oldValue.title.className.replace(CURRENT_CLASS, '');
         }
         this.currentChanged.emit(args);
     }
@@ -668,11 +683,19 @@ export class ApplicationShell extends Widget {
      * Handle a change to the active widget.
      */
     private onActiveChanged(sender: any, args: FocusTracker.IChangedArgs<Widget>): void {
-        if (args.newValue) {
-            args.newValue.title.className += ` ${ACTIVE_CLASS}`;
+        const { newValue, oldValue } = args;
+        if (newValue) {
+            newValue.title.className += ` ${ACTIVE_CLASS}`;
+            const tabBar = this.getTabBarFor(newValue);
+            if (tabBar instanceof ScrollableTabBar) {
+                const index = tabBar.titles.indexOf(newValue.title);
+                if (index >= 0) {
+                    tabBar.revealTab(index);
+                }
+            }
         }
-        if (args.oldValue) {
-            args.oldValue.title.className = args.oldValue.title.className.replace(ACTIVE_CLASS, '');
+        if (oldValue) {
+            oldValue.title.className = oldValue.title.className.replace(ACTIVE_CLASS, '');
         }
         this.activeChanged.emit(args);
     }
@@ -1016,12 +1039,17 @@ export class ApplicationShell extends Widget {
      * Return the tab bar next to the given tab bar; return the given tab bar if there is no adjacent one.
      */
     private nextTabBar(current: TabBar<Widget>): TabBar<Widget> {
-        const bars = toArray(this.mainPanel.tabBars());
-        const len = bars.length;
-        const ci = ArrayExt.firstIndexOf(bars, current);
-        if (ci < (len - 1)) {
+        let bars = toArray(this.bottomPanel.tabBars());
+        let len = bars.length;
+        let ci = ArrayExt.firstIndexOf(bars, current);
+        if (ci < 0) {
+            bars = toArray(this.mainPanel.tabBars());
+            len = bars.length;
+            ci = ArrayExt.firstIndexOf(bars, current);
+        }
+        if (ci >= 0 && ci < len - 1) {
             return bars[ci + 1];
-        } else if (ci === len - 1) {
+        } else if (ci >= 0 && ci === len - 1) {
             return bars[0];
         } else {
             return current;

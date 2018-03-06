@@ -10,51 +10,120 @@
 ::-webkit-scrollbar {
     height: var(--theia-scrollbar-width);
     width: var(--theia-scrollbar-width);
-    background: var(--theia-scrollbar-color);
+    background: var(--theia-scrollbar-rail-color);
 }
 
 ::-webkit-scrollbar-thumb {
     background: var(--theia-scrollbar-thumb-color);
 }
 
+::-webkit-scrollbar:hover {
+    background: var(--theia-scrollbar-active-rail-color);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--theia-scrollbar-active-thumb-color);
+}
+
 ::-webkit-scrollbar-corner {
     background: transparent;
 }
 
-/* perfect scrollbar */
+
+/*-----------------------------------------------------------------------------
+| Perfect scrollbar
+|----------------------------------------------------------------------------*/
+
 .ps__rail-x {
-    background: var(--theia-scrollbar-color);
+    height: var(--theia-scrollbar-rail-width);
+    background: var(--theia-scrollbar-rail-color);
 }
 
-.ps__rail-x .ps__thumb-x {
+.ps__rail-x > .ps__thumb-x {
+    height: var(--theia-scrollbar-width);
+    bottom: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
     background: var(--theia-scrollbar-thumb-color);
-    width: var(--theia-scrollbar-width);
     border-radius: 0px;
+}
+
+.ps__rail-x:hover,
+.ps__rail-x:focus {
+    height: var(--theia-scrollbar-rail-width);
+    background: var(--theia-scrollbar-active-rail-color);
+}
+
+.ps__rail-x:hover > .ps__thumb-x,
+.ps__rail-x:focus > .ps__thumb-x {
+    height: var(--theia-scrollbar-width);
+    bottom: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
+    background: var(--theia-scrollbar-active-thumb-color);
 }
 
 .ps__rail-y {
-    background: var(--theia-scrollbar-color);
+    width: var(--theia-scrollbar-rail-width);
+    background: var(--theia-scrollbar-rail-color);
 }
 
-.ps__rail-y .ps__thumb-y {
-    background: var(--theia-scrollbar-thumb-color);
+.ps__rail-y > .ps__thumb-y {
     width: var(--theia-scrollbar-width);
+    right: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
+    background: var(--theia-scrollbar-thumb-color);
     border-radius: 0px;
 }
-/* monaco */
+
+.ps__rail-y:hover,
+.ps__rail-y:focus {
+    width: var(--theia-scrollbar-rail-width);
+    background: var(--theia-scrollbar-active-rail-color);
+}
+
+.ps__rail-y:hover > .ps__thumb-y,
+.ps__rail-y:focus > .ps__thumb-y {
+    width: var(--theia-scrollbar-width);
+    right: calc((var(--theia-scrollbar-rail-width) - var(--theia-scrollbar-width)) / 2);
+    background: var(--theia-scrollbar-active-thumb-color);
+}
+
+.ps:hover > .ps__rail-x,
+.ps:hover > .ps__rail-y,
+.ps--focus > .ps__rail-x,
+.ps--focus > .ps__rail-y,
+.ps--scrolling-x > .ps__rail-x,
+.ps--scrolling-y > .ps__rail-y {
+    opacity: 1;
+}
+
+
+/*-----------------------------------------------------------------------------
+| Monaco
+|----------------------------------------------------------------------------*/
+
 /* Make horizontal scrollbar, decorations overview ruler and vertical scrollbar arrows opaque */
-.monaco-scrollable-element .scrollbar.horizontal,
-.decorationsOverviewRuler,
-.monaco-scrollable-element .scrollbar.vertical {
-      background: var(--theia-scrollbar-color);
+.vs .monaco-scrollable-element > .scrollbar,
+.vs-dark .monaco-scrollable-element > .scrollbar,
+.decorationsOverviewRuler, {
+    background: var(--theia-scrollbar-rail-color);
 }
 
-.monaco-scrollable-element .scrollbar.vertical .slider {
+.vs .monaco-scrollable-element > .scrollbar > .slider,
+.vs-dark .monaco-scrollable-element > .scrollbar > .slider {
+    background: var(--theia-scrollbar-thumb-color) !important;
+}
+
+.vs .monaco-scrollable-element > .scrollbar:hover,
+.vs-dark .monaco-scrollable-element > .scrollbar:hover {
+    background: var(--theia-scrollbar-active-rail-color);
+}
+
+.vs .monaco-scrollable-element > .scrollbar:hover > .slider,
+.vs-dark .monaco-scrollable-element > .scrollbar:hover > .slider {
+    background: var(--theia-scrollbar-active-thumb-color) !important;
+}
+
+.monaco-scrollable-element > .scrollbar.vertical > .slider {
     width: var(--theia-scrollbar-width) !important;
-    background: var(--theia-scrollbar-thumb-color);
 }
 
-.monaco-scrollable-element .scrollbar.horizontal .slider {
+.monaco-scrollable-element > .scrollbar.horizontal > .slider {
     height: var(--theia-scrollbar-width) !important;
-    background: var(--theia-scrollbar-thumb-color);
 }

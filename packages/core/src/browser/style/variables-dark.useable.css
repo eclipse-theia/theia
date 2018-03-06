@@ -158,8 +158,11 @@ all of MD as it is not optimized for dense, information rich UIs.
 
   /* scrollbars */
   --theia-scrollbar-width: 6px;
+  --theia-scrollbar-rail-width: 10px;
   --theia-scrollbar-thumb-color: hsla(0,0%,39%,.4);
-  --theia-scrollbar-color: rgba(0, 0, 0, 0);
+  --theia-scrollbar-rail-color: transparent;
+  --theia-scrollbar-active-thumb-color: hsla(0,0%,61%,.4);
+  --theia-scrollbar-active-rail-color: transparent;
 
   /* statusbar */
   --theia-statusbar-color: var(--theia-brand-color0);

@@ -6,6 +6,8 @@
   /* These need to be root because tabs get attached to the body during dragging. */
   --theia-private-horizontal-tab-height: 22px;
   --theia-private-horizontal-tab-active-top-border: 2px;
+  --theia-private-horizontal-tab-scrollbar-rail-height: 7px;
+  --theia-private-horizontal-tab-scrollbar-height: 5px;
 }
 
 /*-----------------------------------------------------------------------------
@@ -13,24 +15,26 @@
 |----------------------------------------------------------------------------*/
 
 .p-TabBar {
-  overflow: visible;
   color: var(--theia-ui-font-color1);
   background: var(--theia-layout-color6);
   font-size: var(--theia-ui-font-size1);
-  min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-border-width));
 }
 
-.p-TabBar[data-orientation='horizontal'] > .p-TabBar-content {
+.p-TabBar[data-orientation='horizontal'] {
+  overflow-x: scroll;
+  overflow-y: hidden;
+  min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-border-width) + var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2);
+}
+
+.p-TabBar[data-orientation='horizontal'] .p-TabBar-content {
+  flex: none;
   align-items: flex-end;
-  min-width: 0;
-  min-height: 0;
+  z-index: 0;
 }
 
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-tab {
-  position: relative;
-  overflow: visible;
-  flex: 0 1 auto;
-  height: var(--theia-private-horizontal-tab-height);
+  flex: none;
+  height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2);
   min-width: 35px;
   line-height: var(--theia-private-horizontal-tab-height);
   padding: 0px 8px;
@@ -60,9 +64,9 @@
 
 /* This is a current tab of a tab bar: each tab bar has 1. */
 .p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-current {
+  min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-border-width));
   background: var(--theia-layout-color3);
   color: var(--theia-ui-font-color0);
-  min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-border-width));
   transform: translateY(var(--theia-border-width));
 }
 
@@ -88,7 +92,7 @@
   line-height: 1.7;
 }
 
-.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable>.p-TabBar-tabCloseIcon {
+.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon {
   margin-left: 4px;
   padding-top: 8px;
   background-size: 16px;
@@ -99,9 +103,35 @@
   background-repeat: no-repeat;
 }
 
-.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable.theia-mod-dirty>.p-TabBar-tabCloseIcon {
+.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable.theia-mod-dirty > .p-TabBar-tabCloseIcon {
   background-size: 10px;
   background-image: var(--theia-icon-circle);
+}
+
+
+/*-----------------------------------------------------------------------------
+| Perfect scrollbar
+|----------------------------------------------------------------------------*/
+
+.p-TabBar.theia-app-centers > .ps__rail-x {
+  height: var(--theia-private-horizontal-tab-scrollbar-rail-height);
+  z-index: 1;
+}
+
+.p-TabBar.theia-app-centers > .ps__rail-x  >.ps__thumb-x {
+  height: var(--theia-private-horizontal-tab-scrollbar-height);
+  bottom: calc((var(--theia-private-horizontal-tab-scrollbar-rail-height) - var(--theia-private-horizontal-tab-scrollbar-height)) / 2);
+}
+
+.p-TabBar.theia-app-centers > .ps__rail-x:hover,
+.p-TabBar.theia-app-centers > .ps__rail-x:focus {
+  height: var(--theia-private-horizontal-tab-scrollbar-rail-height);
+}
+
+.p-TabBar.theia-app-centers > .ps__rail-x:hover > .ps__thumb-x,
+.p-TabBar.theia-app-centers > .ps__rail-x:focus > .ps__thumb-x {
+  height: var(--theia-private-horizontal-tab-scrollbar-height);
+  bottom: calc((var(--theia-private-horizontal-tab-scrollbar-rail-height) - var(--theia-private-horizontal-tab-scrollbar-height)) / 2);
 }
 
 
@@ -123,12 +153,12 @@
   box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon,
-.p-TabBar-tab.p-mod-drag-image .p-TabBar-tabLabel {
+.p-TabBar-tab.p-mod-drag-image > .p-TabBar-tabIcon,
+.p-TabBar-tab.p-mod-drag-image > .p-TabBar-tabLabel {
   display: inline-block;
 }
 
-.p-TabBar-tab.p-mod-drag-image .p-TabBar-tabIcon {
+.p-TabBar-tab.p-mod-drag-image > .p-TabBar-tabIcon {
   width: 15px;
   line-height: 1.7;
 }

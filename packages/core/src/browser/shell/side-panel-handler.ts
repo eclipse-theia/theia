@@ -95,12 +95,18 @@ export class SidePanelHandler {
         const side = this.side;
         const tabBarRenderer = this.tabBarRendererFactory();
         const sideBar = new SideTabBar({
+            // Tab bar options
             orientation: side === 'left' || side === 'right' ? 'vertical' : 'horizontal',
             insertBehavior: 'none',
             removeBehavior: 'select-previous-tab',
             allowDeselect: false,
             tabsMovable: true,
-            renderer: tabBarRenderer
+            renderer: tabBarRenderer,
+            // Scroll bar options
+            handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
+            useBothWheelAxes: true,
+            scrollYMarginOffset: 8,
+            suppressScrollX: true
         });
         tabBarRenderer.tabBar = sideBar;
         tabBarRenderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
@@ -414,6 +420,7 @@ export class SidePanelHandler {
     protected onCurrentTabChanged(sender: SideTabBar, { currentTitle, currentIndex }: TabBar.ICurrentChangedArgs<Widget>): void {
         if (currentIndex >= 0) {
             this.state.lastActiveTabIndex = currentIndex;
+            sender.revealTab(currentIndex);
         }
         this.refresh();
     }
