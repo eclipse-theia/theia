@@ -6,26 +6,13 @@
  */
 
 import { injectable, inject } from "inversify";
-import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
-import { open, OpenerService, CommonMenus, StorageService } from '@theia/core/lib/browser';
-import { ConfirmDialog } from "@theia/core/lib/browser/dialogs";
+import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
+import { open, OpenerService, CommonMenus, StorageService, LabelProvider, ConfirmDialog } from '@theia/core/lib/browser';
 import { DirNode, FileDialogFactory, FileStatNode } from '@theia/filesystem/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from './workspace-service';
-import { LabelProvider } from "@theia/core/lib/browser/label-provider";
-
-export namespace WorkspaceCommands {
-    export const OPEN: Command = {
-        id: 'workspace:open',
-        label: 'Open...'
-    };
-
-    export const CLOSE: Command = {
-        id: 'workspace:close',
-        label: 'Close Workspace'
-    };
-}
+import { WorkspaceCommands } from "./workspace-commands";
 
 @injectable()
 export class WorkspaceFrontendContribution implements CommandContribution, MenuContribution {

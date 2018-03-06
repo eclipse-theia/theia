@@ -77,6 +77,15 @@ export class WidgetManager {
         return result;
     }
 
+    tryGetWidget<T extends Widget>(factoryId: string, options?: any): T | undefined {
+        const key = this.toKey({ factoryId, options });
+        const existing = this.widgetPromises.get(key);
+        if (existing instanceof Widget) {
+            return existing as T;
+        }
+        return undefined;
+    }
+
     /**
      * return the widget for the given description
      */

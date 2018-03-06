@@ -6,17 +6,14 @@
  */
 
 import { injectable, inject } from "inversify";
+import { h } from "@phosphor/virtualdom/lib";
 import { Message } from "@phosphor/messaging";
 import URI from "@theia/core/lib/common/uri";
-import { CommandService } from '@theia/core/lib/common/command';
-import { ContextMenuRenderer, TreeProps, ITreeModel, ITreeNode } from '@theia/core/lib/browser';
+import { SelectionService, CommandService } from '@theia/core/lib/common';
+import { ContextMenuRenderer, TreeProps, ITreeModel, ITreeNode, LabelProvider } from '@theia/core/lib/browser';
 import { FileTreeWidget, DirNode } from "@theia/filesystem/lib/browser";
+import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { FileNavigatorModel } from "./navigator-model";
-import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-frontend-contribution';
-import { SelectionService } from '@theia/core/lib/common';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { h } from "@phosphor/virtualdom/lib";
 
 export const FILE_NAVIGATOR_ID = 'files';
 export const LABEL = 'Files';

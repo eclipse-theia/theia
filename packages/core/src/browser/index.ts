@@ -6,6 +6,8 @@
  */
 
 export * from './shell';
+// FIXME move view-contribution out of shell module
+export * from './shell/view-contribution';
 export * from './frontend-application';
 export * from './opener-service';
 export * from './browser';
@@ -23,5 +25,6 @@ export * from './storage-service';
 export * from './preferences';
 export * from './keybinding';
 export * from './keys';
+export * from './status-bar';
 export * from './label-provider';
 export * from './widget-open-handler';

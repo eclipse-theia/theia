@@ -20,6 +20,14 @@ import { WorkspaceService } from './workspace-service';
 const validFilename = require('valid-filename');
 
 export namespace WorkspaceCommands {
+    export const OPEN: Command = {
+        id: 'workspace:open',
+        label: 'Open...'
+    };
+    export const CLOSE: Command = {
+        id: 'workspace:close',
+        label: 'Close Workspace'
+    };
     export const NEW_FILE: Command = {
         id: 'file.newFile',
         label: 'New File'
