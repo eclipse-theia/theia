@@ -14,9 +14,12 @@ const extScriptsPck = require(path.resolve(__dirname, 'package.json'));
 function getExtScript() {
     const commandIndex = process.argv.findIndex(arg => arg.endsWith('theiaext')) + 1;
     const args = process.argv.slice(commandIndex);
+    if (!args[0]) {
+        throw new Error('Please specify the script that runs with theiaext command.');
+    }
     const script = 'ext:' + args[0];
     if (!(script in extScriptsPck.scripts)) {
-        throw new Error('the ext script does not exist: ' + script);
+        throw new Error('The ext script does not exist: ' + script);
     }
     return extScriptsPck.scripts[script];
 }
@@ -38,7 +41,13 @@ function run(script) {
 }
 
 (async () => {
-    const extScript = getExtScript();
-    const exitCode = await run(extScript);
+    let exitCode = 0;
+    try {
+        const extScript = getExtScript();
+        exitCode = await run(extScript);
+    } catch (err) {
+        console.log(`${err.name}: ${err.message}`);
+        exitCode = 1;
+    }
     process.exit(exitCode);
 })();
