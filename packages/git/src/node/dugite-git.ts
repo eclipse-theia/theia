@@ -131,13 +131,13 @@ export class CommitDetailsParser extends OutputParser<CommitWithChanges> {
         const chunks = this.split(input, delimiter);
         const changes: CommitWithChanges[] = [];
         for (const chunk of chunks) {
-            const [sha, email, name, timestamp, authorDateRelative, summary, body, rawChanges] = chunk.trim().split(CommitDetailsParser.ENTRY_DELIMITER);
-            const date = this.toDate(timestamp);
+            const [sha, email, name, timeAsString, authorDateRelative, summary, body, rawChanges] = chunk.trim().split(CommitDetailsParser.ENTRY_DELIMITER);
+            const timestamp = parseInt(timeAsString, 10);
             const fileChanges = this.nameStatusParser.parse(repositoryUri, (rawChanges || '').trim());
             changes.push({
                 sha,
                 author: {
-                    date, email, name
+                    timestamp, email, name
                 },
                 authorDateRelative,
                 summary,
@@ -150,14 +150,6 @@ export class CommitDetailsParser extends OutputParser<CommitWithChanges> {
 
     getFormat(...placeholders: CommitPlaceholders[]): string {
         return '%x02' + placeholders.join('%x01') + '%x01';
-    }
-
-    protected toDate(epochSeconds: string | undefined): Date {
-        const date = new Date(0);
-        if (epochSeconds) {
-            date.setUTCSeconds(Number.parseInt(epochSeconds));
-        }
-        return date;
     }
 
 }
@@ -200,7 +192,7 @@ export class GitBlameParser {
                     author: {
                         name: entry.author,
                         email: entry.authorMail,
-                        date: new Date(parseInt(entry.authorDate || '0', 10) * 1000),
+                        timestamp: entry.authorTime,
                         tzOffset: entry.authorTz,
                     },
                     summary: entry.summary,
@@ -645,7 +637,7 @@ export class DugiteGit implements Git {
 
     private async mapCommitIdentity(toMap: DugiteCommitIdentity): Promise<CommitIdentity> {
         return {
-            date: toMap.date,
+            timestamp: toMap.date.getTime(),
             email: toMap.email,
             name: toMap.name,
             tzOffset: toMap.tzOffset
