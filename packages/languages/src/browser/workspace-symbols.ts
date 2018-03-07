@@ -37,7 +37,8 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
     execute() {
         this.quickOpenService.open(this, {
             placeholder: 'Type to search for symbols.',
-            fuzzyMatchLabel: true
+            fuzzyMatchLabel: true,
+            showItemsWithoutHighlight: true,
         });
     }
 

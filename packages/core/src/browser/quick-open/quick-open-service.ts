@@ -19,6 +19,11 @@ export namespace QuickOpenOptions {
         readonly fuzzyMatchDescription: boolean;
         readonly fuzzySort: boolean;
 
+        /**
+         * Whether to display the items that don't have any highlight.
+         */
+        readonly showItemsWithoutHighlight: boolean;
+
         selectIndex(lookfor: string): number;
 
         onClose(canceled: boolean): void;
@@ -31,6 +36,8 @@ export namespace QuickOpenOptions {
         fuzzyMatchDetail: false,
         fuzzyMatchDescription: false,
         fuzzySort: false,
+
+        showItemsWithoutHighlight: false,
 
         onClose: () => { /* no-op*/ },
 
