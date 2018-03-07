@@ -9,7 +9,7 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 
-import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common";
+import { ConnectionHandler, JsonRpcConnectionHandler, bindContributionProvider } from "@theia/core/lib/common";
 import { ContainerModule } from 'inversify';
 import {
     DebugConfigurationManager,
@@ -17,13 +17,20 @@ import {
     DebugServerImpl,
     DebugSessionManager,
     DebugSessionManagerImpl
-} from "./debug";
-import { DebugPath, DebugServer, DebugConfigurationRegistry } from "../common/debug-server";
+} from "./debug-backend";
+import {
+    DebugPath,
+    DebugServer,
+    DebugConfigurationContribution,
+    DebugSessionFactoryContribution
+} from "../common/debug-server";
 
 export default new ContainerModule(bind => {
     bind(DebugConfigurationManager).to(DebugConfigurationManagerImpl).inSingletonScope();
-    bind(DebugConfigurationRegistry).to(DebugConfigurationManagerImpl).inSingletonScope();
     bind(DebugSessionManager).to(DebugSessionManagerImpl).inSingletonScope();
+    bindContributionProvider(bind, DebugConfigurationContribution);
+    bindContributionProvider(bind, DebugSessionFactoryContribution);
+
     bind(DebugServer).to(DebugServerImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(context =>
         new JsonRpcConnectionHandler(DebugPath, client => {
