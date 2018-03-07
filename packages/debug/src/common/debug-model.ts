@@ -9,29 +9,35 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+import { DebugProtocol } from "vscode-debugprotocol";
 
-// Some entities copied and modified from https://github.com/Microsoft/vscode/blob/master/src/vs/vscode.d.ts
+export namespace Debug {
+    export class InitializeRequest implements DebugProtocol.InitializeRequest {
+        arguments: DebugProtocol.InitializeRequestArguments;
+        command: string;
+        seq: number;
+        type: string;
+    }
 
-/**
- * Configuration for a debug session.
- */
-export interface DebugConfiguration {
-    /**
-     * The type of the debug session.
-     */
-    type: string;
+    export class InitializeRequestArguments implements DebugProtocol.InitializeRequestArguments {
+        clientID?: string | undefined;
+        adapterID: string;
+        locale?: string | undefined;
+        linesStartAt1?: boolean | undefined;
+        columnsStartAt1?: boolean | undefined;
+        pathFormat?: string | undefined;
+        supportsVariableType?: boolean | undefined;
+        supportsVariablePaging?: boolean | undefined;
+        supportsRunInTerminalRequest?: boolean | undefined;
+    }
 
-    /**
-     * The name of the debug session.
-     */
-    name: string;
-
-    /**
-     * Additional debug type specific properties.
-     */
-    [key: string]: any;
+    export class InitializeResponse implements DebugProtocol.InitializeResponse {
+        body?: DebugProtocol.Capabilities | undefined;
+        request_seq: number;
+        success: boolean;
+        command: string;
+        message?: string | undefined;
+        seq: number;
+        type: string;
+    }
 }

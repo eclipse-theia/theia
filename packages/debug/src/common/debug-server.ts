@@ -18,7 +18,6 @@
 
 import { Disposable } from '@theia/core';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { DebugConfiguration } from "./debug-model";
 
 /**
  * The WS endpoint path to the Debug service.
@@ -46,7 +45,7 @@ export interface DebugServer extends Disposable {
      * Finds and returns an array of registered debugger types.
      * @return An array of registered debugger types
      */
-    listDebugConfigurationProviders(): string[];
+    listDebugConfigurationProviders(): Promise<string[]>;
 
     /**
      * Provides initial [debug configuration](#DebugConfiguration). If more than one debug configuration provider is
@@ -54,7 +53,7 @@ export interface DebugServer extends Disposable {
      * @param debuggerType The registered debugger type
      * @return An array of [debug configurations](#DebugConfiguration)
      */
-    provideDebugConfiguration(debuggerType: string): DebugConfiguration[];
+    provideDebugConfiguration(debuggerType: string): Promise<DebugConfiguration[]>;
 
     /**
       * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values or by adding/changing/removing attributes.
@@ -65,7 +64,7 @@ export interface DebugServer extends Disposable {
       * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
       * @return The resolved debug configuration or undefined.
       */
-    resolveDebugConfiguration(debuggerType: string, config: DebugConfiguration): DebugConfiguration | undefined;
+    resolveDebugConfiguration(debuggerType: string, config: DebugConfiguration): Promise<DebugConfiguration | undefined>;
 
     /**
      * Creates a [debug session](#DebugSession) based on resolved configuration.
@@ -75,7 +74,7 @@ export interface DebugServer extends Disposable {
      * @param config The [debug configuration](#DebugConfiguration) to create session based on
      * @return The identifier of the created [debug session](#DebugSession)
      */
-    createDebugSession(debuggerType: string, config: DebugConfiguration): string | undefined;
+    createDebugSession(debuggerType: string, config: DebugConfiguration): Promise<string | undefined>;
 
     /**
      * Sends initialize request to the given [debug session](#DebugSession).
@@ -83,13 +82,8 @@ export interface DebugServer extends Disposable {
      * @param sessionId The session identifier
      * @param initializeRequest The initialize request
      */
-    initializeRequest(sessionId: string, initializeRequest: DebugProtocol.InitializeRequest): DebugProtocol.InitializeResponse | undefined;
+    initializeRequest(sessionId: string, initializeRequest: DebugProtocol.InitializeRequest): Promise<DebugProtocol.InitializeResponse | undefined>;
 }
-
-/**
- * DebugConfigurationProvider symbol for DI.
- */
-export const DebugConfigurationProvider = Symbol('DebugConfigurationProvider');
 
 /**
  * A debug configuration provider allows to add the initial debug configurations
@@ -117,14 +111,9 @@ export interface DebugConfigurationProvider {
 }
 
 /**
- * DebugConfigurationRegistry symbol for DI.
- */
-export const DebugConfigurationRegistry = Symbol('DebugConfigurationRegistry');
-
-/**
  * The registry containing [debug configuration providers](#DebugConfigurationProvider).
  */
-export interface DebugConfigurationRegistry {
+export interface DebugConfigurationProviderRegistry {
 
     /**
      * Registers provider by its type.
@@ -146,7 +135,7 @@ export interface DebugConfigurationContribution {
     /**
      * Registers debug configuration provider.
      */
-    registerDebugConfigurationProvider(registry: DebugConfigurationRegistry): void;
+    registerDebugConfigurationProvider(registry: DebugConfigurationProviderRegistry): void;
 }
 
 /**
@@ -177,11 +166,6 @@ export interface DebugSessionFactoryContribution {
 }
 
 /**
- * DebugSessionFactory symbol for DI.
- */
-export const DebugSessionFactory = Symbol('DebugSessionFactory');
-
-/**
  * Debug session instantiator. It is used to create session once
  * debug configuration is resolved. A debug session factory is registered into
  * [debug session factory registry](#DebugSessionFactoryRegistry) by its type.
@@ -202,4 +186,24 @@ export interface DebugSessionFactory {
  */
 export interface DebugSession extends Disposable {
     initializeRequest(initializeRequest: DebugProtocol.InitializeRequest): DebugProtocol.InitializeResponse;
+}
+
+/**
+ * Configuration for a debug session.
+ */
+export interface DebugConfiguration {
+    /**
+     * The type of the debug session.
+     */
+    type: string;
+
+    /**
+     * The name of the debug session.
+     */
+    name: string;
+
+    /**
+     * Additional debug type specific properties.
+     */
+    [key: string]: any;
 }
