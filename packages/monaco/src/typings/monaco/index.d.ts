@@ -18,11 +18,11 @@ declare module monaco.editor {
     }
 
     export interface ICommonCodeEditor {
-        readonly _codeEditorService: monaco.services.ICodeEditorService;
         readonly _commandService: monaco.commands.ICommandService;
         readonly _instantiationService: monaco.instantiation.IInstantiationService;
         readonly _contributions: {
             'editor.controller.quickOpenController': monaco.quickOpen.QuickOpenController
+            'editor.contrib.referencesController': monaco.referenceSearch.ReferencesController
         }
         readonly cursor: ICursor;
     }
@@ -318,6 +318,41 @@ declare module monaco.theme {
     }
     export interface IThemable { }
     export function attachQuickOpenStyler(widget: IThemable, themeService: IThemeService): monaco.IDisposable;
+}
+
+declare module monaco.referenceSearch {
+
+    export interface Location {
+        uri: Uri,
+        range: IRange
+    }
+
+    export interface OneReference { }
+
+    export interface ReferencesModel {
+        references: OneReference[]
+    }
+
+    export interface RequestOptions {
+        getMetaTitle(model: ReferencesModel): string;
+    }
+
+    export interface ReferenceWidget {
+        hide(): void;
+        show(range: IRange): void;
+        focus(): void;
+    }
+
+    export interface ReferencesController {
+        _widget: ReferenceWidget
+        _model: ReferencesModel | undefined
+        _ignoreModelChangeEvent: boolean;
+        _editorService: monaco.editor.IEditorService;
+        closeWidget(): void;
+        _gotoReference(ref: Location): void
+        toggleWidget(range: IRange, modelPromise: Promise<ReferencesModel> & { cancel: () => void }, options: RequestOptions): void;
+    }
+
 }
 
 declare module monaco.quickOpen {
