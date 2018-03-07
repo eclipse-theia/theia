@@ -13,6 +13,7 @@ import { injectable, inject } from "inversify";
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import { MAIN_MENU_BAR } from "@theia/core/lib/common/menu";
 import { DebugServer } from "../common/debug-server";
+import { Debug } from "../common/debug-model";
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, "4_debug"];
@@ -51,7 +52,12 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(DEBUG_COMMANDS.START);
         registry.registerHandler(DEBUG_COMMANDS.START.id, {
-            execute: () => { this.debug.listDebugConfigurationProviders(); },
+            execute: () => {
+                const debuggerTypes = this.debug.listDebugConfigurationProviders();
+                debuggerTypes.then((types) => {
+                    this.createDebugSession(types[0]);
+                });
+            },
             isEnabled: () => true,
             isVisible: () => true
         });
@@ -62,5 +68,25 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
             isEnabled: () => true,
             isVisible: () => true
         });
+    }
+
+    private createDebugSession(debuggerType: string): void {
+        this.debug
+            .provideDebugConfiguration(debuggerType)
+            .then((configs) => {
+                this.debug
+                    .resolveDebugConfiguration(debuggerType, configs[0])
+                    .then((config) => {
+                        if (config) {
+                            this.debug
+                                .createDebugSession(debuggerType, config)
+                                .then((sessionId) => {
+                                    if (sessionId) {
+                                        this.debug.initializeRequest(sessionId, new Debug.InitializeRequest());
+                                    }
+                                });
+                        }
+                    });
+            });
     }
 }

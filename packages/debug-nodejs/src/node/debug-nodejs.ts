@@ -12,49 +12,107 @@
 import { injectable, inject } from "inversify";
 import {
     DebugConfigurationProvider,
-    DebugConfigurationRegistry,
+    DebugConfigurationProviderRegistry,
     DebugConfigurationContribution,
     DebugSessionFactoryContribution,
     DebugSessionFactoryRegistry,
-    DebugSessionFactory
+    DebugSessionFactory,
+    DebugSession,
+    DebugConfiguration
 } from "@theia/debug/lib/common/debug-server";
-import { DebugConfiguration } from "@theia/debug/lib/common/debug-model";
+import { Debug } from "@theia/debug/lib/common/debug-model";
+import { ILogger } from "@theia/core";
+import { DebugProtocol } from "vscode-debugprotocol/lib/debugProtocol";
 
 /**
- * Node JS debugger type.
+ * NodeJs debugger type.
  */
-export const NodeJs = "Node JS";
+export const NODEJS = "Node Js";
 
+/**
+ * NodeJsDebugConfigurationProvider symbol for DI.
+ */
+export const NodeJsDebugConfigurationProvider = Symbol('NodeJsDebugConfigurationProvider');
+
+/**
+ * NodeJs configuration provider.
+ */
+export interface NodeJsDebugConfigurationProvider extends DebugConfigurationProvider {
+}
+
+/**
+ * NodeJsDebugConfigurationProvider implementation.
+ */
 @injectable()
-export class NodeJSDebugConfigurationProvider implements DebugConfigurationProvider {
+export class NodeJSDebugConfigurationProviderImpl implements NodeJsDebugConfigurationProvider {
     resolveDebugConfiguration(config: DebugConfiguration) {
-        return undefined;
+        return config;
     }
 
     provideDebugConfigurations() {
-        return [];
+        return [new NodeJsDebugConfiguration()];
     }
 }
 
+/**
+ * NodeJsDebugSessionFactory symbol for DI.
+ */
+export const NodeJsDebugSessionFactory = Symbol('NodeJsDebugSessionFactory');
+
+/**
+ * NodeJs session factory.
+ */
+export interface NodeJsDebugSessionFactory extends DebugSessionFactory {
+}
+
+/**
+ * NodeJsDebugSessionFactory implementation.
+ */
 @injectable()
-export class NodeJsDebugSessionFactory implements DebugSessionFactory {
+export class NodeJsDebugSessionFactoryImpl implements NodeJsDebugSessionFactory {
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
     create(config: DebugConfiguration) {
-        return undefined;
+        this.logger.info("NodeJs debug session created");
+        return new NodeJsDebugSession();
     }
 }
 
+/**
+ * Registers NodeJs [debug configuration provider](#NodeJsDebugConfigurationProvider)
+ * and [session factory](#NodeJsDebugSessionFactory).
+ */
 @injectable()
 export class NodeJsDebugRegistrator implements DebugConfigurationContribution, DebugSessionFactoryContribution {
-    @inject(DebugSessionFactory)
-    protected readonly factory: DebugSessionFactory;
+    @inject(NodeJsDebugSessionFactory)
+    protected readonly factory: NodeJsDebugSessionFactory;
 
-    @inject(DebugConfigurationProvider)
-    protected readonly provider: DebugConfigurationProvider;
+    @inject(NodeJsDebugConfigurationProvider)
+    protected readonly provider: NodeJsDebugConfigurationProvider;
 
     registerDebugSessionFactory(registry: DebugSessionFactoryRegistry) {
-        registry.registerDebugSessionFactory(NodeJs, this.factory);
+        registry.registerDebugSessionFactory(NODEJS, this.factory);
     }
-    registerDebugConfigurationProvider(registry: DebugConfigurationRegistry) {
-        registry.registerDebugConfigurationProvider(NodeJs, this.provider);
+    registerDebugConfigurationProvider(registry: DebugConfigurationProviderRegistry) {
+        registry.registerDebugConfigurationProvider(NODEJS, this.provider);
+    }
+}
+
+export class NodeJsDebugConfiguration implements DebugConfiguration {
+    [key: string]: any;
+    type: string;
+    name: string;
+}
+
+/**
+ *  NodeJs session implementation.
+ */
+export class NodeJsDebugSession implements DebugSession {
+    initializeRequest(initializeRequest: DebugProtocol.InitializeRequest) {
+        return new Debug.InitializeResponse();
+    }
+
+    dispose(): void {
     }
 }
