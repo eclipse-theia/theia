@@ -77,6 +77,7 @@ export class MonacoEditorProvider {
         const standaloneCommandService = new monaco.services.StandaloneCommandService(editor.instantiationService);
         commandService.setDelegate(standaloneCommandService);
         this.installQuickOpenService(editor);
+        this.installReferencesController(editor);
 
         return editor;
     }
@@ -115,7 +116,7 @@ export class MonacoEditorProvider {
     protected async createMonacoDiffEditor(uri: URI, override: IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoDiffEditor> {
         const [original, modified] = DiffUris.decode(uri);
 
-        const [originalModel, modifiedModel]  = await Promise.all([this.getModel(original, toDispose), this.getModel(modified, toDispose)]);
+        const [originalModel, modifiedModel] = await Promise.all([this.getModel(original, toDispose), this.getModel(modified, toDispose)]);
 
         const options = this.createMonacoDiffEditorOptions(originalModel, modifiedModel);
         const editor = new MonacoDiffEditor(
@@ -189,6 +190,53 @@ export class MonacoEditorProvider {
                     }
                     editor.focus();
                 }
+            });
+        };
+    }
+
+    protected installReferencesController(editor: MonacoEditor): void {
+        const control = editor.getControl();
+        const referencesController = control._contributions['editor.contrib.referencesController'];
+        referencesController._gotoReference = ref => {
+            referencesController._widget.hide();
+
+            referencesController._ignoreModelChangeEvent = true;
+            const { uri, range } = ref;
+
+            referencesController._editorService.openEditor({
+                resource: uri,
+                options: { selection: range }
+            }).done(openedEditor => {
+                referencesController._ignoreModelChangeEvent = false;
+                if (!openedEditor) {
+                    referencesController.closeWidget();
+                    return;
+                }
+                if (openedEditor.getControl() !== control) {
+                    const model = referencesController._model;
+                    // to preserve the references model
+                    referencesController._model = undefined;
+
+                    // to preserve the active editor
+                    const focus = control.focus;
+                    control.focus = () => { };
+                    referencesController.closeWidget();
+                    control.focus = focus;
+
+                    const modelPromise = Promise.resolve(model) as any;
+                    modelPromise.cancel = () => { };
+                    openedEditor.getControl()._contributions['editor.contrib.referencesController'].toggleWidget(range, modelPromise, {
+                        getMetaTitle: m => m.references.length > 1 ? ` – ${m.references.length} references` : ''
+                    });
+                    return;
+                }
+
+                referencesController._widget.show(range);
+                referencesController._widget.focus();
+
+            }, (e: any) => {
+                referencesController._ignoreModelChangeEvent = false;
+                throw e;
             });
         };
     }

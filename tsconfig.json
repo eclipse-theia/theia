@@ -1,6 +1,7 @@
 {
   "extends": "./configs/base.tsconfig",
   "compilerOptions": {
+    "skipLibCheck": false,
     "baseUrl": ".",
     "paths": {
       "@theia/application-package": [
