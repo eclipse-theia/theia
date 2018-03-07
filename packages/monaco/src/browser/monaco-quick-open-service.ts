@@ -27,7 +27,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
     protected opts: MonacoQuickOpenControllerOpts | undefined;
     protected previousActiveElement: Element | undefined;
 
-    constructor( @inject(ILogger) protected readonly logger: ILogger) {
+    constructor(@inject(ILogger) protected readonly logger: ILogger) {
         super();
         const overlayWidgets = document.createElement('div');
         overlayWidgets.classList.add('quick-open-overlay');
