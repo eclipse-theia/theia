@@ -25,10 +25,6 @@ import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
 /** The class name added to the main and bottom area panels. */
 const MAIN_BOTTOM_AREA_CLASS = 'theia-app-centers';
-/** The class name added to the current widget's title. */
-const CURRENT_CLASS = 'theia-mod-current';
-/** The class name added to the active widget's title. */
-const ACTIVE_CLASS = 'theia-mod-active';
 
 export const ApplicationShellOptions = Symbol('ApplicationShellOptions');
 
@@ -664,13 +660,6 @@ export class ApplicationShell extends Widget {
      * Handle a change to the current widget.
      */
     private onCurrentChanged(sender: any, args: FocusTracker.IChangedArgs<Widget>): void {
-        const { newValue, oldValue } = args;
-        if (newValue) {
-            newValue.title.className += ` ${CURRENT_CLASS}`;
-        }
-        if (oldValue) {
-            oldValue.title.className = oldValue.title.className.replace(CURRENT_CLASS, '');
-        }
         this.currentChanged.emit(args);
     }
 
@@ -684,8 +673,12 @@ export class ApplicationShell extends Widget {
      */
     private onActiveChanged(sender: any, args: FocusTracker.IChangedArgs<Widget>): void {
         const { newValue, oldValue } = args;
+        if (oldValue) {
+            // Reset the z-index to the default
+            this.setZIndex(oldValue.node, null);
+        }
         if (newValue) {
-            newValue.title.className += ` ${ACTIVE_CLASS}`;
+            // Reveal the title of the active widget in its tab bar
             const tabBar = this.getTabBarFor(newValue);
             if (tabBar instanceof ScrollableTabBar) {
                 const index = tabBar.titles.indexOf(newValue.title);
@@ -693,11 +686,21 @@ export class ApplicationShell extends Widget {
                     tabBar.revealTab(index);
                 }
             }
-        }
-        if (oldValue) {
-            oldValue.title.className = oldValue.title.className.replace(ACTIVE_CLASS, '');
+            // Set the z-index so elements with `position: fixed` contained in the active widget are displayed correctly
+            this.setZIndex(newValue.node, '1');
         }
         this.activeChanged.emit(args);
+    }
+
+    /**
+     * Set the z-index of the given element and its ancestors to the value `z`.
+     */
+    private setZIndex(element: HTMLElement, z: string | null) {
+        element.style.zIndex = z;
+        const parent = element.parentElement;
+        if (parent && parent !== this.node) {
+            this.setZIndex(parent, z);
+        }
     }
 
     /**
