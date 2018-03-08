@@ -24,7 +24,7 @@ export class LeftPanel {
     openCloseTab(tabName: string) {
         this.driver.element(`.p-TabBar.theia-app-left .p-TabBar-content`).click(`div\=${tabName}`);
         // Wait for animations to finish
-        this.driver.pause(200);
+        this.driver.pause(300);
     }
 
     collapseTab(tabName: string) {

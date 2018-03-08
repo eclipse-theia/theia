@@ -32,7 +32,7 @@ export class BottomPanel {
     waitForTerminal() {
         this.driver.waitForExist('.p-Widget div.terminal.xterm');
         // Wait for animations to finish
-        this.driver.pause(200);
+        this.driver.pause(300);
     }
 
     isProblemsViewVisible(): boolean {
@@ -42,7 +42,7 @@ export class BottomPanel {
     waitForProblemsView() {
         this.driver.waitForExist('.p-Widget div.theia-marker-container');
         // Wait for animations to finish
-        this.driver.pause(200);
+        this.driver.pause(300);
     }
 
     closeCurrentView() {
