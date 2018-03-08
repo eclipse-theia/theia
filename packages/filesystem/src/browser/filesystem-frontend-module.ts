@@ -31,7 +31,7 @@ export default new ContainerModule(bind => {
 
     bind(FileSystemListener).toSelf().inSingletonScope();
     bind(FileSystem).toDynamicValue(ctx => {
-        const filesystem = WebSocketConnectionProvider.createProxy<FileSystem>(ctx.container, fileSystemPath);
+        const filesystem = WebSocketConnectionProvider.createProxy<FileSystem>(ctx.container, fileSystemPath, undefined, { inWorker: true });
         ctx.container.get(FileSystemListener).listen(filesystem);
         return filesystem;
     }).inSingletonScope();

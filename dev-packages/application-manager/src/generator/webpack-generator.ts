@@ -56,6 +56,10 @@ module.exports = {
     module: {
         rules: [
             {
+                test: /\\.webworker\\.js$/,
+                loader: 'worker-loader'
+            },
+            {
                 test: /\\.css$/,
                 exclude: /\\.useable\\.css$/,
                 loader: 'style-loader!css-loader'

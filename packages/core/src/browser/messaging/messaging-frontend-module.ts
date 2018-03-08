@@ -7,7 +7,9 @@
 
 import { ContainerModule } from "inversify";
 import { WebSocketConnectionProvider } from './connection';
+import { WebSocketFactory } from "./web-socket-factory";
 
 export const messagingFrontendModule = new ContainerModule(bind => {
+    bind(WebSocketFactory).toSelf().inSingletonScope();
     bind(WebSocketConnectionProvider).toSelf().inSingletonScope();
 });

@@ -5,24 +5,35 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, interfaces } from "inversify";
-import { listen as doListen, Logger, ConsoleLogger } from "vscode-ws-jsonrpc";
+import { injectable, interfaces, inject } from "inversify";
+import { listen as doListen, createMessageConnection } from "vscode-ws-jsonrpc";
 import { ConnectionHandler, JsonRpcProxyFactory, JsonRpcProxy } from "../../common";
 import { Endpoint } from "../endpoint";
-const ReconnectingWebSocket = require('reconnecting-websocket');
+import { WebWorkerMessageReader } from "./web-worker-message-reader";
+import { WebWorkerMessageWriter } from "./web-worker-message-writer";
+import { WebSocketOptions, WebSocketFactory } from "./web-socket-factory";
 
-export interface WebSocketOptions {
+export interface WorkerContructor {
+    new(): Worker
+}
+
+export interface WebSocketConnectionOptions {
     /**
      * True by default.
      */
     reconnecting?: boolean;
+
+    inWorker?: boolean;
 }
 
 @injectable()
 export class WebSocketConnectionProvider {
 
-    static createProxy<T extends object>(container: interfaces.Container, path: string, target?: object): JsonRpcProxy<T> {
-        return container.get(WebSocketConnectionProvider).createProxy<T>(path, target);
+    @inject(WebSocketFactory)
+    protected readonly factory: WebSocketFactory;
+
+    static createProxy<T extends object>(container: interfaces.Container, path: string, target?: object, options?: WebSocketConnectionOptions): JsonRpcProxy<T> {
+        return container.get(WebSocketConnectionProvider).createProxy<T>(path, target, options);
     }
 
     /**
@@ -32,7 +43,7 @@ export class WebSocketConnectionProvider {
      * An optional target can be provided to handle
      * notifications and requests from a remote side.
      */
-    createProxy<T extends object>(path: string, target?: object, options?: WebSocketOptions): JsonRpcProxy<T> {
+    createProxy<T extends object>(path: string, target?: object, options?: WebSocketConnectionOptions): JsonRpcProxy<T> {
         const factory = new JsonRpcProxyFactory<T>(target);
         this.listen({
             path,
@@ -44,24 +55,36 @@ export class WebSocketConnectionProvider {
     /**
      * Install a connection handler for the given path.
      */
-    listen(handler: ConnectionHandler, options?: WebSocketOptions): void {
-        const url = this.createWebSocketUrl(handler.path);
-        const webSocket = this.createWebSocket(url, options);
-
-        const logger = this.createLogger();
-        webSocket.onerror = function (error: Event) {
-            logger.error('' + error);
-            return;
+    listen(handler: ConnectionHandler, options?: WebSocketConnectionOptions): void {
+        const op = <WebSocketOptions>{
+            url: this.createWebSocketUrl(handler.path),
+            reconnecting: true,
+            ...options
         };
-        doListen({
-            webSocket,
-            onConnection: handler.onConnection.bind(handler),
-            logger
-        });
+        if (options && options.inWorker !== undefined && options.inWorker && Worker) {
+            this.listenInWorker(handler, op);
+        } else {
+            this.listenInMain(handler, op);
+        }
     }
 
-    protected createLogger(): Logger {
-        return new ConsoleLogger();
+    protected listenInWorker(handler: ConnectionHandler, options: WebSocketOptions): void {
+        const worker = new (require('./connection.webworker') as WorkerContructor)();
+        worker.postMessage(options);
+
+        const reader = new WebWorkerMessageReader(worker);
+        const writer = new WebWorkerMessageWriter(worker);
+        const connection = createMessageConnection(reader, writer);
+        handler.onConnection(connection);
+    }
+
+    protected listenInMain(handler: ConnectionHandler, options: WebSocketOptions): void {
+        const webSocket = this.factory.createWebSocket(options);
+        webSocket.onerror = error => console.error(error);
+        doListen({
+            webSocket,
+            onConnection: handler.onConnection.bind(handler)
+        });
     }
 
     /**
@@ -70,24 +93,6 @@ export class WebSocketConnectionProvider {
     createWebSocketUrl(path: string): string {
         const endpoint = new Endpoint({ path });
         return endpoint.getWebSocketUrl().toString();
-    }
-
-    /**
-     * Creates a web socket for the given url
-     */
-    createWebSocket(url: string, options?: WebSocketOptions): WebSocket {
-        if (options === undefined || options.reconnecting) {
-            const socketOptions = {
-                maxReconnectionDelay: 10000,
-                minReconnectionDelay: 1000,
-                reconnectionDelayGrowFactor: 1.3,
-                connectionTimeout: 10000,
-                maxRetries: Infinity,
-                debug: false
-            };
-            return new ReconnectingWebSocket(url, undefined, socketOptions);
-        }
-        return new WebSocket(url);
     }
 
 }
