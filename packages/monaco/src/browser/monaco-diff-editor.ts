@@ -7,14 +7,13 @@
 
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import URI from '@theia/core/lib/common/uri';
-import { Disposable, DisposableCollection } from '@theia/core/lib/common';
+import { Disposable } from '@theia/core/lib/common';
 import { Dimension, EditorDecorationsService, DiffNavigator, DeltaDecorationParams } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoDiffNavigatorFactory } from './monaco-diff-nagivator-factory';
 
 import IStandaloneDiffEditor = monaco.editor.IStandaloneDiffEditor;
-import IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor;
 import IDiffEditorConstructionOptions = monaco.editor.IDiffEditorConstructionOptions;
 import IDiffNavigatorOptions = monaco.editor.IDiffNavigatorOptions;
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
@@ -63,23 +62,6 @@ export class MonacoDiffEditor extends MonacoEditor {
         });
         this.editor = this._diffEditor.getModifiedEditor();
         return this._diffEditor;
-    }
-
-    protected addOnDidFocusHandler(codeEditor: IStandaloneCodeEditor) {
-        // increase the z-index for the focussed element hierarchy within the dockpanel
-        this.toDispose.push(codeEditor.onDidFocusEditor(() => {
-            const z = '1';
-            // already increased? -> do nothing
-            if (this._diffEditor.getDomNode().style.zIndex === z) {
-                return;
-            }
-            const toDisposeOnBlur = new DisposableCollection();
-            this.editor = codeEditor;
-            this.increaseZIndex(this._diffEditor.getDomNode(), z, toDisposeOnBlur);
-            toDisposeOnBlur.push(codeEditor.onDidBlurEditor(() =>
-                toDisposeOnBlur.dispose()
-            ));
-        }));
     }
 
     protected resize(dimension: Dimension | null): void {

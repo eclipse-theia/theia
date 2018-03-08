@@ -29,7 +29,7 @@
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-content {
   flex: none;
   align-items: flex-end;
-  z-index: 0;
+  z-index: 1;
 }
 
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-tab {
@@ -71,7 +71,7 @@
 }
 
 /* This is the main application level active tab: only 1 exists. */
-.p-TabBar.theia-app-centers .p-TabBar-tab.theia-mod-active:before {
+.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-current:before {
   position: absolute;
   top: calc(-1 * var(--theia-border-width));
   left: calc(-1 * var(--theia-border-width));
@@ -115,7 +115,7 @@
 
 .p-TabBar.theia-app-centers > .ps__rail-x {
   height: var(--theia-private-horizontal-tab-scrollbar-rail-height);
-  z-index: 1;
+  z-index: 1000;
 }
 
 .p-TabBar.theia-app-centers > .ps__rail-x  >.ps__thumb-x {

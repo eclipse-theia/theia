@@ -30,7 +30,7 @@
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-content {
-  z-index: 0;
+  z-index: 1;
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-tab {
@@ -96,7 +96,7 @@
 
 .p-TabBar.theia-app-sides > .ps__rail-y {
   width: var(--theia-private-sidebar-scrollbar-rail-width);
-  z-index: 100;
+  z-index: 1000;
 }
 
 .p-TabBar.theia-app-sides > .ps__rail-y  >.ps__thumb-y {

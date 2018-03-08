@@ -46,7 +46,7 @@ export class BottomPanel {
     }
 
     closeCurrentView() {
-        this.driver.click('#theia-bottom-content-panel .p-TabBar-tab.theia-mod-current .p-TabBar-tabCloseIcon');
+        this.driver.click('#theia-bottom-content-panel .p-TabBar-tab.p-mod-current .p-TabBar-tabCloseIcon');
     }
 
 }
