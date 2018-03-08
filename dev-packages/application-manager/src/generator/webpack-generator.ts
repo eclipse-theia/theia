@@ -56,8 +56,11 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\\.webworker\\.js$/,
-                loader: 'worker-loader'
+                test: /connection\\.webworker\\.js$/,
+                loader: 'worker-loader',
+                options: {
+                    name: 'connection.worker.[hash].js'
+                }
             },
             {
                 test: /\\.css$/,

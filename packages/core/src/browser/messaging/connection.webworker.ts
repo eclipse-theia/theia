@@ -7,27 +7,32 @@
  */
 
 require('reflect-metadata');
-import { toSocket, WebSocketMessageReader, WebSocketMessageWriter } from "vscode-ws-jsonrpc";
+import { WebSocketMessageReader, WebSocketMessageWriter, IWebSocket } from "vscode-ws-jsonrpc";
 import { forward, createConnection } from "vscode-ws-jsonrpc/lib/server";
-import { WebWorkerMessageReader } from "./web-worker-message-reader";
-import { WebWorkerMessageWriter } from "./web-worker-message-writer";
 import { WebSocketFactory } from "./web-socket-factory";
+import { WebSocketWorker, WebWorkerMessageReader, WebWorkerMessageWriter } from "./web-socket-worker";
 
 // tslint:disable-next-line:no-any
-const worker: Worker = self as any;
-worker.onmessage = e => {
-    const workerReader = new WebWorkerMessageReader(worker);
-    const workerWriter = new WebWorkerMessageWriter(worker);
+const worker = new WebSocketWorker(self as any);
+worker.onInitialize(({ options }) => {
+    const workerReader = new WebWorkerMessageReader(options.url, worker);
+    const workerWriter = new WebWorkerMessageWriter(options.url, worker);
     const workerConnection = createConnection(workerReader, workerWriter, () => workerReader.stop());
 
     const webSocketFactory = new WebSocketFactory();
-    const webSocket = webSocketFactory.createWebSocket(e.data);
-    webSocket.onerror = error => console.error('' + error);
+    const webSocket = webSocketFactory.createWebSocket(options);
+    webSocket.onerror = error => console.error(error);
     webSocket.onopen = () => {
-        const socket = toSocket(webSocket);
+        const socket: IWebSocket = {
+            send: content => webSocket.send(content),
+            onMessage: cb => webSocket.onmessage = event => cb(event.data),
+            onError: cb => webSocket.onerror = event => cb(event),
+            onClose: cb => webSocket.onclose = event => cb(event.code, event.reason),
+            dispose: () => webSocket.close()
+        };
         const socketReader = new WebSocketMessageReader(socket);
         const socketWriter = new WebSocketMessageWriter(socket);
         const socketConnection = createConnection(socketReader, socketWriter, () => socket.dispose());
         forward(workerConnection, socketConnection);
     };
-};
+});
