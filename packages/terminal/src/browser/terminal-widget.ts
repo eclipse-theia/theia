@@ -7,7 +7,7 @@
 
 import { inject, injectable } from "inversify";
 import { Disposable, ILogger } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message, WebSocketConnectionProvider, Endpoint, StatefulWidget, isFirefox } from '@theia/core/lib/browser';
+import { Widget, BaseWidget, Message, Endpoint, StatefulWidget, isFirefox, WebSocketFactory } from '@theia/core/lib/browser';
 import { WorkspaceService } from "@theia/workspace/lib/browser";
 import { IShellTerminalServer } from '../common/shell-terminal-protocol';
 import { ITerminalServer } from '../common/terminal-protocol';
@@ -69,7 +69,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
 
     constructor(
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider,
+        @inject(WebSocketFactory) protected readonly webSocketFactory: WebSocketFactory,
         @inject(TerminalWidgetOptions) options: TerminalWidgetOptions,
         @inject(IShellTerminalServer) protected readonly shellTerminalServer: ITerminalServer,
         @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher,
@@ -260,8 +260,8 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
     }
 
     protected createWebSocket(pid: string): WebSocket {
-        const url = this.endpoint.getWebSocketUrl().resolve(pid);
-        return this.webSocketConnectionProvider.createWebSocket(url.toString(), { reconnecting: false });
+        const url = this.endpoint.getWebSocketUrl().resolve(pid).toString();
+        return this.webSocketFactory.createWebSocket({ url, reconnecting: false });
     }
 
     protected onActivateRequest(msg: Message): void {
