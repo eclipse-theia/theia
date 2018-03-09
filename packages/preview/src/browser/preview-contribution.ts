@@ -18,6 +18,7 @@ import { Position } from 'vscode-languageserver-types';
 import { PreviewWidget } from './preview-widget';
 import { PreviewHandlerProvider, } from './preview-handler';
 import { PreviewUri } from "./preview-uri";
+import { PreviewPreferences } from './preview-preferences';
 
 export namespace PreviewCommands {
     export const OPEN: Command = {
@@ -47,6 +48,9 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(PreviewPreferences)
+    protected readonly preferences: PreviewPreferences;
 
     protected readonly syncronizedUris = new Set<string>();
 
@@ -144,9 +148,13 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
             return 200;
         }
         if (PreviewUri.match(uri)) {
-            return 2 * editorPriority;
+            return editorPriority * 2;
         }
-        return editorPriority / 2;
+        return editorPriority * (this.openByDefault ? 2 : 0.5);
+    }
+
+    protected get openByDefault(): boolean {
+        return this.preferences["preview.openByDefault"];
     }
 
     async open(uri: URI, options?: PreviewOpenerOptions): Promise<PreviewWidget> {
