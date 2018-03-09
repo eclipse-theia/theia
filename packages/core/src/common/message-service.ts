@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from "inversify";
-import { MessageClient, MessageType } from "./message-service-protocol";
+import { MessageClient, MessageType, MessageOptions } from "./message-service-protocol";
 
 @injectable()
 export class MessageService {
@@ -15,20 +15,27 @@ export class MessageService {
         @inject(MessageClient) protected readonly client: MessageClient
     ) { }
 
-    log(message: string, ...actions: string[]): Promise<string | undefined> {
-        return this.client.showMessage({ type: MessageType.Log, text: message, actions: actions || [] });
+    log(message: string, options?: MessageOptions): Promise<string | undefined> {
+        return this.processMessage(MessageType.Log, message, options);
     }
 
-    info(message: string, ...actions: string[]): Promise<string | undefined> {
-        return this.client.showMessage({ type: MessageType.Info, text: message, actions: actions || [] });
+    info(message: string, options?: MessageOptions): Promise<string | undefined> {
+        return this.processMessage(MessageType.Info, message, options);
     }
 
-    warn(message: string, ...actions: string[]): Promise<string | undefined> {
-        return this.client.showMessage({ type: MessageType.Warning, text: message, actions: actions || [] });
+    warn(message: string, options?: MessageOptions): Promise<string | undefined> {
+        return this.processMessage(MessageType.Warning, message, options);
     }
 
-    error(message: string, ...actions: string[]): Promise<string | undefined> {
-        return this.client.showMessage({ type: MessageType.Error, text: message, actions: actions || [] });
+    error(message: string, options?: MessageOptions): Promise<string | undefined> {
+        return this.processMessage(MessageType.Error, message, options);
     }
 
+    private processMessage(messageType: MessageType, messageText: string, options: MessageOptions | undefined): Promise<string | undefined> {
+        if (options) {
+            return this.client.showMessage(
+                { type: messageType, text: messageText, options: { timeout: options.timeout, actions: options.actions } });
+        }
+        return this.client.showMessage({ type: messageType, text: messageText });
+    }
 }

@@ -5,18 +5,20 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable } from 'inversify';
+import { injectable, inject } from 'inversify';
 import {
     MessageClient,
     MessageType,
     Message
 } from '@theia/core/lib/common';
 import { Notifications, NotificationAction } from './notifications';
+import { NotificationPreferences } from "./notification-preferences";
 
 @injectable()
 export class NotificationsMessageClient extends MessageClient {
 
     protected notifications: Notifications = new Notifications();
+    @inject(NotificationPreferences) protected preferences: NotificationPreferences;
 
     showMessage(message: Message): Promise<string | undefined> {
         return this.show(message);
@@ -31,18 +33,35 @@ export class NotificationsMessageClient extends MessageClient {
     protected showToast(message: Message, onCloseFn: (action: string | undefined) => void): void {
         const icon = this.iconFor(message.type);
         const text = message.text;
-        const actions = (message.actions || []).map(action => <NotificationAction>{
-            label: action,
-            fn: element => onCloseFn(action)
-        });
-        actions.push(<NotificationAction>{
-            label: 'Close',
-            fn: element => onCloseFn(undefined)
-        });
+        const messageOptions = message.options;
+        const actions = (!!messageOptions)
+            ? (messageOptions.actions
+                ? messageOptions.actions
+                : []).map(action => <NotificationAction>{
+                    label: action,
+                    fn: element => onCloseFn(action)
+                })
+            : [];
+
+        const timeout = (!!messageOptions)
+            ? (messageOptions.actions)
+                ? undefined
+                : (message.options !== undefined
+                    ? message.options.timeout
+                    : this.preferences['notification.timeout'])
+            : this.preferences['notification.timeout'];
+
+        if (actions) {
+            actions.push(<NotificationAction>{
+                label: 'Close',
+                fn: element => onCloseFn(undefined)
+            });
+        }
         this.notifications.show({
             icon,
             text,
-            actions
+            actions,
+            timeout
         });
     }
 

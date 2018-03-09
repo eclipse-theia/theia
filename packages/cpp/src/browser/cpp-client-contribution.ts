@@ -45,7 +45,7 @@ export class CppClientContribution extends BaseLanguageClientContribution {
             const ERROR_MESSAGE = "Error starting C/C++ language server. " +
                 "Please make sure 'clangd' is installed on your system. " +
                 "You can refer to the clangd page for instructions.";
-            this.messageService.error(ERROR_MESSAGE, READ_INSTRUCTIONS_ACTION).then(selected => {
+            this.messageService.error(ERROR_MESSAGE, { actions: [READ_INSTRUCTIONS_ACTION] }).then(selected => {
                 if (READ_INSTRUCTIONS_ACTION === selected) {
                     window.open("https://clang.llvm.org/extra/clangd.html");
                 }
