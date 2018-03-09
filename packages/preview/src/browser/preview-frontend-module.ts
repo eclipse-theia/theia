@@ -14,11 +14,13 @@ import { PreviewWidget, PreviewWidgetOptions } from './preview-widget';
 import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
 import { PreviewUri } from './preview-uri';
 import { MarkdownPreviewHandler } from './markdown';
+import { bindPreviewPreferences } from './preview-preferences';
 
 import '../../src/browser/style/index.css';
 import '../../src/browser/markdown/style/index.css';
 
 export default new ContainerModule(bind => {
+    bindPreviewPreferences(bind);
     bind(PreviewHandlerProvider).toSelf().inSingletonScope();
     bindContributionProvider(bind, PreviewHandler);
     bind(MarkdownPreviewHandler).toSelf().inSingletonScope();
