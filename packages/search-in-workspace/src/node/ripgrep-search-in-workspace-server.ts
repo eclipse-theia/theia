@@ -24,17 +24,17 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     private client: SearchInWorkspaceClient | undefined;
 
     // Highlighted red
-    private readonly FILENAME_START = '^\x1b\\[m\x1b\\[31m';
-    private readonly FILENAME_END = '\x1b\\[m:';
+    private readonly FILENAME_START = '^\x1b\\[0?m\x1b\\[31m';
+    private readonly FILENAME_END = '\x1b\\[0?m:';
     // Highlighted green
-    private readonly LINE_START = '^\x1b\\[m\x1b\\[32m';
-    private readonly LINE_END = '\x1b\\[m:';
+    private readonly LINE_START = '^\x1b\\[0?m\x1b\\[32m';
+    private readonly LINE_END = '\x1b\\[0?m:';
     // Highlighted yellow
-    private readonly CHARACTER_START = '^\x1b\\[m\x1b\\[33m';
-    private readonly CHARACTER_END = '\x1b\\[m:';
+    private readonly CHARACTER_START = '^\x1b\\[0?m\x1b\\[33m';
+    private readonly CHARACTER_END = '\x1b\\[0?m:';
     // Highlighted blue
-    private readonly MATCH_START = '\x1b\\[m\x1b\\[34m\x1b\\[1m';
-    private readonly MATCH_END = '\x1b\\[m';
+    private readonly MATCH_START = '\x1b\\[0?m\x1b\\[34m\x1b\\[1m';
+    private readonly MATCH_END = '\x1b\\[0?m';
 
     constructor(
         @inject(ILogger) protected readonly logger: ILogger,
