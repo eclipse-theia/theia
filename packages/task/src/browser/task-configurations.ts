@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Ericsson and others.
+ * Copyright (C) 2017-2018 Ericsson and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -93,7 +93,7 @@ export class TaskConfigurations implements Disposable {
         if (await this.fileSystem.exists(configFile)) {
             return Promise.resolve(true);
         } else {
-            this.logger.warn(`Config file ${this.TASKFILE} does not exist under ${rootUri}`);
+            this.logger.info(`Config file ${this.TASKFILE} does not exist under ${rootUri}`);
             return Promise.resolve(false);
         }
     }
