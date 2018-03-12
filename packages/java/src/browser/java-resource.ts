@@ -22,7 +22,7 @@ export class JavaResource implements Resource {
     dispose(): void {
     }
 
-    readContents(options: { encoding?: string }): Promise<string> {
+    readContents(): Promise<string> {
         const uri = this.uri.toString();
         return this.clientContribution.languageClient.then(languageClient =>
             languageClient.sendRequest(ClassFileContentsRequest.type, { uri }).then(content =>

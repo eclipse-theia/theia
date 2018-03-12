@@ -8,7 +8,7 @@
 import { ContainerModule } from 'inversify';
 import { ResourceResolver } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
-import { FileSystem, fileSystemPath } from "../common";
+import { FileSystem, fileSystemPath, DocumentManager, documentManagerPath } from "../common";
 import {
     fileSystemWatcherPath, FileSystemWatcherServer,
     FileSystemWatcherServerProxy, ReconnectingFileSystemWatcherServer
@@ -23,19 +23,18 @@ import "../../src/browser/style/index.css";
 export default new ContainerModule(bind => {
     bindFileSystemPreferences(bind);
 
-    bind(FileSystemWatcherServerProxy).toDynamicValue(ctx =>
-        WebSocketConnectionProvider.createProxy(ctx.container, fileSystemWatcherPath)
-    );
+    const bindProxy = WebSocketConnectionProvider.bindProxy(bind);
+    bindProxy(FileSystemWatcherServerProxy, fileSystemWatcherPath);
     bind(FileSystemWatcherServer).to(ReconnectingFileSystemWatcherServer);
     bind(FileSystemWatcher).toSelf().inSingletonScope();
 
     bind(FileSystemListener).toSelf().inSingletonScope();
-    bind(FileSystem).toDynamicValue(ctx => {
-        const filesystem = WebSocketConnectionProvider.createProxy<FileSystem>(ctx.container, fileSystemPath);
-        ctx.container.get(FileSystemListener).listen(filesystem);
+    bindProxy(FileSystem, fileSystemPath).inSingletonScope().onActivation(({ container }, filesystem: FileSystem) => {
+        container.get(FileSystemListener).listen(filesystem);
         return filesystem;
-    }).inSingletonScope();
+    });
 
+    bindProxy(DocumentManager, documentManagerPath);
     bind(FileResourceResolver).toSelf().inSingletonScope();
-    bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(FileResourceResolver));
+    bind(ResourceResolver).toService(FileResourceResolver);
 });

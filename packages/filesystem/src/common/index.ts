@@ -7,3 +7,5 @@
 
 export * from './filesystem';
 export * from './filesystem-selection';
+// FIXME consider to move to own extension or to core
+export * from './document-manager';

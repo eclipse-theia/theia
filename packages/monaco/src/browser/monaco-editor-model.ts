@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { TextDocumentSaveReason, Position } from "vscode-languageserver-types";
+import { TextDocumentContentChangeEvent, TextDocumentSaveReason, Position } from "vscode-languageserver-types";
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
 import { TextEditorDocument } from "@theia/editor/lib/browser";
 import { DisposableCollection, Disposable, Emitter, Event, Resource, CancellationTokenSource, CancellationToken } from '@theia/core';
@@ -45,7 +45,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         this.toDispose.push(this.onDidSaveModelEmitter);
         this.toDispose.push(this.onWillSaveModelEmitter);
         this.toDispose.push(this.onDirtyChangedEmitter);
-        this.resolveModel = resource.readContents().then(content => this.initialize(content));
+        this.resolveModel = this.initialize();
     }
 
     dispose(): void {
@@ -57,15 +57,20 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
      * Only this method can create an instance of `monaco.editor.IModel`,
      * there should not be other calls to `monaco.editor.createModel`.
      */
-    protected initialize(content: string): void {
+    protected async initialize(): Promise<void> {
+        const content = await this.resource.readContents();
         if (!this.toDispose.disposed) {
             this.model = monaco.editor.createModel(content, undefined, monaco.Uri.parse(this.resource.uri.toString()));
             this.toDispose.push(this.model);
-            this.toDispose.push(this.model.onDidChangeContent(event => this.markAsDirty()));
+            this.toDispose.push(this.model.onDidChangeContent(event => this.handleModelChangeContent(event)));
             if (this.resource.onDidChangeContents) {
                 this.toDispose.push(this.resource.onDidChangeContents(() => this.sync()));
             }
         }
+    }
+    protected handleModelChangeContent(event: monaco.editor.IModelContentChangedEvent): void {
+        this.updateContents(event);
+        this.markAsDirty();
     }
 
     protected _dirty = false;
@@ -112,7 +117,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     }
 
     get readOnly(): boolean {
-        return this.resource.saveContents === undefined;
+        return this.resource.updateContents === undefined;
     }
 
     get onDispose(): monaco.IEvent<void> {
@@ -176,10 +181,15 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             return;
         }
 
-        this.applyEdits([this.p2m.asTextEdit({
-            range: this.m2p.asRange(this.model.getFullModelRange()),
-            newText
-        }) as monaco.editor.IIdentifiedSingleEditOperation]);
+        this.shouldUpdateContents = false;
+        try {
+            this.applyEdits([this.p2m.asTextEdit({
+                range: this.m2p.asRange(this.model.getFullModelRange()),
+                newText
+            }) as monaco.editor.IIdentifiedSingleEditOperation]);
+        } finally {
+            this.shouldUpdateContents = true;
+        }
     }
 
     protected ignoreEdits = false;
@@ -234,8 +244,7 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
             return;
         }
 
-        const content = this.model.getValue();
-        await this.resource.saveContents(content);
+        await this.resource.saveContents();
         if (token.isCancellationRequested) {
             return;
         }
@@ -264,4 +273,22 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
     protected fireDidSaveModel(): void {
         this.onDidSaveModelEmitter.fire(this.model);
     }
+
+    protected shouldUpdateContents = true;
+    protected async updateContents(event: monaco.editor.IModelContentChangedEvent): Promise<void> {
+        if (this.shouldUpdateContents && this.resource.updateContents) {
+            const changes = event.changes.map(change => this.asResourceContentChange(change));
+            await this.resource.updateContents(changes);
+        }
+    }
+    protected asResourceContentChange(change: monaco.editor.IModelContentChange): TextDocumentContentChangeEvent {
+        const text = change.text;
+        if (change.range) {
+            const range = this.m2p.asRange(change.range);
+            const rangeLength = change.rangeLength;
+            return { text, range, rangeLength };
+        }
+        return { text };
+    }
+
 }

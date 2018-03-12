@@ -6,6 +6,7 @@
  */
 
 import { injectable, inject } from 'inversify';
+import { TextDocumentContentChangeEvent } from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 import { Resource, ResourceResolver, Emitter, Event, MaybePromise, DisposableCollection } from '@theia/core/lib/common';
 import { UserStorageService } from './user-storage-service';
@@ -38,8 +39,14 @@ export class UserStorageResource implements Resource {
         return this.service.readContents(this.uri);
     }
 
-    saveContents(content: string): Promise<void> {
-        return this.service.saveContents(this.uri, content);
+    protected content = '';
+    async updateContents(changes: TextDocumentContentChangeEvent[]): Promise<void> {
+        // FIXME: handle changes properly
+        this.content = changes[0]!.text;
+    }
+
+    saveContents(): Promise<void> {
+        return this.service.saveContents(this.uri, this.content);
     }
 
     get onDidChangeContents(): Event<void> {

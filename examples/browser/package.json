@@ -15,7 +15,6 @@
     "@theia/keymaps": "^0.3.7",
     "@theia/languages": "^0.3.7",
     "@theia/markers": "^0.3.7",
-    "@theia/merge-conflicts": "^0.3.7",
     "@theia/messages": "^0.3.7",
     "@theia/metrics": "^0.3.7",
     "@theia/monaco": "^0.3.7",
