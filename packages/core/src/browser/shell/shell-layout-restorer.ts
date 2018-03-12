@@ -196,7 +196,7 @@ export class ShellLayoutRestorer implements CommandContribution {
                         }
                     }
                     return widget;
-                }).catch(err => {
+                }, err => {
                     this.logger.warn(`Couldn't restore widget for ${desc.constructionOptions.factoryId}. Error: ${err} `);
                     return undefined;
                 });

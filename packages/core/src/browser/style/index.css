@@ -35,6 +35,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
+  z-index: 50000;
   background: var(--theia-layout-color3);
   background-image: var(--theia-preloader);
   background-size: 60px 60px;

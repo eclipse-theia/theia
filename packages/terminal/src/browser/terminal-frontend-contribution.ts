@@ -148,6 +148,8 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
         const widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(TERMINAL_WIDGET_FACTORY_ID, <TerminalWidgetFactoryOptions>{
             created: new Date().toString()
         });
+        this.shell.addWidget(widget, { area: 'bottom' });
+        this.shell.activateWidget(widget.id);
         widget.start();
     }
 
