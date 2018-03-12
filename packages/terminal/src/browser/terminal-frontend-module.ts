@@ -7,7 +7,7 @@
 
 import { ContainerModule, Container } from 'inversify';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { ApplicationShell, KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, KeybindingContext } from '@theia/core/lib/browser';
+import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, KeybindingContext } from '@theia/core/lib/browser';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalWidget, TerminalWidgetOptions, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget';
 import { ITerminalServer, terminalPath, terminalsPath } from '../common/terminal-protocol';
@@ -39,12 +39,7 @@ export default new ContainerModule(bind => {
                 destroyTermOnClose: true,
                 ...options
             });
-            const result = child.get(TerminalWidget);
-
-            const shell = ctx.container.get(ApplicationShell);
-            shell.addWidget(result, { area: 'bottom' });
-            shell.activateWidget(result.id);
-            return result;
+            return child.get(TerminalWidget);
         }
     }));
 
