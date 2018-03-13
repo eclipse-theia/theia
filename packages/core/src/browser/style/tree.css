@@ -12,6 +12,7 @@
     font-size: var(--theia-ui-font-size1);
     transform: translateY(var(--theia-border-width));
     max-height: calc(100% - var(--theia-border-width));
+    position: relative;
 }
 
 .theia-Tree:focus {
@@ -67,3 +68,7 @@
     text-align: center;
 }
 
+.theia-TreeNodeSegment mark {
+    background-color: var(--theia-highlight-background-color);
+    color: var(--theia-highlight-color);
+}

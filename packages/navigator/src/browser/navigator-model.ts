@@ -5,17 +5,20 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
-import { OpenerService, open, TreeNode, ExpandableTreeNode } from "@theia/core/lib/browser";
-import { FileNode, FileTreeModel } from "@theia/filesystem/lib/browser";
-import { FileNavigatorTree } from "./navigator-tree";
-import URI from "@theia/core/lib/common/uri";
+import { injectable, inject } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
+import { FileNode, FileTreeModel } from '@theia/filesystem/lib/browser';
+import { TreeIterator, Iterators } from '@theia/core/lib/browser/tree/tree-iterator';
+import { OpenerService, open, TreeNode, ExpandableTreeNode } from '@theia/core/lib/browser';
+import { FileNavigatorTree } from './navigator-tree';
+import { FileNavigatorSearch } from './navigator-search';
 
 @injectable()
 export class FileNavigatorModel extends FileTreeModel {
 
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(FileNavigatorTree) protected readonly tree: FileNavigatorTree;
+    @inject(FileNavigatorSearch) protected readonly navigatorSearch: FileNavigatorSearch;
 
     protected doOpenNode(node: TreeNode): void {
         if (FileNode.is(node)) {
@@ -66,6 +69,34 @@ export class FileNavigatorModel extends FileTreeModel {
             return node;
         }
         return undefined;
+    }
+
+    protected createBackwardIterator(node: TreeNode | undefined): TreeIterator | undefined {
+        if (node === undefined) {
+            return undefined;
+        }
+        const { filteredNodes } = this.navigatorSearch;
+        if (filteredNodes.length === 0) {
+            return super.createBackwardIterator(node);
+        }
+        if (filteredNodes.indexOf(node) === -1) {
+            return undefined;
+        }
+        return Iterators.cycle(filteredNodes.slice().reverse(), node);
+    }
+
+    protected createIterator(node: TreeNode | undefined): TreeIterator | undefined {
+        if (node === undefined) {
+            return undefined;
+        }
+        const { filteredNodes } = this.navigatorSearch;
+        if (filteredNodes.length === 0) {
+            return super.createIterator(node);
+        }
+        if (filteredNodes.indexOf(node) === -1) {
+            return undefined;
+        }
+        return Iterators.cycle(filteredNodes, node);
     }
 
 }

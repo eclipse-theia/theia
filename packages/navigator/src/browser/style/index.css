@@ -9,6 +9,7 @@
     font-size: var(--theia-ui-font-size1);
     color: var(--theia-ui-font-color1);
     margin: 5px;
+    position: relative;
 }
 
 .theia-navigator-container .open-workspace-button-container {
@@ -30,3 +31,5 @@
     padding-bottom: 4px;
     width: 100%;
 }
+
+@import './search-box.css';
