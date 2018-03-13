@@ -21,6 +21,12 @@ export interface WebSocketOptions {
 @injectable()
 export class WebSocketConnectionProvider {
 
+    static bindProxy<T extends object>(bind: interfaces.Bind): WebSocketConnectionProvider.BindProxy<T> {
+        return (serviceIdentifier, path, target) => bind(serviceIdentifier).toDynamicValue(ctx =>
+            WebSocketConnectionProvider.createProxy<T>(ctx.container, path, target)
+        );
+    }
+
     static createProxy<T extends object>(container: interfaces.Container, path: string, target?: object): JsonRpcProxy<T> {
         return container.get(WebSocketConnectionProvider).createProxy<T>(path, target);
     }
@@ -90,4 +96,7 @@ export class WebSocketConnectionProvider {
         return new WebSocket(url);
     }
 
+}
+export namespace WebSocketConnectionProvider {
+    export type BindProxy<T extends object> = (serviceIdentifier: interfaces.ServiceIdentifier<T>, path: string, target?: object) => interfaces.BindingInWhenOnSyntax<T>;
 }

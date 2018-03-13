@@ -9,14 +9,15 @@ import * as cluster from 'cluster';
 import { ContainerModule, interfaces } from "inversify";
 import { ConnectionHandler, JsonRpcConnectionHandler, ILogger } from "@theia/core/lib/common";
 import { FileSystemNode } from './node-filesystem';
-import { FileSystem, FileSystemClient, fileSystemPath } from "../common";
+import { FileSystem, FileSystemClient, fileSystemPath, DocumentManager, documentManagerPath, DocumentManagerClient } from "../common";
 import { FileSystemWatcherServer, FileSystemWatcherClient, fileSystemWatcherPath } from '../common/filesystem-watcher-protocol';
 import { FileSystemWatcherServerClient } from './filesystem-watcher-client';
 import { NsfwFileSystemWatcherServer } from './nsfw-watcher/nsfw-filesystem-watcher';
+import { DocumentManagerImpl } from './document-manager-impl';
 
 export function bindFileSystem(bind: interfaces.Bind): void {
     bind(FileSystemNode).toSelf().inSingletonScope();
-    bind(FileSystem).toDynamicValue(ctx => ctx.container.get(FileSystemNode)).inSingletonScope();
+    bind(FileSystem).toService(FileSystemNode);
 }
 
 export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
@@ -30,9 +31,7 @@ export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {
         });
     } else {
         bind(FileSystemWatcherServerClient).toSelf();
-        bind(FileSystemWatcherServer).toDynamicValue(ctx =>
-            ctx.container.get(FileSystemWatcherServerClient)
-        );
+        bind(FileSystemWatcherServer).toService(FileSystemWatcherServerClient);
     }
 }
 
@@ -51,6 +50,17 @@ export default new ContainerModule(bind => {
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<FileSystemWatcherClient>(fileSystemWatcherPath, client => {
             const server = ctx.container.get<FileSystemWatcherServer>(FileSystemWatcherServer);
+            server.setClient(client);
+            client.onDidCloseConnection(() => server.dispose());
+            return server;
+        })
+    ).inSingletonScope();
+
+    bind(DocumentManagerImpl).toSelf();
+    bind(DocumentManager).toService(DocumentManagerImpl);
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler<DocumentManagerClient>(documentManagerPath, client => {
+            const server = ctx.container.get<DocumentManager>(DocumentManager);
             server.setClient(client);
             client.onDidCloseConnection(() => server.dispose());
             return server;

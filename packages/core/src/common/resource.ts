@@ -6,6 +6,7 @@
  */
 
 import { injectable, inject, named } from "inversify";
+import { TextDocumentContentChangeEvent } from "vscode-languageserver-types";
 import URI from "../common/uri";
 import { ContributionProvider } from './contribution-provider';
 import { Event } from "./event";
@@ -14,8 +15,9 @@ import { MaybePromise } from "./types";
 
 export interface Resource extends Disposable {
     readonly uri: URI;
-    readContents(options?: { encoding?: string }): Promise<string>;
-    saveContents?(content: string, options?: { encoding?: string }): Promise<void>;
+    readContents(): Promise<string>;
+    updateContents?(changes: TextDocumentContentChangeEvent[]): Promise<void>;
+    saveContents?(): Promise<void>
     readonly onDidChangeContents?: Event<void>;
 }
 

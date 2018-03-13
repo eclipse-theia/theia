@@ -210,7 +210,7 @@ describe('User Storage Resource (Filesystem implementation)', () => {
 
     it('Should save and read correctly to fs', async () => {
         const testContent = 'test content';
-        await userStorageResource.saveContents(testContent);
+        await userStorageResource.updateContents([{ text: testContent }]);
         const testFsUri = UserStorageServiceFilesystemImpl.toFilesystemURI(userStorageFolder, userStorageResource.uri);
 
         expect(files[testFsUri.toString()]).eq(testContent);

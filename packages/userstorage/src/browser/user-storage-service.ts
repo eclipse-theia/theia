@@ -11,9 +11,7 @@ export const UserStorageService = Symbol('UserStorageService');
 
 export interface UserStorageService extends Disposable {
     readContents(uri: URI): Promise<string>;
-
     saveContents(uri: URI, content: string): Promise<void>;
-
     onUserStorageChanged: Event<UserStorageChangeEvent>;
 }
 

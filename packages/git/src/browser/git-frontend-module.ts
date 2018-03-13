@@ -20,7 +20,7 @@ import { GitQuickOpenService } from './git-quick-open-service';
 import { GitUriLabelProviderContribution } from './git-uri-label-contribution';
 import { GitDecorator } from './git-decorator';
 import { bindGitPreferences } from './git-preferences';
-import { bindDirtyDiff } from './dirty-diff/dirty-diff-module';
+// import { bindDirtyDiff } from './dirty-diff/dirty-diff-module';
 import { GitRepositoryTracker } from './git-repository-tracker';
 
 import '../../src/browser/style/index.css';
@@ -29,7 +29,7 @@ export default new ContainerModule(bind => {
     bindGitPreferences(bind);
     bindGitDiffModule(bind);
     bindGitHistoryModule(bind);
-    bindDirtyDiff(bind);
+    // bindDirtyDiff(bind);
     bind(GitRepositoryTracker).toSelf().inSingletonScope();
     bind(GitWatcherServerProxy).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitWatcherPath)).inSingletonScope();
     bind(GitWatcherServer).to(ReconnectingGitWatcherServer).inSingletonScope();

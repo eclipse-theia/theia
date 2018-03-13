@@ -12,13 +12,20 @@ export interface Reference<T> extends Disposable {
     readonly object: T
 }
 
-export class ReferenceCollection<K, V extends Disposable> {
+export class ReferenceCollection<K, V extends Disposable> implements Disposable {
 
     protected readonly values = new Map<string, MaybePromise<V>>();
     protected readonly keyMap = new Map<string, K>();
     protected readonly references = new Map<string, DisposableCollection>();
 
     constructor(protected readonly factory: (key: K) => MaybePromise<V>) { }
+
+    dispose(): void {
+        this.values.forEach(async promise => {
+            const value = await promise;
+            value.dispose();
+        });
+    }
 
     has(args: K): boolean {
         const key = this.toKey(args);

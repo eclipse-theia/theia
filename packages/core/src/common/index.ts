@@ -6,6 +6,7 @@
  */
 
 export * from './types';
+export * from './promise-util';
 export * from './disposable';
 export * from './reference';
 export * from './event';

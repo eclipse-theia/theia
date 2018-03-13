@@ -5,11 +5,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
-import { Resource, ResourceResolver, Emitter, Event, DisposableCollection } from "@theia/core";
+import { injectable, inject, postConstruct } from "inversify";
+import { TextDocumentContentChangeEvent } from "vscode-languageserver-types";
+import { Resource, ResourceResolver, Emitter, Event, Disposable, DisposableCollection, ReferenceCollection } from "@theia/core";
 import URI from "@theia/core/lib/common/uri";
-import { FileSystem, FileStat } from "../common/filesystem";
-import { FileSystemWatcher } from "./filesystem-watcher";
+import { DocumentManager, DispatchingDocumentManagerClient } from "../common";
 
 export class FileResource implements Resource {
 
@@ -17,20 +17,18 @@ export class FileResource implements Resource {
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
     readonly onDidChangeContents: Event<void> = this.onDidChangeContentsEmitter.event;
 
-    protected state: FileResource.State = FileResource.emptyState;
     protected uriString: string;
 
     constructor(
         readonly uri: URI,
-        protected readonly fileSystem: FileSystem,
-        protected readonly fileSystemWatcher: FileSystemWatcher
+        protected readonly server: DocumentManager,
+        client: DispatchingDocumentManagerClient
     ) {
         this.uriString = this.uri.toString();
+        this.toDispose.push(Disposable.create(() => this.server.close(this.uriString)));
         this.toDispose.push(this.onDidChangeContentsEmitter);
-        this.toDispose.push(this.fileSystemWatcher.onFilesChanged(changes => {
-            if (changes.some(e => e.uri.toString() === uri.toString())) {
-                this.onDidChangeContentsEmitter.fire(undefined);
-            }
+        this.toDispose.push(client.set(this.uriString, {
+            onDidChange: () => this.onDidChangeContentsEmitter.fire(undefined)
         }));
     }
 
@@ -38,70 +36,47 @@ export class FileResource implements Resource {
         this.toDispose.dispose();
     }
 
-    async readContents(options?: { encoding?: string }): Promise<string> {
-        this.state = await this.doReadContents(options);
-        return this.state.content;
-    }
-    protected async doReadContents(options?: { encoding?: string }): Promise<FileResource.State> {
-        try {
-            if (!await this.fileSystem.exists(this.uriString)) {
-                return FileResource.emptyState;
-            }
-            return this.fileSystem.resolveContent(this.uriString, options);
-        } catch {
-            return FileResource.emptyState;
-        }
+    readContents(): Promise<string> {
+        return this.server.read(this.uriString);
     }
 
-    async saveContents(content: string, options?: { encoding?: string }): Promise<void> {
-        const stat = await this.doSaveContents(content, options);
-        this.state = { stat, content };
-    }
-    protected async doSaveContents(content: string, options?: { encoding?: string }): Promise<FileStat> {
-        if (!await this.fileSystem.exists(this.uriString)) {
-            return this.fileSystem.createFile(this.uriString, { content });
-        }
-        const stat = this.state.stat || await this.fileSystem.getFileStat(this.uriString);
-        return this.fileSystem.setContent(stat, content, options);
+    updateContents(changes: TextDocumentContentChangeEvent[]): Promise<void> {
+        return this.server.update(this.uriString, changes);
     }
 
-}
-export namespace FileResource {
-    export interface State {
-        stat?: FileStat,
-        content: string
+    saveContents(): Promise<void> {
+        return this.server.save(this.uriString);
     }
-    export const emptyState: State = { content: '' };
+
 }
 
 @injectable()
 export class FileResourceResolver implements ResourceResolver {
 
-    constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(FileSystemWatcher) protected readonly fileSystemWatcher: FileSystemWatcher
-    ) { }
+    protected readonly resources = new ReferenceCollection<string, FileResource>(
+        async uri => this.createResource(uri)
+    );
+
+    @inject(DocumentManager)
+    protected readonly documents: DocumentManager;
+    protected readonly client = new DispatchingDocumentManagerClient();
+
+    @postConstruct()
+    protected init(): void {
+        this.documents.setClient(this.client);
+    }
 
     async resolve(uri: URI): Promise<FileResource> {
         if (uri.scheme !== 'file') {
             throw new Error('The given uri is not file uri: ' + uri);
         }
-        const fileStat = await this.getFileStat(uri);
-        if (fileStat && fileStat.isDirectory) {
-            throw new Error('The given uri is a directory: ' + uri);
-        }
-        return new FileResource(uri, this.fileSystem, this.fileSystemWatcher);
+        const { object } = await this.resources.acquire(uri.toString());
+        return object;
     }
 
-    protected async getFileStat(uri: URI): Promise<FileStat | undefined> {
-        try {
-            if (await this.fileSystem.exists(uri.toString())) {
-                return await this.fileSystem.getFileStat(uri.toString());
-            }
-            return undefined;
-        } catch {
-            return undefined;
-        }
+    protected async createResource(uri: string): Promise<FileResource> {
+        await this.documents.open(uri);
+        return new FileResource(new URI(uri), this.documents, this.client);
     }
 
 }
