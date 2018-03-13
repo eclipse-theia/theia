@@ -25,12 +25,12 @@ export namespace TaskCommands {
     // run task command
     export const TASK_RUN: Command = {
         id: 'task:run',
-        label: 'Run Task...'
+        label: 'Tasks: Run...'
     };
 
     export const TASK_ATTACH: Command = {
         id: 'task:attach',
-        label: 'Attach to Task ...'
+        label: 'Tasks: Attach...'
     };
 }
 
@@ -66,10 +66,13 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
         menus.registerSubmenu(TaskCommands.TASK_MENU, TaskCommands.TASK_MENU_LABEL);
         menus.registerMenuAction(TaskCommands.RUN_GROUP, {
             commandId: TaskCommands.TASK_RUN.id,
+            label: TaskCommands.TASK_RUN.label ? TaskCommands.TASK_RUN.label.slice('Tasks: '.length) : TaskCommands.TASK_RUN.label,
             order: '0'
         });
+
         menus.registerMenuAction(TaskCommands.RUN_GROUP, {
             commandId: TaskCommands.TASK_ATTACH.id,
+            label: TaskCommands.TASK_ATTACH.label ? TaskCommands.TASK_ATTACH.label.slice('Tasks: '.length) : TaskCommands.TASK_ATTACH.label,
             order: '1'
         });
     }

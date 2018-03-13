@@ -21,7 +21,7 @@ import { HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
  */
 export const SWITCH_SOURCE_HEADER: Command = {
     id: 'switch_source_header',
-    label: 'Switch between source/header file'
+    label: 'C++: Switch between source/header file'
 };
 
 export const FILE_OPEN_PATH = (path: string): Command => <Command>{
