@@ -51,6 +51,9 @@ export class DirtyDiffManager {
     protected async handleEditorCreated(editorWidget: EditorWidget): Promise<void> {
         const editor = editorWidget.editor;
         const uri = editor.document.uri;
+        if (new URI(uri).scheme !== 'file') {
+            return;
+        }
         const reference = await this.models.acquire(uri);
         editorWidget.disposed.connect(() => reference.dispose());
         const model = reference.object;
