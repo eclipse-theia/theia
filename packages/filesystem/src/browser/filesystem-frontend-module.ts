@@ -8,7 +8,7 @@
 import { ContainerModule } from 'inversify';
 import { ResourceResolver } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser';
-import { FileSystem, fileSystemPath, DocumentManager, documentManagerPath } from "../common";
+import { FileSystem, fileSystemPath, DocumentManager, documentManagerPath, DocumentManagerProxy, ReconnectingDocumentManager } from "../common";
 import {
     fileSystemWatcherPath, FileSystemWatcherServer,
     FileSystemWatcherServerProxy, ReconnectingFileSystemWatcherServer
@@ -34,7 +34,8 @@ export default new ContainerModule(bind => {
         return filesystem;
     });
 
-    bindProxy(DocumentManager, documentManagerPath);
+    bindProxy(DocumentManagerProxy, documentManagerPath);
+    bind(DocumentManager).to(ReconnectingDocumentManager);
     bind(FileResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(FileResourceResolver);
 });

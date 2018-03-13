@@ -10,9 +10,8 @@ import { TextDocumentContentChangeEvent } from "vscode-languageserver-types";
 import { ReferenceCollection, Reference } from "@theia/core";
 import URI from "@theia/core/lib/common/uri";
 import { DocumentManager, DocumentManagerClient } from "../common";
-import { Document, FileDocument } from "./document";
+import { Document, FileDocument, BaseDocument } from "./document";
 
-// FIXME: should we ensure that all requests processed in order? here?
 @injectable()
 export class DocumentManagerImpl implements DocumentManager {
 
@@ -78,10 +77,13 @@ export class DocumentManagerImpl implements DocumentManager {
     }
 
     protected async create(stringUri: string): Promise<Document> {
-        // FIXME support other documents?
-        const resource = new FileDocument(new URI(stringUri));
-        await resource.ready;
-        return resource;
+        const uri = new URI(stringUri);
+        // FIXME support other URIs?
+        const document = uri.scheme === 'file' ?
+            new FileDocument(new URI(stringUri)) :
+            new BaseDocument(uri);
+        await document.ready;
+        return document;
     }
 
 }
