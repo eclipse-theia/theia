@@ -150,6 +150,9 @@ all of MD as it is not optimized for dense, information rich UIs.
   --theia-removed-color0: rgba(230, 0, 0, 0.8);
   --theia-modified-color0: rgba(0, 100, 150, 0.8);
 
+  --theia-highlight-background-color: var(--md-purple-A400);
+  --theia-highlight-color: var(--theia-content-font-color0);
+
   /* icons */
   --theia-icon-close: url(../icons/close-dark.svg);
   --theia-sprite-y-offset: -20px;

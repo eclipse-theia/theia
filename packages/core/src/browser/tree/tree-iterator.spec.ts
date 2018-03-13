@@ -14,7 +14,7 @@ import { TreeNavigationService } from './tree-navigation';
 import { TreeModel, TreeModelImpl } from './tree-model';
 import { TreeExpansionService, TreeExpansionServiceImpl, ExpandableTreeNode } from './tree-expansion';
 import { TreeSelectionService, TreeSelectionServiceImpl } from './tree-selection';
-import { DepthFirstTreeIterator, BreadthFirstTreeIterator, BottomUpTreeIterator, TopDownTreeIterator } from './tree-iterator';
+import { DepthFirstTreeIterator, BreadthFirstTreeIterator, BottomUpTreeIterator, TopDownTreeIterator, Iterators } from './tree-iterator';
 
 // tslint:disable:no-unused-expression
 // tslint:disable:max-line-length
@@ -117,5 +117,61 @@ describe('tree-iterator', () => {
         container.bind(TreeModel).toService(TreeModelImpl);
         return container.get(TreeModel);
     }
+
+});
+
+describe('iterators', () => {
+
+    it('as-iterator', () => {
+        const array = [1, 2, 3, 4];
+        const itr = Iterators.asIterator(array);
+        let next = itr.next();
+        while (!next.done) {
+            const { value } = next;
+            expect(value).to.be.not.undefined;
+            const index = array.indexOf(value);
+            expect(index).to.be.not.equal(-1);
+            array.splice(index, 1);
+            next = itr.next();
+        }
+        expect(array).to.be.empty;
+    });
+
+    it('cycle - without start', function () {
+        this.timeout(1000);
+        const array = [1, 2, 3, 4];
+        const itr = Iterators.cycle(array);
+        const visitedItems = new Set();
+        let next = itr.next();
+        while (!next.done) {
+            const { value } = next;
+            expect(value).to.be.not.undefined;
+            if (visitedItems.has(value)) {
+                expect(Array.from(visitedItems).sort()).to.be.deep.equal(array.sort());
+                break;
+            }
+            visitedItems.add(value);
+            next = itr.next();
+        }
+    });
+
+    it('cycle - with start', function () {
+        this.timeout(1000);
+        const array = [1, 2, 3, 4];
+        const itr = Iterators.cycle(array, 2);
+        const visitedItems = new Set();
+        let next = itr.next();
+        expect(next.value).to.be.equal(2);
+        while (!next.done) {
+            const { value } = next;
+            expect(value).to.be.not.undefined;
+            if (visitedItems.has(value)) {
+                expect(Array.from(visitedItems).sort()).to.be.deep.equal(array.sort());
+                break;
+            }
+            visitedItems.add(value);
+            next = itr.next();
+        }
+    });
 
 });

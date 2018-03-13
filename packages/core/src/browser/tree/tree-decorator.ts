@@ -151,6 +151,7 @@ export namespace TreeDecoration {
      * CSS styles for the tree decorators.
      */
     export namespace Styles {
+        export const CAPTION_HIGHLIGHT_CLASS = 'theia-caption-highlight';
         export const CAPTION_PREFIX_CLASS = 'theia-caption-prefix';
         export const CAPTION_SUFFIX_CLASS = 'theia-caption-suffix';
         export const ICON_WRAPPER_CLASS = 'theia-icon-wrapper';
@@ -314,6 +315,107 @@ export namespace TreeDecoration {
     }
 
     /**
+     * The caption highlighting with the highlighted ranges and an optional background color.
+     */
+    export interface CaptionHighlight {
+
+        /**
+         * The ranges to highlight in the caption.
+         */
+        readonly ranges: CaptionHighlight.Range[]
+
+        /**
+         * The optional color of the text data that is being highlighted. Falls back to the default `mark` color values defined under a tree node segment class.
+         */
+        readonly color?: Color;
+
+        /**
+         * The optional background color of the text data that is being highlighted.
+         */
+        readonly backgroundColor?: Color;
+    }
+
+    export namespace CaptionHighlight {
+
+        /**
+         * A pair of offset and length that has to be highlighted as a range.
+         */
+        export interface Range {
+
+            /**
+             * Zero based offset of the highlighted region.
+             */
+            readonly offset: number;
+
+            /**
+             * The length of the highlighted region.
+             */
+            readonly length: number;
+
+        }
+
+        export namespace Range {
+
+            /**
+             * `true` if the `arg` is contained in the range. The ranges are closed ranges, hence the check is inclusive.
+             */
+            export function contains(arg: number, range: Range): boolean {
+                return arg >= range.offset && arg <= (range.offset + range.length);
+            }
+
+        }
+
+        /**
+         * The result of a caption splitting based on the highlighting information.
+         */
+        export interface Fragment {
+
+            /**
+             * The text data of the fragment.
+             */
+            readonly data: string;
+
+            /**
+             * Has to be highlighted if defined.
+             */
+            readonly highligh?: true
+
+        }
+
+        /**
+         * Splits the `caption` argument based on the ranges from the `highlight` argument.
+         */
+        export function split(caption: string, highlight: CaptionHighlight): Fragment[] {
+            const result: Fragment[] = [];
+            const ranges = highlight.ranges.slice();
+            const containerOf = (index: number) => ranges.findIndex(range => Range.contains(index, range));
+            let data = '';
+            for (let i = 0; i < caption.length; i++) {
+                const containerIndex = containerOf(i);
+                if (containerIndex === -1) {
+                    data += caption[i];
+                } else {
+                    if (data.length > 0) {
+                        result.push({ data });
+                    }
+                    const { length } = ranges.splice(containerIndex, 1).shift()!;
+                    result.push({ data: caption.substr(i, length), highligh: true });
+                    data = '';
+                    i = i + length - 1;
+                }
+            }
+            if (data.length > 0) {
+                result.push({ data });
+            }
+            if (ranges.length !== 0) {
+                throw new Error(`Error occurred when splitting the caption. There was a mismatch between the caption and the corresponding highlighting ranges.`);
+            }
+            return result;
+        }
+
+    }
+
+    /**
      * Encapsulates styling information that has to be applied on the tree node which we decorate.
      */
     export interface Data {
@@ -364,6 +466,11 @@ export namespace TreeDecoration {
          * Has not effect if given, but the tree node does not have an associated image.
          */
         readonly iconOverlay?: IconOverlay;
+
+        /**
+         * An array of ranges to highlight the caption.
+         */
+        readonly highlight?: CaptionHighlight;
 
     }
 

@@ -24,7 +24,7 @@ export class VirtualWidget extends BaseWidget {
         super.onUpdateRequest(msg);
         const child = this.render();
         if (!this.childContainer) {
-            // if we are adding scolling, we need to wrap the contents in its own div, to not conflict with the virtual dom algo.
+            // if we are adding scrolling, we need to wrap the contents in its own div, to not conflict with the virtual dom algo.
             if (this.scrollOptions) {
                 this.childContainer = document.createElement('div');
                 this.node.appendChild(this.childContainer);

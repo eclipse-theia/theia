@@ -114,7 +114,7 @@ export class BreadthFirstTreeIterator extends AbstractTreeIterator {
  * but this iterator will visit the next sibling (`1.3` and `1.4` but **not** `1.1`) nodes. So the expected traversal order will be
  * `1.2`, `1.3`, `1.3.1`, `1.3.2`,  and `1.4` then jumps to `2` and continues with `2.1`.
  */
-export class TopDownTreeIterator extends DepthFirstTreeIterator {
+export class TopDownTreeIterator extends AbstractTreeIterator {
 
     constructor(protected readonly root: TreeNode, protected readonly options: TreeIterator.Options = TreeIterator.DEFAULT_OPTIONS) {
         super(root, options);
@@ -218,6 +218,35 @@ export namespace Iterators {
             const head = queue.shift()!;
             yield head;
             queue.push(...(children(head) || []).filter(include));
+        }
+    }
+
+    /**
+     * Returns with the iterator of the argument.
+     */
+    export function asIterator<T>(elements: ReadonlyArray<T>): IterableIterator<T> {
+        return elements.slice()[Symbol.iterator]();
+    }
+
+    /**
+     * Returns an iterator that cycles indefinitely over the elements of iterable.
+     *  - If `start` is given it starts the iteration from that element. Otherwise, it starts with the first element of the array.
+     *  - If `start` is given, it must contain by the `elements` array. Otherwise, an error will be thrown.
+     *
+     * **Warning**: Typical uses of the resulting iterator may produce an infinite loop. You should use an explicit break.
+     */
+    export function* cycle<T>(elements: ReadonlyArray<T>, start?: T): IterableIterator<T> {
+        const copy = elements.slice();
+        let index = !!start ? copy.indexOf(start) : 0;
+        if (index === -1) {
+            throw new Error(`${start} is not contained in ${copy}.`);
+        }
+        while (true) {
+            yield copy[index];
+            index++;
+            if (index === copy.length) {
+                index = 0;
+            }
         }
     }
 

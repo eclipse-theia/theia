@@ -1,0 +1,72 @@
+/*
+ * Copyright (C) 2018 TypeFox and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+
+.theia-search-box {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    display: flex;
+    align-items: baseline;
+    box-shadow: var(--theia-border-width) var(--theia-border-width) var(--theia-border-color0);
+    line-height: var(--theia-private-horizontal-tab-height);
+    background-color: var(--theia-layout-color3);
+    z-index: 1;
+}
+  
+.theia-search-input {
+    flex-grow: 1;
+    line-height: calc(var(--theia-private-horizontal-tab-height) * 0.8);
+    max-width: 6rem;
+}
+  
+.theia-search-button {
+    min-width: 1rem;
+    text-align: center;
+    flex-grow: 0;
+    font-family: FontAwesome;
+    font-size: calc(var(--theia-content-font-size) * 0.8);
+    color: var(--theia-ui-font-color1);
+}
+
+.theia-search-button-next:before {
+    content: "\f107";
+}
+
+.theia-search-button-next:hover:before {
+    content: "\f107";
+    background-color: var(--theia-layout-color0);
+}
+  
+.theia-search-button-previous:before {
+    content: "\f106";
+}
+
+.theia-search-button-previous:hover:before {
+    content: "\f106";
+    background-color: var(--theia-layout-color0);
+}
+  
+.theia-search-button-close:before {
+    content: "\f00d";
+ }
+
+.theia-search-button-close:hover:before {
+    content: "\f00d";
+    background-color: var(--theia-layout-color0);
+}
+
+.theia-non-selectable {
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+    cursor: default;
+}
+  

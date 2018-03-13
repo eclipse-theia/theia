@@ -120,4 +120,36 @@ describe('tree-decorator', () => {
 
     });
 
+    describe('caption-highligh', () => {
+
+        describe('range-contains', () => {
+            ([
+                [1, 2, 3, false],
+                [0, 0, 1, true],
+                [1, 0, 1, true],
+                [1, 1, 1, true],
+                [2, 1, 1, true],
+                [3, 1, 1, false],
+                [1, 1, -100, false],
+            ] as [number, number, number, boolean][]).forEach(test => {
+                const [input, offset, length, expected] = test;
+                it(`${input} should ${expected ? '' : 'not '}be contained in the [${offset}:${length}] range`, () => {
+                    expect(TreeDecoration.CaptionHighlight.Range.contains(input, { offset, length })).to.be.equal(expected);
+                });
+            });
+        });
+
+        it('split', () => {
+            const actual = TreeDecoration.CaptionHighlight.split('alma', {
+                ranges: [{ offset: 0, length: 1 }]
+            });
+            expect(actual).has.lengthOf(2);
+            expect(actual[0].highligh).to.be.true;
+            expect(actual[0].data).to.be.equal('a');
+            expect(actual[1].highligh).to.be.undefined;
+            expect(actual[1].data).to.be.equal('lma');
+        });
+
+    });
+
 });
