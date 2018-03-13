@@ -26,7 +26,7 @@ import { TerminalKeybindingContexts } from "./terminal-keybinding-contexts";
 export namespace TerminalCommands {
     export const NEW: Command = {
         id: 'terminal:new',
-        label: 'New Terminal'
+        label: 'Open New Terminal'
     };
 }
 

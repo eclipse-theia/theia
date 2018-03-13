@@ -23,19 +23,19 @@ const GIT_AHEAD_BEHIND = 'git-ahead-behind';
 export namespace GIT_COMMANDS {
     export const FETCH = {
         id: 'git.fetch',
-        label: 'Git: Fetch'
+        label: 'Git: Fetch...'
     };
     export const PULL = {
         id: 'git.pull',
-        label: 'Git: Pull'
+        label: 'Git: Pull...'
     };
     export const PUSH = {
         id: 'git.push',
-        label: 'Git: Push'
+        label: 'Git: Push...'
     };
     export const MERGE = {
         id: 'git.merge',
-        label: 'Git: Merge'
+        label: 'Git: Merge...'
     };
     export const CHECKOUT = {
         id: 'git.checkout',
@@ -43,7 +43,7 @@ export namespace GIT_COMMANDS {
     };
     export const CHANGE_REPOSITORY = {
         id: 'git.change.repository',
-        label: 'Git: Change Repository'
+        label: 'Git: Change Repository...'
     };
     export const OPEN_FILE = {
         id: 'git.open.file',

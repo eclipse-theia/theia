@@ -17,7 +17,7 @@ export class TopPanel {
 
     openNewTerminal() {
         this.clickMenuTab('File');
-        this.clickSubMenu('New Terminal');
+        this.clickSubMenu('Open New Terminal');
     }
 
     openProblemsView() {

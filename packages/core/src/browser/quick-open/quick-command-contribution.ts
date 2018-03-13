@@ -12,7 +12,7 @@ import { KeybindingRegistry, KeybindingContribution } from "../keybinding";
 
 export const quickCommand: Command = {
     id: 'quickCommand',
-    label: 'Quick Command'
+    label: 'Open Quick Command'
 };
 
 @injectable()

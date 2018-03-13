@@ -18,7 +18,7 @@ export const quickFileOpen: Command = {
 @injectable()
 export class QuickFileOpenFrontendContribution implements CommandContribution, KeybindingContribution {
 
-    constructor( @inject(QuickFileOpenService) protected readonly quickFileOpenService: QuickFileOpenService) { }
+    constructor(@inject(QuickFileOpenService) protected readonly quickFileOpenService: QuickFileOpenService) { }
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(quickFileOpen, {
