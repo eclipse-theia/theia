@@ -28,6 +28,7 @@ all of MD as it is not optimized for dense, information rich UIs.
    */
 
   --theia-border-width: 1px;
+  --theia-panel-border-width: 2px;
   --theia-border-color0: var(--md-grey-500);
   --theia-border-color1: var(--md-grey-300);
   --theia-border-color2: var(--md-grey-200);
