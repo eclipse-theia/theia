@@ -35,11 +35,11 @@ export interface Tree extends Disposable {
     /**
      * Refresh children of the root node.
      */
-    refresh(): void;
+    refresh(): Promise<void>;
     /**
      * Refresh children of the given node if it is valid.
      */
-    refresh(parent: Readonly<CompositeTreeNode>): void;
+    refresh(parent: Readonly<CompositeTreeNode>): Promise<void>;
     /**
      * Emit when the children of the give node are refreshed.
      */
@@ -209,10 +209,11 @@ export class TreeImpl implements Tree {
         return this.getNode(id);
     }
 
-    refresh(raw?: CompositeTreeNode): void {
+    async refresh(raw?: CompositeTreeNode): Promise<void> {
         const parent = !raw ? this._root : this.validateNode(raw);
         if (CompositeTreeNode.is(parent)) {
-            this.resolveChildren(parent).then(children => this.setChildren(parent, children));
+            const children = await this.resolveChildren(parent);
+            this.setChildren(parent, children);
         }
         // FIXME: it should not be here
         // if the idea was to support refreshing of all kind of nodes, then API should be adapted

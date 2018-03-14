@@ -23,19 +23,19 @@ export interface TreeModel extends Tree, TreeSelectionService, TreeExpansionServ
      * Expands the given node. If the `node` argument is `undefined`, then expands the currently selected tree node.
      * If multiple tree nodes are selected, expands the most recently selected tree node.
      */
-    expandNode(node?: Readonly<ExpandableTreeNode>): boolean;
+    expandNode(node?: Readonly<ExpandableTreeNode>): Promise<boolean>;
 
     /**
      * Collapses the given node. If the `node` argument is `undefined`, then collapses the currently selected tree node.
      * If multiple tree nodes are selected, collapses the most recently selected tree node.
      */
-    collapseNode(node?: Readonly<ExpandableTreeNode>): boolean;
+    collapseNode(node?: Readonly<ExpandableTreeNode>): Promise<boolean>;
 
     /**
      * Toggles the expansion state of the given node. If not give, then it toggles the expansion state of the currently selected node.
      * If multiple nodes are selected, then the most recently selected tree node's expansion state will be toggled.
      */
-    toggleNodeExpansion(node?: Readonly<ExpandableTreeNode>): void;
+    toggleNodeExpansion(node?: Readonly<ExpandableTreeNode>): Promise<void>;
 
     /**
      * Opens the given node or the currently selected on if the argument is `undefined`.
@@ -57,8 +57,7 @@ export interface TreeModel extends Tree, TreeSelectionService, TreeExpansionServ
      * Navigates to the given node if it is defined.
      * Navigation sets a node as a root node and expand it.
      */
-    navigateTo(node: Readonly<TreeNode> | undefined): void;
-
+    navigateTo(node: Readonly<TreeNode> | undefined): Promise<void>;
     /**
      * Tests whether it is possible to navigate forward.
      */
@@ -72,12 +71,11 @@ export interface TreeModel extends Tree, TreeSelectionService, TreeExpansionServ
     /**
      * Navigates forward.
      */
-    navigateForward(): void;
-
+    navigateForward(): Promise<void>;
     /**
      * Navigates backward.
      */
-    navigateBackward(): void;
+    navigateBackward(): Promise<void>;
 
     /**
      * Selects the previous node relatively to the currently selected one. This method takes the expansion state of the tree into consideration.
@@ -178,11 +176,11 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         return this.tree.validateNode(node);
     }
 
-    refresh(parent?: Readonly<CompositeTreeNode>): void {
+    async refresh(parent?: Readonly<CompositeTreeNode>): Promise<void> {
         if (parent) {
-            this.tree.refresh(parent);
+            await this.tree.refresh(parent);
         } else {
-            this.tree.refresh();
+            await this.tree.refresh();
         }
     }
 
@@ -198,28 +196,28 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         return this.expansionService.onExpansionChanged;
     }
 
-    expandNode(raw?: Readonly<ExpandableTreeNode>): boolean {
+    async expandNode(raw?: Readonly<ExpandableTreeNode>): Promise<boolean> {
         for (const node of raw ? [raw] : this.selectedNodes) {
             if (ExpandableTreeNode.is(node)) {
-                return this.expansionService.expandNode(node);
+                return await this.expansionService.expandNode(node);
             }
         }
         return false;
     }
 
-    collapseNode(raw?: Readonly<ExpandableTreeNode>): boolean {
+    async collapseNode(raw?: Readonly<ExpandableTreeNode>): Promise<boolean> {
         for (const node of raw ? [raw] : this.selectedNodes) {
             if (ExpandableTreeNode.is(node)) {
-                return this.expansionService.collapseNode(node);
+                return await this.expansionService.collapseNode(node);
             }
         }
         return false;
     }
 
-    toggleNodeExpansion(raw?: Readonly<ExpandableTreeNode>): void {
+    async toggleNodeExpansion(raw?: Readonly<ExpandableTreeNode>): Promise<void> {
         for (const node of raw ? [raw] : this.selectedNodes) {
             if (ExpandableTreeNode.is(node)) {
-                return this.expansionService.toggleNodeExpansion(node);
+                return await this.expansionService.toggleNodeExpansion(node);
             }
         }
     }
@@ -285,10 +283,10 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         }
     }
 
-    navigateTo(node: TreeNode | undefined): void {
+    async navigateTo(node: TreeNode | undefined): Promise<void> {
         if (node) {
             this.navigationService.push(node);
-            this.doNavigate(node);
+            await this.doNavigate(node);
         }
     }
 
@@ -300,24 +298,24 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         return !!this.navigationService.prev;
     }
 
-    navigateForward(): void {
+    async navigateForward(): Promise<void> {
         const node = this.navigationService.advance();
         if (node) {
-            this.doNavigate(node);
+            await this.doNavigate(node);
         }
     }
 
-    navigateBackward(): void {
+    async navigateBackward(): Promise<void> {
         const node = this.navigationService.retreat();
         if (node) {
-            this.doNavigate(node);
+            await this.doNavigate(node);
         }
     }
 
-    protected doNavigate(node: TreeNode): void {
+    protected async doNavigate(node: TreeNode): Promise<void> {
         this.tree.root = node;
         if (ExpandableTreeNode.is(node)) {
-            this.expandNode(node);
+            await this.expandNode(node);
         }
         if (SelectableTreeNode.is(node)) {
             this.selectNode(node);
