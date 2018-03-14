@@ -38,6 +38,7 @@ export class NotificationsMessageClient extends MessageClient {
             fn: element => onCloseFn(action)
         });
 
+
         const timeout = actions.length > 0 ? undefined
             : (!!message.options && message.options.timeout !== undefined
                 ? message.options.timeout
