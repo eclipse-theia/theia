@@ -5,23 +5,24 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
+import { inject, injectable } from 'inversify';
 import { CodeLensProvider, CodeLensParams, CodeLens, CancellationToken } from '@theia/languages/lib/common';
-import { MergeConflict, MergeConflictsCommands as Commands, MergeConflictCommandArgument } from "./merge-conflict";
-import { MergeConflictsService } from "./merge-conflicts-service";
+import { MergeConflictsProvider } from './merge-conflicts-provider';
+import { MergeConflict, MergeConflictsCommands as Commands, MergeConflictCommandArgument } from './merge-conflict';
 
 @injectable()
 export class MergeConflictsCodeLensProvider implements CodeLensProvider {
 
-    constructor(
-        @inject(MergeConflictsService) protected readonly mergeConflictsService: MergeConflictsService,
-    ) { }
+    @inject(MergeConflictsProvider)
+    protected readonly mergeConflictsProvider: MergeConflictsProvider;
 
-    provideCodeLenses(params: CodeLensParams, token: CancellationToken): Promise<CodeLens[]> {
+    async provideCodeLenses(params: CodeLensParams, token: CancellationToken): Promise<CodeLens[]> {
         const uri = params.textDocument.uri;
-        const mergeConflicts: MergeConflict[] = this.mergeConflictsService.get(uri);
+        const mergeConflicts = await this.mergeConflictsProvider.get(uri);
         const result: CodeLens[] = [];
-        mergeConflicts.forEach(mergeConflict => result.push(...this.toCodeLense(uri, mergeConflict)));
+        if (mergeConflicts) {
+            mergeConflicts.mergeConflicts.forEach(mergeConflict => result.push(...this.toCodeLense(uri, mergeConflict)));
+        }
         return Promise.resolve(result);
     }
 

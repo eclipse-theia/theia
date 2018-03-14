@@ -11,6 +11,7 @@ chai.use(require('chai-string'));
 
 import { MergeConflictsParser } from './merge-conflicts-parser';
 import { Range, Position } from '@theia/editor/lib/browser';
+import { MergeConflict } from './merge-conflict';
 
 let parser: MergeConflictsParser;
 
@@ -20,10 +21,19 @@ before(() => {
 
 // tslint:disable:no-unused-expression
 
+function parse(contents: string): MergeConflict[] {
+    const splitted = contents.split('\n');
+    const input = <MergeConflictsParser.Input>{
+        lineCount: splitted.length,
+        getLine: lineNumber => splitted[lineNumber],
+    };
+    return parser.parse(input);
+}
+
 describe("merge-conflict-parser", () => {
 
     it("simple merge conflict", () => {
-        const conflicts = parser.parse(
+        const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
 bar changed on master
@@ -55,7 +65,7 @@ foo on branch
 bar on branch
 >>>>>>> branch
 last line`;
-        const conflicts = parser.parse(content);
+        const conflicts = parse(content);
         expect(conflicts).to.have.lengthOf(1);
         const conflict = conflicts[0];
 
@@ -101,7 +111,7 @@ bar on branch`);
     });
 
     it("multiple merge conflicts", () => {
-        const conflicts = parser.parse(
+        const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
 bar changed on master
@@ -130,7 +140,7 @@ bar on branch
     });
 
     it("merge conflict with bases", () => {
-        const conflicts = parser.parse(
+        const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
 bar changed on master
@@ -170,7 +180,7 @@ bar on branch
     });
 
     it("broken 1: second current marker in current content", () => {
-        const conflicts = parser.parse(
+        const conflicts = parse(
             `<<<<<<< HEAD
 <<<<<<< HEAD
 foo changed on master
@@ -193,7 +203,7 @@ bar on branch
     });
 
     it("broken 2: current marker in incoming content", () => {
-        const conflicts = parser.parse(
+        const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
 bar changed on master
@@ -208,7 +218,7 @@ bar on branch
     });
 
     it("broken 3: second separator", () => {
-        const conflicts = parser.parse(
+        const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
 bar changed on master
@@ -223,7 +233,7 @@ bar on branch
     });
 
     it("broken 4: second separator in incoming content", () => {
-        const conflicts = parser.parse(
+        const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
 bar changed on master
@@ -238,7 +248,7 @@ bar on branch
     });
 
     it("broken 5: incoming marker, no separator", () => {
-        const conflicts = parser.parse(
+        const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
 bar changed on master

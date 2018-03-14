@@ -6,8 +6,8 @@
  */
 
 import { injectable, inject } from "inversify";
-import { EditorDecorationsService, OverviewRulerLane, Range, EditorDecoration, EditorDecorationOptions } from "@theia/editor/lib/browser";
-import { MergeConflictUpdateParams } from "./merge-conflicts-service";
+import { EditorDecorationsService, OverviewRulerLane, EditorDecoration, EditorDecorationOptions } from "@theia/editor/lib/browser";
+import { MergeConflicts } from "./merge-conflicts-provider";
 
 @injectable()
 export class MergeConflictsDecorations {
@@ -16,31 +16,29 @@ export class MergeConflictsDecorations {
         @inject(EditorDecorationsService) protected readonly decorationsService: EditorDecorationsService,
     ) { }
 
-    onMergeConflictUpdate(params: MergeConflictUpdateParams): void {
+    decorate(params: MergeConflicts): void {
         const uri = params.uri;
         const mergeConflicts = params.mergeConflicts;
-        this.setDecorations(uri, MergeConflictsDecorations.Kind.CurrentMarker, mergeConflicts.map(c => c.current.marker!));
-        this.setDecorations(uri, MergeConflictsDecorations.Kind.CurrentContent, mergeConflicts.map(c => c.current.content!));
-        this.setDecorations(uri, MergeConflictsDecorations.Kind.IncomingMarker, mergeConflicts.map(c => c.incoming.marker!));
-        this.setDecorations(uri, MergeConflictsDecorations.Kind.IncomingContent, mergeConflicts.map(c => c.incoming.content!));
-
-        const baseMarkerRanges: Range[] = [];
-        const baseContentRanges: Range[] = [];
-        mergeConflicts.forEach(c => c.bases.forEach(b => {
-            if (b.marker) {
-                baseMarkerRanges.push(b.marker);
+        const newDecorations: EditorDecoration[] = [];
+        for (const mergeConflict of mergeConflicts) {
+            newDecorations.push({ range: mergeConflict.current.marker!, options: MergeConflictsDecorations.Options.CurrentMarker });
+            newDecorations.push({ range: mergeConflict.current.content!, options: MergeConflictsDecorations.Options.CurrentContent });
+            newDecorations.push({ range: mergeConflict.incoming.marker!, options: MergeConflictsDecorations.Options.IncomingMarker });
+            newDecorations.push({ range: mergeConflict.incoming.content!, options: MergeConflictsDecorations.Options.IncomingContent });
+            for (const base of mergeConflict.bases) {
+                if (base.marker) {
+                    newDecorations.push({ range: base.marker, options: MergeConflictsDecorations.Options.BaseMarker });
+                }
+                if (base.content) {
+                    newDecorations.push({ range: base.content, options: MergeConflictsDecorations.Options.BaseContent });
+                }
             }
-            if (b.content) {
-                baseContentRanges.push(b.content);
-            }
-        }));
-        this.setDecorations(uri, MergeConflictsDecorations.Kind.BaseMarker, baseMarkerRanges);
-        this.setDecorations(uri, MergeConflictsDecorations.Kind.BaseContent, baseContentRanges);
+        }
+        this.setDecorations(uri, newDecorations);
     }
 
-    protected setDecorations(uri: string, kind: MergeConflictsDecorations.Kind, ranges: Range[]) {
-        const options = MergeConflictsDecorations.Options[kind];
-        const newDecorations = ranges.map(range => <EditorDecoration>{ range, options });
+    protected setDecorations(uri: string, newDecorations: EditorDecoration[]) {
+        const kind = 'merge-conflicts';
         this.decorationsService.setDecorations({ uri, kind, newDecorations });
     }
 
@@ -48,47 +46,38 @@ export class MergeConflictsDecorations {
 
 export namespace MergeConflictsDecorations {
 
-    export enum Kind {
-        CurrentMarker = 'merge-conflict-current-marker',
-        CurrentContent = 'merge-conflict-current-content',
-        BaseMarker = 'merge-conflict-base-marker',
-        BaseContent = 'merge-conflict-base-content',
-        IncomingMarker = 'merge-conflict-incoming-marker',
-        IncomingContent = 'merge-conflict-incoming-content',
-    }
-
     export const Options = {
-        [Kind.CurrentMarker]: <EditorDecorationOptions>{
+        CurrentMarker: <EditorDecorationOptions>{
             isWholeLine: true,
-            className: Kind.CurrentMarker.toString()
+            className: 'merge-conflict-current-marker'
         },
-        [Kind.CurrentContent]: <EditorDecorationOptions>{
+        CurrentContent: <EditorDecorationOptions>{
             isWholeLine: true,
-            className: Kind.CurrentContent.toString(),
+            className: 'merge-conflict-current-content',
             overviewRuler: {
                 position: OverviewRulerLane.Full,
                 color: 'rgba(0, 255, 0, 0.3)',
             }
         },
-        [Kind.BaseMarker]: <EditorDecorationOptions>{
+        BaseMarker: <EditorDecorationOptions>{
             isWholeLine: true,
-            className: Kind.BaseMarker.toString()
+            className: 'merge-conflict-base-marker'
         },
-        [Kind.BaseContent]: <EditorDecorationOptions>{
+        BaseContent: <EditorDecorationOptions>{
             isWholeLine: true,
-            className: Kind.BaseContent.toString(),
+            className: 'merge-conflict-base-content',
             overviewRuler: {
                 position: OverviewRulerLane.Full,
                 color: 'rgba(125, 125, 125, 0.3)',
             }
         },
-        [Kind.IncomingMarker]: <EditorDecorationOptions>{
+        IncomingMarker: <EditorDecorationOptions>{
             isWholeLine: true,
-            className: Kind.IncomingMarker.toString()
+            className: 'merge-conflict-incoming-marker'
         },
-        [Kind.IncomingContent]: <EditorDecorationOptions>{
+        IncomingContent: <EditorDecorationOptions>{
             isWholeLine: true,
-            className: Kind.IncomingContent.toString(),
+            className: 'merge-conflict-incoming-content',
             overviewRuler: {
                 position: OverviewRulerLane.Full,
                 color: 'rgba(0, 0, 255, 0.3)',

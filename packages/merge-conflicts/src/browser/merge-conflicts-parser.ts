@@ -17,12 +17,11 @@ export class MergeConflictsParser {
         this.init();
     }
 
-    parse(text: string): MergeConflict[] {
+    parse(input: MergeConflictsParser.Input): MergeConflict[] {
         const context = new MergeConflictsParser.Context();
         this.parser.reset(context);
-        const lines = text.split(/\r?\n|\r/);
-        for (let line = 0; line < lines.length; line++) {
-            this.parser.read({ line, text: lines[line] });
+        for (let number = 0; number < input.lineCount; number++) {
+            this.parser.read({ number, content: input.getLine(number) });
         }
         return context.all;
     }
@@ -41,10 +40,19 @@ export class MergeConflictsParser {
         const push = parser.addState('push');
 
         // conditions / triggers
-        const startsWithLt = (input: MergeConflictsParser.Input) => input.text.startsWith('<<<<<<<');
-        const startsWithEq = (input: MergeConflictsParser.Input) => input.text.startsWith('=======');
-        const startsWithGt = (input: MergeConflictsParser.Input) => input.text.startsWith('>>>>>>>');
-        const startsWithPp = (input: MergeConflictsParser.Input) => input.text.startsWith('|||||||');
+        const createStartsWithCondition: (char: string) => ((input: string) => boolean) = (char: string) => {
+            const re = new RegExp(`^${char}{7}`);
+            return (input: string) => {
+                if (input.length < 7) {
+                    return false;
+                }
+                return re.test(input);
+            };
+        };
+        const startsWithLt = createStartsWithCondition('<');
+        const startsWithEq = createStartsWithCondition('=');
+        const startsWithGt = createStartsWithCondition('>');
+        const startsWithPp = createStartsWithCondition('\\|');
         const any = () => true;
 
         // transitions
@@ -109,23 +117,29 @@ export class MergeConflictsParser {
         };
     }
 
-    private lineToRange(input: MergeConflictsParser.Input): Range {
+    private lineToRange(line: MergeConflictsParser.Line): Range {
         return {
-            start: { line: input.line, character: 0 },
-            end: { line: input.line, character: input.text.length },
+            start: { line: line.number, character: 0 },
+            end: { line: line.number, character: line.content.length },
         };
     }
 
-    private addLineToRange(input: MergeConflictsParser.Input, range: Range | undefined): Range {
+    private addLineToRange(line: MergeConflictsParser.Line, range: Range | undefined): Range {
         if (!range) {
-            return this.lineToRange(input);
+            return this.lineToRange(line);
         }
-        range.end = { line: input.line, character: input.text.length };
+        range.end = { line: line.number, character: line.content.length };
         return range;
     }
 }
 
 export namespace MergeConflictsParser {
+
+    export interface Input {
+        readonly lineCount: number;
+        getLine(lineNumber: number): string;
+    }
+
     export class Context {
         new: MergeConflict = {
             current: {},
@@ -135,9 +149,9 @@ export namespace MergeConflictsParser {
         all: MergeConflict[] = [];
     }
 
-    export interface Input {
-        line: number;
-        text: string;
+    export interface Line {
+        number: number;
+        content: string;
     }
 
     export class StateMachine<C extends object> {
@@ -151,11 +165,11 @@ export namespace MergeConflictsParser {
             this.context = context;
         }
 
-        read(input: Input): void {
-            let next = this.current.findNext(input, this.context);
+        read(line: Line): void {
+            let next = this.current.findNext(line, this.context);
             while (next) {
                 if (next.onEnter) {
-                    next.onEnter(input, this.context);
+                    next.onEnter(line, this.context);
                 }
                 if (next.immediateNext) {
                     this.current = next;
@@ -165,7 +179,7 @@ export namespace MergeConflictsParser {
                 }
             }
             if (!next) {
-                throw new Error(`Missing transition from (${this.current.id}) for input: L.${input.line} > ${input.text}`);
+                throw new Error(`Missing transition from (${this.current.id}) for input: L.${line.number} > ${line.content}`);
             }
             this.current = next;
         }
@@ -181,18 +195,22 @@ export namespace MergeConflictsParser {
     }
 
     export class State<C> {
-        onEnter?: (input: Input, context: C) => void;
-        readonly conditionalNext: { to: State<C>, condition: (input: Input, context: C) => boolean }[] = [];
+        onEnter?: (line: Line, context: C) => void;
+        readonly conditionalNext: { to: State<C>, condition: (line: string) => boolean }[] = [];
         immediateNext: State<C> | undefined;
 
         constructor(readonly id: string) { }
 
-        findNext(input: Input, context: C): State<C> | undefined {
-            const match = this.conditionalNext.find(transition => transition.condition(input, context));
-            return match ? match.to : undefined;
+        findNext(line: Line, context: C): State<C> | undefined {
+            for (const candidate of this.conditionalNext) {
+                if (candidate.condition(line.content)) {
+                    return candidate.to;
+                }
+            }
+            return undefined;
         }
 
-        to(next: State<C>, condition?: (input: Input, context: C) => boolean): void {
+        to(next: State<C>, condition?: (line: string) => boolean): void {
             if (condition) {
                 this.immediateNext = undefined;
                 this.conditionalNext.push({ to: next, condition });

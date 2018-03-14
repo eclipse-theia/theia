@@ -12,7 +12,7 @@ import { MergeConflictsFrontendContribution } from './merge-conflicts-frontend-c
 import { MergeConflictsCodeLensProvider } from './merge-conflicts-code-lense-provider';
 import { MergeConflictsParser } from './merge-conflicts-parser';
 import { MergeConflictResolver } from './merge-conflict-resolver';
-import { MergeConflictsService } from './merge-conflicts-service';
+import { MergeConflictsProvider } from './merge-conflicts-provider';
 import { MergeConflictsDecorations } from './merge-conflicts-decorations';
 
 import '../../src/browser/style/index.css';
@@ -23,7 +23,7 @@ export default new ContainerModule(bind => {
     bind(MergeConflictsCodeLensProvider).toSelf().inSingletonScope();
     bind(MergeConflictsDecorations).toSelf().inSingletonScope();
     bind(MergeConflictsFrontendContribution).toSelf().inSingletonScope();
-    bind(MergeConflictsService).toSelf().inSingletonScope();
+    bind(MergeConflictsProvider).toSelf().inSingletonScope();
     [CommandContribution, FrontendApplicationContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toDynamicValue(c => c.container.get(MergeConflictsFrontendContribution)).inSingletonScope()
     );
