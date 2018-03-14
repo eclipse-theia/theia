@@ -8,40 +8,36 @@
 import { injectable, inject } from "inversify";
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { CommandContribution, CommandRegistry } from '@theia/core/lib/common';
-import { Languages, Workspace } from '@theia/languages/lib/common';
+import { Languages } from '@theia/languages/lib/common';
 import { MergeConflictsCodeLensProvider } from './merge-conflicts-code-lense-provider';
 import { MergeConflictResolver } from './merge-conflict-resolver';
 import { MergeConflictsCommands as Commands } from './merge-conflict';
-import { MergeConflictsService } from "./merge-conflicts-service";
+import { MergeConflictsProvider } from "./merge-conflicts-provider";
 import { MergeConflictsDecorations } from "./merge-conflicts-decorations";
 
 @injectable()
 export class MergeConflictsFrontendContribution implements FrontendApplicationContribution, CommandContribution {
 
-    constructor(
-        @inject(Languages) protected readonly languages: Languages,
-        @inject(MergeConflictsCodeLensProvider) protected readonly mergeConflictsCodeLensProvider: MergeConflictsCodeLensProvider,
-        @inject(MergeConflictResolver) protected readonly mergeConflictResolver: MergeConflictResolver,
-        @inject(MergeConflictsDecorations) protected readonly mergeConflictsDecorations: MergeConflictsDecorations,
-        @inject(MergeConflictsService) protected readonly mergeConflictsService: MergeConflictsService,
-        @inject(Workspace) protected readonly workspace: Workspace,
-    ) { }
+    @inject(Languages)
+    protected readonly languages: Languages;
+
+    @inject(MergeConflictsCodeLensProvider)
+    protected readonly mergeConflictsCodeLensProvider: MergeConflictsCodeLensProvider;
+
+    @inject(MergeConflictResolver)
+    protected readonly mergeConflictResolver: MergeConflictResolver;
+
+    @inject(MergeConflictsDecorations)
+    protected readonly decorator: MergeConflictsDecorations;
+
+    @inject(MergeConflictsProvider)
+    protected readonly mergeConflictsProvider: MergeConflictsProvider;
 
     onStart(app: FrontendApplication): void {
         if (this.languages.registerCodeLensProvider) {
             this.languages.registerCodeLensProvider([{ pattern: '**/*' }], this.mergeConflictsCodeLensProvider);
         }
-        this.workspace.onDidOpenTextDocument(document => {
-            window.setTimeout(() => {
-                this.updateEditorDecorations(document.uri);
-            }, 1);
-        });
-        this.workspace.onDidChangeTextDocument(params => this.updateEditorDecorations(params.textDocument.uri));
-        this.mergeConflictsService.onMergeConflictUpdate(params => this.mergeConflictsDecorations.onMergeConflictUpdate(params));
-    }
-
-    protected updateEditorDecorations(uri: string) {
-        this.mergeConflictsService.get(uri);
+        this.mergeConflictsProvider.onDidUpdate(params => this.decorator.decorate(params));
     }
 
     registerCommands(registry: CommandRegistry): void {
