@@ -5,14 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { GitDiffWidget } from "../diff/git-diff-widget";
-import { Git } from "../../common";
-import { GitRepositoryProvider } from "../git-repository-provider";
-import { LabelProvider, open } from "@theia/core/lib/browser";
-import { h } from "@phosphor/virtualdom";
-import URI from "@theia/core/lib/common/uri";
 import { injectable, inject } from "inversify";
+import { h } from "@phosphor/virtualdom";
 import { Widget } from "@phosphor/widgets";
+import { LabelProvider } from "@theia/core/lib/browser";
+import { Git, GitFileChange } from "../../common";
+import { GitDiffWidget } from "../diff/git-diff-widget";
+import { GitRepositoryProvider } from "../git-repository-provider";
 import { GitFileChangeNode } from "../git-widget";
 
 export const GIT_COMMIT_DETAIL = "git-commit-detail-widget";
@@ -84,9 +83,9 @@ export class GitCommitDetailWidget extends GitDiffWidget {
     }
 
     protected ref: Widget | undefined;
-    protected async doOpen(uriToOpen: URI): Promise<void> {
+    protected async revealChange(change: GitFileChange): Promise<void> {
         const ref = this.ref;
-        const widget = await open(this.openerService, uriToOpen, {
+        const widget = await this.openChange(change, {
             mode: 'reveal',
             widgetOptions: ref ?
                 { area: 'main', mode: 'tab-after', ref } :
