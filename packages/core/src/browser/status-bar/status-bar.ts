@@ -86,24 +86,24 @@ export class StatusBarImpl extends VirtualWidget implements StatusBar {
         this.attached.resolve();
     }
 
-    async setElement(id: string, entry: StatusBarEntry) {
+    async setElement(id: string, entry: StatusBarEntry): Promise<void> {
         await this.attached.promise;
         this.entries.set(id, entry);
         this.update();
     }
 
-    async removeElement(id: string) {
+    async removeElement(id: string): Promise<void> {
         await this.attached.promise;
         this.entries.delete(id);
         this.update();
     }
 
-    async setBackgroundColor(color?: string) {
+    async setBackgroundColor(color?: string): Promise<void> {
         await this.attached.promise;
         this.internalSetBackgroundColor(color);
     }
 
-    protected internalSetBackgroundColor(color?: string) {
+    protected internalSetBackgroundColor(color?: string): void {
         this.backgroundColor = color;
         // tslint:disable-next-line:no-null-keyword
         this.node.style.backgroundColor = this.backgroundColor ? this.backgroundColor : null;
@@ -117,7 +117,7 @@ export class StatusBarImpl extends VirtualWidget implements StatusBar {
         return { entries, backgroundColor: this.backgroundColor };
     }
 
-    setLayoutData(data: StatusBarLayoutData) {
+    setLayoutData(data: StatusBarLayoutData): void {
         if (data.entries) {
             data.entries.forEach(entryData => {
                 this.entries.set(entryData.id, entryData.entry);

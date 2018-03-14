@@ -16,7 +16,7 @@ import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
 import { RecursivePartial } from '../../common';
 import { Saveable } from '../saveable';
-import { StatusBarImpl, StatusBarLayoutData } from '../status-bar/status-bar';
+import { StatusBarImpl, StatusBarLayoutData, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory, TheiaDockPanel } from './side-panel-handler';
 import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar } from './tab-bars';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
@@ -25,6 +25,8 @@ import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
 /** The class name added to the main and bottom area panels. */
 const MAIN_BOTTOM_AREA_CLASS = 'theia-app-centers';
+/** Status bar entry identifier for the bottom panel toggle button. */
+const BOTTOM_PANEL_TOGGLE_ID = 'bottom-panel-toggle';
 
 export const ApplicationShellOptions = Symbol('ApplicationShellOptions');
 
@@ -345,10 +347,14 @@ export class ApplicationShell extends Widget {
             spacing: 0
         });
         dockPanel.id = 'theia-bottom-content-panel';
+        dockPanel.widgetAdded.connect((sender, widget) => {
+            this.refreshBottomPanelToggleButton();
+        });
         dockPanel.widgetRemoved.connect((sender, widget) => {
-            if (dockPanel.isEmpty) {
+            if (sender.isEmpty) {
                 this.collapseBottomPanel();
             }
+            this.refreshBottomPanelToggleButton();
         }, this);
         dockPanel.node.addEventListener('p-dragenter', event => {
             // Make sure that the main panel hides its overlay when the bottom panel is expanded
@@ -870,6 +876,25 @@ export class ApplicationShell extends Widget {
             }
             this.bottomPanelState.expansion = SidePanel.ExpansionState.collapsed;
             bottomPanel.hide();
+        }
+    }
+
+    /**
+     * Refresh the toggle button for the bottom panel. This implementation creates a status bar entry
+     * and refers to the command `core.toggle.bottom.panel`.
+     */
+    protected refreshBottomPanelToggleButton() {
+        if (this.bottomPanel.isEmpty) {
+            this.statusBar.removeElement(BOTTOM_PANEL_TOGGLE_ID);
+        } else {
+            const element: StatusBarEntry = {
+                text: '$(window-maximize)',
+                alignment: StatusBarAlignment.RIGHT,
+                tooltip: 'Toggle Bottom Panel',
+                command: 'core.toggle.bottom.panel',
+                priority: 0
+            };
+            this.statusBar.setElement(BOTTOM_PANEL_TOGGLE_ID, element);
         }
     }
 
