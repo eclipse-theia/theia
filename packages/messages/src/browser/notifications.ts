@@ -81,6 +81,9 @@ export class Notifications {
                         window.clearTimeout(closeTimer);
                     }
                     action.fn(handler);
+                    if (closeTimer) {
+                        window.clearTimeout(closeTimer);
+                    }
                     close();
                 });
             }
