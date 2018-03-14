@@ -5,17 +5,15 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { h } from "@phosphor/virtualdom";
-import { DiffUris } from '@theia/core/lib/browser/diff-uris';
-import { VirtualRenderer, open, OpenerService, StatefulWidget, SELECTED_CLASS } from "@theia/core/lib/browser";
-import { GIT_RESOURCE_SCHEME } from '../git-resource';
-import URI from "@theia/core/lib/common/uri";
-import { GitFileChange, GitFileStatus, Git, WorkingDirectoryStatus } from '../../common';
-import { GitNavigableListWidget } from "../git-navigable-list-widget";
-import { DiffNavigatorProvider, DiffNavigator } from "@theia/editor/lib/browser/diff-navigator";
-import { EditorManager, EditorOpenerOptions, EditorWidget } from "@theia/editor/lib/browser";
-import { GitWatcher } from "../../common/git-watcher";
 import { inject, injectable, postConstruct } from "inversify";
+import { h } from "@phosphor/virtualdom";
+import URI from "@theia/core/lib/common/uri";
+import { VirtualRenderer, StatefulWidget, SELECTED_CLASS, DiffUris } from "@theia/core/lib/browser";
+import { EditorManager, EditorOpenerOptions, EditorWidget, DiffNavigatorProvider, DiffNavigator } from "@theia/editor/lib/browser";
+import { GitFileChange, GitFileStatus, Git, WorkingDirectoryStatus } from '../../common';
+import { GitWatcher } from "../../common";
+import { GIT_RESOURCE_SCHEME } from '../git-resource';
+import { GitNavigableListWidget } from "../git-navigable-list-widget";
 import { GitFileChangeNode } from "../git-widget";
 
 export const GIT_DIFF = "git-diff";
@@ -29,7 +27,6 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
 
     @inject(Git) protected readonly git: Git;
     @inject(DiffNavigatorProvider) protected readonly diffNavigatorProvider: DiffNavigatorProvider;
-    @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(GitWatcher) protected readonly gitWatcher: GitWatcher;
 
@@ -167,7 +164,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
                 this.selectNode(change);
             },
             ondblclick: () => {
-                this.openChange(change);
+                this.revealChange(change);
             }
         }, iconSpan, nameSpan, pathSpan));
         if (change.extraIconClassName) {
@@ -197,7 +194,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
                         this.openSelected();
                     }
                 } else {
-                    this.openChange(selected);
+                    this.revealChange(selected);
                 }
             });
         } else if (this.gitNodes.length > 0) {
@@ -220,7 +217,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
                         this.openSelected();
                     }
                 } else {
-                    this.openChange(selected);
+                    this.revealChange(selected);
                 }
             });
         }
@@ -251,7 +248,7 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     protected openSelected(): void {
         const selected = this.getSelected();
         if (selected) {
-            this.openChange(selected);
+            this.revealChange(selected);
         }
     }
 
@@ -300,7 +297,8 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
         return this.editorManager.open(uriToOpen, options);
     }
 
-    protected doOpen(uriToOpen: URI) {
-        open(this.openerService, uriToOpen, { mode: 'reveal' });
+    protected async revealChange(change: GitFileChange): Promise<void> {
+        await this.openChange(change, { mode: 'reveal' });
     }
+
 }
