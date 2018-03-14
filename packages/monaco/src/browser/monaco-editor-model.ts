@@ -111,6 +111,10 @@ export class MonacoEditorModel implements ITextEditorModel, TextEditorDocument {
         return this.model.getLineCount();
     }
 
+    getLineContent(lineNumber: number): string {
+        return this.model.getLineContent(lineNumber);
+    }
+
     get readOnly(): boolean {
         return this.resource.saveContents === undefined;
     }
