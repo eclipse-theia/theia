@@ -20,6 +20,7 @@ export const TextEditorProvider = Symbol('TextEditorProvider');
 export type TextEditorProvider = (uri: URI) => Promise<TextEditor>;
 
 export interface TextEditorDocument extends lsp.TextDocument, Saveable, Disposable {
+    getLineContent(lineNumber: number): string;
 }
 
 export interface TextEditor extends Disposable, TextEditorSelection {
