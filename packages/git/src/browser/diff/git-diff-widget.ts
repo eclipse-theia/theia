@@ -16,6 +16,8 @@ import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import { GitNavigableListWidget } from "../git-navigable-list-widget";
 import { GitFileChangeNode } from "../git-widget";
 
+// tslint:disable:no-null-keyword
+
 export const GIT_DIFF = "git-diff";
 @injectable()
 export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> implements StatefulWidget {
@@ -106,41 +108,84 @@ export class GitDiffWidget extends GitNavigableListWidget<GitFileChangeNode> imp
     }
 
     protected renderDiffListHeader(): h.Child {
-        const elements = [];
+        return this.doRenderDiffListHeader(
+            this.renderPathHeader(),
+            this.renderRevisionHeader(),
+            this.renderToolbar()
+        );
+    }
+    protected doRenderDiffListHeader(...children: h.Child[]): h.Child {
+        return h.div({ className: "diff-header" }, ...children);
+    }
+    protected renderHeaderRow({ name, value, classNames }: { name: h.Child, value: h.Child, classNames?: string[] }): h.Child {
+        if (value === null) {
+            return null;
+        }
+        const className = ['header-row', ...(classNames || [])].join(' ');
+        return h.div({ className },
+            h.div({ className: 'theia-header' }, name),
+            h.div({ className: 'header-value' }, value));
+    }
+
+    protected renderPathHeader(): h.Child {
+        return this.renderHeaderRow({
+            name: 'path',
+            value: this.renderPath()
+        });
+    }
+    protected renderPath(): h.Child {
         if (this.options.uri) {
             const path = this.relativePath(this.options.uri);
             if (path.length > 0) {
-                elements.push(h.div({ className: 'header-row' },
-                    h.div({ className: 'theia-header' }, 'path:'),
-                    h.div({ className: 'header-value' }, '/' + path)));
+                return '/' + path;
             }
         }
-        if (this.fromRevision) {
-            let revision;
-            if (typeof this.fromRevision === 'string') {
-                revision = h.div({ className: 'header-value' }, this.fromRevision);
-            } else {
-                revision = h.div({ className: 'header-value' }, (this.toRevision || 'HEAD') + '~' + this.fromRevision);
-            }
-            elements.push(h.div({ className: 'header-row' },
-                h.div({ className: 'theia-header' }, 'revision: '),
-                revision));
+        return null;
+    }
+
+    protected renderRevisionHeader(): h.Child {
+        return this.renderHeaderRow({
+            name: 'revision: ',
+            value: this.renderRevision()
+        });
+    }
+    protected renderRevision(): h.Child {
+        if (!this.fromRevision) {
+            return null;
         }
-        const header = h.div({ className: 'theia-header' }, 'Files changed');
-        const leftButton = h.span({
+        if (typeof this.fromRevision === 'string') {
+            return this.fromRevision;
+        }
+        return (this.toRevision || 'HEAD') + '~' + this.fromRevision;
+    }
+
+    protected renderToolbar(): h.Child {
+        return this.doRenderToolbar(
+            this.renderNavigationLeft(),
+            this.renderNavigationRight()
+        );
+    }
+    protected doRenderToolbar(...children: h.Child[]) {
+        return this.renderHeaderRow({
+            classNames: ['space-between'],
+            name: 'Files changed',
+            value: h.div({ className: 'lrBtns' }, ...children)
+        });
+    }
+
+    protected renderNavigationLeft(): h.Child {
+        return h.span({
             className: "fa fa-arrow-left",
             title: "Previous Change",
             onclick: () => this.navigateLeft()
         });
-        const rightButton = h.span({
+    }
+    protected renderNavigationRight(): h.Child {
+        return h.span({
             className: "fa fa-arrow-right",
             title: "Next Change",
             onclick: () => this.navigateRight()
         });
-        const lrBtns = h.div({ className: 'lrBtns' }, leftButton, rightButton);
-        const headerRow = h.div({ className: 'header-row space-between' }, header, lrBtns);
-
-        return h.div({ className: "diff-header" }, ...elements, headerRow);
     }
 
     protected renderFileChangeList(): h.Child {
