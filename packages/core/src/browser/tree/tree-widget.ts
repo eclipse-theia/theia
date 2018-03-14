@@ -481,20 +481,20 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         this.addEventListener(this.node, 'click', e => this.handleClickEvent(this.model.root, e));
     }
 
-    protected handleLeft(event: KeyboardEvent): void {
+    protected async handleLeft(event: KeyboardEvent): Promise<void> {
         if (!!this.props.multiSelect && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event))) {
             return;
         }
-        if (!this.model.collapseNode()) {
+        if (! await this.model.collapseNode()) {
             this.model.selectParent();
         }
     }
 
-    protected handleRight(event: KeyboardEvent): void {
+    protected async handleRight(event: KeyboardEvent): Promise<void> {
         if (!!this.props.multiSelect && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event))) {
             return;
         }
-        if (!this.model.expandNode()) {
+        if (! await this.model.expandNode()) {
             this.model.selectNextNode();
         }
     }

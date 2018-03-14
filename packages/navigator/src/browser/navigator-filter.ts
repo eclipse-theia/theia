@@ -49,7 +49,7 @@ export class FileNavigatorFilter {
         let hasChanged = false;
         const { preferenceName, newValue } = event;
         if (preferenceName === 'navigator.exclude') {
-            this.filterPredicate = this.createFilterPredicate(newValue || {});
+            this.filterPredicate = this.createFilterPredicate(newValue as FileNavigatorFilter.Exclusions | undefined || {});
             hasChanged = true;
         }
         if (hasChanged) {

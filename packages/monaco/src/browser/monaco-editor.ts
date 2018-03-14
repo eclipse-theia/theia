@@ -98,6 +98,10 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         ));
     }
 
+    getTargetUri(): URI | undefined {
+        return this.uri;
+    }
+
     get onDispose() {
         return this.toDispose.onDispose;
     }

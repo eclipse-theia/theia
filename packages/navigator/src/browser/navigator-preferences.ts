@@ -13,6 +13,11 @@ import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceCo
 export const FileNavigatorConfigSchema: PreferenceSchema = {
     'type': 'object',
     properties: {
+        'navigator.autoReveal': {
+            type: 'boolean',
+            description: 'Selects file under editing in the navigator.',
+            default: true
+        },
         'navigator.exclude': {
             type: 'object',
             description: `
@@ -25,6 +30,7 @@ Configure glob patterns for excluding files and folders from the navigator. A re
 };
 
 export interface FileNavigatorConfiguration {
+    'navigator.autoReveal': boolean;
     'navigator.exclude': { [key: string]: boolean };
 }
 

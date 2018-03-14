@@ -25,18 +25,18 @@ export interface TreeExpansionService extends Disposable {
      *
      * Return true if a node has been expanded; otherwise false.
      */
-    expandNode(node: Readonly<ExpandableTreeNode>): boolean;
+    expandNode(node: Readonly<ExpandableTreeNode>): Promise<boolean>;
     /**
      * If the given node is valid and expanded then collapse it.
      *
      * Return true if a node has been collapsed; otherwise false.
      */
-    collapseNode(node: Readonly<ExpandableTreeNode>): boolean;
+    collapseNode(node: Readonly<ExpandableTreeNode>): Promise<boolean>;
     /**
      * If the given node is invalid then does nothing.
      * If the given node is collapsed then expand it; otherwise collapse it.
      */
-    toggleNodeExpansion(node: Readonly<ExpandableTreeNode>): void;
+    toggleNodeExpansion(node: Readonly<ExpandableTreeNode>): Promise<void>;
 }
 
 /**
@@ -92,22 +92,22 @@ export class TreeExpansionServiceImpl implements TreeExpansionService {
         this.onExpansionChangedEmitter.fire(node);
     }
 
-    expandNode(raw: ExpandableTreeNode): boolean {
+    async expandNode(raw: ExpandableTreeNode): Promise<boolean> {
         const node = this.tree.validateNode(raw);
         if (ExpandableTreeNode.isCollapsed(node)) {
-            return this.doExpandNode(node);
+            return await this.doExpandNode(node);
         }
         return false;
     }
 
-    protected doExpandNode(node: ExpandableTreeNode): boolean {
+    protected async doExpandNode(node: ExpandableTreeNode): Promise<boolean> {
         node.expanded = true;
+        await this.tree.refresh(node);
         this.fireExpansionChanged(node);
-        this.tree.refresh(node);
         return true;
     }
 
-    collapseNode(raw: ExpandableTreeNode): boolean {
+    async collapseNode(raw: ExpandableTreeNode): Promise<boolean> {
         const node = this.tree.validateNode(raw);
         if (ExpandableTreeNode.isExpanded(node)) {
             return this.doCollapseNode(node);
@@ -121,11 +121,11 @@ export class TreeExpansionServiceImpl implements TreeExpansionService {
         return true;
     }
 
-    toggleNodeExpansion(node: ExpandableTreeNode): void {
+    async toggleNodeExpansion(node: ExpandableTreeNode): Promise<void> {
         if (node.expanded) {
-            this.collapseNode(node);
+            await this.collapseNode(node);
         } else {
-            this.expandNode(node);
+            await this.expandNode(node);
         }
     }
 
