@@ -39,22 +39,14 @@
   line-height: var(--theia-private-horizontal-tab-height);
   padding: 0px 8px;
   background: var(--theia-layout-color0);
-  border: var(--theia-border-width) solid var(--theia-border-color1);
-  border-bottom: none;
-  border-top: none;
-  border-left: none;
 }
 
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-tab:last-child {
-  border-right-color: var(--theia-border-color0);
+  border-right: var(--theia-border-width) solid var(--theia-border-color0);
 }
 
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-tab:hover:not(.p-mod-current) {
   background: var(--theia-layout-color1);
-}
-
-.p-TabBar[data-orientation='horizontal'] .p-TabBar-tab:first-child {
-  margin-left: 0;
 }
 
 
@@ -67,18 +59,12 @@
   min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-border-width));
   background: var(--theia-layout-color3);
   color: var(--theia-ui-font-color0);
-  transform: translateY(var(--theia-border-width));
+  border-top: var(--theia-border-width) solid var(--theia-layout-color3);
 }
 
 /* This is the main application level active tab: only 1 exists. */
-.p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-current:before {
-  position: absolute;
-  top: calc(-1 * var(--theia-border-width));
-  left: calc(-1 * var(--theia-border-width));
-  content: '';
-  height: var(--theia-private-horizontal-tab-active-top-border);
-  width: calc(100% + 2*var(--theia-border-width));
-  background: var(--theia-brand-color1);
+.p-TabBar.theia-app-centers .p-TabBar-tab.theia-mod-active {
+  border-top-color: var(--theia-accent-color2);
 }
 
 .p-TabBar.theia-app-centers .p-TabBar-tabIcon,
@@ -94,11 +80,11 @@
 
 .p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-closable > .p-TabBar-tabCloseIcon {
   margin-left: 4px;
-  padding-top: 8px;
-  background-size: 16px;
+  padding-top: 6px;
   height: 16px;
   width: 16px;
   background-image: var(--theia-icon-close);
+  background-size: 16px;
   background-position: center;
   background-repeat: no-repeat;
 }
@@ -113,23 +99,23 @@
 | Perfect scrollbar
 |----------------------------------------------------------------------------*/
 
-.p-TabBar.theia-app-centers > .ps__rail-x {
+.p-TabBar[data-orientation='horizontal'] > .ps__rail-x {
   height: var(--theia-private-horizontal-tab-scrollbar-rail-height);
   z-index: 1000;
 }
 
-.p-TabBar.theia-app-centers > .ps__rail-x  >.ps__thumb-x {
+.p-TabBar[data-orientation='horizontal'] > .ps__rail-x  >.ps__thumb-x {
   height: var(--theia-private-horizontal-tab-scrollbar-height);
   bottom: calc((var(--theia-private-horizontal-tab-scrollbar-rail-height) - var(--theia-private-horizontal-tab-scrollbar-height)) / 2);
 }
 
-.p-TabBar.theia-app-centers > .ps__rail-x:hover,
-.p-TabBar.theia-app-centers > .ps__rail-x:focus {
+.p-TabBar[data-orientation='horizontal'] > .ps__rail-x:hover,
+.p-TabBar[data-orientation='horizontal'] > .ps__rail-x:focus {
   height: var(--theia-private-horizontal-tab-scrollbar-rail-height);
 }
 
-.p-TabBar.theia-app-centers > .ps__rail-x:hover > .ps__thumb-x,
-.p-TabBar.theia-app-centers > .ps__rail-x:focus > .ps__thumb-x {
+.p-TabBar[data-orientation='horizontal'] > .ps__rail-x:hover > .ps__thumb-x,
+.p-TabBar[data-orientation='horizontal'] > .ps__rail-x:focus > .ps__thumb-x {
   height: var(--theia-private-horizontal-tab-scrollbar-height);
   bottom: calc((var(--theia-private-horizontal-tab-scrollbar-rail-height) - var(--theia-private-horizontal-tab-scrollbar-height)) / 2);
 }
@@ -149,7 +135,6 @@
   color: var(--theia-ui-font-color1);
   background: var(--theia-layout-color1);
   border: var(--theia-border-width) solid var(--theia-border-color1);
-  border-top: var(--theia-border-width) solid var(--theia-brand-color1);
   box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 

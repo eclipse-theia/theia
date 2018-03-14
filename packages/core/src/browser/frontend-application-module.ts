@@ -25,7 +25,7 @@ import { LocalStorageService, StorageService } from './storage-service';
 import { WidgetFactory, WidgetManager } from './widget-manager';
 import {
     ApplicationShell, ApplicationShellOptions, DockPanelRenderer, TabBarRenderer,
-    TabBarRendererFactory, ShellLayoutRestorer, SidePanelHandler, SidePanelHandlerFactory, SplitPositionHandler
+    TabBarRendererFactory, ShellLayoutRestorer, SidePanelHandler, SidePanelHandlerFactory, SplitPositionHandler, DockPanelRendererFactory
 } from './shell';
 import { StatusBar, StatusBarImpl } from "./status-bar/status-bar";
 import { LabelParser } from './label-parser';
@@ -54,6 +54,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(SidePanelHandler).toSelf();
     bind(SplitPositionHandler).toSelf().inSingletonScope();
 
+    bind(DockPanelRendererFactory).toAutoFactory(DockPanelRenderer);
     bind(DockPanelRenderer).toSelf();
     bind(TabBarRendererFactory).toFactory(context => () => {
         const contextMenuRenderer = context.container.get<ContextMenuRenderer>(ContextMenuRenderer);

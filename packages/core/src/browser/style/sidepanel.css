@@ -23,7 +23,7 @@
 .p-TabBar.theia-app-sides {
   display: block;
   color: var(--theia-ui-font-color1);
-  background: var(--theia-layout-color0);
+  background: var(--theia-layout-color5);
   font-size: var(--theia-ui-font-size1);
   min-width: var(--theia-private-sidebar-tab-width); 
   max-width: var(--theia-private-sidebar-tab-width);
@@ -37,12 +37,27 @@
   position: relative;
   padding: 12px 8px;
   background: var(--theia-layout-color0);
-  border: none;
+}
+
+.p-TabBar.theia-app-left .p-TabBar-tab {
+  border-left: var(--theia-panel-border-width) solid var(--theia-layout-color0);
+}
+
+.p-TabBar.theia-app-right .p-TabBar-tab {
+  border-right: var(--theia-panel-border-width) solid var(--theia-layout-color0);
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-tab.p-mod-current {
   color: var(--theia-ui-font-color0);
   background: var(--theia-layout-color3);
+}
+
+.p-TabBar.theia-app-left .p-TabBar-tab.theia-mod-active {
+  border-left-color: var(--theia-accent-color2);
+}
+
+.p-TabBar.theia-app-right .p-TabBar-tab.theia-mod-active {
+  border-right-color: var(--theia-accent-color2);
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-tab:hover:not(.p-mod-current) {
@@ -82,11 +97,11 @@
 }
 
 #theia-left-side-panel {
-  border-right: var(--theia-border-width) solid var(--theia-border-color1);
+  border-right: var(--theia-panel-border-width) solid var(--theia-border-color1);
 }
 
 #theia-right-side-panel {
-  border-left: var(--theia-border-width) solid var(--theia-border-color1);
+  border-left: var(--theia-panel-border-width) solid var(--theia-border-color1);
 }
 
 
@@ -121,7 +136,7 @@
 |----------------------------------------------------------------------------*/
 
 #theia-bottom-content-panel {
-  border-top: var(--theia-border-width) solid var(--theia-border-color1);
+  border-top: var(--theia-panel-border-width) solid var(--theia-border-color1);
 }
 
 
