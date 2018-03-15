@@ -285,6 +285,11 @@ export const editorPreferenceSchema: PreferenceSchema = {
             "type": "boolean",
             "description": "Inserting and deleting whitespace follows tab stops."
         },
+        "editor.insertSpaces": {
+            "type": "boolean",
+            "default": true,
+            "description": "Using whitespaces to replace tabs when tabbing."
+        },
         "diffEditor.renderSideBySide": {
             "type": "boolean",
             "description": "Render the differences in two side-by-side editors.",
@@ -370,7 +375,8 @@ export interface EditorConfiguration {
     'editor.renderControlCharacters'?: boolean
     'editor.renderIndentGuides'?: boolean
     'editor.renderLineHighlight'?: 'none' | 'gutter' | 'line' | 'all'
-    'editor.useTabStops'?: boolean
+    'editor.useTabStops'?: boolean,
+    'editor.insertSpaces': boolean,
     'diffEditor.renderSideBySide'?: boolean
     'diffEditor.ignoreTrimWhitespace'?: boolean
     'diffEditor.renderIndicators'?: boolean

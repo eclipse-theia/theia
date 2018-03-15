@@ -62,7 +62,8 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     protected readonly modelOptions: {
         [name: string]: (keyof monaco.editor.ITextModelUpdateOptions | undefined)
     } = {
-            'editor.tabSize': 'tabSize'
+            'editor.tabSize': 'tabSize',
+            'editor.insertSpaces': 'insertSpaces'
         };
 
     protected updateModel(model: MonacoEditorModel, change: EditorPreferenceChange): void {
@@ -83,7 +84,8 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
 
     protected getModelOptions(): monaco.editor.ITextModelUpdateOptions {
         return {
-            tabSize: this.editorPreferences["editor.tabSize"]
+            tabSize: this.editorPreferences['editor.tabSize'],
+            insertSpaces: this.editorPreferences['editor.insertSpaces']
         };
     }
 

@@ -5,22 +5,23 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { ContainerModule, decorate, injectable } from "inversify";
-import { MenuContribution, CommandContribution } from "@theia/core/lib/common";
-import { QuickOpenService, FrontendApplicationContribution, KeybindingContribution } from "@theia/core/lib/browser";
-import { Languages, Workspace } from "@theia/languages/lib/common";
-import { TextEditorProvider, DiffNavigatorProvider } from "@theia/editor/lib/browser";
-import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
+import { ContainerModule, decorate, injectable } from 'inversify';
+import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
+import { QuickOpenService, FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
+import { Languages, Workspace } from '@theia/languages/lib/common';
+import { TextEditorProvider, DiffNavigatorProvider } from '@theia/editor/lib/browser';
+import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import { MonacoEditorProvider } from './monaco-editor-provider';
 import { MonacoEditorMenuContribution } from './monaco-menu';
-import { MonacoEditorCommandHandlers } from "./monaco-command";
-import { MonacoKeybindingContribution } from "./monaco-keybinding";
-import { MonacoLanguages } from "./monaco-languages";
-import { MonacoWorkspace } from "./monaco-workspace";
-import { MonacoEditorService } from "./monaco-editor-service";
-import { MonacoTextModelService } from "./monaco-text-model-service";
-import { MonacoContextMenuService } from "./monaco-context-menu";
+import { MonacoEditorCommandHandlers } from './monaco-command';
+import { MonacoKeybindingContribution } from './monaco-keybinding';
+import { MonacoLanguages } from './monaco-languages';
+import { MonacoWorkspace } from './monaco-workspace';
+import { MonacoEditorService } from './monaco-editor-service';
+import { MonacoTextModelService } from './monaco-text-model-service';
+import { MonacoContextMenuService } from './monaco-context-menu';
 import { MonacoOutlineContribution } from './monaco-outline-contribution';
+import { MonacoStatusBarContribution } from './monaco-status-bar-contribution';
 import { MonacoCommandService, MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
@@ -59,6 +60,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MonacoOutlineContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(MonacoOutlineContribution));
+
+    bind(MonacoStatusBarContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(MonacoStatusBarContribution);
 
     bind(MonacoCommandRegistry).toSelf().inSingletonScope();
     bind(CommandContribution).to(MonacoEditorCommandHandlers).inSingletonScope();
