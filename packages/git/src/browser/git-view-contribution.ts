@@ -80,7 +80,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
 
     onStart() {
         this.repositoryTracker.onDidChangeRepository(repository => {
-            if (repository) {
+            if (repository && this.hasMultipleRepositories()) {
                 const path = new URI(repository.localUri).path;
                 this.statusBar.setElement(GIT_SELECTED_REPOSITORY, {
                     text: `$(database) ${path.base}`,
@@ -161,7 +161,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
         });
         registry.registerCommand(GIT_COMMANDS.CHANGE_REPOSITORY, {
             execute: () => this.quickOpenService.changeRepository(),
-            isEnabled: () => this.repositoryTracker.allRepositories.length > 1
+            isEnabled: () => this.hasMultipleRepositories()
         });
         registry.registerCommand(GIT_COMMANDS.OPEN_FILE, {
             execute: () => this.openFile(),
@@ -215,4 +215,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
         return undefined;
     }
 
+    protected hasMultipleRepositories(): boolean {
+        return this.repositoryTracker.allRepositories.length > 1;
+    }
 }
