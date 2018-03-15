@@ -6,9 +6,12 @@
  */
 
 import { Worker } from 'cluster';
-import { AbstractStreamMessageWriter } from 'vscode-ws-jsonrpc/lib';
+import { Message } from 'vscode-jsonrpc';
+import { AbstractMessageWriter, MessageWriter } from 'vscode-jsonrpc/lib/messageWriter';
 
-export class WorkerMessageWriter extends AbstractStreamMessageWriter {
+export class WorkerMessageWriter extends AbstractMessageWriter implements MessageWriter {
+
+    protected errorCount = 0;
 
     constructor(
         protected readonly worker: Worker
@@ -16,11 +19,12 @@ export class WorkerMessageWriter extends AbstractStreamMessageWriter {
         super();
     }
 
-    protected send(content: string): void {
+    write(msg: Message): void {
         try {
-            this.worker.send(content);
+            this.worker.send(msg);
         } catch (e) {
-            this.fireError(e);
+            this.errorCount++;
+            this.fireError(e, msg, this.errorCount);
         }
     }
 
