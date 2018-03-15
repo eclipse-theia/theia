@@ -7,7 +7,7 @@
     "@theia/output": "^0.3.7",
     "@theia/process": "^0.3.7",
     "vscode-base-languageclient": "^0.0.1-alpha.3",
-    "vscode-languageserver": "^3.4.0"
+    "vscode-languageserver-protocol": "^3.6.0"
   },
   "publishConfig": {
     "access": "public"

@@ -6,9 +6,10 @@
  */
 
 import { Worker } from 'cluster';
-import { AbstractStreamMessageReader, DataCallback } from 'vscode-ws-jsonrpc/lib';
+import { DataCallback } from 'vscode-jsonrpc';
+import { MessageReader, AbstractMessageReader } from 'vscode-jsonrpc/lib/messageReader';
 
-export class WorkerMessageReader extends AbstractStreamMessageReader {
+export class WorkerMessageReader extends AbstractMessageReader implements MessageReader {
 
     constructor(
         protected readonly worker: Worker
@@ -30,9 +31,7 @@ export class WorkerMessageReader extends AbstractStreamMessageReader {
         this.worker.on('error', e =>
             this.fireError(e)
         );
-        this.worker.on('message', message =>
-            this.readMessage(message, callback)
-        );
+        this.worker.on('message', callback);
     }
 
 }
