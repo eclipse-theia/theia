@@ -14,16 +14,16 @@ import { ContainerModule } from 'inversify';
 import {
     DebugConfigurationManager,
     DebugConfigurationManagerImpl,
-    DebugServerImpl,
+    DebugServiceImpl,
     DebugSessionManager,
     DebugSessionManagerImpl
-} from "./debug-backend";
+} from "./debug-service";
 import {
     DebugPath,
-    DebugServer,
+    DebugService,
     DebugConfigurationContribution,
     DebugSessionFactoryContribution
-} from "../common/debug-server";
+} from "../common/debug-model";
 
 export default new ContainerModule(bind => {
     bind(DebugConfigurationManager).to(DebugConfigurationManagerImpl).inSingletonScope();
@@ -31,12 +31,12 @@ export default new ContainerModule(bind => {
     bindContributionProvider(bind, DebugConfigurationContribution);
     bindContributionProvider(bind, DebugSessionFactoryContribution);
 
-    bind(DebugServer).to(DebugServerImpl).inSingletonScope();
+    bind(DebugService).to(DebugServiceImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(context =>
         new JsonRpcConnectionHandler(DebugPath, client => {
-            const server = context.container.get<DebugServer>(DebugServer);
-            client.onDidCloseConnection(() => server.dispose());
-            return server;
+            const service = context.container.get<DebugService>(DebugService);
+            client.onDidCloseConnection(() => service.dispose());
+            return service;
         })
     ).inSingletonScope();
 });

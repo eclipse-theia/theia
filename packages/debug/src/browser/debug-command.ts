@@ -12,8 +12,7 @@
 import { injectable, inject } from "inversify";
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import { MAIN_MENU_BAR } from "@theia/core/lib/common/menu";
-import { DebugServer } from "../common/debug-server";
-import { Debug } from "../common/debug-model";
+import { DebugService } from "../common/debug-model";
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, "4_debug"];
@@ -36,8 +35,8 @@ export namespace DEBUG_COMMANDS {
 @injectable()
 export class DebugCommandHandlers implements MenuContribution, CommandContribution {
 
-    @inject(DebugServer)
-    protected readonly debug: DebugServer;
+    @inject(DebugService)
+    protected readonly debug: DebugService;
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerSubmenu(DebugMenus.DEBUG, 'Debug');
@@ -53,8 +52,8 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
         registry.registerCommand(DEBUG_COMMANDS.START);
         registry.registerHandler(DEBUG_COMMANDS.START.id, {
             execute: () => {
-                const debuggerTypes = this.debug.listDebugConfigurationProviders();
-                debuggerTypes.then((types) => {
+                const debugTypes = this.debug.listDebugConfigurationProviders();
+                debugTypes.then((types) => {
                     this.createDebugSession(types[0]);
                 });
             },
@@ -70,20 +69,18 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
         });
     }
 
-    private createDebugSession(debuggerType: string): void {
+    private createDebugSession(debugType: string): void {
         this.debug
-            .provideDebugConfiguration(debuggerType)
+            .provideDebugConfiguration(debugType)
             .then((configs) => {
                 this.debug
-                    .resolveDebugConfiguration(debuggerType, configs[0])
+                    .resolveDebugConfiguration(debugType, configs[0])
                     .then((config) => {
                         if (config) {
                             this.debug
-                                .createDebugSession(debuggerType, config)
+                                .createDebugSession(debugType, config)
                                 .then((sessionId) => {
-                                    if (sessionId) {
-                                        this.debug.initializeRequest(sessionId, new Debug.InitializeRequest());
-                                    }
+                                    if (sessionId) { }
                                 });
                         }
                     });
