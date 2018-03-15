@@ -15,9 +15,7 @@ import {
     DebugConfigurationProviderRegistry,
     DebugConfigurationContribution,
     DebugConfiguration
-} from "@theia/debug/lib/common/debug-server";
-import { ILogger } from "@theia/core";
-import { DebugProtocol } from "vscode-debugprotocol";
+} from "@theia/debug/lib/common/debug-model";
 
 /**
  * NodeJs debug type.
@@ -40,6 +38,10 @@ export interface NodeJsDebugConfigurationProvider extends DebugConfigurationProv
  */
 @injectable()
 export class NodeJSDebugConfigurationProviderImpl implements NodeJsDebugConfigurationProvider {
+    debugAdapterExecutable(config: DebugConfiguration) {
+        throw new Error("Method not implemented.");
+    }
+
     resolveDebugConfiguration(config: DebugConfiguration) {
         return config;
     }
@@ -48,7 +50,6 @@ export class NodeJSDebugConfigurationProviderImpl implements NodeJsDebugConfigur
         return [new NodeJsDebugConfiguration()];
     }
 }
-
 
 /**
  * Registers NodeJs [debug configuration provider](#NodeJsDebugConfigurationProvider)
@@ -69,4 +70,3 @@ export class NodeJsDebugConfiguration implements DebugConfiguration {
     type: string;
     name: string;
 }
-
