@@ -14,20 +14,15 @@ import {
     DebugConfigurationProvider,
     DebugConfigurationProviderRegistry,
     DebugConfigurationContribution,
-    DebugSessionFactoryContribution,
-    DebugSessionFactoryRegistry,
-    DebugSessionFactory,
-    DebugSession,
     DebugConfiguration
 } from "@theia/debug/lib/common/debug-server";
-import { Debug } from "@theia/debug/lib/common/debug-model";
 import { ILogger } from "@theia/core";
-import { DebugProtocol } from "vscode-debugprotocol/lib/debugProtocol";
+import { DebugProtocol } from "vscode-debugprotocol";
 
 /**
- * NodeJs debugger type.
+ * NodeJs debug type.
  */
-export const NODEJS = "Node Js";
+export const NODEJS_DEBUG_ID = "Node Js";
 
 /**
  * NodeJsDebugConfigurationProvider symbol for DI.
@@ -54,48 +49,18 @@ export class NodeJSDebugConfigurationProviderImpl implements NodeJsDebugConfigur
     }
 }
 
-/**
- * NodeJsDebugSessionFactory symbol for DI.
- */
-export const NodeJsDebugSessionFactory = Symbol('NodeJsDebugSessionFactory');
-
-/**
- * NodeJs session factory.
- */
-export interface NodeJsDebugSessionFactory extends DebugSessionFactory {
-}
-
-/**
- * NodeJsDebugSessionFactory implementation.
- */
-@injectable()
-export class NodeJsDebugSessionFactoryImpl implements NodeJsDebugSessionFactory {
-    @inject(ILogger)
-    protected readonly logger: ILogger;
-
-    create(config: DebugConfiguration) {
-        this.logger.info("NodeJs debug session created");
-        return new NodeJsDebugSession();
-    }
-}
 
 /**
  * Registers NodeJs [debug configuration provider](#NodeJsDebugConfigurationProvider)
  * and [session factory](#NodeJsDebugSessionFactory).
  */
 @injectable()
-export class NodeJsDebugRegistrator implements DebugConfigurationContribution, DebugSessionFactoryContribution {
-    @inject(NodeJsDebugSessionFactory)
-    protected readonly factory: NodeJsDebugSessionFactory;
-
+export class NodeJsDebugRegistrator implements DebugConfigurationContribution {
     @inject(NodeJsDebugConfigurationProvider)
     protected readonly provider: NodeJsDebugConfigurationProvider;
 
-    registerDebugSessionFactory(registry: DebugSessionFactoryRegistry) {
-        registry.registerDebugSessionFactory(NODEJS, this.factory);
-    }
     registerDebugConfigurationProvider(registry: DebugConfigurationProviderRegistry) {
-        registry.registerDebugConfigurationProvider(NODEJS, this.provider);
+        registry.registerDebugConfigurationProvider(NODEJS_DEBUG_ID, this.provider);
     }
 }
 
@@ -105,14 +70,3 @@ export class NodeJsDebugConfiguration implements DebugConfiguration {
     name: string;
 }
 
-/**
- *  NodeJs session implementation.
- */
-export class NodeJsDebugSession implements DebugSession {
-    initializeRequest(initializeRequest: DebugProtocol.InitializeRequest) {
-        return new Debug.InitializeResponse();
-    }
-
-    dispose(): void {
-    }
-}

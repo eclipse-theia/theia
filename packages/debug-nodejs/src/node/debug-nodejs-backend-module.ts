@@ -15,14 +15,10 @@ import {
     NodeJsDebugRegistrator,
     NodeJsDebugConfigurationProvider,
     NodeJSDebugConfigurationProviderImpl,
-    NodeJsDebugSessionFactory,
-    NodeJsDebugSessionFactoryImpl
 } from './debug-nodejs';
 
 export default new ContainerModule(bind => {
-    bind(NodeJsDebugSessionFactory).to(NodeJsDebugSessionFactoryImpl).inSingletonScope();
     bind(NodeJsDebugConfigurationProvider).to(NodeJSDebugConfigurationProviderImpl).inSingletonScope();
-
     bind(DebugConfigurationContribution).to(NodeJsDebugRegistrator);
     bind(DebugSessionFactoryContribution).to(NodeJsDebugRegistrator);
 });
