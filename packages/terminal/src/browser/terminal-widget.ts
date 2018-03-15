@@ -291,7 +291,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (this.isTermOpen) {
-            DomTerm.setFocus(this.term);
+            this.term.doFocus();
         }
     }
 
@@ -301,13 +301,13 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             if (this.isOpeningTerm === false) {
                 this.openTerm().then(() => {
                     this.openAfterShow = false;
-                    DomTerm.setFocus(this.term);
+                    this.term.doFocus();
                 }).catch(e => {
                     this.logger.error("Error opening terminal", e.toString());
                 });
             }
         } else {
-            DomTerm.setFocus(this.term);
+            this.term.doFocus();
         }
     }
 
@@ -315,7 +315,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         super.onAfterAttach(msg);
         if (this.isVisible) {
             this.openTerm().then(() => {
-                DomTerm.setFocus(this.term);
+                this.term.doFocus();
             }).catch(e => {
                 this.openAfterShow = true;
                 this.logger.error("Error opening terminal", e.toString());
