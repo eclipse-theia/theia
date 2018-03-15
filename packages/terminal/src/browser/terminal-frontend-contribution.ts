@@ -87,6 +87,14 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
             });
         };
 
+        const regCtrlShift = (k: Key) => {
+            keybindings.registerKeybindings({
+                command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
+                keybinding: KeyCode.createKeyCode({ first: k, modifiers: [KeyModifier.CTRL, KeyModifier.SHIFT] }).toString(),
+                context: TERMINAL_ACTIVE_CONTEXT,
+            });
+        };
+
         /* Register alt + k (the passed Key) as a passthrough command in the
            context of the terminal.  */
         const regAlt = (k: Key) => {
@@ -96,6 +104,8 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
                 context: TERMINAL_ACTIVE_CONTEXT,
             });
         };
+        regCtrlShift(Key.KEY_L); // Cycle input modes
+        regCtrlShift(Key.KEY_M); // Pager prefix character
 
         /* ctrl-space (000 - NUL).  */
         regCtrl(Key.SPACE);
