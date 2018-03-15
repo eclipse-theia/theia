@@ -29,7 +29,12 @@ div.domterm-main-popup {
 */
 /* We use <div class="domterm-pre"> instead of <pre> for regular terminal lines.
  * The reason is that <Copy> on some browsers adds *two* newlines between adjacent
- * <pre> nodes.  This appears intentional, as it matches the new innerText spec. */
+ * <pre> nodes.  This appears intentional, as it matches the new innerText spec.
+ * FIXME The downside with not using <pre> is that "copy-as-HTML" becomes
+ * less useful (without stylesheets). So we should either use <pre> and then
+ * fix up the extra newline on copy-to-HTML; or copy-to-HTML should convert
+ * the  <div class="domterm-pre"> to a <pre> node.
+ */
 div.domterm-pre {
     padding: 0px; margin: 0px; font-family: monospace;
     unicode-bidi: embed; white-space: pre }
@@ -41,10 +46,6 @@ span { padding: 0px; margin: 0px;}
 span[line="soft"] { padding: 0px; margin: 0px;}
 span[std="prompt"] { margin: 0px; padding: 0px; border: 0px }
 span[std="prompt"][value]:before { content: attr(value) }
-input[std="input"] {
-  border: 0px; margin: 0px; padding: 0px; right: 0px;
-  width: auto; left: auto;
-}
 *[domterm-hidden="true"] { display: none }
 *[domterm-noecho="true"] { visibility: hidden }
 

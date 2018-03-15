@@ -119,6 +119,7 @@ function DomTerm(name, topNode) {
     sstate.sessionNumber = -1;
     sstate.sessionNameUnique = false;
     this.windowNumber = -1;
+    this._settingsCounterInstance = -1;
     
     // Input lines that have not been processed yet.
     // In some modes we support enhanced type-ahead: Input lines are queued
@@ -141,8 +142,9 @@ function DomTerm(name, topNode) {
     // 1: line mode (local editing, sent to process when Enter types).
     // 0: auto mode (either line and character depending on _clientWantsEditing)
     this._lineEditingMode = 0;
-    // 1: client/inferor is in "canonical mode; 0: non-canonical mode.
+    // 1: client/inferior is in "canonical mode; 0: non-canonical mode.
     this._clientWantsEditing = 0;
+    this._numericArgument = null;
 
     // We have two variations of autoEditing:
     // - If autoCheckInferior is false, then the inferior actively sends OSC 71
@@ -174,18 +176,6 @@ function DomTerm(name, topNode) {
     this.verbosity = 0;
 
     // Use the doLineEdit function when isLineEditing().
-    // By default this is only used in autoEditing mode, in two cases:
-    // (1) for the first character when switching from character to line mode.
-    // (This is because we have check the backend pty for its status before
-    // we can switch to lineEditing mode.)
-    // (2) in cononical no-echo ("password") mode, because at least Chrome's
-    // default actions does not edit a non-visible contentEditable field.
-    // Otherwise (for now) we use the builtin contentEditable actions,
-    // because doLineEdit's functionalty is relatively incomplete.
-    // However, doLineEdit does open the possibility of user keymaps.
-    this.useDoLineEdit = false;
-    this._usingDoLineEdit = false;
-
     // True if a client performs echo on lines sent to it.
     // In that case, when isLineEditing(), when a completed
     // input line is sent to the client, it gets echoed by the client.
@@ -263,10 +253,7 @@ function DomTerm(name, topNode) {
     this._savedControlState = null;
 
     // The output position (cursor) - insert output before this node.
-    // Usually equal to inputLine except for temporary updates,
-    // or when isLineEditing().
-    // If null, this means append output to the end of the output container's
-    // children. (FIXME: The null case is not fully debugged.)
+    // If null, append output to the end of the output container's children.
     /** @type {Node|null} */
     this.outputBefore = null;
 
@@ -276,9 +263,16 @@ function DomTerm(name, topNode) {
     /** @type {Node|null} */
     this.outputContainer = null;
 
-    this.inputLine = null;
+    // this is a small (0 or 1 characters) span for the text caret.
+    // When line-editing this is the *input* caret;
+    // output is inserted at (outputContainer,outputBefore)
+    this._caretNode = null;
+    // When line-editing this is the actively edited line,
+    // that has not yet been sent to the process.
+    // In this case _caretSpan is required to be within _inputLine.
+    this._inputLine = null;
 
-    // True if inputLine should move with outputBefore.
+    // True if _inputLine should move with outputBefore.
     this.inputFollowsOutput = true;
 
     this.inputLineNumber = 0;
@@ -374,6 +368,15 @@ function DomTerm(name, topNode) {
     var dt = this;
     this._showHideEventHandler =
         function(evt) { dt._showHideHandler(evt); };
+    this._updateDisplay = function() {
+        dt._updateTimer = null;
+        dt._breakDeferredLines();
+        dt._checkSpacer();
+        // FIXME only if "scrollWanted"
+        if (dt._pagingMode == 0)
+            dt._scrollIfNeeded();
+        dt._restoreInputLine();
+    };
     this._unforceWidthInColumns =
         function(evt) {
             dt.forceWidthInColumns(-1);
@@ -557,10 +560,14 @@ DomTerm.showFocusedTerm = function(term) {
     }
 }
 
+DomTerm.prototype.doFocus = function() {
+    DomTerm.setFocus(this);
+    this.maybeFocus();
+}
+
 DomTerm.prototype.maybeFocus = function() {
     if (this.hasFocus()) {
-        if (this.inputLine && this.inputLine.parentNode)
-            this.inputLine.focus();
+        this.topNode.focus();
     }
 }
 
@@ -829,7 +836,8 @@ DomTerm.prototype._restoreLineTables = function(startNode, startLine) {
             var classList = cur.classList;
             if (tag == "div"
                 && (classList.contains("domterm-ruler")
-                    || classList.contains("resize-sensor")))
+                    || classList.contains("resize-sensor")
+                    || classList.contains("domterm-show-info")))
                 descend = false;
             else if (this.isBlockTag(tag)) {
                 var hasData = false;
@@ -954,7 +962,7 @@ DomTerm.prototype._restoreSaveLastLine = function() {
             }
             if (node == dt.lineStarts[line])
                 line++;
-            return null;
+            return true;
         }
         this._forEachElementIn(this.topNode, findAltBuffer);
     }
@@ -1298,19 +1306,12 @@ DomTerm.prototype.moveToAbs = function(goalAbsLine, goalColumn, addSpaceAsNeeded
         parent = current;
         current = parent.firstChild;
     }
-    /*
-    if (moveInput) {
-        parent.insertBefore(this.inputLine, current);
-        current = this.inputLine;
-    }
-    */
     var oldBefore = this.outputBefore;
     this.outputContainer = parent;
     this.outputBefore = current;
     if (oldBefore != current && oldBefore instanceof Text
         && oldBefore.previousSibling instanceof Text)
         this._normalize1(oldBefore.previousSibling);
-    //this._removeInputLine();
     this.currentAbsLine = absLine;
     this.currentCursorColumn = column;
 };
@@ -1345,31 +1346,37 @@ DomTerm.prototype._followingText = function(cur) {
 };
 
 DomTerm.prototype._removeCaret = function() {
-    var inputLine = this.inputLine;
-    if (inputLine && inputLine.getAttribute("caret")) {
-        var child = inputLine.firstChild;
-        inputLine.removeAttribute("caret");
+    var caretNode = this._caretNode;
+    if (caretNode && caretNode.getAttribute("caret")) {
+        var child = caretNode.firstChild;
+        caretNode.removeAttribute("caret");
         if (child instanceof Text) {
-            var text = this._followingText(inputLine.nextSibling);
+            var text = this._followingText(caretNode.nextSibling);
             if (text instanceof Text) {
                 text.insertData(0, child.data);
-                inputLine.removeChild(child);
+                caretNode.removeChild(child);
             } else {
-                inputLine.removeChild(child);
-                inputLine.parentNode.insertBefore(child, inputLine.nextSibling);
+                caretNode.removeChild(child);
+                caretNode.parentNode.insertBefore(child, caretNode.nextSibling);
             }
         }
     }
 }
 
 DomTerm.prototype._removeInputLine = function() {
-    if (this.inputFollowsOutput && this.inputLine) {
-        var inputParent = this.inputLine.parentNode;
-        if (inputParent != null) {
-            this._removeCaret();
-            if (this.outputBefore==this.inputLine)
+    if (this.inputFollowsOutput) {
+        this._removeCaret();
+        var caretParent = this._caretNode.parentNode;
+        if (this.isLineEditing()) {
+            if (this._inputLine != null && this._inputLine.parentNode != null) {
+                if (this.outputBefore == this._inputLine)
+                    this.outputBefore = this._inputLine.nextSibling;
+                this._inputLine.parentNode.removeChild(this._inputLine);
+            }
+        } else if (caretParent != null) {
+            if (this.outputBefore==this._caretNode)
                 this.outputBefore = this.outputBefore.nextSibling;
-            inputParent.removeChild(this.inputLine);
+            caretParent.removeChild(this._caretNode);
         }
     }
 };
@@ -1389,14 +1396,11 @@ DomTerm.prototype.isLineEditing = function() {
         || this._composing > 0;
 }
 
-DomTerm.prototype._restoreInputLine = function() {
-    if (this.inputFollowsOutput && this.outputBefore != this.inputLine) {
-        this.outputContainer.insertBefore(this.inputLine, this.outputBefore);
-        this.outputBefore = this.inputLine;
-        if (this.useStyledCaret() && ! this.isLineEditing()) {
-            if (! (this.inputLine.firstChild instanceof Text)
-                || this.inputLine.firstChild.data.length == 0) {
-                var text = this._followingText(this.outputBefore);
+DomTerm.prototype._restoreCaret = function() {
+        if (this.useStyledCaret()) {
+            if (! (this._caretNode.firstChild instanceof Text)
+                || this._caretNode.firstChild.data.length == 0) {
+                var text = this._followingText(this._caretNode);
                 if (text instanceof Text && text.data.length > 0) {
                     var tdata = text.data;
                     var sz = 1;
@@ -1404,19 +1408,19 @@ DomTerm.prototype._restoreInputLine = function() {
                         var ch0 = tdata.charCodeAt(0);
                         var ch1 = tdata.charCodeAt(1);
                         if (ch0 >= 0xD800 && ch0 <= 0xDBFF
-                            && ch1 >= 0xDC00 && ch1 <= DFFF)
+                            && ch1 >= 0xDC00 && ch1 <= 0xDFFF)
                             sz = 2;
                     }
                     var ch = tdata.substring(0, sz);
-                    this.inputLine.appendChild(document.createTextNode(ch));
+                    this._caretNode.appendChild(document.createTextNode(ch));
                     if (sz == text.length)
                         text.parentNode.removeChild(text);
                     else
                         text.deleteData(0, sz);
-                    this.inputLine.removeAttribute("value");
+                    this._caretNode.removeAttribute("value");
                 }
                 else
-                    this.inputLine.setAttribute("value", " ");
+                    this._caretNode.setAttribute("value", " ");
             }
             var cstyle;
             switch (this.caretStyle) {
@@ -1429,10 +1433,23 @@ DomTerm.prototype._restoreInputLine = function() {
             case 4:
                 cstyle = "underline"; break;
             }
-            this.inputLine.setAttribute("caret", cstyle);
+            this._caretNode.setAttribute("caret", cstyle);
         }
-        if (this._pagingMode == 0)
-            this.maybeFocus();
+    else {
+        document.getSelection().collapse(this._caretNode, 0);
+    }
+}
+
+DomTerm.prototype._restoreInputLine = function() {
+    if (this.inputFollowsOutput) {
+        let inputLine = this.isLineEditing() ? this._inputLine : this._caretNode;
+        if (inputLine != null && this.outputBefore != inputLine) {
+            this.outputContainer.insertBefore(inputLine, this.outputBefore);
+            this.outputBefore = inputLine;
+            this._restoreCaret();
+            if (this._pagingMode == 0)
+                this.maybeFocus();
+        }
     }
 };
 
@@ -1555,9 +1572,11 @@ DomTerm.prototype.cursorLeft = function(count, maybeWrap) {
             count -= tcols;
 
             var following = this.outputBefore;
-            var inputOk = this.inputLine == following
+            var input = this._inputLine != null ? this._inputLine
+                : this._caretNode;
+            var inputOk = input == following
                 && this.inputFollowsOutput
-                && this.inputLine.firstChild == null;
+                && input.firstChild == null;
             if (inputOk)
                 following = following.nextSibling;
             if (following && following.nodeType == 3/*TEXT_NODE*/) {
@@ -1603,7 +1622,7 @@ DomTerm.prototype._pushBgStdColor = function(name) {
     this._pushStyle("background-color", this.mapColorName(name));
 }
 
-DomTerm.prototype._getStdMode = function() {
+DomTerm.prototype._getStdElement = function() {
     for (var stdElement = this.outputContainer;
          stdElement instanceof Element;
          stdElement = stdElement.parentNode) {
@@ -1612,6 +1631,10 @@ DomTerm.prototype._getStdMode = function() {
     }
     return null;
 };
+DomTerm.prototype._getStdMode = function() {
+    let el = this._getStdElement();
+    return el == null ? null : el.getAttribute("std");
+}
 
 DomTerm.prototype._pushStdMode = function(styleValue) {
     if (styleValue == null
@@ -1620,7 +1643,7 @@ DomTerm.prototype._pushStdMode = function(styleValue) {
         this._adjustStyle();
         return;
     }
-    var stdElement = this._getStdMode();
+    var stdElement = this._getStdElement();
     if (stdElement == null ? styleValue == null
         : stdElement.getAttribute("std") == styleValue)
         return;
@@ -1713,10 +1736,6 @@ DomTerm.prototype._adjustStyle = function() {
         return;
     }
     this._removeInputLine();
-    if (this.inputLine == this.outputBefore) {
-        this.outputBefore = this.outputBefore.nextSibling;
-        parentSpan.removeChild(this.inputLine);
-    }
     if (inStyleSpan) {
         this._popStyleSpan();
     }
@@ -1889,7 +1908,7 @@ DomTerm.prototype._isAnAncestor = function(node, ancestor) {
     return true;
 };
 
-DomTerm.prototype.deleteLinesIgnoreScroll = function(count, restoreCursor) {
+DomTerm.prototype.deleteLinesIgnoreScroll = function(count) {
     var absLine = this.getAbsCursorLine();
     if (absLine > 0)
         this._clearWrap(absLine-1);
@@ -1899,12 +1918,8 @@ DomTerm.prototype.deleteLinesIgnoreScroll = function(count, restoreCursor) {
     var end;
     var all = count < 0 || absLine+count >= this.lineStarts.length;
     if (all) {
-        if (restoreCursor)
-            end = this.lineEnds[this.lineEnds.length-1];
-        else {
-            end = null;
-            all = false;
-        }
+        end = null;
+        all = false;
         count = this.lineStarts.length - absLine;
     } else {
         this._clearWrap(absLine+count-1);
@@ -1912,8 +1927,6 @@ DomTerm.prototype.deleteLinesIgnoreScroll = function(count, restoreCursor) {
     }
     var cur = this.outputBefore;
     var parent = this.outputContainer;
-    var inputLine = this.inputLine;
-    var inputRoot = this._rootNode(inputLine);
     for (;;) {
         if (cur == null) {
             while (parent != null && parent.nextSibling == null)
@@ -1940,7 +1953,7 @@ DomTerm.prototype.deleteLinesIgnoreScroll = function(count, restoreCursor) {
             }
         }
     }
-    if (all) {
+    if (all) { // remove - never done FIXME
         if (! this._isAnAncestor(start, this.topNode)) {
             start = end;
             for (;;) {
@@ -1963,20 +1976,6 @@ DomTerm.prototype.deleteLinesIgnoreScroll = function(count, restoreCursor) {
     length -= all ? count - 1 : count;
     this.lineStarts.length = length;
     this.lineEnds.length = length;
-    if (restoreCursor) {
-        // If inputLine was among deleted content, put it just before end.
-        if (inputRoot != this._rootNode(inputLine)) {
-            if (inputLine.parentNode)
-                inputLine.parentNode.removeChild(inputLine);
-            if (! end.parentNode) {
-                this.log("bad end node "+end);
-            }
-            end.parentNode.insertBefore(inputLine, end);
-            end = inputLine;
-        }
-        this.outputBefore = end;
-        this.outputContainer = end.parentNode;
-    }
 };
 
 DomTerm.prototype._insertLinesAt = function(count, line, regionBottom) {
@@ -1986,7 +1985,7 @@ DomTerm.prototype._insertLinesAt = function(count, line, regionBottom) {
     if (count <= 0)
         return;
     this.moveToAbs(regionBottom+this.homeLine-count, 0, true);
-    this.deleteLinesIgnoreScroll(count, false);
+    this.deleteLinesIgnoreScroll(count);
     if (count > this.numRows)
         count = this.numRows;
     this.insertLinesIgnoreScroll(count, line);
@@ -2005,7 +2004,7 @@ DomTerm.prototype._deleteLinesAt = function(count, line) {
     var regionHeight = scrollBottom +this.homeLine - line;
     if (count > regionHeight)
         count = regionHeight;
-    this.deleteLinesIgnoreScroll(count, false);
+    this.deleteLinesIgnoreScroll(count);
     this.insertLinesIgnoreScroll(count, scrollBottom - count);
     this.resetCursorCache();
     this.moveToAbs(line, 0, true);
@@ -2079,6 +2078,14 @@ DomTerm.prototype._createPreNode = function() {
     return n;
 };
 
+DomTerm.prototype._getOuterPre = function(node) {
+    for (var v = node; v != null && v != this.topNode; v = v.parentNode) {
+        if (v.classList.contains("domterm-pre"))
+            return v;
+    }
+    return null;
+}
+
 DomTerm.prototype._createSpanNode = function() {
     return document.createElement("span");
 };
@@ -2122,6 +2129,7 @@ DomTerm.prototype.setAlternateScreenBuffer = function(val) {
             // FIXME should scroll top of new buffer to top of window.
             var nextLine = this.lineEnds.length;
             var bufNode = this._createBuffer(this._altBufferName);
+            console.log("after _createBuffer in setAlternateScreenBuffer");
             this.topNode.insertBefore(bufNode, this._vspacer);
             var homeOffset = DomTerm._homeLineOffset(this);
             var homeNode = this.lineStarts[this.homeLine - homeOffset];
@@ -2154,7 +2162,7 @@ DomTerm.prototype.setAlternateScreenBuffer = function(val) {
                                            homeOffset = 0 + parseInt(offset, 10);
                                            return node;
                                        }
-                                       return false;
+                                       return true;
                                    });
             this.homeLine = this._computeHomeLine(homeNode, homeOffset, false);
             this._savedCursor = bufNode.savedCursor;
@@ -2217,6 +2225,8 @@ DomTerm.prototype.isSpanNode = function(node) {
 
 DomTerm.prototype._initializeDomTerm = function(topNode) {
     this.topNode = topNode;
+    topNode.contentEditable = true;
+    topNode.spellcheck = false;
     topNode.terminal = this;
 
     var helperNode = this._createPreNode();
@@ -2243,6 +2253,19 @@ DomTerm.prototype._initializeDomTerm = function(topNode) {
 
     this.topNode.addEventListener("mousedown", this._mouseEventHandler, true);
     this.topNode.addEventListener("mouseup", this._mouseEventHandler, true);
+
+    document.addEventListener("selectionchange", function() {
+        let sel = document.getSelection();
+        if (! sel.isCollapsed &&  this._composing <= 0 && dt.isLineEditing()) {
+            let r = new Range();
+            r.selectNodeContents(dt._inputLine);
+            if (r.comparePoint(sel.focusNode, sel.focusOffset) == 0)
+                dt.editorMoveToPosition(sel.focusNode, sel.focusOffset);
+            else
+                dt._restoreCaret();
+        }
+    });
+
     /*
     function docMouseDown(event) {
         if (! dt._isAnAncestor(event.target, dt.topNode)
@@ -2259,6 +2282,7 @@ DomTerm.prototype._initializeDomTerm = function(topNode) {
     this._altBufferName = this.makeId("alternate")
 
     var mainNode = this._createBuffer(this._mainBufferName);
+    console.log("after _createBuffer in _initializeDomTerm");
     topNode.appendChild(mainNode);
     var vspacer = document.createElement("div");
     vspacer.setAttribute("class", "domterm-spacer");
@@ -2408,29 +2432,49 @@ DomTerm.prototype.initializeTerminal = function(topNode) {
         this.history = new Array();
 
     this._initializeDomTerm(topNode);
-    this.addInputLine();
-    this.outputBefore = this.inputLine;
-    this.pendingInput = this.inputLine;
+
+    var caretNode = this._createSpanNode();
+    this._caretNode = caretNode;
+    caretNode.setAttribute("std", "caret");
+    caretNode.contentEditable = true;
+    caretNode.spellcheck = false;
+    this.insertNode(caretNode);
+    this.outputBefore = caretNode;
+    this.pendingInput = caretNode;
 
     var dt = this;
-    document.addEventListener("keydown",
-                              function(e) { dt.keyDownHandler(e) }, true);
-    document.addEventListener("keypress",
-                              function(e) { dt.keyPressHandler(e) }, true);
-    document.addEventListener("input",
-                              function(e) { dt.inputHandler(e); },
-                              true);
-    topNode.addEventListener("focus", function(e) { DomTerm.setFocus(dt); }, false);
+    topNode.addEventListener("keydown",
+                             function(e) { dt.keyDownHandler(e) }, false);
+    topNode.addEventListener("keypress",
+                             function(e) { dt.keyPressHandler(e) }, false);
+    topNode.addEventListener("input",
+      function(e) { dt.inputHandler(e); }, true);
+    if (! DomTerm.isAtom()) { // kludge for Atom
+        topNode.addEventListener("focusin", function(e) {
+            DomTerm.setFocus(dt);}, false);
+    }
     function compositionStart(ev) {
         dt._composing = 1;
+        dt.editorAddLine();
+        dt._inputLine.parentNode.contentEditable = false;
         dt._removeCaret();
+        document.getSelection().collapse(dt._caretNode, 0);
         if (dt.verbosity >= 1) dt.log("compositionStart");
     }
     function compositionEnd(ev) {
         if (dt.verbosity >= 1) dt.log("compositionEnd");
+        dt._inputLine.parentNode.contentEditable = 'inherit';
         dt._composing = 0;
-        if (! dt.isLineEditing())
+        let before = dt._caretNode.prevousSibling;
+        dt._moveNodes(dt._caretNode.firstChild, dt._caretNode.parentNode,
+                      dt._caretNode);
+        if (before instanceof Text)
+            dt._normalize(before);
+        if (!dt.isLineEditing()) {
             dt._sendInputContents();
+            dt._inputLine = null;
+        }
+        dt._restoreCaret();
     }
     topNode.addEventListener("compositionstart", compositionStart, true);
     topNode.addEventListener("compositionend", compositionEnd, true);
@@ -2631,6 +2675,17 @@ DomTerm.showContextMenu = null;
 DomTerm.prototype._mouseHandler = function(ev) {
     if (this.verbosity >= 2)
         this.log("mouse event "+ev.type+": "+ev+" t:"+this.topNode.id+" pageX:"+ev.pageX+" Y:"+ev.pageY);
+    if (ev.type == "mouseup") {
+        let sel = document.getSelection();
+        if (sel.isCollapsed) {
+            if (this.isLineEditing() && this._inputLine != null) {
+                this.editorMoveToPosition(sel.focusNode, sel.focusOffset);
+            }
+            // we don't want a visible caret
+            sel.removeAllRanges();
+            this.maybeFocus();
+        }
+    }
     if (ev.type == "mousedown") {
         DomTerm.setFocus(this);
     }
@@ -2673,21 +2728,8 @@ DomTerm.prototype._mouseHandler = function(ev) {
     if (ev.type == "mouseup"
         && this.sstate.mouseMode == 0 && ! this.isLineEditing()
         && (window.getSelection().isCollapsed || ev.button == 1)) {
-
-        for (var v = ev.target; v != null && v != this.topNode;
-             v = v.parentNode) {
-            if (v.classList.contains("domterm-pre")) {
-                target_pre_node = v;
-                break;
-            }
-        }
-        for (var v = this.outputContainer; v != null && v != this.topNode;
-             v = v.parentNode) {
-            if (v.classList.contains("domterm-pre")) {
-                current_pre_node = v;
-                break;
-            }
-        }
+        target_pre_node = this._getOuterPre(ev.target);
+        current_pre_node = this._getOuterPre(this.outputContainer);
         if (target_pre_node != null && current_pre_node != null) {
             readlineForced = ev.altKey;
             let firstSibling = target_pre_node.parentNode.firstChild;
@@ -3040,51 +3082,39 @@ DomTerm.prototype.setWindowSize = function(numRows, numColumns,
     this.reportEvent("WS", numRows+" "+numColumns+" "+availHeight+" "+availWidth);
 };
 
-DomTerm.prototype.addInputLine = function() {
-    if (this.inputLine)
-        this.inputLine.removeAttribute("caret");
-    var inputNode = this._createSpanNode();
-    var id = this.makeId("I"+(++this.inputLineNumber));
-    inputNode.setAttribute("id", id);
-    inputNode.setAttribute("std", "input");
-    inputNode.contentEditable = true;
-    inputNode.spellcheck = false;
-    this.insertNode(inputNode);
-
-    /*
-    // The Java WebView has a kludge to deal with that insertion caret isn't
-    // visible until something has inserted into the input line.
-    // So we insert U-200B "zero width space". This gets removed in enter.
-    // (Note if a space is inserted and removed from the UI then the
-    // caret remains visible.  Thus a cleaner work-around would be if
-    // we could simulate this.  I haven't gotten that to work so far.)
-    */
-    //var dummyText = document.createTextNode("\u200B");
-    //inputNode.appendChild(dummyText);
-
-    this.inputLine = inputNode;
-};
-
-DomTerm.prototype._forEachElementIn = function(node, func) {
-    for (var cur = node.firstChild; ;) {
+/**
+* Iterate for sub-node of 'node', starting with 'start'.
+* Call 'func' for each node (if allNodes is true) or each Element
+* (if allNodes is false).  If the value returned by 'func' is not a boolean,
+* stop interating and return that as the result of forEachElementIn.
+* If the value is true, continue with children; if false, skip children.
+*/
+DomTerm.prototype._forEachElementIn = function(node, func, allNodes=false, backwards=false, start=backwards?node.lastChild:node.firstChild) {
+    for (var cur = start; ;) {
         if (cur == null || cur == node)
             break;
-        if (cur instanceof Element) {
+        let doChildren = true
+        if (allNodes || cur instanceof Element) {
             var r = func(cur);
-            if (r != null)
+            if (r === true || r === false)
+                doChildren = r;
+            else
                 return r;
         }
-        if (cur instanceof Element && cur.firstChild) {
-            cur = cur.firstChild;
-        } else if (cur.nextSibling)
-            cur = cur.nextSibling;
+        let next;
+        if (doChildren && cur instanceof Element
+            && (next = backwards?cur.lastChild:cur.firstChild) != null) {
+            cur = next;
+        } else if ((next = backwards?cur.previousSibling:cur.nextSibling) != null)
+            cur = next;
         else {
             for (;;) {
                 cur = cur.parentNode;
                 if (cur == node)
                     break;
-                if (cur.nextSibling) {
-                    cur = cur.nextSibling;
+                next = backwards?cur.previousSibling:cur.nextSibling;
+                if (next != null) {
+                    cur = next;
                     break;
                 }
             }
@@ -3228,6 +3258,8 @@ DomTerm.prototype.getCursorColumn = function() {
 };
 
 DomTerm.prototype.grabInput = function(input) {
+    if (input == null)
+        return "";
     if (input instanceof Text)
         return input.data;
     if (this.isSpanNode(input) && input.getAttribute("line"))
@@ -3242,7 +3274,7 @@ DomTerm.prototype.grabInput = function(input) {
 
 DomTerm.prototype.getPendingInput = function() {
     var text = null;
-    while (this.pendingInput != this.inputLine && text == null) {
+    while (this.pendingInput != this._inputLine && text == null) {
         if (this.isSpanNode(pendingInput)) {
             text = this.grabInput(pendingInput);
             if (text.length == 0)
@@ -3268,13 +3300,13 @@ DomTerm.prototype.historyAdd = function(str, append) {
     else if (append && this.history.length >= 0) {
         this.history[this.history.length-1] =
             this.history[this.history.length-1] + '\n' + str;
-    } else
+    } else if (str != "")
         this.history.push(str);
     this.historyCursor = -1;
 };
 
 DomTerm.prototype.historyMove = function(delta) {
-    var str = this.grabInput(this.inputLine);
+    var str = this.grabInput(this._inputLine);
     if (this.historyCursor >= 0) {
         this.history[this.historyCursor] = str;
     } else {
@@ -3286,13 +3318,16 @@ DomTerm.prototype.historyMove = function(delta) {
         return; // ERROR FIXME
     this.historyCursor = newIndex;
     str = this.history[newIndex];
-    var inputLine = this.inputLine;
+    var inputLine = this._inputLine;
+    this._removeCaret();
     for (var child = inputLine.firstChild; child != null; ) {
         var next = child.nextSibling;
         inputLine.removeChild(child);
         child = next;
     }
-    inputLine.appendChild(document.createTextNode(str));
+    inputLine.appendChild(this._caretNode);
+    this._restoreCaret();
+    this.editorInsertString(str);
     this._scrollIfNeeded();
 };
 
@@ -3311,27 +3346,26 @@ DomTerm.prototype.historySave = function() {
 DomTerm.prototype.handleEnter = function(text) {
     this._doDeferredDeletion();
     // For now we only support the normal case when outputBefore == inputLine.
-    var oldInputLine = this.inputLine;
-    this.historyAdd(text, oldInputLine.getAttribute("continuation") == "true");
+    var oldInputLine = this._inputLine;
     var spanNode;
-    oldInputLine.removeAttribute("contenteditable");
     var line = this.getCursorLine();
-    this.outputBefore = oldInputLine.nextSibling;
-    this.outputContainer = oldInputLine.parentNode;
-    if (! this.clientDoesEcho) {
-        this.inputFollowsOutput = false;
-        this.inputLine = null; // To avoid confusing cursorLineStart
-        this.cursorLineStart(1);
-        this.inputFollowsOutput = true;
+    if (oldInputLine != null) {
+        this.historyAdd(text, oldInputLine.getAttribute("continuation") == "true");
+        this.outputContainer = oldInputLine;
+        this.outputBefore = null;
+        oldInputLine.classList.remove("editing");
     }
-    this.addInputLine();
+    if (! this.clientDoesEcho) {
+        this._inputLine = null; // To avoid confusing cursorLineStart
+        this.cursorLineStart(1);
+    }
+    this._inputLine = null;
     if (this.clientDoesEcho) {
         this._deferredForDeletion = oldInputLine;
         this.currentAbsLine = line+this.homeLine;
         this.currentCursorColumn = -1;
     }
-    this.outputBefore = this.inputLine;
-    this.outputContainer = this.inputLine.parentNode;
+    this.resetCursorCache();
     return text;
 };
 
@@ -3398,7 +3432,7 @@ DomTerm.prototype.eraseDisplay = function(param) {
         var removed = saveHome - this.homeLine;
         if (removed > 0) {
             this.moveToAbs(this.homeLine, 0, false);
-            this.deleteLinesIgnoreScroll(removed, false);
+            this.deleteLinesIgnoreScroll(removed);
             this.resetCursorCache();
             saveLine -= removed;
         }
@@ -3426,7 +3460,7 @@ DomTerm.prototype.eraseDisplay = function(param) {
         }
         else if (count > 0) {
             this.moveToAbs(startLine, 0, false);
-            this.deleteLinesIgnoreScroll(count, false);
+            this.deleteLinesIgnoreScroll(count);
             this.resetCursorCache();
         }
         break;
@@ -3480,20 +3514,15 @@ DomTerm.prototype._clearWrap = function(absLine=this.getAbsCursorLine()) {
         }
         if (pname == "PRE" || pname == "P" || pname == "DIV") {
             var newBlock = this._splitNode(parent, lineEnd.nextSibling);
+            var oldNextLine = this.lineStarts[absLine+1];
             this.lineStarts[absLine+1] = newBlock;
+            newBlock._widthColumns = oldNextLine._widthColumns;
+            newBlock._widthMode = oldNextLine._widthMode;
+            oldNextLine._widthColumns = undefined;
+            oldNextLine._widthMode = undefined;
         }
         // otherwise we have a non-standard line
         // Regardless, do:
-        var lineStart = this.lineStarts[absLine];
-        if (lineEnd._widthMode == DomTerm._WIDTH_MODE_NORMAL
-            && lineEnd._widthColumns !== undefined
-            && lineStart._widthColumns !== undefined) {
-            this.lineStart._widthColumns += lineEnd._widthColumns;
-        } else {
-            if (lineEnd._widthMode > lineStart._widthMode)
-                lineStart._widthMode = lineEnd._widthMode;
-            lineStart._widthColumns = undefined;
-        }
         lineEnd.setAttribute("line", "hard");
         lineEnd.removeAttribute("breaking");
         var child = lineEnd.firstChild;
@@ -4303,10 +4332,12 @@ DomTerm.prototype.handleControlSequence = function(last) {
                     this.outputContainer.setAttribute("domterm-hidden", "false");
             }
             this._pushStdMode("prompt");
-            if (param == 24)
-                this.inputLine.setAttribute("continuation", "true");
-            else
-                this.inputLine.removeAttribute("continuation");
+            if (this._inputLine != null) {
+                if (param == 24)
+                    this._inputLine.setAttribute("continuation", "true");
+                else
+                    this._inputLine.removeAttribute("continuation");
+            }
             break;
         case 15:
             var submode = this.getParameter(1, 1);
@@ -4579,9 +4610,9 @@ DomTerm.defaultHeight = -1;
 
 DomTerm.prototype.setSettings = function(obj) {
     var settingsCounter = obj["##"];
-    if (DomTerm._settingsCounter == settingsCounter)
+    if (this._settingsCounterInstance == settingsCounter)
         return;
-    DomTerm._settingsCounter = settingsCounter;
+    this._settingsCounterInstance = settingsCounter;
 
     this.linkAllowedUrlSchemes = DomTerm.prototype.linkAllowedUrlSchemes;
     var link_conditions = "";
@@ -4627,26 +4658,29 @@ DomTerm.prototype.setSettings = function(obj) {
         this.caretStyleFromSettings = -1;
     }
 
-    var style_user = obj["style.user"];
-    if (style_user) {
-        this.loadStyleSheet("user", style_user);
-        DomTerm._userStyleSet = true;
-    } else if (DomTerm._userStyleSet) {
-        this.loadStyleSheet("user", "");
-        DomTerm._userStyleSet = false;
-    }
-    var geom = obj["window.geometry"];
-    if (geom) {
-        try {
-            var m = geom.match(/^([0-9]+)x([0-9]+)$/);
-            if (m) {
-                DomTerm.defaultWidth = Number(m[1]);
-                DomTerm.defaultHeight = Number(m[2]);
-            }
-        } catch (e) { }
-    } else {
-        DomTerm.defaultWidth = -1;
-        DomTerm.defaultHeight = -1;
+    if (DomTerm._settingsCounter != settingsCounter) {
+        DomTerm._settingsCounter = settingsCounter;
+        var style_user = obj["style.user"];
+        if (style_user) {
+            this.loadStyleSheet("user", style_user);
+            DomTerm._userStyleSet = true;
+        } else if (DomTerm._userStyleSet) {
+            this.loadStyleSheet("user", "");
+            DomTerm._userStyleSet = false;
+        }
+        var geom = obj["window.geometry"];
+        if (geom) {
+            try {
+                var m = geom.match(/^([0-9]+)x([0-9]+)$/);
+                if (m) {
+                    DomTerm.defaultWidth = Number(m[1]);
+                    DomTerm.defaultHeight = Number(m[2]);
+                }
+            } catch (e) { }
+        } else {
+            DomTerm.defaultWidth = -1;
+            DomTerm.defaultHeight = -1;
+        }
     }
 
     if (DomTerm.settingsHook) {
@@ -4788,7 +4822,6 @@ DomTerm.HTMLinfo = {
     "defs": DomTerm._ELEMENT_KIND_SVG+DomTerm._ELEMENT_KIND_INLINE,
     "desc": DomTerm._ELEMENT_KIND_SVG+DomTerm._ELEMENT_KIND_INLINE,
     "div": DomTerm._ELEMENT_KIND_ALLOW,
-    "dd": DomTerm._ELEMENT_KIND_ALLOW,
     "dl": DomTerm._ELEMENT_KIND_ALLOW,
     "dt": DomTerm._ELEMENT_KIND_ALLOW,
     "ellipse": DomTerm._ELEMENT_KIND_SVG+DomTerm._ELEMENT_KIND_INLINE,
@@ -4925,6 +4958,8 @@ DomTerm.prototype._scrubAndInsertHTML = function(str) {
     var ok = 0;
     var i = 0;
     var startLine = this.getAbsCursorLine();
+    // FIXME could be smarter - we should avoid _WIDTH_MODE_VARIABLE_SEEN
+    // until we actually see something that needs it.
     this.lineStarts[startLine]._widthMode = DomTerm._WIDTH_MODE_VARIABLE_SEEN;
     var activeTags = new Array();
     loop:
@@ -5257,9 +5292,8 @@ DomTerm.prototype.handleOperatingSystemControl = function(code, text) {
         if (this.verbosity >= 2)
             this.log("OSC KEY k:"+key+" kstr:"+this.toQuoted(kstr));
         this._clientWantsEditing = 1;
-        if (code == 73 && this.inputLine) {
-            this.inputLine.setAttribute("domterm-noecho", "true");
-            this._usingDoLineEdit = true;
+        if (code == 73 && this._inputLine) {
+            this._inputLine.setAttribute("domterm-noecho", "true");
         }
         this.doLineEdit(key, kstr);
         break;
@@ -5317,17 +5351,28 @@ DomTerm.prototype.handleOperatingSystemControl = function(code, text) {
             if (data.alternateBuffer)
                 this.usingAlternateScreenBuffer = data.alternateBuffer;
             var dt = this;
+            this._inputLine = null;
             function findInputLine(node) {
-                if (node.getAttribute('id') != 'input-cursor')
-                    return null;
-                dt._removeInputLine();
-                dt.inputLine = node;
+                if (node.getAttribute('std') == 'caret')
+                    dt._caretNode = node;
+                if (node.classList.contains('editing'))
+                    dt._inputLine = node;
+                return true;
+                /*
+                if (node.getAttribute('std') != 'caret')
+                    return true;
+                //dt._removeInputLine();
+                dt._caretNode = node;
                 dt.outputBefore = node;
                 dt.outputContainer = node.parentNode;
                 return node;
+                */
             };
             this.initial = DomTerm._currentBufferNode(this);
             this._forEachElementIn(parent, findInputLine);
+            this.outputBefore =
+                this._inputLine != null ? this._inputLine : this._caretNode;
+            this.outputContainer = this.outputBefore.parentNode;
             this.resetCursorCache();
             this._restoreLineTables(this.topNode, 0);
             dt._restoreSaveLastLine();
@@ -5584,11 +5629,6 @@ DomTerm._nodeToHtml = function(node, dt, saveMode) {
                             string += "\n";
                             skip = true;
                         }
-                    } else if (aname == "id" && tagName == "span") {
-                        if (dt != null && node == dt.inputLine)
-                            avalue = "input-cursor";
-                        else
-                            continue;
                     } else if (aname == "class"
                                && node.classList.contains("domterm")) {
                         avalue = DomTerm._savedSessionClassNoScript;
@@ -5749,10 +5789,27 @@ DomTerm.prototype._pauseContinue = function(skip = false) {
     }
 }
 
+DomTerm.prototype.cancelUpdateDisplay = function() {
+    if (this._updateTimer) {
+        if (window.requestAnimationFrame)
+            cancelAnimationFrame(this._updateTimer);
+        else
+            clearTimeout(this._updateTimer);
+        this._updateTimer = null;
+    }
+}
+DomTerm.prototype.requestUpdateDisplay = function() {
+    this.cancelUpdateDisplay();
+    if (window.requestAnimationFrame)
+        this._updateTimer = requestAnimationFrame(this._updateDisplay);
+    else
+        this._updateTimer = setTimeout(this._updateDisplay, 100);
+}
+
 DomTerm.prototype.insertString = function(str) {
     if (this.verbosity >= 2) {
         //var d = new Date(); var ms = (1000*d.getSeconds()+d.getMilliseconds();
-        if (str.length > 200)
+        if (str.length > 20000)
             this.log("insertString "+JSON.stringify(str.substring(0,200))+"... state:"+this.controlSequenceState/*+" ms:"+ms*/);
         else
         this.log("insertString "+JSON.stringify(str)+" state:"+this.controlSequenceState/*+" ms:"+ms*/);
@@ -5773,15 +5830,6 @@ DomTerm.prototype.insertString = function(str) {
     };
     */
     var dt = this;
-    var update = function() {
-        dt._updateTimer = null;
-        dt._breakDeferredLines();
-        dt._checkSpacer();
-        // FIXME only if "scrollWanted"
-        if (dt._pagingMode == 0)
-            dt._scrollIfNeeded();
-        dt._restoreInputLine();
-    };
     if (this.useStyledCaret())
         this._removeInputLine();
     this._doDeferredDeletion();
@@ -6056,12 +6104,14 @@ DomTerm.prototype.insertString = function(str) {
                         || this.getCursorLine() != this._regionBottom-1)) {
                     if (this._pauseNeeded()) {
                         this.parameters[1] = str.substring(i);
-                        update();
+                        this._updateDisplay();
                         this._enterPaging(true);
                         return;
                     }
                     this.cursorLineStart(1);
                     i++;
+                    if (this.isLineEditing())
+                        this.editorAddLine();
                 } else {
                     this._breakDeferredLines();
                     this.cursorLineStart(0);
@@ -6084,11 +6134,13 @@ DomTerm.prototype.insertString = function(str) {
                 this._breakDeferredLines();
                 if (this._pauseNeeded()) {
                     this.parameters[1] = str.substring(i);
-                    update();
+                    this._updateDisplay();
                     this._enterPaging(true);
                     return;
                 }
                 this.cursorNewLine((this.sstate.automaticNewlineMode & 1) != 0);
+                if (this.isLineEditing())
+                    this.editorAddLine();
                 prevEnd = i + 1; columnWidth = 0;
                 break;
             case 27 /* Escape */:
@@ -6201,24 +6253,15 @@ DomTerm.prototype.insertString = function(str) {
         this.parameters[1] = this.parameters[1] + str.substring(prevEnd, i);
     }
 
-    if (this._updateTimer) {
-        if (window.requestAnimationFrame)
-            cancelAnimationFrame(this._updateTimer);
-        else
-            clearTimeout(this._updateTimer);
-        this._updateTimer = null;
-    }
     if (this._pauseNeeded()) {
         this.parameters[1] = "";
+        this.cancelUpdateDisplay();
         this._enterPaging(true);
-        update();
+        this._updateDisplay();
         this.topNode.scrollTop = this._pauseLimit - this.availHeight;
         return;
     }
-    if (window.requestAnimationFrame)
-        this._updateTimer = requestAnimationFrame(update);
-    else
-        this._updateTimer = setTimeout(update, 100);
+    this.requestUpdateDisplay();
 };
 
 DomTerm.prototype._scrollIfNeeded = function() {
@@ -6245,7 +6288,7 @@ DomTerm.prototype._breakDeferredLines = function() {
             var scrollCount = lines - regionHeight;
             if (scrollCount > 0) {
                 this.moveToAbs(this._regionTop+this.homeLine, 0, true);
-                this.deleteLinesIgnoreScroll(scrollCount, false);
+                this.deleteLinesIgnoreScroll(scrollCount);
                 this.moveToAbs(this._regionBottom +this.homeLine- 1, 0, true);
             }
         }
@@ -6254,6 +6297,68 @@ DomTerm.prototype._breakDeferredLines = function() {
 
 DomTerm._doLinkify = true;
 DomTerm._forceMeasureBreaks = false;
+
+// Remove existing soft line breaks.
+DomTerm.prototype._unbreakLines = function(startLine, single=false) {
+    var delta = 0;
+    var prevLine = this.lineStarts[startLine];
+    var skipRest = false;
+    for (var line = startLine+1;  line < this.lineStarts.length;  line++) {
+        var lineStart = this.lineStarts[line];
+        if (delta > 0) {
+            this.lineStarts[line-delta] = this.lineStarts[line];
+            this.lineEnds[line-delta-1] = this.lineEnds[line-1];
+        }
+        let lineAttr = lineStart.getAttribute("line");
+        if (! this.isSpanNode(lineStart) || ! lineAttr || skipRest) {
+            if (single && line > startLine+1) {
+                if (delta == 0)
+                    break;
+                skipRest = true;
+            }
+            prevLine = lineStart;
+            continue;
+        }
+        if (lineStart.getAttribute("breaking")=="yes") {
+            lineStart.removeAttribute("breaking");
+            for (var child = lineStart.firstChild;
+                 child != null; ) {
+                var next = child.nextSibling;
+                if (child.classList.contains("pprint-indentation"))
+                    lineStart.removeChild(child);
+                child = next;
+            }
+        }
+        if (lineAttr != "hard" && lineAttr != "br") {
+            // Remove "soft" line breaks from DOM
+            if (lineAttr == "soft" || lineAttr == "space") {
+                if (this.outputBefore == lineStart)
+                    this.outputBefore = lineStart.nextSibling;
+                var prev = lineStart.previousSibling;
+                lineStart.parentNode.removeChild(lineStart);
+                if (prev instanceof Text)
+                    this._normalize1(prev);
+                if (prevLine) {
+                    if (prevLine._widthColumns)
+                        prevLine._widthColumns += lineStart._widthColumns;
+                    if (lineStart._widthMode > prevLine._widthMode)
+                        prevLine._widthMode = lineStart._widthMode;
+                }
+            }
+            // Remove "soft" "fill" "miser" "space" breaks from the line-table
+            delta++;
+        } else
+	    prevLine = lineStart;
+    }
+    if (delta == 0)
+        return false;
+    // Update line tables
+    var lineCount = this.lineEnds.length;
+    this.lineEnds[lineCount-delta-1] = this.lineEnds[lineCount-1];
+    this.lineStarts.length = lineCount-delta;
+    this.lineEnds.length = lineCount-delta;
+    return true; // FIXME needlessly conservative
+}
 
 DomTerm.prototype._breakAllLines = function(startLine = -1) {
     // The indentation array is a stack of the following:
@@ -6440,11 +6545,12 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
             var dobreak = false;
             var skipChildren = false;
             var measureWidth = el instanceof Element ? el.measureWidth : 0;
+            const isText = el instanceof Text;
             check_fits:
-            if (el instanceof Text || dt.isObjectElement(el)
+            if (isText || dt.isObjectElement(el)
                 || el.classList.contains("wc-node")) {
                 skipChildren = true;
-                if (el instanceof Text)
+                if (isText)
                     dt._normalize1(el);
                 next = el.nextSibling;
                 var afterMeasure;
@@ -6458,10 +6564,11 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
                 measureWidth = afterMeasure - beforeMeasure;
                 var right = afterMeasure - startOffset;
                 if (right > availWidth
-                    && (beforePos > 0 || el instanceof Text)) {
+                    && (beforePos > 0 || isText)) {
                     var lineNode = dt._createLineNode("soft");
                     var indentWidth;
-                    if (el instanceof Text) {
+                    var oldel = el;
+                    if (isText) {
                         el.parentNode.insertBefore(lineNode, el.nextSibling);
                         var rest = dt._breakString(el, lineNode, beforePos,
                                                    right, availWidth, didbreak,
@@ -6486,14 +6593,22 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
                         el.parentNode.insertBefore(lineNode, el);
                         indentWidth = addIndentation(dt, lineNode, countColumns);
                     }
+                    lineNode._widthMode = dt.lineStarts[line]._widthMode;
                     line++;
                     if (! countColumns)
                         beforeMeasure += lineNode.offsetLeft - beforePos;
-                    else if (el instanceof Element)
+                    else if (isText) {
+                        let beforeColumns = oldel.parentNode == null ? 0
+                            : dt.strWidthInContext(oldel.data, el);
+                        beforeMeasure += dt.charWidth * beforeColumns;
+                        let oldWidthCols = dt.lineStarts[line-1]._widthColumns;
+                        if (oldWidthCols) {
+                            let beforeCols = beforeMeasure / dt.charWidth;
+                            dt.lineStarts[line-1]._widthColumns = beforeCols;
+                            lineNode._widthColumns = oldWidthCols - beforeCols;
+                        }
+                    } else
                         beforeMeasure = el.measureLeft;
-                    else
-                        beforeMeasure += dt.charWidth
-                          * dt.strWidthInContext(el.previousSibgling.data, el);
                     beforePos = indentWidth;
                     startOffset = beforeMeasure - beforePos;
                     dobreak = true;
@@ -6606,14 +6721,14 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
     };
 
     function breakNeeded(dt, lineNo, lineStart) {
-	var wmode = lineStart._widthMode;
+        var wmode = lineStart._widthMode;
         if (! DomTerm._forceMeasureBreaks
             && wmode < DomTerm._WIDTH_MODE_VARIABLE_SEEN
             && lineStart._widthColumns !== undefined) {
             return lineStart._widthColumns > dt.numColumns;
         }
-	var end = dt.lineEnds[lineNo];
-	return end != null && end.offsetLeft > dt.availWidth;
+        var end = dt.lineEnds[lineNo];
+        return end != null && end.offsetLeft > dt.availWidth;
     }
 
     if (startLine < 0) {
@@ -6626,60 +6741,7 @@ DomTerm.prototype._breakAllLines = function(startLine = -1) {
         }
     }
 
-    var delta = 0;
-    var prevLine = null;
-    // First remove any existing soft line breaks.
-    for (var line = startLine+1;  line < this.lineStarts.length;  line++) {
-        var lineStart = this.lineStarts[line];
-        if (delta > 0) {
-            this.lineStarts[line-delta] = this.lineStarts[line];
-            this.lineEnds[line-delta-1] = this.lineEnds[line-1];
-        }
-        if (! this.isSpanNode(lineStart))
-            continue;
-        var lineAttr = lineStart.getAttribute("line");
-        if (! lineAttr)
-            continue;
-        if (lineStart.getAttribute("breaking")=="yes") {
-            lineStart.removeAttribute("breaking");
-            for (var child = lineStart.firstChild;
-                 child != null; ) {
-                var next = child.nextSibling;
-                if (child.classList.contains("pprint-indentation"))
-                    lineStart.removeChild(child);
-                child = next;
-            }
-        }
-        if (lineAttr != "hard" && lineAttr != "br") {
-            // Remove "soft" line breaks from DOM
-            if (lineAttr == "soft" || lineAttr == "space") {
-                if (this.outputBefore == lineStart)
-                    this.outputBefore = lineStart.nextSibling;
-                var prev = lineStart.previousSibling;
-                lineStart.parentNode.removeChild(lineStart);
-                if (prev instanceof Text)
-                    this._normalize1(prev);
-                if (prevLine) {
-                    if (prevLine._widthColumns)
-                        prevLine._widthColumns += lineStart._widthColumns;
-                    if (lineStart._widthMode > prevLine._widthMode)
-                        prevLine._widthMode = lineStart._widthMode;
-                }
-            }
-            // Remove "soft" "fill" "miser" "space" breaks from the line-table
-            delta++;
-        } else
-	    prevLine = lineStart;
-    }
-    var changed = false;
-    if (delta > 0) {
-        // Update line tables
-        var lineCount = this.lineEnds.length;
-        this.lineEnds[lineCount-delta-1] = this.lineEnds[lineCount-1];
-        this.lineStarts.length = lineCount-delta;
-        this.lineEnds.length = lineCount-delta;
-        changed = true; // FIXME needlessly conservative
-    }
+    var changed = this._unbreakLines(startLine);
 
     for (var line = startLine;  line < this.lineStarts.length;  line++) {
         var start = this.lineStarts[line];
@@ -6908,7 +6970,7 @@ DomTerm.prototype.insertSimpleOutput = function(str, beginIndex, endIndex,
 	lineStart._widthColumns = column;
 };
 
-DomTerm.prototype._updateLinebreaksStart = function(absLine) {
+DomTerm.prototype._updateLinebreaksStart = function(absLine, requestUpdate=false) {
     // Contending optimizations:
     // If we're on the last line, we may be doing bulk output,
     // so avoid acessing offsetLeft (expensive because it forces layout).
@@ -6920,6 +6982,8 @@ DomTerm.prototype._updateLinebreaksStart = function(absLine) {
                 // FIXME maybe use _widthColumns
                 && this.lineEnds[absLine].offsetLeft > this.availWidth)))
         this._deferredLinebreaksStart = absLine;
+    if (requestUpdate)
+        this.requestUpdateDisplay();
 }
 
 DomTerm.prototype.insertRawOutput = function(str) {
@@ -6995,7 +7059,7 @@ DomTerm.prototype.processInputCharacters = function(str) {
 
 DomTerm.prototype.processEnter = function() {
     this._restoreInputLine();
-    var text = this.grabInput(this.inputLine);
+    var text = this.grabInput(this._inputLine);
     this.handleEnter(text);
     if (this.verbosity >= 2)
         this.log("processEnter \""+this.toQuoted(text)+"\"");
@@ -7110,9 +7174,7 @@ DomTerm.prototype.keyDownToString = function(event) {
 
 DomTerm.prototype.pasteText = function(str) {
     if (this.isLineEditing()) {
-        var rng = bililiteRange(this.inputLine).bounds('selection');
-        rng.text(str, 'end');
-        rng.select();
+        this.editorInsertString(str);
     } else {
         this.reportText(str, null);
     }
@@ -7409,24 +7471,42 @@ DomTerm.prototype.nextInputMode = function() {
 
 DomTerm.prototype._sendInputContents = function() {
     this._doDeferredDeletion();
-    var text = this.grabInput(this.inputLine);
-    this._deferredForDeletion = this.inputLine;
-    this.reportText(text);
+    if (this._inputLine != null) {
+        var text = this.grabInput(this._inputLine);
+        this._deferredForDeletion = this._inputLine;
+        this.reportText(text);
+    }
 }
 
 DomTerm.inputModeChanged = function(dt, mode) {
     dt.reportEvent("INPUT-MODE-CHANGED", '"'+String.fromCharCode(mode)+'"');
 }
 
+DomTerm.prototype._pushToCaret = function() {
+    let saved = {
+        before: this.outputBefore, container: this.outputContainer }
+    this.outputBefore = this._caretNode;
+    this.outputContainer = this._caretNode.parentNode;
+    this.resetCursorCache();
+    return saved;
+}
+
+DomTerm.prototype._popFromCaret = function(saved) {
+    this.outputBefore = saved.before;
+    this.outputContainer = saved.container;
+    this.resetCursorCache();
+}
+
+
 DomTerm.prototype.doLineEdit = function(key, str) {
     if (this.verbosity >= 2)
         this.log("doLineEdit "+key+" "+JSON.stringify(str));
+    this.editorAddLine();
     if (key == -13      // key-press event
         || key == 13) { // key-down event
         this.processEnter();
         return;
     }
-    this._restoreInputLine();
     switch (key) {
     case 38: /*Up*/
         if (this._atTopInputLine()) {
@@ -7441,27 +7521,34 @@ DomTerm.prototype.doLineEdit = function(key, str) {
         }
         break;
     }
-    var rng = bililiteRange(this.inputLine).bounds('selection');
     switch (key) {
-    case 8:
-        rng.sendkeys('{Backspace}');
-        rng.select();
+    case 8: // Backspace
+        this.editorBackspace(this.numericArgumentGet(), true, false);
         break;
-    case 37:
-        rng.sendkeys('{ArrowLeft}');
-        rng.select();
+    case 27: // Esc
+        this._numericArgument = null;
         break;
-    case 39:
-        rng.sendkeys('{ArrowRight}');
-        rng.select();
+    case 35: // End
+    case 36: // Home
+        this.editorMoveHomeOrEnd(key==35);
+        this._numericArgument = null;
         break;
-    case 46:
-        rng.sendkeys('{Delete}');
-        rng.select();
+    case 37:  // Left
+        this.editorBackspace(this.numericArgumentGet(), false, false);
+        break;
+    case 39: // Right
+        this.editorBackspace(- this.numericArgumentGet(), false, false);
+        break;
+    case 46: // Delete
+        this.editorBackspace(- this.numericArgumentGet(), true, false);
         break;
     default:
-        rng.text(str, 'end');
-        rng.select();
+        let sel = window.getSelection();
+        if (! sel.isCollapsed) {
+            this.editorBackspace(1, true, false);
+        }
+        str = str.repeat(this.numericArgumentGet());
+        this.editorInsertString(str);
     }
 };
 
@@ -7536,7 +7623,7 @@ DomTerm.openNewWindow = function(dt, width=DomTerm.defaultWidth,
 
 DomTerm.prototype._isOurEvent = function(event) {
     //return this._isAnAncestor(event.target, this.topNode);
-    return DomTerm.focusedTerm == this;
+    return this.hasFocus();
 }
 
 DomTerm.prototype.keyDownHandler = function(event) {
@@ -7551,36 +7638,13 @@ DomTerm.prototype.keyDownHandler = function(event) {
     if (this._composing == 0)
         this._composing = -1;
 
-    // Ctrl-Shift-C is Copy and Ctrl-Shift-V is Paste
     if (event.ctrlKey && event.shiftKey) {
         switch (key) {
-        case 33 /*PageUp*/:
-        case 34 /*PageDown*/:
-            this._pagePage(key == 33 ? -1 : 1);
-            event.preventDefault();
-            return;
-        case 35 /*End*/:
-            this._pageBottom();
-            event.preventDefault();
-            return;
-        case 36 /*Home*/:
-            this._pageTop();
-            event.preventDefault();
-            return;
-        case 38 /*Up*/:
-        case 40 /*Down*/:
-            this._pageLine(key == 38 ? -1 : 1);
-            event.preventDefault();
-            return;
         case 65: // Control-Shift-A
             if (this.enterMuxMode) {
                 this.enterMuxMode();
                 event.preventDefault();
             }
-            return;
-        case 67: // Control-Shift-C
-            if (DomTerm.doCopy())
-                event.preventDefault();
             return;
         case 73: // Control-shift-I
             return;
@@ -7610,12 +7674,64 @@ DomTerm.prototype.keyDownHandler = function(event) {
                 event.preventDefault();
                 return;
             }
-            break;
+        }
+    }
+    if (event.ctrlKey && (event.shiftKey || this.isLineEditing())) {
+        switch (key) {
+        case 33 /*PageUp*/:
+        case 34 /*PageDown*/:
+            this._pagePage(key == 33 ? -1 : 1);
+            event.preventDefault();
+            return;
+        case 35 /*End*/:
+            this._pageBottom();
+            event.preventDefault();
+            return;
+        case 36 /*Home*/:
+            this._pageTop();
+            event.preventDefault();
+            return;
+        case 38 /*Up*/:
+        case 40 /*Down*/:
+            this._pageLine(key == 38 ? -1 : 1);
+            event.preventDefault();
+            return;
+        case 67: // Control-Shift-C
+            if (DomTerm.doCopy())
+                event.preventDefault();
+            return;
         case 86: // Control-Shift-V
             // Google Chrome doesn't allow execCommand("paste") but Ctrl-Shift-V
             // works by default.  In Firefox, it's the other way round.
             if (DomTerm.doPaste(this))
                 event.preventDefault();
+            return;
+        case 88: // Control[-Shift]-X
+            if (this.isLineEditing()) {
+                // FIXME narrow selection to _inputLine
+                if (DomTerm.doCopy())
+                    event.preventDefault();
+                this.editorBackspace(1, true, false);
+                return;
+            }
+            break;
+        }
+    }
+    if ((key == 37 || key == 39) // Left or Right
+        && (event.ctrlKey || event.shiftKey)) {
+        let sel = document.getSelection();
+        if (event.shiftKey) {
+            if (sel.isCollapsed) {
+                this._removeCaret();
+                sel.collapse(this._caretNode, 0);
+            }
+            return;
+        }
+        if (! sel.isCollapsed)
+            return;
+        if (event.ctrlKey && this.isLineEditing()) {
+            let count = (key == 37 ? 1 : -1) * this.numericArgumentGet();
+            this.editorBackspace(count, false, true);
             return;
         }
     }
@@ -7631,7 +7747,14 @@ DomTerm.prototype.keyDownHandler = function(event) {
     if (this.isLineEditing()) {
         if (! this.useStyledCaret())
             this.maybeFocus();
-        if (key == 13) {
+        if (event.altKey
+            && ((key >= 48 && key <= 57)
+                || (key==189 && this._numericArgument == null))) {
+            let c = String.fromCharCode(key == 189 ? 45 : key);
+            this._numericArgument = this._numericArgument == null ? c
+                : this._numericArgument + c;
+            event.preventDefault();
+        } else if (key == 13) {
             event.preventDefault();
             if (event.shiftKey) {
                 this.pasteText("\n");
@@ -7639,7 +7762,6 @@ DomTerm.prototype.keyDownHandler = function(event) {
                 this.processEnter();
                 if (this._lineEditingMode == 0 && this.autoLazyCheckInferior) {
                     this._clientWantsEditing = 0;
-                    this._usingDoLineEdit = this.useDoLineEdit;
                 }
             }
         }
@@ -7647,7 +7769,7 @@ DomTerm.prototype.keyDownHandler = function(event) {
                  && (key == 67 // ctrl-C
                      || key == 90 // ctrl-Z
                      || (key == 68 // ctrl-D
-                         && this.grabInput(this.inputLine).length == 0))) {
+                         && this.grabInput(this._inputLine).length == 0))) {
             event.preventDefault();
             if (this._lineEditingMode == 0 && this.autoLazyCheckInferior)
                 this._clientWantsEditing = 0;
@@ -7663,11 +7785,11 @@ DomTerm.prototype.keyDownHandler = function(event) {
                 event.preventDefault();
                 this.historyMove(1);
             }
-        } else if (this._usingDoLineEdit) {
+        } else {
             var str = this.keyDownToString(event);
             if (str) {
                 event.preventDefault();
-                this.log("KEY "+key+" "+JSON.stringify(str));
+                //this.log("KEY "+key+" "+JSON.stringify(str));
                 this.doLineEdit(key, str);
             }
         }
@@ -7686,8 +7808,10 @@ DomTerm.prototype.keyDownHandler = function(event) {
 DomTerm.prototype.keyPressHandler = function(event) {
     var key = event.keyCode ? event.keyCode : event.which;
     if (this.verbosity >= 2)
-        this.log("key-press kc:"+key+" key:"+event.key+" code:"+event.keyCode+" char:"+event.keyChar+" ctrl:"+event.ctrlKey+" alt:"+event.altKey+" which:"+event.which+" t:"+this.grabInput(this.inputLine)+" inputLine:"+this.inputLine);
+        this.log("key-press kc:"+key+" key:"+event.key+" code:"+event.keyCode+" char:"+event.keyChar+" ctrl:"+event.ctrlKey+" alt:"+event.altKey+" which:"+event.which);
     if (! this._isOurEvent(event))
+        return;
+    if (this._composing > 0)
         return;
     if (this._currentlyPagingOrPaused()) {
         this._pageKeyHandler(event, key, true);
@@ -7699,11 +7823,9 @@ DomTerm.prototype.keyPressHandler = function(event) {
     }
     this._adjustPauseLimit(this.outputContainer);
     if (this.isLineEditing()) {
-        if (this._usingDoLineEdit) {
-            event.preventDefault();
-            var str = String.fromCharCode(key);
-            this.doLineEdit(-key, str);
-        }
+        event.preventDefault();
+        var str = String.fromCharCode(key);
+        this.doLineEdit(-key, str);
     } else {
         if (event.which !== 0
             && key != 8
@@ -7720,14 +7842,14 @@ DomTerm.prototype.keyPressHandler = function(event) {
 
 DomTerm.prototype.inputHandler = function(event) {
     if (this.verbosity >= 2)
-        this.log("input "+event+ " which:"+event.which+" data:'"+event.data);
-    if (event.target == this.inputLine && ! this.isLineEditing()
-        && this.inputLine != this._deferredForDeletion) {
-        var text = this.grabInput(this.inputLine);
-        var ch = this.inputLine.firstChild;
+        this.log("input "+event+" which:"+event.which+" data:'"+event.data);
+    if (event.target == this._inputLine && ! this.isLineEditing()
+        && this._inputLine != this._deferredForDeletion) {
+        var text = this.grabInput(this._inputLine);
+        var ch = this._inputLine.firstChild;
         while (ch != null) {
             var next = ch.nextSibling;
-            this.inputLine.removeChild(ch);
+            this._inputLine.removeChild(ch);
             ch = next;
         }
         this.reportText(text, null);
@@ -7753,10 +7875,11 @@ DomTerm.prototype._checkTree = function() {
     var isSavedSession = this.isSavedSession();
     if ((this.outputBefore
          && this.outputBefore.parentNode != this.outputContainer)
+        || this.outputContainer == null
         || (! isSavedSession && this.outputContainer.parentNode == null))
         error("bad outputContainer");
-    if (this.inputFollowsOutput && this.inputLine.parentNode
-        && this.outputBefore != this.inputLine)
+    if (this.inputFollowsOutput && this._inputLine
+        && this._inputLine.parentNode && this.outputBefore != this._inputLine)
         error("bad inputLine");
     if (! this._isAnAncestor(this.outputContainer, this.initial))
         error("outputContainer not in initial");
@@ -7812,16 +7935,18 @@ DomTerm.prototype._checkTree = function() {
 };
 
 DomTerm.prototype._atBottomInputLine = function() {
-    var r1 = window.getSelection().getRangeAt(0);
+    if (this._inputLine == null)
+        return true;
     var r2 = document.createRange();
-    r2.selectNode(this.inputLine);
-    return this._countLinesBetween(r1.endContainer, r1.endOffset,
+    r2.selectNode(this._inputLine);
+    return this._countLinesBetween(this._caretNode, 0,
                                    r2.endContainer, r2.endOffset) <= 0;
 };
 DomTerm.prototype._atTopInputLine = function() {
-    var r = window.getSelection().getRangeAt(0);
-    return this._countLinesBetween(this.inputLine, 0,
-                                   r.endContainer, r.endOffset) <= 0;
+    if (this._inputLine == null)
+        return true;
+    return this._countLinesBetween(this._inputLine, 0,
+                                   this._caretNode, 0) <= 0;
 };
 
 DomTerm.prototype._countLinesBetween = function(startNode, startOffset,
@@ -7995,8 +8120,6 @@ DomTerm.prototype.linkify = function(str, start, end, columnWidth, delimiter) {
         return str.match(/^[^@]+@[^@]+\.[^@]+$/);
     }
     let smode = this._getStdMode();
-    if (smode)
-        smode = smode.getAttribute("std");
     if (smode == "input" || smode == "prompt" || smode == "hider")
         return false;
     let fstart = rindexDelimiter(str, start, end)+1;
@@ -8142,8 +8265,8 @@ DomTerm.prototype._currentlyPagingOrPaused = function() {
 
 function _pagerModeInfo(dt) {
     var prefix =  dt._pagingMode == 2 ? "<b>PAUSED</b>" : "<b>PAGER</b>";
-    if (dt._pageNumericArgument) {
-        return prefix+": numeric argument: "+st._pageNumericArgument;
+    if (dt._numericArgument) {
+        return prefix+": numeric argument: "+st._numericArgument;
     }
     return prefix+": type SPACE for more; Ctrl-Shift-M to exit paging";
 }
@@ -8234,12 +8357,12 @@ DomTerm.toggleAutoPaging = function(dt = DomTerm.focusedTerm) {
 }
 
 DomTerm.prototype._pageNumericArgumentGet = function(def = 1) {
-    var arg = this._pageNumericArgument;
+    var arg = this._numericArgument;
     return arg == null ? def : Number(arg);
 }
 DomTerm.prototype._pageNumericArgumentClear = function() {
-    var hadValue =  this._pageNumericArgument;
-    this._pageNumericArgument = null;
+    var hadValue =  this._numericArgument;
+    this._numericArgument = null;
     if (hadValue)
         this._updatePagerInfo();
 }
@@ -8250,7 +8373,7 @@ DomTerm.prototype._pageNumericArgumentAndClear = function(def = 1) {
 }
 
 DomTerm.prototype._pageKeyHandler = function(event, key, press) {
-    var arg = this._pageNumericArgument;
+    var arg = this._numericArgument;
     // Shift-PageUp and Shift-PageDown should maybe work in all modes?
     // Ctrl-Shift-Up / C-S-Down to scroll by one line, in all modes?
     if (this.verbosity >= 2)
@@ -8320,12 +8443,12 @@ DomTerm.prototype._pageKeyHandler = function(event, key, press) {
         break;
     default:
         if (press) {
-            var arg = this._pageNumericArgument;
+            var arg = this._numericArgument;
             var next = String.fromCharCode(key);
             // '0'..'9' || '-' and initial || .'.
             if ((key >= 48 && key <= 57) || (key == 45 && ! arg) || key == 46) {
                 arg = arg ? arg + next : next;
-                this._pageNumericArgument = arg;
+                this._numericArgument = arg;
                 event.preventDefault();
                 this._updatePagerInfo();
             }
@@ -8356,9 +8479,203 @@ DomTerm.prototype._pauseNeeded = function() {
         && this._vspacer.offsetTop + this.charHeight > this._pauseLimit;
 };
 
+DomTerm.prototype.editorAddLine = function() {
+    if (this._inputLine == null) {
+        this._removeInputLine();
+        var inputNode = this._createSpanNode();
+        inputNode.classList.add("editing");
+        inputNode.setAttribute("std", "input");
+        this._removeCaret();
+        if (this.outputBefore==this._caretNode)
+            this.outputBefore = this.outputBefore.nextSibling;
+        inputNode.appendChild(this._caretNode);
+        this.insertNode(inputNode);
+        this._restoreCaret();
+        this.maybeFocus();
+        this.outputBefore = inputNode;
+        let pre = this._getOuterPre(inputNode);
+        if (pre)
+            pre.classList.add("input-line");
+        this._inputLine = inputNode;
+        this._restoreInputLine();
+        this._numericArgument = null;
+    }
+}
+
+// FIXME combine with _pageNumericArgumentGet
+DomTerm.prototype.numericArgumentGet = function() {
+    let s = this._numericArgument;
+    if (s == null)
+       return 1;
+    if (s == "-")
+        s = "-1";
+    this._numericArgument = null;
+    return Number(s);
+}
+
+DomTerm.prototype.editorMoveToRangeStart = function(range) {
+    this._removeCaret();
+    if (range.startContainer == this._caretNode)
+        return;
+    try {
+        range.insertNode(this._caretNode);
+    } catch(e) {
+        console.log("caught "+e);
+    }
+    this._inputLine.normalize();
+    this._restoreCaret();
+}
+
+DomTerm.prototype.editorMoveHomeOrEnd = function(toEnd) {
+    let r = new Range();
+    r.selectNodeContents(this._inputLine);
+    if (toEnd)
+        r.setStart(r.endContainer, r.endOffset);
+    this.editorMoveToRangeStart(r);
+}
+
+DomTerm.prototype.editorMoveToPosition = function(node, offset) {
+    let r = new Range();
+    r.selectNodeContents(this._inputLine);
+    let c = r.comparePoint(node, offset);
+    if (c == 0)
+        r.setStart(node, offset);
+    else if (c > 0)
+        r.collapse(false);
+    this.editorMoveToRangeStart(r);
+}
+
+DomTerm.prototype.editorInsertString = function(str, inserting=true) {
+    let saved = this._pushToCaret();
+    if (inserting) {
+        this.insertRawOutput(str);
+        let line = this.lineStarts[this.getAbsCursorLine()];
+        line._widthColumns += this.strWidthInContext(str, line);
+        this._updateLinebreaksStart(this.getAbsCursorLine(), true);
+    } else {
+        let saveInserting = this.sstate.insertMode;
+        this.sstate.insertMode = inserting;
+        this.insertSimpleOutput(str, 0, str.length, -1);
+        this.sstate.insertMode = saveInserting;
+    }
+    this._popFromCaret(saved);
+}
+
+DomTerm.prototype.editorDeleteRange = function(range) {
+    let str = range.toString();
+    range.deleteContents();
+    let lineNum = this.getAbsCursorLine();
+    this._unbreakLines(lineNum, true);
+    let line = this.lineStarts[lineNum];
+    line._widthColumns -= this.strWidthInContext(str, line);
+    this._updateLinebreaksStart(lineNum, true);
+}
+
+DomTerm.editorNonWordChar = function(ch) {
+    return " \t\n\r!\"#$%&'()*+,-./:;<=>?@[\\]^_{|}".indexOf(ch) >= 0;
+}
+
+DomTerm.prototype.editorBackspace = function(count, doDelete, doWords) {
+    let backwards = count > 0;
+    let todo = backwards ? count : -count;
+    let dt = this;
+    let wordCharSeen = false;
+    let range;
+
+    function fun(node) {
+        if (node == dt._caretNode)
+            return false;
+        if (! (node instanceof Text))
+            return true;
+        var data = node.data;
+        let dlen = data.length;
+        let istart = backwards ? dlen : 0;
+        let index = istart;
+        for (;; ) {
+            if (index == (backwards ? 0 : dlen))
+                return false;
+            if (todo == 0) {
+                if (backwards)
+                    range.setStart(node, index);
+                else
+                    range.setEnd(node, index);
+                return null;
+            }
+            let i0 = index;
+            let c = data.charCodeAt(backwards ? --index : index++);
+            let clen = 1;
+            if (backwards ? (index > 0 && c >= 0xdc00 && c <= 0xdfff)
+                : (index < dlen && c >= 0xd800 && c <= 0xdbff)) {
+                let c2 = data.charCodeAt(backwards ? index-1 : index);
+                if (backwards ? (c2 >= 0xd800 && c2 <= 0xdbff)
+                    : (c2 >= 0xdc00 && c2 <= 0xdfff)) {
+                    clen = 2;
+                    if (backwards) index--; else index++;
+                    // c = FIXME
+                }
+            }
+            if (doWords) {
+                let sep = DomTerm.editorNonWordChar(String.fromCharCode(c));
+                if (sep && wordCharSeen) {
+                    index = i0;
+                } else {
+                    todo++;
+                }
+                wordCharSeen = ! sep;
+            }
+            todo--;
+        }
+        if (doDelete) {
+            // FIXME remove node
+            node.parentNode.insertBefore(dt._caretNode, before);
+        }
+        return false;
+    }
+    let sel = document.getSelection();
+    if (! sel.isCollapsed) {
+        if (doDelete) {
+            let sel = document.getSelection();
+            for (let i = sel.rangeCount; --i >= 0; ) {
+                let r = new Range();
+                r.selectNodeContents(this._inputLine);
+                let sr = sel.getRangeAt(i);
+                if (r.comparePoint(sr.startContainer, sr.startOffset) >= 0)
+                    r.setStart(sr.startContainer, sr.startOffset);
+                if (r.comparePoint(sr.endContainer, sr.endOffset) <= 0)
+                    r.setEnd(sr.endContainer, sr.endOffset);
+                this.editorDeleteRange(r);
+            }
+        } else {
+            let r = sel.getRangeAt(0);
+            let node = backwards ? r.startContainer : r.endContainer;
+            let offset = backwards ? r.startOffset : r.endOffset;
+            this.editorMoveToPosition(node, offset);
+        }
+        sel.removeAllRanges();
+    } else {
+        this._removeCaret();
+        range = document.createRange();
+        range.selectNodeContents(this._inputLine);
+        if (backwards)
+            range.setEndBefore(this._caretNode);
+        else
+            range.setStartAfter(this._caretNode);
+        this._forEachElementIn(this._inputLine, fun, true, backwards,
+                               this._caretNode);
+        if (doDelete) {
+            this.editorDeleteRange(range);
+            this._restoreCaret();
+        } else {
+            if (! backwards)
+                range.collapse();
+            dt.editorMoveToRangeStart(range);
+        }
+    }
+}
+
 if (typeof exports === "object")
     module.exports = DomTerm;
-DomTerm.versionString = "0.98";
+DomTerm.versionString = "0.99";
 DomTerm.copyrightYear = 2018;
 DomTerm.inAtomFlag = false;
 

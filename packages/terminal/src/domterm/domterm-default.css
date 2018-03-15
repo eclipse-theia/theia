@@ -70,21 +70,21 @@ div.domterm-popup-action:hover {
 }
 */
 
-div.domterm span[caret="block"][std="input"], div.domterm span[caret="blinking-block"][std="input"] {
+div.domterm span[caret="block"][std="caret"], div.domterm span[caret="blinking-block"][std="caret"] {
     color: #fffff8; background-color: black; /* fallback if var not handled */
     background-color: var(--foreground-color); color: var(--background-color);
 }
 div.domterm {
     --caret-blink-count: 20
 }
-div.domterm div.domterm span[caret="underline"][std="input"], div.domterm span[caret="blinking-underline"][std="input"]  {
+div.domterm div.domterm span[caret="underline"][std="caret"], div.domterm span[caret="blinking-underline"][std="caret"] {
     text-decoration: underline
 }
-div.domterm-active span[caret="blinking-block"][std="input"],
-div.domterm-active span[caret="blinking-underline"][std="input"] {
+div.domterm-active span[caret="blinking-block"][std="caret"],
+div.domterm-active span[caret="blinking-underline"][std="caret"] {
     animation: blinking-caret 1.5s steps(1) 0s var(--caret-blink-count);
 }
-span[caret][std="input"][value]:after {
+span[caret][std="caret"][value]:after {
     content: attr(value);
 }
 @keyframes blinking-caret {
