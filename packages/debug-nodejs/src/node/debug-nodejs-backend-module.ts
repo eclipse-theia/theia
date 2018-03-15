@@ -10,7 +10,7 @@
  */
 
 import { ContainerModule } from 'inversify';
-import { DebugConfigurationContribution, DebugSessionFactoryContribution } from '@theia/debug/lib/common/debug-server';
+import { DebugConfigurationContribution, DebugSessionFactoryContribution } from '@theia/debug/lib/common/debug-model';
 import {
     NodeJsDebugRegistrator,
     NodeJsDebugConfigurationProvider,
