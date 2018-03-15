@@ -2129,7 +2129,6 @@ DomTerm.prototype.setAlternateScreenBuffer = function(val) {
             // FIXME should scroll top of new buffer to top of window.
             var nextLine = this.lineEnds.length;
             var bufNode = this._createBuffer(this._altBufferName);
-            console.log("after _createBuffer in setAlternateScreenBuffer");
             this.topNode.insertBefore(bufNode, this._vspacer);
             var homeOffset = DomTerm._homeLineOffset(this);
             var homeNode = this.lineStarts[this.homeLine - homeOffset];
@@ -2282,7 +2281,6 @@ DomTerm.prototype._initializeDomTerm = function(topNode) {
     this._altBufferName = this.makeId("alternate")
 
     var mainNode = this._createBuffer(this._mainBufferName);
-    console.log("after _createBuffer in _initializeDomTerm");
     topNode.appendChild(mainNode);
     var vspacer = document.createElement("div");
     vspacer.setAttribute("class", "domterm-spacer");
@@ -2482,7 +2480,7 @@ DomTerm.prototype.initializeTerminal = function(topNode) {
                              function(e) {
                                  dt.pasteText(e.clipboardData.getData("text"));
                                  e.preventDefault(); },
-                              true);
+                              false);
     window.addEventListener("unload",
                             function(event) { dt.historySave(); });
     topNode.addEventListener("click",
@@ -5358,15 +5356,6 @@ DomTerm.prototype.handleOperatingSystemControl = function(code, text) {
                 if (node.classList.contains('editing'))
                     dt._inputLine = node;
                 return true;
-                /*
-                if (node.getAttribute('std') != 'caret')
-                    return true;
-                //dt._removeInputLine();
-                dt._caretNode = node;
-                dt.outputBefore = node;
-                dt.outputContainer = node.parentNode;
-                return node;
-                */
             };
             this.initial = DomTerm._currentBufferNode(this);
             this._forEachElementIn(parent, findInputLine);
@@ -5809,7 +5798,7 @@ DomTerm.prototype.requestUpdateDisplay = function() {
 DomTerm.prototype.insertString = function(str) {
     if (this.verbosity >= 2) {
         //var d = new Date(); var ms = (1000*d.getSeconds()+d.getMilliseconds();
-        if (str.length > 20000)
+        if (str.length > 200)
             this.log("insertString "+JSON.stringify(str.substring(0,200))+"... state:"+this.controlSequenceState/*+" ms:"+ms*/);
         else
         this.log("insertString "+JSON.stringify(str)+" state:"+this.controlSequenceState/*+" ms:"+ms*/);
@@ -7215,6 +7204,9 @@ DomTerm.doContextCopy = function() {
 }
 
 DomTerm.doPaste = function(dt) {
+    let sel = document.getSelection();
+    if (sel.rangeCount == 0)
+        sel.collapse(dt._caretNode, 0);
     dt.maybeFocus();
     return document.execCommand("paste", false);
 };
@@ -7498,7 +7490,7 @@ DomTerm.prototype._popFromCaret = function(saved) {
 }
 
 
-DomTerm.prototype.doLineEdit = function(key, str) {
+DomTerm.prototype.doLineEdit = function(key, str, ctrlKey = false) {
     if (this.verbosity >= 2)
         this.log("doLineEdit "+key+" "+JSON.stringify(str));
     this.editorAddLine();
@@ -7523,7 +7515,7 @@ DomTerm.prototype.doLineEdit = function(key, str) {
     }
     switch (key) {
     case 8: // Backspace
-        this.editorBackspace(this.numericArgumentGet(), true, false);
+        this.editorBackspace(this.numericArgumentGet(), true, ctrlKey);
         break;
     case 27: // Esc
         this._numericArgument = null;
@@ -7534,13 +7526,13 @@ DomTerm.prototype.doLineEdit = function(key, str) {
         this._numericArgument = null;
         break;
     case 37:  // Left
-        this.editorBackspace(this.numericArgumentGet(), false, false);
+        this.editorBackspace(this.numericArgumentGet(), false, ctrlKey);
         break;
     case 39: // Right
-        this.editorBackspace(- this.numericArgumentGet(), false, false);
+        this.editorBackspace(- this.numericArgumentGet(), false, ctrlKey);
         break;
     case 46: // Delete
-        this.editorBackspace(- this.numericArgumentGet(), true, false);
+        this.editorBackspace(- this.numericArgumentGet(), true, ctrlKey);
         break;
     default:
         let sel = window.getSelection();
@@ -7729,12 +7721,8 @@ DomTerm.prototype.keyDownHandler = function(event) {
         }
         if (! sel.isCollapsed)
             return;
-        if (event.ctrlKey && this.isLineEditing()) {
-            let count = (key == 37 ? 1 : -1) * this.numericArgumentGet();
-            this.editorBackspace(count, false, true);
-            return;
-        }
     }
+
     if (this._currentlyPagingOrPaused()) {
         this._pageKeyHandler(event, key, false);
         return;
@@ -7790,7 +7778,7 @@ DomTerm.prototype.keyDownHandler = function(event) {
             if (str) {
                 event.preventDefault();
                 //this.log("KEY "+key+" "+JSON.stringify(str));
-                this.doLineEdit(key, str);
+                this.doLineEdit(key, str, event.ctrlKey);
             }
         }
     } else {
