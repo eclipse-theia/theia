@@ -48,27 +48,26 @@ export function openSocket(options: IServerOptions, onOpen: OnOpen): void {
         isAlive: boolean;
     }
 
-    wss.on('connection', (ws: ws) => {
+    wss.on('connection', (websocket: ws) => {
 
-        const extWs = ws as ExtWebSocket;
-        extWs.isAlive = true;
+        const extWs = websocket as ExtWebSocket;
+
+        websocket.on('pong', () => {
+            extWs.isAlive = true;
+        });
 
     });
 
     setInterval(() => {
-        wss.clients.forEach((ws: ws) => {
+        wss.clients.forEach((websocket: ws) => {
 
-            const extWs = ws as ExtWebSocket;
-
-            ws.on('pong', () => {
-                extWs.isAlive = true;
-            });
+            const extWs = websocket as ExtWebSocket;
 
             if (extWs.isAlive === false) {
-                ws.terminate();
+                websocket.terminate();
                 return;
             }
-            ws.ping();
+            websocket.ping();
             extWs.isAlive = false;
 
         });
