@@ -375,7 +375,7 @@ export interface DebugConfigurationProvider {
 
     /**
      * Provides a [command line](#DebugAdapterExecutable) based on [debug configuration](#DebugConfiguration)
-     * to start a new debug adapter. Returning the value 'undefined' means that it is impossible 
+     * to start a new debug adapter. Returning the value 'undefined' means that it is impossible
      * to construct a command line based on given debug configuration to start a debug adapter.
      * @param config The resolved [debug configuration](#DebugConfiguration).
      * @returns The [command line](#DebugAdapterExecutable).
