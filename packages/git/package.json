@@ -10,12 +10,12 @@
     "@theia/navigator": "^0.3.7",
     "@types/fs-extra": "^4.0.2",
     "@types/diff": "^3.2.2",
-    "dugite-extra": "0.0.1-alpha.15",
+    "diff": "^3.4.0",
+    "dugite-extra": "0.0.1-alpha.18",
     "find-git-repositories": "^0.1.0",
     "fs-extra": "^4.0.2",
     "ts-md5": "^1.2.2",
-    "octicons": "^7.1.0",
-    "diff": "^3.4.0"
+    "octicons": "^7.1.0"
   },
   "publishConfig": {
     "access": "public"
