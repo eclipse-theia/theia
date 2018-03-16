@@ -13,6 +13,7 @@ import { injectable, inject } from "inversify";
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import { MAIN_MENU_BAR } from "@theia/core/lib/common/menu";
 import { DebugService } from "../common/debug-model";
+import { DebugClientFactory } from "./debug-client";
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, "4_debug"];
@@ -37,6 +38,8 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
 
     @inject(DebugService)
     protected readonly debug: DebugService;
+    @inject(DebugClientFactory)
+    protected readonly debugClientFactory: DebugClientFactory;
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerSubmenu(DebugMenus.DEBUG, 'Debug');
@@ -52,9 +55,11 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
         registry.registerCommand(DEBUG_COMMANDS.START);
         registry.registerHandler(DEBUG_COMMANDS.START.id, {
             execute: () => {
-                const debugTypes = this.debug.listDebugConfigurationProviders();
-                debugTypes.then((types) => {
-                    this.createDebugSession(types[0]);
+                this.debug.start({ command: "" }).then((sessionId) => {
+                    if (sessionId) {
+                        const debugClient = this.debugClientFactory.get(sessionId);
+                        debugClient.sendRequest({ command: "", seq: -1, type: "" });
+                    }
                 });
             },
             isEnabled: () => true,
@@ -67,23 +72,5 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
             isEnabled: () => true,
             isVisible: () => true
         });
-    }
-
-    private createDebugSession(debugType: string): void {
-        this.debug
-            .provideDebugConfiguration(debugType)
-            .then((configs) => {
-                this.debug
-                    .resolveDebugConfiguration(debugType, configs[0])
-                    .then((config) => {
-                        if (config) {
-                            this.debug
-                                .createDebugSession(debugType, config)
-                                .then((sessionId) => {
-                                    if (sessionId) { }
-                                });
-                        }
-                    });
-            });
     }
 }

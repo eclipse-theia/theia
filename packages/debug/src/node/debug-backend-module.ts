@@ -10,7 +10,7 @@
  */
 
 import { ConnectionHandler, JsonRpcConnectionHandler, bindContributionProvider } from "@theia/core/lib/common";
-import { ContainerModule } from 'inversify';
+import { ContainerModule, interfaces } from 'inversify';
 import {
     DebugConfigurationManager,
     DebugConfigurationManagerImpl,
@@ -22,14 +22,14 @@ import {
     DebugPath,
     DebugService,
     DebugConfigurationContribution,
-    DebugSessionFactoryContribution
+    DebugAdapterExecutable
 } from "../common/debug-model";
+import { DebugAdapterSession } from "./debug-adapter";
 
 export default new ContainerModule(bind => {
     bind(DebugConfigurationManager).to(DebugConfigurationManagerImpl).inSingletonScope();
     bind(DebugSessionManager).to(DebugSessionManagerImpl).inSingletonScope();
     bindContributionProvider(bind, DebugConfigurationContribution);
-    bindContributionProvider(bind, DebugSessionFactoryContribution);
 
     bind(DebugService).to(DebugServiceImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(context =>
@@ -39,4 +39,12 @@ export default new ContainerModule(bind => {
             return service;
         })
     ).inSingletonScope();
+
+    bind<interfaces.Factory<DebugAdapterSession>>("Factory<DebugAdapterSession>").toFactory<DebugAdapterSession>(context => {
+        return (sessionId: string, executable: DebugAdapterExecutable) => {
+            let session = context.container.get(DebugAdapterSession);
+            session.assistedInit(sessionId, executable);
+            return session;
+        };
+    });
 });
