@@ -5,34 +5,12 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable } from 'inversify';
-import { FrontendApplicationContribution, FrontendApplication, KeybindingRegistry, Keybinding, KeybindingScope } from '@theia/core/lib/browser';
-import { Disposable, DisposableCollection, CommandRegistry, ILogger, ResourceProvider, Resource } from '@theia/core/lib/common';
+import { inject, injectable, postConstruct } from 'inversify';
+import { Disposable, DisposableCollection, CommandRegistry, ILogger, ResourceProvider, Resource, MessageService } from '@theia/core/lib/common';
+import { FrontendApplicationContribution, FrontendApplication, KeybindingRegistry, KeybindingScope } from '@theia/core/lib/browser';
 import { UserStorageUri } from '@theia/userstorage/lib/browser/';
+import parseKeybindings from '../common/keymaps-validation';
 import URI from '@theia/core/lib/common/uri';
-import * as ajv from 'ajv';
-import * as jsoncparser from "jsonc-parser";
-import { ParseError } from "jsonc-parser";
-
-export const keymapsSchema = {
-    "type": "array",
-    "properties": {
-        "keybinding": {
-            "type": "string"
-        },
-        "command": {
-            "type": "string"
-        },
-        "context": {
-            "type": "string"
-        },
-    },
-    "required": ["command", "keybinding"],
-    "optional": [
-        "context"
-    ],
-    "additionalProperties": false
-};
 
 export const keymapsUri: URI = new URI('keymaps.json').withScheme(UserStorageUri.SCHEME);
 
@@ -40,75 +18,73 @@ export const keymapsUri: URI = new URI('keymaps.json').withScheme(UserStorageUri
 export class KeymapsService implements Disposable, FrontendApplicationContribution {
 
     protected readonly toDispose = new DisposableCollection();
-    protected readonly ajv = new ajv();
-    protected ready = false;
     protected keymapsResource: Resource;
+    protected ready = false;
 
-    constructor(
-        @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
-        @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
-        @inject(KeybindingRegistry) protected readonly keyBindingRegistry: KeybindingRegistry,
-        @inject(ILogger) protected readonly logger: ILogger
-    ) {
-        this.resourceProvider(keymapsUri).then(resource => {
-            this.keymapsResource = resource;
-            this.toDispose.push(this.keymapsResource);
-            if (this.keymapsResource.onDidChangeContents) {
-                this.keymapsResource.onDidChangeContents(() => {
-                    this.onDidChangeKeymap();
-                });
-            }
+    @inject(ResourceProvider)
+    protected readonly resourceProvider: ResourceProvider;
 
-            this.keymapsResource.readContents().then(content => {
-                this.parseKeybindings(content);
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
+    @inject(KeybindingRegistry)
+    protected readonly keyBindingRegistry: KeybindingRegistry;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
+    @postConstruct()
+    protected async init() {
+        // this.ajv.compile(keymapsSchema);
+        const resource = await this.resourceProvider(keymapsUri);
+        this.keymapsResource = resource;
+
+        this.toDispose.push(this.keymapsResource);
+
+        if (this.keymapsResource.onDidChangeContents) {
+            this.keymapsResource.onDidChangeContents(() => {
+                this.onDidChangeKeymap();
             });
-        });
+        }
+
+        this.parseAndSetKeybindings(await this.keymapsResource.readContents());
     }
 
     dispose(): void {
         this.toDispose.dispose();
     }
 
-    onStart(app: FrontendApplication): void {
+    onStart(app?: FrontendApplication): void {
         this.ready = true;
     }
 
     protected onDidChangeKeymap(): void {
-
         this.keymapsResource.readContents().then(content => {
-            this.parseKeybindings(content);
+            try {
+                this.parseAndSetKeybindings(content);
+                this.messageService.info(`[${this.keymapsResource.uri}] updated the user keybindings`);
+            } catch (error) {
+                const errors = error.messages || [error.message];
+                for (const message of errors) {
+                    this.messageService.error(`[${this.keymapsResource.uri}] ${message}`);
+                }
+            }
         });
     }
 
-    protected parseKeybindings(content: string) {
-        const strippedContent = jsoncparser.stripComments(content);
-        const errors: ParseError[] = [];
-        const keybindings = jsoncparser.parse(strippedContent, errors);
-        if (errors.length) {
-            for (const error of errors) {
-                this.logger.error("JSON parsing error", error);
-            }
-            this.keyBindingRegistry.resetKeybindingsForScope(KeybindingScope.USER);
-
-        }
-        if (keybindings) {
-            this.setKeymap(keybindings);
-        }
-    }
-
-    protected setKeymap(keybindings: any) {
-        const bindings: Keybinding[] = [];
-
-        for (const keybinding of keybindings) {
-            bindings.push({
-                command: keybinding.command,
-                keybinding: keybinding.keybinding,
-                context: keybinding.context
-            });
-        }
-
-        if (this.ajv.validate(keymapsSchema, bindings)) {
-            this.keyBindingRegistry.setKeymap(KeybindingScope.USER, bindings);
+    /**
+     * Actually parses some raw content and tries to update the USER keybindings.
+     * Throws if the parsing or validation fail.
+     *
+     * @param content the raw text defining the keybindings
+     */
+    protected parseAndSetKeybindings(content: string): void {
+        const keybindings = parseKeybindings(content); // can throw
+        if (keybindings.length) {
+            this.keyBindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
         }
     }
 }

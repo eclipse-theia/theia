@@ -11,6 +11,7 @@ import { KeyCode, KeySequence } from './keys';
 import { ContributionProvider } from '../common/contribution-provider';
 import { ILogger } from "../common/logger";
 import { StatusBarAlignment, StatusBar } from './status-bar/status-bar';
+import { isOSX } from '../common/os';
 
 export enum KeybindingScope {
     DEFAULT,
@@ -21,8 +22,6 @@ export enum KeybindingScope {
 export namespace KeybindingScope {
     export const length = KeybindingScope.END - KeybindingScope.DEFAULT;
 }
-
-export interface KeybindingsResult { full: Keybinding[], partial: Keybinding[], shadow: Keybinding[] }
 
 export namespace Keybinding {
 
@@ -132,16 +131,10 @@ export class KeybindingRegistry {
         for (const context of contexts) {
             const { id } = context;
             if (this.contexts[id]) {
-                console.error(`A keybinding context with ID ${id} is already registered.`);
+                this.logger.error(`A keybinding context with ID ${id} is already registered.`);
             } else {
                 this.contexts[id] = context;
             }
-        }
-    }
-
-    registerKeybindings(...bindings: Keybinding[]): void {
-        for (const binding of bindings) {
-            this.registerKeybinding(binding);
         }
     }
 
@@ -151,41 +144,153 @@ export class KeybindingRegistry {
      * @param binding
      */
     registerKeybinding(binding: Keybinding) {
-        try {
-            const existingBindings = this.getKeybindingsForKeySequence(KeySequence.parse(binding.keybinding));
-            if (existingBindings.full.length > 0) {
-                const collided = existingBindings.full.filter(b => b.context === binding.context);
-                if (collided.length > 0) {
-                    this.logger.warn('Collided keybinding is ignored; ',
-                        Keybinding.stringify(binding), ' collided with ',
-                        collided.map(b => Keybinding.stringify(b)).join(', '));
-                    return;
-                }
-            }
-            if (existingBindings.partial.length > 0) {
-                const shadows = existingBindings.partial.filter(b => b.context === binding.context);
-                if (shadows.length > 0) {
-                    this.logger.warn('Shadowing keybinding is ignored; ',
-                        Keybinding.stringify(binding), ' shadows ',
-                        shadows.map(b => Keybinding.stringify(b)).join(', '));
-                    return;
-                }
-            }
+        this.doRegisterKeybinding(binding, KeybindingScope.DEFAULT);
+    }
 
-            if (existingBindings.shadow.length > 0) {
-                const shadows = existingBindings.shadow.filter(b => b.context === binding.context);
-                if (shadows.length > 0) {
-                    this.logger.warn('Shadowed keybinding is ignored; ',
-                        Keybinding.stringify(binding), ' would be shadowed by ',
-                        shadows.map(b => Keybinding.stringify(b)).join(', '));
-                    return;
-                }
-            }
+    /**
+     * Register default keybindings to the registry
+     *
+     * @param bindings
+     */
+    registerKeybindings(...bindings: Keybinding[]): void {
+        this.doRegisterKeybindings(bindings, KeybindingScope.DEFAULT);
+    }
 
-            this.keymaps[KeybindingScope.DEFAULT].push(binding);
-        } catch (error) {
-            this.logger.warn(`Could not register keybinding ${Keybinding.stringify(binding)}`);
+    protected doRegisterKeybindings(bindings: Keybinding[], scope: KeybindingScope = KeybindingScope.DEFAULT) {
+        for (const binding of bindings) {
+            this.doRegisterKeybinding(binding, scope);
         }
+    }
+
+    protected doRegisterKeybinding(binding: Keybinding, scope: KeybindingScope = KeybindingScope.DEFAULT) {
+        try {
+            if (!this.containsKeybinding(this.keymaps[scope], binding)) {
+                throw new Error(`"${binding.keybinding}" is in collision with something else [scope:${scope}]`);
+            }
+            this.keymaps[scope].push(binding);
+        } catch (error) {
+            this.logger.warn(`Could not register keybinding:\n  ${Keybinding.stringify(binding)}\n${error}`);
+        }
+    }
+
+    /**
+     * Checks for keySequence collisions in a list of Keybindings
+     *
+     * @param bindings the keybinding reference list
+     * @param binding the keybinding to test collisions for
+     */
+    containsKeybinding(bindings: Keybinding[], binding: Keybinding): boolean {
+        const collisions = this.getKeySequenceCollisions(bindings, KeySequence.parse(
+            this.getCurrentPlatformKeybinding(binding.keybinding))
+        ).filter(b => b.context === binding.context);
+
+        if (collisions.full.length > 0) {
+            this.logger.warn('Collided keybinding is ignored; ',
+                Keybinding.stringify(binding), ' collided with ',
+                collisions.full.map(b => Keybinding.stringify(b)).join(', '));
+            return false;
+        }
+        if (collisions.partial.length > 0) {
+            this.logger.warn('Shadowing keybinding is ignored; ',
+                Keybinding.stringify(binding), ' shadows ',
+                collisions.partial.map(b => Keybinding.stringify(b)).join(', '));
+            return false;
+        }
+        if (collisions.shadow.length > 0) {
+            this.logger.warn('Shadowed keybinding is ignored; ',
+                Keybinding.stringify(binding), ' would be shadowed by ',
+                collisions.shadow.map(b => Keybinding.stringify(b)).join(', '));
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Converts special `ctrlcmd` modifier back to `ctrl` for non-OSX users in a keybinding string.
+     * (`ctrlcmd` is mapped to the same actual key as `ctrl` under non-OSX users)
+     *
+     * @param keybinding The keybinding string to convert.
+     */
+    protected getCurrentPlatformKeybinding(keybinding: string): string {
+        return isOSX ? keybinding : keybinding.replace(/\bctrlcmd\b/, 'ctrl');
+    }
+
+    /**
+     * Finds collisions for a binding inside a list of bindings (error-free)
+     *
+     * @param bindings the reference bindings
+     * @param binding the binding to match
+     */
+    protected getKeybindingCollisions(bindings: Keybinding[], binding: Keybinding): KeybindingRegistry.KeybindingsResult {
+        const result = new KeybindingRegistry.KeybindingsResult();
+        try {
+            const keySequence = KeySequence.parse(this.getCurrentPlatformKeybinding(binding.keybinding));
+            result.merge(this.getKeySequenceCollisions(bindings, keySequence));
+        } catch (error) {
+            this.logger.warn(error);
+        }
+        return result;
+    }
+
+    /**
+     * Finds collisions for a key sequence inside a list of bindings (error-free)
+     *
+     * @param bindings the reference bindings
+     * @param keySequence the sequence to match
+     */
+    protected getKeySequenceCollisions(bindings: Keybinding[], keySequence: KeyCode[]): KeybindingRegistry.KeybindingsResult {
+        const result = new KeybindingRegistry.KeybindingsResult();
+
+        for (const registeredBinding of bindings) {
+            try {
+                const bindingKeySequence = KeySequence.parse(registeredBinding.keybinding);
+                const compareResult = KeySequence.compare(keySequence, bindingKeySequence);
+                switch (compareResult) {
+                    case KeySequence.CompareResult.FULL: {
+                        result.full.push(registeredBinding);
+                        break;
+                    }
+                    case KeySequence.CompareResult.PARTIAL: {
+                        result.partial.push(registeredBinding);
+                        break;
+                    }
+                    case KeySequence.CompareResult.SHADOW: {
+                        result.shadow.push(registeredBinding);
+                        break;
+                    }
+                    default: {
+                        break;
+                    }
+                }
+            } catch (error) {
+                this.logger.warn(error);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Get the lists of keybindings matching fully or partially matching a KeySequence.
+     * The lists are sorted by priority (see #sortKeybindingsByPriority).
+     *
+     * @param keySequence The key sequence for which we are looking for keybindings.
+     */
+    getKeybindingsForKeySequence(keySequence: KeySequence): KeybindingRegistry.KeybindingsResult {
+        const result = new KeybindingRegistry.KeybindingsResult();
+
+        for (let scope = KeybindingScope.END; --scope >= KeybindingScope.DEFAULT;) {
+            const matches = this.getKeySequenceCollisions(this.keymaps[scope], keySequence);
+
+            matches.full = matches.full.filter(
+                binding => this.getKeybindingCollisions(result.full, binding).full.length === 0);
+            matches.partial = matches.partial.filter(
+                binding => this.getKeybindingCollisions(result.partial, binding).partial.length === 0);
+
+            result.merge(matches);
+        }
+        this.sortKeybindingsByPriority(result.full);
+        this.sortKeybindingsByPriority(result.partial);
+        return result;
     }
 
     /**
@@ -214,51 +319,6 @@ export class KeybindingRegistry {
     }
 
     /**
-     * Get the lists of keybindings matching fully or partially matching a KeySequence.
-     * The lists are sorted by priority (see #sortKeybindingsByPriority).
-     *
-     * @param keySequence The key sequence for which we are looking for keybindings.
-     */
-    getKeybindingsForKeySequence(keySequence: KeySequence): KeybindingsResult {
-        const result = { full: [] as Keybinding[], partial: [] as Keybinding[], shadow: [] as Keybinding[] };
-
-        for (let scope = KeybindingScope.DEFAULT; scope < KeybindingScope.END; scope++) {
-            this.keymaps[scope].forEach(binding => {
-                try {
-                    const bindingKeySequence = KeySequence.parse(binding.keybinding);
-                    const compareResult = KeySequence.compare(keySequence, bindingKeySequence);
-                    switch (compareResult) {
-                        case KeySequence.CompareResult.FULL: {
-                            if (!this.isKeybindingShadowed(scope, binding)) {
-                                result.full.push(binding);
-                            }
-                            break;
-                        }
-                        case KeySequence.CompareResult.PARTIAL: {
-                            if (!this.isKeybindingShadowed(scope, binding)) {
-                                result.partial.push(binding);
-                            }
-                            break;
-                        }
-                        case KeySequence.CompareResult.SHADOW: {
-                            result.shadow.push(binding);
-                            break;
-                        }
-                        default: {
-                            break;
-                        }
-                    }
-                } catch (error) {
-                    this.logger.warn(error);
-                }
-            });
-        }
-        this.sortKeybindingsByPriority(result.full);
-        this.sortKeybindingsByPriority(result.partial);
-        return result;
-    }
-
-    /**
      * Returns a list of keybindings for a command in a specific scope
      * @param scope specific scope to look for
      * @param commandId unique id of the command
@@ -277,25 +337,6 @@ export class KeybindingRegistry {
             }
         });
         return result;
-    }
-
-    /**
-     * Returns true if a keybinding is shadowed in a more specific scope i.e bound in user scope but remapped in
-     * workspace scope means the user keybinding is shadowed.
-     * @param scope scope of the current keybinding
-     * @param binding keybinding that will be checked in more specific scopes
-     */
-    isKeybindingShadowed(scope: KeybindingScope, binding: Keybinding): boolean {
-        if (scope >= KeybindingScope.END) {
-            return false;
-        }
-
-        const nextScope = ++scope;
-
-        if (this.getScopedKeybindingsForCommand(nextScope, binding.command).length > 0) {
-            return true;
-        }
-        return this.isKeybindingShadowed(nextScope, binding);
     }
 
     /**
@@ -342,7 +383,9 @@ export class KeybindingRegistry {
         return !!command && !!this.commandRegistry.getActiveHandler(command.id);
     }
 
-    /* Tries to execute a keybinding.
+    /**
+     * Tries to execute a keybinding.
+     *
      * @param bindings list of matching keybindings as returned by getKeybindingsForKeySequence.full
      * @param event keyboard event.
      * @return true if the corresponding command was executed false otherwise.
@@ -404,9 +447,12 @@ export class KeybindingRegistry {
         const bindings = this.getKeybindingsForKeySequence(this.keySequence);
 
         if (this.tryKeybindingExecution(bindings.full, event)) {
+
             this.keySequence = [];
             this.statusBar.removeElement('keybinding-status');
+
         } else if (bindings.partial.length > 0) {
+
             /* Accumulate the keysequence */
             event.preventDefault();
             event.stopPropagation();
@@ -416,34 +462,27 @@ export class KeybindingRegistry {
                 alignment: StatusBarAlignment.LEFT,
                 priority: 2
             });
+
         } else {
             this.keySequence = [];
             this.statusBar.removeElement('keybinding-status');
         }
     }
 
-    /* Return true of string a pseudo-command id, in other words a command id
-       that has a special meaning and that we won't find in the command
-       registry.  */
-
+    /**
+     * Return true of string a pseudo-command id, in other words a command id
+     * that has a special meaning and that we won't find in the command
+     * registry.
+     *
+     * @param commandId commandId to test
+     */
     isPseudoCommand(commandId: string): boolean {
         return commandId === KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND;
     }
 
-    setKeymap(scope: KeybindingScope, keybindings: Keybinding[]) {
-        const customBindings: Keybinding[] = [];
-        for (const keybinding of keybindings) {
-            try {
-                // This will throw if the keybinding is invalid.
-                KeyCode.parse(keybinding.keybinding);
-                customBindings.push(keybinding);
-            } catch (error) {
-                this.logger.warn(`Invalid keybinding, keymap reset`);
-                this.resetKeybindingsForScope(scope);
-                return;
-            }
-        }
-        this.keymaps[scope] = customBindings;
+    setKeymap(scope: KeybindingScope, bindings: Keybinding[]) {
+        this.resetKeybindingsForScope(scope);
+        this.doRegisterKeybindings(bindings, scope);
     }
 
     /**
@@ -460,6 +499,41 @@ export class KeybindingRegistry {
     resetKeybindings() {
         for (let i = KeybindingScope.DEFAULT + 1; i < KeybindingScope.END; i++) {
             this.keymaps[i] = [];
+        }
+    }
+}
+
+export namespace KeybindingRegistry {
+    export class KeybindingsResult {
+        full: Keybinding[] = [];
+        partial: Keybinding[] = [];
+        shadow: Keybinding[] = [];
+
+        /**
+         * Merge two results together inside `this`
+         *
+         * @param other the other KeybindingsResult to merge with
+         * @return this
+         */
+        merge(other: KeybindingsResult): KeybindingsResult {
+            this.full = this.full.concat(other.full);
+            this.partial = this.partial.concat(other.partial);
+            this.shadow = this.shadow.concat(other.shadow);
+            return this;
+        }
+
+        /**
+         * Returns a new filtered KeybindingsResult
+         *
+         * @param fn callback filter on the results
+         * @return filtered new result
+         */
+        filter(fn: (binding: Keybinding) => boolean): KeybindingsResult {
+            const result = new KeybindingsResult();
+            result.full = this.full.filter(fn);
+            result.partial = this.partial.filter(fn);
+            result.shadow = this.shadow.filter(fn);
+            return result;
         }
     }
 }
