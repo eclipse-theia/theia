@@ -6,15 +6,16 @@
  */
 
 import * as jsdiff from 'diff';
+import { ContentLinesArrayLike } from './content-lines';
 
 export class DiffComputer {
 
-    computeDiff(previous: string[], current: string[]): DiffResult[] {
-        const diffResult = jsdiff.diffArrays(previous, current);
+    computeDiff(previous: ContentLinesArrayLike, current: ContentLinesArrayLike): DiffResult[] {
+        const diffResult = diffArrays(previous, current);
         return diffResult;
     }
 
-    computeDirtyDiff(previous: string[], current: string[]): DirtyDiff {
+    computeDirtyDiff(previous: ContentLinesArrayLike, current: ContentLinesArrayLike): DirtyDiff {
         const added: LineRange[] = [];
         const removed: number[] = [];
         const modified: LineRange[] = [];
@@ -32,8 +33,8 @@ export class DiffComputer {
             } else if (change.removed && next && next.added) {
                 const isFirstChange = i === 0;
                 const isLastChange = i === changes.length - 2;
-                const isNextEmptyLine = next.value.length === 1 && next.value[0].length === 0;
-                const isPrevEmptyLine = change.value.length === 1 && change.value[0].length === 0;
+                const isNextEmptyLine = next.value.length > 0 && current[next.value[0]].length === 0;
+                const isPrevEmptyLine = change.value.length > 0 && previous[change.value[0]].length === 0;
 
                 if (isFirstChange && isNextEmptyLine) {
                     // special case: removing at the beginning
@@ -65,7 +66,38 @@ export class DiffComputer {
 
 }
 
-export interface DiffResult extends jsdiff.IArrayDiffResult { }
+class ArrayDiff extends jsdiff.Diff {
+    // tslint:disable-next-line:no-any
+    tokenize(value: any) {
+        return value;
+    }
+    // tslint:disable-next-line:no-any
+    join(value: any) {
+        return value;
+    }
+    // tslint:disable-next-line:no-any
+    removeEmpty(value: any) {
+        return value;
+    }
+}
+
+const arrayDiff = new ArrayDiff();
+
+/**
+ * Computes diff without copying data.
+ */
+// tslint:disable-next-line:no-any
+function diffArrays(oldArr: ContentLinesArrayLike, newArr: ContentLinesArrayLike): DiffResult[] {
+    // tslint:disable-next-line:no-any
+    return arrayDiff.diff(oldArr as any, newArr as any) as any;
+}
+
+export interface DiffResult {
+    value: [number, number];
+    count?: number;
+    added?: boolean;
+    removed?: boolean;
+}
 
 export interface DirtyDiff {
     /**

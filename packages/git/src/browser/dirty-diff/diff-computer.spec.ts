@@ -10,6 +10,7 @@ import { expect } from 'chai';
 chai.use(require('chai-string'));
 
 import { DiffComputer, DirtyDiff } from './diff-computer';
+import { ContentLines } from './content-lines';
 
 let diffComputer: DiffComputer;
 
@@ -341,7 +342,27 @@ describe("dirty-diff-computer", () => {
 });
 
 function computeDirtyDiff(previous: string[], modified: string[]) {
-    return diffComputer.computeDirtyDiff(previous, modified);
+    const a = ContentLines.arrayLike({
+        length: previous.length,
+        getLineContent: line => {
+            const value = previous[line];
+            if (value === undefined) {
+                console.log(undefined);
+            }
+            return value;
+        },
+    });
+    const b = ContentLines.arrayLike({
+        length: modified.length,
+        getLineContent: line => {
+            const value = modified[line];
+            if (value === undefined) {
+                console.log(undefined);
+            }
+            return value;
+        },
+    });
+    return diffComputer.computeDirtyDiff(a, b);
 }
 
 function sequenceOfN(n: number, mapFn: (index: number) => string = i => i.toString()): string[] {
