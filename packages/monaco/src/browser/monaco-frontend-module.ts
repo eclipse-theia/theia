@@ -24,7 +24,7 @@ import { MonacoOutlineContribution } from './monaco-outline-contribution';
 import { MonacoCommandService, MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
-import { MonacoDiffNavigatorFactory } from './monaco-diff-nagivator-factory';
+import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
 
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
