@@ -16,7 +16,7 @@ import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-lan
 import { MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoContextMenuService } from './monaco-context-menu';
 import { MonacoDiffEditor } from './monaco-diff-editor';
-import { MonacoDiffNavigatorFactory } from './monaco-diff-nagivator-factory';
+import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditorService } from './monaco-editor-service';

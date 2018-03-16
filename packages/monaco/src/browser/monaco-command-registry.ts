@@ -49,7 +49,7 @@ export class MonacoCommandRegistry {
         return {
             execute: (...args) => this.execute(monacoHandler, ...args),
             isEnabled: (...args) => this.isEnabled(monacoHandler, ...args),
-            isVisible: (...args) => this.isVisble(monacoHandler, ...args)
+            isVisible: (...args) => this.isVisible(monacoHandler, ...args)
         };
     }
 
@@ -67,7 +67,7 @@ export class MonacoCommandRegistry {
         return !!editor && (!monacoHandler.isEnabled || monacoHandler.isEnabled(editor, ...args));
     }
 
-    protected isVisble(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): boolean {
+    protected isVisible(monacoHandler: MonacoEditorCommandHandler, ...args: any[]): boolean {
         return TextEditorSelection.is(this.selectionService.selection);
     }
 
