@@ -14,7 +14,8 @@ import {
     DebugConfigurationProvider,
     DebugConfigurationProviderRegistry,
     DebugConfigurationContribution,
-    DebugConfiguration
+    DebugConfiguration,
+    DebugAdapterExecutable
 } from "@theia/debug/lib/common/debug-model";
 
 /**
@@ -38,6 +39,10 @@ export interface NodeJsDebugConfigurationProvider extends DebugConfigurationProv
  */
 @injectable()
 export class NodeJSDebugConfigurationProviderImpl implements NodeJsDebugConfigurationProvider {
+    provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable | undefined {
+        throw new Error("Method not implemented.");
+    }
+
     debugAdapterExecutable(config: DebugConfiguration) {
         throw new Error("Method not implemented.");
     }
