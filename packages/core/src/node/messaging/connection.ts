@@ -14,6 +14,10 @@ import { MessageConnection } from "vscode-jsonrpc";
 import { createWebSocketConnection, IWebSocket } from "vscode-ws-jsonrpc";
 import { ConsoleLogger } from "./logger";
 
+export interface ExtWebSocket extends ws {
+    isAlive: boolean;
+}
+
 export interface IServerOptions {
     readonly server: http.Server | https.Server;
     readonly path?: string;
@@ -40,18 +44,50 @@ export interface OnOpen {
 }
 
 export function openSocket(options: IServerOptions, onOpen: OnOpen): void {
+
     const wss = new ws.Server({
         noServer: true,
         perMessageDeflate: false
     });
+
+    wss.on('connection', (websocket: ws) => {
+
+        const extWs = websocket as ExtWebSocket;
+        extWs.isAlive = true;
+
+        extWs.on('pong', () => {
+            extWs.isAlive = true;
+        });
+
+    });
+
+    setInterval(() => {
+        wss.clients.forEach(websocket => {
+            const extWs = websocket as ExtWebSocket;
+
+            if (extWs.isAlive === false) {
+                websocket.terminate();
+                return;
+            }
+
+            extWs.isAlive = false;
+            websocket.ping();
+        });
+
+    }, 30000);
+
     options.server.on('upgrade', (request: http.IncomingMessage, socket: net.Socket, head: Buffer) => {
         const pathname = request.url ? url.parse(request.url).pathname : undefined;
         if (options.path && pathname === options.path || options.matches && options.matches(request)) {
             wss.handleUpgrade(request, socket, head, webSocket => {
                 if (webSocket.readyState === webSocket.OPEN) {
                     onOpen(webSocket, request, socket, head);
+                    wss.emit('connection', webSocket);
                 } else {
-                    webSocket.on('open', () => onOpen(webSocket, request, socket, head));
+                    webSocket.on('open', () => {
+                        onOpen(webSocket, request, socket, head);
+                        wss.emit('connection', webSocket);
+                    });
                 }
             });
         }
