@@ -98,8 +98,9 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
             commands: this,
             documentSelector: this.documentSelector,
             synchronize: { fileEvents },
-            initializationFailedHandler: () => {
-                this.messageService.error("Failed to start language server '" + this.name + "'.");
+            initializationFailedHandler: err => {
+                const detail = err instanceof Error ? `: ${err.message}` : '.';
+                this.messageService.error(`Failed to start ${this.name} language server${detail}`);
                 return false;
             }
         };
