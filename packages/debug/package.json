@@ -6,6 +6,7 @@
     "@theia/core": "^0.3.7",
     "@theia/editor": "^0.3.7",
     "@theia/monaco": "^0.3.7",
+    "@theia/process": "^0.3.7",
     "vscode-debugprotocol": "^1.26.0"
   },
   "publishConfig": {
