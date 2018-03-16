@@ -416,7 +416,7 @@ export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<
     }
 
     protected getUri(): URI | undefined {
-        return UriSelection.getUri(this.selectionService.selection) || this.rootUri;
+        return super.getUri() || this.rootUri;
     }
 
 }
