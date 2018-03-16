@@ -25,6 +25,11 @@ export const GitConfigSchema: PreferenceSchema = {
             'type': 'boolean',
             'description': 'Show git decorations in the editor.',
             'default': true
+        },
+        'git.editor.dirtydiff.linesLimit': {
+            'type': 'number',
+            'description': 'Do not show dirty diff decorations, if editor\'s line count exceeds this limit.',
+            'default': 1000
         }
     }
 };
@@ -33,6 +38,7 @@ export interface GitConfiguration {
     'git.decorations.enabled': boolean,
     'git.decorations.colors': boolean,
     'git.editor.decorations.enabled': boolean,
+    'git.editor.dirtydiff.linesLimit': number,
 }
 
 export const GitPreferences = Symbol('GitPreferences');
