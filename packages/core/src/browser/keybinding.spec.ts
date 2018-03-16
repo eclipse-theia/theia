@@ -206,10 +206,10 @@ describe('keybindings', () => {
         keybindingRegistry.setKeymap(KeybindingScope.WORKSPACE, keybindingsSpecific);
 
         let bindings = keybindingRegistry.getKeybindingsForKeySequence([KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.CtrlCmd] })]).full;
-        expect(bindings).to.be.empty;
+        expect(bindings).to.have.lengthOf(1);
 
         bindings = keybindingRegistry.getKeybindingsForKeySequence([KeyCode.createKeyCode({ first: Key.KEY_B, modifiers: [KeyModifier.CtrlCmd] })]).full;
-        expect(bindings).to.be.empty;
+        expect(bindings).to.have.lengthOf(1);
 
         bindings = keybindingRegistry.getKeybindingsForKeySequence([KeyCode.createKeyCode({ first: Key.KEY_C, modifiers: [KeyModifier.CtrlCmd] })]).full;
         const keyCode = KeyCode.parse(bindings[0].keybinding);
@@ -251,6 +251,61 @@ describe('keybindings', () => {
         const bindings = keybindingRegistry.getKeybindingsForCommand(command);
         expect(bindings.length).to.be.equal(1);
         expect(bindings[0].keybinding).to.be.equal(validKeyBinding);
+    });
+
+    it("shadowed bindings should not be returned", () => {
+        const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Shift] });
+        let bindings: Keybinding[];
+
+        const ignoredDefaultBinding: Keybinding = {
+            keybinding: keyCode.toString(),
+            command: "test.ignored-command"
+        };
+
+        const defaultBinding: Keybinding = {
+            keybinding: keyCode.toString(),
+            command: "test.workspace-command"
+        };
+
+        const userBinding: Keybinding = {
+            keybinding: keyCode.toString(),
+            command: "test.workspace-command"
+        };
+
+        const workspaceBinding: Keybinding = {
+            keybinding: keyCode.toString(),
+            command: "test.workspace-command"
+        };
+
+        keybindingRegistry.setKeymap(KeybindingScope.DEFAULT, [defaultBinding, ignoredDefaultBinding]);
+        keybindingRegistry.setKeymap(KeybindingScope.USER, [userBinding]);
+        keybindingRegistry.setKeymap(KeybindingScope.WORKSPACE, [workspaceBinding]);
+        // now WORKSPACE bindings are overriding the other scopes
+
+        bindings = keybindingRegistry.getKeybindingsForKeySequence([keyCode]).full;
+        expect(bindings).to.have.lengthOf(1);
+        expect(bindings[0].command).to.be.equal(workspaceBinding.command);
+
+        keybindingRegistry.resetKeybindingsForScope(KeybindingScope.WORKSPACE);
+        // now it should find USER bindings
+
+        bindings = keybindingRegistry.getKeybindingsForKeySequence([keyCode]).full;
+        expect(bindings).to.have.lengthOf(1);
+        expect(bindings[0].command).to.be.equal(userBinding.command);
+
+        keybindingRegistry.resetKeybindingsForScope(KeybindingScope.USER);
+        // and finally it should fallback to DEFAULT bindings.
+
+        bindings = keybindingRegistry.getKeybindingsForKeySequence([keyCode]).full;
+        expect(bindings).to.have.lengthOf(1);
+        expect(bindings[0].command).to.be.equal(defaultBinding.command);
+
+        keybindingRegistry.resetKeybindingsForScope(KeybindingScope.DEFAULT);
+        // now the registry should be empty
+
+        bindings = keybindingRegistry.getKeybindingsForKeySequence([keyCode]).full;
+        expect(bindings).to.be.empty;
+
     });
 });
 
