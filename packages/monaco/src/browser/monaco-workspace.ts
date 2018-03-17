@@ -1,31 +1,37 @@
 /*
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject, decorate } from "inversify";
-import {
-    MonacoWorkspace as BaseMonacoWorkspace, ProtocolToMonacoConverter, MonacoToProtocolConverter, testGlob
-} from "monaco-languageclient";
+// tslint:disable:no-null-keyword
+
+import { injectable, inject, postConstruct } from "inversify";
+import { ProtocolToMonacoConverter, MonacoToProtocolConverter, testGlob } from "monaco-languageclient";
+import URI from "@theia/core/lib/common/uri";
 import { DisposableCollection } from "@theia/core/lib/common";
 import { FileSystem, } from '@theia/filesystem/lib/common';
 import { FileChangeType, FileSystemWatcher } from '@theia/filesystem/lib/browser';
 import { WorkspaceService } from "@theia/workspace/lib/browser";
 import { EditorManager } from "@theia/editor/lib/browser";
 import * as lang from "@theia/languages/lib/common";
-import { Emitter, Event, TextDocument, TextDocumentWillSaveEvent, TextEdit } from "@theia/languages/lib/common";
+import { Emitter, TextDocumentWillSaveEvent, TextEdit } from "@theia/languages/lib/common";
 import { MonacoTextModelService } from "./monaco-text-model-service";
-import { WillSaveModelEvent } from "./monaco-editor-model";
-import URI from "@theia/core/lib/common/uri";
+import { WillSaveModelEvent, MonacoEditorModel } from "./monaco-editor-model";
 import { MonacoEditor } from "./monaco-editor";
 
-decorate(injectable(), BaseMonacoWorkspace);
-decorate(inject(MonacoToProtocolConverter), BaseMonacoWorkspace, 0);
+export interface MonacoDidChangeTextDocumentParams extends lang.DidChangeTextDocumentParams {
+    readonly textDocument: MonacoEditorModel;
+}
+
+export interface MonacoTextDocumentWillSaveEvent extends TextDocumentWillSaveEvent {
+    readonly textDocument: MonacoEditorModel;
+}
 
 @injectable()
-export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspace {
+export class MonacoWorkspace implements lang.Workspace {
+
     readonly capabilities = {
         applyEdit: true,
         workspaceEdit: {
@@ -43,91 +49,133 @@ export class MonacoWorkspace extends BaseMonacoWorkspace implements lang.Workspa
     readonly ready = new Promise<void>(resolve => {
         this.resolveReady = resolve;
     });
-    protected readonly onWillSaveTextDocumentEmitter = new Emitter<TextDocumentWillSaveEvent>();
-    protected readonly onDidSaveTextDocumentEmitter = new Emitter<TextDocument>();
 
-    constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(FileSystemWatcher) protected readonly fileSystemWatcher: FileSystemWatcher,
-        @inject(MonacoTextModelService) protected readonly textModelService: MonacoTextModelService,
-        @inject(MonacoToProtocolConverter) protected readonly m2p: MonacoToProtocolConverter,
-        @inject(ProtocolToMonacoConverter) protected readonly p2m: ProtocolToMonacoConverter,
-        @inject(EditorManager) protected readonly editorManager: EditorManager
-    ) {
-        super(p2m, m2p);
-        workspaceService.root.then(rootStat => {
+    protected readonly onDidOpenTextDocumentEmitter = new Emitter<MonacoEditorModel>();
+    readonly onDidOpenTextDocument = this.onDidOpenTextDocumentEmitter.event;
+
+    protected readonly onDidCloseTextDocumentEmitter = new Emitter<MonacoEditorModel>();
+    readonly onDidCloseTextDocument = this.onDidCloseTextDocumentEmitter.event;
+
+    protected readonly onDidChangeTextDocumentEmitter = new Emitter<MonacoDidChangeTextDocumentParams>();
+    readonly onDidChangeTextDocument = this.onDidChangeTextDocumentEmitter.event;
+
+    protected readonly onWillSaveTextDocumentEmitter = new Emitter<MonacoTextDocumentWillSaveEvent>();
+    readonly onWillSaveTextDocument = this.onWillSaveTextDocumentEmitter.event;
+
+    protected readonly onDidSaveTextDocumentEmitter = new Emitter<MonacoEditorModel>();
+    readonly onDidSaveTextDocument = this.onDidSaveTextDocumentEmitter.event;
+
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
+    @inject(FileSystemWatcher)
+    protected readonly fileSystemWatcher: FileSystemWatcher;
+
+    @inject(MonacoTextModelService)
+    protected readonly textModelService: MonacoTextModelService;
+
+    @inject(MonacoToProtocolConverter)
+    protected readonly m2p: MonacoToProtocolConverter;
+
+    @inject(ProtocolToMonacoConverter)
+    protected readonly p2m: ProtocolToMonacoConverter;
+
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
+
+    @postConstruct()
+    protected init(): void {
+        this.workspaceService.root.then(rootStat => {
             if (rootStat) {
                 this._rootUri = rootStat.uri;
                 this.resolveReady();
             }
         });
-        monaco.editor.onDidCreateModel(model => {
-            this.textModelService.createModelReference(model.uri).then(reference => {
-                reference.object.onDirtyChanged(() => {
-                    if (reference.object.dirty && MonacoEditor.findByDocument(this.editorManager, reference.object).length === 0) {
-                        // create a new reference to make sure the model is not disposed before it is
-                        // acquired by the editor, thus losing the changes that made it dirty.
-                        this.textModelService.createModelReference(model.uri).then(ref => {
-                            this.editorManager.open(new URI(model.uri.toString()), {
-                                mode: 'open',
-                            }).then(editor => ref.dispose());
-                        });
-                    }
-                });
-                reference.object.onDidSaveModel(model =>
-                    this.onDidSaveModel(model)
-                );
-                reference.object.onWillSaveModel(event =>
-                    this.onWillSaveModel(event)
-                );
-                reference.dispose();
-            });
-        });
+        for (const model of this.textModelService.models) {
+            this.fireDidOpen(model);
+        }
+        this.textModelService.onDidCreate(model => this.fireDidOpen(model));
+    }
+
+    protected _rootUri: string | null = null;
+    get rootUri(): string | null {
+        return this._rootUri;
     }
 
     get rootPath(): string | null {
         return this._rootUri && new URI(this._rootUri).path.toString();
     }
 
-    getTextDocument(uri: string): TextDocument | undefined {
-        return this.documents.get(uri);
+    get textDocuments(): MonacoEditorModel[] {
+        return this.textModelService.models;
     }
 
-    get onWillSaveTextDocument(): Event<TextDocumentWillSaveEvent> {
-        return this.onWillSaveTextDocumentEmitter.event;
+    getTextDocument(uri: string): MonacoEditorModel | undefined {
+        return this.textModelService.get(uri);
     }
 
-    protected onWillSaveModel(event: WillSaveModelEvent): void {
-        const { model, reason } = event;
-        const textDocument = this.getTextDocument(model.uri.toString());
-        if (textDocument) {
-            const timeout = new Promise<TextEdit[]>(resolve =>
-                setTimeout(() => resolve([]), 1000)
-            );
-            const resolveEdits = new Promise<TextEdit[]>(resolve =>
-                this.onWillSaveTextDocumentEmitter.fire({
-                    textDocument,
-                    reason,
-                    waitUntil: thenable => thenable.then(resolve)
-                })
-            );
-            event.waitUntil(
-                Promise.race([resolveEdits, timeout]).then(edits =>
-                    this.p2m.asTextEdits(edits).map(edit => edit as monaco.editor.IIdentifiedSingleEditOperation)
-                )
-            );
+    protected fireDidOpen(model: MonacoEditorModel): void {
+        this.onDidOpenTextDocumentEmitter.fire(model);
+        model.textEditorModel.onDidChangeContent(event => this.fireDidChangeContent(model, event));
+        model.onDidSaveModel(() => this.fireDidSave(model));
+        model.onWillSaveModel(event => this.fireWillSave(model, event));
+        model.onDirtyChanged(() => this.openEditorIfDirty(model));
+        model.onDispose(() => this.fireDidClose(model));
+    }
+
+    protected fireDidClose(model: MonacoEditorModel): void {
+        this.onDidCloseTextDocumentEmitter.fire(model);
+    }
+
+    protected fireDidChangeContent(model: MonacoEditorModel, event: monaco.editor.IModelContentChangedEvent): void {
+        const contentChanges = [];
+        for (const change of event.changes) {
+            const range = this.m2p.asRange(change.range);
+            const rangeLength = change.rangeLength;
+            const text = change.text;
+            contentChanges.push({ range, rangeLength, text });
         }
+        this.onDidChangeTextDocumentEmitter.fire({
+            textDocument: model,
+            contentChanges
+        });
     }
 
-    get onDidSaveTextDocument(): Event<TextDocument> {
-        return this.onDidSaveTextDocumentEmitter.event;
+    protected fireWillSave(model: MonacoEditorModel, event: WillSaveModelEvent): void {
+        const { reason } = event;
+        const timeout = new Promise<TextEdit[]>(resolve =>
+            setTimeout(() => resolve([]), 1000)
+        );
+        const resolveEdits = new Promise<TextEdit[]>(resolve =>
+            this.onWillSaveTextDocumentEmitter.fire({
+                textDocument: model,
+                reason,
+                waitUntil: thenable => thenable.then(resolve)
+            })
+        );
+        event.waitUntil(
+            Promise.race([resolveEdits, timeout]).then(edits =>
+                this.p2m.asTextEdits(edits).map(edit => edit as monaco.editor.IIdentifiedSingleEditOperation)
+            )
+        );
     }
 
-    protected onDidSaveModel(model: monaco.editor.IModel): void {
-        const document = this.getTextDocument(model.uri.toString());
-        if (document) {
-            this.onDidSaveTextDocumentEmitter.fire(document);
+    protected fireDidSave(model: MonacoEditorModel): void {
+        this.onDidSaveTextDocumentEmitter.fire(model);
+    }
+
+    protected openEditorIfDirty(model: MonacoEditorModel): void {
+        if (model.dirty && MonacoEditor.findByDocument(this.editorManager, model).length === 0) {
+            // create a new reference to make sure the model is not disposed before it is
+            // acquired by the editor, thus losing the changes that made it dirty.
+            this.textModelService.createModelReference(model.textEditorModel.uri).then(ref => {
+                this.editorManager.open(new URI(model.uri), {
+                    mode: 'open',
+                }).then(editor => ref.dispose());
+            });
         }
     }
 

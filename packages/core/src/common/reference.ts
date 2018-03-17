@@ -6,19 +6,46 @@
  */
 
 import { Disposable, DisposableCollection } from "./disposable";
+import { Emitter, Event } from "./event";
 import { MaybePromise } from "./types";
 
 export interface Reference<T> extends Disposable {
     readonly object: T
 }
 
-export class ReferenceCollection<K, V extends Disposable> {
+export class ReferenceCollection<K, V extends Disposable> implements Disposable {
 
-    protected readonly values = new Map<string, MaybePromise<V>>();
-    protected readonly keyMap = new Map<string, K>();
+    protected readonly _keys = new Map<string, K>();
+    protected readonly _values = new Map<string, V>();
     protected readonly references = new Map<string, DisposableCollection>();
 
-    constructor(protected readonly factory: (key: K) => MaybePromise<V>) { }
+    protected readonly onDidCreateEmitter = new Emitter<V>();
+    readonly onDidCreate: Event<V> = this.onDidCreateEmitter.event;
+
+    protected readonly onWillDisposeEmitter = new Emitter<V>();
+    readonly onWillDispose: Event<V> = this.onDidCreateEmitter.event;
+
+    protected readonly toDispose = new DisposableCollection();
+
+    constructor(protected readonly factory: (key: K) => MaybePromise<V>) {
+        this.toDispose.push(this.onDidCreateEmitter);
+        this.toDispose.push(this.onWillDisposeEmitter);
+        this.toDispose.push(Disposable.create(() => this.clear()));
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
+    clear(): void {
+        for (const value of this._values.values()) {
+            try {
+                value.dispose();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    }
 
     has(args: K): boolean {
         const key = this.toKey(args);
@@ -26,7 +53,16 @@ export class ReferenceCollection<K, V extends Disposable> {
     }
 
     keys(): K[] {
-        return [...this.keyMap.values()];
+        return [...this._keys.values()];
+    }
+
+    values(): V[] {
+        return [...this._values.values()];
+    }
+
+    get(args: K): V | undefined {
+        const key = this.toKey(args);
+        return this._values.get(key);
     }
 
     async acquire(args: K): Promise<Reference<V>> {
@@ -41,29 +77,41 @@ export class ReferenceCollection<K, V extends Disposable> {
         return reference;
     }
 
+    protected readonly pendingValues = new Map<string, MaybePromise<V>>();
     protected async getOrCreateValue(key: string, args: K): Promise<V> {
-        const existing = this.values.get(key);
+        const existing = this._values.get(key);
         if (existing) {
             return existing;
         }
-        const value = this.factory(args);
-        this.keyMap.set(key, args);
-        this.values.set(key, value);
-        return value;
+        const pending = this.factory(args);
+        this._keys.set(key, args);
+        this.pendingValues.set(key, pending);
+        try {
+            const value = await pending;
+            this._values.set(key, value);
+            this.onDidCreateEmitter.fire(value);
+            return value;
+        } catch (e) {
+            this._keys.delete(key);
+            throw e;
+        } finally {
+            this.pendingValues.delete(key);
+        }
     }
 
     protected toKey(args: K): string {
         return JSON.stringify(args);
     }
 
-    protected createReferences(key: string, object: V): DisposableCollection {
+    protected createReferences(key: string, value: V): DisposableCollection {
         const references = new DisposableCollection();
-        references.onDispose(() => object.dispose());
-        const disposeObject = object.dispose.bind(object);
-        object.dispose = () => {
+        references.onDispose(() => value.dispose());
+        const disposeObject = value.dispose.bind(value);
+        value.dispose = () => {
+            this.onWillDisposeEmitter.fire(value);
             disposeObject();
-            this.values.delete(key);
-            this.keyMap.delete(key);
+            this._values.delete(key);
+            this._keys.delete(key);
             this.references.delete(key);
             references!.dispose();
         };
