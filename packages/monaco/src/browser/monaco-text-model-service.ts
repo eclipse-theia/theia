@@ -8,14 +8,14 @@
 import { inject, injectable } from 'inversify';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import URI from "@theia/core/lib/common/uri";
-import { ResourceProvider, ReferenceCollection } from "@theia/core/lib/common";
+import { ResourceProvider, ReferenceCollection, Event } from "@theia/core";
 import { EditorPreferences, EditorPreferenceChange } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from "./monaco-editor-model";
 
 @injectable()
 export class MonacoTextModelService implements monaco.editor.ITextModelService {
 
-    protected readonly models = new ReferenceCollection<string, MonacoEditorModel>(
+    protected readonly _models = new ReferenceCollection<string, MonacoEditorModel>(
         uri => this.loadModel(new URI(uri))
     );
 
@@ -31,8 +31,20 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
     @inject(ProtocolToMonacoConverter)
     protected readonly p2m: ProtocolToMonacoConverter;
 
+    get models(): MonacoEditorModel[] {
+        return this._models.values();
+    }
+
+    get(uri: string): MonacoEditorModel | undefined {
+        return this._models.get(uri);
+    }
+
+    get onDidCreate(): Event<MonacoEditorModel> {
+        return this._models.onDidCreate;
+    }
+
     createModelReference(raw: monaco.Uri | URI): monaco.Promise<monaco.editor.IReference<MonacoEditorModel>> {
-        return monaco.Promise.wrap(this.models.acquire(raw.toString()));
+        return monaco.Promise.wrap(this._models.acquire(raw.toString()));
     }
 
     protected async loadModel(uri: URI): Promise<MonacoEditorModel> {
