@@ -45,6 +45,7 @@ module.exports = {
         path: outputPath
     },
     target: '${this.ifBrowser('web', 'electron-renderer')}',
+    mode: development ? 'development' : 'production',
     node: {${this.ifElectron(`
         __dirname: false,
         __filename: false`, `
@@ -104,7 +105,6 @@ module.exports = {
     },
     devtool: 'source-map',
     plugins: [
-        new webpack.HotModuleReplacementPlugin(),
         new CopyWebpackPlugin([${this.ifMonaco(() => `
             {
                 from: monacoEditorPath,
