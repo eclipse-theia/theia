@@ -18,7 +18,7 @@ import { EditorManager } from "@theia/editor/lib/browser";
 import * as lang from "@theia/languages/lib/common";
 import { Emitter, TextDocumentWillSaveEvent, TextEdit } from "@theia/languages/lib/common";
 import { MonacoTextModelService } from "./monaco-text-model-service";
-import { WillSaveModelEvent, MonacoEditorModel } from "./monaco-editor-model";
+import { WillSaveMonacoModelEvent, MonacoEditorModel, MonacoModelContentChangedEvent } from "./monaco-editor-model";
 import { MonacoEditor } from "./monaco-editor";
 
 export interface MonacoDidChangeTextDocumentParams extends lang.DidChangeTextDocumentParams {
@@ -119,9 +119,9 @@ export class MonacoWorkspace implements lang.Workspace {
 
     protected fireDidOpen(model: MonacoEditorModel): void {
         this.onDidOpenTextDocumentEmitter.fire(model);
-        model.textEditorModel.onDidChangeContent(event => this.fireDidChangeContent(model, event));
+        model.onDidChangeContent(event => this.fireDidChangeContent(event));
         model.onDidSaveModel(() => this.fireDidSave(model));
-        model.onWillSaveModel(event => this.fireWillSave(model, event));
+        model.onWillSaveModel(event => this.fireWillSave(event));
         model.onDirtyChanged(() => this.openEditorIfDirty(model));
         model.onDispose(() => this.fireDidClose(model));
     }
@@ -130,28 +130,22 @@ export class MonacoWorkspace implements lang.Workspace {
         this.onDidCloseTextDocumentEmitter.fire(model);
     }
 
-    protected fireDidChangeContent(model: MonacoEditorModel, event: monaco.editor.IModelContentChangedEvent): void {
-        const contentChanges = [];
-        for (const change of event.changes) {
-            const range = this.m2p.asRange(change.range);
-            const rangeLength = change.rangeLength;
-            const text = change.text;
-            contentChanges.push({ range, rangeLength, text });
-        }
+    protected fireDidChangeContent(event: MonacoModelContentChangedEvent): void {
+        const { model, contentChanges } = event;
         this.onDidChangeTextDocumentEmitter.fire({
             textDocument: model,
             contentChanges
         });
     }
 
-    protected fireWillSave(model: MonacoEditorModel, event: WillSaveModelEvent): void {
+    protected fireWillSave(event: WillSaveMonacoModelEvent): void {
         const { reason } = event;
         const timeout = new Promise<TextEdit[]>(resolve =>
             setTimeout(() => resolve([]), 1000)
         );
         const resolveEdits = new Promise<TextEdit[]>(resolve =>
             this.onWillSaveTextDocumentEmitter.fire({
-                textDocument: model,
+                textDocument: event.model,
                 reason,
                 waitUntil: thenable => thenable.then(resolve)
             })
