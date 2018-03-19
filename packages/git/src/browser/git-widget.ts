@@ -162,21 +162,19 @@ export class GitWidget extends VirtualWidget {
 
     protected renderCommandBar(repository: Repository | undefined): h.Child {
         const commit = async () => {
-            // need to access the element, because Phosphor.js is not updating `value`but only `setAttribute('value', ....)` which only sets the default value.
-            const messageInput = document.getElementById('git-messageInput') as HTMLInputElement;
             if (this.message !== '') {
-                const extendedMessageInput = document.getElementById('git-extendedMessageInput') as HTMLInputElement;
                 try {
                     // We can make sure, repository exists, otherwise we would not have this button.
-                    await this.git.commit(repository!, this.message + "\n\n" + this.additionalMessage);
-                    messageInput.value = '';
-                    extendedMessageInput.value = '';
+                    await this.git.commit(repository!, `${this.message}\n\n${this.additionalMessage}`);
                     const status = await this.git.status(repository!);
+                    this.resetCommitMessages();
                     this.updateView(status);
                 } catch (error) {
                     this.logError(error);
                 }
             } else {
+                // need to access the element, because Phosphor.js is not updating `value`but only `setAttribute('value', ....)` which only sets the default value.
+                const messageInput = document.getElementById('git-messageInput') as HTMLInputElement;
                 if (messageInput) {
                     this.messageInputHighlighted = true;
                     this.update();
@@ -427,4 +425,13 @@ export class GitWidget extends VirtualWidget {
         return changeUri;
     }
 
+    protected resetCommitMessages(): void {
+        this.message = '';
+        this.additionalMessage = '';
+
+        const messageInput = document.getElementById('git-messageInput') as HTMLInputElement;
+        const extendedMessageInput = document.getElementById('git-extendedMessageInput') as HTMLInputElement;
+        messageInput.value = '';
+        extendedMessageInput.value = '';
+    }
 }
