@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { TextDocumentContentChangeEvent } from 'vscode-languageserver-types';
 import { JsonRpcServer } from '@theia/core/lib/common';
 
 export const fileSystemPath = '/services/filesystem';
@@ -36,6 +37,11 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
      * Updates the content replacing its previous value.
      */
     setContent(file: FileStat, content: string, options?: { encoding?: string }): Promise<FileStat>;
+
+    /**
+     * Updates the content replacing its previous value.
+     */
+    updateContent(file: FileStat, contentChanges: TextDocumentContentChangeEvent[], options?: { encoding?: string }): Promise<FileStat>;
 
     /**
      * Moves the file to a new path identified by the resource.

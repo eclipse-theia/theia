@@ -12,6 +12,7 @@ import * as fs from 'fs-extra';
 import * as os from 'os';
 import * as touch from 'touch';
 import { injectable, inject, optional } from 'inversify';
+import { TextDocumentContentChangeEvent, TextDocument } from 'vscode-languageserver-types';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { FileStat, FileSystem, FileSystemClient } from '../common/filesystem';
@@ -82,9 +83,7 @@ export class FileSystemNode implements FileSystem {
             throw new Error(`Cannot set the content of a directory. URI: ${file.uri}.`);
         }
         if (!(await this.isInSync(file, stat))) {
-            throw new Error(`File is out of sync. URI: ${file.uri}.
-Expected: ${JSON.stringify(stat)}.
-Actual: ${JSON.stringify(file)}.`);
+            throw this.createOutOfSyncError(file, stat);
         }
         const encoding = await this.doGetEncoding(options);
         await fs.writeFile(FileUri.fsPath(_uri), content, { encoding });
@@ -95,11 +94,58 @@ Actual: ${JSON.stringify(file)}.`);
         throw new Error(`Error occurred while writing file content. The file does not exist under ${file.uri}.`);
     }
 
+    async updateContent(file: FileStat, contentChanges: TextDocumentContentChangeEvent[], options?: { encoding?: string }): Promise<FileStat> {
+        const _uri = new URI(file.uri);
+        const stat = await this.doGetStat(_uri, 0);
+        if (!stat) {
+            throw new Error(`Cannot find file under the given URI. URI: ${file.uri}.`);
+        }
+        if (stat.isDirectory) {
+            throw new Error(`Cannot set the content of a directory. URI: ${file.uri}.`);
+        }
+        if (!this.checkInSync(file, stat)) {
+            throw this.createOutOfSyncError(file, stat);
+        }
+        if (contentChanges.length === 0) {
+            return stat;
+        }
+        const encoding = await this.doGetEncoding(options);
+        const content = await fs.readFile(FileUri.fsPath(_uri), { encoding });
+        const newContent = this.applyContentChanges(content, contentChanges);
+        await fs.writeFile(FileUri.fsPath(_uri), newContent, { encoding });
+        const newStat = await this.doGetStat(_uri, 1);
+        if (newStat) {
+            return newStat;
+        }
+        throw new Error(`Error occurred while writing file content. The file does not exist under ${file.uri}.`);
+    }
+    protected applyContentChanges(content: string, contentChanges: TextDocumentContentChangeEvent[]): string {
+        let document = TextDocument.create('', '', 1, content);
+        for (const change of contentChanges) {
+            let newContent = change.text;
+            if (change.range) {
+                const start = document.offsetAt(change.range.start);
+                const end = document.offsetAt(change.range.end);
+                newContent = document.getText().substr(0, start) + change.text + document.getText().substr(end);
+            }
+            document = TextDocument.create(document.uri, document.languageId, document.version, newContent);
+        }
+        return document.getText();
+    }
+
     protected async isInSync(file: FileStat, stat: FileStat): Promise<boolean> {
-        if (stat.lastModification === file.lastModification && stat.size === file.size) {
+        if (this.checkInSync(file, stat)) {
             return true;
         }
         return this.client ? this.client.shouldOverwrite(file, stat) : false;
+    }
+    protected checkInSync(file: FileStat, stat: FileStat): boolean {
+        return stat.lastModification === file.lastModification && stat.size === file.size;
+    }
+    protected createOutOfSyncError(file: FileStat, stat: FileStat): Error {
+        return new Error(`File is out of sync. URI: ${file.uri}.
+Expected: ${JSON.stringify(stat)}.
+Actual: ${JSON.stringify(file)}.`);
     }
 
     async move(sourceUri: string, targetUri: string, options?: { overwrite?: boolean }): Promise<FileStat> {

@@ -1,11 +1,12 @@
 /*
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
 import { injectable, inject } from "inversify";
+import { TextDocumentContentChangeEvent } from "vscode-languageserver-types";
 import { Resource, ResourceResolver, Emitter, Event, DisposableCollection } from "@theia/core";
 import URI from "@theia/core/lib/common/uri";
 import { FileSystem, FileStat } from "../common/filesystem";
@@ -17,7 +18,7 @@ export class FileResource implements Resource {
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
     readonly onDidChangeContents: Event<void> = this.onDidChangeContentsEmitter.event;
 
-    protected state: FileResource.State = FileResource.emptyState;
+    protected stat: FileStat | undefined;
     protected uriString: string;
 
     constructor(
@@ -27,9 +28,18 @@ export class FileResource implements Resource {
     ) {
         this.uriString = this.uri.toString();
         this.toDispose.push(this.onDidChangeContentsEmitter);
+    }
+
+    async init(): Promise<void> {
+        const stat = await this.getFileStat();
+        if (stat && stat.isDirectory) {
+            throw new Error('The given uri is a directory: ' + this.uriString);
+        }
+        this.stat = stat;
+        this.toDispose.push(await this.fileSystemWatcher.watchFileChanges(this.uri));
         this.toDispose.push(this.fileSystemWatcher.onFilesChanged(changes => {
-            if (changes.some(e => e.uri.toString() === uri.toString())) {
-                this.onDidChangeContentsEmitter.fire(undefined);
+            if (changes.some(e => e.uri.toString() === this.uriString)) {
+                this.sync();
             }
         }));
     }
@@ -39,69 +49,72 @@ export class FileResource implements Resource {
     }
 
     async readContents(options?: { encoding?: string }): Promise<string> {
-        this.state = await this.doReadContents(options);
-        return this.state.content;
-    }
-    protected async doReadContents(options?: { encoding?: string }): Promise<FileResource.State> {
-        try {
-            if (!await this.fileSystem.exists(this.uriString)) {
-                return FileResource.emptyState;
-            }
-            return this.fileSystem.resolveContent(this.uriString, options);
-        } catch {
-            return FileResource.emptyState;
-        }
+        const { stat, content } = await this.fileSystem.resolveContent(this.uriString, options);
+        this.stat = stat;
+        return content;
     }
 
     async saveContents(content: string, options?: { encoding?: string }): Promise<void> {
-        const stat = await this.doSaveContents(content, options);
-        this.state = { stat, content };
+        this.stat = await this.doSaveContents(content, options);
     }
     protected async doSaveContents(content: string, options?: { encoding?: string }): Promise<FileStat> {
-        if (!await this.fileSystem.exists(this.uriString)) {
-            return this.fileSystem.createFile(this.uriString, { content });
+        const stat = await this.getFileStat();
+        if (stat) {
+            return this.fileSystem.setContent(stat, content, options);
         }
-        const stat = this.state.stat || await this.fileSystem.getFileStat(this.uriString);
-        return this.fileSystem.setContent(stat, content, options);
+        return this.fileSystem.createFile(this.uriString, { content, ...options });
     }
 
-}
-export namespace FileResource {
-    export interface State {
-        stat?: FileStat,
-        content: string
+    async saveContentChanges(changes: TextDocumentContentChangeEvent[], options?: { encoding?: string }): Promise<void> {
+        if (!this.stat) {
+            throw new Error(this.uriString + ' has not been read yet');
+        }
+        this.stat = await this.fileSystem.updateContent(this.stat, changes, options);
     }
-    export const emptyState: State = { content: '' };
+
+    protected async sync(): Promise<void> {
+        if (await this.isInSync(this.stat)) {
+            return;
+        }
+        this.onDidChangeContentsEmitter.fire(undefined);
+    }
+    protected async isInSync(current: FileStat | undefined): Promise<boolean> {
+        const stat = await this.getFileStat();
+        if (!current) {
+            return !stat;
+        }
+        return !!stat && current.lastModification >= stat.lastModification;
+    }
+
+    protected async getFileStat(): Promise<FileStat | undefined> {
+        if (!this.fileSystem.exists(this.uriString)) {
+            return undefined;
+        }
+        try {
+            return this.fileSystem.getFileStat(this.uriString);
+        } catch {
+            return undefined;
+        }
+    }
+
 }
 
 @injectable()
 export class FileResourceResolver implements ResourceResolver {
 
-    constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(FileSystemWatcher) protected readonly fileSystemWatcher: FileSystemWatcher
-    ) { }
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
+
+    @inject(FileSystemWatcher)
+    protected readonly fileSystemWatcher: FileSystemWatcher;
 
     async resolve(uri: URI): Promise<FileResource> {
         if (uri.scheme !== 'file') {
             throw new Error('The given uri is not file uri: ' + uri);
         }
-        const fileStat = await this.getFileStat(uri);
-        if (fileStat && fileStat.isDirectory) {
-            throw new Error('The given uri is a directory: ' + uri);
-        }
-        return new FileResource(uri, this.fileSystem, this.fileSystemWatcher);
-    }
-
-    protected async getFileStat(uri: URI): Promise<FileStat | undefined> {
-        try {
-            if (await this.fileSystem.exists(uri.toString())) {
-                return await this.fileSystem.getFileStat(uri.toString());
-            }
-            return undefined;
-        } catch {
-            return undefined;
-        }
+        const resource = new FileResource(uri, this.fileSystem, this.fileSystemWatcher);
+        await resource.init();
+        return resource;
     }
 
 }
