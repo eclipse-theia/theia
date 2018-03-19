@@ -56,11 +56,15 @@ If you set `next` in your theia config, then Theia will prefer `next` over `late
 
 To build once:
 
-    theia build
+    theia build --mode development
 
 In order to rebuild on each change:
 
-    theia build --watch
+    theia build --watch --mode development
+
+To build for production:
+
+    theia build
 
 In order to clean up the build result:
 

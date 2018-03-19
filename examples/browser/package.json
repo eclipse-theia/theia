@@ -36,8 +36,8 @@
   "scripts": {
     "prepare": "yarn run clean && yarn build",
     "clean": "theia clean && rimraf errorShots",
-    "build": "theia build",
-    "watch": "yarn build --watch",
+    "build": "theia build --mode development",
+    "watch": "yarn build --watch --mode development",
     "start": "theia start",
     "start:debug": "yarn start --logLevel=debug",
     "test": "wdio",

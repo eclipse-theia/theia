@@ -39,8 +39,8 @@
   "scripts": {
     "prepare": "yarn run clean && yarn build",
     "clean": "theia clean",
-    "build": "theia build",
-    "watch": "yarn build --watch",
+    "build": "theia build --mode development",
+    "watch": "yarn build --watch --mode development",
     "start": "theia start",
     "start:debug": "yarn start --loglevel=debug",
     "test": "electron-mocha --timeout 60000 --require ts-node/register \"./test/**/*.espec.ts\"",
