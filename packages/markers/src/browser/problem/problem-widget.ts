@@ -110,10 +110,11 @@ export class ProblemWidget extends TreeWidget {
     }
 
     protected decorateMarkerFileNode(node: MarkerInfoNode): h.Child {
-        const filenameDiv = h.div({ className: (node.icon || '') + ' file-icon' }, node.name);
+        const iconDiv = h.div({ className: (node.icon || '') + ' file-icon' });
+        const fileNameDiv = h.div({}, node.name);
         const pathDiv = h.div({ className: 'path' }, node.description || '');
         const counterDiv = h.div({ className: 'counter' }, node.numberOfMarkers.toString());
-        return h.div({ className: 'markerFileNode' }, filenameDiv, pathDiv, counterDiv);
+        return h.div({ className: 'markerFileNode' }, iconDiv, fileNameDiv, pathDiv, counterDiv);
     }
 
 }
