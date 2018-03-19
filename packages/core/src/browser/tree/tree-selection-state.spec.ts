@@ -12,8 +12,9 @@ import { MockTreeModel } from './test/mock-tree-model';
 import { TreeSelectionState } from './tree-selection-state';
 import { TreeNavigationService } from './tree-navigation';
 import { TreeModel, TreeModelImpl } from './tree-model';
+import { TreeSelectionServiceImpl } from './tree-selection-impl';
 import { TreeExpansionService, TreeExpansionServiceImpl } from './tree-expansion';
-import { TreeSelection, TreeSelectionService, TreeSelectionServiceImpl, SelectableTreeNode } from './tree-selection';
+import { TreeSelection, TreeSelectionService, SelectableTreeNode } from './tree-selection';
 
 // tslint:disable:no-unused-expression
 

@@ -12,8 +12,9 @@ import { Tree, TreeImpl } from './tree';
 import { MockTreeModel } from './test/mock-tree-model';
 import { TreeNavigationService } from './tree-navigation';
 import { TreeModel, TreeModelImpl } from './tree-model';
+import { TreeSelectionService } from './tree-selection';
+import { TreeSelectionServiceImpl } from './tree-selection-impl';
 import { TreeExpansionService, TreeExpansionServiceImpl, ExpandableTreeNode } from './tree-expansion';
-import { TreeSelectionService, TreeSelectionServiceImpl } from './tree-selection';
 import { DepthFirstTreeIterator, BreadthFirstTreeIterator, BottomUpTreeIterator, TopDownTreeIterator, Iterators } from './tree-iterator';
 
 // tslint:disable:no-unused-expression
