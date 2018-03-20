@@ -13,117 +13,112 @@ import { injectable, inject, named } from "inversify";
 import { ContributionProvider, ILogger } from '@theia/core';
 import {
     DebugService,
-    DebugConfigurationProviderRegistry,
-    DebugConfigurationProvider,
     DebugSession,
-    DebugConfigurationContribution,
     DebugConfiguration,
-    DebugAdapterExecutable
+    DebugAdapterExecutable,
+    DebugAdapterContribution,
+    DebugAdapterFactory
 } from "../common/debug-model";
-import { DebugAdapterSession } from './debug-adapter';
+import { DebugAdapterSession } from './debug-session';
 import { UUID } from "@phosphor/coreutils";
 
 /**
- * DebugConfigurationManager symbol for DI.
+ * Contributions registry.
  */
-export const DebugConfigurationManager = Symbol('DebugConfigurationManager');
+@injectable()
+export class DebugAdapterContributionRegistry {
+    protected readonly contribs = new Map<string, DebugAdapterContribution>();
 
-/**
- * [Debug configuration](#DebugConfiguration) manager.
- */
-export interface DebugConfigurationManager {
+    constructor(
+        @inject(ContributionProvider) @named(DebugAdapterContribution)
+        protected readonly contributions: ContributionProvider<DebugAdapterContribution>
+    ) {
+        for (const contrib of this.contributions.getContributions()) {
+            this.contribs.set(contrib.debugType, contrib);
+        }
+    }
+
     /**
      * Finds and returns an array of registered debug types.
      * @returns An array of registered debug types
      */
-    listDebugConfigurationProviders(): string[];
+    debugTypes(): string[] {
+        return Array.from(this.contribs.keys());
+    }
 
     /**
-     * Provides initial debug configurations for the specific debug type.
+     * Provides initial [debug configuration](#DebugConfiguration).
      * @param debugType The registered debug type
      * @returns An array of [debug configurations](#DebugConfiguration)
      */
-    provideDebugConfiguration(debugType: string): DebugConfiguration[];
-
-    /**
-     * Resolves debug configuration for the specific debug type.
-     * @param debugType The registered debug type
-     * @param config The debug configuration to resolve
-     * @returns Resolved [debug configurations](#DebugConfiguration)
-     */
-    resolveDebugConfiguration(debugType: string, config: DebugConfiguration): DebugConfiguration | undefined;
-
-    /**
-     * Provide a [command line][#DebugAdapterExecutable] to launch debug adapter
-     * @param debugType The registered debug type
-     * @param config The debug configuration
-     * @returns The command and arguments to launch a new debug adapter
-     */
-    provideDebugAdapterExecutable(debugType: string, config: DebugConfiguration): DebugAdapterExecutable | undefined;
-}
-
-/**
- * DebugConfigurationManager implementation.
- */
-@injectable()
-export class DebugConfigurationManagerImpl implements DebugConfigurationManager, DebugConfigurationProviderRegistry {
-    protected readonly providers = new Map<string, DebugConfigurationProvider>();
-
-    constructor(
-        @inject(ContributionProvider) @named(DebugConfigurationContribution)
-        protected readonly contributions: ContributionProvider<DebugConfigurationContribution>
-    ) {
-        for (const contrib of this.contributions.getContributions()) {
-            contrib.registerDebugConfigurationProvider(this);
+    provideDebugConfigurations(debugType: string): DebugConfiguration[] | undefined {
+        const contrib = this.contribs.get(debugType);
+        if (contrib) {
+            return contrib.provideDebugConfigurations();
         }
     }
 
-    registerDebugConfigurationProvider(debugType: string, provider: DebugConfigurationProvider): void {
-        this.providers.set(debugType, provider);
-    }
-
-    listDebugConfigurationProviders(): string[] {
-        return Array.from(this.providers.keys());
-    }
-
-    provideDebugConfiguration(debugType: string): DebugConfiguration[] {
-        const provider = this.providers.get(debugType);
-        return provider ? provider.provideDebugConfigurations() : [];
-    }
-
+    /**
+     * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
+     * or by adding/changing/removing attributes.
+     * @param debugType The registered debug type
+     * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
+     * @returns The resolved debug configuration.
+     */
     resolveDebugConfiguration(debugType: string, config: DebugConfiguration): DebugConfiguration | undefined {
-        const provider = this.providers.get(debugType);
-        return provider ? provider.resolveDebugConfiguration(config) : undefined;
+        const contrib = this.contribs.get(debugType);
+        if (contrib) {
+            return contrib.resolveDebugConfiguration(config);
+        }
     }
 
+    /**
+     * Provides a [debug adapter executable](#DebugAdapterExecutable)
+     * based on [debug configuration](#DebugConfiguration) to launch a new debug adapter.
+     * @param debugType The registered debug type
+     * @param config The resolved [debug configuration](#DebugConfiguration).
+     * @returns The [debug adapter executable](#DebugAdapterExecutable).
+     */
     provideDebugAdapterExecutable(debugType: string, config: DebugConfiguration): DebugAdapterExecutable | undefined {
-        const provider = this.providers.get(debugType);
-        return provider ? provider.provideDebugAdapterExecutable(config) : undefined;
+        const contrib = this.contribs.get(debugType);
+        if (contrib) {
+            return contrib.provideDebugAdapterExecutable(config);
+        }
     }
 }
 
 /**
- * DebugSessionManager symbol for DI.
+ * Debug session manager.
  */
-export const DebugSessionManager = Symbol('DebugSessionManager');
+@injectable()
+export class DebugSessionManager {
+    protected readonly sessions = new Map<string, DebugSession>();
 
-/**
- * [Debug session](#DebugSession) manager.
- */
-export interface DebugSessionManager {
+    constructor(
+        @inject("Factory<DebugAdapterSession>")
+        protected readonly debugSessionFactory: (sessionId: string, executable: DebugAdapterExecutable) => DebugAdapterSession
+    ) { }
+
     /**
      * Creates a new [debug session](#DebugSession).
      * @param executable The [DebugAdapterExecutable](#DebugAdapterExecutable)
-     * @returns The session identifier
+     * @returns The debug session
      */
-    start(executable: DebugAdapterExecutable): string | undefined;
+    create(executable: DebugAdapterExecutable): DebugSession {
+        const sessionId = UUID.uuid4();
+        const session = this.debugSessionFactory(sessionId, executable);
+        this.sessions.set(sessionId, session);
+        return session;
+    }
 
     /**
      * Removes [debug session](#DebugSession) from the list of the instantiated sessions.
      * Is invoked when session is terminated and isn't needed anymore.
      * @param sessionId The session identifier
      */
-    remove(sessionId: string): void;
+    remove(sessionId: string): void {
+        this.sessions.delete(sessionId);
+    }
 
     /**
      * Finds the debug session by its id.
@@ -131,45 +126,14 @@ export interface DebugSessionManager {
      * @param sessionId The session identifier
      * @returns The debug session
      */
-    find(sessionId: string): DebugSession | undefined;
+    find(sessionId: string): DebugSession | undefined {
+        return this.sessions.get(sessionId);
+    }
 
     /**
      * Finds all instantiated debug sessions.
      * @returns An array of debug sessions identifiers
      */
-    findAll(): string[];
-}
-
-/**
- * DebugSessionManager implementation.
- */
-@injectable()
-export class DebugSessionManagerImpl implements DebugSessionManager {
-    protected readonly sessions = new Map<string, DebugSession>();
-
-    constructor(
-        @inject(DebugConfigurationManager)
-        protected readonly debugConfigurationManger: DebugConfigurationManager,
-        @inject("Factory<DebugAdapterSession>")
-        protected readonly debugAdapterSessionFactory: (sessionId: string, executable: DebugAdapterExecutable) => DebugAdapterSession
-    ) { }
-
-    find(sessionId: string): DebugSession | undefined {
-        return this.sessions.get(sessionId);
-    }
-
-    start(executable: DebugAdapterExecutable): string | undefined {
-        const sessionId = UUID.uuid4();
-        const session = this.debugAdapterSessionFactory(sessionId, executable);
-        this.sessions.set(sessionId, session);
-
-        return sessionId;
-    }
-
-    remove(sessionId: string): void {
-        this.sessions.delete(sessionId);
-    }
-
     findAll(): string[] {
         return Array.from(this.sessions.keys());
     }
@@ -183,30 +147,35 @@ export class DebugServiceImpl implements DebugService {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
+    @inject(DebugAdapterFactory)
+    protected readonly adapterFactory: DebugAdapterFactory;
+
     @inject(DebugSessionManager)
-    protected readonly debugSessionManager: DebugSessionManager;
+    protected readonly sessionManager: DebugSessionManager;
 
-    @inject(DebugConfigurationManager)
-    protected readonly debugConfigurationManager: DebugConfigurationManager;
+    @inject(DebugAdapterContributionRegistry)
+    protected readonly registry: DebugAdapterContributionRegistry;
 
-    async listDebugConfigurationProviders(): Promise<string[]> {
-        return this.debugConfigurationManager.listDebugConfigurationProviders();
+    async debugTypes(): Promise<string[]> {
+        return this.registry.debugTypes();
     }
 
-    async provideDebugConfiguration(debugType: string): Promise<DebugConfiguration[]> {
-        return this.debugConfigurationManager.provideDebugConfiguration(debugType);
+    async provideDebugConfigurations(debugType: string): Promise<DebugConfiguration[] | undefined> {
+        return this.registry.provideDebugConfigurations(debugType);
     }
 
     async resolveDebugConfiguration(debugType: string, config: DebugConfiguration): Promise<DebugConfiguration | undefined> {
-        return this.debugConfigurationManager.resolveDebugConfiguration(debugType, config);
+        return this.registry.resolveDebugConfiguration(debugType, config);
     }
 
-    async provideDebugAdapterExecutable(debugType: string, config: DebugConfiguration): Promise<DebugAdapterExecutable | undefined> {
-        return this.debugConfigurationManager.provideDebugAdapterExecutable(debugType, config);
-    }
-
-    async start(executable: DebugAdapterExecutable): Promise<string | undefined> {
-        return this.debugSessionManager.start(executable);
+    async startDebugSession(debugType: string, config: DebugConfiguration): Promise<string | undefined> {
+        const executable = this.registry.provideDebugAdapterExecutable(debugType, config);
+        if (executable) {
+            const session = this.sessionManager.create(executable);
+            if (session) {
+                return session.id;
+            }
+        }
     }
 
     async dispose(): Promise<void> { }

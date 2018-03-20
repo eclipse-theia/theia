@@ -10,14 +10,11 @@
  */
 
 import { ContainerModule } from 'inversify';
-import { DebugConfigurationContribution } from '@theia/debug/lib/common/debug-model';
+import { DebugAdapterContribution } from '@theia/debug/lib/common/debug-model';
 import {
-    NodeJsDebugRegistrator,
-    NodeJsDebugConfigurationProvider,
-    NodeJSDebugConfigurationProviderImpl,
+    NodeJsDebugAdapterContribution
 } from './debug-nodejs';
 
 export default new ContainerModule(bind => {
-    bind(NodeJsDebugConfigurationProvider).to(NodeJSDebugConfigurationProviderImpl).inSingletonScope();
-    bind(DebugConfigurationContribution).to(NodeJsDebugRegistrator);
+    bind(DebugAdapterContribution).to(NodeJsDebugAdapterContribution).inSingletonScope();
 });
