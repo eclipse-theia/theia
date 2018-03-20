@@ -151,11 +151,24 @@ is not optimized for dense, information rich UIs.
   --theia-highlight-background-color: var(--md-purple-A100);
   --theia-highlight-color: var(--theia-content-font-color0);
 
+  /* Colors to highlight words in widgets like tree or editors */
+
+  --theia-word-highlight-color0: rgba(168, 172, 148, 0.7);
+  --theia-word-highlight-color1: rgba(253, 255, 0, 0.2);
+
   /* Icons */
   --theia-icon-close: url(../icons/close-bright.svg);
   --theia-sprite-y-offset: 0px;
   --theia-icon-circle: url(../icons/circle-bright.svg);
   --theia-preloader: url(../icons/spinner.gif);
+  --theia-icon-case-sensitive: url(../icons/case-sensitive.svg);
+  --theia-icon-regex: url(../icons/regex.svg);
+  --theia-icon-whole-word: url(../icons/whole-word.svg);
+  --theia-icon-refresh: url(../icons/Refresh.svg);
+  --theia-icon-collapse-all: url(../icons/CollapseAll.svg);
+  --theia-icon-clear: url(../icons/clear-search-results.svg);
+  --theia-icon-replace: url(../icons/replace.svg);
+  --theia-icon-replace-all: url(../icons/replace-all.svg);
 
   /* Scrollbars */
   --theia-scrollbar-width: 6px;

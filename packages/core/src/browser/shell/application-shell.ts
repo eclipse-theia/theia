@@ -1114,6 +1114,13 @@ export class ApplicationShell extends Widget {
         return toArray(this.bottomPanel.tabBars());
     }
 
+    /**
+     * The tab bars contained in all shell areas.
+     */
+    get allTabBars(): TabBar<Widget>[] {
+        return [...this.mainAreaTabBars, ...this.bottomAreaTabBars, this.leftPanelHandler.tabBar, this.rightPanelHandler.tabBar];
+    }
+
     /*
      * Activate the next tab in the current tab bar.
      */

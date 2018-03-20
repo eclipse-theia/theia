@@ -87,6 +87,13 @@ body {
 
 :focus {
   outline: none;
+  border-style: solid;
+  border-width: 1px;
+  border-color: var(--theia-accent-color3);
+}
+
+.p-Widget:focus {
+    border: none;
 }
 
 button, .theia-button {
