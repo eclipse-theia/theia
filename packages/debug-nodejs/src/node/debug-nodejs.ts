@@ -9,69 +9,26 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 
-import { injectable, inject } from "inversify";
+import { injectable } from "inversify";
 import {
-    DebugConfigurationProvider,
-    DebugConfigurationProviderRegistry,
-    DebugConfigurationContribution,
     DebugConfiguration,
-    DebugAdapterExecutable
+    DebugAdapterExecutable,
+    DebugAdapterContribution
 } from "@theia/debug/lib/common/debug-model";
 
-/**
- * NodeJs debug type.
- */
-export const NODEJS_DEBUG_ID = "Node Js";
-
-/**
- * NodeJsDebugConfigurationProvider symbol for DI.
- */
-export const NodeJsDebugConfigurationProvider = Symbol('NodeJsDebugConfigurationProvider');
-
-/**
- * NodeJs configuration provider.
- */
-export interface NodeJsDebugConfigurationProvider extends DebugConfigurationProvider {
-}
-
-/**
- * NodeJsDebugConfigurationProvider implementation.
- */
 @injectable()
-export class NodeJSDebugConfigurationProviderImpl implements NodeJsDebugConfigurationProvider {
-    provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable | undefined {
-        throw new Error("Method not implemented.");
+export class NodeJsDebugAdapterContribution implements DebugAdapterContribution {
+    readonly debugType = "Node Js";
+
+    provideDebugConfigurations(): DebugConfiguration[] {
+        return [{ name: "", type: "" }];
     }
 
-    debugAdapterExecutable(config: DebugConfiguration) {
-        throw new Error("Method not implemented.");
-    }
-
-    resolveDebugConfiguration(config: DebugConfiguration) {
+    resolveDebugConfiguration(config: DebugConfiguration): DebugConfiguration | undefined {
         return config;
     }
 
-    provideDebugConfigurations() {
-        return [new NodeJsDebugConfiguration()];
+    provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable | undefined {
+        return { command: "", args: [] };
     }
-}
-
-/**
- * Registers NodeJs [debug configuration provider](#NodeJsDebugConfigurationProvider)
- * and [session factory](#NodeJsDebugSessionFactory).
- */
-@injectable()
-export class NodeJsDebugRegistrator implements DebugConfigurationContribution {
-    @inject(NodeJsDebugConfigurationProvider)
-    protected readonly provider: NodeJsDebugConfigurationProvider;
-
-    registerDebugConfigurationProvider(registry: DebugConfigurationProviderRegistry) {
-        registry.registerDebugConfigurationProvider(NODEJS_DEBUG_ID, this.provider);
-    }
-}
-
-export class NodeJsDebugConfiguration implements DebugConfiguration {
-    [key: string]: any;
-    type: string;
-    name: string;
 }

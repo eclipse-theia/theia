@@ -12,26 +12,28 @@
 import { ConnectionHandler, JsonRpcConnectionHandler, bindContributionProvider } from "@theia/core/lib/common";
 import { ContainerModule, interfaces } from 'inversify';
 import {
-    DebugConfigurationManager,
-    DebugConfigurationManagerImpl,
     DebugServiceImpl,
     DebugSessionManager,
-    DebugSessionManagerImpl
+    DebugAdapterContributionRegistry
 } from "./debug-service";
 import {
     DebugPath,
     DebugService,
-    DebugConfigurationContribution,
+    DebugAdapterContribution,
+    DebugAdapterFactory,
     DebugAdapterExecutable
 } from "../common/debug-model";
-import { DebugAdapterSession } from "./debug-adapter";
+import { DebugAdapterSession, LauncherBasedDebugAdapterFactory, ServerContainer } from "./debug-session";
+import { BackendApplicationContribution } from "@theia/core/lib/node";
 
 export default new ContainerModule(bind => {
-    bind(DebugConfigurationManager).to(DebugConfigurationManagerImpl).inSingletonScope();
-    bind(DebugSessionManager).to(DebugSessionManagerImpl).inSingletonScope();
-    bindContributionProvider(bind, DebugConfigurationContribution);
-
+    bind(DebugAdapterContributionRegistry).toSelf().inSingletonScope();
+    bind(DebugSessionManager).toSelf().inSingletonScope();
     bind(DebugService).to(DebugServiceImpl).inSingletonScope();
+    bind(DebugAdapterFactory).to(LauncherBasedDebugAdapterFactory).inSingletonScope();
+    bind(BackendApplicationContribution).to(ServerContainer).inSingletonScope();
+    bindContributionProvider(bind, DebugAdapterContribution);
+
     bind(ConnectionHandler).toDynamicValue(context =>
         new JsonRpcConnectionHandler(DebugPath, client => {
             const service = context.container.get<DebugService>(DebugService);

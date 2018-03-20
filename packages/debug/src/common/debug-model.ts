@@ -18,7 +18,7 @@
 // Some entities copied and modified from https://github.com/Microsoft/vscode/blob/master/src/vs/workbench/parts/debug/common/debug.ts
 
 import { Disposable } from '@theia/core';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { IConnection } from '@theia/languages/lib/node';
 
 /**
  * The WS endpoint path to the Debug service.
@@ -31,136 +31,112 @@ export const DebugPath = '/services/debug';
 export const DebugService = Symbol('DebugService');
 
 /**
- * Ties client and server providing functionality to debug applications.
- *
+ * This service provides functionality to configure and to start a new debug session.
  * The workflow is the following. If user wants to debug an application and
  * there is no debug configuration associated with the application then
  * the list of available providers is requested to create suitable debug configuration.
- * When configuration is chosen the configuration provider is able to alter the configuration
+ * When configuration is chosen it is possible to alter the configuration
  * by filling in missing values or by adding/changing/removing attributes. For this purpose the
- * #resolveDebugConfiguration method is invoked. At final stage the a debug session will be
- * created.
+ * #resolveDebugConfiguration method is invoked. After that the debug session will be started.
  */
 export interface DebugService extends Disposable {
     /**
      * Finds and returns an array of registered debug types.
      * @returns An array of registered debug types
      */
-    listDebugConfigurationProviders(): Promise<string[]>;
+    debugTypes(): Promise<string[]>;
 
     /**
-     * Provides initial [debug configuration](#DebugConfiguration). If more than one debug configuration provider is
-     * registered for the same type, debug configurations are concatenated in arbitrary order.
+     * Provides initial [debug configuration](#DebugConfiguration).
      * @param debugType The registered debug type
      * @returns An array of [debug configurations](#DebugConfiguration)
      */
-    provideDebugConfiguration(debugType: string): Promise<DebugConfiguration[]>;
+    provideDebugConfigurations(debugType: string): Promise<DebugConfiguration[] | undefined>;
 
     /**
-      * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values or by adding/changing/removing attributes.
-      * If more than one debug configuration provider is registered for the same type, the #resolveDebugConfiguration calls are chained
-      * in arbitrary order and the initial debug configuration is piped through the chain.
-      * Returning the value 'undefined' prevents the debug session from starting.
-      * @param debugType The registered debug type
-      * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
-      * @returns The resolved debug configuration or undefined.
-      */
+     * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
+     * or by adding/changing/removing attributes.
+     * @param debugType The registered debug type
+     * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
+     * @returns The resolved debug configuration.
+     */
     resolveDebugConfiguration(debugType: string, config: DebugConfiguration): Promise<DebugConfiguration | undefined>;
 
     /**
-     * Provides a [command line](#DebugAdapterExecutable) based on [debug configuration](#DebugConfiguration)
-     * to start a new debug adapter. Returning the value 'undefined' means that it is impossible
-     * to construct a command line based on given debug configuration to start a debug adapter.
+     * Starts a new [debug session](#DebugSession).
+     * Returning the value 'undefined' means the debug session can't be started.
      * @param debugType The registered debug type
      * @param config The resolved [debug configuration](#DebugConfiguration).
-     * @returns The [command line](#DebugAdapterExecutable).
+     * @returns The identifier of the created [debug session](#DebugSession).
      */
-    provideDebugAdapterExecutable(debugType: string, config: DebugConfiguration): Promise<DebugAdapterExecutable | undefined>;
-
-    /**
-     * Starts a debug adapter.
-     * Returning the value 'undefined' means the debug adapter can't be started.
-     * @param executable The [command line](#DebugAdapterExecutable) to start a debug adapter.
-     * @returns The identifier of the created [debug session](#DebugSession)
-     */
-    start(executable: DebugAdapterExecutable): Promise<string | undefined>;
+    startDebugSession(debugType: string, config: DebugConfiguration): Promise<string | undefined>;
 }
 
 /**
- * Contains a command line to start a debug adapter.
+ * Debug adapter executable.
  */
 export interface DebugAdapterExecutable {
     /**
-     * The command to launch.
+     * Parameters to instantiate the debug adapter. In case of launching adapter
+     * the parameters contain a command and arguments. For instance:
+     * {"command" : "COMMAND_TO_LAUNCH_DEBUG_ADAPTER", args : [ { "arg1", "arg2" } ] }
      */
-    command: string;
-
-    /**
-     * The arguments.
-     */
-    args?: string[];
+    [key: string]: any;
 }
 
 /**
- * A debug configuration provider allows to add the initial debug configurations
- * and to resolve a configuration before it is used to start a new debug session.
- * A debug configuration provider is registered into
- * [debug configuration registry](#DebugConfigurationRegistry) by its type.
+ * DebugAdapterFactory symbol for DI.
  */
-export interface DebugConfigurationProvider {
+export const DebugAdapterFactory = Symbol('DebugAdapterFactory');
+
+/**
+ * The debug adapter factory.
+ */
+export interface DebugAdapterFactory {
     /**
-     * Provides initial [debug configuration](#DebugConfiguration). If more than one debug configuration provider is
-     * registered for the same type, debug configurations are concatenated in arbitrary order.
+     * Instantiating a new debug adapter.
+     * @param executable The [debug adapter executable](#DebugAdapterExecutable)
+     * @returns The connection to the adapter
+     */
+    create(executable: DebugAdapterExecutable): IConnection;
+}
+
+/**
+ * DebugAdapterContribution symbol for DI.
+ */
+export const DebugAdapterContribution = Symbol('DebugAdapterContribution');
+
+/**
+ * A contribution point for debug adapters.
+ */
+export interface DebugAdapterContribution {
+    /**
+     * The debug type.
+     */
+    readonly debugType: string;
+
+    /**
+     * Provides initial [debug configuration](#DebugConfiguration).
      * @returns An array of [debug configurations](#DebugConfiguration).
      */
     provideDebugConfigurations(): DebugConfiguration[];
 
     /**
-     * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values or by adding/changing/removing attributes.
-     * If more than one debug configuration provider is registered for the same type, the #resolveDebugConfiguration calls are chained
-     * in arbitrary order and the initial debug configuration is piped through the chain.
-     * Returning the value 'undefined' prevents the debug session from starting.
+     * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
+     * or by adding/changing/removing attributes.
      * @param config The [debug configuration](#DebugConfiguration) to resolve.
      * @returns The resolved debug configuration or undefined.
      */
     resolveDebugConfiguration(config: DebugConfiguration): DebugConfiguration | undefined;
 
     /**
-     * Provides a [command line](#DebugAdapterExecutable) based on [debug configuration](#DebugConfiguration)
-     * to start a new debug adapter. Returning the value 'undefined' means that it is impossible
-     * to construct a command line based on given debug configuration to start a debug adapter.
+     * Provides a [debug adapter executable](#DebugAdapterExecutable)
+     * based on [debug configuration](#DebugConfiguration) to launch a new debug adapter.
+     * Returning the value 'undefined' prevents the debug adapter from launching.
      * @param config The resolved [debug configuration](#DebugConfiguration).
-     * @returns The [command line](#DebugAdapterExecutable).
+     * @returns The [debug adapter executable](#DebugAdapterExecutable).
      */
     provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable | undefined;
-}
-
-/**
- * The registry containing [debug configuration providers](#DebugConfigurationProvider).
- */
-export interface DebugConfigurationProviderRegistry {
-
-    /**
-     * Registers provider by its type.
-     * @param debugType The debug type
-     * @param provider The configuration provider
-     */
-    registerDebugConfigurationProvider(debugType: string, provider: DebugConfigurationProvider): void;
-}
-
-/**
- * DebugConfigurationContribution symbol for DI.
- */
-export const DebugConfigurationContribution = Symbol('DebugConfigurationContribution');
-
-/**
- * The debug configuration contribution should be implemented to register configuration providers.
- */
-export interface DebugConfigurationContribution {
-    /**
-     * Registers debug configuration provider.
-     */
-    registerDebugConfigurationProvider(registry: DebugConfigurationProviderRegistry): void;
 }
 
 /**
@@ -192,5 +168,5 @@ export const DebugSessionPath = '/services/debug-session';
  * The debug session.
  */
 export interface DebugSession extends Disposable {
-    sendRequest(request: DebugProtocol.Request): void;
+    id: string;
 }
