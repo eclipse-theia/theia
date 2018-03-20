@@ -45,7 +45,17 @@ export class BaseWidget extends Widget {
         this.dispose();
     }
 
+    onBeforeAttach(msg: Message): void {
+        if (!this.hasIconInTitle()) {
+            this.addNoIconClassToTitle();
+        }
+        super.onBeforeAttach(msg);
+    }
+
     protected onBeforeDetach(msg: Message): void {
+        if (!this.hasIconInTitle()) {
+            this.removeNoIconClassFromTitle();
+        }
         this.toDisposeOnDetach.dispose();
         super.onBeforeDetach(msg);
     }
@@ -105,6 +115,17 @@ export class BaseWidget extends Widget {
         this.toDisposeOnDetach.push(addClipboardListener(element, type, listener));
     }
 
+    protected hasIconInTitle(): boolean {
+        return this.title.iconClass.replace('no-icon', '').trim() !== '';
+    }
+    protected addNoIconClassToTitle(): void {
+        this.title.iconClass = `${this.title.iconClass} no-icon`;
+    }
+    protected removeNoIconClassFromTitle(): void {
+        if (this.title.iconClass.includes('no-icon')) {
+            this.title.iconClass = this.title.iconClass.replace('no-icon', '').trim();
+        }
+    }
 }
 
 export function setEnabled(element: HTMLElement, enabled: boolean): void {
