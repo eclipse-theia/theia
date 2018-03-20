@@ -44,24 +44,53 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         this.client = client;
     }
 
+    protected getArgs(options?: SearchInWorkspaceOptions): string[] {
+        const args = ["--vimgrep", "--color=always",
+            "--colors=path:none",
+            "--colors=line:none",
+            "--colors=column:none",
+            "--colors=match:none",
+            "--colors=path:fg:red",
+            "--colors=line:fg:green",
+            "--colors=column:fg:yellow",
+            "--colors=match:fg:blue",
+            "--sort-files"];
+        args.push(options && options.matchCase ? "--case-sensitive" : "--ignore-case");
+        if (options && options.matchWholeWord) {
+            args.push("--word-regexp");
+        }
+        if (options && options.includeIgnored) {
+            args.push("-uu");
+        }
+        args.push(options && options.useRegExp ? "--regexp" : "--fixed-strings");
+
+        return args;
+    }
+
     // Search for the string WHAT in directory ROOT.  Return the assigned search id.
     search(what: string, root: string, opts?: SearchInWorkspaceOptions): Promise<number> {
         // Start the rg process.  Use --vimgrep to get one result per
         // line, --color=always to get color control characters that
         // we'll use to parse the lines.
         const searchId = this.nextSearchId++;
+        const args = this.getArgs(opts);
+        const globs = [];
+        if (opts && opts.include) {
+            for (const include of opts.include) {
+                globs.push('--glob="**/' + include + '"');
+            }
+        }
+        if (opts && opts.exclude) {
+            for (const exclude of opts.exclude) {
+                globs.push('--glob="!**/' + exclude + '"');
+            }
+        }
         const processOptions: RawProcessOptions = {
             command: rgPath,
-            args: ["--vimgrep", "-S", "--color=always",
-                "--colors=path:none",
-                "--colors=line:none",
-                "--colors=column:none",
-                "--colors=match:none",
-                "--colors=path:fg:red",
-                "--colors=line:fg:green",
-                "--colors=column:fg:yellow",
-                "--colors=match:fg:blue",
-                "-e", what, root],
+            args: [...args, '"' + what + '"', ...globs, root],
+            options: {
+                shell: true
+            }
         };
         const process: RawProcess = this.rawProcessFactory(processOptions);
         this.ongoingSearches.set(searchId, process);

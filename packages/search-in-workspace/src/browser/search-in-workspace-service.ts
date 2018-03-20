@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
+import { injectable, inject, postConstruct } from "inversify";
 import { SearchInWorkspaceServer, SearchInWorkspaceClient, SearchInWorkspaceResult, SearchInWorkspaceOptions } from "../common/search-in-workspace-interface";
 import { WorkspaceService } from "@theia/workspace/lib/browser";
 import URI from "@theia/core/lib/common/uri";
@@ -56,13 +56,14 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
 
     private lastKnownSearchId: number = -1;
 
-    constructor(
-        @inject(SearchInWorkspaceServer) protected readonly searchServer: SearchInWorkspaceServer,
-        @inject(SearchInWorkspaceClientImpl) protected readonly client: SearchInWorkspaceClientImpl,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(ILogger) protected readonly logger: ILogger,
-    ) {
-        client.setService(this);
+    @inject(SearchInWorkspaceServer) protected readonly searchServer: SearchInWorkspaceServer;
+    @inject(SearchInWorkspaceClientImpl) protected readonly client: SearchInWorkspaceClientImpl;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(ILogger) protected readonly logger: ILogger;
+
+    @postConstruct()
+    protected init() {
+        this.client.setService(this);
     }
 
     isEnabled(): boolean {

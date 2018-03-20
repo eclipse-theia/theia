@@ -81,6 +81,12 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
     deltaDecorations(params: DeltaDecorationParams): string[];
 
     getVisibleColumn(position: Position): number;
+
+    /**
+     * Replaces the text of source given in ReplacetextParams.
+     * @param params: ReplaceTextParams
+     */
+    replaceText(params: ReplaceTextParams): Promise<boolean>;
 }
 
 export interface Dimension {
@@ -113,6 +119,28 @@ export interface DeltaDecorationParams {
     uri: string;
     oldDecorations: string[];
     newDecorations: EditorDecoration[];
+}
+
+export interface ReplaceTextParams {
+    /**
+     * the source to edit
+     */
+    source: string;
+    /**
+     * the replace operations
+     */
+    replaceOperations: ReplaceOperation[];
+}
+
+export interface ReplaceOperation {
+    /**
+     * the position that shall be replaced
+     */
+    range: Range;
+    /**
+     * the text to replace with
+     */
+    text: string;
 }
 
 export namespace TextEditorSelection {

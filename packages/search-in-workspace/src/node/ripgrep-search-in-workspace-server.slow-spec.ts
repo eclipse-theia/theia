@@ -52,7 +52,7 @@ class ResultAccumulator implements SearchInWorkspaceClient {
 
 // Create a test file relative to rootDir.
 function createTestFile(filename: string, text: string) {
-    fs.writeFileSync(rootDir + '/' + filename, text);
+    fs.writeFileSync(path.join(rootDir, filename), text);
     fileLines.set(filename, text.split('\n'));
 }
 
@@ -71,7 +71,7 @@ it's very confusing.
 `);
 
     createTestFile('regexes', `\
-aaa hello x h3lo y hell0h3lllo
+aaa hello. x h3lo y hell0h3lllo
 hello1
 `);
 
@@ -177,7 +177,7 @@ describe('ripgrep-search-in-workspace-server', function () {
                 { file: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' },
                 { file: 'carrots', line: 3, character: 52, length: pattern.length, lineText: '' },
                 { file: 'carrots', line: 4, character: 1, length: pattern.length, lineText: '' },
-                { file: 'potatoes', line: 1, character: 18, length: pattern.length, lineText: '' },
+                { file: 'potatoes', line: 1, character: 18, length: pattern.length, lineText: '' }
             ];
 
             compareSearchResults(expected, client.results);
@@ -185,6 +185,66 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir);
+    });
+
+    it('returns 5 results when searching for "carrot" case sensitive', function (done) {
+        const pattern = 'carrot';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceResult[] = [
+                { file: 'carrots', line: 1, character: 11, length: pattern.length, lineText: '' },
+                { file: 'carrots', line: 2, character: 6, length: pattern.length, lineText: '' },
+                { file: 'carrots', line: 2, character: 35, length: pattern.length, lineText: '' },
+                { file: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' },
+                { file: 'potatoes', line: 1, character: 18, length: pattern.length, lineText: '' }
+            ];
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, rootDir, {
+            matchCase: true
+        });
+    });
+
+    it('returns 4 results when searching for "carrot" matching whole words, case insensitive', function (done) {
+        const pattern = 'carrot';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceResult[] = [
+                { file: 'carrots', line: 1, character: 11, length: pattern.length, lineText: '' },
+                { file: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' },
+                { file: 'carrots', line: 3, character: 52, length: pattern.length, lineText: '' },
+                { file: 'carrots', line: 4, character: 1, length: pattern.length, lineText: '' }
+            ];
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, rootDir, {
+            matchWholeWord: true
+        });
+    });
+
+    it('returns 4 results when searching for "carrot" matching whole words, case sensitive', function (done) {
+        const pattern = 'carrot';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceResult[] = [
+                { file: 'carrots', line: 1, character: 11, length: pattern.length, lineText: '' },
+                { file: 'carrots', line: 3, character: 28, length: pattern.length, lineText: '' }
+            ];
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, rootDir, {
+            matchWholeWord: true,
+            matchCase: true
+        });
     });
 
     it('returns 1 result when searching for "Carrot"', function (done) {
@@ -197,7 +257,7 @@ describe('ripgrep-search-in-workspace-server', function () {
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search('Carrot', rootDir);
+        ripgrepServer.search('Carrot', rootDir, { matchCase: true });
     });
 
     it('returns 0 result when searching for "CarroT"', function (done) {
@@ -208,7 +268,7 @@ describe('ripgrep-search-in-workspace-server', function () {
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, rootDir);
+        ripgrepServer.search(pattern, rootDir, { matchCase: true });
     });
 
     // Try something that we know isn't there.
@@ -301,9 +361,9 @@ describe('ripgrep-search-in-workspace-server', function () {
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [
                 { file: 'regexes', line: 1, character: 5, length: 5, lineText: '' },
-                { file: 'regexes', line: 1, character: 13, length: 4, lineText: '' },
-                { file: 'regexes', line: 1, character: 20, length: 5, lineText: '' },
-                { file: 'regexes', line: 1, character: 25, length: 6, lineText: '' },
+                { file: 'regexes', line: 1, character: 14, length: 4, lineText: '' },
+                { file: 'regexes', line: 1, character: 21, length: 5, lineText: '' },
+                { file: 'regexes', line: 1, character: 26, length: 6, lineText: '' },
                 { file: 'regexes', line: 2, character: 1, length: 5, lineText: '' },
             ];
 
@@ -311,7 +371,27 @@ describe('ripgrep-search-in-workspace-server', function () {
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, rootDir);
+        ripgrepServer.search(pattern, rootDir, {
+            useRegExp: true
+        });
+    });
+
+    // Try without regex
+    it('searches for fixed string', function (done) {
+        const pattern = 'hello.';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceResult[] = [
+                { file: 'regexes', line: 1, character: 5, length: 6, lineText: '' }
+            ];
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, rootDir, {
+            useRegExp: false
+        });
     });
 
     // Try with a pattern starting with -, and in filenames containing colons and spaces.
@@ -333,7 +413,7 @@ describe('ripgrep-search-in-workspace-server', function () {
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, rootDir);
+        ripgrepServer.search(pattern, rootDir, { useRegExp: true });
     });
 
     // Try with a pattern starting with --, and in filenames containing colons and spaces.
@@ -355,7 +435,7 @@ describe('ripgrep-search-in-workspace-server', function () {
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, rootDir);
+        ripgrepServer.search(pattern, rootDir, { useRegExp: true });
     });
 
     // Try searching in an UTF-8 file.
@@ -390,7 +470,7 @@ describe('ripgrep-search-in-workspace-server', function () {
             done();
         });
         ripgrepServer.setClient(client);
-        ripgrepServer.search(pattern, rootDir);
+        ripgrepServer.search(pattern, rootDir, { useRegExp: true });
     });
 
     // A regex that may match an empty string should not return zero-length

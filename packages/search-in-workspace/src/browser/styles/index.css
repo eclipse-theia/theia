@@ -1,0 +1,345 @@
+/*
+ * Copyright (C) 2017-2018 Ericsson and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+ :root {
+  --theia-search-match-color0: rgba(234, 92, 0, 0.33);
+  --theia-search-match-color1: rgba(234, 92, 0, 0.5);
+  --theia-match-replace-color: rgba(155, 185, 85, 0.2);
+  
+  --theia-current-search-match-color: var(--theia-word-highlight-color0);
+  --theia-range-highlight: var(--theia-word-highlight-color1);
+ }
+
+.t-siw-search-container {
+    color: var(--theia-ui-font-color1);
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.t-siw-search-container input[type="text"] {
+    flex: 1;
+    line-height: var(--theia-content-line-height);
+    font-size: var(--theia-ui-font-size1);
+    padding-left: 8px;
+    color: var(--theia-ui-font-color1);
+}
+
+.t-siw-search-container input[type="text"]:focus {
+    outline: none;
+}
+
+.t-siw-search-container #search-input-field:focus {
+    border-color: var(--theia-layout-color2);
+}
+
+.t-siw-search-container .searchHeader {
+    width: 100%;
+    margin-bottom:  10px;
+}
+
+.t-siw-search-container .searchHeader .controls.button-container {
+    height: 22px;
+    margin-bottom: 5px;
+}
+
+.t-siw-search-container .searchHeader .controls .refresh {
+    background: var(--theia-icon-refresh);
+}
+
+.t-siw-search-container .searchHeader .controls .collapse-all {
+    background: var(--theia-icon-collapse-all);
+}
+
+.t-siw-search-container .searchHeader .controls .clear {
+    background: var(--theia-icon-clear);
+}
+
+.t-siw-search-container .searchHeader .search-field-container.focussed {
+    border-style: solid;
+    border-width: var(--theia-border-width);
+    border-color: var(--theia-accent-color3);
+    margin: -1px;
+}
+
+.t-siw-search-container .searchHeader .search-field {
+    display: flex;
+    align-items:  center;
+}
+
+.t-siw-search-container .searchHeader .search-field .option {
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+.t-siw-search-container .searchHeader .search-field .option.enabled {
+    border: var(--theia-border-width) var(--theia-accent-color3) solid;
+}
+
+.t-siw-search-container .searchHeader .search-field .option:hover {
+    opacity: 1;
+}
+
+.t-siw-search-container .searchHeader .search-field .option.match-case {
+    background-image: var(--theia-icon-case-sensitive);
+}    
+
+.t-siw-search-container .searchHeader .search-field .option.whole-word {
+    background-image: var(--theia-icon-whole-word);
+}    
+
+.t-siw-search-container .searchHeader .search-field .option.use-regexp {
+    background-image: var(--theia-icon-regex);
+}    
+
+.t-siw-search-container .searchHeader .search-field .option-buttons {
+    height: 23px;
+    display: flex;
+    align-items:  center;
+    background-color: var(--theia-layout-color2);
+}
+
+.t-siw-search-container .searchHeader .button-container {
+    text-align: right;
+    padding-right: 5px;
+    padding-top: 5px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.t-siw-search-container .searchHeader .search-field .option, 
+.t-siw-search-container .searchHeader .button-container .btn {
+    width: 21px;
+    height: 21px;
+    margin: 0 1px;
+    display: inline-block;
+    box-sizing: border-box;
+    align-items: center;
+    user-select: none;
+    background-repeat: no-repeat;
+    background-position: center;
+    border: var(--theia-border-width) solid transparent;
+}
+
+.t-siw-search-container .searchHeader .search-field .fa.option {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.t-siw-search-container .searchHeader .controls .btn{
+    margin-left: 3px;
+    opacity: 0.25;
+    width: 18px
+}
+
+.t-siw-search-container .searchHeader .controls .btn.enabled{
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+.t-siw-search-container .searchHeader .controls .btn.enabled:hover{
+    opacity: 1;
+}
+
+.t-siw-search-container .searchHeader .search-details .button-container {
+    height: 5px;
+}
+
+
+.t-siw-search-container .searchHeader .search-details .button-container .btn{
+    cursor: pointer;
+}
+
+.t-siw-search-container .searchHeader .glob-field-container.hidden {
+    display: none;
+}
+
+.t-siw-search-container .searchHeader .glob-field-container .glob-field {
+    margin-bottom: 8px;
+    margin-left: 17px;
+    display: flex;
+    flex-direction: column;
+}
+
+.t-siw-search-container .searchHeader .glob-field-container .glob-field .label {
+    margin-bottom: 3px;
+    user-select: none;
+    font-size: var(--theia-ui-font-size0);
+}
+
+.t-siw-search-container .result {
+    overflow: hidden;
+    width: 100%;
+} 
+
+.t-siw-search-container .result .result-head {
+    display:flex;
+}
+
+.t-siw-search-container .result .result-head .result-no {
+    background: var(--theia-ui-expand-button-color);
+    padding: 3px 8px;
+    border-radius: 7px;
+    font-size: var(--theia-ui-font-size0);
+}
+
+.t-siw-search-container .result .result-head .expand-icon {
+    margin: 0 3px;
+    width: 7px;
+}
+
+.t-siw-search-container .result .result-head .file-icon {
+    margin: 0 3px;
+}
+
+.t-siw-search-container .result .result-head .file-name {
+    margin-right: 5px;
+}
+
+.t-siw-search-container .result .result-head .file-path {
+    color: var(--theia-ui-font-color2);
+    font-size: var(--theia-ui-font-size0);
+    margin-left: 3px;
+}
+
+.t-siw-search-container .resultLine .match {
+    background: var(--theia-search-match-color1);
+}
+
+.t-siw-search-container .resultLine .match.strike-through {
+    text-decoration: line-through;
+}
+
+.t-siw-search-container .resultLine.selected .match {
+    background: var(--theia-search-match-color1);
+}
+.t-siw-search-container .resultLine .replace-term {
+    background: var(--theia-match-replace-color);
+}
+
+.noWrapInfo {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.result-head-info {
+    align-items: center;
+}
+
+.search-in-workspace-editor-match {
+    background: var(--theia-search-match-color0);
+}
+
+.current-search-in-workspace-editor-match {
+    background: var(--theia-current-search-match-color)
+}
+
+.current-match-range-highlight {
+    background: var(--theia-range-highlight);
+}
+
+.result-node-buttons {
+    display: none;
+}
+
+.theia-TreeNode:hover .result-node-buttons {
+    display: flex;
+    justify-content: flex-end;
+    flex: 1;
+    align-items: center;
+    align-self: center;
+}
+
+.theia-TreeNode:hover .result-number {
+    display: none;
+}
+
+.theia-TreeNode .result-number {
+    background-color: var(--theia-ui-font-color2);
+    border-radius: 10px;
+    padding: 0 5px;
+    text-align: center;
+    font-size: calc(var(--theia-ui-font-size0) * 0.8);
+    color: var(--theia-inverse-ui-font-color0);
+    font-weight: 400;
+    min-width: 7px;
+    height: 16px;
+    line-height: calc(var(--theia-private-horizontal-tab-height) * 0.8);
+    align-self: center;
+}
+
+.result-node-buttons .remove-node {
+    background-image: var(--theia-icon-close);
+}
+
+.result-node-buttons > span {
+    width: 15px;
+    height: 15px;
+    margin-right: 3px;
+    background-repeat:  no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+
+.search-and-replace-container {
+    display: flex;
+}
+
+.replace-toggle {
+    display: flex;
+    align-items:  center;
+    width: 15px;
+    justify-content: center;
+    margin-right: 2px;
+    box-sizing: border-box;
+}
+
+.replace-toggle:hover {
+    background: var(--theia-layout-color2);
+}
+
+.search-and-replace-fields {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.replace-field {
+    display: flex;
+    margin-top: 5px;    
+}
+
+.replace-field.hidden {
+    display: none;
+}
+
+.replace-all-button-container {
+    width: 25px;
+    display: flex;
+    align-items: center;
+    justify-content:  center;
+}
+
+.replace-all-button {
+    width:  100%;
+    height: 100%;
+    display: inline-block;
+    background: var(--theia-icon-replace-all) no-repeat center;
+}
+
+.result-node-buttons .replace-result {
+    background-image: var(--theia-icon-replace);
+}
+
+.replace-all-button.disabled {
+    opacity: 0.5;
+}

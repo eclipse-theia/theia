@@ -23,6 +23,7 @@
     line-height: var(--theia-private-horizontal-tab-height);
     display: flex;
     align-items: baseline;
+    margin-right: 10px;
 }
 
 .theia-TreeNode:hover {
