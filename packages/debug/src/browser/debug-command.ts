@@ -54,14 +54,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(DEBUG_COMMANDS.START);
         registry.registerHandler(DEBUG_COMMANDS.START.id, {
-            execute: () => {
-                this.debug.start({ command: "" }).then((sessionId) => {
-                    if (sessionId) {
-                        const debugClient = this.debugClientFactory.get(sessionId);
-                        debugClient.sendRequest({ command: "", seq: -1, type: "" });
-                    }
-                });
-            },
+            execute: () => { },
             isEnabled: () => true,
             isVisible: () => true
         });
