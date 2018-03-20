@@ -12,7 +12,7 @@ import { bindContributionProvider } from '@theia/core/lib/common/contribution-pr
 import { FileNavigatorTree } from "./navigator-tree";
 import { FileNavigatorModel } from "./navigator-model";
 import { FileNavigatorWidget } from "./navigator-widget";
-import { NAVIGATOR_CONTEXT_MENU } from "./navigator-menu";
+import { NAVIGATOR_CONTEXT_MENU } from "./navigator-contribution";
 import { NavigatorDecoratorService, NavigatorTreeDecorator } from './navigator-decorator-service';
 
 export const FILE_NAVIGATOR_PROPS = <TreeProps>{

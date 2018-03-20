@@ -7,11 +7,13 @@
 
 import { injectable, inject, postConstruct } from "inversify";
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-import { CommandRegistry, MenuModelRegistry } from "@theia/core/lib/common";
-import { Navigatable, SelectableTreeNode, Widget, KeybindingRegistry } from "@theia/core/lib/browser";
+import { CommandRegistry, MenuModelRegistry, MenuPath } from "@theia/core/lib/common";
+import { Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands, OpenerService } from "@theia/core/lib/browser";
 import { SHELL_TABBAR_CONTEXT_MENU } from "@theia/core/lib/browser";
+import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
 import { FileNavigatorPreferences } from "./navigator-preferences";
+import { NavigatorKeybindingContexts } from './navigator-keybinding-context';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR = {
@@ -20,11 +22,23 @@ export namespace FileNavigatorCommands {
     };
 }
 
+export const NAVIGATOR_CONTEXT_MENU: MenuPath = ['navigator-context-menu'];
+
+export namespace NavigatorContextMenu {
+    export const OPEN = [...NAVIGATOR_CONTEXT_MENU, '1_open'];
+    export const OPEN_WITH = [...OPEN, 'open_with'];
+    export const CLIPBOARD = [...NAVIGATOR_CONTEXT_MENU, '2_clipboard'];
+    export const MOVE = [...NAVIGATOR_CONTEXT_MENU, '3_move'];
+    export const NEW = [...NAVIGATOR_CONTEXT_MENU, '4_new'];
+    export const DIFF = [...NAVIGATOR_CONTEXT_MENU, '5_diff'];
+}
+
 @injectable()
-export class FileNavigatorContribution extends AbstractViewContribution<FileNavigatorWidget> {
+export class FileNavigatorContribution extends AbstractViewContribution<FileNavigatorWidget>  {
 
     constructor(
-        @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences
+        @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences,
+        @inject(OpenerService) protected readonly openerService: OpenerService
     ) {
         super({
             widgetId: FILE_NAVIGATOR_ID,
@@ -60,6 +74,47 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             label: 'Reveal in Files',
             order: '5'
         });
+
+        registry.registerMenuAction(NavigatorContextMenu.OPEN, {
+            commandId: WorkspaceCommands.FILE_OPEN.id
+        });
+        registry.registerSubmenu(NavigatorContextMenu.OPEN_WITH, 'Open With');
+        this.openerService.getOpeners().then(openers => {
+            for (const opener of openers) {
+                const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
+                registry.registerMenuAction(NavigatorContextMenu.OPEN_WITH, {
+                    commandId: openWithCommand.id
+                });
+            }
+        });
+
+        // registry.registerMenuAction([CONTEXT_MENU_PATH, CUT_MENU_GROUP], {
+        //     commandId: Commands.FILE_CUT
+        // });
+
+        registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
+            commandId: CommonCommands.COPY.id
+        });
+        registry.registerMenuAction(NavigatorContextMenu.CLIPBOARD, {
+            commandId: CommonCommands.PASTE.id
+        });
+
+        registry.registerMenuAction(NavigatorContextMenu.MOVE, {
+            commandId: WorkspaceCommands.FILE_RENAME.id
+        });
+        registry.registerMenuAction(NavigatorContextMenu.MOVE, {
+            commandId: WorkspaceCommands.FILE_DELETE.id
+        });
+
+        registry.registerMenuAction(NavigatorContextMenu.NEW, {
+            commandId: WorkspaceCommands.NEW_FILE.id
+        });
+        registry.registerMenuAction(NavigatorContextMenu.NEW, {
+            commandId: WorkspaceCommands.NEW_FOLDER.id
+        });
+        registry.registerMenuAction(NavigatorContextMenu.DIFF, {
+            commandId: WorkspaceCommands.FILE_COMPARE.id
+        });
     }
 
     registerKeybindings(registry: KeybindingRegistry): void {
@@ -67,6 +122,18 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         registry.registerKeybinding({
             command: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.id,
             keybinding: "alt+r"
+        });
+
+        registry.registerKeybinding({
+            command: WorkspaceCommands.FILE_DELETE.id,
+            keybinding: "del",
+            context: NavigatorKeybindingContexts.navigatorActive
+        });
+
+        registry.registerKeybinding({
+            command: WorkspaceCommands.FILE_RENAME.id,
+            keybinding: "f2",
+            context: NavigatorKeybindingContexts.navigatorActive
         });
     }
 
@@ -94,5 +161,4 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             this.selectWidgetFileNode(this.shell.currentWidget);
         }
     }
-
 }

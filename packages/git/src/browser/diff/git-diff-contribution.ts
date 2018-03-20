@@ -11,7 +11,7 @@ import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { injectable, inject } from "inversify";
 import { GitDiffWidget, GIT_DIFF } from './git-diff-widget';
 import { open, OpenerService } from "@theia/core/lib/browser";
-import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-menu';
+import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/workspace/lib/browser/workspace-commands';
 import { GitQuickOpenService } from '../git-quick-open-service';
 import { FileSystem } from "@theia/filesystem/lib/common";
