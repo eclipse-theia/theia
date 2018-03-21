@@ -472,6 +472,18 @@ export namespace Git {
             readonly content?: string;
         }
 
+        /**
+         * Further refinements for the `git ls-files`.
+         */
+        export interface LsFiles {
+
+            /**
+             * If any the file does not appear in the index, treat this as an error that results in the error code 1.
+             */
+            readonly errorUnmatch?: true;
+
+        }
+
     }
 
 }
@@ -657,6 +669,20 @@ export interface Git extends Disposable {
      * @param options more options refining the `git blame`.
      */
     blame(repository: Repository, uri: string, options?: Git.Options.Blame): Promise<GitFileBlame | undefined>;
+
+    /**
+     * Resolves to `true` if the file is managed by the Git repository. Otherwise, `false`.
+     */
+    lsFiles(repository: Repository, uri: string, options: { errorUnmatch: true }): Promise<boolean>;
+    /**
+     * Shows information about files in the index and the working tree
+     *
+     * @param repository the repository where the `git lf-files` has to be executed.
+     * @param uri the URI of the file to check.
+     * @param options further options for the command executions.
+     */
+    // tslint:disable-next-line:no-any
+    lsFiles(repository: Repository, uri: string, options?: Git.Options.LsFiles): Promise<any>;
 
 }
 

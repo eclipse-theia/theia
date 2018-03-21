@@ -407,14 +407,14 @@ describe('git', async function () {
             await addAndCommit('six 🍏');
 
             await expectBlame(['🍏', '🍐', '🍐', '🍏', '🍏', '🍏'].join('\n'),
-            [
-                [0, 'six 🍏'],
-                [1, 'uncommitted'],
-                [2, 'uncommitted'],
-                [3, 'six 🍏'],
-                [4, 'six 🍏'],
-                [5, 'six 🍏'],
-            ]);
+                [
+                    [0, 'six 🍏'],
+                    [1, 'uncommitted'],
+                    [2, 'uncommitted'],
+                    [3, 'six 🍏'],
+                    [4, 'six 🍏'],
+                    [5, 'six 🍏'],
+                ]);
         });
 
         it('uncommitted file', async () => {
@@ -698,6 +698,46 @@ describe('git', async function () {
             // Filter for a non-existing file.
             await expectDiff('HEAD~4', 'HEAD~3', [], 'does not exist');
             await expectDiff('HEAD~4', 'HEAD', [], 'does not exist');
+        });
+
+    });
+
+    describe('ls-files', () => {
+
+        let git: Git;
+        let root: string;
+        let localUri: string;
+
+        before(async () => {
+            root = track.mkdirSync('ls-files');
+            localUri = FileUri.create(root).toString();
+            await createTestRepository(root);
+            git = await createGit();
+        });
+
+        ([
+            ['A.txt', true],
+            ['missing.txt', false],
+            ['../missing.txt', /^.*fatal: .* is outside repository$/],
+        ] as [string, boolean | RegExp][]).forEach(test => {
+            const [relativePath, expectation] = test;
+            const message = expectation instanceof RegExp ? 'be rejected' : `${expectation ? '' : 'not '}exist`;
+            it(`errorUnmatched - ${relativePath} should ${message}`, async () => {
+                const uri = expectation instanceof RegExp ? relativePath : FileUri.create(path.join(root, relativePath)).toString();
+                const testMe = async () => await git.lsFiles({ localUri }, uri, { errorUnmatch: true });
+                if (expectation instanceof RegExp) {
+                    try {
+                        throw new Error(`Expected a rejection, but got a result instead: ${await testMe()}.`);
+                    } catch (e) {
+                        if (e.message.startsWith('Expected a rejection, but got a result instead')) {
+                            throw e;
+                        }
+                        expect(expectation.test(e.message.trim())).to.be.equal(true, e.message);
+                    }
+                } else {
+                    expect(await testMe()).to.be.equal(expectation);
+                }
+            });
         });
 
     });

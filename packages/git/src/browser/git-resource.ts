@@ -17,10 +17,10 @@ export class GitResource implements Resource {
 
     constructor(readonly uri: URI, protected readonly repository: Repository | undefined, protected readonly git: Git) { }
 
-    async readContents(options?: { encoding?: string | undefined; } | undefined): Promise<string> {
+    async readContents(options?: { encoding?: string }): Promise<string> {
         if (this.repository) {
             const commitish = this.uri.query;
-            return await this.git.show(this.repository, this.uri.toString(), Object.assign({ commitish }, options));
+            return this.git.show(this.repository, this.uri.toString(), Object.assign({ commitish }, options));
         }
         return '';
     }

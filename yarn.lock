@@ -2967,9 +2967,9 @@ dtrace-provider@~0.8:
   dependencies:
     nan "^2.3.3"
 
-dugite-extra@0.0.1-alpha.18:
-  version "0.0.1-alpha.18"
-  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.0.1-alpha.18.tgz#5bfaf9cdcb069808fec6c0e500eed18220b48594"
+dugite-extra@0.0.1-alpha.20:
+  version "0.0.1-alpha.20"
+  resolved "https://registry.yarnpkg.com/dugite-extra/-/dugite-extra-0.0.1-alpha.20.tgz#fb2912442579d9f8e3d9ca15af027fd9e68394d6"
   dependencies:
     byline "^5.0.0"
     dugite "1.42.0"

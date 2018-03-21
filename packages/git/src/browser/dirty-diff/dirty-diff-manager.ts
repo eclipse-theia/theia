@@ -16,6 +16,7 @@ import { PreferenceChangeEvent } from '@theia/core/lib/browser';
 import { GitResourceResolver, GIT_RESOURCE_SCHEME } from '../git-resource';
 import { WorkingDirectoryStatus, GitFileStatus, GitFileChange, Repository } from '../../common';
 import { GitRepositoryTracker } from '../git-repository-tracker';
+import { Git } from '../../common/git';
 
 @injectable()
 export class DirtyDiffManager {
@@ -27,6 +28,7 @@ export class DirtyDiffManager {
     protected readonly onDirtyDiffUpdateEmitter = new Emitter<DirtyDiffUpdate>();
     readonly onDirtyDiffUpdate: Event<DirtyDiffUpdate> = this.onDirtyDiffUpdateEmitter.event;
 
+    @inject(Git) protected readonly git: Git;
     @inject(GitRepositoryTracker) protected readonly repositoryTracker: GitRepositoryTracker;
     @inject(GitResourceResolver) protected readonly gitResourceResolver: GitResourceResolver;
 
@@ -67,7 +69,7 @@ export class DirtyDiffManager {
     }
 
     protected createNewModel(uri: string): DirtyDiffModel {
-        const model = new DirtyDiffModel(uri, async gitUri => await this.readGitResourceContents(gitUri));
+        const model = new DirtyDiffModel(uri, this.git, async gitUri => await this.readGitResourceContents(gitUri));
         model.onDirtyDiffUpdate(e => this.onDirtyDiffUpdateEmitter.fire(e));
         model.enabled = this.isEnabled();
         return model;
@@ -157,6 +159,7 @@ export class DirtyDiffModel implements Disposable {
 
     constructor(
         readonly uri: string,
+        protected readonly git: Git,
         protected readonly readGitResource: DirtyDiffModel.GitResourceReader
     ) { }
 
@@ -202,7 +205,8 @@ export class DirtyDiffModel implements Disposable {
             this.dirty = false;
             this.previousContent = [];
         }
-        if (noRelevantChanges && this.isInGitRepository(repository)) {
+        const inGitRepository = await this.isInGitRepository(repository);
+        if (noRelevantChanges && inGitRepository) {
             try {
                 this.previousContent = await this.getPreviousRevision();
             } catch { }
@@ -210,10 +214,10 @@ export class DirtyDiffModel implements Disposable {
         this.update();
     }
 
-    protected isInGitRepository(repository: Repository): boolean {
+    protected async isInGitRepository(repository: Repository): Promise<boolean> {
         const modelUri = new URI(this.uri).withoutScheme().toString();
         const repoUri = new URI(repository.localUri).withoutScheme().toString();
-        return modelUri.startsWith(repoUri);
+        return modelUri.startsWith(repoUri) && this.git.lsFiles(repository, this.uri, { errorUnmatch: true });
     }
 
     protected async getPreviousRevision(): Promise<string[]> {

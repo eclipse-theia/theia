@@ -549,6 +549,19 @@ export class DugiteGit implements Git {
         return blame;
     }
 
+    // tslint:disable-next-line:no-any
+    async lsFiles(repository: Repository, uri: string, options?: Git.Options.LsFiles): Promise<any> {
+        const args = ['ls-files'];
+        const file = Path.relative(this.getFsPath(repository), this.getFsPath(uri));
+        if (options && options.errorUnmatch) {
+            args.push('--error-unmatch', file);
+            const successExitCodes = new Set([0, 1]);
+            const result = await this.exec(repository, args, { successExitCodes });
+            const { exitCode } = result;
+            return exitCode === 0;
+        }
+    }
+
     private getCommitish(options?: Git.Options.Show): string {
         if (options && options.commitish) {
             return 'index' === options.commitish ? '' : options.commitish;
