@@ -69,7 +69,7 @@ export interface DebugService extends Disposable {
      * @param config The resolved [debug configuration](#DebugConfiguration).
      * @returns The identifier of the created [debug session](#DebugSession).
      */
-    startDebugSession(debugType: string, config: DebugConfiguration): Promise<string | undefined>;
+    startDebugSession(debugType: string, config: DebugConfiguration): Promise<string>;
 }
 
 /**
@@ -94,11 +94,11 @@ export const DebugAdapterFactory = Symbol('DebugAdapterFactory');
  */
 export interface DebugAdapterFactory {
     /**
-     * Instantiating a new debug adapter.
+     * Starts a new debug adapter.
      * @param executable The [debug adapter executable](#DebugAdapterExecutable)
      * @returns The connection to the adapter
      */
-    create(executable: DebugAdapterExecutable): IConnection;
+    start(executable: DebugAdapterExecutable): IConnection;
 }
 
 /**
@@ -165,8 +165,16 @@ export interface DebugConfiguration {
 export const DebugSessionPath = '/services/debug-session';
 
 /**
+ * DebugSession symbol for DI.
+ */
+export const DebugSession = Symbol('DebugSession');
+
+/**
  * The debug session.
  */
 export interface DebugSession extends Disposable {
     id: string;
+    executable: DebugAdapterExecutable;
+
+    start(): Promise<void>
 }
