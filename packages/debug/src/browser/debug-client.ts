@@ -11,25 +11,37 @@
 
 import { injectable, inject } from "inversify";
 import { WebSocketConnectionProvider } from "@theia/core/lib/browser";
-import { IConnectionProvider } from "@theia/languages/lib/common";
-import {
-    ConnectionErrorHandler,
-    ConnectionCloseHandler,
-    createConnection
-} from "vscode-base-languageclient/lib/connection";
 import { DebugSessionPath } from "../common/debug-model";
-import { DebugProtocol } from "vscode-debugprotocol/lib/debugProtocol";
+import { DebugProtocol } from "vscode-debugprotocol";
 
 export interface DebugClient {
-    sendRequest(request: DebugProtocol.Request): DebugProtocol.Response;
+    sendRequest(request: DebugProtocol.Request): void;
 }
 
 export class BaseDebugClient implements DebugClient {
-    constructor(protected readonly connectionProvider: IConnectionProvider) { }
+    constructor(
+        protected readonly connectionProvider: WebSocketConnectionProvider,
+        protected readonly sessionId: string) { }
 
-    sendRequest(request: DebugProtocol.Request): DebugProtocol.Response {
-        return { command: "", request_seq: -1, success: true, seq: -1, type: "" };
+    sendRequest(request: DebugProtocol.Request): void {
+        this.connectionProvider.listen({
+            path: DebugSessionPath + "/" + this.sessionId,
+            onConnection: messageConnection => {
+                messageConnection.onRequest("test", (...args) => this.onRequest("test", ...args));
+                messageConnection.onNotification("test", (...args) => this.onNotification("test", ...args));
+                messageConnection.listen();
+
+                const resultPromise = messageConnection.sendRequest("test", JSON.stringify({ command: "response", success: true, seq: "0", type: "" }));
+                resultPromise.then(response => { });
+            }
+        },
+            { reconnecting: false }
+        );
     }
+
+    protected async onRequest(method: string, ...args: any[]): Promise<any> { }
+
+    protected onNotification(method: string, ...args: any[]): void { }
 }
 
 @injectable()
@@ -40,18 +52,6 @@ export class DebugClientFactory {
     ) { }
 
     get(sessionId: string): DebugClient {
-        return new BaseDebugClient({
-            get: (errorHandler: ConnectionErrorHandler, closeHandler: ConnectionCloseHandler) =>
-                new Promise(resolve => {
-                    this.connectionProvider.listen({
-                        path: DebugSessionPath + "/" + sessionId,
-                        onConnection: messageConnection => {
-                            const connection = createConnection(messageConnection, errorHandler, closeHandler);
-                            resolve(connection);
-                        }
-                    }, { reconnecting: false }
-                    );
-                })
-        });
+        return new BaseDebugClient(this.connectionProvider, sessionId);
     }
 }

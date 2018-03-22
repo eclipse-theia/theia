@@ -19,7 +19,7 @@ import {
     DebugAdapterContribution,
     DebugAdapterFactory
 } from "../common/debug-model";
-import { DebugAdapterSession } from './debug-session';
+
 import { UUID } from "@phosphor/coreutils";
 
 /**
@@ -95,8 +95,8 @@ export class DebugSessionManager {
     protected readonly sessions = new Map<string, DebugSession>();
 
     constructor(
-        @inject("Factory<DebugAdapterSession>")
-        protected readonly debugSessionFactory: (sessionId: string, executable: DebugAdapterExecutable) => DebugAdapterSession
+        @inject("Factory<DebugSession>")
+        protected readonly debugSessionFactory: (sessionId: string, executable: DebugAdapterExecutable) => DebugSession
     ) { }
 
     /**
@@ -104,11 +104,15 @@ export class DebugSessionManager {
      * @param executable The [DebugAdapterExecutable](#DebugAdapterExecutable)
      * @returns The debug session
      */
-    create(executable: DebugAdapterExecutable): DebugSession {
+    create(executable: DebugAdapterExecutable): Promise<DebugSession> {
         const sessionId = UUID.uuid4();
         const session = this.debugSessionFactory(sessionId, executable);
         this.sessions.set(sessionId, session);
-        return session;
+
+        const started = session.start();
+        return started.then(function () {
+            return session;
+        });
     }
 
     /**
@@ -144,17 +148,15 @@ export class DebugSessionManager {
  */
 @injectable()
 export class DebugServiceImpl implements DebugService {
-    @inject(ILogger)
-    protected readonly logger: ILogger;
-
-    @inject(DebugAdapterFactory)
-    protected readonly adapterFactory: DebugAdapterFactory;
-
-    @inject(DebugSessionManager)
-    protected readonly sessionManager: DebugSessionManager;
-
-    @inject(DebugAdapterContributionRegistry)
-    protected readonly registry: DebugAdapterContributionRegistry;
+    constructor(
+        @inject(ILogger)
+        protected readonly logger: ILogger,
+        @inject(DebugAdapterFactory)
+        protected readonly adapterFactory: DebugAdapterFactory,
+        @inject(DebugSessionManager)
+        protected readonly sessionManager: DebugSessionManager,
+        @inject(DebugAdapterContributionRegistry)
+        protected readonly registry: DebugAdapterContributionRegistry) { }
 
     async debugTypes(): Promise<string[]> {
         return this.registry.debugTypes();
@@ -168,14 +170,16 @@ export class DebugServiceImpl implements DebugService {
         return this.registry.resolveDebugConfiguration(debugType, config);
     }
 
-    async startDebugSession(debugType: string, config: DebugConfiguration): Promise<string | undefined> {
+    async startDebugSession(debugType: string, config: DebugConfiguration): Promise<string> {
         const executable = this.registry.provideDebugAdapterExecutable(debugType, config);
         if (executable) {
             const session = this.sessionManager.create(executable);
-            if (session) {
+            return session.then(function (session) {
                 return session.id;
-            }
+            });
         }
+
+        return Promise.reject(`Can't start debug session for ${debugType}`);
     }
 
     async dispose(): Promise<void> { }
