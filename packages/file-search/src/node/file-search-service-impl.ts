@@ -33,7 +33,8 @@ export class FileSearchServiceImpl implements FileSearchService {
         };
         const args: string[] = [
             '--files',
-            '--sort-files'
+            '--sort-files',
+            '-u',
         ];
         const process = this.rawProcessFactory({
             command: rgPath,
