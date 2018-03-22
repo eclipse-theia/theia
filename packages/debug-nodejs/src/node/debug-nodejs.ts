@@ -29,6 +29,6 @@ export class NodeJsDebugAdapterContribution implements DebugAdapterContribution 
     }
 
     provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable | undefined {
-        return { command: "", args: [] };
+        return { command: "cat", args: [] };
     }
 }
