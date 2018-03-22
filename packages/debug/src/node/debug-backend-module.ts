@@ -21,9 +21,10 @@ import {
     DebugService,
     DebugAdapterContribution,
     DebugAdapterFactory,
-    DebugAdapterExecutable
+    DebugAdapterExecutable,
+    DebugSession
 } from "../common/debug-model";
-import { DebugAdapterSession, LauncherBasedDebugAdapterFactory, ServerContainer } from "./debug-session";
+import { DebugSessionImpl, LauncherBasedDebugAdapterFactory, ServerContainer } from "./debug-adapter";
 import { BackendApplicationContribution } from "@theia/core/lib/node";
 
 export default new ContainerModule(bind => {
@@ -31,7 +32,9 @@ export default new ContainerModule(bind => {
     bind(DebugSessionManager).toSelf().inSingletonScope();
     bind(DebugService).to(DebugServiceImpl).inSingletonScope();
     bind(DebugAdapterFactory).to(LauncherBasedDebugAdapterFactory).inSingletonScope();
-    bind(BackendApplicationContribution).to(ServerContainer).inSingletonScope();
+    bind(DebugSession).to(DebugSessionImpl);
+    bind(ServerContainer).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toDynamicValue(c => c.container.get(ServerContainer));
     bindContributionProvider(bind, DebugAdapterContribution);
 
     bind(ConnectionHandler).toDynamicValue(context =>
@@ -42,10 +45,11 @@ export default new ContainerModule(bind => {
         })
     ).inSingletonScope();
 
-    bind<interfaces.Factory<DebugAdapterSession>>("Factory<DebugAdapterSession>").toFactory<DebugAdapterSession>(context => {
+    bind<interfaces.Factory<DebugSession>>("Factory<DebugSession>").toFactory<DebugSession>(context => {
         return (sessionId: string, executable: DebugAdapterExecutable) => {
-            let session = context.container.get(DebugAdapterSession);
-            session.assistedInit(sessionId, executable);
+            let session = context.container.get<DebugSession>(DebugSession);
+            session.id = sessionId;
+            session.executable = executable;
             return session;
         };
     });
