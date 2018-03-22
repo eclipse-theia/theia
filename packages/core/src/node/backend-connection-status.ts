@@ -13,7 +13,10 @@ import { BackendApplicationContribution } from './backend-application';
 export class BackendConnectionStatusEndpoint implements BackendApplicationContribution {
 
     configure(app: express.Application): void {
-        app.get('/alive', (request, response) => response.send());
+        app.get('/alive', (request, response) => {
+            response.contentType('application/json');
+            return response.send();
+        });
     }
 
 }
