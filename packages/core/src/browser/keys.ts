@@ -127,7 +127,20 @@ export namespace KeySequence {
                 if (previous) {
                     keyCodeResult += separator;
                 }
-                keyCodeResult += Key.getEasyKey(keyCode.key).easyString.toUpperCase();
+
+                const keyString = Key.getEasyKey(keyCode.key).easyString;
+
+                if (keyCode.key.keyCode >= Key.KEY_A.keyCode && keyCode.key.keyCode <= Key.KEY_Z.keyCode ||
+                    keyCode.key.keyCode >= Key.F1.keyCode && keyCode.key.keyCode <= Key.F24.keyCode) {
+                    /* We want to capitalize single letters and function keys */
+                    keyCodeResult += keyString.toUpperCase();
+                } else if (Key.getEasyKey(keyCode.key).easyString.length > 1) {
+                    /* We want to only capitalize the first letter */
+                    keyCodeResult += keyString.charAt(0).toUpperCase() + keyString.slice(1);
+                } else {
+                    /* Return the symbol as is */
+                    keyCodeResult += keyString;
+                }
             }
             result.push(keyCodeResult);
         }
