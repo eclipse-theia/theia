@@ -145,6 +145,9 @@
 .p-TabBar-tab.p-mod-drag-image > .p-TabBar-tabLabel {
   display: inline-block;
 }
+.p-TabBar-tab.p-mod-drag-image > .p-TabBar-tabIcon.no-icon {
+  display: none;
+}
 
 .p-TabBar-tab.p-mod-drag-image > .p-TabBar-tabIcon {
   width: 15px;
