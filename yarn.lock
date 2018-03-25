@@ -2310,8 +2310,8 @@ domhandler@^2.3.0:
     domelementtype "1"
 
 "domterm@git+https://git@github.com/PerBothner/DomTerm.git":
-  version "0.99.0"
-  resolved "git+https://git@github.com/PerBothner/DomTerm.git#027a7a71dcea4c41eca33e3e570faa333c13f554"
+  version "0.99.2"
+  resolved "git+https://git@github.com/PerBothner/DomTerm.git#d2aebd24768080590687bdcfa20f4e700debaebe"
 
 domutils@^1.5.1:
   version "1.7.0"

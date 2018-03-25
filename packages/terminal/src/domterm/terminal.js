@@ -97,6 +97,9 @@ if (typeof ResizeSensor == "undefined" && typeof require !== "undefined")
 if (typeof WcWidth == "undefined" && typeof require !== "undefined")
     var WcWidth = require("./wcwidth.js");
 
+if (typeof browserKeymap == "undefined" && typeof require !== "undefined")
+    var browserKeymap = require("./browserkeymap.js");
+
 /** @constructor */
 
 function DomTerm(name, topNode) {
@@ -215,8 +218,6 @@ function DomTerm(name, topNode) {
     // -1 if unknown. */
     this.currentCursorColumn = -1;
 
-    this._savedCursor = null;
-
     this.rightMarginWidth = 0;
 
     // See https://stackoverflow.com/questions/9847580/how-to-detect-safari-chrome-ie-firefox-and-opera-browser/9851769
@@ -271,6 +272,9 @@ function DomTerm(name, topNode) {
     // that has not yet been sent to the process.
     // In this case _caretSpan is required to be within _inputLine.
     this._inputLine = null;
+
+    this._miniBuffer = null;
+    this._searchMode = false;
 
     // True if _inputLine should move with outputBefore.
     this.inputFollowsOutput = true;
@@ -335,6 +339,9 @@ function DomTerm(name, topNode) {
 
     this.history = null;
     this.historyCursor = -1;
+    this.historySearchStart = -1;
+    this.historySearchForwards = false;
+    this.historySearchSaved = "";
     this.historyStorageKey = "DomTerm.history";
     this.historyStorageMax = 200;
 
@@ -841,8 +848,7 @@ DomTerm.prototype._restoreLineTables = function(startNode, startLine) {
                 descend = false;
             else if (this.isBlockTag(tag)) {
                 var hasData = false;
-                var prevWasBlock = cur.parentNode.firstChild==cur
-                    && this.isBlockNode(cur.parentNode);
+                var prevWasBlock = false;
                 // Check to see if cur has any non-block children:
                 for (var ch = cur.firstChild; ch != null; ) {
                     var next = ch.nextSibling;
@@ -929,7 +935,7 @@ DomTerm.prototype._restoreLineTables = function(startNode, startLine) {
 };
 
 DomTerm.prototype.saveCursor = function() {
-    this._savedCursor = {
+    this.sstate.savedCursor = {
         line: this.getCursorLine(),
         column: this.getCursorColumn(),
         fgcolor:  this._currentStyleMap.get("color"),
@@ -969,7 +975,7 @@ DomTerm.prototype._restoreSaveLastLine = function() {
 }
  
 DomTerm.prototype.restoreCursor = function() {
-    var saved = this._savedCursor;
+    var saved = this.sstate.savedCursor;
     if (saved) {
         this.moveToAbs(saved.line+this.homeLine, saved.column, true);
         this._Gcharsets[0] = saved.charset0;
@@ -1345,6 +1351,8 @@ DomTerm.prototype._followingText = function(cur) {
     }
 };
 
+// "Normalize" caret by moving caret text to following node.
+// Doesn't actually remove the _caretNode node, for that use _removeInputLine.
 DomTerm.prototype._removeCaret = function() {
     var caretNode = this._caretNode;
     if (caretNode && caretNode.getAttribute("caret")) {
@@ -2134,8 +2142,8 @@ DomTerm.prototype.setAlternateScreenBuffer = function(val) {
             var homeNode = this.lineStarts[this.homeLine - homeOffset];
             homeNode.setAttribute("home-line", homeOffset);
             bufNode.saveLastLine = nextLine;
-            bufNode.savedCursor = this._savedCursor;
-            this._savedCursor = null;
+            this.sstate.savedCursorMain = this.sstate.savedCursor;
+            this.sstate.savedCursor = undefined;
             var newLineNode = bufNode.firstChild;
             this.homeLine = nextLine;
             this.outputContainer = newLineNode;
@@ -2164,7 +2172,8 @@ DomTerm.prototype.setAlternateScreenBuffer = function(val) {
                                        return true;
                                    });
             this.homeLine = this._computeHomeLine(homeNode, homeOffset, false);
-            this._savedCursor = bufNode.savedCursor;
+            this.sstate.savedCursor = this.sstate.savedCursorMain;
+            this.sstate.savedCursorMain = undefined;
             this.moveToAbs(this.homeLine, 0, false);
             bufNode.parentNode.removeChild(bufNode);
             if (this._pauseLimit >= 0)
@@ -2252,6 +2261,14 @@ DomTerm.prototype._initializeDomTerm = function(topNode) {
 
     this.topNode.addEventListener("mousedown", this._mouseEventHandler, true);
     this.topNode.addEventListener("mouseup", this._mouseEventHandler, true);
+
+    this.topNode.addEventListener("contextmenu",
+                                  function(e) {
+                                      if (dt.sstate.mouseMode != 0
+                                          || (DomTerm.showContextMenu
+                                              && DomTerm.showContextMenu(dt, e, DomTerm._contextLink?"A":"")))
+                                          e.preventDefault();
+                                  }, false);
 
     document.addEventListener("selectionchange", function() {
         let sel = document.getSelection();
@@ -2398,9 +2415,8 @@ DomTerm.prototype._displayInfoMessage = function(contents) {
 }
 
 /** Display contents in _displayInfoWidget., or clear if null.
- * The contents is updated with innerHTML, so "<>&" must be escaped.
- * This method can be overridden. */
-DomTerm.displayInfoMessage = function(contents, dt) {
+ * The contents is updated with innerHTML, so "<>&" must be escaped. */
+DomTerm.displayInfoInWidget = function(contents, dt) {
     var div = dt._displayInfoWidget;
     if (contents == null) {
         if (div != null) {
@@ -2417,6 +2433,23 @@ DomTerm.displayInfoMessage = function(contents, dt) {
     }
     div.innerHTML = contents;
 };
+
+/** Display contents using displayInfoInWidget or something equivalent. */
+DomTerm.displayInfoMessage = DomTerm.displayInfoInWidget;
+
+DomTerm.prototype.showMiniBuffer = function(prefix, postfix) {
+    DomTerm.displayInfoInWidget(prefix, this);
+    let miniBuffer = this._createSpanNode();
+    miniBuffer.classList.add("editing");
+    miniBuffer.setAttribute("std", "input");
+    this._miniBuffer = miniBuffer;
+    var div = this._displayInfoWidget;
+    div.appendChild(miniBuffer);
+    div.insertAdjacentHTML("beforeend", postfix);
+    document.getSelection().collapse(miniBuffer, 0);
+    miniBuffer.contentEditable = true;
+    div.contentEditable = false;
+}
 
 DomTerm.prototype.initializeTerminal = function(topNode) {
     try {
@@ -2672,11 +2705,12 @@ DomTerm.showContextMenu = null;
 
 DomTerm.prototype._mouseHandler = function(ev) {
     if (this.verbosity >= 2)
-        this.log("mouse event "+ev.type+": "+ev+" t:"+this.topNode.id+" pageX:"+ev.pageX+" Y:"+ev.pageY);
-    if (ev.type == "mouseup") {
+        this.log("mouse event "+ev.type+": "+ev+" t:"+this.topNode.id+" pageX:"+ev.pageX+" Y:"+ev.pageY+" mmode:"+this.sstate.mouseMode+" but:"+ev.button);
+    if (this.sstate.mouseMode == 0 && ev.button == 0 && ev.type == "mouseup") {
         let sel = document.getSelection();
         if (sel.isCollapsed) {
-            if (this.isLineEditing() && this._inputLine != null) {
+            if (this.isLineEditing() && this._inputLine != null
+               && sel.focusNode != null) {
                 this.editorMoveToPosition(sel.focusNode, sel.focusOffset);
             }
             // we don't want a visible caret
@@ -2690,13 +2724,6 @@ DomTerm.prototype._mouseHandler = function(ev) {
     if (this.sstate.mouseMode == 0 && ev.button == 2) {
         DomTerm._contextTarget = ev.target;
         DomTerm._contextLink = DomTerm._isInElement(ev.target, "A");
-        if (DomTerm.showContextMenu) {
-            //&& DomTerm.isInIFrame()) {
-            // used by atom-domterm
-            if (DomTerm.showContextMenu(DomTerm._contextLink?"A":""))
-                ev.preventDefault();
-            return;
-        }
     }
     /* FUTURE POPUP
     if (ev.ctrlKey && ev.button == 2) {
@@ -3071,8 +3098,8 @@ DomTerm.prototype.reportEvent = function(name, data) {
     this.processInputCharacters("\x92"+name+" "+data+"\n");
 };
 
-DomTerm.prototype.reportKeyEvent = function(key, str) {
-    this.reportEvent("KEY", ""+key+" "+JSON.stringify(str));
+DomTerm.prototype.reportKeyEvent = function(keyName, str) {
+    this.reportEvent("KEY", ""+keyName+"\t"+JSON.stringify(str));
 };
 
 DomTerm.prototype.setWindowSize = function(numRows, numColumns,
@@ -3303,6 +3330,32 @@ DomTerm.prototype.historyAdd = function(str, append) {
     this.historyCursor = -1;
 };
 
+DomTerm.prototype.historySearch =
+function(str, forwards = this.historySearchForwards) {
+    let step = forwards ? 1 : -1;
+    for (let i = this.historySearchStart;
+         (i += step) >= 0 && i < this.history.length; ) {
+        if (this.history[i].indexOf(str) >= 0) {
+            i -= this.historyCursor >= 0 ? this.historyCursor
+                : this.history.length;
+            this.historyMove(i);
+            if (this._displayInfoWidget
+                && this._displayInfoWidget.firstChild instanceof Text) {
+                let prefix = this._displayInfoWidget.firstChild;
+                if (prefix.data.startsWith("failed "))
+                    prefix.deleteData(0, 7);
+            }
+            return;
+        }
+    }
+    if (this._displayInfoWidget
+        && this._displayInfoWidget.firstChild instanceof Text) {
+        let prefix = this._displayInfoWidget.firstChild;
+        if (! prefix.data.startsWith("failed "))
+            prefix.insertData(0, "failed ");
+    }
+}
+
 DomTerm.prototype.historyMove = function(delta) {
     var str = this.grabInput(this._inputLine);
     if (this.historyCursor >= 0) {
@@ -3348,7 +3401,10 @@ DomTerm.prototype.handleEnter = function(text) {
     var spanNode;
     var line = this.getCursorLine();
     if (oldInputLine != null) {
-        this.historyAdd(text, oldInputLine.getAttribute("continuation") == "true");
+        let noecho = oldInputLine.getAttribute("domterm-noecho");
+        let cont = oldInputLine.getAttribute("continuation");
+        if (noecho == null || noecho == "false")
+            this.historyAdd(text, cont == "true");
         this.outputContainer = oldInputLine;
         this.outputBefore = null;
         oldInputLine.classList.remove("editing");
@@ -3781,7 +3837,7 @@ DomTerm.prototype.get_DEC_private_mode = function(param) {
     case 45: return (this.sstate.wraparoundMode & 1) != 0;
     case 47: // fall though
     case 1047: return this.usingAlternateScreenBuffer;
-    case 1048: return this._savedCursor != null;
+    case 1048: return this.sstate.savedCursor !== undefined;
     case 1049: return this.usingAlternateScreenBuffer;
     case 2004: return this.sstate.bracketedPasteMode;
     case 9: case 1000: case 1001: case 1002: case 1003:
@@ -4679,6 +4735,19 @@ DomTerm.prototype.setSettings = function(obj) {
             DomTerm.defaultWidth = -1;
             DomTerm.defaultHeight = -1;
         }
+
+        var lineeditMap = obj["keymap.line-edit"];
+        if (lineeditMap != null) {
+            let map = "{" + lineeditMap.trim().replace(/\n/g, ",") + "}";
+            map = map.replace(/("[^"]+")\s*:\s*([^"',\s]+)/g, '$1: "$2"')
+                .replace(/('[^']+')\s*:\s*([^"',\s]+)/g, '$1: "$2"');
+            try {
+                DomTerm.lineEditKeymap =
+                    DomTerm.lineEditKeymapDefault.update(JSON.parse(map));
+            } catch (e) {
+            }
+        } else
+            DomTerm.lineEditKeymap = DomTerm.lineEditKeymapDefault;
     }
 
     if (DomTerm.settingsHook) {
@@ -5284,16 +5353,18 @@ DomTerm.prototype.handleOperatingSystemControl = function(code, text) {
         break;
     case 73:
     case 74:
-        var sp = text.indexOf(' ');
-        var key = parseInt(text.substring(0, sp), 10);
-        var kstr = JSON.parse(text.substring(sp+1));
-        if (this.verbosity >= 2)
-            this.log("OSC KEY k:"+key+" kstr:"+this.toQuoted(kstr));
+        var tb = text.indexOf('\t');
+        var keyName = tb < 0 ? text : text.substring(0, tb);
+        if (this.verbosity >= 2) {
+            var kstr = tb < 0 ? "?" : JSON.parse(text.substring(tb+1));
+            this.log("OSC KEY k:"+keyName+" kstr:"+this.toQuoted(kstr));
+        }
         this._clientWantsEditing = 1;
-        if (code == 73 && this._inputLine) {
+        this.editorAddLine();
+        if (code == 73) {
             this._inputLine.setAttribute("domterm-noecho", "true");
         }
-        this.doLineEdit(key, kstr);
+        this.doLineEdit(keyName);
         break;
     case 7:
         // text is pwd as URL: "file://HOST/PWD"
@@ -7424,6 +7495,8 @@ DomTerm.prototype.setInputMode = function(mode) {
         this.clientDoesEcho = false;
         break;
     }
+    if (this.isLineEditing())
+        this.editorAddLine();
     this._restoreInputLine();
     if (wasEditing && ! this.isLineEditing()) {
         this._sendInputContents();
@@ -7489,59 +7562,135 @@ DomTerm.prototype._popFromCaret = function(saved) {
     this.resetCursorCache();
 }
 
+DomTerm.commandMap = new Object();
+DomTerm.commandMap['backward-char'] = function(dt, key) {
+    dt.editorBackspace(dt.numericArgumentGet(), false, false);
+    return true; }
+DomTerm.commandMap['backward-word'] = function(dt, key) {
+    dt.editorBackspace(dt.numericArgumentGet(), false, true);
+    return true; }
+DomTerm.commandMap['forward-char'] = function(dt, key) {
+    dt.editorBackspace(- dt.numericArgumentGet(), false, false);
+    return true; }
+DomTerm.commandMap['forward-word'] = function(dt, key) {
+    dt.editorBackspace(- dt.numericArgumentGet(), false, true);
+    return true; }
+DomTerm.commandMap['backward-delete-char'] = function(dt, key) {
+    dt.editorBackspace(dt.numericArgumentGet(), true, false);
+    return true; }
+DomTerm.commandMap['backward-delete-word'] = function(dt, key) {
+    dt.editorBackspace(dt.numericArgumentGet(), true, true);
+    return true; }
+DomTerm.commandMap['forward-delete-char'] = function(dt, key) {
+    dt.editorBackspace(- dt.numericArgumentGet(), true, false);
+    return true; }
+DomTerm.commandMap['forward-delete-word'] = function(dt, key) {
+    dt.editorBackspace(- dt.numericArgumentGet(), true, true);
+    return true; }
+DomTerm.commandMap['beginning-of-line'] = function(dt, key) {
+    dt.editorMoveHomeOrEnd(false); dt._numericArgument = null;
+    return true; }
+DomTerm.commandMap['end-of-line'] = function(dt, key) {
+    dt.editorMoveHomeOrEnd(true); dt._numericArgument = null;
+    return true; }
+DomTerm.commandMap['up-line-or-history'] = function(dt, key) {
+    if (dt._atTopInputLine()) {
+        dt.historyMove(-1);
+        return true;
+    }
+    return false;
+}
+DomTerm.commandMap['down-line-or-history'] = function(dt, key) {
+    if (dt._atBottomInputLine()) {
+        dt.historyMove(1);
+        return true;
+    }
+    return false;
+}
+DomTerm.commandMap['ignore-action'] = function(dt, key) {
+    return true; }
+DomTerm.commandMap['default-action'] = function(dt, key) {
+    return false; }
+DomTerm.commandMap['accept-line'] = function(dt, key) {
+    dt.processEnter();
+    return true; }
+DomTerm.commandMap['backward-search-history'] = function(dt, key) {
+    dt.showMiniBuffer("backward history search: \u2018", "\u2019");
+    function search(mrecords, observer) {
+        dt.historySearch(dt._miniBuffer.textContent);
+    }
+    let observer = new MutationObserver(search);
+    observer.observe(dt._miniBuffer,
+                     { attributes: false, childList: true, characterData: true, subtree: true });
+    dt._miniBuffer.observer = observer;
+    dt._searchMode = true;
+    dt.historySearchForwards = false;
+    dt.historySearchStart =
+        dt.historyCursor < 0 ? dt.history.length
+        : dt.historyCursor;
+    return true;
+}
 
-DomTerm.prototype.doLineEdit = function(key, str, ctrlKey = false) {
+// "Mod-" is Cmd on Mac and Ctrl otherwise.
+DomTerm.lineEditKeymapDefault = new browserKeymap({
+    "Ctrl-R": "backward-search-history",
+    "Left": 'backward-char',
+    "Mod-Left": 'backward-word',
+    "Right": 'forward-char',
+    "Mod-Right": 'forward-word',
+    "Backspace": "backward-delete-char",
+    "Mod-Backspace": "backward-delete-word",
+    "Delete": "forward-delete-char",
+    "Mod-Delete": "forward-delete-word",
+    "Home": "beginning-of-line",
+    "End": "end-of-line",
+    "Down": "down-line-or-history",
+    "Up": "up-line-or-history",
+    "Enter": "accept-line",
+    // The following should be controlled by a user preference
+    // for emacs-like keybindings. FIXME
+    "Alt-B": "backward-word",
+    "Alt-F": "forward-word",
+    "Ctrl-A": "beginning-of-line",
+    "Ctrl-B": "backward-char",
+    "Ctrl-D": "delete-char",
+    "Ctrl-E": "end-of-line",
+    "Ctrl-F": "forward-char"
+}, {});
+DomTerm.lineEditKeymap = DomTerm.lineEditKeymapDefault;
+
+DomTerm.prototype.doLineEdit = function(keyName) {
     if (this.verbosity >= 2)
-        this.log("doLineEdit "+key+" "+JSON.stringify(str));
+        this.log("doLineEdit "+keyName);
+
     this.editorAddLine();
-    if (key == -13      // key-press event
-        || key == 13) { // key-down event
-        this.processEnter();
-        return;
-    }
-    switch (key) {
-    case 38: /*Up*/
-        if (this._atTopInputLine()) {
-            this.historyMove(-1);
-            return;
+    let keymaps = [ DomTerm.lineEditKeymap ];
+    for (let map of keymaps) {
+        let commandName = map.lookup(keyName);
+        if (commandName) {
+            let command = DomTerm.commandMap[commandName];
+            if (command) {
+                let ret = command(this, keyName);
+                if (ret) {
+                    return ret;
+                }
+            }
         }
-        break;
-    case 40: /*Down*/
-        if (this._atBottomInputLine()) {
-            this.historyMove(1);
-            return;
-        }
-        break;
     }
-    switch (key) {
-    case 8: // Backspace
-        this.editorBackspace(this.numericArgumentGet(), true, ctrlKey);
-        break;
-    case 27: // Esc
-        this._numericArgument = null;
-        break;
-    case 35: // End
-    case 36: // Home
-        this.editorMoveHomeOrEnd(key==35);
-        this._numericArgument = null;
-        break;
-    case 37:  // Left
-        this.editorBackspace(this.numericArgumentGet(), false, ctrlKey);
-        break;
-    case 39: // Right
-        this.editorBackspace(- this.numericArgumentGet(), false, ctrlKey);
-        break;
-    case 46: // Delete
-        this.editorBackspace(- this.numericArgumentGet(), true, ctrlKey);
-        break;
-    default:
+    if (keyName.length >= 3 && keyName.charCodeAt(0) == 39/*"'"*/) {
+        let ch = keyName.length == 3 ? keyName.charCodeAt(1) : -1;
+        if (ch >= 0 && ch < 32)
+            return false;
+        let str = keyName.substring(1, keyName.length-1);
         let sel = window.getSelection();
         if (! sel.isCollapsed) {
             this.editorBackspace(1, true, false);
         }
-        str = str.repeat(this.numericArgumentGet());
-        this.editorInsertString(str);
+        let count = this.numericArgumentGet();
+        this.editorInsertString(str.repeat(count >= 0 ? count : 1));
+        return true;
     }
+    return false;
 };
 
 DomTerm.prototype._writeFile = function(data, filePath) {
@@ -7621,7 +7770,8 @@ DomTerm.prototype._isOurEvent = function(event) {
 DomTerm.prototype.keyDownHandler = function(event) {
     var key = event.keyCode ? event.keyCode : event.which;
     if (this.verbosity >= 2)
-        this.log("key-down kc:"+key+" key:"+event.key+" code:"+event.code+" ctrl:"+event.ctrlKey+" alt:"+event.altKey+" meta:"+event.metaKey+" char:"+event.char+" event:"+event);
+        this.log("key-down kc:"+key+" key:"+event.key+" code:"+event.code+" ctrl:"+event.ctrlKey+" alt:"+event.altKey+" meta:"+event.metaKey+" char:"+event.char+" event:"+event+" name:"+browserKeymap.keyName(event));
+    let keyName = browserKeymap.keyName(event);
 
     if (! this._isOurEvent(event))
         return;
@@ -7688,7 +7838,9 @@ DomTerm.prototype.keyDownHandler = function(event) {
             this._pageLine(key == 38 ? -1 : 1);
             event.preventDefault();
             return;
-        case 67: // Control-Shift-C
+        case 67: // Control[-Shift]-C
+            if (! event.shiftKey && document.getSelection().isCollapsed)
+                break;
             if (DomTerm.doCopy())
                 event.preventDefault();
             return;
@@ -7735,6 +7887,53 @@ DomTerm.prototype.keyDownHandler = function(event) {
     if (this.isLineEditing()) {
         if (! this.useStyledCaret())
             this.maybeFocus();
+        if (this._searchMode) {
+            if (keyName == "Backspace" || keyName == "Delete"
+                || keyName == "Left" || keyName == "Right"
+                || keyName == "Ctrl" || keyName == "Alt") {
+                return;
+            }
+            if (keyName == "Ctrl-R" || keyName == "Ctrl-S") {
+                this.historySearchForwards = keyName == "Ctrl-S";
+                this.historySearchStart =
+                    this.historyCursor >= 0 ? this.historyCursor
+                    : this.history.length;
+                let str = this._miniBuffer.textContent;
+                if (str == "") {
+                    str = this.historySearchSaved;
+                    this._miniBuffer.innerText = str;
+                }
+                this.historySearch(str);
+                event.preventDefault();
+                if (this._displayInfoWidget
+                    && this._displayInfoWidget.firstChild instanceof Text) {
+                    let prefix = this._displayInfoWidget.firstChild;
+                    let dirstr = this.historySearchForwards ? "forward" : "backward";
+                    let m = prefix.data.match(/^(.*)(forward|backward)(.*)$/);
+                    if (m)
+                        prefix.data = m[1] + dirstr + m[3];
+                }
+                return;
+            }
+            if (keyName == "Esc" || keyName == "Enter" || keyName == "Tab"
+                || keyName == "Down" || keyName == "Up"
+                || event.ctrlKey || event.altKey) {
+                DomTerm.displayInfoInWidget(null, this);
+                this.historySearchSaved = this._miniBuffer.textContent;
+                this.historyAdd(this._inputLine.textContent, false);
+                this._searchMode = false;
+                if (this._miniBuffer.observer) {
+                    this._miniBuffer.observer.disconnect();
+                    this._miniBuffer.observer = undefined;
+                }
+                this._miniBuffer = null;
+                if (keyName == "Tab") {
+                    this.maybeFocus();
+                    event.preventDefault();
+                    return;
+                }
+            }
+        }
         if (event.altKey
             && ((key >= 48 && key <= 57)
                 || (key==189 && this._numericArgument == null))) {
@@ -7744,7 +7943,7 @@ DomTerm.prototype.keyDownHandler = function(event) {
             event.preventDefault();
         } else if (key == 13) {
             event.preventDefault();
-            if (event.shiftKey) {
+            if (false && event.shiftKey) { // FIXME needs work
                 this.pasteText("\n");
             } else {
                 this.processEnter();
@@ -7761,32 +7960,18 @@ DomTerm.prototype.keyDownHandler = function(event) {
             event.preventDefault();
             if (this._lineEditingMode == 0 && this.autoLazyCheckInferior)
                 this._clientWantsEditing = 0;
-            this.reportKeyEvent(64 - key, // ctrl-C -> -3; ctrl-D -> -4
+            this.reportKeyEvent(keyName,
                                 this.keyDownToString(event));
-        } else if (key == 38/*Up*/) {
-            if (this._atTopInputLine()) {
-                event.preventDefault();
-                this.historyMove(-1);
-            }
-        } else if (key == 40/*Down*/) {
-            if (this._atBottomInputLine()) {
-                event.preventDefault();
-                this.historyMove(1);
-            }
         } else {
-            var str = this.keyDownToString(event);
-            if (str) {
+            if (this.doLineEdit(keyName))
                 event.preventDefault();
-                //this.log("KEY "+key+" "+JSON.stringify(str));
-                this.doLineEdit(key, str, event.ctrlKey);
-            }
         }
     } else {
         var str = this.keyDownToString(event);
         if (str) {
             event.preventDefault();
             if (this._lineEditingMode == 0 && this.autoLazyCheckInferior)
-                this.reportKeyEvent(key, str);
+                this.reportKeyEvent(keyName, str);
             else
                 this.processInputCharacters(str);
         }
@@ -7796,9 +7981,10 @@ DomTerm.prototype.keyDownHandler = function(event) {
 DomTerm.prototype.keyPressHandler = function(event) {
     var key = event.keyCode ? event.keyCode : event.which;
     if (this.verbosity >= 2)
-        this.log("key-press kc:"+key+" key:"+event.key+" code:"+event.keyCode+" char:"+event.keyChar+" ctrl:"+event.ctrlKey+" alt:"+event.altKey+" which:"+event.which);
+        this.log("key-press kc:"+key+" key:"+event.key+" code:"+event.keyCode+" char:"+event.keyChar+" ctrl:"+event.ctrlKey+" alt:"+event.altKey+" which:"+event.which+" name:"+browserKeymap.keyName(event));
     if (! this._isOurEvent(event))
         return;
+    let keyName = browserKeymap.keyName(event);
     if (this._composing > 0)
         return;
     if (this._currentlyPagingOrPaused()) {
@@ -7811,16 +7997,19 @@ DomTerm.prototype.keyPressHandler = function(event) {
     }
     this._adjustPauseLimit(this.outputContainer);
     if (this.isLineEditing()) {
-        event.preventDefault();
-        var str = String.fromCharCode(key);
-        this.doLineEdit(-key, str);
+        if (this._searchMode) {
+            this._miniBuffer.focus();
+            return;
+        }
+        else if (this.doLineEdit(keyName))
+            event.preventDefault();
     } else {
         if (event.which !== 0
             && key != 8
             && ! event.ctrlKey) {
             var str = String.fromCharCode(key);
             if (this._lineEditingMode == 0 && this.autoLazyCheckInferior)
-                this.reportKeyEvent(-key, str);
+                this.reportKeyEvent(keyName, str);
             else
                 this.processInputCharacters(str);
             event.preventDefault();
@@ -8254,7 +8443,7 @@ DomTerm.prototype._currentlyPagingOrPaused = function() {
 function _pagerModeInfo(dt) {
     var prefix =  dt._pagingMode == 2 ? "<b>PAUSED</b>" : "<b>PAGER</b>";
     if (dt._numericArgument) {
-        return prefix+": numeric argument: "+st._numericArgument;
+        return prefix+": numeric argument: "+dt._numericArgument;
     }
     return prefix+": type SPACE for more; Ctrl-Shift-M to exit paging";
 }
@@ -8423,7 +8612,7 @@ DomTerm.prototype._pageKeyHandler = function(event, key, press) {
         break;
     case 67:
         if (event.ctrlKey) { // ctrl-C
-            this.reportKeyEvent(3, this.keyDownToString(event));
+            this.reportKeyEvent(keyName, this.keyDownToString(event));
             this._pauseContinue(true);
             this._adjustPauseLimit(this.outputContainer);
             event.preventDefault();
@@ -8487,6 +8676,8 @@ DomTerm.prototype.editorAddLine = function() {
         this._inputLine = inputNode;
         this._restoreInputLine();
         this._numericArgument = null;
+    } else if (this._inputLine.parentNode == null) {
+        this._restoreInputLine();
     }
 }
 
@@ -8534,19 +8725,33 @@ DomTerm.prototype.editorMoveToPosition = function(node, offset) {
 }
 
 DomTerm.prototype.editorInsertString = function(str, inserting=true) {
-    let saved = this._pushToCaret();
-    if (inserting) {
-        this.insertRawOutput(str);
-        let line = this.lineStarts[this.getAbsCursorLine()];
-        line._widthColumns += this.strWidthInContext(str, line);
-        this._updateLinebreaksStart(this.getAbsCursorLine(), true);
-    } else {
-        let saveInserting = this.sstate.insertMode;
-        this.sstate.insertMode = inserting;
-        this.insertSimpleOutput(str, 0, str.length, -1);
-        this.sstate.insertMode = saveInserting;
+    for (;;) {
+        let nl = str.indexOf('\n');
+        let str1 = nl < 0 ? str : str.substring(0, nl);
+        if (str1 != "") {
+            let saved = this._pushToCaret();
+            if (inserting) {
+                this.insertRawOutput(str1);
+                let line = this.lineStarts[this.getAbsCursorLine()];
+                line._widthColumns += this.strWidthInContext(str1, line);
+                this._updateLinebreaksStart(this.getAbsCursorLine(), true);
+            } else {
+                let saveInserting = this.sstate.insertMode;
+                this.sstate.insertMode = inserting;
+                this.insertSimpleOutput(str1, 0, str.length, -1);
+                this.sstate.insertMode = saveInserting;
+            }
+            this._popFromCaret(saved);
+        }
+        if (nl < 0)
+            break;
+        // FIXME break existing line
+        // insert _createLineNode("hard")
+        // maybe insert prompt
+        // update line tables
+        this.cursorNewLine(1);
+        str = str.substring(nl+1);
     }
-    this._popFromCaret(saved);
 }
 
 DomTerm.prototype.editorDeleteRange = function(range) {
@@ -8663,7 +8868,7 @@ DomTerm.prototype.editorBackspace = function(count, doDelete, doWords) {
 
 if (typeof exports === "object")
     module.exports = DomTerm;
-DomTerm.versionString = "0.99";
+DomTerm.versionString = "0.99.2";
 DomTerm.copyrightYear = 2018;
 DomTerm.inAtomFlag = false;
 

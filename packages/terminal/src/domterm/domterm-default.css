@@ -46,6 +46,7 @@ div.domterm { --monospace-family: "DejaVu Sans Mono","Everson Mono",FreeMono,Men
 div.domterm-pre, span.docutils.literal { font-family: var(--monospace-family),monospace }
 div.domterm[reverse-video] span[std="input"] { background-color: #404000 } /* a dark yellow */
 div.domterm[reverse-video] span[std="prompt"] { background-color: #006000 } /* a dark green */
+div.domterm-show-info span.editing { font-family: var(--monospace-family) }
 span[std="input"] { background-color: #F8F8D0 } /* a pale yellow */
 span[std="prompt"] { background-color: #E0FFE0 } /* a pale green */
 span[std="error"] { color: red; }
