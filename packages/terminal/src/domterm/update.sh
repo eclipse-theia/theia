@@ -3,7 +3,7 @@ DOMTERM_CLONE_DIR=`pwd`/../../../../node_modules/domterm
 DOMVERSION_LOCAL_DIR="."
 
 TMP_VERSION=$DOMVERSION_LOCAL_DIR/tmp-domterm-version.js
-FILES_TO_COPY="domterm-core.css domterm-default.css domterm-standard.css  ResizeSensor.js wcwidth.js"
+FILES_TO_COPY="domterm-core.css domterm-default.css domterm-standard.css  ResizeSensor.js wcwidth.js browserkeymap.js"
 
 if test -d $DOMTERM_CLONE_DIR
 then
