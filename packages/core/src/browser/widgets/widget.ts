@@ -45,17 +45,21 @@ export class BaseWidget extends Widget {
         this.dispose();
     }
 
-    onBeforeAttach(msg: Message): void {
-        if (!this.hasIconInTitle()) {
-            this.addNoIconClassToTitle();
+    protected onBeforeAttach(msg: Message): void {
+        if (this.title.iconClass === '') {
+            this.title.iconClass = 'no-icon';
         }
         super.onBeforeAttach(msg);
     }
 
-    protected onBeforeDetach(msg: Message): void {
-        if (!this.hasIconInTitle()) {
-            this.removeNoIconClassFromTitle();
+    protected onAfterDetach(msg: Message): void {
+        if (this.title.iconClass === 'no-icon') {
+            this.title.iconClass = '';
         }
+        super.onAfterDetach(msg);
+    }
+
+    protected onBeforeDetach(msg: Message): void {
         this.toDisposeOnDetach.dispose();
         super.onBeforeDetach(msg);
     }
@@ -111,18 +115,6 @@ export class BaseWidget extends Widget {
 
     protected addClipboardListener<K extends 'cut' | 'copy' | 'paste'>(element: HTMLElement, type: K, listener: EventListenerOrEventListenerObject<K>): void {
         this.toDisposeOnDetach.push(addClipboardListener(element, type, listener));
-    }
-
-    protected hasIconInTitle(): boolean {
-        return this.title.iconClass.replace('no-icon', '').trim() !== '';
-    }
-    protected addNoIconClassToTitle(): void {
-        this.title.iconClass = `${this.title.iconClass} no-icon`;
-    }
-    protected removeNoIconClassFromTitle(): void {
-        if (this.title.iconClass.includes('no-icon')) {
-            this.title.iconClass = this.title.iconClass.replace('no-icon', '').trim();
-        }
     }
 }
 
