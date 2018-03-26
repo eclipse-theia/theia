@@ -47,7 +47,7 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
     // Some sample Theia tasks
     "tasks": [
         {
-            "label": "[Task] short runnning test task (~3s)",
+            "label": "[Task] short running test task (~3s)",
             "processType": "terminal",
             "cwd": "$workspace/packages/task/src/node/test-resources/",
             "processOptions": {
@@ -68,7 +68,7 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
             }
         },
         {
-            "label": "[Task] long runnning test task (~300s)",
+            "label": "[Task] long running test task (~300s)",
             "processType": "terminal",
             "cwd": "$workspace/packages/task/src/node/test-resources/",
             "processOptions": {
