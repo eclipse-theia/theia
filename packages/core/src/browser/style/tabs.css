@@ -94,7 +94,7 @@
   background-image: var(--theia-icon-circle);
 }
 
-.p-TabBar.theia-app-centers > .p-TabBar-content > .p-TabBar-tab > .p-TabBar-tabIcon.no-icon {
+.p-TabBar.theia-app-centers .p-TabBar-tab > .p-TabBar-tabIcon.no-icon {
   display: none;
 }
 
