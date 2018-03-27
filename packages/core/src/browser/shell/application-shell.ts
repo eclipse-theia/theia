@@ -128,6 +128,7 @@ export class ApplicationShell extends Widget {
      */
     protected readonly bottomPanelState: SidePanel.State = {
         loading: true,
+        empty: true,
         expansion: SidePanel.ExpansionState.collapsed,
         pendingUpdate: Promise.resolve()
     };
@@ -284,6 +285,7 @@ export class ApplicationShell extends Widget {
             const { clientX, clientY } = this.dragState.lastDragOver;
             const event = document.createEvent('MouseEvent');
             event.initMouseEvent('mousemove', true, true, window, 0, 0, 0,
+                // tslint:disable-next-line:no-null-keyword
                 clientX, clientY, false, false, false, false, 0, null);
             document.dispatchEvent(event);
         }
@@ -510,12 +512,21 @@ export class ApplicationShell extends Widget {
     /**
      * Apply a shell layout that has been previously created with `getLayoutData`.
      */
-    setLayoutData(layoutData: ApplicationShell.LayoutData): void {
+    async setLayoutData(layoutData: ApplicationShell.LayoutData): Promise<void> {
         const { mainPanel, bottomPanel, leftPanel, rightPanel, statusBar, activeWidgetId } = this.getValidatedLayoutData(layoutData);
-        if (mainPanel) {
-            this.mainPanel.restoreLayout(mainPanel);
-            this.registerWithFocusTracker(mainPanel.main);
+        if (statusBar) {
+            this.statusBar.setLayoutData(statusBar);
         }
+        if (leftPanel) {
+            this.leftPanelHandler.setLayoutData(leftPanel);
+            this.registerWithFocusTracker(leftPanel);
+        }
+        if (rightPanel) {
+            this.rightPanelHandler.setLayoutData(rightPanel);
+            this.registerWithFocusTracker(rightPanel);
+        }
+        // Proceed with the bottom panel once the side panels are set up
+        await Promise.all([this.leftPanelHandler.state.pendingUpdate, this.rightPanelHandler.state.pendingUpdate]);
         if (bottomPanel) {
             if (bottomPanel.config) {
                 this.bottomPanel.restoreLayout(bottomPanel.config);
@@ -530,16 +541,11 @@ export class ApplicationShell extends Widget {
                 this.collapseBottomPanel();
             }
         }
-        if (leftPanel) {
-            this.leftPanelHandler.setLayoutData(leftPanel);
-            this.registerWithFocusTracker(leftPanel);
-        }
-        if (rightPanel) {
-            this.rightPanelHandler.setLayoutData(rightPanel);
-            this.registerWithFocusTracker(rightPanel);
-        }
-        if (statusBar) {
-            this.statusBar.setLayoutData(statusBar);
+        // Proceed with the main panel once all others are set up
+        await this.bottomPanelState.pendingUpdate;
+        if (mainPanel) {
+            this.mainPanel.restoreLayout(mainPanel);
+            this.registerWithFocusTracker(mainPanel.main);
         }
         if (activeWidgetId) {
             this.activateWidget(activeWidgetId);
@@ -580,6 +586,7 @@ export class ApplicationShell extends Widget {
             this.bottomPanelState.pendingUpdate,
             this.leftPanelHandler.state.pendingUpdate,
             this.rightPanelHandler.state.pendingUpdate
+            // tslint:disable-next-line:no-any
         ]) as Promise<any>;
     }
 
@@ -693,7 +700,7 @@ export class ApplicationShell extends Widget {
     /**
      * Handle a change to the current widget.
      */
-    private onCurrentChanged(sender: any, args: FocusTracker.IChangedArgs<Widget>): void {
+    private onCurrentChanged(sender: FocusTracker<Widget>, args: FocusTracker.IChangedArgs<Widget>): void {
         this.currentChanged.emit(args);
     }
 
@@ -705,12 +712,13 @@ export class ApplicationShell extends Widget {
     /**
      * Handle a change to the active widget.
      */
-    private onActiveChanged(sender: any, args: FocusTracker.IChangedArgs<Widget>): void {
+    private onActiveChanged(sender: FocusTracker<Widget>, args: FocusTracker.IChangedArgs<Widget>): void {
         const { newValue, oldValue } = args;
         if (oldValue) {
             // Remove the mark of the previously active widget
             oldValue.title.className = oldValue.title.className.replace(' theia-mod-active', '');
             // Reset the z-index to the default
+            // tslint:disable-next-line:no-null-keyword
             this.setZIndex(oldValue.node, null);
         }
         if (newValue) {

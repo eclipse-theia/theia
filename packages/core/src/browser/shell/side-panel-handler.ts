@@ -61,6 +61,7 @@ export class SidePanelHandler {
      */
     readonly state: SidePanel.State = {
         loading: true,
+        empty: true,
         expansion: SidePanel.ExpansionState.collapsed,
         pendingUpdate: Promise.resolve()
     };
@@ -183,6 +184,7 @@ export class SidePanelHandler {
      * Apply a side panel layout that has been previously created with `getLayoutData`.
      */
     setLayoutData(layoutData: SidePanel.LayoutData): void {
+        // tslint:disable-next-line:no-null-keyword
         this.tabBar.currentTitle = null;
 
         let currentTitle: Title<Widget> | undefined;
@@ -283,6 +285,7 @@ export class SidePanelHandler {
      */
     collapse(): void {
         if (this.tabBar.currentTitle) {
+            // tslint:disable-next-line:no-null-keyword
             this.tabBar.currentTitle = null;
         } else {
             this.refresh();
@@ -309,14 +312,14 @@ export class SidePanelHandler {
         const parent = container.parent;
         const tabBar = this.tabBar;
         const dockPanel = this.dockPanel;
-        const hideSideBar = tabBar.titles.length === 0;
+        const isEmpty = tabBar.titles.length === 0;
         const currentTitle = tabBar.currentTitle;
         const hideDockPanel = currentTitle === null;
         let relativeSizes: number[] | undefined;
 
         if (hideDockPanel) {
             container.addClass(COLLAPSED_CLASS);
-            if (this.state.expansion === SidePanel.ExpansionState.expanded && !hideSideBar) {
+            if (this.state.expansion === SidePanel.ExpansionState.expanded && !this.state.empty) {
                 // Update the lastPanelSize property
                 const size = this.getPanelSize();
                 if (size) {
@@ -349,9 +352,10 @@ export class SidePanelHandler {
                 this.state.expansion = SidePanel.ExpansionState.expanded;
             }
         }
-        container.setHidden(hideSideBar && hideDockPanel);
-        tabBar.setHidden(hideSideBar);
+        container.setHidden(isEmpty && hideDockPanel);
+        tabBar.setHidden(isEmpty);
         dockPanel.setHidden(hideDockPanel);
+        this.state.empty = isEmpty;
         if (currentTitle) {
             dockPanel.selectWidget(currentTitle.owner);
         }
@@ -435,12 +439,14 @@ export class SidePanelHandler {
         sender.releaseMouse();
 
         // Clone the selected tab and use that as drag image
+        // tslint:disable:no-null-keyword
         const clonedTab = tab.cloneNode(true) as HTMLElement;
         clonedTab.style.width = null;
         clonedTab.style.height = null;
         const label = clonedTab.getElementsByClassName('p-TabBar-tabLabel')[0] as HTMLElement;
         label.style.width = null;
         label.style.height = null;
+        // tslint:enable:no-null-keyword
 
         // Create and start a drag to move the selected tab to another panel
         const mimeData = new MimeData();
@@ -552,6 +558,10 @@ export namespace SidePanel {
          * of side panels, e.g. no animations are shown while loading.
          */
         loading: boolean;
+        /**
+         * Indicates whether the panel is empty.
+         */
+        empty: boolean;
         /**
          * Indicates whether the panel is expanded, collapsed, or in a transition between the two.
          */
