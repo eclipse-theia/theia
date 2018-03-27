@@ -47,6 +47,7 @@ export class EditorManager extends WidgetOpenHandler<EditorWidget> {
     protected _activeEditor: EditorWidget | undefined;
     /**
      * The active editor.
+     * If there is an active editor (one that has focus), active and current are the same.
      */
     get activeEditor(): EditorWidget | undefined {
         return this._activeEditor;
@@ -64,7 +65,8 @@ export class EditorManager extends WidgetOpenHandler<EditorWidget> {
 
     protected _currentEditor: EditorWidget | undefined;
     /**
-     * The most recently activated editor.
+     * The most recently activated editor (which might not have the focus anymore, hence it is not active).
+     * If no editor has focus, e.g. when a context menu is shown, the active editor is `undefined`, but current might be the editor that was active before the menu popped up.
      */
     get currentEditor(): EditorWidget | undefined {
         return this._currentEditor;

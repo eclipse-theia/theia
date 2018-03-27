@@ -23,12 +23,31 @@ export interface TextEditorDocument extends lsp.TextDocument, Saveable, Disposab
     getLineContent(lineNumber: number): string;
 }
 
+export interface TextDocumentContentChangeDelta extends lsp.TextDocumentContentChangeEvent {
+    readonly range: Range;
+    readonly rangeLength: number;
+}
+
+export namespace TextDocumentContentChangeDelta {
+
+    // tslint:disable-next-line:no-any
+    export function is(arg: any): arg is TextDocumentContentChangeDelta {
+        return !!arg && typeof arg['text'] === 'string' && typeof arg['rangeLength'] === 'number' && Range.is(arg['range']);
+    }
+
+}
+
+export interface TextDocumentChangeEvent {
+    readonly document: TextEditorDocument;
+    readonly contentChanges: TextDocumentContentChangeDelta[];
+}
+
 export interface TextEditor extends Disposable, TextEditorSelection, Navigatable {
     readonly node: HTMLElement;
 
     readonly uri: URI;
     readonly document: TextEditorDocument;
-    readonly onDocumentContentChanged: Event<TextEditorDocument>;
+    readonly onDocumentContentChanged: Event<TextDocumentChangeEvent>;
 
     cursor: Position;
     readonly onCursorPositionChanged: Event<Position>;
@@ -97,6 +116,7 @@ export interface DeltaDecorationParams {
 }
 
 export namespace TextEditorSelection {
+    // tslint:disable-next-line:no-any
     export function is(e: any): e is TextEditorSelection {
         return e && e["uri"] instanceof URI;
     }

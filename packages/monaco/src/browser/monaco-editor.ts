@@ -15,7 +15,8 @@ import {
     EditorWidget,
     Position,
     Range,
-    TextEditorDocument,
+    TextDocumentContentChangeDelta,
+    TextDocumentChangeEvent,
     TextEditor,
     RevealRangeOptions,
     RevealPositionOptions,
@@ -42,7 +43,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
     protected readonly onCursorPositionChangedEmitter = new Emitter<Position>();
     protected readonly onSelectionChangedEmitter = new Emitter<Range>();
     protected readonly onFocusChangedEmitter = new Emitter<boolean>();
-    protected readonly onDocumentContentChangedEmitter = new Emitter<TextEditorDocument>();
+    protected readonly onDocumentContentChangedEmitter = new Emitter<TextDocumentChangeEvent>();
 
     readonly documents = new Set<MonacoEditorModel>();
 
@@ -80,9 +81,9 @@ export class MonacoEditor implements TextEditor, IEditorReference {
     protected addHandlers(codeEditor: IStandaloneCodeEditor): void {
         this.toDispose.push(codeEditor.onDidChangeConfiguration(e => this.refresh()));
         this.toDispose.push(codeEditor.onDidChangeModel(e => this.refresh()));
-        this.toDispose.push(codeEditor.onDidChangeModelContent(() => {
+        this.toDispose.push(codeEditor.onDidChangeModelContent(e => {
             this.refresh();
-            this.onDocumentContentChangedEmitter.fire(this.document);
+            this.onDocumentContentChangedEmitter.fire({ document: this.document, contentChanges: e.changes.map(this.mapModelContentChange.bind(this)) });
         }));
         this.toDispose.push(codeEditor.onDidChangeCursorPosition(() =>
             this.onCursorPositionChangedEmitter.fire(this.cursor)
@@ -98,6 +99,14 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         ));
     }
 
+    protected mapModelContentChange(change: monaco.editor.IModelContentChange): TextDocumentContentChangeDelta {
+        return {
+            range: this.m2p.asRange(change.range),
+            rangeLength: change.rangeLength,
+            text: change.text
+        };
+    }
+
     getTargetUri(): URI | undefined {
         return this.uri;
     }
@@ -106,7 +115,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         return this.toDispose.onDispose;
     }
 
-    get onDocumentContentChanged(): Event<TextEditorDocument> {
+    get onDocumentContentChanged(): Event<TextDocumentChangeEvent> {
         return this.onDocumentContentChangedEmitter.event;
     }
 
