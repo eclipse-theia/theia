@@ -471,7 +471,8 @@ export class ApplicationShell extends Widget {
             },
             leftPanel: this.leftPanelHandler.getLayoutData(),
             rightPanel: this.rightPanelHandler.getLayoutData(),
-            statusBar: this.statusBar.getLayoutData()
+            statusBar: this.statusBar.getLayoutData(),
+            activeWidgetId: this.activeWidget ? this.activeWidget.id : undefined
         };
     }
 
@@ -506,7 +507,7 @@ export class ApplicationShell extends Widget {
     /**
      * Apply a shell layout that has been previously created with `getLayoutData`.
      */
-    setLayoutData({ mainPanel, bottomPanel, leftPanel, rightPanel, statusBar }: ApplicationShell.LayoutData): void {
+    setLayoutData({ mainPanel, bottomPanel, leftPanel, rightPanel, statusBar, activeWidgetId }: ApplicationShell.LayoutData): void {
         if (mainPanel) {
             this.mainPanel.restoreLayout(mainPanel);
             this.registerWithFocusTracker(mainPanel.main);
@@ -535,6 +536,9 @@ export class ApplicationShell extends Widget {
         }
         if (statusBar) {
             this.statusBar.setLayoutData(statusBar);
+        }
+        if (activeWidgetId) {
+            this.activateWidget(activeWidgetId);
         }
     }
 
@@ -1245,6 +1249,7 @@ export namespace ApplicationShell {
         leftPanel?: SidePanel.LayoutData;
         rightPanel?: SidePanel.LayoutData;
         statusBar?: StatusBarLayoutData;
+        activeWidgetId?: string;
     }
 
     /**
