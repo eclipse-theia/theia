@@ -16,7 +16,7 @@ export interface FileSearchService {
 
     /**
      * finds files by a given search pattern.
-     * @return the matching pathes, relative to the given options.rootPath
+     * @return the matching paths, relative to the given `options.rootUri`.
      */
     find(searchPattern: string, options: FileSearchService.Options, cancellationToken?: CancellationToken): Promise<string[]>;
 
@@ -25,10 +25,10 @@ export interface FileSearchService {
 export const FileSearchService = Symbol('FileSearchService');
 export namespace FileSearchService {
     export interface Options {
-        rootPath: string,
+        rootUri: string,
         fuzzyMatch?: boolean
         limit?: number
-        useGitignore?: boolean
+        useGitIgnore?: boolean
         defaultIgnorePatterns?: string[]
     }
 }

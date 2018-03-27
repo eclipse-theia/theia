@@ -9,8 +9,7 @@ import { SearchInWorkspaceServer, SearchInWorkspaceOptions, SearchInWorkspaceRes
 import { ILogger } from "@theia/core";
 import { inject, injectable } from "inversify";
 import { RawProcess, RawProcessFactory, RawProcessOptions } from '@theia/process/lib/node';
-
-import * as rg from 'vscode-ripgrep';
+import { rgPath } from "vscode-ripgrep";
 
 @injectable()
 export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
@@ -52,7 +51,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         // we'll use to parse the lines.
         const searchId = this.nextSearchId++;
         const processOptions: RawProcessOptions = {
-            command: rg.rgPath,
+            command: rgPath,
             args: ["--vimgrep", "-S", "--color=always",
                 "--colors=path:fg:red",
                 "--colors=line:fg:green",

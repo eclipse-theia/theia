@@ -5,7 +5,7 @@
   "dependencies": {
     "@theia/core": "^0.3.8",
     "@theia/editor": "^0.3.8",
-    "vscode-ripgrep": "^0.7.1-patch.0"
+    "vscode-ripgrep": "^1.0.0"
   },
   "publishConfig": {
     "access": "public"
