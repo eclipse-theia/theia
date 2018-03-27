@@ -1,0 +1,52 @@
+{
+  "name": "@theia/variable-resolver",
+  "version": "0.3.7",
+  "description": "Theia - Variable Resolver Extension",
+  "dependencies": {
+    "@theia/core": "^0.3.7"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/variable-resolver-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "contributors": [
+    {
+      "name": "Artem Zatsarynnyi",
+      "email": "azatsary@redhat.com"
+    }
+  ],
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^0.2.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

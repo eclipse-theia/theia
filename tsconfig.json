@@ -81,6 +81,9 @@
       ],
       "@theia/callhierarchy/lib/*": [
         "packages/callhierarchy/src/*"
+      ],
+      "@theia/variable-resolver/lib/*": [
+        "packages/variable-resolver/src/*"
       ]
     }
   },
