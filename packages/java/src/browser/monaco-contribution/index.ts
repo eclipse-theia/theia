@@ -5,13 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { JAVA_LANGUAGE_ID } from '../../common';
+import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME } from '../../common';
 import { configuration, monarchLanguage } from "./java-monaco-language";
 
 monaco.languages.register({
     id: JAVA_LANGUAGE_ID,
     extensions: ['.java', '.jav', '.class'],
-    aliases: ['Java', 'java'],
+    aliases: [JAVA_LANGUAGE_NAME, 'java'],
     mimetypes: ['text/x-java-source', 'text/x-java'],
 });
 
