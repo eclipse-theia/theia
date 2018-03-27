@@ -6,7 +6,7 @@
  */
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { EditorManager, EditorWidget, TextEditor, TextEditorDocument } from '@theia/editor/lib/browser';
+import { EditorManager, EditorWidget, TextEditor, TextEditorDocument, TextDocumentChangeEvent } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { DiffComputer, DirtyDiff } from './diff-computer';
 import { Emitter, Event, Disposable, DisposableCollection } from '@theia/core';
@@ -63,7 +63,7 @@ export class DirtyDiffManager {
         const model = this.createNewModel(editor);
         toDispose.push(model);
         this.models.set(uri, model);
-        toDispose.push(editor.onDocumentContentChanged(throttle((document: TextEditorDocument) => model.handleDocumentChanged(document), 1000)));
+        toDispose.push(editor.onDocumentContentChanged(throttle((event: TextDocumentChangeEvent) => model.handleDocumentChanged(event.document), 1000)));
         editorWidget.disposed.connect(() => {
             this.models.delete(uri);
             toDispose.dispose();

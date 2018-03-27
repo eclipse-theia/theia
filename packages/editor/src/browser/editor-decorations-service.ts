@@ -22,12 +22,12 @@ export class EditorDecorationsService {
     ) { }
 
     /**
-     * Applies new decorations of the given kind in an editor opened whith the given uri.
+     * Applies new decorations of the given kind in an editor opened with the given URI.
      * Previously applied decoration of the same kind are removed.
      *
      * To remove decorations of a kind, client should pass an empty array for new decorations.
      *
-     * Clients should create qualified kinds for decorations to avoid colisions.
+     * Clients should create qualified kinds for decorations to avoid collision.
      */
     async setDecorations(params: SetDecorationParams): Promise<void> {
         const editor = await this.findEditorByUri(params.uri);
@@ -40,7 +40,7 @@ export class EditorDecorationsService {
     }
 
     /**
-     * Removes old decorations and applies new decorations in an editor opened whith the given uri.
+     * Removes old decorations and applies new decorations in an editor opened with the given URI.
      *
      * @returns identifiers of applied decorations, which can be used to remove them in next call,
      * or `undefined` if no editor could be found with the given uri.

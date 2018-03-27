@@ -42,7 +42,7 @@ export namespace Keybinding {
         return JSON.stringify(copy);
     }
 
-    /* Return a user visble representation of a keybinding.  */
+    /* Return a user visible representation of a keybinding.  */
     export function acceleratorFor(keybinding: Keybinding) {
         const keyCodesString = keybinding.keybinding.split(" ");
         return KeySequence.acceleratorFor(keyCodesString.map(k => KeyCode.parse(k)));
