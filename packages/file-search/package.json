@@ -7,7 +7,7 @@
     "@theia/filesystem": "^0.3.8",
     "@theia/workspace": "^0.3.8",
     "fuzzy": "^0.1.3",
-    "vscode-ripgrep": "^0.7.1-patch.0"
+    "vscode-ripgrep": "^1.0.0"
   },
   "publishConfig": {
     "access": "public"

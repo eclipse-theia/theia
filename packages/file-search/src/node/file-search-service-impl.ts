@@ -13,6 +13,7 @@ import { RawProcessFactory } from "@theia/process/lib/node";
 import { rgPath } from "vscode-ripgrep";
 import { Deferred } from "@theia/core/lib/common/promise-util";
 import { CancellationToken, ILogger } from '@theia/core';
+import { FileUri } from '@theia/core/lib/node/file-uri';
 
 @injectable()
 export class FileSearchServiceImpl implements FileSearchService {
@@ -25,7 +26,7 @@ export class FileSearchServiceImpl implements FileSearchService {
         const opts = {
             fuzzyMatch: true,
             limit: Number.MAX_SAFE_INTEGER,
-            useGitignore: true,
+            useGitIgnore: true,
             defaultIgnorePatterns: [
                 '^.git$'
             ],
@@ -40,17 +41,17 @@ export class FileSearchServiceImpl implements FileSearchService {
             command: rgPath,
             args,
             options: {
-                cwd: opts.rootPath
+                cwd: FileUri.fsPath(opts.rootUri)
             }
         });
         const result: string[] = [];
         const fuzzyMatches: string[] = [];
-        const resultDeffered = new Deferred<string[]>();
+        const resultDeferred = new Deferred<string[]>();
         if (cancellationToken) {
             const cancel = () => {
                 this.logger.debug('Search cancelled');
                 process.kill();
-                resultDeffered.resolve([]);
+                resultDeferred.resolve([]);
             };
             if (cancellationToken.isCancellationRequested) {
                 cancel();
@@ -74,14 +75,14 @@ export class FileSearchServiceImpl implements FileSearchService {
             }
         });
         process.onError(e => {
-            resultDeffered.reject(e);
+            resultDeferred.reject(e);
         });
         process.onExit(e => {
             const left = opts.limit - result.length;
             result.push(...fuzzyMatches.slice(0, Math.min(left, fuzzyMatches.length)));
-            resultDeffered.resolve(result);
+            resultDeferred.resolve(result);
         });
-        return resultDeffered.promise;
+        return resultDeferred.promise;
     }
 
 }
