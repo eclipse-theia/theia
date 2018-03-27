@@ -218,7 +218,7 @@ Let assume you have to work for instance in the `@theia/navigator` extension. Bu
     - All variations of `--inspect` flag are supported: https://nodejs.org/en/docs/inspector/#command-line-options.
   - Attach the debugger to the logged port.
 
-In order to look up `server-name` run the backend server with `--logLevel=debug` flag to enable logging of IPC servers instantiation.
+In order to look up `server-name` run the backend server with `--log-level=debug` flag to enable logging of IPC servers instantiation.
 You should be able to see message of `[${server-name}: ${server-PID}]: IPC started` format, like `[nsfw-watcher: 37557] IPC started`.
 
 ## Testing

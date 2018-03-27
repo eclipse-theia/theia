@@ -18,7 +18,7 @@ export class LogLevelCliContribution implements CliContribution {
     logLevel: string;
 
     configure(conf: yargs.Argv): void {
-        conf.option('logLevel', {
+        conf.option('log-level', {
             description: 'Sets the log level',
             default: 'info',
             choices: ['trace', 'debug', 'info', 'warn', 'error', 'fatal']
@@ -26,7 +26,7 @@ export class LogLevelCliContribution implements CliContribution {
     }
 
     setArguments(args: yargs.Arguments): void {
-        this.logLevel = args['logLevel'];
+        this.logLevel = args['log-level'];
     }
 }
 

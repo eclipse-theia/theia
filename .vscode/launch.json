@@ -15,7 +15,7 @@
             "program": "${workspaceRoot}/examples/electron/src-gen/frontend/electron-main.js",
             "protocol": "inspector",
             "args": [
-                "--loglevel=debug",
+                "--log-level=debug",
                 "--hostname=localhost",
                 "--no-cluster",
                 "--app-project-path=${workspaceRoot}/examples/electron",
@@ -42,7 +42,7 @@
             "name": "Launch Backend",
             "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
             "args": [
-                "--loglevel=debug",
+                "--log-level=debug",
                 "--port=3000",
                 "--no-cluster",
                 "--app-project-path=${workspaceRoot}/examples/browser",
@@ -68,7 +68,7 @@
             "name": "Launch Backend (eclipse.jdt.ls)",
             "program": "${workspaceRoot}/examples/browser/src-gen/backend/main.js",
             "args": [
-                "--loglevel=debug",
+                "--log-level=debug",
                 "--root-dir=${workspaceRoot}/../eclipse.jdt.ls/org.eclipse.jdt.ls.core",
                 "--port=3000",
                 "--no-cluster",
