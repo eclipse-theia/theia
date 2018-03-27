@@ -49,7 +49,6 @@ export class JavaContribution extends BaseLanguageServerContribution {
         if (DEBUG_MODE) {
             args.push(
                 '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044',
-                '-Dlog.protocol=true',
                 '-Dlog.level=ALL'
             );
         }
@@ -60,20 +59,14 @@ export class JavaContribution extends BaseLanguageServerContribution {
             '-data', workspacePath
         );
 
-        Promise.all([
-            this.startSocketServer(), this.startSocketServer()
-        ]).then(servers => {
-            const [inServer, outServer] = servers;
-            const inSocket = this.accept(inServer);
-            const outSocket = this.accept(outServer);
+        this.startSocketServer().then(server => {
+            const socket = this.accept(server);
 
             this.logInfo('logs at ' + path.resolve(workspacePath, '.metadata', '.log'));
             const env = Object.create(process.env);
-            env.STDIN_HOST = inServer.address().address;
-            env.STDIN_PORT = inServer.address().port;
-            env.STDOUT_HOST = outServer.address().address;
-            env.STDOUT_PORT = outServer.address().port;
-            this.createProcessSocketConnection(inSocket, outSocket, command, args, { env })
+            env.CLIENT_HOST = server.address().address;
+            env.CLIENT_PORT = server.address().port;
+            this.createProcessSocketConnection(socket, socket, command, args, { env })
                 .then(serverConnection => this.forward(clientConnection, serverConnection));
         });
     }
