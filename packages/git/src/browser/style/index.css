@@ -9,7 +9,7 @@
     color: var(--theia-ui-font-color1);
     padding: 5px;
     box-sizing: border-box;
-    background: var(--theia-layout-color3);
+    background: var(--theia-layout-color0);
     display: flex;
     flex-direction: column;
 }
@@ -52,7 +52,7 @@
 }
 
 .theia-git .gitItem:hover {
-    background-color: var(--theia-layout-color0);
+    background-color: var(--theia-layout-color2);
     cursor: pointer;
 }
 
@@ -149,7 +149,7 @@
     border-width: 1px;
     border-style: solid;
     border-color: var(--theia-border-color1);
-    background: var(--theia-layout-color0);
+    background: var(--theia-layout-color2);
     color: var(--theia-ui-font-color1);
 }
 
@@ -183,5 +183,5 @@
 }
 
 .theia-git .theia-mod-selected{
-    background: var(--theia-accent-color5);
+    background: var(--theia-accent-color4);
 }

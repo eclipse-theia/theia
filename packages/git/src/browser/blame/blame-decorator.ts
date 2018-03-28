@@ -207,7 +207,7 @@ export namespace BlameDecorator {
     export const defaultGutterStyles = <CSSStyleDeclaration>{
         width: `${maxWidth}ch`,
         color: 'var(--theia-ui-font-color0)',
-        backgroundColor: 'var(--theia-ui-font-color5)',
+        backgroundColor: 'var(--theia-layout-color1)',
         height: '100%',
         margin: '0 26px -1px 0',
         display: 'inline-block',
@@ -219,7 +219,7 @@ export namespace BlameDecorator {
     });
 
     export const highlightStyle = new EditorDecorationStyle('git-blame-highlight::before', style => {
-        style.backgroundColor = 'var(--theia-ui-font-color4)';
+        style.backgroundColor = 'var(--theia-layout-color2)';
     });
 
 }

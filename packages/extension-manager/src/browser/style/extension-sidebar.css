@@ -7,7 +7,7 @@
 
 .theia-extensions {
     min-width: 250px !important;
-    background-color: var(--theia-layout-color3);
+    background-color: var(--theia-layout-color0);
     display: flex;
     flex-direction: column;
 }
@@ -29,7 +29,7 @@
     border-width: 1px;
     border-style: solid;
     border-color: var(--theia-border-color1);
-    background: var(--theia-layout-color0);
+    background: var(--theia-layout-color2);
     color: var(--theia-ui-font-color1);
     padding-left: 5px;
 }
@@ -44,11 +44,11 @@
 .theia-extensions .extensionHeaderContainer {
     padding: 3px 15px;
     font-size: var(--theia-ui-font-size0);
-    background: var(--theia-layout-color3);
+    background: var(--theia-layout-color0);
 }
 
 .theia-extensions .extensionHeaderContainer:hover {
-    background: var(--theia-layout-color0);
+    background: var(--theia-layout-color2);
 }
 
 .theia-extensions .extensionHeaderContainer .row {

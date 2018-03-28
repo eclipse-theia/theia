@@ -23,7 +23,7 @@
 
 .p-MenuBar {
   padding-left: 5px;
-  background: var(--theia-layout-color5);
+  background: var(--theia-menu-color0);
   color: var(--theia-ui-bar-font-color1);
   font-size: var(--theia-ui-font-size1);
 }
@@ -43,14 +43,14 @@
 
 
 .p-MenuBar-item.p-mod-active {
-  background: var(--theia-layout-color2);
+  background: var(--theia-menu-color2);
   color: var(--theia-ui-bar-font-color0);
 }
 
 
 .p-MenuBar.p-mod-active .p-MenuBar-item.p-mod-active {
   z-index: 10001;
-  background: var(--theia-layout-color1);
+  background: var(--theia-menu-color1);
   border-left: var(--theia-border-width) solid var(--theia-border-color1);
   border-right: var(--theia-border-width) solid var(--theia-border-color1);
   box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.2);
@@ -76,7 +76,7 @@
 
 
 #theia-top-panel {
-  background: var(--theia-layout-color5);
+  background: var(--theia-menu-color0);
   display: flex;
   min-height: var(--theia-private-menubar-height);
 }
@@ -90,7 +90,7 @@
 .p-Menu {
   z-index: 10000;
   padding: 4px 0px;
-  background: var(--theia-layout-color1);
+  background: var(--theia-menu-color1);
   color: var(--theia-ui-font-color1);
   border: var(--theia-border-width) solid var(--theia-border-color1);
   font-size: var(--theia-ui-font-size1);
@@ -107,7 +107,8 @@
 
 
 .p-Menu-item.p-mod-active {
-  background: var(--theia-layout-color2);
+  background: var(--theia-menu-color2);
+  color: var(--theia-ui-bar-font-color0);
 }
 
 
@@ -155,7 +156,7 @@
   display: block;
   position: relative;
   top: 4px;
-  border-top: var(--theia-border-width) solid var(--theia-layout-color2);
+  border-top: var(--theia-border-width) solid var(--theia-border-color1);
 }
 
 .p-Menu-itemIcon::before,

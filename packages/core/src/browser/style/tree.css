@@ -8,7 +8,7 @@
 .theia-Tree {
     overflow: hidden;
     color: var(--theia-ui-font-color1);
-    background: var(--theia-layout-color3);
+    background: var(--theia-layout-color0);
     font-size: var(--theia-ui-font-size1);
     max-height: calc(100% - var(--theia-border-width));
     position: relative;
@@ -47,7 +47,7 @@
 }
 
 .theia-Tree:not(:focus) .theia-TreeNode.theia-mod-selected {
-    background: var(--theia-accent-color5);
+    background: var(--theia-accent-color4);
 }
 
 .theia-TreeNodeSegment {

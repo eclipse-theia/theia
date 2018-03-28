@@ -11,7 +11,7 @@
 }
 
 .theia-extension-detail .extensionHeaderContainer {
-    background: var(--theia-layout-color3);
+    background: var(--theia-layout-color0);
     padding: 15px 22px;
     border-bottom: 3px solid var(--theia-border-color1);
 }
@@ -79,7 +79,7 @@
 }
 
 .theia-extension-detail pre code {
-    background: var(--theia-layout-color0);
+    background: var(--theia-layout-color2);
     display: block;
     padding: 10px;
 }

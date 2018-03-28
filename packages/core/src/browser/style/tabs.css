@@ -16,7 +16,7 @@
 
 .p-TabBar {
   color: var(--theia-ui-font-color1);
-  background: var(--theia-layout-color6);
+  background: var(--theia-layout-color1);
   font-size: var(--theia-ui-font-size1);
 }
 
@@ -38,7 +38,7 @@
   min-width: 35px;
   line-height: var(--theia-private-horizontal-tab-height);
   padding: 0px 8px;
-  background: var(--theia-layout-color0);
+  background: var(--theia-layout-color3);
 }
 
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-tab:last-child {
@@ -46,7 +46,7 @@
 }
 
 .p-TabBar[data-orientation='horizontal'] .p-TabBar-tab:hover:not(.p-mod-current) {
-  background: var(--theia-layout-color1);
+  background: var(--theia-accent-color3);
 }
 
 
@@ -57,9 +57,9 @@
 /* This is a current tab of a tab bar: each tab bar has 1. */
 .p-TabBar.theia-app-centers .p-TabBar-tab.p-mod-current {
   min-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-border-width));
-  background: var(--theia-layout-color3);
+  background: var(--theia-layout-color0);
   color: var(--theia-ui-font-color0);
-  border-top: var(--theia-border-width) solid var(--theia-layout-color3);
+  border-top: var(--theia-border-width) solid var(--theia-layout-color0);
 }
 
 /* This is the main application level active tab: only 1 exists. */
@@ -136,7 +136,7 @@
   font-size: var(--theia-ui-font-size1);
   line-height: var(--theia-private-horizontal-tab-height);
   color: var(--theia-ui-font-color1);
-  background: var(--theia-layout-color1);
+  background: var(--theia-layout-color4);
   border: var(--theia-border-width) solid var(--theia-border-color1);
   box-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }

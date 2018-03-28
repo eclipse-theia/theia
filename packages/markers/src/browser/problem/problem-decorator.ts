@@ -100,7 +100,7 @@ export class ProblemDecorator implements TreeDecorator {
                 color,
                 background: {
                     shape: 'circle',
-                    color: 'var(--theia-layout-color3)'
+                    color: 'var(--theia-layout-color0)'
                 }
             }
         };
