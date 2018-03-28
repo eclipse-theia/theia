@@ -60,7 +60,7 @@ export class ShellLayoutRestorer implements CommandContribution {
                 execute: () => {
                     this.shouldStoreLayout = false;
                     this.storageService.setData(this.storageKey, undefined)
-                        .then(() => window.location.reload());
+                        .then(() => window.location.reload(true));
                 }
             });
     }

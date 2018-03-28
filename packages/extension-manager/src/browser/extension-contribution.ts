@@ -44,7 +44,7 @@ export class ExtensionContribution extends AbstractViewContribution<ExtensionWid
         this.extensionManager.onDidStopInstallation(({ reverting, failed }) => {
             if (!failed) {
                 const reloadMessage = !reverting ? 'Reload to complete the installation.' : 'Reload to revert the installation.';
-                this.messageService.info(reloadMessage).then(() => window.location.reload());
+                this.messageService.info(reloadMessage).then(() => window.location.reload(true));
             }
         });
     }
