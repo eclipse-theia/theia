@@ -18,6 +18,6 @@ export default new ContainerModule(bind => {
     // FIXME: get rid of it, replace by a logger per a language
     bind(ILogger).toDynamicValue(ctx => {
         const logger = ctx.container.get<ILogger>(ILogger);
-        return logger.child({ 'module': 'languages' });
+        return logger.child('languages');
     }).inSingletonScope().whenTargetNamed('languages');
 });

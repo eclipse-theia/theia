@@ -26,6 +26,7 @@
     "inversify": "^4.2.0",
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
+    "nsfw": "^1.0.16",
     "perfect-scrollbar": "^1.3.0",
     "reconnecting-websocket": "^3.0.7",
     "reflect-metadata": "^0.1.10",

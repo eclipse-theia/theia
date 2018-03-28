@@ -7,7 +7,7 @@
 
 import { ContainerModule, Container } from 'inversify';
 import { ILoggerServer, loggerPath } from '../common/logger-protocol';
-import { ILogger, Logger, LoggerFactory, LoggerOptions, setRootLogger } from '../common/logger';
+import { ILogger, Logger, LoggerFactory, setRootLogger, LoggerName, rootLoggerName } from '../common/logger';
 import { LoggerWatcher } from '../common/logger-watcher';
 import { WebSocketConnectionProvider } from './messaging';
 import { FrontendApplicationContribution } from './frontend-application';
@@ -19,6 +19,7 @@ export const loggerFrontendModule = new ContainerModule(bind => {
         }
     }));
 
+    bind(LoggerName).toConstantValue(rootLoggerName);
     bind(ILogger).to(Logger).inSingletonScope().whenTargetIsDefault();
     bind(LoggerWatcher).toSelf().inSingletonScope();
     bind(ILoggerServer).toDynamicValue(ctx => {
@@ -27,11 +28,11 @@ export const loggerFrontendModule = new ContainerModule(bind => {
         return connection.createProxy<ILoggerServer>(loggerPath, loggerWatcher.getLoggerClient());
     }).inSingletonScope();
     bind(LoggerFactory).toFactory(ctx =>
-        (options?: any) => {
+        (name: string) => {
             const child = new Container({ defaultScope: 'Singleton' });
             child.parent = ctx.container;
             child.bind(ILogger).to(Logger).inTransientScope();
-            child.bind(LoggerOptions).toConstantValue(options);
+            child.bind(LoggerName).toConstantValue(name);
             return child.get(ILogger);
         }
     );

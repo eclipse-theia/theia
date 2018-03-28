@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable, optional } from 'inversify';
+import { inject, injectable } from 'inversify';
 import { LoggerWatcher } from './logger-watcher';
 import { ILoggerServer } from './logger-protocol';
 
@@ -20,6 +20,32 @@ export enum LogLevel {
     TRACE = 10
 }
 
+export namespace LogLevel {
+    export const strings = new Map<LogLevel, string>([
+        [LogLevel.FATAL, 'fatal'],
+        [LogLevel.ERROR, 'error'],
+        [LogLevel.WARN, 'warn'],
+        [LogLevel.INFO, 'info'],
+        [LogLevel.DEBUG, 'debug'],
+        [LogLevel.TRACE, 'trace'],
+
+    ]);
+
+    export function toString(level: LogLevel): string | undefined {
+        return strings.get(level);
+    }
+
+    export function fromString(levelStr: string): LogLevel | undefined {
+        for (const pair of strings) {
+            if (pair[1] === levelStr) {
+                return pair[0];
+            }
+        }
+
+        return undefined;
+    }
+}
+
 type ConsoleLog = typeof console.log;
 type ConsoleInfo = typeof console.info;
 type ConsoleWarn = typeof console.warn;
@@ -32,6 +58,9 @@ let originalConsoleError: ConsoleError;
 
 /* This is to be initialized from container composition root. It can be used outside of the inversify context.  */
 export let logger: ILogger;
+
+export const rootLoggerName: string = 'root';
+
 /**
  * Counterpart of the `#setRootLogger(ILogger)`. Restores the `console.xxx` bindings to the original one.
  * Invoking has no side-effect if `setRootLogger` was not called before. Multiple function invocation has
@@ -73,9 +102,9 @@ export type Log = (message: string, ...params: any[]) => void;
 export type Loggable = (log: Log) => void;
 
 export const LoggerFactory = Symbol('LoggerFactory');
-export type LoggerFactory = (options?: object) => ILogger;
+export type LoggerFactory = (name: string) => ILogger;
 
-export const LoggerOptions = Symbol('LoggerOptions');
+export const LoggerName = Symbol('LoggerName');
 
 export const ILogger = Symbol('ILogger');
 
@@ -246,9 +275,9 @@ export interface ILogger {
     /**
      * Create a child logger from this logger.
      *
-     * @param obj - The options object to create the logger with.
+     * @param name - The name of the child logger.
      */
-    child(obj: Object): ILogger;
+    child(name: string): ILogger;
 }
 
 @injectable()
@@ -257,11 +286,8 @@ export class Logger implements ILogger {
     /* Log level for the logger.  */
     protected _logLevel: Promise<number>;
 
-    /* Root logger has id 0.  */
-    protected readonly rootLoggerId = 0;
-
-    /* Default id is the root logger id.  */
-    protected id: Promise<number> = Promise.resolve(this.rootLoggerId);
+    /* A promise resolved when the logger has been created by the backend.  */
+    protected created: Promise<void>;
 
     /**
      * Build a new Logger.
@@ -273,20 +299,23 @@ export class Logger implements ILogger {
         @inject(ILoggerServer) protected readonly server: ILoggerServer,
         @inject(LoggerWatcher) protected readonly loggerWatcher: LoggerWatcher,
         @inject(LoggerFactory) protected readonly factory: LoggerFactory,
-        @inject(LoggerOptions) @optional() options: object | undefined) {
+        @inject(LoggerName) protected name: string) {
 
-        /* Creating a child logger.  */
-        if (options !== undefined) {
-            this.id = server.child(options);
+        if (name !== rootLoggerName) {
+            /* Creating a child logger.  */
+            this.created = server.child(name);
+        } else {
+            /* Creating the root logger (it already exists at startup).  */
+            this.created = Promise.resolve();
         }
 
         /* Fetch the log level so it's cached in the frontend.  */
-        this._logLevel = this.id.then(id => this.server.getLogLevel(id));
+        this._logLevel = this.created.then(_ => this.server.getLogLevel(name));
 
-        /* Update the root logger log level if it changes in the backend. */
+        /* Update the log level if it changes in the backend. */
         loggerWatcher.onLogLevelChanged(event => {
-            this.id.then(id => {
-                if (id === this.rootLoggerId) {
+            this.created.then(() => {
+                if (event.loggerName === name) {
                     this._logLevel = Promise.resolve(event.newLogLevel);
                 }
             });
@@ -295,9 +324,9 @@ export class Logger implements ILogger {
 
     setLogLevel(logLevel: number): Promise<void> {
         return new Promise<void>(resolve => {
-            this.id.then(id => {
+            this.created.then(() => {
                 this._logLevel.then(oldLevel => {
-                    this.server.setLogLevel(id, logLevel).then(() => {
+                    this.server.setLogLevel(this.name, logLevel).then(() => {
                         this._logLevel = Promise.resolve(logLevel);
                         resolve();
                     });
@@ -343,9 +372,9 @@ export class Logger implements ILogger {
     }
     protected getLog(logLevel: number): Promise<Log> {
         return this.ifEnabled(logLevel).then(() =>
-            this.id.then(id =>
+            this.created.then(() =>
                 (message: string, ...params: any[]) =>
-                    this.server.log(id, logLevel, message, params)
+                    this.server.log(this.name, logLevel, message, params)
             )
         );
     }
@@ -410,7 +439,7 @@ export class Logger implements ILogger {
         return this.log(LogLevel.FATAL, arg, ...params);
     }
 
-    child(obj: object): ILogger {
-        return this.factory(obj);
+    child(name: string): ILogger {
+        return this.factory(name);
     }
 }
