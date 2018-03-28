@@ -1,11 +1,11 @@
 {
   "name": "@theia/languages",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Theia - Languages Extension",
   "dependencies": {
-    "@theia/core": "^0.3.7",
-    "@theia/output": "^0.3.7",
-    "@theia/process": "^0.3.7",
+    "@theia/core": "^0.3.8",
+    "@theia/output": "^0.3.8",
+    "@theia/process": "^0.3.8",
     "vscode-base-languageclient": "^0.0.1-alpha.3",
     "vscode-languageserver-protocol": "^3.6.0"
   },
@@ -43,7 +43,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.2.0"
+    "@theia/ext-scripts": "^0.3.8"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

@@ -1,17 +1,17 @@
 {
   "name": "@theia/java",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Theia - Java Extension",
   "dependencies": {
-    "@theia/core": "^0.3.7",
-    "@theia/editor": "^0.3.7",
-    "@theia/languages": "^0.3.7",
-    "@theia/monaco": "^0.3.7",
+    "@theia/core": "^0.3.8",
+    "@theia/editor": "^0.3.8",
+    "@theia/languages": "^0.3.8",
+    "@theia/monaco": "^0.3.8",
     "@types/glob": "^5.0.30",
     "glob": "^7.1.2"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.2.0",
+    "@theia/ext-scripts": "^0.3.8",
     "gulp": "^3.9.1",
     "gulp-decompress": "^2.0.1",
     "gulp-download": "0.0.1"

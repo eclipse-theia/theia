@@ -1,10 +1,10 @@
 {
   "name": "@theia/search-in-workspace",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "Theia - Search in workspace",
   "dependencies": {
-    "@theia/core": "^0.3.7",
-    "@theia/editor": "^0.3.7",
+    "@theia/core": "^0.3.8",
+    "@theia/editor": "^0.3.8",
     "vscode-ripgrep": "^0.7.1-patch.0"
   },
   "publishConfig": {
@@ -41,6 +41,6 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.2.0"
+    "@theia/ext-scripts": "^0.3.8"
   }
 }
