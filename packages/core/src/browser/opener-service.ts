@@ -34,7 +34,7 @@ export interface OpenHandler {
      * Return a positive number if this handler can open; otherwise it cannot.
      * Never reject.
      *
-     * A returned value indicating a priorify of this handler.
+     * A returned value indicating a priority of this handler.
      */
     canHandle(uri: URI, options?: OpenerOptions): MaybePromise<number>;
     /**

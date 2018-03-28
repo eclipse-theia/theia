@@ -10,13 +10,15 @@ import { h } from '@phosphor/virtualdom/lib';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { SelectionService, CommandService } from '@theia/core/lib/common';
+import { CommonCommands } from '@theia/core/lib/browser/common-frontend-contribution';
 import { ContextMenuRenderer, TreeProps, TreeModel, TreeNode, LabelProvider, Widget, SelectableTreeNode } from '@theia/core/lib/browser';
 import { FileTreeWidget, DirNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
+import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { FileNavigatorModel } from './navigator-model';
 import { FileNavigatorSearch } from './navigator-search';
 import { SearchBox, SearchBoxProps, SearchBoxFactory } from './search-box';
-import { ApplicationShell } from '@theia/core/lib/browser/shell';
+import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 
 export const FILE_NAVIGATOR_ID = 'files';
 export const LABEL = 'Files';
@@ -38,6 +40,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         @inject(FileNavigatorSearch) protected readonly navigatorSearch: FileNavigatorSearch,
         @inject(SearchBoxFactory) protected readonly searchBoxFactory: SearchBoxFactory,
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
+        @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) {
         super(props, model, contextMenuRenderer);
         this.id = FILE_NAVIGATOR_ID;
@@ -82,6 +85,29 @@ export class FileNavigatorWidget extends FileTreeWidget {
         });
     }
 
+    protected enableDndOnMainPanel(): void {
+        const mainPanelNode = this.shell.mainPanel.node;
+        this.addEventListener(mainPanelNode, 'drop', async e => {
+            const treeNode = this.getTreeNodeFromData(e.dataTransfer);
+            if (treeNode) {
+                const { id } = treeNode;
+                const exists = await this.fileSystem.exists(id);
+                if (exists) {
+                    const fileStat = await this.fileSystem.getFileStat(id);
+                    if (!fileStat.isDirectory) {
+                        this.commandService.executeCommand(CommonCommands.OPEN.id, new URI(id));
+                    }
+                }
+            }
+        });
+        const handler = (e: DragEvent) => {
+            e.dataTransfer.dropEffect = 'link';
+            e.preventDefault();
+        };
+        this.addEventListener(mainPanelNode, 'dragover', handler);
+        this.addEventListener(mainPanelNode, 'dragenter', handler);
+    }
+
     protected deflateForStorage(node: TreeNode): object {
         // tslint:disable-next-line:no-any
         const copy = { ...node } as any;
@@ -112,6 +138,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         }
         Widget.attach(this.searchBox, this.node.parentElement!);
         this.addKeyListener(this.node, this.searchBox.keyCodePredicate.bind(this.searchBox), this.searchBox.handle.bind(this.searchBox));
+        this.enableDndOnMainPanel();
     }
 
     protected handleCopy(event: ClipboardEvent): void {

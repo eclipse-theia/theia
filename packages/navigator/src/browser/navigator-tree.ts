@@ -5,21 +5,19 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
-import { FileSystem } from "@theia/filesystem/lib/common";
-import { FileTree } from "@theia/filesystem/lib/browser";
+import { injectable, inject, postConstruct } from 'inversify';
+import { FileTree } from '@theia/filesystem/lib/browser';
 import { TreeNode, CompositeTreeNode } from '@theia/core/lib/browser/tree/tree';
 import { FileNavigatorFilter } from './navigator-filter';
 
 @injectable()
 export class FileNavigatorTree extends FileTree {
 
-    constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(FileNavigatorFilter) protected readonly filter: FileNavigatorFilter
-    ) {
-        super(fileSystem);
-        filter.onFilterChanged(() => this.refresh());
+    @inject(FileNavigatorFilter) protected readonly filter: FileNavigatorFilter;
+
+    @postConstruct()
+    protected init(): void {
+        this.filter.onFilterChanged(() => this.refresh());
     }
 
     async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {

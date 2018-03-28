@@ -15,12 +15,8 @@ import { UriSelection } from '@theia/core/lib/common//selection';
 @injectable()
 export class FileTree extends TreeImpl {
 
+    @inject(FileSystem) protected readonly fileSystem: FileSystem;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
-
-    constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem) {
-        super();
-    }
 
     async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (FileStatNode.is(parent)) {
