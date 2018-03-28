@@ -4,24 +4,23 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-import * as yargs from 'yargs';
-import { injectable } from 'inversify';
-import { MetricsContribution } from './';
-import { ApplicationPackageManager } from '@theia/application-package';
-
-const appProjectPath = 'app-project-path';
+import { injectable, inject } from 'inversify';
+import { MetricsContribution, MetricsProjectPath } from './';
+import { ApplicationPackageManager } from '@theia/application-manager';
 
 @injectable()
 export class ExtensionMetricsContribution implements MetricsContribution {
     private metrics: string = "";
     readonly applicationPackageManager: ApplicationPackageManager;
 
+    constructor(@inject(MetricsProjectPath) readonly appProjectPath: string) { }
+
     getMetrics(): string {
         return this.metrics;
     }
 
     startCollecting(): void {
-        const projectPath = yargs.parse(process.argv)[appProjectPath];
+        const projectPath = this.appProjectPath;
         let latestMetrics = "";
         const app = new ApplicationPackageManager({ projectPath });
         const installedExtensions = app.pck.extensionPackages;

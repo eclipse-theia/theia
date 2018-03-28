@@ -6,11 +6,30 @@
  */
 
 import { ContainerModule } from 'inversify';
-import { BackendApplicationContribution } from '@theia/core/lib/node';
+import { BackendApplicationContribution, CliContribution } from '@theia/core/lib/node';
 import { bindContributionProvider } from '@theia/core/lib/common';
-import { MetricsContribution, NodeMetricsContribution, MetricsBackendApplicationContribution, ExtensionMetricsContribution } from './';
+import {
+    MetricsContribution,
+    NodeMetricsContribution,
+    MetricsProjectPath,
+    MetricsBackendApplicationContribution,
+    ExtensionMetricsContribution,
+    MetricsCliContribution
+} from './';
 
 export default new ContainerModule(bind => {
+
+    bind(MetricsCliContribution).toSelf().inSingletonScope();
+    bind(CliContribution).toService(MetricsCliContribution);
+
+    bind(MetricsProjectPath).toDynamicValue(ctx => {
+        const contrib = ctx.container.get(MetricsCliContribution);
+        if (contrib.applicationPath) {
+            return contrib.applicationPath;
+        } else {
+            return process.cwd();
+        }
+    }).inSingletonScope();
 
     bindContributionProvider(bind, MetricsContribution);
     bind(MetricsContribution).to(NodeMetricsContribution);
