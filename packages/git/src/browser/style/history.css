@@ -98,7 +98,7 @@
     justify-content: center;
     align-items: center;
     display: flex;
-    background: var(--theia-layout-color1);
+    background: var(--theia-layout-color4);
     border: var(--theia-border-width) var(--theia-border-color2) solid;
     box-sizing: border-box;
 }

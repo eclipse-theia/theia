@@ -12,11 +12,11 @@
 }
 
 .monaco-editor, .monaco-editor-background {
-    background: var(--theia-layout-color3);
+    background: var(--theia-layout-color0);
 }
 
 .monaco-editor .margin {
-    background: var(--theia-layout-color3);
+    background: var(--theia-layout-color0);
 }
 
 .monaco-keybinding-key {

@@ -23,7 +23,7 @@
 .p-TabBar.theia-app-sides {
   display: block;
   color: var(--theia-ui-font-color1);
-  background: var(--theia-layout-color5);
+  background: var(--theia-layout-color2);
   font-size: var(--theia-ui-font-size1);
   min-width: var(--theia-private-sidebar-tab-width); 
   max-width: var(--theia-private-sidebar-tab-width);
@@ -36,20 +36,20 @@
 .p-TabBar.theia-app-sides .p-TabBar-tab {
   position: relative;
   padding: 12px 8px;
-  background: var(--theia-layout-color0);
+  background: var(--theia-layout-color2);
 }
 
 .p-TabBar.theia-app-left .p-TabBar-tab {
-  border-left: var(--theia-panel-border-width) solid var(--theia-layout-color0);
+  border-left: var(--theia-panel-border-width) solid var(--theia-layout-color2);
 }
 
 .p-TabBar.theia-app-right .p-TabBar-tab {
-  border-right: var(--theia-panel-border-width) solid var(--theia-layout-color0);
+  border-right: var(--theia-panel-border-width) solid var(--theia-layout-color2);
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-tab.p-mod-current {
   color: var(--theia-ui-font-color0);
-  background: var(--theia-layout-color3);
+  background: var(--theia-layout-color0);
 }
 
 .p-TabBar.theia-app-left .p-TabBar-tab.theia-mod-active {
@@ -60,8 +60,8 @@
   border-right-color: var(--theia-accent-color2);
 }
 
-.p-TabBar.theia-app-sides .p-TabBar-tab:hover:not(.p-mod-current) {
-  background: var(--theia-layout-color1);
+.p-TabBar.theia-app-sides .p-TabBar-tab:hover {
+  background: var(--theia-accent-color3);
 }
 
 .p-TabBar.theia-app-sides .p-TabBar-tabIcon,

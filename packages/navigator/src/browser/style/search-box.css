@@ -14,7 +14,7 @@
     align-items: baseline;
     box-shadow: var(--theia-border-width) var(--theia-border-width) var(--theia-border-color0);
     line-height: var(--theia-private-horizontal-tab-height);
-    background-color: var(--theia-layout-color3);
+    background-color: var(--theia-layout-color0);
     z-index: 1;
 }
   
@@ -39,7 +39,7 @@
 
 .theia-search-button-next:hover:before {
     content: "\f107";
-    background-color: var(--theia-layout-color0);
+    background-color: var(--theia-layout-color2);
 }
   
 .theia-search-button-previous:before {
@@ -48,7 +48,7 @@
 
 .theia-search-button-previous:hover:before {
     content: "\f106";
-    background-color: var(--theia-layout-color0);
+    background-color: var(--theia-layout-color2);
 }
   
 .theia-search-button-close:before {
@@ -57,7 +57,7 @@
 
 .theia-search-button-close:hover:before {
     content: "\f00d";
-    background-color: var(--theia-layout-color0);
+    background-color: var(--theia-layout-color2);
 }
 
 .theia-non-selectable {

@@ -123,7 +123,7 @@
 	margin: 0 7px 0 5px;
 	padding: 0 16px 0 10px;
 	border-left: 5px solid;
-	background: var(--theia-accent-color5);
+	background: var(--theia-accent-color4);
 	border-color: var(--theia-brand-color2);
 }
 
@@ -152,7 +152,7 @@
 
 .markdown-preview pre:not(.hljs),
 .markdown-preview code > div {
-	background-color: var(--theia-accent-color5);
+	background-color: var(--theia-accent-color4);
 }
 
 .markdown-preview h1,
