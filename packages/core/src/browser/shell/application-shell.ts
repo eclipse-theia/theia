@@ -95,15 +95,14 @@ interface WidgetDragState {
  */
 @injectable()
 export class ApplicationShell extends Widget {
-
+    /**
+     * The dock panel in the main shell area. This is where editors usually go to.
+     */
+    readonly mainPanel: DockPanel;
     /**
      * General options for the application shell.
      */
     protected options: ApplicationShell.Options;
-    /**
-     * The dock panel in the main shell area. This is where editors usually go to.
-     */
-    protected mainPanel: DockPanel;
     /**
      * The fixed-size panel shown on top. This one usually holds the main menu.
      */

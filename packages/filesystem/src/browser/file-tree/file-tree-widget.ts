@@ -78,6 +78,7 @@ export class FileTreeWidget extends TreeWidget {
             ondrop: event => this.handleDropEvent(node, event)
         };
     }
+
     protected handleDragStartEvent(node: TreeNode, event: DragEvent): void {
         event.stopPropagation();
         this.setTreeNodeAsData(event.dataTransfer, node);
@@ -132,6 +133,7 @@ export class FileTreeWidget extends TreeWidget {
     protected setTreeNodeAsData(data: DataTransfer, node: TreeNode): void {
         data.setData('tree-node', node.id);
     }
+
     protected getTreeNodeFromData(data: DataTransfer): TreeNode | undefined {
         const id = data.getData('tree-node');
         return this.model.getNode(id);
