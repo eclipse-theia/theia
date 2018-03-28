@@ -24,7 +24,10 @@ export interface WindowService {
 export class DefaultWindowService implements WindowService {
 
     openNewWindow(url: string): void {
-        window.open(url);
+        const newWindow = window.open(url);
+        if (newWindow === null) {
+            throw new Error('Cannot open a new window for URL: ' + url);
+        }
     }
 
 }
