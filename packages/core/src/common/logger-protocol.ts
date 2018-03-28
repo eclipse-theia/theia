@@ -11,19 +11,17 @@ export const ILoggerServer = Symbol('ILoggerServer');
 
 export const loggerPath = '/services/logger';
 
-export const LoggerServerOptions = Symbol('LoggerServerOptions');
-
 export interface ILoggerServer extends JsonRpcServer<ILoggerClient> {
-    setLogLevel(id: number, logLevel: number): Promise<void>;
-    getLogLevel(id: number): Promise<number>;
-    log(id: number, logLevel: number, message: string, params: any[]): Promise<void>;
-    child(obj: object): Promise<number>;
+    setLogLevel(name: string, logLevel: number): Promise<void>;
+    getLogLevel(name: string): Promise<number>;
+    log(name: string, logLevel: number, message: string, params: any[]): Promise<void>;
+    child(name: string): Promise<void>;
 }
 
 export const ILoggerClient = Symbol('ILoggerClient');
 
 export interface ILogLevelChangedEvent {
-    oldLogLevel: number;
+    loggerName: string;
     newLogLevel: number;
 }
 

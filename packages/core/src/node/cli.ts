@@ -16,10 +16,8 @@ export const CliContribution = Symbol('CliContribution');
  * Call back for extension to contribute options to the cli.
  */
 export interface CliContribution {
-
     configure(conf: yargs.Argv): void;
-
-    setArguments(args: yargs.Arguments): MaybePromise<void>
+    setArguments(args: yargs.Arguments): MaybePromise<void>;
 }
 
 @injectable()

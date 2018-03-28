@@ -11,23 +11,21 @@ import { ILoggerServer, ILoggerClient } from './logger-protocol';
 
 @injectable()
 export class ConsoleLoggerServer implements ILoggerServer {
-
-    setLogLevel(id: number, logLevel: number): Promise<void> {
+    setLogLevel(name: string, logLevel: number): Promise<void> {
         return Promise.resolve();
     }
-    getLogLevel(id: number): Promise<number> {
+    getLogLevel(name: string): Promise<number> {
         return Promise.resolve(LogLevel.DEBUG);
     }
-    log(id: number, logLevel: number, message: string, params: any[]): Promise<void> {
+    log(name: string, logLevel: number, message: string, params: any[]): Promise<void> {
         console.log(`${message} ${params.map(p => p.toString()).join(' ')}`);
         return Promise.resolve();
     }
-    child(obj: object): Promise<number> {
-        return Promise.resolve(1);
+    child(name: string): Promise<void> {
+        return Promise.resolve();
     }
     dispose(): void {
     }
     setClient(client: ILoggerClient | undefined): void {
     }
-
 }

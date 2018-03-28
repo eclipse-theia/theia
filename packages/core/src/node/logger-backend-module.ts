@@ -7,33 +7,27 @@
 
 import { ContainerModule, Container, interfaces } from 'inversify';
 import { ConnectionHandler, JsonRpcConnectionHandler } from "../common/messaging";
-import { ILogger, LoggerFactory, LoggerOptions, Logger, setRootLogger } from '../common/logger';
-import { ILoggerServer, ILoggerClient, loggerPath, LoggerServerOptions } from '../common/logger-protocol';
-import { BunyanLoggerServer, LogLevelCliContribution } from './bunyan-logger-server';
+import { ILogger, LoggerFactory, Logger, setRootLogger, LoggerName, rootLoggerName } from '../common/logger';
+import { ILoggerServer, ILoggerClient, loggerPath } from '../common/logger-protocol';
+import { BunyanLoggerServer } from './bunyan-logger-server';
 import { LoggerWatcher } from '../common/logger-watcher';
 import { BackendApplicationContribution } from './backend-application';
 import { CliContribution } from './cli';
+import { LogLevelCliContribution } from './logger-cli-contribution';
 
 export function bindLogger(bind: interfaces.Bind): void {
+    bind(LoggerName).toConstantValue(rootLoggerName);
     bind(ILogger).to(Logger).inSingletonScope().whenTargetIsDefault();
     bind(LoggerWatcher).toSelf().inSingletonScope();
     bind(ILoggerServer).to(BunyanLoggerServer).inSingletonScope();
     bind(LogLevelCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toDynamicValue(ctx => ctx.container.get(LogLevelCliContribution));
-    bind(LoggerServerOptions).toDynamicValue(ctx => {
-        const contrib = ctx.container.get(LogLevelCliContribution);
-        return {
-            name: "Theia",
-            level: contrib.logLevel
-        };
-    }
-    ).inSingletonScope();
     bind(LoggerFactory).toFactory(ctx =>
-        (options?: any) => {
+        (name: string) => {
             const child = new Container({ defaultScope: 'Singleton' });
             child.parent = ctx.container;
             child.bind(ILogger).to(Logger).inTransientScope();
-            child.bind(LoggerOptions).toConstantValue(options);
+            child.bind(LoggerName).toConstantValue(name);
             return child.get(ILogger);
         }
     );

@@ -17,6 +17,6 @@ export function createCommonBindings(bind: interfaces.Bind) {
 
     bind(ILogger).toDynamicValue(ctx => {
         const logger = ctx.container.get<ILogger>(ILogger);
-        return logger.child({ 'module': 'task' });
+        return logger.child('task');
     }).inSingletonScope().whenTargetNamed('task');
 }

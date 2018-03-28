@@ -1,75 +1,85 @@
 /*
- * Copyright (C) 2017 Ericsson and others.
+ * Copyright (C) 2018 Ericsson and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
 import * as bunyan from 'bunyan';
-import * as yargs from 'yargs';
-import { inject, injectable } from 'inversify';
-import { LogLevel } from '../common/logger';
-import { ILoggerServer, ILoggerClient, LoggerServerOptions } from '../common/logger-protocol';
-import { CliContribution } from './cli';
-
-@injectable()
-export class LogLevelCliContribution implements CliContribution {
-
-    logLevel: string;
-
-    configure(conf: yargs.Argv): void {
-        conf.option('log-level', {
-            description: 'Sets the log level',
-            default: 'info',
-            choices: ['trace', 'debug', 'info', 'warn', 'error', 'fatal']
-        });
-    }
-
-    setArguments(args: yargs.Arguments): void {
-        this.logLevel = args['log-level'];
-    }
-}
+import { inject, injectable, postConstruct } from 'inversify';
+import { LogLevel, rootLoggerName } from '../common/logger';
+import { ILoggerServer, ILoggerClient, ILogLevelChangedEvent } from '../common/logger-protocol';
+import { LoggerWatcher } from '../common/logger-watcher';
+import { LogLevelCliContribution } from './logger-cli-contribution';
 
 @injectable()
 export class BunyanLoggerServer implements ILoggerServer {
 
     /* Root logger and all child logger array.  */
-    private loggers = new Map<number, bunyan>();
-
-    /* ID counter for the children.  */
-    private currentId = 0;
+    private loggers = new Map<string, bunyan>();
 
     /* Logger client to send notifications to.  */
     private client: ILoggerClient | undefined = undefined;
 
-    /* Default log level.  */
-    private logLevel: number = LogLevel.INFO;
+    @inject(LoggerWatcher)
+    protected watcher: LoggerWatcher;
 
-    /* Root logger id.  */
-    private readonly rootLoggerId = 0;
+    @inject(LogLevelCliContribution)
+    protected cli: LogLevelCliContribution;
 
-    constructor( @inject(LoggerServerOptions) options: object) {
-        this.loggers.set(this.currentId++, bunyan.createLogger(
-            <bunyan.LoggerOptions>options
-        ));
+    @postConstruct()
+    protected init() {
+        /* Create the root logger by default.  */
+        const opts = this.makeLoggerOptions(rootLoggerName);
+        const rootOpts = Object.assign(opts, { name: 'Theia' });
+        const logger = bunyan.createLogger(rootOpts);
+        this.loggers.set(rootLoggerName, logger);
+
+        this.cli.onLogConfigChanged(() => this.updateLogLevels());
+    }
+
+    protected updateLogLevels() {
+        for (const [loggerName, _] of this.loggers) {
+            const newLevel = this.cli.logLevelFor(loggerName);
+            this.setLogLevel(loggerName, newLevel);
+        }
+    }
+
+    protected makeLoggerOptions(name: string) {
+        const opts = {
+            logger: name,
+            level: this.toBunyanLevel(this.cli.logLevelFor(name)),
+        };
+
+        return opts;
     }
 
     dispose(): void {
         // no-op
     }
 
-    /* See the bunyan child documentation, this creates a child logger
-     * with the added properties of object in param.  */
-    child(obj: Object): Promise<number> {
-        const rootLogger = this.loggers.get(this.rootLoggerId);
-        if (rootLogger !== undefined) {
-            const id = this.currentId;
-            this.loggers.set(id, rootLogger.child(obj));
-            this.currentId++;
-            return Promise.resolve(id);
-        } else {
-            throw new Error('No root logger');
+    /* Create a logger child of the root logger.  See the bunyan child
+     * documentation.  */
+    child(name: string): Promise<void> {
+        if (name.length === 0) {
+            return Promise.reject("Can't create a logger with an empty name.");
         }
+
+        if (this.loggers.has(name)) {
+            /* Logger already exists.  */
+            return Promise.resolve();
+        }
+
+        const rootLogger = this.loggers.get(rootLoggerName);
+        if (rootLogger === undefined) {
+            throw new Error('No root logger.');
+        }
+
+        const opts = this.makeLoggerOptions(name);
+        const logger = rootLogger.child(opts);
+        this.loggers.set(name, logger);
+
+        return Promise.resolve();
     }
 
     /* Set the client to receive notifications on.  */
@@ -77,41 +87,57 @@ export class BunyanLoggerServer implements ILoggerServer {
         this.client = client;
     }
 
-    /* Set the log level for a logger.  */
-    setLogLevel(id: number, logLevel: number): Promise<void> {
-        const oldLogLevel = this.logLevel;
-        const logger = this.loggers.get(id);
+    /**
+     * Set the log level for a logger.  logLevel should be one of Theia's
+     * LogLevel.
+     */
+    setLogLevel(name: string, newLogLevel: number): Promise<void> {
+        const logger = this.loggers.get(name);
         if (logger === undefined) {
-            throw new Error(`No logger for id: ${id}`);
+            throw new Error(`No logger named ${name}.`);
         }
 
-        logger.level(this.toBunyanLevel(logLevel));
-        this.logLevel = logLevel;
-
-        /* Only notify about the root logger level changes.  */
-        if (this.client !== undefined && id === this.rootLoggerId) {
-            this.client.onLogLevelChanged({ oldLogLevel: oldLogLevel, newLogLevel: this.logLevel });
+        // Does the log level really change?
+        const newBunyanLogLevel = this.toBunyanLevel(newLogLevel);
+        if (newBunyanLogLevel === logger.level()) {
+            return Promise.resolve();
         }
+
+        logger.level(newBunyanLogLevel);
+
+        const changedEvent: ILogLevelChangedEvent = {
+            loggerName: name,
+            newLogLevel: newLogLevel,
+        };
+
+        /* Notify the frontend.  */
+        if (this.client !== undefined) {
+            this.client.onLogLevelChanged(changedEvent);
+        }
+
+        /* Notify the backend.  */
+        this.watcher.fireLogLevelChanged(changedEvent);
+
         return Promise.resolve();
     }
 
     /* Get the log level for a logger.  */
-    getLogLevel(id: number): Promise<number> {
-        const logger = this.loggers.get(id);
+    getLogLevel(name: string): Promise<number> {
+        const logger = this.loggers.get(name);
         if (logger === undefined) {
-            throw new Error(`No logger for id: ${id}`);
+            throw new Error(`No logger named ${name}.`);
         }
 
         return Promise.resolve(
-            this.toLogLevel(logger.level())
+            this.toTheiaLevel(logger.level())
         );
     }
 
     /* Log a message to a logger.  */
-    log(id: number, logLevel: number, message: string, params: any[]): Promise<void> {
-        const logger = this.loggers.get(id);
+    log(name: string, logLevel: number, message: string, params: any[]): Promise<void> {
+        const logger = this.loggers.get(name);
         if (logger === undefined) {
-            throw new Error(`No logger for id: ${id}`);
+            throw new Error(`No logger named ${name}.`);
         }
 
         switch (logLevel) {
@@ -160,7 +186,10 @@ export class BunyanLoggerServer implements ILoggerServer {
         }
     }
 
-    protected toLogLevel(bunyanLogLevel: number | string): number {
+    /**
+     * Convert Bunyan's log levels to Theia's.
+     */
+    protected toTheiaLevel(bunyanLogLevel: number | string): number {
         switch (Number(bunyanLogLevel)) {
             case bunyan.FATAL:
                 return LogLevel.FATAL;
