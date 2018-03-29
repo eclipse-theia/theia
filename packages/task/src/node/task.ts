@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { ILogger } from '@theia/core/lib/common/';
 import { ProcessType, TaskInfo } from '../common/task-protocol';
 import { TaskManager } from './task-manager';
@@ -29,7 +29,7 @@ export class Task {
 
     constructor(
         @inject(TaskManager) protected readonly taskManager: TaskManager,
-        @inject(ILogger) protected readonly logger: ILogger,
+        @inject(ILogger) @named('task') protected readonly logger: ILogger,
         @inject(TaskProcessOptions) protected readonly options: TaskProcessOptions,
         @inject(ProcessManager) protected readonly processManager: ProcessManager
     ) {

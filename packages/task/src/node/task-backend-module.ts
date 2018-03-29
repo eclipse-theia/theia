@@ -12,8 +12,8 @@ import { TaskClient, TaskServer, taskPath } from '../common/task-protocol';
 import { TaskServerImpl } from './task-server';
 import { TaskManager } from './task-manager';
 import { TaskWatcher } from '../common/task-watcher';
-import { ILogger } from '@theia/core/lib/common/logger';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
+import { createCommonBindings } from '../common/task-common-module';
 
 export default new ContainerModule(bind => {
 
@@ -22,11 +22,6 @@ export default new ContainerModule(bind => {
     bind(TaskServer).to(TaskServerImpl).inSingletonScope();
     bind(Task).toSelf().inTransientScope();
     bind(TaskWatcher).toSelf().inSingletonScope();
-
-    bind(ILogger).toDynamicValue(ctx => {
-        const logger = ctx.container.get<ILogger>(ILogger);
-        return logger.child({ 'module': 'task' });
-    }).inSingletonScope().whenTargetNamed("task");
 
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<TaskClient>(taskPath, client => {
@@ -48,4 +43,6 @@ export default new ContainerModule(bind => {
             return child.get(Task);
         }
     );
+
+    createCommonBindings(bind);
 });

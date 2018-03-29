@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { TaskOptions } from '../common/task-protocol';
 import { ILogger, Disposable, DisposableCollection } from '@theia/core/lib/common/';
 import URI from "@theia/core/lib/common/uri";
@@ -40,7 +40,7 @@ export class TaskConfigurations implements Disposable {
     protected client: TaskConfigurationClient | undefined = undefined;
 
     constructor(
-        @inject(ILogger) protected readonly logger: ILogger,
+        @inject(ILogger) @named('task') protected readonly logger: ILogger,
         @inject(FileSystemWatcherServer) protected readonly watcherServer: FileSystemWatcherServer,
         @inject(FileSystem) protected readonly fileSystem: FileSystem
     ) {

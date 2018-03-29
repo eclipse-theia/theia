@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable } from "inversify";
+import { inject, injectable, named } from "inversify";
 import { ILogger } from '@theia/core/lib/common';
 import { QuickOpenTask } from './quick-open-task';
 import { MAIN_MENU_BAR, CommandContribution, Command, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
@@ -40,7 +40,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
     constructor(
         @inject(QuickOpenTask) protected readonly quickOpenTask: QuickOpenTask,
         @inject(FrontendApplication) protected readonly app: FrontendApplication,
-        @inject(ILogger) protected readonly logger: ILogger,
+        @inject(ILogger) @named('task') protected readonly logger: ILogger,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager
     ) { }
 

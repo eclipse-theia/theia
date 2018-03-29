@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { ILogger } from '@theia/core/lib/common/';
 import { Task } from './task';
 import { Emitter, Event } from '@theia/core/lib/common';
@@ -24,7 +24,7 @@ export class TaskManager implements BackendApplicationContribution {
     protected readonly deleteEmitter = new Emitter<number>();
 
     constructor(
-        @inject(ILogger) protected readonly logger: ILogger
+        @inject(ILogger) @named('task') protected readonly logger: ILogger
     ) { }
 
     register(task: Task, ctx?: string): number {
