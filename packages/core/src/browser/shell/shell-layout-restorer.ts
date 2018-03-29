@@ -7,7 +7,7 @@
 
 import { injectable, inject } from 'inversify';
 import { Widget } from '@phosphor/widgets';
-import { FrontendApplication, FrontendApplicationContribution } from '../frontend-application';
+import { FrontendApplication } from '../frontend-application';
 import { WidgetManager, WidgetConstructionOptions } from '../widget-manager';
 import { StorageService } from '../storage-service';
 import { ILogger } from '../../common/logger';
@@ -65,28 +65,6 @@ export class ShellLayoutRestorer implements CommandContribution {
             });
     }
 
-    async initializeLayout(app: FrontendApplication, contributions: FrontendApplicationContribution[]): Promise<void> {
-        try {
-            // Try to restore the shell layout from the storage service
-            const serializedLayoutData = await this.storageService.getData<string>(this.storageKey);
-            if (serializedLayoutData !== undefined) {
-                const layoutData = await this.inflate(serializedLayoutData);
-                await app.shell.setLayoutData(layoutData);
-                return;
-            }
-        } catch (e) {
-            this.logger.debug(e);
-        }
-
-        // Fallback: Let the frontend application contributions initialize the layout
-        for (const initializer of contributions) {
-            if (initializer.initializeLayout) {
-                await initializer.initializeLayout(app);
-            }
-        }
-        await app.shell.pendingUpdates;
-    }
-
     storeLayout(app: FrontendApplication): void {
         if (this.shouldStoreLayout) {
             try {
@@ -98,6 +76,16 @@ export class ShellLayoutRestorer implements CommandContribution {
                 this.logger.error(`Error during serialization of layout data: ${error}`);
             }
         }
+    }
+
+    async restoreLayout(app: FrontendApplication): Promise<boolean> {
+        const serializedLayoutData = await this.storageService.getData<string>(this.storageKey);
+        if (serializedLayoutData === undefined) {
+            return false;
+        }
+        const layoutData = await this.inflate(serializedLayoutData);
+        await app.shell.setLayoutData(layoutData);
+        return true;
     }
 
     protected isWidgetProperty(propertyName: string) {
@@ -164,6 +152,7 @@ export class ShellLayoutRestorer implements CommandContribution {
                 }
                 return widgets;
             } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+                // tslint:disable-next-line:no-any
                 const copy: any = {};
                 for (const p in value) {
                     if (this.isWidgetProperty(p)) {
