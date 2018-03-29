@@ -85,7 +85,12 @@ export namespace KeySequence {
         return keyCodes;
     }
 
-    export function acceleratorFor(keySequence: KeySequence, separator: string = " ") {
+    /**
+     * Return an array of strings representing the keys in this keysequence.
+     * For example ['ctrlcmd p', 'ctrlcmd k'].  The character used between
+     * keys can be overriden using `separator`.
+     */
+    export function acceleratorFor(keySequence: KeySequence, separator: string = " "): string[] {
         const result: string[] = [];
         for (const keyCode of keySequence) {
             let keyCodeResult = "";
