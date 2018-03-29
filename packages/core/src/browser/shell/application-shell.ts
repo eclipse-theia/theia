@@ -763,22 +763,38 @@ export class ApplicationShell extends Widget {
         let widget = find(this.mainPanel.widgets(), w => w.id === id);
         if (widget) {
             this.mainPanel.activateWidget(widget);
-            return widget;
+            return this.checkActivation(widget);
         }
         widget = find(this.bottomPanel.widgets(), w => w.id === id);
         if (widget) {
             this.expandBottomPanel();
             this.bottomPanel.activateWidget(widget);
-            return widget;
+            return this.checkActivation(widget);
         }
         widget = this.leftPanelHandler.activate(id);
         if (widget) {
-            return widget;
+            return this.checkActivation(widget);
         }
         widget = this.rightPanelHandler.activate(id);
         if (widget) {
-            return widget;
+            return this.checkActivation(widget);
         }
+    }
+
+    /**
+     * Focus is taken by a widget through the `onActivateRequest` method. It is up to the
+     * widget implementation which DOM element will get the focus. The default implementation
+     * of Widget does not take any focus. This method can help finding such problems by logging
+     * a warning in case a widget was explicitly activated, but did not trigger a change of the
+     * `activeWidget` property.
+     */
+    private checkActivation(widget: Widget): Widget {
+        window.requestAnimationFrame(() => {
+            if (this.activeWidget !== widget) {
+                console.warn("Widget was activated, but did not accept focus: " + widget.id);
+            }
+        });
+        return widget;
     }
 
     /**
