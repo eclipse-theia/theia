@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { ILogger, DisposableCollection } from '@theia/core/lib/common';
 import { IBaseTerminalServer, IBaseTerminalServerOptions, IBaseTerminalClient } from '../common/base-terminal-protocol';
 import { TerminalProcess, ProcessManager } from '@theia/process/lib/node';
@@ -17,7 +17,7 @@ export abstract class BaseTerminalServer implements IBaseTerminalServer {
 
     constructor(
         @inject(ProcessManager) protected readonly processManager: ProcessManager,
-        @inject(ILogger) protected readonly logger: ILogger) {
+        @inject(ILogger) @named('terminal') protected readonly logger: ILogger) {
 
         processManager.onDelete(id => {
             const toDispose = this.terminalToDispose.get(id);

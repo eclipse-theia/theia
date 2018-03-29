@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable } from "inversify";
+import { inject, injectable, named } from "inversify";
 import { Disposable, ILogger } from '@theia/core/lib/common';
 import { Widget, BaseWidget, Message, WebSocketConnectionProvider, Endpoint, StatefulWidget, isFirefox } from '@theia/core/lib/browser';
 import { WorkspaceService } from "@theia/workspace/lib/browser";
@@ -73,7 +73,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         @inject(TerminalWidgetOptions) options: TerminalWidgetOptions,
         @inject(IShellTerminalServer) protected readonly shellTerminalServer: ITerminalServer,
         @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher,
-        @inject(ILogger) protected readonly logger: ILogger
+        @inject(ILogger) @named('terminal') protected readonly logger: ILogger
     ) {
         super();
         this.endpoint = new Endpoint(options.endpoint);

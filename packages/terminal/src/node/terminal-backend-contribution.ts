@@ -7,7 +7,7 @@
 
 import * as http from 'http';
 import * as https from 'https';
-import { injectable, inject } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import URI from "@theia/core/lib/common/uri";
 import { ILogger } from "@theia/core/lib/common";
 import { TerminalProcess, ProcessManager, MultiRingBufferReadableStream } from "@theia/process/lib/node";
@@ -20,7 +20,7 @@ export class TerminalBackendContribution implements BackendApplicationContributi
 
     constructor(
         @inject(ProcessManager) protected readonly processManager: ProcessManager,
-        @inject(ILogger) protected readonly logger: ILogger) {
+        @inject(ILogger) @named('terminal') protected readonly logger: ILogger) {
     }
 
     onStart(server: http.Server | https.Server): void {

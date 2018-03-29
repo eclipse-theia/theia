@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import {
     ITerminalServer,
@@ -20,7 +20,7 @@ export class TerminalServer extends BaseTerminalServer implements ITerminalServe
     constructor(
         @inject(TerminalProcessFactory) protected readonly terminalFactory: TerminalProcessFactory,
         @inject(ProcessManager) protected readonly processManager: ProcessManager,
-        @inject(ILogger) protected readonly logger: ILogger) {
+        @inject(ILogger) @named('terminal') protected readonly logger: ILogger) {
         super(processManager, logger);
     }
 
