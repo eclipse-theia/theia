@@ -24,11 +24,13 @@ export class ExtensionMetricsContribution implements MetricsContribution {
         let latestMetrics = "";
         const app = new ApplicationPackageManager({ projectPath });
         const installedExtensions = app.pck.extensionPackages;
+        latestMetrics += "# HELP theia_extension_version Theia extension version info.\n";
+        latestMetrics += "# TYPE theia_extension_version  gauge\n";
         installedExtensions.forEach(extensionInfo => {
             /* TODO Make sure that theia extensions really always follow @theia/something pattern ? and only one /*/
             const extensionName = extensionInfo.name.split('/')[1];
-            const metricsName = 'theia_extension_' + extensionName;
-            const metricsValue = metricsName + `{version="${extensionInfo.version}"} 1`;
+            const metricsName = 'theia_extension_version';
+            const metricsValue = metricsName + `{extension="${extensionName}",version="${extensionInfo.version}"} 1`;
             latestMetrics += metricsValue + '\n';
         });
 
