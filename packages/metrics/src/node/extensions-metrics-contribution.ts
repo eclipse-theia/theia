@@ -5,8 +5,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 import { injectable, inject } from 'inversify';
-import { MetricsContribution, MetricsProjectPath } from './';
+import { MetricsContribution, MetricsProjectPath } from './metrics-contribution';
 import { ApplicationPackageManager } from '@theia/application-manager';
+import { PROMETHEUS_REGEXP, toPrometheusValidName } from './prometheus';
+
+const metricsName = 'theia_extension_version';
 
 @injectable()
 export class ExtensionMetricsContribution implements MetricsContribution {
@@ -24,12 +27,14 @@ export class ExtensionMetricsContribution implements MetricsContribution {
         let latestMetrics = "";
         const app = new ApplicationPackageManager({ projectPath });
         const installedExtensions = app.pck.extensionPackages;
-        latestMetrics += "# HELP theia_extension_version Theia extension version info.\n";
-        latestMetrics += "# TYPE theia_extension_version  gauge\n";
+        latestMetrics += `# HELP ${metricsName} Theia extension version info.\n`;
+        latestMetrics += `# TYPE ${metricsName} gauge\n`;
         installedExtensions.forEach(extensionInfo => {
-            /* TODO Make sure that theia extensions really always follow @theia/something pattern ? and only one /*/
-            const extensionName = extensionInfo.name.split('/')[1];
-            const metricsName = 'theia_extension_version';
+            let extensionName = extensionInfo.name;
+            if (!PROMETHEUS_REGEXP.test(extensionName)) {
+                extensionName = toPrometheusValidName(extensionName);
+            }
+
             const metricsValue = metricsName + `{extension="${extensionName}",version="${extensionInfo.version}"} 1`;
             latestMetrics += metricsValue + '\n';
         });
