@@ -9,15 +9,13 @@ import { injectable, inject, named } from 'inversify';
 import * as http from 'http';
 import * as https from 'https';
 import * as express from 'express';
-import { ILogger, ContributionProvider } from "@theia/core/lib/common";
+import { ContributionProvider } from "@theia/core/lib/common";
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { MetricsContribution } from './metrics-contribution';
 
 @injectable()
 export class MetricsBackendApplicationContribution implements BackendApplicationContribution {
-
     constructor(
-        @inject(ILogger) protected readonly logger: ILogger,
         @inject(ContributionProvider) @named(MetricsContribution)
         protected readonly metricsProviders: ContributionProvider<MetricsContribution>
     ) {
@@ -38,7 +36,6 @@ export class MetricsBackendApplicationContribution implements BackendApplication
 
     fetchMetricsFromProviders(): string {
         return this.metricsProviders.getContributions().reduce((total, contribution) =>
-            total += contribution.getMetrics() + '\n'
-            , "");
+            total += contribution.getMetrics() + '\n', "");
     }
 }
