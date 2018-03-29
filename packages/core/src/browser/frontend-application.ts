@@ -91,7 +91,7 @@ export class FrontendApplication {
         const host = await this.getHost();
         this.attachShell(host);
         await new Promise(resolve => requestAnimationFrame(() => resolve()));
-        await this.layoutRestorer.initializeLayout(this, this.contributions.getContributions());
+        await this.initializeLayout();
         await this.revealShell(host);
 
         window.addEventListener('resize', () => this.shell.update());
@@ -168,6 +168,42 @@ export class FrontendApplication {
             }
         }
         return 0;
+    }
+
+    /**
+     * Initialize the shell layout either using the layout restorer service or, if no layout has
+     * been stored, by creating the default layout.
+     */
+    protected async initializeLayout(): Promise<void> {
+        if (!await this.restoreLayout()) {
+            // Fallback: Create the default shell layout
+            await this.createDefaultLayout();
+        }
+        await this.shell.pendingUpdates;
+    }
+
+    /**
+     * Try to restore the shell layout from the storage service. Resolves to `true` if successful.
+     */
+    protected async restoreLayout(): Promise<boolean> {
+        try {
+            return await this.layoutRestorer.restoreLayout(this);
+        } catch (error) {
+            this.logger.error(error.toString());
+            return false;
+        }
+    }
+
+    /**
+     * Let the frontend application contributions initialize the shell layout. Override this
+     * method in order to create an application-specific custom layout.
+     */
+    protected async createDefaultLayout(): Promise<void> {
+        for (const initializer of this.contributions.getContributions()) {
+            if (initializer.initializeLayout) {
+                await initializer.initializeLayout(this);
+            }
+        }
     }
 
     /**
