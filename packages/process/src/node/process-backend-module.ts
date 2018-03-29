@@ -17,15 +17,16 @@ export default new ContainerModule(bind => {
     bind(RawProcess).toSelf().inTransientScope();
     bind(ProcessManager).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(ProcessManager)).inSingletonScope();
+    bind(ILogger).toDynamicValue(ctx => {
+        const parentLogger = ctx.container.get<ILogger>(ILogger);
+        return parentLogger.child({ 'module': 'process' });
+    }).inSingletonScope().whenTargetNamed('process');
     bind(RawProcessFactory).toFactory(ctx =>
         (options: RawProcessOptions) => {
             const child = new Container({ defaultScope: 'Singleton' });
             child.parent = ctx.container;
 
-            const logger = ctx.container.get<ILogger>(ILogger);
-            const loggerChild = logger.child({ 'module': 'process' });
             child.bind(RawProcessOptions).toConstantValue(options);
-            child.bind(ILogger).toConstantValue(loggerChild);
             return child.get(RawProcess);
         }
     );
@@ -36,10 +37,7 @@ export default new ContainerModule(bind => {
             const child = new Container({ defaultScope: 'Singleton' });
             child.parent = ctx.container;
 
-            const logger = ctx.container.get<ILogger>(ILogger);
-            const loggerChild = logger.child({ 'module': 'process' });
             child.bind(TerminalProcessOptions).toConstantValue(options);
-            child.bind(ILogger).toConstantValue(loggerChild);
             return child.get(TerminalProcess);
         }
     );
