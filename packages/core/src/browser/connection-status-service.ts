@@ -151,9 +151,9 @@ export class FrontendConnectionStatusService implements ConnectionStatusService,
 
     protected schedule(checkAlive: () => Promise<boolean>) {
         const tick = async () => {
-            this.logger.debug(`Checking backend connection status. Scheduled an alive request with ${this.retryInterval} ms timeout.`);
+            this.logger.trace(`Checking backend connection status. Scheduled an alive request with ${this.retryInterval} ms timeout.`);
             const success = await checkAlive();
-            this.logger.debug(success ? `Connected to the backend.` : `Cannot reach the backend.`);
+            this.logger.trace(success ? `Connected to the backend.` : `Cannot reach the backend.`);
             const previousState = this.connectionState;
             const newState = this.updateStatus(success);
             if (previousState.state !== newState.state) {
