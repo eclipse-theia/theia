@@ -35,8 +35,10 @@ export class FileSearchServiceImpl implements FileSearchService {
         const args: string[] = [
             '--files',
             '--sort-files',
-            '-u',
         ];
+        if (!options.useGitIgnore) {
+            args.push('-u');
+        }
         const process = this.rawProcessFactory({
             command: rgPath,
             args,

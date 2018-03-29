@@ -43,9 +43,9 @@ export namespace Keybinding {
     }
 
     /* Return a user visible representation of a keybinding.  */
-    export function acceleratorFor(keybinding: Keybinding) {
+    export function acceleratorFor(keybinding: Keybinding, separator: string = " ") {
         const keyCodesString = keybinding.keybinding.split(" ");
-        return KeySequence.acceleratorFor(keyCodesString.map(k => KeyCode.parse(k)));
+        return KeySequence.acceleratorFor(keyCodesString.map(k => KeyCode.parse(k)), separator);
     }
 }
 
