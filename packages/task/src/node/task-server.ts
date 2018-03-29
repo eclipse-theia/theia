@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { ILogger, Disposable, isWindows } from '@theia/core/lib/common/';
 import { TaskClient, TaskExitedEvent, TaskInfo, TaskOptions, TaskServer } from '../common/task-protocol';
 import { Task, TaskFactory } from './task';
@@ -26,7 +26,7 @@ export class TaskServerImpl implements TaskServer {
     protected tasksToDispose = new Map<number, Disposable>();
 
     constructor(
-        @inject(ILogger) protected readonly logger: ILogger,
+        @inject(ILogger) @named('task') protected readonly logger: ILogger,
         @inject(RawProcessFactory) protected readonly rawProcessFactory: RawProcessFactory,
         @inject(TerminalProcessFactory) protected readonly terminalProcessFactory: TerminalProcessFactory,
         @inject(TaskManager) protected readonly taskManager: TaskManager,

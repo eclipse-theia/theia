@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable } from "inversify";
+import { inject, injectable, named } from "inversify";
 import { ILogger } from '@theia/core/lib/common';
 import { FrontendApplication } from '@theia/core/lib/browser';
 import { TaskServer, TaskExitedEvent, TaskOptions, TaskInfo } from '../common/task-protocol';
@@ -30,7 +30,7 @@ export class TaskService implements TaskConfigurationClient {
     constructor(
         @inject(FrontendApplication) protected readonly app: FrontendApplication,
         @inject(TaskServer) protected readonly taskServer: TaskServer,
-        @inject(ILogger) protected readonly logger: ILogger,
+        @inject(ILogger) @named('task') protected readonly logger: ILogger,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
         @inject(TaskWatcher) protected readonly taskWatcher: TaskWatcher,
         @inject(MessageService) protected readonly messageService: MessageService,

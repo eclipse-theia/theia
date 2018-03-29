@@ -19,7 +19,7 @@ export const loggerFrontendModule = new ContainerModule(bind => {
         }
     }));
 
-    bind(ILogger).to(Logger).inSingletonScope();
+    bind(ILogger).to(Logger).inSingletonScope().whenTargetIsDefault();
     bind(LoggerWatcher).toSelf().inSingletonScope();
     bind(ILoggerServer).toDynamicValue(ctx => {
         const loggerWatcher = ctx.container.get(LoggerWatcher);

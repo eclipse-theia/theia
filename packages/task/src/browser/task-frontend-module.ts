@@ -14,6 +14,7 @@ import { TaskWatcher } from '../common/task-watcher';
 import { TaskService } from './task-service';
 import { QuickOpenTask } from './quick-open-task';
 import { TaskConfigurations } from './task-configurations';
+import { createCommonBindings } from '../common/task-common-module';
 
 export default new ContainerModule(bind => {
     bind(TaskFrontendContribution).toSelf().inSingletonScope();
@@ -29,4 +30,6 @@ export default new ContainerModule(bind => {
         const taskWatcher = ctx.container.get(TaskWatcher);
         return connection.createProxy<TaskServer>(taskPath, taskWatcher.getTaskClient());
     }).inSingletonScope();
+
+    createCommonBindings(bind);
 });
