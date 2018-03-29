@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { ILogger } from '@theia/core/lib/common';
 import { Process, ProcessType, ProcessOptions } from './process';
 import { ProcessManager } from './process-manager';
@@ -31,7 +31,7 @@ export class TerminalProcess extends Process {
         @inject(TerminalProcessOptions) options: TerminalProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(MultiRingBuffer) protected readonly ringBuffer: MultiRingBuffer,
-        @inject(ILogger) logger: ILogger) {
+        @inject(ILogger) @named('process') logger: ILogger) {
         super(processManager, logger, ProcessType.Terminal, options);
 
         this.logger.debug(`Starting terminal process: ${options.command},`

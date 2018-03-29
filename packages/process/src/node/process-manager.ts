@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-import { injectable, inject } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { Process } from './process';
 import { Emitter, Event } from '@theia/core/lib/common';
 import { ILogger } from '@theia/core/lib/common/logger';
@@ -17,7 +17,7 @@ export class ProcessManager implements BackendApplicationContribution {
     protected readonly processes: Map<number, Process>;
     protected readonly deleteEmitter: Emitter<number>;
 
-    constructor( @inject(ILogger) protected logger: ILogger) {
+    constructor(@inject(ILogger) @named('process') protected logger: ILogger) {
         this.processes = new Map();
         this.deleteEmitter = new Emitter<number>();
     }

@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, named } from 'inversify';
 import { ProcessManager } from './process-manager';
 import { ILogger } from '@theia/core/lib/common';
 import { Process, ProcessType, ProcessOptions } from './process';
@@ -47,7 +47,7 @@ export class RawProcess extends Process {
     constructor(
         @inject(RawProcessOptions) options: RawProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
-        @inject(ILogger) logger: ILogger) {
+        @inject(ILogger) @named('process') logger: ILogger) {
         super(processManager, logger, ProcessType.Raw, options);
 
         this.logger.debug(`Starting raw process: ${options.command},`
