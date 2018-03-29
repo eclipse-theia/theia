@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, named } from 'inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { IShellTerminalServerOptions } from '../common/shell-terminal-protocol';
 import { BaseTerminalServer } from '../node/base-terminal-server';
@@ -18,7 +18,7 @@ export class ShellTerminalServer extends BaseTerminalServer {
     constructor(
         @inject(ShellProcessFactory) protected readonly shellFactory: ShellProcessFactory,
         @inject(ProcessManager) processManager: ProcessManager,
-        @inject(ILogger) logger: ILogger) {
+        @inject(ILogger) @named('terminal') logger: ILogger) {
         super(processManager, logger);
     }
 

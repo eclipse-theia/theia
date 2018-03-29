@@ -14,6 +14,7 @@ import { ITerminalServer, terminalPath, terminalsPath } from '../common/terminal
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { IShellTerminalServer, shellTerminalPath } from '../common/shell-terminal-protocol';
 import { TerminalActiveContext } from './terminal-keybinding-contexts';
+import { createCommonBindings } from '../common/terminal-common-module';
 
 import '../../src/browser/terminal.css';
 import 'xterm/lib/xterm.css';
@@ -59,4 +60,6 @@ export default new ContainerModule(bind => {
         const terminalWatcher = ctx.container.get(TerminalWatcher);
         return connection.createProxy<ITerminalServer>(shellTerminalPath, terminalWatcher.getTerminalClient());
     }).inSingletonScope();
+
+    createCommonBindings(bind);
 });

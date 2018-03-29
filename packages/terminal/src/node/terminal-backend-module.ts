@@ -13,10 +13,10 @@ import { ShellProcess, ShellProcessFactory, ShellProcessOptions } from './shell-
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { IBaseTerminalClient } from '../common/base-terminal-protocol';
 import { TerminalServer } from './terminal-server';
-import { ILogger } from '@theia/core/lib/common/logger';
 import { IShellTerminalServer, shellTerminalPath } from '../common/shell-terminal-protocol';
 import { ShellTerminalServer } from '../node/shell-terminal-server';
 import { TerminalWatcher } from '../common/terminal-watcher';
+import { createCommonBindings } from '../common/terminal-common-module';
 
 export default new ContainerModule(bind => {
     bind(BackendApplicationContribution).to(TerminalBackendContribution);
@@ -24,11 +24,6 @@ export default new ContainerModule(bind => {
     bind(IShellTerminalServer).to(ShellTerminalServer).inSingletonScope();
     bind(ShellProcess).toSelf().inTransientScope();
     bind(TerminalWatcher).toSelf().inSingletonScope();
-
-    bind(ILogger).toDynamicValue(ctx => {
-        const logger = ctx.container.get<ILogger>(ILogger);
-        return logger.child({ 'module': 'terminal' });
-    }).inSingletonScope().whenTargetNamed("terminal");
 
     bind(ShellProcessFactory).toFactory(ctx =>
         (options: ShellProcessOptions) => {
@@ -54,4 +49,6 @@ export default new ContainerModule(bind => {
             return shellTerminalServer;
         })
     ).inSingletonScope();
+
+    createCommonBindings(bind);
 });
