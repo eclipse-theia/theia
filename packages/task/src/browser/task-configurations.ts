@@ -105,11 +105,7 @@ export class TaskConfigurations implements Disposable {
 
     /** returns the task configuration for a given label */
     getTask(taskLabel: string): TaskOptions | undefined {
-        if (this.tasksMap.has(taskLabel)) {
-            return this.tasksMap.get(taskLabel);
-        } else {
-            return undefined;
-        }
+        return this.tasksMap.get(taskLabel);
     }
 
     /** returns the string uri of where the config file would be, if it existed under a given root directory */
