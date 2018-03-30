@@ -118,6 +118,13 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
 }
 ```
 
+### Variables
+The variables are supported in the following properties, using `${variableName}` syntax:
+- `cwd`
+- `processOptions.command`
+- `processOptions.args`
+- `windowsProcessOptions.command`
+- `windowsProcessOptions.args`
 
 See [here](https://github.com/theia-ide/theia) for other Theia documentation.
 

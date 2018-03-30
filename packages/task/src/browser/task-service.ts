@@ -16,6 +16,8 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { TaskConfigurations, TaskConfigurationClient } from './task-configurations';
 import { TerminalWidget } from '@theia/terminal/lib/browser/terminal-widget';
+import { VariableResolverService } from "@theia/variable-resolver/lib/browser";
+import { ProcessOptions } from "@theia/process/lib/node";
 
 @injectable()
 export class TaskService implements TaskConfigurationClient {
@@ -35,7 +37,8 @@ export class TaskService implements TaskConfigurationClient {
         @inject(TaskWatcher) protected readonly taskWatcher: TaskWatcher,
         @inject(MessageService) protected readonly messageService: MessageService,
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(TaskConfigurations) protected readonly taskConfigurations: TaskConfigurations
+        @inject(TaskConfigurations) protected readonly taskConfigurations: TaskConfigurations,
+        @inject(VariableResolverService) protected readonly variableResolverService: VariableResolverService
     ) {
         // wait for the workspace root to be set
         this.workspaceService.root.then(async root => {
@@ -105,7 +108,7 @@ export class TaskService implements TaskConfigurationClient {
         }
 
         try {
-            taskInfo = await this.taskServer.run(this.prepareTaskConfiguration(task), this.getContext());
+            taskInfo = await this.taskServer.run(await this.prepareTaskConfiguration(task), this.getContext());
         } catch (error) {
             this.logger.error(`Error launching task '${taskName}': ${error}`);
             this.messageService.error(`Error launching task '${taskName}': ${error}`);
@@ -124,23 +127,41 @@ export class TaskService implements TaskConfigurationClient {
      * Perform some adjustments to the task launch configuration, before sending
      * it to the backend to be executed. We can make sure that parameters that
      * are optional to the user but required by the server will be defined, with
-     * sane default values.
+     * sane default values. Also, resolve all known variables, e.g. `${workspaceFolder}`.
      */
-    protected prepareTaskConfiguration(task: TaskOptions): TaskOptions {
+    protected async prepareTaskConfiguration(task: TaskOptions): Promise<TaskOptions> {
+        const resultTask: TaskOptions = {
+            label: task.label,
+            processType: task.processType ? task.processType : 'terminal',
+            processOptions: await this.resolveVariablesInOptions(task.processOptions)
+        };
+        if (task.windowsProcessOptions) {
+            resultTask.windowsProcessOptions = await this.resolveVariablesInOptions(task.windowsProcessOptions);
+        }
         if (task.cwd) {
+            resultTask.cwd = await this.variableResolverService.resolve(task.cwd);
+            // TODO: remove once Theia provides ${workspaceFolder} variable #1598
             if (this.workspaceRootUri) {
-                task.cwd = task.cwd.replace(/\$workspace/gi, this.workspaceRootUri);
+                resultTask.cwd = resultTask.cwd.replace(/\$workspace/gi, this.workspaceRootUri);
             }
         } else if (this.workspaceRootUri) {
-            // if "cwd' is not set in task launch config. Let's use the workspace root
-            // as default
-            task.cwd = this.workspaceRootUri;
+            resultTask.cwd = this.workspaceRootUri;
         }
+        return resultTask;
+    }
 
-        if (!task.processType) {
-            task.processType = 'terminal';
+    /**
+     * Resolve the variables in the given process options.
+     */
+    protected async resolveVariablesInOptions(options: ProcessOptions): Promise<ProcessOptions> {
+        const resultOptions: ProcessOptions = {
+            command: await this.variableResolverService.resolve(options.command)
+        };
+        if (options.args) {
+            resultOptions.args = await this.variableResolverService.resolveArray(options.args);
         }
-        return task;
+        resultOptions.options = options.options;
+        return resultOptions;
     }
 
     async attach(terminalId: number, taskId: number): Promise<void> {
