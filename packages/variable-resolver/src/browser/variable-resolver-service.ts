@@ -21,7 +21,7 @@ export class VariableResolverService {
     ) { }
 
     /**
-	 * Resolve variables in the given string.
+	 * Resolve the variables in the given string.
 	 * @returns promise resolved to the provided string with already resolved variables.
      * Never reject.
 	 */
@@ -32,6 +32,19 @@ export class VariableResolverService {
             return value ? value : match;
         });
         return resolvedText;
+    }
+
+    /**
+     * Resolve the variables in the given string array.
+     * @returns promise resolved to the provided string array with already resolved variables.
+     * Never reject.
+     */
+    async resolveArray(arr: string[]): Promise<string[]> {
+        const result: string[] = [];
+        for (let i = 0; i < arr.length; i++) {
+            result[i] = await this.resolve(arr[i]);
+        }
+        return result;
     }
 
     /**
