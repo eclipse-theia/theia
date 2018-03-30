@@ -1,0 +1,47 @@
+{
+  "name": "@theia/isolated-extension-api",
+  "version": "0.3.8",
+  "description": "Theia - Isolated Extension API",
+  "dependencies": {
+    "@theia/core": "^0.3.8"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "backend": "lib/node/extension-api-backend-module",
+      "frontend": "lib/browser/extension-api-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^0.3.8"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

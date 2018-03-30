@@ -32,7 +32,8 @@
     "@theia/typescript": "^0.3.8",
     "@theia/userstorage": "^0.3.8",
     "@theia/variable-resolver": "^0.3.8",
-    "@theia/workspace": "^0.3.8"
+    "@theia/workspace": "^0.3.8",
+    "@theia/isolated-extension-api": "^0.3.8"
   },
   "scripts": {
     "prepare": "yarn run clean && yarn build",
