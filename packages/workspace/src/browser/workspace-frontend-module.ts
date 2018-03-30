@@ -11,10 +11,12 @@ import { WebSocketConnectionProvider, FrontendApplicationContribution } from '@t
 import { FileDialogFactory, createFileDialog, FileDialogProps } from '@theia/filesystem/lib/browser';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
+import { VariableContribution } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceServer, workspacePath } from '../common';
 import { WorkspaceFrontendContribution } from "./workspace-frontend-contribution";
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceCommandContribution, FileMenuContribution } from './workspace-commands';
+import { WorkspaceVariableContribution } from './workspace-variable-contribution';
 import { WorkspaceStorageService } from './workspace-storage-service';
 import { WorkspaceUriLabelProviderContribution } from './workspace-uri-contribution';
 
@@ -43,4 +45,5 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     rebind(StorageService).to(WorkspaceStorageService).inSingletonScope();
 
     bind(LabelProviderContribution).to(WorkspaceUriLabelProviderContribution).inSingletonScope();
+    bind(VariableContribution).to(WorkspaceVariableContribution).inSingletonScope();
 });
