@@ -128,7 +128,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
         commands.forEach(command =>
             menus.registerMenuAction(GIT_WIDGET_CONTEXT_MENU, {
                 commandId: command.id,
-                label: command.label.slice('Git: '.length) + '...'
+                label: command.label.slice('Git: '.length)
             })
         );
         menus.registerMenuAction(EditorContextMenu.NAVIGATION, {
