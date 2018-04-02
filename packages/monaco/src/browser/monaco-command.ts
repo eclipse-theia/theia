@@ -132,7 +132,7 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             execute: (editor: MonacoEditor) => {
                 const options = [true, false].map(useSpaces =>
                     new QuickOpenItem({
-                        label: `Indent Using ${useSpaces ? 'Spaces' : 'Tab Size'}`,
+                        label: `Indent Using ${useSpaces ? 'Spaces' : 'Tabs'}`,
                         run: (mode: QuickOpenMode) => {
                             if (mode === QuickOpenMode.OPEN) {
                                 this.configTabSize(editor, useSpaces);
