@@ -6,17 +6,17 @@
  */
 
 .p-Widget.dialogOverlay {
+    z-index: 5000;
     display: flex;
     flex-direction: column;
+    position: fixed;
     width: 100vw;
     height: 100vh;
     top: 0;
     left: 0;
-    display: flex;
     justify-content: center;
     align-items: center;
     background: rgba(1,1,1,0.5);
-    position: fixed;
     color: var(--theia-ui-font-color1);
     font-size: var(--theia-ui-font-size1);
     padding: 2px;
