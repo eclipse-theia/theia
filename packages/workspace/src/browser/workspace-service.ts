@@ -88,9 +88,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
         const valid = await this.toValidRoot(rootUri);
         if (valid) {
             // The same window has to be preserved too (instead of opening a new one), if the workspace root is not yet available and we are setting it for the first time.
-            const preserveWindow = !(await this.root);
+            const preserveWindow = options ? options.preserveWindow : !(await this.root);
             await this.server.setRoot(rootUri);
-            this.openWindow(uri, Object.assign(options || {}, { preserveWindow }));
+            this.openWindow(uri, { preserveWindow });
             return;
         }
         throw new Error(`Invalid workspace root URI. Expected an existing directory location. URI: ${rootUri}.`);
