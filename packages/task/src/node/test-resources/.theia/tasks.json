@@ -4,7 +4,7 @@
         {
             "label": "test task",
             "processType": "terminal",
-            "cwd": "$workspace",
+            "cwd": "${workspaceFolder}",
             "processOptions": {
                 "command": "./task",
                 "args": [
@@ -24,7 +24,7 @@
         {
             "label": "long running test task",
             "processType": "terminal",
-            "cwd": "$workspace",
+            "cwd": "${workspaceFolder}",
             "processOptions": {
                 "command": "./task-long-running",
                 "args": [],
@@ -42,7 +42,7 @@
         {
             "label": "list all files",
             "processType": "terminal",
-            "cwd": "$workspace",
+            "cwd": "${workspaceFolder}",
             "processOptions": {
                 "command": "ls",
                 "args": [

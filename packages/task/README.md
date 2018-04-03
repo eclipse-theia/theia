@@ -9,7 +9,7 @@ Each task configuration looks like this:
      {
         "label": "Test task - list workspace files recursively",
         "processType": "terminal",
-        "cwd": "$workspace",
+        "cwd": "${workspaceFolder}",
         "processOptions": {
             "command": "ls",
             "args": [
@@ -31,7 +31,7 @@ Each task configuration looks like this:
 
 *processType*: Determines what type of process will be used to execute the task. Can be "raw" or "terminal". Terminal processes can be shown in Theia's frontend, in a terminal widget. Raw processes are run without their output being shown. 
 
-*cwd*: The current working directory, in which the task's command will execute. This is the equivalent of doing a "cd" to that directory, on the command-line, before running the command. This can contain the symbol *$workspace*, which will be replaced at execution time by the path of the current workspace. If left undefined, will by default be set to workspace root. 
+*cwd*: The current working directory, in which the task's command will execute. This is the equivalent of doing a "cd" to that directory, on the command-line, before running the command. This can contain the variable *${workspaceFolder}*, which will be replaced at execution time by the path of the current workspace. If left undefined, will by default be set to workspace root. 
 
 *processOptions.command*: the actual command or script to execute. The command can have no path (e.g. "ls") if it can be found in the system path. Else it can have an absolute path, in which case there is no confusion. Or it can have a relative path, in which case it will be interpreted to be relative to cwd. e.g. "./task" would be interpreted to mean a script or binary called "task", right under the workspace root directory.
 
@@ -49,7 +49,7 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
         {
             "label": "[Task] short running test task (~3s)",
             "processType": "terminal",
-            "cwd": "$workspace/packages/task/src/node/test-resources/",
+            "cwd": "${workspaceFolder}/packages/task/src/node/test-resources/",
             "processOptions": {
                 "command": "./task",
                 "args": [
@@ -70,7 +70,7 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
         {
             "label": "[Task] long running test task (~300s)",
             "processType": "terminal",
-            "cwd": "$workspace/packages/task/src/node/test-resources/",
+            "cwd": "${workspaceFolder}/packages/task/src/node/test-resources/",
             "processOptions": {
                 "command": "./task-long-running",
                 "args": []
@@ -86,7 +86,7 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
         {
             "label": "[Task] recursively list files from workspace root",
             "processType": "terminal",
-            "cwd": "$workspace",
+            "cwd": "${workspaceFolder}",
             "processOptions": {
                 "command": "ls",
                 "args": [
@@ -105,7 +105,7 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
         {
             "label": "[Task] Echo a string",
             "processType": "terminal",
-            "cwd": "$workspace",
+            "cwd": "${workspaceFolder}",
             "processOptions": {
                 "command": "bash",
                 "args": [

@@ -139,15 +139,7 @@ export class TaskService implements TaskConfigurationClient {
         if (task.windowsProcessOptions) {
             resultTask.windowsProcessOptions = await this.resolveVariablesInOptions(task.windowsProcessOptions);
         }
-        if (task.cwd) {
-            resultTask.cwd = await this.variableResolverService.resolve(task.cwd);
-            // TODO: remove once Theia provides ${workspaceFolder} variable #1598
-            if (this.workspaceRootUri) {
-                resultTask.cwd = resultTask.cwd.replace(/\$workspace/gi, this.workspaceRootUri);
-            }
-        } else if (this.workspaceRootUri) {
-            resultTask.cwd = this.workspaceRootUri;
-        }
+        resultTask.cwd = await this.variableResolverService.resolve(task.cwd ? task.cwd : '${workspaceFolder}');
         return resultTask;
     }
 
