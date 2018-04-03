@@ -48,9 +48,9 @@ export interface TaskOptions {
     /**
      * The 'current working directory' the task will run in. Can be a uri-as-string
      * or plain string path. If the cwd is meant to be somewhere under the workspace,
-     * one can use symbolic value "$workspace", which will be replaced by its path,
+     * one can use the variable `${workspaceFolder}`, which will be replaced by its path,
      * at runtime. If not specified, defaults to the workspace root.
-     * ex:  cwd: '$workspace/foo'
+     * ex:  cwd: '${workspaceFolder}/foo'
      */
     cwd?: string
 }
