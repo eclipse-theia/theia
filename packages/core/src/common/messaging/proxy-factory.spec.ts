@@ -5,13 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as chai from "chai";
 import { ConsoleLogger } from '../../node/messaging/logger';
 import { JsonRpcProxyFactory } from './proxy-factory';
 import { createMessageConnection } from "vscode-jsonrpc/lib/main";
 import * as stream from "stream";
-
-const expect = chai.expect;
 
 class NoTransform extends stream.Transform {
 
@@ -45,8 +42,7 @@ class TestClient {
 }
 
 describe('Proxy-Factory', () => {
-
-    it('Should correctly send notifications and requests.', done => {
+    test('Should correctly send notifications and requests.', done => {
         const it = getSetup();
         it.clientProxy.notifyThat("hello");
         function check() {
@@ -54,20 +50,20 @@ describe('Proxy-Factory', () => {
                 console.log("waiting another 50 ms");
                 setTimeout(check, 50);
             } else {
-                expect(it.client.notifications[0]).eq("hello");
+                expect(it.client.notifications[0]).toEqual("hello");
                 it.serverProxy.doStuff("foo").then(result => {
-                    expect(result).to.be.eq("done: foo");
+                    expect(result).toEqual("done: foo");
                     done();
                 });
             }
         }
         check();
     });
-    it('Rejected Promise should result in rejected Promise.', done => {
+    test('Rejected Promise should result in rejected Promise.', done => {
         const it = getSetup();
         const handle = setTimeout(() => done("timeout"), 500);
         it.serverProxy.fails('a', 'b').catch(err => {
-            expect(<Error>err.message).to.contain("fails failed");
+            expect(<Error>err.message).toContain("fails failed");
             clearTimeout(handle);
             done();
         });
@@ -76,7 +72,7 @@ describe('Proxy-Factory', () => {
         const { serverProxy } = getSetup();
         const handle = setTimeout(() => done("timeout"), 500);
         serverProxy.fails2('a', 'b').catch(err => {
-            expect(<Error>err.message).to.contain("fails2 failed");
+            expect(<Error>err.message).toContain("fails2 failed");
             clearTimeout(handle);
             done();
         });
@@ -99,9 +95,6 @@ function getSetup() {
     clientProxyFactory.listen(clientConnection);
     const clientProxy = clientProxyFactory.createProxy();
     return {
-        client,
-        clientProxy,
-        server,
-        serverProxy
+        client, clientProxy, server, serverProxy
     };
 }

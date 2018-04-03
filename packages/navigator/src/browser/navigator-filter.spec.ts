@@ -3,15 +3,13 @@
  *
  * Licensed under the Apache License, Version 2.0 (the 'License'); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * @jest-environment @theia/core/src/browser/test/jsdom-environment
  */
 
-import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
-const disableJSDOM = enableJSDOM();
+import 'reflect-metadata';
 
-import { expect } from 'chai';
 import { FileNavigatorFilterPredicate } from './navigator-filter';
-
-disableJSDOM();
 
 interface Input {
     readonly patterns: { [key: string]: boolean };
@@ -119,21 +117,24 @@ describe('navigator-filter-glob', () => {
 
             ]
         }
-    ] as Input[]).forEach((test, index) => {
-        it(`${index < 10 ? `0${index + 1}` : `${index + 1}`} glob-filter: (${Object.keys(test.patterns).map(key => `${key} [${test.patterns[key]}]`).join(', ')}) `, () => {
-            const filter = new FileNavigatorFilterPredicate(test.patterns);
-            const result = itemsToFilter.filter(filter.filter.bind(filter));
-            test.includes.map(toItem).forEach(item => includes(result, item));
-            test.excludes.map(toItem).forEach(item => excludes(result, item));
-        });
+    ] as Input[]).forEach((testObj, index) => {
+        test(
+            `${index < 10 ? `0${index + 1}` : `${index + 1}`} glob-filter: (${Object.keys(testObj.patterns).map(key => `${key} [${testObj.patterns[key]}]`).join(', ')}) `,
+            () => {
+                const filter = new FileNavigatorFilterPredicate(testObj.patterns);
+                const result = itemsToFilter.filter(filter.filter.bind(filter));
+                testObj.includes.map(toItem).forEach(item => includes(result, item));
+                testObj.excludes.map(toItem).forEach(item => excludes(result, item));
+            }
+        );
     });
 
 });
 
-function includes<T>(array: T[], item: T, message: string = `Expected ${JSON.stringify(array)} to include ${JSON.stringify(item)}.`) {
-    expect(array).to.deep.include(item, message);
+function includes<T>(array: T[], item: T) {
+    expect(array).toContainEqual(item);
 }
 
-function excludes<T>(array: T[], item: T, message: string = `Expected ${JSON.stringify(array)} to not include ${JSON.stringify(item)}.`) {
-    expect(array).to.not.deep.include(item, message);
+function excludes<T>(array: T[], item: T) {
+    expect(array).not.toContainEqual(item);
 }

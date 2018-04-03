@@ -3,16 +3,16 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * @jest-environment @theia/core/src/browser/test/jsdom-environment
  */
 
 // tslint:disable:no-unused-expression
 
-import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
-
-let disableJSDOM = enableJSDOM();
+import 'reflect-metadata';
 
 import { Container } from 'inversify';
-import * as chai from 'chai';
+
 import { Emitter } from '@theia/core/lib/common';
 import { PreferenceService, PreferenceProviders, PreferenceServiceImpl } from '@theia/core/lib/browser/preferences';
 import { FileSystem } from '@theia/filesystem/lib/common/';
@@ -31,11 +31,7 @@ import { MockResourceProvider } from '@theia/core/lib/common/test/mock-resource-
 import { MockWorkspaceServer } from '@theia/workspace/lib/common/test/mock-workspace-server';
 import { MockWindowService } from '@theia/core/lib/browser/window/test/mock-window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import * as sinon from 'sinon';
 
-disableJSDOM();
-
-const expect = chai.expect;
 let testContainer: Container;
 
 let prefService: PreferenceService;
@@ -43,7 +39,7 @@ let prefService: PreferenceService;
 const mockUserPreferenceEmitter = new Emitter<void>();
 const mockWorkspacePreferenceEmitter = new Emitter<void>();
 
-before(async () => {
+beforeAll(async () => {
     testContainer = new Container();
 
     testContainer.bind(UserPreferenceProvider).toSelf().inSingletonScope();
@@ -53,12 +49,12 @@ before(async () => {
         const userProvider = ctx.container.get(UserPreferenceProvider);
         const workspaceProvider = ctx.container.get(WorkspacePreferenceProvider);
 
-        sinon.stub(userProvider, 'onDidPreferencesChanged').get(() =>
-            mockUserPreferenceEmitter.event
-        );
-        sinon.stub(workspaceProvider, 'onDidPreferencesChanged').get(() =>
-            mockWorkspacePreferenceEmitter.event
-        );
+        Object.defineProperty(userProvider, 'onDidPreferencesChanged', {
+            get: () => mockUserPreferenceEmitter.event
+        });
+        Object.defineProperty(workspaceProvider, 'onDidPreferencesChanged', {
+            get: () => mockWorkspacePreferenceEmitter.event
+        });
         return [userProvider, workspaceProvider];
     });
     testContainer.bind(PreferenceServiceImpl).toSelf().inSingletonScope();
@@ -96,15 +92,7 @@ before(async () => {
     testContainer.bind(ILogger).to(MockLogger);
 });
 
-describe('Preference Service', function () {
-
-    before(() => {
-        disableJSDOM = enableJSDOM();
-    });
-
-    after(() => {
-        disableJSDOM();
-    });
+describe('Preference Service', () => {
 
     beforeEach(() => {
         prefService = testContainer.get<PreferenceService>(PreferenceService);
@@ -116,127 +104,123 @@ describe('Preference Service', function () {
         prefService.dispose();
     });
 
-    it('Should get notified if a provider gets a change', function (done) {
+    test('Should get notified if a provider gets a change', done => {
 
         const prefValue = true;
         prefService.onPreferenceChanged(pref => {
             try {
-                expect(pref.preferenceName).eq('testPref');
+                expect(pref.preferenceName).toEqual('testPref');
             } catch (e) {
-                stubGet.restore();
                 done(e);
                 return;
             }
-            expect(pref.newValue).eq(prefValue);
-            stubGet.restore();
+            expect(pref.newValue).toEqual(prefValue);
             done();
         });
 
         const userProvider = testContainer.get(UserPreferenceProvider);
-        const stubGet = sinon.stub(userProvider, 'getPreferences').returns({
+        jest.spyOn(userProvider, 'getPreferences').mockReturnValue({
             'testPref': prefValue
         });
 
         mockUserPreferenceEmitter.fire(undefined);
 
-    }).timeout(2000);
+    }, 2000);
 
-    it('Should return the preference from the more specific scope (user > workspace)', () => {
-        const userProvider = testContainer.get(UserPreferenceProvider);
-        const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
-        const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
-            'test.boolean': true,
-            'test.number': 1
-        });
-        const stubWorkspace = sinon.stub(workspaceProvider, 'getPreferences').returns({
-            'test.boolean': false,
-            'test.number': 0
-        });
-        mockUserPreferenceEmitter.fire(undefined);
+    test(
+        'Should return the preference from the more specific scope (user > workspace)',
+        () => {
+            const userProvider = testContainer.get(UserPreferenceProvider);
+            const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
+            jest.spyOn(userProvider, 'getPreferences').mockReturnValue({
+                'test.boolean': true,
+                'test.number': 1
+            });
+            jest.spyOn(workspaceProvider, 'getPreferences').mockReturnValue({
+                'test.boolean': false,
+                'test.number': 0
+            });
+            mockUserPreferenceEmitter.fire(undefined);
 
-        let value = prefService.get('test.boolean');
-        expect(value).to.be.false;
+            let value = prefService.get('test.boolean');
+            expect(value).toEqual(false);
 
-        value = prefService.get('test.number');
-        expect(value).equals(0);
-
-        [stubUser, stubWorkspace].forEach(stub => {
-            stub.restore();
-        });
-    });
-
-    it('Should return the preference from the less specific scope if the value is removed from the more specific one', () => {
-        const userProvider = testContainer.get(UserPreferenceProvider);
-        const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
-        const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
-            'test.boolean': true,
-            'test.number': 1
-        });
-        const stubWorkspace = sinon.stub(workspaceProvider, 'getPreferences').returns({
-            'test.boolean': false,
-            'test.number': 0
-        });
-        mockUserPreferenceEmitter.fire(undefined);
-
-        let value = prefService.get('test.boolean');
-        expect(value).to.be.false;
-
-        stubWorkspace.restore();
-        mockUserPreferenceEmitter.fire(undefined);
-
-        value = prefService.get('test.boolean');
-        expect(value).to.be.true;
-
-        stubUser.restore();
-    });
-
-    it('Should throw a TypeError if the preference (reference object) is modified', () => {
-        const userProvider = testContainer.get(UserPreferenceProvider);
-        const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
-            'test.immutable': [
-                'test', 'test', 'test'
-            ]
-        });
-        mockUserPreferenceEmitter.fire(undefined);
-
-        const immutablePref: string[] | undefined = prefService.get('test.immutable');
-        expect(immutablePref).to.not.be.undefined;
-        if (immutablePref !== undefined) {
-            expect(() => {
-                immutablePref.push('fails');
-            }).to.throw(TypeError);
+            value = prefService.get('test.number');
+            expect(value).toEqual(0);
         }
-        stubUser.restore();
-    });
+    );
 
-    it('Should still report the more specific preference even though the less specific one changed', () => {
-        const userProvider = testContainer.get(UserPreferenceProvider);
-        const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
-        let stubUser = sinon.stub(userProvider, 'getPreferences').returns({
-            'test.boolean': true,
-            'test.number': 1
-        });
-        const stubWorkspace = sinon.stub(workspaceProvider, 'getPreferences').returns({
-            'test.boolean': false,
-            'test.number': 0
-        });
-        mockUserPreferenceEmitter.fire(undefined);
+    test(
+        'Should return the preference from the less specific scope if the value is removed from the more specific one',
+        () => {
+            const userProvider = testContainer.get(UserPreferenceProvider);
+            const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
+            jest.spyOn(userProvider, 'getPreferences').mockReturnValue({
+                'test.boolean': true,
+                'test.number': 1
+            });
+            const stubWorkspace = jest.spyOn(workspaceProvider, 'getPreferences').mockReturnValue({
+                'test.boolean': false,
+                'test.number': 0
+            });
+            mockUserPreferenceEmitter.fire(undefined);
 
-        let value = prefService.get('test.number');
-        expect(value).equals(0);
-        stubUser.restore();
+            let value = prefService.get('test.boolean');
+            expect(value).toEqual(false);
 
-        stubUser = sinon.stub(userProvider, 'getPreferences').returns({
-            'test.boolean': true,
-            'test.number': 4
-        });
-        mockUserPreferenceEmitter.fire(undefined);
+            stubWorkspace.mockRestore();
+            mockUserPreferenceEmitter.fire(undefined);
 
-        value = prefService.get('test.number');
-        expect(value).equals(0);
+            value = prefService.get('test.boolean');
+            expect(value).toEqual(true);
+        }
+    );
 
-        [stubUser, stubWorkspace].forEach(stub => {
-            stub.restore();
-        });
-    });
+    test(
+        'Should throw a TypeError if the preference (reference object) is modified',
+        () => {
+            const userProvider = testContainer.get(UserPreferenceProvider);
+            jest.spyOn(userProvider, 'getPreferences').mockReturnValue({
+                'test.immutable': [
+                    'test', 'test', 'test'
+                ]
+            });
+            mockUserPreferenceEmitter.fire(undefined);
+
+            const immutablePref: string[] | undefined = prefService.get('test.immutable');
+            expect(immutablePref).toBeDefined();
+            expect(() => {
+                immutablePref!.push('fails');
+            }).toThrow(TypeError);
+        }
+    );
+
+    test(
+        'Should still report the more specific preference even though the less specific one changed',
+        () => {
+            const userProvider = testContainer.get(UserPreferenceProvider);
+            const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
+            const stubUser = jest.spyOn(userProvider, 'getPreferences').mockReturnValue({
+                'test.boolean': true,
+                'test.number': 1
+            });
+            jest.spyOn(workspaceProvider, 'getPreferences').mockReturnValue({
+                'test.boolean': false,
+                'test.number': 0
+            });
+            mockUserPreferenceEmitter.fire(undefined);
+
+            let value = prefService.get('test.number');
+            expect(value).toEqual(0);
+
+            stubUser.mockReturnValue({
+                'test.boolean': true,
+                'test.number': 4
+            });
+            mockUserPreferenceEmitter.fire(undefined);
+
+            value = prefService.get('test.number');
+            expect(value).toEqual(0);
+        }
+    );
 });

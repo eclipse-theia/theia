@@ -6,5 +6,9 @@
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "**/*.spec.ts",
+    "**/*.slow-spec.ts"
   ]
 }

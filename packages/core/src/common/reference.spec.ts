@@ -11,7 +11,7 @@ import { Disposable } from "./disposable";
 
 describe('reference', () => {
 
-    it('dispose a single reference', async () => {
+    test('dispose a single reference', async () => {
         const expectation: { disposed: boolean } = { disposed: false };
         const references = new ReferenceCollection<string, Disposable>(key => ({
             key, dispose: () => {
@@ -33,7 +33,7 @@ describe('reference', () => {
         assert.deepEqual(references.keys(), []);
     });
 
-    it('dispose 2 references', async () => {
+    test('dispose 2 references', async () => {
         const expectation: { disposed: boolean } = { disposed: false };
         const references = new ReferenceCollection<string, Disposable>(key => ({
             key, dispose: () => {
@@ -61,7 +61,7 @@ describe('reference', () => {
         assert.deepEqual(references.keys(), []);
     });
 
-    it('dispose an object with 2 references', async () => {
+    test('dispose an object with 2 references', async () => {
         const expectation: { disposed: boolean } = { disposed: false };
         const references = new ReferenceCollection<string, Disposable>(key => ({
             key, dispose: () => {

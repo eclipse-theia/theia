@@ -95,27 +95,6 @@
             "outputCapture": "std"
         },
         {
-            "type": "node",
-            "request": "launch",
-            "protocol": "inspector",
-            "name": "Run Mocha Test",
-            "program": "${workspaceRoot}/node_modules/mocha/bin/_mocha",
-            "args": [
-                "${file}",
-                "--no-timeouts",
-                "--colors",
-                "--opts",
-                "${workspaceRoot}/configs/mocha.opts"
-            ],
-            "env": {
-                "TS_NODE_PROJECT": "${workspaceRoot}/tsconfig.json"
-            },
-            "sourceMaps": true,
-            "smartStep": true,
-            "internalConsoleOptions": "openOnSessionStart",
-            "outputCapture": "std"
-        },
-        {
             "name": "Launch Frontend",
             "type": "chrome",
             "request": "launch",

@@ -5,10 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as chai from 'chai';
 import { PROMETHEUS_REGEXP, toPrometheusValidName } from './prometheus';
-
-const expect = chai.expect;
 
 // tslint:disable:no-unused-expression
 
@@ -21,22 +18,22 @@ describe("Prometheus helper module", () => {
     const invalidName2 = '@theia/?$%^ ';
 
     it("Should correctly validate a metric name", () => {
-        expect(PROMETHEUS_REGEXP.test(validName)).to.be.true;
+        expect(PROMETHEUS_REGEXP.test(validName)).toEqual(true);
 
-        expect(PROMETHEUS_REGEXP.test(invalidTheiaName)).to.be.false;
+        expect(PROMETHEUS_REGEXP.test(invalidTheiaName)).toEqual(false);
 
-        expect(PROMETHEUS_REGEXP.test(invalidName2)).to.be.false;
+        expect(PROMETHEUS_REGEXP.test(invalidName2)).toEqual(false);
 
     });
 
     it("Should correctly return a valid name from an otherwise invalid prometheus string", () => {
-        expect(PROMETHEUS_REGEXP.test(invalidTheiaName)).to.be.false;
+        expect(PROMETHEUS_REGEXP.test(invalidTheiaName)).toEqual(false);
 
         const newName = toPrometheusValidName(invalidTheiaName);
-        expect(PROMETHEUS_REGEXP.test(newName)).to.be.true;
-        expect(newName).to.be.equal(validTheiaName);
+        expect(PROMETHEUS_REGEXP.test(newName)).toEqual(true);
+        expect(newName).toEqual(validTheiaName);
 
         const newName2 = toPrometheusValidName(invalidName2);
-        expect(PROMETHEUS_REGEXP.test(newName2)).to.be.true;
+        expect(PROMETHEUS_REGEXP.test(newName2)).toEqual(true);
     });
 });

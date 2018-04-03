@@ -16,11 +16,6 @@ import { isWindows } from '@theia/core/lib/common/os';
 import URI from "@theia/core/lib/common/uri";
 import { FileUri } from "@theia/core/lib/node";
 import { terminalsPath } from '@theia/terminal/lib/common/terminal-protocol';
-import { expectThrowsAsync } from '@theia/core/lib/common/test/expect';
-
-/**
- * Globals
- */
 
 // test scripts that we bundle with tasks
 const commandShortRunning = './task';

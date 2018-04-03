@@ -3,68 +3,54 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * @jest-environment @theia/core/src/browser/test/jsdom-environment
  */
 
-import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+import 'reflect-metadata';
 
-let disableJSDOM = enableJSDOM();
-
-import * as chai from 'chai';
-import { expect } from 'chai';
 import URI from "@theia/core/lib/common/uri";
 import { MarkdownPreviewHandler } from './markdown-preview-handler';
 
-disableJSDOM();
-
-chai.use(require('chai-string'));
-
 let previewHandler: MarkdownPreviewHandler;
 
-before(() => {
+beforeAll(() => {
     previewHandler = new MarkdownPreviewHandler();
 });
 
 describe("markdown-preview-handler", () => {
 
-    before(() => {
-        disableJSDOM = enableJSDOM();
-    });
-
-    after(() => {
-        disableJSDOM();
-    });
-
-    it("renders html with line information", async () => {
+    test("renders html with line information", async () => {
         const contentElement = await previewHandler.renderContent({ content: exampleMarkdown1, originUri: new URI('') });
-        expect(contentElement.innerHTML).equals(exampleHtml1);
+        expect(contentElement.innerHTML).toEqual(exampleHtml1);
     });
 
-    it("finds element for source line", () => {
+    test("finds element for source line", () => {
         document.body.innerHTML = exampleHtml1;
         const element = previewHandler.findElementForSourceLine(document.body, 4);
-        expect(element).not.to.be.equal(undefined);
-        expect(element!.tagName).to.be.equal('H2');
-        expect(element!.textContent).to.be.equal('License');
+        expect(element).not.toEqual(undefined);
+        expect(element!.tagName).toEqual('H2');
+        expect(element!.textContent).toEqual('License');
     });
 
-    it("finds previous element for empty source line", () => {
+    test("finds previous element for empty source line", () => {
         document.body.innerHTML = exampleHtml1;
         const element = previewHandler.findElementForSourceLine(document.body, 3);
-        expect(element).not.to.be.equal(undefined);
-        expect(element!.tagName).to.be.equal('P');
-        expect(element!.textContent).that.startWith('Shows a preview of supported resources.');
+        expect(element).not.toEqual(undefined);
+        expect(element!.tagName).toEqual('P');
+        expect(element!.textContent!.startsWith('Shows a preview of supported resources.')).toEqual(true);
     });
 
-    it("finds source line for offset in html", () => {
+    test("finds source line for offset in html", () => {
         mockOffsetProperties();
         document.body.innerHTML = exampleHtml1;
         for (const expectedLine of [0, 1, 4, 5]) {
             const line = previewHandler.getSourceLineForOffset(document.body, offsetForLine(expectedLine));
-            expect(line).to.be.equal(expectedLine);
+            expect(line).toEqual(expectedLine);
         }
     });
 
-    it("interpolates source lines for offset in html", () => {
+    test("interpolates source lines for offset in html", () => {
         mockOffsetProperties();
         document.body.innerHTML = exampleHtml1;
         const expectedLines = [1, 2, 3, 4];
@@ -73,7 +59,7 @@ describe("markdown-preview-handler", () => {
             const expectedLine = expectedLines[i];
             const offset = offsets[i];
             const line = previewHandler.getSourceLineForOffset(document.body, offset);
-            expect(line).to.be.equal(expectedLine);
+            expect(line).toEqual(expectedLine);
         }
     });
 });

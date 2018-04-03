@@ -5,10 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as temp from 'temp';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as assert from 'assert';
+import * as tmp from 'tmp';
 import { ExtensionClient, ExtensionServer, Extension } from '../common/extension-protocol';
 import extensionNodeTestContainer from './test/extension-node-test-container';
 import { ApplicationProject } from './application-project';
@@ -36,8 +36,7 @@ fs.ensureDirSync(dir);
 describe("node-extension-server", function () {
 
     beforeEach(function () {
-        this.timeout(50000);
-        appProjectPath = temp.mkdirSync({ dir });
+        appProjectPath = tmp.dirSync({ dir, unsafeCleanup: true });
         fs.writeJsonSync(path.resolve(appProjectPath, 'package.json'), {
             "dependencies": {
                 "@theia/core": "0.1.0",
@@ -53,25 +52,22 @@ describe("node-extension-server", function () {
         });
         server = container.get(ExtensionServer);
         appProject = container.get(ApplicationProject);
-    });
+    }, 50000);
 
     afterEach(function () {
-        this.timeout(50000);
         server.dispose();
         appProject.dispose();
         fs.removeSync(appProjectPath);
-    });
+    }, 50000);
 
     it("search", function () {
-        this.timeout(30000);
-
         return server.search({
             query: "filesystem scope:theia"
         }).then(extensions => {
             assert.equal(extensions.length, 1, JSON.stringify(extensions, undefined, 2));
             assert.equal(extensions[0].name, '@theia/filesystem');
         });
-    });
+    }, 50000);
 
     it("installed", function () {
         this.timeout(10000);

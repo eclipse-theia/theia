@@ -5,8 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import 'reflect-metadata';
+
 import { Container } from 'inversify';
-import * as chai from 'chai';
+
 import { ProblemManager } from './problem-manager';
 import URI from "@theia/core/lib/common/uri";
 import { LocalStorageService, StorageService } from '@theia/core/lib/browser/storage-service';
@@ -14,11 +16,10 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 
-const expect = chai.expect;
 let manager: ProblemManager;
 let testContainer: Container;
 
-before(async () => {
+beforeAll(async () => {
     testContainer = new Container();
     testContainer.bind(ILogger).to(MockLogger);
     testContainer.bind(StorageService).to(LocalStorageService).inSingletonScope();
@@ -89,12 +90,12 @@ before(async () => {
 });
 
 describe('problem-manager', () => {
-    it('replaces markers', async () => {
+    test('replaces markers', async () => {
         let events = 0;
         manager.onDidChangeMarkers(() => {
             events++;
         });
-        expect(events).equal(0);
+        expect(events).toEqual(0);
         const previous = await manager.setMarkers(new URI('file:/foo/bar.txt'), 'me', [
             {
                 range: {
@@ -123,33 +124,33 @@ describe('problem-manager', () => {
                 message: "Bar"
             }
         ]);
-        expect(previous.length).equal(2);
-        expect(events).equal(1);
-        expect(manager.findMarkers().length).equal(4);
+        expect(previous).toHaveLength(2);
+        expect(events).toEqual(1);
+        expect(manager.findMarkers()).toHaveLength(4);
     });
 
     it('should find markers with filter', () => {
         expect(manager.findMarkers({
             owner: 'me'
-        }).length).equal(4);
+        })).toHaveLength(4);
 
         expect(manager.findMarkers({
             owner: 'you'
-        }).length).equal(0);
+        })).toHaveLength(0);
 
         expect(manager.findMarkers({
             uri: new URI('file:/foo/foo.txt'),
             owner: 'me'
-        }).length).equal(2);
+        })).toHaveLength(2);
 
         expect(manager.findMarkers({
             dataFilter: data => data.range.end.character > 1
-        }).length).equal(1);
+        })).toHaveLength(1);
     });
 
     it('should persist markers', async () => {
         const newManager = testContainer.get(ProblemManager);
         await newManager.initialized;
-        expect(newManager.findMarkers().length).eq(4);
+        expect(newManager.findMarkers().length).toEqual(4);
     });
 });

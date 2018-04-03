@@ -6,9 +6,8 @@
  */
 
 import * as fs from 'fs-extra';
-import * as temp from 'temp';
 import * as path from 'path';
-import { expect } from 'chai';
+import * as tmp from 'tmp';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { Git } from '../common/git';
 import { DugiteGit } from './dugite-git';
@@ -20,8 +19,6 @@ import { GitWatcherServer, GitStatusChangeEvent } from '../common/git-watcher';
 
 // tslint:disable:no-unused-expression
 
-const track = temp.track();
-
 describe('git-watcher-slow', () => {
 
     let git: Git | undefined;
@@ -31,8 +28,8 @@ describe('git-watcher-slow', () => {
     beforeEach(async function () {
         this.timeout(20000);
 
-        const root = track.mkdirSync('git-watcher-slow');
-        const localUri = FileUri.create(root).toString();
+        const root = tmp.dirSync({prefix: 'git-watcher-slow-', unsafeCleanup: true});
+        const localUri = FileUri.create(root.name).toString();
         const { container, bind } = initializeBindings();
         bindGit(bind);
         bindRepositoryWatcher(bind);
@@ -46,7 +43,6 @@ describe('git-watcher-slow', () => {
 
     after(function () {
         this.timeout(20000);
-        track.cleanupSync();
     });
 
     it('watching the same repository multiple times should not duplicate the events', async function () {
@@ -59,7 +55,7 @@ describe('git-watcher-slow', () => {
             async onGitChanged(event: GitStatusChangeEvent): Promise<void> {
                 // Ignore that event which is fired when one subscribes to the repository changes via #watchGitChanges(repository).
                 if (ignoredEvents > 0) {
-                    expect(event.status.changes).to.be.empty;
+                    expect(event.status.changes).toHaveLength(0);
                     ignoredEvents--;
                     if (ignoredEvents === 0) {
                         // Once we consumed all the events we wanted to ignore, make the FS change.
@@ -77,15 +73,15 @@ describe('git-watcher-slow', () => {
         await sleep(6000);
 
         watchers.forEach(async watcherId => await watcher!.unwatchGitChanges(watcherId));
-        expect(events.length).to.be.equal(1, JSON.stringify(events));
-        expect(events[0].status.changes.length).to.be.equal(1, JSON.stringify(events));
-        expect(events[0].status.changes[0].uri.toString().endsWith('A.txt')).to.be.true;
+        expect(events).toHaveLength(1, JSON.stringify(events));
+        expect(events[0].status.changes).toHaveLength(1, JSON.stringify(events));
+        expect(events[0].status.changes[0].uri.toString().endsWith('A.txt')).toEqual(true);
 
         events.length = 0;
         // Revert the change we've made, and check for the notifications. Zero should be received.
         await fs.unlink(path.join(FileUri.fsPath(repository!.localUri), 'A.txt'));
         await sleep(6000);
-        expect(events).to.be.empty;
+        expect(events).toHaveLength(0);
     });
 
 });

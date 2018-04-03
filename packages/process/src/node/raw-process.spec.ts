@@ -4,30 +4,21 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-import * as chai from 'chai';
+
+import 'reflect-metadata';
+
 import * as process from 'process';
 import * as stream from 'stream';
 import { testContainer } from './inversify.spec-config';
 import { RawProcessFactory } from './raw-process';
-import * as temp from 'temp';
+import * as tmp from 'tmp';
 import * as fs from 'fs';
 import { isWindows } from '@theia/core';
 
-/* Allow to create temporary files, but delete them when we're done.  */
-const track = temp.track();
-
-/**
- * Globals
- */
-
-const expect = chai.expect;
-
-describe('RawProcess', function () {
-
-    this.timeout(5000);
+describe('RawProcess', () => {
     const rawProcessFactory = testContainer.get<RawProcessFactory>(RawProcessFactory);
 
-    it('test error on non-existent path', async function () {
+    test('test error on non-existent path', async () => {
         const p = new Promise((resolve, reject) => {
             const rawProcess = rawProcessFactory({ command: '/non-existent' });
             rawProcess.onError(error => {
@@ -37,12 +28,12 @@ describe('RawProcess', function () {
             });
         });
 
-        expect(await p).to.be.equal('ENOENT');
+        await expect(p).resolves.toEqual('ENOENT');
     });
 
-    it('test error on non-executable path', async function () {
+    test('test error on non-executable path', async () => {
         /* Create a non-executable file.  */
-        const f = track.openSync('non-executable');
+        const f = tmp.fileSync({ prefix: 'non-executable-' });
         fs.writeSync(f.fd, 'echo bob');
 
         /* Make really sure it's non-executable.  */
@@ -55,7 +46,7 @@ describe('RawProcess', function () {
         fs.closeSync(f.fd);
 
         const p = new Promise((resolve, reject) => {
-            const rawProcess = rawProcessFactory({ command: f.path });
+            const rawProcess = rawProcessFactory({ command: f.name });
             rawProcess.onError(error => {
                 // tslint:disable-next-line:no-any
                 const code = (error as any).code;
@@ -69,10 +60,10 @@ describe('RawProcess', function () {
             expectedCode = 'UNKNOWN';
         }
 
-        expect(await p).to.equal(expectedCode);
+        await expect(p).resolves.toEqual(expectedCode);
     });
 
-    it('test exit', async function () {
+    test('test exit', async () => {
         const args = ['--version'];
         const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
         const p = new Promise((resolve, reject) => {
@@ -89,10 +80,10 @@ describe('RawProcess', function () {
             });
         });
 
-        await p;
+        await expect(p).resolves.toBeUndefined();
     });
 
-    it('test pipe stdout stream', async function () {
+    test('test pipe stdout stream', async () => {
         const args = ['--version'];
         const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
 
@@ -110,10 +101,10 @@ describe('RawProcess', function () {
 
         rawProcess.output.pipe(outStream);
 
-        expect(await p).to.be.equal(process.version);
+        await expect(p).resolves.toEqual(process.version);
     });
 
-    it('test pipe stderr stream', async function () {
+    test('test pipe stderr stream', async () => {
         const args = ['invalidarg'];
         const rawProcess = rawProcessFactory({ command: process.execPath, 'args': args });
 
@@ -131,6 +122,6 @@ describe('RawProcess', function () {
 
         rawProcess.errorOutput.pipe(outStream);
 
-        expect(await p).to.have.string('Error');
+        await expect(p).resolves.toContain('Error');
     });
 });

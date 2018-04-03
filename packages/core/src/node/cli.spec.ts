@@ -5,8 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import 'reflect-metadata';
+
 import * as yargs from "yargs";
-import * as chai from "chai";
 import { CliManager, CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
 
@@ -34,7 +35,7 @@ beforeEach(() => {
 });
 
 describe('CliManager', () => {
-    it("Parses simple option", async () => {
+    test("Parses simple option", async () => {
         const value = new Deferred<string>();
         const mnr = new TestCliManager({
             configure(conf: yargs.Argv) {
@@ -47,10 +48,10 @@ describe('CliManager', () => {
         });
         mnr.setArgs('-f', "bla");
         mnr.initializeCli();
-        chai.assert.equal(await value.promise, 'bla');
+        await expect(value.promise).resolves.toEqual('bla');
     });
 
-    it("resolves with default", async () => {
+    test("resolves with default", async () => {
         const value = new Deferred<string>();
         const mnr = new TestCliManager({
             configure(conf: yargs.Argv) {
@@ -63,16 +64,15 @@ describe('CliManager', () => {
         });
         mnr.setArgs('--foo');
         mnr.initializeCli();
-        chai.assert.equal(await value.promise, 'my-default');
+        await expect(value.promise).resolves.toEqual('my-default');
     });
 
-    it("prints help and exits", () =>
+    test("prints help and exits", () =>
         assertExits(() => {
             const mnr = new TestCliManager();
             mnr.setArgs('--help');
             mnr.initializeCli();
-        })
-    );
+        }));
 });
 
 function assertExits(code: () => void): Promise<void> {

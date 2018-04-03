@@ -5,16 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as chai from 'chai';
 import { Endpoint } from "@theia/core/src/browser/endpoint";
-
-const expect = chai.expect;
 
 describe("Endpoint", () => {
 
     describe("01 #getWebSocketUrl", () => {
 
-        it("Should correctly join root pathname", () => {
+        test("Should correctly join root pathname", () => {
             expectWsUri(
                 {
                     httpScheme: "ws",
@@ -28,7 +25,7 @@ describe("Endpoint", () => {
                 }, "ws://example.org/miau/");
         });
 
-        it("Should correctly join pathname and path", () => {
+        test("Should correctly join pathname and path", () => {
             expectWsUri(
                 {
                     httpScheme: "ws",
@@ -42,21 +39,24 @@ describe("Endpoint", () => {
                 }, "ws://example.org/mainresource/miau/");
         });
 
-        it("Should correctly join pathname and path, ignoring double slash in between", () => {
-            expectWsUri(
-                {
-                    httpScheme: "ws",
-                    path: "/miau/"
-                },
-                {
-                    host: "example.org",
-                    pathname: "/mainresource/",
-                    search: "",
-                    protocol: ""
-                }, "ws://example.org/mainresource/miau/");
-        });
+        test(
+            "Should correctly join pathname and path, ignoring double slash in between",
+            () => {
+                expectWsUri(
+                    {
+                        httpScheme: "ws",
+                        path: "/miau/"
+                    },
+                    {
+                        host: "example.org",
+                        pathname: "/mainresource/",
+                        search: "",
+                        protocol: ""
+                    }, "ws://example.org/mainresource/miau/");
+            }
+        );
 
-        it("Should correctly join pathname and path, without trailing slash", () => {
+        test("Should correctly join pathname and path, without trailing slash", () => {
             expectWsUri(
                 {
                     httpScheme: "ws",
@@ -73,7 +73,7 @@ describe("Endpoint", () => {
 
     describe("02 #httpScheme", () => {
 
-        it("Should choose https:// if location protocol is https://", () => {
+        test("Should choose https:// if location protocol is https://", () => {
             expectRestUri(
                 {
                     path: "/"
@@ -91,11 +91,11 @@ describe("Endpoint", () => {
 function expectWsUri(options: Endpoint.Options, mockLocation: Endpoint.Location, expectedUri: string) {
     const cut = new Endpoint(options, mockLocation);
     const uri = cut.getWebSocketUrl();
-    expect(uri.toString()).to.eq(expectedUri);
+    expect(uri.toString()).toEqual(expectedUri);
 }
 
 function expectRestUri(options: Endpoint.Options, mockLocation: Endpoint.Location, expectedUri: string) {
     const cut = new Endpoint(options, mockLocation);
     const uri = cut.getRestUrl();
-    expect(uri.toString()).to.eq(expectedUri);
+    expect(uri.toString()).toEqual(expectedUri);
 }

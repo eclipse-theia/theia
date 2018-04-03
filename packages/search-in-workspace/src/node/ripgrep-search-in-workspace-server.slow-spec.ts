@@ -5,9 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as chai from 'chai';
-const expect = chai.expect;
-import * as temp from 'temp';
+import * as tmp from 'tmp';
 import * as fs from 'fs';
 import { RipgrepSearchInWorkspaceServer } from './ripgrep-search-in-workspace-server';
 import { SearchInWorkspaceClient, SearchInWorkspaceResult } from '../common/search-in-workspace-interface';
@@ -16,9 +14,6 @@ import { ILogger, isWindows } from '@theia/core';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { RawProcessFactory, RawProcessOptions, RawProcess, ProcessManager } from '@theia/process/lib/node';
 import * as path from 'path';
-
-// Allow creating temporary files, but remove them when we are done.
-const track = temp.track();
 
 // The root dir we'll use to test searching.
 let rootDir: string;
@@ -56,8 +51,8 @@ function createTestFile(filename: string, text: string) {
     fileLines.set(filename, text.split('\n'));
 }
 
-before(() => {
-    rootDir = track.mkdirSync();
+beforeAll(() => {
+    rootDir = tmp.dirSync({ unsafeCleanup: true }).name;
 
     createTestFile('carrots', `\
 This is a carrot.
@@ -123,10 +118,6 @@ beforeEach(() => {
     ripgrepServer = container.get(RipgrepSearchInWorkspaceServer);
 });
 
-after(() => {
-    track.cleanupSync();
-});
-
 // Compare expected and actual search results.
 //
 // For convenience, the expected entries do not have their lineText field set
@@ -138,7 +129,7 @@ after(() => {
 // rootDir.  This function will update the field to contain the absolute path.
 
 function compareSearchResults(expected: SearchInWorkspaceResult[], actual: SearchInWorkspaceResult[]) {
-    expect(actual.length).eq(expected.length);
+    expect(actual).toHaveLength(expected.length);
 
     if (actual.length !== expected.length) {
         return;
@@ -149,22 +140,16 @@ function compareSearchResults(expected: SearchInWorkspaceResult[], actual: Searc
         const e = expected[i];
 
         const lines = fileLines.get(e.file);
-        if (lines) {
-            const line = lines[e.line - 1];
-            e.lineText = line;
-            e.file = path.join(rootDir, e.file);
+        expect(lines).toBeTruthy();
+        const line = lines![e.line - 1];
+        e.lineText = line;
+        e.file = path.join(rootDir, e.file);
 
-            expect(a).deep.eq(e);
-        } else {
-            // We don't know this file...
-            expect.fail();
-        }
+        expect(a).toEqual(e);
     }
 }
 
 describe('ripgrep-search-in-workspace-server', function () {
-    this.timeout(10000);
-
     // Try some simple patterns with different case.
     it('returns 7 results when searching for "carrot"', function (done) {
         const pattern = 'carrot';
@@ -185,7 +170,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir);
-    });
+    }, 10000);
 
     it('returns 1 result when searching for "Carrot"', function (done) {
         const client = new ResultAccumulator(() => {
@@ -198,7 +183,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search('Carrot', rootDir);
-    });
+    }, 10000);
 
     it('returns 0 result when searching for "CarroT"', function (done) {
         const pattern = 'CarroT';
@@ -209,7 +194,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir);
-    });
+    }, 10000);
 
     // Try something that we know isn't there.
     it('finds 0 result when searching for "PINEAPPLE"', function (done) {
@@ -221,7 +206,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir);
-    });
+    }, 10000);
 
     // Try a pattern with a space.
     it('finds 1 result when searching for "carrots are orange"', function (done) {
@@ -237,13 +222,12 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir);
-    });
+    }, 10000);
 
     // Try with an output size that exceeds the default node buffer size
     // (200 * 1024) when spawning a new process.
     it('works with a lot of results', function (done) {
         // This can take a bit of time.
-        this.timeout(150000);
         const pattern = 'lots-of-matches';
 
         const client = new ResultAccumulator(() => {
@@ -265,7 +249,7 @@ describe('ripgrep-search-in-workspace-server', function () {
 
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir);
-    });
+    }, 150000);
 
     // Try limiting the number of returned results.
     it('limits the number of returned results', function (done) {
@@ -292,7 +276,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         ripgrepServer.search(pattern, rootDir, {
             maxResults: 1000,
         });
-    });
+    }, 10000);
 
     // Try with regexes.
     it('searches for regexes', function (done) {
@@ -312,7 +296,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir);
-    });
+    }, 10000);
 
     // Try with a pattern starting with -, and in filenames containing colons and spaces.
     it('searches a pattern starting with -', function (done) {
@@ -334,7 +318,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir);
-    });
+    }, 10000);
 
     // Try with a pattern starting with --, and in filenames containing colons and spaces.
     it('searches a pattern starting with --', function (done) {
@@ -356,7 +340,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir);
-    });
+    }, 10000);
 
     // Try searching in an UTF-8 file.
     it('searches in a UTF-8 file', function (done) {
@@ -373,7 +357,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir);
-    });
+    }, 10000);
 
     // Try searching a pattern that contains unicode characters.
     it('searches a UTF-8 pattern', function (done) {
@@ -391,7 +375,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir);
-    });
+    }, 10000);
 
     // A regex that may match an empty string should not return zero-length
     // results.  Run the test in a directory without big files, because it
@@ -408,5 +392,5 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir + '/small');
-    });
+    }, 10000);
 });

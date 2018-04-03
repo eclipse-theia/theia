@@ -5,7 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { expect } from 'chai';
+import 'reflect-metadata';
+
 import { Container } from 'inversify';
 import { notEmpty } from '../../common/objects';
 import { Tree, TreeImpl } from './tree';
@@ -29,79 +30,79 @@ describe('tree-iterator', () => {
         model.root = MockTreeModel.HIERARCHICAL_MOCK_ROOT();
     });
 
-    it('should include root', () => {
+    test('should include root', () => {
         const expected = ['1'];
         const actual = [...new BottomUpTreeIterator(findNode('1')!)].map(node => node.id);
-        expect(expected).to.be.deep.equal(actual);
+        expect(expected).toEqual(actual);
     });
 
-    it('should return `undefined` after consuming the iterator', () => {
+    test('should return `undefined` after consuming the iterator', () => {
         const itr = new BottomUpTreeIterator(findNode('1')!);
         let next = itr.next();
         while (!next.done) {
-            expect(next.value).to.be.not.undefined;
+            expect(next.value).toBeDefined();
             next = itr.next();
         }
-        expect(next.done).to.be.true;
-        expect(next.value).to.be.undefined;
+        expect(next.done).toEqual(true);
+        expect(next.value).toBeUndefined();
     });
 
-    it('depth-first (no collapsed nodes)', () => {
+    test('depth-first (no collapsed nodes)', () => {
         const expected = ['1', '1.1', '1.1.1', '1.1.2', '1.2', '1.2.1', '1.2.1.1', '1.2.1.2', '1.2.2', '1.2.3', '1.3'];
         const actual = [...new DepthFirstTreeIterator(model.root!)].map(node => node.id);
-        expect(expected).to.be.deep.equal(actual);
+        expect(expected).toEqual(actual);
     });
 
-    it('depth-first (with collapsed nodes)', () => {
+    test('depth-first (with collapsed nodes)', () => {
         collapseNode('1.1', '1.2.1');
         const expected = ['1', '1.1', '1.2', '1.2.1', '1.2.2', '1.2.3', '1.3'];
         const actual = [...new DepthFirstTreeIterator(model.root!, { pruneCollapsed: true })].map(node => node.id);
-        expect(expected).to.be.deep.equal(actual);
+        expect(expected).toEqual(actual);
     });
 
-    it('breadth-first (no collapsed nodes)', () => {
+    test('breadth-first (no collapsed nodes)', () => {
         const expected = ['1', '1.1', '1.2', '1.3', '1.1.1', '1.1.2', '1.2.1', '1.2.2', '1.2.3', '1.2.1.1', '1.2.1.2'];
         const actual = [...new BreadthFirstTreeIterator(model.root!)].map(node => node.id);
-        expect(expected).to.be.deep.equal(actual);
+        expect(expected).toEqual(actual);
     });
 
-    it('breadth-first (with collapsed nodes)', () => {
+    test('breadth-first (with collapsed nodes)', () => {
         collapseNode('1.1', '1.2.1');
         const expected = ['1', '1.1', '1.2', '1.3', '1.2.1', '1.2.2', '1.2.3'];
         const actual = [...new BreadthFirstTreeIterator(model.root!, { pruneCollapsed: true })].map(node => node.id);
-        expect(expected).to.be.deep.equal(actual);
+        expect(expected).toEqual(actual);
     });
 
-    it('bottom-up (no collapsed nodes)', () => {
+    test('bottom-up (no collapsed nodes)', () => {
         const expected = ['1.2.2', '1.2.1.2', '1.2.1.1', '1.2.1', '1.2', '1.1.2', '1.1.1', '1.1', '1'];
         const actual = [...new BottomUpTreeIterator(findNode('1.2.2')!)].map(node => node.id);
-        expect(expected).to.be.deep.equal(actual);
+        expect(expected).toEqual(actual);
     });
 
-    it('bottom-up (with collapsed nodes)', () => {
+    test('bottom-up (with collapsed nodes)', () => {
         collapseNode('1.1', '1.2.1');
         const expected = ['1.2.2', '1.2.1', '1.2', '1.1', '1'];
         const actual = [...new BottomUpTreeIterator(findNode('1.2.2')!, { pruneCollapsed: true })].map(node => node.id);
-        expect(expected).to.be.deep.equal(actual);
+        expect(expected).toEqual(actual);
     });
 
-    it('top-down (no collapsed nodes)', () => {
+    test('top-down (no collapsed nodes)', () => {
         const expected = ['1.1.2', '1.2', '1.2.1', '1.2.1.1', '1.2.1.2', '1.2.2', '1.2.3', '1.3'];
         const actual = [...new TopDownTreeIterator(findNode('1.1.2')!)].map(node => node.id);
-        expect(expected).to.be.deep.equal(actual);
+        expect(expected).toEqual(actual);
     });
 
-    it('top-down (with collapsed nodes)', () => {
+    test('top-down (with collapsed nodes)', () => {
         collapseNode('1.2.1');
         const expected = ['1.1.2', '1.2', '1.2.1', '1.2.2', '1.2.3', '1.3'];
         const actual = [...new TopDownTreeIterator(findNode('1.1.2')!, { pruneCollapsed: true })].map(node => node.id);
-        expect(expected).to.be.deep.equal(actual);
+        expect(expected).toEqual(actual);
     });
 
     function collapseNode(...ids: string[]): void {
         ids.map(findNode).filter(notEmpty).filter(ExpandableTreeNode.is).forEach(node => {
             model.collapseNode(node);
-            expect(node).to.have.property('expanded', false);
+            expect(node).toHaveProperty('expanded', false);
         });
     }
 
@@ -129,26 +130,25 @@ describe('iterators', () => {
         let next = itr.next();
         while (!next.done) {
             const { value } = next;
-            expect(value).to.be.not.undefined;
+            expect(value).toBeDefined();
             const index = array.indexOf(value);
-            expect(index).to.be.not.equal(-1);
+            expect(index).not.toEqual(-1);
             array.splice(index, 1);
             next = itr.next();
         }
-        expect(array).to.be.empty;
+        expect(array).toHaveLength(0);
     });
 
     it('cycle - without start', function () {
-        this.timeout(1000);
         const array = [1, 2, 3, 4];
         const itr = Iterators.cycle(array);
         const visitedItems = new Set();
         let next = itr.next();
         while (!next.done) {
             const { value } = next;
-            expect(value).to.be.not.undefined;
+            expect(value).toBeDefined();
             if (visitedItems.has(value)) {
-                expect(Array.from(visitedItems).sort()).to.be.deep.equal(array.sort());
+                expect(Array.from(visitedItems).sort()).toEqual(array.sort());
                 break;
             }
             visitedItems.add(value);
@@ -157,17 +157,16 @@ describe('iterators', () => {
     });
 
     it('cycle - with start', function () {
-        this.timeout(1000);
         const array = [1, 2, 3, 4];
         const itr = Iterators.cycle(array, 2);
         const visitedItems = new Set();
         let next = itr.next();
-        expect(next.value).to.be.equal(2);
+        expect(next.value).toEqual(2);
         while (!next.done) {
             const { value } = next;
-            expect(value).to.be.not.undefined;
+            expect(value).toBeDefined();
             if (visitedItems.has(value)) {
-                expect(Array.from(visitedItems).sort()).to.be.deep.equal(array.sort());
+                expect(Array.from(visitedItems).sort()).toEqual(array.sort());
                 break;
             }
             visitedItems.add(value);

@@ -5,16 +5,15 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import 'reflect-metadata';
+
 import { CommandContribution, CommandRegistry } from './command';
 import { CompositeMenuNode, MenuContribution, MenuModelRegistry } from './menu';
-import * as chai from "chai";
-
-const expect = chai.expect;
 
 describe('menu-model-registry', () => {
 
     describe('01 #register', () => {
-        it('Should allow to register menu actions.', () => {
+        test('Should allow to register menu actions.', () => {
             const fileMenu = ["main", "File"];
             const fileOpenMenu = [...fileMenu, "0_open"];
             const service = createMenuRegistry({
@@ -41,16 +40,15 @@ describe('menu-model-registry', () => {
                 });
             const all = service.getMenu();
             const main = all.children[0] as CompositeMenuNode;
-            expect(main.children.length).equals(1);
-            expect(main.id, "main");
-            expect(all.children.length).equals(1);
+            expect(main.children).toHaveLength(1);
+            expect(main.id).toBe("main");
+            expect(all.children).toHaveLength(1);
             const file = main.children[0] as CompositeMenuNode;
-            expect(file.children.length).equals(1);
-            expect(file.label, "File");
+            expect(file.children).toHaveLength(1);
+            expect(file.label).toBe("File");
             const openGroup = file.children[0] as CompositeMenuNode;
-            expect(openGroup.children.length).equals(2);
-            // tslint:disable-next-line:no-unused-expression
-            expect(openGroup.label).undefined;
+            expect(openGroup.children).toHaveLength(2);
+            expect(openGroup.label).toBeUndefined();
         });
     });
 });

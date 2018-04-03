@@ -11,7 +11,7 @@ import { NpmRegistry } from './npm-registry';
 import { RawExtensionPackage, ExtensionPackage } from './extension-package';
 
 const testOutdated = (expectation: (extensionPackage: ExtensionPackage) => boolean | Promise<boolean>, name: string, version: string) =>
-    it(name + '@' + version, async () => {
+    test(name + '@' + version, async () => {
         const registry = new NpmRegistry();
         const rawExtension = await RawExtensionPackage.view(registry, name, version);
         assert.ok(rawExtension);
@@ -19,11 +19,10 @@ const testOutdated = (expectation: (extensionPackage: ExtensionPackage) => boole
         const extensionPackage = new ExtensionPackage(rawExtension!, registry);
         const outdated = await extensionPackage.isOutdated();
         assert.equal(await expectation(extensionPackage), outdated);
-    });
+    }, 10000);
 
-describe("extension-package", function () {
+describe("extension-package", () => {
 
-    this.timeout(10000);
     describe("isOutdated", () => {
         testOutdated(async extensionPackage => {
             const latestVersion = await extensionPackage.getLatestVersion();

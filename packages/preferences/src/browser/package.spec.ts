@@ -6,7 +6,7 @@
  */
 
 /* note: this bogus test file is required so that
-   we are able to run mocha unit tests on this
+   we are able to run Jest unit tests on this
    package, without having any actual unit tests in it.
    This way a coverage report will be generated,
    showing 0% coverage, instead of no report.
@@ -15,5 +15,5 @@
 
 describe("preferences package", () => {
 
-    it("should support code coverage statistics", () => true);
+    test("should support code coverage statistics", () => Promise.resolve());
 });

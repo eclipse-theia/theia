@@ -5,8 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import 'reflect-metadata';
 import * as path from 'path';
-import * as temp from 'temp';
+import * as tmp from 'tmp';
 import * as fs from 'fs-extra';
 import * as assert from 'assert';
 import { InstallationParam, InstallationResult } from "../common/extension-protocol";
@@ -44,30 +45,26 @@ export async function assertInstallation(expectation: {
     assert.equal(false, result.failed, 'the installation is failed');
 }
 
-describe("application-project", function () {
+describe("application-project", () => {
 
-    beforeEach(function () {
-        this.timeout(50000);
-
+    beforeEach(() => {
         const dir = path.resolve(__dirname, '..', '..', 'application-project-test-temp');
         fs.ensureDirSync(dir);
-        appProjectPath = temp.mkdirSync({ dir });
+        appProjectPath = tmp.dirSync({ dir, unsafeCleanup: true }).name;
         appProject = extensionNodeTestContainer({
             projectPath: appProjectPath,
             npmClient: 'yarn',
             autoInstall: false,
             watchRegistry: false
         }).get(ApplicationProject);
-    });
+    }, 50000);
 
-    afterEach(function () {
-        this.timeout(50000);
+    afterEach(() => {
         appProject.dispose();
         fs.removeSync(appProjectPath);
-    });
+    }, 50000);
 
-    it("install", async function () {
-        this.timeout(1800000);
+    test("install", async () => {
 
         await fs.writeJSON(path.resolve(appProjectPath, 'package.json'), {
             "private": true,
@@ -92,6 +89,6 @@ describe("application-project", function () {
             installed: ['@theia/core'],
             uninstalled: ['@theia/filesystem']
         });
-    });
+    }, 1800000);
 
 });

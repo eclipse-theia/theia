@@ -5,6 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import 'reflect-metadata';
+
 import { DefaultOpenerService, OpenHandler } from './opener-service';
 import * as assert from 'assert';
 
@@ -25,7 +27,7 @@ const openerService = new DefaultOpenerService({
 
 describe("opener-service", () => {
 
-    it("getOpeners", () => {
+    test("getOpeners", () => {
         return openerService.getOpeners().then(openers => {
             assert.deepStrictEqual([openHandler], openers);
         });

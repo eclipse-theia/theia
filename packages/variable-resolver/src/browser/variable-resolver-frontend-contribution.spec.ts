@@ -3,13 +3,12 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * @jest-environment @theia/core/src/browser/test/jsdom-environment
  */
 
-import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+import 'reflect-metadata';
 
-let disableJSDOM = enableJSDOM();
-
-import * as chai from 'chai';
 import { Container, ContainerModule } from 'inversify';
 import { QuickOpenService } from '@theia/core/lib/browser';
 import { ILogger, bindContributionProvider } from '@theia/core/lib/common';
@@ -18,23 +17,12 @@ import { VariableContribution, VariableRegistry } from './variable';
 import { VariableQuickOpenService } from './variable-quick-open-service';
 import { VariableResolverFrontendContribution } from './variable-resolver-frontend-contribution';
 
-disableJSDOM();
-
-const expect = chai.expect;
-
-before(() => {
-    chai.config.showDiff = true;
-    chai.config.includeStack = true;
-});
-
 describe('variable-resolver-frontend-contribution', () => {
 
     let testContainer: Container;
     let variableRegistry: VariableRegistry;
 
-    before(() => {
-        disableJSDOM = enableJSDOM();
-
+    beforeAll(() => {
         testContainer = new Container();
         const module = new ContainerModule((bind, unbind, isBound, rebind) => {
             bindContributionProvider(bind, VariableContribution);
@@ -51,10 +39,6 @@ describe('variable-resolver-frontend-contribution', () => {
         testContainer.load(module);
     });
 
-    after(() => {
-        disableJSDOM();
-    });
-
     beforeEach(() => {
         variableRegistry = testContainer.get<VariableRegistry>(VariableRegistry);
 
@@ -64,9 +48,9 @@ describe('variable-resolver-frontend-contribution', () => {
 
     it('should register all variables from the contribution points', () => {
         const variables = variableRegistry.getVariables();
-        expect(variables.length).to.be.equal(2);
-        expect(variables[0].name).to.be.equal('file');
-        expect(variables[1].name).to.be.equal('lineNumber');
+        expect(variables.length).toEqual(2);
+        expect(variables[0].name).toEqual('file');
+        expect(variables[1].name).toEqual('lineNumber');
     });
 });
 

@@ -5,6 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+
+import 'mocha';
+import * as chaiAsPromised from 'chai-as-promised';
 import { testContainer } from './test/inversify.spec-config';
 import { BackendApplication } from '@theia/core/lib/node/backend-application';
 import { IShellTerminalServer } from '../common/shell-terminal-protocol';

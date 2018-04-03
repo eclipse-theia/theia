@@ -5,9 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as chai from 'chai';
-import { expect } from 'chai';
-chai.use(require('chai-string'));
+import 'reflect-metadata';
 
 import { MergeConflictsParser } from './merge-conflicts-parser';
 import { Range, Position } from '@theia/editor/lib/browser';
@@ -15,7 +13,7 @@ import { MergeConflict } from './merge-conflict';
 
 let parser: MergeConflictsParser;
 
-before(() => {
+beforeAll(() => {
     parser = new MergeConflictsParser();
 });
 
@@ -32,7 +30,7 @@ function parse(contents: string): MergeConflict[] {
 
 describe("merge-conflict-parser", () => {
 
-    it("simple merge conflict", () => {
+    test("simple merge conflict", () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
@@ -43,13 +41,13 @@ bar on branch
 >>>>>>> branch
 `
         );
-        expect(conflicts).to.have.lengthOf(1);
+        expect(conflicts).toHaveLength(1);
         const conflict = conflicts[0];
-        expect(conflict.total).to.not.be.undefined;
-        expect(conflict.current.marker).to.not.be.undefined;
-        expect(conflict.current.content).to.not.be.undefined;
-        expect(conflict.incoming.marker).to.not.be.undefined;
-        expect(conflict.incoming.content).to.not.be.undefined;
+        expect(conflict.total).toBeDefined();
+        expect(conflict.current.marker).toBeDefined();
+        expect(conflict.current.content).toBeDefined();
+        expect(conflict.incoming.marker).toBeDefined();
+        expect(conflict.incoming.content).toBeDefined();
     });
 
     it("content regions are correct", () => {
@@ -66,15 +64,15 @@ bar on branch
 >>>>>>> branch
 last line`;
         const conflicts = parse(content);
-        expect(conflicts).to.have.lengthOf(1);
+        expect(conflicts).toHaveLength(1);
         const conflict = conflicts[0];
 
         const total = conflict.total!;
-        expect(total, 'total range').to.deep.equal({
+        expect(total).toEqual({
             start: { line: 1, character: 0 },
             end: { line: 10, character: 14 }
         });
-        expect(substring(content, total)).to.equal(`<<<<<<< HEAD
+        expect(substring(content, total)).toEqual(`<<<<<<< HEAD
 foo changed on master
 bar changed on master
 ||||||| base 1
@@ -86,27 +84,27 @@ bar on branch
 >>>>>>> branch`);
 
         const currentContent = conflict.current.content!;
-        expect(currentContent).to.deep.equal({
+        expect(currentContent).toEqual({
             start: { line: 2, character: 0 },
             end: { line: 3, character: 21 }
         });
-        expect(substring(content, currentContent)).to.equal(`foo changed on master
+        expect(substring(content, currentContent)).toEqual(`foo changed on master
 bar changed on master`);
 
         const baseContent = conflict.bases[0].content!;
-        expect(baseContent).to.deep.equal({
+        expect(baseContent).toEqual({
             start: { line: 5, character: 0 },
             end: { line: 6, character: 3 }
         });
-        expect(substring(content, baseContent)).to.equal(`foo
+        expect(substring(content, baseContent)).toEqual(`foo
 bar`);
 
         const incomingContent = conflict.incoming.content!;
-        expect(incomingContent).to.deep.equal({
+        expect(incomingContent).toEqual({
             start: { line: 8, character: 0 },
             end: { line: 9, character: 13 }
         });
-        expect(substring(content, incomingContent)).to.equal(`foo on branch
+        expect(substring(content, incomingContent)).toEqual(`foo on branch
 bar on branch`);
     });
 
@@ -136,7 +134,7 @@ foo on branch
 bar on branch
 >>>>>>> branch`
         );
-        expect(conflicts).to.have.lengthOf(3);
+        expect(conflicts).toHaveLength(3);
     });
 
     it("merge conflict with bases", () => {
@@ -155,25 +153,25 @@ bar on branch
 >>>>>>> branch
 `
         );
-        expect(conflicts).to.have.lengthOf(1);
+        expect(conflicts).toHaveLength(1);
         const conflict = conflicts[0];
 
         const bases = conflict.bases;
-        expect(bases).to.have.lengthOf(3);
+        expect(bases).toHaveLength(3);
 
         const base1Content = bases[0].content;
-        expect(base1Content).to.not.be.undefined;
-        expect(base1Content).to.deep.equal({
+        expect(base1Content).toBeDefined();
+        expect(base1Content).toEqual({
             start: { line: 4, character: 0 },
             end: { line: 4, character: 13 }
         });
 
         const base2Content = bases[1].content;
-        expect(base2Content).to.be.undefined;
+        expect(base2Content).toBeUndefined();
 
         const base3Content = bases[2].content;
-        expect(base3Content).to.not.be.undefined;
-        expect(base3Content).to.deep.equal({
+        expect(base3Content).toBeDefined();
+        expect(base3Content).toEqual({
             start: { line: 7, character: 0 },
             end: { line: 7, character: 13 }
         });
@@ -191,12 +189,12 @@ bar on branch
 >>>>>>> branch
 `
         );
-        expect(conflicts).to.have.lengthOf(1);
+        expect(conflicts).toHaveLength(1);
         const conflict = conflicts[0];
 
         const total = conflict.total;
-        expect(total).to.not.be.undefined;
-        expect(total).to.deep.equal({
+        expect(total).toBeDefined();
+        expect(total).toEqual({
             start: { line: 1, character: 0 },
             end: { line: 7, character: 14 }
         });
@@ -214,7 +212,7 @@ bar on branch
 >>>>>>> branch
 `
         );
-        expect(conflicts).to.have.lengthOf(0);
+        expect(conflicts).toHaveLength(0);
     });
 
     it("broken 3: second separator", () => {
@@ -229,7 +227,7 @@ bar on branch
 >>>>>>> branch
 `
         );
-        expect(conflicts).to.have.lengthOf(0);
+        expect(conflicts).toHaveLength(0);
     });
 
     it("broken 4: second separator in incoming content", () => {
@@ -244,7 +242,7 @@ bar on branch
 >>>>>>> branch
 `
         );
-        expect(conflicts).to.have.lengthOf(0);
+        expect(conflicts).toHaveLength(0);
     });
 
     it("broken 5: incoming marker, no separator", () => {
@@ -265,12 +263,12 @@ bar on branch
 >>>>>>> branch
 `
         );
-        expect(conflicts).to.have.lengthOf(1);
+        expect(conflicts).toHaveLength(1);
         const conflict = conflicts[0];
 
         const total = conflict.total;
-        expect(total).to.not.be.undefined;
-        expect(total).to.deep.equal({
+        expect(total).toBeDefined();
+        expect(total).toEqual({
             start: { line: 7, character: 0 },
             end: { line: 13, character: 14 }
         });

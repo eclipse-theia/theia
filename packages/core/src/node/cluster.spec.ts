@@ -45,8 +45,7 @@ describe('master-process', () => {
      *   3.4 the master worker returns to the first worker
      *   3.5 the first worker exits
      */
-    it('start', async function () {
-        this.timeout(10000);
+    test('start', async () => {
         const master = new MasterProcess();
 
         prepareTestWorker('restart');
@@ -59,6 +58,6 @@ describe('master-process', () => {
         const restartedWorker = await master.restarted;
         await restartWorker.exit;
         await restartedWorker.exit;
-    });
+    }, 10000);
 
 });

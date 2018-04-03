@@ -5,7 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { expect } from 'chai';
+import 'reflect-metadata';
+
 import { FuzzySearch } from './fuzzy-search';
 
 describe('fuzzy-search', () => {
@@ -72,11 +73,11 @@ describe('fuzzy-search', () => {
     });
 
     function expectOrder(actual: FuzzySearch.Match<string>[], expected: string[]) {
-        expect(actual.map(result => result.item)).to.be.deep.equal(expected);
+        expect(actual.map(result => result.item)).toEqual(expected);
     }
 
     function expectSearch(actual: FuzzySearch.Match<string>[], expected: FuzzySearch.Match<string>[]) {
-        expect(actual).to.be.deep.equal(expected);
+        expect(actual).toEqual(expected);
     }
 
     async function search(pattern: string, items: string[]): Promise<FuzzySearch.Match<string>[]> {

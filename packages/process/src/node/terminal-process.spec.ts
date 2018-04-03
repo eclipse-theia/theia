@@ -4,30 +4,25 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-import * as chai from 'chai';
+
+import 'reflect-metadata';
+
 import * as process from 'process';
 import * as stream from 'stream';
 import { testContainer } from './inversify.spec-config';
 import { TerminalProcessFactory } from './terminal-process';
 import { isWindows } from "@theia/core/lib/common";
 
-/**
- * Globals
- */
+describe('TerminalProcess', () => {
 
-const expect = chai.expect;
-
-describe('TerminalProcess', function () {
-
-    this.timeout(5000);
     const terminalProcessFactory = testContainer.get<TerminalProcessFactory>(TerminalProcessFactory);
 
-    it('test error on non existent path', async function () {
+    test('test error on non existent path', async () => {
 
         /* Strangely, Linux returns exited with code 1 when using a non existing path but Windows throws an error.
         This would need to be investigated more.  */
         if (isWindows) {
-            return expect(() => terminalProcessFactory({ command: '/non-existent' })).to.throw();
+            return expect(() => terminalProcessFactory({ command: '/non-existent' })).toThrow();
         } else {
             const terminalProcess = terminalProcessFactory({ command: '/non-existant' });
             const p = new Promise(resolve => {
@@ -36,11 +31,11 @@ describe('TerminalProcess', function () {
                 });
             });
 
-            await p;
+            await expect(p).resolves.toBeUndefined();
         }
     });
 
-    it('test exit', async function () {
+    test('test exit', async () => {
         const args = ['--version'];
         const terminalProcess = terminalProcessFactory({ command: process.execPath, 'args': args });
         const p = new Promise((resolve, reject) => {
@@ -56,10 +51,10 @@ describe('TerminalProcess', function () {
             });
         });
 
-        await p;
+        await expect(p).resolves.toBeUndefined();
     });
 
-    it('test pipe stream', async function () {
+    test('test pipe stream', async () => {
         const args = ['--version'];
         const terminalProcess = terminalProcessFactory({ command: process.execPath, 'args': args });
 
@@ -80,6 +75,6 @@ describe('TerminalProcess', function () {
         terminalProcess.createOutputStream().pipe(outStream);
 
         /* Avoid using equal since terminal characters can be inserted at the end.  */
-        expect(await p).to.have.string(process.version);
+        await expect(p).resolves.toContain(process.version);
     });
 });

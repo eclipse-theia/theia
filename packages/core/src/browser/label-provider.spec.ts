@@ -5,37 +5,44 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { expect } from 'chai';
+import 'reflect-metadata';
+
 import { DefaultUriLabelProviderContribution } from './label-provider';
 import URI from '../common/uri';
 
-describe("DefaultUriLabelProviderContribution", function () {
+describe("DefaultUriLabelProviderContribution", () => {
 
-    it("should return a short name", function () {
+    test("should return a short name", () => {
         const prov = new DefaultUriLabelProviderContribution();
         const shortName = prov.getName(new URI('file:///tmp/hello/you.txt'));
 
-        expect(shortName).eq('you.txt');
+        expect(shortName).toEqual('you.txt');
     });
 
-    it("should return a long name", function () {
+    test("should return a long name", () => {
         const prov = new DefaultUriLabelProviderContribution();
         const longName = prov.getLongName(new URI('file:///tmp/hello/you.txt'));
 
-        expect(longName).eq('/tmp/hello/you.txt');
+        expect(longName).toEqual('/tmp/hello/you.txt');
     });
 
-    it("should return icon class for something that seems to be a file", function () {
-        const prov = new DefaultUriLabelProviderContribution();
-        const icon = prov.getIcon(new URI('file:///tmp/hello/you.txt'));
+    test(
+        "should return icon class for something that seems to be a file",
+        () => {
+            const prov = new DefaultUriLabelProviderContribution();
+            const icon = prov.getIcon(new URI('file:///tmp/hello/you.txt'));
 
-        expect(icon).eq('text-icon');
-    });
+            expect(icon).toEqual('text-icon');
+        }
+    );
 
-    it("should return icon class for something that seems to be a directory", function () {
-        const prov = new DefaultUriLabelProviderContribution();
-        const icon = prov.getIcon(new URI('file:///tmp/hello'));
+    test(
+        "should return icon class for something that seems to be a directory",
+        () => {
+            const prov = new DefaultUriLabelProviderContribution();
+            const icon = prov.getIcon(new URI('file:///tmp/hello'));
 
-        expect(icon).eq('fa fa-folder');
-    });
+            expect(icon).toEqual('fa fa-folder');
+        }
+    );
 });

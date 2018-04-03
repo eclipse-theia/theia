@@ -5,11 +5,12 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import 'reflect-metadata';
+
 import * as path from 'path';
 import * as upath from 'upath';
-import * as temp from 'temp';
+import * as tmp from 'tmp';
 import * as fs from 'fs-extra';
-import { expect } from 'chai';
 import { Git } from '../common/git';
 import { git as gitExec } from 'dugite-extra/lib/core/git';
 import { FileUri } from '@theia/core/lib/node/file-uri';
@@ -20,21 +21,13 @@ import { createGit } from './test/binding-helper';
 // tslint:disable:no-unused-expression
 // tslint:disable:max-line-length
 
-const track = temp.track();
-
-describe('git', async function () {
-
-    this.timeout(10000);
-
-    after(async () => {
-        track.cleanupSync();
-    });
+describe('git', async () => {
 
     describe('repositories', async () => {
 
-        it('should discover only first repository', async () => {
+        test('should discover only first repository', async () => {
 
-            const root = track.mkdirSync('discovery-test-1');
+            const root = tmp.dirSync({ prefix: 'discovery-test-1', unsafeCleanup: true }).name;
             fs.mkdirSync(path.join(root, 'A'));
             fs.mkdirSync(path.join(root, 'B'));
             fs.mkdirSync(path.join(root, 'C'));
@@ -44,13 +37,13 @@ describe('git', async function () {
             const git = await createGit();
             const workspaceRootUri = FileUri.create(root).toString();
             const repositories = await git.repositories(workspaceRootUri, { maxCount: 1 });
-            expect(repositories.length).to.deep.equal(1);
+            expect(repositories).toHaveLength(1);
 
         });
 
-        it('should discover all nested repositories', async () => {
+        test('should discover all nested repositories', async () => {
 
-            const root = track.mkdirSync('discovery-test-2');
+            const root = tmp.dirSync({ prefix: 'discovery-test-2', unsafeCleanup: true }).name;
             fs.mkdirSync(path.join(root, 'A'));
             fs.mkdirSync(path.join(root, 'B'));
             fs.mkdirSync(path.join(root, 'C'));
@@ -60,87 +53,93 @@ describe('git', async function () {
             const git = await createGit();
             const workspaceRootUri = FileUri.create(root).toString();
             const repositories = await git.repositories(workspaceRootUri, {});
-            expect(repositories.map(r => path.basename(FileUri.fsPath(r.localUri))).sort()).to.deep.equal(['A', 'B', 'C']);
+            expect(repositories.map(r => path.basename(FileUri.fsPath(r.localUri))).sort()).toEqual(['A', 'B', 'C']);
 
         });
 
-        it('should discover all nested repositories and the root repository which is at the workspace root', async () => {
+        test(
+            'should discover all nested repositories and the root repository which is at the workspace root',
+            async () => {
 
-            const root = track.mkdirSync('discovery-test-3');
-            fs.mkdirSync(path.join(root, 'BASE'));
-            fs.mkdirSync(path.join(root, 'BASE', 'A'));
-            fs.mkdirSync(path.join(root, 'BASE', 'B'));
-            fs.mkdirSync(path.join(root, 'BASE', 'C'));
-            await initRepository(path.join(root, 'BASE'));
-            await initRepository(path.join(root, 'BASE', 'A'));
-            await initRepository(path.join(root, 'BASE', 'B'));
-            await initRepository(path.join(root, 'BASE', 'C'));
-            const git = await createGit();
-            const workspaceRootUri = FileUri.create(path.join(root, 'BASE')).toString();
-            const repositories = await git.repositories(workspaceRootUri, {});
-            expect(repositories.map(r => path.basename(FileUri.fsPath(r.localUri))).sort()).to.deep.equal(['A', 'B', 'BASE', 'C']);
+                const root = tmp.dirSync({ prefix: 'discovery-test-3', unsafeCleanup: true }).name;
+                fs.mkdirSync(path.join(root, 'BASE'));
+                fs.mkdirSync(path.join(root, 'BASE', 'A'));
+                fs.mkdirSync(path.join(root, 'BASE', 'B'));
+                fs.mkdirSync(path.join(root, 'BASE', 'C'));
+                await initRepository(path.join(root, 'BASE'));
+                await initRepository(path.join(root, 'BASE', 'A'));
+                await initRepository(path.join(root, 'BASE', 'B'));
+                await initRepository(path.join(root, 'BASE', 'C'));
+                const git = await createGit();
+                const workspaceRootUri = FileUri.create(path.join(root, 'BASE')).toString();
+                const repositories = await git.repositories(workspaceRootUri, {});
+                expect(repositories.map(r => path.basename(FileUri.fsPath(r.localUri))).sort()).toEqual(['A', 'B', 'BASE', 'C']);
 
-        });
+            }
+        );
 
-        it('should discover all nested repositories and the container repository', async () => {
+        test(
+            'should discover all nested repositories and the container repository',
+            async () => {
 
-            const root = track.mkdirSync('discovery-test-4');
-            fs.mkdirSync(path.join(root, 'BASE'));
-            fs.mkdirSync(path.join(root, 'BASE', 'WS_ROOT'));
-            fs.mkdirSync(path.join(root, 'BASE', 'WS_ROOT', 'A'));
-            fs.mkdirSync(path.join(root, 'BASE', 'WS_ROOT', 'B'));
-            fs.mkdirSync(path.join(root, 'BASE', 'WS_ROOT', 'C'));
-            await initRepository(path.join(root, 'BASE'));
-            await initRepository(path.join(root, 'BASE', 'WS_ROOT', 'A'));
-            await initRepository(path.join(root, 'BASE', 'WS_ROOT', 'B'));
-            await initRepository(path.join(root, 'BASE', 'WS_ROOT', 'C'));
-            const git = await createGit();
-            const workspaceRootUri = FileUri.create(path.join(root, 'BASE', 'WS_ROOT')).toString();
-            const repositories = await git.repositories(workspaceRootUri, {});
-            const repositoryNames = repositories.map(r => path.basename(FileUri.fsPath(r.localUri)));
-            expect(repositoryNames.shift()).to.equal('BASE'); // The first must be the container repository.
-            expect(repositoryNames.sort()).to.deep.equal(['A', 'B', 'C']);
+                const root = tmp.dirSync({ prefix: 'discovery-test-4', unsafeCleanup: true }).name;
+                fs.mkdirSync(path.join(root, 'BASE'));
+                fs.mkdirSync(path.join(root, 'BASE', 'WS_ROOT'));
+                fs.mkdirSync(path.join(root, 'BASE', 'WS_ROOT', 'A'));
+                fs.mkdirSync(path.join(root, 'BASE', 'WS_ROOT', 'B'));
+                fs.mkdirSync(path.join(root, 'BASE', 'WS_ROOT', 'C'));
+                await initRepository(path.join(root, 'BASE'));
+                await initRepository(path.join(root, 'BASE', 'WS_ROOT', 'A'));
+                await initRepository(path.join(root, 'BASE', 'WS_ROOT', 'B'));
+                await initRepository(path.join(root, 'BASE', 'WS_ROOT', 'C'));
+                const git = await createGit();
+                const workspaceRootUri = FileUri.create(path.join(root, 'BASE', 'WS_ROOT')).toString();
+                const repositories = await git.repositories(workspaceRootUri, {});
+                const repositoryNames = repositories.map(r => path.basename(FileUri.fsPath(r.localUri)));
+                expect(repositoryNames.shift()).toEqual('BASE'); // The first must be the container repository.
+                expect(repositoryNames.sort()).toEqual(['A', 'B', 'C']);
 
-        });
+            }
+        );
 
     });
 
     describe('status', async () => {
 
-        it('modifying a staged file should result in two changes', async () => {
+        test('modifying a staged file should result in two changes', async () => {
 
             // Init repository.
-            const root = await createTestRepository(track.mkdirSync('status-test'));
+            const root = await createTestRepository(tmp.dirSync({ prefix: 'status-test', unsafeCleanup: true }).name);
             const localUri = FileUri.create(root).toString();
             const repository = { localUri };
             const git = await createGit();
 
             // // Check status. Expect empty.
             let status = await git.status(repository);
-            expect(status.changes).to.be.empty;
+            expect(status.changes).toHaveLength(0);
 
             // Modify a file.
             const filePath = path.join(root, 'A.txt');
             const fileUri = FileUri.create(filePath).toString();
             fs.writeFileSync(filePath, 'new content');
-            expect(fs.readFileSync(filePath, { encoding: 'utf8' })).to.be.equal('new content');
+            expect(fs.readFileSync(filePath, { encoding: 'utf8' })).toEqual('new content');
             await git.add(repository, fileUri);
 
             // Check the status again. Expect one single change.
             status = await git.status(repository);
-            expect(status.changes).to.be.have.lengthOf(1);
-            expect(status.changes[0].uri).to.be.equal(fileUri);
-            expect(status.changes[0].staged).to.be.true;
+            expect(status.changes).toHaveLength(1);
+            expect(status.changes[0].uri).toEqual(fileUri);
+            expect(status.changes[0].staged).toEqual(true);
 
             // Change the same file again.
             fs.writeFileSync(filePath, 'yet another new content');
-            expect(fs.readFileSync(filePath, { encoding: 'utf8' })).to.be.equal('yet another new content');
+            expect(fs.readFileSync(filePath, { encoding: 'utf8' })).toEqual('yet another new content');
 
             // We expect two changes; one is staged, the other is in the working directory.
             status = await git.status(repository);
-            expect(status.changes).to.be.have.lengthOf(2);
-            expect(status.changes.map(f => f.uri)).to.be.deep.equal([fileUri, fileUri]);
-            expect(status.changes.map(f => f.staged).sort()).to.be.deep.equal([false, true]);
+            expect(status.changes).toHaveLength(2);
+            expect(status.changes.map(f => f.uri)).toEqual([fileUri, fileUri]);
+            expect(status.changes.map(f => f.staged).sort()).toEqual([false, true]);
 
         });
 
@@ -148,7 +147,7 @@ describe('git', async function () {
 
     describe('WorkingDirectoryStatus#equals', async () => {
 
-        it('staged change should matter', async () => {
+        test('staged change should matter', async () => {
 
             const left: WorkingDirectoryStatus = JSON.parse(`
             {
@@ -190,7 +189,7 @@ describe('git', async function () {
              }
             `);
 
-            expect(WorkingDirectoryStatus.equals(left, right)).to.be.false;
+            expect(WorkingDirectoryStatus.equals(left, right)).toEqual(false);
 
         });
 
@@ -202,73 +201,73 @@ describe('git', async function () {
         let git: Git | undefined;
 
         beforeEach(async () => {
-            const root = await createTestRepository(track.mkdirSync('status-test'));
+            const root = await createTestRepository(tmp.dirSync({ prefix: 'status-test', unsafeCleanup: true }).name);
             const localUri = FileUri.create(root).toString();
             repository = { localUri };
             git = await createGit();
         });
 
-        it('modified in working directory', async () => {
+        test('modified in working directory', async () => {
             const repositoryPath = FileUri.fsPath(repository!.localUri);
             fs.writeFileSync(path.join(repositoryPath, 'A.txt'), 'new content');
-            expect(fs.readFileSync(path.join(repositoryPath, 'A.txt'), { encoding: 'utf8' })).to.be.equal('new content');
+            expect(fs.readFileSync(path.join(repositoryPath, 'A.txt'), { encoding: 'utf8' })).toEqual('new content');
             const content = await git!.show(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString(), { commitish: 'HEAD' });
-            expect(content).to.be.equal('A');
+            expect(content).toEqual('A');
         });
 
-        it('modified in working directory (nested)', async () => {
+        test('modified in working directory (nested)', async () => {
             const repositoryPath = FileUri.fsPath(repository!.localUri);
             fs.writeFileSync(path.join(repositoryPath, 'folder', 'C.txt'), 'new content');
-            expect(fs.readFileSync(path.join(repositoryPath, 'folder', 'C.txt'), { encoding: 'utf8' })).to.be.equal('new content');
+            expect(fs.readFileSync(path.join(repositoryPath, 'folder', 'C.txt'), { encoding: 'utf8' })).toEqual('new content');
             const content = await git!.show(repository!, FileUri.create(path.join(repositoryPath, 'folder', 'C.txt')).toString(), { commitish: 'HEAD' });
-            expect(content).to.be.equal('C');
+            expect(content).toEqual('C');
         });
 
-        it('modified in index', async () => {
+        test('modified in index', async () => {
             const repositoryPath = FileUri.fsPath(repository!.localUri);
             fs.writeFileSync(path.join(repositoryPath, 'A.txt'), 'new content');
-            expect(fs.readFileSync(path.join(repositoryPath, 'A.txt'), { encoding: 'utf8' })).to.be.equal('new content');
+            expect(fs.readFileSync(path.join(repositoryPath, 'A.txt'), { encoding: 'utf8' })).toEqual('new content');
             await git!.add(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString());
             const content = await git!.show(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString(), { commitish: 'index' });
-            expect(content).to.be.equal('new content');
+            expect(content).toEqual('new content');
         });
 
-        it('modified in index and in working directory', async () => {
+        test('modified in index and in working directory', async () => {
             const repositoryPath = FileUri.fsPath(repository!.localUri);
             fs.writeFileSync(path.join(repositoryPath, 'A.txt'), 'new content');
-            expect(fs.readFileSync(path.join(repositoryPath, 'A.txt'), { encoding: 'utf8' })).to.be.equal('new content');
+            expect(fs.readFileSync(path.join(repositoryPath, 'A.txt'), { encoding: 'utf8' })).toEqual('new content');
             await git!.add(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString());
-            expect(await git!.show(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString(), { commitish: 'index' })).to.be.equal('new content');
-            expect(await git!.show(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString(), { commitish: 'HEAD' })).to.be.equal('A');
+            expect(await git!.show(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString(), { commitish: 'index' })).toEqual('new content');
+            expect(await git!.show(repository!, FileUri.create(path.join(repositoryPath, 'A.txt')).toString(), { commitish: 'HEAD' })).toEqual('A');
         });
 
     });
 
     describe('remote', async () => {
 
-        it('remotes are not set by default', async () => {
-            const root = track.mkdirSync('remote-with-init');
+        test('remotes are not set by default', async () => {
+            const root = tmp.dirSync({ prefix: 'remote-with-init', unsafeCleanup: true }).name;
             const localUri = FileUri.create(root).toString();
             await initRepository(root);
             const git = await createGit();
             const remotes = await git.remote({ localUri });
-            expect(remotes).to.be.empty;
+            expect(remotes).toHaveLength(0);
         });
 
-        it('origin is the default after a fresh clone', async () => {
+        test('origin is the default after a fresh clone', async () => {
             const git = await createGit();
             const remoteUrl = 'https://github.com/TypeFox/find-git-exec.git';
-            const localUri = FileUri.create(track.mkdirSync('remote-with-clone')).toString();
+            const localUri = FileUri.create(tmp.dirSync({ prefix: 'remote-with-clone', unsafeCleanup: true }).name).toString();
             const options = { localUri };
             await git.clone(remoteUrl, options);
 
             const remotes = await git.remote({ localUri });
-            expect(remotes).to.be.lengthOf(1);
-            expect(remotes.shift()).to.be.equal('origin');
+            expect(remotes).toHaveLength(1);
+            expect(remotes.shift()).toEqual('origin');
         });
 
-        it('remotes can be added and queried', async () => {
-            const root = track.mkdirSync('remote-with-init');
+        test('remotes can be added and queried', async () => {
+            const root = tmp.dirSync({ prefix: 'remote-with-init', unsafeCleanup: true }).name;
             const localUri = FileUri.create(root).toString();
             await initRepository(root);
 
@@ -277,91 +276,91 @@ describe('git', async function () {
 
             const git = await createGit();
             const remotes = await git.remote({ localUri });
-            expect(remotes).to.be.deep.equal(['first', 'second']);
+            expect(remotes).toEqual(['first', 'second']);
         });
 
     });
 
     describe('exec', async () => {
 
-        it('version', async () => {
-            const root = track.mkdirSync('exec-version');
+        test('version', async () => {
+            const root = tmp.dirSync({ prefix: 'exec-version', unsafeCleanup: true }).name;
             const localUri = FileUri.create(root).toString();
             await initRepository(root);
 
             const git = await createGit();
             const result = await git.exec({ localUri }, ['--version']);
-            expect(result.stdout.trim().replace(/^git version /, '').startsWith('2')).to.be.true;
-            expect(result.stderr.trim()).to.be.empty;
-            expect(result.exitCode).to.be.equal(0);
+            expect(result.stdout.trim().replace(/^git version /, '').startsWith('2')).toEqual(true);
+            expect(result.stderr.trim()).toHaveLength(0);
+            expect(result.exitCode).toEqual(0);
         });
 
-        it('config', async () => {
-            const root = track.mkdirSync('exec-config');
+        test('config', async () => {
+            const root = tmp.dirSync({ prefix: 'exec-config', unsafeCleanup: true }).name;
             const localUri = FileUri.create(root).toString();
             await initRepository(root);
 
             const git = await createGit();
             const result = await git.exec({ localUri }, ['config', '-l']);
-            expect(result.stdout.trim()).to.be.not.empty;
-            expect(result.stderr.trim()).to.be.empty;
-            expect(result.exitCode).to.be.equal(0);
+            expect(result.stdout.trim()).not.toHaveLength(0);
+            expect(result.stderr.trim()).toHaveLength(0);
+            expect(result.exitCode).toEqual(0);
         });
 
     });
 
     describe('map-status', async () => {
 
-        it('deleted', () => {
-            expect(GitUtils.mapStatus('D')).to.be.equal(GitFileStatus.Deleted);
+        test('deleted', () => {
+            expect(GitUtils.mapStatus('D')).toEqual(GitFileStatus.Deleted);
         });
 
-        it('added with leading whitespace', () => {
-            expect(GitUtils.mapStatus(' A')).to.be.equal(GitFileStatus.New);
+        test('added with leading whitespace', () => {
+            expect(GitUtils.mapStatus(' A')).toEqual(GitFileStatus.New);
         });
 
-        it('modified with trailing whitespace', () => {
-            expect(GitUtils.mapStatus('M ')).to.be.equal(GitFileStatus.Modified);
+        test('modified with trailing whitespace', () => {
+            expect(GitUtils.mapStatus('M ')).toEqual(GitFileStatus.Modified);
         });
 
-        it('copied with percentage', () => {
-            expect(GitUtils.mapStatus('C100')).to.be.equal(GitFileStatus.Copied);
+        test('copied with percentage', () => {
+            expect(GitUtils.mapStatus('C100')).toEqual(GitFileStatus.Copied);
         });
 
-        it('renamed with percentage', () => {
-            expect(GitUtils.mapStatus('R10')).to.be.equal(GitFileStatus.Renamed);
+        test('renamed with percentage', () => {
+            expect(GitUtils.mapStatus('R10')).toEqual(GitFileStatus.Renamed);
         });
 
     });
 
     describe('similarity-status', async () => {
 
-        it('copied (2)', () => {
-            expect(GitUtils.isSimilarityStatus('C2')).to.be.false;
+        test('copied (2)', () => {
+            expect(GitUtils.isSimilarityStatus('C2')).toEqual(false);
         });
 
-        it('copied (20)', () => {
-            expect(GitUtils.isSimilarityStatus('C20')).to.be.false;
+        test('copied (20)', () => {
+            expect(GitUtils.isSimilarityStatus('C20')).toEqual(false);
         });
 
-        it('copied (020)', () => {
-            expect(GitUtils.isSimilarityStatus('C020')).to.be.true;
+        test('copied (020)', () => {
+            expect(GitUtils.isSimilarityStatus('C020')).toEqual(true);
         });
 
-        it('renamed (2)', () => {
-            expect(GitUtils.isSimilarityStatus('R2')).to.be.false;
+        test('renamed (2)', () => {
+            expect(GitUtils.isSimilarityStatus('R2')).toEqual(false);
         });
 
-        it('renamed (20)', () => {
-            expect(GitUtils.isSimilarityStatus('R20')).to.be.false;
+        test('renamed (20)', () => {
+            expect(GitUtils.isSimilarityStatus('R20')).toEqual(false);
         });
 
-        it('renamed (020)', () => {
-            expect(GitUtils.isSimilarityStatus('R020')).to.be.true;
+        test('renamed (020)', () => {
+            expect(GitUtils.isSimilarityStatus('R020')).toEqual(true);
         });
 
-        it('invalid', () => {
-            expect(GitUtils.isSimilarityStatus('invalid')).to.be.false;
+        test('invalid', () => {
+            expect(GitUtils.isSimilarityStatus('invalid')).toEqual(false);
         });
 
     });
@@ -378,9 +377,9 @@ describe('git', async function () {
             }
         };
 
-        it('blame file with dirty content', async () => {
+        test('blame file with dirty content', async () => {
             const fileName = 'blame.me.not';
-            const root = track.mkdirSync('blame-dirty-file');
+            const root = tmp.dirSync({ prefix: 'blame-dirty-file', unsafeCleanup: true }).name;
             const filePath = path.join(root, fileName);
             const localUri = FileUri.create(root).toString();
             const repository = { localUri };
@@ -393,10 +392,10 @@ describe('git', async function () {
             const expectBlame = async (content: string, expected: [number, string][]) => {
                 const uri = FileUri.create(path.join(root, fileName)).toString();
                 const actual = await git.blame(repository, uri, { content });
-                expect(actual).to.be.not.undefined;
+                expect(actual).toBeDefined();
                 const messages = new Map(actual!.commits.map<[string, string]>(c => [c.sha, c.summary]));
                 const lineMessages = actual!.lines.map(l => [l.line, messages.get(l.sha)]);
-                expect(lineMessages).to.be.deep.equal(expected);
+                expect(lineMessages).toEqual(expected);
             };
 
             const git = await createGit();
@@ -417,9 +416,9 @@ describe('git', async function () {
                 ]);
         });
 
-        it('uncommitted file', async () => {
+        test('uncommitted file', async () => {
             const fileName = 'uncommitted.file';
-            const root = track.mkdirSync('try-blame');
+            const root = tmp.dirSync({ prefix: 'try-blame', unsafeCleanup: true }).name;
             const filePath = path.join(root, fileName);
             const localUri = FileUri.create(root).toString();
             const repository = { localUri };
@@ -431,7 +430,7 @@ describe('git', async function () {
             const expectUndefinedBlame = async () => {
                 const uri = FileUri.create(path.join(root, fileName)).toString();
                 const actual = await git.blame(repository, uri);
-                expect(actual).to.be.undefined;
+                expect(actual).toBeUndefined();
             };
 
             const git = await createGit();
@@ -448,9 +447,9 @@ describe('git', async function () {
             await expectUndefinedBlame();
         });
 
-        it('blame file', async () => {
+        test('blame file', async () => {
             const fileName = 'blame.me';
-            const root = track.mkdirSync('blame-file');
+            const root = tmp.dirSync({ prefix: 'blame-file', unsafeCleanup: true }).name;
             const filePath = path.join(root, fileName);
             const localUri = FileUri.create(root).toString();
             const repository = { localUri };
@@ -463,10 +462,10 @@ describe('git', async function () {
             const expectBlame = async (expected: [number, string][]) => {
                 const uri = FileUri.create(path.join(root, fileName)).toString();
                 const actual = await git.blame(repository, uri);
-                expect(actual).to.be.not.undefined;
+                expect(actual).toBeDefined();
                 const messages = new Map(actual!.commits.map<[string, string]>(c => [c.sha, c.summary]));
                 const lineMessages = actual!.lines.map(l => [l.line, messages.get(l.sha)]);
-                expect(lineMessages).to.be.deep.equal(expected);
+                expect(lineMessages).toEqual(expected);
             };
 
             const git = await createGit();
@@ -494,9 +493,9 @@ describe('git', async function () {
             ]);
         });
 
-        it('commit summary and body', async () => {
+        test('commit summary and body', async () => {
             const fileName = 'blame.me';
-            const root = track.mkdirSync('blame-with-commit-body');
+            const root = tmp.dirSync({ prefix: 'blame-with-commit-body', unsafeCleanup: true }).name;
             const filePath = path.join(root, fileName);
             const localUri = FileUri.create(root).toString();
             const repository = { localUri };
@@ -509,10 +508,10 @@ describe('git', async function () {
             const expectBlame = async (expected: [number, string, string][]) => {
                 const uri = FileUri.create(path.join(root, fileName)).toString();
                 const actual = await git.blame(repository, uri);
-                expect(actual).to.be.not.undefined;
+                expect(actual).toBeDefined();
                 const messages = new Map(actual!.commits.map<[string, string[]]>(c => [c.sha, [c.summary, c.body!]]));
                 const lineMessages = actual!.lines.map(l => [l.line, ...messages.get(l.sha)!]);
-                expect(lineMessages).to.be.deep.equal(expected);
+                expect(lineMessages).toEqual(expected);
             };
 
             const git = await createGit();
@@ -539,8 +538,8 @@ describe('git', async function () {
             }
         };
 
-        it('diff without ranges / unstaged', async () => {
-            const root = track.mkdirSync('diff-without-ranges');
+        test('diff without ranges / unstaged', async () => {
+            const root = tmp.dirSync({ prefix: 'diff-without-ranges', unsafeCleanup: true }).name;
             const localUri = FileUri.create(root).toString();
             const repository = { localUri };
             await fs.createFile(path.join(root, 'A.txt'));
@@ -551,7 +550,7 @@ describe('git', async function () {
 
             const expectDiff: (expected: ChangeDelta[]) => void = async expected => {
                 const actual = (await git.diff(repository)).map(change => ChangeDelta.map(repository, change)).sort(ChangeDelta.compare);
-                expect(actual).to.be.deep.equal(expected);
+                expect(actual).toEqual(expected);
             };
 
             await git.exec(repository, ['add', '.']);
@@ -568,8 +567,8 @@ describe('git', async function () {
             await expectDiff([{ pathSegment: 'A.txt', status: GitFileStatus.Deleted }]); // Unstaged (deleted)
         });
 
-        it('diff without ranges / staged', async () => {
-            const root = track.mkdirSync('diff-without-ranges');
+        test('diff without ranges / staged', async () => {
+            const root = tmp.dirSync({ prefix: 'diff-without-ranges', unsafeCleanup: true }).name;
             const localUri = FileUri.create(root).toString();
             const repository = { localUri };
             await fs.createFile(path.join(root, 'A.txt'));
@@ -580,7 +579,7 @@ describe('git', async function () {
 
             const expectDiff: (expected: ChangeDelta[]) => void = async expected => {
                 const actual = (await git.diff(repository)).map(change => ChangeDelta.map(repository, change)).sort(ChangeDelta.compare);
-                expect(actual).to.be.deep.equal(expected);
+                expect(actual).toEqual(expected);
             };
 
             await git.exec(repository, ['add', '.']);
@@ -600,8 +599,8 @@ describe('git', async function () {
             await expectDiff([{ pathSegment: 'A.txt', status: GitFileStatus.Deleted }, { pathSegment: 'B.txt', status: GitFileStatus.New }]); // Staged (deleted)
         });
 
-        it('diff with ranges', async () => {
-            const root = track.mkdirSync('diff-with-ranges');
+        test('diff with ranges', async () => {
+            const root = tmp.dirSync({ prefix: 'diff-with-ranges', unsafeCleanup: true }).name;
             const localUri = FileUri.create(root).toString();
             const repository = { localUri };
             await fs.createFile(path.join(root, 'A.txt'));
@@ -625,7 +624,7 @@ describe('git', async function () {
                 }
                 const options: Git.Options.Diff = { range, uri };
                 const actual = (await git.diff(repository, options)).map(change => ChangeDelta.map(repository, change)).sort(ChangeDelta.compare);
-                expect(actual).to.be.deep.equal(expected, `Between ${fromRevision}..${toRevision}`);
+                expect(actual).toEqual(expected);
             };
 
             await git.exec(repository, ['add', '.']);
@@ -708,8 +707,8 @@ describe('git', async function () {
         let root: string;
         let localUri: string;
 
-        before(async () => {
-            root = track.mkdirSync('ls-files');
+        beforeAll(async () => {
+            root = tmp.dirSync({ prefix: 'ls-files', unsafeCleanup: true }).name;
             localUri = FileUri.create(root).toString();
             await createTestRepository(root);
             git = await createGit();
@@ -719,10 +718,10 @@ describe('git', async function () {
             ['A.txt', true],
             ['missing.txt', false],
             ['../missing.txt', /^.*fatal: .* is outside repository$/],
-        ] as [string, boolean | RegExp][]).forEach(test => {
-            const [relativePath, expectation] = test;
+        ] as [string, boolean | RegExp][]).forEach(testObj => {
+            const [relativePath, expectation] = testObj;
             const message = expectation instanceof RegExp ? 'be rejected' : `${expectation ? '' : 'not '}exist`;
-            it(`errorUnmatched - ${relativePath} should ${message}`, async () => {
+            test(`errorUnmatched - ${relativePath} should ${message}`, async () => {
                 const uri = expectation instanceof RegExp ? relativePath : FileUri.create(path.join(root, relativePath)).toString();
                 const testMe = async () => await git.lsFiles({ localUri }, uri, { errorUnmatch: true });
                 if (expectation instanceof RegExp) {
@@ -732,10 +731,10 @@ describe('git', async function () {
                         if (e.message.startsWith('Expected a rejection, but got a result instead')) {
                             throw e;
                         }
-                        expect(expectation.test(e.message.trim())).to.be.equal(true, e.message);
+                        expect(expectation.test(e.message.trim())).toEqual(true);
                     }
                 } else {
-                    expect(await testMe()).to.be.equal(expectation);
+                    expect(await testMe()).toEqual(expectation);
                 }
             });
         });

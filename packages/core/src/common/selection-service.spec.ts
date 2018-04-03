@@ -5,15 +5,14 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { SelectionService } from './selection-service';
-import * as chai from "chai";
+import 'reflect-metadata';
 
-const expect = chai.expect;
+import { SelectionService } from './selection-service';
 
 describe('selection-service', () => {
 
     describe('01 #addListener and dispose', () => {
-        it('Should be rejected when path argument is undefined.', () => {
+        test('Should be rejected when path argument is undefined.', () => {
             const service = createSelectionService();
             const events: any[] = [];
             const disposable = service.onSelectionChanged(
@@ -22,8 +21,8 @@ describe('selection-service', () => {
             service.selection = "foo";
             disposable.dispose();
             service.selection = "bar";
-            expect(events.length).equals(1);
-            expect(events[0]).equals("foo");
+            expect(events).toHaveLength(1);
+            expect(events[0]).toEqual("foo");
         });
     });
 });

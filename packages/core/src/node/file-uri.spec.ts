@@ -7,52 +7,49 @@
 
 import * as os from "os";
 import * as path from "path";
-import * as chai from "chai";
 import { FileUri } from "./file-uri";
-
-const expect = chai.expect;
 
 describe("file-uri", () => {
 
     const filePaths: string[] = ["with.txt", "with spaces.txt", "with:colon.txt", "with_Ö.txt"].map(filePath => path.join(os.tmpdir(), "file-uri-folder", filePath));
 
-    it("create -> fsPath -> create should be symmetric", () => {
+    test("create -> fsPath -> create should be symmetric", () => {
         const orderedPaths = filePaths.map(filePath => filePath.toLowerCase()).sort();
-        expect(orderedPaths.map(filePath => FileUri.create(filePath)).map(uri => FileUri.fsPath(uri).toLowerCase()).sort()).to.be.deep.equal(orderedPaths);
+        expect(orderedPaths.map(filePath => FileUri.create(filePath)).map(uri => FileUri.fsPath(uri).toLowerCase()).sort()).toEqual(orderedPaths);
     });
 
-    it("fsPath -> create -> fsPath should be symmetric", () => {
+    test("fsPath -> create -> fsPath should be symmetric", () => {
         filePaths.forEach(filePath => {
             const expectedUri = FileUri.create(filePath);
             const convertedPath = FileUri.fsPath(expectedUri);
             const actualUri = FileUri.create(convertedPath);
-            expect(actualUri.toString()).to.be.equal(expectedUri.toString());
+            expect(actualUri.toString()).toEqual(expectedUri.toString());
         });
     });
 
-    it('from /', () => {
+    test('from /', () => {
         const uri = FileUri.create('/');
-        expect(uri.toString(true)).to.be.equal('file:///');
+        expect(uri.toString(true)).toEqual('file:///');
     });
 
-    it('from //', () => {
+    test('from //', () => {
         const uri = FileUri.create('//');
-        expect(uri.toString(true)).to.be.equal('file:///');
+        expect(uri.toString(true)).toEqual('file:///');
     });
 
-    it('from c:', () => {
+    test('from c:', () => {
         const uri = FileUri.create('c:');
-        expect(uri.toString(true)).to.be.equal('file:///c:');
+        expect(uri.toString(true)).toEqual('file:///c:');
     });
 
-    it('from /c:', () => {
+    test('from /c:', () => {
         const uri = FileUri.create('/c:');
-        expect(uri.toString(true)).to.be.equal('file:///c:');
+        expect(uri.toString(true)).toEqual('file:///c:');
     });
 
-    it('from /c:/', () => {
+    test('from /c:/', () => {
         const uri = FileUri.create('/c:/');
-        expect(uri.toString(true)).to.be.equal('file:///c:/');
+        expect(uri.toString(true)).toEqual('file:///c:/');
     });
 
 });

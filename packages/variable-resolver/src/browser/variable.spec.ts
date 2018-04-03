@@ -5,24 +5,19 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as chai from 'chai';
+import 'reflect-metadata';
+
 import { Container, ContainerModule } from 'inversify';
 import { ILogger, Disposable } from '@theia/core/lib/common';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 import { Variable, VariableRegistry } from './variable';
 
-const expect = chai.expect;
 let variableRegistry: VariableRegistry;
-
-before(() => {
-    chai.config.showDiff = true;
-    chai.config.includeStack = true;
-});
 
 describe('variable api', () => {
     let testContainer: Container;
 
-    before(() => {
+    beforeAll(() => {
         testContainer = new Container();
         const module = new ContainerModule((bind, unbind, isBound, rebind) => {
             bind(ILogger).to(MockLogger);
@@ -39,9 +34,9 @@ describe('variable api', () => {
         registerTestVariable();
 
         const variable = variableRegistry.getVariable(TEST_VARIABLE.name);
-        expect(variable).is.not.undefined;
+        expect(variable).toBeDefined();
         if (variable) {
-            expect(variable.name).is.equal(TEST_VARIABLE.name);
+            expect(variable.name).toEqual(TEST_VARIABLE.name);
         }
     });
 
@@ -61,9 +56,9 @@ describe('variable api', () => {
         variables.forEach(v => variableRegistry.registerVariable(v));
 
         const registeredVariables = variableRegistry.getVariables();
-        expect(registeredVariables.length).to.be.equal(1);
-        expect(registeredVariables[0].name).to.be.equal('workspaceRoot');
-        expect(registeredVariables[0].description).to.be.equal('workspace root URI');
+        expect(registeredVariables.length).toEqual(1);
+        expect(registeredVariables[0].name).toEqual('workspaceRoot');
+        expect(registeredVariables[0].description).toEqual('workspace root URI');
     });
 
     it('should dispose variable', () => {
@@ -71,19 +66,19 @@ describe('variable api', () => {
         disposable.dispose();
 
         const variable = variableRegistry.getVariable(TEST_VARIABLE.name);
-        expect(variable).is.undefined;
+        expect(variable).toBeUndefined();
     });
 
     it('should unregister variables on dispose', () => {
         registerTestVariable();
 
         let variables = variableRegistry.getVariables();
-        expect(variables.length).to.be.equal(1);
+        expect(variables.length).toEqual(1);
 
         variableRegistry.dispose();
 
         variables = variableRegistry.getVariables();
-        expect(variables.length).to.be.equal(0);
+        expect(variables.length).toEqual(0);
     });
 });
 

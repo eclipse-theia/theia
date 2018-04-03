@@ -3,29 +3,18 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * @jest-environment @theia/core/src/browser/test/jsdom-environment
  */
 
-import { enableJSDOM } from '../browser/test/jsdom';
+import 'reflect-metadata';
 
-let disableJSDOM = enableJSDOM();
-
-import { expect } from 'chai';
 import { ConnectionState } from './connection-status-service';
 import { MockConnectionStatusService } from './test/mock-connection-status-service';
 
-disableJSDOM();
-
-describe('connection-status', function () {
+describe('connection-status', () => {
 
     let connectionStatusService: MockConnectionStatusService;
-
-    before(() => {
-        disableJSDOM = enableJSDOM();
-    });
-
-    after(() => {
-        disableJSDOM();
-    });
 
     beforeEach(() => {
         connectionStatusService = new MockConnectionStatusService();
@@ -38,23 +27,29 @@ describe('connection-status', function () {
         }
     });
 
-    it('should go from online to offline if the connection is down', async () => {
-        expect(connectionStatusService.currentState.state).to.be.equal(ConnectionState.INITIAL);
-        connectionStatusService.alive = false;
-        await pause();
+    test(
+        'should go from online to offline if the connection is down',
+        async () => {
+            expect(connectionStatusService.currentState.state).toEqual(ConnectionState.INITIAL);
+            connectionStatusService.alive = false;
+            await pause();
 
-        expect(connectionStatusService.currentState.state).to.be.equal(ConnectionState.OFFLINE);
-    });
+            expect(connectionStatusService.currentState.state).toEqual(ConnectionState.OFFLINE);
+        }
+    );
 
-    it('should go from offline to online if the connection is re-established', async () => {
-        connectionStatusService.alive = false;
-        await pause();
-        expect(connectionStatusService.currentState.state).to.be.equal(ConnectionState.OFFLINE);
+    test(
+        'should go from offline to online if the connection is re-established',
+        async () => {
+            connectionStatusService.alive = false;
+            await pause();
+            expect(connectionStatusService.currentState.state).toEqual(ConnectionState.OFFLINE);
 
-        connectionStatusService.alive = true;
-        await pause();
-        expect(connectionStatusService.currentState.state).to.be.equal(ConnectionState.ONLINE);
-    });
+            connectionStatusService.alive = true;
+            await pause();
+            expect(connectionStatusService.currentState.state).toEqual(ConnectionState.ONLINE);
+        }
+    );
 
 });
 

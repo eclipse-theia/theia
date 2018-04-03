@@ -3,9 +3,13 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * @jest-environment @theia/core/src/browser/test/jsdom-environment
  */
+
+import 'reflect-metadata';
+
 import { Container, ContainerModule } from 'inversify';
-import { expect } from 'chai';
 import { WidgetManager, WidgetFactory } from './widget-manager';
 import { Widget } from '@phosphor/widgets';
 import { Signal } from '@phosphor/signaling';
@@ -31,7 +35,7 @@ class TestWidgetFactory implements WidgetFactory {
 
 let widgetManager: WidgetManager;
 
-before(() => {
+beforeAll(() => {
     const testContainer = new Container();
 
     const module = new ContainerModule((bind, unbind, isBound, rebind) => {
@@ -47,11 +51,11 @@ before(() => {
 
 describe("widget-manager", () => {
 
-    it("creates and caches widgets", async () => {
+    test("creates and caches widgets", async () => {
         const wA = await widgetManager.getOrCreateWidget('test', 'widgetA');
         const wB = await widgetManager.getOrCreateWidget('test', 'widgetB');
-        expect(wA).not.equals(wB);
-        expect(wA).equals(await widgetManager.getOrCreateWidget('test', 'widgetA'));
+        expect(wA).not.toEqual(wB);
+        expect(wA).toEqual(await widgetManager.getOrCreateWidget('test', 'widgetA'));
     });
 
 });

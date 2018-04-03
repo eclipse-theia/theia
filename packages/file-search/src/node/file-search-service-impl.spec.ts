@@ -5,7 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { expect } from 'chai';
+import 'reflect-metadata';
+
 import * as path from 'path';
 import { FileSearchServiceImpl } from './file-search-service-impl';
 import { FileUri } from '@theia/core/lib/node';
@@ -24,36 +25,33 @@ testContainer.load(new ContainerModule(bind => {
     bind(FileSearchServiceImpl).toSelf().inSingletonScope();
 }));
 
-describe('search-service', function () {
-
-    this.timeout(10000);
-
-    it('shall fuzzy search this spec file', async () => {
+describe('search-service', () => {
+    test('shall fuzzy search this spec file', async () => {
         const service = testContainer.get(FileSearchServiceImpl);
         const rootUri = FileUri.create(path.resolve(__dirname, "..")).toString();
         const matches = await service.find('spc', { rootUri });
         const expectedFile = FileUri.create(__filename).displayName;
         const testFile = matches.find(e => e.endsWith(expectedFile));
-        expect(testFile).to.be.not.undefined;
-    });
+        expect(testFile).toBeDefined();
+    }, 10000);
 
-    it('shall respect nested .gitignore');
-    //     const service = testContainer.get(FileSearchServiceImpl);
-    //     const rootUri = FileUri.create(path.resolve(__dirname, "../../test-resources")).toString();
-    //     const matches = await service.find('foo', { rootUri, fuzzyMatch: false });
+    test('shall respect nested .gitignore', async () => {
+        // const service = testContainer.get(FileSearchServiceImpl);
+        // const rootPath = path.resolve(__dirname, "../../test-resources");
+        // const matches = await service.find('foo', { rootPath, fuzzyMatch: false });
 
-    //     expect(matches.find(match => match.endsWith('subdir1/sub-bar/foo.txt'))).to.be.undefined;
-    //     expect(matches.find(match => match.endsWith('subdir1/sub2/foo.txt'))).to.be.not.undefined;
-    //     expect(matches.find(match => match.endsWith('subdir1/foo.txt'))).to.be.not.undefined;
-    // });
+        // expect(!matches.some(e => e.endsWith('subdir1/sub-bar/foo.txt')));
+        // expect(matches.some(e => e.endsWith('subdir1/sub2/foo.txt')));
+        // expect(matches.some(e => e.endsWith('subdir1/foo.txt')));
+    }, 10000);
 
-    it('shall cancel searches', async () => {
+    test('shall cancel searches', async () => {
         const service = testContainer.get(FileSearchServiceImpl);
         const rootUri = FileUri.create(path.resolve(__dirname, "../../../../..")).toString();
         const cancelTokenSource = new CancellationTokenSource();
         cancelTokenSource.cancel();
         const matches = await service.find('foo', { rootUri, fuzzyMatch: false }, cancelTokenSource.token);
 
-        expect(matches).to.be.empty;
-    });
+        expect(matches).toHaveLength(0);
+    }, 10000);
 });

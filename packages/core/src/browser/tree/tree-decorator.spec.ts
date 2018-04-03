@@ -5,7 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { expect } from 'chai';
+import 'reflect-metadata';
+
 import { TreeDecoratorService, AbstractTreeDecoratorService, TreeDecoration } from './tree-decorator';
 
 // tslint:disable:no-unused-expression
@@ -24,11 +25,11 @@ describe('tree-decorator', () => {
 
         const decoratorService: TreeDecoratorService = new MockTreeDecoratorService();
 
-        it('should inflate an empty object into an empty map', () => {
-            expect(decoratorService.inflateDecorators({})).to.be.empty;
+        test('should inflate an empty object into an empty map', () => {
+            expect(decoratorService.inflateDecorators({}).size).toEqual(0);
         });
 
-        it('should inflate an object into the corresponding map', () => {
+        test('should inflate an object into the corresponding map', () => {
             const expected = new Map<string, TreeDecoration.Data[]>();
             expected.set('id_1', [
                 {
@@ -69,14 +70,14 @@ describe('tree-decorator', () => {
                         }
                     ]
                 }
-            )).to.be.deep.equal(expected);
+            )).toEqual(expected);
         });
 
-        it('should deflate an empty map into an empty object', () => {
-            expect(decoratorService.inflateDecorators({})).to.be.empty;
+        test('should deflate an empty map into an empty object', () => {
+            expect(decoratorService.inflateDecorators({}).size).toEqual(0);
         });
 
-        it('should inflate an object into the corresponding map', () => {
+        test('should inflate an object into the corresponding map', () => {
             const decorations = new Map<string, TreeDecoration.Data[]>();
             decorations.set('id_1', [
                 {
@@ -96,7 +97,7 @@ describe('tree-decorator', () => {
                     priority: 100
                 }
             ]);
-            expect(decoratorService.deflateDecorators(decorations)).to.be.deep.equal({
+            expect(decoratorService.deflateDecorators(decorations)).toEqual({
                 "id_1": [
                     {
                         "tooltip": "tooltip"
@@ -134,7 +135,7 @@ describe('tree-decorator', () => {
             ] as [number, number, number, boolean][]).forEach(test => {
                 const [input, offset, length, expected] = test;
                 it(`${input} should ${expected ? '' : 'not '}be contained in the [${offset}:${length}] range`, () => {
-                    expect(TreeDecoration.CaptionHighlight.Range.contains(input, { offset, length })).to.be.equal(expected);
+                    expect(TreeDecoration.CaptionHighlight.Range.contains(input, { offset, length })).toEqual(expected);
                 });
             });
         });
@@ -143,11 +144,11 @@ describe('tree-decorator', () => {
             const actual = TreeDecoration.CaptionHighlight.split('alma', {
                 ranges: [{ offset: 0, length: 1 }]
             });
-            expect(actual).has.lengthOf(2);
-            expect(actual[0].highligh).to.be.true;
-            expect(actual[0].data).to.be.equal('a');
-            expect(actual[1].highligh).to.be.undefined;
-            expect(actual[1].data).to.be.equal('lma');
+            expect(actual).toHaveLength(2);
+            expect(actual[0].highligh).toEqual(true);
+            expect(actual[0].data).toEqual('a');
+            expect(actual[1].highligh).toBeUndefined();
+            expect(actual[1].data).toEqual('lma');
         });
 
     });

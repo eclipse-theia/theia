@@ -5,16 +5,12 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import * as chai from 'chai';
-import { expect } from 'chai';
-chai.use(require('chai-string'));
-
 import { DiffComputer, DirtyDiff } from './diff-computer';
 import { ContentLines } from './content-lines';
 
 let diffComputer: DiffComputer;
 
-before(() => {
+beforeAll(() => {
     diffComputer = new DiffComputer();
 });
 
@@ -22,7 +18,7 @@ before(() => {
 
 describe("dirty-diff-computer", () => {
 
-    it("remove single line", () => {
+    test("remove single line", () => {
         const dirtyDiff = computeDirtyDiff(
             [
                 "FIRST",
@@ -34,7 +30,7 @@ describe("dirty-diff-computer", () => {
                 "THIRD"
             ],
         );
-        expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+        expect(dirtyDiff).toEqual(<DirtyDiff>{
             added: [],
             modified: [],
             removed: [0],
@@ -42,13 +38,13 @@ describe("dirty-diff-computer", () => {
     });
 
     [1, 2, 3, 20].forEach(lines => {
-        it(`remove ${formatLines(lines)} at the end`, () => {
+        test(`remove ${formatLines(lines)} at the end`, () => {
             const dirtyDiff = computeDirtyDiff(
                 sequenceOfN(2)
                     .concat(sequenceOfN(lines, () => "TO-BE-REMOVED")),
                 sequenceOfN(2),
             );
-            expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+            expect(dirtyDiff).toEqual(<DirtyDiff>{
                 modified: [],
                 removed: [1],
                 added: [],
@@ -61,7 +57,7 @@ describe("dirty-diff-computer", () => {
             sequenceOfN(10, () => "TO-BE-REMOVED"),
             [""]
         );
-        expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+        expect(dirtyDiff).toEqual(<DirtyDiff>{
             added: [],
             modified: [],
             removed: [0],
@@ -69,13 +65,13 @@ describe("dirty-diff-computer", () => {
     });
 
     [1, 2, 3, 20].forEach(lines => {
-        it(`remove ${formatLines(lines)} at the beginning`, () => {
+        test(`remove ${formatLines(lines)} at the beginning`, () => {
             const dirtyDiff = computeDirtyDiff(
                 sequenceOfN(lines, () => "TO-BE-REMOVED")
                     .concat(sequenceOfN(2)),
                 sequenceOfN(2),
             );
-            expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+            expect(dirtyDiff).toEqual(<DirtyDiff>{
                 modified: [],
                 removed: [0],
                 added: [],
@@ -84,11 +80,11 @@ describe("dirty-diff-computer", () => {
     });
 
     [1, 2, 3, 20].forEach(lines => {
-        it(`add ${formatLines(lines)}`, () => {
+        test(`add ${formatLines(lines)}`, () => {
             const previous = sequenceOfN(3);
             const modified = insertIntoArray(previous, 2, ...sequenceOfN(lines, () => "ADDED LINE"));
             const dirtyDiff = computeDirtyDiff(previous, modified);
-            expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+            expect(dirtyDiff).toEqual(<DirtyDiff>{
                 modified: [],
                 removed: [],
                 added: [{ start: 2, end: 2 + lines - 1 }],
@@ -97,13 +93,13 @@ describe("dirty-diff-computer", () => {
     });
 
     [1, 2, 3, 20].forEach(lines => {
-        it(`add ${formatLines(lines)} at the beginning`, () => {
+        test(`add ${formatLines(lines)} at the beginning`, () => {
             const dirtyDiff = computeDirtyDiff(
                 sequenceOfN(2),
                 sequenceOfN(lines, () => "ADDED LINE")
                     .concat(sequenceOfN(2))
             );
-            expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+            expect(dirtyDiff).toEqual(<DirtyDiff>{
                 modified: [],
                 removed: [],
                 added: [{ start: 0, end: lines - 1 }],
@@ -117,7 +113,7 @@ describe("dirty-diff-computer", () => {
             [""],
             sequenceOfN(numberOfLines, () => "ADDED LINE")
         );
-        expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+        expect(dirtyDiff).toEqual(<DirtyDiff>{
             modified: [],
             removed: [],
             added: [{ start: 0, end: numberOfLines - 1 }],
@@ -137,7 +133,7 @@ describe("dirty-diff-computer", () => {
                 "2"
             ]
         );
-        expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+        expect(dirtyDiff).toEqual(<DirtyDiff>{
             modified: [],
             removed: [],
             added: [{ start: 1, end: 2 }],
@@ -154,7 +150,7 @@ describe("dirty-diff-computer", () => {
                 ""
             ]
         );
-        expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+        expect(dirtyDiff).toEqual(<DirtyDiff>{
             modified: [],
             removed: [],
             added: [{ start: 1, end: 1 }],
@@ -162,13 +158,13 @@ describe("dirty-diff-computer", () => {
     });
 
     [1, 2, 3, 20].forEach(lines => {
-        it(`add ${formatLines(lines)} (empty) at the end`, () => {
+        test(`add ${formatLines(lines)} (empty) at the end`, () => {
             const dirtyDiff = computeDirtyDiff(
                 sequenceOfN(2),
                 sequenceOfN(2)
                     .concat(new Array(lines).map(() => ""))
             );
-            expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+            expect(dirtyDiff).toEqual(<DirtyDiff>{
                 modified: [],
                 removed: [],
                 added: [{ start: 2, end: 1 + lines }],
@@ -192,7 +188,7 @@ describe("dirty-diff-computer", () => {
                 "LAST"
             ]
         );
-        expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+        expect(dirtyDiff).toEqual(<DirtyDiff>{
             modified: [],
             removed: [],
             added: [{ start: 1, end: 5 }],
@@ -200,12 +196,12 @@ describe("dirty-diff-computer", () => {
     });
 
     [1, 2, 3, 4, 5].forEach(lines => {
-        it(`add ${formatLines(lines)} after single line`, () => {
+        test(`add ${formatLines(lines)} after single line`, () => {
             const dirtyDiff = computeDirtyDiff(
                 ["0"],
                 ["0"].concat(sequenceOfN(lines, () => "ADDED LINE"))
             );
-            expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+            expect(dirtyDiff).toEqual(<DirtyDiff>{
                 modified: [],
                 removed: [],
                 added: [{ start: 1, end: lines }],
@@ -226,7 +222,7 @@ describe("dirty-diff-computer", () => {
                 "LAST"
             ]
         );
-        expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+        expect(dirtyDiff).toEqual(<DirtyDiff>{
             removed: [],
             added: [],
             modified: [{ start: 1, end: 1 }],
@@ -239,7 +235,7 @@ describe("dirty-diff-computer", () => {
             sequenceOfN(numberOfLines, () => "TO-BE-MODIFIED"),
             sequenceOfN(numberOfLines, () => "MODIFIED")
         );
-        expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+        expect(dirtyDiff).toEqual(<DirtyDiff>{
             removed: [],
             added: [],
             modified: [{ start: 0, end: numberOfLines - 1 }],
@@ -260,7 +256,7 @@ describe("dirty-diff-computer", () => {
                 "3-changed"
             ]
         );
-        expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+        expect(dirtyDiff).toEqual(<DirtyDiff>{
             removed: [],
             added: [],
             modified: [{ start: 1, end: 2 }],
@@ -297,7 +293,7 @@ describe("dirty-diff-computer", () => {
                 ""
             ]
         );
-        expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+        expect(dirtyDiff).toEqual(<DirtyDiff>{
             removed: [3],
             added: [{ start: 10, end: 11 }],
             modified: [{ start: 0, end: 0 }],
@@ -332,7 +328,7 @@ describe("dirty-diff-computer", () => {
                 "",
                 ""
             ]);
-        expect(dirtyDiff).to.be.deep.equal(<DirtyDiff>{
+        expect(dirtyDiff).toEqual(<DirtyDiff>{
             removed: [11],
             added: [{ start: 5, end: 5 }, { start: 9, end: 9 }],
             modified: [],
