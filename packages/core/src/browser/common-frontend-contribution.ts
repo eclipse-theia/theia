@@ -9,11 +9,15 @@ import { injectable, inject } from "inversify";
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
 import { CommandContribution, CommandRegistry, Command } from '../common/command';
+import { UriAwareCommandHandler } from '../common/uri-command-handler';
+import { SelectionService } from "../common/selection-service";
 import { MessageService } from '../common/message-service';
+import { OpenerService, open } from '../browser/opener-service';
 import { ApplicationShell } from './shell/application-shell';
 import { SHELL_TABBAR_CONTEXT_MENU } from './shell/tab-bars';
 import { AboutDialog } from './about-dialog';
 import * as browser from './browser';
+import URI from '../common/uri';
 
 export namespace CommonMenus {
 
@@ -37,6 +41,11 @@ export namespace CommonMenus {
 }
 
 export namespace CommonCommands {
+
+    export const OPEN: Command = {
+        id: 'core.open',
+        label: 'Open'
+    };
 
     export const CUT: Command = {
         id: 'core.cut',
@@ -139,7 +148,9 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
 
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
+        @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(MessageService) protected readonly messageService: MessageService,
+        @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(AboutDialog) protected readonly aboutDialog: AboutDialog
     ) { }
 
@@ -229,6 +240,9 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
     }
 
     registerCommands(commandRegistry: CommandRegistry): void {
+        commandRegistry.registerCommand(CommonCommands.OPEN, new UriAwareCommandHandler<URI>(this.selectionService, {
+            execute: uri => open(this.openerService, uri)
+        }));
         commandRegistry.registerCommand(CommonCommands.CUT, {
             execute: () => {
                 if (supportCut) {

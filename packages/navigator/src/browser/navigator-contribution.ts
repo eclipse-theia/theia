@@ -76,7 +76,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
 
         registry.registerMenuAction(NavigatorContextMenu.OPEN, {
-            commandId: WorkspaceCommands.FILE_OPEN.id
+            commandId: CommonCommands.OPEN.id
         });
         registry.registerSubmenu(NavigatorContextMenu.OPEN_WITH, 'Open With');
         this.openerService.getOpeners().then(openers => {
