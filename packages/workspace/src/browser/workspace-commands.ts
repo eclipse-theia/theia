@@ -9,13 +9,13 @@ import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
-import { Command, CommandContribution, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
+import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
-import { UriSelection } from '@theia/core/lib/common/selection';
 import { SingleTextInputDialog, ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { OpenerService, OpenHandler, open, FrontendApplication } from '@theia/core/lib/browser';
+import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
 
@@ -37,10 +37,6 @@ export namespace WorkspaceCommands {
     export const NEW_FOLDER: Command = {
         id: 'file.newFolder',
         label: 'New Folder'
-    };
-    export const FILE_OPEN: Command = {
-        id: 'file.open',
-        label: 'Open'
     };
     export const FILE_OPEN_WITH = (opener: OpenHandler): Command => ({
         id: `file.openWith.${opener.id}`,
@@ -88,9 +84,6 @@ export class WorkspaceCommandContribution implements CommandContribution {
     ) { }
 
     registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand(WorkspaceCommands.FILE_OPEN, this.newUriAwareCommandHandler({
-            execute: uri => open(this.openerService, uri)
-        }));
         this.openerService.getOpeners().then(openers => {
             for (const opener of openers) {
                 const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
@@ -267,135 +260,6 @@ export class WorkspaceCommandContribution implements CommandContribution {
         }
         return parentUri.resolve(base);
     }
-}
-
-export interface UriCommandHandler<T extends URI | URI[]> {
-
-    // tslint:disable-next-line:no-any
-    execute(uri: T, ...args: any[]): any;
-
-    // tslint:disable-next-line:no-any
-    isEnabled?(uri: URI, ...args: any[]): boolean;
-
-    // tslint:disable-next-line:no-any
-    isVisible?(uri: URI, ...args: any[]): boolean;
-
-}
-
-/**
- * Handler for a single URI-based selection.
- */
-export interface SingleUriCommandHandler extends UriCommandHandler<URI> {
-
-}
-
-/**
- * Handler for multiple URIs.
- */
-export interface MultiUriCommandHandler extends UriCommandHandler<URI[]> {
-
-}
-
-export namespace UriAwareCommandHandler {
-
-    /**
-     * Further options for the URI aware command handler instantiation.
-     */
-    export interface Options {
-
-        /**
-         * `true` if the handler supports multiple selection. Otherwise, `false`. Defaults to `false`.
-         */
-        readonly multi?: boolean,
-
-        /**
-         * Additional validation callback on the URIs.
-         */
-        readonly isValid?: (uris: URI[]) => boolean;
-
-    }
-
-}
-
-export class UriAwareCommandHandler<T extends URI | URI[]> implements CommandHandler {
-
-    constructor(
-        protected readonly selectionService: SelectionService,
-        protected readonly handler: UriCommandHandler<T>,
-        protected readonly options?: UriAwareCommandHandler.Options
-    ) { }
-
-    // tslint:disable-next-line:no-any
-    protected getUri(...args: any[]): T | undefined {
-        if (args && args[0] instanceof URI) {
-            return this.isMulti() ? [args[0]] : args[0];
-        }
-        const { selection } = this.selectionService;
-        if (UriSelection.is(selection)) {
-            return (this.isMulti() ? [selection.uri] : selection.uri) as T;
-        }
-        if (Array.isArray(selection)) {
-            if (this.isMulti()) {
-                const uris: URI[] = [];
-                for (const item of selection) {
-                    if (UriSelection.is(item)) {
-                        uris.push(item.uri);
-                    }
-                }
-                if (this.options && this.options.isValid) {
-                    return (this.options.isValid(uris) ? uris : undefined) as T;
-                }
-                return uris as T;
-            } else if (selection.length === 1) {
-                const firstItem = selection[0];
-                if (UriSelection.is(firstItem)) {
-                    return firstItem.uri as T;
-                }
-            }
-        }
-        return undefined;
-    }
-
-    // tslint:disable-next-line:no-any
-    execute(...args: any[]): object | undefined {
-        const uri = this.getUri(...args);
-        return uri ? this.handler.execute(uri, ...args) : undefined;
-    }
-
-    // tslint:disable-next-line:no-any
-    isVisible(...args: any[]): boolean {
-        const uri = this.getUri(...args);
-        if (uri) {
-            if (this.handler.isVisible) {
-                if (this.isMulti() && Array.isArray(uri)) {
-                    return uri.every(u => this.handler.isVisible!(u, ...args));
-                }
-                return this.handler.isVisible(uri as URI, ...args);
-            }
-            return true;
-        }
-        return false;
-    }
-
-    // tslint:disable-next-line:no-any
-    isEnabled(...args: any[]): boolean {
-        const uri = this.getUri(...args);
-        if (uri) {
-            if (this.handler.isEnabled) {
-                if (this.isMulti() && Array.isArray(uri)) {
-                    return uri.every(u => this.handler.isEnabled!(u, ...args));
-                }
-                return this.handler.isEnabled(uri as URI, ...args);
-            }
-            return true;
-        }
-        return false;
-    }
-
-    protected isMulti() {
-        return this.options && !!this.options.multi;
-    }
-
 }
 
 export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<URI> {

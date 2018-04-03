@@ -9,7 +9,7 @@ import { MenuModelRegistry, CommandRegistry, Command, SelectionService } from "@
 import { AbstractViewContribution } from "@theia/core/lib/browser";
 import { injectable, inject } from "inversify";
 import { NAVIGATOR_CONTEXT_MENU } from "@theia/navigator/lib/browser/navigator-contribution";
-import { UriCommandHandler, UriAwareCommandHandler } from "@theia/workspace/lib/browser/workspace-commands";
+import { UriCommandHandler, UriAwareCommandHandler } from "@theia/core/lib/common/uri-command-handler";
 import URI from '@theia/core/lib/common/uri';
 import { GitHistoryWidget } from './git-history-widget';
 import { Git } from "../../common";
