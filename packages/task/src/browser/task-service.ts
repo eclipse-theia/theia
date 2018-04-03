@@ -7,7 +7,7 @@
 
 import { inject, injectable, named } from "inversify";
 import { ILogger } from '@theia/core/lib/common';
-import { FrontendApplication } from '@theia/core/lib/browser';
+import { FrontendApplication, ApplicationShell } from '@theia/core/lib/browser';
 import { TaskServer, TaskExitedEvent, TaskOptions, TaskInfo } from '../common/task-protocol';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
@@ -31,6 +31,7 @@ export class TaskService implements TaskConfigurationClient {
 
     constructor(
         @inject(FrontendApplication) protected readonly app: FrontendApplication,
+        @inject(ApplicationShell) protected readonly shell: ApplicationShell,
         @inject(TaskServer) protected readonly taskServer: TaskServer,
         @inject(ILogger) @named('task') protected readonly logger: ILogger,
         @inject(WidgetManager) protected readonly widgetManager: WidgetManager,
@@ -175,6 +176,8 @@ export class TaskService implements TaskConfigurationClient {
                 label: `Task #${taskId}`,
                 destroyTermOnClose: true
             });
+        this.shell.addWidget(widget, { area: 'bottom' });
+        this.shell.activateWidget(widget.id);
         widget.start(terminalId);
     }
 
