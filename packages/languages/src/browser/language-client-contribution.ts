@@ -102,7 +102,8 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
                 const detail = err instanceof Error ? `: ${err.message}` : '.';
                 this.messageService.error(`Failed to start ${this.name} language server${detail}`);
                 return false;
-            }
+            },
+            diagnosticCollectionName: this.id,
         };
     }
 
