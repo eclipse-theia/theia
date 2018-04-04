@@ -43,8 +43,12 @@ jobs:
   allow_failures:
     - os: osx
   include:
-  - state: test
+  - stage: test
     os: linux
+  - os: osx
+    env: CXX=c++
+    before_script: skip
+    script: travis_retry yarn test:theia ;
   - stage: deploy
     os: linux
     before_script: skip
@@ -59,8 +63,3 @@ jobs:
       on:
         branch: master
       skip_cleanup: true
-  - stage: OSx test
-    os: osx
-    env: CXX=c++
-    before_script: skip
-    script: travis_retry yarn test:theia ;
