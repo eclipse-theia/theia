@@ -50,7 +50,7 @@ bar on branch
         expect(conflict.incoming.content).toBeDefined();
     });
 
-    it("content regions are correct", () => {
+    test("content regions are correct", () => {
         const content = `first line
 <<<<<<< HEAD
 foo changed on master
@@ -108,7 +108,7 @@ bar`);
 bar on branch`);
     });
 
-    it("multiple merge conflicts", () => {
+    test("multiple merge conflicts", () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
@@ -137,7 +137,7 @@ bar on branch
         expect(conflicts).toHaveLength(3);
     });
 
-    it("merge conflict with bases", () => {
+    test("merge conflict with bases", () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
@@ -177,7 +177,7 @@ bar on branch
         });
     });
 
-    it("broken 1: second current marker in current content", () => {
+    test("broken 1: second current marker in current content", () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 <<<<<<< HEAD
@@ -200,7 +200,7 @@ bar on branch
         });
     });
 
-    it("broken 2: current marker in incoming content", () => {
+    test("broken 2: current marker in incoming content", () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
@@ -215,7 +215,7 @@ bar on branch
         expect(conflicts).toHaveLength(0);
     });
 
-    it("broken 3: second separator", () => {
+    test("broken 3: second separator", () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
@@ -230,7 +230,7 @@ bar on branch
         expect(conflicts).toHaveLength(0);
     });
 
-    it("broken 4: second separator in incoming content", () => {
+    test("broken 4: second separator in incoming content", () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master
@@ -245,7 +245,7 @@ bar on branch
         expect(conflicts).toHaveLength(0);
     });
 
-    it("broken 5: incoming marker, no separator", () => {
+    test("broken 5: incoming marker, no separator", () => {
         const conflicts = parse(
             `<<<<<<< HEAD
 foo changed on master

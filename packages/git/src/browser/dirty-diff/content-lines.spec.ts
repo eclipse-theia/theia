@@ -9,7 +9,7 @@ import { ContentLines } from './content-lines';
 
 describe("content-lines", () => {
 
-    it("array like access of lines without splitting", () => {
+    test("array like access of lines without splitting", () => {
         const raw = "abc\ndef\n123\n456";
         const linesArray = ContentLines.arrayLike(ContentLines.fromString(raw));
         expect(linesArray[0]).toEqual('abc');

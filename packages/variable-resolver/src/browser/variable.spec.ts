@@ -30,7 +30,7 @@ describe('variable api', () => {
         variableRegistry = testContainer.get<VariableRegistry>(VariableRegistry);
     });
 
-    it('should register and return variable', () => {
+    test('should register and return variable', () => {
         registerTestVariable();
 
         const variable = variableRegistry.getVariable(TEST_VARIABLE.name);
@@ -40,7 +40,7 @@ describe('variable api', () => {
         }
     });
 
-    it('should not register a variable for already existed name', () => {
+    test('should not register a variable for already existed name', () => {
         const variables: Variable[] = [
             {
                 name: 'workspaceRoot',
@@ -61,7 +61,7 @@ describe('variable api', () => {
         expect(registeredVariables[0].description).toEqual('workspace root URI');
     });
 
-    it('should dispose variable', () => {
+    test('should dispose variable', () => {
         const disposable = registerTestVariable();
         disposable.dispose();
 
@@ -69,7 +69,7 @@ describe('variable api', () => {
         expect(variable).toBeUndefined();
     });
 
-    it('should unregister variables on dispose', () => {
+    test('should unregister variables on dispose', () => {
         registerTestVariable();
 
         let variables = variableRegistry.getVariables();

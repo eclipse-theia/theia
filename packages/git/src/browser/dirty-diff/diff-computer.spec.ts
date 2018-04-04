@@ -52,7 +52,7 @@ describe("dirty-diff-computer", () => {
         });
     });
 
-    it("remove all lines", () => {
+    test("remove all lines", () => {
         const dirtyDiff = computeDirtyDiff(
             sequenceOfN(10, () => "TO-BE-REMOVED"),
             [""]
@@ -107,7 +107,7 @@ describe("dirty-diff-computer", () => {
         });
     });
 
-    it("add lines to empty file", () => {
+    test("add lines to empty file", () => {
         const numberOfLines = 3;
         const dirtyDiff = computeDirtyDiff(
             [""],
@@ -120,7 +120,7 @@ describe("dirty-diff-computer", () => {
         });
     });
 
-    it("add empty lines", () => {
+    test("add empty lines", () => {
         const dirtyDiff = computeDirtyDiff(
             [
                 "1",
@@ -140,7 +140,7 @@ describe("dirty-diff-computer", () => {
         });
     });
 
-    it("add empty line after single line", () => {
+    test("add empty line after single line", () => {
         const dirtyDiff = computeDirtyDiff(
             [
                 "1"
@@ -172,7 +172,7 @@ describe("dirty-diff-computer", () => {
         });
     });
 
-    it("add empty and non-empty lines", () => {
+    test("add empty and non-empty lines", () => {
         const dirtyDiff = computeDirtyDiff(
             [
                 "FIRST",
@@ -209,7 +209,7 @@ describe("dirty-diff-computer", () => {
         });
     });
 
-    it("modify single line", () => {
+    test("modify single line", () => {
         const dirtyDiff = computeDirtyDiff(
             [
                 "FIRST",
@@ -229,7 +229,7 @@ describe("dirty-diff-computer", () => {
         });
     });
 
-    it("modify all lines", () => {
+    test("modify all lines", () => {
         const numberOfLines = 10;
         const dirtyDiff = computeDirtyDiff(
             sequenceOfN(numberOfLines, () => "TO-BE-MODIFIED"),
@@ -242,7 +242,7 @@ describe("dirty-diff-computer", () => {
         });
     });
 
-    it("modify lines at the end", () => {
+    test("modify lines at the end", () => {
         const dirtyDiff = computeDirtyDiff(
             [
                 "1",
@@ -263,7 +263,7 @@ describe("dirty-diff-computer", () => {
         });
     });
 
-    it("multiple diffs", () => {
+    test("multiple diffs", () => {
         const dirtyDiff = computeDirtyDiff(
             [
                 "TO-BE-CHANGED",
@@ -300,7 +300,7 @@ describe("dirty-diff-computer", () => {
         });
     });
 
-    it("multiple additions", () => {
+    test("multiple additions", () => {
         const dirtyDiff = computeDirtyDiff(
             [
                 "first line",

@@ -129,7 +129,7 @@ describe('problem-manager', () => {
         expect(manager.findMarkers()).toHaveLength(4);
     });
 
-    it('should find markers with filter', () => {
+    test('should find markers with filter', () => {
         expect(manager.findMarkers({
             owner: 'me'
         })).toHaveLength(4);
@@ -148,7 +148,7 @@ describe('problem-manager', () => {
         })).toHaveLength(1);
     });
 
-    it('should persist markers', async () => {
+    test('should persist markers', async () => {
         const newManager = testContainer.get(ProblemManager);
         await newManager.initialized;
         expect(newManager.findMarkers().length).toEqual(4);

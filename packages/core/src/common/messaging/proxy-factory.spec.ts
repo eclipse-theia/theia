@@ -68,7 +68,7 @@ describe('Proxy-Factory', () => {
             done();
         });
     });
-    it('Remote Exceptions should result in rejected Promise.', done => {
+    test('Remote Exceptions should result in rejected Promise.', done => {
         const { serverProxy } = getSetup();
         const handle = setTimeout(() => done("timeout"), 500);
         serverProxy.fails2('a', 'b').catch(err => {

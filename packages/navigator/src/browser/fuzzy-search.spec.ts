@@ -55,9 +55,9 @@ describe('fuzzy-search', () => {
         readonly pattern: string,
         readonly items: string[],
         readonly expected: FuzzySearch.Match<string>[]
-    }[]).forEach(test => {
-        const { pattern, items, expected } = test;
-        it(`should match ${expected.length} item${expected.length === 1 ? '' : 's'} when filtering [${items.join(', ')}] with pattern: '${pattern}'`, async () => {
+    }[]).forEach(testObj => {
+        const { pattern, items, expected } = testObj;
+        test(`should match ${expected.length} item${expected.length === 1 ? '' : 's'} when filtering [${items.join(', ')}] with pattern: '${pattern}'`, async () => {
             expectSearch(await search(pattern, items), expected);
         });
     });
@@ -65,9 +65,9 @@ describe('fuzzy-search', () => {
     ([
         ['con', ['configs', 'base.tsconfig.json', 'tsconfig.json', 'base.nyc.json', 'CONTRIBUTING.MD']],
         ['bcn', ['baconing', 'narwhal', 'a mighty bear canoe'], ['baconing', 'a mighty bear canoe']]
-    ] as ([string, string[], string[]])[]).forEach(test => {
-        const [pattern, items, expected] = test;
-        it(`should match the order of items after the filtering with pattern: '${pattern}'`, async () => {
+    ] as ([string, string[], string[]])[]).forEach(testObj => {
+        const [pattern, items, expected] = testObj;
+        test(`should match the order of items after the filtering with pattern: '${pattern}'`, async () => {
             expectOrder(await search(pattern, items), expected || items);
         });
     });

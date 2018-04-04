@@ -124,7 +124,7 @@ describe('tree-iterator', () => {
 
 describe('iterators', () => {
 
-    it('as-iterator', () => {
+    test('as-iterator', () => {
         const array = [1, 2, 3, 4];
         const itr = Iterators.asIterator(array);
         let next = itr.next();
@@ -139,7 +139,7 @@ describe('iterators', () => {
         expect(array).toHaveLength(0);
     });
 
-    it('cycle - without start', function () {
+    test('cycle - without start', function () {
         const array = [1, 2, 3, 4];
         const itr = Iterators.cycle(array);
         const visitedItems = new Set();
@@ -156,7 +156,7 @@ describe('iterators', () => {
         }
     });
 
-    it('cycle - with start', function () {
+    test('cycle - with start', function () {
         const array = [1, 2, 3, 4];
         const itr = Iterators.cycle(array, 2);
         const visitedItems = new Set();

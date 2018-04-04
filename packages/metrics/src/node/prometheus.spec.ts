@@ -17,7 +17,7 @@ describe("Prometheus helper module", () => {
     const validTheiaName = 'theia_something';
     const invalidName2 = '@theia/?$%^ ';
 
-    it("Should correctly validate a metric name", () => {
+    test("Should correctly validate a metric name", () => {
         expect(PROMETHEUS_REGEXP.test(validName)).toEqual(true);
 
         expect(PROMETHEUS_REGEXP.test(invalidTheiaName)).toEqual(false);
@@ -26,7 +26,7 @@ describe("Prometheus helper module", () => {
 
     });
 
-    it("Should correctly return a valid name from an otherwise invalid prometheus string", () => {
+    test("Should correctly return a valid name from an otherwise invalid prometheus string", () => {
         expect(PROMETHEUS_REGEXP.test(invalidTheiaName)).toEqual(false);
 
         const newName = toPrometheusValidName(invalidTheiaName);

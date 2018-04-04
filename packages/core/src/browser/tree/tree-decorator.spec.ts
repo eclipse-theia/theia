@@ -132,15 +132,15 @@ describe('tree-decorator', () => {
                 [2, 1, 1, true],
                 [3, 1, 1, false],
                 [1, 1, -100, false],
-            ] as [number, number, number, boolean][]).forEach(test => {
-                const [input, offset, length, expected] = test;
-                it(`${input} should ${expected ? '' : 'not '}be contained in the [${offset}:${length}] range`, () => {
+            ] as [number, number, number, boolean][]).forEach(testObj => {
+                const [input, offset, length, expected] = testObj;
+                test(`${input} should ${expected ? '' : 'not '}be contained in the [${offset}:${length}] range`, () => {
                     expect(TreeDecoration.CaptionHighlight.Range.contains(input, { offset, length })).toEqual(expected);
                 });
             });
         });
 
-        it('split', () => {
+        test('split', () => {
             const actual = TreeDecoration.CaptionHighlight.split('alma', {
                 ranges: [{ offset: 0, length: 1 }]
             });

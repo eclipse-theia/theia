@@ -46,7 +46,7 @@ describe('variable-resolver-frontend-contribution', () => {
         variableRegistrar.onStart();
     });
 
-    it('should register all variables from the contribution points', () => {
+    test('should register all variables from the contribution points', () => {
         const variables = variableRegistry.getVariables();
         expect(variables.length).toEqual(2);
         expect(variables[0].name).toEqual('file');
