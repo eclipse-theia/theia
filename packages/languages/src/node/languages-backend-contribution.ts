@@ -20,7 +20,7 @@ export class LanguagesBackendContribution implements BackendApplicationContribut
 
     constructor(
         @inject(ContributionProvider) @named(LanguageServerContribution) protected readonly contributors: ContributionProvider<LanguageServerContribution>,
-        @inject(ILogger) protected logger: ILogger
+        @inject(ILogger) @named('languages') protected logger: ILogger
     ) { }
 
     onStart(server: http.Server | https.Server): void {

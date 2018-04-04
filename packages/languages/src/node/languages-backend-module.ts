@@ -6,7 +6,7 @@
  */
 
 import { ContainerModule } from "inversify";
-import { bindContributionProvider } from '@theia/core/lib/common';
+import { bindContributionProvider, ILogger } from '@theia/core/lib/common';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { LanguagesBackendContribution } from "./languages-backend-contribution";
 import { LanguageServerContribution } from "./language-server-contribution";
@@ -14,4 +14,9 @@ import { LanguageServerContribution } from "./language-server-contribution";
 export default new ContainerModule(bind => {
     bind(BackendApplicationContribution).to(LanguagesBackendContribution).inSingletonScope();
     bindContributionProvider(bind, LanguageServerContribution);
+
+    bind(ILogger).toDynamicValue(ctx => {
+        const logger = ctx.container.get<ILogger>(ILogger);
+        return logger.child({ 'module': 'languages' });
+    }).inSingletonScope().whenTargetNamed('languages');
 });
