@@ -1,6 +1,5 @@
 {
   "defaultSeverity": "warning",
-  "extends": "./tslint.json",
   "rules": {
     "arrow-parens": [
       true,
@@ -28,15 +27,6 @@
     "no-null-keyword": true,
     "no-shadowed-variable": true,
     "no-unused-expression": true,
-    "one-variable-per-declaration": true,
-    "prefer-const": {
-      "options": [
-        true,
-        {
-          "destructuring": "all"
-        }
-      ],
-      "severity": "error"
-    }
+    "one-variable-per-declaration": true
   }
 }

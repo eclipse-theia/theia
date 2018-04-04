@@ -31,6 +31,14 @@
       "check-else",
       "check-whitespace"
     ],
+    "prefer-const": {
+      "options": [
+        true,
+        {
+          "destructuring": "all"
+        }
+      ]
+    },
     "radix": true,
     "semicolon": [
       true,

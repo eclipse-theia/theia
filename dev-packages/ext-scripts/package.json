@@ -21,7 +21,7 @@
     "ext:build": "concurrently -n compile,lint -c blue,green \"theiaext compile\" \"theiaext lint\"",
     "ext:compile": "tsc -p compile.tsconfig.json",
     "ext:compile:clean": "rimraf lib",
-    "ext:lint": "tslint -c ../../configs/tslint.json --project compile.tsconfig.json",
+    "ext:lint": "tslint --project compile.tsconfig.json",
     "ext:watch": "tsc -w -p compile.tsconfig.json",
     "ext:docs": "typedoc --tsconfig compile.tsconfig.json --options ../../configs/typedoc.json",
     "ext:docs:clean": "rimraf docs/api",
