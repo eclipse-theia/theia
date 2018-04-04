@@ -7,7 +7,7 @@
 
 import * as net from 'net';
 import * as cp from 'child_process';
-import { injectable, inject } from "inversify";
+import { injectable, inject, named } from "inversify";
 import { Message, isRequestMessage } from 'vscode-ws-jsonrpc';
 import { InitializeParams, InitializeRequest } from 'vscode-languageserver-protocol';
 import {
@@ -16,7 +16,7 @@ import {
     forward,
     IConnection
 } from 'vscode-ws-jsonrpc/lib/server';
-import { MaybePromise } from "@theia/core/lib/common";
+import { MaybePromise, ILogger } from "@theia/core/lib/common";
 import { LanguageContribution } from "../common";
 import { RawProcess, RawProcessFactory } from '@theia/process/lib/node/raw-process';
 import { ProcessManager } from '@theia/process/lib/node/process-manager';
@@ -42,6 +42,8 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
     @inject(ProcessManager)
     protected readonly processManager: ProcessManager;
 
+    @inject(ILogger) @named('languages') protected readonly logger: ILogger;
+
     abstract start(clientConnection: IConnection): void;
 
     protected forward(clientConnection: IConnection, serverConnection: IConnection): void {
@@ -55,6 +57,9 @@ export abstract class BaseLanguageServerContribution implements LanguageServerCo
                 initializeParams.processId = process.pid;
             }
         }
+
+        this.logger.debug(JSON.stringify(message));
+
         return message;
     }
 
