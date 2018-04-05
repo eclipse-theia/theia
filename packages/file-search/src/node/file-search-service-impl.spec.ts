@@ -35,15 +35,15 @@ describe('search-service', () => {
         expect(testFile).toBeDefined();
     }, 10000);
 
-    test('shall respect nested .gitignore', async () => {
-        // const service = testContainer.get(FileSearchServiceImpl);
-        // const rootPath = path.resolve(__dirname, "../../test-resources");
-        // const matches = await service.find('foo', { rootPath, fuzzyMatch: false });
+    test.skip('shall respect nested .gitignore', async () => {
+        const service = testContainer.get(FileSearchServiceImpl);
+        const rootUri = FileUri.create(path.resolve(__dirname, "../../test-resources")).toString();
+        const matches = await service.find('foo', { rootUri, fuzzyMatch: false });
 
-        // expect(!matches.some(e => e.endsWith('subdir1/sub-bar/foo.txt')));
-        // expect(matches.some(e => e.endsWith('subdir1/sub2/foo.txt')));
-        // expect(matches.some(e => e.endsWith('subdir1/foo.txt')));
-    }, 10000);
+        expect(matches.find(match => match.endsWith('subdir1/sub-bar/foo.txt'))).toBeUndefined();
+        expect(matches.find(match => match.endsWith('subdir1/sub2/foo.txt'))).toBeDefined();
+        expect(matches.find(match => match.endsWith('subdir1/foo.txt'))).toBeDefined();
+    });
 
     test('shall cancel searches', async () => {
         const service = testContainer.get(FileSearchServiceImpl);
