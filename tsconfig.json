@@ -85,7 +85,12 @@
       "@theia/variable-resolver/lib/*": [
         "packages/variable-resolver/src/*"
       ]
-    }
+    },
+    "plugins": [
+      {
+        "name": "tslint-language-service"
+      }
+    ]
   },
   "include": [
     "dev-packages/*/src",
