@@ -60,6 +60,8 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
      * @returns identifiers of applied decorations, which can be removed in next call.
      */
     deltaDecorations(params: DeltaDecorationParams): string[];
+
+    getVisibleColumn(position: Position): number;
 }
 
 export interface Dimension {

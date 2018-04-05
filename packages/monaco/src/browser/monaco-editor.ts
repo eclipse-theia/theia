@@ -296,6 +296,12 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         });
     }
 
+    getVisibleColumn(position: Position): number {
+        return this.editor.getVisibleColumnFromPosition({
+            column: position.character + 1,
+            lineNumber: position.line + 1
+        });
+    }
 }
 
 export namespace MonacoEditor {
