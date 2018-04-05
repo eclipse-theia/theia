@@ -6,7 +6,8 @@
  */
 
 import { EditorManager } from './editor-manager';
-import { injectable, inject } from "inversify";
+import { TextEditor } from './editor';
+import { injectable, inject } from 'inversify';
 import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
 import { Position } from 'vscode-languageserver-types';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
@@ -41,10 +42,10 @@ export class EditorContribution implements FrontendApplicationContribution {
                     priority: 1
                 });
 
-                this.setCursorPositionStatus(widget.editor.cursor);
+                this.setCursorPositionStatus(widget.editor.cursor, widget.editor);
                 this.toDispose.dispose();
                 this.toDispose.push(widget.editor.onCursorPositionChanged(position => {
-                    this.setCursorPositionStatus(position);
+                    this.setCursorPositionStatus(position, widget.editor);
                 }));
             } else {
                 this.statusBar.removeElement('editor-status-language');
@@ -53,9 +54,9 @@ export class EditorContribution implements FrontendApplicationContribution {
         });
     }
 
-    protected setCursorPositionStatus(position: Position): void {
+    protected setCursorPositionStatus(position: Position, editor: TextEditor): void {
         this.statusBar.setElement('editor-status-cursor-position', {
-            text: `Ln ${position.line + 1}, Col ${position.character + 1}`,
+            text: `Ln ${position.line + 1}, Col ${editor.getVisibleColumn(position)}`,
             alignment: StatusBarAlignment.RIGHT,
             priority: 100
         });
