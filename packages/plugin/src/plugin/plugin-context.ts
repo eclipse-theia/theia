@@ -8,7 +8,7 @@
  * Contributors:
  *   Red Hat, Inc. - initial API and implementation
  */
-import { MAIN_RPC_CONTEXT } from '../api/extension-api';
+import { MAIN_RPC_CONTEXT } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import * as theia from 'theia';
 import { CommandRegistryImpl } from './command-registry';

@@ -11,9 +11,9 @@
 import { interfaces } from 'inversify';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { CommandRegistryMainImpl } from './command-registry-main';
-import { EXTENSION_RPC_CONTEXT } from '../api/extension-api';
+import { PLUGIN_RPC_CONTEXT } from '../api/plugin-api';
 
-export function setUpExtensionApi(rpc: RPCProtocol, container: interfaces.Container): void {
+export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const commandRegistryMain = new CommandRegistryMainImpl(rpc, container);
-    rpc.set(EXTENSION_RPC_CONTEXT.COMMAND_REGISTRY_MAIN, commandRegistryMain);
+    rpc.set(PLUGIN_RPC_CONTEXT.COMMAND_REGISTRY_MAIN, commandRegistryMain);
 }

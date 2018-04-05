@@ -24,7 +24,7 @@ export interface MessageConnection {
 
 export interface RPCProtocol {
     /**
-     * Returns a proxy to an object addressable/named in the extension process or in the main process.
+     * Returns a proxy to an object addressable/named in the plugin process or in the main process.
      */
     getProxy<T>(proxyId: ProxyIdentifier<T>): T;
 

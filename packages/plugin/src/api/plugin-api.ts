@@ -11,12 +11,12 @@
 import { createProxyIdentifier, ProxyIdentifier } from './rpc-protocol';
 import * as theia from 'theia';
 
-export interface HostedExtensionManagerExt {
-    $loadExtension(ext: Extension): void;
-    $stopExtensions(): PromiseLike<void>;
+export interface HostedPluginManagerExt {
+    $loadPlugin(ext: Plugin): void;
+    $stopPlugin(): PromiseLike<void>;
 }
 
-export interface Extension {
+export interface Plugin {
     name: string;
     publisher: string;
     version: string;
@@ -35,11 +35,11 @@ export interface CommandRegistryExt {
     $executeCommand<T>(id: string, ...ars: any[]): PromiseLike<T>;
 }
 
-export const EXTENSION_RPC_CONTEXT = {
+export const PLUGIN_RPC_CONTEXT = {
     COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>("CommandRegistryMain")
 };
 
 export const MAIN_RPC_CONTEXT = {
-    HOSTED_EXTENSION_MANAGER_EXT: createProxyIdentifier<HostedExtensionManagerExt>("HostedExtensionManagerExt"),
+    HOSTED_PLUGIN_MANAGER_EXT: createProxyIdentifier<HostedPluginManagerExt>("HostedPluginManagerExt"),
     COMMAND_REGISTRY_EXT: createProxyIdentifier<CommandRegistryExt>("CommandRegistryExt")
 };

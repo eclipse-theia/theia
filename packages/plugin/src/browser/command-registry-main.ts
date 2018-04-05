@@ -8,7 +8,7 @@
  * Contributors:
  *   Red Hat, Inc. - initial API and implementation
  */
-import { CommandRegistryExt, MAIN_RPC_CONTEXT, CommandRegistryMain } from '../api/extension-api';
+import { CommandRegistryExt, MAIN_RPC_CONTEXT, CommandRegistryMain } from '../api/plugin-api';
 import { interfaces } from "inversify";
 import { CommandRegistry } from '@theia/core/lib/common/command';
 import * as theia from 'theia';

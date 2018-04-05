@@ -10,12 +10,12 @@
  */
 import { injectable } from "inversify";
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { HostedExtensionClient } from '../common/extension-protocol';
+import { HostedPluginClient } from '../common/plugin-protocol';
 
 @injectable()
-export class HostedExtensionWatcher {
+export class HostedPluginWatcher {
     private onPostMessage = new Emitter<string[]>();
-    getHostedExtensionClient(): HostedExtensionClient {
+    getHostedPluginClient(): HostedPluginClient {
         const messageEmitter = this.onPostMessage;
         return {
             postMessage(message: string): Promise<void> {

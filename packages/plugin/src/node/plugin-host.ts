@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Red Hat, Inc.
+ * Copyright (C) 2015-2018 Red Hat, Inc.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -11,14 +11,13 @@
 
 import { RPCProtocolImpl } from '../api/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
-import { createAPI } from '../extension/extension-context';
-import { MAIN_RPC_CONTEXT } from '../api/extension-api';
-import { HostedExtensionManagerExtImpl } from '../extension/hosted-extension-manager';
+import { createAPI } from '../plugin/plugin-context';
+import { MAIN_RPC_CONTEXT } from '../api/plugin-api';
+import { HostedPluginManagerExtImpl } from '../plugin/hosted-plugin-manager';
 
-const ctx = self as any;
+console.log("Plugin host loaded!!!");
 const plugins = new Array<() => void>();
 const registerPlugin = function (pluginId: string, start: (api: any) => void, stop?: () => void): void {
-    console.log(`Extension: ${pluginId} loaded.`);
     if (stop) {
         plugins.push(stop);
     }
@@ -29,26 +28,33 @@ const emmitter = new Emitter();
 const rpc = new RPCProtocolImpl({
     onMessage: emmitter.event,
     send: (m: {}) => {
-        ctx.postMessage(m);
+        if (process.send) {
+            process.send(JSON.stringify(m));
+        }
     }
 });
-addEventListener('message', (message: any) => {
-    emmitter.fire(message.data);
+process.on('message', (message: any) => {
+    console.log("Ext: " + message);
+    emmitter.fire(JSON.parse(message));
 });
 
 const theia = createAPI(rpc);
 if (registerPlugin) {
-    ctx['registerPlugin'] = registerPlugin;
+    const g = global as any;
+    g['registerPlugin'] = registerPlugin;
 }
-// api.commands.registerCommand({ id: 'fooBar', label: 'Command From Extension' }, () => {
-//     console.log("Hello from WebWorker Command");
-// });
 
-rpc.set(MAIN_RPC_CONTEXT.HOSTED_EXTENSION_MANAGER_EXT, new HostedExtensionManagerExtImpl({
-    loadExtension(path: string): void {
-        ctx.importScripts('/hostedExtension/' + path);
+rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtImpl({
+    loadPlugin(path: string): void {
+        console.log("Ext: load: " + path);
+        try {
+            require(path);
+        } catch (e) {
+            console.error(e);
+        }
     },
-    stopExtensions(): void {
+    stopPlugins(): void {
+        console.log("Plugin: Stopping plugins.");
         for (const s of plugins) {
             s();
         }

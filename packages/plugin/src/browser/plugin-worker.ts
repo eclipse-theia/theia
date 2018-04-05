@@ -13,7 +13,7 @@ import { RPCProtocolImpl, RPCProtocol } from '../api/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
 
 @injectable()
-export class ExtensionWorker {
+export class PluginWorker {
 
     private worker: Worker;
     public readonly rpc: RPCProtocol;

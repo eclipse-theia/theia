@@ -1,7 +1,7 @@
 {
-  "name": "@theia/isolated-extension-api",
+  "name": "@theia/plugin",
   "version": "0.3.8",
-  "description": "Theia - Isolated Extension API",
+  "description": "Theia - Plugin API",
   "dependencies": {
     "@theia/core": "^0.3.8"
   },
@@ -10,8 +10,8 @@
   },
   "theiaExtensions": [
     {
-      "backend": "lib/node/extension-api-backend-module",
-      "frontend": "lib/browser/extension-api-frontend-module"
+      "backend": "lib/node/plugin-api-backend-module",
+      "frontend": "lib/browser/plugin-api-frontend-module"
     }
   ],
   "keywords": [

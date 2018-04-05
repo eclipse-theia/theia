@@ -10,22 +10,22 @@
  */
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 
-export const hostedServicePath = '/services/hostedExtension';
+export const hostedServicePath = '/services/hostedPlugin';
 
-export interface Extension {
+export interface Plugin {
     name: string;
     publisher: string;
     version: string;
-    theiaExtension: { worker?: string, node?: string };
+    theiaPlugin: { worker?: string, node?: string };
 }
 
-export const HostedExtensionClient = Symbol('HostedExtensionClient');
-export interface HostedExtensionClient {
+export const HostedPluginClient = Symbol('HostedPluginClient');
+export interface HostedPluginClient {
     postMessage(message: string): Promise<void>;
 }
 
-export const HostedExtensionServer = Symbol('HostedExtensionServer');
-export interface HostedExtensionServer extends JsonRpcServer<HostedExtensionClient> {
-    getHostedExtension(): Promise<Extension | undefined>;
+export const HostedPluginServer = Symbol('HostedPluginServer');
+export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
+    getHostedPlugin(): Promise<Plugin | undefined>;
     onMessage(message: string): Promise<void>;
 }

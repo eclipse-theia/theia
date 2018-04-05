@@ -12,51 +12,51 @@ import { BackendApplicationContribution } from '@theia/core/lib/node/backend-app
 import { injectable } from "inversify";
 import * as express from 'express';
 import * as fs from 'fs';
-import { Extension } from '../common/extension-protocol';
+import { Plugin } from '../common/plugin-protocol';
 import { resolve } from 'path';
 
 @injectable()
-export class HostedExtensionReader implements BackendApplicationContribution {
-    private extension: Extension | undefined;
-    private extensionPath: string;
+export class HostedPluginReader implements BackendApplicationContribution {
+    private plugin: Plugin | undefined;
+    private pluginPath: string;
 
     initialize(): void {
         if (process.env.HOSTED_PLUGIN) {
-            let extensionPath = process.env.HOSTED_PLUGIN;
-            if (extensionPath) {
-                if (!extensionPath.endsWith('/')) {
-                    extensionPath += '/';
+            let pluginPath = process.env.HOSTED_PLUGIN;
+            if (pluginPath) {
+                if (!pluginPath.endsWith('/')) {
+                    pluginPath += '/';
                 }
-                this.extensionPath = extensionPath;
-                this.handleExtension(extensionPath);
+                this.pluginPath = pluginPath;
+                this.handlePlugin(pluginPath);
             }
         }
     }
 
     configure(app: express.Application): void {
-        app.get('/hostedExtension/:path(*)', (req, res) => {
+        app.get('/hostedPlugin/:path(*)', (req, res) => {
             const filePath: string = req.params.path;
-            res.sendFile(this.extensionPath + filePath);
+            res.sendFile(this.pluginPath + filePath);
         });
     }
 
-    private handleExtension(path: string): void {
+    private handlePlugin(path: string): void {
         if (!path.endsWith('/')) {
             path += '/';
         }
         const packageJsonPath = path + 'package.json';
         if (fs.existsSync(packageJsonPath)) {
-            const extension: Extension = require(packageJsonPath);
-            this.extension = extension;
-            if (extension.theiaExtension.node) {
-                extension.theiaExtension.node = resolve(path, extension.theiaExtension.node);
+            const plugin: Plugin = require(packageJsonPath);
+            this.plugin = plugin;
+            if (plugin.theiaPlugin.node) {
+                plugin.theiaPlugin.node = resolve(path, plugin.theiaPlugin.node);
             }
         } else {
-            this.extension = undefined;
+            this.plugin = undefined;
         }
     }
 
-    getExtension(): Extension | undefined {
-        return this.extension;
+    getPlugin(): Plugin | undefined {
+        return this.plugin;
     }
 }

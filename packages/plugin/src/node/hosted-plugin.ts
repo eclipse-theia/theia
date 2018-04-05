@@ -11,11 +11,11 @@
 import * as path from 'path';
 import * as cp from "child_process";
 import { injectable, inject } from "inversify";
-import { Extension, HostedExtensionClient } from '../common/extension-protocol';
+import { Plugin, HostedPluginClient } from '../common/plugin-protocol';
 import { ILogger, ConnectionErrorHandler } from "@theia/core/lib/common";
 import { Emitter } from '@theia/core/lib/common/event';
 import { createIpcEnv } from "@theia/core/lib/node/messaging/ipc-protocol";
-import { MAIN_RPC_CONTEXT } from '../api/extension-api';
+import { MAIN_RPC_CONTEXT } from '../api/plugin-api';
 import { RPCProtocolImpl } from '../api/rpc-protocol';
 
 export interface IPCConnectionOptions {
@@ -26,8 +26,8 @@ export interface IPCConnectionOptions {
 }
 
 @injectable()
-export class HostedExtensionSupport {
-    private client: HostedExtensionClient;
+export class HostedPluginSupport {
+    private client: HostedPluginClient;
 
     @inject(ILogger)
     protected readonly logger: ILogger;
@@ -37,13 +37,13 @@ export class HostedExtensionSupport {
 
     }
 
-    setClient(client: HostedExtensionClient): void {
+    setClient(client: HostedPluginClient): void {
         this.client = client;
     }
 
-    runExtension(extension: Extension): void {
-        if (extension.theiaExtension.node) {
-            this.runExtServer(extension);
+    runPlugin(plugin: Plugin): void {
+        if (plugin.theiaPlugin.node) {
+            this.runPluginServer(plugin);
         }
     }
 
@@ -73,18 +73,18 @@ export class HostedExtensionSupport {
                 }
             }
         });
-        const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_EXTENSION_MANAGER_EXT);
-        hostedExtManager.$stopExtensions().then(() => {
+        const hostedPluginManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
+        hostedPluginManager.$stopPlugin().then(() => {
             cp.kill();
         });
     }
 
-    private runExtServer(extension: Extension): void {
+    private runPluginServer(plugin: Plugin): void {
         if (this.cp) {
             this.terminatePluginServer(this.cp);
         }
         this.cp = this.fork({
-            serverName: "hosted-extension",
+            serverName: "hosted-plugin",
             logger: this.logger,
             args: []
         });
@@ -109,7 +109,7 @@ export class HostedExtensionSupport {
             forkOptions.execArgv = ['--nolazy', `--inspect${inspectArg.substr(inspectArgPrefix.length)}`];
         }
 
-        const childProcess = cp.fork(path.resolve(__dirname, 'extension-host.js'), options.args, forkOptions);
+        const childProcess = cp.fork(path.resolve(__dirname, 'plugin-host.js'), options.args, forkOptions);
         childProcess.stdout.on('data', data => this.logger.info(`[${options.serverName}: ${childProcess.pid}] ${data.toString()}`));
         childProcess.stderr.on('data', data => this.logger.error(`[${options.serverName}: ${childProcess.pid}] ${data.toString()}`));
 

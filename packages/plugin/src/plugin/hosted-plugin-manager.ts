@@ -8,25 +8,25 @@
  * Contributors:
  *   Red Hat, Inc. - initial API and implementation
  */
-import { HostedExtensionManagerExt, Extension } from '../api/extension-api';
+import { HostedPluginManagerExt, Plugin } from '../api/plugin-api';
 
 export interface PluginHost {
-    loadExtension(scriptPath: string): void;
+    loadPlugin(scriptPath: string): void;
 
-    stopExtensions(): void;
+    stopPlugins(): void;
 }
 
-export class HostedExtensionManagerExtImpl implements HostedExtensionManagerExt {
+export class HostedPluginManagerExtImpl implements HostedPluginManagerExt {
 
     constructor(private readonly host: PluginHost) {
     }
 
-    $loadExtension(ext: Extension): void {
-        this.host.loadExtension(ext.extPath);
+    $loadPlugin(ext: Plugin): void {
+        this.host.loadPlugin(ext.extPath);
     }
 
-    $stopExtensions(): PromiseLike<void> {
-        this.host.stopExtensions();
+    $stopPlugin(): PromiseLike<void> {
+        this.host.stopPlugins();
         return Promise.resolve();
     }
 
