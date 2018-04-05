@@ -43,8 +43,5 @@
     "watch": "theiaext watch",
     "test": "theiaext test",
     "docs": "theiaext docs"
-  },
-  "nyc": {
-    "extends": "../../configs/nyc.json"
   }
 }

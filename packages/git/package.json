@@ -56,8 +56,5 @@
   "devDependencies": {
     "@theia/ext-scripts": "^0.3.8",
     "upath": "^1.0.2"
-  },
-  "nyc": {
-    "extends": "../../configs/nyc.json"
   }
 }
