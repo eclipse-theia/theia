@@ -16,6 +16,7 @@ import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browse
 import { FileNavigatorModel } from './navigator-model';
 import { FileNavigatorSearch } from './navigator-search';
 import { SearchBox, SearchBoxProps, SearchBoxFactory } from './search-box';
+import { ApplicationShell } from '@theia/core/lib/browser/shell';
 
 export const FILE_NAVIGATOR_ID = 'files';
 export const LABEL = 'Files';
@@ -35,7 +36,8 @@ export class FileNavigatorWidget extends FileTreeWidget {
         @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
         @inject(FileNavigatorSearch) protected readonly navigatorSearch: FileNavigatorSearch,
-        @inject(SearchBoxFactory) protected readonly searchBoxFactory: SearchBoxFactory
+        @inject(SearchBoxFactory) protected readonly searchBoxFactory: SearchBoxFactory,
+        @inject(ApplicationShell) protected readonly shell: ApplicationShell,
     ) {
         super(props, model, contextMenuRenderer);
         this.id = FILE_NAVIGATOR_ID;
@@ -61,8 +63,11 @@ export class FileNavigatorWidget extends FileTreeWidget {
     }
 
     protected initialize(): void {
-        this.model.onSelectionChanged(selection =>
-            this.selectionService.selection = selection
+        this.model.onSelectionChanged(selection => {
+            if (this.shell.activeWidget === this) {
+                this.selectionService.selection = selection;
+            }
+        }
         );
 
         this.workspaceService.root.then(async resolvedRoot => {
