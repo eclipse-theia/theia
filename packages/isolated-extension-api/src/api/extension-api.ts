@@ -12,8 +12,8 @@ import { createProxyIdentifier, ProxyIdentifier } from './rpc-protocol';
 import * as theia from 'theia';
 
 export interface HostedExtensionManagerExt {
-    loadExtension(ext: Extension): void;
-    stopExtensions(): PromiseLike<void>;
+    $loadExtension(ext: Extension): void;
+    $stopExtensions(): PromiseLike<void>;
 }
 
 export interface Extension {
@@ -23,43 +23,16 @@ export interface Extension {
     extPath: string;
 }
 
-/**
- * A command handler is an implementation of a command.
- *
- * A command can have multiple handlers
- * but they should be active in different contexts,
- * otherwise first active will be executed.
- */
-export interface CommandHandler {
-    /**
-     * Execute this handler.
-     */
-    execute(...args: any[]): any;
-    /**
-     * Test whether this handler is enabled (active).
-     */
-    isEnabled?(...args: any[]): boolean;
-    /**
-     * Test whether menu items for this handler should be visible.
-     */
-    isVisible?(...args: any[]): boolean;
-}
-
 export interface CommandRegistryMain {
-    /**
-     * Register the given command and handler if present.
-     *
-     * Throw if a command is already registered for the given command identifier.
-     */
-    registerCommand(command: theia.Command): void;
+    $registerCommand(command: theia.Command): void;
 
-    unregisterCommand(id: string): void;
-    executeCommand<T>(id: string, args: any[]): PromiseLike<T>;
-    getCommands(): PromiseLike<string[]>;
+    $unregisterCommand(id: string): void;
+    $executeCommand<T>(id: string, args: any[]): PromiseLike<T | undefined>;
+    $getCommands(): PromiseLike<string[]>;
 }
 
 export interface CommandRegistryExt {
-    executeCommand<T>(id: string): PromiseLike<T>;
+    $executeCommand<T>(id: string, ...ars: any[]): PromiseLike<T>;
 }
 
 export const EXTENSION_RPC_CONTEXT = {

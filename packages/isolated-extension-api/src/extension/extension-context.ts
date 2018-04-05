@@ -11,15 +11,24 @@
 import { MAIN_RPC_CONTEXT } from '../api/extension-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import * as theia from 'theia';
-import { CommandRegistryImpl } from './comand-registry';
+import { CommandRegistryImpl } from './command-registry';
 import { Disposable } from './types-impl';
 
 export function createAPI(rpc: RPCProtocol): typeof theia {
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
 
     const commands: typeof theia.commands = {
-        registerCommand(command: theia.Command, callback: <T>(...args: any[]) => T | Thenable<T>): Disposable {
-            return commandRegistryExt.registerCommand(command, callback);
+        registerCommand(command: theia.Command, handler?: <T>(...args: any[]) => T | Thenable<T>): Disposable {
+            return commandRegistryExt.registerCommand(command, handler);
+        },
+        executeCommand<T>(commandId: string, ...args: any[]): PromiseLike<T | undefined> {
+            return commandRegistryExt.executeCommand<T>(commandId, args);
+        },
+        registerTextEditorCommand(command: theia.Command, callback: (textEditor: theia.TextEditor, edit: theia.TextEditorEdit, ...arg: any[]) => void): Disposable {
+            throw new Error("Function registerTextEditorCommand is not implemented");
+        },
+        registerHandler(commandId: string, handler: (...args: any[]) => any): Disposable {
+            return commandRegistryExt.registerHandler(commandId, handler);
         }
     };
     return <typeof theia>{

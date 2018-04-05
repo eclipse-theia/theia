@@ -74,7 +74,7 @@ export class HostedExtensionSupport {
             }
         });
         const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_EXTENSION_MANAGER_EXT);
-        hostedExtManager.stopExtensions().then(() => {
+        hostedExtManager.$stopExtensions().then(() => {
             cp.kill();
         });
     }

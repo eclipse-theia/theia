@@ -24,28 +24,32 @@ export class CommandRegistryMainImpl implements CommandRegistryMain {
         this.delegate = container.get(CommandRegistry);
     }
 
-    registerCommand(command: theia.Command): void {
+    $registerCommand(command: theia.Command): void {
         this.disposables.set(
             command.id,
             this.delegate.registerCommand(command, {
                 execute: (...args: any[]) => {
-                    this.proxy.executeCommand(command.id);
+                    this.proxy.$executeCommand(command.id);
                 },
                 isEnabled() { return true; },
                 isVisible() { return true; }
             }));
     }
-    unregisterCommand(id: string): void {
+    $unregisterCommand(id: string): void {
         const dis = this.disposables.get(id);
         if (dis) {
             dis.dispose();
             this.disposables.delete(id);
         }
     }
-    executeCommand<T>(id: string, args: any[]): PromiseLike<T> {
-        throw new Error("Method not implemented.");
+    $executeCommand<T>(id: string, args: any[]): PromiseLike<T | undefined> {
+        try {
+            return Promise.resolve(this.delegate.executeCommand(id, args));
+        } catch (e) {
+            return Promise.reject(e);
+        }
     }
-    getCommands(): PromiseLike<string[]> {
+    $getCommands(): PromiseLike<string[]> {
         throw new Error("Method not implemented.");
     }
 

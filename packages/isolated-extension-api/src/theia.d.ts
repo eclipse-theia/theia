@@ -42,7 +42,74 @@ declare module 'theia' {
          */
         iconClass?: string;
     }
+
+    /**
+     * Represents a text editor.
+     */
+    export interface TextEditor {
+        // TODO implement TextEditor
+    }
+
+    /**
+     * 
+     */
+    export interface TextEditorEdit {
+        // TODO implement TextEditorEdit
+    }
+    /**
+	 * Namespace for dealing with commands. In short, a command is a function with a
+	 * unique identifier. The function is sometimes also called _command handler_.
+     * 
+     * Commands can be added using the [registerCommand](#commands.registerCommand) and
+     * [registerTextEditorCommand](#commands.registerTextEditorCommand) functions.
+     * Registration can be split in two step: first register command without handler, 
+     * second register handler by command id.
+     * 
+     * Any contributed command are available to any plugin, command can be invoked 
+     * by [executeCommand](#commands.executeCommand) function.
+     * 
+     * Simple example that register command:
+     * ```javascript
+     * theia.commands.registerCommand({id:'say.hello.command'}, ()=>{
+     *     console.log("Hello World!");
+     * });
+     * ```
+     * 
+     * Simple example that invoke command:
+     * 
+     * ```javascript
+     * theia.commands.executeCommand('core.about');
+     * ```
+	 */
     export namespace commands {
-        export function registerCommand(command: Command, callback: (...args: any[]) => any): Disposable
+        /**
+         * Register the given command and handler if present.
+         *
+         * Throw if a command is already registered for the given command identifier.
+         */
+        export function registerCommand(command: Command, handler?: (...args: any[]) => any): Disposable
+
+        /**
+         * Register the given handler for the given command identifier.
+         * 
+         * @param commandId a given command id
+         * @param handler a command handler
+         */
+        export function registerHandler(commandId: string, handler: (...args: any[]) => any): Disposable
+
+        /**
+         * Register a text editor command which can execute only if active editor present and command has access to the active editor 
+         * 
+         * @param command a command description 
+         * @param handler a command handler with access to text editor 
+         */
+        export function registerTextEditorCommand(command: Command, handler: (textEditor: TextEditor, edit: TextEditorEdit, ...arg: any[]) => void): Disposable
+
+        /**
+         * Execute the active handler for the given command and arguments.
+         *
+         * Reject if a command cannot be executed.
+         */
+        export function executeCommand<T>(commandId: string, ...args: any[]): PromiseLike<T | undefined>
     }
 }
