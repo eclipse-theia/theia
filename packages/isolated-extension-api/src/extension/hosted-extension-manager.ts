@@ -21,11 +21,11 @@ export class HostedExtensionManagerExtImpl implements HostedExtensionManagerExt 
     constructor(private readonly host: PluginHost) {
     }
 
-    loadExtension(ext: Extension): void {
+    $loadExtension(ext: Extension): void {
         this.host.loadExtension(ext.extPath);
     }
 
-    stopExtensions(): PromiseLike<void> {
+    $stopExtensions(): PromiseLike<void> {
         this.host.stopExtensions();
         return Promise.resolve();
     }

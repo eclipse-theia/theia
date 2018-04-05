@@ -37,7 +37,7 @@ export class HostedExtensionSupport {
             this.worker = new ExtensionWorker();
             setUpExtensionApi(this.worker.rpc, container);
             const hostedExtManager = this.worker.rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_EXTENSION_MANAGER_EXT);
-            hostedExtManager.loadExtension({
+            hostedExtManager.$loadExtension({
                 extPath: extension.theiaExtension.worker!,
                 name: extension.name,
                 publisher: extension.publisher,
@@ -48,7 +48,7 @@ export class HostedExtensionSupport {
             const rpc = this.createServerRpc();
             setUpExtensionApi(rpc, container);
             const hostedExtManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_EXTENSION_MANAGER_EXT);
-            hostedExtManager.loadExtension({
+            hostedExtManager.$loadExtension({
                 extPath: extension.theiaExtension.node!,
                 name: extension.name,
                 publisher: extension.publisher,

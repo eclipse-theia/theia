@@ -81,7 +81,7 @@ export class RPCProtocolImpl implements RPCProtocol {
     private createProxy<T>(proxyId: string): T {
         const handler = {
             get: (target: any, name: string) => {
-                if (!target[name] /*&& name.charCodeAt(0) === 36 */ /* CharCode.DollarSign */) {
+                if (!target[name] && name.charCodeAt(0) === 36 /* CharCode.DollarSign */) {
                     target[name] = (...myArgs: any[]) =>
                         this.remoteCall(proxyId, name, myArgs);
                 }
