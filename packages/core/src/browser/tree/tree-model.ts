@@ -41,7 +41,7 @@ export interface TreeModel extends Tree, TreeSelectionService, TreeExpansionServ
      * Opens the given node or the currently selected on if the argument is `undefined`.
      * If multiple nodes are selected, open the most recently selected node.
      */
-    openNode(node?: Readonly<TreeNode> | undefined): void;
+    openNode(node?: Readonly<TreeNode> | undefined, event?: MouseEvent): void;
 
     /**
      * Event when a node should be opened.
@@ -259,15 +259,15 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         return node ? new TopDownTreeIterator(node!, { pruneCollapsed: true }) : undefined;
     }
 
-    openNode(raw?: TreeNode | undefined): void {
+    openNode(raw?: TreeNode | undefined, event?: MouseEvent): void {
         const node = raw || this.selectedNodes[0];
         if (node) {
-            this.doOpenNode(node);
+            this.doOpenNode(node, event);
             this.onOpenNodeEmitter.fire(node);
         }
     }
 
-    protected doOpenNode(node: TreeNode): void {
+    protected doOpenNode(node: TreeNode, event?: MouseEvent): void {
         if (ExpandableTreeNode.is(node)) {
             this.toggleNodeExpansion(node);
         }

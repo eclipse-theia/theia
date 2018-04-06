@@ -12,6 +12,8 @@ import { TextEditor } from "./editor";
 
 export class EditorWidget extends BaseWidget implements SaveableSource, Navigatable {
 
+    isPreview: boolean = false;
+
     constructor(
         readonly editor: TextEditor,
         protected readonly selectionService: SelectionService

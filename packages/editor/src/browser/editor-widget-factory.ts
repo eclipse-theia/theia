@@ -5,12 +5,16 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject, } from "inversify";
-import URI from "@theia/core/lib/common/uri";
+import { injectable, inject, } from 'inversify';
+import URI from '@theia/core/lib/common/uri';
 import { SelectionService } from '@theia/core/lib/common';
-import { WidgetFactory, LabelProvider } from "@theia/core/lib/browser";
-import { EditorWidget } from "./editor-widget";
-import { TextEditorProvider } from "./editor";
+import { WidgetFactory, LabelProvider, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { EditorWidget } from './editor-widget';
+import { TextEditorProvider } from './editor';
+
+export interface EditorWidgetOpenerOptions extends WidgetOpenerOptions {
+    uri: string;
+}
 
 @injectable()
 export class EditorWidgetFactory implements WidgetFactory {
@@ -28,8 +32,8 @@ export class EditorWidgetFactory implements WidgetFactory {
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
 
-    createWidget(uriAsString: string): Promise<EditorWidget> {
-        const uri = new URI(uriAsString);
+    createWidget(options: EditorWidgetOpenerOptions): Promise<EditorWidget> {
+        const uri = new URI(options.uri);
         return this.createEditor(uri);
     }
 
