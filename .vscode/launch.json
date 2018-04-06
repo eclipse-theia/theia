@@ -95,6 +95,20 @@
             "outputCapture": "std"
         },
         {
+            "type": "node",
+            "request": "launch",
+            "name": "Jest Current File",
+            "program": "${workspaceFolder}/node_modules/jest/bin/jest",
+            "args": [
+                "${relativeFile}"
+            ],
+            "console": "integratedTerminal",
+            "sourceMaps": true,
+            "smartStep": true,
+            "internalConsoleOptions": "openOnSessionStart",
+            "outputCapture": "std"
+        },
+        {
             "name": "Launch Frontend",
             "type": "chrome",
             "request": "launch",
