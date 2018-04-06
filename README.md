@@ -6,11 +6,12 @@
 [![Open questions](https://img.shields.io/badge/Open-questions-pink.svg?style=flat-square)](https://github.com/theia-ide/theia/labels/question)
 [![Open bugs](https://img.shields.io/badge/Open-bugs-red.svg?style=flat-square)](https://github.com/theia-ide/theia/labels/bug)
 
-Theia is an extensible platform to develop full-fledged multi-language Cloud & Desktop IDE-like products with state-of-the-art web technologies.
+Theia is an extensible platform to develop full-fledged multi-language Cloud & Desktop IDE-like products with state-of-the-art web technologies. All languages which are implemented in the LSP [are supported](https://langserver.org/#implementations-server)
 
 ![Theia](https://user-images.githubusercontent.com/372735/33182625-0f6575f0-d075-11e7-8ec7-53801e3892bd.jpg)
 
 - [**Website**](#website)
+- [**Docker**](https://hub.docker.com/r/theiaide/theia/)
 - [**Scope**](#scope)
 - [**Getting Started**](#getting-started)
 - [**Contributing**](#contributing)
@@ -22,12 +23,16 @@ Theia is an extensible platform to develop full-fledged multi-language Cloud & D
 
 [Visit the Theia website](http://www.theia-ide.org) for more [documentation](http://www.theia-ide.org/doc).
 
+## Libaries 
+- [Monaco](https://github.com/Microsoft/monaco-editor)
+- [Language Server Protocol](https://github.com/Microsoft/language-server-protocol)
+
 ## Scope
 - Establish a platform to build IDE-like products
 - Provide the end-user with a full-fledged multi-language IDE  (not just a smart editor)
 - Support equally the paradigm of Cloud IDE and Desktop IDE
 - Provide support for multiple languages via the language and debug server protocols
-- Provide modern GUI with javascript UI libraries
+- Provide modern GUI with JavaScript UI libraries
 
 ## Getting Started
 Here you can find guides and examples for common scenarios:
