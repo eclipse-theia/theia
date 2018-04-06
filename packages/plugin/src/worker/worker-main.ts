@@ -11,7 +11,7 @@
 
 import { RPCProtocolImpl } from '../api/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
-import { createAPI } from '../plugin/plugin-context';
+import { createAPI, startExtension } from '../plugin/plugin-context';
 import { MAIN_RPC_CONTEXT } from '../api/plugin-api';
 import { HostedPluginManagerExtImpl } from '../plugin/hosted-plugin-manager';
 
@@ -38,12 +38,14 @@ addEventListener('message', (message: any) => {
 
 const theia = createAPI(rpc);
 if (registerPlugin) {
-    ctx['registerPlugin'] = registerPlugin;
+    ctx['theia'] = theia;
 }
 
 rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtImpl({
     loadPlugin(path: string): void {
         ctx.importScripts('/hostedPlugin/' + path);
+        // FIXME: simplePlugin should come from metadata
+        startExtension(ctx['simplePlugin'], plugins);
     },
     stopPlugins(): void {
         for (const s of plugins) {

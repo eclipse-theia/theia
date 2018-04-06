@@ -5,6 +5,8 @@
   "dependencies": {
     "@theia/core": "^0.3.8"
   },
+  "main": "./src/index.js",
+  "types": "./src/theia.d.ts",
   "publishConfig": {
     "access": "public"
   },
@@ -45,3 +47,4 @@
     "extends": "../../configs/nyc.json"
   }
 }
+

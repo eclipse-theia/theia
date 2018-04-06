@@ -9,7 +9,7 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 import { createProxyIdentifier, ProxyIdentifier } from './rpc-protocol';
-import * as theia from 'theia';
+import * as theia from '@theia/plugin';
 
 export interface HostedPluginManagerExt {
     $loadPlugin(ext: Plugin): void;

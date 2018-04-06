@@ -10,7 +10,7 @@
  */
 import { MAIN_RPC_CONTEXT } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
-import * as theia from 'theia';
+import * as theia from '@theia/plugin';
 import { CommandRegistryImpl } from './command-registry';
 import { Disposable } from './types-impl';
 
@@ -36,4 +36,16 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         Disposable: Disposable
     };
 
+}
+
+export function startExtension(plugin: any, plugins: Array<() => void>): void {
+    if (typeof plugin.doStartThings === 'function') {
+        plugin.doStartThings.apply(global, []);
+    } else {
+        console.log('there is no doStart method on plugin');
+    }
+
+    if (typeof plugin.doStopThings === 'function') {
+        plugins.push(plugin.doStopThings);
+    }
 }

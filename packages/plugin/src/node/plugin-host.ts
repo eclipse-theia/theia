@@ -11,18 +11,12 @@
 
 import { RPCProtocolImpl } from '../api/rpc-protocol';
 import { Emitter } from '@theia/core/lib/common/event';
-import { createAPI } from '../plugin/plugin-context';
+import { createAPI, startExtension } from '../plugin/plugin-context';
 import { MAIN_RPC_CONTEXT } from '../api/plugin-api';
 import { HostedPluginManagerExtImpl } from '../plugin/hosted-plugin-manager';
 
 console.log("Plugin host loaded!!!");
 const plugins = new Array<() => void>();
-const registerPlugin = function (pluginId: string, start: (api: any) => void, stop?: () => void): void {
-    if (stop) {
-        plugins.push(stop);
-    }
-    start(theia);
-};
 
 const emmitter = new Emitter();
 const rpc = new RPCProtocolImpl({
@@ -39,16 +33,19 @@ process.on('message', (message: any) => {
 });
 
 const theia = createAPI(rpc);
-if (registerPlugin) {
-    const g = global as any;
-    g['registerPlugin'] = registerPlugin;
-}
+
+// add theia into global goal
+const g = global as any;
+g['theia'] = theia;
 
 rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtImpl({
     loadPlugin(path: string): void {
         console.log("Ext: load: " + path);
+
         try {
-            require(path);
+            const plugin = require(path);
+            startExtension(plugin, plugins);
+
         } catch (e) {
             console.error(e);
         }

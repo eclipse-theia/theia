@@ -9,7 +9,7 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 
-declare module 'theia' {
+declare module '@theia/plugin' {
 
     export class Disposable {
 
