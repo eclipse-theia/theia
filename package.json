@@ -11,7 +11,6 @@
     "@types/chai-as-promised": "^7.1.0",
     "@types/chai-string": "^1.4.0",
     "@types/jest": "^22.2.2",
-    "@types/jsdom": "^11.0.4",
     "@types/mocha": "^5.0.0",
     "@types/tmp": "^0.0.33",
     "@types/webdriverio": "^4.7.0",
