@@ -28,3 +28,4 @@ export * from './label-provider';
 export * from './widget-open-handler';
 export * from './navigatable';
 export * from './diff-uris';
+export * from './variable';

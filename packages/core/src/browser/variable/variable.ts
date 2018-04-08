@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { ILogger, Disposable, DisposableCollection, MaybePromise } from '@theia/core';
+import { ILogger, Disposable, DisposableCollection, MaybePromise } from '../../common';
 
 /**
  * Variable can be used inside of strings using ${variableName} syntax.

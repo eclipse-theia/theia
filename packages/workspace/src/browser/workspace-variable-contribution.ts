@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { VariableContribution, VariableRegistry } from '@theia/variable-resolver/lib/browser';
+import { VariableContribution, VariableRegistry } from '@theia/core/lib/browser';
 import { WorkspaceService } from './workspace-service';
 import URI from '@theia/core/lib/common/uri';
 

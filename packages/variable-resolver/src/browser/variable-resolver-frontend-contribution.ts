@@ -6,9 +6,8 @@
  */
 
 import { injectable, inject, named } from 'inversify';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, VariableContribution, VariableRegistry } from '@theia/core/lib/browser';
 import { Command, CommandContribution, CommandRegistry, ContributionProvider } from '@theia/core/lib/common';
-import { VariableContribution, VariableRegistry } from './variable';
 import { VariableQuickOpenService } from './variable-quick-open-service';
 
 export const LIST_VARIABLES: Command = {

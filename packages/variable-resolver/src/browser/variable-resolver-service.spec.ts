@@ -7,9 +7,9 @@
 
 import * as chai from 'chai';
 import { Container, ContainerModule } from 'inversify';
+import { Variable, VariableRegistry } from '@theia/core/lib/browser';
 import { ILogger } from '@theia/core/lib/common';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
-import { Variable, VariableRegistry } from './variable';
 import { VariableResolverService } from './variable-resolver-service';
 
 const expect = chai.expect;

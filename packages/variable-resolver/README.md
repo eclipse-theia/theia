@@ -3,7 +3,7 @@
 The extension provides variable substitution mechanism inside of strings using `${variableName}` syntax.
 
 ## Variable Contribution Point
-Extension provides a hook that allows any extensions to contribute its own variables.
+Variable API defined in `@theia/core` provides a hook that allows any extensions to contribute its own variables.
 Here's the example of contributing two variables:
 - `${file}` - returns the name of the file opened in the current editor
 - `${lineNumber}` - returns the current line number in the current file
