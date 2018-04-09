@@ -2,9 +2,6 @@
   "name": "@theia/plugin",
   "version": "0.3.8",
   "description": "Theia - Plugin API",
-  "dependencies": {
-    "@theia/core": "^0.3.8"
-  },
   "main": "./src/index.js",
   "types": "./src/theia.d.ts",
   "publishConfig": {
@@ -41,6 +38,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
+    "@theia/core": "^0.3.8",
     "@theia/ext-scripts": "^0.3.8"
   },
   "nyc": {
