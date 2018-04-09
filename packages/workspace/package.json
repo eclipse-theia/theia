@@ -5,7 +5,6 @@
   "dependencies": {
     "@theia/core": "^0.3.8",
     "@theia/filesystem": "^0.3.8",
-    "@theia/variable-resolver": "^0.3.8",
     "@types/fs-extra": "^4.0.2",
     "fs-extra": "^4.0.2",
     "valid-filename": "^2.0.1"

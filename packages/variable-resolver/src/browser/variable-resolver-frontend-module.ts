@@ -7,8 +7,7 @@
 
 import { ContainerModule } from 'inversify';
 import { bindContributionProvider, CommandContribution } from '@theia/core';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { VariableRegistry, VariableContribution } from './variable';
+import { FrontendApplicationContribution, VariableRegistry, VariableContribution } from '@theia/core/lib/browser';
 import { VariableQuickOpenService } from './variable-quick-open-service';
 import { VariableResolverFrontendContribution } from './variable-resolver-frontend-contribution';
 import { VariableResolverService } from './variable-resolver-service';

@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { Variable, VariableRegistry } from './variable';
+import { VariableRegistry, Variable } from '@theia/core/lib/browser';
 
 /**
  * The variable resolver service should be used to resolve variables in strings.
