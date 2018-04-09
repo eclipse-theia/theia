@@ -17,13 +17,6 @@ import { HostedPluginManagerExtImpl } from '../plugin/hosted-plugin-manager';
 
 const ctx = self as any;
 const plugins = new Array<() => void>();
-const registerPlugin = function (pluginId: string, start: (api: any) => void, stop?: () => void): void {
-    console.log(`Plugin: ${pluginId} loaded.`);
-    if (stop) {
-        plugins.push(stop);
-    }
-    start(theia);
-};
 
 const emmitter = new Emitter();
 const rpc = new RPCProtocolImpl({
@@ -37,9 +30,7 @@ addEventListener('message', (message: any) => {
 });
 
 const theia = createAPI(rpc);
-if (registerPlugin) {
-    ctx['theia'] = theia;
-}
+ctx['theia'] = theia;
 
 rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtImpl({
     loadPlugin(path: string): void {
