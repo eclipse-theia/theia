@@ -41,8 +41,8 @@ export class MergeConflictsFrontendContribution implements FrontendApplicationCo
     }
 
     registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand(Commands.AcceptCurrent, this.mergeConflictResolver.acceptCurrent);
-        registry.registerCommand(Commands.AcceptIncoming, this.mergeConflictResolver.acceptIncoming);
-        registry.registerCommand(Commands.AcceptBoth, this.mergeConflictResolver.acceptBoth);
+        registry.registerCommand({ id: Commands.AcceptCurrent.id }, this.mergeConflictResolver.acceptCurrent);
+        registry.registerCommand({ id: Commands.AcceptIncoming.id }, this.mergeConflictResolver.acceptIncoming);
+        registry.registerCommand({ id: Commands.AcceptBoth.id }, this.mergeConflictResolver.acceptBoth);
     }
 }
