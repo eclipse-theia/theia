@@ -6,7 +6,43 @@ git:
 cache:
   yarn: true
   directories:
+  # All directories need to be listed here, because Travis does not support globs.
+  # Generate with jq ".modulesFolders[]" -r node_modules/.yarn-integrity | sort -u | awk '{print "  - " $1}'
+  - dev-packages/application-manager/node_modules
+  - dev-packages/application-package/node_modules
+  - examples/browser/node_modules
+  - examples/electron/node_modules
   - node_modules
+  - packages/callhierarchy/node_modules
+  - packages/core/node_modules
+  - packages/cpp/node_modules
+  - packages/editor/node_modules
+  - packages/extension-manager/node_modules
+  - packages/file-search/node_modules
+  - packages/filesystem/node_modules
+  - packages/git/node_modules
+  - packages/java/node_modules
+  - packages/keymaps/node_modules
+  - packages/languages/node_modules
+  - packages/markers/node_modules
+  - packages/merge-conflicts/node_modules
+  - packages/messages/node_modules
+  - packages/metrics/node_modules
+  - packages/monaco/node_modules
+  - packages/navigator/node_modules
+  - packages/outline-view/node_modules
+  - packages/output/node_modules
+  - packages/preferences/node_modules
+  - packages/preview/node_modules
+  - packages/process/node_modules
+  - packages/python/node_modules
+  - packages/search-in-workspace/node_modules
+  - packages/task/node_modules
+  - packages/terminal/node_modules
+  - packages/typescript/node_modules
+  - packages/userstorage/node_modules
+  - packages/variable-resolver/node_modules
+  - packages/workspace/node_modules
 branches:
   only:
   - master
