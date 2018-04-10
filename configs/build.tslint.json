@@ -1,0 +1,7 @@
+// Lint rules to use when building.  We don't include warnings to avoid
+// polluting the build output.
+{
+  "extends": [
+    "./errors.tslint.json"
+  ]
+}
