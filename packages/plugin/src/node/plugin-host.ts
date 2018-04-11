@@ -15,7 +15,7 @@ import { createAPI, startExtension } from '../plugin/plugin-context';
 import { MAIN_RPC_CONTEXT } from '../api/plugin-api';
 import { HostedPluginManagerExtImpl } from '../plugin/hosted-plugin-manager';
 
-console.log("Plugin host loaded!!!");
+const NODE_MODULE_NAME = '@theia/plugin';
 const plugins = new Array<() => void>();
 
 const emmitter = new Emitter();
@@ -41,6 +41,27 @@ g['theia'] = theia;
 rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtImpl({
     loadPlugin(path: string): void {
         console.log("Ext: load: " + path);
+        const module = require('module');
+
+        // add theia object as module into npm cache
+        require.cache[NODE_MODULE_NAME] = {
+            id: NODE_MODULE_NAME,
+            filename: NODE_MODULE_NAME,
+            loaded: true,
+            exports: theia
+        };
+
+        // save original resolve method
+        const internalResolve = module._resolveFilename;
+
+        // if we try to resolve theia module, return the filename entry to use cache.
+        module._resolveFilename = (request: string, parent: {}) => {
+            if (NODE_MODULE_NAME === request) {
+                return NODE_MODULE_NAME;
+            }
+            const retVal = internalResolve(request, parent);
+            return retVal;
+        };
 
         try {
             const plugin = require(path);
