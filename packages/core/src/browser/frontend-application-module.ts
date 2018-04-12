@@ -42,6 +42,7 @@ import "file-icons-js/css/style.css";
 import { ApplicationServer, applicationPath } from "../common/application-protocol";
 import { WebSocketConnectionProvider } from "./messaging/connection";
 import { AboutDialog, AboutDialogProps } from "./about-dialog";
+import { EnvVariablesServer, envVariablesPath } from "./../common/env-variables";
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplication).toSelf().inSingletonScope();
@@ -137,6 +138,11 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(AboutDialog).toSelf().inSingletonScope();
     bind(AboutDialogProps).toConstantValue({ title: 'Theia' });
+
+    bind(EnvVariablesServer).toDynamicValue(ctx => {
+        const connection = ctx.container.get(WebSocketConnectionProvider);
+        return connection.createProxy<EnvVariablesServer>(envVariablesPath);
+    }).inSingletonScope();
 });
 
 const theme = ThemeService.get().getCurrentTheme().id;
