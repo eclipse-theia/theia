@@ -139,11 +139,11 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
         previewWidget.disposed.connect(() => disposable.dispose());
     }
 
-    async canHandle(uri: URI): Promise<number> {
+    canHandle(uri: URI): number {
         if (!this.previewHandlerProvider.canHandle(uri)) {
             return 0;
         }
-        const editorPriority = await this.editorManager.canHandle(uri);
+        const editorPriority = this.editorManager.canHandle(uri);
         if (editorPriority === 0) {
             return 200;
         }
