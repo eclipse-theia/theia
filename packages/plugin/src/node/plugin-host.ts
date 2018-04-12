@@ -15,7 +15,7 @@ import { createAPI, startExtension } from '../plugin/plugin-context';
 import { MAIN_RPC_CONTEXT } from '../api/plugin-api';
 import { HostedPluginManagerExtImpl } from '../plugin/hosted-plugin-manager';
 
-const NODE_MODULE_NAME = '@theia/plugin';
+const NODE_MODULE_NAMES = ['@theia/plugin', '@wiptheia/plugin'];
 const plugins = new Array<() => void>();
 
 const emmitter = new Emitter();
@@ -44,20 +44,22 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtIm
         const module = require('module');
 
         // add theia object as module into npm cache
-        require.cache[NODE_MODULE_NAME] = {
-            id: NODE_MODULE_NAME,
-            filename: NODE_MODULE_NAME,
-            loaded: true,
-            exports: theia
-        };
+        NODE_MODULE_NAMES.forEach((moduleName) => {
+            require.cache[moduleName] = {
+                id: moduleName,
+                filename: moduleName,
+                loaded: true,
+                exports: theia
+            };
+        });
 
         // save original resolve method
         const internalResolve = module._resolveFilename;
 
         // if we try to resolve theia module, return the filename entry to use cache.
         module._resolveFilename = (request: string, parent: {}) => {
-            if (NODE_MODULE_NAME === request) {
-                return NODE_MODULE_NAME;
+            if (NODE_MODULE_NAMES.indexOf(request) !== -1) {
+                return request;
             }
             const retVal = internalResolve(request, parent);
             return retVal;
