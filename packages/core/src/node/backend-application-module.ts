@@ -14,6 +14,8 @@ import { IPCConnectionProvider } from "./messaging";
 import { BackendConnectionStatusEndpoint } from './backend-connection-status';
 import { ApplicationServerImpl } from "./application-server";
 import { ApplicationServer, applicationPath } from "../common/application-protocol";
+import { EnvVariablesServer, envVariablesPath } from './../common/env-variables';
+import { EnvVariablesServerImpl } from './env-variables';
 
 export function bindServerProcess(bind: interfaces.Bind, masterFactory: RemoteMasterProcessFactory): void {
     bind(RemoteMasterProcessFactory).toConstantValue(masterFactory);
@@ -47,5 +49,13 @@ export const backendApplicationModule = new ContainerModule(bind => {
         new JsonRpcConnectionHandler(applicationPath, () =>
             ctx.container.get(ApplicationServer)
         )
+    ).inSingletonScope();
+
+    bind(EnvVariablesServer).to(EnvVariablesServerImpl).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler(envVariablesPath, () => {
+            const envVariablesServer = ctx.container.get<EnvVariablesServer>(EnvVariablesServer);
+            return envVariablesServer;
+        })
     ).inSingletonScope();
 });
