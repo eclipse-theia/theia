@@ -9,16 +9,16 @@ import { injectable, inject } from 'inversify';
 import { h } from '@phosphor/virtualdom/lib';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
-import { SelectionService, CommandService } from '@theia/core/lib/common';
+import { CommandService, SelectionService } from '@theia/core/lib/common';
 import { CommonCommands } from '@theia/core/lib/browser/common-frontend-contribution';
-import { ContextMenuRenderer, TreeProps, TreeModel, TreeNode, LabelProvider, Widget, SelectableTreeNode, ExpandableTreeNode } from '@theia/core/lib/browser';
-import { FileTreeWidget, DirNode, FileNode } from '@theia/filesystem/lib/browser';
+import { ContextMenuRenderer, ExpandableTreeNode, LabelProvider, SelectableTreeNode, TreeProps, TreeModel, TreeNode, Widget, CompositeTreeNode } from '@theia/core/lib/browser';
+import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
+import { DirNode, FileTreeWidget, FileNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { FileNavigatorModel } from './navigator-model';
 import { FileNavigatorSearch } from './navigator-search';
 import { SearchBox, SearchBoxProps, SearchBoxFactory } from './search-box';
-import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 
 export const FILE_NAVIGATOR_ID = 'files';
 export const LABEL = 'Files';
@@ -73,7 +73,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         ]);
     }
 
-    protected initialize(): void {
+    protected async initialize() {
         this.model.onSelectionChanged(selection => {
             if (this.shell.activeWidget === this) {
                 this.selectionService.selection = selection;
@@ -81,16 +81,43 @@ export class FileNavigatorWidget extends FileTreeWidget {
         }
         );
 
-        this.workspaceService.root.then(async resolvedRoot => {
-            if (resolvedRoot) {
-                const uri = new URI(resolvedRoot.uri);
+        const active = await this.workspaceService.activeRoot;
+        if (active) {
+            const roots = await this.workspaceService.roots;
+            if (roots.length === 1) { // only one directory (aka. root) is opened
+                this.model.hasMultipleRoots = false;
+                const uri = new URI(active.uri);
                 const label = this.labelProvider.getName(uri);
-                const icon = await this.labelProvider.getIcon(resolvedRoot);
-                this.model.root = DirNode.createRoot(resolvedRoot, label, icon);
-            } else {
-                this.update();
+                const icon = await this.labelProvider.getIcon(active);
+                this.model.root = DirNode.createRoot(active, label, icon);
+            } else if (roots.length > 1) { // more than one directories (aka. roots)
+                const workspaceConfig = await this.workspaceService.workspaceConfig;
+                if (workspaceConfig) {
+                    this.model.hasMultipleRoots = true;
+                    const workspaceRootNode = {
+                        id: workspaceConfig.uri,
+                        name: 'WorkspaceRoot',
+                        parent: undefined
+                    } as CompositeTreeNode;
+
+                    const children: TreeNode[] = [];
+                    for (const root of roots) {
+                        const icon = await this.labelProvider.getIcon(root);
+                        children.push({
+                            id: root.uri,
+                            name: this.labelProvider.getName(new URI(root.uri)),
+                            icon,
+                            visible: true,
+                            parent: workspaceRootNode
+                        });
+                    }
+                    workspaceConfig.children = roots;
+                    this.model.root = DirNode.createWorkspaceRoot(workspaceConfig, children);
+                }
             }
-        });
+        } else {
+            this.update();
+        }
     }
 
     protected enableDndOnMainPanel(): void {
@@ -163,17 +190,17 @@ export class FileNavigatorWidget extends FileTreeWidget {
     }
 
     /**
-     * Instead of rendering the file resources form the workspace, we render a placeholder
+     * Instead of rendering the file resources from the workspace, we render a placeholder
      * button when the workspace root is not yet set.
      */
     protected renderOpenWorkspaceDiv(): h.Child {
         const button = h.button({
             className: 'open-workspace-button',
             title: 'Select a directory as your workspace root',
-            onclick: e => this.commandService.executeCommand(WorkspaceCommands.OPEN.id)
-        }, 'Open Workspace');
+            onclick: e => this.commandService.executeCommand(WorkspaceCommands.OPEN_FOLDER.id)
+        }, 'Open Folder');
         const buttonContainer = h.div({ className: 'open-workspace-button-container' }, button);
-        return h.div({ className: 'theia-navigator-container' }, 'You have not yet opened a workspace.', buttonContainer);
+        return h.div({ className: 'theia-navigator-container' }, 'You have not yet opened a folder or workspace.', buttonContainer);
     }
 
 }

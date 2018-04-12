@@ -7,9 +7,9 @@
 
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { FileNode, FileTreeModel } from '@theia/filesystem/lib/browser';
+import { FileNode, FileTreeModel, FileStatNode } from '@theia/filesystem/lib/browser';
 import { TreeIterator, Iterators } from '@theia/core/lib/browser/tree/tree-iterator';
-import { OpenerService, open, TreeNode, ExpandableTreeNode } from '@theia/core/lib/browser';
+import { OpenerService, open, TreeNode, ExpandableTreeNode, CompositeTreeNode } from '@theia/core/lib/browser';
 import { FileNavigatorTree } from './navigator-tree';
 import { FileNavigatorSearch } from './navigator-search';
 
@@ -17,8 +17,18 @@ import { FileNavigatorSearch } from './navigator-search';
 export class FileNavigatorModel extends FileTreeModel {
 
     @inject(OpenerService) protected readonly openerService: OpenerService;
-    @inject(FileNavigatorTree) protected readonly tree: FileNavigatorTree;
+    @inject(FileNavigatorTree) public readonly tree: FileNavigatorTree;
     @inject(FileNavigatorSearch) protected readonly navigatorSearch: FileNavigatorSearch;
+    _hasMultipleRoots: boolean = false;
+
+    get hasMultipleRoots() {
+        return this._hasMultipleRoots;
+    }
+
+    set hasMultipleRoots(multipleRoots: boolean) {
+        this._hasMultipleRoots = multipleRoots;
+        this.tree.hasVirtualRoot = multipleRoots;
+    }
 
     protected doOpenNode(node: TreeNode): void {
         if (FileNode.is(node)) {
@@ -36,11 +46,11 @@ export class FileNavigatorModel extends FileTreeModel {
      */
     async revealFile(targetFileUri: URI): Promise<TreeNode | undefined> {
         const navigatorNodeId = targetFileUri.toString();
-        let node = this.getNode(navigatorNodeId);
+        let node = this.getNodeClosestToRootByUri(navigatorNodeId);
 
         // success stop condition
         // we have to reach workspace root because expanded node could be inside collapsed one
-        if (this.root === node) {
+        if (this.isProjectRoot(node)) {
             if (ExpandableTreeNode.is(node)) {
                 if (!node.expanded) {
                     await this.expandNode(node);
@@ -61,7 +71,7 @@ export class FileNavigatorModel extends FileTreeModel {
         if (await this.revealFile(targetFileUri.parent)) {
             if (node === undefined) {
                 // get node if it wasn't mounted into navigator tree before expansion
-                node = this.getNode(navigatorNodeId);
+                node = this.getNodeClosestToRootByUri(navigatorNodeId);
             }
             if (ExpandableTreeNode.is(node) && !node.expanded) {
                 await this.expandNode(node);
@@ -69,6 +79,27 @@ export class FileNavigatorModel extends FileTreeModel {
             return node;
         }
         return undefined;
+    }
+
+    protected getNodeClosestToRootByUri(uri: string): TreeNode | undefined {
+        const nodes = this.getNodes((node: FileStatNode) =>
+            node.uri.toString() === uri
+        );
+        return nodes.length > 0
+            ? nodes.reduce((node1, node2) => // return the node closest to the workspace root
+                node1.id.length <= node2.id.length ? node1 : node2
+            )
+            : undefined;
+    }
+
+    protected isProjectRoot(node: TreeNode | undefined): boolean {
+        if (!this.hasMultipleRoots && this.root === node) {
+            return true;
+        }
+        if (node && this.hasMultipleRoots && CompositeTreeNode.is(this.root)) {
+            return this.root.children.some(child => child.id === node.id);
+        }
+        return false;
     }
 
     protected createBackwardIterator(node: TreeNode | undefined): TreeIterator | undefined {

@@ -29,6 +29,10 @@ export interface Tree extends Disposable {
      */
     getNode(id: string | undefined): TreeNode | undefined;
     /**
+     * Return an array of nodes that satisfy the given condition. An empty array is return when none is found.
+     */
+    getNodes(test: (node: TreeNode) => boolean): TreeNode[];
+    /**
      * Return a valid node in this tree matching to the given; otherwise undefined.
      */
     validateNode(node: TreeNode | undefined): TreeNode | undefined;
@@ -41,7 +45,7 @@ export interface Tree extends Disposable {
      */
     refresh(parent: Readonly<CompositeTreeNode>): Promise<void>;
     /**
-     * Emit when the children of the give node are refreshed.
+     * Emit when the children of the given node are refreshed.
      */
     readonly onNodeRefreshed: Event<Readonly<CompositeTreeNode>>;
 }
@@ -202,6 +206,17 @@ export class TreeImpl implements Tree {
 
     getNode(id: string | undefined): TreeNode | undefined {
         return id !== undefined ? this.nodes[id] : undefined;
+    }
+
+    getNodes(test: (node: TreeNode) => boolean): TreeNode[] {
+        const nodes: TreeNode[] = [];
+        Object.keys(this.nodes).forEach(nodeId => {
+            const node = this.nodes[nodeId];
+            if (node && test(node)) {
+                nodes.push(node);
+            }
+        });
+        return nodes;
     }
 
     validateNode(node: TreeNode | undefined): TreeNode | undefined {

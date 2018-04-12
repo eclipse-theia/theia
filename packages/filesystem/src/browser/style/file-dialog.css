@@ -17,6 +17,7 @@
      justify-content: center;
      align-items: center;
      margin-top: 0px;
+     margin-bottom: 5px;
  }
 
  .dialogContent .theia-LocationList {
@@ -24,7 +25,15 @@
  }
 
  .dialogContent .theia-NavigationPanel > * {
-     margin-right: 4px;
+     margin-left: 4px;
+}
+
+.dialogContent .theia-NavigationPanel > span {
+    width: 9.5px;
+}
+
+.dialogContent .theia-NavigationPanel > input {
+    width: calc(100% - 281px);
 }
 
 .dialogContent .theia-ControlPanel {

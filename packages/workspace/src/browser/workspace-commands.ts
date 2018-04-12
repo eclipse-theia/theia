@@ -22,9 +22,9 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
 export namespace WorkspaceCommands {
-    export const OPEN: Command = {
-        id: 'workspace:open',
-        label: 'Open...'
+    export const OPEN_FOLDER: Command = {
+        id: 'workspace:openFolder',
+        label: 'Open Folder...'
     };
     export const CLOSE: Command = {
         id: 'workspace:close',
@@ -54,6 +54,21 @@ export namespace WorkspaceCommands {
     export const FILE_COMPARE: Command = {
         id: 'file.compare',
         label: 'Compare with Each Other'
+    };
+    export const ADD_FOLDER: Command = {
+        id: 'workspace:addFolder',
+        label: 'Add Folder to Workspace...'
+    };
+    export const REMOVE_FOLDER: Command = {
+        id: 'workspace:removeFolder'
+    };
+    export const SAVE_WORKSPACE_AS: Command = {
+        id: 'workspace:saveAs',
+        label: 'Save Workspace As...'
+    };
+    export const OPEN_WORKSPACE: Command = {
+        id: 'workspace:openSaved',
+        label: 'Open Workspace...'
     };
 }
 
@@ -281,9 +296,9 @@ export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<
         protected readonly handler: UriCommandHandler<URI>
     ) {
         super(selectionService, handler);
-        workspaceService.root.then(root => {
-            if (root) {
-                this.rootUri = new URI(root.uri);
+        workspaceService.activeRoot.then(activeRoot => {
+            if (activeRoot) {
+                this.rootUri = new URI(activeRoot.uri);
             }
         });
     }

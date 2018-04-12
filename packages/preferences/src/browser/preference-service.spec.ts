@@ -26,7 +26,7 @@ import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem
 import { FileSystemPreferences, createFileSystemPreferences } from '@theia/filesystem/lib/browser/filesystem-preferences';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { UserPreferenceProvider } from './user-preference-provider';
-import { WorkspacePreferenceProvider } from './workspace-preference-provider';
+import { RootPreferenceProvider } from './root-preference-provider';
 import { ResourceProvider } from '@theia/core/lib/common/resource';
 import { WorkspaceServer } from '@theia/workspace/lib/common/';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
@@ -55,11 +55,11 @@ before(async () => {
     testContainer = new Container();
 
     testContainer.bind(UserPreferenceProvider).toSelf().inSingletonScope();
-    testContainer.bind(WorkspacePreferenceProvider).toSelf().inSingletonScope();
+    testContainer.bind(RootPreferenceProvider).toSelf().inSingletonScope();
 
     testContainer.bind(PreferenceProviders).toFactory(ctx => (scope: PreferenceScope) => {
         const userProvider = ctx.container.get(UserPreferenceProvider);
-        const workspaceProvider = ctx.container.get(WorkspacePreferenceProvider);
+        const workspaceProvider = ctx.container.get(RootPreferenceProvider);
 
         sinon.stub(userProvider, 'onDidPreferencesChanged').get(() =>
             mockUserPreferenceEmitter.event
@@ -168,7 +168,7 @@ describe('Preference Service', function () {
 
     it('Should return the preference from the more specific scope (user > workspace)', () => {
         const userProvider = testContainer.get(UserPreferenceProvider);
-        const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
+        const workspaceProvider = testContainer.get(RootPreferenceProvider);
         const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
             'test.boolean': true,
             'test.number': 1
@@ -192,7 +192,7 @@ describe('Preference Service', function () {
 
     it('Should return the preference from the less specific scope if the value is removed from the more specific one', () => {
         const userProvider = testContainer.get(UserPreferenceProvider);
-        const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
+        const workspaceProvider = testContainer.get(RootPreferenceProvider);
         const stubUser = sinon.stub(userProvider, 'getPreferences').returns({
             'test.boolean': true,
             'test.number': 1
@@ -236,7 +236,7 @@ describe('Preference Service', function () {
 
     it('Should still report the more specific preference even though the less specific one changed', () => {
         const userProvider = testContainer.get(UserPreferenceProvider);
-        const workspaceProvider = testContainer.get(WorkspacePreferenceProvider);
+        const workspaceProvider = testContainer.get(RootPreferenceProvider);
         let stubUser = sinon.stub(userProvider, 'getPreferences').returns({
             'test.boolean': true,
             'test.number': 1

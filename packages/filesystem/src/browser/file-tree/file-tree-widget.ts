@@ -5,16 +5,16 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
-import { h } from "@phosphor/virtualdom";
-import { Message } from "@phosphor/messaging";
+import { injectable, inject } from 'inversify';
+import { h } from '@phosphor/virtualdom';
+import { Message } from '@phosphor/messaging';
 import {
-    ContextMenuRenderer,
-    TreeWidget, NodeProps, TreeProps, TreeNode
-} from "@theia/core/lib/browser";
-import { ElementAttrs } from "@phosphor/virtualdom";
-import { DirNode, FileStatNode } from "./file-tree";
-import { FileTreeModel } from "./file-tree-model";
+    ContextMenuRenderer, NodeProps,
+    TreeDecoration, TreeNode, TreeProps, TreeWidget
+} from '@theia/core/lib/browser';
+import { ElementAttrs } from '@phosphor/virtualdom';
+import { DirNode, FileStatNode } from './file-tree';
+import { FileTreeModel } from './file-tree-model';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common';
 
 export const FILE_TREE_CLASS = 'theia-FileTree';
@@ -139,4 +139,15 @@ export class FileTreeWidget extends TreeWidget {
         return this.model.getNode(id);
     }
 
+    protected getDecorations(node: TreeNode): TreeDecoration.Data[] {
+        const treeNode = {
+            id: node.id,
+            name: node.name,
+            parent: node.parent
+        };
+        if (FileStatNode.is(node)) {
+            treeNode.id = FileStatNode.getUri(node);
+        }
+        return super.getDecorations(treeNode as TreeNode);
+    }
 }

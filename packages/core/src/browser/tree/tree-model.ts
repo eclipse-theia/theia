@@ -172,6 +172,10 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         return this.tree.getNode(id);
     }
 
+    getNodes(test: (node: TreeNode) => boolean): TreeNode[] {
+        return this.tree.getNodes(test);
+    }
+
     validateNode(node: TreeNode | undefined) {
         return this.tree.validateNode(node);
     }

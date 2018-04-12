@@ -6,9 +6,9 @@
  */
 
 import { ContainerModule, interfaces } from 'inversify';
-import { CommandContribution, MenuContribution } from "@theia/core/lib/common";
+import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider, FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { FileDialogFactory, createFileDialog, FileDialogProps } from '@theia/filesystem/lib/browser';
+import { FileDialogFactory, SaveFileDialogFactory, createFileDialog, FileDialogProps } from '@theia/filesystem/lib/browser';
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { VariableContribution } from '@theia/variable-resolver/lib/browser';
@@ -39,6 +39,10 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     }
 
     bind(FileDialogFactory).toFactory(ctx =>
+        (props: FileDialogProps) =>
+            createFileDialog(ctx.container, props)
+    );
+    bind(SaveFileDialogFactory).toFactory(ctx =>
         (props: FileDialogProps) =>
             createFileDialog(ctx.container, props)
     );
