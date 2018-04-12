@@ -5,32 +5,42 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
+import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from "@theia/core/lib/browser";
-import { FileSystem, FileStat } from "../../common";
-import { LabelProvider } from "@theia/core/lib/browser/label-provider";
-import { UriSelection } from '@theia/core/lib/common//selection';
+import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from '@theia/core/lib/browser';
+import { FileSystem, FileStat } from '../../common';
+import { LabelProvider } from '@theia/core/lib/browser/label-provider';
+import { UriSelection } from '@theia/core/lib/common/selection';
 
 @injectable()
 export class FileTree extends TreeImpl {
 
     @inject(FileSystem) protected readonly fileSystem: FileSystem;
     @inject(LabelProvider) protected readonly labelProvider: LabelProvider;
+    hasVirtualRoot: boolean = false;
 
-    async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+    async resolveChildren(parent: DirNode): Promise<TreeNode[]> {
         if (FileStatNode.is(parent)) {
-            const fileStat = await this.resolveFileStat(parent);
+            let fileStat;
+            if (this.isVirtualRoot(parent)) {
+                const root = parent as DirNode;
+                fileStat = await this.resolveVirtualRootFileStat(root);
+                if (fileStat) {
+                    root.fileStat = fileStat;
+                }
+            } else {
+                fileStat = await this.resolveFileStat(parent);
+            }
+
             if (fileStat) {
                 return this.toNodes(fileStat, parent);
             }
-
             return [];
         }
         return super.resolveChildren(parent);
     }
 
-    protected resolveFileStat(node: FileStatNode): Promise<FileStat | undefined> {
+    protected resolveFileStat(node: DirNode): Promise<FileStat | undefined> {
         return this.fileSystem.getFileStat(node.fileStat.uri).then(fileStat => {
             if (fileStat) {
                 node.fileStat = fileStat;
@@ -38,6 +48,27 @@ export class FileTree extends TreeImpl {
             }
             return undefined;
         });
+    }
+
+    protected async resolveVirtualRootFileStat(virtualRoot: DirNode): Promise<FileStat | undefined> {
+        const rootFileStat = await this.fileSystem.getFileStat(virtualRoot.uri.toString());
+        const children = virtualRoot.fileStat.children;
+        let childrenFileStat: (FileStat | undefined)[] = [];
+        if (children) {
+            childrenFileStat = await Promise.all(children.map(child =>
+                this.fileSystem.getFileStat(child.uri.toString())
+            ));
+        }
+        if (rootFileStat) {
+            rootFileStat.isDirectory = true;
+            rootFileStat.children = [];
+            for (const stat of childrenFileStat) {
+                if (stat) {
+                    rootFileStat.children.push(stat);
+                }
+            }
+        }
+        return rootFileStat;
     }
 
     protected async toNodes(fileStat: FileStat, parent: CompositeTreeNode): Promise<TreeNode[]> {
@@ -54,7 +85,7 @@ export class FileTree extends TreeImpl {
         const uri = new URI(fileStat.uri);
         const name = await this.labelProvider.getName(uri);
         const icon = await this.labelProvider.getIcon(fileStat);
-        const id = fileStat.uri;
+        const id = this.generateFileTreeNodeId(name, fileStat.uri, parent);
         const node = this.getNode(id);
         if (fileStat.isDirectory) {
             if (DirNode.is(node)) {
@@ -78,6 +109,16 @@ export class FileTree extends TreeImpl {
         };
     }
 
+    protected isVirtualRoot(node: CompositeTreeNode): boolean {
+        return node.parent === undefined && this.hasVirtualRoot && node.name === 'WorkspaceRoot';
+    }
+
+    protected generateFileTreeNodeId(nodeName: string, uri: string, parent: CompositeTreeNode | undefined): string {
+        if (parent && parent.name) {
+            return this.generateFileTreeNodeId(`${parent.name}/${nodeName}`, uri, parent.parent);
+        }
+        return `${nodeName}///${uri}`;
+    }
 }
 
 export interface FileStatNode extends SelectableTreeNode, UriSelection {
@@ -86,6 +127,13 @@ export interface FileStatNode extends SelectableTreeNode, UriSelection {
 export namespace FileStatNode {
     export function is(node: TreeNode | undefined): node is FileStatNode {
         return !!node && 'fileStat' in node;
+    }
+
+    export function getUri(node: TreeNode | undefined): string {
+        if (!node) {
+            return '';
+        }
+        return node.id.slice(node.id.indexOf('file:///'));
     }
 }
 
@@ -124,6 +172,23 @@ export namespace DirNode {
             children: [],
             expanded: true,
             selected: false
+        };
+    }
+
+    export function createWorkspaceRoot(workspace: FileStat, children: TreeNode[]): DirNode {
+        const id = workspace.uri;
+        const uri = new URI(id);
+        return {
+            id,
+            uri,
+            fileStat: workspace,
+            name: 'WorkspaceRoot',
+            parent: undefined,
+            children,
+            expanded: true,
+            selected: false,
+            focus: false,
+            visible: false
         };
     }
 

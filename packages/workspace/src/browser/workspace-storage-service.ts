@@ -21,9 +21,9 @@ export class WorkspaceStorageService implements StorageService {
     private initialized: Promise<void>;
     protected storageService: StorageService;
 
-    constructor( @inject(WorkspaceService) protected workspaceService: WorkspaceService,
+    constructor(@inject(WorkspaceService) protected workspaceService: WorkspaceService,
         @inject(ILogger) protected logger: ILogger) {
-        this.initialized = this.workspaceService.root.then(stat => {
+        this.initialized = this.workspaceService.activeRoot.then(stat => {
             if (stat) {
                 this.prefix = stat.uri;
             } else {

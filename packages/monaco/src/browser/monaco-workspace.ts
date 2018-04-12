@@ -88,7 +88,7 @@ export class MonacoWorkspace implements lang.Workspace {
 
     @postConstruct()
     protected init(): void {
-        this.workspaceService.root.then(rootStat => {
+        this.workspaceService.activeRoot.then(rootStat => {
             if (rootStat) {
                 this._rootUri = rootStat.uri;
                 this.resolveReady();

@@ -42,10 +42,10 @@ export class TaskService implements TaskConfigurationClient {
         @inject(VariableResolverService) protected readonly variableResolverService: VariableResolverService
     ) {
         // wait for the workspace root to be set
-        this.workspaceService.root.then(async root => {
-            if (root) {
-                this.configurationFileFound = await this.taskConfigurations.watchConfigurationFile(root.uri);
-                this.workspaceRootUri = root.uri;
+        this.workspaceService.activeRoot.then(async activeRoot => {
+            if (activeRoot) {
+                this.configurationFileFound = await this.taskConfigurations.watchConfigurationFile(activeRoot.uri);
+                this.workspaceRootUri = activeRoot.uri;
             }
         });
 

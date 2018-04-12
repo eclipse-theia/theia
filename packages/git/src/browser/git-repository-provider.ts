@@ -65,14 +65,28 @@ export class GitRepositoryProvider {
     }
 
     async refresh(options?: GitRefreshOptions): Promise<void> {
-        const root = await this.workspaceService.root;
-        if (!root) {
+        const activeRoot = await this.workspaceService.activeRoot;
+        if (!activeRoot) {
             return;
         }
-        const repositories = await this.git.repositories(root.uri, {
-            ...options
+
+        const repoUris = new Set<string>();
+        const roots = await this.workspaceService.roots;
+        this._allRepositories = await Promise.all(
+            roots.map(root => this.git.repositories(root.uri, { ...options }))
+        ).then(reposOfRoots => {
+            const repos: Repository[] = [];
+            reposOfRoots.forEach(reposPerRoot => {
+                reposPerRoot.forEach(repoOfOneRoot => {
+                    if (!repoUris.has(repoOfOneRoot.localUri)) {
+                        repos.push(repoOfOneRoot);
+                        repoUris.add(repoOfOneRoot.localUri);
+                    }
+                });
+            });
+            return repos;
         });
-        this._allRepositories = repositories;
+
         const selectedRepository = this._selectedRepository;
         if (!selectedRepository || !this.exists(selectedRepository)) {
             this.selectedRepository = this._allRepositories[0];

@@ -5,16 +5,18 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject, postConstruct } from "inversify";
+import { injectable, inject, postConstruct } from 'inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX } from "@theia/core/lib/common";
-import { Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands, OpenerService } from "@theia/core/lib/browser";
-import { SHELL_TABBAR_CONTEXT_MENU } from "@theia/core/lib/browser";
-import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
+import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX } from '@theia/core/lib/common';
+import { Navigatable, SelectableTreeNode, KeybindingRegistry, CommonCommands, OpenerService, Widget, WidgetManager } from '@theia/core/lib/browser';
+import { SHELL_TABBAR_CONTEXT_MENU } from '@theia/core/lib/browser';
+import { WorkspaceCommands, WorkspaceService } from '@theia/workspace/lib/browser';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
-import { FileNavigatorPreferences } from "./navigator-preferences";
+import { FileNavigatorPreferences } from './navigator-preferences';
 import { NavigatorKeybindingContexts } from './navigator-keybinding-context';
 import { FileNavigatorFilter } from "./navigator-filter";
+import { FileStatNode } from '@theia/filesystem/lib/browser';
+import URI from '@theia/core/lib/common/uri';
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR = {
@@ -36,6 +38,7 @@ export namespace NavigatorContextMenu {
     export const MOVE = [...NAVIGATOR_CONTEXT_MENU, '3_move'];
     export const NEW = [...NAVIGATOR_CONTEXT_MENU, '4_new'];
     export const DIFF = [...NAVIGATOR_CONTEXT_MENU, '5_diff'];
+    export const WORKSPACE = [...NAVIGATOR_CONTEXT_MENU, '6_workspace'];
 }
 
 @injectable()
@@ -44,7 +47,9 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     constructor(
         @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences,
         @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(FileNavigatorFilter) protected readonly fileNavigatorFilter: FileNavigatorFilter
+        @inject(FileNavigatorFilter) protected readonly fileNavigatorFilter: FileNavigatorFilter,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
+        @inject(WidgetManager) protected readonly widgetManager: WidgetManager
     ) {
         super({
             widgetId: FILE_NAVIGATOR_ID,
@@ -77,6 +82,11 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             },
             isEnabled: () => true,
             isVisible: () => true
+        });
+        registry.registerCommand(WorkspaceCommands.REMOVE_FOLDER, {
+            execute: () => this.removeFolderFromWorkspace(),
+            isEnabled: () => this.workspaceService.opened,
+            isVisible: () => this.isRootFolderSelected()
         });
     }
 
@@ -127,6 +137,14 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerMenuAction(NavigatorContextMenu.DIFF, {
             commandId: WorkspaceCommands.FILE_COMPARE.id
+        });
+
+        registry.registerMenuAction(NavigatorContextMenu.WORKSPACE, {
+            commandId: WorkspaceCommands.ADD_FOLDER.id
+        });
+        registry.registerMenuAction(NavigatorContextMenu.WORKSPACE, {
+            commandId: WorkspaceCommands.REMOVE_FOLDER.id,
+            label: 'Remove Folder from Workspace'
         });
     }
 
@@ -186,5 +204,34 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         if (this.fileNavigatorPreferences['navigator.autoReveal']) {
             this.selectWidgetFileNode(this.shell.currentWidget);
         }
+    }
+
+    protected removeFolderFromWorkspace() {
+        this.workspaceService.removeFolders(
+            this.getSelectedNodesInFileNavigator()
+                .filter(node => this.isRootDirectory(node))
+                .map(rootFolder => {
+                    const rootFolderNode = rootFolder as FileStatNode;
+                    return new URI(rootFolderNode.uri.toString());
+                })
+        );
+    }
+
+    private isRootFolderSelected(): boolean {
+        return this.getSelectedNodesInFileNavigator().some(node => this.isRootDirectory(node));
+    }
+
+    private getSelectedNodesInFileNavigator(): Readonly<SelectableTreeNode>[] {
+        return this.widgetManager.getWidgets(FILE_NAVIGATOR_ID)
+            .map(widget => widget as FileNavigatorWidget)
+            .map(fileNavigatorWidget => fileNavigatorWidget.model.selectedNodes as Array<Readonly<SelectableTreeNode>>)
+            .reduce((prev, cur) => [...prev, ...cur]);
+    }
+
+    private isRootDirectory(node: Readonly<SelectableTreeNode>): boolean {
+        return node && node.parent !== undefined
+            && node.parent.parent === undefined
+            && !node.parent.visible
+            && node.parent.name === 'WorkspaceRoot';
     }
 }

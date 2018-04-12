@@ -87,9 +87,9 @@ export class WorkspaceVariableContribution implements VariableContribution {
     }
 
     protected async getWorkspaceRootUri(): Promise<URI | undefined> {
-        const wsRoot = await this.workspaceService.root;
-        if (wsRoot) {
-            return new URI(wsRoot.uri);
+        const wsActiveRoot = await this.workspaceService.activeRoot;
+        if (wsActiveRoot) {
+            return new URI(wsActiveRoot.uri);
         }
         return undefined;
     }

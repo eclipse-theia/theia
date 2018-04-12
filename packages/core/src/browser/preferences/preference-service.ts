@@ -13,6 +13,7 @@ import { PreferenceProvider } from './preference-provider';
 
 export enum PreferenceScope {
     User,
+    Root,
     Workspace
 }
 
@@ -60,6 +61,7 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
         if (!this._preferenceProviders) {
             this._preferenceProviders = [
                 this.getPreferenceProvider(PreferenceScope.User),
+                this.getPreferenceProvider(PreferenceScope.Root),
                 this.getPreferenceProvider(PreferenceScope.Workspace)
             ];
         }

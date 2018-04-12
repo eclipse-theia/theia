@@ -6,8 +6,8 @@
  */
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { FileTree } from '@theia/filesystem/lib/browser';
-import { TreeNode, CompositeTreeNode } from '@theia/core/lib/browser/tree/tree';
+import { FileTree, DirNode } from '@theia/filesystem/lib/browser';
+import { TreeNode } from '@theia/core/lib/browser/tree/tree';
 import { FileNavigatorFilter } from './navigator-filter';
 
 @injectable()
@@ -20,7 +20,7 @@ export class FileNavigatorTree extends FileTree {
         this.filter.onFilterChanged(() => this.refresh());
     }
 
-    async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+    async resolveChildren(parent: DirNode): Promise<TreeNode[]> {
         return this.filter.filter(super.resolveChildren(parent));
     }
 

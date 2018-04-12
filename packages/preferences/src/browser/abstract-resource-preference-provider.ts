@@ -6,10 +6,11 @@
  */
 
 import { inject, injectable, postConstruct } from 'inversify';
-import * as jsoncparser from "jsonc-parser";
+import * as jsoncparser from 'jsonc-parser';
 import URI from '@theia/core/lib/common/uri';
-import { ILogger, Resource, ResourceProvider, MaybePromise } from "@theia/core/lib/common";
+import { ILogger, Resource, ResourceProvider, MaybePromise } from '@theia/core/lib/common';
 import { PreferenceProvider } from '@theia/core/lib/browser/preferences';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 
 @injectable()
 export abstract class AbstractResourcePreferenceProvider extends PreferenceProvider {
@@ -20,10 +21,14 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
 
     @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider;
 
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+
     protected resource: Promise<Resource>;
+    protected workspaceId: string | undefined;
 
     @postConstruct()
     protected async init(): Promise<void> {
+        this.workspaceId = await this.workspaceService.workspaceId;
         const uri = await this.getUri();
         this.resource = this.resourceProvider(uri);
 
@@ -61,19 +66,37 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     }
 
     protected async readPreferences(): Promise<void> {
-        const newContent = await this.readContents();
-        const strippedContent = jsoncparser.stripComments(newContent);
-        this.preferences = jsoncparser.parse(strippedContent);
+        this.preferences = await this.readJson();
         this.onDidPreferencesChangedEmitter.fire(undefined);
     }
 
     protected async readContents(): Promise<string> {
         try {
             const resource = await this.resource;
+            console.log(`${this.constructor.name} resource uri ${resource.uri.toString()}`);
             return await resource.readContents();
         } catch {
             return '';
         }
     }
 
+    protected async readJson(): Promise<object> {
+        const newContent = await this.readContents();
+        const strippedContent = jsoncparser.stripComments(newContent);
+        return jsoncparser.parse(strippedContent);
+    }
+
+    protected preferencesChanged(newPreferences: { [key: string]: any }): boolean {
+        const oldPrefNames = Object.keys(this.preferences);
+        const newPrefNames = Object.keys(newPreferences);
+        if (oldPrefNames.length === newPrefNames.length) {
+            newPrefNames.forEach(pref => {
+                if (newPreferences[pref] !== this.preferences[pref]) {
+                    return false;
+                }
+            });
+            return true;
+        }
+        return false;
+    }
 }
