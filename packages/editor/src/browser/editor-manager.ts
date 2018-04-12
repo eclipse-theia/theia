@@ -86,7 +86,7 @@ export class EditorManager extends WidgetOpenHandler<EditorWidget> {
         }
     }
 
-    canHandle(uri: URI, options?: WidgetOpenerOptions): number | Promise<number> {
+    canHandle(uri: URI, options?: WidgetOpenerOptions): number {
         return 100;
     }
 
