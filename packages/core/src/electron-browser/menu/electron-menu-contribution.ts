@@ -67,7 +67,7 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
                 child = itr.next();
             }
         }
-        electron.remote.Menu.setApplicationMenu(this.factory.createMenuBar());
+        electron.remote.getCurrentWindow().setMenu(this.factory.createMenuBar());
     }
 
     registerCommands(registry: CommandRegistry): void {
