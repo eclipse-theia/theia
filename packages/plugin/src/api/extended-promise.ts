@@ -1,18 +1,14 @@
 /*
- * Copyright (C) 2018 Red Hat, Inc.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (C) 2018 Red Hat, Inc. and others.
  *
- * Contributors:
- *   Red Hat, Inc. - initial API and implementation
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-export class ExtendedPromise implements Promise<any> {
-    private delegate: Promise<any>;
-    private resolveDelegate: (value?: any) => void;
-    private rejectDelegate: (reason?: any) => void;
+export class ExtendedPromise<T> implements Promise<T> {
+    private delegate: Promise<T>;
+    private resolveDelegate: (value?: T) => void;
+    private rejectDelegate: (reason?: T) => void;
     constructor() {
         this.delegate = new Promise((resolve, reject) => {
             this.resolveDelegate = resolve;
@@ -20,7 +16,7 @@ export class ExtendedPromise implements Promise<any> {
         });
     }
 
-    resolve(value: any): void {
+    resolve(value: T): void {
         this.resolveDelegate(value);
     }
 
@@ -28,8 +24,8 @@ export class ExtendedPromise implements Promise<any> {
         this.rejectDelegate(err);
     }
 
-    then<TResult1 = any, TResult2 = never>(onfulfilled?: (value: any) => TResult1 | PromiseLike<TResult1>,
-        onrejected?: (reason: any) => TResult2 | PromiseLike<TResult2>): Promise<TResult1 | TResult2> {
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: (value: T) => TResult1 | PromiseLike<TResult1>,
+        onrejected?: (reason: T) => TResult2 | PromiseLike<TResult2>): Promise<TResult1 | TResult2> {
         return this.delegate.then(onfulfilled, onrejected);
     }
     catch<TResult = never>(onrejected?: (reason: any) => TResult | PromiseLike<TResult>): Promise<any> {
@@ -37,4 +33,19 @@ export class ExtendedPromise implements Promise<any> {
     }
     [Symbol.toStringTag]: "Promise";
 
+    public static any<T>(promises: PromiseLike<T>[]): ExtendedPromise<{ key: number; value: PromiseLike<T>; }> {
+        const result = new ExtendedPromise<{ key: number; value: PromiseLike<T>; }>();
+        if (promises.length === 0) {
+            result.resolveDelegate();
+        }
+
+        promises.forEach((val, key) => {
+            Promise.resolve(promises[key]).then(() => {
+                result.resolveDelegate({ key: key, value: promises[key] });
+            }, err => {
+                result.resolveDelegate({ key: key, value: promises[key] });
+            });
+        });
+        return result;
+    }
 }
