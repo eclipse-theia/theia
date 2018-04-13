@@ -32,7 +32,7 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
     private readonly CHARACTER_START = '^\x1b\\[0?m\x1b\\[33m';
     private readonly CHARACTER_END = '\x1b\\[0?m:';
     // Highlighted blue
-    private readonly MATCH_START = '\x1b\\[0?m\x1b\\[34m\x1b\\[1m';
+    private readonly MATCH_START = '\x1b\\[0?m\x1b\\[34m';
     private readonly MATCH_END = '\x1b\\[0?m';
 
     constructor(
@@ -53,6 +53,10 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         const processOptions: RawProcessOptions = {
             command: rgPath,
             args: ["--vimgrep", "-S", "--color=always",
+                "--colors=path:none",
+                "--colors=line:none",
+                "--colors=column:none",
+                "--colors=match:none",
                 "--colors=path:fg:red",
                 "--colors=line:fg:green",
                 "--colors=column:fg:yellow",
