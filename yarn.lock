@@ -1833,6 +1833,10 @@ chardet@^0.4.0:
   version "0.4.2"
   resolved "https://registry.yarnpkg.com/chardet/-/chardet-0.4.2.tgz#b5473b33dc97c424e5d98dc87d55d4d8a29c8bf2"
 
+charenc@~0.0.1:
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/charenc/-/charenc-0.0.2.tgz#c0a1d2f3a7092e03774bfa83f14c0fc5790a8667"
+
 check-error@^1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/check-error/-/check-error-1.0.2.tgz#574d312edd88bb5dd8912e9286dd6c0aed4aac82"
@@ -2471,6 +2475,10 @@ cross-spawn@^6.0.5:
     shebang-command "^1.2.0"
     which "^1.2.9"
 
+crypt@~0.0.1:
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/crypt/-/crypt-0.0.2.tgz#88d7ff7ec0dfb86f713dc87bbb42d044d3e6c41b"
+
 cryptiles@2.x.x:
   version "2.0.5"
   resolved "https://registry.yarnpkg.com/cryptiles/-/cryptiles-2.0.5.tgz#3bdfecdc608147c1c67202fa291e7dca59eaa3b8"
@@ -2661,6 +2669,10 @@ dashdash@^1.12.0:
 date-fns@^1.23.0, date-fns@^1.27.2:
   version "1.29.0"
   resolved "https://registry.yarnpkg.com/date-fns/-/date-fns-1.29.0.tgz#12e609cdcb935127311d04d33334e2960a2a54e6"
+
+date-format@0.0.2:
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/date-format/-/date-format-0.0.2.tgz#fafd448f72115ef1e2b739155ae92f2be6c28dd1"
 
 date-now@^0.1.4:
   version "0.1.4"
@@ -4766,7 +4778,7 @@ is-binary-path@^1.0.0:
   dependencies:
     binary-extensions "^1.0.0"
 
-is-buffer@^1.1.5:
+is-buffer@^1.1.5, is-buffer@~1.1.1:
   version "1.1.6"
   resolved "https://registry.yarnpkg.com/is-buffer/-/is-buffer-1.1.6.tgz#efaa2ea9daa0d7ab2ea13a97b2b8ad51fefbe8be"
 
@@ -5343,6 +5355,15 @@ jsprim@^1.2.2:
     json-schema "0.2.3"
     verror "1.10.0"
 
+junit-report-builder@~1.3.0:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/junit-report-builder/-/junit-report-builder-1.3.0.tgz#897d9caa32f47f346d7bd7f29ba466472a657cac"
+  dependencies:
+    date-format "0.0.2"
+    lodash "^3.8.0"
+    mkdirp "^0.5.0"
+    xmlbuilder "^2.6.2"
+
 just-extend@^1.1.26:
   version "1.1.27"
   resolved "https://registry.yarnpkg.com/just-extend/-/just-extend-1.1.27.tgz#ec6e79410ff914e472652abfa0e603c03d60e905"
@@ -5802,6 +5823,10 @@ lodash.uniq@^4.5.0:
   version "4.5.0"
   resolved "https://registry.yarnpkg.com/lodash.uniq/-/lodash.uniq-4.5.0.tgz#d0225373aeb652adc1bc82e4945339a842754773"
 
+lodash@^3.5.0, lodash@^3.8.0:
+  version "3.10.1"
+  resolved "https://registry.yarnpkg.com/lodash/-/lodash-3.10.1.tgz#5bf45e8e49ba4189e17d482789dfd15bd140b7b6"
+
 lodash@^4.0.0, lodash@^4.1.0, lodash@^4.13.1, lodash@^4.14.0, lodash@^4.17.4, lodash@^4.2.1, lodash@^4.3.0, lodash@^4.5.1, lodash@^4.8.0, lodash@~4.17.4:
   version "4.17.4"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.4.tgz#78203a4d1c328ae1d86dca6460e369b57f4055ae"
@@ -5969,6 +5994,14 @@ md5.js@^1.3.4:
   dependencies:
     hash-base "^3.0.0"
     inherits "^2.0.1"
+
+md5@^2.1.0:
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/md5/-/md5-2.2.1.tgz#53ab38d5fe3c8891ba465329ea23fac0540126f9"
+  dependencies:
+    charenc "~0.0.1"
+    crypt "~0.0.1"
+    is-buffer "~1.1.1"
 
 mdurl@^1.0.1:
   version "1.0.1"
@@ -6210,6 +6243,16 @@ mkdirp@0.5.1, mkdirp@0.5.x, "mkdirp@>=0.5 0", mkdirp@^0.5.0, mkdirp@^0.5.1, mkdi
   resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-0.5.1.tgz#30057438eac6cf7f8c4767f38648d6697d75c903"
   dependencies:
     minimist "0.0.8"
+
+mocha-junit-reporter@^1.17.0:
+  version "1.17.0"
+  resolved "https://registry.yarnpkg.com/mocha-junit-reporter/-/mocha-junit-reporter-1.17.0.tgz#2e5149ed40fc5d2e3ca71e42db5ab1fec9c6d85c"
+  dependencies:
+    debug "^2.2.0"
+    md5 "^2.1.0"
+    mkdirp "~0.5.1"
+    strip-ansi "^4.0.0"
+    xml "^1.0.0"
 
 mocha@^3.4.2:
   version "3.5.3"
@@ -9768,6 +9811,13 @@ wdio-dot-reporter@~0.0.8:
   version "0.0.9"
   resolved "https://registry.yarnpkg.com/wdio-dot-reporter/-/wdio-dot-reporter-0.0.9.tgz#929b2adafd49d6b0534fda068e87319b47e38fe5"
 
+wdio-junit-reporter@^0.4.2:
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/wdio-junit-reporter/-/wdio-junit-reporter-0.4.2.tgz#08c31265b5b34c1d6b5c716ce305e2c08fd76632"
+  dependencies:
+    junit-report-builder "~1.3.0"
+    mkdirp "~0.5.1"
+
 wdio-mocha-framework@^0.5.9:
   version "0.5.12"
   resolved "https://registry.yarnpkg.com/wdio-mocha-framework/-/wdio-mocha-framework-0.5.12.tgz#84633c697275896b46f7922cd7b4cb0cd59049cc"
@@ -10055,6 +10105,16 @@ xdg-trashdir@^2.1.1:
 xml-name-validator@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/xml-name-validator/-/xml-name-validator-2.0.1.tgz#4d8b8f1eccd3419aa362061becef515e1e559635"
+
+xml@^1.0.0:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/xml/-/xml-1.0.1.tgz#78ba72020029c5bc87b8a81a3cfcd74b4a2fc1e5"
+
+xmlbuilder@^2.6.2:
+  version "2.6.5"
+  resolved "https://registry.yarnpkg.com/xmlbuilder/-/xmlbuilder-2.6.5.tgz#6ff7ad60fb72d22764f007a164b77f2bf1400526"
+  dependencies:
+    lodash "^3.5.0"
 
 "xtend@>=4.0.0 <4.1.0-0", xtend@^4.0.0, xtend@~4.0.0, xtend@~4.0.1:
   version "4.0.1"

@@ -18,3 +18,4 @@ package-backup.json
 .history
 .Trash-*
 .theia
+**/test-results.xml
