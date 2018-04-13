@@ -1,21 +1,21 @@
 /*
- * Copyright (C) 2018 Red Hat, Inc.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (C) 2018 Red Hat, Inc. and others.
  *
- * Contributors:
- *   Red Hat, Inc. - initial API and implementation
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 import { MAIN_RPC_CONTEXT } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import * as theia from '@theia/plugin';
 import { CommandRegistryImpl } from './command-registry';
 import { Disposable } from './types-impl';
+import { Emitter } from '@theia/core/lib/common/event';
+import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
+import { QuickOpenExtImpl } from './quick-open';
 
 export function createAPI(rpc: RPCProtocol): typeof theia {
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
+    const quickOpenExt = rpc.set(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT, new QuickOpenExtImpl(rpc));
 
     const commands: typeof theia.commands = {
         registerCommand(command: theia.Command, handler?: <T>(...args: any[]) => T | Thenable<T>): Disposable {
@@ -31,9 +31,20 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
             return commandRegistryExt.registerHandler(commandId, handler);
         }
     };
+
+    const window: typeof theia.window = {
+        showQuickPick(items: any, options: theia.QuickPickOptions, token?: theia.CancellationToken): any {
+            return quickOpenExt.showQuickPick(items, options, token);
+        }
+    };
+
     return <typeof theia>{
         commands,
-        Disposable: Disposable
+        window,
+        // Types
+        Disposable: Disposable,
+        EventEmitter: Emitter,
+        CancellationTokenSource: CancellationTokenSource
     };
 
 }
