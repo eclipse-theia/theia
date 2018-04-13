@@ -18,7 +18,7 @@
 // Some entities copied and modified from https://github.com/Microsoft/vscode/blob/master/src/vs/workbench/parts/debug/common/debug.ts
 
 import { Disposable } from '@theia/core';
-import { IConnection } from '@theia/languages/lib/node';
+import * as stream from 'stream';
 
 /**
  * The WS endpoint path to the Debug service.
@@ -98,7 +98,18 @@ export interface DebugAdapterFactory {
      * @param executable The [debug adapter executable](#DebugAdapterExecutable)
      * @returns The connection to the adapter
      */
-    start(executable: DebugAdapterExecutable): IConnection;
+    start(executable: DebugAdapterExecutable): CommunicationProvider;
+}
+
+/**
+ * Provides some way we can communicate with the running debug adapter. In general there is
+ * no obligation as of how to launch/initialize local or remote debug adapter
+ * process/server, it can be done separately and it is not required that this interface covers the
+ * procedure, however it is also not disallowed.
+ */
+export interface CommunicationProvider {
+    output: stream.Readable;
+    input: stream.Writable;
 }
 
 /**
