@@ -47,7 +47,7 @@ export default new ContainerModule(bind => {
 
     bind<interfaces.Factory<DebugSession>>("Factory<DebugSession>").toFactory<DebugSession>(context => {
         return (sessionId: string, executable: DebugAdapterExecutable) => {
-            let session = context.container.get<DebugSession>(DebugSession);
+            const session = context.container.get<DebugSession>(DebugSession);
             session.id = sessionId;
             session.executable = executable;
             return session;

@@ -13,8 +13,7 @@ import { injectable, inject } from "inversify";
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import { MAIN_MENU_BAR } from "@theia/core/lib/common/menu";
 import { DebugService } from "../common/debug-model";
-import { DebugClientFactory } from "./debug-client";
-// import { DebugProtocol } from "vscode-debugprotocol";
+import { DebugClientManager } from "./debug-client";
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, "4_debug"];
@@ -39,8 +38,8 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
     @inject(DebugService)
     protected readonly debug: DebugService;
 
-    @inject(DebugClientFactory)
-    protected readonly debugClientFactory: DebugClientFactory;
+    @inject(DebugClientManager)
+    protected readonly debugClientManager: DebugClientManager;
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerSubmenu(DebugMenus.DEBUG, 'Debug');
@@ -57,8 +56,12 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
         registry.registerHandler(DEBUG_COMMANDS.START.id, {
             execute: () => {
                 this.debug.startDebugSession("Node Js", { name: "", type: "" }).then(sessionId => {
-                    const debugClient = this.debugClientFactory.get(sessionId);
-                    debugClient.sendRequest({ command: "test", seq: 0, type: "" });
+                    const debugClient = this.debugClientManager.create(sessionId);
+
+                    debugClient.then(debugClient => {
+                        this.debugClientManager.setActiveDebugClient(debugClient);
+                        debugClient.sendRequest("initialize");
+                    });
                 });
             },
             isEnabled: () => true,
@@ -67,7 +70,12 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
 
         registry.registerCommand(DEBUG_COMMANDS.STOP);
         registry.registerHandler(DEBUG_COMMANDS.STOP.id, {
-            execute: () => { },
+            execute: () => {
+                const debugClient = this.debugClientManager.getActiveDebugClient();
+                if (debugClient) {
+                    debugClient.dispose();
+                }
+            },
             isEnabled: () => true,
             isVisible: () => true
         });
