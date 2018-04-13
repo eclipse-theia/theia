@@ -1,12 +1,8 @@
 /*
- * Copyright (C) 2018 Red Hat, Inc.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+ * Copyright (C) 2018 Red Hat, Inc. and others.
  *
- * Contributors:
- *   Red Hat, Inc. - initial API and implementation
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
 declare module '@theia/plugin' {
@@ -56,6 +52,139 @@ declare module '@theia/plugin' {
     export interface TextEditorEdit {
         // TODO implement TextEditorEdit
     }
+
+    /**
+     * Represents a typed event.
+     */
+    export interface Event<T> {
+
+        /**
+         *
+         * @param listener The listener function will be call when the event happens.
+         * @param thisArgs The 'this' which will be used when calling the event listener.
+         * @param disposables An array to which a {{IDisposable}} will be added.
+         * @return a disposable to remove the listener again.
+         */
+        (listener: (e: T) => any, thisArgs?: any, disposables?: Disposable[]): Disposable;
+    }
+
+    /**
+     * An event emitter used to create and fire an [event](#Event) or to subscribe to.
+     */
+    export class EventEmitter<T> {
+        /**
+         * The event listeners can subscribe to
+         */
+        event: Event<T>;
+
+        /**
+         * Fire the event and pass data object
+         * @param data 
+         */
+        fire(data?: T): void;
+
+        /**
+         * Dispose this object
+         */
+        dispose(): void;
+    }
+
+    /**
+     * A cancellation token used to request cancellation on long running 
+     * or asynchronous task.
+     */
+    export interface CancellationToken {
+        readonly isCancellationRequested: boolean;
+        /*
+         * An event emitted when cancellation is requested
+         * @event
+         */
+        readonly onCancellationRequested: Event<void>;
+    }
+
+    /**
+     * A cancellation token source create and manage a [cancellation token](#CancellationToken)
+     */
+    export class CancellationTokenSource {
+        token: CancellationToken;
+        cancel(): void;
+        dispose(): void;
+    }
+
+    /**
+     * Something that can be selected from a list of items.
+     */
+    export interface QuickPickItem {
+
+        /**
+         * The item label
+         */
+        label: string;
+
+        /**
+         * The item description
+         */
+        description?: string;
+
+        /**
+         * The item detail
+         */
+        detail?: string;
+
+        /**
+         * Used for [QuickPickOptions.canPickMany](#QuickPickOptions.canPickMany)
+         * not implemented yet
+         */
+        picked?: boolean;
+    }
+
+    /**
+     * Options for configuration behavior of the quick pick
+     */
+    export interface QuickPickOptions {
+        /**
+         * A flag to include the description when filtering
+         */
+        machOnDescription?: boolean;
+
+        /**
+         *  A flag to include the detail when filtering
+         */
+        machOnDetail?: boolean;
+
+        /**
+         * The place holder in input box 
+         */
+        placeHolder?: string;
+
+        /**
+         * If `true` prevent picker closing when it's loses focus
+         */
+        ignoreFocusOut?: boolean;
+
+        /**
+         * If `true` make picker accept multiple selections.
+         * Not implemented yet
+         */
+        canPickMany?: boolean;
+
+        /**
+         * Function that is invoked when item selected
+         */
+        onDidSelectItem?(item: QuickPickItem | string): any;
+    }
+
+    export interface InputBoxOptions {
+        value?: string;
+
+        valueSelection?: [number, number];
+        prompt?: string;
+        placeHolder?: string;
+        password?: boolean;
+        ignoreFocusOut?: boolean;
+        validateInput?(value: string): string | undefined | null | PromiseLike<string | undefined | null>;
+    }
+
     /**
 	 * Namespace for dealing with commands. In short, a command is a function with a
 	 * unique identifier. The function is sometimes also called _command handler_.
@@ -111,5 +240,39 @@ declare module '@theia/plugin' {
          * Reject if a command cannot be executed.
          */
         export function executeCommand<T>(commandId: string, ...args: any[]): PromiseLike<T | undefined>
+    }
+
+    /**
+     * Common namespace for dealing with window and editor, showing messages and user input.
+     */
+    export namespace window {
+
+        /**
+         * Shows a selection list.
+         * @param items 
+         * @param options 
+         * @param token 
+         */
+        export function showQuickPick(items: string[] | PromiseLike<string[]>, options: QuickPickOptions, token?: CancellationToken): PromiseLike<string[] | undefined>;
+
+        /**
+         * Shows a selection list with multiple selection allowed.
+         */
+        export function showQuickPick(items: string[] | PromiseLike<string[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): PromiseLike<string[] | undefined>;
+
+        /**
+         * Shows a selection list.
+         * @param items 
+         * @param options 
+         * @param token 
+         */
+        export function showQuickPick<T extends QuickPickItem>(items: T[] | PromiseLike<T[]>, options: QuickPickOptions, token?: CancellationToken): PromiseLike<T[] | undefined>;
+
+        /**
+         * Shows a selection list with multiple selection allowed.
+         */
+        export function showQuickPick<T extends QuickPickItem>(items: T[] | PromiseLike<T[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): PromiseLike<T[] | undefined>;
+
+
     }
 }
