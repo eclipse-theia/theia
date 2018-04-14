@@ -10,6 +10,7 @@ import { MenuContribution, CommandContribution } from '@theia/core/lib/common';
 import { QuickOpenService, FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
 import { Languages, Workspace } from '@theia/languages/lib/common';
 import { TextEditorProvider, DiffNavigatorProvider } from '@theia/editor/lib/browser';
+import { StrictEditorTextFocusContext } from '@theia/editor/lib/browser/editor-keybinding-contexts';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import { MonacoEditorProvider } from './monaco-editor-provider';
 import { MonacoEditorMenuContribution } from './monaco-menu';
@@ -26,6 +27,7 @@ import { MonacoCommandService, MonacoCommandServiceFactory } from './monaco-comm
 import { MonacoCommandRegistry } from './monaco-command-registry';
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
 import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
+import { MonacoStrictEditorTextFocusContext } from './monaco-keybinding-contexts';
 
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
@@ -68,6 +70,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CommandContribution).to(MonacoEditorCommandHandlers).inSingletonScope();
     bind(MenuContribution).to(MonacoEditorMenuContribution).inSingletonScope();
     bind(KeybindingContribution).to(MonacoKeybindingContribution).inSingletonScope();
+    rebind(StrictEditorTextFocusContext).to(MonacoStrictEditorTextFocusContext).inSingletonScope();
 
     bind(MonacoQuickOpenService).toSelf().inSingletonScope();
     rebind(QuickOpenService).toDynamicValue(ctx =>

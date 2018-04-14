@@ -31,6 +31,9 @@ import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
 import IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor;
 import IBoxSizing = ElementExt.IBoxSizing;
 import IEditorReference = monaco.editor.IEditorReference;
+import SuggestController = monaco.suggestController.SuggestController;
+import CommonFindController = monaco.findController.CommonFindController;
+import RenameController = monaco.rename.RenameController;
 
 export class MonacoEditor implements TextEditor, IEditorReference {
 
@@ -197,6 +200,27 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         return this.onFocusChangedEmitter.event;
     }
 
+    /**
+     * `true` if the suggest widget is visible in the editor. Otherwise, `false`.
+     */
+    isSuggestWidgetVisible(): boolean {
+        return this.editor.getContribution<SuggestController>('editor.contrib.suggestController')._widget.suggestWidgetVisible.get();
+    }
+
+    /**
+     * `true` if the find (and replace) widget is visible in the editor. Otherwise, `false`.
+     */
+    isFindWidgetVisible(): boolean {
+        return this.editor.getContribution<CommonFindController>('editor.contrib.findController')._findWidgetVisible.get();
+    }
+
+    /**
+     * `true` if the name rename refactoring input HTML element is visible. Otherwise, `false`.
+     */
+    isRenameInputVisible(): boolean {
+        return this.editor.getContribution<RenameController>('editor.contrib.renameController')._renameInputVisible.get();
+    }
+
     dispose() {
         this.toDispose.dispose();
     }
@@ -219,6 +243,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
 
     protected autoresize() {
         if (this.autoSizing) {
+            // tslint:disable-next-line:no-null-keyword
             this.resize(null);
         }
     }

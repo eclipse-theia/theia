@@ -5,6 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+// tslint:disable:no-any
+
 export function loadVsRequire(context: any): Promise<any> {
     // Monaco uses a custom amd loader that over-rides node's require.
     // Keep a reference to an original require so we can restore it after executing the amd loader file.
@@ -53,10 +55,13 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/platform/theme/common/styler',
                 'vs/base/common/platform',
                 'vs/editor/common/modes',
-                'vs/base/common/cancellation'
+                'vs/base/common/cancellation',
+                'vs/editor/contrib/suggest/browser/suggestController',
+                'vs/editor/contrib/find/common/findController',
+                'vs/editor/contrib/rename/browser/rename',
             ], (basic: any, css: any, html: any, json: any, commands: any, actions: any, registry: any, resolver: any, resolvedKeybinding: any,
                 keyCodes: any, editorCommonExtensions: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
-                filters: any, styler: any, platform: any, modes: any, cancellation: any) => {
+                filters: any, styler: any, platform: any, modes: any, cancellation: any, suggestController: any, findController: any, rename: any) => {
                     const global: any = self;
                     global.monaco.commands = commands;
                     global.monaco.actions = actions;
@@ -69,6 +74,9 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                     global.monaco.editorCommonExtensions = editorCommonExtensions;
                     global.monaco.modes = modes;
                     global.monaco.cancellation = cancellation;
+                    global.monaco.suggestController = suggestController;
+                    global.monaco.findController = findController;
+                    global.monaco.rename = rename;
                     resolve();
                 });
         });
