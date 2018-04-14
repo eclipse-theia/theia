@@ -48,13 +48,17 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
             // This would require introducing the FS dependency in the editor extension.
             this.editorManager.onCurrentEditorChanged(this.onCurrentEditorChanged.bind(this))
         ]);
-        this.commandRegistry.registerHandler(EditorCommands.BACK.id, {
+        this.commandRegistry.registerHandler(EditorCommands.GO_BACK.id, {
             execute: () => this.locationStack.back(),
             isEnabled: () => this.locationStack.canGoBack()
         });
-        this.commandRegistry.registerHandler(EditorCommands.FORWARD.id, {
+        this.commandRegistry.registerHandler(EditorCommands.GO_FORWARD.id, {
             execute: () => this.locationStack.forward(),
             isEnabled: () => this.locationStack.canGoForward()
+        });
+        this.commandRegistry.registerHandler(EditorCommands.GO_LAST_EDIT.id, {
+            execute: () => this.locationStack.reveal(this.locationStack.lastEditLocation()),
+            isEnabled: () => !!this.locationStack.lastEditLocation()
         });
     }
 

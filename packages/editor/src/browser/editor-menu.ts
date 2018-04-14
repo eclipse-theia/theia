@@ -45,12 +45,16 @@ export class EditorMenuContribution implements MenuContribution {
         // Editor navigation. Go > Back and Go > Forward.
         registry.registerSubmenu(EditorMainMenu.GO, 'Go');
         registry.registerMenuAction(EditorMainMenu.NAVIGATION_GROUP, {
-            commandId: EditorCommands.BACK.id,
+            commandId: EditorCommands.GO_BACK.id,
             label: 'Back'
         });
         registry.registerMenuAction(EditorMainMenu.NAVIGATION_GROUP, {
-            commandId: EditorCommands.FORWARD.id,
+            commandId: EditorCommands.GO_FORWARD.id,
             label: 'Forward'
+        });
+        registry.registerMenuAction(EditorMainMenu.NAVIGATION_GROUP, {
+            commandId: EditorCommands.GO_LAST_EDIT.id,
+            label: 'Last Edit Location'
         });
     }
 

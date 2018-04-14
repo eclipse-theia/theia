@@ -6,6 +6,7 @@
  */
 
 import { injectable } from 'inversify';
+import { isOSX, isWindows } from '@theia/core/lib/common/os';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser/keybinding';
 import { EditorCommands } from './editor-command';
 
@@ -15,12 +16,16 @@ export class EditorKeybindingContribution implements KeybindingContribution {
     registerKeybindings(registry: KeybindingRegistry): void {
         registry.registerKeybindings(
             {
-                command: EditorCommands.BACK.id,
-                keybinding: 'alt+left'
+                command: EditorCommands.GO_BACK.id,
+                keybinding: isOSX ? 'ctrl+-' : isWindows ? 'alt+left' : /*isLinux*/ 'ctrl+alt+-'
             },
             {
-                command: EditorCommands.FORWARD.id,
-                keybinding: 'alt+right'
+                command: EditorCommands.GO_FORWARD.id,
+                keybinding: isOSX ? 'ctrl+shift+-' : isWindows ? 'alt+right' : /*isLinux*/ 'ctrl+shift+-'
+            },
+            {
+                command: EditorCommands.GO_LAST_EDIT.id,
+                keybinding: 'ctrl+alt+q'
             }
         );
     }
