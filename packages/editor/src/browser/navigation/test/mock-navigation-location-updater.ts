@@ -18,3 +18,15 @@ export class MockNavigationLocationUpdater extends NavigationLocationUpdater {
     }
 
 }
+
+/**
+ * NOOP navigation location updater for testing. Use this, if you want to avoid any
+ * location updates during the tests.
+ */
+export class NoopNavigationLocationUpdater extends NavigationLocationUpdater {
+
+    affects(): false {
+        return false;
+    }
+
+}

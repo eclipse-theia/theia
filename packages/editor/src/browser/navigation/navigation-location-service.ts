@@ -11,7 +11,7 @@ import { OpenerService, OpenerOptions, open } from '@theia/core/lib/browser/open
 import { EditorOpenerOptions } from '../editor-manager';
 import { NavigationLocationUpdater } from './navigation-location-updater';
 import { NavigationLocationSimilarity } from './navigation-location-similarity';
-import { NavigationLocation, Range } from './navigation-location';
+import { NavigationLocation, Range, ContentChangeLocation } from './navigation-location';
 
 /**
  * The navigation location service. Also, stores and manages navigation locations.
@@ -36,6 +36,7 @@ export class NavigationLocationService {
     protected pointer = -1;
     protected stack: NavigationLocation[] = [];
     protected canRegister = true;
+    protected _lastEditLocation: ContentChangeLocation | undefined;
 
     /**
      * Registers the give locations into the service.
@@ -44,6 +45,9 @@ export class NavigationLocationService {
         if (this.canRegister) {
             const max = this.maxStackItems();
             [...locations].forEach(location => {
+                if (ContentChangeLocation.is(location)) {
+                    this._lastEditLocation = location;
+                }
                 const current = this.currentLocation();
                 this.debug(`Registering new location: ${NavigationLocation.toObject(location)}.`);
                 if (!this.isSimilar(current, location)) {
@@ -61,7 +65,7 @@ export class NavigationLocationService {
                         this.stack.shift();
                         this.pointer--;
                     }
-                    this.debug(`Updating preceeding navigation locations.`);
+                    this.debug(`Updating preceding navigation locations.`);
                     for (let i = this.stack.length - 1; i >= 0; i--) {
                         const candidate = this.stack[i];
                         const update = this.updater.affects(candidate, location);
@@ -144,24 +148,17 @@ export class NavigationLocationService {
     }
 
     /**
-     * `true` if the two locations are similar.
+     * Returns with the location of the most recent edition if any. If there were no modifications,
+     * returns `undefined`.
      */
-    protected isSimilar(left: NavigationLocation | undefined, right: NavigationLocation | undefined): boolean {
-        return this.similarity.similar(left, right);
-    }
-
-    /**
-     * Returns with the number of navigation locations that the application can handle and manage.
-     * When the number of locations exceeds this number, old locations will be erased.
-     */
-    protected maxStackItems(): number {
-        return NavigationLocationService.MAX_STACK_ITEMS;
+    lastEditLocation(): NavigationLocation | undefined {
+        return this._lastEditLocation;
     }
 
     /**
      * Reveals the location argument. If not given, reveals the `current location`. Does nothing, if the argument is `undefined`.
      */
-    protected async reveal(location: NavigationLocation | undefined = this.currentLocation()): Promise<void> {
+    async reveal(location: NavigationLocation | undefined = this.currentLocation()): Promise<void> {
         if (location === undefined) {
             return;
         }
@@ -178,23 +175,37 @@ export class NavigationLocationService {
     }
 
     /**
+     * `true` if the two locations are similar.
+     */
+    protected isSimilar(left: NavigationLocation | undefined, right: NavigationLocation | undefined): boolean {
+        return this.similarity.similar(left, right);
+    }
+
+    /**
+     * Returns with the number of navigation locations that the application can handle and manage.
+     * When the number of locations exceeds this number, old locations will be erased.
+     */
+    protected maxStackItems(): number {
+        return NavigationLocationService.MAX_STACK_ITEMS;
+    }
+
+    /**
      * Returns with the opener option for the location argument.
      */
     protected toOpenerOptions(location: NavigationLocation): OpenerOptions {
-        const { start } = NavigationLocation.range(location);
+        let { start } = NavigationLocation.range(location);
+        // Here, the `start` and represents the previous state that has been updated with the `text`.
+        // So we calculate the range by appending the `text` length to the `start`.
+        if (ContentChangeLocation.is(location)) {
+            start = { ...start, character: start.character + location.context.text.length };
+        }
         return {
             selection: Range.create(start, start)
         } as EditorOpenerOptions;
     }
 
     private async debug(message: string | (() => string)): Promise<void> {
-        if (typeof message === 'string') {
-            this.logger.debug(message);
-        } else {
-            if (await this.logger.isDebug()) {
-                this.logger.debug(message());
-            }
-        }
+        this.logger.debug(typeof message === 'string' ? message : message());
     }
 
     private get stackDump(): string {

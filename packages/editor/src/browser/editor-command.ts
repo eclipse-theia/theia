@@ -34,16 +34,23 @@ export namespace EditorCommands {
     /**
      * Command for going back to the last editor navigation location.
      */
-    export const BACK: Command = {
-        id: 'textEditor.commands.back',
+    export const GO_BACK: Command = {
+        id: 'textEditor.commands.go.back',
         label: 'Go Back'
     };
     /**
      * Command for going to the forthcoming editor navigation location.
      */
-    export const FORWARD: Command = {
-        id: 'textEditor.commands.forward',
+    export const GO_FORWARD: Command = {
+        id: 'textEditor.commands.go.forward',
         label: 'Go Forward'
+    };
+    /**
+     * Command that reveals the last text edit location, if any.
+     */
+    export const GO_LAST_EDIT: Command = {
+        id: 'textEditor.commands.go.lastEdit',
+        label: 'Go to Last Edit Location'
     };
 }
 
@@ -56,7 +63,8 @@ export class EditorCommandContribution implements CommandContribution {
         registry.registerCommand(EditorCommands.INDENT_USING_SPACES);
         registry.registerCommand(EditorCommands.INDENT_USING_TABS);
 
-        registry.registerCommand(EditorCommands.BACK);
-        registry.registerCommand(EditorCommands.FORWARD);
+        registry.registerCommand(EditorCommands.GO_BACK);
+        registry.registerCommand(EditorCommands.GO_FORWARD);
+        registry.registerCommand(EditorCommands.GO_LAST_EDIT);
     }
 }
