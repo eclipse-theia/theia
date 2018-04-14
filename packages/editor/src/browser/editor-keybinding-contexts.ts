@@ -11,7 +11,16 @@ import { EditorManager } from "./editor-manager";
 import { EditorWidget } from "./editor-widget";
 
 export namespace EditorKeybindingContexts {
+
+    /**
+     * ID of a keybinding context that is enabled when the active text editor has the focus.
+     */
     export const editorTextFocus = 'editorTextFocus';
+
+    /**
+     * Unique identifier of a keybinding context that is enabled if the active editor has the focus but it does not have any overlaying widgets, such as the content assist widget.
+     */
+    export const strictEditorTextFocus = 'strictEditorTextFocus';
 }
 
 @injectable()
@@ -37,5 +46,16 @@ export class EditorTextFocusContext implements KeybindingContext {
     protected canHandle(widget: EditorWidget): boolean {
         return widget.editor.isFocused();
     }
+
+}
+
+/**
+ * Keybinding context that is enabled when the active text editor has the focus **AND** it does not
+ * have any widgets (for example, the content assist widget) overlaying the active editor.
+ */
+@injectable()
+export class StrictEditorTextFocusContext extends EditorTextFocusContext {
+
+    readonly id: string = EditorKeybindingContexts.strictEditorTextFocus;
 
 }

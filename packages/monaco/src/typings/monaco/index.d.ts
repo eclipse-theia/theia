@@ -618,3 +618,59 @@ declare module monaco.cancellation {
     }
 
 }
+
+declare module monaco.suggestController {
+
+    export class SuggestController {
+
+        getId(): string;
+        dispose(): void;
+
+        /**
+         * This is a hack. The widget has a `private` visibility in the VSCode source.
+         */
+        readonly _widget: {
+            suggestWidgetVisible: {
+                get(): boolean;
+            };
+        };
+
+    }
+
+}
+
+declare module monaco.findController {
+
+    export class CommonFindController {
+
+        getId(): string;
+        dispose(): void;
+
+        /**
+         * Hack for checking whether the find (and replace) widget is visible in code editor or not.
+         */
+        readonly _findWidgetVisible: {
+            get(): boolean;
+        };
+
+    }
+
+}
+
+declare module monaco.rename {
+
+    export class RenameController {
+
+        getId(): string;
+        dispose(): void;
+
+        /**
+         * Hack for checking whether the rename input HTML element is visible in the code editor or not. In VSCode source this is has `private` visibility.
+         */
+        readonly _renameInputVisible: {
+            get(): boolean;
+        };
+
+    }
+
+}

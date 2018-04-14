@@ -12,7 +12,7 @@ import { EditorManager } from './editor-manager';
 import { EditorContribution } from './editor-contribution';
 import { EditorMenuContribution } from './editor-menu';
 import { EditorCommandContribution } from './editor-command';
-import { EditorTextFocusContext } from "./editor-keybinding-contexts";
+import { EditorTextFocusContext, StrictEditorTextFocusContext } from "./editor-keybinding-contexts";
 import { EditorKeybindingContribution } from "./editor-keybinding";
 import { bindEditorPreferences } from './editor-preferences';
 import { EditorDecorationsService } from './editor-decorations-service';
@@ -33,6 +33,8 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).to(EditorCommandContribution).inSingletonScope();
     bind(MenuContribution).to(EditorMenuContribution).inSingletonScope();
 
+    bind(StrictEditorTextFocusContext).toSelf().inSingletonScope();
+    bind(KeybindingContext).toService(StrictEditorTextFocusContext);
     bind(KeybindingContext).to(EditorTextFocusContext).inSingletonScope();
     bind(KeybindingContribution).to(EditorKeybindingContribution).inSingletonScope();
 

@@ -135,7 +135,7 @@ export class BlameContribution implements FrontendApplicationContribution, Comma
         });
         keybindings.registerKeybinding({
             command: BlameCommands.CLEAR_GIT_ANNOTATIONS.id,
-            context: EditorKeybindingContexts.editorTextFocus,
+            context: EditorKeybindingContexts.strictEditorTextFocus,
             keybinding: 'esc'
         });
     }
