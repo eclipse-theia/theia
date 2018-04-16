@@ -31,6 +31,7 @@ import { MockResourceProvider } from '@theia/core/lib/common/test/mock-resource-
 import { MockWorkspaceServer } from '@theia/workspace/lib/common/test/mock-workspace-server';
 import { MockWindowService } from '@theia/core/lib/browser/window/test/mock-window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { WorkspacePreferences, createWorkspacePreferences } from '@theia/workspace/lib/browser/workspace-preferences';
 import * as sinon from 'sinon';
 
 disableJSDOM();
@@ -75,6 +76,10 @@ before(async () => {
     /* Workspace mocks and bindings */
     testContainer.bind(WorkspaceServer).to(MockWorkspaceServer);
     testContainer.bind(WorkspaceService).toSelf();
+    testContainer.bind(WorkspacePreferences).toDynamicValue(ctx => {
+        const preferences = ctx.container.get<PreferenceService>(PreferenceService);
+        return createWorkspacePreferences(preferences);
+    }).inSingletonScope();
 
     /* Window mocks and bindings*/
     testContainer.bind(WindowService).to(MockWindowService);

@@ -19,8 +19,11 @@ import { WorkspaceCommandContribution, FileMenuContribution } from './workspace-
 import { WorkspaceVariableContribution } from './workspace-variable-contribution';
 import { WorkspaceStorageService } from './workspace-storage-service';
 import { WorkspaceUriLabelProviderContribution } from './workspace-uri-contribution';
+import { bindWorkspacePreferences } from './workspace-preferences';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
+    bindWorkspacePreferences(bind);
+
     bind(WorkspaceService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(WorkspaceService));
     bind(WorkspaceServer).toDynamicValue(ctx => {

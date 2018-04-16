@@ -14,6 +14,7 @@ import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ILogger } from '@theia/core/lib/common/logger';
+import { WorkspacePreferences } from './workspace-preferences';
 
 /**
  * The workspace service.
@@ -41,6 +42,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
 
     @inject(ILogger)
     protected logger: ILogger;
+
+    @inject(WorkspacePreferences)
+    protected preferences: WorkspacePreferences;
 
     @postConstruct()
     protected async init(): Promise<void> {
@@ -88,7 +92,11 @@ export class WorkspaceService implements FrontendApplicationContribution {
         const valid = await this.toValidRoot(rootUri);
         if (valid) {
             // The same window has to be preserved too (instead of opening a new one), if the workspace root is not yet available and we are setting it for the first time.
-            const preserveWindow = options ? options.preserveWindow : !(await this.root);
+            // Option passed as parameter has the highest priority (for api developers), then the preference, then the default.
+            const { preserveWindow } = {
+                preserveWindow: this.preferences['workspace.preserveWindow'] || !(await this.root),
+                ...options
+            };
             await this.server.setRoot(rootUri);
             if (preserveWindow) {
                 this._root = valid;
