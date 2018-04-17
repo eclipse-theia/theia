@@ -136,9 +136,9 @@ export class GitDecorator implements TreeDecorator {
 
     protected getDecorationColor(status: GitFileStatus, staged?: boolean): string {
         switch (status) {
-            case GitFileStatus.New: return !!staged ? 'var(--theia-success-color0)' : 'var(--theia-disabled-color0)';
+            case GitFileStatus.New: return 'var(--theia-success-color0)';
             case GitFileStatus.Renamed: // Fall through.
-            case GitFileStatus.Copied: return ' var(--theia-disabled-color0)';
+            case GitFileStatus.Copied: // Fall through.
             case GitFileStatus.Modified: return 'var(--theia-brand-color0)';
             case GitFileStatus.Deleted: return 'var(--theia-warn-color0)';
             case GitFileStatus.Conflicted: return 'var(--theia-error-color0)';

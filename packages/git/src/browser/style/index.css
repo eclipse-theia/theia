@@ -74,7 +74,7 @@
 }
 
 .theia-git .gitItem .status.new {
-    color: var(--theia-disabled-color0);
+    color: var(--theia-success-color0);
 }
 
 .theia-git .gitItem .status.new.staged {
@@ -90,7 +90,7 @@
 }
 
 .theia-git .gitItem .status.renamed {
-    color: var(--theia-disabled-color0);
+    color: var(--theia-brand-color0);
 }
 
 .theia-git .gitItem .status.conflicted {
@@ -98,7 +98,7 @@
 }
 
 .theia-git .gitItem .status.copied {
-    color: var(--theia-disabled-color0);
+    color: var(--theia-brand-color0);
 }
 
 #theia-gitContainer .buttons {
