@@ -302,7 +302,15 @@ export class KeyCode {
         }
     }
 
-    public static toCode(event: KeyboardEvent): string {
+    // keyIdentifier is used to access this deprecated field:
+    // https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/keyIdentifier
+    public static toCode(event: KeyboardEvent & { readonly keyIdentifier?: string }): string {
+        // The `event.keyCode` can vary in different browsers.
+        // Check if we can recognize the `event.code` string. If yes, we are done.
+        const candidateKey = Key.getKey(event.code);
+        if (!!candidateKey && candidateKey.code === event.code) {
+            return candidateKey.code;
+        }
         if (event.keyCode) {
             const key = Key.getKey(event.keyCode);
             if (key) {
@@ -312,10 +320,8 @@ export class KeyCode {
         if (event.code) {
             return event.code;
         }
-        // tslint:disable-next-line:no-any
-        const e = event as any;
-        if (e.keyIdentifier) {
-            return e.keyIdentifier;
+        if (event.keyIdentifier !== undefined) {
+            return event.keyIdentifier;
         }
         if (event.which) {
             const key = Key.getKey(event.which);
@@ -578,7 +584,7 @@ export namespace Key {
         return !!arg && ('code' in arg) && ('keyCode' in arg);
     }
 
-    export function getKey(arg: string | number): Key {
+    export function getKey(arg: string | number): Key | undefined {
         if (typeof arg === "number") {
             return KEY_CODE_TO_KEY[arg] || {
                 code: 'unknown',
