@@ -42,7 +42,7 @@
 }
 
 .extensionButton {
-    background: var(--theia-success-color1);
+    background-color: var(--theia-success-color1);
     padding: 2px;
     box-sizing: border-box;
     color: var(--theia-ui-icon-font-color);
@@ -63,23 +63,23 @@
 
 .extensionButton:hover {
     cursor: pointer;
-    background: var(--theia-success-color2);
+    background-color: var(--theia-success-color0);
 }
 
 .extensionButton.installed {
-    background: var(--theia-error-color1);
+    background-color: var(--theia-error-color1);
 }
 
 .extensionButton.outdated {
-    background: var(--theia-accent-color2);
+    background-color: var(--theia-accent-color2);
 }
 
 .extensionButton.installed:hover {
-    background: var(--theia-error-color2);
+    background-color: var(--theia-error-color0);
 }
 
 .extensionButton.outdated:hover {
-    background: var(--theia-accent-color1);
+    background-color: var(--theia-accent-color1);
 }
 
 @import './extension-sidebar.css';
