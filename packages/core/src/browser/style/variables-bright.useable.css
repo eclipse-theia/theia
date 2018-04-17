@@ -82,10 +82,10 @@ is not optimized for dense, information rich UIs.
     ------------------------------------ */
 
   --theia-layout-color0: #ffffff;
-  --theia-layout-color1: #f0f3f5;
-  --theia-layout-color2: #eceff1;
-  --theia-layout-color3: #dde5e9;
-  --theia-layout-color4: #cfd8dc;
+  --theia-layout-color1: var(--md-grey-100);
+  --theia-layout-color2: var(--md-grey-200);
+  --theia-layout-color3: var(--md-grey-300);
+  --theia-layout-color4: var(--md-grey-400);
 
   /* Brand colors */
 
@@ -93,6 +93,13 @@ is not optimized for dense, information rich UIs.
   --theia-brand-color1: var(--md-blue-500);
   --theia-brand-color2: var(--md-blue-300);
   --theia-brand-color3: var(--md-blue-100);
+  
+  /* Secondary Brand colors */
+
+  --theia-secondary-brand-color0: var(--md-grey-700);
+  --theia-secondary-brand-color1: var(--md-grey-500);
+  --theia-secondary-brand-color2: var(--md-grey-300);
+  --theia-secondary-brand-color3: var(--md-grey-100);
 
   /* Accent colors (dark to bright): Use these to create contrast to layout colors. */
 
@@ -126,10 +133,10 @@ is not optimized for dense, information rich UIs.
   --theia-info-color2: var(--md-cyan-300);
   --theia-info-color3: var(--md-cyan-100);
 
-  --theia-disabled-color0: var(--md-blue-grey-500);
-  --theia-disabled-color1: var(--md-blue-grey-300);
-  --theia-disabled-color2: var(--md-blue-grey-200);
-  --theia-disabled-color3: var(--md-blue-grey-50);
+  --theia-disabled-color0: var(--md-grey-500);
+  --theia-disabled-color1: var(--md-grey-300);
+  --theia-disabled-color2: var(--md-grey-200);
+  --theia-disabled-color3: var(--md-grey-50);
 
   --theia-added-color0: rgba(0, 255, 0, 0.8);
   --theia-removed-color0: rgba(230, 0, 0, 0.8);
@@ -164,11 +171,13 @@ is not optimized for dense, information rich UIs.
 
   /* Buttons */
   --theia-ui-button-color: var(--theia-brand-color1);
+  --theia-ui-button-color-hover: var(--theia-brand-color0);
   --theia-ui-button-font-color: var(--theia-inverse-ui-font-color0);
-  --theia-ui-button-color-secondary: var(--theia-accent-color3);
+  --theia-ui-button-color-secondary: var(--theia-secondary-brand-color1);
+  --theia-ui-button-color-secondary-hover: var(--theia-secondary-brand-color0);
   --theia-ui-button-font-color-secondary: var(--theia-inverse-ui-font-color0);
-  --theia-ui-button-color-disabled: var(--theia-accent-color3);
-  --theia-ui-button-font-color-disabled: var(--theia-ui-font-color3);
+  --theia-ui-button-color-disabled: var(--theia-disabled-color1);
+  --theia-ui-button-font-color-disabled: var(--theia-ui-font-color2);
 
   /* Expand/collapse element */
   --theia-ui-expand-button-color: var(--theia-accent-color4);

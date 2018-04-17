@@ -175,7 +175,7 @@ export class ExtensionWidget extends VirtualWidget {
         const content = extension.busy ? h.i({ className: 'fa fa-spinner fa-pulse fa-fw' }) : btnLabel;
 
         const btn = h.div({
-            className: 'extensionButton' +
+            className: 'theia-button extensionButton' +
                 (extension.busy ? ' working' : '') + ' ' +
                 (extension.installed && !extension.busy ? ' installed' : '') + ' ' +
                 (extension.outdated && !extension.busy ? ' outdated' : ''),

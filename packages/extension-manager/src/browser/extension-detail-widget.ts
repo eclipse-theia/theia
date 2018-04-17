@@ -93,7 +93,7 @@ export class ExtensionDetailWidget extends VirtualWidget {
         const content = extension.busy ? faEl : btnLabel;
 
         buttonArr.push(h.div({
-            className: 'extensionButton' +
+            className: 'theia-button extensionButton' +
                 (extension.busy ? ' working' : '') + ' ' +
                 (extension.installed && !extension.busy ? ' installed' : '') + ' ' +
                 (extension.outdated && !extension.busy ? ' outdated' : ''),
@@ -111,7 +111,7 @@ export class ExtensionDetailWidget extends VirtualWidget {
 
         if (extension.outdated) {
             buttonArr.push(h.div({
-                className: (extension.busy ? ' working' : '') + ' ' + 'extensionButton' + (extension.outdated && !extension.busy ? ' outdated' : ''),
+                className: (extension.busy ? ' working' : '') + ' ' + 'theia-button extensionButton' + (extension.outdated && !extension.busy ? ' outdated' : ''),
                 onclick: event => {
                     if (!extension.busy) {
                         extension.update();
