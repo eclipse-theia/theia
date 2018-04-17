@@ -231,6 +231,25 @@ export namespace Git {
         }
 
         /**
+         * Options for the `git commit` command refinement.
+         */
+        export interface Commit {
+
+            /**
+             * If `true` replaces the tip of the current branch by creating a new commit.
+             * The recorded tree is prepared as usual, and the message from the original commit is used as the starting point, instead of an empty message,
+             * when no other message is specified. The new commit has the same parents and author as the current one. Defaults to `false`.
+             */
+            readonly amend?: boolean;
+
+            /**
+             * Adds the `Signed-off-by` line by the committer at the end of the commit log message. `false` by default.
+             */
+            readonly signOff?: boolean;
+
+        }
+
+        /**
          * Options for further refining the `git show` command.
          */
         export interface Show {
@@ -278,7 +297,7 @@ export namespace Git {
             readonly localBranch?: string;
 
             /**
-             * The name of the remote branch to push to. If not given then teh changes will be pushed to the remote branch associated with the
+             * The name of the remote branch to push to. If not given then the changes will be pushed to the remote branch associated with the
              * local branch.
              *
              * `git push <remote> <localBranch>:<remoteBranch>`
@@ -572,7 +591,7 @@ export interface Git extends Disposable {
      * @param repository the repository where the staged changes has to be committed.
      * @param message the optional commit message.
      */
-    commit(repository: Repository, message?: string): Promise<void>;
+    commit(repository: Repository, message?: string, options?: Git.Options.Commit): Promise<void>;
 
     /**
      * Fetches branches and/or tags (collectively, `refs`) from the repository, along with the objects necessary to complete their histories.

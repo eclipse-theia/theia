@@ -702,6 +702,27 @@ describe('git', async function () {
 
     });
 
+    describe('branch', () => {
+
+        it('should list the branch in chronological order', async () => {
+            const root = track.mkdirSync('branch-order');
+            const localUri = FileUri.create(root).toString();
+            const repository = { localUri };
+            const git = await createGit();
+
+            await createTestRepository(root);
+            await git.exec(repository, ['checkout', '-b', 'a']);
+            await git.exec(repository, ['checkout', 'master']);
+            await git.exec(repository, ['checkout', '-b', 'b']);
+            await git.exec(repository, ['checkout', 'master']);
+            await git.exec(repository, ['checkout', '-b', 'c']);
+            await git.exec(repository, ['checkout', 'master']);
+
+            expect((await git.branch(repository, { type: 'local' })).map(b => b.nameWithoutRemote)).to.be.deep.equal(['master', 'c', 'b', 'a']);
+        });
+
+    });
+
     describe('ls-files', () => {
 
         let git: Git;

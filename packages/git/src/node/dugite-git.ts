@@ -395,9 +395,11 @@ export class DugiteGit implements Git {
         });
     }
 
-    async commit(repository: Repository, message?: string): Promise<void> {
+    async commit(repository: Repository, message?: string, options?: Git.Options.Commit): Promise<void> {
+        const signOff = options && options.signOff;
+        const amend = options && options.amend;
         return this.manager.run(repository, () =>
-            createCommit(this.getFsPath(repository), message || '')
+            createCommit(this.getFsPath(repository), message || '', signOff, amend)
         );
     }
 
