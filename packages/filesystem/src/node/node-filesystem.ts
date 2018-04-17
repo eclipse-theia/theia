@@ -46,12 +46,9 @@ export class FileSystemNode implements FileSystem {
         this.client = client;
     }
 
-    async getFileStat(uri: string): Promise<FileStat> {
+    async getFileStat(uri: string): Promise<FileStat | undefined> {
         const uri_ = new URI(uri);
         const stat = await this.doGetStat(uri_, 1);
-        if (!stat) {
-            throw new Error(`Cannot find file under the given URI. URI: ${uri}.`);
-        }
         return stat;
     }
 
@@ -311,7 +308,7 @@ Actual: ${JSON.stringify(file)}.`);
         return [];
     }
 
-    async getCurrentUserHome(): Promise<FileStat> {
+    async getCurrentUserHome(): Promise<FileStat | undefined> {
         return this.getFileStat(FileUri.create(os.homedir()).toString());
     }
 

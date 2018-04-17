@@ -121,6 +121,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
         }
         try {
             const fileStat = await this.fileSystem.getFileStat(uri);
+            if (!fileStat) {
+                return undefined;
+            }
             if (fileStat.isDirectory) {
                 return fileStat;
             }

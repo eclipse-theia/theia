@@ -38,11 +38,12 @@ describe("NodeFileSystem", function () {
 
     describe("01 #getFileStat", () => {
 
-        it("Should be rejected if not file exists under the given URI.", async () => {
+        it("Should return undefined if not file exists under the given URI.", async () => {
             const uri = root.resolve("foo.txt");
             expect(fs.existsSync(FileUri.fsPath(uri))).to.be.false;
 
-            await expectThrowsAsync(fileSystem.getFileStat(uri.toString()), Error);
+            const fileStat = await fileSystem.getFileStat(uri.toString());
+            expect(fileStat).to.be.undefined;
         });
 
         it("Should return a proper result for a file.", async () => {
@@ -51,8 +52,9 @@ describe("NodeFileSystem", function () {
             expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
 
             const stat = await fileSystem.getFileStat(uri.toString());
-            expect(stat.isDirectory).to.be.false;
-            expect(stat.uri).to.eq(uri.toString());
+            expect(stat).to.not.be.undefined;
+            expect(stat!.isDirectory).to.be.false;
+            expect(stat!.uri).to.eq(uri.toString());
         });
 
         it("Should return a proper result for a directory.", async () => {
@@ -64,7 +66,9 @@ describe("NodeFileSystem", function () {
             expect(fs.statSync(FileUri.fsPath(uri_2)).isFile()).to.be.true;
 
             const stat = await fileSystem.getFileStat(root.toString());
-            expect(stat.children!.length).to.equal(2);
+            expect(stat).to.not.be.undefined;
+            expect(stat!.children!.length).to.equal(2);
+
         });
 
     });
@@ -161,8 +165,8 @@ describe("NodeFileSystem", function () {
             expect(fs.statSync(FileUri.fsPath(uri)).isDirectory()).to.be.true;
 
             const stat = await fileSystem.getFileStat(uri.toString());
-
-            await expectThrowsAsync(fileSystem.setContent(stat, "foo"), Error);
+            expect(stat).to.not.be.undefined;
+            await expectThrowsAsync(fileSystem.setContent(stat!, "foo"), Error);
         });
 
         it("Should be rejected with an error when trying to set the content of a file which is out-of-sync.", async () => {
@@ -179,8 +183,8 @@ describe("NodeFileSystem", function () {
             fs.writeFileSync(FileUri.fsPath(uri), "longer", { encoding: "utf8" });
             expect(fs.readFileSync(FileUri.fsPath(uri), { encoding: "utf8" }))
                 .to.be.equal("longer");
-
-            await expectThrowsAsync(fileSystem.setContent(stat, "baz"), Error);
+            expect(stat).to.not.be.undefined;
+            await expectThrowsAsync(fileSystem.setContent(stat!, "baz"), Error);
         });
 
         it("Should be rejected with an error when trying to set the content when the desired encoding cannot be handled.", async () => {
@@ -191,8 +195,9 @@ describe("NodeFileSystem", function () {
             expect(fs.readFileSync(FileUri.fsPath(uri), { encoding: "utf8" })).to.be.equal("foo");
 
             const stat = await fileSystem.getFileStat(uri.toString());
+            expect(stat).to.not.be.undefined;
+            await expectThrowsAsync(fileSystem.setContent(stat!, "baz", { encoding: "unknownEncoding" }), Error);
 
-            await expectThrowsAsync(fileSystem.setContent(stat, "baz", { encoding: "unknownEncoding" }), Error);
         });
 
         it("Should return with a stat representing the latest state of the successfully modified file.", async () => {
@@ -203,10 +208,12 @@ describe("NodeFileSystem", function () {
             expect(fs.readFileSync(FileUri.fsPath(uri), { encoding: "utf8" })).to.be.equal("foo");
 
             const currentStat = await fileSystem.getFileStat(uri.toString());
-            await fileSystem.setContent(currentStat, "baz");
+            expect(currentStat).to.not.be.undefined;
 
+            await fileSystem.setContent(currentStat!, "baz");
             expect(fs.readFileSync(FileUri.fsPath(uri), { encoding: "utf8" }))
                 .to.be.equal("baz");
+
         });
 
     });
@@ -625,6 +632,8 @@ describe("NodeFileSystem", function () {
             expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
 
             const initialStat = await fileSystem.getFileStat(uri.toString());
+            expect(initialStat).to.not.be.undefined;
+
             expect(initialStat).is.an("object");
             expect(initialStat).has.property("uri").that.equals(uri.toString());
             expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
@@ -636,7 +645,7 @@ describe("NodeFileSystem", function () {
             expect(updatedStat).is.an("object");
             expect(updatedStat).has.property("uri").that.equals(uri.toString());
             expect(fs.statSync(FileUri.fsPath(uri)).isFile()).to.be.true;
-            expect(updatedStat.lastModification).to.be.greaterThan(initialStat.lastModification);
+            expect(updatedStat.lastModification).to.be.greaterThan(initialStat!.lastModification);
         });
 
     });
@@ -722,7 +731,9 @@ describe("NodeFileSystem", function () {
     describe("#15 currentUserHome", async () => {
 
         it("should exist", async () => {
-            const actual = (await createFileSystem().getCurrentUserHome()).uri.toString();
+            const userHome = await createFileSystem().getCurrentUserHome();
+            expect(userHome).to.not.be.undefined;
+            const actual = userHome!.uri.toString();
             const expected = FileUri.create(os.homedir()).toString();
             expect(expected).to.be.equal(actual);
         });

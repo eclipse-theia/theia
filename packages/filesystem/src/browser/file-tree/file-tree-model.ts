@@ -39,10 +39,12 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
     set location(uri: URI | undefined) {
         if (uri) {
             this.fileSystem.getFileStat(uri.toString()).then(async fileStat => {
-                const label = this.labelProvider.getName(uri);
-                const icon = await this.labelProvider.getIcon(fileStat);
-                const node = DirNode.createRoot(fileStat, label, icon);
-                this.navigateTo(node);
+                if (fileStat) {
+                    const label = this.labelProvider.getName(uri);
+                    const icon = await this.labelProvider.getIcon(fileStat);
+                    const node = DirNode.createRoot(fileStat, label, icon);
+                    this.navigateTo(node);
+                }
             });
         } else {
             this.navigateTo(undefined);
@@ -201,8 +203,8 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
         const uri = base.toString();
         const encoding = 'base64';
         const content = base64.fromByteArray(new Uint8Array(fileContent));
-        if (await this.fileSystem.exists(uri)) {
-            const stat = await this.fileSystem.getFileStat(uri);
+        const stat = await this.fileSystem.getFileStat(uri);
+        if (stat) {
             if (!stat.isDirectory) {
                 await this.fileSystem.setContent(stat, content, { encoding });
             }
@@ -210,5 +212,4 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
             await this.fileSystem.createFile(uri, { content, encoding });
         }
     }
-
 }

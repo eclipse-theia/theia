@@ -12,7 +12,7 @@ import URI from '@theia/core/lib/common/uri';
 import { SelectionService, CommandService } from '@theia/core/lib/common';
 import { CommonCommands } from '@theia/core/lib/browser/common-frontend-contribution';
 import { ContextMenuRenderer, TreeProps, TreeModel, TreeNode, LabelProvider, Widget, SelectableTreeNode } from '@theia/core/lib/browser';
-import { FileTreeWidget, DirNode } from '@theia/filesystem/lib/browser';
+import { FileTreeWidget, DirNode, FileNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { FileNavigatorModel } from './navigator-model';
@@ -89,15 +89,9 @@ export class FileNavigatorWidget extends FileTreeWidget {
         const mainPanelNode = this.shell.mainPanel.node;
         this.addEventListener(mainPanelNode, 'drop', async e => {
             const treeNode = this.getTreeNodeFromData(e.dataTransfer);
-            if (treeNode) {
-                const { id } = treeNode;
-                const exists = await this.fileSystem.exists(id);
-                if (exists) {
-                    const fileStat = await this.fileSystem.getFileStat(id);
-                    if (!fileStat.isDirectory) {
-                        this.commandService.executeCommand(CommonCommands.OPEN.id, new URI(id));
-                    }
-                }
+
+            if (FileNode.is(treeNode)) {
+                this.commandService.executeCommand(CommonCommands.OPEN.id, treeNode.uri);
             }
         });
         const handler = (e: DragEvent) => {

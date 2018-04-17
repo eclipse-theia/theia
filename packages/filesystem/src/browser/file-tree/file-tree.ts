@@ -21,15 +21,22 @@ export class FileTree extends TreeImpl {
     async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (FileStatNode.is(parent)) {
             const fileStat = await this.resolveFileStat(parent);
-            return this.toNodes(fileStat, parent);
+            if (fileStat) {
+                return this.toNodes(fileStat, parent);
+            }
+
+            return [];
         }
         return super.resolveChildren(parent);
     }
 
-    protected resolveFileStat(node: FileStatNode): Promise<FileStat> {
+    protected resolveFileStat(node: FileStatNode): Promise<FileStat | undefined> {
         return this.fileSystem.getFileStat(node.fileStat.uri).then(fileStat => {
-            node.fileStat = fileStat;
-            return fileStat;
+            if (fileStat) {
+                node.fileStat = fileStat;
+                return fileStat;
+            }
+            return undefined;
         });
     }
 
