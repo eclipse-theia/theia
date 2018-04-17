@@ -50,15 +50,17 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
         this.workspaceService.root.then(async resolvedRoot => {
             const root = resolvedRoot || await this.fileSystem.getCurrentUserHome();
             if (root) {
-                const rootUri = new URI(root.uri).parent;
-                const rootStat = await this.fileSystem.getFileStat(rootUri.toString());
-                const name = this.labelProvider.getName(rootUri);
-                const label = await this.labelProvider.getIcon(root);
-                const rootNode = DirNode.createRoot(rootStat, name, label);
-                const dialog = this.fileDialogFactory({ title: WorkspaceCommands.OPEN.label! });
-                dialog.model.navigateTo(rootNode);
-                const node = await dialog.open();
-                this.openFile(node);
+                const parentUri = new URI(root.uri).parent;
+                const parentStat = await this.fileSystem.getFileStat(parentUri.toString());
+                if (parentStat) {
+                    const name = this.labelProvider.getName(parentUri);
+                    const label = await this.labelProvider.getIcon(root);
+                    const rootNode = DirNode.createRoot(parentStat, name, label);
+                    const dialog = this.fileDialogFactory({ title: WorkspaceCommands.OPEN.label! });
+                    dialog.model.navigateTo(rootNode);
+                    const node = await dialog.open();
+                    this.openFile(node);
+                }
             }
         });
     }

@@ -21,7 +21,7 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
      *
      * Reject if a file for the given uri does not exist.
      */
-    getFileStat(uri: string): Promise<FileStat>;
+    getFileStat(uri: string): Promise<FileStat | undefined>;
 
     /**
      * Finds out if a file identified by the resource exists.
@@ -104,7 +104,7 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
     /**
      * Returns a promise the resolves to a file stat representing the current user's home directory.
      */
-    getCurrentUserHome(): Promise<FileStat>;
+    getCurrentUserHome(): Promise<FileStat | undefined>;
 
 }
 

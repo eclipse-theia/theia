@@ -68,8 +68,10 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
                                 fromRevision
                             }
                         };
-                        if (fileStat.isDirectory) {
-                            this.showWidget(options);
+                        if (fileStat) {
+                            if (fileStat.isDirectory) {
+                                this.showWidget(options);
+                            }
                         } else {
                             const fromURI = fileUri.withScheme(GIT_RESOURCE_SCHEME).withQuery(fromRevision);
                             const toURI = fileUri;

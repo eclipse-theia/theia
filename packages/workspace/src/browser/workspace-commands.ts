@@ -80,7 +80,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(FrontendApplication) protected readonly app: FrontendApplication,
-        @inject(MessageService) protected readonly messageService: MessageService,
+        @inject(MessageService) protected readonly messageService: MessageService
+
     ) { }
 
     registerCommands(registry: CommandRegistry): void {
@@ -96,45 +97,51 @@ export class WorkspaceCommandContribution implements CommandContribution {
         });
         registry.registerCommand(WorkspaceCommands.NEW_FILE, this.newWorkspaceRootUriAwareCommandHandler({
             execute: uri => this.getDirectory(uri).then(parent => {
-                const parentUri = new URI(parent.uri);
-                const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled', '.txt');
-                const dialog = new SingleTextInputDialog({
-                    title: `New File`,
-                    initialValue: vacantChildUri.path.base,
-                    validate: name => this.validateFileName(name, parent)
-                });
-                dialog.open().then(name => {
-                    const fileUri = parentUri.resolve(name);
-                    this.fileSystem.createFile(fileUri.toString()).then(() => {
-                        open(this.openerService, fileUri);
+                if (parent) {
+                    const parentUri = new URI(parent.uri);
+                    const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled', '.txt');
+                    const dialog = new SingleTextInputDialog({
+                        title: `New File`,
+                        initialValue: vacantChildUri.path.base,
+                        validate: name => this.validateFileName(name, parent)
                     });
-                });
+                    dialog.open().then(name => {
+                        const fileUri = parentUri.resolve(name);
+                        this.fileSystem.createFile(fileUri.toString()).then(() => {
+                            open(this.openerService, fileUri);
+                        });
+                    });
+                }
             })
         }));
         registry.registerCommand(WorkspaceCommands.NEW_FOLDER, this.newWorkspaceRootUriAwareCommandHandler({
             execute: uri => this.getDirectory(uri).then(parent => {
-                const parentUri = new URI(parent.uri);
-                const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled');
-                const dialog = new SingleTextInputDialog({
-                    title: `New Folder`,
-                    initialValue: vacantChildUri.path.base,
-                    validate: name => this.validateFileName(name, parent)
-                });
-                dialog.open().then(name =>
-                    this.fileSystem.createFolder(parentUri.resolve(name).toString())
-                );
+                if (parent) {
+                    const parentUri = new URI(parent.uri);
+                    const vacantChildUri = this.findVacantChildUri(parentUri, parent, 'Untitled');
+                    const dialog = new SingleTextInputDialog({
+                        title: `New Folder`,
+                        initialValue: vacantChildUri.path.base,
+                        validate: name => this.validateFileName(name, parent)
+                    });
+                    dialog.open().then(name =>
+                        this.fileSystem.createFolder(parentUri.resolve(name).toString())
+                    );
+                }
             })
         }));
         registry.registerCommand(WorkspaceCommands.FILE_RENAME, this.newUriAwareCommandHandler({
             execute: uri => this.getParent(uri).then(parent => {
-                const dialog = new SingleTextInputDialog({
-                    title: 'Rename File',
-                    initialValue: uri.path.base,
-                    validate: name => this.validateFileName(name, parent)
-                });
-                dialog.open().then(name =>
-                    this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString())
-                );
+                if (parent) {
+                    const dialog = new SingleTextInputDialog({
+                        title: 'Rename File',
+                        initialValue: uri.path.base,
+                        validate: name => this.validateFileName(name, parent)
+                    });
+                    dialog.open().then(name =>
+                        this.fileSystem.move(uri.toString(), uri.parent.resolve(name).toString())
+                    );
+                }
             })
         }));
         registry.registerCommand(WorkspaceCommands.FILE_DELETE, this.newMultiUriAwareCommandHandler({
@@ -181,23 +188,25 @@ export class WorkspaceCommandContribution implements CommandContribution {
                         this.fileSystem.getFileStat(left.toString()),
                         this.fileSystem.getFileStat(right.toString()),
                     ]);
-                    if (!leftStat.isDirectory && !rightStat.isDirectory) {
-                        const uri = DiffUris.encode(left, right);
-                        const opener = await this.openerService.getOpener(uri);
-                        opener.open(uri);
-                    } else {
-                        const details = (() => {
-                            if (leftStat.isDirectory && rightStat.isDirectory) {
-                                return 'Both resource were a directory.';
-                            } else {
-                                if (leftStat.isDirectory) {
-                                    return `'${left.path.base}' was a directory.`;
+                    if (leftStat && rightStat) {
+                        if (!leftStat.isDirectory && !rightStat.isDirectory) {
+                            const uri = DiffUris.encode(left, right);
+                            const opener = await this.openerService.getOpener(uri);
+                            opener.open(uri);
+                        } else {
+                            const details = (() => {
+                                if (leftStat.isDirectory && rightStat.isDirectory) {
+                                    return 'Both resource were a directory.';
                                 } else {
-                                    return `'${right.path.base}' was a directory.`;
+                                    if (leftStat.isDirectory) {
+                                        return `'${left.path.base}' was a directory.`;
+                                    } else {
+                                        return `'${right.path.base}' was a directory.`;
+                                    }
                                 }
-                            }
-                        });
-                        this.messageService.warn(`Directories cannot be compared. ${details()}`);
+                            });
+                            this.messageService.warn(`Directories cannot be compared. ${details()}`);
+                        }
                     }
                 }
             }
@@ -237,15 +246,15 @@ export class WorkspaceCommandContribution implements CommandContribution {
         return '';
     }
 
-    protected async getDirectory(candidate: URI): Promise<FileStat> {
+    protected async getDirectory(candidate: URI): Promise<FileStat | undefined> {
         const stat = await this.fileSystem.getFileStat(candidate.toString());
-        if (stat.isDirectory) {
+        if (stat && stat.isDirectory) {
             return stat;
         }
         return this.getParent(candidate);
     }
 
-    protected getParent(candidate: URI): Promise<FileStat> {
+    protected getParent(candidate: URI): Promise<FileStat | undefined> {
         return this.fileSystem.getFileStat(candidate.parent.toString());
     }
 
