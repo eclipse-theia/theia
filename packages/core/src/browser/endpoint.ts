@@ -8,7 +8,7 @@
 import URI from "../common/uri";
 
 /**
- * An endpoint provides URLs for http and ws, based on configuration ansd defaults.
+ * An endpoint provides URLs for http and ws, based on configuration and defaults.
  */
 export class Endpoint {
     static readonly PROTO_HTTPS: string = "https:";
@@ -102,7 +102,7 @@ export namespace Endpoint {
         path?: string;
     }
 
-    // Necessary for running tests with dependecy on TS lib on node
+    // Necessary for running tests with dependency on TS lib on node
     // FIXME figure out how to mock with ts-node
     export class Location {
         host: string;

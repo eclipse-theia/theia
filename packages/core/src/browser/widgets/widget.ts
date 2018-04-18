@@ -147,7 +147,7 @@ export namespace EventListenerObject {
 }
 export type EventListenerOrEventListenerObject<K extends keyof HTMLElementEventMap> = EventListener<K> | EventListenerObject<K>;
 export function addEventListener<K extends keyof HTMLElementEventMap>(
-    element: HTMLElement, type: K, listener: EventListenerOrEventListenerObject<K>, useCapture?: boolean
+    element: HTMLElement | Window, type: K, listener: EventListenerOrEventListenerObject<K>, useCapture?: boolean
 ): Disposable {
     element.addEventListener(type, listener, useCapture);
     return Disposable.create(() =>
@@ -156,7 +156,7 @@ export function addEventListener<K extends keyof HTMLElementEventMap>(
 }
 
 export function addKeyListener<K extends keyof HTMLElementEventMap>(
-    element: HTMLElement,
+    element: HTMLElement | Window,
     keysOrKeyCodes: KeyCode.Predicate | KeysOrKeyCodes,
     action: (event: KeyboardEvent) => void, ...additionalEventTypes: K[]): Disposable {
 
