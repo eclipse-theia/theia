@@ -22,9 +22,13 @@ export class MergeConflictsDecorations {
         const newDecorations: EditorDecoration[] = [];
         for (const mergeConflict of mergeConflicts) {
             newDecorations.push({ range: mergeConflict.current.marker!, options: MergeConflictsDecorations.Options.CurrentMarker });
-            newDecorations.push({ range: mergeConflict.current.content!, options: MergeConflictsDecorations.Options.CurrentContent });
+            if (mergeConflict.current.content) {
+                newDecorations.push({ range: mergeConflict.current.content!, options: MergeConflictsDecorations.Options.CurrentContent });
+            }
             newDecorations.push({ range: mergeConflict.incoming.marker!, options: MergeConflictsDecorations.Options.IncomingMarker });
-            newDecorations.push({ range: mergeConflict.incoming.content!, options: MergeConflictsDecorations.Options.IncomingContent });
+            if (mergeConflict.incoming.content) {
+                newDecorations.push({ range: mergeConflict.incoming.content!, options: MergeConflictsDecorations.Options.IncomingContent });
+            }
             for (const base of mergeConflict.bases) {
                 if (base.marker) {
                     newDecorations.push({ range: base.marker, options: MergeConflictsDecorations.Options.BaseMarker });
