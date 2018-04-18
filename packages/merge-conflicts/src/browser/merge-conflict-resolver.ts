@@ -41,13 +41,13 @@ export class MergeConflictResolver {
 
     protected doAcceptBoth(argument: MergeConflictCommandArgument) {
         this.doAccept(argument, (textOfRange, conflict) => {
-            const currentText = textOfRange(conflict.current.content!);
-            const incomingText = textOfRange(conflict.incoming.content!);
+            const currentText = textOfRange(conflict.current.content);
+            const incomingText = textOfRange(conflict.incoming.content);
             return `${currentText}\n${incomingText}`;
         });
     }
 
-    protected doAccept(argument: MergeConflictCommandArgument, newTextFn: ((textOfRange: (range: Range) => string, conflict: MergeConflict) => string)) {
+    protected doAccept(argument: MergeConflictCommandArgument, newTextFn: ((textOfRange: (range: Range | undefined) => string, conflict: MergeConflict) => string)) {
         const { uri, conflict } = argument;
         const document = this.workspace.textDocuments.find(d => d.uri === uri);
         if (document) {
@@ -58,7 +58,10 @@ export class MergeConflictResolver {
         }
     }
 
-    protected getTextRange(range: Range, document: TextDocument): string {
+    protected getTextRange(range: Range | undefined, document: TextDocument): string {
+        if (!range) {
+            return '';
+        }
         const start = document.offsetAt(range.start);
         const end = document.offsetAt(range.end);
         const text = document.getText().substring(start, end);
