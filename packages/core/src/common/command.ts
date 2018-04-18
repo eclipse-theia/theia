@@ -101,6 +101,10 @@ export class CommandRegistry implements CommandService {
      * Throw if a command is already registered for the given command identifier.
      */
     registerCommand(command: Command, handler?: CommandHandler): Disposable {
+        if (this._commands[command.id]) {
+            console.warn(`A command ${command.id} is already registered.`);
+            return Disposable.NULL;
+        }
         if (handler) {
             const toDispose = new DisposableCollection();
             toDispose.push(this.doRegisterCommand(command));
@@ -111,9 +115,6 @@ export class CommandRegistry implements CommandService {
     }
 
     protected doRegisterCommand(command: Command): Disposable {
-        if (this._commands[command.id]) {
-            throw Error(`A command ${command.id} is already registered.`);
-        }
         this._commands[command.id] = command;
         return {
             dispose: () => {
