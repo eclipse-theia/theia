@@ -18,6 +18,8 @@ import { OutlineSymbolInformationNode } from '@theia/outline-view/lib/browser/ou
 import URI from "@theia/core/lib/common/uri";
 import { MonacoEditor } from './monaco-editor';
 
+import debounce = require('lodash.debounce');
+
 @injectable()
 export class MonacoOutlineContribution implements FrontendApplicationContribution {
 
@@ -35,15 +37,13 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         this.outlineViewService.onDidChangeOpenState(async isOpen => {
             this.updateOutline();
         });
-        // let's skip the initial current Editor change event, as on reload it comes before the language sevrers have started,
+        // let's skip the initial current Editor change event, as on reload it comes before the language server have started,
         // resulting in an empty outline.
         setTimeout(() => {
-            this.editorManager.onCurrentEditorChanged(widget => this.updateOutlineForEditor(widget));
+            this.editorManager.onCurrentEditorChanged(debounce(widget => this.updateOutlineForEditor(widget), 50));
         }, 3000);
 
-        DocumentSymbolProviderRegistry.onDidChange(event => {
-            this.updateOutline();
-        });
+        DocumentSymbolProviderRegistry.onDidChange(debounce(event => this.updateOutline()));
 
         this.outlineViewService.onDidSelect(async node => {
             if (MonacoOutlineSymbolInformationNode.is(node) && node.parent) {
@@ -102,12 +102,17 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         this.cancellationSource = new CancellationTokenSource();
         const token = this.cancellationSource.token;
         for (const documentSymbolProvider of documentSymbolProviders) {
-            const symbolInformation = await documentSymbolProvider.provideDocumentSymbols(model, token);
-            if (token.isCancellationRequested) {
+            try {
+                const symbolInformation = await documentSymbolProvider.provideDocumentSymbols(model, token);
+                if (token.isCancellationRequested) {
+                    return [];
+                }
+                if (Array.isArray(symbolInformation)) {
+                    entries.push(...symbolInformation);
+                }
+            } catch {
+                // happens if `provideDocumentSymbols` promise is rejected.
                 return [];
-            }
-            if (Array.isArray(symbolInformation)) {
-                entries.push(...symbolInformation);
             }
         }
 
