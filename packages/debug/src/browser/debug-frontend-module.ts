@@ -11,6 +11,7 @@
 
 import { ContainerModule, interfaces } from 'inversify';
 import { DebugCommandHandlers } from "./debug-command";
+import { DebugConfigurationManager } from './debug-configuration';
 import { DebugClientFactory, DebugClientManager } from "./debug-client";
 import { MenuContribution } from "@theia/core/lib/common/menu";
 import { CommandContribution } from "@theia/core/lib/common/command";
@@ -22,5 +23,6 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(DebugClientManager).toSelf().inSingletonScope();
     bind(MenuContribution).to(DebugCommandHandlers);
     bind(CommandContribution).to(DebugCommandHandlers);
+    bind(DebugConfigurationManager).toSelf().inSingletonScope();
     bind(DebugService).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, DebugPath)).inSingletonScope();
 });

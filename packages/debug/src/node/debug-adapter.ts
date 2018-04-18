@@ -114,15 +114,14 @@ export class LauncherBasedDebugAdapterFactory implements DebugAdapterFactory {
 }
 
 class MessageForwarder implements Disposable {
-    dispose(): void {
-        throw new Error("Method not implemented.");
-    }
     private static TWO_CRLF = '\r\n\r\n';
 
     private contentLength: number;
     private buffer: Buffer;
 
-    constructor(protected readonly websocket: IWebSocket, protected readonly communicationProvider: CommunicationProvider) { }
+    constructor(
+        protected readonly websocket: IWebSocket,
+        protected readonly communicationProvider: CommunicationProvider) { }
 
     start() {
         this.contentLength = -1;
@@ -168,4 +167,6 @@ class MessageForwarder implements Disposable {
             break;
         }
     }
+
+    dispose(): void { }
 }

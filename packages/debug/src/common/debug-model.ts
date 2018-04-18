@@ -56,20 +56,18 @@ export interface DebugService extends Disposable {
     /**
      * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
      * or by adding/changing/removing attributes.
-     * @param debugType The registered debug type
      * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
      * @returns The resolved debug configuration.
      */
-    resolveDebugConfiguration(debugType: string, config: DebugConfiguration): Promise<DebugConfiguration | undefined>;
+    resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration | undefined>;
 
     /**
      * Starts a new [debug session](#DebugSession).
      * Returning the value 'undefined' means the debug session can't be started.
-     * @param debugType The registered debug type
      * @param config The resolved [debug configuration](#DebugConfiguration).
      * @returns The identifier of the created [debug session](#DebugSession).
      */
-    startDebugSession(debugType: string, config: DebugConfiguration): Promise<string>;
+    startDebugSession(config: DebugConfiguration): Promise<string>;
 }
 
 /**
