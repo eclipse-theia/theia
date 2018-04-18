@@ -4,13 +4,15 @@ const path = require('path');
 const gulp = require('gulp');
 const cp = require('child_process');
 const decompress = require('gulp-decompress');
-const download = require('gulp-download');
+const download = require('gulp-downloader');
 const serverDir = '../../../eclipse.jdt.ls';
 const downloadDir = 'download';
 const extensionDir = 'lib/node/server';
-const archiveUri = "http://download.eclipse.org/jdtls/snapshots/jdt-language-server-latest.tar.gz"
+const packageJson = require('./package.json');
+const serverPath = packageJson['jdt.ls.download.path'] || '/jdtls/snapshots/jdt-language-server-latest.tar.gz';
+const archiveUri = `https://www.eclipse.org/downloads/download.php?file=${serverPath}&r=1`;
 const downloadPath = path.join(__dirname, downloadDir);
-const archivePath = path.join(downloadPath, path.basename(archiveUri));
+const archivePath = path.join(downloadPath, path.basename(serverPath));
 
 function decompressArchive() {
     gulp.src(archivePath)
@@ -22,7 +24,11 @@ gulp.task('download_java_server', () => {
     if (fs.existsSync(archivePath)) {
         decompressArchive();
     } else {
-        download(archiveUri)
+        download({fileName: path.basename(serverPath),
+                   request: {
+                      url: archiveUri
+                    }
+                })
             .pipe(gulp.dest(downloadPath))
             .on('end', () =>
                 decompressArchive()
