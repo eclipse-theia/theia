@@ -40,12 +40,13 @@ function load(raw) {
 
 function start(port, host) {
     const cliManager = container.get(CliManager);
-    cliManager.initializeCli();
-    const application = container.get(BackendApplication);
-    application.use(express.static(path.join(__dirname, '../../lib'), {
-        index: 'index.html'
-    }));
-    return application.start(port, host);
+    return cliManager.initializeCli().then(function () {
+        const application = container.get(BackendApplication);
+        application.use(express.static(path.join(__dirname, '../../lib'), {
+            index: 'index.html'
+        }));
+        return application.start(port, host);
+    });
 }
 
 module.exports = (port, host) => Promise.resolve()${this.compileBackendModuleImports(backendModules)}

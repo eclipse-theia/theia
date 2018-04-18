@@ -46,7 +46,7 @@ describe('CliManager', () => {
             }
         });
         mnr.setArgs('-f', "bla");
-        mnr.initializeCli();
+        await mnr.initializeCli();
         chai.assert.equal(await value.promise, 'bla');
     });
 
@@ -62,20 +62,20 @@ describe('CliManager', () => {
             }
         });
         mnr.setArgs('--foo');
-        mnr.initializeCli();
+        await mnr.initializeCli();
         chai.assert.equal(await value.promise, 'my-default');
     });
 
-    it("prints help and exits", () =>
-        assertExits(() => {
+    it("prints help and exits", async () =>
+        await assertExits(async () => {
             const mnr = new TestCliManager();
             mnr.setArgs('--help');
-            mnr.initializeCli();
+            await mnr.initializeCli();
         })
     );
 });
 
-function assertExits(code: () => void): Promise<void> {
+async function assertExits(code: () => Promise<void>): Promise<void> {
     const oldExit = process.exit;
     const exitCalled = new Deferred<void>();
     const exitError = new Error();
@@ -83,7 +83,7 @@ function assertExits(code: () => void): Promise<void> {
         throw exitError;
     };
     try {
-        code();
+        await code();
         exitCalled.reject();
     } catch (err) {
         if (err === exitError) {

@@ -8,6 +8,7 @@
 import * as yargs from 'yargs';
 import { inject, named, injectable } from 'inversify';
 import { ContributionProvider } from '../common/contribution-provider';
+import { MaybePromise } from '../common/types';
 
 export const CliContribution = Symbol('CliContribution');
 
@@ -18,16 +19,16 @@ export interface CliContribution {
 
     configure(conf: yargs.Argv): void;
 
-    setArguments(args: yargs.Arguments): void;
+    setArguments(args: yargs.Arguments): MaybePromise<void>
 }
 
 @injectable()
 export class CliManager {
 
-    constructor( @inject(ContributionProvider) @named(CliContribution)
+    constructor(@inject(ContributionProvider) @named(CliContribution)
     protected readonly contributionsProvider: ContributionProvider<CliContribution>) { }
 
-    initializeCli(): void {
+    async initializeCli(): Promise<void> {
         const pack = require('../../package.json');
         const version = pack.version;
         const command = yargs.version(version);
@@ -41,7 +42,7 @@ export class CliManager {
             .help('help')
             .parse(this.getArgs());
         for (const contrib of this.contributionsProvider.getContributions()) {
-            contrib.setArguments(args);
+            await contrib.setArguments(args);
         }
     }
 
