@@ -61,12 +61,11 @@ export class DebugAdapterContributionRegistry {
     /**
      * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
      * or by adding/changing/removing attributes.
-     * @param debugType The registered debug type
      * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
      * @returns The resolved debug configuration.
      */
-    resolveDebugConfiguration(debugType: string, config: DebugConfiguration): DebugConfiguration | undefined {
-        const contrib = this.contribs.get(debugType);
+    resolveDebugConfiguration(config: DebugConfiguration): DebugConfiguration | undefined {
+        const contrib = this.contribs.get(config.type);
         if (contrib) {
             return contrib.resolveDebugConfiguration(config);
         }
@@ -75,12 +74,11 @@ export class DebugAdapterContributionRegistry {
     /**
      * Provides a [debug adapter executable](#DebugAdapterExecutable)
      * based on [debug configuration](#DebugConfiguration) to launch a new debug adapter.
-     * @param debugType The registered debug type
      * @param config The resolved [debug configuration](#DebugConfiguration).
      * @returns The [debug adapter executable](#DebugAdapterExecutable).
      */
-    provideDebugAdapterExecutable(debugType: string, config: DebugConfiguration): DebugAdapterExecutable | undefined {
-        const contrib = this.contribs.get(debugType);
+    provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable | undefined {
+        const contrib = this.contribs.get(config.type);
         if (contrib) {
             return contrib.provideDebugAdapterExecutable(config);
         }
@@ -166,12 +164,12 @@ export class DebugServiceImpl implements DebugService {
         return this.registry.provideDebugConfigurations(debugType);
     }
 
-    async resolveDebugConfiguration(debugType: string, config: DebugConfiguration): Promise<DebugConfiguration | undefined> {
-        return this.registry.resolveDebugConfiguration(debugType, config);
+    async resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration | undefined> {
+        return this.registry.resolveDebugConfiguration(config);
     }
 
-    async startDebugSession(debugType: string, config: DebugConfiguration): Promise<string> {
-        const executable = this.registry.provideDebugAdapterExecutable(debugType, config);
+    async startDebugSession(config: DebugConfiguration): Promise<string> {
+        const executable = this.registry.provideDebugAdapterExecutable(config);
         if (executable) {
             const session = this.sessionManager.create(executable);
             return session.then(function (session) {
@@ -179,7 +177,7 @@ export class DebugServiceImpl implements DebugService {
             });
         }
 
-        return Promise.reject(`Can't start debug session for ${debugType}`);
+        return Promise.reject(`Can't start debug session for ${config.type}`);
     }
 
     async dispose(): Promise<void> { }
