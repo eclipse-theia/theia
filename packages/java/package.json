@@ -14,7 +14,7 @@
     "@theia/ext-scripts": "^0.3.8",
     "gulp": "^3.9.1",
     "gulp-decompress": "^2.0.1",
-    "gulp-download": "0.0.1"
+    "gulp-downloader": "1.0.4"
   },
   "scripts": {
     "prepare": "yarn run clean && yarn run build",
@@ -51,5 +51,6 @@
   ],
   "nyc": {
     "extends": "../../configs/nyc.json"
-  }
+  },
+  "jdt.ls.download.path" : "/jdtls/milestones/0.17.0/jdt-language-server-0.17.0-201804162308.tar.gz"
 }
