@@ -96,7 +96,8 @@ export class NsfwFileSystemWatcherServer implements FileSystemWatcherServer {
         if (options.ignored.length > 0) {
             this.debug('Files ignored for watching', options.ignored);
         }
-        const watcher = await nsfw(fs.realpathSync(basePath), events => {
+
+        const watcher: nsfw.NSFW = await nsfw(fs.realpathSync(basePath), (events: nsfw.ChangeEvent[]) => {
             for (const event of events) {
                 if (event.action === nsfw.actions.CREATED) {
                     this.pushAdded(watcherId, paths.join(event.directory, event.file!));

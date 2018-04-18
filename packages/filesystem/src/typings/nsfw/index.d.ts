@@ -1,40 +1,39 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+/*
+ * Copyright (C) 2018 Ericsson and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
 
 declare module 'nsfw' {
-	interface NsfwWatcher {
-		start(): any;
-		stop(): any;
-	}
+    function nsfw(dir: string, eventHandler: (events: ChangeEvent[]) => void, options?: Options): Promise<NSFW>;
 
-	interface NsfwWatchingPromise {
-		then(): void;
-	}
+    namespace nsfw {
+        export interface NSFW {
+            start(): Promise<void>;
+            stop(): Promise<void>;
+        }
 
-	interface NsfwStartWatchingPromise {
-		then(fn: (watcher: NsfwWatcher) => void): NsfwWatchingPromise;
-	}
+        export interface Options {
+            debounceMS?: number;
+            errorCallback?: (error: string) => void;
+        }
 
-	interface NsfwEvent {
-		action: number;
-		directory: string;
-		file?: string;
-		newFile?: string;
-		oldFile?: string;
-	}
+        export interface ChangeEvent {
+            action: number;
+            directory: string;
+            file?: string;
+            oldFile?: string;
+            newFile?: string;
+        }
 
-	interface NsfwFunction {
-		(dir: string, eventHandler: (events: NsfwEvent[]) => void, options?: any): NsfwStartWatchingPromise;
-		actions: {
-			CREATED: number;
-			DELETED: number;
-			MODIFIED: number;
-			RENAMED: number;
-		}
-	}
+        export enum actions {
+            CREATED,
+            DELETED,
+            MODIFIED,
+            RENAMED,
+        }
+    }
 
-	var nsfw: NsfwFunction;
-	export = nsfw;
+    export = nsfw;
 }
