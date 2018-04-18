@@ -102,9 +102,8 @@ export class DebugClientFactory {
         protected readonly connectionProvider: WebSocketConnectionProvider
     ) { }
 
-    get(sessionId: string): Promise<DebugClient> {
-        const debugClient = new BaseDebugClient(sessionId, this.connectionProvider);
-        return debugClient.connect().then(() => debugClient);
+    get(sessionId: string): DebugClient {
+        return new BaseDebugClient(sessionId, this.connectionProvider);
     }
 }
 
@@ -127,29 +126,23 @@ export class DebugClientManager {
      * @param sessionId The session identifier
      * @returns The debug client
      */
-    create(sessionId: string): Promise<DebugClient> {
+    create(sessionId: string): DebugClient {
         const client = this.debugClientFactory.get(sessionId);
-        client.then(client => this.clients.set(sessionId, client));
+        this.clients.set(sessionId, client);
         return client;
     }
 
     /**
-     * Disposes the [debug client](#DebugClient).
+     * Removes the [debug client](#DebugClient).
      * @param sessionId The session identifier
      */
-    dispose(sessionId: string): void {
-        const debugClient = this.clients.get(sessionId);
-
-        if (debugClient) {
-            debugClient.dispose();
-            this.clients.delete(sessionId);
-
-            if (this.activeSessionId === sessionId) {
-                if (this.clients.size !== 0) {
-                    this.setActiveDebugClient(this.clients.values().next().value);
-                } else {
-                    this.setActiveDebugClient(undefined);
-                }
+    remove(sessionId: string): void {
+        this.clients.delete(sessionId);
+        if (this.activeSessionId === sessionId) {
+            if (this.clients.size !== 0) {
+                this.setActiveDebugClient(this.clients.values().next().value);
+            } else {
+                this.setActiveDebugClient(undefined);
             }
         }
     }

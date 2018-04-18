@@ -18,10 +18,15 @@ import {
 
 @injectable()
 export class NodeJsDebugAdapterContribution implements DebugAdapterContribution {
-    readonly debugType = "Node Js";
+    readonly debugType = "node";
 
     provideDebugConfigurations(): DebugConfiguration[] {
-        return [{ name: "", type: "" }];
+        return [{
+            "type": this.debugType,
+            "request": "attach",
+            "name": "Attach by Process ID",
+            "processId": ""
+        }];
     }
 
     resolveDebugConfiguration(config: DebugConfiguration): DebugConfiguration | undefined {
