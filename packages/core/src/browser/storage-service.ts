@@ -35,7 +35,9 @@ interface LocalStorage {
 export class LocalStorageService implements StorageService {
     private storage: LocalStorage;
 
-    constructor(@inject(ILogger) protected logger: ILogger) {
+    constructor(
+        @inject(ILogger) protected logger: ILogger
+    ) {
         if (typeof window !== 'undefined' && window.localStorage) {
             this.storage = window.localStorage;
         } else {
@@ -62,6 +64,7 @@ export class LocalStorageService implements StorageService {
     }
 
     protected prefix(key: string): string {
-        return 'theia:' + key;
+        const pathname = typeof window === 'undefined' ? '' : window.location.pathname;
+        return `theia:${pathname}:${key}`;
     }
 }
