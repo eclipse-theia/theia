@@ -199,7 +199,7 @@ export class FrontendApplication {
         try {
             return await this.layoutRestorer.restoreLayout(this);
         } catch (error) {
-            this.logger.error(error.toString());
+            this.logger.error('Could not restore layout', error);
             return false;
         }
     }
@@ -224,8 +224,8 @@ export class FrontendApplication {
             if (contribution.initialize) {
                 try {
                     contribution.initialize();
-                } catch (err) {
-                    this.logger.error(err.toString());
+                } catch (error) {
+                    this.logger.error('Could not initialize contribution', error);
                 }
             }
         }
@@ -242,8 +242,8 @@ export class FrontendApplication {
             if (contribution.onStart) {
                 try {
                     await contribution.onStart(this);
-                } catch (err) {
-                    this.logger.error(err.toString());
+                } catch (error) {
+                    this.logger.error('Could not start contribution', error);
                 }
             }
         }
@@ -257,8 +257,8 @@ export class FrontendApplication {
             if (contribution.onStop) {
                 try {
                     contribution.onStop(this);
-                } catch (err) {
-                    this.logger.error(err.toString());
+                } catch (error) {
+                    this.logger.error('Could not stop contribution', error);
                 }
             }
         }

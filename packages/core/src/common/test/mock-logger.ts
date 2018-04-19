@@ -27,7 +27,7 @@ export class MockLogger implements ILogger {
         return Promise.resolve();
     }
 
-    log(logLevel: number, arg2: string | Loggable, ...params: any[]): Promise<void> {
+    log(logLevel: number, arg2: string | Loggable | Error, ...params: any[]): Promise<void> {
         return Promise.resolve();
     }
 
@@ -85,7 +85,7 @@ export class MockLogger implements ILogger {
     ifError(): Promise<void> {
         return Promise.resolve();
     }
-    error(arg: string | Loggable, ...params: any[]): Promise<void> {
+    error(arg: string | Loggable | Error, ...params: any[]): Promise<void> {
         return Promise.resolve();
     }
 
