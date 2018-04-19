@@ -93,9 +93,7 @@ export class FrontendApplication {
         await new Promise(resolve => requestAnimationFrame(() => resolve()));
         await this.initializeLayout();
         await this.revealShell(host);
-
-        window.addEventListener('resize', () => this.shell.update());
-        document.addEventListener('keydown', event => this.keybindings.run(event), true);
+        this.registerEventListeners();
         this.shell.loading = false;
     }
 
@@ -117,6 +115,18 @@ export class FrontendApplication {
     protected getStartupIndicator(host: HTMLElement): HTMLElement | undefined {
         const startupElements = host.getElementsByClassName('theia-preload');
         return startupElements.length === 0 ? undefined : startupElements[0] as HTMLElement;
+    }
+
+    /**
+     * Register global event listeners.
+     */
+    protected registerEventListeners(): void {
+        window.addEventListener('unload', () => {
+            this.layoutRestorer.storeLayout(this);
+            this.stopContributions();
+        });
+        window.addEventListener('resize', () => this.shell.update());
+        document.addEventListener('keydown', event => this.keybindings.run(event), true);
     }
 
     /**
@@ -237,19 +247,21 @@ export class FrontendApplication {
                 }
             }
         }
+    }
 
-        window.onunload = () => {
-            this.layoutRestorer.storeLayout(this);
-            for (const contribution of this.contributions.getContributions()) {
-                if (contribution.onStop) {
-                    try {
-                        contribution.onStop(this);
-                    } catch (err) {
-                        this.logger.error(err.toString());
-                    }
+    /**
+     * Stop the frontent application contributions. This is called when the window is unloaded.
+     */
+    protected stopContributions(): void {
+        for (const contribution of this.contributions.getContributions()) {
+            if (contribution.onStop) {
+                try {
+                    contribution.onStop(this);
+                } catch (err) {
+                    this.logger.error(err.toString());
                 }
             }
-        };
+        }
     }
 
 }
