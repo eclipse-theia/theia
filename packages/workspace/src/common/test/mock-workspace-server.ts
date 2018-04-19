@@ -10,6 +10,8 @@ import { WorkspaceServer } from '../workspace-protocol';
 @injectable()
 export class MockWorkspaceServer implements WorkspaceServer {
 
+    getTheiaId(): Promise<string | undefined> { return Promise.resolve('mock'); }
+
     getRoot(): Promise<string | undefined> { return Promise.resolve(''); }
 
     setRoot(uri: string): Promise<void> { return Promise.resolve(); }

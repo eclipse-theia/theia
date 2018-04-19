@@ -14,6 +14,11 @@ export const WorkspaceServer = Symbol('WorkspaceServer');
 export interface WorkspaceServer {
 
     /**
+     * Returns the random identifier to the running theia instance
+     */
+    getTheiaId(): Promise<string | undefined>;
+
+    /**
      * Returns with a promise that resolves to the workspace root URI as a string. Resolves to `undefined` if the workspace root is not yet set.
      */
     getRoot(): Promise<string | undefined>;

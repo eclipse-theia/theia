@@ -7,7 +7,7 @@
 
 import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { WorkspaceService } from './workspace-service';
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { ILogger } from '@theia/core/lib/common';
 import { LocalStorageService } from '@theia/core/lib/browser/storage-service';
 
@@ -21,16 +21,22 @@ export class WorkspaceStorageService implements StorageService {
     private initialized: Promise<void>;
     protected storageService: StorageService;
 
-    constructor( @inject(WorkspaceService) protected workspaceService: WorkspaceService,
-        @inject(ILogger) protected logger: ILogger) {
-        this.initialized = this.workspaceService.root.then(stat => {
-            if (stat) {
-                this.prefix = stat.uri;
-            } else {
-                this.prefix = '_global_';
-            }
-        });
+    @inject(WorkspaceService)
+    protected workspaceService: WorkspaceService;
+
+    @inject(ILogger)
+    protected logger: ILogger;
+
+    constructor() {
         this.storageService = new LocalStorageService(this.logger);
+    }
+
+    @postConstruct()
+    protected async init(): Promise<void> {
+        const instanceId = await this.workspaceService.getTheiaId();
+        const workspaceId = await this.workspaceService.getWorkspaceId();
+        this.prefix = `${instanceId}:${workspaceId ? workspaceId : '_global_'}`;
+        this.initialized = Promise.resolve();
     }
 
     async setData<T>(key: string, data: T): Promise<void> {

@@ -54,6 +54,17 @@ export class WorkspaceService implements FrontendApplicationContribution {
         this.deferredRoot.resolve(this._root);
     }
 
+    async getTheiaId(): Promise<string | undefined> {
+        return await this.server.getTheiaId();
+    }
+
+    async getWorkspaceId(): Promise<string | undefined> {
+        const stat = await this.root;
+        return stat ?
+            new URI(stat.uri).path.toString() :
+            undefined;
+    }
+
     protected updateTitle(uri: URI): void {
         document.title = uri.displayName;
     }
