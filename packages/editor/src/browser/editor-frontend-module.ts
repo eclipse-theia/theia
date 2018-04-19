@@ -8,6 +8,7 @@
 import { ContainerModule } from 'inversify';
 import { CommandContribution, MenuContribution } from "@theia/core/lib/common";
 import { OpenHandler, WidgetFactory, FrontendApplicationContribution, KeybindingContext, KeybindingContribution } from '@theia/core/lib/browser';
+import { VariableContribution } from '@theia/variable-resolver/lib/browser';
 import { EditorManager } from './editor-manager';
 import { EditorContribution } from './editor-contribution';
 import { EditorMenuContribution } from './editor-menu';
@@ -21,6 +22,7 @@ import { EditorNavigationContribution } from './editor-navigation-contribution';
 import { NavigationLocationUpdater } from './navigation/navigation-location-updater';
 import { NavigationLocationService } from './navigation/navigation-location-service';
 import { NavigationLocationSimilarity } from './navigation/navigation-location-similarity';
+import { EditorVariableContribution } from './editor-variable-contribution';
 
 export default new ContainerModule(bind => {
     bindEditorPreferences(bind);
@@ -48,4 +50,6 @@ export default new ContainerModule(bind => {
     bind(NavigationLocationService).toSelf().inSingletonScope();
     bind(NavigationLocationUpdater).toSelf().inSingletonScope();
     bind(NavigationLocationSimilarity).toSelf().inSingletonScope();
+
+    bind(VariableContribution).to(EditorVariableContribution).inSingletonScope();
 });
