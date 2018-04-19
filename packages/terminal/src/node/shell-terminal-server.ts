@@ -28,7 +28,7 @@ export class ShellTerminalServer extends BaseTerminalServer {
             this.postCreate(term);
             return Promise.resolve(term.id);
         } catch (error) {
-            this.logger.error(`Error while creating terminal: ${error}`);
+            this.logger.error('Error while creating terminal', error);
             return Promise.resolve(-1);
         }
     }

@@ -73,7 +73,7 @@ export class ShellLayoutRestorer implements CommandContribution {
                 this.storageService.setData(this.storageKey, serializedLayoutData);
             } catch (error) {
                 this.storageService.setData(this.storageKey, undefined);
-                this.logger.error(`Error during serialization of layout data: ${error}`);
+                this.logger.error('Error during serialization of layout data', error);
             }
         }
     }

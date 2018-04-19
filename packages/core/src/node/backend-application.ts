@@ -93,8 +93,8 @@ export class BackendApplication {
             if (contribution.initialize) {
                 try {
                     contribution.initialize();
-                } catch (err) {
-                    this.logger.error(err.toString());
+                } catch (error) {
+                    this.logger.error('Could not initialize contribution', error);
                 }
             }
         }
@@ -103,8 +103,8 @@ export class BackendApplication {
             if (contribution.configure) {
                 try {
                     contribution.configure(this.app);
-                } catch (err) {
-                    this.logger.error(err.toString());
+                } catch (error) {
+                    this.logger.error('Could not configure contribution', error);
                 }
             }
         }
@@ -163,8 +163,8 @@ export class BackendApplication {
             if (contrib.onStart) {
                 try {
                     contrib.onStart(server);
-                } catch (err) {
-                    this.logger.error(err.toString());
+                } catch (error) {
+                    this.logger.error('Could not start contribution', error);
                 }
             }
         }
@@ -176,8 +176,8 @@ export class BackendApplication {
             if (contrib.onStop) {
                 try {
                     contrib.onStop(this.app);
-                } catch (err) {
-                    this.logger.error(err);
+                } catch (error) {
+                    this.logger.error('Could not stop contribution', error);
                 }
             }
         }

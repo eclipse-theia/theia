@@ -9,6 +9,8 @@ import { inject, injectable, optional } from 'inversify';
 import { LoggerWatcher } from './logger-watcher';
 import { ILoggerServer } from './logger-protocol';
 
+// tslint:disable:no-any
+
 export enum LogLevel {
     FATAL = 60,
     ERROR = 50,
@@ -104,6 +106,10 @@ export interface ILogger {
      * Log a loggable with the given level if it is enabled.
      */
     log(logLevel: number, loggable: Loggable): Promise<void>;
+    /**
+     * Log an error with the given level if it is enabled.
+     */
+    log(logLevel: number, error: Error): Promise<void>;
     /**
      * Log a message with the given level if it is enabled.
      *
@@ -206,6 +212,10 @@ export interface ILogger {
      */
     error(loggable: Loggable): Promise<void>;
     /**
+     * Log an error, e.g. when received in a `catch` block.
+     */
+    error(error: Error): Promise<void>;
+    /**
      * Log a message with the error level.
      *
      * @param message - The message format string.
@@ -284,7 +294,7 @@ export class Logger implements ILogger {
     }
 
     setLogLevel(logLevel: number): Promise<void> {
-        return new Promise<void>((resolve) => {
+        return new Promise<void>(resolve => {
             this.id.then(id => {
                 this._logLevel.then(oldLevel => {
                     this.server.setLogLevel(id, logLevel).then(() => {
@@ -313,14 +323,21 @@ export class Logger implements ILogger {
             })
         );
     }
-    log(logLevel: number, arg2: string | Loggable, ...params: any[]): Promise<void> {
+    log(logLevel: number, arg2: string | Loggable | Error, ...params: any[]): Promise<void> {
         return this.getLog(logLevel).then(log => {
             if (typeof arg2 === 'string') {
                 const message = arg2;
                 log(message, ...params);
-            } else {
+            } else if (typeof arg2 === 'function') {
                 const loggable = arg2;
                 loggable(log);
+            } else if (arg2) {
+                const message = arg2.toString();
+                if (params.length === 0 && arg2.stack) {
+                    log(message, [arg2.stack]);
+                } else {
+                    log(message, ...params);
+                }
             }
         });
     }
@@ -379,7 +396,7 @@ export class Logger implements ILogger {
     ifError(): Promise<void> {
         return this.ifEnabled(LogLevel.ERROR);
     }
-    error(arg: string | Loggable, ...params: any[]): Promise<void> {
+    error(arg: string | Loggable | Error, ...params: any[]): Promise<void> {
         return this.log(LogLevel.ERROR, arg, ...params);
     }
 

@@ -80,7 +80,7 @@ export abstract class Process {
 
     protected handleOnError(error: Error) {
         this._killed = true;
-        this.logger.error(error.toString());
+        this.logger.error(error);
     }
 
 }
