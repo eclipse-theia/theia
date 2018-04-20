@@ -7,7 +7,7 @@
 import * as path from 'path';
 import * as cp from "child_process";
 import { injectable, inject } from "inversify";
-import { Plugin, HostedPluginClient } from '../common/plugin-protocol';
+import { HostedPluginClient, PluginModel } from '../common/plugin-protocol';
 import { ILogger, ConnectionErrorHandler } from "@theia/core/lib/common";
 import { Emitter } from '@theia/core/lib/common/event';
 import { createIpcEnv } from "@theia/core/lib/node/messaging/ipc-protocol";
@@ -37,8 +37,8 @@ export class HostedPluginSupport {
         this.client = client;
     }
 
-    runPlugin(plugin: Plugin): void {
-        if (plugin.theiaPlugin.node) {
+    runPlugin(plugin: PluginModel): void {
+        if (plugin.entryPoint.backend) {
             this.runPluginServer(plugin);
         }
     }
@@ -75,7 +75,7 @@ export class HostedPluginSupport {
         });
     }
 
-    private runPluginServer(plugin: Plugin): void {
+    private runPluginServer(plugin: PluginModel): void {
         if (this.cp) {
             this.terminatePluginServer(this.cp);
         }

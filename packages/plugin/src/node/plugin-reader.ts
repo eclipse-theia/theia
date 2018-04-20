@@ -5,15 +5,17 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
-import { injectable } from "inversify";
+import { inject, injectable } from "inversify";
 import * as express from 'express';
 import * as fs from 'fs';
-import { Plugin } from '../common/plugin-protocol';
 import { resolve } from 'path';
+import { PluginPackage, PluginMetadata } from '../common/plugin-protocol';
+import { MetadataScanner } from './metadata-scanner';
 
 @injectable()
 export class HostedPluginReader implements BackendApplicationContribution {
-    private plugin: Plugin | undefined;
+    @inject(MetadataScanner) private readonly scanner: MetadataScanner;
+    private plugin: PluginMetadata | undefined;
     private pluginPath: string;
 
     initialize(): void {
@@ -42,17 +44,18 @@ export class HostedPluginReader implements BackendApplicationContribution {
         }
         const packageJsonPath = path + 'package.json';
         if (fs.existsSync(packageJsonPath)) {
-            const plugin: Plugin = require(packageJsonPath);
-            this.plugin = plugin;
-            if (plugin.theiaPlugin.node) {
-                plugin.theiaPlugin.node = resolve(path, plugin.theiaPlugin.node);
+            const plugin: PluginPackage = require(packageJsonPath);
+            this.plugin = this.scanner.getPluginMetadata(plugin);
+
+            if (this.plugin.model.entryPoint.backend) {
+                this.plugin.model.entryPoint.backend = resolve(path, this.plugin.model.entryPoint.backend);
             }
         } else {
             this.plugin = undefined;
         }
     }
 
-    getPlugin(): Plugin | undefined {
+    getPlugin(): PluginMetadata | undefined {
         return this.plugin;
     }
 }

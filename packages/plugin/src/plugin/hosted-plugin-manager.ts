@@ -5,24 +5,35 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 import { HostedPluginManagerExt, Plugin } from '../api/plugin-api';
+import { getPluginId } from '../common/plugin-protocol';
 
 export interface PluginHost {
-    loadPlugin(scriptPath: string): void;
+    initialize(contextPath: string): void;
 
-    stopPlugins(): void;
+    loadPlugin(plugin: Plugin): void;
+
+    stopPlugins(pluginIds: string[]): void;
 }
 
 export class HostedPluginManagerExtImpl implements HostedPluginManagerExt {
 
+    private runningPluginIds: string[];
+
     constructor(private readonly host: PluginHost) {
+        this.runningPluginIds = [];
     }
 
-    $loadPlugin(ext: Plugin): void {
-        this.host.loadPlugin(ext.pluginPath);
+    $initialize(contextPath: string): void {
+        this.host.initialize(contextPath);
+    }
+
+    $loadPlugin(plugin: Plugin): void {
+        this.runningPluginIds.push(getPluginId(plugin.model));
+        this.host.loadPlugin(plugin);
     }
 
     $stopPlugin(): PromiseLike<void> {
-        this.host.stopPlugins();
+        this.host.stopPlugins(this.runningPluginIds);
         return Promise.resolve();
     }
 
