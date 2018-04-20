@@ -367,6 +367,19 @@ export class SidePanelHandler {
     }
 
     /**
+     * Sets the size of the side panel.
+     *
+     * @param size the desired size (width) of the panel in pixels.
+     */
+    resize(size: number): void {
+        if (this.dockPanel.isHidden) {
+            this.state.lastPanelSize = size;
+        } else {
+            this.setPanelSize(size);
+        }
+    }
+
+    /**
      * Compute the current width of the panel. This implementation assumes that the parent of
      * the panel container is a `SplitPanel`.
      */
