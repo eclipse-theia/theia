@@ -1,0 +1,47 @@
+{
+  "name": "@theia/editorconfig",
+  "version": "0.3.8",
+  "description": "Theia - Editorconfig Extension",
+  "dependencies": {
+    "@theia/core": "0.3.8",
+    "@theia/editor": "0.3.8",
+    "@theia/monaco": "0.3.8",
+    "editorconfig": "^0.15.0"
+  },
+  "keywords": [
+    "theia-extension"
+  ],
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/editorconfig-frontend-module",
+      "backend": "lib/node/editorconfig-backend-module"
+    }
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^0.3.8"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}
