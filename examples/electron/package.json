@@ -21,6 +21,7 @@
     "@theia/markers": "^0.3.8",
     "@theia/merge-conflicts": "^0.3.8",
     "@theia/messages": "^0.3.8",
+    "@theia/mini-browser": "^0.3.8",
     "@theia/metrics": "^0.3.8",
     "@theia/monaco": "^0.3.8",
     "@theia/navigator": "^0.3.8",

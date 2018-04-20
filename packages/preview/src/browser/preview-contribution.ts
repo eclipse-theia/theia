@@ -52,7 +52,7 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
     @inject(PreviewPreferences)
     protected readonly preferences: PreviewPreferences;
 
-    protected readonly syncronizedUris = new Set<string>();
+    protected readonly synchronizedUris = new Set<string>();
 
     protected readonly defaultOpenFromEditorOptions: PreviewOpenerOptions = {
         widgetOptions: { area: 'main', mode: 'split-right' },
@@ -90,7 +90,7 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
         if (!previewWidget || !editorWidget || !uri) {
             return;
         }
-        if (this.syncronizedUris.has(uri)) {
+        if (this.synchronizedUris.has(uri)) {
             return;
         }
         const syncDisposables = new DisposableCollection();
@@ -101,8 +101,8 @@ export class PreviewContribution extends WidgetOpenHandler<PreviewWidget> implem
         syncDisposables.push(editor.onCursorPositionChanged(position => this.revealSourceLineInPreview(previewWidget!, position)));
         syncDisposables.push(this.synchronizeScrollToEditor(previewWidget, editor));
 
-        this.syncronizedUris.add(uri);
-        syncDisposables.push(Disposable.create(() => this.syncronizedUris.delete(uri)));
+        this.synchronizedUris.add(uri);
+        syncDisposables.push(Disposable.create(() => this.synchronizedUris.delete(uri)));
     }
 
     protected revealSourceLineInPreview(previewWidget: PreviewWidget, position: Position): void {

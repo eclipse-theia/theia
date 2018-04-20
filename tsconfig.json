@@ -46,6 +46,9 @@
       "@theia/editor/lib/*": [
         "packages/editor/src/*"
       ],
+      "@theia/mini-browser/lib/*": [
+        "packages/mini-browser/src/*"
+      ],
       "@theia/monaco/lib/*": [
         "packages/monaco/src/*"
       ],
@@ -59,7 +62,7 @@
         "packages/python/src/*"
       ],
       "@theia/git/lib/*": [
-        "git/src/*"
+        "packages/git/src/*"
       ],
       "@theia/process/lib*": [
         "packages/process/src/*"

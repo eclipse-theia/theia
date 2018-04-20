@@ -96,33 +96,40 @@ interface WidgetDragState {
  */
 @injectable()
 export class ApplicationShell extends Widget {
+
     /**
      * The dock panel in the main shell area. This is where editors usually go to.
      */
     readonly mainPanel: DockPanel;
-    /**
-     * General options for the application shell.
-     */
-    protected options: ApplicationShell.Options;
-    /**
-     * The fixed-size panel shown on top. This one usually holds the main menu.
-     */
-    protected topPanel: Panel;
+
     /**
      * The dock panel in the bottom shell area. In contrast to the main panel, the bottom panel
      * can be collapsed and expanded.
      */
-    protected bottomPanel: DockPanel;
+    readonly bottomPanel: DockPanel;
+
     /**
      * Handler for the left side panel. The primary application views go here, such as the
      * file explorer and the git view.
      */
-    protected leftPanelHandler: SidePanelHandler;
+    readonly leftPanelHandler: SidePanelHandler;
+
     /**
      * Handler for the right side panel. The secondary application views go here, such as the
      * outline view.
      */
-    protected rightPanelHandler: SidePanelHandler;
+    readonly rightPanelHandler: SidePanelHandler;
+
+    /**
+     * General options for the application shell.
+     */
+    protected options: ApplicationShell.Options;
+
+    /**
+     * The fixed-size panel shown on top. This one usually holds the main menu.
+     */
+    protected topPanel: Panel;
+
     /**
      * The current state of the bottom panel.
      */
@@ -845,6 +852,32 @@ export class ApplicationShell extends Widget {
                 break;
             default:
                 throw new Error('Area cannot be expanded: ' + area);
+        }
+    }
+
+    /**
+     * Adjusts the size of the given area in the application shell.
+     *
+     * @param size the desired size of the panel in pixels.
+     * @param area the area to resize.
+     */
+    resize(size: number, area: ApplicationShell.Area): void {
+        switch (area) {
+            case 'bottom':
+                if (this.bottomPanel.isHidden) {
+                    this.bottomPanelState.lastPanelSize = size;
+                } else {
+                    this.setBottomPanelSize(size);
+                }
+                break;
+            case 'left':
+                this.leftPanelHandler.resize(size);
+                break;
+            case 'right':
+                this.rightPanelHandler.resize(size);
+                break;
+            default:
+                throw new Error('Area cannot be resized: ' + area);
         }
     }
 
