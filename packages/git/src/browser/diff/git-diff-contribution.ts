@@ -85,10 +85,10 @@ export class GitDiffContribution extends AbstractViewContribution<GitDiffWidget>
         }));
     }
 
-    async showWidget(options: Git.Options.Diff) {
+    async showWidget(options: Git.Options.Diff): Promise<GitDiffWidget> {
         const widget = await this.widget;
         await widget.setContent(options);
-        this.openView({
+        return this.openView({
             activate: true
         });
     }
