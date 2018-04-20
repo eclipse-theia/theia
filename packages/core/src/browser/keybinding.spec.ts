@@ -17,6 +17,7 @@ import { CommandRegistry, CommandService, CommandContribution, Command } from '.
 import { LabelParser } from './label-parser';
 import { MockLogger } from '../common/test/mock-logger';
 import { StatusBar, StatusBarImpl } from './status-bar/status-bar';
+import { FrontendApplicationStateService } from './frontend-application-state';
 import * as os from '../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';
@@ -63,7 +64,7 @@ before(async () => {
         bind(StatusBar).toDynamicValue(ctx => ctx.container.get(StatusBarImpl)).inSingletonScope();
         bind(CommandService).toDynamicValue(context => context.container.get(CommandRegistry));
         bind(LabelParser).toSelf().inSingletonScope();
-
+        bind(FrontendApplicationStateService).toSelf().inSingletonScope();
     });
 
     testContainer.load(module);

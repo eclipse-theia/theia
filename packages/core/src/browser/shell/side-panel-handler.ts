@@ -14,6 +14,7 @@ import { Drag } from '@phosphor/dragdrop';
 import { AttachedProperty } from '@phosphor/properties';
 import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, SideTabBar } from './tab-bars';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
+import { FrontendApplicationStateService } from '../frontend-application-state';
 
 /** The class name added to the left and right area panels. */
 export const LEFT_RIGHT_AREA_CLASS = 'theia-app-sides';
@@ -60,7 +61,6 @@ export class SidePanelHandler {
      * The current state of the side panel.
      */
     readonly state: SidePanel.State = {
-        loading: true,
         empty: true,
         expansion: SidePanel.ExpansionState.collapsed,
         pendingUpdate: Promise.resolve()
@@ -78,6 +78,7 @@ export class SidePanelHandler {
 
     @inject(TabBarRendererFactory) protected tabBarRendererFactory: () => TabBarRenderer;
     @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler;
+    @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService;
 
     /**
      * Create the side bar and dock panel widgets.
@@ -403,9 +404,10 @@ export class SidePanelHandler {
      * container is a `SplitPanel`.
      */
     protected setPanelSize(size: number): Promise<void> {
+        const enableAnimation = this.applicationStateService.state === 'ready';
         const options: SplitPositionOptions = {
             side: this.side,
-            duration: this.state.loading ? 0 : this.options.expandDuration,
+            duration: enableAnimation ? this.options.expandDuration : 0,
             referenceWidget: this.dockPanel
         };
         const promise = this.splitPositionHandler.setSidePanelSize(this.container, size, options);
@@ -553,11 +555,6 @@ export namespace SidePanel {
     }
 
     export interface State {
-        /**
-         * This flag indicates whether the application is loading. This has an impact on the behavior
-         * of side panels, e.g. no animations are shown while loading.
-         */
-        loading: boolean;
         /**
          * Indicates whether the panel is empty.
          */

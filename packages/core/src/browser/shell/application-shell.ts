@@ -20,6 +20,7 @@ import { StatusBarImpl, StatusBarLayoutData, StatusBarEntry, StatusBarAlignment 
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory, TheiaDockPanel } from './side-panel-handler';
 import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar } from './tab-bars';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
+import { FrontendApplicationStateService } from '../frontend-application-state';
 
 /** The class name added to ApplicationShell instances. */
 const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -126,7 +127,6 @@ export class ApplicationShell extends Widget {
      * The current state of the bottom panel.
      */
     protected readonly bottomPanelState: SidePanel.State = {
-        loading: true,
         empty: true,
         expansion: SidePanel.ExpansionState.collapsed,
         pendingUpdate: Promise.resolve()
@@ -143,6 +143,7 @@ export class ApplicationShell extends Widget {
         @inject(StatusBarImpl) protected readonly statusBar: StatusBarImpl,
         @inject(SidePanelHandlerFactory) sidePanelHandlerFactory: () => SidePanelHandler,
         @inject(SplitPositionHandler) protected splitPositionHandler: SplitPositionHandler,
+        @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService,
         @inject(ApplicationShellOptions) @optional() options: RecursivePartial<ApplicationShell.Options> = {}
     ) {
         super(options as Widget.IOptions);
@@ -450,17 +451,6 @@ export class ApplicationShell extends Widget {
     }
 
     /**
-     * Change the state of the application to currently loading (`true`) or ready (`false`).
-     * This has an impact on the behavior of certain operations, e.g. animations are disabled
-     * while loading.
-     */
-    set loading(value: boolean) {
-        this.bottomPanelState.loading = value;
-        this.leftPanelHandler.state.loading = value;
-        this.rightPanelHandler.state.loading = value;
-    }
-
-    /**
      * Create an object that describes the current shell layout. This object may contain references
      * to widgets; these need to be transformed before the layout can be serialized.
      */
@@ -563,9 +553,10 @@ export class ApplicationShell extends Widget {
      * bottom panel is a `SplitPanel`.
      */
     protected setBottomPanelSize(size: number): Promise<void> {
+        const enableAnimation = this.applicationStateService.state === 'ready';
         const options: SplitPositionOptions = {
             side: 'bottom',
-            duration: this.bottomPanelState.loading ? 0 : this.options.bottomPanel.expandDuration,
+            duration: enableAnimation ? this.options.bottomPanel.expandDuration : 0,
             referenceWidget: this.bottomPanel
         };
         const promise = this.splitPositionHandler.setSidePanelSize(this.bottomPanel, size, options);

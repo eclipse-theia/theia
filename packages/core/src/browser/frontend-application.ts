@@ -12,6 +12,7 @@ import { KeybindingRegistry } from './keybinding';
 import { Widget } from "./widgets";
 import { ApplicationShell } from './shell/application-shell';
 import { ShellLayoutRestorer } from './shell/shell-layout-restorer';
+import { FrontendApplicationStateService } from './frontend-application-state';
 
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.
@@ -70,6 +71,7 @@ export class FrontendApplication {
         @inject(ContributionProvider) @named(FrontendApplicationContribution)
         protected readonly contributions: ContributionProvider<FrontendApplicationContribution>,
         @inject(ApplicationShell) protected readonly _shell: ApplicationShell,
+        @inject(FrontendApplicationStateService) protected readonly stateService: FrontendApplicationStateService
     ) { }
 
     get shell(): ApplicationShell {
@@ -86,15 +88,20 @@ export class FrontendApplication {
      * - reveal the application shell if it was hidden by a startup indicator
      */
     async start(): Promise<void> {
-        this.shell.loading = true;
         await this.startContributions();
+        this.stateService.state = 'started_contributions';
+
         const host = await this.getHost();
         this.attachShell(host);
         await new Promise(resolve => requestAnimationFrame(() => resolve()));
+        this.stateService.state = 'attached_shell';
+
         await this.initializeLayout();
+        this.stateService.state = 'initialized_layout';
+
         await this.revealShell(host);
         this.registerEventListeners();
-        this.shell.loading = false;
+        this.stateService.state = 'ready';
     }
 
     /**
@@ -122,6 +129,7 @@ export class FrontendApplication {
      */
     protected registerEventListeners(): void {
         window.addEventListener('unload', () => {
+            this.stateService.state = 'closing_window';
             this.layoutRestorer.storeLayout(this);
             this.stopContributions();
         });
