@@ -5,6 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import '../../src/browser/style/index.css';
+import 'font-awesome/css/font-awesome.min.css';
+import 'file-icons-js/css/style.css';
+
 import { ContainerModule } from "inversify";
 import {
     bindContributionProvider,
@@ -35,17 +39,15 @@ import { ContextMenuRenderer } from './context-menu-renderer';
 import { ThemingCommandContribution, ThemeService } from './theming';
 import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution } from './connection-status-service';
 import { DiffUriLabelProviderContribution } from './diff-uris';
-
-import '../../src/browser/style/index.css';
-import 'font-awesome/css/font-awesome.min.css';
-import "file-icons-js/css/style.css";
 import { ApplicationServer, applicationPath } from "../common/application-protocol";
 import { WebSocketConnectionProvider } from "./messaging/connection";
 import { AboutDialog, AboutDialogProps } from "./about-dialog";
 import { EnvVariablesServer, envVariablesPath } from "./../common/env-variables";
+import { FrontendApplicationStateService } from './frontend-application-state';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplication).toSelf().inSingletonScope();
+    bind(FrontendApplicationStateService).toSelf().inSingletonScope();
     bind(DefaultFrontendApplicationContribution).toSelf();
     bindContributionProvider(bind, FrontendApplicationContribution);
 

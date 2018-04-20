@@ -5,12 +5,12 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { VirtualRenderer, VirtualWidget, Message } from '../widgets';
+import { VirtualRenderer, VirtualWidget } from '../widgets';
 import { CommandService } from '../../common';
 import { h } from '@phosphor/virtualdom';
 import { LabelParser, LabelIcon } from '../label-parser';
 import { injectable, inject } from 'inversify';
-import { Deferred } from '../../common/promise-util';
+import { FrontendApplicationStateService } from '../frontend-application-state';
 
 export interface StatusBarLayoutData {
     entries: StatusBarEntryData[]
@@ -70,36 +70,35 @@ export class StatusBarImpl extends VirtualWidget implements StatusBar {
 
     protected backgroundColor: string | undefined;
     protected entries: Map<string, StatusBarEntry> = new Map();
-    protected attached = new Deferred<void>();
 
     constructor(
         @inject(CommandService) protected readonly commands: CommandService,
-        @inject(LabelParser) protected readonly entryService: LabelParser
+        @inject(LabelParser) protected readonly entryService: LabelParser,
+        @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService
     ) {
         super();
         delete this.scrollOptions;
         this.id = 'theia-statusBar';
     }
 
-    onAfterAttach(msg: Message): void {
-        super.onAfterAttach(msg);
-        this.attached.resolve();
+    protected get ready(): Promise<void> {
+        return this.applicationStateService.reachedAnyState('initialized_layout', 'ready');
     }
 
     async setElement(id: string, entry: StatusBarEntry): Promise<void> {
-        await this.attached.promise;
+        await this.ready;
         this.entries.set(id, entry);
         this.update();
     }
 
     async removeElement(id: string): Promise<void> {
-        await this.attached.promise;
+        await this.ready;
         this.entries.delete(id);
         this.update();
     }
 
     async setBackgroundColor(color?: string): Promise<void> {
-        await this.attached.promise;
+        await this.ready;
         this.internalSetBackgroundColor(color);
     }
 
