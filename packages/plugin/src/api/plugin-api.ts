@@ -6,17 +6,18 @@
  */
 import { createProxyIdentifier, ProxyIdentifier } from './rpc-protocol';
 import * as theia from '@theia/plugin';
+import { PluginLifecycle, PluginModel } from '../common/plugin-protocol';
 
 export interface HostedPluginManagerExt {
-    $loadPlugin(ext: Plugin): void;
+    $initialize(contextPath: string): void;
+    $loadPlugin(plugin: Plugin): void;
     $stopPlugin(): PromiseLike<void>;
 }
 
 export interface Plugin {
-    name: string;
-    publisher: string;
-    version: string;
     pluginPath: string;
+    model: PluginModel;
+    lifecycle: PluginLifecycle;
 }
 
 export interface CommandRegistryMain {

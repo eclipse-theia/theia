@@ -8,16 +8,22 @@
 import { ContainerModule } from "inversify";
 import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common/messaging";
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
+import { MetadataScanner } from './metadata-scanner';
 import { PluginApiContribution, HostedPluginServerImpl } from './plugin-service';
 import { HostedPluginReader } from './plugin-reader';
-import { HostedPluginClient, HostedPluginServer, hostedServicePath } from '../common/plugin-protocol';
+import { HostedPluginClient, HostedPluginServer, hostedServicePath, PluginScanner } from '../common/plugin-protocol';
 import { HostedPluginSupport } from './hosted-plugin';
+import { TheiaPluginScanner } from './scanners/scanner-theia';
+import { VsCodePluginScanner } from './scanners/scanner-vscode';
 
 export default new ContainerModule(bind => {
     bind(PluginApiContribution).toSelf().inSingletonScope();
     bind(HostedPluginReader).toSelf().inSingletonScope();
     bind(HostedPluginServer).to(HostedPluginServerImpl).inSingletonScope();
     bind(HostedPluginSupport).toSelf().inSingletonScope();
+    bind(PluginScanner).to(TheiaPluginScanner).inSingletonScope();
+    bind(PluginScanner).to(VsCodePluginScanner).inSingletonScope();
+    bind(MetadataScanner).toSelf().inSingletonScope();
 
     bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(PluginApiContribution)).inSingletonScope();
     bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(HostedPluginReader)).inSingletonScope();

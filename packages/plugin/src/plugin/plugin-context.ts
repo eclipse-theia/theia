@@ -12,6 +12,8 @@ import { Disposable } from './types-impl';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { QuickOpenExtImpl } from './quick-open';
+import { Plugin } from '../api/plugin-api';
+import { getPluginId } from '../common/plugin-protocol';
 
 export function createAPI(rpc: RPCProtocol): typeof theia {
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
@@ -49,14 +51,15 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
 
 }
 
-export function startExtension(plugin: any, plugins: Array<() => void>): void {
-    if (typeof plugin.doStartThings === 'function') {
-        plugin.doStartThings.apply(global, []);
+export function startPlugin(plugin: Plugin, pluginMain: any, plugins: Map<string, () => void>): void {
+    if (typeof pluginMain[plugin.lifecycle.startMethod] === 'function') {
+        pluginMain[plugin.lifecycle.startMethod].apply(global, []);
     } else {
         console.log('there is no doStart method on plugin');
     }
 
-    if (typeof plugin.doStopThings === 'function') {
-        plugins.push(plugin.doStopThings);
+    if (typeof pluginMain[plugin.lifecycle.stopMethod] === 'function') {
+        const pluginId = getPluginId(plugin.model);
+        plugins.set(pluginId, pluginMain[plugin.lifecycle.stopMethod]);
     }
 }
