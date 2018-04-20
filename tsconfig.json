@@ -84,6 +84,9 @@
       ],
       "@theia/variable-resolver/lib/*": [
         "packages/variable-resolver/src/*"
+      ],
+      "@theia/editorconfig/lib/*": [
+        "packages/editorconfig/src/*"
       ]
     },
     "plugins": [

@@ -10,6 +10,7 @@
     "@theia/core": "^0.3.8",
     "@theia/cpp": "^0.3.8",
     "@theia/editor": "^0.3.8",
+    "@theia/editorconfig": "^0.3.8",
     "@theia/extension-manager": "^0.3.8",
     "@theia/file-search": "^0.3.8",
     "@theia/filesystem": "^0.3.8",
