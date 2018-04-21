@@ -8,6 +8,9 @@
     "@theia/monaco": "0.3.8",
     "editorconfig": "^0.15.0"
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "keywords": [
     "theia-extension"
   ],
