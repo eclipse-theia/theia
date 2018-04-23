@@ -6,18 +6,25 @@
  */
 import { ContainerModule } from "inversify";
 import { FrontendApplicationContribution, FrontendApplication } from "@theia/core/lib/browser";
-import { MaybePromise } from "@theia/core/lib/common";
+import { MaybePromise, CommandContribution } from "@theia/core/lib/common";
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { PluginWorker } from './plugin-worker';
 import { HostedPluginServer, hostedServicePath } from '../common/plugin-protocol';
 import { HostedPluginSupport } from './hosted-plugin';
 import { setUpPluginApi } from './main-context';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
+import { PluginApiFrontendContribution } from './plugin-api-frontend-contribution';
+import { HostedPluginManagerClient } from "./hosted-plugin-manager-client";
 
 export default new ContainerModule(bind => {
     bind(PluginWorker).toSelf().inSingletonScope();
     bind(HostedPluginSupport).toSelf().inSingletonScope();
     bind(HostedPluginWatcher).toSelf().inSingletonScope();
+    bind(HostedPluginManagerClient).toSelf().inSingletonScope();
+
+    bind(PluginApiFrontendContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(PluginApiFrontendContribution));
+    bind(CommandContribution).toDynamicValue(c => c.container.get(PluginApiFrontendContribution));
 
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ({
         onStart(app: FrontendApplication): MaybePromise<void> {

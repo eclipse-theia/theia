@@ -1,0 +1,52 @@
+/*
+ * Copyright (C) 2018 Red Hat, Inc. and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+import { injectable, inject } from 'inversify';
+import { Command, CommandRegistry, CommandContribution } from '@theia/core/lib/common';
+import { HostedPluginManagerClient } from './hosted-plugin-manager-client';
+
+export namespace HostedPluginCommands {
+    export const RUN: Command = {
+        id: 'hosted-plugin:run',
+        label: 'Hosted Plugin: Start Instance'
+    };
+    export const TERMINATE: Command = {
+        id: 'hosted-plugin:terminate',
+        label: 'Hosted Plugin: Stop Instance'
+    };
+    export const RESTART: Command = {
+        id: 'hosted-plugin:restart',
+        label: 'Hosted Plugin: Restart Instance'
+    };
+    export const SELECT_PLUGIN_PATH: Command = {
+        id: 'hosted-plugin:select-path',
+        label: 'Hosted Plugin: Select Path'
+    };
+}
+
+@injectable()
+export class PluginApiFrontendContribution implements CommandContribution {
+
+    @inject(HostedPluginManagerClient)
+    protected readonly hostedPluginManagerClient: HostedPluginManagerClient;
+
+    registerCommands(commands: CommandRegistry): void {
+        commands.registerCommand(HostedPluginCommands.RUN, {
+            execute: () => this.hostedPluginManagerClient.start()
+        });
+        commands.registerCommand(HostedPluginCommands.TERMINATE, {
+            execute: () => this.hostedPluginManagerClient.stop()
+        });
+        commands.registerCommand(HostedPluginCommands.RESTART, {
+            execute: () => this.hostedPluginManagerClient.restart()
+        });
+        commands.registerCommand(HostedPluginCommands.SELECT_PLUGIN_PATH, {
+            execute: () => this.hostedPluginManagerClient.selectPluginPath()
+        });
+    }
+
+}

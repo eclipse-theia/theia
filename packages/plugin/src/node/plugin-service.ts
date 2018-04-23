@@ -5,11 +5,13 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 import * as express from 'express';
+import URI from '@theia/core/lib/common/uri';
 import { injectable, inject } from "inversify";
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { HostedPluginServer, HostedPluginClient, PluginMetadata } from '../common/plugin-protocol';
 import { HostedPluginReader } from './plugin-reader';
 import { HostedPluginSupport } from './hosted-plugin';
+import { HostedPluginManager } from './hosted-plugin-manager';
 
 const pluginPath = (process.env.HOME || process.env.HOMEPATH || process.env.USERPROFILE) + './theia/plugins/';
 
@@ -26,8 +28,10 @@ export class PluginApiContribution implements BackendApplicationContribution {
 @injectable()
 export class HostedPluginServerImpl implements HostedPluginServer {
 
-    constructor(@inject(HostedPluginReader) private readonly reader: HostedPluginReader,
-        @inject(HostedPluginSupport) private readonly hostedPlugin: HostedPluginSupport) {
+    constructor(
+        @inject(HostedPluginReader) private readonly reader: HostedPluginReader,
+        @inject(HostedPluginSupport) private readonly hostedPlugin: HostedPluginSupport,
+        @inject(HostedPluginManager) protected readonly hostedPluginManager: HostedPluginManager) {
     }
 
     dispose(): void {
@@ -48,4 +52,33 @@ export class HostedPluginServerImpl implements HostedPluginServer {
         this.hostedPlugin.onMessage(message);
         return Promise.resolve();
     }
+
+    isPluginValid(uri: string): Promise<boolean> {
+        return Promise.resolve(this.hostedPluginManager.isPluginValid(new URI(uri)));
+    }
+
+    runHostedPluginInstance(uri: string): Promise<string> {
+        return this.uriToStrPromise(this.hostedPluginManager.run(new URI(uri)));
+    }
+
+    terminateHostedPluginInstance(): Promise<void> {
+        return Promise.resolve(this.hostedPluginManager.terminate());
+    }
+
+    isHostedTheiaRunning(): Promise<boolean> {
+        return Promise.resolve(this.hostedPluginManager.isRunning());
+    }
+
+    getHostedPluginInstanceURI(): Promise<string> {
+        return Promise.resolve(this.hostedPluginManager.getInstanceURI().toString());
+    }
+
+    protected uriToStrPromise(promise: Promise<URI>): Promise<string> {
+        return new Promise((resolve, reject) => {
+            promise.then((uri: URI) => {
+                resolve(uri.toString());
+            }).catch(error => reject(error));
+        });
+    }
+
 }
