@@ -37,16 +37,15 @@ export class DebugConfigurationManager {
      * Opens configuration file in the editor.
      */
     openConfigurationFile(): Promise<EditorWidget> {
-        return this.resolveConfigurationFile()
-            .then(configFile => this.editorManager.open(new URI(configFile.uri)));
+        return this.resolveConfigurationFile().then(configFile => this.editorManager.open(new URI(configFile.uri)));
     }
 
     /**
      * Adds a new configuration to the configuration file.
      */
     addConfiguration(): Promise<void> {
-        return this.selectDebugType()
-            .then(debugType => this.selectDebugConfiguration(debugType))
+        return this.provideDebugTypes()
+            .then(debugType => this.provideDebugConfigurations(debugType))
             .then(newDebugConfiguration => this.readConfigurations().then(configurations => configurations.concat(newDebugConfiguration)))
             .then(configurations => this.writeConfigurations(configurations))
             .then(() => this.openConfigurationFile())
@@ -54,34 +53,20 @@ export class DebugConfigurationManager {
     }
 
     /**
-     * Gets configuration to start debug adapter.
+     * Selects the debug configuration to start debug adapter.
      */
-    getConfiguration(): Promise<DebugConfiguration> {
+    selectConfiguration(): Promise<DebugConfiguration> {
         const result = new Deferred<DebugConfiguration>();
 
         return this.readConfigurations()
             .then(configurations => {
-                if (configurations.length === 0) {
-                    return Promise.reject("There are no debug configurations in the configuration file.");
+                if (configurations.length !== 0) {
+                    const items = configurations.map(configuration => this.toQuickOpenItem(configuration.type + " : " + configuration.name, result, configuration));
+                    return Promise.resolve(items);
                 }
-
-                const items = configurations.map(configuration => new QuickOpenItem({
-                    label: configuration.type + " : " + configuration.name,
-                    run(mode: QuickOpenMode): boolean {
-                        if (mode === QuickOpenMode.OPEN) {
-                            result.resolve(configuration);
-                            return true;
-                        }
-                        return false;
-                    }
-                }));
-                return Promise.resolve(items);
+                return Promise.reject("There are no provided debug configurations.");
             })
-            .then(items => this.quickOpenService.open({
-                onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
-                    acceptor(items);
-                }
-            }))
+            .then(items => this.doOpen(items))
             .then(() => result.promise);
     }
 
@@ -132,60 +117,54 @@ export class DebugConfigurationManager {
         });
     }
 
-    private selectDebugType(): Promise<string> {
+    private provideDebugTypes(): Promise<string> {
         const result = new Deferred<string>();
 
         return this.debug.debugTypes()
             .then(debugTypes => {
-                if (debugTypes.length === 0) {
-                    return Promise.reject("There are no registered debug adapters.");
+                if (debugTypes.length !== 0) {
+                    const items = debugTypes.map(debugType => this.toQuickOpenItem(debugType, result, debugType));
+                    return Promise.resolve(items);
                 }
-
-                const items = debugTypes.map(debugType => new QuickOpenItem({
-                    label: debugType,
-                    run(mode: QuickOpenMode): boolean {
-                        if (mode === QuickOpenMode.OPEN) {
-                            result.resolve(debugType);
-                            return true;
-                        }
-                        return false;
-                    }
-                }));
-                return Promise.resolve(items);
+                return Promise.reject("There are no registered debug adapters.");
             })
-            .then(items => this.quickOpenService.open({
-                onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
-                    acceptor(items);
-                }
-            }))
+            .then(items => this.doOpen(items))
             .then(() => result.promise);
     }
 
-    private selectDebugConfiguration(debugType: string): Promise<DebugConfiguration> {
+    private provideDebugConfigurations(debugType: string): Promise<DebugConfiguration> {
         const result = new Deferred<DebugConfiguration>();
 
         return this.debug.provideDebugConfigurations(debugType)
             .then(configurations => {
                 if (configurations) {
-                    const items = configurations.map(configuration => new QuickOpenItem({
-                        label: configuration.name,
-                        run(mode: QuickOpenMode): boolean {
-                            if (mode === QuickOpenMode.OPEN) {
-                                result.resolve(configuration);
-                                return true;
-                            }
-                            return false;
-                        }
-                    }));
+                    const items = configurations.map(configuration => this.toQuickOpenItem(configuration.name, result, configuration));
                     return Promise.resolve(items);
                 }
                 return Promise.reject(`There are no provided debug configurations for ${debugType}`);
             })
-            .then(items => this.quickOpenService.open({
-                onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
-                    acceptor(items);
-                }
-            }))
+            .then(items => this.doOpen(items))
             .then(() => result.promise);
+    }
+
+    private toQuickOpenItem<T>(label: string, result: Deferred<T>, value: T): QuickOpenItem {
+        return new QuickOpenItem({
+            label: label,
+            run(mode: QuickOpenMode): boolean {
+                if (mode === QuickOpenMode.OPEN) {
+                    result.resolve(value);
+                    return true;
+                }
+                return false;
+            }
+        });
+    }
+
+    private doOpen(items: QuickOpenItem[]): void {
+        this.quickOpenService.open({
+            onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): void {
+                acceptor(items);
+            }
+        });
     }
 }
