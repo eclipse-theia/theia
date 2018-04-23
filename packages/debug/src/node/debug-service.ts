@@ -51,11 +51,12 @@ export class DebugAdapterContributionRegistry {
      * @param debugType The registered debug type
      * @returns An array of [debug configurations](#DebugConfiguration)
      */
-    provideDebugConfigurations(debugType: string): DebugConfiguration[] | undefined {
+    provideDebugConfigurations(debugType: string): DebugConfiguration[] {
         const contrib = this.contribs.get(debugType);
         if (contrib) {
             return contrib.provideDebugConfigurations();
         }
+        throw new Error(`Debug adapter '${debugType}' isn't registered.`);
     }
 
     /**
@@ -64,11 +65,12 @@ export class DebugAdapterContributionRegistry {
      * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
      * @returns The resolved debug configuration.
      */
-    resolveDebugConfiguration(config: DebugConfiguration): DebugConfiguration | undefined {
+    resolveDebugConfiguration(config: DebugConfiguration): DebugConfiguration {
         const contrib = this.contribs.get(config.type);
         if (contrib) {
             return contrib.resolveDebugConfiguration(config);
         }
+        throw new Error(`Debug adapter '${config.type}' isn't registered.`);
     }
 
     /**
@@ -77,11 +79,12 @@ export class DebugAdapterContributionRegistry {
      * @param config The resolved [debug configuration](#DebugConfiguration).
      * @returns The [debug adapter executable](#DebugAdapterExecutable).
      */
-    provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable | undefined {
+    provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable {
         const contrib = this.contribs.get(config.type);
         if (contrib) {
             return contrib.provideDebugAdapterExecutable(config);
         }
+        throw new Error(`Debug adapter '${config.type}' isn't registered.`);
     }
 }
 
@@ -160,24 +163,20 @@ export class DebugServiceImpl implements DebugService {
         return this.registry.debugTypes();
     }
 
-    async provideDebugConfigurations(debugType: string): Promise<DebugConfiguration[] | undefined> {
+    async provideDebugConfigurations(debugType: string): Promise<DebugConfiguration[]> {
         return this.registry.provideDebugConfigurations(debugType);
     }
 
-    async resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration | undefined> {
+    async resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration> {
         return this.registry.resolveDebugConfiguration(config);
     }
 
     async startDebugSession(config: DebugConfiguration): Promise<string> {
         const executable = this.registry.provideDebugAdapterExecutable(config);
-        if (executable) {
-            const session = this.sessionManager.create(executable);
-            return session.then(function (session) {
-                return session.id;
-            });
-        }
-
-        return Promise.reject(`Can't start debug session for ${config.type}`);
+        const session = this.sessionManager.create(executable);
+        return session.then(function (session) {
+            return session.id;
+        });
     }
 
     async dispose(): Promise<void> { }

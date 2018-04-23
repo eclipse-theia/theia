@@ -51,7 +51,7 @@ export interface DebugService extends Disposable {
      * @param debugType The registered debug type
      * @returns An array of [debug configurations](#DebugConfiguration)
      */
-    provideDebugConfigurations(debugType: string): Promise<DebugConfiguration[] | undefined>;
+    provideDebugConfigurations(debugType: string): Promise<DebugConfiguration[]>;
 
     /**
      * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
@@ -59,7 +59,7 @@ export interface DebugService extends Disposable {
      * @param debugConfiguration The [debug configuration](#DebugConfiguration) to resolve.
      * @returns The resolved debug configuration.
      */
-    resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration | undefined>;
+    resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration>;
 
     /**
      * Starts a new [debug session](#DebugSession).
@@ -136,16 +136,15 @@ export interface DebugAdapterContribution {
      * @param config The [debug configuration](#DebugConfiguration) to resolve.
      * @returns The resolved debug configuration or undefined.
      */
-    resolveDebugConfiguration(config: DebugConfiguration): DebugConfiguration | undefined;
+    resolveDebugConfiguration(config: DebugConfiguration): DebugConfiguration;
 
     /**
      * Provides a [debug adapter executable](#DebugAdapterExecutable)
      * based on [debug configuration](#DebugConfiguration) to launch a new debug adapter.
-     * Returning the value 'undefined' prevents the debug adapter from launching.
      * @param config The resolved [debug configuration](#DebugConfiguration).
      * @returns The [debug adapter executable](#DebugAdapterExecutable).
      */
-    provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable | undefined;
+    provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable;
 }
 
 /**
