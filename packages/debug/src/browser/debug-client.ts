@@ -11,13 +11,15 @@
 
 import { injectable, inject } from "inversify";
 import { WebSocketConnectionProvider } from "@theia/core/lib/browser";
-import { DebugSessionPath } from "../common/debug-model";
+import { DebugSessionPath, DebugConfiguration } from "../common/debug-model";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { Disposable } from "vscode-jsonrpc";
 import { Deferred } from "@theia/core/lib/common/promise-util";
+import { Emitter, Event } from "@theia/core";
 
 export interface DebugClient extends Disposable {
     sessionId: string;
+    configuration: DebugConfiguration;
 
     connect(): Promise<void>;
     sendRequest(command: string, args?: any): Promise<DebugProtocol.Response>;
@@ -30,6 +32,7 @@ export class BaseDebugClient implements DebugClient {
 
     constructor(
         public readonly sessionId: string,
+        public readonly configuration: DebugConfiguration,
         protected readonly connectionProvider: WebSocketConnectionProvider) {
     }
 
@@ -102,8 +105,8 @@ export class DebugClientFactory {
         protected readonly connectionProvider: WebSocketConnectionProvider
     ) { }
 
-    get(sessionId: string): DebugClient {
-        return new BaseDebugClient(sessionId, this.connectionProvider);
+    get(sessionId: string, debugConfiguration: DebugConfiguration): DebugClient {
+        return new BaseDebugClient(sessionId, debugConfiguration, this.connectionProvider);
     }
 }
 
@@ -112,9 +115,13 @@ export class DebugClientFactory {
  * instantiate several debug sessions and switch between them.
  */
 @injectable()
-export class DebugClientManager {
-    private activeSessionId: string | undefined;
+export class DebugClientManager implements Disposable {
+    private activeDebugSessionId: string | undefined;
+
     protected readonly clients = new Map<string, DebugClient>();
+    protected readonly onDidChangeDebugClientEmitter = new Emitter<DebugClient | undefined>();
+    protected readonly onDidCreateDebugClientEmitter = new Emitter<DebugClient>();
+    protected readonly onDidDisposeDebugClientEmitter = new Emitter<DebugClient>();
 
     constructor(
         @inject(DebugClientFactory)
@@ -124,11 +131,13 @@ export class DebugClientManager {
     /**
      * Creates a new [debug client](#DebugClient).
      * @param sessionId The session identifier
+     * @param configuration The debug configuration
      * @returns The debug client
      */
-    create(sessionId: string): DebugClient {
-        const client = this.debugClientFactory.get(sessionId);
+    create(sessionId: string, debugConfiguration: DebugConfiguration): DebugClient {
+        const client = this.debugClientFactory.get(sessionId, debugConfiguration);
         this.clients.set(sessionId, client);
+        this.onDidCreateDebugClientEmitter.fire(client);
         return client;
     }
 
@@ -138,32 +147,34 @@ export class DebugClientManager {
      */
     remove(sessionId: string): void {
         this.clients.delete(sessionId);
-        if (this.activeSessionId === sessionId) {
-            if (this.clients.size !== 0) {
-                this.setActiveDebugClient(this.clients.values().next().value);
-            } else {
-                this.setActiveDebugClient(undefined);
+        if (this.activeDebugSessionId) {
+            if (this.activeDebugSessionId === sessionId) {
+                if (this.clients.size !== 0) {
+                    this.setActiveDebugClient(this.clients.keys().next().value);
+                } else {
+                    this.setActiveDebugClient(undefined);
+                }
+
             }
         }
     }
 
     /**
      * Finds all instantiated debug clients.
-     * @returns An array of debug sessions identifiers
+     * @returns An array of debug clients
      */
-    findAll(): string[] {
-        return Array.from(this.clients.keys());
+    findAll(): DebugClient[] {
+        return Array.from(this.clients.values());
     }
 
     /**
      * Sets the active debug client.
-     * @param debugClient the [debug client](#DebugClient)
+     * @param sessionId The session identifier
      */
-    setActiveDebugClient(debugClient: DebugClient | undefined) {
-        if (debugClient) {
-            this.activeSessionId = debugClient.sessionId;
-        } else {
-            this.activeSessionId = undefined;
+    setActiveDebugClient(sessionId: string | undefined) {
+        if (this.activeDebugSessionId !== sessionId) {
+            this.activeDebugSessionId = sessionId;
+            this.onDidChangeDebugClientEmitter.fire(this.getActiveDebugClient());
         }
     }
 
@@ -172,8 +183,41 @@ export class DebugClientManager {
      * @returns the [debug client](#DebugClient)
      */
     getActiveDebugClient(): DebugClient | undefined {
-        if (this.activeSessionId) {
-            return this.clients.get(this.activeSessionId);
+        if (this.activeDebugSessionId) {
+            return this.clients.get(this.activeDebugSessionId);
         }
+    }
+
+    /**
+     * Disposes the debug client.
+     * @param sessionId The session identifier
+     */
+    dispose(sessionId?: string): void {
+        if (sessionId) {
+            const debugClient = this.clients.get(sessionId);
+            if (debugClient) {
+                this.doDispose(debugClient);
+            }
+        } else {
+            this.clients.forEach(debugClient => this.doDispose(debugClient));
+        }
+    }
+
+    private doDispose(debugClient: DebugClient): void {
+        debugClient.dispose();
+        this.remove(debugClient.sessionId);
+        this.onDidDisposeDebugClientEmitter.fire(debugClient);
+    }
+
+    get onDidChangeDebugClient(): Event<DebugClient | undefined> {
+        return this.onDidChangeDebugClientEmitter.event;
+    }
+
+    get onDidCreateDebugClient(): Event<DebugClient> {
+        return this.onDidCreateDebugClientEmitter.event;
+    }
+
+    get onDidDisposeDebugClient(): Event<DebugClient> {
+        return this.onDidDisposeDebugClientEmitter.event;
     }
 }
