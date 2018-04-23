@@ -6,17 +6,25 @@
  */
 
 import { inject, injectable } from "inversify";
-import { BaseLanguageClientContribution, LanguageClientFactory, LanguageClientOptions } from '@theia/languages/lib/browser';
-import { Languages, Workspace } from "@theia/languages/lib/common";
+import {
+    BaseLanguageClientContribution, LanguageClientFactory,
+    LanguageClientOptions,
+    ILanguageClient
+} from '@theia/languages/lib/browser';
+import { Languages, Workspace, DidChangeConfigurationParams, DidChangeConfigurationNotification } from "@theia/languages/lib/common";
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME, HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
+import { CppBuildConfigurationManager, CppBuildConfiguration } from "./cpp-build-configurations";
 
 @injectable()
 export class CppLanguageClientContribution extends BaseLanguageClientContribution {
 
     readonly id = CPP_LANGUAGE_ID;
     readonly name = CPP_LANGUAGE_NAME;
+
+    @inject(CppBuildConfigurationManager)
+    protected readonly cppBuildConfigurations: CppBuildConfigurationManager;
 
     constructor(
         @inject(Workspace) protected readonly workspace: Workspace,
@@ -26,6 +34,27 @@ export class CppLanguageClientContribution extends BaseLanguageClientContributio
         @inject(ILogger) protected readonly logger: ILogger
     ) {
         super(workspace, languages, languageClientFactory);
+    }
+
+    protected onReady(languageClient: ILanguageClient): void {
+        super.onReady(languageClient);
+
+        // When the language server is ready, send the active build
+        // configuration so it knows where to find the build commands
+        // (e.g. compile_commands.json).
+        this.onActiveBuildConfigChanged(this.cppBuildConfigurations.getActiveConfig());
+        this.cppBuildConfigurations.onActiveConfigChange(config => this.onActiveBuildConfigChanged(config));
+    }
+
+    async onActiveBuildConfigChanged(config: CppBuildConfiguration | undefined) {
+        const interfaceParams: DidChangeConfigurationParams = {
+            settings: {
+                compilationDatabasePath: config ? config.directory : undefined,
+            },
+        };
+
+        const languageClient = await this.languageClient;
+        languageClient.sendNotification(DidChangeConfigurationNotification.type, interfaceParams);
     }
 
     protected get documentSelector() {
