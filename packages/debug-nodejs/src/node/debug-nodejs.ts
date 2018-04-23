@@ -29,11 +29,11 @@ export class NodeJsDebugAdapterContribution implements DebugAdapterContribution 
         }];
     }
 
-    resolveDebugConfiguration(config: DebugConfiguration): DebugConfiguration | undefined {
+    resolveDebugConfiguration(config: DebugConfiguration): DebugConfiguration {
         return config;
     }
 
-    provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable | undefined {
+    provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable {
         return { command: "cat", args: [] };
     }
 }

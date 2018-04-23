@@ -10,15 +10,48 @@
  */
 
 import { ContainerModule, interfaces } from 'inversify';
-import { DebugCommandHandlers } from "./debug-command";
+import { DebugCommandHandlers, DEBUG_SESSION_CONTEXT_MENU } from "./debug-command";
 import { DebugConfigurationManager } from './debug-configuration';
+import {
+    DebugViewContribution,
+    DebugTreeWidgetFactory,
+    DebugTreeWidget,
+    DebugWidgetFactory,
+} from './view/debug-view-contribution';
+import { DebugPath, DebugService } from "../common/debug-model";
 import { DebugClientFactory, DebugClientManager } from "./debug-client";
 import { MenuContribution } from "@theia/core/lib/common/menu";
 import { CommandContribution } from "@theia/core/lib/common/command";
 import { WebSocketConnectionProvider } from "@theia/core/lib/browser/messaging/connection";
-import { DebugPath, DebugService } from "../common/debug-model";
+import {
+    FrontendApplicationContribution,
+    createTreeContainer,
+    TreeWidget,
+    WidgetFactory,
+    KeybindingContribution,
+    TreeProps,
+    defaultTreeProps
+} from '@theia/core/lib/browser';
+
+export const DEBUG_SESSION_TREE_PROPS = <TreeProps>{
+    ...defaultTreeProps,
+    contextMenuPath: DEBUG_SESSION_CONTEXT_MENU,
+    multiSelect: false
+};
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
+    bind(DebugViewContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(DebugViewContribution));
+    bind(MenuContribution).toDynamicValue(c => c.container.get(DebugViewContribution));
+    bind(CommandContribution).toDynamicValue(c => c.container.get(DebugViewContribution));
+    bind(KeybindingContribution).toDynamicValue(c => c.container.get(DebugViewContribution));
+    bind(DebugWidgetFactory).toSelf().inSingletonScope();
+    bind(WidgetFactory).toDynamicValue(context => context.container.get(DebugWidgetFactory));
+
+    bind(DebugTreeWidgetFactory).toFactory(ctx =>
+        () => createDebugTreeWidget(ctx.container)
+    );
+
     bind(DebugClientFactory).toSelf().inSingletonScope();
     bind(DebugClientManager).toSelf().inSingletonScope();
     bind(MenuContribution).to(DebugCommandHandlers);
@@ -26,3 +59,11 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(DebugConfigurationManager).toSelf().inSingletonScope();
     bind(DebugService).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, DebugPath)).inSingletonScope();
 });
+
+function createDebugTreeWidget(parent: interfaces.Container): DebugTreeWidget {
+    const child = createTreeContainer(parent);
+    child.unbind(TreeWidget);
+    child.bind(DebugTreeWidget).toSelf();
+    child.rebind(TreeProps).toConstantValue(DEBUG_SESSION_TREE_PROPS);
+    return child.get(DebugTreeWidget);
+}
