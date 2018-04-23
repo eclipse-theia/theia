@@ -28,10 +28,6 @@ export class CppContribution extends BaseLanguageServerContribution {
             args = parseArgs(envArgs);
         }
 
-        const envCompilationDatabase = process.env.CPP_CLANGD_COMPILATION_DB_DIRECTORY;
-        if (envCompilationDatabase) {
-            args.push("-compile-commands-dir=" + envCompilationDatabase);
-        }
         const serverConnection = this.createProcessStreamConnection(command, args);
         this.forward(clientConnection, serverConnection);
     }
