@@ -12,10 +12,12 @@ import { Disposable } from './types-impl';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { QuickOpenExtImpl } from './quick-open';
+import { MessageRegistryExt } from './message-registry';
 
 export function createAPI(rpc: RPCProtocol): typeof theia {
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
     const quickOpenExt = rpc.set(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT, new QuickOpenExtImpl(rpc));
+    const messageRegistryExt = rpc.set(MAIN_RPC_CONTEXT.MESSAGE_REGISTRY_EXT, new MessageRegistryExt(rpc));
 
     const commands: typeof theia.commands = {
         registerCommand(command: theia.Command, handler?: <T>(...args: any[]) => T | Thenable<T>): Disposable {
@@ -35,6 +37,21 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
     const window: typeof theia.window = {
         showQuickPick(items: any, options: theia.QuickPickOptions, token?: theia.CancellationToken): any {
             return quickOpenExt.showQuickPick(items, options, token);
+        },
+        showInformationMessage(message: string,
+                               optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+                               ...items: any[]): PromiseLike<any> {
+            return messageRegistryExt.showInformationMessage(message, optionsOrFirstItem, items);
+        },
+        showWarningMessage(message: string,
+                           optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+                           ...items: any[]): PromiseLike<any> {
+            return messageRegistryExt.showWarningMessage(message, optionsOrFirstItem, items);
+        },
+        showErrorMessage(message: string,
+                         optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+                         ...items: any[]): PromiseLike<any> {
+            return messageRegistryExt.showErrorMessage(message, optionsOrFirstItem, items);
         }
     };
 

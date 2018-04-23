@@ -47,7 +47,7 @@ declare module '@theia/plugin' {
     }
 
     /**
-     * 
+     *
      */
     export interface TextEditorEdit {
         // TODO implement TextEditorEdit
@@ -79,7 +79,7 @@ declare module '@theia/plugin' {
 
         /**
          * Fire the event and pass data object
-         * @param data 
+         * @param data
          */
         fire(data?: T): void;
 
@@ -90,7 +90,7 @@ declare module '@theia/plugin' {
     }
 
     /**
-     * A cancellation token used to request cancellation on long running 
+     * A cancellation token used to request cancellation on long running
      * or asynchronous task.
      */
     export interface CancellationToken {
@@ -153,7 +153,7 @@ declare module '@theia/plugin' {
         machOnDetail?: boolean;
 
         /**
-         * The place holder in input box 
+         * The place holder in input box
          */
         placeHolder?: string;
 
@@ -186,60 +186,90 @@ declare module '@theia/plugin' {
     }
 
     /**
-	 * Namespace for dealing with commands. In short, a command is a function with a
-	 * unique identifier. The function is sometimes also called _command handler_.
-     * 
+     * Namespace for dealing with commands. In short, a command is a function with a
+     * unique identifier. The function is sometimes also called _command handler_.
+     *
      * Commands can be added using the [registerCommand](#commands.registerCommand) and
      * [registerTextEditorCommand](#commands.registerTextEditorCommand) functions.
-     * Registration can be split in two step: first register command without handler, 
+     * Registration can be split in two step: first register command without handler,
      * second register handler by command id.
-     * 
-     * Any contributed command are available to any plugin, command can be invoked 
+     *
+     * Any contributed command are available to any plugin, command can be invoked
      * by [executeCommand](#commands.executeCommand) function.
-     * 
+     *
      * Simple example that register command:
      * ```javascript
      * theia.commands.registerCommand({id:'say.hello.command'}, ()=>{
      *     console.log("Hello World!");
      * });
      * ```
-     * 
+     *
      * Simple example that invoke command:
-     * 
+     *
      * ```javascript
      * theia.commands.executeCommand('core.about');
      * ```
-	 */
+     */
     export namespace commands {
         /**
          * Register the given command and handler if present.
          *
          * Throw if a command is already registered for the given command identifier.
          */
-        export function registerCommand(command: Command, handler?: (...args: any[]) => any): Disposable
+        export function registerCommand(command: Command, handler?: (...args: any[]) => any): Disposable;
 
         /**
          * Register the given handler for the given command identifier.
-         * 
+         *
          * @param commandId a given command id
          * @param handler a command handler
          */
-        export function registerHandler(commandId: string, handler: (...args: any[]) => any): Disposable
+        export function registerHandler(commandId: string, handler: (...args: any[]) => any): Disposable;
 
         /**
-         * Register a text editor command which can execute only if active editor present and command has access to the active editor 
-         * 
-         * @param command a command description 
-         * @param handler a command handler with access to text editor 
+         * Register a text editor command which can execute only if active editor present and command has access to the active editor
+         *
+         * @param command a command description
+         * @param handler a command handler with access to text editor
          */
-        export function registerTextEditorCommand(command: Command, handler: (textEditor: TextEditor, edit: TextEditorEdit, ...arg: any[]) => void): Disposable
+        export function registerTextEditorCommand(command: Command, handler: (textEditor: TextEditor, edit: TextEditorEdit, ...arg: any[]) => void): Disposable;
 
         /**
          * Execute the active handler for the given command and arguments.
          *
          * Reject if a command cannot be executed.
          */
-        export function executeCommand<T>(commandId: string, ...args: any[]): PromiseLike<T | undefined>
+        export function executeCommand<T>(commandId: string, ...args: any[]): PromiseLike<T | undefined>;
+    }
+
+    /**
+     * Represents an action that is shown with a message.
+     */
+    export interface MessageItem {
+
+        /**
+         * A message title.
+         */
+        title: string;
+
+        /**
+         * Indicates that the item should be triggered
+         * when the user cancels the dialog.
+         *
+         * Note: this option is ignored for non-modal messages.
+         */
+        isCloseAffordance?: boolean;
+    }
+
+    /**
+     * Options to configure the message behavior.
+     */
+    export interface MessageOptions {
+
+        /**
+         * Indicates that this message should be modal.
+         */
+        modal?: boolean;
     }
 
     /**
@@ -249,9 +279,9 @@ declare module '@theia/plugin' {
 
         /**
          * Shows a selection list.
-         * @param items 
-         * @param options 
-         * @param token 
+         * @param items
+         * @param options
+         * @param token
          */
         export function showQuickPick(items: string[] | PromiseLike<string[]>, options: QuickPickOptions, token?: CancellationToken): PromiseLike<string[] | undefined>;
 
@@ -262,9 +292,9 @@ declare module '@theia/plugin' {
 
         /**
          * Shows a selection list.
-         * @param items 
-         * @param options 
-         * @param token 
+         * @param items
+         * @param options
+         * @param token
          */
         export function showQuickPick<T extends QuickPickItem>(items: T[] | PromiseLike<T[]>, options: QuickPickOptions, token?: CancellationToken): PromiseLike<T[] | undefined>;
 
@@ -273,6 +303,118 @@ declare module '@theia/plugin' {
          */
         export function showQuickPick<T extends QuickPickItem>(items: T[] | PromiseLike<T[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): PromiseLike<T[] | undefined>;
 
+        /**
+         * Show an information message.
+         *
+         * @param message a message to show.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showInformationMessage(message: string, ...items: string[]): PromiseLike<string | undefined>;
 
+        /**
+         * Show an information message.
+         *
+         * @param message a message to show.
+         * @param options Configures the behaviour of the message.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showInformationMessage(message: string, options: MessageOptions, ...items: string[]): PromiseLike<string | undefined>;
+
+        /**
+         * Show an information message.
+         *
+         * @param message a message to show.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showInformationMessage<T extends MessageItem>(message: string, options: MessageOptions, ...items: T[]): PromiseLike<T | undefined>
+
+        /**
+         * Show an information message.
+         *
+         * @param message a message to show.
+         * @param options Configures the behaviour of the message.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showInformationMessage<T extends MessageItem>(message: string, options: MessageOptions, ...items: T[]): PromiseLike<T | undefined>;
+
+        /**
+         * Show a warning message.
+         *
+         * @param message a message to show.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showWarningMessage<T extends MessageItem>(message: string, options: MessageOptions, ...items: T[]): PromiseLike<T | undefined>
+
+        /**
+         * Show a warning message.
+         *
+         * @param message a message to show.
+         * @param options Configures the behaviour of the message.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showWarningMessage(message: string, options: MessageOptions, ...items: string[]): PromiseLike<string | undefined>;
+
+        /**
+         * Show a warning message.
+         *
+         * @param message a message to show.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showWarningMessage<T extends MessageItem>(message: string, ...items: T[]): PromiseLike<T | undefined>;
+
+        /**
+         * Show a warning message.
+         *
+         * @param message a message to show.
+         * @param options Configures the behaviour of the message.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showWarningMessage<T extends MessageItem>(message: string, options: MessageOptions, ...items: T[]): PromiseLike<T | undefined>;
+
+        /**
+         * Show an error message.
+         *
+         * @param message a message to show.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showErrorMessage<T extends MessageItem>(message: string, options: MessageOptions, ...items: T[]): PromiseLike<T | undefined>
+
+        /**
+         * Show an error message.
+         *
+         * @param message a message to show.
+         * @param options Configures the behaviour of the message.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showErrorMessage(message: string, options: MessageOptions, ...items: string[]): PromiseLike<string | undefined>;
+
+        /**
+         * Show an error message.
+         *
+         * @param message a message to show.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showErrorMessage<T extends MessageItem>(message: string, ...items: T[]): PromiseLike<T | undefined>;
+
+        /**
+         * Show an error message.
+         *
+         * @param message a message to show.
+         * @param options Configures the behaviour of the message.
+         * @param items A set of items that will be rendered as actions in the message.
+         * @return A promise that resolves to the selected item or `undefined` when being dismissed.
+         */
+        export function showErrorMessage<T extends MessageItem>(message: string, options: MessageOptions, ...items: T[]): PromiseLike<T | undefined>;
     }
 }

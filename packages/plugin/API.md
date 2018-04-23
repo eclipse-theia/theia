@@ -26,7 +26,6 @@ Simple example that invoke command:
 ```javascript
 theia.commands.executeCommand('core.about');
 ```
-
 ### window
 
 Common namespace for dealing with window and editor, showing messages and user input.
@@ -50,4 +49,23 @@ Example of using:
 theia.window.showQuickPick(["foo", "bar", "foobar"], option).then((val: string[] | undefined) => {
         console.log(`Quick Pick Selected: ${val}`);
     });
+```
+#### Notification API
+ A notification shows an information message to users.
+ Optionally provide an array of items which will be presented as clickable buttons.
+ 
+ Notifications can be shown using the [showInformationMessage](#window.showInformationMessage),
+ [showWarningMessage](#window.showWarningMessage) and [showErrorMessage](#window.showErrorMessage) functions.
+ 
+
+Simple example that show an information message:
+```javascript
+theia.window.showInformationMessage('Information message');
+```
+
+Simple example that show an information message with buttons:
+```javascript
+theia.window.showInformationMessage('Information message', 'Btn1', 'Btn2').then(result => {
+    console.log("Click button", result);
+});
 ```

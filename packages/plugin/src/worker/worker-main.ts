@@ -14,15 +14,15 @@ import { HostedPluginManagerExtImpl } from '../plugin/hosted-plugin-manager';
 const ctx = self as any;
 const plugins = new Array<() => void>();
 
-const emmitter = new Emitter();
+const emitter = new Emitter();
 const rpc = new RPCProtocolImpl({
-    onMessage: emmitter.event,
+    onMessage: emitter.event,
     send: (m: {}) => {
         ctx.postMessage(m);
     }
 });
 addEventListener('message', (message: any) => {
-    emmitter.fire(message.data);
+    emitter.fire(message.data);
 });
 
 const theia = createAPI(rpc);

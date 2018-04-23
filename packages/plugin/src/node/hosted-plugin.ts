@@ -57,12 +57,12 @@ export class HostedPluginSupport {
     }
 
     private terminatePluginServer(cp: cp.ChildProcess) {
-        const emmitter = new Emitter();
+        const emitter = new Emitter();
         cp.on('message', message => {
-            emmitter.fire(JSON.parse(message));
+            emitter.fire(JSON.parse(message));
         });
         const rpc = new RPCProtocolImpl({
-            onMessage: emmitter.event,
+            onMessage: emitter.event,
             send: (m: {}) => {
                 if (cp.send) {
                     cp.send(JSON.stringify(m));
