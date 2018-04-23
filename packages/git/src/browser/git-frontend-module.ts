@@ -23,6 +23,7 @@ import { bindGitPreferences } from './git-preferences';
 import { bindDirtyDiff } from './dirty-diff/dirty-diff-module';
 import { bindBlame } from './blame/blame-module';
 import { GitRepositoryTracker } from './git-repository-tracker';
+import { GitCommitMessageValidator } from './git-commit-message-validator';
 
 import '../../src/browser/style/index.css';
 
@@ -53,4 +54,6 @@ export default new ContainerModule(bind => {
 
     bind(LabelProviderContribution).to(GitUriLabelProviderContribution).inSingletonScope();
     bind(NavigatorTreeDecorator).to(GitDecorator).inSingletonScope();
+
+    bind(GitCommitMessageValidator).toSelf().inSingletonScope();
 });

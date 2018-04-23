@@ -26,7 +26,7 @@ export class VirtualWidget extends BaseWidget {
         if (!this.childContainer) {
             // if we are adding scrolling, we need to wrap the contents in its own div, to not conflict with the virtual dom algo.
             if (this.scrollOptions) {
-                this.childContainer = document.createElement('div');
+                this.childContainer = this.createChildContainer();
                 this.node.appendChild(this.childContainer);
             } else {
                 this.childContainer = this.node;
@@ -39,6 +39,10 @@ export class VirtualWidget extends BaseWidget {
     protected render(): h.Child {
         // tslint:disable-next-line:no-null-keyword
         return null;
+    }
+
+    protected createChildContainer(): HTMLElement {
+        return document.createElement('div');
     }
 
 }
