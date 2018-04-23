@@ -7,16 +7,17 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { h } from '@phosphor/virtualdom';
-import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
-import { MessageService, ResourceProvider, CommandService, DisposableCollection, MenuPath } from '@theia/core';
+import { MessageService, ResourceProvider, CommandService, MenuPath } from '@theia/core';
 import { VirtualRenderer, ContextMenuRenderer, VirtualWidget, LabelProvider, DiffUris } from '@theia/core/lib/browser';
 import { EditorManager, EditorWidget, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
-import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus } from '../common';
+import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus, CommitWithChanges } from '../common';
 import { GitWatcher, GitStatusChangeEvent } from '../common/git-watcher';
 import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { GitRepositoryProvider } from './git-repository-provider';
+import { GitCommitMessageValidator } from './git-commit-message-validator';
+import { GitAvatarService } from './history/git-avatar-service';
 
 export interface GitFileChangeNode extends GitFileChange {
     readonly icon: string;
@@ -41,10 +42,11 @@ export class GitWidget extends VirtualWidget {
     protected mergeChanges: GitFileChangeNode[] = [];
     protected message: string = '';
     protected messageInputHighlighted: boolean = false;
-    protected additionalMessage: string = '';
     protected status: WorkingDirectoryStatus | undefined;
-    protected toDispose = new DisposableCollection();
     protected scrollContainer: string;
+    protected commitMessageValidationResult: GitCommitMessageValidator.Result | undefined;
+    protected lastCommit: { commit: CommitWithChanges, avatar: string } | undefined;
+    protected lastHead: string | undefined;
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
@@ -58,14 +60,15 @@ export class GitWidget extends VirtualWidget {
         @inject(CommandService) protected readonly commandService: CommandService,
         @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService) {
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
+        @inject(GitAvatarService) protected readonly avatarService: GitAvatarService,
+        @inject(GitCommitMessageValidator) protected readonly commitMessageValidator: GitCommitMessageValidator) {
+
         super();
         this.id = 'theia-gitContainer';
         this.title.label = 'Git';
         this.scrollContainer = 'changesOuterContainer';
-
         this.addClass('theia-git');
-
     }
 
     @postConstruct()
@@ -77,22 +80,16 @@ export class GitWidget extends VirtualWidget {
         this.update();
     }
 
-    protected onActivateRequest(msg: Message): void {
-        super.onActivateRequest(msg);
-        const messageInput = document.getElementById('git-messageInput');
-        if (messageInput) {
-            messageInput.focus();
-        } else {
-            this.node.focus();
-        }
-    }
-
     async initialize(repository: Repository | undefined): Promise<void> {
         if (repository) {
             this.toDispose.dispose();
             this.toDispose.push(await this.gitWatcher.watchGitChanges(repository));
             this.toDispose.push(this.gitWatcher.onGitEvent(async gitEvent => {
                 if (GitStatusChangeEvent.is(gitEvent)) {
+                    if (gitEvent.status.currentHead !== this.lastHead) {
+                        this.lastHead = gitEvent.status.currentHead;
+                        this.lastCommit = await this.getLastCommit();
+                    }
                     this.status = gitEvent.status;
                     this.updateView(gitEvent.status);
                 }
@@ -100,7 +97,21 @@ export class GitWidget extends VirtualWidget {
         }
     }
 
-    async commit(repository?: Repository, options?: 'amend' | 'sign-off', message: string = `${this.message}\n\n${this.additionalMessage}`) {
+    protected async undo(): Promise<void> {
+        const { selectedRepository } = this.repositoryProvider;
+        if (selectedRepository) {
+            const message = (await this.git.exec(selectedRepository, ['log', '-n', '1', '--format=%B'])).stdout.trim();
+            const commitTextArea = document.getElementById('theia-git-commit-message') as HTMLTextAreaElement;
+            await this.git.exec(selectedRepository, ['reset', 'HEAD~', '--soft']);
+            if (commitTextArea) {
+                commitTextArea.value = message;
+                this.resize(commitTextArea);
+                commitTextArea.focus();
+            }
+        }
+    }
+
+    async commit(repository?: Repository, options?: 'amend' | 'sign-off', message: string = `${this.message}`) {
         if (repository) {
             if (message.trim().length > 0) {
                 try {
@@ -116,13 +127,16 @@ export class GitWidget extends VirtualWidget {
                 }
             } else {
                 // need to access the element, because Phosphor.js is not updating `value`but only `setAttribute('value', ....)` which only sets the default value.
-                const messageInput = document.getElementById('git-messageInput') as HTMLInputElement;
+                const messageInput = document.getElementById('theia-git-commit-message') as HTMLInputElement;
                 if (messageInput) {
                     this.messageInputHighlighted = true;
                     this.update();
                     messageInput.focus();
                 }
-                this.messageService.error('Please provide a commit message!');
+                this.commitMessageValidationResult = {
+                    status: 'error',
+                    message: 'Please provide a commit message'
+                };
             }
         }
     }
@@ -169,20 +183,118 @@ export class GitWidget extends VirtualWidget {
         this.update();
     }
 
+    protected renderCommitMessage(): h.Child {
+        const oninput = this.onCommitMessageChange.bind(this);
+        const placeholder = 'Commit message';
+        const status = this.commitMessageValidationResult ? this.commitMessageValidationResult.status : 'idle';
+        const message = this.commitMessageValidationResult ? this.commitMessageValidationResult.message : '';
+        const autofocus = 'true';
+        const id = GitWidget.Styles.COMMIT_MESSAGE;
+        const commitMessageArea = h.textarea({
+            className: `${GitWidget.Styles.COMMIT_MESSAGE} theia-git-commit-message-${status}`,
+            autofocus,
+            oninput,
+            placeholder,
+            id
+        });
+        const validationMessageArea = h.textarea({
+            className: `${GitWidget.Styles.VALIDATION_MESSAGE} ${GitWidget.Styles.NO_SELECT} theia-git-validation-message-${status} theia-git-commit-message-${status}`,
+            style: {
+                display: !!this.commitMessageValidationResult ? 'block' : 'none'
+            },
+            readonly: 'true'
+        }, message);
+        return h.div({ className: GitWidget.Styles.COMMIT_MESSAGE_CONTAINER }, commitMessageArea, validationMessageArea);
+    }
+
+    protected onCommitMessageChange(e: Event): void {
+        const { target } = e;
+        if (target instanceof HTMLTextAreaElement) {
+            const { value } = target;
+            this.resize(target);
+            this.validateCommitMessage(value).then(result => {
+                if (!GitCommitMessageValidator.Result.equal(this.commitMessageValidationResult, result)) {
+                    this.commitMessageValidationResult = result;
+                    this.update();
+                }
+            });
+        }
+    }
+
+    protected resize(textArea: HTMLTextAreaElement): void {
+        // tslint:disable-next-line:no-null-keyword
+        const fontSize = Number.parseInt(window.getComputedStyle(textArea, undefined).getPropertyValue('font-size').split('px')[0] || '0', 10);
+        const { value } = textArea;
+        if (Number.isInteger(fontSize) && fontSize > 0) {
+            const requiredHeight = fontSize * value.split(/\r?\n/).length;
+            if (requiredHeight < textArea.scrollHeight) {
+                textArea.style.height = `${requiredHeight}px`;
+            }
+        }
+        if (textArea.clientHeight < textArea.scrollHeight) {
+            textArea.style.height = `${textArea.scrollHeight}px`;
+            if (textArea.clientHeight < textArea.scrollHeight) {
+                textArea.style.height = `${(textArea.scrollHeight * 2 - textArea.clientHeight)}px`;
+            }
+        }
+    }
+
+    protected async validateCommitMessage(input: string | undefined): Promise<GitCommitMessageValidator.Result | undefined> {
+        return this.commitMessageValidator.validate(input);
+    }
+
     protected render(): h.Child {
         const repository = this.repositoryProvider.selectedRepository;
 
-        const messageInput = this.renderMessageInput();
-        const messageTextarea = this.renderMessageTextarea();
+        const messageInput = this.renderCommitMessage();
         const commandBar = this.renderCommandBar(repository);
-        const headerContainer = h.div({ className: 'headerContainer' }, messageInput, messageTextarea, commandBar);
+        const headerContainer = h.div({ className: 'headerContainer' }, messageInput, commandBar);
 
         const mergeChanges = this.renderMergeChanges(repository) || '';
         const stagedChanges = this.renderStagedChanges(repository) || '';
         const unstagedChanges = this.renderUnstagedChanges(repository) || '';
         const changesContainer = h.div({ className: "changesOuterContainer", id: this.scrollContainer }, mergeChanges, stagedChanges, unstagedChanges);
 
-        return [headerContainer, changesContainer];
+        const lastCommit = h.div({ className: GitWidget.Styles.LAST_COMMIT_CONTAINER }, this.renderLastCommit());
+
+        return [headerContainer, changesContainer, lastCommit];
+    }
+
+    protected createChildContainer(): HTMLElement {
+        const container = super.createChildContainer();
+        container.classList.add(GitWidget.Styles.MAIN_CONTAINER);
+        return container;
+    }
+
+    protected async getLastCommit(): Promise<{ commit: CommitWithChanges, avatar: string } | undefined> {
+        const { selectedRepository } = this.repositoryProvider;
+        if (selectedRepository) {
+            const commits = await this.git.log(selectedRepository, { maxCount: 1, shortSha: true });
+            if (commits.length > 0) {
+                const commit = commits[0];
+                const avatar = await this.avatarService.getAvatar(commit.author.email);
+                return { commit, avatar };
+            }
+        }
+        return undefined;
+    }
+
+    protected renderLastCommit(): h.Child {
+        if (!this.lastCommit) {
+            return '';
+        }
+        const { commit, avatar } = this.lastCommit;
+        const gravatar = h.div({ className: GitWidget.Styles.LAST_COMMIT_MESSAGE_AVATAR }, h.img({ src: avatar }));
+        const summary = h.div({ className: GitWidget.Styles.LAST_COMMIT_MESSAGE_SUMMARY }, commit.summary);
+        const time = h.div({ className: GitWidget.Styles.LAST_COMMIT_MESSAGE_TIME }, `${commit.authorDateRelative} by ${commit.author.name}`);
+        const details = h.div({ className: GitWidget.Styles.LAST_COMMIT_DETAILS }, summary, time);
+        // Yes, a container. Otherwise the button would stretch vertically. And having a bigger `Undo` button than a `Commit` would be odd.
+        const buttonContainer = h.div({ className: GitWidget.Styles.FLEX_CENTER }, h.button({
+            className: `theia-button`,
+            title: 'Undo last commit',
+            onclick: () => this.undo.bind(this)()
+        }, 'Undo'));
+        return VirtualRenderer.flatten([gravatar, details, buttonContainer]);
     }
 
     protected renderCommandBar(repository: Repository | undefined): h.Child {
@@ -206,44 +318,45 @@ export class GitWidget extends VirtualWidget {
                 }
             }
         }, h.i({ className: 'fa fa-ellipsis-h' })) : '';
-        const commandsContainer = h.div({ className: 'buttons' }, refresh, more);
+        const signOffBy = repository ? h.a({
+            className: 'toolbar-button',
+            title: 'Add Signed-off-by',
+            onclick: async () => {
+                const { selectedRepository } = this.repositoryProvider;
+                if (selectedRepository) {
+                    const [username, email] = await this.getUserConfig(selectedRepository);
+                    const signOff = `\n\nSigned-off-by: ${username} <${email}>`;
+                    const commitTextArea = document.getElementById('theia-git-commit-message') as HTMLTextAreaElement;
+                    if (commitTextArea) {
+                        const content = commitTextArea.value;
+                        if (content.endsWith(signOff)) {
+                            commitTextArea.value = content.substr(0, content.length - signOff.length);
+                        } else {
+                            commitTextArea.value = `${content}${signOff}`;
+                        }
+                        this.resize(commitTextArea);
+                        commitTextArea.focus();
+                    }
+                }
+            }
+        }, h.i({ className: 'fa fa-pencil-square-o ' })) : '';
+        const commandsContainer = h.div({ className: 'buttons' }, refresh, signOffBy, more);
         const commitButton = h.button({
             className: 'theia-button',
             title: 'Commit all the staged changes',
-            onclick: () => this.commit.bind(this)()
+            onclick: () => this.commit.bind(this)(repository)
         }, 'Commit');
         const commitContainer = h.div({ className: 'buttons' }, commitButton);
         const placeholder = h.div({ className: 'placeholder' });
         return h.div({ id: 'commandBar', className: 'flexcontainer' }, commandsContainer, placeholder, commitContainer);
     }
 
-    protected renderMessageInput(): h.Child {
-        const input = h.input({
-            id: 'git-messageInput',
-            oninput: event => {
-                const inputElement = (event.target as HTMLInputElement);
-                if (inputElement.value !== '') {
-                    this.messageInputHighlighted = false;
-                }
-                this.message = (event.target as HTMLInputElement).value;
-            },
-            className: this.messageInputHighlighted ? 'warn' : '',
-            placeholder: 'Commit message',
-            value: this.message
-        });
-        return h.div({ id: 'messageInputContainer', className: 'flexcontainer row' }, input);
-    }
-
-    protected renderMessageTextarea(): h.Child {
-        const textarea = h.textarea({
-            id: 'git-extendedMessageInput',
-            placeholder: 'Extended commit text',
-            oninput: event => {
-                this.additionalMessage = (event.target as HTMLTextAreaElement).value;
-            },
-            value: this.additionalMessage
-        });
-        return h.div({ id: 'messageTextareaContainer', className: 'flexcontainer row' }, textarea);
+    protected async getUserConfig(repository: Repository): Promise<[string, string]> {
+        const [username, email] = (await Promise.all([
+            this.git.exec(repository, ['config', 'user.name']),
+            this.git.exec(repository, ['config', 'user.email'])
+        ])).map(result => result.stdout.trim());
+        return [username, email];
     }
 
     protected renderGitItemButtons(repository: Repository, change: GitFileChange): h.Child {
@@ -430,9 +543,7 @@ export class GitWidget extends VirtualWidget {
 
     protected resetCommitMessages(): void {
         this.message = '';
-        this.additionalMessage = '';
-
-        const messageInput = document.getElementById('git-messageInput') as HTMLInputElement;
+        const messageInput = document.getElementById('theia-git-commit-message') as HTMLInputElement;
         const extendedMessageInput = document.getElementById('git-extendedMessageInput') as HTMLInputElement;
         messageInput.value = '';
         extendedMessageInput.value = '';
@@ -445,6 +556,21 @@ export namespace GitWidget {
         export const PATH: MenuPath = ['git-widget-context-menu'];
         export const OTHER_GROUP: MenuPath = [...PATH, '1_other'];
         export const COMMIT_GROUP: MenuPath = [...PATH, '2_commit'];
+    }
+
+    export namespace Styles {
+        export const MAIN_CONTAINER = 'theia-git-main-container';
+        export const COMMIT_MESSAGE_CONTAINER = 'theia-git-commit-message-container';
+        export const COMMIT_MESSAGE = 'theia-git-commit-message';
+        export const VALIDATION_MESSAGE = 'theia-git-commit-validation-message';
+        export const LAST_COMMIT_CONTAINER = 'theia-git-last-commit-container';
+        export const LAST_COMMIT_DETAILS = 'theia-git-last-commit-details';
+        export const LAST_COMMIT_MESSAGE_AVATAR = 'theia-git-last-commit-message-avatar';
+        export const LAST_COMMIT_MESSAGE_SUMMARY = 'theia-git-last-commit-message-summary';
+        export const LAST_COMMIT_MESSAGE_TIME = 'theia-git-last-commit-message-time';
+
+        export const FLEX_CENTER = 'flex-container-center';
+        export const NO_SELECT = 'no-select';
     }
 
 }
