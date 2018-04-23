@@ -5,8 +5,7 @@
   "dependencies": {
     "@theia/core": "^0.3.8",
     "@theia/languages": "^0.3.8",
-    "@theia/variable-resolver": "^0.3.8",
-    "@theia/workspace": "^0.3.8"
+    "@theia/variable-resolver": "^0.3.8"
   },
   "publishConfig": {
     "access": "public"
