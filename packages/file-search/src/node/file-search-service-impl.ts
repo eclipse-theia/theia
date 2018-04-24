@@ -37,7 +37,7 @@ export class FileSearchServiceImpl implements FileSearchService {
             '--sort-files',
         ];
         if (!options.useGitIgnore) {
-            args.push('-u');
+            args.push('-uu');
         }
         const process = this.rawProcessFactory({
             command: rgPath,
