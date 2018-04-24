@@ -10,7 +10,7 @@ import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
 import { KeybindingContribution, WebSocketConnectionProvider, WidgetFactory, KeybindingContext } from '@theia/core/lib/browser';
 import { TerminalFrontendContribution } from './terminal-frontend-contribution';
 import { TerminalWidget, TerminalWidgetOptions, TERMINAL_WIDGET_FACTORY_ID } from './terminal-widget';
-import { ITerminalServer, terminalPath, terminalsPath } from '../common/terminal-protocol';
+import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { IShellTerminalServer, shellTerminalPath } from '../common/shell-terminal-protocol';
 import { TerminalActiveContext } from './terminal-keybinding-contexts';
@@ -33,7 +33,6 @@ export default new ContainerModule(bind => {
             child.parent = ctx.container;
             const counter = terminalNum++;
             child.bind(TerminalWidgetOptions).toConstantValue({
-                endpoint: { path: terminalsPath },
                 id: 'terminal-' + counter,
                 caption: 'Terminal ' + counter,
                 label: 'Terminal ' + counter,

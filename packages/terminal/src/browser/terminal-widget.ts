@@ -7,10 +7,10 @@
 
 import { inject, injectable, named } from "inversify";
 import { Disposable, ILogger } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message, WebSocketConnectionProvider, Endpoint, StatefulWidget, isFirefox } from '@theia/core/lib/browser';
+import { Widget, BaseWidget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox } from '@theia/core/lib/browser';
 import { WorkspaceService } from "@theia/workspace/lib/browser";
 import { IShellTerminalServer } from '../common/shell-terminal-protocol';
-import { ITerminalServer } from '../common/terminal-protocol';
+import { ITerminalServer, terminalsPath } from '../common/terminal-protocol';
 import { IBaseTerminalErrorEvent, IBaseTerminalExitEvent } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import * as Xterm from 'xterm';
@@ -24,7 +24,6 @@ export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
 export const TerminalWidgetOptions = Symbol("TerminalWidgetOptions");
 export interface TerminalWidgetOptions {
-    endpoint: Endpoint.Options,
     id: string,
     caption: string,
     label: string
@@ -57,7 +56,6 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
     private term: Xterm.Terminal;
     private cols: number;
     private rows: number;
-    private endpoint: Endpoint;
     protected restored = false;
     protected closeOnDispose = true;
     protected openAfterShow = false;
@@ -76,7 +74,6 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         @inject(ILogger) @named('terminal') protected readonly logger: ILogger
     ) {
         super();
-        this.endpoint = new Endpoint(options.endpoint);
         this.id = options.id;
         this.title.caption = options.caption;
         this.title.label = options.label;
@@ -259,11 +256,6 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         return this.waitForTermOpened.promise;
     }
 
-    protected createWebSocket(pid: string): WebSocket {
-        const url = this.endpoint.getWebSocketUrl().resolve(pid);
-        return this.webSocketConnectionProvider.createWebSocket(url.toString(), { reconnecting: false });
-    }
-
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
         if (this.isTermOpen) {
@@ -315,7 +307,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         }, 50);
     }
 
-    protected connectTerminalProcess(id: number) {
+    protected connectTerminalProcess(id: number): void {
         this.monitorTerminal(id);
         this.connectSocket(id);
     }
@@ -334,19 +326,16 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         }));
     }
 
-    protected connectSocket(id: number) {
-        const socket = this.createWebSocket(id.toString());
-        socket.onopen = () => {
-            this.term.attach(socket);
-            this.term._initialized = true;
-        };
-
-        socket.onerror = err => {
-            console.error(err);
-        };
-        this.toDispose.push(Disposable.create(() =>
-            socket.close()
-        ));
+    protected connectSocket(id: number): void {
+        this.webSocketConnectionProvider.listen({
+            path: `${terminalsPath}/${id}`,
+            onConnection: connection => {
+                connection.onNotification('onData', (data: string) => this.term.write(data));
+                this.term.on('data', data => data && connection.sendRequest('write', data));
+                this.toDispose.push(connection);
+                connection.listen();
+            }
+        }, { reconnecting: false });
     }
 
     dispose(): void {

@@ -67,7 +67,7 @@ export class WebSocketConnectionProvider {
     /**
      * Creates a websocket URL to the current location
      */
-    createWebSocketUrl(path: string): string {
+    protected createWebSocketUrl(path: string): string {
         const endpoint = new Endpoint({ path });
         return endpoint.getWebSocketUrl().toString();
     }
@@ -75,7 +75,7 @@ export class WebSocketConnectionProvider {
     /**
      * Creates a web socket for the given url
      */
-    createWebSocket(url: string, options?: WebSocketOptions): WebSocket {
+    protected createWebSocket(url: string, options?: WebSocketOptions): WebSocket {
         if (options === undefined || options.reconnecting) {
             const socketOptions = {
                 maxReconnectionDelay: 10000,

@@ -6,7 +6,6 @@
  */
 
 import { ContainerModule, Container } from 'inversify';
-import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { TerminalBackendContribution } from "./terminal-backend-contribution";
 import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common/messaging";
 import { ShellProcess, ShellProcessFactory, ShellProcessOptions } from './shell-process';
@@ -17,9 +16,10 @@ import { IShellTerminalServer, shellTerminalPath } from '../common/shell-termina
 import { ShellTerminalServer } from '../node/shell-terminal-server';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { createCommonBindings } from '../common/terminal-common-module';
+import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 
 export default new ContainerModule(bind => {
-    bind(BackendApplicationContribution).to(TerminalBackendContribution);
+    bind(MessagingService.Contribution).to(TerminalBackendContribution).inSingletonScope();
     bind(ITerminalServer).to(TerminalServer).inSingletonScope();
     bind(IShellTerminalServer).to(ShellTerminalServer).inSingletonScope();
     bind(ShellProcess).toSelf().inTransientScope();
