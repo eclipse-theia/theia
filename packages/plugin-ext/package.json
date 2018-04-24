@@ -1,11 +1,27 @@
 {
-  "name": "@theia/plugin",
+  "name": "@theia/plugin-ext",
   "version": "0.3.8",
-  "description": "Theia - Plugin API",
-  "types": "./src/theia.d.ts",
+  "description": "Theia - Plugin Extension",
+  "main": "lib/common/index.js",
+  "types": "lib/common/index.d.ts",
+  "dependencies": {
+    "@theia/core": "^0.3.8",
+    "@theia/filesystem": "^0.3.8",
+    "@theia/workspace": "^0.3.8"
+  },
   "publishConfig": {
     "access": "public"
   },
+  "theiaExtensions": [
+    {
+      "backend": "lib/node/node-plugin-api-backend-module",
+      "backendElectron": "lib/node-electron/electron-plugin-api-backend-module",
+      "frontend": "lib/browser/plugin-api-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -16,6 +32,7 @@
   },
   "homepage": "https://github.com/theia-ide/theia",
   "files": [
+    "lib",
     "src"
   ],
   "scripts": {
@@ -33,4 +50,3 @@
     "extends": "../../configs/nyc.json"
   }
 }
-
