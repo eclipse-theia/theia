@@ -8,18 +8,13 @@
 import { inject, injectable, postConstruct } from 'inversify';
 import * as jsoncparser from "jsonc-parser";
 import URI from '@theia/core/lib/common/uri';
-import { ILogger, DisposableCollection, Resource, Event, Emitter, ResourceProvider, MaybePromise } from "@theia/core/lib/common";
+import { ILogger, Resource, ResourceProvider, MaybePromise } from "@theia/core/lib/common";
 import { PreferenceProvider } from '@theia/core/lib/browser/preferences';
 
 @injectable()
-export abstract class AbstractResourcePreferenceProvider implements PreferenceProvider {
+export abstract class AbstractResourcePreferenceProvider extends PreferenceProvider {
 
     protected preferences: { [key: string]: any } = {};
-
-    protected readonly onDidPreferencesChangedEmitter = new Emitter<void>();
-    readonly onDidPreferencesChanged: Event<void> = this.onDidPreferencesChangedEmitter.event;
-
-    protected readonly toDispose = new DisposableCollection();
 
     @inject(ILogger) protected readonly logger: ILogger;
 
@@ -42,12 +37,21 @@ export abstract class AbstractResourcePreferenceProvider implements PreferencePr
 
     protected abstract getUri(): MaybePromise<URI>;
 
-    dispose(): void {
-        this.toDispose.dispose();
-    }
-
     getPreferences(): { [key: string]: any } {
         return this.preferences;
+    }
+
+    async setPreference(key: string, value: any): Promise<void> {
+        const resource = await this.resource;
+        if (resource.saveContents) {
+            const content = await resource.readContents();
+            const formattingOptions = {tabSize: 3, insertSpaces: true, eol: ''};
+            const edits = jsoncparser.modify(content, [key], value, { formattingOptions });
+            const result = jsoncparser.applyEdits(content, edits);
+
+            await resource.saveContents(result);
+            this.onDidPreferencesChangedEmitter.fire(undefined);
+        }
     }
 
     protected async readPreferences(): Promise<void> {

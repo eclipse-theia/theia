@@ -13,8 +13,12 @@ let disableJSDOM = enableJSDOM();
 
 import { Container } from 'inversify';
 import * as chai from 'chai';
+import * as fs from 'fs-extra';
+import * as temp from 'temp';
 import { Emitter } from '@theia/core/lib/common';
-import { PreferenceService, PreferenceProviders, PreferenceServiceImpl } from '@theia/core/lib/browser/preferences';
+import {
+    PreferenceService, PreferenceScope,
+    PreferenceProviders, PreferenceServiceImpl } from '@theia/core/lib/browser/preferences';
 import { FileSystem } from '@theia/filesystem/lib/common/';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
@@ -32,6 +36,7 @@ import { MockWorkspaceServer } from '@theia/workspace/lib/common/test/mock-works
 import { MockWindowService } from '@theia/core/lib/browser/window/test/mock-window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import * as sinon from 'sinon';
+import URI from "@theia/core/lib/common/uri";
 
 disableJSDOM();
 
@@ -39,6 +44,7 @@ const expect = chai.expect;
 let testContainer: Container;
 
 let prefService: PreferenceService;
+const tempPath = temp.track().openSync().path;
 
 const mockUserPreferenceEmitter = new Emitter<void>();
 const mockWorkspacePreferenceEmitter = new Emitter<void>();
@@ -49,7 +55,7 @@ before(async () => {
     testContainer.bind(UserPreferenceProvider).toSelf().inSingletonScope();
     testContainer.bind(WorkspacePreferenceProvider).toSelf().inSingletonScope();
 
-    testContainer.bind(PreferenceProviders).toFactory(ctx => () => {
+    testContainer.bind(PreferenceProviders).toFactory(ctx => (scope: PreferenceScope) => {
         const userProvider = ctx.container.get(UserPreferenceProvider);
         const workspaceProvider = ctx.container.get(WorkspacePreferenceProvider);
 
@@ -59,7 +65,7 @@ before(async () => {
         sinon.stub(workspaceProvider, 'onDidPreferencesChanged').get(() =>
             mockWorkspacePreferenceEmitter.event
         );
-        return [userProvider, workspaceProvider];
+        return scope === PreferenceScope.User ? userProvider : workspaceProvider;
     });
     testContainer.bind(PreferenceServiceImpl).toSelf().inSingletonScope();
 
@@ -80,7 +86,20 @@ before(async () => {
     testContainer.bind(WindowService).to(MockWindowService);
 
     /* Resource mocks and bindings */
-    testContainer.bind(MockResourceProvider).toSelf().inSingletonScope();
+    testContainer.bind(MockResourceProvider).toDynamicValue(ctx => {
+        const resourceProvider = new MockResourceProvider();
+        sinon.stub(resourceProvider, 'get').callsFake(() => Promise.resolve({
+            uri: new URI(''),
+            dispose() { },
+            readContents(): Promise<string> {
+                return fs.readFile(tempPath, 'utf-8');
+            },
+            saveContents(content: string, options?: { encoding?: string }): Promise<void> {
+                return fs.writeFile(tempPath, content);
+            }
+        }));
+        return resourceProvider;
+    });
     testContainer.bind(ResourceProvider).toProvider(context =>
         uri => context.container.get(MockResourceProvider).get(uri)
     );
@@ -238,5 +257,25 @@ describe('Preference Service', function () {
         [stubUser, stubWorkspace].forEach(stub => {
             stub.restore();
         });
+    });
+
+    it('Should store preference when settings file is empty', async () => {
+        const settings = "{\n   \"key\": \"value\"\n}";
+        await prefService.set("key", "value", PreferenceScope.User);
+        expect(fs.readFileSync(tempPath).toString()).equals(settings);
+    });
+
+    it('Should store preference when settings file is not empty', async () => {
+        const settings = "{\n   \"key\": \"value\",\n   \"newKey\": \"newValue\"\n}";
+        fs.writeFileSync(tempPath, "{\n   \"key\": \"value\"\n}");
+        await prefService.set("newKey", "newValue", PreferenceScope.User);
+        expect(fs.readFileSync(tempPath).toString()).equals(settings);
+    });
+
+    it('Should override existing preference', async () => {
+        const settings = "{\n   \"key\": \"newValue\"\n}";
+        fs.writeFileSync(tempPath, "{\n   \"key\": \"oldValue\"\n}");
+        await prefService.set("key", "newValue", PreferenceScope.User);
+        expect(fs.readFileSync(tempPath).toString()).equals(settings);
     });
 });

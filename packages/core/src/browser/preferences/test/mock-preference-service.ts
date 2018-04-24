@@ -18,6 +18,7 @@ export class MockPreferenceService implements PreferenceService {
     get<T>(preferenceName: string, defaultValue?: T): T | undefined {
         return undefined;
     }
+    set(preferenceName: string, value: any): Promise<void> { return Promise.resolve(); }
     ready: Promise<void>;
     readonly onPreferenceChanged: Event<PreferenceChange> = new Emitter<PreferenceChange>().event;
 }

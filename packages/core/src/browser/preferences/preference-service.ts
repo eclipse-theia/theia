@@ -11,6 +11,11 @@ import { FrontendApplicationContribution } from '../../browser';
 import { Event, Emitter, DisposableCollection, Disposable, deepFreeze } from '../../common';
 import { PreferenceProvider } from './preference-provider';
 
+export enum PreferenceScope {
+    User,
+    Workspace
+}
+
 export interface PreferenceChangedEvent {
     changes: PreferenceChange[]
 }
@@ -27,11 +32,12 @@ export interface PreferenceService extends Disposable {
     get<T>(preferenceName: string): T | undefined;
     get<T>(preferenceName: string, defaultValue: T): T;
     get<T>(preferenceName: string, defaultValue?: T): T | undefined;
+    set(preferenceName: string, value: any, scope?: PreferenceScope): Promise<void>;
     onPreferenceChanged: Event<PreferenceChange>;
 }
 
-export const PreferenceProviders = Symbol('PreferenceProvidersFactory');
-export type PreferenceProviders = () => PreferenceProvider[];
+export const PreferenceProviders = Symbol('PreferenceProviders');
+export type PreferenceProviders = (scope: PreferenceScope) => PreferenceProvider;
 
 @injectable()
 export class PreferenceServiceImpl implements PreferenceService, FrontendApplicationContribution {
@@ -43,7 +49,7 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
     readonly onPreferenceChanged = this.onPreferenceChangedEmitter.event;
 
     @inject(PreferenceProviders)
-    protected readonly createPreferenceProviders: PreferenceProviders;
+    protected readonly getPreferenceProvider: PreferenceProviders;
 
     constructor() {
         this.toDispose.push(this.onPreferenceChangedEmitter);
@@ -52,7 +58,10 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
     protected _preferenceProviders: PreferenceProvider[] | undefined;
     protected get preferenceProviders(): PreferenceProvider[] {
         if (!this._preferenceProviders) {
-            this._preferenceProviders = this.createPreferenceProviders();
+            this._preferenceProviders = [
+                this.getPreferenceProvider(PreferenceScope.User),
+                this.getPreferenceProvider(PreferenceScope.Workspace)
+            ];
         }
         return this._preferenceProviders;
     }
@@ -129,6 +138,10 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
     get<T>(preferenceName: string, defaultValue?: T): T | undefined {
         const value = this.preferences[preferenceName];
         return value !== null && value !== undefined ? value : defaultValue;
+    }
+
+    set(preferenceName: string, value: any, scope: PreferenceScope): Promise<void> {
+        return this.getPreferenceProvider(scope).setPreference(preferenceName, value);
     }
 
     getBoolean(preferenceName: string): boolean | undefined;
