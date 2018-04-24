@@ -65,7 +65,7 @@ export class QuickFileOpenService implements QuickOpenModel {
         let placeholderText = "File name to search.";
         const keybinding = this.getKeyCommand();
         if (keybinding) {
-            placeholderText += ` (Press ${keybinding} to show/hide .gitignore files)`;
+            placeholderText += ` (Press ${keybinding} to show/hide ignored files)`;
         }
 
         // Triggering the keyboard shortcut while the dialog is open toggles
