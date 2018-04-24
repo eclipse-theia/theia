@@ -5,11 +5,33 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { Disposable, Event } from '../../common';
+import { injectable } from 'inversify';
+import { Disposable, DisposableCollection, Emitter, Event } from '../../common';
 
-export const PreferenceProvider = Symbol('PreferenceProvider');
+@injectable()
+export class PreferenceProvider implements Disposable {
+    protected readonly onDidPreferencesChangedEmitter = new Emitter<void>();
+    readonly onDidPreferencesChanged: Event<void> = this.onDidPreferencesChangedEmitter.event;
 
-export interface PreferenceProvider extends Disposable {
-    getPreferences(): { [key: string]: any };
-    readonly onDidPreferencesChanged: Event<void>;
+    protected readonly toDispose = new DisposableCollection();
+
+    constructor() {
+        this.toDispose.push(this.onDidPreferencesChangedEmitter);
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
+    protected fireOnDidPreferencesChanged(): void {
+        this.onDidPreferencesChangedEmitter.fire(undefined);
+    }
+
+    getPreferences(): { [p: string]: any } {
+        return [];
+    }
+
+    setPreference(key: string, value: any): Promise<void> {
+        return Promise.resolve();
+    }
 }
