@@ -7,14 +7,15 @@
 
 import { ContainerModule } from "inversify";
 import { bindContributionProvider, ILogger } from '@theia/core/lib/common';
-import { BackendApplicationContribution } from '@theia/core/lib/node';
+import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 import { LanguagesBackendContribution } from "./languages-backend-contribution";
 import { LanguageServerContribution } from "./language-server-contribution";
 
 export default new ContainerModule(bind => {
-    bind(BackendApplicationContribution).to(LanguagesBackendContribution).inSingletonScope();
+    bind(MessagingService.Contribution).to(LanguagesBackendContribution).inSingletonScope();
     bindContributionProvider(bind, LanguageServerContribution);
 
+    // FIXME: get rid of it, replace by a logger per a language
     bind(ILogger).toDynamicValue(ctx => {
         const logger = ctx.container.get<ILogger>(ILogger);
         return logger.child({ 'module': 'languages' });
