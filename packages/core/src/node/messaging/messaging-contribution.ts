@@ -14,8 +14,8 @@ import { MessageConnection } from 'vscode-jsonrpc';
 import { createWebSocketConnection } from 'vscode-ws-jsonrpc/lib/socket/connection';
 import { IConnection } from 'vscode-ws-jsonrpc/lib/server/connection';
 import * as launch from 'vscode-ws-jsonrpc/lib/server/launch';
-import { IWebSocket } from 'vscode-ws-jsonrpc/lib/socket/socket';
 import { ContributionProvider, ConnectionHandler } from '../../common';
+import { WebSocketChannel } from '../../common/messaging/web-socket-channel';
 import { BackendApplicationContribution } from "../backend-application";
 import { MessagingService } from './messaging-service';
 import { ConsoleLogger } from "./logger";
@@ -31,8 +31,12 @@ export class MessagingContribution implements BackendApplicationContribution, Me
     @inject(ContributionProvider) @named(MessagingService.Contribution)
     protected readonly contributions: ContributionProvider<MessagingService.Contribution>;
 
+    protected readonly wsHandlers = new MessagingContribution.ConnectionHandlers<ws>();
+    protected readonly channelHandlers = new MessagingContribution.ConnectionHandlers<WebSocketChannel>();
+
     @postConstruct()
     protected init(): void {
+        this.ws(WebSocketChannel.wsPath, (_, socket) => this.handleChannels(socket));
         for (const contribution of this.contributions.getContributions()) {
             contribution.configure(this);
         }
@@ -43,46 +47,22 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         }
     }
 
-    listen(spec: string, callback: (params: MessagingService.Params, connection: MessageConnection) => void): void {
-        return this.pushAcceptor(spec, (params, socket) => {
-            const connection = createWebSocketConnection(this.toIWebSocket(socket), new ConsoleLogger());
+    listen(spec: string, callback: (params: MessagingService.PathParams, connection: MessageConnection) => void): void {
+        return this.channelHandlers.push(spec, (params, channel) => {
+            const connection = createWebSocketConnection(channel, new ConsoleLogger());
             callback(params, connection);
         });
     }
 
-    forward(spec: string, callback: (params: MessagingService.Params, connection: IConnection) => void): void {
-        return this.pushAcceptor(spec, (params, socket) => {
-            const connection = launch.createWebSocketConnection(this.toIWebSocket(socket));
+    forward(spec: string, callback: (params: MessagingService.PathParams, connection: IConnection) => void): void {
+        return this.channelHandlers.push(spec, (params, channel) => {
+            const connection = launch.createWebSocketConnection(channel);
             callback(params, connection);
         });
     }
 
-    protected readonly acceptors: ((path: string, socket: ws) => boolean)[] = [];
-    protected pushAcceptor(spec: string, callback: (params: MessagingService.Params, socket: ws) => void): void {
-        const route = new Route(spec);
-        this.acceptors.push((path, socket) => {
-            const params = route.match(path);
-            if (!params) {
-                return false;
-            }
-            callback(params, socket);
-            return true;
-        });
-    }
-    protected dispatch(socket: ws, request: http.IncomingMessage): void {
-        const pathname = request.url && url.parse(request.url).pathname;
-        if (!pathname) {
-            return;
-        }
-        for (const acceptor of this.acceptors) {
-            try {
-                if (acceptor(pathname, socket)) {
-                    return;
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
+    ws(spec: string, callback: (params: MessagingService.PathParams, socket: ws) => void): void {
+        return this.wsHandlers.push(spec, callback);
     }
 
     protected checkAliveTimeout = 30000;
@@ -97,7 +77,7 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         wss.on('connection', (socket: CheckAliveWS, request) => {
             socket.alive = true;
             socket.on('pong', () => socket.alive = true);
-            this.dispatch(socket, request);
+            this.handleConnection(socket, request);
         });
         setInterval(() => {
             wss.clients.forEach((socket: CheckAliveWS) => {
@@ -110,22 +90,89 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         }, this.checkAliveTimeout);
     }
 
-    protected toIWebSocket(webSocket: ws): IWebSocket {
-        return <IWebSocket>{
-            send: content => webSocket.send(content, error => {
-                if (error) {
-                    console.log(error);
-                }
-            }),
-            onMessage: cb => webSocket.on('message', cb),
-            onError: cb => webSocket.on('error', cb),
-            onClose: cb => webSocket.on('close', cb),
-            dispose: () => {
-                if (webSocket.readyState < ws.CLOSING) {
-                    webSocket.close();
-                }
-            }
-        };
+    protected handleConnection(socket: ws, request: http.IncomingMessage): void {
+        const pathname = request.url && url.parse(request.url).pathname;
+        if (pathname && !this.wsHandlers.route(pathname, socket)) {
+            console.error('Cannot find a ws handler for the path: ' + pathname);
+        }
     }
 
+    protected readonly channels = new Map<number, WebSocketChannel>();
+    protected handleChannels(socket: ws): void {
+        socket.on('message', data => {
+            const message: WebSocketChannel.Message = JSON.parse(data.toString());
+            if (message.kind === 'open') {
+                const { id, path } = message;
+                const channel = this.createChannel(id, socket);
+                if (this.channelHandlers.route(path, channel)) {
+                    channel.ready();
+                    this.channels.set(id, channel);
+                } else {
+                    console.error('Cannot find a service for the path: ' + path);
+                }
+            } else {
+                const { id } = message;
+                const channel = this.channels.get(id);
+                if (channel) {
+                    if (message.kind === 'close') {
+                        this.channels.delete(id);
+                    }
+                    channel.handleMessage(message);
+                } else {
+                    console.error('The ws channel does not exist', id);
+                }
+            }
+        });
+        socket.on('error', err => {
+            for (const channel of this.channels.values()) {
+                channel.fireError(err);
+            }
+        });
+        socket.on('close', (code, reason) => {
+            for (const channel of this.channels.values()) {
+                channel.fireClose(code, reason);
+            }
+            this.channels.clear();
+        });
+    }
+
+    protected createChannel(id: number, socket: ws): WebSocketChannel {
+        return new WebSocketChannel(id, content => socket.send(content, err => {
+            if (err) {
+                throw err;
+            }
+        }));
+    }
+
+}
+export namespace MessagingContribution {
+    export class ConnectionHandlers<T> {
+        protected readonly handlers: ((path: string, connection: T) => string | false)[] = [];
+
+        push(spec: string, callback: (params: MessagingService.PathParams, connection: T) => void): void {
+            const route = new Route(spec);
+            this.handlers.push((path, channel) => {
+                const params = route.match(path);
+                if (!params) {
+                    return false;
+                }
+                callback(params, channel);
+                return route.reverse(params);
+            });
+        }
+
+        route(path: string, connection: T): string | false {
+            for (const handler of this.handlers) {
+                try {
+                    const result = handler(path, connection);
+                    if (result) {
+                        return result;
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            return false;
+        }
+    }
 }
