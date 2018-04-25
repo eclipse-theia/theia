@@ -8,13 +8,15 @@ import { Container } from 'inversify';
 import { loggerBackendModule } from '@theia/core/lib/node/logger-backend-module';
 import { backendApplicationModule } from '@theia/core/lib/node/backend-application-module';
 import processBackendModule from '@theia/process/lib/node/process-backend-module';
+import { messagingBackendModule } from '@theia/core/lib/node/messaging/messaging-backend-module';
 import terminalBackendModule from '../terminal-backend-module';
 
-const testContainer = new Container();
-
-testContainer.load(backendApplicationModule);
-testContainer.load(loggerBackendModule);
-testContainer.load(processBackendModule);
-testContainer.load(terminalBackendModule);
-
-export { testContainer };
+export function createTerminalTestContainer() {
+    const terminalTestContainer = new Container();
+    terminalTestContainer.load(backendApplicationModule);
+    terminalTestContainer.load(loggerBackendModule);
+    terminalTestContainer.load(messagingBackendModule);
+    terminalTestContainer.load(processBackendModule);
+    terminalTestContainer.load(terminalBackendModule);
+    return terminalTestContainer;
+}

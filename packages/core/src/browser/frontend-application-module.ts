@@ -40,7 +40,7 @@ import { ThemingCommandContribution, ThemeService } from './theming';
 import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution } from './connection-status-service';
 import { DiffUriLabelProviderContribution } from './diff-uris';
 import { ApplicationServer, applicationPath } from "../common/application-protocol";
-import { WebSocketConnectionProvider } from "./messaging/connection";
+import { WebSocketConnectionProvider } from "./messaging";
 import { AboutDialog, AboutDialogProps } from "./about-dialog";
 import { EnvVariablesServer, envVariablesPath } from "./../common/env-variables";
 import { FrontendApplicationStateService } from './frontend-application-state';

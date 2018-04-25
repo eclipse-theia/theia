@@ -5,8 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { testContainer } from './test/inversify.spec-config';
+import { createTerminalTestContainer } from './test/terminal-test-container';
 import { BackendApplication } from '@theia/core/lib/node/backend-application';
+import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
 import { IShellTerminalServer } from '../common/shell-terminal-protocol';
 import * as ws from 'ws';
 import * as http from 'http';
@@ -19,25 +20,31 @@ describe('Terminal Backend Contribution', function () {
     let server: http.Server | https.Server;
     let shellTerminalServer: IShellTerminalServer;
 
-    before(async function () {
-        const application = testContainer.get(BackendApplication);
-        shellTerminalServer = testContainer.get(IShellTerminalServer);
+    beforeEach(async () => {
+        const container = createTerminalTestContainer();
+        const application = container.get(BackendApplication);
+        shellTerminalServer = container.get(IShellTerminalServer);
         server = await application.start();
     });
 
-    it("is data received from the terminal ws server", async function () {
+    it("is data received from the terminal ws server", async () => {
         const terminalId = await shellTerminalServer.create({});
-        const p = new Promise((resolve, reject) => {
-            const socket = new ws(`ws://localhost:${server.address().port}${terminalsPath}/${terminalId}`);
-            socket.on('message', msg => {
+        await new Promise((resolve, reject) => {
+            const socket = new ws(`ws://localhost:${server.address().port}/services`);
+            socket.on('error', reject);
+            socket.on('close', (code, reason) => reject(`socket is closed with '${code}' code and '${reason}' reason`));
+
+            const channel = new WebSocketChannel(0, content => socket.send(content));
+            channel.onOpen(() => {
                 resolve();
                 socket.close();
             });
-            socket.on('error', error => {
-                reject(error);
-            });
+            socket.on('message', data =>
+                channel.handleMessage(JSON.parse(data.toString()))
+            );
+            socket.on('open', () =>
+                channel.open(`${terminalsPath}/${terminalId}`)
+            );
         });
-
-        await p;
     });
 });

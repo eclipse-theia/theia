@@ -6,7 +6,7 @@
  */
 
 import * as chai from 'chai';
-import { testContainer } from './test/inversify.spec-config';
+import { createTerminalTestContainer } from './test/terminal-test-container';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { ITerminalServer } from '../common/terminal-protocol';
 import { IBaseTerminalExitEvent } from '../common/base-terminal-protocol';
@@ -21,8 +21,14 @@ const expect = chai.expect;
 describe('TermninalServer', function () {
 
     this.timeout(5000);
-    const terminalServer = testContainer.get<ITerminalServer>(ITerminalServer);
-    const terminalWatcher = testContainer.get<TerminalWatcher>(TerminalWatcher);
+    let terminalServer: ITerminalServer;
+    let terminalWatcher: TerminalWatcher;
+
+    beforeEach(() => {
+        const container = createTerminalTestContainer();
+        terminalServer = container.get(ITerminalServer);
+        terminalWatcher = container.get(TerminalWatcher);
+    });
 
     it('test terminal create', async function () {
         const args = ['--version'];
