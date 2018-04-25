@@ -2,8 +2,6 @@
   "name": "@theia/plugin-ext",
   "version": "0.3.8",
   "description": "Theia - Plugin Extension",
-  "main": "lib/common/index.js",
-  "types": "lib/common/index.d.ts",
   "dependencies": {
     "@theia/core": "^0.3.8",
     "@theia/filesystem": "^0.3.8",
@@ -14,9 +12,9 @@
   },
   "theiaExtensions": [
     {
-      "backend": "lib/node/node-plugin-api-backend-module",
-      "backendElectron": "lib/node-electron/electron-plugin-api-backend-module",
-      "frontend": "lib/browser/plugin-api-frontend-module"
+      "backend": "lib/plugin-ext-backend-module",
+      "backendElectron": "lib/plugin-backend-electron-module",
+      "frontend": "lib/plugin-ext-frontend-module"
     }
   ],
   "keywords": [
