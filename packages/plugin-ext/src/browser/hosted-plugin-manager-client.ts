@@ -123,7 +123,11 @@ export class HostedPluginManagerClient {
         this.pluginInstanceUri = uri;
         if (!isNative) {
             // Open a new tab in case of browser
-            this.windowService.openNewWindow(uri);
+            try {
+                this.windowService.openNewWindow(uri);
+            } catch (err) {
+                this.messageService.warn('Your browser prevented opening of new tab. You can do it manually: ' + uri);
+            }
         }
     }
 
