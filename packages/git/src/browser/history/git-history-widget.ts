@@ -112,7 +112,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                         authorDate.setUTCSeconds(commit.author.timestamp);
                         commits.push({
                             authorName: commit.author.name,
-                            authorDate: authorDate,
+                            authorDate,
                             authorEmail: commit.author.email,
                             authorDateRelative: commit.authorDateRelative,
                             authorAvatar: avatarUrl,
