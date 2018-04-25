@@ -8,7 +8,7 @@
     "@theia/languages": "^0.3.8",
     "@theia/monaco": "^0.3.8",
     "monaco-typescript": "^2.3.0",
-    "typescript-language-server": "^0.1.9"
+    "typescript-language-server": "^0.1.11"
   },
   "publishConfig": {
     "access": "public"
