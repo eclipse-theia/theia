@@ -197,7 +197,7 @@ export class GitWidget extends VirtualWidget {
             placeholder,
             id
         });
-        const validationMessageArea = h.textarea({
+        const validationMessageArea = h.div({
             className: `${GitWidget.Styles.VALIDATION_MESSAGE} ${GitWidget.Styles.NO_SELECT} theia-git-validation-message-${status} theia-git-commit-message-${status}`,
             style: {
                 display: !!this.commitMessageValidationResult ? 'block' : 'none'
@@ -255,7 +255,7 @@ export class GitWidget extends VirtualWidget {
         const unstagedChanges = this.renderUnstagedChanges(repository) || '';
         const changesContainer = h.div({ className: "changesOuterContainer", id: this.scrollContainer }, mergeChanges, stagedChanges, unstagedChanges);
 
-        const lastCommit = h.div({ className: GitWidget.Styles.LAST_COMMIT_CONTAINER }, this.renderLastCommit());
+        const lastCommit = this.lastCommit ? h.div(h.div({ className: GitWidget.Styles.LAST_COMMIT_CONTAINER }, this.renderLastCommit())) : '';
 
         return [headerContainer, changesContainer, lastCommit];
     }

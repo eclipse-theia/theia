@@ -218,6 +218,7 @@
     display: flex;
     flex-direction: column;
     margin: 0px 0px 7px 0px;
+    max-height: 400px;
 }
 
 .flex-container-center {
@@ -233,7 +234,6 @@
     border-style: solid;
     border-width: 1px;
     resize: none;
-	overflow: hidden;
     box-sizing: border-box;
     height: 25px;
     padding-left: 4px;
@@ -261,6 +261,10 @@
 
 .theia-git-commit-message-error {
     border-color: var(--theia-error-color0) !important;
+}
+
+.theia-git-commit-validation-message {
+    padding: 4px 4px 4px 4px;
 }
 
 .theia-git-validation-message-idle {
