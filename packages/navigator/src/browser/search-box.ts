@@ -138,16 +138,13 @@ export class SearchBox extends BaseWidget {
     }
 
     protected handleKey(keyCode: KeyCode) {
-        const { key } = keyCode;
-        if (key) {
-            const character = Key.equals(Key.BACKSPACE, keyCode) ? '\b' : Key.getEasyKey(key).easyString;
-            const data = this.debounce.append(character);
-            if (data) {
-                this.input.value = data;
-                this.update();
-            } else {
-                this.hide();
-            }
+        const character = Key.equals(Key.BACKSPACE, keyCode) ? '\b' : keyCode.character;
+        const data = this.debounce.append(character);
+        if (data) {
+            this.input.value = data;
+            this.update();
+        } else {
+            this.hide();
         }
     }
 
@@ -159,7 +156,7 @@ export class SearchBox extends BaseWidget {
         if (ctrl || alt || meta) {
             return false;
         }
-        if (this.isPrintableChar(keyCode) || (this.isVisible && SearchBox.SPECIAL_KEYS.some(key => Key.equals(key, keyCode)))) {
+        if (keyCode.character || (this.isVisible && SearchBox.SPECIAL_KEYS.some(key => Key.equals(key, keyCode)))) {
             return true;
         }
         return false;
@@ -226,19 +223,6 @@ export class SearchBox extends BaseWidget {
             close
         };
 
-    }
-
-    private isPrintableChar(input: KeyCode): boolean {
-        const { key } = input;
-        if (key) {
-            const { keyCode } = key;
-            return (keyCode > 47 && keyCode < 58)     // number keys
-                || (keyCode > 64 && keyCode < 91)     // letter keys
-                || (keyCode > 95 && keyCode < 112)    // numpad keys
-                || (keyCode > 185 && keyCode < 193)   // ;=,-./` (in order)
-                || (keyCode > 218 && keyCode < 223);  // [\]' (in order)
-        }
-        return false;
     }
 
 }
