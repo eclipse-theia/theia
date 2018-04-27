@@ -93,8 +93,15 @@ export class HostedPluginManagerClient {
      */
     async selectPluginPath(): Promise<void> {
         const root = await this.workspaceService.root || await this.fileSystem.getCurrentUserHome();
+        if (!root) {
+            throw new Error('Unable to find the root');
+        }
         const rootUri = new URI(root.uri);
         const rootStat = await this.fileSystem.getFileStat(rootUri.toString());
+        if (!rootStat) {
+            throw new Error('Unable to find the rootStat');
+        }
+
         const name = this.labelProvider.getName(rootUri);
         const label = await this.labelProvider.getIcon(root);
         const rootNode = DirNode.createRoot(rootStat, name, label);
