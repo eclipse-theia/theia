@@ -149,6 +149,7 @@ export class WorkspaceService implements FrontendApplicationContribution {
                 this.openNewWindow();
             } catch (error) {
                 // Fall back to reloading the current window in case the browser has blocked the new window
+                this._root = undefined;
                 this.logger.error(error.toString()).then(() => this.reloadWindow());
             }
         }
