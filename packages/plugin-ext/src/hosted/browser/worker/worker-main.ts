@@ -9,7 +9,7 @@ import { Emitter } from '@theia/core/lib/common/event';
 import { RPCProtocolImpl } from '../../../api/rpc-protocol';
 import { HostedPluginManagerExtImpl } from '../../plugin/hosted-plugin-manager';
 import { MAIN_RPC_CONTEXT, Plugin } from '../../../api/plugin-api';
-import { createAPI, startPlugin } from '../../plugin/plugin-context';
+import { createAPI, startPlugin } from '../../../plugin/plugin-context';
 
 const ctx = self as any;
 const plugins = new Map<string, () => void>();

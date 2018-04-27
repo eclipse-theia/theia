@@ -4,12 +4,12 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-import { QuickOpenExt, PLUGIN_RPC_CONTEXT as Ext, QuickOpenMain, PickOpenItem } from '../../api/plugin-api';
+import { QuickOpenExt, PLUGIN_RPC_CONTEXT as Ext, QuickOpenMain, PickOpenItem } from '../api/plugin-api';
 import { QuickPickOptions, QuickPickItem } from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
-import { RPCProtocol } from '../../api/rpc-protocol';
-import { ExtendedPromise } from '../../api/extended-promise';
-import { hookCancellationToken } from '../../api/async-util';
+import { RPCProtocol } from '../api/rpc-protocol';
+import { ExtendedPromise } from '../api/extended-promise';
+import { hookCancellationToken } from '../api/async-util';
 
 export type Item = string | QuickPickItem;
 

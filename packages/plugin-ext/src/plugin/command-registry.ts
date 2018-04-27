@@ -5,9 +5,9 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 import * as theia from '@theia/plugin';
-import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } from '../../api/plugin-api';
-import { RPCProtocol } from '../../api/rpc-protocol';
-import { Disposable } from '../../common/types-impl';
+import { CommandRegistryExt, PLUGIN_RPC_CONTEXT as Ext, CommandRegistryMain } from '../api/plugin-api';
+import { RPCProtocol } from '../api/rpc-protocol';
+import { Disposable } from './types-impl';
 
 export type Handler = <T>(...args: any[]) => T | PromiseLike<T>;
 

@@ -7,7 +7,7 @@
 
 import { resolve } from 'path';
 import { Emitter } from '@theia/core/lib/common/event';
-import { startPlugin } from '../plugin/plugin-context';
+import { startPlugin } from '../../plugin/plugin-context';
 import { HostedPluginManagerExtImpl } from '../plugin/hosted-plugin-manager';
 import { RPCProtocolImpl } from '../../api/rpc-protocol';
 import { MAIN_RPC_CONTEXT, Plugin } from '../../api/plugin-api';
