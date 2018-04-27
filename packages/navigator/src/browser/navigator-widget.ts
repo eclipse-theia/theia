@@ -11,7 +11,7 @@ import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { SelectionService, CommandService } from '@theia/core/lib/common';
 import { CommonCommands } from '@theia/core/lib/browser/common-frontend-contribution';
-import { ContextMenuRenderer, TreeProps, TreeModel, TreeNode, LabelProvider, Widget, SelectableTreeNode } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, TreeProps, TreeModel, TreeNode, LabelProvider, Widget, SelectableTreeNode, ExpandableTreeNode } from '@theia/core/lib/browser';
 import { FileTreeWidget, DirNode, FileNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
@@ -49,7 +49,15 @@ export class FileNavigatorWidget extends FileTreeWidget {
         this.initialize();
         this.searchBox = searchBoxFactory(SearchBoxProps.DEFAULT);
         this.toDispose.pushAll([
-            this.model.onExpansionChanged(() => this.searchBox.hide()),
+            this.model.onExpansionChanged(node => {
+                this.searchBox.hide();
+                if (node.expanded && node.children.length === 1) {
+                    const child = node.children[0];
+                    if (ExpandableTreeNode.is(child) && !child.expanded) {
+                        this.model.expandNode(child);
+                    }
+                }
+            }),
             this.navigatorSearch,
             this.navigatorSearch.onFilteredNodesChanged(nodes => {
                 const node = nodes.find(SelectableTreeNode.is);
