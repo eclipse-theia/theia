@@ -7,7 +7,7 @@
 
 .monaco-editor {
     padding-bottom: 5.6px;
-    font-family: monospace !important;
+    font-family: var(--theia-ui-font-family);
     font-size: inherit !important;
 }
 
