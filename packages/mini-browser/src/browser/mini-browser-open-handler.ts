@@ -67,7 +67,7 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> {
                 name,
                 iconClass,
                 // Make sure the toolbar is not visible. We have the `iframe.src` anyway.
-                showToolbar: false
+                toolbar: 'read-only'
             };
         }
         if (options) {
@@ -85,7 +85,7 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> {
             mode: 'activate',
             widgetOptions: { area: 'main' },
             sandbox: MiniBrowserProps.SandboxOptions.DEFAULT,
-            showToolbar: true
+            toolbar: 'show'
         };
     }
 

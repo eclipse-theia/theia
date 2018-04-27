@@ -5,26 +5,52 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-.t-mini-browser {
+.theia-mini-browser {
     display: flex;
     flex-direction: column;
 }
 
-.t-mini-browser-toolbar {
+.theia-mini-browser-toolbar {
     margin-top: 8px;
     display: flex;
     align-items: center;
     justify-content: space-evenly;
 }
 
-.t-mini-browser-toolbar input {
+.theia-mini-browser-toolbar-read-only {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+.theia-mini-browser-toolbar input {
     width: 100%;
     line-height: var(--theia-private-horizontal-tab-height);
     margin-left: 4px;
     margin-right: 4px;
 }
 
-.t-mini-browser-button {
+.theia-mini-browser-toolbar-read-only input {
+    width: 100%;
+    line-height: var(--theia-private-horizontal-tab-height);
+    margin-left: 4px;
+    margin-right: 4px;
+    cursor: pointer;
+    background: var(--theia-layout-color0);
+    border: none;
+    text-decoration: underline;
+    outline: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.theia-mini-browser-toolbar-read-only input:hover {
+    color: #0000EE; /* Theia does not yet have its `link` color. Use the default HTML5 one. */
+}
+
+.theia-mini-browser-button {
     min-width: 1rem;
     text-align: center;
     flex-grow: 0;
@@ -34,31 +60,31 @@
     margin: 0px 4px 0px 4px;
 }
 
-.t-mini-browser-button:not(.t-mini-browser-button-disabled):hover {
+.theia-mini-browser-button:not(.theia-mini-browser-button-disabled):hover {
     color: var(--theia-ui-font-color2);
 }
 
-.t-mini-browser-button-disabled {
+.theia-mini-browser-button-disabled {
     color: var(--theia-disabled-color0);
 }
 
-.t-mini-browser-previous::before {
+.theia-mini-browser-previous::before {
     content: "\f053";
 }
   
-.t-mini-browser-next::before {
+.theia-mini-browser-next::before {
     content: "\f054";
 }
   
-.t-mini-browser-refresh::before {
+.theia-mini-browser-refresh::before {
     content: "\f021";
 }
   
-.t-mini-browser-open::before {
+.theia-mini-browser-open::before {
     content: "\f08e";
 }
 
-.t-mini-browser-content-area {
+.theia-mini-browser-content-area {
     position: relative;
     display: flex; 
     height: 100%;
@@ -68,12 +94,12 @@
     padding-top: 6px;
 }
 
-.t-mini-browser-pdf-container {
+.theia-mini-browser-pdf-container {
     width: 100%;
     height: 100%;   
 }
 
-.t-mini-browser-load-indicator {
+.theia-mini-browser-load-indicator {
     position: absolute;
     top: 6px;
     right: 0;
@@ -88,12 +114,12 @@
     transition: opacity 0.8s;
 }
 
-.t-mini-browser-content-area iframe {
+.theia-mini-browser-content-area iframe {
     flex-grow: 1;
     border: none; margin: 0; padding: 0;
 }
 
-.t-mini-browser-transparent-overlay {
+.theia-mini-browser-transparent-overlay {
     background-color: transparent;
     position: absolute;
     top: 0;
