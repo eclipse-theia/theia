@@ -109,6 +109,12 @@ is not optimized for dense, information rich UIs.
   --theia-accent-color3: #c0dbf1;
   --theia-accent-color4: #d7eaf8;
 
+  /* Accent colors with opacity */
+
+  --theia-transparent-accent-color0: hsla(210, 63%, 46%, 0.3);
+  --theia-transparent-accent-color1: hsla(207, 66%, 56%, 0.3);
+  --theia-transparent-accent-color2: hsla(207, 64%, 85%, 0.3);
+  --theia-transparent-accent-color3: hsla(205, 70%, 91%, 0.3);
 
   /* State colors (warn, error, success, info)
     ------------------------------------------ */
