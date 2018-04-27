@@ -9,7 +9,6 @@ import { createTaskTestContainer } from './test/task-test-container';
 import { BackendApplication } from '@theia/core/lib/node/backend-application';
 import { TaskExitedEvent, TaskInfo, TaskServer, TaskOptions, ProcessType } from '../common/task-protocol';
 import { TaskWatcher } from '../common/task-watcher';
-import * as ws from 'ws';
 import * as http from 'http';
 import * as https from 'https';
 import { isWindows } from '@theia/core/lib/common/os';
@@ -17,7 +16,7 @@ import URI from "@theia/core/lib/common/uri";
 import { FileUri } from "@theia/core/lib/node";
 import { terminalsPath } from '@theia/terminal/lib/common/terminal-protocol';
 import { expectThrowsAsync } from '@theia/core/lib/common/test/expect';
-import { WebSocketChannel } from '@theia/core/lib/common/messaging/web-socket-channel';
+import { TestWebSocketChannel } from '@theia/core/lib/node/messaging/test/test-web-socket-channel';
 
 /**
  * Globals
@@ -80,11 +79,9 @@ describe('Task server / back-end', function () {
 
         // hook-up to terminal's ws and confirm that it outputs expected tasks' output
         await new Promise((resolve, reject) => {
-            const socket = new ws(`ws://localhost:${server.address().port}/services`);
-            socket.on('error', reject);
-            socket.on('close', (code, reason) => reject(`socket is closed with '${code}' code and '${reason}' reason`));
-
-            const channel = new WebSocketChannel(0, content => socket.send(content));
+            const channel = new TestWebSocketChannel({ server, path: `${terminalsPath}/${terminalId}` });
+            channel.onError(reject);
+            channel.onClose((code, reason) => reject(`channel is closed with '${code}' code and '${reason}' reason`));
             channel.onMessage(msg => {
                 // check output of task on terminal is what we expect
                 const expected = `tasking... ${someString}`;
@@ -93,14 +90,8 @@ describe('Task server / back-end', function () {
                 } else {
                     reject(`expected sub-string not found in terminal output. Expected: "${expected}" vs Actual: "${msg.toString()}"`);
                 }
-                socket.close();
+                channel.dispose();
             });
-            socket.on('message', data =>
-                channel.handleMessage(JSON.parse(data.toString()))
-            );
-            socket.on('open', () =>
-                channel.open(`${terminalsPath}/${terminalId}`)
-            );
         });
     });
 
