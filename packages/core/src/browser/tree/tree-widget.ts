@@ -125,8 +125,16 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        if (!this.model.selectedNodes && SelectableTreeNode.is(this.model.root)) {
-            this.model.selectNode(this.model.root);
+        if (this.model.selectedNodes.length === 0) {
+            const root = this.model.root;
+            if (SelectableTreeNode.is(root)) {
+                this.model.selectNode(root);
+            } else if (CompositeTreeNode.is(root) && root.children.length >= 1) {
+                const firstChild = root.children[0];
+                if (SelectableTreeNode.is(firstChild)) {
+                    this.model.selectNode(firstChild);
+                }
+            }
         }
         this.node.focus();
     }
