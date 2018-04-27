@@ -111,7 +111,7 @@ export class GitWidget extends VirtualWidget {
         }
     }
 
-    async commit(repository?: Repository, options?: 'amend' | 'sign-off', message: string = `${this.message}`) {
+    async commit(repository?: Repository, options?: 'amend' | 'sign-off', message: string = this.message) {
         if (repository) {
             if (message.trim().length > 0) {
                 try {
@@ -211,6 +211,7 @@ export class GitWidget extends VirtualWidget {
         const { target } = e;
         if (target instanceof HTMLTextAreaElement) {
             const { value } = target;
+            this.message = value;
             this.resize(target);
             this.validateCommitMessage(value).then(result => {
                 if (!GitCommitMessageValidator.Result.equal(this.commitMessageValidationResult, result)) {
@@ -543,10 +544,9 @@ export class GitWidget extends VirtualWidget {
 
     protected resetCommitMessages(): void {
         this.message = '';
-        const messageInput = document.getElementById('theia-git-commit-message') as HTMLInputElement;
-        const extendedMessageInput = document.getElementById('git-extendedMessageInput') as HTMLInputElement;
+        const messageInput = document.getElementById('theia-git-commit-message') as HTMLTextAreaElement;
         messageInput.value = '';
-        extendedMessageInput.value = '';
+        this.resize(messageInput);
     }
 }
 
