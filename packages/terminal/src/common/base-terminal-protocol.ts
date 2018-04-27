@@ -15,6 +15,11 @@ export interface IBaseTerminalServer extends JsonRpcServer<IBaseTerminalClient> 
     attach(id: number): Promise<number>;
     close(id: number): Promise<void>;
 }
+export namespace IBaseTerminalServer {
+    export function validateId(id?: number): boolean {
+        return typeof id === "number" && id !== -1;
+    }
+}
 
 export interface IBaseTerminalExitEvent {
     terminalId: number;
