@@ -9,7 +9,7 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 
-import { createAPI } from '../../plugin/plugin-context';
+import { createAPI } from '../../../plugin/plugin-context';
 import { BackendInitializationFn } from '../../../common/plugin-protocol';
 
 export const doInitialization: BackendInitializationFn = (rpc: any) => {

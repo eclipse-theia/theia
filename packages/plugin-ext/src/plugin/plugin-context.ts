@@ -9,10 +9,10 @@ import { CommandRegistryImpl } from './command-registry';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CancellationTokenSource } from '@theia/core/lib/common/cancellation';
 import { QuickOpenExtImpl } from './quick-open';
-import { MAIN_RPC_CONTEXT, Plugin } from '../../api/plugin-api';
-import { RPCProtocol } from '../../api/rpc-protocol';
-import { getPluginId } from '../../common/plugin-protocol';
-import { Disposable } from '../../common/types-impl';
+import { MAIN_RPC_CONTEXT, Plugin } from '../api/plugin-api';
+import { RPCProtocol } from '../api/rpc-protocol';
+import { getPluginId } from '../common/plugin-protocol';
+import { Disposable } from './types-impl';
 
 export function createAPI(rpc: RPCProtocol): typeof theia {
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));

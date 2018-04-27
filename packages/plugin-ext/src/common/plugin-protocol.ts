@@ -6,7 +6,7 @@
  */
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { RPCProtocol } from '../api/rpc-protocol';
-import { Disposable } from './types-impl';
+import { Disposable } from '@theia/core/lib/common/disposable';
 
 export const hostedServicePath = '/services/hostedPlugin';
 
