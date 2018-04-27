@@ -7,7 +7,7 @@
 
 import { injectable, inject, postConstruct } from "inversify";
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-import { CommandRegistry, MenuModelRegistry, MenuPath } from "@theia/core/lib/common";
+import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX } from "@theia/core/lib/common";
 import { Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands, OpenerService } from "@theia/core/lib/browser";
 import { SHELL_TABBAR_CONTEXT_MENU } from "@theia/core/lib/browser";
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
@@ -129,6 +129,13 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             keybinding: "del",
             context: NavigatorKeybindingContexts.navigatorActive
         });
+        if (isOSX) {
+            registry.registerKeybinding({
+                command: WorkspaceCommands.FILE_DELETE.id,
+                keybinding: "cmd+backspace",
+                context: NavigatorKeybindingContexts.navigatorActive
+            });
+        }
 
         registry.registerKeybinding({
             command: WorkspaceCommands.FILE_RENAME.id,
