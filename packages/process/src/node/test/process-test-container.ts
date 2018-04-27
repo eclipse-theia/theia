@@ -6,11 +6,13 @@
  */
 import { Container } from 'inversify';
 import { loggerBackendModule } from '@theia/core/lib/node/logger-backend-module';
-import processBackendModule from './process-backend-module';
+import processBackendModule from '../process-backend-module';
 
-const testContainer = new Container();
+export function createProcessTestContainer() {
+    const testContainer = new Container();
 
-testContainer.load(loggerBackendModule);
-testContainer.load(processBackendModule);
+    testContainer.load(loggerBackendModule);
+    testContainer.load(processBackendModule);
 
-export { testContainer };
+    return testContainer;
+}

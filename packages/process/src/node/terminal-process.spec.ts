@@ -7,7 +7,7 @@
 import * as chai from 'chai';
 import * as process from 'process';
 import * as stream from 'stream';
-import { testContainer } from './inversify.spec-config';
+import { createProcessTestContainer } from './test/process-test-container';
 import { TerminalProcessFactory } from './terminal-process';
 import { isWindows } from "@theia/core/lib/common";
 
@@ -20,7 +20,11 @@ const expect = chai.expect;
 describe('TerminalProcess', function () {
 
     this.timeout(5000);
-    const terminalProcessFactory = testContainer.get<TerminalProcessFactory>(TerminalProcessFactory);
+    let terminalProcessFactory: TerminalProcessFactory;
+
+    beforeEach(() => {
+        terminalProcessFactory = createProcessTestContainer().get<TerminalProcessFactory>(TerminalProcessFactory);
+    });
 
     it('test error on non existent path', async function () {
 

@@ -7,7 +7,7 @@
 import * as chai from 'chai';
 import * as process from 'process';
 import * as stream from 'stream';
-import { testContainer } from './inversify.spec-config';
+import { createProcessTestContainer } from './test/process-test-container';
 import { RawProcessFactory } from './raw-process';
 import * as temp from 'temp';
 import * as fs from 'fs';
@@ -25,7 +25,11 @@ const expect = chai.expect;
 describe('RawProcess', function () {
 
     this.timeout(5000);
-    const rawProcessFactory = testContainer.get<RawProcessFactory>(RawProcessFactory);
+    let rawProcessFactory: RawProcessFactory;
+
+    beforeEach(() => {
+        rawProcessFactory = createProcessTestContainer().get<RawProcessFactory>(RawProcessFactory);
+    });
 
     it('test error on non-existent path', async function () {
         const p = new Promise((resolve, reject) => {
