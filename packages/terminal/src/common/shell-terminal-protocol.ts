@@ -5,6 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+import { JsonRpcProxy } from '@theia/core';
 import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol';
 
 export const IShellTerminalServer = Symbol('IShellTerminalServer');
@@ -20,3 +21,6 @@ export interface IShellTerminalServerOptions extends IBaseTerminalServerOptions 
     cols?: number,
     rows?: number
 }
+
+export const ShellTerminalServerProxy = Symbol('ShellTerminalServerProxy');
+export type ShellTerminalServerProxy = JsonRpcProxy<IShellTerminalServer>;
