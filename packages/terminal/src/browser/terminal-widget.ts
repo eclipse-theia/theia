@@ -47,6 +47,9 @@ interface TerminalCSSProperties {
 
     /* The background color, as a CSS color string.  */
     background: string;
+
+    /* The color of selections. Bla */
+    selection: string;
 }
 
 @injectable()
@@ -98,7 +101,8 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             theme: {
                 foreground: cssProps.foreground,
                 background: cssProps.background,
-                cursor: cssProps.foreground
+                cursor: cssProps.foreground,
+                selection: cssProps.selection
             },
         });
 
@@ -107,7 +111,8 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             this.term.setOption('theme', {
                 foreground: changedProps.foreground,
                 background: changedProps.background,
-                cursor: changedProps.foreground
+                cursor: changedProps.foreground,
+                selection: cssProps.selection
             });
         }));
 
@@ -159,6 +164,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         const fontSizeStr = lookup(htmlElementProps, '--theia-code-font-size');
         const foreground = lookup(htmlElementProps, '--theia-ui-font-color1');
         const background = lookup(htmlElementProps, '--theia-layout-color0');
+        const selection = lookup(htmlElementProps, '--theia-transparent-accent-color2');
 
         /* The font size is returned as a string, such as ' 13px').  We want to
            return just the number of px.  */
@@ -181,10 +187,11 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         }
 
         return {
-            fontSize: fontSize,
-            fontFamily: fontFamily,
-            foreground: foreground,
-            background: background,
+            fontSize,
+            fontFamily,
+            foreground,
+            background,
+            selection
         };
     }
 
