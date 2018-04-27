@@ -31,9 +31,10 @@ import debounce = require('lodash.debounce');
 export class MiniBrowserProps {
 
     /**
-     * `true` if the toolbar should be visible. Otherwise, `false`. The default is `false`.
+     * `show` if the toolbar should be visible. If `read-only`, the toolbar is visible but the address cannot be changed and it acts as a link instead.\
+     * `hide` if the toolbar should be hidden. `show` by default. If the `startPage` is not defined, this property is always `show`.
      */
-    readonly showToolbar?: boolean;
+    readonly toolbar?: 'show' | 'hide' | 'read-only';
 
     /**
      * If defined, the browser will load this page on startup. Otherwise, it show a blank page.
@@ -252,7 +253,6 @@ export class MiniBrowser extends BaseWidget {
     protected readonly submitInputEmitter = new Emitter<string>();
     protected readonly navigateBackEmitter = new Emitter<void>();
     protected readonly navigateForwardEmitter = new Emitter<void>();
-    protected readonly refreshEmitter = new Emitter<void>();
     protected readonly openEmitter = new Emitter<void>();
 
     protected readonly input: HTMLInputElement;
@@ -268,7 +268,7 @@ export class MiniBrowser extends BaseWidget {
 
     constructor(@inject(MiniBrowserProps) protected readonly props: MiniBrowserProps) {
         super();
-        this.id = `t-mini-browser-${MiniBrowser.ID++}`;
+        this.id = `theia-mini-browser-${MiniBrowser.ID++}`;
         this.title.closable = true;
         this.title.caption = this.title.label = this.props.name || 'Browser';
         this.title.iconClass = this.props.iconClass || MiniBrowser.ICON;
@@ -284,7 +284,6 @@ export class MiniBrowser extends BaseWidget {
             this.submitInputEmitter,
             this.navigateBackEmitter,
             this.navigateForwardEmitter,
-            this.refreshEmitter,
             this.openEmitter
         ]);
     }
@@ -310,7 +309,7 @@ export class MiniBrowser extends BaseWidget {
 
     onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
-        (!!this.props.showToolbar ? this.input : this.frame).focus();
+        (this.getToolbarProps() !== 'hide' ? this.input : this.frame).focus();
         this.update();
     }
 
@@ -332,17 +331,21 @@ export class MiniBrowser extends BaseWidget {
 
     protected createToolbar(parent: HTMLElement): HTMLDivElement & Readonly<{ input: HTMLInputElement }> {
         const toolbar = document.createElement('div');
-        toolbar.classList.add(MiniBrowser.Styles.TOOLBAR);
+        toolbar.classList.add(this.getToolbarProps() === 'read-only' ? MiniBrowser.Styles.TOOLBAR_READ_ONLY : MiniBrowser.Styles.TOOLBAR);
         parent.appendChild(toolbar);
         this.createPrevious(toolbar);
         this.createNext(toolbar);
-        this.createRefresh(toolbar);
         const input = this.createInput(toolbar);
+        input.readOnly = this.getToolbarProps() === 'read-only';
         this.createOpen(toolbar);
-        if (!this.props.showToolbar) {
+        if (this.getToolbarProps() === 'hide') {
             toolbar.style.display = 'none';
         }
         return Object.assign(toolbar, { input });
+    }
+
+    protected getToolbarProps(): 'show' | 'hide' | 'read-only' {
+        return !this.props.startPage ? 'show' : this.props.toolbar || 'show';
     }
 
     // tslint:disable-next-line:max-line-length
@@ -358,7 +361,6 @@ export class MiniBrowser extends BaseWidget {
         this.submitInputEmitter.event(input => this.go(input, true));
         this.navigateBackEmitter.event(this.handleBack.bind(this));
         this.navigateForwardEmitter.event(this.handleForward.bind(this));
-        this.refreshEmitter.event(this.handleRefresh.bind(this));
         this.openEmitter.event(this.handleOpen.bind(this));
 
         const transparentOverlay = document.createElement('div');
@@ -421,10 +423,6 @@ export class MiniBrowser extends BaseWidget {
         }
     }
 
-    protected handleRefresh(): void {
-        history.go();
-    }
-
     protected handleOpen(): void {
         const location = this.frameSrc() || this.input.value;
         if (location) {
@@ -438,8 +436,12 @@ export class MiniBrowser extends BaseWidget {
         this.toDispose.pushAll([
             addEventListener(input, 'keydown', this.handleInputChange.bind(this)),
             addEventListener(input, 'click', () => {
-                if (input.value) {
-                    input.select();
+                if (this.getToolbarProps() === 'read-only') {
+                    this.handleOpen();
+                } else {
+                    if (input.value) {
+                        input.select();
+                    }
                 }
             })
         ]);
@@ -449,7 +451,7 @@ export class MiniBrowser extends BaseWidget {
 
     protected handleInputChange(e: KeyboardEvent): void {
         const { key } = KeyCode.createKeyCode(e);
-        if (key && Key.ENTER.keyCode === key.keyCode) {
+        if (key && Key.ENTER.keyCode === key.keyCode && this.getToolbarProps() === 'show') {
             const { srcElement } = e;
             if (srcElement instanceof HTMLInputElement) {
                 this.mapLocation(srcElement.value).then(location => this.submitInputEmitter.fire(location));
@@ -464,11 +466,6 @@ export class MiniBrowser extends BaseWidget {
 
     protected createNext(parent: HTMLElement): HTMLElement {
         const button = this.onClick(this.createButton(parent, 'Show The Next Page', MiniBrowser.Styles.NEXT), this.navigateForwardEmitter);
-        return button;
-    }
-
-    protected createRefresh(parent: HTMLElement): HTMLElement {
-        const button = this.onClick(this.createButton(parent, 'Reload This Page', MiniBrowser.Styles.REFRESH), this.refreshEmitter);
         return button;
     }
 
@@ -542,6 +539,9 @@ export class MiniBrowser extends BaseWidget {
             try {
                 const url = await this.mapLocation(location);
                 this.setInput(url);
+                if (this.getToolbarProps() === 'read-only') {
+                    this.input.title = `Open ${url} In A New Window`;
+                }
                 if (showLoadIndicator) {
                     this.showLoadIndicator();
                 }
@@ -573,18 +573,19 @@ export namespace MiniBrowser {
 
     export namespace Styles {
 
-        export const MINI_BROWSER = 't-mini-browser';
-        export const TOOLBAR = 't-mini-browser-toolbar';
-        export const PRE_LOAD = 't-mini-browser-load-indicator';
-        export const CONTENT_AREA = 't-mini-browser-content-area';
-        export const PDF_CONTAINER = 't-mini-browser-pdf-container';
-        export const PREVIOUS = 't-mini-browser-previous';
-        export const NEXT = 't-mini-browser-next';
-        export const REFRESH = 't-mini-browser-refresh';
-        export const OPEN = 't-mini-browser-open';
-        export const BUTTON = 't-mini-browser-button';
-        export const DISABLED = 't-mini-browser-button-disabled';
-        export const TRANSPARENT_OVERLAY = 't-mini-browser-transparent-overlay';
+        export const MINI_BROWSER = 'theia-mini-browser';
+        export const TOOLBAR = 'theia-mini-browser-toolbar';
+        export const TOOLBAR_READ_ONLY = 'theia-mini-browser-toolbar-read-only';
+        export const PRE_LOAD = 'theia-mini-browser-load-indicator';
+        export const CONTENT_AREA = 'theia-mini-browser-content-area';
+        export const PDF_CONTAINER = 'theia-mini-browser-pdf-container';
+        export const PREVIOUS = 'theia-mini-browser-previous';
+        export const NEXT = 'theia-mini-browser-next';
+        export const REFRESH = 'theia-mini-browser-refresh';
+        export const OPEN = 'theia-mini-browser-open';
+        export const BUTTON = 'theia-mini-browser-button';
+        export const DISABLED = 'theia-mini-browser-button-disabled';
+        export const TRANSPARENT_OVERLAY = 'theia-mini-browser-transparent-overlay';
 
     }
 
