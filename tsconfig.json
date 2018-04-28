@@ -90,6 +90,9 @@
       ],
       "@theia/editorconfig/lib/*": [
         "packages/editorconfig/src/*"
+      ],
+      "@theia/rust/lib/*": [
+        "packages/rust/src/*"
       ]
     },
     "plugins": [
