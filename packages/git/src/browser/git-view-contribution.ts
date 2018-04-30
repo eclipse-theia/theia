@@ -106,10 +106,14 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
             const branch = status.branch ? status.branch : 'NO-HEAD';
             let dirty = '';
             if (status.changes.length > 0) {
-                if (this.hasConflicts(status.changes)) {
-                    dirty = '!';
-                } else if (this.allStaged(status.changes)) {
-                    dirty = '+';
+                const conflicts = this.hasConflicts(status.changes);
+                const staged = this.allStaged(status.changes);
+                if (conflicts || staged) {
+                    if (conflicts) {
+                        dirty = '!';
+                    } else if (staged) {
+                        dirty = '+';
+                    }
                 } else {
                     dirty = '*';
                 }
@@ -221,13 +225,11 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
     }
 
     protected hasConflicts(changes: GitFileChange[]): boolean {
-        const conflicted = changes.find(c => c.status === GitFileStatus.Conflicted);
-        return !!conflicted;
+        return changes.some(c => c.status === GitFileStatus.Conflicted);
     }
 
     protected allStaged(changes: GitFileChange[]): boolean {
-        const unstaged = changes.find(c => !c.staged);
-        return !unstaged;
+        return !changes.some(c => !c.staged);
     }
 
     protected async openFile(): Promise<EditorWidget | undefined> {
