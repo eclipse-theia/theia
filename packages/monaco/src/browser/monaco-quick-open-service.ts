@@ -140,7 +140,7 @@ export class MonacoQuickOpenControllerOptsImpl implements MonacoQuickOpenControl
             }
         }
         if (this.options.fuzzySort) {
-            entries.sort((a, b) => monaco.quickOpen.QuickOpenEntry.compare(a, b, lookFor));
+            entries.sort((a, b) => monaco.quickOpen.compareEntries(a, b, lookFor));
         }
         return new monaco.quickOpen.QuickOpenModel(entries);
     }

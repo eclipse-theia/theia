@@ -510,9 +510,10 @@ declare module monaco.quickOpen {
         setHighlights(labelHighlights: IHighlight[], descriptionHighlights?: IHighlight[], detailHighlights?: IHighlight[]): void;
         getHighlights(): [IHighlight[] /* Label */, IHighlight[] /* Description */, IHighlight[] /* Detail */];
         run(mode: Mode, context: IEntryRunContext): boolean;
-        static compare(elementA: QuickOpenEntry, elementB: QuickOpenEntry, lookFor: string): number;
-        static highlight(entry: QuickOpenEntry, lookFor: string, fuzzyHighlight?: boolean): { labelHighlights: IHighlight[], descriptionHighlights: IHighlight[] };
     }
+
+    export function compareEntries(elementA: QuickOpenEntry, elementB: QuickOpenEntry, lookFor: string): number;
+
     export class QuickOpenEntryGroup extends QuickOpenEntry {
         constructor(entry?: QuickOpenEntry, groupLabel?: string, withBorder?: boolean);
         getGroupLabel(): string;
