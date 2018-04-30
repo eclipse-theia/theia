@@ -68,7 +68,7 @@ export namespace MonacoCommands {
             iconClasses.set(menuItem.command.id, menuItem.command.iconClass);
         }
     }
-    for (const command of monaco.editorCommonExtensions.CommonEditorRegistry.getEditorActions()) {
+    for (const command of monaco.editorExtensions.EditorExtensionsRegistry.getEditorActions()) {
         const id = command.id;
         if (!EXCLUDE_ACTIONS.has(id)) {
             const label = command.label;

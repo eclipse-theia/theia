@@ -35,7 +35,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
     return new Promise<void>(resolve => {
         vsRequire(["vs/editor/editor.main"], () => {
             vsRequire([
-                'vs/basic-languages/src/monaco.contribution',
+                'vs/basic-languages/monaco.contribution',
                 'vs/language/css/monaco.contribution',
                 'vs/language/html/monaco.contribution',
                 'vs/language/json/monaco.contribution',
@@ -45,7 +45,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/platform/keybinding/common/keybindingResolver',
                 'vs/platform/keybinding/common/usLayoutResolvedKeybinding',
                 'vs/base/common/keyCodes',
-                'vs/editor/common/editorCommonExtensions',
+                'vs/editor/browser/editorExtensions',
                 'vs/editor/standalone/browser/simpleServices',
                 'vs/editor/standalone/browser/standaloneServices',
                 'vs/base/parts/quickopen/common/quickOpen',
@@ -56,11 +56,11 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/base/common/platform',
                 'vs/editor/common/modes',
                 'vs/base/common/cancellation',
-                'vs/editor/contrib/suggest/browser/suggestController',
-                'vs/editor/contrib/find/common/findController',
-                'vs/editor/contrib/rename/browser/rename',
+                'vs/editor/contrib/suggest/suggestController',
+                'vs/editor/contrib/find/findController',
+                'vs/editor/contrib/rename/rename',
             ], (basic: any, css: any, html: any, json: any, commands: any, actions: any, registry: any, resolver: any, resolvedKeybinding: any,
-                keyCodes: any, editorCommonExtensions: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
+                keyCodes: any, editorExtensions: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
                 filters: any, styler: any, platform: any, modes: any, cancellation: any, suggestController: any, findController: any, rename: any) => {
                     const global: any = self;
                     global.monaco.commands = commands;
@@ -71,7 +71,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                     global.monaco.filters = filters;
                     global.monaco.theme = styler;
                     global.monaco.platform = platform;
-                    global.monaco.editorCommonExtensions = editorCommonExtensions;
+                    global.monaco.editorExtensions = editorExtensions;
                     global.monaco.modes = modes;
                     global.monaco.cancellation = cancellation;
                     global.monaco.suggestController = suggestController;

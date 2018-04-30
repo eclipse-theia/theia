@@ -70,6 +70,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
     protected create(options?: IEditorConstructionOptions, override?: monaco.editor.IEditorOverrideServices): Disposable {
         return this.editor = monaco.editor.create(this.node, {
             ...options,
+            lightbulb: { enabled: true },
             fixedOverflowWidgets: true,
             scrollbar: {
                 useShadows: false,
@@ -149,14 +150,14 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         return this.onSelectionChangedEmitter.event;
     }
 
-    revealPosition(raw: Position, options: RevealPositionOptions = { vertical: 'center', horizontal: true }): void {
+    revealPosition(raw: Position, options: RevealPositionOptions = { vertical: 'center' }): void {
         const position = this.p2m.asPosition(raw);
         switch (options.vertical) {
             case 'auto':
-                this.editor.revealPosition(position, false, options.horizontal);
+                this.editor.revealPosition(position);
                 break;
             case 'center':
-                this.editor.revealPosition(position, true, options.horizontal);
+                this.editor.revealPositionInCenter(position);
                 break;
             case 'centerIfOutsideViewport':
                 this.editor.revealPositionInCenterIfOutsideViewport(position);
@@ -204,7 +205,8 @@ export class MonacoEditor implements TextEditor, IEditorReference {
      * `true` if the suggest widget is visible in the editor. Otherwise, `false`.
      */
     isSuggestWidgetVisible(): boolean {
-        return this.editor.getContribution<SuggestController>('editor.contrib.suggestController')._widget.suggestWidgetVisible.get();
+        const widget = this.editor.getContribution<SuggestController>('editor.contrib.suggestController')._widget;
+        return widget ? widget.suggestWidgetVisible.get() : false;
     }
 
     /**

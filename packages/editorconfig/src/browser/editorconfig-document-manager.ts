@@ -218,7 +218,6 @@ export class EditorconfigDocumentManager {
 
                 if (line.length !== trimmedLine.length) {
                     edits.push({
-                        identifier: undefined!,
                         forceMoveMarkers: false,
                         range: new monaco.Range(i, trimmedLine.length + 1, i, line.length + 1),
                         text: ""
@@ -268,7 +267,6 @@ export class EditorconfigDocumentManager {
 
             if ("" !== lineContent) {
                 return {
-                    identifier: undefined!,
                     forceMoveMarkers: false,
                     range: new monaco.Range(lines, lineContent.length + 1, lines, lineContent.length + 1),
                     text: lineEnding
