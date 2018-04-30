@@ -50,6 +50,7 @@ env:
   global:
     - secure: es511klr3A8rLVIQ+ZxWkYl2/OLaZYzHpLH94O0EqFDC05t7sk76WOD+9fVT0jkINUKt7sK4Nozv19GmNYxFVXKaWwAH9jt7sHKYgbfCr+vTg58z9jyposMZSGEgsGPSbFn5DxPS7KdWbfQDEjxX18yiKMKN9k+7XwkC8p+WSgy4I30M5Y4YXffQooEwjqJpTdkpOm6p+o6t99mp3ufaxG5VOLtSwsZ0r3cKJo0rbqKxJGA62eNYLYksQ7PsFHDE2stQ8IDxFNXOrXB6ocwwd7KGphJIofU/t1UCXjpsGn0Ozr4LYvSpvl9nKQBmA3prKuAOnygLZh0YfYACIoIpBFa0/igxdX7j7INgp50Q+6CHRWwCb+YqZPgJ297EZi5mVKYNlAh0OeKKTo0NanunWR2pnzj29MGzR40wJqPVhQBRQvaKannwpoY5opK8MWi9jnDDY3xpzgZ8na3yOkw9wQ+a2nUm13BZnWmMDODGnaf9vy9eQ7bB26eiU2VSHlNWeniqDMY81sjqBlst22bHR4IgsI4qkh5UXMyyvMKbXltUIXERdCv1yK/Faa/VJ0Qrs+mk+G23bkT8/1f6cHBhjiVJX5HhXLcN3lHxImi+K9NkuCn8g+okX+SfD2lT5OPpRYHS8Jb51frNUIDWqWqRcjCioNjcuup2o6nbTlJaFb0=
     - CXX=g++-4.8
+    - NODE_OPTIONS="--max_old_space_size=4096"
 addons:
   apt:
     sources:
