@@ -118,7 +118,19 @@ exports.config = {
     services: ['selenium-standalone'],
     seleniumArgs: {
         seleniumArgs: ["-port", "4444"],
-        javaArgs: ["-Xmx1024m", "-Djna.nosys=true"]
+        javaArgs: ["-Xmx1024m", "-Djna.nosys=true"],
+        drivers: {
+            chrome: {
+                version: '2.33'
+            }
+        }
+    },
+    seleniumInstallArgs: {
+        drivers: {
+            chrome: {
+                version: '2.33'
+            }
+        }
     },
     //
     // Framework you want to run your specs with.
