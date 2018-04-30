@@ -9,7 +9,6 @@ import { injectable, inject } from 'inversify';
 import { DisposableCollection } from '@theia/core';
 import { FrontendApplicationContribution, FrontendApplication, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
 import { EditorCommands, EditorManager, EditorWidget } from '@theia/editor/lib/browser';
-import { OutlineViewService } from '@theia/outline-view/lib/browser/outline-view-service';
 import { MonacoEditor } from './monaco-editor';
 
 @injectable()
@@ -18,7 +17,6 @@ export class MonacoStatusBarContribution implements FrontendApplicationContribut
     protected readonly toDispose = new DisposableCollection();
 
     constructor(
-        @inject(OutlineViewService) protected readonly outlineViewService: OutlineViewService,
         @inject(EditorManager) protected readonly editorManager: EditorManager,
         @inject(StatusBar) protected readonly statusBar: StatusBar
     ) { }

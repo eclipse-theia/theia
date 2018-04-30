@@ -213,7 +213,7 @@ export class MonacoWorkspace implements lang.Workspace {
                     identifier: undefined!,
                     forceMoveMarkers: false,
                     range: new monaco.Range(edit.range.startLineNumber, edit.range.startColumn, edit.range.endLineNumber, edit.range.endColumn),
-                    text: edit.newText
+                    text: edit.text
                 }));
                 // start a fresh operation
                 model.pushStackElement();
@@ -226,11 +226,12 @@ export class MonacoWorkspace implements lang.Workspace {
     }
 
     protected groupEdits(workspaceEdit: monaco.languages.WorkspaceEdit) {
-        const result = new Map<string, monaco.languages.IResourceEdit[]>();
+        const result = new Map<string, monaco.languages.TextEdit[]>();
         for (const edit of workspaceEdit.edits) {
-            const uri = edit.resource.toString();
+            const resourceTextEdit = edit as monaco.languages.ResourceTextEdit;
+            const uri = resourceTextEdit.resource.toString();
             const edits = result.get(uri) || [];
-            edits.push(edit);
+            edits.push(...resourceTextEdit.edits);
             result.set(uri, edits);
         }
         return result;

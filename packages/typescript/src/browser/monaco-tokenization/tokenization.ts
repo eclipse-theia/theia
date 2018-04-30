@@ -17,7 +17,7 @@
 // tslint:disable:no-var-keyword
 // tslint:disable:one-variable-per-declaration
 // tslint:disable:prefer-const
-import ts = require('monaco-typescript/release/lib/typescriptServices');
+import ts = require('monaco-typescript/release/min/lib/typescriptServices');
 
 export enum Language {
 	TypeScript,

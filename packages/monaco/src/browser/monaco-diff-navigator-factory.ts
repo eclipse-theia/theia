@@ -27,7 +27,7 @@ export class MonacoDiffNavigatorFactory {
         const navigator = monaco.editor.createDiffNavigator(editor, options);
         const ensureInitialized = (fwd: boolean) => {
             if (navigator.nextIdx < -1) {
-                navigator.initIdx(fwd);
+                navigator._initIdx(fwd);
             }
         };
         return <DiffNavigator>{

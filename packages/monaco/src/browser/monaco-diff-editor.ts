@@ -82,7 +82,7 @@ export class MonacoDiffEditor extends MonacoEditor {
     }
 
     isActionSupported(id: string): boolean {
-        const action = this._diffEditor.getActions().find(a => a.id === id);
+        const action = this._diffEditor.getSupportedActions().find(a => a.id === id);
         return !!action && action.isSupported() && super.isActionSupported(id);
     }
 

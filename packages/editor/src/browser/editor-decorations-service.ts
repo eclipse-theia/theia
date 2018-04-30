@@ -209,7 +209,7 @@ export namespace EditorDecorationStyle {
         const index = styleSheet.insertRule('.' + selector + '{}', 0);
         const rules = styleSheet.cssRules || styleSheet.rules;
         const rule = rules.item(index);
-        if (rule.type === CSSRule.STYLE_RULE) {
+        if (rule && rule.type === CSSRule.STYLE_RULE) {
             const styleRule = rule as CSSStyleRule;
             styleProvider(styleRule.style);
         }

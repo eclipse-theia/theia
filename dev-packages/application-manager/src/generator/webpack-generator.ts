@@ -39,7 +39,7 @@ const { mode }  = yargs.option('mode', {
 const development = mode === 'development';${this.ifMonaco(() => `
 
 const monacoEditorPath = development ? '${this.resolve('monaco-editor-core', 'dev/vs')}' : '${this.resolve('monaco-editor-core', 'min/vs')}';
-const monacoLanguagesPath = '${this.resolve('monaco-languages', 'release')}';
+const monacoLanguagesPath = '${this.resolve('monaco-languages', 'release/min')}';
 const monacoCssLanguagePath = '${this.resolve('monaco-css', 'release/min')}';
 const monacoJsonLanguagePath = '${this.resolve('monaco-json', 'release/min')}';
 const monacoHtmlLanguagePath = '${this.resolve('monaco-html', 'release/min')}';`)}
