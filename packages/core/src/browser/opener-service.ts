@@ -94,9 +94,13 @@ export class DefaultOpenerService implements OpenerService {
     }
 
     protected async prioritize(uri: URI, options?: OpenerOptions): Promise<OpenHandler[]> {
-        const prioritized = await Prioritizeable.prioritizeAll(this.getHandlers(), handler =>
-            handler.canHandle(uri, options)
-        );
+        const prioritized = await Prioritizeable.prioritizeAll(this.getHandlers(), handler => {
+            try {
+                return handler.canHandle(uri, options);
+            } catch {
+                return 0;
+            }
+        });
         return prioritized.map(p => p.value);
     }
 
