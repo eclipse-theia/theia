@@ -52,5 +52,5 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "jdt.ls.download.path" : "/jdtls/milestones/0.17.0/jdt-language-server-0.17.0-201804162308.tar.gz"
+  "jdt.ls.download.path" : "/jdtls/milestones/0.18.0/jdt-language-server-0.18.0-201805010001.tar.gz"
 }
