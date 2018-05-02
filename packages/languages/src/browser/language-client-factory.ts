@@ -7,6 +7,7 @@
 
 import { injectable, inject } from "inversify";
 import { WebSocketConnectionProvider } from "@theia/core/lib/browser";
+import { ErrorAction } from "vscode-base-languageclient/lib/base";
 import {
     Workspace, Languages, Window,
     ILanguageClient, LanguageClientOptions, BaseLanguageClient,
@@ -27,7 +28,14 @@ export class LanguageClientFactory {
         const { workspace, languages, window } = this;
         const commands = clientOptions.commands;
         const services = { workspace, languages, commands, window };
-        return new BaseLanguageClient({
+        if (!clientOptions.errorHandler) {
+            clientOptions.errorHandler = {
+                // ignore connection errors
+                error: () => ErrorAction.Continue,
+                closed: () => defaultErrorHandler.closed()
+            };
+        }
+        const client = new BaseLanguageClient({
             name: contribution.name,
             clientOptions,
             services,
@@ -39,13 +47,15 @@ export class LanguageClientFactory {
                             onConnection: messageConnection => {
                                 const connection = createConnection(messageConnection, errorHandler, closeHandler);
                                 resolve(connection);
-                            }
+                            },
                         },
                             { reconnecting: false }
                         );
                     })
             }
         });
+        const defaultErrorHandler = client.createDefaultErrorHandler();
+        return client;
     }
 
 }
