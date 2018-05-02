@@ -12,7 +12,7 @@
     "@theia/file-search": "^0.3.9",
     "@theia/filesystem": "^0.3.9",
     "@theia/git": "^0.3.9",
-    "@theia/java": "^0.3.8",
+    "@theia/java": "^0.3.9",
     "@theia/keymaps": "^0.3.9",
     "@theia/languages": "^0.3.9",
     "@theia/markers": "^0.3.9",
