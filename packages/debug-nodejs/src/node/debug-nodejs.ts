@@ -34,6 +34,10 @@ export class NodeJsDebugAdapterContribution implements DebugAdapterContribution 
     }
 
     provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable {
-        return { command: "cat", args: [] };
+        return {
+            runtime: "node",
+            program: "packages/debug-nodejs/lib/node/adapter/out/src/nodeDebug.js",
+            args: []
+        };
     }
 }
