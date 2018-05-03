@@ -19,7 +19,6 @@ import {
     DebugWidgetFactory,
 } from './view/debug-view-contribution';
 import { DebugPath, DebugService } from "../common/debug-model";
-import { DebugClientFactory, DebugClientManager } from "./debug-client";
 import { MenuContribution } from "@theia/core/lib/common/menu";
 import { CommandContribution } from "@theia/core/lib/common/command";
 import { WebSocketConnectionProvider } from "@theia/core/lib/browser/messaging/connection";
@@ -32,6 +31,7 @@ import {
     TreeProps,
     defaultTreeProps
 } from '@theia/core/lib/browser';
+import { DebugSessionManager, DebugSessionFactory } from './debug-session';
 
 export const DEBUG_SESSION_TREE_PROPS = <TreeProps>{
     ...defaultTreeProps,
@@ -52,8 +52,8 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
         () => createDebugTreeWidget(ctx.container)
     );
 
-    bind(DebugClientFactory).toSelf().inSingletonScope();
-    bind(DebugClientManager).toSelf().inSingletonScope();
+    bind(DebugSessionFactory).toSelf().inSingletonScope();
+    bind(DebugSessionManager).toSelf().inSingletonScope();
     bind(MenuContribution).to(DebugCommandHandlers);
     bind(CommandContribution).to(DebugCommandHandlers);
     bind(DebugConfigurationManager).toSelf().inSingletonScope();

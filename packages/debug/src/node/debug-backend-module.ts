@@ -13,26 +13,41 @@ import { ConnectionHandler, JsonRpcConnectionHandler, bindContributionProvider }
 import { ContainerModule, interfaces } from 'inversify';
 import {
     DebugServiceImpl,
-    DebugSessionManager,
+    DebugAdapterSessionManager,
     DebugAdapterContributionRegistry
 } from "./debug-service";
 import {
     DebugPath,
     DebugService,
     DebugAdapterContribution,
-    DebugAdapterFactory,
-    DebugAdapterExecutable,
-    DebugSession
+    DebugAdapterExecutable
 } from "../common/debug-model";
-import { DebugSessionImpl, LauncherBasedDebugAdapterFactory, ServerContainer } from "./debug-adapter";
+import {
+    DebugAdapterSessionImpl,
+    ServerContainer,
+    DebugAdapterFactory,
+    DebugAdapterSession
+} from "./debug-adapter";
 import { BackendApplicationContribution } from "@theia/core/lib/node";
 
 export default new ContainerModule(bind => {
-    bind(DebugAdapterContributionRegistry).toSelf().inSingletonScope();
-    bind(DebugSessionManager).toSelf().inSingletonScope();
     bind(DebugService).to(DebugServiceImpl).inSingletonScope();
-    bind(DebugAdapterFactory).to(LauncherBasedDebugAdapterFactory).inSingletonScope();
-    bind(DebugSession).to(DebugSessionImpl);
+
+    bind<interfaces.Factory<DebugAdapterSession>>("Factory<DebugAdapterSession>").toFactory<DebugAdapterSession>(context => {
+        return (sessionId: string, executable: DebugAdapterExecutable) => {
+            const session = context.container.get<DebugAdapterSession>(DebugAdapterSession);
+            session.id = sessionId;
+            session.executable = executable;
+            return session;
+        };
+    });
+
+    bind(DebugAdapterContributionRegistry).toSelf().inSingletonScope();
+    bind(DebugAdapterSession).to(DebugAdapterSessionImpl);
+    bind(DebugAdapterSessionManager).toSelf().inSingletonScope();
+
+    bind(DebugAdapterFactory).toSelf().inSingletonScope();
+
     bind(ServerContainer).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toDynamicValue(c => c.container.get(ServerContainer));
     bindContributionProvider(bind, DebugAdapterContribution);
@@ -44,13 +59,4 @@ export default new ContainerModule(bind => {
             return service;
         })
     ).inSingletonScope();
-
-    bind<interfaces.Factory<DebugSession>>("Factory<DebugSession>").toFactory<DebugSession>(context => {
-        return (sessionId: string, executable: DebugAdapterExecutable) => {
-            const session = context.container.get<DebugSession>(DebugSession);
-            session.id = sessionId;
-            session.executable = executable;
-            return session;
-        };
-    });
 });

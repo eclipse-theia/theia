@@ -13,14 +13,13 @@ import { injectable, inject, named } from "inversify";
 import { ContributionProvider, ILogger } from '@theia/core';
 import {
     DebugService,
-    DebugSession,
     DebugConfiguration,
     DebugAdapterExecutable,
     DebugAdapterContribution,
-    DebugAdapterFactory
 } from "../common/debug-model";
 
 import { UUID } from "@phosphor/coreutils";
+import { DebugAdapterSession } from "./debug-adapter";
 
 /**
  * Contributions registry.
@@ -89,35 +88,31 @@ export class DebugAdapterContributionRegistry {
 }
 
 /**
- * Debug session manager.
+ * Debug adapter session manager.
  */
 @injectable()
-export class DebugSessionManager {
-    protected readonly sessions = new Map<string, DebugSession>();
+export class DebugAdapterSessionManager {
+    protected readonly sessions = new Map<string, DebugAdapterSession>();
 
     constructor(
-        @inject("Factory<DebugSession>")
-        protected readonly debugSessionFactory: (sessionId: string, executable: DebugAdapterExecutable) => DebugSession
+        @inject("Factory<DebugAdapterSession>")
+        protected readonly factory: (sessionId: string, executable: DebugAdapterExecutable) => DebugAdapterSession
     ) { }
 
     /**
-     * Creates a new [debug session](#DebugSession).
+     * Creates a new [debug adapter session](#DebugAdapterSession).
      * @param executable The [DebugAdapterExecutable](#DebugAdapterExecutable)
-     * @returns The debug session
+     * @returns The debug adapter session
      */
-    create(executable: DebugAdapterExecutable): Promise<DebugSession> {
+    create(executable: DebugAdapterExecutable): DebugAdapterSession {
         const sessionId = UUID.uuid4();
-        const session = this.debugSessionFactory(sessionId, executable);
+        const session = this.factory(sessionId, executable);
         this.sessions.set(sessionId, session);
-
-        const started = session.start();
-        return started.then(function () {
-            return session;
-        });
+        return session;
     }
 
     /**
-     * Removes [debug session](#DebugSession) from the list of the instantiated sessions.
+     * Removes [debug adapter session](#DebugAdapterSession) from the list of the instantiated sessions.
      * Is invoked when session is terminated and isn't needed anymore.
      * @param sessionId The session identifier
      */
@@ -126,21 +121,21 @@ export class DebugSessionManager {
     }
 
     /**
-     * Finds the debug session by its id.
+     * Finds the debug adapter session by its id.
      * Returning the value 'undefined' means the session isn't found.
      * @param sessionId The session identifier
-     * @returns The debug session
+     * @returns The debug adapter session
      */
-    find(sessionId: string): DebugSession | undefined {
+    find(sessionId: string): DebugAdapterSession | undefined {
         return this.sessions.get(sessionId);
     }
 
     /**
-     * Finds all instantiated debug sessions.
-     * @returns An array of debug sessions identifiers
+     * Finds all instantiated debug adapter sessions.
+     * @returns An array of debug adapter sessions
      */
-    findAll(): string[] {
-        return Array.from(this.sessions.keys());
+    findAll(): DebugAdapterSession[] {
+        return Array.from(this.sessions.values());
     }
 }
 
@@ -152,10 +147,8 @@ export class DebugServiceImpl implements DebugService {
     constructor(
         @inject(ILogger)
         protected readonly logger: ILogger,
-        @inject(DebugAdapterFactory)
-        protected readonly adapterFactory: DebugAdapterFactory,
-        @inject(DebugSessionManager)
-        protected readonly sessionManager: DebugSessionManager,
+        @inject(DebugAdapterSessionManager)
+        protected readonly sessionManager: DebugAdapterSessionManager,
         @inject(DebugAdapterContributionRegistry)
         protected readonly registry: DebugAdapterContributionRegistry) { }
 
@@ -171,13 +164,20 @@ export class DebugServiceImpl implements DebugService {
         return this.registry.resolveDebugConfiguration(config);
     }
 
-    async startDebugSession(config: DebugConfiguration): Promise<string> {
+    async start(config: DebugConfiguration): Promise<string> {
         const executable = this.registry.provideDebugAdapterExecutable(config);
         const session = this.sessionManager.create(executable);
-        return session.then(function (session) {
-            return session.id;
-        });
+        return session.start().then(() => session.id);
     }
 
-    async dispose(): Promise<void> { }
+    async dispose(sessionId?: string): Promise<void> {
+        if (sessionId) {
+            const debugSession = this.sessionManager.find(sessionId);
+            if (debugSession) {
+                debugSession.dispose();
+            }
+        } else {
+            this.sessionManager.findAll().forEach(debugSession => debugSession.dispose());
+        }
+    }
 }
