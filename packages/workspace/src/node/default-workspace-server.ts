@@ -10,7 +10,7 @@ import * as yargs from 'yargs';
 import * as fs from 'fs-extra';
 import * as os from 'os';
 
-import { injectable, inject } from "inversify";
+import { injectable, inject, postConstruct } from "inversify";
 import { FileUri } from '@theia/core/lib/node';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -48,32 +48,33 @@ export class WorkspaceCliContribution implements CliContribution {
 @injectable()
 export class DefaultWorkspaceServer implements WorkspaceServer {
 
-    protected root: Promise<string | undefined>;
+    protected root: Deferred<string | undefined> = new Deferred();
 
-    constructor(
-        @inject(WorkspaceCliContribution) protected readonly cliParams: WorkspaceCliContribution
-    ) {
-        this.root = this.getRootURIFromCli();
-        this.root.then(async root => {
-            if (!root) {
-                const data = await this.readFromUserHome();
-                if (data && data.recentRoots) {
-                    this.root = Promise.resolve(data.recentRoots[0]);
-                }
+    @inject(WorkspaceCliContribution)
+    protected readonly cliParams: WorkspaceCliContribution;
+
+    @postConstruct()
+    protected async init() {
+        let root = await this.getRootURIFromCli();
+        if (!root) {
+            const data = await this.readFromUserHome();
+            if (data && data.recentRoots) {
+                root = data.recentRoots[0];
             }
-        });
+        }
+        this.root.resolve(root);
     }
 
     getRoot(): Promise<string | undefined> {
-        return this.root;
+        return this.root.promise;
     }
 
-    setRoot(uri: string): Promise<void> {
-        this.root = Promise.resolve(uri);
+    async setRoot(uri: string): Promise<void> {
+        this.root = new Deferred();
+        this.root.resolve(uri);
         this.writeToUserHome({
             recentRoots: [uri]
         });
-        return Promise.resolve();
     }
 
     protected async getRootURIFromCli(): Promise<string | undefined> {
