@@ -96,7 +96,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         const cssProps = this.getCSSPropertiesFromPage();
 
         this.term = new Xterm.Terminal({
-            cursorBlink: true,
+            cursorBlink: false,
             fontFamily: cssProps.fontFamily,
             fontSize: cssProps.fontSize,
             theme: {
