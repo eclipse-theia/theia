@@ -22,9 +22,9 @@ import {
     WidgetFactory,
     Widget
 } from "@theia/core/lib/browser";
-import { DebugClientManager } from "../debug-client";
+import { DebugSessionManager } from "../debug-session";
 import { inject, injectable } from "inversify";
-import { Emitter, Event, DisposableCollection} from "@theia/core";
+import { Emitter, Event, DisposableCollection } from "@theia/core";
 import { Message } from '@phosphor/messaging';
 
 const DEBUG_NAVIGATOR_ID = 'debug-view';
@@ -135,7 +135,7 @@ export class DebugWidgetFactory implements WidgetFactory {
 @injectable()
 export class DebugViewContribution extends AbstractViewContribution<DebugTreeWidget> {
     constructor(
-        @inject(DebugClientManager) protected readonly debugClientManager: DebugClientManager,
+        @inject(DebugSessionManager) protected readonly debugClientManager: DebugSessionManager,
         @inject(DebugWidgetFactory) protected readonly debugWidgetFactory: DebugWidgetFactory) {
         super({
             widgetId: DEBUG_NAVIGATOR_ID,
@@ -156,10 +156,10 @@ export class DebugViewContribution extends AbstractViewContribution<DebugTreeWid
             }
         });
 
-        this.debugClientManager.onDidCreateDebugClient(debugClient => this.updateDebugSessions());
-        this.debugClientManager.onDidDisposeDebugClient(debugClient => this.updateDebugSessions());
+        this.debugClientManager.onDidStartDebugSession(debugClient => this.updateDebugSessions());
+        this.debugClientManager.onDidTerminateDebugSession(debugClient => this.updateDebugSessions());
 
-        this.debugWidgetFactory.onDidSelect(node => this.debugClientManager.setActiveDebugClient(node.sessionId));
+        this.debugWidgetFactory.onDidSelect(node => this.debugClientManager.setActiveDebugSession(node.sessionId));
     }
 
     private updateDebugSessions(): void {

@@ -31,13 +31,13 @@ export const DebugPath = '/services/debug';
 export const DebugService = Symbol('DebugService');
 
 /**
- * This service provides functionality to configure and to start a new debug session.
+ * This service provides functionality to configure and to start a new debug adapter session.
  * The workflow is the following. If user wants to debug an application and
  * there is no debug configuration associated with the application then
  * the list of available providers is requested to create suitable debug configuration.
  * When configuration is chosen it is possible to alter the configuration
  * by filling in missing values or by adding/changing/removing attributes. For this purpose the
- * #resolveDebugConfiguration method is invoked. After that the debug session will be started.
+ * #resolveDebugConfiguration method is invoked. After that the debug adapter session will be started.
  */
 export interface DebugService extends Disposable {
     /**
@@ -62,12 +62,12 @@ export interface DebugService extends Disposable {
     resolveDebugConfiguration(config: DebugConfiguration): Promise<DebugConfiguration>;
 
     /**
-     * Starts a new [debug session](#DebugSession).
-     * Returning the value 'undefined' means the debug session can't be started.
+     * Starts a new [debug adapter session](#DebugAdapterSession).
+     * Returning the value 'undefined' means the debug adapter session can't be started.
      * @param config The resolved [debug configuration](#DebugConfiguration).
-     * @returns The identifier of the created [debug session](#DebugSession).
+     * @returns The identifier of the created [debug adapter session](#DebugAdapterSession).
      */
-    startDebugSession(config: DebugConfiguration): Promise<string>;
+    start(config: DebugConfiguration): Promise<string>;
 }
 
 /**
@@ -77,26 +77,9 @@ export interface DebugAdapterExecutable {
     /**
      * Parameters to instantiate the debug adapter. In case of launching adapter
      * the parameters contain a command and arguments. For instance:
-     * {"command" : "COMMAND_TO_LAUNCH_DEBUG_ADAPTER", args : [ { "arg1", "arg2" } ] }
+     * {"program" : "COMMAND_TO_LAUNCH_DEBUG_ADAPTER", args : [ { "arg1", "arg2" } ] }
      */
     [key: string]: any;
-}
-
-/**
- * DebugAdapterFactory symbol for DI.
- */
-export const DebugAdapterFactory = Symbol('DebugAdapterFactory');
-
-/**
- * The debug adapter factory.
- */
-export interface DebugAdapterFactory {
-    /**
-     * Starts a new debug adapter.
-     * @param executable The [debug adapter executable](#DebugAdapterExecutable)
-     * @returns The connection to the adapter
-     */
-    start(executable: DebugAdapterExecutable): CommunicationProvider;
 }
 
 /**
@@ -105,7 +88,7 @@ export interface DebugAdapterFactory {
  * process/server, it can be done separately and it is not required that this interface covers the
  * procedure, however it is also not disallowed.
  */
-export interface CommunicationProvider {
+export interface CommunicationProvider extends Disposable {
     output: stream.Readable;
     input: stream.Writable;
 }
@@ -148,16 +131,16 @@ export interface DebugAdapterContribution {
 }
 
 /**
- * Configuration for a debug session.
+ * Configuration for a debug adapter session.
  */
 export interface DebugConfiguration {
     /**
-     * The type of the debug session.
+     * The type of the debug adapter session.
      */
     type: string;
 
     /**
-     * The name of the debug session.
+     * The name of the debug adapter session.
      */
     name: string;
 
@@ -168,21 +151,6 @@ export interface DebugConfiguration {
 }
 
 /**
- * The endpoint path to the debug session.
+ * The endpoint path to the debug adapter session.
  */
-export const DebugSessionPath = '/services/debug-session';
-
-/**
- * DebugSession symbol for DI.
- */
-export const DebugSession = Symbol('DebugSession');
-
-/**
- * The debug session.
- */
-export interface DebugSession extends Disposable {
-    id: string;
-    executable: DebugAdapterExecutable;
-
-    start(): Promise<void>
-}
+export const DebugAdapterPath = '/services/debug-adapter';
