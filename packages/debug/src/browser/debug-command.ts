@@ -13,7 +13,7 @@ import { injectable, inject } from "inversify";
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import { MAIN_MENU_BAR, MenuPath } from "@theia/core/lib/common/menu";
 import { DebugService } from "../common/debug-model";
-import { DebugClientManager } from "./debug-client";
+import { DebugSessionManager } from "./debug-session";
 import { DebugConfigurationManager } from "./debug-configuration";
 
 export const DEBUG_SESSION_CONTEXT_MENU: MenuPath = ['debug-session-context-menu'];
@@ -56,8 +56,8 @@ export namespace DEBUG_COMMANDS {
 export class DebugCommandHandlers implements MenuContribution, CommandContribution {
     @inject(DebugService)
     protected readonly debug: DebugService;
-    @inject(DebugClientManager)
-    protected readonly debugClientManager: DebugClientManager;
+    @inject(DebugSessionManager)
+    protected readonly debugClientManager: DebugSessionManager;
     @inject(DebugConfigurationManager)
     protected readonly debugConfigurationManager: DebugConfigurationManager;
 
@@ -78,12 +78,6 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
         menus.registerMenuAction(DebugSessionContextMenu.STOP, {
             commandId: DEBUG_COMMANDS.STOP.id
         });
-
-        this.debugClientManager.onDidChangeDebugClient(debugClient => {
-            if (debugClient) {
-                menus.getMenu(DebugMenus.DEBUG_STOP).label = debugClient.configuration.name;
-            }
-        });
     }
 
     registerCommands(registry: CommandRegistry): void {
@@ -92,8 +86,8 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
             execute: () => {
                 this.debugConfigurationManager.selectConfiguration()
                     .then(configuration => this.debug.resolveDebugConfiguration(configuration))
-                    .then((configuration) => {
-                        return this.debug.startDebugSession(configuration).then(sessionId => {
+                    .then(configuration => {
+                        return this.debug.start(configuration).then(sessionId => {
                             return { sessionId, configuration };
                         });
                     })
@@ -102,8 +96,8 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                         return debugClient.connect().then(() => debugClient);
                     })
                     .then(debugClient => {
-                        debugClient.sendRequest("initialize");
-                        this.debugClientManager.setActiveDebugClient(debugClient.sessionId);
+                        debugClient.sendRequest("initialize", { adapterID: debugClient.configuration.type });
+                        this.debugClientManager.setActiveDebugSession(debugClient.sessionId);
                     });
             },
             isEnabled: () => true,
@@ -112,13 +106,13 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
 
         registry.registerCommand(DEBUG_COMMANDS.STOP);
         registry.registerHandler(DEBUG_COMMANDS.STOP.id, {
-            execute: () => {
-                const debugClient = this.debugClientManager.getActiveDebugClient();
+            execute: (x: any) => {
+                const debugClient = this.debugClientManager.getActiveDebugSession();
                 if (debugClient) {
                     this.debugClientManager.dispose(debugClient.sessionId);
                 }
             },
-            isEnabled: () => this.debugClientManager.getActiveDebugClient() !== undefined,
+            isEnabled: () => this.debugClientManager.getActiveDebugSession() !== undefined,
             isVisible: () => true
         });
 
