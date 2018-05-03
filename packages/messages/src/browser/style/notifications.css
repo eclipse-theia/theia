@@ -46,11 +46,22 @@
     color: var(--theia-ui-dialog-font-color);
 }
 
+.dialogContent .theia-Notification {
+    min-width: inherit;
+    box-shadow: none;
+    animation: none;
+}
+
 .theia-Notification .icon {
     display: inline-block;
     width: 35px;
     order: 1;
     padding: 10px 15px;
+}
+
+.dialogContent .theia-Notification .icon {
+    font-size: 20px;
+    padding: 5px 0;
 }
 
 .theia-Notification .icon .fa {
