@@ -32,13 +32,16 @@
   "scripts": {
     "prepare": "yarn run clean && yarn run build",
     "clean": "theiaext clean",
-    "build": "theiaext build",
+    "build": "concurrently -n download,build -c red,blue \"gulp download_nodejs_debug_adapter\" \"theiaext build\"",
     "watch": "theiaext watch",
     "test": "theiaext test",
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.8"
+    "@theia/ext-scripts": "^0.3.8",
+    "gulp": "^3.9.1",
+    "gulp-decompress": "^2.0.1",
+    "gulp-download": "0.0.1"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
