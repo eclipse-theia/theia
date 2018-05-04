@@ -31,6 +31,7 @@
     "@theia/preview": "^0.3.10",
     "@theia/process": "^0.3.10",
     "@theia/python": "^0.3.10",
+    "@theia/rust": "^0.3.10",
     "@theia/search-in-workspace": "^0.3.10",
     "@theia/task": "^0.3.10",
     "@theia/terminal": "^0.3.10",
