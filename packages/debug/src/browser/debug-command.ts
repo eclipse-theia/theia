@@ -57,7 +57,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
     @inject(DebugService)
     protected readonly debug: DebugService;
     @inject(DebugSessionManager)
-    protected readonly debugClientManager: DebugSessionManager;
+    protected readonly debugSessionManager: DebugSessionManager;
     @inject(DebugConfigurationManager)
     protected readonly debugConfigurationManager: DebugConfigurationManager;
 
@@ -92,12 +92,14 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                         });
                     })
                     .then(({ sessionId, configuration }) => {
-                        const debugClient = this.debugClientManager.create(sessionId, configuration);
-                        return debugClient.connect().then(() => debugClient);
+                        return this.debugSessionManager.create(sessionId, configuration);
                     })
-                    .then(debugClient => {
-                        debugClient.sendRequest("initialize", { adapterID: debugClient.configuration.type });
-                        this.debugClientManager.setActiveDebugSession(debugClient.sessionId);
+                    .then(debugSession => {
+                        debugSession.initialize().then((response) => {
+                            if (response.success) {
+                                this.debugSessionManager.setActiveDebugSession(debugSession.sessionId);
+                            }
+                        });
                     });
             },
             isEnabled: () => true,
@@ -107,12 +109,12 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
         registry.registerCommand(DEBUG_COMMANDS.STOP);
         registry.registerHandler(DEBUG_COMMANDS.STOP.id, {
             execute: (x: any) => {
-                const debugClient = this.debugClientManager.getActiveDebugSession();
-                if (debugClient) {
-                    this.debugClientManager.dispose(debugClient.sessionId);
+                const debugSession = this.debugSessionManager.getActiveDebugSession();
+                if (debugSession) {
+                    debugSession.disconnect();
                 }
             },
-            isEnabled: () => this.debugClientManager.getActiveDebugSession() !== undefined,
+            isEnabled: () => this.debugSessionManager.getActiveDebugSession() !== undefined,
             isVisible: () => true
         });
 
