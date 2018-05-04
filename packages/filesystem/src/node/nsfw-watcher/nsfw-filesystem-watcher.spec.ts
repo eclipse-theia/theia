@@ -30,6 +30,7 @@ describe("nsfw-filesystem-watcher", function () {
         root = FileUri.create(fs.realpathSync(temp.mkdirSync('node-fs-root')));
         watcherServer = createNsfwFileSystemWatcherServer();
         watcherId = await watcherServer.watchFileChanges(root.toString());
+        await onDidFilesChanged();
     });
 
     afterEach(async () => {
@@ -37,71 +38,70 @@ describe("nsfw-filesystem-watcher", function () {
         watcherServer.dispose();
     });
 
-    describe("watch/unwatch file changes and notify clients", () => {
-        it("Should receive file changes events from in the workspace by default.", async function () {
-            const actualUris = new Set<string>();
+    it("Should receive file changes events from in the workspace by default.", async function () {
+        const actualUris = new Set<string>();
+        const pushActual = (event: DidFilesChangedParams) =>
+            event.changes.forEach(c => actualUris.add(c.uri.toString()));
 
-            const watcherClient = {
-                onDidFilesChanged(event: DidFilesChangedParams) {
-                    event.changes.forEach(c => actualUris.add(c.uri.toString()));
-                }
-            };
-            watcherServer.setClient(watcherClient);
+        const expectedUris = [
+            root.resolve("foo").toString(),
+            root.withPath(root.path.join('foo', 'bar')).toString(),
+            root.withPath(root.path.join('foo', 'bar', 'baz.txt')).toString()
+        ];
 
-            const expectedUris = [
-                root.resolve("foo").toString(),
-                root.withPath(root.path.join('foo', 'bar')).toString(),
-                root.withPath(root.path.join('foo', 'bar', 'baz.txt')).toString()
-            ];
+        fs.mkdirSync(FileUri.fsPath(root.resolve("foo")));
+        expect(fs.statSync(FileUri.fsPath(root.resolve("foo"))).isDirectory()).to.be.true;
+        pushActual(await onDidFilesChanged());
 
-            fs.mkdirSync(FileUri.fsPath(root.resolve("foo")));
-            expect(fs.statSync(FileUri.fsPath(root.resolve("foo"))).isDirectory()).to.be.true;
-            await sleep(2000);
+        fs.mkdirSync(FileUri.fsPath(root.resolve("foo").resolve("bar")));
+        expect(fs.statSync(FileUri.fsPath(root.resolve("foo").resolve("bar"))).isDirectory()).to.be.true;
+        pushActual(await onDidFilesChanged());
 
-            fs.mkdirSync(FileUri.fsPath(root.resolve("foo").resolve("bar")));
-            expect(fs.statSync(FileUri.fsPath(root.resolve("foo").resolve("bar"))).isDirectory()).to.be.true;
-            await sleep(2000);
+        fs.writeFileSync(FileUri.fsPath(root.resolve("foo").resolve("bar").resolve("baz.txt")), "baz");
+        expect(fs.readFileSync(FileUri.fsPath(root.resolve("foo").resolve("bar").resolve("baz.txt")), "utf8")).to.be.equal("baz");
+        pushActual(await onDidFilesChanged());
 
-            fs.writeFileSync(FileUri.fsPath(root.resolve("foo").resolve("bar").resolve("baz.txt")), "baz");
-            expect(fs.readFileSync(FileUri.fsPath(root.resolve("foo").resolve("bar").resolve("baz.txt")), "utf8")).to.be.equal("baz");
-            await sleep(2000);
+        assert.deepEqual(expectedUris, [...actualUris]);
+    });
 
-            assert.deepEqual(expectedUris, [...actualUris]);
-        });
+    it("Should not receive file changes events from in the workspace by default if unwatched", async function () {
+        const actualUris = new Set<string>();
 
-        it("Should not receive file changes events from in the workspace by default if unwatched", async function () {
-            const actualUris = new Set<string>();
+        const watcherClient = {
+            onDidFilesChanged(event: DidFilesChangedParams) {
+                event.changes.forEach(c => actualUris.add(c.uri.toString()));
+            }
+        };
+        watcherServer.setClient(watcherClient);
 
-            const watcherClient = {
-                onDidFilesChanged(event: DidFilesChangedParams) {
-                    event.changes.forEach(c => actualUris.add(c.uri.toString()));
-                }
-            };
-            watcherServer.setClient(watcherClient);
+        /* Unwatch root */
+        watcherServer.unwatchFileChanges(watcherId);
 
-            /* Unwatch root */
-            watcherServer.unwatchFileChanges(watcherId);
+        fs.mkdirSync(FileUri.fsPath(root.resolve("foo")));
+        expect(fs.statSync(FileUri.fsPath(root.resolve("foo"))).isDirectory()).to.be.true;
+        await sleep(2000);
 
-            fs.mkdirSync(FileUri.fsPath(root.resolve("foo")));
-            expect(fs.statSync(FileUri.fsPath(root.resolve("foo"))).isDirectory()).to.be.true;
-            await sleep(2000);
+        fs.mkdirSync(FileUri.fsPath(root.resolve("foo").resolve("bar")));
+        expect(fs.statSync(FileUri.fsPath(root.resolve("foo").resolve("bar"))).isDirectory()).to.be.true;
+        await sleep(2000);
 
-            fs.mkdirSync(FileUri.fsPath(root.resolve("foo").resolve("bar")));
-            expect(fs.statSync(FileUri.fsPath(root.resolve("foo").resolve("bar"))).isDirectory()).to.be.true;
-            await sleep(2000);
+        fs.writeFileSync(FileUri.fsPath(root.resolve("foo").resolve("bar").resolve("baz.txt")), "baz");
+        expect(fs.readFileSync(FileUri.fsPath(root.resolve("foo").resolve("bar").resolve("baz.txt")), "utf8")).to.be.equal("baz");
+        await sleep(2000);
 
-            fs.writeFileSync(FileUri.fsPath(root.resolve("foo").resolve("bar").resolve("baz.txt")), "baz");
-            expect(fs.readFileSync(FileUri.fsPath(root.resolve("foo").resolve("bar").resolve("baz.txt")), "utf8")).to.be.equal("baz");
-            await sleep(2000);
-
-            assert.deepEqual(0, actualUris.size);
-        });
+        assert.deepEqual(0, actualUris.size);
     });
 
     function createNsfwFileSystemWatcherServer() {
         return new NsfwFileSystemWatcherServer({
             verbose: true
         });
+    }
+
+    function onDidFilesChanged(): Promise<DidFilesChangedParams> {
+        return new Promise(resolve => watcherServer.setClient({
+            onDidFilesChanged: resolve
+        }));
     }
 
     function sleep(time: number) {
