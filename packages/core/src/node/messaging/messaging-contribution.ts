@@ -97,8 +97,8 @@ export class MessagingContribution implements BackendApplicationContribution, Me
         }
     }
 
-    protected readonly channels = new Map<number, WebSocketChannel>();
     protected handleChannels(socket: ws): void {
+        const channels = new Map<number, WebSocketChannel>();
         socket.on('message', data => {
             const message: WebSocketChannel.Message = JSON.parse(data.toString());
             if (message.kind === 'open') {
@@ -106,16 +106,16 @@ export class MessagingContribution implements BackendApplicationContribution, Me
                 const channel = this.createChannel(id, socket);
                 if (this.channelHandlers.route(path, channel)) {
                     channel.ready();
-                    this.channels.set(id, channel);
+                    channels.set(id, channel);
                 } else {
                     console.error('Cannot find a service for the path: ' + path);
                 }
             } else {
                 const { id } = message;
-                const channel = this.channels.get(id);
+                const channel = channels.get(id);
                 if (channel) {
                     if (message.kind === 'close') {
-                        this.channels.delete(id);
+                        channels.delete(id);
                     }
                     channel.handleMessage(message);
                 } else {
@@ -124,15 +124,15 @@ export class MessagingContribution implements BackendApplicationContribution, Me
             }
         });
         socket.on('error', err => {
-            for (const channel of this.channels.values()) {
+            for (const channel of channels.values()) {
                 channel.fireError(err);
             }
         });
         socket.on('close', (code, reason) => {
-            for (const channel of this.channels.values()) {
+            for (const channel of channels.values()) {
                 channel.fireClose(code, reason);
             }
-            this.channels.clear();
+            channels.clear();
         });
     }
 
