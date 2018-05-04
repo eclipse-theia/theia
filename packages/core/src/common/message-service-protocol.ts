@@ -26,6 +26,7 @@ export interface Message {
 
 export interface MessageOptions {
     timeout?: number;
+    modal?: boolean;
 }
 
 @injectable()

@@ -12,7 +12,8 @@ import {
     Message
 } from '@theia/core/lib/common';
 import { Notifications, NotificationAction } from './notifications';
-import { NotificationPreferences } from "./notification-preferences";
+import { NotificationPreferences } from './notification-preferences';
+import { ModalNotification } from './modal-notification';
 
 @injectable()
 export class NotificationsMessageClient extends MessageClient {
@@ -47,12 +48,27 @@ export class NotificationsMessageClient extends MessageClient {
             label: 'Close',
             fn: element => onCloseFn(undefined)
         });
-        this.notifications.show({
-            icon,
-            text,
-            actions,
-            timeout
-        });
+
+        if (message.options && message.options.modal) {
+            const modalNotification = new ModalNotification({
+                icon,
+                text,
+                actions,
+                timeout
+            });
+            modalNotification.open().then((confirmed: boolean) => {
+                if (!confirmed) {
+                    onCloseFn(undefined);
+                }
+            });
+        } else {
+            this.notifications.show({
+                icon,
+                text,
+                actions,
+                timeout
+            });
+        }
     }
 
     protected iconFor(type: MessageType): string {
