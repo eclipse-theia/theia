@@ -33,7 +33,6 @@ import {
     RawProcess
 } from "@theia/process/lib/node";
 import { IWebSocket } from 'vscode-ws-jsonrpc/lib';
-import { DebugProtocol } from 'vscode-debugprotocol';
 
 /**
  * DebugAdapterSession symbol for DI.
@@ -109,21 +108,17 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
     protected readonly serverContainer: ServerContainer;
 
     protected readonly toDispose = new DisposableCollection();
-    protected readonly pendingRequests = new Map<number, DebugProtocol.Request>();
 
     private static TWO_CRLF = '\r\n\r\n';
-    private static TIMEOUT = 10_000;
 
     private communicationProvider: CommunicationProvider;
     private socket: IWebSocket;
     private contentLength: number;
     private buffer: Buffer;
-    private sequence: number;
 
     constructor() {
         this.contentLength = -1;
         this.buffer = new Buffer(0);
-        this.sequence = 1;
     }
 
     start(): Promise<void> {
@@ -137,12 +132,9 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
                 this.socket = socket;
 
                 this.communicationProvider.output.on('data', (data: Buffer) => this.handleData(data));
-                this.communicationProvider.output.on('error', (error: Error) => this.sendEvent('error', error));
-                this.communicationProvider.output.on('close', () => this.sendEvent('close'));
+                this.communicationProvider.output.on('close', () => this.proceedEvent('close'));
 
-                this.communicationProvider.input.on('error', (error: Error) => this.sendEvent('error', error));
-
-                this.socket.onMessage((data: string) => this.sendRequest(data));
+                this.socket.onMessage((data: string) => this.proceedRequest(data));
             });
         });
 
@@ -160,7 +152,7 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
                     this.contentLength = -1;
 
                     if (message.length > 0) {
-                        this.sendResponse(message);
+                        this.proceedResponse(message);
                     }
                     continue;	// there may be more complete messages to process
                 }
@@ -183,57 +175,24 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
         }
     }
 
-    protected sendEvent(event: string, body?: any): void {
-        const data: DebugProtocol.Event = {
-            seq: this.sequence++,
+    protected proceedEvent(event: string, body?: any): void {
+        const message = JSON.stringify({
             type: 'event',
             event: event,
             body: body
-        };
-
-        const message = JSON.stringify(data);
-        this.logger.debug(`DAP event: ${message}`);
-
+        });
+        this.logger.debug(`event: ${message}`);
         this.socket.send(message);
     }
 
-    protected sendResponse(message: string): void {
+    protected proceedResponse(message: string): void {
         this.logger.debug(`DAP response: ${message}`);
-
-        const response = JSON.parse(message) as DebugProtocol.Response;
-        if (response.type === 'response') {
-            if (this.pendingRequests.delete(response.request_seq)) {
-                this.socket.send(message);
-            }
-        }
+        this.socket.send(message);
     }
 
-    protected sendRequest(message: string): void {
+    protected proceedRequest(message: string): void {
         this.logger.debug(`DAP request: ${message}`);
-
-        const request = JSON.parse(message) as DebugProtocol.Request;
-        request.seq = this.sequence++;
-        this.pendingRequests.set(request.seq, request);
         this.communicationProvider.input.write(`Content-Length: ${Buffer.byteLength(message, 'utf8')}\r\n\r\n${message}`, 'utf8');
-
-        const timer = setTimeout(() => {
-            clearTimeout(timer);
-            const pendingRequest = this.pendingRequests.get(request.seq);
-            if (pendingRequest) {
-                this.pendingRequests.delete(request.seq);
-
-                const response: DebugProtocol.Response = {
-                    request_seq: pendingRequest.seq,
-                    type: 'response',
-                    seq: this.sequence++,
-                    command: pendingRequest.command,
-                    success: false,
-                    message: 'timeout'
-                };
-
-                this.socket.send(JSON.stringify(response));
-            }
-        }, DebugAdapterSessionImpl.TIMEOUT);
     }
 
     dispose(): void {
