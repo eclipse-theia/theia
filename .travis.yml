@@ -16,6 +16,7 @@ cache:
   - packages/callhierarchy/node_modules
   - packages/core/node_modules
   - packages/cpp/node_modules
+  - packages/editorconfig/node_modules
   - packages/editor/node_modules
   - packages/extension-manager/node_modules
   - packages/file-search/node_modules
@@ -28,6 +29,7 @@ cache:
   - packages/merge-conflicts/node_modules
   - packages/messages/node_modules
   - packages/metrics/node_modules
+  - packages/mini-browser/node_modules
   - packages/monaco/node_modules
   - packages/navigator/node_modules
   - packages/outline-view/node_modules
