@@ -16,7 +16,7 @@ import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
 import { RecursivePartial } from '../../common';
 import { Saveable } from '../saveable';
-import { StatusBarImpl, StatusBarLayoutData, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
+import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory, TheiaDockPanel } from './side-panel-handler';
 import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar } from './tab-bars';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
@@ -472,7 +472,6 @@ export class ApplicationShell extends Widget {
             },
             leftPanel: this.leftPanelHandler.getLayoutData(),
             rightPanel: this.rightPanelHandler.getLayoutData(),
-            statusBar: this.statusBar.getLayoutData(),
             activeWidgetId: this.activeWidget ? this.activeWidget.id : undefined
         };
     }
@@ -509,10 +508,7 @@ export class ApplicationShell extends Widget {
      * Apply a shell layout that has been previously created with `getLayoutData`.
      */
     async setLayoutData(layoutData: ApplicationShell.LayoutData): Promise<void> {
-        const { mainPanel, bottomPanel, leftPanel, rightPanel, statusBar, activeWidgetId } = this.getValidatedLayoutData(layoutData);
-        if (statusBar) {
-            this.statusBar.setLayoutData(statusBar);
-        }
+        const { mainPanel, bottomPanel, leftPanel, rightPanel, activeWidgetId } = this.getValidatedLayoutData(layoutData);
         if (leftPanel) {
             this.leftPanelHandler.setLayoutData(leftPanel);
             this.registerWithFocusTracker(leftPanel);
@@ -1307,7 +1303,6 @@ export namespace ApplicationShell {
         bottomPanel?: BottomPanelLayoutData;
         leftPanel?: SidePanel.LayoutData;
         rightPanel?: SidePanel.LayoutData;
-        statusBar?: StatusBarLayoutData;
         activeWidgetId?: string;
     }
 
