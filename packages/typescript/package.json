@@ -7,7 +7,6 @@
     "@theia/core": "^0.3.11",
     "@theia/languages": "^0.3.11",
     "@theia/monaco": "^0.3.11",
-    "monaco-typescript": "^3.0.2",
     "typescript-language-server": "^0.1.14"
   },
   "publishConfig": {
@@ -33,7 +32,8 @@
   "homepage": "https://github.com/theia-ide/theia",
   "files": [
     "lib",
-    "src"
+    "src",
+    "data"
   ],
   "scripts": {
     "prepare": "yarn run clean && yarn run build",

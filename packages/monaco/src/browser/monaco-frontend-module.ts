@@ -28,6 +28,8 @@ import { MonacoCommandRegistry } from './monaco-command-registry';
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
 import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
 import { MonacoStrictEditorTextFocusContext } from './monaco-keybinding-contexts';
+import { MonacoFrontendApplicationContribution } from './monaco-frontend-application-contribution';
+import MonacoTextmateModuleBinder from './textmate/monaco-textmate-frontend-bindings';
 
 decorate(injectable(), MonacoToProtocolConverter);
 decorate(injectable(), ProtocolToMonacoConverter);
@@ -37,6 +39,8 @@ import '../../src/browser/style/symbol-sprite.svg';
 import '../../src/browser/style/symbol-icons.css';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    bind(FrontendApplicationContribution).to(MonacoFrontendApplicationContribution).inSingletonScope();
+
     bind(MonacoToProtocolConverter).toSelf().inSingletonScope();
     bind(ProtocolToMonacoConverter).toSelf().inSingletonScope();
 
@@ -76,4 +80,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     rebind(QuickOpenService).toDynamicValue(ctx =>
         ctx.container.get(MonacoQuickOpenService)
     ).inSingletonScope();
+
+    MonacoTextmateModuleBinder(bind, unbind, isBound, rebind);
 });

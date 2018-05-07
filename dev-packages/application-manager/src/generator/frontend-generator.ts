@@ -47,6 +47,7 @@ const { FrontendApplication } = require('@theia/core/lib/browser');
 const { frontendApplicationModule } = require('@theia/core/lib/browser/frontend-application-module');
 const { messagingFrontendModule } = require('@theia/core/lib/browser/messaging/messaging-frontend-module');
 const { loggerFrontendModule } = require('@theia/core/lib/browser/logger-frontend-module');
+const { ThemeService } = require('@theia/core/lib/browser/theming');
 
 const container = new Container();
 container.load(frontendApplicationModule);
@@ -60,6 +61,9 @@ function load(raw) {
 }
 
 function start() {
+    const themeService = ThemeService.get()
+    themeService.loadUserTheme();
+
     const application = container.get(FrontendApplication);
     application.start();
 }
