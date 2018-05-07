@@ -64,7 +64,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         (async () => {
             const sc = await this.getScrollContainer();
             const listener = (e: UIEvent) => {
-                const el = (e.srcElement as HTMLElement);
+                const el = (e.srcElement || e.target) as HTMLElement;
                 if (el.scrollTop + el.clientHeight > el.scrollHeight - 83) {
                     const ll = this.node.getElementsByClassName('history-lazy-loading')[0];
                     ll.className = "history-lazy-loading show";
