@@ -41,6 +41,7 @@ export class PreviewWidget extends BaseWidget {
     constructor(
         @inject(PreviewWidgetOptions) protected readonly options: PreviewWidgetOptions,
         @inject(PreviewHandlerProvider) protected readonly previewHandlerProvider: PreviewHandlerProvider,
+        @inject(ThemeService) protected readonly themeService: ThemeService,
         @inject(Workspace) protected readonly workspace: Workspace,
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
     ) {
@@ -86,7 +87,7 @@ export class PreviewWidget extends BaseWidget {
         this.toDispose.push(this.workspace.onDidOpenTextDocument(document => updateIfAffected(document.uri)));
         this.toDispose.push(this.workspace.onDidChangeTextDocument(params => updateIfAffected(params.textDocument.uri)));
         this.toDispose.push(this.workspace.onDidCloseTextDocument(document => updateIfAffected(document.uri)));
-        this.toDispose.push(ThemeService.get().onThemeChange(() => this.update()));
+        this.toDispose.push(this.themeService.onThemeChange(() => this.update()));
         this.firstUpdate = () => {
             this.revealFragment(this.uri);
         };

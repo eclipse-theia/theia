@@ -6,13 +6,12 @@
  */
 
 // tslint:disable:no-any
-import { DisposableCollection } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { inject, injectable } from 'inversify';
+import { DisposableCollection } from '@theia/core/lib/common';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
-
 import { MonacoCommandServiceFactory } from './monaco-command-service';
 import { MonacoContextMenuService } from './monaco-context-menu';
 import { MonacoDiffEditor } from './monaco-diff-editor';
@@ -23,17 +22,8 @@ import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoQuickOpenService } from './monaco-quick-open-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { MonacoWorkspace } from './monaco-workspace';
-import { ThemeService } from '@theia/core/lib/browser/theming';
 
 import IEditorOverrideServices = monaco.editor.IEditorOverrideServices;
-
-function changeTheme(editorTheme: string | undefined) {
-    const monacoTheme = editorTheme || 'vs-dark';
-    monaco.editor.setTheme(monacoTheme);
-    document.body.classList.add(monacoTheme);
-}
-changeTheme(ThemeService.get().getCurrentTheme().editorTheme);
-ThemeService.get().onThemeChange(event => changeTheme(event.newTheme.editorTheme));
 
 @injectable()
 export class MonacoEditorProvider {

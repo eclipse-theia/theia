@@ -14,7 +14,9 @@
     "monaco-html": "^2.0.2",
     "monaco-json": "^2.0.1",
     "monaco-languageclient": "0.6.3",
-    "monaco-languages": "^1.0.4"
+    "monaco-languages": "^1.0.4",
+    "monaco-textmate": "^3.0.0",
+    "onigasm": "^2.1.0"
   },
   "publishConfig": {
     "access": "public"
@@ -39,7 +41,8 @@
   "homepage": "https://github.com/theia-ide/theia",
   "files": [
     "lib",
-    "src"
+    "src",
+    "data"
   ],
   "scripts": {
     "prepare": "yarn run clean && yarn run build",

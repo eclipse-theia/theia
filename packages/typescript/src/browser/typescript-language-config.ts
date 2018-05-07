@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox, Ericsson and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -12,7 +12,6 @@
 // some parts are copied from https://github.com/Microsoft/monaco-typescript/blob/v2.3.0/src/mode.ts
 
 import { TYPESCRIPT_LANGUAGE_ID, TYPESCRIPT_LANGUAGE_NAME, JAVASCRIPT_LANGUAGE_ID, JAVASCRIPT_LANGUAGE_NAME } from "../common";
-import { createTokenizationSupport, Language } from "./monaco-tokenization/tokenization";
 
 const genericEditConfiguration: monaco.languages.LanguageConfiguration = {
     wordPattern: /(-?\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\-\=\+\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
@@ -71,7 +70,6 @@ export function registerTypeScript() {
     });
     monaco.languages.onLanguage(TYPESCRIPT_LANGUAGE_ID, () => {
         monaco.languages.setLanguageConfiguration(TYPESCRIPT_LANGUAGE_ID, genericEditConfiguration);
-        monaco.languages.setTokensProvider(TYPESCRIPT_LANGUAGE_ID, createTokenizationSupport(Language.TypeScript));
     });
 }
 
@@ -84,6 +82,5 @@ export function registerJavaScript() {
     });
     monaco.languages.onLanguage(JAVASCRIPT_LANGUAGE_ID, () => {
         monaco.languages.setLanguageConfiguration(JAVASCRIPT_LANGUAGE_ID, genericEditConfiguration);
-        monaco.languages.setTokensProvider(JAVASCRIPT_LANGUAGE_ID, createTokenizationSupport(Language.EcmaScript5));
     });
 }

@@ -62,6 +62,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
     @inject(TerminalWidgetOptions) options: TerminalWidgetOptions;
     @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
     @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher;
+    @inject(ThemeService) protected readonly themeService: ThemeService;
     @inject(ILogger) @named('terminal') protected readonly logger: ILogger;
 
     protected readonly toDisposeOnConnect = new DisposableCollection();
@@ -97,7 +98,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             },
         });
 
-        this.toDispose.push(ThemeService.get().onThemeChange(c => {
+        this.toDispose.push(this.themeService.onThemeChange(c => {
             const changedProps = this.getCSSPropertiesFromPage();
             this.term.setOption('theme', {
                 foreground: changedProps.foreground,

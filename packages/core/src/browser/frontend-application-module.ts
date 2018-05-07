@@ -36,9 +36,10 @@ import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from "./label-provider";
 import {
     PreferenceProviders, PreferenceProvider,
-    PreferenceScope, PreferenceService, PreferenceServiceImpl } from './preferences';
+    PreferenceScope, PreferenceService, PreferenceServiceImpl
+} from './preferences';
 import { ContextMenuRenderer } from './context-menu-renderer';
-import { ThemingCommandContribution, ThemeService } from './theming';
+import { ThemingCommandContribution, ThemeService, BuiltinThemeProvider } from './theming';
 import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution } from './connection-status-service';
 import { DiffUriLabelProviderContribution } from './diff-uris';
 import { ApplicationServer, applicationPath } from "../common/application-protocol";
@@ -48,6 +49,10 @@ import { EnvVariablesServer, envVariablesPath } from "./../common/env-variables"
 import { FrontendApplicationStateService } from './frontend-application-state';
 
 export const frontendApplicationModule = new ContainerModule((bind, unbind, isBound, rebind) => {
+    const themeService = ThemeService.get();
+    themeService.register(...BuiltinThemeProvider.themes);
+    themeService.startupTheme();
+
     bind(FrontendApplication).toSelf().inSingletonScope();
     bind(FrontendApplicationStateService).toSelf().inSingletonScope();
     bind(DefaultFrontendApplicationContribution).toSelf();
@@ -121,8 +126,6 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
     bind(LabelProviderContribution).to(DefaultUriLabelProviderContribution).inSingletonScope();
     bind(LabelProviderContribution).to(DiffUriLabelProviderContribution).inSingletonScope();
 
-    bind(CommandContribution).to(ThemingCommandContribution).inSingletonScope();
-
     bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.User);
     bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
     bind(PreferenceProviders).toFactory(ctx => (scope: PreferenceScope) => ctx.container.getNamed(PreferenceProvider, scope));
@@ -149,7 +152,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         const connection = ctx.container.get(WebSocketConnectionProvider);
         return connection.createProxy<EnvVariablesServer>(envVariablesPath);
     }).inSingletonScope();
-});
 
-const theme = ThemeService.get().getCurrentTheme().id;
-ThemeService.get().setCurrentTheme(theme);
+    bind(ThemeService).toDynamicValue(() => ThemeService.get());
+    bind(CommandContribution).to(ThemingCommandContribution).inSingletonScope();
+});
