@@ -128,6 +128,9 @@ export class WorkspaceService implements FrontendApplicationContribution {
             return undefined;
         }
         try {
+            if (uri && uri.endsWith("/")) {
+                uri = uri.slice(0, -1);
+            }
             const fileStat = await this.fileSystem.getFileStat(uri);
             if (!fileStat) {
                 return undefined;
