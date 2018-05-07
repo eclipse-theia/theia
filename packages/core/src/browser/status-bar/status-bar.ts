@@ -12,16 +12,6 @@ import { LabelParser, LabelIcon } from '../label-parser';
 import { injectable, inject } from 'inversify';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 
-export interface StatusBarLayoutData {
-    entries: StatusBarEntryData[]
-    backgroundColor?: string
-}
-
-export interface StatusBarEntryData {
-    id: string;
-    entry: StatusBarEntry
-}
-
 export interface StatusBarEntry {
     /**
      * For icons we use fontawesome. Get more information and the class names
@@ -106,24 +96,6 @@ export class StatusBarImpl extends VirtualWidget implements StatusBar {
         this.backgroundColor = color;
         // tslint:disable-next-line:no-null-keyword
         this.node.style.backgroundColor = this.backgroundColor ? this.backgroundColor : null;
-    }
-
-    getLayoutData(): StatusBarLayoutData {
-        const entries: StatusBarEntryData[] = [];
-        this.entries.forEach((entry, id) => {
-            entries.push({ id, entry });
-        });
-        return { entries, backgroundColor: this.backgroundColor };
-    }
-
-    setLayoutData(data: StatusBarLayoutData): void {
-        if (data.entries) {
-            data.entries.forEach(entryData => {
-                this.entries.set(entryData.id, entryData.entry);
-            });
-            this.update();
-        }
-        this.internalSetBackgroundColor(data.backgroundColor);
     }
 
     protected render(): h.Child {
