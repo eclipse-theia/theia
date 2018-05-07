@@ -26,7 +26,7 @@ export class JavaContribution extends BaseLanguageServerContribution {
     readonly name = JAVA_LANGUAGE_NAME;
 
     start(clientConnection: IConnection): void {
-        const serverPath = path.resolve(__dirname, 'server');
+        const serverPath = path.resolve(__dirname, '..', '..', 'server');
         const jarPaths = glob.sync('**/plugins/org.eclipse.equinox.launcher_*.jar', { cwd: serverPath });
         if (jarPaths.length === 0) {
             throw new Error('The Java server launcher is not found.');
