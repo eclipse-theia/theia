@@ -8,18 +8,19 @@
     "@theia/languages": "^0.3.10",
     "@theia/monaco": "^0.3.10",
     "@types/glob": "^5.0.30",
-    "glob": "^7.1.2"
+    "@types/tar": "4.0.0",
+    "glob": "^7.1.2",
+    "mkdirp": "^0.5.0",
+    "tar": "^4.0.0"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.10",
-    "gulp": "^3.9.1",
-    "gulp-decompress": "^2.0.1",
-    "gulp-downloader": "1.0.4"
+    "@theia/ext-scripts": "^0.3.10"
   },
   "scripts": {
     "prepare": "yarn run clean && yarn run build",
     "clean": "theiaext clean",
-    "build": "concurrently -n download,build -c red,blue \"gulp download_java_server\" \"theiaext build\"",
+    "postinstall": "node ./scripts/download-jdt-ls.js",
+    "build": "theiaext build",
     "watch": "theiaext watch",
     "test": "theiaext test",
     "docs": "theiaext docs"
@@ -47,10 +48,10 @@
   "homepage": "https://github.com/theia-ide/theia",
   "files": [
     "lib",
+    "scripts",
     "src"
   ],
   "nyc": {
     "extends": "../../configs/nyc.json"
-  },
-  "jdt.ls.download.path": "/jdtls/milestones/0.18.0/jdt-language-server-0.18.0-201805010001.tar.gz"
+  }
 }
