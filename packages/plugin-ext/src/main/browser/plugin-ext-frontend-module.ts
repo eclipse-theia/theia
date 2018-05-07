@@ -15,8 +15,11 @@ import { HostedPluginManagerClient } from "./plugin-manager-client";
 import { PluginApiFrontendContribution } from "./plugin-frontend-contribution";
 import { setUpPluginApi } from "./main-context";
 import { HostedPluginServer, hostedServicePath } from "../../common/plugin-protocol";
+import { ModalNotification } from './dialogs/modal-notification';
 
 export default new ContainerModule(bind => {
+    bind(ModalNotification).toSelf().inSingletonScope();
+
     bind(PluginWorker).toSelf().inSingletonScope();
     bind(HostedPluginSupport).toSelf().inSingletonScope();
     bind(HostedPluginWatcher).toSelf().inSingletonScope();

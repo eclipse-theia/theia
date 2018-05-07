@@ -56,6 +56,18 @@ export interface PickOpenItem {
     detail?: string;
     picked?: boolean;
 }
+
+export interface MessageRegistryMain {
+    $showInformationMessage (message: string,
+                             optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+                             items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
+    $showWarningMessage (message: string,
+                         optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+                         items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
+    $showErrorMessage (message: string,
+                       optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+                       items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
+}
 export interface QuickOpenExt {
     $onItemSelected(handle: number): void;
     $validateInput(input: string): PromiseLike<string> | undefined;
@@ -70,7 +82,8 @@ export interface QuickOpenMain {
 
 export const PLUGIN_RPC_CONTEXT = {
     COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
-    QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain')
+    QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain'),
+    MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<MessageRegistryMain>>createProxyIdentifier<MessageRegistryMain>('MessageRegistryMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
