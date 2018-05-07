@@ -14,15 +14,15 @@ import { createAPI, startPlugin } from '../../../plugin/plugin-context';
 const ctx = self as any;
 const plugins = new Map<string, () => void>();
 
-const emmitter = new Emitter();
+const emitter = new Emitter();
 const rpc = new RPCProtocolImpl({
-    onMessage: emmitter.event,
+    onMessage: emitter.event,
     send: (m: {}) => {
         ctx.postMessage(m);
     }
 });
 addEventListener('message', (message: any) => {
-    emmitter.fire(message.data);
+    emitter.fire(message.data);
 });
 
 const theia = createAPI(rpc);
