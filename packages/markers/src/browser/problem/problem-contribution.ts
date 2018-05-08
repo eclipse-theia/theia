@@ -32,17 +32,10 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
     }
 
     onStart(app: FrontendApplication) {
+        this.setStatusBarElement(this.problemManager.getProblemStat());
         this.problemManager.onDidChangeMarkers(() => {
             this.setStatusBarElement(this.problemManager.getProblemStat());
         });
-    }
-
-    initializeLayout(app: FrontendApplication): Promise<void> {
-        this.setStatusBarElement({
-            errors: 0,
-            warnings: 0
-        });
-        return Promise.resolve();
     }
 
     protected setStatusBarElement(problemStat: ProblemStat) {
