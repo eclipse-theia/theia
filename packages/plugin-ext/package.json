@@ -2,6 +2,8 @@
   "name": "@theia/plugin-ext",
   "version": "0.3.10",
   "description": "Theia - Plugin Extension",
+  "main": "lib/common/index.js",
+  "typings": "lib/common/index.d.ts",
   "dependencies": {
     "@theia/core": "^0.3.10",
     "@theia/filesystem": "^0.3.10",
