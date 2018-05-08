@@ -123,28 +123,28 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
     }
 
     registerKeybindings(registry: KeybindingRegistry): void {
-        registry.registerKeybinding({
-            command: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id,
-            keybinding: "ctrlcmd+shift+i"
-        });
-
-        registry.registerKeybinding({
-            command: ElectronCommands.RELOAD.id,
-            keybinding: "ctrlcmd+r"
-        });
-
-        registry.registerKeybinding({
-            command: ElectronCommands.ZOOM_IN.id,
-            keybinding: "ctrlcmd+="
-        });
-        registry.registerKeybinding({
-            command: ElectronCommands.ZOOM_OUT.id,
-            keybinding: "ctrlcmd+-"
-        });
-        registry.registerKeybinding({
-            command: ElectronCommands.RESET_ZOOM.id,
-            keybinding: "ctrlcmd+0"
-        });
+        registry.registerKeybindings(
+            {
+                command: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id,
+                keybinding: "ctrlcmd+shift+i"
+            },
+            {
+                command: ElectronCommands.RELOAD.id,
+                keybinding: "ctrlcmd+r"
+            },
+            {
+                command: ElectronCommands.ZOOM_IN.id,
+                keybinding: "ctrlcmd+="
+            },
+            {
+                command: ElectronCommands.ZOOM_OUT.id,
+                keybinding: "ctrlcmd+-"
+            },
+            {
+                command: ElectronCommands.RESET_ZOOM.id,
+                keybinding: "ctrlcmd+0"
+            }
+        );
     }
 
     registerMenus(registry: MenuModelRegistry) {
