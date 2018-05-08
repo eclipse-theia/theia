@@ -67,7 +67,7 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
         /* Register ctrl + k (the passed Key) as a passthrough command in the
            context of the terminal.  */
         const regCtrl = (k: Key) => {
-            keybindings.registerKeybindings({
+            keybindings.registerKeybinding({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keybinding: KeyCode.createKeyCode({ first: k, modifiers: [KeyModifier.CTRL] }).toString(),
                 context: TerminalKeybindingContexts.terminalActive,
@@ -136,7 +136,7 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
         }
         if (isOSX) {
             // selectAll on OSX
-            keybindings.registerKeybindings({
+            keybindings.registerKeybinding({
                 command: KeybindingRegistry.PASSTHROUGH_PSEUDO_COMMAND,
                 keybinding: "ctrlcmd+a",
                 context: TerminalKeybindingContexts.terminalActive

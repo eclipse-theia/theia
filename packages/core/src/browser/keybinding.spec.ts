@@ -75,6 +75,7 @@ before(async () => {
 });
 
 describe('keybindings', () => {
+
     before(() => {
         disableJSDOM = enableJSDOM();
     });
@@ -94,7 +95,7 @@ describe('keybindings', () => {
     });
 
     it("should register the default keybindings", () => {
-        const keybinding = keybindingRegistry.getKeybindingsForCommand('test.command');
+        const keybinding = keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND.id);
         expect(keybinding).is.not.undefined;
 
         const keybinding2 = keybindingRegistry.getKeybindingsForCommand('undefined.command');
@@ -103,13 +104,13 @@ describe('keybindings', () => {
 
     it("should set a keymap", () => {
         const keybindings: Keybinding[] = [{
-            command: "test.command",
+            command: TEST_COMMAND.id,
             keybinding: "ctrl+c"
         }];
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
 
-        const bindings = keybindingRegistry.getKeybindingsForCommand('test.command');
+        const bindings = keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND.id);
         if (bindings) {
             const keyCode = KeyCode.parse(bindings[0].keybinding);
             expect(keyCode.key).to.be.equal(Key.KEY_C);
@@ -120,13 +121,13 @@ describe('keybindings', () => {
 
     it("should reset to default in case of invalid keybinding", () => {
         const keybindings: Keybinding[] = [{
-            command: "test.command",
+            command: TEST_COMMAND.id,
             keybinding: "ctrl+invalid"
         }];
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
 
-        const bindings = keybindingRegistry.getKeybindingsForCommand('test.command');
+        const bindings = keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND.id);
         if (bindings) {
             const keyCode = KeyCode.parse(bindings[0].keybinding);
             expect(keyCode.key).to.be.equal(Key.KEY_A);
@@ -136,13 +137,13 @@ describe('keybindings', () => {
 
     it("should remove all keybindings from a command that has multiple keybindings", () => {
         const keybindings: Keybinding[] = [{
-            command: "test.command2",
+            command: TEST_COMMAND2.id,
             keybinding: "F3"
         }];
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
 
-        const bindings = keybindingRegistry.getKeybindingsForCommand('test.command2');
+        const bindings = keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND2.id);
         if (bindings) {
             expect(bindings.length).to.be.equal(2);
             const keyCode = KeyCode.parse(bindings[0].keybinding);
@@ -153,15 +154,16 @@ describe('keybindings', () => {
 
     it("should register a correct keybinding, then default back to the original for a wrong one after", () => {
         let keybindings: Keybinding[] = [{
-            command: "test.command",
+            command: TEST_COMMAND.id,
             keybinding: "ctrl+c"
         }];
+
         // Get default binding
-        const keystroke = keybindingRegistry.getKeybindingsForCommand('test.command');
+        const keystroke = keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND.id);
 
         // Set correct new binding
         keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
-        const bindings = keybindingRegistry.getKeybindingsForCommand('test.command');
+        const bindings = keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND.id);
         if (bindings) {
             const keyCode = KeyCode.parse(bindings[0].keybinding);
             expect(keyCode.key).to.be.equal(Key.KEY_C);
@@ -170,11 +172,13 @@ describe('keybindings', () => {
 
         // Set invalid binding
         keybindings = [{
-            command: "test.command",
+            command: TEST_COMMAND.id,
             keybinding: "ControlLeft+Invalid"
         }];
+
         keybindingRegistry.setKeymap(KeybindingScope.USER, keybindings);
-        const defaultBindings = keybindingRegistry.getKeybindingsForCommand('test.command');
+
+        const defaultBindings = keybindingRegistry.getKeybindingsForCommand(TEST_COMMAND.id);
         if (defaultBindings) {
             if (keystroke) {
                 const keyCode = KeyCode.parse(defaultBindings[0].keybinding);
@@ -186,14 +190,14 @@ describe('keybindings', () => {
 
     it("should only return the more specific keybindings when a keystroke is entered", () => {
         const keybindingsUser: Keybinding[] = [{
-            command: "test.command",
+            command: TEST_COMMAND.id,
             keybinding: "ctrl+b"
         }];
 
         keybindingRegistry.setKeymap(KeybindingScope.USER, keybindingsUser);
 
         const keybindingsSpecific: Keybinding[] = [{
-            command: "test.command",
+            command: TEST_COMMAND.id,
             keybinding: "ctrl+c"
         }];
 
@@ -214,7 +218,7 @@ describe('keybindings', () => {
 
     it("should return partial keybinding matches", () => {
         const keybindingsUser: Keybinding[] = [{
-            command: "test.command",
+            command: TEST_COMMAND.id,
             keybinding: "ctrlcmd+x t"
         }];
 
@@ -230,7 +234,7 @@ describe('keybindings', () => {
 
     it("should not register a shadowing keybinding", () => {
         const validKeyBinding = "ctrlcmd+b a";
-        const command = "test.command-shadow";
+        const command = TEST_COMMAND_SHADOW.id;
         const keybindingShadowing: Keybinding[] = [
             {
                 command,
@@ -266,7 +270,7 @@ describe("keys api", () => {
         expect(keycode.key).is.equal(Key.KEY_B);
 
         // Invalid keystroke string
-        expect(() => KeyCode.parse("ctl+b")).to.throw("Unrecognized key in ctl+b");
+        expect(() => KeyCode.parse("ctl+b")).to.throw(Error);
 
     });
 
@@ -281,7 +285,7 @@ describe("keys api", () => {
         expect(keycodeOption.alt).to.be.true;
         expect(keycodeOption.key).is.equal(Key.KEY_B);
 
-        expect(() => KeyCode.parse("cmd+b")).to.throw("Can't parse keybinding cmd+b meta is for OSX only");
+        expect(() => KeyCode.parse("cmd+b")).to.throw(/OSX only/);
 
         const keycodeCtrlOrCommand = KeyCode.parse("ctrlcmd+b");
         expect(keycodeCtrlOrCommand.meta).to.be.false;

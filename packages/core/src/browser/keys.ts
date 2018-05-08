@@ -258,7 +258,7 @@ export class KeyCode {
                     sequence.unshift(key.code);
                 }
             } else {
-                throw new Error(`Unrecognized key in ${keybinding}`);
+                throw new Error(`Unrecognized key <${keyString}> in <${keybinding}>`);
             }
         }
 
