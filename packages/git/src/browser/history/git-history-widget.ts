@@ -85,7 +85,6 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
 
     async setContent(options?: Git.Options.Log) {
         this.options = options || {};
-        this.commits = [];
         this.ready = false;
         if (options && options.uri) {
             const fileStat = await this.fileSystem.getFileStat(options.uri);
@@ -100,6 +99,7 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         if (repository) {
             const log = this.git.log(repository, options);
             log.then(async changes => {
+                this.commits = [];
                 if (this.commits.length > 0) {
                     changes = changes.slice(1);
                 }
@@ -125,13 +125,11 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
                     }
                     this.commits.push(...commits);
                 }
-                this.ready = true;
-                this.update();
-                const ll = this.node.getElementsByClassName('history-lazy-loading')[0];
-                if (ll && ll.className === "history-lazy-loading show") {
-                    ll.className = "history-lazy-loading hide";
-                }
+                this.onDataReady();
             });
+        } else {
+            this.commits = [];
+            this.onDataReady();
         }
     }
 
@@ -168,6 +166,15 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         this.singleFileMode = oldState['singleFileMode'];
         this.ready = true;
         this.update();
+    }
+
+    protected onDataReady(): void {
+        this.ready = true;
+        this.update();
+        const ll = this.node.getElementsByClassName('history-lazy-loading')[0];
+        if (ll && ll.className === "history-lazy-loading show") {
+            ll.className = "history-lazy-loading hide";
+        }
     }
 
     protected render(): h.Child {

@@ -5,14 +5,15 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { MenuModelRegistry, CommandRegistry, Command, SelectionService } from "@theia/core";
-import { AbstractViewContribution } from "@theia/core/lib/browser";
-import { injectable, inject } from "inversify";
-import { NAVIGATOR_CONTEXT_MENU } from "@theia/navigator/lib/browser/navigator-contribution";
-import { UriCommandHandler, UriAwareCommandHandler } from "@theia/core/lib/common/uri-command-handler";
+import { MenuModelRegistry, CommandRegistry, Command, SelectionService } from '@theia/core';
+import { AbstractViewContribution } from '@theia/core/lib/browser';
+import { injectable, inject, postConstruct } from 'inversify';
+import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
+import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import URI from '@theia/core/lib/common/uri';
 import { GitHistoryWidget } from './git-history-widget';
-import { Git } from "../../common";
+import { Git } from '../../common';
+import { GitRepositoryTracker } from '../git-repository-tracker';
 
 export namespace GitHistoryCommands {
     export const OPEN_FILE_HISTORY: Command = {
@@ -29,8 +30,12 @@ export const GIT_HISTORY_MAX_COUNT = 100;
 @injectable()
 export class GitHistoryContribution extends AbstractViewContribution<GitHistoryWidget> {
 
-    constructor(
-        @inject(SelectionService) protected readonly selectionService: SelectionService) {
+    @inject(SelectionService)
+    protected readonly selectionService: SelectionService;
+    @inject(GitRepositoryTracker)
+    protected readonly repositoryTracker: GitRepositoryTracker;
+
+    constructor() {
         super({
             widgetId: GIT_HISTORY,
             widgetName: 'Git History',
@@ -40,6 +45,25 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
             },
             toggleCommandId: GitHistoryCommands.OPEN_BRANCH_HISTORY.id,
             toggleKeybinding: 'alt+h'
+        });
+    }
+
+    @postConstruct()
+    protected init() {
+        this.repositoryTracker.onDidChangeRepository(async repository =>
+            this.refreshWidget(repository ? repository.localUri : undefined)
+        );
+        this.repositoryTracker.onGitEvent(event => {
+            const { source, status, oldStatus } = event;
+            let isBranchChanged = false;
+            let isHeaderChanged = false;
+            if (oldStatus) {
+                isBranchChanged = status.branch !== oldStatus.branch;
+                isHeaderChanged = status.currentHead !== oldStatus.currentHead;
+            }
+            if (isBranchChanged || isHeaderChanged || oldStatus === undefined) {
+                this.refreshWidget(source.localUri);
+            }
         });
     }
 
@@ -53,30 +77,30 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(GitHistoryCommands.OPEN_FILE_HISTORY, this.newUriAwareCommandHandler({
-            execute: async uri => {
-                const options: Git.Options.Log = {
-                    uri: uri.toString(),
-                    maxCount: GIT_HISTORY_MAX_COUNT,
-                    shortSha: true
-                };
-                this.showWidget(options);
-            }
+            execute: async uri => this.showWidget(uri.toString())
         }));
         commands.registerCommand(GitHistoryCommands.OPEN_BRANCH_HISTORY, {
-            execute: () => {
-                this.showWidget({
-                    maxCount: GIT_HISTORY_MAX_COUNT,
-                    shortSha: true
-                });
-            }
+            execute: () => this.showWidget(undefined)
         });
     }
 
-    async showWidget(options?: Git.Options.Log) {
+    async showWidget(uri: string | undefined) {
+        this.refreshWidget(uri);
+        this.openView({
+            activate: true
+        });
+    }
+
+    protected async refreshWidget(uri: string | undefined) {
+        const options: Git.Options.Log = {
+            uri,
+            maxCount: GIT_HISTORY_MAX_COUNT,
+            shortSha: true
+        };
         const widget = await this.widget;
         await widget.setContent(options);
         this.openView({
-            activate: true
+            activate: false
         });
     }
 
