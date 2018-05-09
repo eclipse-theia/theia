@@ -5,19 +5,14 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { injectable, inject } from "inversify";
-import { EditorDecorationsService, OverviewRulerLane, EditorDecoration, EditorDecorationOptions } from "@theia/editor/lib/browser";
-import { MergeConflicts } from "./merge-conflicts-provider";
+import { injectable } from "inversify";
+import { OverviewRulerLane, EditorDecoration, EditorDecorationOptions, EditorDecorator } from "@theia/editor/lib/browser";
+import { MergeConflictsUpdate } from "./merge-conflicts-provider";
 
 @injectable()
-export class MergeConflictsDecorations {
+export class MergeConflictsDecorations extends EditorDecorator {
 
-    constructor(
-        @inject(EditorDecorationsService) protected readonly decorationsService: EditorDecorationsService,
-    ) { }
-
-    decorate(params: MergeConflicts): void {
-        const uri = params.uri;
+    decorate(params: MergeConflictsUpdate): void {
         const mergeConflicts = params.mergeConflicts;
         const newDecorations: EditorDecoration[] = [];
         for (const mergeConflict of mergeConflicts) {
@@ -38,12 +33,7 @@ export class MergeConflictsDecorations {
                 }
             }
         }
-        this.setDecorations(uri, newDecorations);
-    }
-
-    protected setDecorations(uri: string, newDecorations: EditorDecoration[]) {
-        const kind = 'merge-conflicts';
-        this.decorationsService.setDecorations({ uri, kind, newDecorations });
+        this.setDecorations(params.editor, newDecorations);
     }
 
 }

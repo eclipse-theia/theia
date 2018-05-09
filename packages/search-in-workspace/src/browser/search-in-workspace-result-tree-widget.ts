@@ -447,7 +447,6 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const appliedDecorations = editorWidget.editor.deltaDecorations({
             newDecorations,
             oldDecorations,
-            uri: editorWidget.editor.uri.toString()
         });
         this.appliedDecorations.set(key, appliedDecorations);
     }

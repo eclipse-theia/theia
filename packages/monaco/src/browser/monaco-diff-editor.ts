@@ -8,7 +8,7 @@
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
 import URI from '@theia/core/lib/common/uri';
 import { Disposable } from '@theia/core/lib/common';
-import { Dimension, EditorDecorationsService, DiffNavigator, DeltaDecorationParams } from '@theia/editor/lib/browser';
+import { Dimension, DiffNavigator, DeltaDecorationParams } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
@@ -34,12 +34,11 @@ export class MonacoDiffEditor extends MonacoEditor {
         readonly modifiedModel: MonacoEditorModel,
         protected readonly m2p: MonacoToProtocolConverter,
         protected readonly p2m: ProtocolToMonacoConverter,
-        protected readonly decorationsService: EditorDecorationsService,
         protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory,
         options?: MonacoDiffEditor.IOptions,
         override?: IEditorOverrideServices,
     ) {
-        super(uri, modifiedModel, node, m2p, p2m, decorationsService, options, override);
+        super(uri, modifiedModel, node, m2p, p2m, options, override);
         this.documents.add(originalModel);
         const original = originalModel.textEditorModel;
         const modified = modifiedModel.textEditorModel;
@@ -87,14 +86,7 @@ export class MonacoDiffEditor extends MonacoEditor {
     }
 
     deltaDecorations(params: DeltaDecorationParams): string[] {
-        const uri = params.uri;
-        const oldDecorations = params.oldDecorations;
-        const newDecorations = this.toDeltaDecorations(params);
-        for (const editor of [this._diffEditor.getOriginalEditor(), this._diffEditor.getModifiedEditor()]) {
-            if (editor.getModel().uri.toString() === uri) {
-                return editor.deltaDecorations(oldDecorations, newDecorations);
-            }
-        }
+        console.warn('`deltaDecorations` should be called on either the original, or the modified editor.');
         return [];
     }
 }
