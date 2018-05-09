@@ -10,7 +10,7 @@ import * as lsp from 'vscode-languageserver-types';
 import URI from "@theia/core/lib/common/uri";
 import { Event, Disposable } from '@theia/core/lib/common';
 import { Saveable, Navigatable } from '@theia/core/lib/browser';
-import { EditorDecoration } from './editor-decorations-service';
+import { EditorDecoration } from './decorations';
 
 export {
     Position, Range
@@ -74,7 +74,7 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
     setSize(size: Dimension): void;
 
     /**
-     * Applies given new decorations and removes old decorations identified by ids.
+     * Applies given new decorations, and removes old decorations identified by ids.
      *
      * @returns identifiers of applied decorations, which can be removed in next call.
      */
@@ -109,14 +109,7 @@ export interface RevealRangeOptions {
     at: 'auto' | 'center' | 'top' | 'centerIfOutsideViewport';
 }
 
-export interface SetDecorationParams {
-    uri: string;
-    kind: string;
-    newDecorations: EditorDecoration[];
-}
-
 export interface DeltaDecorationParams {
-    uri: string;
     oldDecorations: string[];
     newDecorations: EditorDecoration[];
 }

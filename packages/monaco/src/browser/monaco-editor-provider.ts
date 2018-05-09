@@ -8,7 +8,7 @@
 // tslint:disable:no-any
 import { DisposableCollection } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { EditorPreferenceChange, EditorPreferences, EditorDecorationsService, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
+import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { inject, injectable } from 'inversify';
 import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from 'monaco-languageclient';
@@ -48,7 +48,6 @@ export class MonacoEditorProvider {
         @inject(MonacoCommandServiceFactory) protected readonly commandServiceFactory: MonacoCommandServiceFactory,
         @inject(EditorPreferences) protected readonly editorPreferences: EditorPreferences,
         @inject(MonacoQuickOpenService) protected readonly quickOpenService: MonacoQuickOpenService,
-        @inject(EditorDecorationsService) protected readonly decorationsService: EditorDecorationsService,
         @inject(MonacoDiffNavigatorFactory) protected readonly diffNavigatorFactory: MonacoDiffNavigatorFactory,
     ) { }
 
@@ -95,7 +94,7 @@ export class MonacoEditorProvider {
     protected async createMonacoEditor(uri: URI, override: IEditorOverrideServices, toDispose: DisposableCollection): Promise<MonacoEditor> {
         const model = await this.getModel(uri, toDispose);
         const options = this.createMonacoEditorOptions(model);
-        const editor = new MonacoEditor(uri, model, document.createElement('div'), this.m2p, this.p2m, this.decorationsService, options, override);
+        const editor = new MonacoEditor(uri, model, document.createElement('div'), this.m2p, this.p2m, options, override);
         toDispose.push(this.editorPreferences.onPreferenceChanged(event => this.updateMonacoEditorOptions(editor, event)));
         return editor;
     }
@@ -124,7 +123,6 @@ export class MonacoEditorProvider {
             document.createElement('div'),
             originalModel, modifiedModel,
             this.m2p, this.p2m,
-            this.decorationsService,
             this.diffNavigatorFactory,
             options,
             override);
