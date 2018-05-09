@@ -34,7 +34,12 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
             if (command) {
                 const raw = item.keybinding;
                 if (raw.type === monaco.keybindings.KeybindingType.Simple) {
-                    const keybinding = raw as monaco.keybindings.SimpleKeybinding;
+                    let keybinding = raw as monaco.keybindings.SimpleKeybinding;
+                    if (command === 'monaco.editor.action.refactor') {
+                        // todo: remove the temporary workaround after updating to monaco 0.13.x
+                        // see: https://github.com/Microsoft/vscode/issues/49225
+                        keybinding = this.fixRefactorKeybinding(keybinding);
+                    }
                     registry.registerKeybinding({
                         command,
                         keybinding: this.keyCode(keybinding).toString(),
@@ -55,6 +60,14 @@ export class MonacoKeybindingContribution implements KeybindingContribution {
                 context: EditorKeybindingContexts.editorTextFocus
             });
         }
+    }
+
+    // todo: remove the temporary workaround after updating to monaco 0.13.x
+    protected fixRefactorKeybinding(original: monaco.keybindings.SimpleKeybinding): monaco.keybindings.SimpleKeybinding {
+        if (monaco.platform.OS !== monaco.platform.OperatingSystem.Macintosh) {
+            return { ...original, ctrlKey: true, metaKey: false };
+        }
+        return original;
     }
 
     protected keyCode(keybinding: monaco.keybindings.SimpleKeybinding): KeyCode {
