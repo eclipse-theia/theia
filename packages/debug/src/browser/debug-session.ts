@@ -24,6 +24,8 @@ export interface DebugSession extends Disposable {
     getServerCapabilities(): DebugProtocol.Capabilities | undefined;
     initialize(): Promise<DebugProtocol.InitializeResponse>;
     configurationDone(): Promise<DebugProtocol.ConfigurationDoneResponse>;
+    threads(): Promise<DebugProtocol.ThreadsResponse>;
+    stacks(args: DebugProtocol.StackTraceArguments): Promise<DebugProtocol.StackTraceResponse>;
     disconnect(): Promise<DebugProtocol.InitializeResponse>;
 }
 
@@ -31,7 +33,7 @@ export class DebugSessionImpl implements DebugSession {
     private sequence: number;
 
     protected readonly toDispose = new DisposableCollection();
-    protected readonly callbacks = new Map<number, (response: DebugProtocol.Response) => void>();
+    protected readonly callbacks = new Map<number, (response: any) => void>();
 
     protected websocket: Promise<WebSocket>;
     protected capabilities: DebugProtocol.Capabilities = {};
@@ -76,10 +78,18 @@ export class DebugSessionImpl implements DebugSession {
             supportsVariableType: false,
             supportsVariablePaging: false,
             supportsRunInTerminalRequest: false
-        }).then(response => {
+        }).then((response: DebugProtocol.InitializeResponse) => {
             this.capabilities = response.body || {};
             return response;
         });
+    }
+
+    threads(): Promise<DebugProtocol.ThreadsResponse> {
+        return this.proceedRequest("threads");
+    }
+
+    stacks(args: DebugProtocol.StackTraceArguments): Promise<DebugProtocol.StackTraceResponse> {
+        return this.proceedRequest("stackTrace", args);
     }
 
     configurationDone(): Promise<DebugProtocol.ConfigurationDoneResponse> {
@@ -103,8 +113,8 @@ export class DebugSessionImpl implements DebugSession {
         }
     }
 
-    protected proceedRequest(command: string, args?: any): Promise<DebugProtocol.Response> {
-        const result = new Deferred<DebugProtocol.Response>();
+    protected proceedRequest<T>(command: string, args?: any): Promise<T> {
+        const result = new Deferred<T>();
 
         const request: DebugProtocol.Request = {
             seq: this.sequence++,
@@ -113,7 +123,7 @@ export class DebugSessionImpl implements DebugSession {
             arguments: args
         };
 
-        this.callbacks.set(request.seq, (response) => {
+        this.callbacks.set(request.seq, (response: T) => {
             result.resolve(response);
         });
 
