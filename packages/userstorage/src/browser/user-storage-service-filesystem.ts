@@ -52,10 +52,14 @@ export class UserStorageServiceFilesystemImpl implements UserStorageService {
         this.userStorageFolder.then(folder => {
             if (folder) {
                 for (const change of fileChanges) {
-                    const userStorageUri = UserStorageServiceFilesystemImpl.toUserStorageUri(folder, change.uri);
-                    uris.push(userStorageUri);
+                    if (change.uri.toString().startsWith(folder.toString())) {
+                        const userStorageUri = UserStorageServiceFilesystemImpl.toUserStorageUri(folder, change.uri);
+                        uris.push(userStorageUri);
+                    }
                 }
-                this.onUserStorageChangedEmitter.fire({ uris });
+                if (uris.length > 0) {
+                    this.onUserStorageChangedEmitter.fire({ uris });
+                }
             }
         });
     }
