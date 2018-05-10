@@ -23,6 +23,8 @@ export class FileNavigatorFilter {
 
     protected filterPredicate: FileNavigatorFilter.Predicate;
 
+    protected showHiddenFiles: boolean;
+
     constructor(@inject(FileNavigatorPreferences) protected readonly preferences: FileNavigatorPreferences) {
         this.emitter = new Emitter<void>();
         this.filterPredicate = this.createFilterPredicate(this.preferences['navigator.exclude']);
@@ -58,7 +60,20 @@ export class FileNavigatorFilter {
     }
 
     protected createFilterPredicate(exclusions: FileNavigatorFilter.Exclusions): FileNavigatorFilter.Predicate {
-        return new FileNavigatorFilterPredicate(exclusions);
+        return new FileNavigatorFilterPredicate(this.interceptExclusions(exclusions));
+    }
+
+    toggleHiddenFiles(): void {
+        this.showHiddenFiles = !this.showHiddenFiles;
+        this.filterPredicate = this.createFilterPredicate(this.preferences['navigator.exclude'] || {});
+        this.fireFilterChanged();
+    }
+
+    protected interceptExclusions(exclusions: FileNavigatorFilter.Exclusions): FileNavigatorFilter.Exclusions {
+        return {
+            ...exclusions,
+            '**/.*': this.showHiddenFiles
+        };
     }
 
 }

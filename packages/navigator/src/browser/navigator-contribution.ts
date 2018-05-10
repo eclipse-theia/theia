@@ -14,11 +14,16 @@ import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-comman
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
 import { FileNavigatorPreferences } from "./navigator-preferences";
 import { NavigatorKeybindingContexts } from './navigator-keybinding-context';
+import { FileNavigatorFilter } from "./navigator-filter";
 
 export namespace FileNavigatorCommands {
     export const REVEAL_IN_NAVIGATOR = {
         id: 'navigator.reveal',
         label: 'Reveal in Files'
+    };
+    export const TOGGLE_HIDDEN_FILES = {
+        id: 'navigator.toggle.hidden.files',
+        label: 'Toggle Hidden Files'
     };
 }
 
@@ -38,7 +43,8 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     constructor(
         @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences,
-        @inject(OpenerService) protected readonly openerService: OpenerService
+        @inject(OpenerService) protected readonly openerService: OpenerService,
+        @inject(FileNavigatorFilter) protected readonly fileNavigatorFilter: FileNavigatorFilter
     ) {
         super({
             widgetId: FILE_NAVIGATOR_ID,
@@ -64,6 +70,13 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
             execute: () => this.openView({ activate: true }).then(() => this.selectWidgetFileNode(this.shell.currentWidget)),
             isEnabled: () => Navigatable.is(this.shell.currentWidget),
             isVisible: () => Navigatable.is(this.shell.currentWidget)
+        });
+        registry.registerCommand(FileNavigatorCommands.TOGGLE_HIDDEN_FILES, {
+            execute: () => {
+                this.fileNavigatorFilter.toggleHiddenFiles();
+            },
+            isEnabled: () => true,
+            isVisible: () => true
         });
     }
 
@@ -140,6 +153,12 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         registry.registerKeybinding({
             command: WorkspaceCommands.FILE_RENAME.id,
             keybinding: "f2",
+            context: NavigatorKeybindingContexts.navigatorActive
+        });
+
+        registry.registerKeybinding({
+            command: FileNavigatorCommands.TOGGLE_HIDDEN_FILES.id,
+            keybinding: "ctrlcmd+i",
             context: NavigatorKeybindingContexts.navigatorActive
         });
     }
