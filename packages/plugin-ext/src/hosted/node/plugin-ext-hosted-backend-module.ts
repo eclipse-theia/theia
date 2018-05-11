@@ -33,7 +33,9 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
         new JsonRpcConnectionHandler<HostedPluginClient>(hostedServicePath, client => {
             const server = ctx.container.get<HostedPluginServer>(HostedPluginServer);
             server.setClient(client);
-            client.onDidCloseConnection(() => server.dispose());
+            // FIXME: handle multiple remote connections
+            /*
+            client.onDidCloseConnection(() => server.dispose());*/
             return server;
         })
     ).inSingletonScope();

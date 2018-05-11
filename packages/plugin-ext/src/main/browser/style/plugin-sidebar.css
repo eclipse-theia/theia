@@ -1,0 +1,58 @@
+/*
+ * Copyright (C) 2018 Red Hat, Inc. and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
+ 
+.theia-plugins {
+    min-width: 250px !important;
+    background-color: var(--theia-layout-color0);
+    display: flex;
+    flex-direction: column;
+}
+
+#pluginListContainer {
+    width: 100%;
+    box-sizing: border-box;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.theia-plugins .pluginHeaderContainer {
+    padding: 3px 15px;
+    font-size: var(--theia-ui-font-size0);
+    background: var(--theia-layout-color0);
+    border-bottom: 1px solid;
+}
+
+.theia-plugins .pluginHeaderContainer:hover {
+    background: var(--theia-layout-color2);
+}
+
+.theia-plugins .pluginHeaderContainer .row {
+    margin: 3px 0;
+}
+
+.theia-plugins .pluginName {
+    flex: 1;
+    margin-right: 5px;
+    font-size: var(--theia-ui-font-size1);
+    font-weight: 400;
+}
+
+.theia-plugins .pluginVersion {
+    flex: 1;
+    text-align: left;
+    font-size: var(--theia-ui-font-size0)
+}
+
+.theia-plugins .pluginDescription {
+    flex: 1;
+}
+
+.theia-plugins .pluginPublisher {
+    font-size: var(--theia-ui-font-size0);
+    flex: 5;
+    align-items: center;
+}

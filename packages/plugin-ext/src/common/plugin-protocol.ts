@@ -36,6 +36,16 @@ export interface PluginPackage {
 }
 
 export const PluginScanner = Symbol('PluginScanner');
+export const PluginDeployer = Symbol('PluginDeployer');
+
+/**
+ * A plugin resolver is handling how to resolve a plugin link into a local resource.
+ */
+export const PluginDeployerResolver = Symbol('PluginDeployerResolver');
+
+export const PluginDeployerDirectoryHandler = Symbol('PluginDeployerDirectoryHandler');
+
+export const PluginDeployerFileHandler = Symbol('PluginDeployerFileHandler');
 
 /**
  * This scanner process package.json object and returns plugin metadata objects.
@@ -60,6 +70,126 @@ export interface PluginScanner {
      * @returns {PluginLifecycle}
      */
     getLifecycle(plugin: PluginPackage): PluginLifecycle;
+}
+
+export interface PluginDeployerResolverInit {
+
+}
+
+export interface PluginDeployerResolverContext {
+
+    addPlugin(pluginId: string, path: string): void;
+
+    getOriginId(): string;
+
+}
+
+export interface PluginDeployer {
+
+    start(): void;
+
+}
+
+/**
+ * A resolver handle a set of resource
+ */
+export interface PluginDeployerResolver {
+
+    init?(pluginDeployerResolverInit: PluginDeployerResolverInit): void;
+
+    accept(pluginSourceId: string): boolean;
+
+    resolve(pluginResolverContext: PluginDeployerResolverContext): Promise<void>;
+
+}
+
+export enum PluginDeployerEntryType {
+
+    FRONTEND,
+
+    BACKEND
+}
+
+export interface PluginDeployerEntry {
+
+    /**
+     * ID (before any resolution)
+     */
+    id(): string;
+
+    /**
+     * Original resolved path
+     */
+    originalPath(): string;
+
+    /**
+     * Local path on the filesystem
+     */
+    path(): string;
+
+    /**
+     * Get a specific entry
+     */
+    getValue<T>(key: string): T;
+
+    /**
+     * Store a value
+     */
+    storeValue<T>(key: string, value: T): void;
+
+    /**
+     * Update path
+     */
+    updatePath(newPath: string): void;
+
+    getChanges(): string[];
+
+    isFile(): boolean;
+
+    isDirectory(): boolean;
+
+    /**
+     * Resolved if a resolver has handle this plugin
+     */
+    isResolved(): boolean;
+
+    resolvedBy(): string;
+
+    /**
+     * Accepted when a handler is telling this location can go live
+     */
+    isAccepted(...types: PluginDeployerEntryType[]): boolean;
+
+    accept(...types: PluginDeployerEntryType[]): void;
+
+    hasError(): boolean;
+}
+
+export interface PluginDeployerFileHandlerContext {
+
+    unzip(sourcePath: string, destPath: string): Promise<void>;
+
+    pluginEntry(): PluginDeployerEntry;
+
+}
+
+export interface PluginDeployerDirectoryHandlerContext {
+
+    pluginEntry(): PluginDeployerEntry;
+
+}
+
+export interface PluginDeployerFileHandler {
+
+    accept(pluginDeployerEntry: PluginDeployerEntry): boolean;
+
+    handle(context: PluginDeployerFileHandlerContext): Promise<void>;
+}
+
+export interface PluginDeployerDirectoryHandler {
+    accept(pluginDeployerEntry: PluginDeployerEntry): boolean;
+
+    handle(context: PluginDeployerDirectoryHandlerContext): Promise<void>;
 }
 
 /**
@@ -122,7 +252,7 @@ export interface PluginMetadata {
 }
 
 export function getPluginId(plugin: PluginPackage | PluginModel): string {
-    return `${plugin.publisher}_${plugin.name}`;
+    return `${plugin.publisher}_${plugin.name}`.replace(/\W/g, '_');
 }
 
 export function buildFrontendModuleName(plugin: PluginPackage | PluginModel): string {
@@ -137,6 +267,13 @@ export interface HostedPluginClient {
 export const HostedPluginServer = Symbol('HostedPluginServer');
 export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
     getHostedPlugin(): Promise<PluginMetadata | undefined>;
+
+    getDeployedMetadata(): Promise<PluginMetadata[]>;
+    getDeployedFrontendMetadata(): Promise<PluginMetadata[]>;
+    deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void>;
+    getDeployedBackendMetadata(): Promise<PluginMetadata[]>;
+    deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void>;
+
     onMessage(message: string): Promise<void>;
 
     isPluginValid(uri: string): Promise<boolean>;

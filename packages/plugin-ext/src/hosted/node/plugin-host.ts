@@ -12,6 +12,8 @@ import { HostedPluginManagerExtImpl } from '../plugin/hosted-plugin-manager';
 import { RPCProtocolImpl } from '../../api/rpc-protocol';
 import { MAIN_RPC_CONTEXT, Plugin } from '../../api/plugin-api';
 
+console.log("PLUGIN_HOST(" + process.pid + ") starting instance");
+
 const plugins = new Map<string, () => void>();
 
 const emmitter = new Emitter();
@@ -24,19 +26,19 @@ const rpc = new RPCProtocolImpl({
     }
 });
 process.on('message', (message: any) => {
-    console.log("Ext: " + message);
+    console.log("PLUGIN_HOST(" + process.pid + "): " + message);
     emmitter.fire(JSON.parse(message));
 });
 
 rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtImpl({
     initialize(contextPath: string): void {
+        console.log("PLUGIN_HOST(" + process.pid + "): initializing(" + contextPath + ")");
         const backendInitPath = resolve(__dirname, 'context', contextPath);
         const backendInit = require(backendInitPath);
         backendInit.doInitialization(rpc);
     },
     loadPlugin(plugin: Plugin): void {
-        console.log("Ext: load: " + plugin.pluginPath);
-
+        console.log("PLUGIN_HOST(" + process.pid + "): loadPlugin(" + plugin.pluginPath + ")");
         try {
             const pluginMain = require(plugin.pluginPath);
             startPlugin(plugin, pluginMain, plugins);
@@ -46,7 +48,7 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtIm
         }
     },
     stopPlugins(pluginIds: string[]): void {
-        console.log("Plugin: Stopping plugin: ", pluginIds);
+        console.log("PLUGIN_HOST(" + process.pid + "): stopPlugins(" + JSON.stringify(pluginIds) + ")");
         pluginIds.forEach(pluginId => {
             const stopPluginMethod = plugins.get(pluginId);
             if (stopPluginMethod) {

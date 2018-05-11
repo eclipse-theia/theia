@@ -5,8 +5,8 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 import { ContainerModule } from "inversify";
-import { FrontendApplicationContribution, FrontendApplication } from "@theia/core/lib/browser";
-import { MaybePromise, CommandContribution } from "@theia/core/lib/common";
+import { FrontendApplicationContribution, FrontendApplication, WidgetFactory, KeybindingContribution } from "@theia/core/lib/browser";
+import { MaybePromise, CommandContribution, MenuContribution } from "@theia/core/lib/common";
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { PluginWorker } from './plugin-worker';
 import { HostedPluginSupport } from "../../hosted/browser/hosted-plugin";
@@ -16,6 +16,10 @@ import { PluginApiFrontendContribution } from "./plugin-frontend-contribution";
 import { setUpPluginApi } from "./main-context";
 import { HostedPluginServer, hostedServicePath } from "../../common/plugin-protocol";
 import { ModalNotification } from './dialogs/modal-notification';
+import { PluginWidget } from "./plugin-ext-widget";
+import { PluginFrontendViewContribution } from "./plugin-frontend-view-contribution";
+
+import '../../../src/main/browser/style/index.css';
 
 export default new ContainerModule(bind => {
     bind(ModalNotification).toSelf().inSingletonScope();
@@ -42,4 +46,17 @@ export default new ContainerModule(bind => {
         const hostedWatcher = ctx.container.get(HostedPluginWatcher);
         return connection.createProxy<HostedPluginServer>(hostedServicePath, hostedWatcher.getHostedPluginClient());
     }).inSingletonScope();
+
+    bind(PluginFrontendViewContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(PluginFrontendViewContribution));
+    bind(CommandContribution).toDynamicValue(c => c.container.get(PluginFrontendViewContribution));
+    bind(KeybindingContribution).toDynamicValue(c => c.container.get(PluginFrontendViewContribution));
+    bind(MenuContribution).toDynamicValue(c => c.container.get(PluginFrontendViewContribution));
+
+    bind(PluginWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(ctx => ({
+        id: PluginFrontendViewContribution.PLUGINS_WIDGET_FACTORY_ID,
+        createWidget: () => ctx.container.get(PluginWidget)
+    }));
+
 });

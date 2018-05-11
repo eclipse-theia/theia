@@ -5,14 +5,28 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 import { injectable, inject } from 'inversify';
-import { HostedPluginServer, HostedPluginClient, PluginMetadata } from '../../common/plugin-protocol';
+import { HostedPluginServer, HostedPluginClient, PluginMetadata, PluginDeployerEntry } from '../../common/plugin-protocol';
 import { HostedPluginReader } from './plugin-reader';
 import { HostedPluginManager } from './hosted-plugin-manager';
 import { HostedPluginSupport } from './hosted-plugin';
 import URI from '@theia/core/lib/common/uri';
+import { ILogger } from '@theia/core';
 
 @injectable()
 export class HostedPluginServerImpl implements HostedPluginServer {
+
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
+    /**
+     * Managed plugin metadata backend entries.
+     */
+    private currentBackendPluginsMetadata: PluginMetadata[] = [];
+
+    /**
+     * Managed plugin metadata frontend entries.
+     */
+    private currentFrontendPluginsMetadata: PluginMetadata[] = [];
 
     constructor(
         @inject(HostedPluginReader) private readonly reader: HostedPluginReader,
@@ -32,6 +46,51 @@ export class HostedPluginServerImpl implements HostedPluginServer {
             this.hostedPlugin.runPlugin(pluginMetadata.model);
         }
         return Promise.resolve(this.reader.getPlugin());
+    }
+
+    getDeployedFrontendMetadata(): Promise<PluginMetadata[]> {
+        return Promise.resolve(this.currentFrontendPluginsMetadata);
+    }
+
+    getDeployedMetadata(): Promise<PluginMetadata[]> {
+        const allMetadata: PluginMetadata[] = [];
+        allMetadata.push(...this.currentFrontendPluginsMetadata);
+        allMetadata.push(...this.currentBackendPluginsMetadata);
+        return Promise.resolve(allMetadata);
+    }
+
+    // need to run a new node instance with plugin-host for all plugins
+    deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<void> {
+        // get metadata
+        frontendPlugins.forEach(frontendPluginDeployerEntry => {
+            const pluginMetadata = this.reader.getPluginMetadata(frontendPluginDeployerEntry.path());
+            if (pluginMetadata) {
+                this.currentFrontendPluginsMetadata.push(pluginMetadata);
+                this.logger.info('HostedPluginServerImpl/ asking to deploy the frontend Plugin', frontendPluginDeployerEntry.path(), 'and model is', pluginMetadata.model);
+            }
+        });
+        return Promise.resolve();
+    }
+
+    getDeployedBackendMetadata(): Promise<PluginMetadata[]> {
+        return Promise.resolve(this.currentBackendPluginsMetadata);
+    }
+
+    // need to run a new node instance with plugin-host for all plugins
+    deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<void> {
+        if (backendPlugins.length > 0) {
+            this.hostedPlugin.runPluginServer();
+        }
+
+        // get metadata
+        backendPlugins.forEach(backendPluginDeployerEntry => {
+            const pluginMetadata = this.reader.getPluginMetadata(backendPluginDeployerEntry.path());
+            if (pluginMetadata) {
+                this.currentBackendPluginsMetadata.push(pluginMetadata);
+                this.logger.info('HostedPluginServerImpl/ asking to deploy the backend Plugin', backendPluginDeployerEntry.path(), 'and model is', pluginMetadata.model);
+            }
+        });
+        return Promise.resolve();
     }
 
     onMessage(message: string): Promise<void> {
