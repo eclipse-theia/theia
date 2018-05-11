@@ -9,7 +9,7 @@ import {
     PluginDeployerDirectoryHandler,
     PluginDeployerEntry, PluginPackage, PluginDeployerDirectoryHandlerContext,
     PluginDeployerEntryType
-} from "../../../common/plugin-protocol";
+} from "@theia/plugin-ext";
 import { injectable } from "inversify";
 import * as fs from "fs";
 import * as path from "path";

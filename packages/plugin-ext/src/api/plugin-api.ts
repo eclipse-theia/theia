@@ -6,12 +6,12 @@
  */
 import { createProxyIdentifier, ProxyIdentifier } from './rpc-protocol';
 import * as theia from '@theia/plugin';
-import { PluginLifecycle, PluginModel } from '../common/plugin-protocol';
+import { PluginLifecycle, PluginModel, PluginMetadata } from '../common/plugin-protocol';
 
 export interface HostedPluginManagerExt {
-    $initialize(contextPath: string): void;
-    $loadPlugin(plugin: Plugin): void;
-    $stopPlugin(): PromiseLike<void>;
+    $initialize(contextPath: string, pluginMedata: PluginMetadata): void;
+    $loadPlugin(contextPath: string, plugin: Plugin): void;
+    $stopPlugin(contextPath: string): PromiseLike<void>;
 }
 
 export interface Plugin {
@@ -58,15 +58,15 @@ export interface PickOpenItem {
 }
 
 export interface MessageRegistryMain {
-    $showInformationMessage (message: string,
-                             optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-                             items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
-    $showWarningMessage (message: string,
-                         optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-                         items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
-    $showErrorMessage (message: string,
-                       optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-                       items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
+    $showInformationMessage(message: string,
+        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
+    $showWarningMessage(message: string,
+        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
+    $showErrorMessage(message: string,
+        optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+        items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
 }
 export interface QuickOpenExt {
     $onItemSelected(handle: number): void;

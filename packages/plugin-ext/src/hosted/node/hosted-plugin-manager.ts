@@ -150,7 +150,7 @@ export abstract class AbstractHostedPluginManager implements HostedPluginManager
                 const line = data.toString();
                 const match = THEIA_INSTANCE_REGEX.exec(line);
                 if (match) {
-                    this.hostedInstanceProcess.stdout.removeListener('data', outputListener);
+                    //      this.hostedInstanceProcess.stdout.removeListener('data', outputListener);
                     started = true;
                     resolve(new URI(match[1]));
                 }
