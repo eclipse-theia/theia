@@ -105,16 +105,17 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         };
         this.addClass(TREE_CLASS);
         this.node.tabIndex = 0;
-        model.onChanged(() => this.update());
-        this.toDispose.push(model);
     }
 
     @postConstruct()
     protected init() {
         this.toDispose.pushAll([
-            this.decoratorService.onDidChangeDecorations(op => this.updateDecorations(op(this.model))),
+            this.model,
+            this.model.onChanged(() => this.update()),
             this.model.onNodeRefreshed(() => this.updateDecorations(this.decoratorService.getDecorations(this.model))),
-            this.model.onExpansionChanged(() => this.updateDecorations(this.decoratorService.getDecorations(this.model)))
+            this.model.onExpansionChanged(() => this.updateDecorations(this.decoratorService.getDecorations(this.model))),
+            this.decoratorService,
+            this.decoratorService.onDidChangeDecorations(op => this.updateDecorations(op(this.model)))
         ]);
     }
 

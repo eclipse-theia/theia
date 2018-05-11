@@ -45,7 +45,11 @@ export class DisposableCollection implements Disposable {
             return;
         }
         while (!this.disposed) {
-            this.disposables.pop()!.dispose();
+            try {
+                this.disposables.pop()!.dispose();
+            } catch (e) {
+                console.error(e);
+            }
         }
         this.checkDisposed();
     }

@@ -7,7 +7,7 @@
 
 import { injectable } from 'inversify';
 import { Tree } from './tree';
-import { Event, Emitter } from '../../common/event';
+import { Event, Emitter, Disposable, DisposableCollection } from '../../common';
 
 /**
  * Tree decorator that can change the look and the style of the tree items within a widget.
@@ -30,7 +30,7 @@ export interface TreeDecorator {
  * Decorator service which emits events from all known tree decorators.
  */
 export const TreeDecoratorService = Symbol('TreeDecoratorService');
-export interface TreeDecoratorService {
+export interface TreeDecoratorService extends Disposable {
 
     /**
      * Fired when any of the available tree decorators has changes. Keys are the unique tree node IDs and the values
@@ -64,9 +64,12 @@ export interface TreeDecoratorService {
 @injectable()
 export class NoopTreeDecoratorService implements TreeDecoratorService {
 
-    private emitter: Emitter<(tree: Tree) => Map<string, TreeDecoration.Data[]>> = new Emitter();
-
+    protected readonly emitter = new Emitter<(tree: Tree) => Map<string, TreeDecoration.Data[]>>();
     readonly onDidChangeDecorations = this.emitter.event;
+
+    dispose(): void {
+        this.emitter.dispose();
+    }
 
     getDecorations() {
         return new Map();
@@ -89,23 +92,27 @@ export class NoopTreeDecoratorService implements TreeDecoratorService {
 @injectable()
 export abstract class AbstractTreeDecoratorService implements TreeDecoratorService {
 
-    protected readonly emitter: Emitter<(tree: Tree) => Map<string, TreeDecoration.Data[]>>;
-    protected readonly decorations: Map<string, (tree: Tree) => Map<string, TreeDecoration.Data>>;
+    protected readonly decorations = new Map<string, (tree: Tree) => Map<string, TreeDecoration.Data>>();
+
+    protected readonly onDidChangeDecorationsEmitter = new Emitter<(tree: Tree) => Map<string, TreeDecoration.Data[]>>();
+    readonly onDidChangeDecorations = this.onDidChangeDecorationsEmitter.event;
+
+    protected readonly toDispose = new DisposableCollection();
 
     constructor(protected readonly decorators: ReadonlyArray<TreeDecorator>) {
-        this.emitter = new Emitter();
-        this.decorations = new Map();
-        this.decorators.forEach(decorator => {
+        this.toDispose.push(this.onDidChangeDecorationsEmitter);
+        this.toDispose.pushAll(this.decorators.map(decorator => {
             const { id } = decorator;
-            decorator.onDidChangeDecorations(data => {
+            return decorator.onDidChangeDecorations(data => {
                 this.decorations.set(id, data);
-                this.emitter.fire(this.getDecorations.bind(this));
+                this.onDidChangeDecorationsEmitter.fire(this.getDecorations.bind(this));
             });
-        });
+        }));
+        this.toDispose.push(Disposable.create(() => this.decorations.clear()));
     }
 
-    get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, TreeDecoration.Data[]>> {
-        return this.emitter.event;
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     getDecorations(tree: Tree): Map<string, TreeDecoration.Data[]> {
