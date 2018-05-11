@@ -115,10 +115,11 @@ export class BackendApplication {
     }
 
     async start(aPort?: number, aHostname?: string): Promise<http.Server | https.Server> {
+        const hostname = aHostname !== undefined ? aHostname : this.cliParams.hostname;
+        const port = aPort !== undefined ? aPort : this.cliParams.port;
+
         const deferred = new Deferred<http.Server | https.Server>();
         let server: http.Server | https.Server;
-        const port = aPort !== undefined ? aPort : this.cliParams.port;
-        const hostname = aHostname !== undefined ? aHostname : this.cliParams.hostname;
 
         if (this.cliParams.ssl) {
 
@@ -130,8 +131,8 @@ export class BackendApplication {
                 throw new Error("Missing --certkey option, see --help for usage");
             }
 
-            let key;
-            let cert;
+            let key: Buffer;
+            let cert: Buffer;
             try {
                 key = await fs.readFile(this.cliParams.certkey as string);
             } catch (err) {
@@ -149,6 +150,13 @@ export class BackendApplication {
         } else {
             server = http.createServer(this.app);
         }
+
+        server.on('error', error => {
+            deferred.reject(error);
+            /* The backend might run in a separate process,
+             * so we defer `process.exit` to let time for logging in the parent process */
+            setTimeout(process.exit, 0, 1);
+        });
 
         server.listen(port, hostname, () => {
             const scheme = this.cliParams.ssl ? 'https' : 'http';

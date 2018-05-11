@@ -36,6 +36,10 @@ export interface Address {
 export async function start(serverPath: string): Promise<Address> {
     if (isMaster) {
         const master = new MasterProcess();
+        master.on('exit', () =>
+            Object.keys(cluster.workers).length === 0
+            && process.exit(0)
+        );
         return master.start().listening;
     }
     const server = await require(serverPath)();
