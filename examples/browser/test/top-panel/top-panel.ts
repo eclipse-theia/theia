@@ -25,20 +25,24 @@ export class TopPanel {
         this.clickSubMenu('Problems');
     }
 
+    waitForSubMenu(): void {
+        this.driver.waitForExist('div.p-Widget.p-Menu.p-MenuBar-menu');
+    }
+
     isSubMenuVisible(): boolean {
         return this.driver.isExisting('div.p-Widget.p-Menu.p-MenuBar-menu');
     }
 
     clickMenuTab(tab: number | string) {
         if (typeof tab === "string") {
-            this.driver.element(`ul.p-MenuBar-content`).click(`div\=${tab}`);
+            this.driver.element(`ul.p-MenuBar-content`).click(`div=${tab}`);
         } else {
             this.driver.click(`ul.p-MenuBar-content > .p-MenuBar-item:nth-child(${tab})`);
         }
     }
 
     clickSubMenu(subMenuItem: string) {
-        this.driver.element(`div.p-Widget.p-Menu.p-MenuBar-menu .p-Menu-content`).click(`div\=${subMenuItem}`);
+        this.driver.element(`div.p-Widget.p-Menu.p-MenuBar-menu .p-Menu-content`).click(`div=${subMenuItem}`);
     }
 
     hoverMenuTab(tabNumber: number) {
