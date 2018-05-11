@@ -19,6 +19,8 @@ before(() => {
     const url = '/';
 
     driver.url(url);
+    driver.localStorage('DELETE');
+    driver.refresh();
     topPanel = new TopPanel(driver);
     bottomPanel = new BottomPanel(driver);
     mainPage = new MainPage(driver);
@@ -66,12 +68,15 @@ describe('theia top panel (menubar)', () => {
 
         topPanel.clickMenuTab(2);
         expect(topPanel.isSubMenuVisible()).to.be.false;
+
     });
 
     describe('terminal UI', () => {
         it('should open a new terminal and then close it', () => {
-            topPanel.openNewTerminal();
-            bottomPanel.waitForTerminal();
+            if (!bottomPanel.isTerminalVisible()) {
+                topPanel.openNewTerminal();
+                bottomPanel.waitForTerminal();
+            }
             expect(bottomPanel.isTerminalVisible()).to.be.true;
 
             bottomPanel.closeCurrentView();
@@ -81,8 +86,10 @@ describe('theia top panel (menubar)', () => {
 
     describe('problems view UI', () => {
         it('should open a new problems view and then close it', () => {
-            topPanel.openProblemsView();
-            bottomPanel.waitForProblemsView();
+            if (!bottomPanel.isProblemsViewVisible()) {
+                topPanel.openProblemsView();
+                bottomPanel.waitForProblemsView();
+            }
             expect(bottomPanel.isProblemsViewVisible()).to.be.true;
 
             bottomPanel.closeCurrentView();
