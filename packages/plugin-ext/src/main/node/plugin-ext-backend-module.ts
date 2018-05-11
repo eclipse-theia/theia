@@ -14,8 +14,6 @@ import { PluginDeployerImpl } from "./plugin-deployer-impl";
 import { LocalDirectoryPluginDeployerResolver } from "./resolvers/plugin-local-dir-resolver";
 import { PluginTheiaFileHandler } from "./handlers/plugin-theia-file-handler";
 import { PluginTheiaDirectoryHandler } from "./handlers/plugin-theia-directory-handler";
-import { PluginVsCodeFileHandler } from "./handlers/plugin-vscode-file-handler";
-import { PluginVsCodeDirectoryHandler } from "./handlers/plugin-vscode-directory-handler";
 
 export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();
@@ -27,8 +25,5 @@ export function bindMainBackend(bind: interfaces.Bind): void {
 
     bind(PluginDeployerResolver).to(LocalDirectoryPluginDeployerResolver).inSingletonScope();
     bind(PluginDeployerFileHandler).to(PluginTheiaFileHandler).inSingletonScope();
-    bind(PluginDeployerFileHandler).to(PluginVsCodeFileHandler).inSingletonScope();
     bind(PluginDeployerDirectoryHandler).to(PluginTheiaDirectoryHandler).inSingletonScope();
-    bind(PluginDeployerDirectoryHandler).to(PluginVsCodeDirectoryHandler).inSingletonScope();
-
 }

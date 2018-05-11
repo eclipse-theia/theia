@@ -40,18 +40,18 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
             return quickOpenExt.showQuickPick(items, options, token);
         },
         showInformationMessage(message: string,
-                               optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-                               ...items: any[]): PromiseLike<any> {
+            optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+            ...items: any[]): PromiseLike<any> {
             return messageRegistryExt.showInformationMessage(message, optionsOrFirstItem, items);
         },
         showWarningMessage(message: string,
-                           optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-                           ...items: any[]): PromiseLike<any> {
+            optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+            ...items: any[]): PromiseLike<any> {
             return messageRegistryExt.showWarningMessage(message, optionsOrFirstItem, items);
         },
         showErrorMessage(message: string,
-                         optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
-                         ...items: any[]): PromiseLike<any> {
+            optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
+            ...items: any[]): PromiseLike<any> {
             return messageRegistryExt.showErrorMessage(message, optionsOrFirstItem, items);
         }
     };

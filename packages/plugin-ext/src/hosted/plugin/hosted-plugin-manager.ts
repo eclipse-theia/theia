@@ -6,14 +6,14 @@
  */
 
 import { HostedPluginManagerExt, Plugin } from "../../api/plugin-api";
-import { getPluginId } from "../../common/plugin-protocol";
+import { getPluginId, PluginMetadata } from "../../common/plugin-protocol";
 
 export interface PluginHost {
-    initialize(contextPath: string): void;
+    initialize(contextPath: string, pluginMetadata: PluginMetadata): void;
 
-    loadPlugin(plugin: Plugin): void;
+    loadPlugin(contextPath: string, plugin: Plugin): void;
 
-    stopPlugins(pluginIds: string[]): void;
+    stopPlugins(contextPath: string, pluginIds: string[]): void;
 }
 
 export class HostedPluginManagerExtImpl implements HostedPluginManagerExt {
@@ -24,17 +24,17 @@ export class HostedPluginManagerExtImpl implements HostedPluginManagerExt {
         this.runningPluginIds = [];
     }
 
-    $initialize(contextPath: string): void {
-        this.host.initialize(contextPath);
+    $initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
+        this.host.initialize(contextPath, pluginMetadata);
     }
 
-    $loadPlugin(plugin: Plugin): void {
+    $loadPlugin(contextPath: string, plugin: Plugin): void {
         this.runningPluginIds.push(getPluginId(plugin.model));
-        this.host.loadPlugin(plugin);
+        this.host.loadPlugin(contextPath, plugin);
     }
 
-    $stopPlugin(): PromiseLike<void> {
-        this.host.stopPlugins(this.runningPluginIds);
+    $stopPlugin(contextPath: string): PromiseLike<void> {
+        this.host.stopPlugins(contextPath, this.runningPluginIds);
         return Promise.resolve();
     }
 

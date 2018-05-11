@@ -44,7 +44,6 @@ export class PluginTheiaDirectoryHandler implements PluginDeployerDirectoryHandl
         }
 
         if (packageJson.engines && packageJson.engines.theiaPlugin) {
-            console.log("accepting packagejson with engines", packageJson.engines);
             return true;
         }
 

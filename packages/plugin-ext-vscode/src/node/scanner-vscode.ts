@@ -10,7 +10,7 @@
  */
 
 import { injectable } from 'inversify';
-import { PluginScanner, PluginEngine, PluginPackage, PluginModel, PluginLifecycle } from '../../../common/plugin-protocol';
+import { PluginScanner, PluginEngine, PluginPackage, PluginModel, PluginLifecycle } from '@theia/plugin-ext';
 
 @injectable()
 export class VsCodePluginScanner implements PluginScanner {
@@ -42,7 +42,7 @@ export class VsCodePluginScanner implements PluginScanner {
             startMethod: 'activate',
             stopMethod: 'deactivate',
 
-            backendInitPath: 'backend-init-vscode.js'
+            backendInitPath: __dirname + '/plugin-vscode-init.js'
         };
     }
 }

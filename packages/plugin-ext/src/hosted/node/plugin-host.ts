@@ -5,12 +5,12 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { resolve } from 'path';
 import { Emitter } from '@theia/core/lib/common/event';
 import { startPlugin } from '../../plugin/plugin-context';
 import { HostedPluginManagerExtImpl } from '../plugin/hosted-plugin-manager';
 import { RPCProtocolImpl } from '../../api/rpc-protocol';
 import { MAIN_RPC_CONTEXT, Plugin } from '../../api/plugin-api';
+import { PluginMetadata } from "../../common/plugin-protocol";
 
 console.log("PLUGIN_HOST(" + process.pid + ") starting instance");
 
@@ -31,14 +31,18 @@ process.on('message', (message: any) => {
 });
 
 rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtImpl({
-    initialize(contextPath: string): void {
+
+    initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
         console.log("PLUGIN_HOST(" + process.pid + "): initializing(" + contextPath + ")");
-        const backendInitPath = resolve(__dirname, 'context', contextPath);
-        const backendInit = require(backendInitPath);
-        backendInit.doInitialization(rpc);
+        const backendInit = require(contextPath);
+        backendInit.doInitialization(rpc, pluginMetadata);
     },
-    loadPlugin(plugin: Plugin): void {
+    loadPlugin(contextPath: string, plugin: Plugin): void {
         console.log("PLUGIN_HOST(" + process.pid + "): loadPlugin(" + plugin.pluginPath + ")");
+        const backendInit = require(contextPath);
+        if (backendInit.doLoad) {
+            backendInit.doLoad(rpc, plugin);
+        }
         try {
             const pluginMain = require(plugin.pluginPath);
             startPlugin(plugin, pluginMain, plugins);
@@ -47,7 +51,7 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtIm
             console.error(e);
         }
     },
-    stopPlugins(pluginIds: string[]): void {
+    stopPlugins(contextPath: string, pluginIds: string[]): void {
         console.log("PLUGIN_HOST(" + process.pid + "): stopPlugins(" + JSON.stringify(pluginIds) + ")");
         pluginIds.forEach(pluginId => {
             const stopPluginMethod = plugins.get(pluginId);

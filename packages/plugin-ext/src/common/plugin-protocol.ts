@@ -208,7 +208,7 @@ export interface PluginModel {
     entryPoint: {
         frontend?: string;
         backend?: string;
-    };
+    }
 }
 
 /**
@@ -235,7 +235,11 @@ export interface PluginLifecycle {
  * The export function of initialization module of backend plugin.
  */
 export interface BackendInitializationFn {
-    (rpc: RPCProtocol): void;
+    (rpc: RPCProtocol, pluginMetadata: PluginMetadata): void;
+}
+
+export interface BackendLoadingFn {
+    (rpc: RPCProtocol, plugin: Plugin): void;
 }
 
 export interface PluginContext {
@@ -247,6 +251,7 @@ export interface ExtensionContext {
 }
 
 export interface PluginMetadata {
+    source: PluginPackage;
     model: PluginModel;
     lifecycle: PluginLifecycle;
 }

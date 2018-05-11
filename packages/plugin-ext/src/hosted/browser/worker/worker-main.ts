@@ -10,7 +10,7 @@ import { RPCProtocolImpl } from '../../../api/rpc-protocol';
 import { HostedPluginManagerExtImpl } from '../../plugin/hosted-plugin-manager';
 import { MAIN_RPC_CONTEXT, Plugin } from '../../../api/plugin-api';
 import { createAPI, startPlugin } from '../../../plugin/plugin-context';
-import { getPluginId } from '../../../common/plugin-protocol';
+import { getPluginId, PluginMetadata } from '../../../common/plugin-protocol';
 
 const ctx = self as any;
 const plugins = new Map<string, () => void>();
@@ -30,10 +30,10 @@ const theia = createAPI(rpc);
 ctx['theia'] = theia;
 
 rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtImpl({
-    initialize(contextPath: string): void {
+    initialize(contextPath: string, pluginMetadata: PluginMetadata): void {
         ctx.importScripts('/context/' + contextPath);
     },
-    loadPlugin(plugin: Plugin): void {
+    loadPlugin(contextPath: string, plugin: Plugin): void {
         ctx.importScripts('/hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
         if (plugin.lifecycle.frontendModuleName) {
             if (!ctx[plugin.lifecycle.frontendModuleName]) {
@@ -43,7 +43,7 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtIm
             startPlugin(plugin, ctx[plugin.lifecycle.frontendModuleName], plugins);
         }
     },
-    stopPlugins(pluginIds: string[]): void {
+    stopPlugins(contextPath: string, pluginIds: string[]): void {
         pluginIds.forEach(pluginId => {
             const stopPluginMethod = plugins.get(pluginId);
             if (stopPluginMethod) {

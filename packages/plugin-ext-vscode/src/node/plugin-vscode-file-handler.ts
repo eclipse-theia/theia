@@ -5,7 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandlerContext } from "../../../common/plugin-protocol";
+import { PluginDeployerFileHandler, PluginDeployerEntry, PluginDeployerFileHandlerContext } from "@theia/plugin-ext";
 import { injectable } from "inversify";
 import * as os from "os";
 import * as path from "path";

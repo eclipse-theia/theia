@@ -6,7 +6,7 @@
  */
 import { injectable, inject, interfaces } from 'inversify';
 import { PluginWorker } from '../../main/browser/plugin-worker';
-import { HostedPluginServer, PluginLifecycle, PluginModel, PluginMetadata } from '../../common/plugin-protocol';
+import { HostedPluginServer, PluginMetadata } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { MAIN_RPC_CONTEXT, Plugin } from '../../api/plugin-api';
 import { setUpPluginApi } from '../../main/browser/main-context';
@@ -28,23 +28,25 @@ export class HostedPluginSupport {
     checkAndLoadPlugin(container: interfaces.Container): void {
         this.server.getHostedPlugin().then((pluginMedata: any) => {
             if (pluginMedata) {
-                this.loadPlugin(pluginMedata.model, pluginMedata.lifecycle, container);
+                this.loadPlugin(pluginMedata, container);
             }
         });
 
         const backendMetadatas = this.server.getDeployedBackendMetadata();
 
         backendMetadatas.then((pluginMetadatas: PluginMetadata[]) => {
-            pluginMetadatas.forEach(pluginMetadata => this.loadPlugin(pluginMetadata.model, pluginMetadata.lifecycle, container));
+            pluginMetadatas.forEach(pluginMetadata => this.loadPlugin(pluginMetadata, container));
         });
 
         this.server.getDeployedFrontendMetadata().then((pluginMetadatas: PluginMetadata[]) => {
-            pluginMetadatas.forEach(pluginMetadata => this.loadPlugin(pluginMetadata.model, pluginMetadata.lifecycle, container));
+            pluginMetadatas.forEach(pluginMetadata => this.loadPlugin(pluginMetadata, container));
         });
 
     }
 
-    public loadPlugin(pluginModel: PluginModel, pluginLifecycle: PluginLifecycle, container: interfaces.Container): void {
+    public loadPlugin(pluginMedata: PluginMetadata, container: interfaces.Container): void {
+        const pluginModel = pluginMedata.model;
+        const pluginLifecycle = pluginMedata.lifecycle;
         this.logger.info('Ask to load the plugin with model ', pluginModel, ' and lifecycle', pluginLifecycle);
         if (pluginModel.entryPoint!.frontend) {
             this.logger.info(`Loading frontend hosted plugin: ${pluginModel.name}`);
@@ -56,10 +58,13 @@ export class HostedPluginSupport {
                 model: pluginModel,
                 lifecycle: pluginLifecycle
             };
-            if (pluginLifecycle.frontendInitPath) {
-                hostedExtManager.$initialize(pluginLifecycle.frontendInitPath);
+            const frontendInitPath = pluginLifecycle.frontendInitPath;
+            if (frontendInitPath) {
+                hostedExtManager.$initialize(frontendInitPath, pluginMedata);
+                hostedExtManager.$loadPlugin(frontendInitPath, plugin);
+            } else {
+                hostedExtManager.$loadPlugin('', plugin);
             }
-            hostedExtManager.$loadPlugin(plugin);
         }
         if (pluginModel.entryPoint!.backend) {
             this.logger.info(`Loading backend hosted plugin: ${pluginModel.name}`);
@@ -71,10 +76,13 @@ export class HostedPluginSupport {
                 model: pluginModel,
                 lifecycle: pluginLifecycle
             };
-            if (pluginLifecycle.backendInitPath) {
-                hostedExtManager.$initialize(pluginLifecycle.backendInitPath);
+            const backendInitPath = pluginLifecycle.backendInitPath;
+            if (backendInitPath) {
+                hostedExtManager.$initialize(backendInitPath, pluginMedata);
+                hostedExtManager.$loadPlugin(backendInitPath, plugin);
+            } else {
+                hostedExtManager.$loadPlugin('', plugin);
             }
-            hostedExtManager.$loadPlugin(plugin);
         }
     }
 
