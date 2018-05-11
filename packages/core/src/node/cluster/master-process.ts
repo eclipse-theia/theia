@@ -8,13 +8,15 @@
 import { EventEmitter } from 'events';
 import { ServerWorker } from './server-worker';
 
-export type MasterProcessEvent = 'started' | 'restarted' | 'restarting';
+export type MasterProcessEvent = 'started' | 'restarted' | 'restarting' | 'exit';
 export class MasterProcess extends EventEmitter {
 
     protected serverWorker: ServerWorker | undefined;
 
     protected fork(): ServerWorker {
-        return new ServerWorker(() => this.restart());
+        const worker = new ServerWorker(() => this.restart());
+        worker.exit.then(() => this.emit('exit', worker));
+        return worker;
     }
 
     start(): ServerWorker {
@@ -35,6 +37,7 @@ export class MasterProcess extends EventEmitter {
         }
         this.emit('restarting', this.serverWorker);
         console.log(`Restarting the server worker is requested.`);
+
         const serverWorker = this.fork();
         const success = serverWorker.initialized.then(() => true);
 
@@ -53,10 +56,10 @@ export class MasterProcess extends EventEmitter {
         this.emit('restarted', this.serverWorker);
     }
     get restarting(): Promise<ServerWorker> {
-        return new Promise(resolve => this.on('restarting', resolve));
+        return new Promise(resolve => this.once('restarting', resolve));
     }
     get restarted(): Promise<ServerWorker> {
-        return new Promise(resolve => this.on('restarted', resolve));
+        return new Promise(resolve => this.once('restarted', resolve));
     }
 
     protected timeout(delay: number): Promise<void> {
