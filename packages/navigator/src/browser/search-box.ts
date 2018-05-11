@@ -68,7 +68,7 @@ export class SearchBox extends BaseWidget {
             this.closeEmitter,
             this.textChangeEmitter,
             this.debounce,
-            this.debounce.onChanged(data => this.fireTextChange(data)),
+            this.debounce.onChanged(data => this.fireTextChange(data))
         ]);
         this.hide();
         this.update();

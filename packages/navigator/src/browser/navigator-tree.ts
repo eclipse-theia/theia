@@ -17,7 +17,7 @@ export class FileNavigatorTree extends FileTree {
 
     @postConstruct()
     protected init(): void {
-        this.filter.onFilterChanged(() => this.refresh());
+        this.toDispose.push(this.filter.onFilterChanged(() => this.refresh()));
     }
 
     async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {

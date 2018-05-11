@@ -109,6 +109,7 @@ export class Emitter<T> {
 
     private _event: Event<T>;
     private _callbacks: CallbackList | undefined;
+    private disposed = false;
 
     constructor(private _options?: EmitterOptions) {
     }
@@ -131,10 +132,13 @@ export class Emitter<T> {
                 let result: Disposable;
                 result = {
                     dispose: () => {
-                        this._callbacks!.remove(listener, thisArgs);
                         result.dispose = Emitter._noop;
-                        if (this._options && this._options.onLastListenerRemove && this._callbacks!.isEmpty()) {
-                            this._options.onLastListenerRemove(this);
+                        if (!this.disposed) {
+                            this._callbacks!.remove(listener, thisArgs);
+                            result.dispose = Emitter._noop;
+                            if (this._options && this._options.onLastListenerRemove && this._callbacks!.isEmpty()) {
+                                this._options.onLastListenerRemove(this);
+                            }
                         }
                     }
                 };
@@ -163,5 +167,6 @@ export class Emitter<T> {
             this._callbacks.dispose();
             this._callbacks = undefined;
         }
+        this.disposed = true;
     }
 }
