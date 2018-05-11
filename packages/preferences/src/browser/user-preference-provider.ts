@@ -12,7 +12,7 @@ import { AbstractResourcePreferenceProvider } from './abstract-resource-preferen
 @injectable()
 export class UserPreferenceProvider extends AbstractResourcePreferenceProvider {
 
-    protected getUri() {
+    getUri() {
         return new URI().withScheme('user_storage').withPath('settings.json');
     }
 

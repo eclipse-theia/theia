@@ -16,7 +16,7 @@ export class WorkspacePreferenceProvider extends AbstractResourcePreferenceProvi
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    protected async getUri(): Promise<URI> {
+    async getUri(): Promise<URI> {
         const root = await this.workspaceService.root;
         if (root) {
             const rootUri = new URI(root.uri);
