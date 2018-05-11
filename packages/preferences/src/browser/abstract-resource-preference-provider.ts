@@ -35,7 +35,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         }
     }
 
-    protected abstract getUri(): MaybePromise<URI>;
+    abstract getUri(): MaybePromise<URI>;
 
     getPreferences(): { [key: string]: any } {
         return this.preferences;
@@ -45,7 +45,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         const resource = await this.resource;
         if (resource.saveContents) {
             const content = await resource.readContents();
-            const formattingOptions = {tabSize: 3, insertSpaces: true, eol: ''};
+            const formattingOptions = { tabSize: 3, insertSpaces: true, eol: '' };
             const edits = jsoncparser.modify(content, [key], value, { formattingOptions });
             const result = jsoncparser.applyEdits(content, edits);
 
