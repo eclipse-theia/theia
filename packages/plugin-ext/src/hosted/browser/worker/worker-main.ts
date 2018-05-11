@@ -10,6 +10,7 @@ import { RPCProtocolImpl } from '../../../api/rpc-protocol';
 import { HostedPluginManagerExtImpl } from '../../plugin/hosted-plugin-manager';
 import { MAIN_RPC_CONTEXT, Plugin } from '../../../api/plugin-api';
 import { createAPI, startPlugin } from '../../../plugin/plugin-context';
+import { getPluginId } from '../../../common/plugin-protocol';
 
 const ctx = self as any;
 const plugins = new Map<string, () => void>();
@@ -33,7 +34,7 @@ rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtIm
         ctx.importScripts('/context/' + contextPath);
     },
     loadPlugin(plugin: Plugin): void {
-        ctx.importScripts('/hostedPlugin/' + plugin.pluginPath);
+        ctx.importScripts('/hostedPlugin/' + getPluginId(plugin.model) + '/' + plugin.pluginPath);
         if (plugin.lifecycle.frontendModuleName) {
             if (!ctx[plugin.lifecycle.frontendModuleName]) {
                 console.error(`WebWorker: Cannot start plugin "${plugin.model.name}". Frontend plugin not found: "${plugin.lifecycle.frontendModuleName}"`);

@@ -86,6 +86,9 @@ export abstract class AbstractHostedPluginManager implements HostedPluginManager
         if (pluginUri.scheme === 'file') {
             processOptions = { ...PROCESS_OPTIONS };
             processOptions.env.HOSTED_PLUGIN = pluginUri.path.toString();
+
+            // Disable all the other plugins on this instance
+            processOptions.env.THEIA_PLUGINS = '';
             command = await this.getStartCommand(port);
         } else {
             throw new Error('Not supported plugin location: ' + pluginUri.toString());

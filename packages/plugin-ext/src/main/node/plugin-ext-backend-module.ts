@@ -8,8 +8,27 @@
 import { interfaces } from "inversify";
 import { PluginApiContribution } from "./plugin-service";
 import { BackendApplicationContribution } from "@theia/core/lib/node";
+import { PluginDeployerContribution } from "./plugin-deployer-contribution";
+import { PluginDeployer, PluginDeployerResolver, PluginDeployerFileHandler, PluginDeployerDirectoryHandler } from "../../common/plugin-protocol";
+import { PluginDeployerImpl } from "./plugin-deployer-impl";
+import { LocalDirectoryPluginDeployerResolver } from "./resolvers/plugin-local-dir-resolver";
+import { PluginTheiaFileHandler } from "./handlers/plugin-theia-file-handler";
+import { PluginTheiaDirectoryHandler } from "./handlers/plugin-theia-directory-handler";
+import { PluginVsCodeFileHandler } from "./handlers/plugin-vscode-file-handler";
+import { PluginVsCodeDirectoryHandler } from "./handlers/plugin-vscode-directory-handler";
 
 export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(PluginApiContribution)).inSingletonScope();
+
+    bind(PluginDeployer).to(PluginDeployerImpl).inSingletonScope();
+    bind(PluginDeployerContribution).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(PluginDeployerContribution)).inSingletonScope();
+
+    bind(PluginDeployerResolver).to(LocalDirectoryPluginDeployerResolver).inSingletonScope();
+    bind(PluginDeployerFileHandler).to(PluginTheiaFileHandler).inSingletonScope();
+    bind(PluginDeployerFileHandler).to(PluginVsCodeFileHandler).inSingletonScope();
+    bind(PluginDeployerDirectoryHandler).to(PluginTheiaDirectoryHandler).inSingletonScope();
+    bind(PluginDeployerDirectoryHandler).to(PluginVsCodeDirectoryHandler).inSingletonScope();
+
 }

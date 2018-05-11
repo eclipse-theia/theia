@@ -7,7 +7,8 @@
   "dependencies": {
     "@theia/core": "^0.3.10",
     "@theia/filesystem": "^0.3.10",
-    "@theia/workspace": "^0.3.10"
+    "@theia/workspace": "^0.3.10",
+    "decompress": "^4.2.0"
   },
   "publishConfig": {
     "access": "public"
@@ -44,7 +45,8 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.10"
+    "@theia/ext-scripts": "^0.3.10",
+    "@types/decompress": "^4.2.2"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

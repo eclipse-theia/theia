@@ -27,11 +27,8 @@ export class HostedPluginSupport {
 
     @inject(ILogger)
     protected readonly logger: ILogger;
+
     private cp: cp.ChildProcess | undefined;
-
-    constructor() {
-
-    }
 
     setClient(client: HostedPluginClient): void {
         this.client = client;
@@ -39,7 +36,7 @@ export class HostedPluginSupport {
 
     runPlugin(plugin: PluginModel): void {
         if (plugin.entryPoint.backend) {
-            this.runPluginServer(plugin);
+            this.runPluginServer();
         }
     }
 
@@ -75,7 +72,7 @@ export class HostedPluginSupport {
         });
     }
 
-    private runPluginServer(plugin: PluginModel): void {
+    public runPluginServer(): void {
         if (this.cp) {
             this.terminatePluginServer(this.cp);
         }
