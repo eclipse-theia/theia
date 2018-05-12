@@ -41,7 +41,6 @@ export class GitWidget extends VirtualWidget {
     protected unstagedChanges: GitFileChangeNode[] = [];
     protected mergeChanges: GitFileChangeNode[] = [];
     protected message: string = '';
-    protected messageInputHighlighted: boolean = false;
     protected status: WorkingDirectoryStatus | undefined;
     protected scrollContainer: string;
     protected commitMessageValidationResult: GitCommitMessageValidator.Result | undefined;
@@ -104,6 +103,7 @@ export class GitWidget extends VirtualWidget {
             const commitTextArea = document.getElementById('theia-git-commit-message') as HTMLTextAreaElement;
             await this.git.exec(selectedRepository, ['reset', 'HEAD~', '--soft']);
             if (commitTextArea) {
+                this.message = message;
                 commitTextArea.value = message;
                 this.resize(commitTextArea);
                 commitTextArea.focus();
@@ -129,7 +129,6 @@ export class GitWidget extends VirtualWidget {
                 // need to access the element, because Phosphor.js is not updating `value`but only `setAttribute('value', ....)` which only sets the default value.
                 const messageInput = document.getElementById('theia-git-commit-message') as HTMLInputElement;
                 if (messageInput) {
-                    this.messageInputHighlighted = true;
                     this.update();
                     messageInput.focus();
                 }
