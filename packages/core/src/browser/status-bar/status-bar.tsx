@@ -1,16 +1,16 @@
 /*
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2017-2018 TypeFox and others.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { VirtualRenderer, VirtualWidget } from '../widgets';
 import { CommandService } from '../../common';
-import { h, ElementInlineStyle } from '@phosphor/virtualdom';
 import { LabelParser, LabelIcon } from '../label-parser';
 import { injectable, inject } from 'inversify';
 import { FrontendApplicationStateService } from '../frontend-application-state';
+import { ReactWidget } from '../widgets/react-widget';
+import * as React from "react";
 
 export interface StatusBarEntry {
     /**
@@ -41,10 +41,10 @@ export enum StatusBarAlignment {
 }
 
 export interface StatusBarEntryAttributes {
-    style?: ElementInlineStyle;
     className?: string;
     title?: string;
-    onclick?: (e: MouseEvent) => void;
+    style?: object;
+    onClick?: (e: MouseEvent) => void;
 }
 
 export const STATUSBAR_WIDGET_FACTORY_ID = 'statusBar';
@@ -58,7 +58,7 @@ export interface StatusBar {
 }
 
 @injectable()
-export class StatusBarImpl extends VirtualWidget implements StatusBar {
+export class StatusBarImpl extends ReactWidget implements StatusBar {
 
     protected backgroundColor: string | undefined;
     protected entries: Map<string, StatusBarEntry> = new Map();
@@ -100,9 +100,9 @@ export class StatusBarImpl extends VirtualWidget implements StatusBar {
         this.node.style.backgroundColor = this.backgroundColor ? this.backgroundColor : null;
     }
 
-    protected render(): h.Child {
-        const leftEntries: h.Child[] = [];
-        const rightEntries: h.Child[] = [];
+    protected render(): JSX.Element {
+        const leftEntries: JSX.Element[] = [];
+        const rightEntries: JSX.Element[] = [];
         const elements = Array.from(this.entries.values()).sort((left, right) => {
             const lp = left.priority || 0;
             const rp = right.priority || 0;
@@ -115,24 +115,30 @@ export class StatusBarImpl extends VirtualWidget implements StatusBar {
                 rightEntries.push(this.renderElement(entry));
             }
         });
-        const leftElements = h.div({ className: 'area left' }, VirtualRenderer.flatten(leftEntries));
-        const rightElements = h.div({ className: 'area right' }, VirtualRenderer.flatten(rightEntries));
-        return VirtualRenderer.flatten([leftElements, rightElements]);
+
+        return <React.Fragment>
+            <div className="area left">{leftEntries}</div>
+            <div className="area right">{rightEntries}</div>
+        </React.Fragment>;
+    }
+
+    protected onclick(entry: StatusBarEntry): () => void {
+        return () => {
+            if (entry.command) {
+                const args = entry.arguments || [];
+                this.commands.executeCommand(entry.command, ...args);
+            }
+        };
     }
 
     protected createAttributes(entry: StatusBarEntry): StatusBarEntryAttributes {
         const attrs: StatusBarEntryAttributes = {};
 
         if (entry.command) {
-            attrs.onclick = () => {
-                if (entry.command) {
-                    const args = entry.arguments || [];
-                    this.commands.executeCommand(entry.command, ...args);
-                }
-            };
+            attrs.onClick = this.onclick(entry);
             attrs.className = 'element hasCommand';
         } else if (entry.onclick) {
-            attrs.onclick = (e) => {
+            attrs.onClick = e => {
                 if (entry.onclick) {
                     entry.onclick(e);
                 }
@@ -159,21 +165,22 @@ export class StatusBarImpl extends VirtualWidget implements StatusBar {
         return attrs;
     }
 
-    protected renderElement(entry: StatusBarEntry): h.Child {
+    protected renderElement(entry: StatusBarEntry): JSX.Element {
         const childStrings = this.entryService.parse(entry.text);
-        const children: h.Child[] = [];
+        const children: JSX.Element[] = [];
 
         childStrings.forEach((val, idx) => {
+            const key = entry.alignment + "-" + idx;
             if (!(typeof val === 'string') && LabelIcon.is(val)) {
                 const classStr = `fa fa-${val.name} ${val.animation ? 'fa-' + val.animation : ''}`;
-                children.push(h.span({ className: classStr }));
+                children.push(<span className={classStr} key={key}></span>);
             } else {
-                children.push(h.span({}, val));
+                children.push(<span key={key}>{val}</span>);
             }
         });
-        const elementInnerDiv = h.div(VirtualRenderer.flatten(children));
+        const elementInnerDiv = <div>{children}</div>;
 
-        return h.div(this.createAttributes(entry), elementInnerDiv);
+        return React.createElement("div", { key: entry.text + entry.tooltip + entry.priority + entry.command , ...this.createAttributes(entry) }, elementInnerDiv);
     }
 
 }
