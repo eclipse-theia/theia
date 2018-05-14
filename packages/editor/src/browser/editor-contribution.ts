@@ -17,41 +17,41 @@ import { DisposableCollection } from '@theia/core';
 @injectable()
 export class EditorContribution implements FrontendApplicationContribution {
 
-    protected toDispose = new DisposableCollection();
+    @inject(StatusBar) protected readonly statusBar: StatusBar;
+    @inject(EditorManager) protected readonly editorManager: EditorManager;
+    @inject(Languages) protected readonly languages: Languages;
 
-    constructor(
-        @inject(StatusBar) protected readonly statusBar: StatusBar,
-        @inject(EditorManager) protected readonly editorManager: EditorManager,
-        @inject(Languages) protected readonly languages: Languages
-    ) { }
-
-    onStart() {
-        this.addStatusBarWidgets();
+    onStart(): void {
+        this.updateStatusBar();
+        this.editorManager.onCurrentEditorChanged(() => this.updateStatusBar());
     }
 
-    protected async addStatusBarWidgets() {
-        this.editorManager.onCurrentEditorChanged(async widget => {
-            if (widget) {
-                const languageId = widget.editor.document.languageId;
-                const languages = this.languages.languages || [];
-                const language = languages.find(l => l.id === languageId);
-                const languageName = language ? language.name : '';
-                this.statusBar.setElement('editor-status-language', {
-                    text: languageName,
-                    alignment: StatusBarAlignment.RIGHT,
-                    priority: 1
-                });
+    protected readonly toDisposeOnCurrentEditorChanged = new DisposableCollection();
+    protected updateStatusBar(): void {
+        this.toDisposeOnCurrentEditorChanged.dispose();
 
-                this.setCursorPositionStatus(widget.editor.cursor, widget.editor);
-                this.toDispose.dispose();
-                this.toDispose.push(widget.editor.onCursorPositionChanged(position => {
-                    this.setCursorPositionStatus(position, widget.editor);
-                }));
-            } else {
-                this.statusBar.removeElement('editor-status-language');
-                this.statusBar.removeElement('editor-status-cursor-position');
-            }
-        });
+        const widget = this.editorManager.currentEditor;
+        if (widget) {
+            const languageId = widget.editor.document.languageId;
+            const languages = this.languages.languages || [];
+            const language = languages.find(l => l.id === languageId);
+            const languageName = language ? language.name : '';
+            this.statusBar.setElement('editor-status-language', {
+                text: languageName,
+                alignment: StatusBarAlignment.RIGHT,
+                priority: 1
+            });
+
+            this.setCursorPositionStatus(widget.editor.cursor, widget.editor);
+            this.toDisposeOnCurrentEditorChanged.push(
+                widget.editor.onCursorPositionChanged(position =>
+                    this.setCursorPositionStatus(position, widget.editor)
+                )
+            );
+        } else {
+            this.statusBar.removeElement('editor-status-language');
+            this.statusBar.removeElement('editor-status-cursor-position');
+        }
     }
 
     protected setCursorPositionStatus(position: Position, editor: TextEditor): void {

@@ -18,11 +18,11 @@ export class EditorWidget extends BaseWidget implements SaveableSource, Navigata
     ) {
         super(editor);
         this.toDispose.push(this.editor);
-        this.editor.onSelectionChanged(() => {
+        this.toDispose.push(this.editor.onSelectionChanged(() => {
             if (this.editor.isFocused()) {
                 this.selectionService.selection = this.editor;
             }
-        });
+        }));
     }
 
     get saveable(): Saveable {

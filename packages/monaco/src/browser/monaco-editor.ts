@@ -62,6 +62,12 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         options?: MonacoEditor.IOptions,
         override?: IEditorOverrideServices,
     ) {
+        this.toDispose.pushAll([
+            this.onCursorPositionChangedEmitter,
+            this.onSelectionChangedEmitter,
+            this.onFocusChangedEmitter,
+            this.onDocumentContentChangedEmitter
+        ]);
         this.documents.add(document);
         this.autoSizing = options && options.autoSizing !== undefined ? options.autoSizing : false;
         this.minHeight = options && options.minHeight !== undefined ? options.minHeight : -1;
