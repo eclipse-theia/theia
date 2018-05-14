@@ -106,6 +106,7 @@ export class WebSocketConnectionProvider {
             if (this.socket.readyState < WebSocket.CLOSING) {
                 channel.close();
             }
+            channel.dispose();
         }
         const { reconnecting } = { reconnecting: true, ...options };
         if (reconnecting) {
