@@ -180,7 +180,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         });
         const elementInnerDiv = <div>{children}</div>;
 
-        return React.createElement("div", { key: entry.text + entry.tooltip + entry.priority + entry.command , ...this.createAttributes(entry) }, elementInnerDiv);
+        return React.createElement("div", { key: entry.text + entry.tooltip + entry.priority + entry.command, ...this.createAttributes(entry) }, elementInnerDiv);
     }
 
 }
