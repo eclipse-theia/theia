@@ -98,7 +98,7 @@ jobs:
       - yarn
     deploy:
       provider: script
-      script: yarn run publish:next
+      script: yarn run publish:next --loglevel verbose
       on:
         branch: master
       skip_cleanup: true
