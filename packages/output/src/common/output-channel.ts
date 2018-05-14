@@ -9,44 +9,39 @@ import { Emitter, Event } from "@theia/core";
 import { injectable, inject } from "inversify";
 import { OutputPreferences } from "./output-preferences";
 
-export interface OutputChannel {
-    append(value: string): void;
-    appendLine(line: string): void;
-}
-
 @injectable()
 export class OutputChannelManager {
-    protected readonly channels = new Map<string, OutputChannelImpl>();
+    protected readonly channels = new Map<string, OutputChannel>();
 
-    private readonly channelAddedEmitter = new Emitter<OutputChannelImpl>();
+    private readonly channelAddedEmitter = new Emitter<OutputChannel>();
     readonly onChannelAdded = this.channelAddedEmitter.event;
 
-    constructor( @inject(OutputPreferences) protected preferences: OutputPreferences) {
+    constructor(@inject(OutputPreferences) protected preferences: OutputPreferences) {
     }
 
-    getChannel(name: string): OutputChannelImpl {
+    getChannel(name: string): OutputChannel {
         const existing = this.channels.get(name);
         if (existing) {
             return existing;
         }
-        const channel = new OutputChannelImpl(name, this.preferences);
+        const channel = new OutputChannel(name, this.preferences);
         this.channels.set(name, channel);
         this.channelAddedEmitter.fire(channel);
         return channel;
     }
 
-    getChannels(): OutputChannelImpl[] {
+    getChannels(): OutputChannel[] {
         return Array.from(this.channels.values());
     }
 }
 
-export class OutputChannelImpl implements OutputChannel {
+export class OutputChannel {
 
-    private readonly contentChangeEmitter = new Emitter<OutputChannelImpl>();
+    private readonly contentChangeEmitter = new Emitter<OutputChannel>();
     private lines: string[] = [];
     private currentLine: string | undefined;
 
-    readonly onContentChange: Event<OutputChannelImpl> = this.contentChangeEmitter.event;
+    readonly onContentChange: Event<OutputChannel> = this.contentChangeEmitter.event;
 
     constructor(readonly name: string, readonly preferences: OutputPreferences) { }
 
