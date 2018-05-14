@@ -18,11 +18,12 @@ export class ExtensionDetailWidget extends VirtualWidget {
         super();
         this.addClass('theia-extension-detail');
         this.node.tabIndex = 0;
-        resolvedExtension.onDidChange(change => {
+        this.toDispose.push(resolvedExtension);
+        this.toDispose.push(resolvedExtension.onDidChange(change => {
             if (change.name === this.resolvedExtension.name) {
                 this.update();
             }
-        });
+        }));
         this.update();
     }
 

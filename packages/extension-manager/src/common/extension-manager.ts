@@ -19,8 +19,9 @@ import { ExtensionChange } from './extension-protocol';
  *
  * The user code should access extensions and listen to their changes with the extension manager.
  */
-export class Extension extends protocol.Extension {
+export class Extension extends protocol.Extension implements Disposable {
 
+    protected readonly toDispose = new DisposableCollection();
     protected readonly onDidChangedEmitter = new Emitter<ExtensionChange>();
 
     constructor(extension: protocol.Extension,
@@ -28,12 +29,17 @@ export class Extension extends protocol.Extension {
         protected readonly manager: ExtensionManager) {
         super();
         Object.assign(this, extension);
-        manager.onDidChange(change => {
+        this.toDispose.push(this.onDidChangedEmitter);
+        this.toDispose.push(manager.onDidChange(change => {
             if (change.name === this.name) {
                 Object.assign(this, change);
                 this.onDidChangedEmitter.fire(change);
             }
-        });
+        }));
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     get onDidChange(): Event<ExtensionChange> {
