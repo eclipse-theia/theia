@@ -290,16 +290,16 @@ export class MiniBrowser extends BaseWidget {
 
     @postConstruct()
     protected init(): void {
-        this.mouseTracker.onMousedown(e => {
+        this.toDispose.push(this.mouseTracker.onMousedown(e => {
             if (this.frame.style.display !== 'none') {
                 this.transparentOverlay.style.display = 'block';
             }
-        });
-        this.mouseTracker.onMouseup(e => {
+        }));
+        this.toDispose.push(this.mouseTracker.onMouseup(e => {
             if (this.frame.style.display !== 'none') {
                 this.transparentOverlay.style.display = 'none';
             }
-        });
+        }));
         const { startPage } = this.props;
         if (startPage) {
             setTimeout(() => this.go(startPage, true), 500);
@@ -324,7 +324,7 @@ export class MiniBrowser extends BaseWidget {
                         this.go(location, false, false);
                     }
                 };
-                this.fileSystemWatcher.onFilesChanged(debounce(onFileChange, 500));
+                this.toDispose.push(this.fileSystemWatcher.onFilesChanged(debounce(onFileChange, 500)));
             }
         }
     }
