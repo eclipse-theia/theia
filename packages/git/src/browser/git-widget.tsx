@@ -6,10 +6,9 @@
  */
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { h } from '@phosphor/virtualdom';
 import URI from '@theia/core/lib/common/uri';
 import { MessageService, ResourceProvider, CommandService, MenuPath } from '@theia/core';
-import { VirtualRenderer, ContextMenuRenderer, VirtualWidget, LabelProvider, DiffUris, StatefulWidget } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, LabelProvider, DiffUris, StatefulWidget, Message } from '@theia/core/lib/browser';
 import { EditorManager, EditorWidget, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus, CommitWithChanges } from '../common';
@@ -18,6 +17,8 @@ import { GIT_RESOURCE_SCHEME } from './git-resource';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { GitCommitMessageValidator } from './git-commit-message-validator';
 import { GitAvatarService } from './history/git-avatar-service';
+import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
+import * as React from "react";
 
 export interface GitFileChangeNode extends GitFileChange {
     readonly icon: string;
@@ -35,7 +36,7 @@ export namespace GitFileChangeNode {
 }
 
 @injectable()
-export class GitWidget extends VirtualWidget implements StatefulWidget {
+export class GitWidget extends ReactWidget implements StatefulWidget {
 
     private static MESSAGE_BOX_MIN_HEIGHT = 25;
 
@@ -99,6 +100,13 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
         }
     }
 
+    onActivateRequest(msg: Message): void {
+        const messageInput = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLInputElement;
+        if (messageInput) {
+            messageInput.focus();
+        }
+    }
+
     storeState(): object {
         const commitTextArea = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
         const messageBoxHeight = commitTextArea ? commitTextArea.offsetHeight : GitWidget.MESSAGE_BOX_MIN_HEIGHT;
@@ -159,7 +167,6 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
                     this.logError(error);
                 }
             } else {
-                // need to access the element, because Phosphor.js is not updating `value`but only `setAttribute('value', ....)` which only sets the default value.
                 const messageInput = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLInputElement;
                 if (messageInput) {
                     this.update();
@@ -211,30 +218,30 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
         this.update();
     }
 
-    protected renderCommitMessage(): h.Child {
-        const oninput = this.onCommitMessageChange.bind(this);
-        const placeholder = 'Commit message';
+    protected renderCommitMessage(): React.ReactNode {
         const validationStatus = this.commitMessageValidationResult ? this.commitMessageValidationResult.status : 'idle';
         const validationMessage = this.commitMessageValidationResult ? this.commitMessageValidationResult.message : '';
-        const autofocus = 'true';
-        const id = GitWidget.Styles.COMMIT_MESSAGE;
-        const commitMessageArea = h.textarea({
-            className: `${GitWidget.Styles.COMMIT_MESSAGE} theia-git-commit-message-${validationStatus}`,
-            style: { height: `${this.messageBoxHeight}px` },
-            autofocus,
-            oninput,
-            placeholder,
-            id
-        }, this.message);
-        const validationMessageArea = h.div({
-            // tslint:disable-next-line:max-line-length
-            className: `${GitWidget.Styles.VALIDATION_MESSAGE} ${GitWidget.Styles.NO_SELECT} theia-git-validation-message-${validationStatus} theia-git-commit-message-${validationStatus}`,
-            style: {
-                display: !!this.commitMessageValidationResult ? 'block' : 'none'
-            },
-            readonly: 'true'
-        }, validationMessage);
-        return h.div({ className: GitWidget.Styles.COMMIT_MESSAGE_CONTAINER }, commitMessageArea, validationMessageArea);
+        return <div className={GitWidget.Styles.COMMIT_MESSAGE_CONTAINER}>
+            <textarea
+                className={`${GitWidget.Styles.COMMIT_MESSAGE} theia-git-commit-message-${validationStatus}`}
+                style={{ height: this.messageBoxHeight }}
+                autoFocus={true}
+                onInput={this.onCommitMessageChange.bind(this)}
+                placeholder='Commit message'
+                id={GitWidget.Styles.COMMIT_MESSAGE}
+                defaultValue={this.message}>
+            </textarea>
+            <div
+                className={
+                    `${GitWidget.Styles.VALIDATION_MESSAGE} ${GitWidget.Styles.NO_SELECT}
+                    theia-git-validation-message-${validationStatus} theia-git-commit-message-${validationStatus}`
+                }
+                style={
+                    {
+                        display: !!this.commitMessageValidationResult ? 'block' : 'none'
+                    }
+                }>{validationMessage}</div>
+        </div>;
     }
 
     protected onCommitMessageChange(e: Event): void {
@@ -274,27 +281,28 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
         return this.commitMessageValidator.validate(input);
     }
 
-    protected render(): h.Child {
+    protected render(): React.ReactNode {
         const repository = this.repositoryProvider.selectedRepository;
-
-        const messageInput = this.renderCommitMessage();
-        const commandBar = this.renderCommandBar(repository);
-        const headerContainer = h.div({ className: 'headerContainer' }, messageInput, commandBar);
-
-        const mergeChanges = this.renderMergeChanges(repository) || '';
-        const stagedChanges = this.renderStagedChanges(repository) || '';
-        const unstagedChanges = this.renderUnstagedChanges(repository) || '';
-        const changesContainer = h.div({ className: "changesOuterContainer", id: this.scrollContainer }, mergeChanges, stagedChanges, unstagedChanges);
-
-        const lastCommit = this.lastCommit ? h.div(h.div({ className: GitWidget.Styles.LAST_COMMIT_CONTAINER }, this.renderLastCommit())) : '';
-
-        return [headerContainer, changesContainer, lastCommit];
-    }
-
-    protected createChildContainer(): HTMLElement {
-        const container = super.createChildContainer();
-        container.classList.add(GitWidget.Styles.MAIN_CONTAINER);
-        return container;
+        return <div className={GitWidget.Styles.MAIN_CONTAINER}>
+            <div className='headerContainer'>
+                {this.renderCommitMessage()}
+                {this.renderCommandBar(repository)}
+            </div>
+            <div className="changesOuterContainer" id={this.scrollContainer}>
+                {this.renderMergeChanges(repository) || ''}
+                {this.renderStagedChanges(repository) || ''}
+                {this.renderUnstagedChanges(repository) || ''}
+            </div>
+            {
+                this.lastCommit ?
+                    <div>
+                        <div className={GitWidget.Styles.LAST_COMMIT_CONTAINER}>
+                            {this.renderLastCommit()}
+                        </div>
+                    </div>
+                    : ''
+            }
+        </div>;
     }
 
     protected async getLastCommit(): Promise<{ commit: CommitWithChanges, avatar: string } | undefined> {
@@ -310,77 +318,89 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
         return undefined;
     }
 
-    protected renderLastCommit(): h.Child {
+    protected renderLastCommit(): React.ReactNode {
         if (!this.lastCommit) {
             return '';
         }
         const { commit, avatar } = this.lastCommit;
-        const gravatar = h.div({ className: GitWidget.Styles.LAST_COMMIT_MESSAGE_AVATAR }, h.img({ src: avatar }));
-        const summary = h.div({ className: GitWidget.Styles.LAST_COMMIT_MESSAGE_SUMMARY }, commit.summary);
-        const time = h.div({ className: GitWidget.Styles.LAST_COMMIT_MESSAGE_TIME }, `${commit.authorDateRelative} by ${commit.author.name}`);
-        const details = h.div({ className: GitWidget.Styles.LAST_COMMIT_DETAILS }, summary, time);
-        // Yes, a container. Otherwise the button would stretch vertically. And having a bigger `Undo` button than a `Commit` would be odd.
-        const buttonContainer = h.div({ className: GitWidget.Styles.FLEX_CENTER }, h.button({
-            className: `theia-button`,
-            title: 'Undo last commit',
-            onclick: () => this.undo.bind(this)()
-        }, 'Undo'));
-        return VirtualRenderer.flatten([gravatar, details, buttonContainer]);
+        return <React.Fragment>
+            <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_AVATAR}>
+                <img src={avatar} />
+            </div>
+            <div className={GitWidget.Styles.LAST_COMMIT_DETAILS}>
+                <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_SUMMARY}>{commit.summary}</div>
+                <div className={GitWidget.Styles.LAST_COMMIT_MESSAGE_TIME}>{`${commit.authorDateRelative} by ${commit.author.name}`}</div>
+            </div>
+            <div className={GitWidget.Styles.FLEX_CENTER}>
+                <button className='theia-button' title='Undo last commit' onClick={() => this.undo.bind(this)()}>
+                    Undo
+            </button>
+            </div>
+        </React.Fragment>;
     }
 
-    protected renderCommandBar(repository: Repository | undefined): h.Child {
-        const refresh = h.a({
-            className: 'toolbar-button',
-            title: 'Refresh',
-            onclick: async e => {
-                await this.repositoryProvider.refresh();
-            }
-        }, h.i({ className: 'fa fa-refresh' }));
-        const more = repository ? h.a({
-            className: 'toolbar-button',
-            title: 'More...',
-            onclick: event => {
-                const el = (event.target as HTMLElement).parentElement;
-                if (el) {
-                    this.contextMenuRenderer.render(GitWidget.ContextMenu.PATH, {
-                        x: el.getBoundingClientRect().left,
-                        y: el.getBoundingClientRect().top + el.offsetHeight
-                    });
+    protected refreshHandler = async () => {
+        await this.repositoryProvider.refresh();
+    }
+
+    protected toolbarMoreHandler = (event: React.MouseEvent<HTMLElement>) => {
+        const el = (event.target as HTMLElement).parentElement;
+        if (el) {
+            this.contextMenuRenderer.render(GitWidget.ContextMenu.PATH, {
+                x: el.getBoundingClientRect().left,
+                y: el.getBoundingClientRect().top + el.offsetHeight
+            });
+        }
+    }
+
+    protected addSignedOffHandler = async () => {
+        const { selectedRepository } = this.repositoryProvider;
+        if (selectedRepository) {
+            const [username, email] = await this.getUserConfig(selectedRepository);
+            const signOff = `\n\nSigned-off-by: ${username} <${email}>`;
+            const commitTextArea = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
+            if (commitTextArea) {
+                const content = commitTextArea.value;
+                if (content.endsWith(signOff)) {
+                    commitTextArea.value = content.substr(0, content.length - signOff.length);
+                } else {
+                    commitTextArea.value = `${content}${signOff}`;
                 }
+                this.resize(commitTextArea);
+                this.message = commitTextArea.value;
+                commitTextArea.focus();
             }
-        }, h.i({ className: 'fa fa-ellipsis-h' })) : '';
-        const signOffBy = repository ? h.a({
-            className: 'toolbar-button',
-            title: 'Add Signed-off-by',
-            onclick: async () => {
-                const { selectedRepository } = this.repositoryProvider;
-                if (selectedRepository) {
-                    const [username, email] = await this.getUserConfig(selectedRepository);
-                    const signOff = `\n\nSigned-off-by: ${username} <${email}>`;
-                    const commitTextArea = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
-                    if (commitTextArea) {
-                        const content = commitTextArea.value;
-                        if (content.endsWith(signOff)) {
-                            commitTextArea.value = content.substr(0, content.length - signOff.length);
-                        } else {
-                            commitTextArea.value = `${content}${signOff}`;
-                        }
-                        this.resize(commitTextArea);
-                        this.message = commitTextArea.value;
-                        commitTextArea.focus();
-                    }
+        }
+    }
+
+    protected commitHandler = (repository: Repository | undefined) => this.commit.bind(this)(repository);
+
+    protected renderCommandBar(repository: Repository | undefined): React.ReactNode {
+        return <div id='commandBar' className='flexcontainer'>
+            <div className='buttons'>
+                <a className='toolbar-button' title='Refresh' onClick={this.refreshHandler}>
+                    <i className='fa fa-refresh' />
+                </a>
+                {
+                    repository ?
+                        <React.Fragment>
+                            <a className='toolbar-button' title='Add Signed-off-by' onClick={this.addSignedOffHandler}>
+                                <i className='fa fa-pencil-square-o ' />
+                            </a >
+                            <a className='toolbar-button' title='More...' onClick={this.toolbarMoreHandler}>
+                                <i className='fa fa-ellipsis-h' />
+                            </a >
+                        </React.Fragment>
+                        : ''
                 }
-            }
-        }, h.i({ className: 'fa fa-pencil-square-o ' })) : '';
-        const commandsContainer = h.div({ className: 'buttons' }, refresh, signOffBy, more);
-        const commitButton = h.button({
-            className: 'theia-button',
-            title: 'Commit all the staged changes',
-            onclick: () => this.commit.bind(this)(repository)
-        }, 'Commit');
-        const commitContainer = h.div({ className: 'buttons' }, commitButton);
-        const placeholder = h.div({ className: 'placeholder' });
-        return h.div({ id: 'commandBar', className: 'flexcontainer' }, commandsContainer, placeholder, commitContainer);
+            </div >
+            <div className='placeholder'></div >
+            <div className='buttons'>
+                <button className='theia-button' title='Commit all the staged changes' onClick={() => this.commitHandler(repository)}>
+                    Commit
+            </button >
+            </div>
+        </div>;
     }
 
     protected async getUserConfig(repository: Repository): Promise<[string, string]> {
@@ -391,118 +411,119 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
         return [username, email];
     }
 
-    protected renderGitItemButtons(repository: Repository, change: GitFileChange): h.Child {
-        const buttons: h.Child[] = [];
-        if (change.staged) {
-            buttons.push(h.a({
-                className: 'toolbar-button',
-                title: 'Unstage Changes',
-                onclick: async event => {
-                    try {
-                        await this.git.unstage(repository, change.uri, { treeish: 'HEAD', reset: 'index' });
-                    } catch (error) {
-                        this.logError(error);
-                    }
-                }
-            }, h.i({ className: 'fa fa-minus' })));
-        } else {
-            buttons.push(h.a({
-                className: 'toolbar-button',
-                title: 'Discard Changes',
-                onclick: async event => {
-                    // Allow deletion, only iff the same file is not yet in the Git index.
-                    if (await this.git.lsFiles(repository, change.uri, { errorUnmatch: true })) {
-                        try {
-                            await this.git.unstage(repository, change.uri, { treeish: 'HEAD', reset: 'working-tree' });
-                        } catch (error) {
-                            this.logError(error);
-                        }
-                    } else {
-                        this.commandService.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(change.uri));
-                    }
-                }
-            }, h.i({ className: 'fa fa-undo' })));
-            buttons.push(h.a({
-                className: 'toolbar-button',
-                title: 'Stage Changes',
-                onclick: async event => {
-                    try {
-                        await this.git.add(repository, change.uri);
-                    } catch (error) {
-                        this.logError(error);
-                    }
-                }
-            }, h.i({ className: 'fa fa-plus' })));
+    protected unstageHandler = async (repository: Repository, change: GitFileChange) => {
+        try {
+            await this.git.unstage(repository, change.uri);
+        } catch (error) {
+            this.logError(error);
         }
-        return h.div({ className: 'buttons' }, VirtualRenderer.flatten(buttons));
     }
 
-    protected renderGitItem(repository: Repository | undefined, change: GitFileChangeNode): h.Child {
+    protected discardHandler = async (repository: Repository, change: GitFileChange) => {
+        const options: Git.Options.Checkout.WorkingTreeFile = { paths: change.uri };
+        if (change.status === GitFileStatus.New) {
+            this.commandService.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(change.uri));
+        } else {
+            try {
+                await this.git.checkout(repository, options);
+            } catch (error) {
+                this.logError(error);
+            }
+        }
+    }
+
+    protected stageHandler = async (repository: Repository, change: GitFileChange) => {
+        try {
+            await this.git.add(repository, change.uri);
+        } catch (error) {
+            this.logError(error);
+        }
+    }
+
+    protected renderGitItemButtons(repository: Repository, change: GitFileChange): React.ReactNode {
+        return <div className='buttons'>
+            {
+                change.staged ?
+                    <a className='toolbar-button' title='Unstage Changes' onClick={() => this.unstageHandler(repository, change)}>
+                        <i className='fa fa-minus' />
+                    </a> :
+                    <React.Fragment>
+                        <a className='toolbar-button' title='Discard Changes' onClick={() => this.discardHandler(repository, change)}>
+                            <i className='fa fa-undo' />
+                        </a>
+                        <a className='toolbar-button' title='Stage Changes' onClick={() => this.stageHandler(repository, change)}>
+                            <i className='fa fa-plus' />
+                        </a>
+                    </React.Fragment>
+            }
+        </div>;
+    }
+
+    protected renderGitItem(repository: Repository | undefined, change: GitFileChangeNode): React.ReactNode {
         if (!repository) {
             return '';
         }
-        const iconSpan = h.span({ className: change.icon + ' file-icon' });
-        const nameSpan = h.span({ className: 'name' }, change.label + ' ');
-        const pathSpan = h.span({ className: 'path' }, change.description);
-        const nameAndPathDiv = h.div({
-            className: 'noWrapInfo',
-            onclick: () => this.openChange(change)
-        }, iconSpan, nameSpan, pathSpan);
-        const buttonsDiv = this.renderGitItemButtons(repository, change);
-        const staged = change.staged ? 'staged ' : '';
-        const statusDiv = h.div({
-            title: this.getStatusCaption(change.status, change.staged),
-            className: 'status ' + staged + GitFileStatus[change.status].toLowerCase()
-        }, this.getAbbreviatedStatusCaption(change.status, change.staged));
-        const itemButtonsAndStatusDiv = h.div({ className: 'itemButtonsContainer' }, buttonsDiv, statusDiv);
-        return h.div({ className: 'gitItem noselect' }, nameAndPathDiv, itemButtonsAndStatusDiv);
+        return <div className='gitItem noselect' key={change.uri + change.status}>
+            <div className='noWrapInfo' onClick={() => this.openChange(change)}>
+                <span className={change.icon + ' file-icon'}></span>
+                <span className='name'>{change.label + ' '}</span>
+                <span className='path'>{change.description}</span>
+            </div>
+            <div className='itemButtonsContainer'>
+                <div className='buttons'>
+                    {
+                        change.staged ?
+                            <a className='toolbar-button' title='Unstage Changes' onClick={() => this.unstageHandler(repository, change)}>
+                                <i className='fa fa-minus' />
+                            </a> :
+                            <React.Fragment>
+                                <a className='toolbar-button' title='Discard Changes' onClick={() => this.discardHandler(repository, change)}>
+                                    <i className='fa fa-undo' />
+                                </a>
+                                <a className='toolbar-button' title='Stage Changes' onClick={() => this.stageHandler(repository, change)}>
+                                    <i className='fa fa-plus' />
+                                </a>
+                            </React.Fragment>
+                    }
+                </div>
+                <div title={GitFileStatus.toString(change.status, change.staged)}
+                    className={`status ${change.staged ? 'staged ' : ''} ${GitFileStatus[change.status].toLowerCase()}`}>
+                    {GitFileStatus.toAbbreviation(change.status, change.staged)}
+                </div>
+            </div>
+        </div>;
     }
 
-    protected renderChangesHeader(title: string): h.Child {
-        const stagedChangesHeaderDiv = h.div({ className: 'header' }, title);
-        return stagedChangesHeaderDiv;
-    }
-
-    protected renderMergeChanges(repository: Repository | undefined): h.Child | undefined {
-        const mergeChangeDivs: h.Child[] = [];
+    protected renderMergeChanges(repository: Repository | undefined): React.ReactNode | undefined {
         if (this.mergeChanges.length > 0) {
-            this.mergeChanges.forEach(change => {
-                mergeChangeDivs.push(this.renderGitItem(repository, change));
-            });
-            return h.div({
-                id: 'mergeChanges',
-                className: 'changesContainer'
-            }, h.div({ className: 'theia-header' }, 'Merge Changes'), VirtualRenderer.flatten(mergeChangeDivs));
+            return <div id='mergeChanges' className='changesContainer'>
+                <div className='theia-header'>Merge Changes</div>
+                {this.mergeChanges.map(change => this.renderGitItem(repository, change))}
+            </div>;
         } else {
             return undefined;
         }
     }
 
-    protected renderStagedChanges(repository: Repository | undefined): h.Child | undefined {
-        const stagedChangeDivs: h.Child[] = [];
+    protected renderStagedChanges(repository: Repository | undefined): React.ReactNode | undefined {
         if (this.stagedChanges.length > 0) {
-            this.stagedChanges.forEach(change => {
-                stagedChangeDivs.push(this.renderGitItem(repository, change));
-            });
-            return h.div({
-                id: 'stagedChanges',
-                className: 'changesContainer'
-            }, h.div({ className: 'theia-header' }, 'Staged Changes'), VirtualRenderer.flatten(stagedChangeDivs));
+            return <div id='stagedChanges' className='changesContainer'>
+                <div className='theia-header'>
+                    Staged Changes
+            </div>
+                {this.stagedChanges.map(change => this.renderGitItem(repository, change))}
+            </div>;
         } else {
             return undefined;
         }
     }
 
-    protected renderUnstagedChanges(repository: Repository | undefined): h.Child | undefined {
-        const unstagedChangeDivs: h.Child[] = [];
+    protected renderUnstagedChanges(repository: Repository | undefined): React.ReactNode | undefined {
         if (this.unstagedChanges.length > 0) {
-            this.unstagedChanges.forEach(change => {
-                unstagedChangeDivs.push(this.renderGitItem(repository, change));
-            });
-            return h.div({
-                id: 'unstagedChanges',
-                className: 'changesContainer'
-            }, h.div({ className: 'theia-header' }, 'Changed'), VirtualRenderer.flatten(unstagedChangeDivs));
+            return <div id='unstagedChanges' className='changesContainer'>
+                <div className='theia-header'>Changed</div>
+                {this.unstagedChanges.map(change => this.renderGitItem(repository, change))}
+            </div>;
         }
 
         return undefined;
@@ -512,14 +533,6 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
     protected logError(error: any): void {
         const message = error instanceof Error ? error.message : error;
         this.messageService.error(message);
-    }
-
-    protected getStatusCaption(status: GitFileStatus, staged?: boolean): string {
-        return GitFileStatus.toString(status, staged);
-    }
-
-    protected getAbbreviatedStatusCaption(status: GitFileStatus, staged?: boolean): string {
-        return GitFileStatus.toAbbreviation(status, staged);
     }
 
     findChange(uri: URI): GitFileChange | undefined {
@@ -534,10 +547,12 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
         }
         return this.stagedChanges.find(c => c.uri.toString() === stringUri);
     }
+
     async openChange(change: GitFileChange, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
         const changeUri = this.createChangeUri(change);
         return this.editorManager.open(changeUri, options);
     }
+
     protected createChangeUri(change: GitFileChange): URI {
         const changeUri: URI = new URI(change.uri);
         if (change.status !== GitFileStatus.New) {
