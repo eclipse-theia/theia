@@ -341,6 +341,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             return;
         }
         this.toDisposeOnConnect.dispose();
+        this.toDispose.push(this.toDisposeOnConnect);
         this.webSocketConnectionProvider.listen({
             path: `${terminalsPath}/${this.terminalId}`,
             onConnection: connection => {
