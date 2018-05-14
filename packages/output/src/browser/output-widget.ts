@@ -5,10 +5,10 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable } from "inversify";
+import { inject, injectable, postConstruct } from "inversify";
 import { VirtualWidget, VirtualRenderer, Message } from "@theia/core/lib/browser";
 import { VirtualElement, h } from "@phosphor/virtualdom";
-import { OutputChannelManager, OutputChannelImpl } from "../common/output-channel";
+import { OutputChannelManager, OutputChannel } from "../common/output-channel";
 
 import "../../src/browser/style/output.css";
 
@@ -17,20 +17,27 @@ export const OUTPUT_WIDGET_KIND = 'outputView';
 @injectable()
 export class OutputWidget extends VirtualWidget {
 
-    private selectedChannel: OutputChannelImpl;
+    protected selectedChannel: OutputChannel;
 
-    constructor( @inject(OutputChannelManager) protected readonly outputChannelManager: OutputChannelManager) {
+    @inject(OutputChannelManager)
+    protected readonly outputChannelManager: OutputChannelManager;
+
+    constructor() {
         super();
         this.id = OUTPUT_WIDGET_KIND;
         this.title.label = 'Output';
         this.title.iconClass = 'fa fa-flag';
         this.title.closable = true;
         this.addClass('theia-output');
-        outputChannelManager.getChannels().forEach(this.registerListener.bind(this));
-        outputChannelManager.onChannelAdded(channel => {
+    }
+
+    @postConstruct()
+    protected init(): void {
+        this.outputChannelManager.getChannels().forEach(this.registerListener.bind(this));
+        this.toDispose.push(this.outputChannelManager.onChannelAdded(channel => {
             this.registerListener(channel);
             this.update();
-        });
+        }));
         this.update();
     }
 
@@ -44,15 +51,15 @@ export class OutputWidget extends VirtualWidget {
         }
     }
 
-    protected registerListener(outputChannel: OutputChannelImpl) {
+    protected registerListener(outputChannel: OutputChannel): void {
         if (!this.selectedChannel) {
             this.selectedChannel = outputChannel;
         }
-        outputChannel.onContentChange(c => {
+        this.toDispose.push(outputChannel.onContentChange(c => {
             if (outputChannel === this.selectedChannel) {
                 this.update();
             }
-        });
+        }));
     }
 
     render(): VirtualElement[] {
@@ -106,7 +113,7 @@ export class OutputWidget extends VirtualWidget {
         }, VirtualRenderer.flatten(channelOptionElements));
     }
 
-    protected onUpdateRequest(msg: Message) {
+    protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         setTimeout(() => {
             const div = document.getElementById(this.OUTPUT_CONTENTS_ID) as HTMLDivElement;
