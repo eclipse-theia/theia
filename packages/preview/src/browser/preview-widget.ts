@@ -53,6 +53,9 @@ export class PreviewWidget extends BaseWidget {
         this.title.caption = this.title.label;
         this.title.closable = true;
 
+        this.toDispose.push(this.onDidScrollEmitter);
+        this.toDispose.push(this.onDidDoubleClickEmitter);
+
         this.addClass(PREVIEW_WIDGET_CLASS);
         this.node.tabIndex = 0;
         const previewHandler = this.previewHandler = this.previewHandlerProvider.findContribution(this.uri)[0];
@@ -84,17 +87,21 @@ export class PreviewWidget extends BaseWidget {
         this.toDispose.push(this.workspace.onDidChangeTextDocument(params => updateIfAffected(params.textDocument.uri)));
         this.toDispose.push(this.workspace.onDidCloseTextDocument(document => updateIfAffected(document.uri)));
         this.toDispose.push(ThemeService.get().onThemeChange(() => this.update()));
-        this.startScrollSync();
-        this.startDoubleClickListener();
         this.firstUpdate = () => {
             this.revealFragment(this.uri);
         };
         this.update();
     }
 
+    protected onBeforeAttach(msg: Message): void {
+        super.onBeforeAttach(msg);
+        this.startScrollSync();
+        this.startDoubleClickListener();
+    }
+
     protected preventScrollNotification: boolean = false;
     protected startScrollSync(): void {
-        this.node.addEventListener('scroll', throttle(50, (event: UIEvent) => {
+        this.addEventListener(this.node, 'scroll', throttle(50, (event: UIEvent) => {
             if (this.preventScrollNotification) {
                 return;
             }
@@ -104,7 +111,7 @@ export class PreviewWidget extends BaseWidget {
     }
 
     protected startDoubleClickListener(): void {
-        this.node.addEventListener('dblclick', (event: MouseEvent) => {
+        this.addEventListener(this.node, 'dblclick', (event: MouseEvent) => {
             if (!(event.target instanceof HTMLElement)) {
                 return;
             }
