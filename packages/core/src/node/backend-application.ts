@@ -43,11 +43,11 @@ export class BackendApplicationCliContribution implements CliContribution {
     certkey: string | undefined;
 
     configure(conf: yargs.Argv): void {
-        yargs.option('port', { alias: 'p', description: 'The port the backend server listens on.', type: 'number', default: defaultPort });
-        yargs.option('hostname', { description: 'The allowed hostname for connections.', type: 'string', default: defaultHost });
-        yargs.option('ssl', { description: 'Use SSL (HTTPS), cert and certkey must also be set', type: 'boolean', default: defaultSSL });
-        yargs.option('cert', { description: 'Path to SSL certificate.', type: 'string' });
-        yargs.option('certkey', { description: 'Path to SSL certificate key.', type: 'string' });
+        conf.option('port', { alias: 'p', description: 'The port the backend server listens on.', type: 'number', default: defaultPort });
+        conf.option('hostname', { description: 'The allowed hostname for connections.', type: 'string', default: defaultHost });
+        conf.option('ssl', { description: 'Use SSL (HTTPS), cert and certkey must also be set', type: 'boolean', default: defaultSSL });
+        conf.option('cert', { description: 'Path to SSL certificate.', type: 'string' });
+        conf.option('certkey', { description: 'Path to SSL certificate key.', type: 'string' });
     }
 
     setArguments(args: yargs.Arguments): void {
