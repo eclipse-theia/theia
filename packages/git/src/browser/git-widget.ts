@@ -72,9 +72,9 @@ export class GitWidget extends VirtualWidget {
 
     @postConstruct()
     protected init() {
-        this.repositoryProvider.onDidChangeRepository(repository => {
-            this.initialize(repository);
-        });
+        this.toDispose.push(this.repositoryProvider.onDidChangeRepository(repository =>
+            this.initialize(repository)
+        ));
         this.initialize(this.repositoryProvider.selectedRepository);
         this.update();
     }
