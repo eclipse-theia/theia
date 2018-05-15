@@ -57,12 +57,15 @@ export class MonacoQuickOpenService extends QuickOpenService {
             return this._widget;
         }
         this._widget = new monaco.quickOpen.QuickOpenWidget(this.container, {
-            onOk: () => this.onClose(false),
+            onOk: () => {
+                this.previousActiveElement = undefined;
+                this.onClose(false);
+            },
             onCancel: () => {
                 if (this.previousActiveElement instanceof HTMLElement) {
                     this.previousActiveElement.focus();
-                    this.previousActiveElement = undefined;
                 }
+                this.previousActiveElement = undefined;
                 this.onClose(true);
             },
             onType: lookFor => this.onType(lookFor || ''),

@@ -25,7 +25,6 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
 
     protected ids: string[] = [];
     protected symbolList: NodeAndSymbol[] = [];
-    protected readonly toDispose = new DisposableCollection();
     protected readonly outlineSymbolInformations: MonacoOutlineSymbolInformationNode[];
     protected cancellationSource: CancellationTokenSource;
 
@@ -73,23 +72,19 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         }
     }
 
+    protected readonly toDisposeOnEditor = new DisposableCollection();
     protected async updateOutlineForEditor(editor: EditorWidget | undefined) {
+        this.toDisposeOnEditor.dispose();
         if (editor) {
-            const model = this.getModel(editor);
+            const monacoEditor = MonacoEditor.get(editor);
+            const model = monacoEditor!.getControl().getModel();
+            this.toDisposeOnEditor.push(model.onDidChangeContent(async ev => {
+                this.publish(await this.computeSymbolInformations(model));
+            }));
             this.publish(await this.computeSymbolInformations(model));
         } else {
             this.publish([]);
         }
-    }
-
-    protected getModel(editor: EditorWidget): monaco.editor.IModel {
-        const monacoEditor = MonacoEditor.get(editor);
-        const model = monacoEditor!.getControl().getModel();
-        this.toDispose.dispose();
-        this.toDispose.push(model.onDidChangeContent(async ev => {
-            this.publish(await this.computeSymbolInformations(model));
-        }));
-        return model;
     }
 
     protected async computeSymbolInformations(model: monaco.editor.IModel): Promise<SymbolInformation[]> {
