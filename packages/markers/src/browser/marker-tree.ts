@@ -28,7 +28,7 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
     ) {
         super();
 
-        markerManager.onDidChangeMarkers(() => this.refresh());
+        this.toDispose.push(markerManager.onDidChangeMarkers(() => this.refresh()));
 
         this.root = <MarkerRootNode>{
             visible: false,
