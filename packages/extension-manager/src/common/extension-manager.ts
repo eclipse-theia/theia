@@ -30,12 +30,17 @@ export class Extension extends protocol.Extension implements Disposable {
         super();
         Object.assign(this, extension);
         this.toDispose.push(this.onDidChangedEmitter);
+
+        manager.onDidChange.maxListeners = manager.onDidChange.maxListeners + 1;
         this.toDispose.push(manager.onDidChange(change => {
             if (change.name === this.name) {
                 Object.assign(this, change);
                 this.onDidChangedEmitter.fire(change);
             }
         }));
+        this.toDispose.push(Disposable.create(() =>
+            manager.onDidChange.maxListeners = manager.onDidChange.maxListeners - 1)
+        );
     }
 
     dispose(): void {
