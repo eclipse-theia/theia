@@ -7,7 +7,16 @@
 
 import URI from "@theia/core/lib/common/uri";
 
-export const HostedPluginUriPostProcessor = Symbol('HostedPluginUriPostProcessor');
+// We export symbol name instead of symbol itself here because we need to provide
+// a contribution point to which any extensions could contribute.
+// In case of just symbols, symbol inside an extension won't be the same as here
+// even if the extension imports this module.
+// To solve this problem we should provide global symbol. So right way to use the contribution point is:
+// ...
+// bind(Symbol.for(HostedPluginUriPostProcessorSymbolName)).to(AContribution);
+// ...
+export const HostedPluginUriPostProcessorSymbolName = 'HostedPluginUriPostProcessor';
+
 export interface HostedPluginUriPostProcessor {
     processUri(uri: URI): Promise<URI>;
 }

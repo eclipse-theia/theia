@@ -7,7 +7,7 @@
 
 import { bindContributionProvider } from "@theia/core/lib/common/contribution-provider";
 import { HostedPluginManager, NodeHostedPluginRunner } from './hosted-plugin-manager';
-import { HostedPluginUriPostProcessor } from "./hosted-plugin-uri-postprocessor";
+import { HostedPluginUriPostProcessorSymbolName } from "./hosted-plugin-uri-postprocessor";
 import { interfaces } from "inversify";
 import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common/messaging";
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
@@ -41,6 +41,6 @@ export function bindCommonHostedBackend(bind: interfaces.Bind): void {
 
 export function bindHostedBackend(bind: interfaces.Bind): void {
     bind(HostedPluginManager).to(NodeHostedPluginRunner).inSingletonScope();
-    bindContributionProvider(bind, HostedPluginUriPostProcessor);
+    bindContributionProvider(bind, Symbol.for(HostedPluginUriPostProcessorSymbolName));
     bindCommonHostedBackend(bind);
 }

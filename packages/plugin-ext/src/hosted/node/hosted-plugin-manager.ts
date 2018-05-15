@@ -11,7 +11,7 @@ import * as fs from "fs";
 import * as net from "net";
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider } from "@theia/core/lib/common/contribution-provider";
-import { HostedPluginUriPostProcessor } from "./hosted-plugin-uri-postprocessor";
+import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } from "./hosted-plugin-uri-postprocessor";
 
 export const HostedPluginManager = Symbol('HostedPluginManager');
 
@@ -198,7 +198,7 @@ export abstract class AbstractHostedPluginManager implements HostedPluginManager
 
 @injectable()
 export class NodeHostedPluginRunner extends AbstractHostedPluginManager {
-    @inject(ContributionProvider) @named(HostedPluginUriPostProcessor)
+    @inject(ContributionProvider) @named(Symbol.for(HostedPluginUriPostProcessorSymbolName))
     protected readonly uriPostProcessors: ContributionProvider<HostedPluginUriPostProcessor>;
 
     protected async postProcessInstanceUri(uri: URI): Promise<URI> {
