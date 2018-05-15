@@ -10,9 +10,9 @@ import * as path from 'path';
 import { FileSearchServiceImpl } from './file-search-service-impl';
 import { FileUri } from '@theia/core/lib/node';
 import { Container, ContainerModule } from 'inversify';
+import { CancellationTokenSource } from '@theia/core';
 import { loggerBackendModule } from '@theia/core/lib/node/logger-backend-module';
 import processBackendModule from '@theia/process/lib/node/process-backend-module';
-import { CancellationTokenSource } from 'vscode-ws-jsonrpc/lib';
 
 // tslint:disable:no-unused-expression
 
