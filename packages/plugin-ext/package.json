@@ -46,6 +46,7 @@
   },
   "devDependencies": {
     "@theia/ext-scripts": "^0.3.10",
+    "@theia/plugin": "^0.3.10",
     "@types/decompress": "^4.2.2"
   },
   "nyc": {
