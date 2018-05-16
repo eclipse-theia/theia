@@ -84,4 +84,23 @@ describe('reference', () => {
         assert.deepEqual(references.keys(), []);
     });
 
+    it("shouldn't call onWillDispose event on create", async () => {
+        const expectation: { disposed: boolean } = { disposed: false };
+        const references = new ReferenceCollection<string, Disposable>(key => ({
+            key, dispose: () => {
+            }
+        }));
+        assert.ok(!references.has("a"));
+        assert.ok(!expectation.disposed);
+        references.onWillDispose(e => {
+            expectation.disposed = true;
+        });
+        await references.acquire("a");
+        assert.ok(!expectation.disposed);
+
+        const reference = await references.acquire("a");
+        reference.object.dispose();
+        assert.ok(expectation.disposed);
+    });
+
 });

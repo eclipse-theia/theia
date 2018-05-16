@@ -23,7 +23,7 @@ export class ReferenceCollection<K, V extends Disposable> implements Disposable 
     readonly onDidCreate: Event<V> = this.onDidCreateEmitter.event;
 
     protected readonly onWillDisposeEmitter = new Emitter<V>();
-    readonly onWillDispose: Event<V> = this.onDidCreateEmitter.event;
+    readonly onWillDispose: Event<V> = this.onWillDisposeEmitter.event;
 
     protected readonly toDispose = new DisposableCollection();
 
