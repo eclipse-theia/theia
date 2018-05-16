@@ -111,7 +111,7 @@ export class BaseWidget extends Widget {
     protected addKeyListener<K extends keyof HTMLElementEventMap>(
         element: HTMLElement,
         keysOrKeyCodes: KeyCode.Predicate | KeysOrKeyCodes,
-        action: (event: KeyboardEvent) => void, ...additionalEventTypes: K[]): void {
+        action: (event: KeyboardEvent) => boolean | void | Object, ...additionalEventTypes: K[]): void {
         this.toDisposeOnDetach.push(addKeyListener(element, keysOrKeyCodes, action, ...additionalEventTypes));
     }
 
@@ -158,7 +158,7 @@ export function addEventListener<K extends keyof HTMLElementEventMap>(
 export function addKeyListener<K extends keyof HTMLElementEventMap>(
     element: HTMLElement,
     keysOrKeyCodes: KeyCode.Predicate | KeysOrKeyCodes,
-    action: (event: KeyboardEvent) => void, ...additionalEventTypes: K[]): Disposable {
+    action: (event: KeyboardEvent) => boolean | void | Object, ...additionalEventTypes: K[]): Disposable {
 
     const toDispose = new DisposableCollection();
     const keyCodePredicate = (() => {
@@ -171,18 +171,22 @@ export function addKeyListener<K extends keyof HTMLElementEventMap>(
     toDispose.push(addEventListener(element, 'keydown', e => {
         const kc = KeyCode.createKeyCode(e);
         if (keyCodePredicate(kc)) {
-            action(e);
-            e.stopPropagation();
-            e.preventDefault();
+            const result = action(e);
+            if (typeof result !== 'boolean' || result) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
         }
     }));
     for (const type of additionalEventTypes) {
         toDispose.push(addEventListener(element, type, e => {
             // tslint:disable-next-line:no-any
             const event = (type as any)['keydown'];
-            action(event);
-            e.stopPropagation();
-            e.preventDefault();
+            const result = action(event);
+            if (typeof result !== 'boolean' || result) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
         }));
     }
     return toDispose;

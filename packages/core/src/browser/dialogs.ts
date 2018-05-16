@@ -103,8 +103,19 @@ export abstract class AbstractDialog<T> extends BaseWidget {
             this.addAcceptAction(this.acceptButton, 'click');
         }
         this.addCloseAction(this.closeCrossNode, 'click');
-        this.addKeyListener(document.body, Key.ESCAPE, () => this.close());
-        this.addKeyListener(document.body, Key.ENTER, () => this.accept());
+        this.addKeyListener(document.body, Key.ESCAPE, e => this.handleEscape(e));
+        this.addKeyListener(document.body, Key.ENTER, e => this.handleEnter(e));
+    }
+
+    protected handleEscape(event: KeyboardEvent): boolean | void {
+        this.close();
+    }
+
+    protected handleEnter(event: KeyboardEvent): boolean | void {
+        if (event.target instanceof HTMLTextAreaElement) {
+            return false;
+        }
+        this.accept();
     }
 
     protected onActivateRequest(msg: Message): void {
