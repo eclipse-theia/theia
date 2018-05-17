@@ -5,7 +5,6 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable } from 'inversify';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { debounce } from 'throttle-debounce';
@@ -13,8 +12,7 @@ import { debounce } from 'throttle-debounce';
 /**
  * Options for the search term debounce.
  */
-@injectable()
-export class SearchBoxDebounceOptions {
+export interface SearchBoxDebounceOptions {
 
     /**
      * The delay (in milliseconds) before the debounce notifies clients about its content change.
@@ -37,7 +35,6 @@ export namespace SearchBoxDebounceOptions {
 /**
  * It notifies the clients, once if the underlying search term has changed after a given amount of delay.
  */
-@injectable()
 export class SearchBoxDebounce implements Disposable {
 
     protected readonly disposables = new DisposableCollection();
@@ -46,7 +43,7 @@ export class SearchBoxDebounce implements Disposable {
 
     protected state: string | undefined;
 
-    constructor(@inject(SearchBoxDebounceOptions) protected readonly options: SearchBoxDebounceOptions) {
+    constructor(protected readonly options: SearchBoxDebounceOptions) {
         this.disposables.push(this.emitter);
         this.handler = debounce(this.options.delay, () => this.fireChanged(this.state)).bind(this);
     }
