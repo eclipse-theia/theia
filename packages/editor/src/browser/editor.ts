@@ -55,6 +55,11 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
     selection: Range;
     readonly onSelectionChanged: Event<Range>;
 
+    /**
+     * Get a unique id for this editor instance
+     */
+    getId(): string;
+
     focus(): void;
     blur(): void;
     isFocused(): boolean;
