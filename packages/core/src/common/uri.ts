@@ -176,4 +176,16 @@ export default class URI {
         return this.codeUri.toString(skipEncoding);
     }
 
+    static revive(data: UriComponents): URI {
+        return new URI(Uri.revive(data));
+    }
+
+}
+
+export interface UriComponents {
+    scheme?: string;
+    authority?: string;
+    path?: string;
+    query?: string;
+    fragment?: string;
 }

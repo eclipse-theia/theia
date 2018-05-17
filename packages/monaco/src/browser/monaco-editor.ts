@@ -152,6 +152,14 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         return this.onSelectionChangedEmitter.event;
     }
 
+    getId(): string {
+        return this.editor.getId();
+    }
+
+    getModel(): monaco.editor.IModel {
+        return this.editor.getModel();
+    }
+
     revealPosition(raw: Position, options: RevealPositionOptions = { vertical: 'center' }): void {
         const position = this.p2m.asPosition(raw);
         switch (options.vertical) {

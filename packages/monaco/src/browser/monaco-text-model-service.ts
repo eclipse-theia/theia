@@ -43,6 +43,10 @@ export class MonacoTextModelService implements monaco.editor.ITextModelService {
         return this._models.onDidCreate;
     }
 
+    get onWillDispose(): Event<MonacoEditorModel> {
+        return this._models.onWillDispose;
+    }
+
     createModelReference(raw: monaco.Uri | URI): monaco.Promise<monaco.editor.IReference<MonacoEditorModel>> {
         return monaco.Promise.wrap(this._models.acquire(raw.toString()));
     }
