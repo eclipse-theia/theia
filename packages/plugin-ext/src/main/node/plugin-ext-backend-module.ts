@@ -15,6 +15,7 @@ import { LocalDirectoryPluginDeployerResolver } from "./resolvers/plugin-local-d
 import { PluginTheiaFileHandler } from "./handlers/plugin-theia-file-handler";
 import { PluginTheiaDirectoryHandler } from "./handlers/plugin-theia-directory-handler";
 import { GithubPluginDeployerResolver } from "./plugin-github-resolver";
+import { HttpPluginDeployerResolver } from "./plugin-http-resolver";
 
 export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();
@@ -26,6 +27,8 @@ export function bindMainBackend(bind: interfaces.Bind): void {
 
     bind(PluginDeployerResolver).to(LocalDirectoryPluginDeployerResolver).inSingletonScope();
     bind(PluginDeployerResolver).to(GithubPluginDeployerResolver).inSingletonScope();
+    bind(PluginDeployerResolver).to(HttpPluginDeployerResolver).inSingletonScope();
+
     bind(PluginDeployerFileHandler).to(PluginTheiaFileHandler).inSingletonScope();
     bind(PluginDeployerDirectoryHandler).to(PluginTheiaDirectoryHandler).inSingletonScope();
 }
