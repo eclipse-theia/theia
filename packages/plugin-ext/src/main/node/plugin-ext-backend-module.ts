@@ -14,6 +14,7 @@ import { PluginDeployerImpl } from "./plugin-deployer-impl";
 import { LocalDirectoryPluginDeployerResolver } from "./resolvers/plugin-local-dir-resolver";
 import { PluginTheiaFileHandler } from "./handlers/plugin-theia-file-handler";
 import { PluginTheiaDirectoryHandler } from "./handlers/plugin-theia-directory-handler";
+import { GithubPluginDeployerResolver } from "./plugin-github-resolver";
 
 export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();
@@ -24,6 +25,7 @@ export function bindMainBackend(bind: interfaces.Bind): void {
     bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(PluginDeployerContribution)).inSingletonScope();
 
     bind(PluginDeployerResolver).to(LocalDirectoryPluginDeployerResolver).inSingletonScope();
+    bind(PluginDeployerResolver).to(GithubPluginDeployerResolver).inSingletonScope();
     bind(PluginDeployerFileHandler).to(PluginTheiaFileHandler).inSingletonScope();
     bind(PluginDeployerDirectoryHandler).to(PluginTheiaDirectoryHandler).inSingletonScope();
 }
