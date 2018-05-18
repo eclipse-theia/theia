@@ -134,7 +134,7 @@ export class BunyanLoggerServer implements ILoggerServer {
     }
 
     /* Log a message to a logger.  */
-    log(name: string, logLevel: number, message: string, params: any[]): Promise<void> {
+    log(name: string, logLevel: number, message: any, params: any[]): Promise<void> {
         const logger = this.loggers.get(name);
         if (logger === undefined) {
             throw new Error(`No logger named ${name}.`);
