@@ -15,22 +15,20 @@ export interface SelectionProvider<T> {
 }
 
 @injectable()
-export class SelectionService implements SelectionProvider<any> {
+export class SelectionService implements SelectionProvider<Object | undefined> {
 
-    private currentSelection: any;
-    private selectionListeners: Emitter<any> = new Emitter();
+    private currentSelection: Object | undefined;
 
-    get selection(): any {
+    protected readonly onSelectionChangedEmitter = new Emitter<any>();
+    readonly onSelectionChanged: Event<any> = this.onSelectionChangedEmitter.event;
+
+    get selection(): Object | undefined {
         return this.currentSelection;
     }
 
-    set selection(selection: any) {
+    set selection(selection: Object | undefined) {
         this.currentSelection = selection;
-        this.selectionListeners.fire(this.currentSelection);
-    }
-
-    get onSelectionChanged(): Event<any> {
-        return this.selectionListeners.event;
+        this.onSelectionChangedEmitter.fire(this.currentSelection);
     }
 
 }

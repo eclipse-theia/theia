@@ -13,17 +13,29 @@ export interface UriSelection {
 
 export namespace UriSelection {
 
-    // tslint:disable-next-line:no-any
-    export function is(arg: any): arg is UriSelection {
-        return !!arg && arg['uri'] instanceof URI;
+    export function is(arg: Object | undefined): arg is UriSelection {
+        // tslint:disable-next-line:no-any
+        return typeof arg === 'object' && ('uri' in arg) && (<any>arg)['uri'] instanceof URI;
     }
 
-    // tslint:disable-next-line:no-any
-    export function getUri(selection: any): URI | undefined {
-        if (UriSelection.is(selection)) {
+    export function getUri(selection: Object | undefined): URI | undefined {
+        if (is(selection)) {
             return selection.uri;
         }
+        if (Array.isArray(selection) && is(selection[0])) {
+            return selection[0].uri;
+        }
         return undefined;
+    }
+
+    export function getUris(selection: Object | undefined): URI[] {
+        if (is(selection)) {
+            return [selection.uri];
+        }
+        if (Array.isArray(selection)) {
+            return selection.filter(is).map(s => s.uri);
+        }
+        return [];
     }
 
 }

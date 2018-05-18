@@ -72,29 +72,14 @@ export class UriAwareCommandHandler<T extends MaybeArray<URI>> implements Comman
             return this.isMulti() ? [args[0]] : args[0];
         }
         const { selection } = this.selectionService;
-        if (UriSelection.is(selection)) {
-            return (this.isMulti() ? [selection.uri] : selection.uri) as T;
+        if (!this.isMulti()) {
+            return UriSelection.getUri(selection) as T;
         }
-        if (Array.isArray(selection)) {
-            if (this.isMulti()) {
-                const uris: URI[] = [];
-                for (const item of selection) {
-                    if (UriSelection.is(item)) {
-                        uris.push(item.uri);
-                    }
-                }
-                if (this.options && this.options.isValid) {
-                    return (this.options.isValid(uris) ? uris : undefined) as T;
-                }
-                return uris as T;
-            } else if (selection.length === 1) {
-                const firstItem = selection[0];
-                if (UriSelection.is(firstItem)) {
-                    return firstItem.uri as T;
-                }
-            }
+        const uris = UriSelection.getUris(selection);
+        if (this.options && this.options.isValid) {
+            return (this.options.isValid(uris) ? uris : undefined) as T;
         }
-        return undefined;
+        return uris as T;
     }
 
     // tslint:disable-next-line:no-any
