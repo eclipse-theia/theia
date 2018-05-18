@@ -41,15 +41,15 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         this.title.iconClass = 'fa fa-arrow-circle-down';
         this.title.closable = true;
         this.addClass(HIERARCHY_TREE_CLASS);
-        this.model.onSelectionChanged(selection => {
+        this.toDispose.push(this.model.onSelectionChanged(selection => {
             const node = selection[0];
             if (node) {
                 this.openEditor(node, true);
             }
-        });
-        this.model.onOpenNode((node: TreeNode) => {
+        }));
+        this.toDispose.push(this.model.onOpenNode((node: TreeNode) => {
             this.openEditor(node, false);
-        });
+        }));
     }
 
     initializeModel(selection: Location | undefined, languageId: string | undefined): void {
