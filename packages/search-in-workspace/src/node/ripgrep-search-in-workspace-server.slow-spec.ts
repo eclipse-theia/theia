@@ -124,7 +124,11 @@ beforeEach(() => {
 });
 
 after(() => {
-    track.cleanupSync();
+    try {
+        track.cleanupSync();
+    } catch (ex) {
+        console.log("Couldn't cleanup search-in-workspace temp directory.", ex);
+    }
 });
 
 // Compare expected and actual search results.
