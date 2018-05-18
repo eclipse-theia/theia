@@ -6,7 +6,7 @@
  */
 
 import { inject, injectable } from "inversify";
-import { SelectionService } from '@theia/core/lib/common';
+import { SelectionService, UriSelection } from '@theia/core/lib/common';
 import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
 import URI from "@theia/core/lib/common/uri";
 import { open, OpenerService } from '@theia/core/lib/browser';
@@ -55,7 +55,11 @@ export class CppCommandContribution implements CommandContribution {
     }
 
     protected switchSourceHeader(): void {
-        const docIdentifier = TextDocumentIdentifier.create(this.selectionService.selection.uri.toString());
+        const uri = UriSelection.getUri(this.selectionService.selection);
+        if (!uri) {
+            return;
+        }
+        const docIdentifier = TextDocumentIdentifier.create(uri.toString());
         this.clientContribution.languageClient.then(languageClient => {
             languageClient.sendRequest(SwitchSourceHeaderRequest.type, docIdentifier).then(sourceUri => {
                 if (sourceUri !== undefined) {
