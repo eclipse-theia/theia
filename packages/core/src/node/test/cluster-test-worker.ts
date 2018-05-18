@@ -15,9 +15,9 @@ const jobs: { [id: string]: (() => Promise<void>) | undefined } = {
         try {
             await server.restart();
             firstRestartFailed = false;
-        } catch (e) {
-            if ((e as Error).message.indexOf('failed to restart') === -1) {
-                throw e;
+        } catch (error) {
+            if (!/failed to start/.test(error.message)) {
+                throw error;
             }
         }
         if (firstRestartFailed) {
