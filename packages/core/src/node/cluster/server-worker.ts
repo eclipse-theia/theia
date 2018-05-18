@@ -19,7 +19,7 @@ export class ServerWorker {
     readonly listening: Promise<cluster.Address>;
     readonly initialized: Promise<void>;
     readonly disconnect: Promise<void>;
-    readonly exit: Promise<string>;
+    readonly exit: Promise<number>;
 
     constructor(restart: () => Promise<void>) {
         let onDidInitialize: () => void = () => { };

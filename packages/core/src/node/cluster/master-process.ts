@@ -8,27 +8,55 @@
 import { EventEmitter } from 'events';
 import { ServerWorker } from './server-worker';
 
-export type MasterProcessEvent = 'started' | 'restarted' | 'restarting' | 'exit';
+class ProcessError extends Error {
+    returnCode: number = 1;
+}
+
+export type MasterProcessEvent = 'started' | 'restarted' | 'restarting';
 export class MasterProcess extends EventEmitter {
 
     protected serverWorker: ServerWorker | undefined;
+    protected workerCount: number = 0;
 
-    protected fork(): ServerWorker {
+    protected async fork(): Promise<ServerWorker> {
         const worker = new ServerWorker(() => this.restart());
-        worker.exit.then(() => this.emit('exit', worker));
+        const success = worker.initialized.then(() => true);
+
+        const failure = Promise.race(
+            [worker.failed, worker.disconnect, worker.exit, this.timeout(5000)]
+        ).then(() => false);
+        const started = await Promise.race([success, failure]);
+
+        // Failure
+        if (!started) {
+            const error = new ProcessError(`Server worker failed to start.`);
+            console.error(error.message);
+
+            worker.stop();
+            error.returnCode = await worker.exit;
+            throw error;
+        }
+
+        // Success
+        this.workerCount++;
+        worker.exit.then(code => {
+            if (--this.workerCount === 0) {
+                super.emit('exit', code);
+            }
+        });
         return worker;
     }
 
-    start(): ServerWorker {
+    async start(): Promise<ServerWorker> {
         if (this.serverWorker) {
             throw new Error('Server worker is already running.');
         }
-        this.serverWorker = this.fork();
+        this.serverWorker = await this.fork();
         this.emit('started', this.serverWorker);
         return this.serverWorker;
     }
     get started(): Promise<ServerWorker> {
-        return new Promise(resolve => this.on('started', resolve));
+        return new Promise(resolve => this.once('started', resolve));
     }
 
     async restart(): Promise<void> {
@@ -38,20 +66,10 @@ export class MasterProcess extends EventEmitter {
         this.emit('restarting', this.serverWorker);
         console.log(`Restarting the server worker is requested.`);
 
-        const serverWorker = this.fork();
-        const success = serverWorker.initialized.then(() => true);
+        // Will throw if a problem is encountered at startup
+        const newServerWorker = await this.fork();
 
-        const failure = Promise.race(
-            [serverWorker.failed, serverWorker.disconnect, serverWorker.exit, this.timeout(5000)]
-        ).then(() => false);
-        const restarted = await Promise.race([success, failure]);
-        if (!restarted) {
-            serverWorker.stop();
-            const message = `Server worker failed to restart.`;
-            console.error(message);
-            throw new Error(message);
-        }
-        this.serverWorker = serverWorker;
+        this.serverWorker = newServerWorker;
         console.log(`Server worker has been restarted.`);
         this.emit('restarted', this.serverWorker);
     }
@@ -67,6 +85,10 @@ export class MasterProcess extends EventEmitter {
         const timeout = new Promise<void>(resolve => resolveTimeout = resolve);
         setTimeout(() => resolveTimeout(), delay);
         return timeout;
+    }
+
+    onexit(listener: (code: number) => void): this {
+        return super.on('exit', listener);
     }
 
     on(event: MasterProcessEvent, listener: (worker: ServerWorker) => void): this {

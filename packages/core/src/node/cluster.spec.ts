@@ -50,7 +50,7 @@ describe('master-process', () => {
         const master = new MasterProcess();
 
         prepareTestWorker('restart');
-        const restartWorker = master.start();
+        const restartWorker = await master.start();
 
         prepareTestWorker('timeout next worker');
         await master.restarting;
