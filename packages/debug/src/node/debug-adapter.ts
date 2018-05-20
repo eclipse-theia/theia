@@ -16,23 +16,21 @@
 
 // Some entities copied and modified from https://github.com/Microsoft/vscode-debugadapter-node/blob/master/adapter/src/protocol.ts
 
-import * as http from 'http';
-import * as https from 'https';
+import * as WebSocket from 'ws';
 import { injectable, inject } from "inversify";
-import { openJsonRpcSocket, BackendApplicationContribution } from "@theia/core/lib/node";
-import { ILogger, DisposableCollection, Disposable } from "@theia/core";
+import { ILogger, DisposableCollection } from "@theia/core";
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import {
     DebugAdapterExecutable,
-    DebugAdapterPath,
     CommunicationProvider,
+    DebugAdapterPath,
 } from "../common/debug-model";
 import {
     RawProcessFactory,
     ProcessManager,
     RawProcess
 } from "@theia/process/lib/node";
-import { IWebSocket } from 'vscode-ws-jsonrpc/lib';
+import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 
 /**
  * DebugAdapterSession symbol for DI.
@@ -42,23 +40,27 @@ export const DebugAdapterSession = Symbol('DebugAdapterSession');
 /**
  * The debug adapter session.
  */
-export interface DebugAdapterSession extends Disposable {
+export interface DebugAdapterSession {
     id: string;
     executable: DebugAdapterExecutable;
 
     start(): Promise<void>
+    stop(): Promise<void>
 }
 
+/**
+ * The container for [Messaging Service](#MessagingService).
+ */
 @injectable()
-export class ServerContainer implements BackendApplicationContribution {
-    protected server = new Deferred<http.Server | https.Server>();
+export class MessagingServiceContainer implements MessagingService.Contribution {
+    protected service = new Deferred<MessagingService>();
 
-    onStart(server: http.Server | https.Server): void {
-        this.server.resolve(server);
+    getService(): Promise<MessagingService> {
+        return this.service.promise;
     }
 
-    getServer(): Promise<http.Server | https.Server> {
-        return this.server.promise;
+    configure(service: MessagingService): void {
+        this.service.resolve(service);
     }
 }
 
@@ -75,6 +77,7 @@ export class DebugAdapterFactory {
 
     start(executable: DebugAdapterExecutable): CommunicationProvider {
         const process = this.spawnProcess(executable);
+
         return {
             input: process.input,
             output: process.output,
@@ -100,23 +103,23 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
     id: string;
     executable: DebugAdapterExecutable;
 
-    @inject(DebugAdapterFactory)
-    protected readonly adapterFactory: DebugAdapterFactory;
-    @inject(ILogger)
-    protected readonly logger: ILogger;
-    @inject(ServerContainer)
-    protected readonly serverContainer: ServerContainer;
-
     protected readonly toDispose = new DisposableCollection();
 
     private static TWO_CRLF = '\r\n\r\n';
 
     private communicationProvider: CommunicationProvider;
-    private socket: IWebSocket;
+    private ws: WebSocket;
     private contentLength: number;
     private buffer: Buffer;
 
-    constructor() {
+    constructor(
+        @inject(DebugAdapterFactory)
+        protected readonly adapterFactory: DebugAdapterFactory,
+        @inject(ILogger)
+        protected readonly logger: ILogger,
+        @inject(MessagingServiceContainer)
+        protected readonly messagingServiceContainer: MessagingServiceContainer) {
+
         this.contentLength = -1;
         this.buffer = new Buffer(0);
     }
@@ -126,15 +129,18 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
         this.toDispose.push(this.communicationProvider);
 
         const path = DebugAdapterPath + "/" + this.id;
-        this.serverContainer.getServer().then(server => {
-            openJsonRpcSocket({ server, path }, socket => {
-                this.toDispose.push(socket);
-                this.socket = socket;
 
+        this.messagingServiceContainer.getService().then(service => {
+            service.ws(path, (params: MessagingService.PathParams, ws: WebSocket) => {
+                this.toDispose.push({
+                    dispose: () => ws.close()
+                });
+
+                this.ws = ws;
                 this.communicationProvider.output.on('data', (data: Buffer) => this.handleData(data));
-                this.communicationProvider.output.on('close', () => this.proceedEvent('close'));
-
-                this.socket.onMessage((data: string) => this.proceedRequest(data));
+                this.communicationProvider.output.on('close', () => this.proceedEvent("terminated"));
+                this.communicationProvider.input.on('error', (error) => this.logger.error(error));
+                ws.on('message', (message: string) => this.proceedRequest(message));
             });
         });
 
@@ -182,12 +188,12 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
             body: body
         });
         this.logger.debug(`event: ${message}`);
-        this.socket.send(message);
+        this.ws.send(message);
     }
 
     protected proceedResponse(message: string): void {
         this.logger.debug(`DAP response: ${message}`);
-        this.socket.send(message);
+        this.ws.send(message);
     }
 
     protected proceedRequest(message: string): void {
@@ -195,7 +201,8 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
         this.communicationProvider.input.write(`Content-Length: ${Buffer.byteLength(message, 'utf8')}\r\n\r\n${message}`, 'utf8');
     }
 
-    dispose(): void {
+    stop(): Promise<void> {
         this.toDispose.dispose();
+        return Promise.resolve();
     }
 }

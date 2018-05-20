@@ -24,11 +24,11 @@ import {
 } from "../common/debug-model";
 import {
     DebugAdapterSessionImpl,
-    ServerContainer,
     DebugAdapterFactory,
-    DebugAdapterSession
+    DebugAdapterSession,
+    MessagingServiceContainer
 } from "./debug-adapter";
-import { BackendApplicationContribution } from "@theia/core/lib/node";
+import { MessagingService } from "@theia/core/lib/node/messaging/messaging-service";
 
 export default new ContainerModule(bind => {
     bind(DebugService).to(DebugServiceImpl).inSingletonScope();
@@ -45,11 +45,9 @@ export default new ContainerModule(bind => {
     bind(DebugAdapterContributionRegistry).toSelf().inSingletonScope();
     bind(DebugAdapterSession).to(DebugAdapterSessionImpl);
     bind(DebugAdapterSessionManager).toSelf().inSingletonScope();
-
     bind(DebugAdapterFactory).toSelf().inSingletonScope();
-
-    bind(ServerContainer).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toDynamicValue(c => c.container.get(ServerContainer));
+    bind(MessagingServiceContainer).toSelf().inSingletonScope();
+    bind(MessagingService.Contribution).toDynamicValue(c => c.container.get(MessagingServiceContainer));
     bindContributionProvider(bind, DebugAdapterContribution);
 
     bind(ConnectionHandler).toDynamicValue(context =>
