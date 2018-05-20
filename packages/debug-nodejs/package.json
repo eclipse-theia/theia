@@ -1,9 +1,9 @@
 {
   "name": "@theia/debug-nodejs",
-  "version": "0.3.8",
+  "version": "0.3.10",
   "description": "Theia - NodeJS Debug Extension",
   "dependencies": {
-    "@theia/debug": "^0.3.8",
+    "@theia/debug": "^0.3.10",
     "vscode-debugprotocol": "^1.26.0"
   },
   "publishConfig": {
@@ -38,7 +38,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.8",
+    "@theia/ext-scripts": "^0.3.10",
     "gulp": "^3.9.1",
     "gulp-decompress": "^2.0.1",
     "gulp-download": "0.0.1"

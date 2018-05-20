@@ -10,14 +10,15 @@
  */
 
 import { injectable, inject } from "inversify";
-import { WebSocketConnectionProvider } from "@theia/core/lib/browser";
+import { Endpoint } from "@theia/core/lib/browser";
 import { DebugAdapterPath, DebugConfiguration } from "../common/debug-model";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { Disposable } from "vscode-jsonrpc";
 import { Deferred } from "@theia/core/lib/common/promise-util";
 import { Emitter, Event, DisposableCollection } from "@theia/core";
+import { EventEmitter } from "events";
 
-export interface DebugSession extends Disposable {
+export interface DebugSession extends Disposable, NodeJS.EventEmitter {
     sessionId: string;
     configuration: DebugConfiguration;
 
@@ -29,7 +30,10 @@ export interface DebugSession extends Disposable {
     disconnect(): Promise<DebugProtocol.InitializeResponse>;
 }
 
-export class DebugSessionImpl implements DebugSession {
+/**
+ * DebugSession implementation.
+ */
+export class DebugSessionImpl extends EventEmitter implements DebugSession {
     private sequence: number;
 
     protected readonly toDispose = new DisposableCollection();
@@ -40,22 +44,24 @@ export class DebugSessionImpl implements DebugSession {
 
     constructor(
         public readonly sessionId: string,
-        public readonly configuration: DebugConfiguration,
-        protected readonly connectionProvider: WebSocketConnectionProvider) {
+        public readonly configuration: DebugConfiguration) {
 
-        this.websocket = this.initWebSocket();
+        super();
+        this.websocket = this.createWebSocket();
         this.sequence = 1;
     }
 
-    private initWebSocket(): Promise<WebSocket> {
-        const url = this.connectionProvider.createWebSocketUrl(DebugAdapterPath + "/" + this.sessionId);
-        const websocket = this.connectionProvider.createWebSocket(url, { reconnecting: false });
+    private createWebSocket(): Promise<WebSocket> {
+        const path = DebugAdapterPath + "/" + this.sessionId;
+        const url = new Endpoint({ path }).getWebSocketUrl().toString();
+        const websocket = new WebSocket(url);
 
         const initialized = new Deferred<WebSocket>();
 
         websocket.onopen = () => {
             initialized.resolve(websocket);
         };
+        websocket.onclose = () => { };
         websocket.onerror = () => {
             initialized.reject(`Failed to establish connection with debug adapter by url: '${url}'`);
         };
@@ -144,6 +150,7 @@ export class DebugSessionImpl implements DebugSession {
 
     protected proceedEvent(event: DebugProtocol.Event): void {
         console.log(event);
+        this.emit(event.event, event);
     }
 
     dispose() {
@@ -156,19 +163,14 @@ export class DebugSessionImpl implements DebugSession {
 
 @injectable()
 export class DebugSessionFactory {
-    constructor(
-        @inject(WebSocketConnectionProvider)
-        protected readonly connectionProvider: WebSocketConnectionProvider
-    ) { }
-
     get(sessionId: string, debugConfiguration: DebugConfiguration): DebugSession {
-        return new DebugSessionImpl(sessionId, debugConfiguration, this.connectionProvider);
+        return new DebugSessionImpl(sessionId, debugConfiguration);
     }
 }
 
 /** It is intended to manage active debug sessions. */
 @injectable()
-export class DebugSessionManager implements Disposable {
+export class DebugSessionManager {
     private activeDebugSessionId: string | undefined;
 
     protected readonly sessions = new Map<string, DebugSession>();
@@ -191,6 +193,7 @@ export class DebugSessionManager implements Disposable {
         const session = this.debugSessionFactory.get(sessionId, debugConfiguration);
         this.sessions.set(sessionId, session);
         this.onDidStartDebugSessionEmitter.fire(session);
+        session.on("terminated", () => this.destroy(sessionId));
         return session;
     }
 
@@ -242,21 +245,21 @@ export class DebugSessionManager implements Disposable {
     }
 
     /**
-     * Disposes the debug session.
+     * Destroy the debug session.
      * @param sessionId The session identifier
      */
-    dispose(sessionId?: string): void {
+    destroy(sessionId?: string): void {
         if (sessionId) {
             const session = this.sessions.get(sessionId);
             if (session) {
-                this.doDispose(session);
+                this.doDestroy(session);
             }
         } else {
-            this.sessions.forEach(session => this.doDispose(session));
+            this.sessions.forEach(session => this.doDestroy(session));
         }
     }
 
-    private doDispose(session: DebugSession): void {
+    private doDestroy(session: DebugSession): void {
         session.dispose();
         this.remove(session.sessionId);
         this.onDidTerminateDebugSessionEmitter.fire(session);

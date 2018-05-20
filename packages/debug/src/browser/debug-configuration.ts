@@ -114,6 +114,11 @@ export class DebugConfigurationManager {
             } else {
                 return this.fileSystem.createFile(uri, { encoding: "utf8" });
             }
+        }).then(configFile => {
+            if (configFile) {
+                return Promise.resolve(configFile);
+            }
+            return Promise.reject(`Configuration file '${DebugConfigurationManager.CONFIG}' not found.`);
         });
     }
 
