@@ -113,7 +113,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                 if (debugSession) {
                     debugSession.disconnect().then(response => {
                         if (response.success) {
-                            this.debugSessionManager.dispose(debugSession.sessionId);
+                            this.debugSessionManager.destroy(debugSession.sessionId);
                         }
                     });
                 }

@@ -20,12 +20,14 @@ import {
 import { DebugPath, DebugService } from "../common/debug-model";
 import { MenuContribution } from "@theia/core/lib/common/menu";
 import { CommandContribution } from "@theia/core/lib/common/command";
-import { WebSocketConnectionProvider } from "@theia/core/lib/browser/messaging/connection";
 import {
     WidgetFactory,
-    bindViewContribution
+    bindViewContribution,
+    WebSocketConnectionProvider
 } from '@theia/core/lib/browser';
 import { DebugSessionManager, DebugSessionFactory } from './debug-session';
+
+import '../../src/browser/style/index.css';
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
     bind(DebugWidget).toSelf();
