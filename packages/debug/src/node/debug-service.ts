@@ -174,10 +174,10 @@ export class DebugServiceImpl implements DebugService {
         if (sessionId) {
             const debugSession = this.sessionManager.find(sessionId);
             if (debugSession) {
-                debugSession.dispose();
+                debugSession.stop();
             }
         } else {
-            this.sessionManager.findAll().forEach(debugSession => debugSession.dispose());
+            this.sessionManager.findAll().forEach(debugSession => debugSession.stop());
         }
     }
 }
