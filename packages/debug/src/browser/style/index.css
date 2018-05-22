@@ -9,13 +9,17 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 
-.theia-debug-container {
+.theia-debug-panel {
     display: flex;
 }
 
-.theia-debug-container:focus {
+.theia-debug-panel:focus {
     outline: 0;
     box-shadow: none;
+}
+
+.theia-debug-target {
+    display: flex;
 }
 
 .theia-debug-threads-container {
@@ -44,6 +48,36 @@
 }
 
 .theia-debug-thread:hover {
+    background: var(--theia-accent-color4);
+    cursor: pointer;
+}
+
+.theia-debug-stack-frames-container {
+    overflow: hidden;
+    color: var(--theia-ui-font-color1);
+    background: var(--theia-layout-color0);
+    font-size: var(--theia-ui-font-size1);
+    max-height: calc(100% - var(--theia-border-width));
+    position: relative;
+    width: 400px;
+}
+
+.theia-debug-stack-frames-container:focus .theia-mod-selected {
+    background: var(--theia-accent-color3);
+}
+
+.theia-debug-stack-frames-container:not(:focus) .theia-mod-selected {
+    background: var(--theia-accent-color4);
+}
+
+.theia-debug-stack-frame {
+    line-height: var(--theia-private-horizontal-tab-height);
+    align-items: baseline;
+    padding-left: 5px;
+    display: flex;
+}
+
+.theia-debug-stack-frame:hover {
     background: var(--theia-accent-color4);
     cursor: pointer;
 }
