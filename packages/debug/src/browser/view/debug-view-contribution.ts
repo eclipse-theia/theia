@@ -11,8 +11,6 @@
 
 import {
     AbstractViewContribution,
-    VirtualWidget,
-    SELECTED_CLASS,
     TabBar,
     Panel,
     TabBarRenderer,
@@ -25,9 +23,8 @@ import {
 import { DebugSessionManager, DebugSession } from "../debug-session";
 import { DEBUG_SESSION_CONTEXT_MENU } from "../debug-command";
 import { inject, injectable, postConstruct } from "inversify";
-import { h } from '@phosphor/virtualdom';
-import { DebugProtocol } from 'vscode-debugprotocol';
-import { Emitter, Event } from "@theia/core";
+import { DebugThreadsWidget } from "./debug-threads-widget";
+import { DebugStackFramesWidget } from "./debug-stack-frames-widget";
 
 export const DEBUG_FACTORY_ID = 'debug';
 
@@ -48,7 +45,7 @@ export class DebugWidget extends Panel {
         this.title.closable = true;
         this.title.iconClass = 'fa fa-bug';
         this.tabBar = this.createTabBar();
-        this.addClass(DebugWidget.Styles.DEBUG_CONTAINER);
+        this.addClass(DebugWidget.Styles.DEBUG_PANEL);
     }
 
     @postConstruct()
@@ -121,98 +118,35 @@ export class DebugWidget extends Panel {
 }
 
 /**
- * The debug target widget.
- * It is used as a container for the rest of widget for the specific debug target.
+ * The debug target widget. It is used as a container
+ * for the rest of widgets for the specific debug target.
  */
 export class DebugTargetWidget extends Widget {
     public readonly sessionId: string;
     private threads: DebugThreadsWidget;
+    private stackFrames: DebugStackFramesWidget;
 
     constructor(protected readonly debugSession: DebugSession) {
         super();
         this.sessionId = debugSession.sessionId;
         this.title.label = debugSession.configuration.name;
         this.title.closable = true;
+        this.addClass(DebugWidget.Styles.DEBUG_TARGET);
+
+        this.stackFrames = new DebugStackFramesWidget(debugSession);
+        this.stackFrames.onDidSelectStackFrame(stackFrameId => { });
+
         this.threads = new DebugThreadsWidget(debugSession);
-        this.threads.onDidSelectThread(thread => { });
+        this.threads.onDidSelectThread(threadId => this.stackFrames.threadId = threadId);
+
         this.node.appendChild(this.threads.node);
+        this.node.appendChild(this.stackFrames.node);
     }
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
-        this.threads.update();
-    }
-}
-
-/**
- * The debug threads widget.
- * Is it used to display list of threads.
- */
-export class DebugThreadsWidget extends VirtualWidget {
-    private threads: DebugProtocol.Thread[] = [];
-    private selectedThreadId: number;
-
-    private readonly onDidSelectThreadEmitter = new Emitter<DebugProtocol.Thread>();
-
-    constructor(protected readonly debugSession: DebugSession) {
-        super();
-        this.id = `debug-session-${debugSession.sessionId}`;
-        this.debugSession.on('stopped', (event) => this.onStoppedEvent(event));
-        this.debugSession.on('continued', (event) => this.onContinuedEvent(event));
-        this.debugSession.on('thread', (event) => this.onThreadEvent(event));
-
-        this.debugSession.threads().then(response => {
-            if (response.success) {
-                this.threads = response.body.threads;
-                this.update();
-            }
-        });
-    }
-
-    get onDidSelectThread(): Event<DebugProtocol.Thread> {
-        return this.onDidSelectThreadEmitter.event;
-    }
-
-    protected render(): h.Child {
-        // TODO: remove
-        this.threads = [{ id: 1, name: "thread 1" }, { id: 2, name: "thread 2" }];
-
-        const header = h.div({ className: "theia-header" }, "Threads");
-        const items: h.Child = [];
-        for (const thread of this.threads) {
-            let className = DebugWidget.Styles.THREAD;
-            if (thread.id === this.selectedThreadId) {
-                className += ` ${DebugWidget.Styles.THREAD}`;
-            }
-
-            const item =
-                h.div({
-                    id: `thread-id-${thread.id}`,
-                    className: className,
-                    onclick: (event) => {
-                        const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
-                        if (selected) {
-                            selected.className = `${DebugWidget.Styles.THREAD}`;
-                        }
-
-                        (event.target as HTMLDivElement).className = `${DebugWidget.Styles.THREAD} ${SELECTED_CLASS}`;
-                        this.selectedThreadId = thread.id;
-                        this.onDidSelectThreadEmitter.fire(thread);
-                    }
-                }, thread.name);
-            items.push(item);
-        }
-        const list = h.div(items);
-
-        return h.div({ tabindex: "0", className: DebugWidget.Styles.THREADS_CONTAINER }, header, list);
-    }
-
-    private onStoppedEvent(event: DebugProtocol.StoppedEvent): void { }
-
-    private onContinuedEvent(event: DebugProtocol.ContinuedEvent): void { }
-
-    private onThreadEvent(event: DebugProtocol.ThreadEvent): void {
-        this.update();
+        this.threads.update(); // TODO cascade updating
+        this.stackFrames.update();
     }
 }
 
@@ -234,8 +168,11 @@ export class DebugViewContribution extends AbstractViewContribution<DebugWidget>
 
 export namespace DebugWidget {
     export namespace Styles {
-        export const DEBUG_CONTAINER = 'theia-debug-container';
+        export const DEBUG_PANEL = 'theia-debug-panel';
+        export const DEBUG_TARGET = 'theia-debug-target';
         export const THREADS_CONTAINER = 'theia-debug-threads-container';
         export const THREAD = 'theia-debug-thread';
+        export const STACK_FRAMES_CONTAINER = 'theia-debug-stack-frames-container';
+        export const STACK_FRAME = 'theia-debug-stack-frame';
     }
 }
