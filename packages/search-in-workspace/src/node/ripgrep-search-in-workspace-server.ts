@@ -77,20 +77,21 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
         const globs = [];
         if (opts && opts.include) {
             for (const include of opts.include) {
-                globs.push('--glob="**/' + include + '"');
+                if (include !== "") {
+                    globs.push('--glob=**/' + include);
+                }
             }
         }
         if (opts && opts.exclude) {
             for (const exclude of opts.exclude) {
-                globs.push('--glob="!**/' + exclude + '"');
+                if (exclude !== "") {
+                    globs.push('--glob=!**/' + exclude);
+                }
             }
         }
         const processOptions: RawProcessOptions = {
             command: rgPath,
-            args: [...args, '"' + what + '"', ...globs, root],
-            options: {
-                shell: true
-            }
+            args: [...args, what, ...globs, root]
         };
         const process: RawProcess = this.rawProcessFactory(processOptions);
         this.ongoingSearches.set(searchId, process);
