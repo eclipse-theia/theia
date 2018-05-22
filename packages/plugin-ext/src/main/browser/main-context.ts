@@ -10,6 +10,7 @@ import { QuickOpenMainImpl } from './quick-open-main';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { PLUGIN_RPC_CONTEXT } from '../../api/plugin-api';
 import { MessageRegistryMainImpl } from './message-registry-main';
+import { WindowStateMain } from './window-state-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const commandRegistryMain = new CommandRegistryMainImpl(rpc, container);
@@ -20,4 +21,8 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const messageRegistryMain = new MessageRegistryMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.MESSAGE_REGISTRY_MAIN, messageRegistryMain);
+
+    // tslint:disable-next-line:no-unused-variable
+    // @ts-ignore
+    const windowStateMain = new WindowStateMain(rpc);
 }

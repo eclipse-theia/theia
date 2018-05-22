@@ -80,6 +80,10 @@ export interface QuickOpenMain {
     $input(options: theia.InputBoxOptions, validateInput: boolean): PromiseLike<string>;
 }
 
+export interface WindowStateExt {
+    $onWindowStateChanged(focus: boolean): void;
+}
+
 export const PLUGIN_RPC_CONTEXT = {
     COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
     QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain'),
@@ -89,5 +93,6 @@ export const PLUGIN_RPC_CONTEXT = {
 export const MAIN_RPC_CONTEXT = {
     HOSTED_PLUGIN_MANAGER_EXT: createProxyIdentifier<HostedPluginManagerExt>('HostedPluginManagerExt'),
     COMMAND_REGISTRY_EXT: createProxyIdentifier<CommandRegistryExt>('CommandRegistryExt'),
-    QUICK_OPEN_EXT: createProxyIdentifier<QuickOpenExt>('QuickOpenExt')
+    QUICK_OPEN_EXT: createProxyIdentifier<QuickOpenExt>('QuickOpenExt'),
+    WINDOW_STATE_EXT: createProxyIdentifier<WindowStateExt>('WindowStateExt')
 };

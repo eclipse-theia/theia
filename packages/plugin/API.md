@@ -1,20 +1,21 @@
 # Introduction
+
 ## Theia Plugin system description
 
 ### Command API
+
  A command is a unique identifier of a function which
  can be executed by a user via a keyboard shortcut, a
  menu action or directly.
 
 Commands can be added using the [registerCommand](#commands.registerCommand) and
 [registerTextEditorCommand](#commands.registerTextEditorCommand) functions.
-Registration can be split in two step: first register command without handler, 
-second register handler by command id.
+Registration can be split in two step: first register command without handler, second register handler by command id.
 
-Any contributed command are available to any plugin, command can be invoked 
-by [executeCommand](#commands.executeCommand) function.
+Any contributed command are available to any plugin, command can be invoked by [executeCommand](#commands.executeCommand) function.
 
 Simple example that register command:
+
 ```javascript
 theia.commands.registerCommand({id:'say.hello.command'}, ()=>{
     console.log("Hello World!");
@@ -51,22 +52,49 @@ theia.window.showQuickPick(["foo", "bar", "foobar"], option).then((val: string[]
         console.log(`Quick Pick Selected: ${val}`);
     });
 ```
+
 #### Notification API
+
  A notification shows an information message to users.
  Optionally provide an array of items which will be presented as clickable buttons.
- 
+
  Notifications can be shown using the [showInformationMessage](#window.showInformationMessage),
  [showWarningMessage](#window.showWarningMessage) and [showErrorMessage](#window.showErrorMessage) functions.
- 
 
 Simple example that show an information message:
+
 ```javascript
 theia.window.showInformationMessage('Information message');
 ```
 
 Simple example that show an information message with buttons:
+
 ```javascript
 theia.window.showInformationMessage('Information message', 'Btn1', 'Btn2').then(result => {
     console.log("Click button", result);
+});
+```
+
+#### Window State API
+
+It is possible to track state of the IDE window inside a plugin. Window state is defined as:
+
+```javascript
+interface WindowState {
+    readonly focused: boolean;
+}
+```
+
+To read a state on demand one can use readonly variable:
+
+```javascript
+theia.window.state
+```
+
+To track window activity subscribe on `onDidChangeWindowState` event:
+
+```javascript
+const disposable = theia.window.onDidChangeWindowState((windowState: theia.WindowState) => {
+            console.log('Window focus changed: ', windowState.focused);
 });
 ```
