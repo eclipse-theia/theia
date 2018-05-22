@@ -10,7 +10,7 @@ import { SelectionService } from '@theia/core/lib/common';
 import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
 import URI from "@theia/core/lib/common/uri";
 import { open, OpenerService } from '@theia/core/lib/browser';
-import { CppClientContribution } from "./cpp-client-contribution";
+import { CppLanguageClientContribution } from "./cpp-language-client-contribution";
 import { SwitchSourceHeaderRequest } from "./cpp-protocol";
 import { TextDocumentIdentifier } from "@theia/languages/lib/common";
 import { EditorManager } from "@theia/editor/lib/browser";
@@ -40,7 +40,7 @@ export function editorContainsCppFiles(editorManager: EditorManager | undefined)
 export class CppCommandContribution implements CommandContribution {
 
     constructor(
-        @inject(CppClientContribution) protected readonly clientContribution: CppClientContribution,
+        @inject(CppLanguageClientContribution) protected readonly clientContribution: CppLanguageClientContribution,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(EditorManager) private editorService: EditorManager,
         protected readonly selectionService: SelectionService

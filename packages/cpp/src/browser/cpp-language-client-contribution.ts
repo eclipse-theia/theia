@@ -13,7 +13,7 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { CPP_LANGUAGE_ID, CPP_LANGUAGE_NAME, HEADER_AND_SOURCE_FILE_EXTENSIONS } from '../common';
 
 @injectable()
-export class CppClientContribution extends BaseLanguageClientContribution {
+export class CppLanguageClientContribution extends BaseLanguageClientContribution {
 
     readonly id = CPP_LANGUAGE_ID;
     readonly name = CPP_LANGUAGE_NAME;

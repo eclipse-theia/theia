@@ -11,7 +11,7 @@ import { KeybindingContribution, KeybindingContext } from '@theia/core/lib/brows
 import { CppCommandContribution } from './cpp-commands';
 
 import { LanguageClientContribution } from "@theia/languages/lib/browser";
-import { CppClientContribution } from "./cpp-client-contribution";
+import { CppLanguageClientContribution } from "./cpp-language-client-contribution";
 import { CppKeybindingContribution, CppKeybindingContext } from "./cpp-keybinding";
 
 export default new ContainerModule(bind => {
@@ -20,7 +20,7 @@ export default new ContainerModule(bind => {
     bind(KeybindingContext).toDynamicValue(context => context.container.get(CppKeybindingContext));
     bind(KeybindingContribution).to(CppKeybindingContribution).inSingletonScope();
 
-    bind(CppClientContribution).toSelf().inSingletonScope();
-    bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(CppClientContribution));
+    bind(CppLanguageClientContribution).toSelf().inSingletonScope();
+    bind(LanguageClientContribution).toDynamicValue(ctx => ctx.container.get(CppLanguageClientContribution));
 
 });
