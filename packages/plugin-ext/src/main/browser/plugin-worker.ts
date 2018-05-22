@@ -19,10 +19,13 @@ export class PluginWorker {
         this.worker.onmessage = (message) => {
             emmitter.fire(message.data);
         };
+        this.worker.onerror = e => console.error(e);
 
         this.rpc = new RPCProtocolImpl({
             onMessage: emmitter.event,
-            send: (m: {}) => this.worker.postMessage(m)
+            send: (m: {}) => {
+                this.worker.postMessage(m);
+            }
         });
 
     }
