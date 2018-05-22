@@ -12,6 +12,7 @@ import * as net from "net";
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider } from "@theia/core/lib/common/contribution-provider";
 import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } from "./hosted-plugin-uri-postprocessor";
+const processTree = require('ps-tree');
 
 export const HostedPluginManager = Symbol('HostedPluginManager');
 
@@ -101,7 +102,9 @@ export abstract class AbstractHostedPluginManager implements HostedPluginManager
 
     terminate(): void {
         if (this.isPluginRunnig) {
-            this.hostedInstanceProcess.kill();
+            processTree(this.hostedInstanceProcess.pid, (err: Error, children: Array<any>) => {
+                cp.spawn('kill', ['SIGTERM'].concat(children.map((p: any) => p.PID)));
+            });
         } else {
             throw new Error('Hosted plugin instance is not running.');
         }
@@ -150,7 +153,7 @@ export abstract class AbstractHostedPluginManager implements HostedPluginManager
                 const line = data.toString();
                 const match = THEIA_INSTANCE_REGEX.exec(line);
                 if (match) {
-                    //      this.hostedInstanceProcess.stdout.removeListener('data', outputListener);
+                    this.hostedInstanceProcess.stdout.removeListener('data', outputListener);
                     started = true;
                     resolve(new URI(match[1]));
                 }
@@ -223,14 +226,5 @@ export class NodeHostedPluginRunner extends AbstractHostedPluginManager {
 
 @injectable()
 export class ElectronNodeHostedPluginRunner extends AbstractHostedPluginManager {
-    terminate(): void {
-        if (this.isPluginRunnig) {
-            // TODO fix it. In case of electron, this terminates only parent process while
-            // child processes detach and become child processes of systemd.
-            // See https://github.com/eclipse/che/issues/9367
-            this.hostedInstanceProcess.kill();
-        } else {
-            throw new Error('Hosted plugin instance is not running.');
-        }
-    }
+
 }

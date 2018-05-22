@@ -9,7 +9,8 @@
     "@theia/filesystem": "^0.3.10",
     "@theia/workspace": "^0.3.10",
     "@theia/plugin": "^0.3.10",
-    "decompress": "^4.2.0"
+    "decompress": "^4.2.0",
+    "ps-tree": "1.1.0"
   },
   "publishConfig": {
     "access": "public"
@@ -17,7 +18,7 @@
   "theiaExtensions": [
     {
       "backend": "lib/plugin-ext-backend-module",
-      "backendElectron": "lib/plugin-backend-electron-module",
+      "backendElectron": "lib/plugin-ext-backend-electron-module",
       "frontend": "lib/plugin-ext-frontend-module"
     }
   ],
