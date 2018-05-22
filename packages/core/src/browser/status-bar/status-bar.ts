@@ -7,7 +7,7 @@
 
 import { VirtualRenderer, VirtualWidget } from '../widgets';
 import { CommandService } from '../../common';
-import { h } from '@phosphor/virtualdom';
+import { h , ElementInlineStyle } from '@phosphor/virtualdom';
 import { LabelParser, LabelIcon } from '../label-parser';
 import { injectable, inject } from 'inversify';
 import { FrontendApplicationStateService } from '../frontend-application-state';
@@ -26,6 +26,7 @@ export interface StatusBarEntry {
      */
     text: string;
     alignment: StatusBarAlignment;
+    color?: string;
     tooltip?: string;
     command?: string;
     // tslint:disable-next-line:no-any
@@ -38,6 +39,7 @@ export enum StatusBarAlignment {
 }
 
 export interface StatusBarEntryAttributes {
+    style?: ElementInlineStyle;
     className?: string;
     title?: string;
     onclick?: () => void;
@@ -135,6 +137,12 @@ export class StatusBarImpl extends VirtualWidget implements StatusBar {
 
         if (entry.tooltip) {
             attrs.title = entry.tooltip;
+        }
+
+        if (entry.color) {
+            attrs.style = {
+                color: entry.color
+            };
         }
 
         return attrs;
