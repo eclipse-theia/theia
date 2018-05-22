@@ -92,6 +92,10 @@ Are you looking for this: --foobar?
 Var är jag?  Varför är jag här?
 `);
 
+    createTestFile('special shell characters', `\
+If one uses \`salut";\' echo foo && echo bar; "\` as a search term it should not be a problem to find here.
+`);
+
     let lotsOfMatchesText = '';
     for (let i = 0; i < 100000; i++) {
         lotsOfMatchesText += 'lots-of-matches\n';
@@ -492,5 +496,20 @@ describe('ripgrep-search-in-workspace-server', function () {
         });
         ripgrepServer.setClient(client);
         ripgrepServer.search(pattern, rootDir + '/small');
+    });
+
+    it('searches a pattern with special characters ', function (done) {
+        const pattern = 'salut";\' echo foo && echo bar; "';
+
+        const client = new ResultAccumulator(() => {
+            const expected: SearchInWorkspaceResult[] = [
+                { file: 'special shell characters', line: 1, character: 14, length: 32, lineText: '' },
+            ];
+
+            compareSearchResults(expected, client.results);
+            done();
+        });
+        ripgrepServer.setClient(client);
+        ripgrepServer.search(pattern, rootDir, { useRegExp: true });
     });
 });
