@@ -27,7 +27,8 @@
   },
   "homepage": "https://github.com/theia-ide/theia",
   "files": [
-    "lib"
+    "lib",
+    "src"
   ],
   "scripts": {
     "prepare": "yarn run clean && yarn run build",
@@ -45,5 +46,9 @@
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
+  },
+  "debugAdapter": {
+    "downloadUri": "https://github.com/tolusha/node-debug/releases/download/v1.23.5/vscode-node-debug.tar.gz",
+    "dir": "lib/adapter"
   }
 }
