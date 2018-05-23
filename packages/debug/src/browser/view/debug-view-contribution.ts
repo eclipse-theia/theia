@@ -50,8 +50,15 @@ export class DebugWidget extends Panel {
 
     @postConstruct()
     protected init() {
-        this.debugSessionManager.onDidStartDebugSession(debugSession => this.onDebugSessionStarted(debugSession));
-        this.debugSessionManager.onDidTerminateDebugSession(debugSession => this.onDebugSessionTerminated(debugSession));
+        this.debugSessionManager.onDidCreateDebugSession(debugSession => this.onDebugSessionStarted(debugSession));
+        this.debugSessionManager.onDidDestroyDebugSession(debugSession => this.onDebugSessionDestroyed(debugSession));
+        this.debugSessionManager.onDidConnectDebugSession(debugSession => this.onDebugSessionConnected(debugSession));
+    }
+
+    private onDebugSessionConnected(debugSession: DebugSession): void {
+        this.tabBar.titles
+            .filter(title => (title.owner as DebugTargetWidget).sessionId === debugSession.sessionId)
+            .forEach(title => title.owner.update());
     }
 
     private onDebugSessionStarted(debugSession: DebugSession): void {
@@ -64,11 +71,9 @@ export class DebugWidget extends Panel {
         this.tabBar.addTab(widget.title);
         this.node.appendChild(widget.node);
         this.tabBar.currentTitle = widget.title;
-
-        widget.update();
     }
 
-    private onDebugSessionTerminated(debugSession: DebugSession) {
+    private onDebugSessionDestroyed(debugSession: DebugSession) {
         this.tabBar.titles
             .filter(title => (title.owner as DebugTargetWidget).sessionId === debugSession.sessionId)
             .forEach(title => {
@@ -102,7 +107,10 @@ export class DebugWidget extends Panel {
     }
 
     protected onTabCloseRequested(sender: SideTabBar, { title }: TabBar.ITabCloseRequestedArgs<DebugTargetWidget>): void {
-        this.debugSessionManager.destroy(title.owner.sessionId);
+        const session = this.debugSessionManager.find(title.owner.sessionId);
+        if (session) {
+            session.disconnect();
+        }
     }
 
     protected onCurrentTabChanged(sender: SideTabBar, { previousTitle, currentTitle }: TabBar.ICurrentChangedArgs<DebugTargetWidget>): void {
@@ -145,7 +153,7 @@ export class DebugTargetWidget extends Widget {
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
-        this.threads.update(); // TODO cascade updating
+        this.threads.update();
         this.stackFrames.update();
     }
 }

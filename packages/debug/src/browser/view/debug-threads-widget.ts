@@ -12,6 +12,7 @@
 import {
     VirtualWidget,
     SELECTED_CLASS,
+    Message
 } from "@theia/core/lib/browser";
 import { DebugSession } from "../debug-session";
 import { h } from '@phosphor/virtualdom';
@@ -32,8 +33,8 @@ export class DebugThreadsWidget extends VirtualWidget {
         this.id = this.toDocumentId();
         this.addClass(Styles.THREADS_CONTAINER);
         this.node.setAttribute("tabIndex", "0");
-        this.debugSession.on('thread', (event) => this.onThreadEvent(event));
-        this.refreshThreads();
+        this.debugSession.on('thread', event => this.onThreadEvent(event));
+        this.debugSession.on('connected', event => this.refreshThreads());
     }
 
     get threads(): DebugProtocol.Thread[] {
@@ -82,7 +83,7 @@ export class DebugThreadsWidget extends VirtualWidget {
                 h.div({
                     id: this.toDocumentId(thread.id),
                     className,
-                    onclick: (event) => {
+                    onclick: event => {
                         this.threadId = thread.id;
                         this.onDidSelectThreadEmitter.fire(this.threadId);
                     }
@@ -109,15 +110,13 @@ export class DebugThreadsWidget extends VirtualWidget {
         }
 
         this.debugSession.threads().then(response => {
-            if (response) {
-                this.threads = response.body.threads;
-                this.threadId = threadId2select
-                    ? threadId2select
-                    : (this.threads.length
-                        ? this.threads[0].id
-                        : undefined);
-                this.onDidSelectThreadEmitter.fire(this.threadId);
-            }
+            this.threads = response.body.threads;
+            this.threadId = threadId2select
+                ? threadId2select
+                : (this.threads.length
+                    ? this.threads[0].id
+                    : undefined);
+            this.onDidSelectThreadEmitter.fire(this.threadId);
         });
     }
 }

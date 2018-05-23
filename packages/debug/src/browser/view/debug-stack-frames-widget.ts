@@ -34,8 +34,8 @@ export class DebugStackFramesWidget extends VirtualWidget {
         this.id = this.toDocumentId();
         this.addClass(Styles.STACK_FRAMES_CONTAINER);
         this.node.setAttribute("tabIndex", "0");
-        this.debugSession.on('stopped', (event) => this.onStoppedEvent(event));
-        this.debugSession.on('continued', (event) => this.onContinuedEvent(event));
+        this.debugSession.on('stopped', event => this.onStoppedEvent(event));
+        this.debugSession.on('continued', event => this.onContinuedEvent(event));
     }
 
     get onDidSelectStackFrame(): Event<number | undefined> {
@@ -97,7 +97,7 @@ export class DebugStackFramesWidget extends VirtualWidget {
                 h.div({
                     id: this.toDocumentId(stackFrame.id),
                     className,
-                    onclick: (event) => {
+                    onclick: event => {
                         this.stackFrameId = stackFrame.id;
                         this.onDidSelectStackFrameEmitter.fire(this.stackFrameId);
                     }

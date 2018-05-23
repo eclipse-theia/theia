@@ -139,7 +139,7 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
                 this.ws = ws;
                 this.communicationProvider.output.on('data', (data: Buffer) => this.handleData(data));
                 this.communicationProvider.output.on('close', () => this.proceedEvent("terminated"));
-                this.communicationProvider.input.on('error', (error) => this.logger.error(error));
+                this.communicationProvider.input.on('error', error => this.logger.error(error));
                 ws.on('message', (message: string) => this.proceedRequest(message));
             });
         });
@@ -187,17 +187,18 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
             event: event,
             body: body
         });
-        this.logger.debug(`event: ${message}`);
+
+        this.logger.debug(`DAP Event: ${message}`);
         this.ws.send(message);
     }
 
     protected proceedResponse(message: string): void {
-        this.logger.debug(`DAP response: ${message}`);
+        this.logger.debug(`DAP Response: ${message}`);
         this.ws.send(message);
     }
 
     protected proceedRequest(message: string): void {
-        this.logger.debug(`DAP request: ${message}`);
+        this.logger.debug(`DAP Request: ${message}`);
         this.communicationProvider.input.write(`Content-Length: ${Buffer.byteLength(message, 'utf8')}\r\n\r\n${message}`, 'utf8');
     }
 
