@@ -68,9 +68,6 @@ export class TreeSelectionServiceImpl implements TreeSelectionService {
 
         const toUnselect = this.difference(oldNodes, newNodes);
         const toSelect = this.difference(newNodes, oldNodes);
-        if (toUnselect.length === 0 && toSelect.length === 0) {
-            return;
-        }
 
         this.unselect(toUnselect);
         this.select(toSelect);
