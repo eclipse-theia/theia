@@ -15,6 +15,7 @@ export interface MenuAction {
     label?: string
     icon?: string
     order?: string
+    args?: any[]
 }
 
 export type MenuPath = string[];

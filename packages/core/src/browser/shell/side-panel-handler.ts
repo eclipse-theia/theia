@@ -12,7 +12,7 @@ import { Signal } from '@phosphor/signaling';
 import { MimeData } from '@phosphor/coreutils';
 import { Drag } from '@phosphor/dragdrop';
 import { AttachedProperty } from '@phosphor/properties';
-import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, SideTabBar } from './tab-bars';
+import { TabBarRendererFactory, TabBarRenderer, SideTabBar, LEFT_PANEL_TABBAR_CONTEXT_MENU, RIGHT_PANEL_TABBAR_CONTEXT_MENU } from './tab-bars';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 
@@ -111,7 +111,11 @@ export class SidePanelHandler {
             suppressScrollX: true
         });
         tabBarRenderer.tabBar = sideBar;
-        tabBarRenderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
+        if (side === 'left') {
+            tabBarRenderer.contextMenuPath = LEFT_PANEL_TABBAR_CONTEXT_MENU;
+        } else if (side === 'right') {
+            tabBarRenderer.contextMenuPath = RIGHT_PANEL_TABBAR_CONTEXT_MENU;
+        }
         sideBar.addClass('theia-app-' + side);
         sideBar.addClass(LEFT_RIGHT_AREA_CLASS);
 

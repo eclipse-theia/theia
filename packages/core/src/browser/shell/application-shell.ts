@@ -14,11 +14,11 @@ import {
 } from '@phosphor/widgets';
 import { Message } from '@phosphor/messaging';
 import { IDragEvent } from '@phosphor/dragdrop';
-import { RecursivePartial } from '../../common';
+import { RecursivePartial, MenuPath } from '../../common';
 import { Saveable } from '../saveable';
 import { StatusBarImpl, StatusBarEntry, StatusBarAlignment } from '../status-bar/status-bar';
 import { SidePanelHandler, SidePanel, SidePanelHandlerFactory, TheiaDockPanel } from './side-panel-handler';
-import { TabBarRendererFactory, TabBarRenderer, SHELL_TABBAR_CONTEXT_MENU, ScrollableTabBar } from './tab-bars';
+import { TabBarRendererFactory, TabBarRenderer, ScrollableTabBar, MAIN_PANEL_TABBAR_CONTEXT_MENU, BOTTOM_PANEL_TABBAR_CONTEXT_MENU } from './tab-bars';
 import { SplitPositionHandler, SplitPositionOptions } from './split-panels';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 
@@ -45,6 +45,7 @@ export const DockPanelRendererFactory = Symbol('DockPanelRendererFactory');
 export class DockPanelRenderer implements DockLayout.IRenderer {
 
     readonly tabBarClasses: string[] = [];
+    contextMenuPath?: MenuPath;
 
     constructor(
         @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: () => TabBarRenderer
@@ -62,7 +63,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
         });
         this.tabBarClasses.forEach(c => tabBar.addClass(c));
         renderer.tabBar = tabBar;
-        renderer.contextMenuPath = SHELL_TABBAR_CONTEXT_MENU;
+        renderer.contextMenuPath = this.contextMenuPath;
         tabBar.currentChanged.connect(this.onCurrentTabChanged, this);
         return tabBar;
     }
@@ -349,6 +350,7 @@ export class ApplicationShell extends Widget {
         const renderer = this.dockPanelRendererFactory();
         renderer.tabBarClasses.push(MAIN_BOTTOM_AREA_CLASS);
         renderer.tabBarClasses.push(MAIN_AREA_CLASS);
+        renderer.contextMenuPath = MAIN_PANEL_TABBAR_CONTEXT_MENU;
         const dockPanel = new TheiaDockPanel({
             mode: 'multiple-document',
             renderer,
@@ -365,6 +367,7 @@ export class ApplicationShell extends Widget {
         const renderer = this.dockPanelRendererFactory();
         renderer.tabBarClasses.push(MAIN_BOTTOM_AREA_CLASS);
         renderer.tabBarClasses.push(BOTTOM_AREA_CLASS);
+        renderer.contextMenuPath = BOTTOM_PANEL_TABBAR_CONTEXT_MENU;
         const dockPanel = new TheiaDockPanel({
             mode: 'multiple-document',
             renderer,
@@ -1124,8 +1127,13 @@ export class ApplicationShell extends Widget {
     /*
      * Activate the next tab in the current tab bar.
      */
-    activateNextTab(): void {
-        const current = this.currentTabBar;
+    activateNextTab(tabBarOrArea: TabBar<Widget> | ApplicationShell.Area): void {
+        let current: TabBar<Widget> | undefined;
+        if (typeof tabBarOrArea === 'string') {
+            current = this.getTabBarFor(tabBarOrArea);
+        } else {
+            current = tabBarOrArea;
+        }
         if (current) {
             const ci = current.currentIndex;
             if (ci !== -1) {
@@ -1169,8 +1177,13 @@ export class ApplicationShell extends Widget {
     /*
      * Activate the previous tab in the current tab bar.
      */
-    activatePreviousTab(): void {
-        const current = this.currentTabBar;
+    activatePreviousTab(tabBarOrArea: TabBar<Widget> | ApplicationShell.Area): void {
+        let current: TabBar<Widget> | undefined;
+        if (typeof tabBarOrArea === 'string') {
+            current = this.getTabBarFor(tabBarOrArea);
+        } else {
+            current = tabBarOrArea;
+        }
         if (current) {
             const ci = current.currentIndex;
             if (ci !== -1) {

@@ -14,7 +14,10 @@ import { SelectionService } from "../common/selection-service";
 import { MessageService } from '../common/message-service';
 import { OpenerService, open } from '../browser/opener-service';
 import { ApplicationShell } from './shell/application-shell';
-import { SHELL_TABBAR_CONTEXT_MENU } from './shell/tab-bars';
+import {
+    MAIN_PANEL_TABBAR_CONTEXT_MENU, BOTTOM_PANEL_TABBAR_CONTEXT_MENU, LEFT_PANEL_TABBAR_CONTEXT_MENU,
+    RIGHT_PANEL_TABBAR_CONTEXT_MENU
+} from './shell/tab-bars';
 import { AboutDialog } from './about-dialog';
 import * as browser from './browser';
 import URI from '../common/uri';
@@ -207,31 +210,112 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
             order: '1'
         });
 
-        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(MAIN_PANEL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_TAB.id,
             label: 'Close',
-            order: '0'
+            order: '0',
+            args: ['main']
         });
-        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(MAIN_PANEL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_OTHER_TABS.id,
             label: 'Close Others',
-            order: '1'
+            order: '1',
+            args: ['main']
         });
-        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(MAIN_PANEL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_RIGHT_TABS.id,
             label: 'Close to the Right',
-            order: '2'
+            order: '2',
+            args: ['main']
         });
-        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(MAIN_PANEL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.CLOSE_ALL_TABS.id,
             label: 'Close All',
-            order: '3'
+            order: '3',
+            args: ['main']
         });
-        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+
+        registry.registerMenuAction(BOTTOM_PANEL_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.CLOSE_TAB.id,
+            label: 'Close',
+            order: '0',
+            args: ['bottom']
+        });
+        registry.registerMenuAction(BOTTOM_PANEL_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.CLOSE_OTHER_TABS.id,
+            label: 'Close Others',
+            order: '1',
+            args: ['bottom']
+        });
+        registry.registerMenuAction(BOTTOM_PANEL_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.CLOSE_RIGHT_TABS.id,
+            label: 'Close to the Right',
+            order: '2',
+            args: ['bottom']
+        });
+        registry.registerMenuAction(BOTTOM_PANEL_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.CLOSE_ALL_TABS.id,
+            label: 'Close All',
+            order: '3',
+            args: ['bottom']
+        });
+        registry.registerMenuAction(BOTTOM_PANEL_TABBAR_CONTEXT_MENU, {
             commandId: CommonCommands.COLLAPSE_PANEL.id,
             label: 'Collapse',
-            order: '4'
+            order: '4',
+            args: ['bottom']
         });
+
+        registry.registerMenuAction(LEFT_PANEL_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.CLOSE_TAB.id,
+            label: 'Close',
+            order: '0',
+            args: ['left']
+        });
+        registry.registerMenuAction(LEFT_PANEL_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.CLOSE_OTHER_TABS.id,
+            label: 'Close Others',
+            order: '1',
+            args: ['left']
+        });
+        registry.registerMenuAction(LEFT_PANEL_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.CLOSE_ALL_TABS.id,
+            label: 'Close All',
+            order: '3',
+            args: ['left']
+        });
+        registry.registerMenuAction(LEFT_PANEL_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.COLLAPSE_PANEL.id,
+            label: 'Collapse',
+            order: '4',
+            args: ['left']
+        });
+
+        registry.registerMenuAction(RIGHT_PANEL_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.CLOSE_TAB.id,
+            label: 'Close',
+            order: '0',
+            args: ['right']
+        });
+        registry.registerMenuAction(RIGHT_PANEL_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.CLOSE_OTHER_TABS.id,
+            label: 'Close Others',
+            order: '1',
+            args: ['right']
+        });
+        registry.registerMenuAction(RIGHT_PANEL_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.CLOSE_ALL_TABS.id,
+            label: 'Close All',
+            order: '3',
+            args: ['right']
+        });
+        registry.registerMenuAction(RIGHT_PANEL_TABBAR_CONTEXT_MENU, {
+            commandId: CommonCommands.COLLAPSE_PANEL.id,
+            label: 'Collapse',
+            order: '4',
+            args: ['right']
+        });
+
         registry.registerMenuAction(CommonMenus.HELP, {
             commandId: CommonCommands.ABOUT_COMMAND.id,
             label: 'About',
@@ -277,69 +361,79 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         commandRegistry.registerCommand(CommonCommands.FIND);
         commandRegistry.registerCommand(CommonCommands.REPLACE);
 
+        const getTabBar = (area?: ApplicationShell.Area) => {
+            if (area) {
+                return this.shell.getTabBarFor(area);
+            } else {
+                return this.shell.currentTabBar;
+            }
+        };
+        const isNotEmpty = (area?: ApplicationShell.Area) => {
+            const tabBar = getTabBar(area);
+            return tabBar !== undefined && tabBar.titles.length > 0;
+        };
+
         commandRegistry.registerCommand(CommonCommands.NEXT_TAB, {
-            isEnabled: () => this.shell.currentTabBar !== undefined,
-            execute: () => this.shell.activateNextTab()
+            isEnabled: isNotEmpty,
+            execute: (area?: ApplicationShell.Area) => this.shell.activateNextTab(getTabBar(area)!)
         });
         commandRegistry.registerCommand(CommonCommands.PREVIOUS_TAB, {
-            isEnabled: () => this.shell.currentTabBar !== undefined,
-            execute: () => this.shell.activatePreviousTab()
+            isEnabled: isNotEmpty,
+            execute: (area?: ApplicationShell.Area) => this.shell.activatePreviousTab(getTabBar(area)!)
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_TAB, {
-            isEnabled: () => this.shell.currentTabBar !== undefined,
-            execute: () => {
-                const tabBar = this.shell.currentTabBar!;
+            isEnabled: isNotEmpty,
+            execute: (area?: ApplicationShell.Area) => {
+                const tabBar = getTabBar(area)!;
                 const currentTitle = tabBar.currentTitle;
                 this.shell.closeTabs(tabBar, (title, index) => title === currentTitle);
             }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_OTHER_TABS, {
-            isEnabled: () => {
-                const tabBar = this.shell.currentTabBar;
-                if (tabBar) {
-                    return tabBar.titles.length > 1;
-                }
-                return false;
+            isEnabled: (area?: ApplicationShell.Area) => {
+                const tabBar = getTabBar(area);
+                return tabBar !== undefined && tabBar.titles.length > 1;
             },
-            execute: () => {
-                const tabBar = this.shell.currentTabBar!;
+            execute: (area?: ApplicationShell.Area) => {
+                const tabBar = getTabBar(area)!;
                 const currentTitle = tabBar.currentTitle;
-                this.shell.closeTabs(this.shell.currentTabArea!, (title, index) => title !== currentTitle);
+                this.shell.closeTabs(area || this.shell.currentTabArea!, (title, index) => title !== currentTitle);
             }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_RIGHT_TABS, {
-            isEnabled: () => {
-                const tabBar = this.shell.currentTabBar;
-                if (tabBar) {
-                    return tabBar.currentIndex < tabBar.titles.length - 1;
-                }
-                return false;
+            isEnabled: (area?: ApplicationShell.Area) => {
+                const tabBar = getTabBar(area);
+                return tabBar !== undefined && tabBar.currentIndex < tabBar.titles.length - 1;
             },
-            isVisible: () => {
-                const area = this.shell.currentTabArea;
-                return area !== 'left' && area !== 'right';
+            isVisible: (area?: ApplicationShell.Area) => {
+                const currentArea = area || this.shell.currentTabArea;
+                return currentArea !== 'left' && currentArea !== 'right';
             },
-            execute: () => {
-                const tabBar = this.shell.currentTabBar!;
+            execute: (area?: ApplicationShell.Area) => {
+                const tabBar = getTabBar(area)!;
                 const currentIndex = tabBar.currentIndex;
                 this.shell.closeTabs(tabBar, (title, index) => index > currentIndex);
             }
         });
         commandRegistry.registerCommand(CommonCommands.CLOSE_ALL_TABS, {
-            isEnabled: () => this.shell.currentTabBar !== undefined,
-            execute: () => this.shell.closeTabs(this.shell.currentTabArea!)
+            isEnabled: isNotEmpty,
+            execute: (area?: ApplicationShell.Area) => this.shell.closeTabs(getTabBar(area)!)
         });
         commandRegistry.registerCommand(CommonCommands.COLLAPSE_PANEL, {
-            isEnabled: () => ApplicationShell.isSideArea(this.shell.currentTabArea),
-            isVisible: () => ApplicationShell.isSideArea(this.shell.currentTabArea),
-            execute: () => {
-                const currentArea = this.shell.currentTabArea;
+            isEnabled: (area?: ApplicationShell.Area) => {
+                const currentArea = area || this.shell.currentTabArea;
+                return ApplicationShell.isSideArea(currentArea) && this.shell.isExpanded(currentArea);
+            },
+            isVisible: (area?: ApplicationShell.Area) => ApplicationShell.isSideArea(area || this.shell.currentTabArea),
+            execute: (area?: ApplicationShell.Area) => {
+                const currentArea = area || this.shell.currentTabArea;
                 if (ApplicationShell.isSideArea(currentArea)) {
                     this.shell.collapsePanel(currentArea);
                 }
             }
         });
         commandRegistry.registerCommand(CommonCommands.COLLAPSE_ALL_PANELS, {
+            isEnabled: () => this.shell.isExpanded('left') || this.shell.isExpanded('right') || this.shell.isExpanded('bottom'),
             execute: () => {
                 this.shell.collapsePanel('left');
                 this.shell.collapsePanel('right');

@@ -71,12 +71,13 @@ export class ElectronMainMenuFactory {
                     accelerator = this.acceleratorFor(binding);
                 }
 
+                const args = menu.action.args || [];
                 items.push({
                     label: menu.label,
                     icon: menu.icon,
                     enabled: true, // https://github.com/theia-ide/theia/issues/446
                     visible: true,
-                    click: () => this.execute(menu.action.commandId),
+                    click: () => this.execute(menu.action.commandId, ...args),
                     accelerator
                 });
             }
@@ -141,8 +142,8 @@ export class ElectronMainMenuFactory {
         return result;
     }
 
-    protected execute(command: string): void {
-        this.commandRegistry.executeCommand(command).catch(() => { /* no-op */ });
+    protected execute(command: string, ...args: any[]): void {
+        this.commandRegistry.executeCommand(command, ...args).catch(() => { /* no-op */ });
     }
 
     protected createOSXMenu(): Electron.MenuItemConstructorOptions {

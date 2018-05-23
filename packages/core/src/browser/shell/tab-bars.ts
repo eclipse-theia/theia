@@ -18,8 +18,11 @@ import { ElementExt } from '@phosphor/domutils';
 /** The class name added to hidden content nodes, which are required to render vertical side bars. */
 const HIDDEN_CONTENT_CLASS = 'theia-TabBar-hidden-content';
 
-/** Menu path for tab bars used throughout the application shell. */
-export const SHELL_TABBAR_CONTEXT_MENU: MenuPath = ['shell-tabbar-context-menu'];
+/** Menu paths for tab bars used throughout the application shell. */
+export const MAIN_PANEL_TABBAR_CONTEXT_MENU: MenuPath = ['shell-main-panel-tabbar'];
+export const BOTTOM_PANEL_TABBAR_CONTEXT_MENU: MenuPath = ['shell-bottom-panel-tabbar'];
+export const LEFT_PANEL_TABBAR_CONTEXT_MENU: MenuPath = ['shell-left-panel-tabbar'];
+export const RIGHT_PANEL_TABBAR_CONTEXT_MENU: MenuPath = ['shell-right-panel-tabbar'];
 
 export const TabBarRendererFactory = Symbol('TabBarRendererFactory');
 

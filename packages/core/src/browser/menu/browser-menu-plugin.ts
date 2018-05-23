@@ -70,12 +70,13 @@ export class BrowserMainMenuFactory {
         if (!command) {
             return;
         }
+        const args = menu.action.args || [];
         commands.addCommand(command.id, {
-            execute: () => this.commandRegistry.executeCommand(command.id),
+            execute: () => this.commandRegistry.executeCommand(command.id, ...args),
             label: menu.label,
             icon: command.iconClass,
-            isEnabled: () => this.commandRegistry.isEnabled(command.id),
-            isVisible: () => this.commandRegistry.isVisible(command.id)
+            isEnabled: () => this.commandRegistry.isEnabled(command.id, ...args),
+            isVisible: () => this.commandRegistry.isVisible(command.id, ...args)
         });
 
         const bindings = this.keybindingRegistry.getKeybindingsForCommand(command.id);

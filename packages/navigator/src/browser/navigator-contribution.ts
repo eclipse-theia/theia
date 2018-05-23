@@ -8,8 +8,10 @@
 import { injectable, inject, postConstruct } from "inversify";
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX } from "@theia/core/lib/common";
-import { Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands, OpenerService } from "@theia/core/lib/browser";
-import { SHELL_TABBAR_CONTEXT_MENU } from "@theia/core/lib/browser";
+import {
+    Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands, OpenerService,
+    MAIN_PANEL_TABBAR_CONTEXT_MENU, BOTTOM_PANEL_TABBAR_CONTEXT_MENU
+} from "@theia/core/lib/browser";
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
 import { FileNavigatorPreferences } from "./navigator-preferences";
@@ -82,10 +84,15 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
     registerMenus(registry: MenuModelRegistry): void {
         super.registerMenus(registry);
-        registry.registerMenuAction(SHELL_TABBAR_CONTEXT_MENU, {
+        registry.registerMenuAction(MAIN_PANEL_TABBAR_CONTEXT_MENU, {
             commandId: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.id,
             label: 'Reveal in Files',
-            order: '5'
+            order: '10'
+        });
+        registry.registerMenuAction(BOTTOM_PANEL_TABBAR_CONTEXT_MENU, {
+            commandId: FileNavigatorCommands.REVEAL_IN_NAVIGATOR.id,
+            label: 'Reveal in Files',
+            order: '10'
         });
 
         registry.registerMenuAction(NavigatorContextMenu.OPEN, {
