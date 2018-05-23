@@ -414,32 +414,60 @@ export class DugiteGit implements Git {
         );
     }
 
-    async push(repository: Repository, options?: Git.Options.Push): Promise<void> {
+    async push(repository: Repository, { remote, localBranch, remoteBranch, setUpstream, force }: Git.Options.Push = {}): Promise<void> {
         const repositoryPath = this.getFsPath(repository);
-        const r = await this.getDefaultRemote(repositoryPath, options ? options.remote : undefined);
-        if (r === undefined) {
+        const currentRemote = await this.getDefaultRemote(repositoryPath, remote);
+        if (currentRemote === undefined) {
             this.fail(repository, `No configured push destination.`);
         }
-        const localBranch = await this.getCurrentBranch(repositoryPath, options ? options.localBranch : undefined);
-        const localBranchName = typeof localBranch === 'string' ? localBranch : localBranch.name;
-        const remoteBranch = options ? options.remoteBranch : undefined;
-        return this.manager.run(repository, () =>
-            push(repositoryPath, r!, localBranchName, remoteBranch)
-        );
+        const branch = await this.getCurrentBranch(repositoryPath, localBranch);
+        const branchName = typeof branch === 'string' ? branch : branch.name;
+        if (setUpstream || force) {
+            const args = ['push'];
+            if (force) {
+                args.push('--force');
+            }
+            if (setUpstream) {
+                args.push('--set-upstream');
+            }
+            if (currentRemote) {
+                args.push(currentRemote);
+            }
+            args.push(branchName + (remoteBranch ? `:${remoteBranch}` : ''));
+            await this.exec(repository, args);
+        } else {
+            return this.manager.run(repository, () =>
+                push(repositoryPath, currentRemote!, branchName, remoteBranch)
+            );
+        }
     }
 
-    async pull(repository: Repository, options?: Git.Options.Pull): Promise<void> {
+    async pull(repository: Repository, { remote, branch, rebase }: Git.Options.Pull = {}): Promise<void> {
         const repositoryPath = this.getFsPath(repository);
-        const r = await this.getDefaultRemote(repositoryPath, options ? options.remote : undefined);
-        if (r === undefined) {
+        const currentRemote = await this.getDefaultRemote(repositoryPath, remote);
+        if (currentRemote === undefined) {
             this.fail(repository, `No remote repository specified. Please, specify either a URL or a remote name from which new revisions should be fetched.`);
         }
-        return this.manager.run(repository, () => {
-            if (options && options.branch) {
-                return pull(repositoryPath, r!, options.branch);
+        if (rebase) {
+            const args = ['pull'];
+            if (rebase) {
+                args.push('-r');
             }
-            return pull(repositoryPath, r!);
-        });
+            if (currentRemote) {
+                args.push(currentRemote);
+            }
+            if (branch) {
+                args.push(branch);
+            }
+            await this.exec(repository, args);
+        } else {
+            return this.manager.run(repository, () => {
+                if (branch) {
+                    return pull(repositoryPath, currentRemote!, branch);
+                }
+                return pull(repositoryPath, currentRemote!);
+            });
+        }
     }
 
     reset(repository: Repository, options: Git.Options.Reset): Promise<void> {
