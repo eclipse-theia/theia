@@ -6,13 +6,14 @@
  */
 
 import { inject, injectable, named } from 'inversify';
-import { ContributionProvider, CommandRegistry, MenuModelRegistry, ILogger } from '../common';
+import { ContributionProvider, CommandRegistry, MenuModelRegistry, ILogger, isOSX } from '../common';
 import { MaybePromise } from '../common/types';
 import { KeybindingRegistry } from './keybinding';
 import { Widget } from "./widgets";
 import { ApplicationShell } from './shell/application-shell';
 import { ShellLayoutRestorer } from './shell/shell-layout-restorer';
 import { FrontendApplicationStateService } from './frontend-application-state';
+import { preventNavigation, parseCssTime } from './browser';
 
 /**
  * Clients can implement to get a callback for contributing widgets to a shell on start.
@@ -135,6 +136,10 @@ export class FrontendApplication {
         });
         window.addEventListener('resize', () => this.shell.update());
         document.addEventListener('keydown', event => this.keybindings.run(event), true);
+        // Prevent forward/back navigation by scrolling in OS X
+        if (isOSX) {
+            document.body.addEventListener('wheel', preventNavigation);
+        }
     }
 
     /**
@@ -157,7 +162,7 @@ export class FrontendApplication {
                 window.requestAnimationFrame(() => {
                     startupElem.classList.add('theia-hidden');
                     const preloadStyle = window.getComputedStyle(startupElem);
-                    const transitionDuration = this.parseCssTime(preloadStyle.transitionDuration);
+                    const transitionDuration = parseCssTime(preloadStyle.transitionDuration, 0);
                     window.setTimeout(() => {
                         const parent = startupElem.parentElement;
                         if (parent) {
@@ -170,22 +175,6 @@ export class FrontendApplication {
         } else {
             return Promise.resolve();
         }
-    }
-
-    /**
-     * Parse the number of milliseconds from a CSS time value.
-     */
-    private parseCssTime(time: string | null): number {
-        if (time) {
-            if (time.endsWith('ms')) {
-                return parseFloat(time.substring(0, time.length - 2));
-            } else if (time.endsWith('s')) {
-                return parseFloat(time.substring(0, time.length - 1)) * 1000;
-            } else {
-                return parseFloat(time);
-            }
-        }
-        return 0;
     }
 
     /**
