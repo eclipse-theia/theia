@@ -103,9 +103,7 @@ export class DebugConfigurationManager {
         return this.workspaceService.root.then(root => {
             if (root) {
                 const uri = root.uri + "/" + DebugConfigurationManager.CONFIG;
-                return this.fileSystem.exists(uri).then((exists) => {
-                    return { exists, uri };
-                });
+                return this.fileSystem.exists(uri).then(exists => ({ exists, uri }));
             }
             return Promise.reject("Workspace is not opened yet.");
         }).then(({ exists, uri }) => {
