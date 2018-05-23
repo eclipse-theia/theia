@@ -90,7 +90,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                     .then(({ sessionId, configuration }) => this.debugSessionManager.create(sessionId, configuration))
                     .catch(error => {
                         console.log(error);
-                    })
+                    });
             },
             isEnabled: () => true,
             isVisible: () => true

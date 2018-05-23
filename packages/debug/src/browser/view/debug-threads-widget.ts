@@ -9,11 +9,7 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 
-import {
-    VirtualWidget,
-    SELECTED_CLASS,
-    Message
-} from "@theia/core/lib/browser";
+import { VirtualWidget, SELECTED_CLASS } from "@theia/core/lib/browser";
 import { DebugSession } from "../debug-session";
 import { h } from '@phosphor/virtualdom';
 import { DebugProtocol } from 'vscode-debugprotocol';
