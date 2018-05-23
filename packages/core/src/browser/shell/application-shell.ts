@@ -532,6 +532,7 @@ export class ApplicationShell extends Widget {
             } else {
                 this.collapseBottomPanel();
             }
+            this.refreshBottomPanelToggleButton();
         }
         // Proceed with the main panel once all others are set up
         await this.bottomPanelState.pendingUpdate;
