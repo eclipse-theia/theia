@@ -24,6 +24,7 @@ import { bindDirtyDiff } from './dirty-diff/dirty-diff-module';
 import { bindBlame } from './blame/blame-module';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import { GitCommitMessageValidator } from './git-commit-message-validator';
+import { GitSyncService } from './git-sync-service';
 
 import '../../src/browser/style/index.css';
 
@@ -56,4 +57,6 @@ export default new ContainerModule(bind => {
     bind(NavigatorTreeDecorator).to(GitDecorator).inSingletonScope();
 
     bind(GitCommitMessageValidator).toSelf().inSingletonScope();
+
+    bind(GitSyncService).toSelf().inSingletonScope();
 });

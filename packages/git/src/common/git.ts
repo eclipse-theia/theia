@@ -304,6 +304,18 @@ export namespace Git {
              */
             readonly remoteBranch?: string;
 
+            /**
+             * Set upstream for every branch that is up to date or successfully pushed,
+             * add upstream (tracking) reference, used by argument-less git-pull and other commands.
+             */
+            readonly setUpstream?: boolean;
+
+            /**
+             * Usually, the command refuses to update a remote ref that is not an ancestor of the local ref used to overwrite it.
+             * This flag disables these checks, and can cause the remote repository to lose commits; use it with care.
+             */
+            readonly force?: boolean;
+
         }
 
         /**
@@ -321,6 +333,11 @@ export namespace Git {
              * the default remote tracking of the currently active branch.
              */
             readonly branch?: string;
+
+            /**
+             * When true, rebase the current branch on top of the upstream branch after fetching.
+             */
+            readonly rebase?: boolean
 
         }
 

@@ -7,18 +7,15 @@
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { DisposableCollection, CommandRegistry, MenuModelRegistry } from '@theia/core';
-import { AbstractViewContribution, StatusBar, StatusBarAlignment, DiffUris } from '@theia/core/lib/browser';
+import { AbstractViewContribution, StatusBar, StatusBarAlignment, DiffUris, StatusBarEntry } from '@theia/core/lib/browser';
 import { EditorManager, EditorWidget, EditorOpenerOptions, EditorContextMenu, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { GitFileChange, GitFileStatus } from '../common';
 import { GitWidget } from './git-widget';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import { GitQuickOpenService } from './git-quick-open-service';
+import { GitSyncService } from './git-sync-service';
 
 export const GIT_WIDGET_FACTORY_ID = 'git';
-
-const GIT_SELECTED_REPOSITORY = 'git-selected-repository';
-const GIT_REPOSITORY_STATUS = 'git-repository-status';
-const GIT_AHEAD_BEHIND = 'git-ahead-behind';
 
 export const EDITOR_CONTEXT_MENU_GIT = [...EDITOR_CONTEXT_MENU, '3_git'];
 
@@ -61,10 +58,22 @@ export namespace GIT_COMMANDS {
         id: 'git.open.changes',
         label: 'Git: Open Changes'
     };
+    export const SYNC = {
+        id: 'git.sync',
+        label: 'Git: Sync'
+    };
+    export const PUBLISH = {
+        id: 'git.publish',
+        label: 'Git: Publish Branch'
+    };
 }
 
 @injectable()
 export class GitViewContribution extends AbstractViewContribution<GitWidget> {
+
+    static GIT_SELECTED_REPOSITORY = 'git-selected-repository';
+    static GIT_REPOSITORY_STATUS = 'git-repository-status';
+    static GIT_SYNC_STATUS = 'git-sync-status';
 
     protected toDispose = new DisposableCollection();
 
@@ -72,6 +81,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(GitQuickOpenService) protected readonly quickOpenService: GitQuickOpenService;
     @inject(GitRepositoryTracker) protected readonly repositoryTracker: GitRepositoryTracker;
+    @inject(GitSyncService) protected readonly syncService: GitSyncService;
 
     constructor() {
         super({
@@ -86,11 +96,11 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
         });
     }
 
-    onStart() {
+    onStart(): void {
         this.repositoryTracker.onDidChangeRepository(repository => {
             if (repository && this.hasMultipleRepositories()) {
                 const path = new URI(repository.localUri).path;
-                this.statusBar.setElement(GIT_SELECTED_REPOSITORY, {
+                this.statusBar.setElement(GitViewContribution.GIT_SELECTED_REPOSITORY, {
                     text: `$(database) ${path.base}`,
                     alignment: StatusBarAlignment.LEFT,
                     priority: 102,
@@ -98,7 +108,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
                     tooltip: path.toString()
                 });
             } else {
-                this.statusBar.removeElement(GIT_SELECTED_REPOSITORY);
+                this.statusBar.removeElement(GitViewContribution.GIT_SELECTED_REPOSITORY);
             }
         });
         this.repositoryTracker.onGitEvent(event => {
@@ -118,27 +128,15 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
                     dirty = '*';
                 }
             }
-            this.statusBar.setElement(GIT_REPOSITORY_STATUS, {
+            this.statusBar.setElement(GitViewContribution.GIT_REPOSITORY_STATUS, {
                 text: `$(code-fork) ${branch}${dirty}`,
                 alignment: StatusBarAlignment.LEFT,
                 priority: 101,
                 command: GIT_COMMANDS.CHECKOUT.id
             });
-            if (status.aheadBehind === undefined) {
-                this.statusBar.removeElement(GIT_AHEAD_BEHIND);
-            } else {
-                const { ahead, behind } = status.aheadBehind;
-                if (ahead > 0 || behind > 0) {
-                    this.statusBar.setElement(GIT_AHEAD_BEHIND, {
-                        text: `${behind}↓ ${ahead}↑`,
-                        alignment: StatusBarAlignment.LEFT,
-                        priority: 100
-                    });
-                } else {
-                    this.statusBar.removeElement(GIT_AHEAD_BEHIND);
-                }
-            }
+            this.updateSyncStatusBarEntry();
         });
+        this.syncService.onDidChange(() => this.updateSyncStatusBarEntry());
     }
 
     registerMenus(menus: MenuModelRegistry): void {
@@ -222,6 +220,16 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
             isEnabled: () => !!this.openChangesOptions,
             isVisible: () => !!this.openChangesOptions
         });
+        registry.registerCommand(GIT_COMMANDS.SYNC, {
+            execute: () => this.syncService.sync(),
+            isEnabled: () => this.syncService.canSync(),
+            isVisible: () => this.syncService.canSync()
+        });
+        registry.registerCommand(GIT_COMMANDS.PUBLISH, {
+            execute: () => this.syncService.publish(),
+            isEnabled: () => this.syncService.canPublish(),
+            isVisible: () => this.syncService.canPublish()
+        });
     }
 
     protected hasConflicts(changes: GitFileChange[]): boolean {
@@ -276,5 +284,43 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
 
     protected hasMultipleRepositories(): boolean {
         return this.repositoryTracker.allRepositories.length > 1;
+    }
+
+    protected updateSyncStatusBarEntry(): void {
+        const entry = this.getStatusBarEntry();
+        if (entry) {
+            this.statusBar.setElement(GitViewContribution.GIT_SYNC_STATUS, {
+                alignment: StatusBarAlignment.LEFT,
+                priority: 100,
+                ...entry
+            });
+        } else {
+            this.statusBar.removeElement(GitViewContribution.GIT_SYNC_STATUS);
+        }
+    }
+    protected getStatusBarEntry(): (Pick<StatusBarEntry, 'text'> & Partial<StatusBarEntry>) | undefined {
+        const status = this.repositoryTracker.selectedRepositoryStatus;
+        if (!status || !status.branch) {
+            return undefined;
+        }
+        if (this.syncService.isSyncing()) {
+            return {
+                text: '$(refresh~spin)',
+                tooltip: 'Synchronizing Changes...'
+            };
+        }
+        const { upstreamBranch, aheadBehind } = status;
+        if (upstreamBranch) {
+            return {
+                text: '$(refresh)' + (aheadBehind ? ` ${aheadBehind.behind}↓ ${aheadBehind.ahead}↑` : ''),
+                command: GIT_COMMANDS.SYNC.id,
+                tooltip: 'Synchronize Changes'
+            };
+        }
+        return {
+            text: '$(cloud-upload)',
+            command: GIT_COMMANDS.PUBLISH.id,
+            tooltip: 'Publish Changes'
+        };
     }
 }
