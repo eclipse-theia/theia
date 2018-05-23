@@ -125,6 +125,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
 
     protected onActivateRequest(msg: Message): void {
         super.onActivateRequest(msg);
+        this.node.focus();
         if (this.model.selectedNodes.length === 0) {
             const root = this.model.root;
             if (SelectableTreeNode.is(root)) {
@@ -136,7 +137,6 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
                 }
             }
         }
-        this.node.focus();
     }
 
     protected onUpdateRequest(msg: Message): void {
