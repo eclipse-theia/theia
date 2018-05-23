@@ -25,6 +25,8 @@ export interface DebugSession extends Disposable, NodeJS.EventEmitter {
     getServerCapabilities(): DebugProtocol.Capabilities | undefined;
     initialize(): Promise<DebugProtocol.InitializeResponse>;
     configurationDone(): Promise<DebugProtocol.ConfigurationDoneResponse>;
+    attach(args: DebugProtocol.AttachRequestArguments): Promise<DebugProtocol.AttachResponse>;
+    launch(args: DebugProtocol.LaunchRequestArguments): Promise<DebugProtocol.LaunchResponse>;
     threads(): Promise<DebugProtocol.ThreadsResponse>;
     stacks(args: DebugProtocol.StackTraceArguments): Promise<DebugProtocol.StackTraceResponse>;
     disconnect(): Promise<DebugProtocol.InitializeResponse>;
@@ -37,7 +39,7 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
     private sequence: number;
 
     protected readonly toDispose = new DisposableCollection();
-    protected readonly callbacks = new Map<number, (response: any) => void>();
+    protected readonly callbacks = new Map<number, (response: DebugProtocol.Response) => void>();
 
     protected websocket: Promise<WebSocket>;
     protected capabilities: DebugProtocol.Capabilities = {};
@@ -90,6 +92,22 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         });
     }
 
+    attach(args: DebugProtocol.AttachRequestArguments): Promise<DebugProtocol.AttachResponse> {
+        return this.proceedRequest("attach", args)
+            .then(response => {
+                this.emit("connected");
+                return response;
+            });
+    }
+
+    launch(args: DebugProtocol.LaunchRequestArguments): Promise<DebugProtocol.LaunchResponse> {
+        return this.proceedRequest("launch", args)
+            .then(response => {
+                this.emit("connected");
+                return response;
+            });
+    }
+
     threads(): Promise<DebugProtocol.ThreadsResponse> {
         return this.proceedRequest("threads");
     }
@@ -119,7 +137,7 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         }
     }
 
-    protected proceedRequest<T>(command: string, args?: any): Promise<T> {
+    protected proceedRequest<T extends DebugProtocol.Response>(command: string, args?: {}): Promise<T> {
         const result = new Deferred<T>();
 
         const request: DebugProtocol.Request = {
@@ -130,7 +148,11 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         };
 
         this.callbacks.set(request.seq, (response: T) => {
-            result.resolve(response);
+            if (!response.success) {
+                result.reject(response);
+            } else {
+                result.resolve(response);
+            }
         });
 
         return this.websocket
@@ -174,9 +196,10 @@ export class DebugSessionManager {
     private activeDebugSessionId: string | undefined;
 
     protected readonly sessions = new Map<string, DebugSession>();
+    protected readonly onDidCreateDebugSessionEmitter = new Emitter<DebugSession>();
+    protected readonly onDidConnectDebugSessionEmitter = new Emitter<DebugSession>();
     protected readonly onDidChangeActiveDebugSessionEmitter = new Emitter<DebugSession | undefined>();
-    protected readonly onDidStartDebugSessionEmitter = new Emitter<DebugSession>();
-    protected readonly onDidTerminateDebugSessionEmitter = new Emitter<DebugSession>();
+    protected readonly onDidDestroyDebugSessionEmitter = new Emitter<DebugSession>();
 
     constructor(
         @inject(DebugSessionFactory)
@@ -192,8 +215,21 @@ export class DebugSessionManager {
     create(sessionId: string, debugConfiguration: DebugConfiguration): DebugSession {
         const session = this.debugSessionFactory.get(sessionId, debugConfiguration);
         this.sessions.set(sessionId, session);
-        this.onDidStartDebugSessionEmitter.fire(session);
+        this.onDidCreateDebugSessionEmitter.fire(session);
+
         session.on("terminated", () => this.destroy(sessionId));
+        session.on("initialized", () => this.setActiveDebugSession(sessionId));
+
+        session.initialize()
+            .then(response => session.configurationDone())
+            .then(response => {
+                const request = debugConfiguration.request;
+                switch (request) {
+                    case "attach": return session.attach(debugConfiguration);
+                    default: return Promise.reject(`Unsupported request '${request}' type.`);
+                }
+            }).then(response => this.onDidConnectDebugSessionEmitter.fire(session));
+
         return session;
     }
 
@@ -210,9 +246,16 @@ export class DebugSessionManager {
                 } else {
                     this.setActiveDebugSession(undefined);
                 }
-
             }
         }
+    }
+
+    /**
+     * Finds a debug session by its identifier.
+     * @returns The debug sessions
+     */
+    find(sessionId: string): DebugSession | undefined {
+        return this.sessions.get(sessionId);
     }
 
     /**
@@ -245,7 +288,8 @@ export class DebugSessionManager {
     }
 
     /**
-     * Destroy the debug session.
+     * Destroy the debug session. If session identifier isn't provided then
+     * all active debug session will be destroyed.
      * @param sessionId The session identifier
      */
     destroy(sessionId?: string): void {
@@ -262,18 +306,22 @@ export class DebugSessionManager {
     private doDestroy(session: DebugSession): void {
         session.dispose();
         this.remove(session.sessionId);
-        this.onDidTerminateDebugSessionEmitter.fire(session);
+        this.onDidDestroyDebugSessionEmitter.fire(session);
     }
 
     get onDidChangeActiveDebugSession(): Event<DebugSession | undefined> {
         return this.onDidChangeActiveDebugSessionEmitter.event;
     }
 
-    get onDidStartDebugSession(): Event<DebugSession> {
-        return this.onDidStartDebugSessionEmitter.event;
+    get onDidCreateDebugSession(): Event<DebugSession> {
+        return this.onDidCreateDebugSessionEmitter.event;
     }
 
-    get onDidTerminateDebugSession(): Event<DebugSession> {
-        return this.onDidTerminateDebugSessionEmitter.event;
+    get onDidConnectDebugSession(): Event<DebugSession> {
+        return this.onDidConnectDebugSessionEmitter.event;
+    }
+
+    get onDidDestroyDebugSession(): Event<DebugSession> {
+        return this.onDidDestroyDebugSessionEmitter.event;
     }
 }

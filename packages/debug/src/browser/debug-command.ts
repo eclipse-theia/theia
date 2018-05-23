@@ -86,21 +86,11 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
             execute: () => {
                 this.debugConfigurationManager.selectConfiguration()
                     .then(configuration => this.debug.resolveDebugConfiguration(configuration))
-                    .then(configuration => {
-                        return this.debug.start(configuration).then(sessionId => {
-                            return { sessionId, configuration };
-                        });
+                    .then(configuration => this.debug.start(configuration).then(sessionId => ({ sessionId, configuration })))
+                    .then(({ sessionId, configuration }) => this.debugSessionManager.create(sessionId, configuration))
+                    .catch(error => {
+                        console.log(error);
                     })
-                    .then(({ sessionId, configuration }) => {
-                        return this.debugSessionManager.create(sessionId, configuration);
-                    })
-                    .then(debugSession => {
-                        debugSession.initialize().then((response) => {
-                            if (response.success) {
-                                this.debugSessionManager.setActiveDebugSession(debugSession.sessionId);
-                            }
-                        });
-                    });
             },
             isEnabled: () => true,
             isVisible: () => true
@@ -108,14 +98,10 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
 
         registry.registerCommand(DEBUG_COMMANDS.STOP);
         registry.registerHandler(DEBUG_COMMANDS.STOP.id, {
-            execute: (x: any) => {
+            execute: () => {
                 const debugSession = this.debugSessionManager.getActiveDebugSession();
                 if (debugSession) {
-                    debugSession.disconnect().then(response => {
-                        if (response.success) {
-                            this.debugSessionManager.destroy(debugSession.sessionId);
-                        }
-                    });
+                    debugSession.disconnect();
                 }
             },
             isEnabled: () => this.debugSessionManager.getActiveDebugSession() !== undefined,
