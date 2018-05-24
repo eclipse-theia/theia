@@ -516,9 +516,9 @@ export namespace KeybindingRegistry {
          * @return this
          */
         merge(other: KeybindingsResult): KeybindingsResult {
-            this.full = this.full.concat(other.full);
-            this.partial = this.partial.concat(other.partial);
-            this.shadow = this.shadow.concat(other.shadow);
+            this.full.push(...other.full);
+            this.partial.push(...other.partial);
+            this.shadow.push(...other.shadow);
             return this;
         }
 
