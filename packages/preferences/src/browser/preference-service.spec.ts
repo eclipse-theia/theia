@@ -18,7 +18,8 @@ import * as temp from 'temp';
 import { Emitter } from '@theia/core/lib/common';
 import {
     PreferenceService, PreferenceScope,
-    PreferenceProviders, PreferenceServiceImpl } from '@theia/core/lib/browser/preferences';
+    PreferenceProviders, PreferenceServiceImpl, PreferenceProvider
+} from '@theia/core/lib/browser/preferences';
 import { FileSystem } from '@theia/filesystem/lib/common/';
 import { FileSystemWatcher } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { FileSystemWatcherServer } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
@@ -282,5 +283,39 @@ describe('Preference Service', function () {
         fs.writeFileSync(tempPath, "{\n   \"key\": \"oldValue\"\n}");
         await prefService.set("key", "newValue", PreferenceScope.User);
         expect(fs.readFileSync(tempPath).toString()).equals(settings);
+    });
+
+    /**
+     * Make sure that the preference service is ready only once the providers
+     * are ready to provide preferences.
+     */
+    it('Should be ready only when all providers are ready', async () => {
+        /**
+         * A slow provider that becomes ready after 1 second.
+         */
+        class SlowProvider extends PreferenceProvider {
+            readonly prefs: { [p: string]: any } = {};
+
+            constructor() {
+                super();
+                setTimeout(() => {
+                    this.prefs['mypref'] = 2;
+                    this._ready.resolve();
+                }, 1000);
+            }
+
+            getPreferences() {
+                return this.prefs;
+            }
+        }
+
+        const container = new Container();
+        container.bind(PreferenceProviders).toFactory(ctx => (scope: PreferenceScope) => new SlowProvider());
+        container.bind(PreferenceServiceImpl).toSelf().inSingletonScope();
+
+        const service = container.get<PreferenceServiceImpl>(PreferenceServiceImpl);
+        await service.ready;
+        const n = service.getNumber('mypref');
+        expect(n).to.equal(2);
     });
 });
