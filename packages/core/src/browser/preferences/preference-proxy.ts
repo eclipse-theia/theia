@@ -74,7 +74,7 @@ export function createPreferenceProxy<T extends Configuration>(preferences: Pref
                 return () => toDispose.dispose();
             }
             if (property === 'ready') {
-                return () => preferences.ready;
+                return preferences.ready;
             }
             throw new Error('unexpected property: ' + property);
         },
