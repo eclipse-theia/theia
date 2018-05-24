@@ -85,9 +85,9 @@ describe('keybindings', () => {
     });
 
     beforeEach(() => {
+        stub = sinon.stub(os, 'isOSX').value(false);
         keybindingRegistry = testContainer.get<KeybindingRegistry>(KeybindingRegistry);
         keybindingRegistry.onStart();
-        stub = sinon.stub(os, 'isOSX').value(false);
     });
 
     afterEach(() => {

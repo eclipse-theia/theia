@@ -301,7 +301,7 @@ export class KeyCode {
             return new KeyCode(sequence.join('+'), KeyCode.toCharacter(event));
         } else {
             const key = event.first ? [event.first.code] : [];
-            return new KeyCode(([] as string[]).concat(key)
+            return new KeyCode(key
                 .concat((event.modifiers || []).sort().map(modifier => `${modifier}`))
                 .join('+'));
         }
