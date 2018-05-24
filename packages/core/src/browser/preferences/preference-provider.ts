@@ -7,6 +7,7 @@
 
 import { injectable } from 'inversify';
 import { Disposable, DisposableCollection, Emitter, Event } from '../../common';
+import { Deferred } from '../../common/promise-util';
 
 @injectable()
 export class PreferenceProvider implements Disposable {
@@ -14,6 +15,12 @@ export class PreferenceProvider implements Disposable {
     readonly onDidPreferencesChanged: Event<void> = this.onDidPreferencesChangedEmitter.event;
 
     protected readonly toDispose = new DisposableCollection();
+
+    /**
+     * Resolved when the preference provider is ready to provide preferences
+     * It should be resolved by subclasses.
+     */
+    protected readonly _ready = new Deferred<void>();
 
     constructor() {
         this.toDispose.push(this.onDidPreferencesChangedEmitter);
@@ -33,5 +40,10 @@ export class PreferenceProvider implements Disposable {
 
     setPreference(key: string, value: any): Promise<void> {
         return Promise.resolve();
+    }
+
+    /** See `_ready`.  */
+    get ready() {
+        return this._ready.promise;
     }
 }

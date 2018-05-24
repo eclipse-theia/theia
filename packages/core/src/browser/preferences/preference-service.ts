@@ -74,12 +74,16 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
     protected _ready: Promise<void> | undefined;
     get ready(): Promise<void> {
         if (!this._ready) {
-            this._ready = new Promise((resolve, reject) => {
+            this._ready = new Promise(async (resolve, reject) => {
                 this.toDispose.push(Disposable.create(() => reject()));
                 for (const preferenceProvider of this.preferenceProviders) {
                     this.toDispose.push(preferenceProvider);
                     preferenceProvider.onDidPreferencesChanged(event => this.reconcilePreferences());
                 }
+
+                // Wait until all the providers are ready to provide preferences.
+                await Promise.all(this.preferenceProviders.map(p => p.ready));
+
                 this.reconcilePreferences();
                 resolve();
             });
