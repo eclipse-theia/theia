@@ -52,7 +52,13 @@ export class DebugStackFramesWidget extends VirtualWidget {
         }
 
         this._threadId = threadId;
-        this.refreshStackFrames(threadId);
+        if (threadId) {
+            this.refreshStackFrames(threadId);
+        } else {
+            this.stackFrames = [];
+            this.stackFrameId = undefined;
+            this.onDidSelectStackFrameEmitter.fire(this.stackFrameId);
+        }
     }
 
     get stackFrames(): DebugProtocol.StackFrame[] {
@@ -110,13 +116,7 @@ export class DebugStackFramesWidget extends VirtualWidget {
     }
 
     private toDisplayName(stackFrame: DebugProtocol.StackFrame): string {
-        return stackFrame.name + '():' + stackFrame.line
-            + (stackFrame.source && stackFrame.column
-                ? ':' + stackFrame.column
-                : '')
-            + (stackFrame.source
-                ? ', ' + stackFrame.source.name
-                : '');
+        return stackFrame.name;
     }
 
     private toDocumentId(stackFrameId?: number): string {
@@ -141,22 +141,18 @@ export class DebugStackFramesWidget extends VirtualWidget {
         }
     }
 
-    private refreshStackFrames(threadId?: number) {
-        if (this.stackFrames.length) {
-            this.stackFrames = [];
-            this.stackFrameId = undefined;
-            this.onDidSelectStackFrameEmitter.fire(this.stackFrameId);
-        }
+    private refreshStackFrames(threadId: number) {
+        this.stackFrames = [];
+        this.stackFrameId = undefined;
+        this.onDidSelectStackFrameEmitter.fire(this.stackFrameId);
 
-        if (threadId) {
-            this.debugSession.stacks({ threadId }).then(response => {
-                if (this.threadId === threadId && response.success) { // still the same thread remains selected
-                    this.stackFrames = response.body.stackFrames;
-                    this.stackFrameId = this.stackFrames.length ? this.stackFrames[0].id : undefined;
-                    this.onDidSelectStackFrameEmitter.fire(this.stackFrameId);
-                }
-            });
-        }
+        this.debugSession.stacks(threadId).then(response => {
+            if (this.threadId === threadId) { // still the same thread remains selected
+                this.stackFrames = response.body.stackFrames;
+                this.stackFrameId = this.stackFrames.length ? this.stackFrames[0].id : undefined;
+                this.onDidSelectStackFrameEmitter.fire(this.stackFrameId);
+            }
+        });
     }
 }
 

@@ -50,18 +50,23 @@ export class DebugWidget extends Panel {
 
     @postConstruct()
     protected init() {
-        this.debugSessionManager.onDidCreateDebugSession(debugSession => this.onDebugSessionStarted(debugSession));
+        this.debugSessionManager.onDidCreateDebugSession(debugSession => this.onDebugSessionCreated(debugSession));
         this.debugSessionManager.onDidDestroyDebugSession(debugSession => this.onDebugSessionDestroyed(debugSession));
-        this.debugSessionManager.onDidConnectDebugSession(debugSession => this.onDebugSessionConnected(debugSession));
+
+        this.debugSessionManager.findAll().forEach(debugSession => {
+            this.onDebugSessionCreated(debugSession);
+            this.tabBar.titles
+                .filter(title => (title.owner as DebugTargetWidget).sessionId === debugSession.sessionId)
+                .forEach(title => title.owner.update());
+        });
     }
 
-    private onDebugSessionConnected(debugSession: DebugSession): void {
-        this.tabBar.titles
-            .filter(title => (title.owner as DebugTargetWidget).sessionId === debugSession.sessionId)
-            .forEach(title => title.owner.update());
+    protected onActivateRequest(msg: Message) {
+        super.onActivateRequest(msg);
+        this.tabBar.update();
     }
 
-    private onDebugSessionStarted(debugSession: DebugSession): void {
+    private onDebugSessionCreated(debugSession: DebugSession): void {
         const currentTitle = this.tabBar.currentTitle;
         if (currentTitle) {
             currentTitle.owner.hide();
@@ -69,8 +74,14 @@ export class DebugWidget extends Panel {
 
         const widget = new DebugTargetWidget(debugSession);
         this.tabBar.addTab(widget.title);
-        this.node.appendChild(widget.node);
         this.tabBar.currentTitle = widget.title;
+        this.node.appendChild(widget.node);
+
+        debugSession.on("connected", () => {
+            this.tabBar.titles
+                .filter(title => (title.owner as DebugTargetWidget).sessionId === debugSession.sessionId)
+                .forEach(title => title.owner.update());
+        });
     }
 
     private onDebugSessionDestroyed(debugSession: DebugSession) {
