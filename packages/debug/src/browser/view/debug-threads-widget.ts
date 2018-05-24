@@ -29,8 +29,13 @@ export class DebugThreadsWidget extends VirtualWidget {
         this.id = this.toDocumentId();
         this.addClass(Styles.THREADS_CONTAINER);
         this.node.setAttribute("tabIndex", "0");
+
         this.debugSession.on('thread', event => this.onThreadEvent(event));
         this.debugSession.on('connected', event => this.refreshThreads());
+
+        if (this.debugSession.isConnected) {
+            this.refreshThreads();
+        }
     }
 
     get threads(): DebugProtocol.Thread[] {
@@ -95,23 +100,24 @@ export class DebugThreadsWidget extends VirtualWidget {
     }
 
     private onThreadEvent(event: DebugProtocol.ThreadEvent): void {
-        this.refreshThreads(this.threadId);
+        this.refreshThreads(true);
     }
 
-    private refreshThreads(threadId2select?: number) {
-        if (this.threads.length) {
-            this.threads = [];
-            this.threadId = undefined;
-            this.onDidSelectThreadEmitter.fire(this.threadId);
-        }
+    private refreshThreads(remainThreadSelected?: boolean): void {
+        const selectedThreadId = this.threadId;
+
+        this.threads = [];
+        this.threadId = undefined;
+        this.onDidSelectThreadEmitter.fire(undefined);
 
         this.debugSession.threads().then(response => {
             this.threads = response.body.threads;
-            this.threadId = threadId2select
-                ? threadId2select
-                : (this.threads.length
-                    ? this.threads[0].id
-                    : undefined);
+
+            const remainThreadExists = this.threads.filter(thread => thread.id === selectedThreadId).length !== 0;
+            this.threadId = remainThreadSelected && remainThreadExists
+                ? selectedThreadId
+                : (this.threads.length ? this.threads[0].id : undefined);
+
             this.onDidSelectThreadEmitter.fire(this.threadId);
         });
     }
