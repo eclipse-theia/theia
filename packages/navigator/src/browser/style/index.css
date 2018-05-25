@@ -29,7 +29,7 @@
     padding-right: 12px;
     padding-top: 4px;
     padding-bottom: 4px;
-    width: 100%;
+    width: calc(100% - var(--theia-ui-padding)*4);
 }
 
 @import './search-box.css';
