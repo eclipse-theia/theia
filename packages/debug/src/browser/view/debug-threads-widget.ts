@@ -9,12 +9,13 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 
-import { VirtualWidget, SELECTED_CLASS } from "@theia/core/lib/browser";
+import { VirtualWidget, SELECTED_CLASS, ContextMenuRenderer } from "@theia/core/lib/browser";
 import { DebugSession } from "../debug-session";
 import { h } from '@phosphor/virtualdom';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { Emitter, Event } from "@theia/core";
 import { injectable, inject } from "inversify";
+import { Emitter, Event, CommandRegistry } from "@theia/core";
+import { DEBUG_SESSION_THREAD_CONTEXT_MENU, DEBUG_COMMANDS } from '../debug-command';
 
 /**
  * Is it used to display list of threads.
@@ -26,7 +27,9 @@ export class DebugThreadsWidget extends VirtualWidget {
 
     private readonly onDidSelectThreadEmitter = new Emitter<number | undefined>();
 
-    constructor(@inject(DebugSession) protected readonly debugSession: DebugSession) {
+    constructor(@inject(DebugSession) protected readonly debugSession: DebugSession,
+        @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
+        @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry) {
         super();
         this.id = this.createId();
         this.addClass(Styles.THREADS_CONTAINER);
@@ -38,6 +41,46 @@ export class DebugThreadsWidget extends VirtualWidget {
         if (this.debugSession.debugSessionState.isConnected) {
             this.refreshThreads();
         }
+        this.initCommands();
+    }
+
+    protected initCommands() {
+        this.commandRegistry.registerHandler(DEBUG_COMMANDS.SUSPEND_THREAD.id, {
+            execute: () => {
+                if (this._threadId) {
+                    this.debugSession.pause(this._threadId);
+                }
+            },
+            isEnabled: () => !!this._threadId && !!this.debugSession.debugSessionState.stoppedThreadIds.indexOf(this._threadId),
+            isVisible: () => true
+        });
+        this.commandRegistry.registerHandler(DEBUG_COMMANDS.RESUME_THREAD.id, {
+            execute: () => {
+                if (this._threadId) {
+                    this.debugSession.resume(this._threadId);
+                }
+            },
+            isEnabled: () => !!this._threadId && !this.debugSession.debugSessionState.stoppedThreadIds.indexOf(this._threadId),
+            isVisible: () => true
+        });
+        this.commandRegistry.registerHandler(DEBUG_COMMANDS.RESUME_ALL_THREADS.id, {
+            execute: () => {
+                if (this.threads.length > 0) {
+                    this.debugSession.resume();
+                }
+            },
+            isEnabled: () => this.debugSession.debugSessionState.stoppedThreadIds.length >= 1,
+            isVisible: () => true
+        });
+        this.commandRegistry.registerHandler(DEBUG_COMMANDS.SUSPEND_ALL_THREADS.id, {
+            execute: () => {
+                if (this.threads.length > 0) {
+                    this.debugSession.pause();
+                }
+            },
+            isEnabled: () => this.debugSession.debugSessionState.stoppedThreadIds.length < this._threads.length,
+            isVisible: () => true
+        });
     }
 
     get threads(): DebugProtocol.Thread[] {
@@ -93,6 +136,12 @@ export class DebugThreadsWidget extends VirtualWidget {
                     onclick: event => {
                         this.threadId = thread.id;
                         this.onDidSelectThreadEmitter.fire(this.threadId);
+                    },
+                    oncontextmenu: (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        this.onDidSelectThreadEmitter.fire(this.threadId);
+                        this.contextMenuRenderer.render(DEBUG_SESSION_THREAD_CONTEXT_MENU, event);
                     }
                 }, thread.name);
             items.push(item);
