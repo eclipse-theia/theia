@@ -44,7 +44,7 @@ For Windows instructions [click here](#building-on-windows).
 
 ## Prerequisites
  - Node.js v8.0 or higher
- - [Yarn package manager](https://yarnpkg.com/en/docs/install) v1.2.1
+ - [Yarn package manager](https://yarnpkg.com/en/docs/install) v1.6.0
  - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
 
 [nvm](https://github.com/creationix/nvm) is recommended to easily switch between
@@ -251,7 +251,7 @@ Install `git` via `choco`
 
 Install the correct version of `yarn` (The version is important)
 
-    choco install yarn --version 1.2.1 -y
+    choco install yarn --version 1.6.0 -y
 
 Install Windows-Build-Tools.
 Run PowerShell as an administrator and copy-paste the below command:
@@ -264,8 +264,6 @@ Using Git Bash as administrator:
     git clone https://github.com/theia-ide/theia.git && cd theia && yarn && cd examples/browser && yarn run start
 
 ## Troubleshooting
-
-You might see `error Could not open cafile: EISDIR: illegal operation on a directory` errors when running `yarn`. This is a known [issue in `yarn` version `1.2.1`](https://github.com/yarnpkg/yarn/issues/4695), and will be fixed in the next release. You can safely ignore it for now.
 
 ### Linux
 
@@ -303,7 +301,7 @@ If you have accidentally installed the wrong `yarn` version, you have to remove 
 
  - Run PowerShell as an administrator.
  - Run: choco uninstall yarn -y
- - Run: choco install yarn --version 1.2.1 -y
+ - Run: choco install yarn --version 1.6.0 -y
 
 [all-in-one packages]: https://github.com/felixrieseberg/windows-build-tools
 [bug]: https://github.com/theia-ide/theia/issues
