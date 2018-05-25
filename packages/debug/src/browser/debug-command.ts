@@ -17,15 +17,23 @@ import { DebugSessionManager } from "./debug-session";
 import { DebugConfigurationManager } from "./debug-configuration";
 
 export const DEBUG_SESSION_CONTEXT_MENU: MenuPath = ['debug-session-context-menu'];
+export const DEBUG_SESSION_THREAD_CONTEXT_MENU: MenuPath = ['debug-session-thread-context-menu'];
 
 export namespace DebugSessionContextMenu {
     export const STOP = [...DEBUG_SESSION_CONTEXT_MENU, '1_stop'];
+}
+
+export namespace ThreadContextMenu {
+    export const RESUME_THREAD = [...DEBUG_SESSION_THREAD_CONTEXT_MENU, '2_resume'];
+    export const SUSPEND_THREAD = [...RESUME_THREAD, '1_suspend'];
 }
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, "4_debug"];
     export const DEBUG_STOP = [...DEBUG, '2_stop'];
     export const DEBUG_START = [...DEBUG_STOP, '1_start'];
+    export const SUSPEND_ALL_THREADS = [...DEBUG, '6_suspend_all_threads'];
+    export const RESUME_ALL_THREADS = [...SUSPEND_ALL_THREADS, '5_resume_all_threads'];
     export const ADD_CONFIGURATION = [...DEBUG, '4_add_configuration'];
     export const OPEN_CONFIGURATION = [...ADD_CONFIGURATION, '3_open_configuration'];
 }
@@ -49,6 +57,26 @@ export namespace DEBUG_COMMANDS {
     export const ADD_CONFIGURATION = {
         id: 'debug.configuration.add',
         label: 'Add configuration'
+    };
+
+    export const SUSPEND_THREAD = {
+        id: 'debug.thread.suspend',
+        label: 'Suspend thread'
+    };
+
+    export const RESUME_THREAD = {
+        id: 'debug.thread.resume',
+        label: 'Resume thread'
+    };
+
+    export const SUSPEND_ALL_THREADS = {
+        id: 'debug.thread.suspend.all',
+        label: 'Suspend'
+    };
+
+    export const RESUME_ALL_THREADS = {
+        id: 'debug.thread.resume.all',
+        label: 'Resume'
     };
 }
 
@@ -77,6 +105,18 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
         });
         menus.registerMenuAction(DebugSessionContextMenu.STOP, {
             commandId: DEBUG_COMMANDS.STOP.id
+        });
+        menus.registerMenuAction(DebugMenus.SUSPEND_ALL_THREADS, {
+            commandId: DEBUG_COMMANDS.SUSPEND_ALL_THREADS.id
+        });
+        menus.registerMenuAction(DebugMenus.RESUME_ALL_THREADS, {
+            commandId: DEBUG_COMMANDS.RESUME_ALL_THREADS.id
+        });
+        menus.registerMenuAction(ThreadContextMenu.SUSPEND_THREAD, {
+            commandId: DEBUG_COMMANDS.SUSPEND_THREAD.id
+        });
+        menus.registerMenuAction(ThreadContextMenu.RESUME_THREAD, {
+            commandId: DEBUG_COMMANDS.RESUME_THREAD.id
         });
     }
 
@@ -121,5 +161,10 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
             isEnabled: () => true,
             isVisible: () => true
         });
+
+        registry.registerCommand(DEBUG_COMMANDS.SUSPEND_ALL_THREADS);
+        registry.registerCommand(DEBUG_COMMANDS.RESUME_ALL_THREADS);
+        registry.registerCommand(DEBUG_COMMANDS.SUSPEND_THREAD);
+        registry.registerCommand(DEBUG_COMMANDS.RESUME_THREAD);
     }
 }
