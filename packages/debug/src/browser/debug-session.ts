@@ -33,7 +33,8 @@ export interface DebugSession extends Disposable, NodeJS.EventEmitter {
     launch(args: DebugProtocol.LaunchRequestArguments): Promise<DebugProtocol.LaunchResponse>;
     threads(): Promise<DebugProtocol.ThreadsResponse>;
     stacks(threadId: number): Promise<DebugProtocol.StackTraceResponse>;
-    pause(threadId: number): Promise<DebugProtocol.PauseResponse>;
+    pause(threadId?: number): Promise<DebugProtocol.PauseResponse> | Promise<DebugProtocol.PauseResponse[]>;
+    resume(threadId?: number): Promise<DebugProtocol.ContinueResponse | DebugProtocol.ContinueResponse[]>;
     disconnect(): Promise<DebugProtocol.InitializeResponse>;
     scopes(frameId: number): Promise<DebugProtocol.ScopesResponse>;
     variables(variablesReference: number, start?: number, count?: number): Promise<DebugProtocol.VariablesResponse>;
@@ -124,8 +125,40 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         return this.proceedRequest("threads");
     }
 
-    pause(threadId: number): Promise<DebugProtocol.PauseResponse> {
+    pause(threadId?: number): Promise<DebugProtocol.PauseResponse> | Promise<DebugProtocol.PauseResponse[]> {
+        if (threadId) {
+            return this.doPause(threadId);
+        } else {
+            return this.threads().then(response => Promise.all(response.body.threads.map((thread: DebugProtocol.Thread) => this.doPause(thread.id))));
+        }
+    }
+
+    doPause(threadId: number): Promise<DebugProtocol.PauseResponse> {
         return this.proceedRequest("pause", { threadId });
+    }
+
+    resume(threadId?: number): Promise<DebugProtocol.ContinueResponse | DebugProtocol.ContinueResponse[]> {
+        if (threadId) {
+            return this.doResume(threadId);
+        } else {
+            return this.threads().then(response => Promise.all(response.body.threads.map((thread: DebugProtocol.Thread) => this.doResume(thread.id))));
+        }
+    }
+
+    private doResume(threadId: number): Promise<DebugProtocol.ContinueResponse> {
+        return this.proceedRequest("continue", { threadId: threadId }).then(response => {
+            const event: DebugProtocol.ContinuedEvent = {
+                type: 'event',
+                seq: -1,
+                event: 'continued',
+                body: {
+                    threadId: threadId,
+                    allThreadsContinued: false
+                }
+            };
+            this.proceedEvent(event);
+            return response as DebugProtocol.ContinueResponse;
+        });
     }
 
     stacks(threadId: number): Promise<DebugProtocol.StackTraceResponse> {
