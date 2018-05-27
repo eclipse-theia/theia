@@ -124,10 +124,6 @@ export class DebugThreadsWidget extends VirtualWidget {
 }
 
 export namespace Styles {
-    export const DEBUG_PANEL = 'theia-debug-panel';
-    export const DEBUG_TARGET = 'theia-debug-target';
     export const THREADS_CONTAINER = 'theia-debug-threads-container';
     export const THREAD = 'theia-debug-thread';
-    export const STACK_FRAMES_CONTAINER = 'theia-debug-stack-frames-container';
-    export const STACK_FRAME = 'theia-debug-stack-frame';
 }
