@@ -25,6 +25,7 @@ import { DEBUG_SESSION_CONTEXT_MENU } from "../debug-command";
 import { inject, injectable, postConstruct } from "inversify";
 import { DebugThreadsWidget } from "./debug-threads-widget";
 import { DebugStackFramesWidget } from "./debug-stack-frames-widget";
+import { DebugBreakpointsWidget } from "./debug-breakpoints-widget";
 
 export const DEBUG_FACTORY_ID = 'debug';
 
@@ -45,7 +46,7 @@ export class DebugWidget extends Panel {
         this.title.closable = true;
         this.title.iconClass = 'fa fa-bug';
         this.tabBar = this.createTabBar();
-        this.addClass(DebugWidget.Styles.DEBUG_PANEL);
+        this.addClass(Styles.DEBUG_PANEL);
     }
 
     @postConstruct()
@@ -144,13 +145,14 @@ export class DebugTargetWidget extends Widget {
     public readonly sessionId: string;
     private threads: DebugThreadsWidget;
     private stackFrames: DebugStackFramesWidget;
+    private breakpoints: DebugBreakpointsWidget;
 
     constructor(protected readonly debugSession: DebugSession) {
         super();
         this.sessionId = debugSession.sessionId;
         this.title.label = debugSession.configuration.name;
         this.title.closable = true;
-        this.addClass(DebugWidget.Styles.DEBUG_TARGET);
+        this.addClass(Styles.DEBUG_TARGET);
 
         this.stackFrames = new DebugStackFramesWidget(debugSession);
         this.stackFrames.onDidSelectStackFrame(stackFrameId => { });
@@ -158,14 +160,18 @@ export class DebugTargetWidget extends Widget {
         this.threads = new DebugThreadsWidget(debugSession);
         this.threads.onDidSelectThread(threadId => this.stackFrames.threadId = threadId);
 
+        this.breakpoints = new DebugBreakpointsWidget(debugSession);
+
         this.node.appendChild(this.threads.node);
         this.node.appendChild(this.stackFrames.node);
+        this.node.appendChild(this.breakpoints.node);
     }
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         this.threads.update();
         this.stackFrames.update();
+        this.breakpoints.update();
     }
 }
 
@@ -185,13 +191,7 @@ export class DebugViewContribution extends AbstractViewContribution<DebugWidget>
     }
 }
 
-export namespace DebugWidget {
-    export namespace Styles {
-        export const DEBUG_PANEL = 'theia-debug-panel';
-        export const DEBUG_TARGET = 'theia-debug-target';
-        export const THREADS_CONTAINER = 'theia-debug-threads-container';
-        export const THREAD = 'theia-debug-thread';
-        export const STACK_FRAMES_CONTAINER = 'theia-debug-stack-frames-container';
-        export const STACK_FRAME = 'theia-debug-stack-frame';
-    }
+namespace Styles {
+    export const DEBUG_PANEL = 'theia-debug-panel';
+    export const DEBUG_TARGET = 'theia-debug-target';
 }
