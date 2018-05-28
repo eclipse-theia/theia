@@ -140,7 +140,7 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
         return value !== null && value !== undefined ? value : defaultValue;
     }
 
-    set(preferenceName: string, value: any, scope: PreferenceScope): Promise<void> {
+    set(preferenceName: string, value: any, scope: PreferenceScope = PreferenceScope.User): Promise<void> {
         return this.getPreferenceProvider(scope).setPreference(preferenceName, value);
     }
 

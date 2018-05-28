@@ -75,7 +75,8 @@ export class BrowserMainMenuFactory {
             label: menu.label,
             icon: command.iconClass,
             isEnabled: () => this.commandRegistry.isEnabled(command.id),
-            isVisible: () => this.commandRegistry.isVisible(command.id)
+            isVisible: () => this.commandRegistry.isVisible(command.id),
+            isToggled: () => this.commandRegistry.isToggled(command.id)
         });
 
         const bindings = this.keybindingRegistry.getKeybindingsForCommand(command.id);
