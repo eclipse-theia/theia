@@ -48,6 +48,10 @@ export interface CommandHandler {
      * Test whether menu items for this handler should be visible.
      */
     isVisible?(...args: any[]): boolean;
+    /**
+     * Test whether menu items for this handler should be toggled.
+     */
+    isToggled?(...args: any[]): boolean;
 }
 
 export const CommandContribution = Symbol("CommandContribution");
@@ -157,6 +161,14 @@ export class CommandRegistry implements CommandService {
     }
 
     /**
+     * Test whether there is a toggled handler for the given command.
+     */
+    isToggled(command: string): boolean {
+        const handler = this.getToggledHandler(command);
+        return handler && handler.isToggled ? handler.isToggled() : false;
+    }
+
+    /**
      * Execute the active handler for the given command and arguments.
      *
      * Reject if a command cannot be executed.
@@ -193,6 +205,21 @@ export class CommandRegistry implements CommandService {
         if (handlers) {
             for (const handler of handlers) {
                 if (!handler.isEnabled || handler.isEnabled(...args)) {
+                    return handler;
+                }
+            }
+        }
+        return undefined;
+    }
+
+    /**
+     * Get a toggled handler for the given command or `undefined`.
+     */
+    getToggledHandler(commandId: string): CommandHandler | undefined {
+        const handlers = this._handlers[commandId];
+        if (handlers) {
+            for (const handler of handlers) {
+                if (handler.isToggled) {
                     return handler;
                 }
             }
