@@ -24,6 +24,7 @@ import { isOSX } from '../../common/os';
 
 export const TREE_CLASS = 'theia-Tree';
 export const TREE_NODE_CLASS = 'theia-TreeNode';
+export const TREE_NODE_CONTENT_CLASS = 'theia-TreeNodeContent';
 export const TREE_NODE_TAIL_CLASS = 'theia-TreeNodeTail';
 export const TREE_NODE_SEGMENT_CLASS = 'theia-TreeNodeSegment';
 export const TREE_NODE_SEGMENT_GROW_CLASS = 'theia-TreeNodeSegmentGrow';
@@ -382,13 +383,14 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
 
     protected renderNode(node: TreeNode, props: NodeProps): h.Child {
         const attributes = this.createNodeAttributes(node, props);
-        return h.div(attributes,
+        const content = h.div({ className: TREE_NODE_CONTENT_CLASS },
             this.renderExpansionToggle(node, props),
             this.decorateIcon(node, this.renderIcon(node, props)),
             ...this.renderCaptionAffixes(node, props, 'captionPrefixes'),
             this.renderCaption(node, props),
             ...this.renderCaptionAffixes(node, props, 'captionSuffixes'),
             ...this.renderTailDecorations(node, props));
+        return h.div(attributes, content);
     }
 
     protected createNodeAttributes(node: TreeNode, props: NodeProps): ElementAttrs {
