@@ -179,15 +179,19 @@ export class MonacoWorkspace implements lang.Workspace {
         disposables.push(onFileEventEmitter);
         disposables.push(this.fileSystemWatcher.onFilesChanged(changes => {
             for (const change of changes) {
-                const result: [lang.FileChangeType, boolean | undefined] =
-                    change.type === FileChangeType.ADDED ? [lang.FileChangeType.Created, ignoreCreateEvents] :
-                        change.type === FileChangeType.UPDATED ? [lang.FileChangeType.Changed, ignoreChangeEvents] :
-                            [lang.FileChangeType.Deleted, ignoreDeleteEvents];
-
-                const type = result[0];
-                const ignoreEvents = result[1];
+                const fileChangeType = change.type;
+                if (ignoreCreateEvents === true && fileChangeType === FileChangeType.ADDED) {
+                    continue;
+                }
+                if (ignoreChangeEvents === true && fileChangeType === FileChangeType.UPDATED) {
+                    continue;
+                }
+                if (ignoreDeleteEvents === true && fileChangeType === FileChangeType.DELETED) {
+                    continue;
+                }
                 const uri = change.uri.toString();
-                if (ignoreEvents === undefined && ignoreEvents === false && testGlob(globPattern, uri)) {
+                if (testGlob(globPattern, uri)) {
+                    const type = this.mapChangeType(fileChangeType);
                     onFileEventEmitter.fire({ uri, type });
                 }
             }
@@ -197,6 +201,15 @@ export class MonacoWorkspace implements lang.Workspace {
             onFileEvent,
             dispose: () => disposables.dispose()
         };
+    }
+
+    protected mapChangeType(type: FileChangeType): lang.FileChangeType {
+        switch (type) {
+            case FileChangeType.ADDED: return lang.FileChangeType.Created;
+            case FileChangeType.UPDATED: return lang.FileChangeType.Changed;
+            case FileChangeType.DELETED: return lang.FileChangeType.Deleted;
+            default: throw new Error(`Unexpected file change type: ${type}.`);
+        }
     }
 
     async applyEdit(changes: lang.WorkspaceEdit): Promise<boolean> {
