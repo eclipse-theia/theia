@@ -43,6 +43,10 @@
     height: 28px;
 }
 
+.p-Widget.dialogOverlay .dialogTitle i.closeButton {
+    cursor: pointer;
+} 
+
 .p-Widget.dialogOverlay .dialogContent {
     display: flex;
     flex-grow: 2;
