@@ -89,6 +89,7 @@ jobs:
     before_script: skip
     script: travis_retry yarn test:theia ;
   - stage: deploy
+    if: NOT type IN (cron, pull_request)
     os: linux
     before_script: skip
     script: skip
