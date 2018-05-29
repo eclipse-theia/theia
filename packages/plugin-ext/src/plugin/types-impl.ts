@@ -25,3 +25,16 @@ export class Disposable {
         return new Disposable(func);
     }
 }
+
+export class ThemeColor {
+    id: string;
+
+    constructor(id: string) {
+        this.id = id;
+    }
+}
+
+export enum StatusBarAlignment {
+    Left = 1,
+    Right = 2
+}

@@ -12,8 +12,9 @@ import { QuickOpenExtImpl } from './quick-open';
 import { MAIN_RPC_CONTEXT, Plugin } from '../api/plugin-api';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { getPluginId } from '../common/plugin-protocol';
-import { Disposable } from './types-impl';
+import { Disposable, StatusBarAlignment, ThemeColor } from './types-impl';
 import { MessageRegistryExt } from './message-registry';
+import { StatusBarMessageRegistryExt } from './status-bar-message-registry';
 import { WindowStateExtImpl } from './window-state';
 
 export function createAPI(rpc: RPCProtocol): typeof theia {
@@ -21,6 +22,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
     const quickOpenExt = rpc.set(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT, new QuickOpenExtImpl(rpc));
     const messageRegistryExt = new MessageRegistryExt(rpc);
     const windowStateExt = rpc.set(MAIN_RPC_CONTEXT.WINDOW_STATE_EXT, new WindowStateExtImpl(rpc));
+    const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
 
     const commands: typeof theia.commands = {
         registerCommand(command: theia.Command, handler?: <T>(...args: any[]) => T | Thenable<T>): Disposable {
@@ -56,6 +58,12 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
             ...items: any[]): PromiseLike<any> {
             return messageRegistryExt.showErrorMessage(message, optionsOrFirstItem, items);
         },
+        setStatusBarMessage(text: string, arg?: number | PromiseLike<any>): Disposable {
+            return statusBarMessageRegistryExt.setStatusBarMessage(text, arg);
+        },
+        createStatusBarItem(alignment?: theia.StatusBarAlignment, priority?: number): theia.StatusBarItem {
+            return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority);
+        },
 
         get state(): theia.WindowState {
             return windowStateExt.getWindowState();
@@ -69,6 +77,8 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         commands,
         window,
         // Types
+        StatusBarAlignment: StatusBarAlignment,
+        ThemeColor: ThemeColor,
         Disposable: Disposable,
         EventEmitter: Emitter,
         CancellationTokenSource: CancellationTokenSource

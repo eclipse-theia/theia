@@ -11,6 +11,7 @@ import { RPCProtocol } from '../../api/rpc-protocol';
 import { PLUGIN_RPC_CONTEXT } from '../../api/plugin-api';
 import { MessageRegistryMainImpl } from './message-registry-main';
 import { WindowStateMain } from './window-state-main';
+import {StatusBarMessageRegistryMainImpl} from './status-bar-message-registry-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const commandRegistryMain = new CommandRegistryMainImpl(rpc, container);
@@ -25,4 +26,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     // tslint:disable-next-line:no-unused-variable
     // @ts-ignore
     const windowStateMain = new WindowStateMain(rpc);
+
+    const statusBarMessageRegistryMain = new StatusBarMessageRegistryMainImpl(container);
+    rpc.set(PLUGIN_RPC_CONTEXT.STATUS_BAR_MESSAGE_REGISTRY_MAIN, statusBarMessageRegistryMain);
 }

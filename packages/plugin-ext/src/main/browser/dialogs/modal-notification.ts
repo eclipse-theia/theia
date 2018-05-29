@@ -45,7 +45,7 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
         const iconContainer = messageNode.appendChild(document.createElement('div'));
         iconContainer.classList.add(ICON);
         const iconElement = iconContainer.appendChild(document.createElement('i'));
-        iconElement.classList.add('fa', this.toIconClass(messageType), 'fa-fw', messageType);
+        iconElement.classList.add('fa', this.toIconClass(messageType), 'fa-fw', messageType.toString());
 
         const textContainer = messageNode.appendChild(document.createElement('div'));
         textContainer.classList.add(TEXT);
@@ -69,7 +69,7 @@ export class ModalNotification extends AbstractDialog<string | undefined> {
         return messageNode;
     }
 
-    protected toIconClass(icon: string): string {
+    protected toIconClass(icon: MessageType): string {
         if (icon === MessageType.Error) {
             return 'fa-times-circle';
         }
