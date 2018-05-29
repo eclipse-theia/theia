@@ -15,8 +15,6 @@ import { HostedPluginServer, PluginMetadata } from '../../common/plugin-protocol
 @injectable()
 export class PluginWidget extends VirtualWidget {
 
-    static SEARCH_DELAY = 200;
-
     protected plugins: PluginMetadata[] = [];
     protected readonly toDisposeOnFetch = new DisposableCollection();
     protected readonly toDisposeOnSearch = new DisposableCollection();
@@ -41,12 +39,19 @@ export class PluginWidget extends VirtualWidget {
         this.node.focus();
     }
 
-    protected fetchPlugins(): void {
-        this.hostedPluginServer.getDeployedMetadata().then(pluginMetadatas => {
+    public refreshPlugins(): void {
+        this.fetchPlugins();
+    }
+
+    protected fetchPlugins(): Promise<PluginMetadata[]> {
+        const promise = this.hostedPluginServer.getDeployedMetadata();
+
+        promise.then(pluginMetadatas => {
             this.plugins = pluginMetadatas;
             this.ready = true;
             this.update();
         });
+        return promise;
     }
 
     protected render(): h.Child {

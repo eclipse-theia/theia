@@ -287,3 +287,16 @@ export interface HostedPluginServer extends JsonRpcServer<HostedPluginClient> {
     isHostedTheiaRunning(): Promise<boolean>;
     getHostedPluginInstanceURI(): Promise<string>;
 }
+
+/**
+ * The JSON-RPC workspace interface.
+ */
+export const pluginServerJsonRpcPath = '/services/plugin-ext';
+export const PluginServer = Symbol('PluginServer');
+export interface PluginServer {
+
+    /**
+     * Deploy a plugin
+     */
+    deploy(pluginEntry: string): Promise<void>
+}

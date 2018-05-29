@@ -8,12 +8,16 @@
 import { injectable, inject } from 'inversify';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
 import { HostedPluginManagerClient, HostedPluginCommands } from './plugin-manager-client';
+import { PluginExtDeployCommandService } from './plugin-ext-deploy-command';
 
 @injectable()
 export class PluginApiFrontendContribution implements CommandContribution {
 
     @inject(HostedPluginManagerClient)
     protected readonly hostedPluginManagerClient: HostedPluginManagerClient;
+
+    @inject(PluginExtDeployCommandService)
+    protected readonly pluginExtDeployCommandService: PluginExtDeployCommandService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(HostedPluginCommands.RUN, {
@@ -27,6 +31,10 @@ export class PluginApiFrontendContribution implements CommandContribution {
         });
         commands.registerCommand(HostedPluginCommands.SELECT_PLUGIN_PATH, {
             execute: () => this.hostedPluginManagerClient.selectPluginPath()
+        });
+
+        commands.registerCommand(PluginExtDeployCommandService.COMMAND, {
+            execute: () => this.pluginExtDeployCommandService.deploy()
         });
     }
 

@@ -14,12 +14,13 @@ import { HostedPluginWatcher } from "../../hosted/browser/hosted-plugin-watcher"
 import { HostedPluginManagerClient } from "./plugin-manager-client";
 import { PluginApiFrontendContribution } from "./plugin-frontend-contribution";
 import { setUpPluginApi } from "./main-context";
-import { HostedPluginServer, hostedServicePath } from "../../common/plugin-protocol";
+import { HostedPluginServer, hostedServicePath, PluginServer, pluginServerJsonRpcPath } from "../../common/plugin-protocol";
 import { ModalNotification } from './dialogs/modal-notification';
 import { PluginWidget } from "./plugin-ext-widget";
 import { PluginFrontendViewContribution } from "./plugin-frontend-view-contribution";
 
 import '../../../src/main/browser/style/index.css';
+import { PluginExtDeployCommandService } from "./plugin-ext-deploy-command";
 
 export default new ContainerModule(bind => {
     bind(ModalNotification).toSelf().inSingletonScope();
@@ -58,5 +59,11 @@ export default new ContainerModule(bind => {
         id: PluginFrontendViewContribution.PLUGINS_WIDGET_FACTORY_ID,
         createWidget: () => ctx.container.get(PluginWidget)
     }));
+
+    bind(PluginExtDeployCommandService).toSelf().inSingletonScope();
+    bind(PluginServer).toDynamicValue(ctx => {
+        const provider = ctx.container.get(WebSocketConnectionProvider);
+        return provider.createProxy<PluginServer>(pluginServerJsonRpcPath);
+    }).inSingletonScope();
 
 });
