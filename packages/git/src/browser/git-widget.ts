@@ -9,7 +9,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { h } from '@phosphor/virtualdom';
 import URI from '@theia/core/lib/common/uri';
 import { MessageService, ResourceProvider, CommandService, MenuPath } from '@theia/core';
-import { VirtualRenderer, ContextMenuRenderer, VirtualWidget, LabelProvider, DiffUris } from '@theia/core/lib/browser';
+import { VirtualRenderer, ContextMenuRenderer, VirtualWidget, LabelProvider, DiffUris, StatefulWidget } from '@theia/core/lib/browser';
 import { EditorManager, EditorWidget, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { Git, GitFileChange, GitFileStatus, Repository, WorkingDirectoryStatus, CommitWithChanges } from '../common';
@@ -35,12 +35,13 @@ export namespace GitFileChangeNode {
 }
 
 @injectable()
-export class GitWidget extends VirtualWidget {
+export class GitWidget extends VirtualWidget implements StatefulWidget {
 
     protected stagedChanges: GitFileChangeNode[] = [];
     protected unstagedChanges: GitFileChangeNode[] = [];
     protected mergeChanges: GitFileChangeNode[] = [];
     protected message: string = '';
+    protected messageBoxHeight: number = 25;
     protected status: WorkingDirectoryStatus | undefined;
     protected scrollContainer: string;
     protected commitMessageValidationResult: GitCommitMessageValidator.Result | undefined;
@@ -96,11 +97,27 @@ export class GitWidget extends VirtualWidget {
         }
     }
 
+    storeState(): object {
+        const commitTextArea = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
+        const messageBoxHeight = commitTextArea ? commitTextArea.offsetHeight : 25;
+        return {
+            message: this.message,
+            commitMessageValidationResult: this.commitMessageValidationResult,
+            messageBoxHeight
+        };
+    }
+
+    restoreState(oldState: any): void {
+        this.message = oldState.message;
+        this.commitMessageValidationResult = oldState.commitMessageValidationResult;
+        this.messageBoxHeight = oldState.messageBoxHeight;
+    }
+
     protected async undo(): Promise<void> {
         const { selectedRepository } = this.repositoryProvider;
         if (selectedRepository) {
             const message = (await this.git.exec(selectedRepository, ['log', '-n', '1', '--format=%B'])).stdout.trim();
-            const commitTextArea = document.getElementById('theia-git-commit-message') as HTMLTextAreaElement;
+            const commitTextArea = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
             await this.git.exec(selectedRepository, ['reset', 'HEAD~', '--soft']);
             if (commitTextArea) {
                 this.message = message;
@@ -127,7 +144,7 @@ export class GitWidget extends VirtualWidget {
                 }
             } else {
                 // need to access the element, because Phosphor.js is not updating `value`but only `setAttribute('value', ....)` which only sets the default value.
-                const messageInput = document.getElementById('theia-git-commit-message') as HTMLInputElement;
+                const messageInput = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLInputElement;
                 if (messageInput) {
                     this.update();
                     messageInput.focus();
@@ -185,24 +202,26 @@ export class GitWidget extends VirtualWidget {
     protected renderCommitMessage(): h.Child {
         const oninput = this.onCommitMessageChange.bind(this);
         const placeholder = 'Commit message';
-        const status = this.commitMessageValidationResult ? this.commitMessageValidationResult.status : 'idle';
-        const message = this.commitMessageValidationResult ? this.commitMessageValidationResult.message : '';
+        const validationStatus = this.commitMessageValidationResult ? this.commitMessageValidationResult.status : 'idle';
+        const validationMessage = this.commitMessageValidationResult ? this.commitMessageValidationResult.message : '';
         const autofocus = 'true';
         const id = GitWidget.Styles.COMMIT_MESSAGE;
         const commitMessageArea = h.textarea({
-            className: `${GitWidget.Styles.COMMIT_MESSAGE} theia-git-commit-message-${status}`,
+            className: `${GitWidget.Styles.COMMIT_MESSAGE} theia-git-commit-message-${validationStatus}`,
+            style: {height: `${this.messageBoxHeight}px`},
             autofocus,
             oninput,
             placeholder,
             id
-        });
+        }, this.message);
         const validationMessageArea = h.div({
-            className: `${GitWidget.Styles.VALIDATION_MESSAGE} ${GitWidget.Styles.NO_SELECT} theia-git-validation-message-${status} theia-git-commit-message-${status}`,
+            className: `${GitWidget.Styles.VALIDATION_MESSAGE} ${GitWidget.Styles.NO_SELECT}
+            theia-git-validation-message-${validationStatus} theia-git-commit-message-${validationStatus}`,
             style: {
                 display: !!this.commitMessageValidationResult ? 'block' : 'none'
             },
             readonly: 'true'
-        }, message);
+        }, validationMessage);
         return h.div({ className: GitWidget.Styles.COMMIT_MESSAGE_CONTAINER }, commitMessageArea, validationMessageArea);
     }
 
@@ -326,7 +345,7 @@ export class GitWidget extends VirtualWidget {
                 if (selectedRepository) {
                     const [username, email] = await this.getUserConfig(selectedRepository);
                     const signOff = `\n\nSigned-off-by: ${username} <${email}>`;
-                    const commitTextArea = document.getElementById('theia-git-commit-message') as HTMLTextAreaElement;
+                    const commitTextArea = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
                     if (commitTextArea) {
                         const content = commitTextArea.value;
                         if (content.endsWith(signOff)) {
@@ -543,7 +562,7 @@ export class GitWidget extends VirtualWidget {
 
     protected resetCommitMessages(): void {
         this.message = '';
-        const messageInput = document.getElementById('theia-git-commit-message') as HTMLTextAreaElement;
+        const messageInput = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
         messageInput.value = '';
         this.resize(messageInput);
     }
