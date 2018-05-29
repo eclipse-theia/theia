@@ -6,9 +6,10 @@
  */
 
 import { inject, injectable } from 'inversify';
-import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { WorkspaceData, WorkspaceSettings } from '@theia/workspace/lib/common/workspace-protocol';
 import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
+import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class WorkspacePreferenceProvider extends AbstractResourcePreferenceProvider {
@@ -17,12 +18,18 @@ export class WorkspacePreferenceProvider extends AbstractResourcePreferenceProvi
     protected readonly workspaceService: WorkspaceService;
 
     async getUri(): Promise<URI> {
-        const root = await this.workspaceService.root;
-        if (root) {
-            const rootUri = new URI(root.uri);
-            return rootUri.resolve('.theia').resolve('settings.json');
+        const workspaceConfigStat = await this.workspaceService.workspaceConfig;
+        if (workspaceConfigStat) {
+            return new URI(workspaceConfigStat.uri);
         }
         return new Promise<URI>(() => { });
     }
 
+    protected async readJson(): Promise<WorkspaceSettings> {
+        const newPreferences = (await super.readJson() as WorkspaceData).settings;
+        if (this.preferencesChanged(newPreferences)) {
+            await this.workspaceService.updateWorkspaceSettings(this.workspaceId, newPreferences);
+        }
+        return newPreferences;
+    }
 }

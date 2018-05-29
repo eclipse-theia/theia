@@ -20,6 +20,7 @@ import { WorkingDirectoryStatus } from '../common/git-model';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { GitFileChange, GitFileStatus } from '../common/git-model';
 import { GitPreferences, GitConfiguration } from './git-preferences';
+import { FileStatNode } from '@theia/filesystem/lib/browser';
 
 @injectable()
 export class GitDecorator implements TreeDecorator {
@@ -68,7 +69,8 @@ export class GitDecorator implements TreeDecorator {
             return result;
         }
         const markers = this.appendContainerChanges(tree, status.changes);
-        for (const { id } of new DepthFirstTreeIterator(tree.root)) {
+        for (const treeNode of new DepthFirstTreeIterator(tree.root)) {
+            const id = FileStatNode.is(treeNode) ? FileStatNode.getUri(treeNode) : treeNode.id;
             const marker = markers.get(id);
             if (marker) {
                 result.set(id, marker);

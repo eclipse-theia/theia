@@ -16,12 +16,13 @@ import { MaybePromise } from "@theia/core";
 export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProviderContribution {
 
     wsRoot: string;
+
     constructor(@inject(WorkspaceService) wsService: WorkspaceService,
         @inject(FileSystem) protected fileSystem: FileSystem) {
         super();
-        wsService.root.then(root => {
-            if (root) {
-                this.wsRoot = root.uri;
+        wsService.activeRoot.then(activeRoot => {
+            if (activeRoot) {
+                this.wsRoot = activeRoot.uri;
             }
         });
     }

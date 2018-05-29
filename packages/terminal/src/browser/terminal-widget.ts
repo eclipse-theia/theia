@@ -253,7 +253,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         return this.createTerminal();
     }
     protected async createTerminal(): Promise<number | undefined> {
-        const root = await this.workspaceService.root;
+        const root = await this.workspaceService.activeRoot;
         const rootURI = root && root.uri;
         const { cols, rows } = this;
         const terminalId = await this.shellTerminalServer.create({ rootURI, cols, rows });

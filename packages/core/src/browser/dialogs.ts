@@ -12,7 +12,9 @@ import { Widget, BaseWidget, Message } from './widgets';
 
 @injectable()
 export class DialogProps {
-    readonly title: string;
+    constructor(
+        public readonly title: string
+    ) { }
 }
 
 @injectable()
@@ -189,6 +191,7 @@ export abstract class AbstractDialog<T> extends BaseWidget {
 @injectable()
 export class ConfirmDialogProps extends DialogProps {
     readonly msg: string | HTMLElement;
+    readonly type?: 'Info' | 'Action';
     readonly cancel?: string;
     readonly ok?: string;
 }
@@ -201,7 +204,9 @@ export class ConfirmDialog extends AbstractDialog<boolean> {
         super(props);
 
         this.contentNode.appendChild(this.createMessageNode(this.props.msg));
-        this.appendCloseButton(props.cancel);
+        if (!props.type || props.type === 'Action') {
+            this.appendCloseButton(props.cancel);
+        }
         this.appendAcceptButton(props.ok);
     }
 

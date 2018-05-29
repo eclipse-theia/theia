@@ -37,7 +37,7 @@ export class QuickFileOpenService implements QuickOpenModel {
         @inject(FileSearchService) protected readonly fileSearchService: FileSearchService,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider
     ) {
-        workspaceService.root.then(root => this.wsRoot = root);
+        workspaceService.activeRoot.then(activeRoot => this.wsRoot = activeRoot);
     }
 
     protected wsRoot: FileStat | undefined;

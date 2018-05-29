@@ -5,14 +5,15 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { interfaces, Container } from "inversify";
-import { TreeModel } from "@theia/core/lib/browser";
+import { interfaces, Container } from 'inversify';
+import { TreeModel } from '@theia/core/lib/browser';
 import { createFileTreeContainer, FileTreeModel, FileTreeWidget } from '../file-tree';
-import { FileDialog, FileDialogProps } from "./file-dialog";
-import { FileDialogModel } from "./file-dialog-model";
+import { FileDialog, FileDialogProps } from './file-dialog';
+import { SaveFileDialog } from './save-file-dialog';
+import { FileDialogModel } from './file-dialog-model';
 import { FileDialogWidget } from './file-dialog-widget';
 
-export function createFileDialogContainer(parent: interfaces.Container): Container {
+export function createFileDialogContainer(parent: interfaces.Container, dialogProps: FileDialogProps): Container {
     const child = createFileTreeContainer(parent);
 
     child.unbind(FileTreeModel);
@@ -22,13 +23,13 @@ export function createFileDialogContainer(parent: interfaces.Container): Contain
     child.unbind(FileTreeWidget);
     child.bind(FileDialogWidget).toSelf();
 
-    child.bind(FileDialog).toSelf();
+    child.bind(dialogProps.isOpenFileDialog() ? FileDialog : SaveFileDialog).toSelf();
 
     return child;
 }
 
 export function createFileDialog(parent: interfaces.Container, props: FileDialogProps): FileDialog {
-    const container = createFileDialogContainer(parent);
+    const container = createFileDialogContainer(parent, props);
     container.bind(FileDialogProps).toConstantValue(props);
-    return container.get(FileDialog);
+    return container.get(props.isOpenFileDialog() ? FileDialog : SaveFileDialog);
 }
