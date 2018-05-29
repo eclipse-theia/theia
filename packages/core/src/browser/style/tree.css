@@ -22,13 +22,17 @@
 .theia-TreeNode {
     line-height: var(--theia-private-horizontal-tab-height);
     display: flex;
-    align-items: baseline;
-    margin-right: 10px;
 }
 
 .theia-TreeNode:hover {
     background: var(--theia-accent-color4);
     cursor: pointer;
+}
+
+.theia-TreeNodeContent {
+    display: flex;
+    align-items: baseline;
+    width: calc(100% - var(--theia-scrollbar-rail-width));
 }
 
 .theia-ExpansionToggle.theia-mod-collapsed::before {
