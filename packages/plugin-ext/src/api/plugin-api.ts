@@ -68,6 +68,17 @@ export interface MessageRegistryMain {
         optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
         items: string[] | theia.MessageItem[]): PromiseLike<string | theia.MessageItem | undefined>;
 }
+
+export interface StatusBarMessageRegistryMain {
+    $setMessage(text: string,
+                priority: number,
+                alignment: theia.StatusBarAlignment,
+                color: string | undefined,
+                tooltip: string | undefined,
+                command: string | undefined): PromiseLike<string>;
+    $dispose(id: string): void;
+}
+
 export interface QuickOpenExt {
     $onItemSelected(handle: number): void;
     $validateInput(input: string): PromiseLike<string> | undefined;
@@ -87,7 +98,8 @@ export interface WindowStateExt {
 export const PLUGIN_RPC_CONTEXT = {
     COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
     QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain'),
-    MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<MessageRegistryMain>>createProxyIdentifier<MessageRegistryMain>('MessageRegistryMain')
+    MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<MessageRegistryMain>>createProxyIdentifier<MessageRegistryMain>('MessageRegistryMain'),
+    STATUS_BAR_MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<StatusBarMessageRegistryMain>>createProxyIdentifier<StatusBarMessageRegistryMain>('StatusBarMessageRegistryMain')
 };
 
 export const MAIN_RPC_CONTEXT = {

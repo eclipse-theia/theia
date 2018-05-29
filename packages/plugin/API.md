@@ -98,3 +98,24 @@ const disposable = theia.window.onDidChangeWindowState((windowState: theia.Windo
             console.log('Window focus changed: ', windowState.focused);
 });
 ```
+
+#### StatusBar API
+
+ A status bar shows a message to users and supports icon substitution.
+
+ Status bar message can be shown using the [setStatusBarMessage](#window.setStatusBarMessage) and
+ [createStatusBarItem](#window.createStatusBarItem) functions.
+
+Simple example that show a status bar message:
+
+```javascript
+theia.window.setStatusBarMessage('test status bar item');
+```
+
+Simple example that show a status bar message with statusBarItem:
+
+```javascript
+  const item = theia.window.createStatusBarItem(theia.StatusBarAlignment.Right, 99);
+        item.text = 'test status bar item';
+        item.show();
+```
