@@ -14,6 +14,7 @@ import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
 import { ILogger } from '@theia/core';
 @injectable()
 export class HostedPluginSupport {
+    container: interfaces.Container;
     private worker: PluginWorker;
 
     @inject(ILogger)
@@ -26,20 +27,25 @@ export class HostedPluginSupport {
     private readonly watcher: HostedPluginWatcher;
 
     checkAndLoadPlugin(container: interfaces.Container): void {
+        this.container = container;
+        this.initPlugins();
+    }
+
+    public initPlugins(): void {
         this.server.getHostedPlugin().then((pluginMedata: any) => {
             if (pluginMedata) {
-                this.loadPlugin(pluginMedata, container);
+                this.loadPlugin(pluginMedata, this.container);
             }
         });
 
         const backendMetadatas = this.server.getDeployedBackendMetadata();
 
         backendMetadatas.then((pluginMetadatas: PluginMetadata[]) => {
-            pluginMetadatas.forEach(pluginMetadata => this.loadPlugin(pluginMetadata, container));
+            pluginMetadatas.forEach(pluginMetadata => this.loadPlugin(pluginMetadata, this.container));
         });
 
         this.server.getDeployedFrontendMetadata().then((pluginMetadatas: PluginMetadata[]) => {
-            pluginMetadatas.forEach(pluginMetadata => this.loadPlugin(pluginMetadata, container));
+            pluginMetadatas.forEach(pluginMetadata => this.loadPlugin(pluginMetadata, this.container));
         });
 
     }

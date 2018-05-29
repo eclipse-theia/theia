@@ -20,7 +20,6 @@ export class PluginDeployerContribution implements BackendApplicationContributio
     protected pluginDeployer: PluginDeployer;
 
     initialize() {
-        this.logger.info("Starting the deployer...");
         this.pluginDeployer.start();
     }
 }

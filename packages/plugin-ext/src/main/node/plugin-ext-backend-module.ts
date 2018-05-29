@@ -9,13 +9,17 @@ import { interfaces } from "inversify";
 import { PluginApiContribution } from "./plugin-service";
 import { BackendApplicationContribution } from "@theia/core/lib/node";
 import { PluginDeployerContribution } from "./plugin-deployer-contribution";
-import { PluginDeployer, PluginDeployerResolver, PluginDeployerFileHandler, PluginDeployerDirectoryHandler } from "../../common/plugin-protocol";
+import {
+    PluginDeployer, PluginDeployerResolver, PluginDeployerFileHandler,
+    PluginDeployerDirectoryHandler, PluginServer, pluginServerJsonRpcPath
+} from "../../common/plugin-protocol";
 import { PluginDeployerImpl } from "./plugin-deployer-impl";
 import { LocalDirectoryPluginDeployerResolver } from "./resolvers/plugin-local-dir-resolver";
 import { PluginTheiaFileHandler } from "./handlers/plugin-theia-file-handler";
 import { PluginTheiaDirectoryHandler } from "./handlers/plugin-theia-directory-handler";
 import { GithubPluginDeployerResolver } from "./plugin-github-resolver";
 import { HttpPluginDeployerResolver } from "./plugin-http-resolver";
+import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core";
 
 export function bindMainBackend(bind: interfaces.Bind): void {
     bind(PluginApiContribution).toSelf().inSingletonScope();
@@ -31,4 +35,12 @@ export function bindMainBackend(bind: interfaces.Bind): void {
 
     bind(PluginDeployerFileHandler).to(PluginTheiaFileHandler).inSingletonScope();
     bind(PluginDeployerDirectoryHandler).to(PluginTheiaDirectoryHandler).inSingletonScope();
+
+    bind(PluginServer).to(PluginDeployerImpl).inSingletonScope();
+
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler(pluginServerJsonRpcPath, () =>
+            ctx.container.get(PluginServer)
+        )
+    ).inSingletonScope();
 }
