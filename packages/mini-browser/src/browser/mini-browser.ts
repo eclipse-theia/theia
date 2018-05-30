@@ -56,6 +56,11 @@ export class MiniBrowserProps {
      */
     readonly name?: string;
 
+    /**
+     * `true` if the `iFrame`'s background has to be reset to the default white color. Otherwise, `false`. `false` is the default.
+     */
+    readonly resetBackground?: boolean;
+
 }
 
 export namespace MiniBrowserProps {
@@ -396,10 +401,14 @@ export class MiniBrowser extends BaseWidget {
 
     protected focus(): void {
         const contentDocument = this.contentDocument();
-        if (contentDocument !== null) {
+        if (contentDocument !== null && contentDocument.body) {
             contentDocument.body.focus();
-        } else {
+        } else if (this.pdfContainer.style.display !== 'none') {
+            this.pdfContainer.focus();
+        } else if (this.getToolbarProps() !== 'hide') {
             this.input.focus();
+        } else if (this.frame.parentElement) {
+            this.frame.parentElement.focus();
         }
     }
 
@@ -554,7 +563,9 @@ export class MiniBrowser extends BaseWidget {
                     });
                     this.hideLoadIndicator();
                 } else {
-                    this.frame.addEventListener('load', () => this.frame.style.backgroundColor = 'white', { once: true });
+                    if (this.props.resetBackground === true) {
+                        this.frame.addEventListener('load', () => this.frame.style.backgroundColor = 'white', { once: true });
+                    }
                     this.pdfContainer.style.display = 'none';
                     this.frame.style.display = 'block';
                     this.frame.src = url;

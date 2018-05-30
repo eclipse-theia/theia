@@ -33,6 +33,7 @@ export default new ContainerModule(bind => {
 
     bind(MiniBrowserOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(MiniBrowserOpenHandler);
+    bind(FrontendApplicationContribution).toService(MiniBrowserOpenHandler);
 
     bindContributionProvider(bind, LocationMapper);
     bind(LocationMapper).to(FileLocationMapper).inSingletonScope();
