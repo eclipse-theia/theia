@@ -44,10 +44,11 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    color: var(--theia-ui-button-color);
 }
 
 .theia-mini-browser-toolbar-read-only input:hover {
-    color: #0000EE; /* Theia does not yet have its `link` color. Use the default HTML5 one. */
+    color: var(--theia-ui-button-color-hover);
 }
 
 .theia-mini-browser-button {
