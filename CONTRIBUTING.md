@@ -13,7 +13,7 @@ In the following some of the typical ways of contribution are described.
 
 ### Asking Questions
 
-It's totally fine to ask questions by opening an issue in the Theia Github
+It's totally fine to ask questions by opening an issue in the Theia GitHub
 repository. We will close it once it's answered and tag it with the 'question'
 label. Please check if the question has been asked before there or on [Stack
 Overflow](https://stackoverflow.com).
