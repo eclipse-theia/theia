@@ -107,17 +107,7 @@ export class FileLocationMapper implements LocationMapper {
     }
 
     map(location: string): MaybePromise<string> {
-        return FileLocationMapper.toURL(new URI(location));
-    }
-
-}
-
-export namespace FileLocationMapper {
-
-    /**
-     * Maps the `file` URI to an URL.
-     */
-    export function toURL(uri: URI, endpointPath: string = 'mini-browser'): MaybePromise<string> {
+        const uri = new URI(location);
         if (uri.scheme !== 'file') {
             throw new Error(`Only URIs with 'file' scheme can be mapped to an URL. URI was: ${uri}.`);
         }
@@ -125,7 +115,7 @@ export namespace FileLocationMapper {
         if (rawLocation.charAt(0) === '/') {
             rawLocation = rawLocation.substr(1);
         }
-        return new Endpoint().getRestUrl().resolve(`${endpointPath}/${rawLocation}`).toString();
+        return new Endpoint().getRestUrl().resolve(`mini-browser/${rawLocation}`).toString();
     }
 
 }

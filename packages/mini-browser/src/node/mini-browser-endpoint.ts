@@ -40,16 +40,37 @@ export const MiniBrowserEndpointHandler = Symbol('MiniBrowserEndpointHandler');
 export interface MiniBrowserEndpointHandler {
 
     /**
-     * Returns or resolves to a positive number if the current contribution can handle the resource with the given URI.
-     * The number indicates the priority of the endpoint contribution. If it is not a positive number, it means, the
-     * contribution cannot handle the URI.
+     * Returns with the file extensions supported by the current `mini-browser` endpoint handler.
+     * The file extension must start with the leading `.` (dot). For instance; `'.html'` or `['.jpg', '.jpeg']`.
+     * Extensions are case insensitive.
      */
-    canHandle(uri: string): MaybePromise<number>;
+    supportedExtensions(): string | string[];
 
     /**
      * Responds back to the sender.
      */
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response>;
+
+    /**
+     * Returns or resolves to a positive number if the current contribution can handle the resource with the given URI.
+     * The number indicates the priority of the endpoint contribution. If it is not a positive number, it means, the
+     * contribution cannot handle the URI.
+     */
+    priority(uri: string): MaybePromise<number>;
+
+}
+
+@injectable()
+export abstract class BaseMiniBrowserEndpointHandler implements MiniBrowserEndpointHandler {
+
+    abstract supportedExtensions(): string | string[];
+
+    abstract respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response>;
+
+    priority(uri: string): number {
+        const extensions = this.supportedExtensions();
+        return (Array.isArray(extensions) ? extensions : [extensions]).some(extension => uri.endsWith(extension)) ? 1 : 0;
+    }
 
 }
 
@@ -62,9 +83,9 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution {
     static HANDLE_PATH = '/mini-browser/';
 
     /**
-     * Path for checking whether a resource can be handled at all.
+     * Path for returning all the file extensions that are supported by all the available endpoint handler contributions.
      */
-    static CAN_HANDLE_PATH = '/mini-browser-check/';
+    static SUPPORTED_EXTENSIONS_PATH = '/mini-browser-supported-extensions/';
 
     @inject(ILogger)
     protected readonly logger: ILogger;
@@ -78,7 +99,7 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution {
 
     configure(app: Application): void {
         app.get(`${MiniBrowserEndpoint.HANDLE_PATH}*`, async (request, response) => await this.response(await this.getUri(request), response));
-        app.get(`${MiniBrowserEndpoint.CAN_HANDLE_PATH}*`, async (request, response) => await this.canHandle(await this.getUri(request), response));
+        app.get(`${MiniBrowserEndpoint.SUPPORTED_EXTENSIONS_PATH}`, async (request, response) => await this.supportedExtensions(await this.getUri(request), response));
     }
 
     protected async response(uri: string, response: Response): Promise<Response> {
@@ -101,17 +122,13 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution {
         return this.defaultHandler()(statWithContent, response);
     }
 
-    protected async canHandle(uri: string, response: Response): Promise<Response> {
-        try {
-            response.status((await this.prioritize(uri)).length > 0 ? 200 : 501);
-        } catch {
-            response.status(501);
-        }
-        return response.send();
+    protected async supportedExtensions(uri: string, response: Response): Promise<Response> {
+        const extensions = Array.from(new Set(([] as string[]).concat(...this.getContributions().map(c => c.supportedExtensions()).map(e => Array.isArray(e) ? e : [e]))));
+        return response.send({ extensions });
     }
 
     protected async prioritize(uri: string): Promise<MiniBrowserEndpointHandler[]> {
-        const prioritized = await Prioritizeable.prioritizeAll(this.getContributions(), contribution => contribution.canHandle(uri));
+        const prioritized = await Prioritizeable.prioritizeAll(this.getContributions(), contribution => contribution.priority(uri));
         return prioritized.map(p => p.value);
     }
 
@@ -169,10 +186,10 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution {
  * Endpoint handler contribution for HTML files.
  */
 @injectable()
-export class HtmlHandler implements MiniBrowserEndpointHandler {
+export class HtmlHandler extends BaseMiniBrowserEndpointHandler {
 
-    canHandle(uri: string): MaybePromise<number> {
-        return uri.endsWith('.html') ? 1 : 0;
+    supportedExtensions(): string {
+        return '.html';
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {
@@ -186,10 +203,10 @@ export class HtmlHandler implements MiniBrowserEndpointHandler {
  * Handler for JPG resources.
  */
 @injectable()
-export class JpgHandler implements MiniBrowserEndpointHandler {
+export class ImageHandler extends BaseMiniBrowserEndpointHandler {
 
-    canHandle(uri: string): MaybePromise<number> {
-        return uri.endsWith('.jpg') ? 1 : 0;
+    supportedExtensions(): string[] {
+        return ['.jpg', '.jpeg', '.png', '.bmp', 'gif'];
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {
@@ -209,10 +226,10 @@ export class JpgHandler implements MiniBrowserEndpointHandler {
  * PDF endpoint handler.
  */
 @injectable()
-export class PdfHandler implements MiniBrowserEndpointHandler {
+export class PdfHandler extends BaseMiniBrowserEndpointHandler {
 
-    canHandle(uri: string): MaybePromise<number> {
-        return uri.endsWith('.pdf') ? 1 : 0;
+    supportedExtensions(): string {
+        return '.pdf';
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {
@@ -244,10 +261,10 @@ export class PdfHandler implements MiniBrowserEndpointHandler {
  * Endpoint contribution for SVG resources.
  */
 @injectable()
-export class SvgHandler implements MiniBrowserEndpointHandler {
+export class SvgHandler extends BaseMiniBrowserEndpointHandler {
 
-    canHandle(uri: string): MaybePromise<number> {
-        return uri.endsWith('.svg') ? 1 : 0;
+    supportedExtensions(): string {
+        return '.svg';
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {
