@@ -4,11 +4,12 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-import {StatusBarItem} from '@theia/plugin';
+import * as theia from '@theia/plugin';
 import {ThemeColor, StatusBarAlignment} from '../types-impl';
-import {StatusBarMessageRegistryMain} from "../../api/plugin-api";
+import {StatusBarMessageRegistryMain} from '../../api/plugin-api';
+import {VS_COLORS} from './vscolor-const';
 
-export class StatusBarItemImpl implements StatusBarItem {
+export class StatusBarItemImpl implements theia.StatusBarItem {
     private _messageId: string;
     private _alignment: StatusBarAlignment;
     private _priority: number;
@@ -31,8 +32,8 @@ export class StatusBarItemImpl implements StatusBarItem {
         this._priority = priority;
     }
 
-    public get alignment(): StatusBarAlignment {
-        return this._alignment;
+    public get alignment(): theia.StatusBarAlignment {
+        return <theia.StatusBarAlignment>this._alignment;
     }
 
     public get priority(): number {
@@ -122,14 +123,7 @@ export class StatusBarItemImpl implements StatusBarItem {
     private getColor(): string | undefined {
         if (typeof this.color !== 'string') {
             const colorId = (<ThemeColor>this.color).id;
-            // TODO implement ThemeColor for vs (redo it)
-            const vsColorMap: Map<string, string> = new Map([
-                ['statusBar.foreground', '--theia-layout-color4'],
-                ['editorOverviewRuler.errorForeground', '--theia-error-color0'],
-                ['editorOverviewRuler.warningForeground', '--theia-warn-color0'],
-                ['editorOverviewRuler.infoForeground', '--theia-info-color0'],
-            ]);
-            return `var(${vsColorMap.has(colorId) ? vsColorMap.get(colorId) : colorId})`;
+            return `var(${VS_COLORS[colorId] ? VS_COLORS[colorId] : colorId})`;
         }
         return this.color;
     }
