@@ -149,7 +149,7 @@ class DynamicMenuWidget extends MenuWidget {
     private updateSubMenus(parent: MenuWidget, menu: CompositeMenuNode, commands: PhosphorCommandRegistry): void {
         for (const item of menu.children) {
             if (item instanceof CompositeMenuNode) {
-                if (item.label) {
+                if (item.label && item.children.length > 0) {
                     parent.addItem({
                         type: 'submenu',
                         submenu: new DynamicMenuWidget(item, this.options)
