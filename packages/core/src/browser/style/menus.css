@@ -101,7 +101,6 @@
   padding: 4px 0px;
   background: var(--theia-menu-color1);
   color: var(--theia-ui-font-color1);
-  border: var(--theia-border-width) solid var(--theia-border-color1);
   font-size: var(--theia-ui-font-size1);
   box-shadow: 0px 1px 6px rgba(0, 0, 0, 0.2);
 }
