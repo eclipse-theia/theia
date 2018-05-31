@@ -8,13 +8,7 @@ import {interfaces} from 'inversify';
 import * as theia from '@theia/plugin';
 import {MessageService} from '@theia/core/lib/common/message-service';
 import {MessageRegistryMain} from '../../api/plugin-api';
-import {ModalNotification} from './dialogs/modal-notification';
-
-export enum MessageType {
-    Error = 'error',
-    Warning = 'warning',
-    Info = 'info'
-}
+import {ModalNotification, MessageType} from './dialogs/modal-notification';
 
 export class MessageRegistryMainImpl implements MessageRegistryMain {
     private messageService: MessageService;

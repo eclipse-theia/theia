@@ -7,9 +7,14 @@
 import {injectable} from 'inversify';
 import {Message} from '@phosphor/messaging';
 import {Key} from '@theia/core/lib/browser';
-import {MessageType} from '../message-registry-main';
 import {AbstractDialog} from '@theia/core/lib/browser/dialogs';
 import '../../../../src/main/browser/dialogs/style/modal-notification.css';
+
+export enum MessageType {
+    Error = 'error',
+    Warning = 'warning',
+    Info = 'info'
+}
 
 const NOTIFICATION = 'theia-Notification';
 const ICON = 'icon';
