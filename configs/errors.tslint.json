@@ -23,6 +23,7 @@
       180
     ],
     "no-consecutive-blank-lines": true,
+    "no-shadowed-variable": true,
     "no-trailing-whitespace": true,
     "no-var-keyword": true,
     "one-line": [
