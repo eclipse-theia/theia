@@ -330,8 +330,6 @@ describe("keys api", () => {
     });
 
     it("should parse a string containing special modifiers to a KeyCode correctly", () => {
-        const stub = sinon.stub(os, 'isOSX').value(false);
-
         const keycode = KeyCode.parse("ctrl+b");
         expect(keycode.ctrl).to.be.true;
         expect(keycode.key).is.equal(Key.KEY_B);
@@ -346,8 +344,6 @@ describe("keys api", () => {
         expect(keycodeCtrlOrCommand.meta).to.be.false;
         expect(keycodeCtrlOrCommand.ctrl).to.be.true;
         expect(keycodeCtrlOrCommand.key).is.equal(Key.KEY_B);
-
-        stub.restore();
     });
 
     it("should parse a string containing special modifiers to a KeyCode correctly (macOS)", () => {
