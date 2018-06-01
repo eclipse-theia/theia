@@ -274,7 +274,7 @@ export class GitQuickOpenService {
     private async getTags(): Promise<Tag[]> {
         const repository = this.getRepository();
         if (repository) {
-            const result = await this.git.exec(repository, ['tag', '--sort=version:refname']);
+            const result = await this.git.exec(repository, ['tag', '--sort=-creatordate']);
             return result.stdout.trim().split('\n').map(tag => ({ name: tag }));
         }
         return [];
