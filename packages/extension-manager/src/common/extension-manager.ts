@@ -97,7 +97,6 @@ export type ResolvedExtension = Extension & protocol.ResolvedExtension;
  * - listen to changes of:
  *   - installed extension;
  *   - and the installation process.
-
  */
 @injectable()
 export class ExtensionManager implements Disposable {
@@ -158,7 +157,7 @@ export class ExtensionManager implements Disposable {
         this.onChangedEmitter.fire(change);
     }
 
-    /**InsrallationResultInsrallationResult
+    /**
      * Notify when the installation process is going to be started.
      */
     get onWillStartInstallation(): Event<protocol.InstallationParam> {
