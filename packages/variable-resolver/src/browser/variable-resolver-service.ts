@@ -21,10 +21,10 @@ export class VariableResolverService {
     ) { }
 
     /**
-	 * Resolve the variables in the given string.
-	 * @returns promise resolved to the provided string with already resolved variables.
+     * Resolve the variables in the given string.
+     * @returns promise resolved to the provided string with already resolved variables.
      * Never reject.
-	 */
+     */
     async resolve(text: string): Promise<string> {
         const variablesToValues = await this.resolveVariables(this.searchVariables(text));
         const resolvedText = text.replace(VariableResolverService.VAR_REGEXP, (match: string, varName: string) => {

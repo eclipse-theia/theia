@@ -17,6 +17,7 @@
       true,
       "spaces"
     ],
+    "jsdoc-format": [true, "check-multiline-start"],
     "max-line-length": [
       true,
       180

@@ -19,7 +19,6 @@
       4
     ],
     "interface-over-type-literal": true,
-    "jsdoc-format": true,
     "no-any": true,
     "no-console": false,
     "no-construct": true,
