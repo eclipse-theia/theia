@@ -48,8 +48,8 @@ export class NodeJsDebugAdapterContribution implements DebugAdapterContribution 
     provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable {
         const program = path.join(__dirname, `../../${debugAdapterDir}/out/src/nodeDebug.js`);
         return {
-            runtime: "node",
-            program
+            program,
+            runtime: "node"
         };
     }
 

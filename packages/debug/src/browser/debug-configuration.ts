@@ -89,7 +89,7 @@ export class DebugConfigurationManager {
     writeConfigurations(configurations: DebugConfiguration[]): Promise<void> {
         return this.resolveConfigurationFile()
             .then(configFile => {
-                const jsonPretty = JSON.stringify(configurations, (key: string, value: any) => value, 2);
+                const jsonPretty = JSON.stringify(configurations, (key, value) => value, 2);
                 return this.fileSystem.setContent(configFile, jsonPretty);
             })
             .then(() => { });
