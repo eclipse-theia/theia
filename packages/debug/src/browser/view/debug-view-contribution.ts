@@ -26,6 +26,7 @@ import { inject, injectable, postConstruct } from "inversify";
 import { DebugThreadsWidget } from "./debug-threads-widget";
 import { DebugStackFramesWidget } from "./debug-stack-frames-widget";
 import { DebugBreakpointsWidget } from "./debug-breakpoints-widget";
+import { DebugVariablesWidget } from "./debug-variables-widget";
 
 export const DEBUG_FACTORY_ID = 'debug';
 
@@ -37,10 +38,14 @@ export class DebugWidget extends Panel {
     private readonly tabBar: SideTabBar;
 
     constructor(
-        @inject(DebugSessionManager) protected readonly debugSessionManager: DebugSessionManager,
-        @inject(TabBarRendererFactory) protected readonly tabBarRendererFactory: () => TabBarRenderer) {
-        super();
+        @inject(DebugSessionManager)
+        protected readonly debugSessionManager: DebugSessionManager,
+        @inject(TabBarRendererFactory)
+        protected readonly tabBarRendererFactory: () => TabBarRenderer,
+        @inject("Factory<DebugTargetWidget>")
+        protected readonly debugTargetWidgetFactory: (debugSession: DebugSession) => DebugTargetWidget) {
 
+        super();
         this.id = DEBUG_FACTORY_ID;
         this.title.label = 'Debug';
         this.title.closable = true;
@@ -73,7 +78,7 @@ export class DebugWidget extends Panel {
             currentTitle.owner.hide();
         }
 
-        const widget = new DebugTargetWidget(debugSession);
+        const widget = this.debugTargetWidgetFactory(debugSession);
         this.tabBar.addTab(widget.title);
         this.tabBar.currentTitle = widget.title;
         this.node.appendChild(widget.node);
@@ -141,37 +146,43 @@ export class DebugWidget extends Panel {
  * The debug target widget. It is used as a container
  * for the rest of widgets for the specific debug target.
  */
+@injectable()
 export class DebugTargetWidget extends Widget {
-    public readonly sessionId: string;
-    private threads: DebugThreadsWidget;
-    private stackFrames: DebugStackFramesWidget;
-    private breakpoints: DebugBreakpointsWidget;
-
-    constructor(protected readonly debugSession: DebugSession) {
+    constructor(
+        @inject(DebugSession) protected readonly debugSession: DebugSession,
+        @inject(DebugThreadsWidget) protected readonly threads: DebugThreadsWidget,
+        @inject(DebugStackFramesWidget) protected readonly frames: DebugStackFramesWidget,
+        @inject(DebugBreakpointsWidget) protected readonly breakpoints: DebugBreakpointsWidget,
+        @inject(DebugVariablesWidget) protected readonly variables: DebugVariablesWidget) {
         super();
-        this.sessionId = debugSession.sessionId;
+
         this.title.label = debugSession.configuration.name;
         this.title.closable = true;
         this.addClass(Styles.DEBUG_TARGET);
 
-        this.stackFrames = new DebugStackFramesWidget(debugSession);
-        this.stackFrames.onDidSelectStackFrame(stackFrameId => { });
-
-        this.threads = new DebugThreadsWidget(debugSession);
-        this.threads.onDidSelectThread(threadId => this.stackFrames.threadId = threadId);
-
-        this.breakpoints = new DebugBreakpointsWidget(debugSession);
+        this.threads.onDidSelectThread(threadId => this.frames.threadId = threadId);
+        this.frames.onDidSelectFrame(stackFrameId => this.variables.frameId = stackFrameId);
 
         this.node.appendChild(this.threads.node);
-        this.node.appendChild(this.stackFrames.node);
+        this.node.appendChild(this.frames.node);
         this.node.appendChild(this.breakpoints.node);
+        this.node.appendChild(this.variables.node);
+    }
+
+    get sessionId(): string {
+        return this.debugSession.sessionId;
+    }
+
+    set sessionId(sessionId: string) {
+        throw new Error('Read only variable');
     }
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
         this.threads.update();
-        this.stackFrames.update();
+        this.frames.update();
         this.breakpoints.update();
+        this.variables.update();
     }
 }
 
