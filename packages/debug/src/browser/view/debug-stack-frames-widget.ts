@@ -17,29 +17,30 @@ import { DebugSession } from "../debug-session";
 import { h } from '@phosphor/virtualdom';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Emitter, Event } from "@theia/core";
+import { injectable, inject } from "inversify";
 
 /**
  * Is it used to display call stack.
  */
+@injectable()
 export class DebugStackFramesWidget extends VirtualWidget {
-    private _stackFrames: DebugProtocol.StackFrame[] = [];
-    private _stackFrameId?: number;
+    private _frames: DebugProtocol.StackFrame[] = [];
+    private _frameId?: number;
     private _threadId?: number;
 
-    private readonly onDidSelectStackFrameEmitter = new Emitter<number | undefined>();
+    private readonly onDidSelectFrameEmitter = new Emitter<number | undefined>();
 
-    constructor(
-        protected readonly debugSession: DebugSession) {
+    constructor(@inject(DebugSession) protected readonly debugSession: DebugSession) {
         super();
-        this.id = this.toDocumentId();
-        this.addClass(Styles.STACK_FRAMES_CONTAINER);
+        this.id = this.createId();
+        this.addClass(Styles.FRAMES_CONTAINER);
         this.node.setAttribute("tabIndex", "0");
         this.debugSession.on('stopped', event => this.onStoppedEvent(event));
         this.debugSession.on('continued', event => this.onContinuedEvent(event));
     }
 
-    get onDidSelectStackFrame(): Event<number | undefined> {
-        return this.onDidSelectStackFrameEmitter.event;
+    get onDidSelectFrame(): Event<number | undefined> {
+        return this.onDidSelectFrameEmitter.event;
     }
 
     get threadId(): number | undefined {
@@ -47,67 +48,67 @@ export class DebugStackFramesWidget extends VirtualWidget {
     }
 
     set threadId(threadId: number | undefined) {
-        if (this.threadId === threadId) {
+        if (this._threadId === threadId) {
             return;
         }
 
         this._threadId = threadId;
         if (threadId) {
-            this.refreshStackFrames(threadId);
+            this.refreshFrames(threadId);
         } else {
-            this.stackFrames = [];
-            this.stackFrameId = undefined;
-            this.onDidSelectStackFrameEmitter.fire(this.stackFrameId);
+            this.frames = [];
+            this.frameId = undefined;
+            this.onDidSelectFrameEmitter.fire(this.frameId);
         }
     }
 
-    get stackFrames(): DebugProtocol.StackFrame[] {
-        return this._stackFrames;
+    get frames(): DebugProtocol.StackFrame[] {
+        return this._frames;
     }
 
-    set stackFrames(stackFrames: DebugProtocol.StackFrame[]) {
-        this._stackFrames = stackFrames;
+    set frames(frames: DebugProtocol.StackFrame[]) {
+        this._frames = frames;
         this.update();
     }
 
-    get stackFrameId(): number | undefined {
-        return this._stackFrameId;
+    get frameId(): number | undefined {
+        return this._frameId;
     }
 
-    set stackFrameId(stackFrameId: number | undefined) {
-        if (this.stackFrameId) {
-            const element = document.getElementById(this.toDocumentId(this.stackFrameId));
+    set frameId(frameId: number | undefined) {
+        if (this.frameId) {
+            const element = document.getElementById(this.createId(this.frameId));
             if (element) {
-                element.className = Styles.STACK_FRAME;
+                element.className = Styles.FRAME;
             }
         }
 
-        if (stackFrameId) {
-            const element = document.getElementById(this.toDocumentId(stackFrameId));
+        if (frameId) {
+            const element = document.getElementById(this.createId(frameId));
             if (element) {
-                element.className = `${Styles.STACK_FRAME} ${SELECTED_CLASS}`;
+                element.className = `${Styles.FRAME} ${SELECTED_CLASS}`;
             }
         }
 
-        this._stackFrameId = stackFrameId;
+        this._frameId = frameId;
     }
 
     protected render(): h.Child {
         const header = h.div({ className: "theia-header" }, "Call stack");
         const items: h.Child = [];
 
-        for (const stackFrame of this._stackFrames) {
-            const className = Styles.STACK_FRAME + (stackFrame.id === this.stackFrameId ? ` ${SELECTED_CLASS}` : '');
+        for (const frame of this._frames) {
+            const className = Styles.FRAME + (frame.id === this.frameId ? ` ${SELECTED_CLASS}` : '');
 
             const item =
                 h.div({
-                    id: this.toDocumentId(stackFrame.id),
+                    id: this.createId(frame.id),
                     className,
                     onclick: event => {
-                        this.stackFrameId = stackFrame.id;
-                        this.onDidSelectStackFrameEmitter.fire(this.stackFrameId);
+                        this.frameId = frame.id;
+                        this.onDidSelectFrameEmitter.fire(this.frameId);
                     }
-                }, this.toDisplayName(stackFrame));
+                }, this.toDisplayName(frame));
 
             items.push(item);
         }
@@ -115,20 +116,20 @@ export class DebugStackFramesWidget extends VirtualWidget {
         return [header, h.div(items)];
     }
 
-    private toDisplayName(stackFrame: DebugProtocol.StackFrame): string {
-        return stackFrame.name;
+    private toDisplayName(frame: DebugProtocol.StackFrame): string {
+        return frame.name;
     }
 
-    private toDocumentId(stackFrameId?: number): string {
-        return `debug-stack-frames-${this.debugSession.sessionId}` + (stackFrameId ? `-${stackFrameId}` : '');
+    private createId(frameId?: number): string {
+        return `debug-stack-frames-${this.debugSession.sessionId}` + (frameId ? `-${frameId}` : '');
     }
 
     private onContinuedEvent(event: DebugProtocol.ContinuedEvent): void {
         if (this.threadId) {
             if (this.threadId === event.body.threadId || event.body.allThreadsContinued) {
-                this.stackFrames = [];
-                this.stackFrameId = undefined;
-                this.onDidSelectStackFrameEmitter.fire(this.stackFrameId);
+                this.frames = [];
+                this.frameId = undefined;
+                this.onDidSelectFrameEmitter.fire(this.frameId);
             }
         }
     }
@@ -136,27 +137,27 @@ export class DebugStackFramesWidget extends VirtualWidget {
     private onStoppedEvent(event: DebugProtocol.StoppedEvent): void {
         if (this.threadId) {
             if (this.threadId === event.body.threadId || event.body.allThreadsStopped) {
-                this.refreshStackFrames(this.threadId);
+                this.refreshFrames(this.threadId);
             }
         }
     }
 
-    private refreshStackFrames(threadId: number) {
-        this.stackFrames = [];
-        this.stackFrameId = undefined;
-        this.onDidSelectStackFrameEmitter.fire(this.stackFrameId);
+    private refreshFrames(threadId: number) {
+        this.frames = [];
+        this.frameId = undefined;
+        this.onDidSelectFrameEmitter.fire(this.frameId);
 
         this.debugSession.stacks(threadId).then(response => {
             if (this.threadId === threadId) { // still the same thread remains selected
-                this.stackFrames = response.body.stackFrames;
-                this.stackFrameId = this.stackFrames.length ? this.stackFrames[0].id : undefined;
-                this.onDidSelectStackFrameEmitter.fire(this.stackFrameId);
+                this.frames = response.body.stackFrames;
+                this.frameId = this.frames.length ? this.frames[0].id : undefined;
+                this.onDidSelectFrameEmitter.fire(this.frameId);
             }
         });
     }
 }
 
 namespace Styles {
-    export const STACK_FRAMES_CONTAINER = 'theia-debug-stack-frames-container';
-    export const STACK_FRAME = 'theia-debug-stack-frame';
+    export const FRAMES_CONTAINER = 'theia-debug-frames-container';
+    export const FRAME = 'theia-debug-frame';
 }
