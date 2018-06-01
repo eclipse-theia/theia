@@ -24,7 +24,6 @@
     "no-construct": true,
     "no-magic-numbers": false,
     "no-null-keyword": true,
-    "no-shadowed-variable": true,
     "no-unused-expression": true,
     "one-variable-per-declaration": true
   }
