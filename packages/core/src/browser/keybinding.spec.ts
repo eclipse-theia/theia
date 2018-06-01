@@ -31,7 +31,6 @@ const expect = chai.expect;
 let keybindingRegistry: KeybindingRegistry;
 let commandRegistry: CommandRegistry;
 let testContainer: Container;
-let stub: sinon.SinonStub;
 
 before(async () => {
     testContainer = new Container();
@@ -75,6 +74,8 @@ before(async () => {
 });
 
 describe('keybindings', () => {
+
+    let stub: sinon.SinonStub;
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -330,6 +331,7 @@ describe("keys api", () => {
     });
 
     it("should parse a string containing special modifiers to a KeyCode correctly", () => {
+        const stub = sinon.stub(os, 'isOSX').value(false);
         const keycode = KeyCode.parse("ctrl+b");
         expect(keycode.ctrl).to.be.true;
         expect(keycode.key).is.equal(Key.KEY_B);
@@ -344,11 +346,12 @@ describe("keys api", () => {
         expect(keycodeCtrlOrCommand.meta).to.be.false;
         expect(keycodeCtrlOrCommand.ctrl).to.be.true;
         expect(keycodeCtrlOrCommand.key).is.equal(Key.KEY_B);
+        stub.restore();
     });
 
     it("should parse a string containing special modifiers to a KeyCode correctly (macOS)", () => {
         KeyCode.resetKeyBindings();
-        stub = sinon.stub(os, 'isOSX').value(true);
+        const stub = sinon.stub(os, 'isOSX').value(true);
         const keycode = KeyCode.parse("ctrl+b");
         expect(keycode.ctrl).to.be.true;
         expect(keycode.key).is.equal(Key.KEY_B);
@@ -370,19 +373,21 @@ describe("keys api", () => {
     });
 
     it("it should serialize a keycode properly with BACKQUOTE + M1", () => {
-        stub = sinon.stub(os, 'isOSX').value(true);
+        const stub = sinon.stub(os, 'isOSX').value(true);
         let keyCode = KeyCode.createKeyCode({ first: Key.BACKQUOTE, modifiers: [KeyModifier.CtrlCmd] });
         let keyCodeString = keyCode.toString();
         expect(keyCodeString).to.be.equal("meta+`");
         let parsedKeyCode = KeyCode.parse(keyCodeString);
         expect(KeyCode.equals(parsedKeyCode, keyCode)).to.be.true;
 
-        stub = sinon.stub(os, 'isOSX').value(false);
+        sinon.stub(os, 'isOSX').value(false);
         keyCode = KeyCode.createKeyCode({ first: Key.BACKQUOTE, modifiers: [KeyModifier.CtrlCmd] });
         keyCodeString = keyCode.toString();
         expect(keyCodeString).to.be.equal("ctrl+`");
         parsedKeyCode = KeyCode.parse(keyCodeString);
         expect(KeyCode.equals(parsedKeyCode, keyCode)).to.be.true;
+
+        stub.restore();
     });
 
     it("it should serialize a keycode properly with a + M2 + M3", () => {
@@ -419,19 +424,21 @@ describe("keys api", () => {
             code: Key.BACKQUOTE.code,
             ctrlKey: true,
         });
-        stub = sinon.stub(os, 'isOSX').value(true);
+        const stub = sinon.stub(os, 'isOSX').value(true);
         expect(KeyCode.createKeyCode(event).keystroke).to.be.equal('Backquote+M4');
-        stub = sinon.stub(os, 'isOSX').value(false);
+        sinon.stub(os, 'isOSX').value(false);
         expect(KeyCode.createKeyCode(event).keystroke).to.be.equal('Backquote+M1');
+        stub.restore();
     });
 
     it("it should serialize a keycode properly with a + M4", () => {
-        stub = sinon.stub(os, 'isOSX').value(true);
+        const stub = sinon.stub(os, 'isOSX').value(true);
         const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.MacCtrl] });
         const keyCodeString = keyCode.toString();
         expect(keyCodeString).to.be.equal("ctrl+a");
         const parsedKeyCode = KeyCode.parse(keyCodeString);
         expect(KeyCode.equals(parsedKeyCode, keyCode)).to.be.true;
+        stub.restore();
     });
 
     it("it should parse a multi keycode keybinding", () => {
