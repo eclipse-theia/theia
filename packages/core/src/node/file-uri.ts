@@ -14,8 +14,8 @@ export namespace FileUri {
      * Creates a new file URI from the filesystem path argument.
      * @param fsPath the filesystem path.
      */
-    export function create(fsPath: string) {
-        return new URI(Uri.file(fsPath));
+    export function create(fsPath_: string) {
+        return new URI(Uri.file(fsPath_));
     }
 
     /**
