@@ -355,7 +355,7 @@ export class DugiteGit implements Git {
 
     async branch(repository: Repository, options: { type: 'current' }): Promise<Branch | undefined>;
     async branch(repository: Repository, options: { type: 'local' | 'remote' | 'all' }): Promise<Branch[]>;
-    async branch(repository: Repository, options: Git.Options.Branch.Create | Git.Options.Branch.Rename | Git.Options.Branch.Delete): Promise<void>;
+    async branch(repository: Repository, options: Git.Options.BranchCommand.Create | Git.Options.BranchCommand.Rename | Git.Options.BranchCommand.Delete): Promise<void>;
     // tslint:disable-next-line:no-any
     async branch(repository: any, options: any): Promise<void | undefined | Branch | Branch[]> {
         const repositoryPath = this.getFsPath(repository);
@@ -381,7 +381,7 @@ export class DugiteGit implements Git {
         });
     }
 
-    checkout(repository: Repository, options: Git.Options.Checkout.Branch | Git.Options.Checkout.WorkingTreeFile): Promise<void> {
+    checkout(repository: Repository, options: Git.Options.Checkout.CheckoutBranch | Git.Options.Checkout.WorkingTreeFile): Promise<void> {
         return this.manager.run(repository, () => {
             const repositoryPath = this.getFsPath(repository);
             if (GitUtils.isBranchCheckout(options)) {
