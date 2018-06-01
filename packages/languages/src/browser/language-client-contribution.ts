@@ -127,17 +127,17 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
 
     // FIXME move it to the workspace
     protected waitForOpenTextDocument(selector: DocumentSelector): Promise<TextDocument> {
-        const document = this.workspace.textDocuments.filter(document =>
-            this.languages.match(selector, document)
+        const document = this.workspace.textDocuments.filter(doc =>
+            this.languages.match(selector, doc)
         )[0];
         if (document !== undefined) {
             return Promise.resolve(document);
         }
         return new Promise<TextDocument>(resolve => {
-            const disposable = this.workspace.onDidOpenTextDocument(document => {
-                if (this.languages.match(selector, document)) {
+            const disposable = this.workspace.onDidOpenTextDocument(doc => {
+                if (this.languages.match(selector, doc)) {
                     disposable.dispose();
-                    resolve(document);
+                    resolve(doc);
                 }
             });
         });
