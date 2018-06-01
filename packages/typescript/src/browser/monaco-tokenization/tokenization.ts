@@ -78,11 +78,11 @@ function tokenize(bracketTypeTable: { [i: number]: string }, tokenTypeTable: { [
 		endState: new State(state.language, ts.EndOfLineState.None, false)
 	};
 
-	function appendFn(startIndex: number, type: string): void {
-		if (ret.tokens.length === 0 || ret.tokens[ret.tokens.length - 1].scopes !== type) {
+	function appendFn(startIndex: number, tokenType: string): void {
+		if (ret.tokens.length === 0 || ret.tokens[ret.tokens.length - 1].scopes !== tokenType) {
 			ret.tokens.push({
 				startIndex: startIndex,
-				scopes: type
+				scopes: tokenType
 			});
 		}
 	}
