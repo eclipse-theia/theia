@@ -14,19 +14,21 @@ import { DebugSession } from "../debug-session";
 import { h } from '@phosphor/virtualdom';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Emitter, Event } from "@theia/core";
+import { injectable, inject } from "inversify";
 
 /**
  * Is it used to display list of threads.
  */
+@injectable()
 export class DebugThreadsWidget extends VirtualWidget {
     private _threads: DebugProtocol.Thread[] = [];
     private _threadId?: number;
 
     private readonly onDidSelectThreadEmitter = new Emitter<number | undefined>();
 
-    constructor(protected readonly debugSession: DebugSession) {
+    constructor(@inject(DebugSession) protected readonly debugSession: DebugSession) {
         super();
-        this.id = this.toDocumentId();
+        this.id = this.createId();
         this.addClass(Styles.THREADS_CONTAINER);
         this.node.setAttribute("tabIndex", "0");
 
@@ -52,15 +54,19 @@ export class DebugThreadsWidget extends VirtualWidget {
     }
 
     set threadId(threadId: number | undefined) {
+        if (this._threadId === threadId) {
+            return;
+        }
+
         if (this.threadId) {
-            const element = document.getElementById(this.toDocumentId(this.threadId));
+            const element = document.getElementById(this.createId(this.threadId));
             if (element) {
                 element.className = Styles.THREAD;
             }
         }
 
         if (threadId) {
-            const element = document.getElementById(this.toDocumentId(threadId));
+            const element = document.getElementById(this.createId(threadId));
             if (element) {
                 element.className = `${Styles.THREAD} ${SELECTED_CLASS}`;
             }
@@ -82,7 +88,7 @@ export class DebugThreadsWidget extends VirtualWidget {
 
             const item =
                 h.div({
-                    id: this.toDocumentId(thread.id),
+                    id: this.createId(thread.id),
                     className,
                     onclick: event => {
                         this.threadId = thread.id;
@@ -95,7 +101,7 @@ export class DebugThreadsWidget extends VirtualWidget {
         return [header, h.div(items)];
     }
 
-    private toDocumentId(threadId?: number): string {
+    private createId(threadId?: number): string {
         return `debug-threads-${this.debugSession.sessionId}` + (threadId ? `-${threadId}` : '');
     }
 

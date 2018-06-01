@@ -52,7 +52,7 @@
     cursor: pointer;
 }
 
-.theia-debug-stack-frames-container {
+.theia-debug-frames-container {
     overflow: hidden;
     color: var(--theia-ui-font-color1);
     background: var(--theia-layout-color0);
@@ -62,22 +62,22 @@
     width: 400px;
 }
 
-.theia-debug-stack-frames-container:focus .theia-mod-selected {
+.theia-debug-frames-container:focus .theia-mod-selected {
     background: var(--theia-accent-color3);
 }
 
-.theia-debug-stack-frames-container:not(:focus) .theia-mod-selected {
+.theia-debug-frames-container:not(:focus) .theia-mod-selected {
     background: var(--theia-accent-color4);
 }
 
-.theia-debug-stack-frame {
+.theia-debug-frame {
     line-height: var(--theia-private-horizontal-tab-height);
     align-items: baseline;
     padding-left: 5px;
     display: flex;
 }
 
-.theia-debug-stack-frame:hover {
+.theia-debug-frame:hover {
     background: var(--theia-accent-color4);
     cursor: pointer;
 }
@@ -108,6 +108,36 @@
 }
 
 .theia-debug-breakpoint:hover {
+    background: var(--theia-accent-color4);
+    cursor: pointer;
+}
+
+.theia-debug-variables-container {
+    overflow: hidden;
+    color: var(--theia-ui-font-color1);
+    background: var(--theia-layout-color0);
+    font-size: var(--theia-ui-font-size1);
+    max-height: calc(100% - var(--theia-border-width));
+    position: relative;
+    width: 400px;
+}
+
+.theia-debug-variables-container:focus .theia-mod-selected {
+    background: var(--theia-accent-color3);
+}
+
+.theia-debug-variables-container:not(:focus) .theia-mod-selected {
+    background: var(--theia-accent-color4);
+}
+
+.theia-debug-variable {
+    line-height: var(--theia-private-horizontal-tab-height);
+    align-items: baseline;
+    padding-left: 5px;
+    display: flex;
+}
+
+.theia-debug-variable:hover {
     background: var(--theia-accent-color4);
     cursor: pointer;
 }

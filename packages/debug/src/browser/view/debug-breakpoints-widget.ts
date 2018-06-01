@@ -17,20 +17,21 @@ import { DebugSession } from "../debug-session";
 import { h } from '@phosphor/virtualdom';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { Emitter, Event } from "@theia/core";
+import { injectable, inject } from "inversify";
 
 /**
- * Is it used to display call stack.
+ * Is it used to display breakpoints.
  */
+@injectable()
 export class DebugBreakpointsWidget extends VirtualWidget {
     private _breakpoints = new Map<string, DebugProtocol.Breakpoint>();
 
     private readonly onDidClickBreakpointEmitter = new Emitter<DebugProtocol.Breakpoint>();
     private readonly onDidDblClickBreakpointEmitter = new Emitter<DebugProtocol.Breakpoint>();
 
-    constructor(
-        protected readonly debugSession: DebugSession) {
+    constructor(@inject(DebugSession) protected readonly debugSession: DebugSession) {
         super();
-        this.id = this.toDocumentId();
+        this.id = this.createId();
         this.addClass(Styles.BREAKPOINTS_CONTAINER);
         this.node.setAttribute("tabIndex", "0");
         debugSession.on('breakpoint', event => this.onBreakpointEvent(event));
@@ -38,8 +39,8 @@ export class DebugBreakpointsWidget extends VirtualWidget {
         // TODO remove
         const breakpoint1 = { id: 1, verified: true, line: 1, source: { name: 'module.js' } };
         const breakpoint2 = { id: 2, verified: true, line: 2, source: { name: 'module.js' } };
-        this._breakpoints.set(this.toDocumentId(breakpoint1), breakpoint1);
-        this._breakpoints.set(this.toDocumentId(breakpoint2), breakpoint2);
+        this._breakpoints.set(this.createId(breakpoint1), breakpoint1);
+        this._breakpoints.set(this.createId(breakpoint2), breakpoint2);
     }
 
     get onDidClickBreakpoint(): Event<DebugProtocol.Breakpoint> {
@@ -68,17 +69,17 @@ export class DebugBreakpointsWidget extends VirtualWidget {
     }
 
     private onNewBreakpoint(breakpoint: DebugProtocol.Breakpoint): void {
-        this._breakpoints.set(this.toDocumentId(breakpoint), breakpoint);
+        this._breakpoints.set(this.createId(breakpoint), breakpoint);
         this.update();
     }
 
     private onBreakpointRemoved(breakpoint: DebugProtocol.Breakpoint): void {
-        this._breakpoints.delete(this.toDocumentId(breakpoint));
+        this._breakpoints.delete(this.createId(breakpoint));
         this.update();
     }
 
     private onBreakpointChanged(breakpoint: DebugProtocol.Breakpoint): void {
-        this._breakpoints.set(this.toDocumentId(breakpoint), breakpoint);
+        this._breakpoints.set(this.createId(breakpoint), breakpoint);
         this.update();
     }
 
@@ -89,7 +90,7 @@ export class DebugBreakpointsWidget extends VirtualWidget {
         for (const breakpoint of this._breakpoints.values()) {
             const item =
                 h.div({
-                    id: this.toDocumentId(breakpoint),
+                    id: this.createId(breakpoint),
                     className: Styles.BREAKPOINT,
                     onclick: event => {
                         const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
@@ -114,7 +115,7 @@ export class DebugBreakpointsWidget extends VirtualWidget {
             + (breakpoint.column ? `:${breakpoint.column}` : '');
     }
 
-    private toDocumentId(breakpoint?: DebugProtocol.Breakpoint): string {
+    private createId(breakpoint?: DebugProtocol.Breakpoint): string {
         return `debug-breakpoints-${this.debugSession.sessionId}`
             + (breakpoint
                 ? (breakpoint.id

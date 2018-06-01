@@ -19,6 +19,8 @@ import { Emitter, Event, DisposableCollection } from "@theia/core";
 import { EventEmitter } from "events";
 import { OutputChannelManager } from "@theia/output/lib/common/output-channel";
 
+export const DebugSession = Symbol("DebugSession");
+
 export interface DebugSession extends Disposable, NodeJS.EventEmitter {
     sessionId: string;
     configuration: DebugConfiguration;
@@ -33,6 +35,10 @@ export interface DebugSession extends Disposable, NodeJS.EventEmitter {
     stacks(threadId: number): Promise<DebugProtocol.StackTraceResponse>;
     pause(threadId: number): Promise<DebugProtocol.PauseResponse>;
     disconnect(): Promise<DebugProtocol.InitializeResponse>;
+    scopes(frameId: number): Promise<DebugProtocol.ScopesResponse>;
+    variables(variablesReference: number, start?: number, count?: number): Promise<DebugProtocol.VariablesResponse>;
+    setVariable(args: DebugProtocol.SetVariableArguments): Promise<DebugProtocol.SetVariableResponse>;
+    evaluate(frameId: number, expression: string, context?: string): Promise<DebugProtocol.EvaluateResponse>;
 }
 
 /**
@@ -155,6 +161,30 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         });
     }
 
+    scopes(frameId: number): Promise<DebugProtocol.ScopesResponse> {
+        return this.proceedRequest("scopes", { frameId });
+    }
+
+    variables(variablesReference: number, start?: number, count?: number): Promise<DebugProtocol.VariablesResponse> {
+        const args: DebugProtocol.VariablesArguments = {
+            variablesReference, start, count,
+            format: { hex: false }
+        };
+        return this.proceedRequest('variables', args);
+    }
+
+    setVariable(args: DebugProtocol.SetVariableArguments): Promise<DebugProtocol.SetVariableResponse> {
+        return this.proceedRequest('setVariable', args);
+    }
+
+    evaluate(frameId: number, expression: string, context?: string): Promise<DebugProtocol.EvaluateResponse> {
+        const args: DebugProtocol.EvaluateArguments = {
+            frameId, expression, context,
+            format: { hex: false }
+        };
+        return this.proceedRequest('evaluate', args);
+    }
+
     get isConnected(): boolean {
         return this._isConnected;
     }
@@ -211,6 +241,7 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
     }
 
     dispose() {
+        this._isConnected = false;
         this.callbacks.clear();
         this.websocket
             .then(websocket => websocket.close())
