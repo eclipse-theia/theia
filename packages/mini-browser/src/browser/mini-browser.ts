@@ -271,6 +271,7 @@ export class MiniBrowser extends BaseWidget {
     protected readonly pdfContainer: HTMLElement;
 
     protected readonly initialHistoryLength: number;
+    protected readonly toDisposeOnGo = new DisposableCollection();
 
     constructor(@inject(MiniBrowserProps) protected readonly props: MiniBrowserProps) {
         super();
@@ -572,6 +573,7 @@ export class MiniBrowser extends BaseWidget {
     protected async go(location: string, register: boolean = false, showLoadIndicator: boolean = true): Promise<void> {
         if (location) {
             try {
+                this.toDisposeOnGo.dispose();
                 const url = await this.mapLocation(location);
                 this.setInput(url);
                 if (this.getToolbarProps() === 'read-only') {
@@ -597,6 +599,19 @@ export class MiniBrowser extends BaseWidget {
                     this.frame.src = url;
                     // The load indicator will hide itself if the content of the iframe was loaded.
                 }
+                // Delegate all the `keypress` events from the `iframe` to the application.
+                this.toDisposeOnGo.push(addEventListener(this.frame, 'load', () => {
+                    try {
+                        const { contentDocument } = this.frame;
+                        if (contentDocument) {
+                            const keypressHandler = (e: KeyboardEvent) => this.keybindings.run(e);
+                            contentDocument.addEventListener('keypress', keypressHandler, true);
+                            this.toDisposeOnDetach.push(Disposable.create(() => contentDocument.removeEventListener('keypress', keypressHandler)));
+                        }
+                    } catch {
+                        // There is not much we could do with the security exceptions due to CORS.
+                    }
+                }));
             } catch (e) {
                 this.hideLoadIndicator();
                 console.log(e);

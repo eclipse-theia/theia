@@ -69,7 +69,8 @@ export abstract class BaseMiniBrowserEndpointHandler implements MiniBrowserEndpo
 
     priority(uri: string): number {
         const extensions = this.supportedExtensions();
-        return (Array.isArray(extensions) ? extensions : [extensions]).some(extension => uri.endsWith(extension)) ? 1 : 0;
+        // The handler for the extension should be case insensitive. For example; the handler accepts `'.jpg'` and the file extension is `.JPG`.
+        return (Array.isArray(extensions) ? extensions : [extensions]).some(extension => uri.toLocaleLowerCase().endsWith(extension.toLocaleLowerCase())) ? 1 : 0;
     }
 
 }

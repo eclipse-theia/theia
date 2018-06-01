@@ -26,8 +26,6 @@ export interface MiniBrowserOpenerOptions extends WidgetOpenerOptions, MiniBrows
 export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> implements FrontendApplicationContribution {
 
     /**
-     * This is a **hack**.
-     *
      * Instead of going to the backend with each file URI to ask whether it can handle the current file or not,
      * we have this array of extensions that we populate at application startup. The real advantage of this
      * approach is the following: [Phosphor cannot run async code when invoking `isEnabled`/`isVisible`
@@ -85,13 +83,16 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> imple
             const startPage = uri.toString();
             const name = await this.labelProvider.getName(uri);
             const iconClass = `${await this.labelProvider.getIcon(uri)} file-icon`;
+            // The background has to be reset to white only for "real" web-pages but not for images, for instance.
+            const resetBackground = 'file' === uri.scheme && uri.toString().endsWith('.html');
             result = {
                 ...result,
                 startPage,
                 name,
                 iconClass,
                 // Make sure the toolbar is not visible. We have the `iframe.src` anyway.
-                toolbar: 'hide'
+                toolbar: 'hide',
+                resetBackground
             };
         }
         if (options) {
