@@ -29,7 +29,7 @@ export namespace Git {
         /**
          * Refinements for the `git branch` command.
          */
-        export namespace Branch {
+        export namespace BranchCommand {
 
             /**
              * Option for listing branches in a Git repository.
@@ -152,7 +152,7 @@ export namespace Git {
             /**
              * Options for checking out branches.
              */
-            export interface Branch {
+            export interface CheckoutBranch {
 
                 /**
                  * Branch to checkout; if it refers to a branch, then that branch is checked out.
@@ -590,9 +590,9 @@ export interface Git extends Disposable {
      * @param options further Git command refinements for the branch modification.
      */
     branch(repository: Repository, options:
-        Git.Options.Branch.Create |
-        Git.Options.Branch.Rename |
-        Git.Options.Branch.Delete): Promise<void>;
+        Git.Options.BranchCommand.Create |
+        Git.Options.BranchCommand.Rename |
+        Git.Options.BranchCommand.Delete): Promise<void>;
 
     /**
      * Switches branches or restores working tree files.
@@ -600,7 +600,7 @@ export interface Git extends Disposable {
      * @param repository the repository to where the `git checkout` has to be performed.
      * @param options further checkout options.
      */
-    checkout(repository: Repository, options: Git.Options.Checkout.Branch | Git.Options.Checkout.WorkingTreeFile): Promise<void>;
+    checkout(repository: Repository, options: Git.Options.Checkout.CheckoutBranch | Git.Options.Checkout.WorkingTreeFile): Promise<void>;
 
     /**
      * Commits the changes of all staged files in the working directory.
@@ -731,7 +731,7 @@ export namespace GitUtils {
      * `true` if the argument is an option for renaming an existing branch in the repository.
      */
     // tslint:disable-next-line:no-any
-    export function isBranchRename(arg: any | undefined): arg is Git.Options.Branch.Rename {
+    export function isBranchRename(arg: any | undefined): arg is Git.Options.BranchCommand.Rename {
         return !!arg && ('newName' in arg);
     }
 
@@ -739,7 +739,7 @@ export namespace GitUtils {
      * `true` if the argument is an option for deleting an existing branch in the repository.
      */
     // tslint:disable-next-line:no-any
-    export function isBranchDelete(arg: any | undefined): arg is Git.Options.Branch.Delete {
+    export function isBranchDelete(arg: any | undefined): arg is Git.Options.BranchCommand.Delete {
         return !!arg && ('toDelete' in arg);
     }
 
@@ -747,7 +747,7 @@ export namespace GitUtils {
      * `true` if the argument is an option for creating a new branch in the repository.
      */
     // tslint:disable-next-line:no-any
-    export function isBranchCreate(arg: any | undefined): arg is Git.Options.Branch.Create {
+    export function isBranchCreate(arg: any | undefined): arg is Git.Options.BranchCommand.Create {
         return !!arg && ('toCreate' in arg);
     }
 
@@ -755,7 +755,7 @@ export namespace GitUtils {
      * `true` if the argument is an option for listing the branches in a repository.
      */
     // tslint:disable-next-line:no-any
-    export function isBranchList(arg: any | undefined): arg is Git.Options.Branch.List {
+    export function isBranchList(arg: any | undefined): arg is Git.Options.BranchCommand.List {
         return !!arg && ('type' in arg);
     }
 
@@ -763,7 +763,7 @@ export namespace GitUtils {
      * `true` if the argument is an option for checking out a new local branch.
      */
     // tslint:disable-next-line:no-any
-    export function isBranchCheckout(arg: any | undefined): arg is Git.Options.Checkout.Branch {
+    export function isBranchCheckout(arg: any | undefined): arg is Git.Options.Checkout.CheckoutBranch {
         return !!arg && ('branch' in arg);
     }
 
