@@ -14,13 +14,52 @@ export const WorkspaceServer = Symbol('WorkspaceServer');
 export interface WorkspaceServer {
 
     /**
-     * Returns with a promise that resolves to the workspace root URI as a string. Resolves to `undefined` if the workspace root is not yet set.
+     * Returns with a promise that resolves to root URIs as strings of a workspace.
+     * Resolves an empty array if the workspace has no root.
+     * @param instanceId Id of the workspace
      */
-    getRoot(): Promise<string | undefined>;
+    getRoots(instanceId: string): Promise<string[]>;
 
     /**
-     * Sets the desired string representation of the URI as the workspace root.
+     * Adds the desired string representation of the URI to the workspace.
+     * @param uri string representation of the root URI
+     * @param instanceId Id of the workspace
      */
-    setRoot(uri: string): Promise<void>;
+    addRoot(uri: string, instanceId: string): Promise<void>
 
+    /**
+     * Removes the root, represented by the string representation of the URI, from the workspace.
+     * @param uri string representation of the root URI
+     * @param instanceId Id of the workspace
+     */
+    removeRoot(uri: string, instanceId: string): Promise<void>
+
+    /**
+     * Returns a promise that resolves to the workspace configuration file URI as a string.
+     * Resolves `undefined` if the workspace configuration file is unavailable.
+     * @param instanceId Id of the workspace
+     */
+    getWorkspaceConfigFile(instanceId: string): Promise<string | undefined>;
+
+
+    /**
+     * Returns a promise that resolves to the workspace configuration data.
+     * Resolves `undefined` if the workspace configuration is unavailable.
+     * When instanceId is `undefined`, returns a promise that resolves to the workspace configuration that gets saved most recently.
+     * @param instanceId Id of the workspace
+     */
+    getWorkspaceConfigData(instanceId: string | undefined): Promise<WorkspaceData | undefined>;
+
+    /**
+     * Resovles when workspace server side gets ready
+     */
+    ready(): Promise<boolean>;
+
+}
+
+export interface WorkspaceData {
+    id: string;
+    name?: string;
+    roots: string[];
+    // settings?: WorkspaceSettings // TODO
 }
