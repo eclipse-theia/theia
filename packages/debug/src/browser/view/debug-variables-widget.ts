@@ -43,7 +43,7 @@ export class DebugVariablesWidget extends TreeWidget {
 
         this.id = `debug-variables-${debugSession.sessionId}`;
         this.title.label = 'Variables';
-        // this.addClass(Styles.VARIABLES_CONTAINER);
+        this.addClass(Styles.VARIABLES_CONTAINER);
     }
 
     get frameId(): number | undefined {
@@ -64,34 +64,16 @@ export class DebugVariablesWidget extends TreeWidget {
         return h.div(header, super.render());
     }
 
-    protected createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
-        const classNames = super.createNodeClassNames(node, props);
-        // if (VariableNode.is(node)) {
-        //     classNames.push(Styles.VARIABLE);
-        // } else if (ScopeNode.is(node)) {
-        //     classNames.push(Styles.SCOPE);
-        // }
-        return classNames;
-    }
-
     protected renderCaption(node: TreeNode, props: NodeProps): h.Child {
         if (VariableNode.is(node)) {
             return this.decorateVariableCaption(node.variable);
         } else if (ScopeNode.is(node)) {
             return this.decorateScopeCaption(node.scope);
         }
-        return 'caption';
+        return super.renderCaption(node, props);
     }
 
     protected decorateVariableCaption(variable: DebugProtocol.Variable): h.Child {
-        // const containerName = definition.containerName;
-        // const icon = h.div({ className: "symbol-icon " + this.toIconClass(definition.symbolKind) });
-        // const symbol = definition.symbolName;
-        // const symbolElement = h.div({ className: 'symbol' }, symbol);
-        // const location = this.labelProvider.getName(new URI(definition.location.uri));
-        // const container = (containerName) ? containerName + ' — ' + location : location;
-        // const containerElement = h.div({ className: 'container' }, container);
-        // return h.div({ className: 'definitionNode' }, icon, symbolElement, containerElement);
         return h.div(`${variable.name} = ${variable.value}`);
     }
 
@@ -214,9 +196,6 @@ function createId(object: Object, parent?: TreeNode): string {
     return id;
 }
 
-// TODO
-// namespace Styles {
-//     export const VARIABLES_CONTAINER = 'theia-debug-variables-container';
-//     export const VARIABLE = 'theia-debug-variable';
-//     export const SCOPE = 'theia-debug-scope';
-// }
+namespace Styles {
+    export const VARIABLES_CONTAINER = 'theia-debug-variables-container';
+}

@@ -163,9 +163,9 @@ export class DebugTargetWidget extends Widget {
         this.threads.onDidSelectThread(threadId => this.frames.threadId = threadId);
         this.frames.onDidSelectFrame(stackFrameId => this.variables.frameId = stackFrameId);
 
+        this.node.appendChild(this.breakpoints.node);
         this.node.appendChild(this.threads.node);
         this.node.appendChild(this.frames.node);
-        this.node.appendChild(this.breakpoints.node);
         this.node.appendChild(this.variables.node);
     }
 
