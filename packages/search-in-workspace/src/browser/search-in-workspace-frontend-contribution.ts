@@ -5,13 +5,18 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { AbstractViewContribution } from "@theia/core/lib/browser";
+import { AbstractViewContribution, KeybindingRegistry } from "@theia/core/lib/browser";
 import { SearchInWorkspaceWidget } from "./search-in-workspace-widget";
 import { injectable } from "inversify";
+import { CommandRegistry } from "@theia/core";
 
 export namespace SearchInWorkspaceCommands {
+    export const TOGGLE_SIW_WIDGET = {
+        id: "search-in-workspace.toggle"
+    };
     export const OPEN_SIW_WIDGET = {
-        id: "search-in-workspace.open"
+        id: "search-in-workspace.open",
+        label: "Search In Workspace"
     };
 }
 
@@ -25,8 +30,24 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
             defaultWidgetOptions: {
                 area: "left"
             },
-            toggleCommandId: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id,
-            toggleKeybinding: "ctrlcmd+shift+f"
+            toggleCommandId: SearchInWorkspaceCommands.TOGGLE_SIW_WIDGET.id
+        });
+    }
+
+    registerCommands(commands: CommandRegistry): void {
+        super.registerCommands(commands);
+        commands.registerCommand(SearchInWorkspaceCommands.OPEN_SIW_WIDGET, {
+            execute: () => this.openView({
+                activate: true
+            })
+        });
+    }
+
+    registerKeybindings(keybindings: KeybindingRegistry): void {
+        super.registerKeybindings(keybindings);
+        keybindings.registerKeybinding({
+            command: SearchInWorkspaceCommands.OPEN_SIW_WIDGET.id,
+            keybinding: "ctrlcmd+shift+f"
         });
     }
 }
