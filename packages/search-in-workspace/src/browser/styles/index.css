@@ -5,11 +5,7 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
- :root {
-  --theia-search-match-color0: rgba(234, 92, 0, 0.33);
-  --theia-search-match-color1: rgba(234, 92, 0, 0.5);
-  --theia-match-replace-color: rgba(155, 185, 85, 0.2);
-  
+ :root { 
   --theia-current-search-match-color: var(--theia-word-highlight-color0);
   --theia-range-highlight: var(--theia-word-highlight-color1);
  }
@@ -210,7 +206,7 @@
 }
 
 .t-siw-search-container .resultLine .match {
-    background: var(--theia-search-match-color1);
+    background: var(--theia-word-highlight-match-color1);
 }
 
 .t-siw-search-container .resultLine .match.strike-through {
@@ -218,10 +214,10 @@
 }
 
 .t-siw-search-container .resultLine.selected .match {
-    background: var(--theia-search-match-color1);
+    background: var(--theia-word-highlight-match-color1);
 }
 .t-siw-search-container .resultLine .replace-term {
-    background: var(--theia-match-replace-color);
+    background: var(--theia-word-highlight-replace-color0);
 }
 
 .noWrapInfo {
@@ -236,7 +232,7 @@
 }
 
 .search-in-workspace-editor-match {
-    background: var(--theia-search-match-color0);
+    background: var(--theia-word-highlight-match-color0);
 }
 
 .current-search-in-workspace-editor-match {

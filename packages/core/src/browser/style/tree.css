@@ -73,6 +73,6 @@
 }
 
 .theia-TreeNodeSegment mark {
-    background-color: var(--theia-highlight-background-color);
-    color: var(--theia-highlight-color);
+    background-color: var(--theia-word-highlight-match-color1);
+    color: var(--theia-ui-font-color1);
 }
