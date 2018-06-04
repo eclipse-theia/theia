@@ -35,7 +35,7 @@ export class DebugThreadsWidget extends VirtualWidget {
         this.debugSession.on('thread', event => this.onThreadEvent(event));
         this.debugSession.on('connected', event => this.refreshThreads());
 
-        if (this.debugSession.debugState.isConnected) {
+        if (this.debugSession.debugSessionState.isConnected) {
             this.refreshThreads();
         }
     }

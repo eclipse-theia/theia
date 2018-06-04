@@ -24,7 +24,7 @@ export const DebugSession = Symbol("DebugSession");
 export interface DebugSession extends Disposable, NodeJS.EventEmitter {
     readonly sessionId: string;
     readonly configuration: DebugConfiguration;
-    readonly debugState: DebugSessionState;
+    readonly debugSessionState: DebugSessionState;
 
     getServerCapabilities(): DebugProtocol.Capabilities | undefined;
     initialize(): Promise<DebugProtocol.InitializeResponse>;
@@ -45,7 +45,7 @@ export interface DebugSession extends Disposable, NodeJS.EventEmitter {
  * DebugSession implementation.
  */
 export class DebugSessionImpl extends EventEmitter implements DebugSession {
-    readonly debugState: DebugSessionState;
+    readonly debugSessionState: DebugSessionState;
 
     protected readonly toDispose = new DisposableCollection();
     protected readonly callbacks = new Map<number, (response: DebugProtocol.Response) => void>();
@@ -60,7 +60,7 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         public readonly configuration: DebugConfiguration) {
 
         super();
-        this.debugState = new DebugSessionStateImpl(this);
+        this.debugSessionState = new DebugSessionStateImpl(this);
         this.websocket = this.createWebSocket();
         this.sequence = 1;
     }
@@ -402,7 +402,7 @@ class DebugSessionStateImpl implements DebugSessionState {
         this.debugSession.on('breakpoint', event => this.onBreakpointEvent(event));
     }
 
-    get stoppedThreads(): number[] {
+    get stoppedThreadIds(): number[] {
         return Array.from(this._stoppedThreads);
     }
 
