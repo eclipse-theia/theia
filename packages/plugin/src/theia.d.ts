@@ -99,7 +99,9 @@ declare module '@theia/plugin' {
          * An event emitted when cancellation is requested
          * @event
          */
-        readonly onCancellationRequested: Event<void>;
+        readonly onCancellationRequested: Event<any>;
+
+
     }
 
     /**

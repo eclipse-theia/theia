@@ -41,7 +41,13 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
 
     const window: typeof theia.window = {
         showQuickPick(items: any, options: theia.QuickPickOptions, token?: theia.CancellationToken): any {
-            return quickOpenExt.showQuickPick(items, options, token);
+            if (token) {
+                const coreEvent = Object.assign(token.onCancellationRequested, { maxListeners: 0 });
+                const coreCancellationToken = { isCancellationRequested: token.isCancellationRequested, onCancellationRequested: coreEvent };
+                return quickOpenExt.showQuickPick(items, options, coreCancellationToken);
+            } else {
+                return quickOpenExt.showQuickPick(items, options);
+            }
         },
         showInformationMessage(message: string,
             optionsOrFirstItem: theia.MessageOptions | string | theia.MessageItem,
