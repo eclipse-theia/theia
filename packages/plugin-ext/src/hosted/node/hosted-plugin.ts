@@ -53,22 +53,22 @@ export class HostedPluginSupport {
         }
     }
 
-    private terminatePluginServer(cp: cp.ChildProcess) {
+    private terminatePluginServer(childProcess: cp.ChildProcess) {
         const emitter = new Emitter();
-        cp.on('message', message => {
+        childProcess.on('message', message => {
             emitter.fire(JSON.parse(message));
         });
         const rpc = new RPCProtocolImpl({
             onMessage: emitter.event,
             send: (m: {}) => {
-                if (cp.send) {
-                    cp.send(JSON.stringify(m));
+                if (childProcess.send) {
+                    childProcess.send(JSON.stringify(m));
                 }
             }
         });
         const hostedPluginManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
         hostedPluginManager.$stopPlugin('').then(() => {
-            cp.kill();
+            childProcess.kill();
         });
     }
 
