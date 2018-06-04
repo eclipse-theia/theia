@@ -30,8 +30,8 @@
     z-index: 0;
 }
 
-.quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon, 
-.vs-dark .quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon.file-icon {
+.monaco-quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon,
+.vs-dark .monaco-quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon {
     background-image: none;
     margin-bottom: 4px;
     margin-right: 0px;
