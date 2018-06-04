@@ -181,7 +181,7 @@ export interface DebugSessionState {
     readonly allThreadsStopped: boolean | undefined;
 
     /**
-     * Stopped threads.
+     * Stopped threads Ids.
      */
-    readonly stoppedThreads: number[];
+    readonly stoppedThreadIds: number[];
 }
