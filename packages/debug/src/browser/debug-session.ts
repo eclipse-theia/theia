@@ -11,7 +11,7 @@
 
 import { injectable, inject } from "inversify";
 import { Endpoint } from "@theia/core/lib/browser";
-import { DebugAdapterPath, DebugConfiguration } from "../common/debug-model";
+import { DebugAdapterPath, DebugConfiguration, DebugSessionState } from "../common/debug-model";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { Disposable } from "vscode-jsonrpc";
 import { Deferred } from "@theia/core/lib/common/promise-util";
@@ -22,9 +22,9 @@ import { OutputChannelManager } from "@theia/output/lib/common/output-channel";
 export const DebugSession = Symbol("DebugSession");
 
 export interface DebugSession extends Disposable, NodeJS.EventEmitter {
-    sessionId: string;
-    configuration: DebugConfiguration;
-    isConnected: boolean;
+    readonly sessionId: string;
+    readonly configuration: DebugConfiguration;
+    readonly debugState: DebugSessionState;
 
     getServerCapabilities(): DebugProtocol.Capabilities | undefined;
     initialize(): Promise<DebugProtocol.InitializeResponse>;
@@ -45,6 +45,8 @@ export interface DebugSession extends Disposable, NodeJS.EventEmitter {
  * DebugSession implementation.
  */
 export class DebugSessionImpl extends EventEmitter implements DebugSession {
+    readonly debugState: DebugSessionState;
+
     protected readonly toDispose = new DisposableCollection();
     protected readonly callbacks = new Map<number, (response: DebugProtocol.Response) => void>();
 
@@ -52,13 +54,13 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
     protected capabilities: DebugProtocol.Capabilities = {};
 
     private sequence: number;
-    private _isConnected: boolean;
 
     constructor(
         public readonly sessionId: string,
         public readonly configuration: DebugConfiguration) {
 
         super();
+        this.debugState = new DebugSessionStateImpl(this);
         this.websocket = this.createWebSocket();
         this.sequence = 1;
     }
@@ -106,7 +108,6 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         return this.proceedRequest("attach", args)
             .then(response => {
                 this.emit("connected");
-                this._isConnected = true;
                 return response;
             });
     }
@@ -115,7 +116,6 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         return this.proceedRequest("launch", args)
             .then(response => {
                 this.emit("connected");
-                this._isConnected = true;
                 return response;
             });
     }
@@ -155,10 +155,7 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
     }
 
     disconnect(): Promise<DebugProtocol.DisconnectResponse> {
-        return this.proceedRequest("disconnect", { terminateDebuggee: true }).then(response => {
-            this._isConnected = false;
-            return response;
-        });
+        return this.proceedRequest("disconnect", { terminateDebuggee: true });
     }
 
     scopes(frameId: number): Promise<DebugProtocol.ScopesResponse> {
@@ -183,14 +180,6 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
             format: { hex: false }
         };
         return this.proceedRequest('evaluate', args);
-    }
-
-    get isConnected(): boolean {
-        return this._isConnected;
-    }
-
-    set isConnected(isConnected: boolean) {
-        throw new Error("readonly");
     }
 
     protected handleMessage(event: MessageEvent) {
@@ -241,7 +230,6 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
     }
 
     dispose() {
-        this._isConnected = false;
         this.callbacks.clear();
         this.websocket
             .then(websocket => websocket.close())
@@ -296,7 +284,10 @@ export class DebugSessionManager {
             .then(response => {
                 const request = debugConfiguration.request;
                 switch (request) {
-                    case "attach": return session.attach(debugConfiguration);
+                    case "attach": {
+                        const args: DebugProtocol.AttachRequestArguments = Object.assign({ __restart: false }, debugConfiguration);
+                        return session.attach(args);
+                    }
                     default: return Promise.reject(`Unsupported request '${request}' type.`);
                 }
             })
@@ -391,5 +382,93 @@ export class DebugSessionManager {
 
     get onDidDestroyDebugSession(): Event<DebugSession> {
         return this.onDidDestroyDebugSessionEmitter.event;
+    }
+}
+
+class DebugSessionStateImpl implements DebugSessionState {
+    isConnected: boolean;
+    allThreadsContinued: boolean | undefined;
+    allThreadsStopped: boolean | undefined;
+
+    private _stoppedThreads = new Set<number>();
+    private _breakpoints = new Map<string, DebugProtocol.Breakpoint>();
+
+    constructor(protected readonly debugSession: DebugSession) {
+        this.debugSession.on("connected", () => this.onConnectedEvent());
+        this.debugSession.on("terminated", () => this.onTerminatedEvent());
+        this.debugSession.on('stopped', event => this.onStoppedEvent(event));
+        this.debugSession.on('continued', event => this.onContinuedEvent(event));
+        this.debugSession.on('thread', event => this.onThreadEvent(event));
+        this.debugSession.on('breakpoint', event => this.onBreakpointEvent(event));
+    }
+
+    get stoppedThreads(): number[] {
+        return Array.from(this._stoppedThreads);
+    }
+
+    get breakpoints(): DebugProtocol.Breakpoint[] {
+        return Array.from(this._breakpoints.values());
+    }
+
+    private onConnectedEvent(): void {
+        this.isConnected = true;
+    }
+
+    private onTerminatedEvent(): void {
+        this.isConnected = false;
+    }
+
+    private onContinuedEvent(event: DebugProtocol.ContinuedEvent): void {
+        const body = event.body;
+
+        this.allThreadsContinued = body.allThreadsContinued;
+        if (this.allThreadsContinued) {
+            this._stoppedThreads.clear();
+        } else {
+            this._stoppedThreads.delete(body.threadId);
+        }
+    }
+
+    private onStoppedEvent(event: DebugProtocol.StoppedEvent): void {
+        const body = event.body;
+
+        this.allThreadsStopped = body.allThreadsStopped;
+        if (body.threadId) {
+            this._stoppedThreads.add(body.threadId);
+        }
+    }
+
+    private onThreadEvent(event: DebugProtocol.ThreadEvent): void {
+        switch (event.body.reason) {
+            case 'exited': {
+                this._stoppedThreads.delete(event.body.threadId);
+                break;
+            }
+        }
+    }
+
+    private onBreakpointEvent(event: DebugProtocol.BreakpointEvent): void {
+        const breakpoint = event.body.breakpoint;
+        switch (event.body.reason) {
+            case 'new': {
+                this._breakpoints.set(this.createId(breakpoint), breakpoint);
+                break;
+            }
+            case 'removed': {
+                this._breakpoints.delete(this.createId(breakpoint));
+                break;
+            }
+            case 'changed': {
+                this._breakpoints.set(this.createId(breakpoint), breakpoint);
+                break;
+            }
+        }
+    }
+
+    private createId(breakpoint: DebugProtocol.Breakpoint): string {
+        return breakpoint.id
+            ? breakpoint.id.toString()
+            : (breakpoint.source ? `${breakpoint.source.path}-` : '')
+            + (`${breakpoint.line}: ${breakpoint.column} `);
     }
 }
