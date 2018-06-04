@@ -19,6 +19,7 @@
 
 import { Disposable } from '@theia/core';
 import * as stream from 'stream';
+import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
 
 /**
  * The WS endpoint path to the Debug service.
@@ -154,3 +155,33 @@ export interface DebugConfiguration {
  * The endpoint path to the debug adapter session.
  */
 export const DebugAdapterPath = '/services/debug-adapter';
+
+/**
+ * The debug session state.
+ */
+export interface DebugSessionState {
+    /**
+     * Indicates if debug session is connected to the debug adapter.
+     */
+    readonly isConnected: boolean | undefined;
+
+    /**
+     * The debug session breakpoints.
+     */
+    readonly breakpoints: DebugProtocol.Breakpoint[];
+
+    /**
+     * Indicates if all threads are continued.
+     */
+    readonly allThreadsContinued: boolean | undefined;
+
+    /**
+     * Indicates if all threads are stopped.
+     */
+    readonly allThreadsStopped: boolean | undefined;
+
+    /**
+     * Stopped threads.
+     */
+    readonly stoppedThreads: number[];
+}
