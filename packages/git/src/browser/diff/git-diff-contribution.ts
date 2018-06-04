@@ -23,7 +23,7 @@ import { Git } from "../../common";
 export namespace GitDiffCommands {
     export const OPEN_FILE_DIFF: Command = {
         id: 'git-diff:open-file-diff',
-        label: 'Diff: Compare With ...'
+        label: 'Diff: Compare With...'
     };
 }
 
