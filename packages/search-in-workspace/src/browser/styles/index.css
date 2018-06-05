@@ -53,7 +53,7 @@
     background: var(--theia-icon-collapse-all);
 }
 
-.t-siw-search-container .searchHeader .controls .clear {
+.t-siw-search-container .searchHeader .controls .clear-all {
     background: var(--theia-icon-clear);
 }
 
