@@ -331,12 +331,14 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected renderExpandGlobFieldsButton(): h.Child {
-        const button = h.span({ className: "fa fa-ellipsis-h btn" });
-        return h.div({
-            className: "button-container", onclick: () => {
+        const button = h.span({
+            className: "fa fa-ellipsis-h btn", onclick: () => {
                 this.showSearchDetails = !this.showSearchDetails;
                 this.update();
             }
+        });
+        return h.div({
+            className: "button-container"
         }, button);
     }
 
