@@ -141,7 +141,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.focusInputField();
     }
 
-    protected focusInputField(){
+    protected focusInputField() {
         const f = document.getElementById("search-input-field");
         if (f) {
             (f as HTMLInputElement).focus();
