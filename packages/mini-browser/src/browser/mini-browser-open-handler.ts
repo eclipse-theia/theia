@@ -7,13 +7,14 @@
 
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { Endpoint } from '@theia/core/lib/browser/endpoint';
+import { MaybePromise } from '@theia/core/lib/common/types';
 import { ApplicationShell } from '@theia/core/lib/browser/shell';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application';
 import { WidgetOpenHandler, WidgetOpenerOptions } from '@theia/core/lib/browser/widget-open-handler';
+import { MiniBrowserService } from '../common/mini-browser-service';
 import { MiniBrowser, MiniBrowserProps } from './mini-browser';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 
 /**
  * Further options for opening a new `Mini Browser` widget.
@@ -47,15 +48,11 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> imple
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
+    @inject(MiniBrowserService)
+    protected readonly miniBrowserService: MiniBrowserService;
+
     async onStart(): Promise<void> {
-        const url = new Endpoint().getRestUrl().resolve('mini-browser-supported-extensions').toString();
-        const response = await fetch(url);
-        if (response.status === 200) {
-            const body = await response.json();
-            if (body && body.extensions && Array.isArray(body.extensions)) {
-                this.supportedExtensions.push(...body.extensions);
-            }
-        }
+        this.supportedExtensions.push(...(await this.miniBrowserService.supportedFileExtensions()));
     }
 
     canHandle(uri: URI): number {
@@ -84,7 +81,7 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> imple
             const name = await this.labelProvider.getName(uri);
             const iconClass = `${await this.labelProvider.getIcon(uri)} file-icon`;
             // The background has to be reset to white only for "real" web-pages but not for images, for instance.
-            const resetBackground = 'file' === uri.scheme && uri.toString().endsWith('.html');
+            const resetBackground = await this.resetBackground(uri);
             result = {
                 ...result,
                 startPage,
@@ -103,6 +100,11 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> imple
             };
         }
         return result;
+    }
+
+    protected resetBackground(uri: URI): MaybePromise<boolean> {
+        const { scheme } = uri;
+        return scheme === 'http' || scheme === 'https' || (scheme === 'file' && uri.toString().endsWith('.html'));
     }
 
     protected async defaultOptions(): Promise<MiniBrowserOpenerOptions & { widgetOptions: ApplicationShell.WidgetOptions }> {

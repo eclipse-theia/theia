@@ -6,6 +6,7 @@
  */
 
 import * as fs from 'fs-extra';
+import { lookup } from 'mime-types';
 import { injectable, inject, named } from 'inversify';
 import { Application, Request, Response } from 'express';
 import URI from '@theia/core/lib/common/uri';
@@ -15,6 +16,7 @@ import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { MaybePromise, Prioritizeable } from '@theia/core/lib/common/types';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
+import { MiniBrowserService } from '../common/mini-browser-service';
 
 /**
  * The return type of the `FileSystem#resolveContent` method.
@@ -76,17 +78,12 @@ export abstract class BaseMiniBrowserEndpointHandler implements MiniBrowserEndpo
 }
 
 @injectable()
-export class MiniBrowserEndpoint implements BackendApplicationContribution {
+export class MiniBrowserEndpoint implements BackendApplicationContribution, MiniBrowserService {
 
     /**
      * Endpoint path to handle the request for the given resource.
      */
     static HANDLE_PATH = '/mini-browser/';
-
-    /**
-     * Path for returning all the file extensions that are supported by all the available endpoint handler contributions.
-     */
-    static SUPPORTED_EXTENSIONS_PATH = '/mini-browser-supported-extensions/';
 
     @inject(ILogger)
     protected readonly logger: ILogger;
@@ -100,7 +97,10 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution {
 
     configure(app: Application): void {
         app.get(`${MiniBrowserEndpoint.HANDLE_PATH}*`, async (request, response) => await this.response(await this.getUri(request), response));
-        app.get(`${MiniBrowserEndpoint.SUPPORTED_EXTENSIONS_PATH}`, async (request, response) => await this.supportedExtensions(await this.getUri(request), response));
+    }
+
+    async supportedFileExtensions(): Promise<string[]> {
+        return Array.from(new Set(([] as string[]).concat(...this.getContributions().map(c => c.supportedExtensions()).map(e => Array.isArray(e) ? e : [e]))));
     }
 
     protected async response(uri: string, response: Response): Promise<Response> {
@@ -121,11 +121,6 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution {
             return this.errorHandler()(e, uri, response);
         }
         return this.defaultHandler()(statWithContent, response);
-    }
-
-    protected async supportedExtensions(uri: string, response: Response): Promise<Response> {
-        const extensions = Array.from(new Set(([] as string[]).concat(...this.getContributions().map(c => c.supportedExtensions()).map(e => Array.isArray(e) ? e : [e]))));
-        return response.send({ extensions });
     }
 
     protected async prioritize(uri: string): Promise<MiniBrowserEndpointHandler[]> {
@@ -176,8 +171,14 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution {
 
     protected defaultHandler(): (statWithContent: FileStatWithContent, response: Response) => MaybePromise<Response> {
         return async (statWithContent: FileStatWithContent, response: Response) => {
-            this.logger.warn(`Cannot handle unexpected resource. URI: ${statWithContent.stat.uri}.`);
-            return response.send();
+            const { stat, content } = statWithContent;
+            const mimeType = lookup(FileUri.fsPath(stat.uri));
+            if (!mimeType) {
+                this.logger.warn(`Cannot handle unexpected resource. URI: ${statWithContent.stat.uri}.`);
+                return response.send();
+            }
+            response.contentType(mimeType);
+            return response.send(content);
         };
     }
 
@@ -207,7 +208,7 @@ export class HtmlHandler extends BaseMiniBrowserEndpointHandler {
 export class ImageHandler extends BaseMiniBrowserEndpointHandler {
 
     supportedExtensions(): string[] {
-        return ['.jpg', '.jpeg', '.png', '.bmp', 'gif'];
+        return ['.jpg', '.jpeg', '.png', '.bmp', '.gif'];
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {

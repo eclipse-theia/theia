@@ -5,6 +5,8 @@
   "dependencies": {
     "@theia/core": "^0.3.10",
     "@theia/filesystem": "^0.3.10",
+    "@types/mime-types": "^2.1.0",
+    "mime-types": "^2.1.18",
     "pdfobject": "^2.0.201604172"
   },
   "publishConfig": {
