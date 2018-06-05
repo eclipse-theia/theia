@@ -9,9 +9,11 @@ import { ContainerModule } from 'inversify';
 import { OpenHandler } from '@theia/core/lib/browser/opener-service';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
+import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging/ws-connection-provider';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application';
-import { MiniBrowser, MiniBrowserProps, MiniBrowserMouseClickTracker } from './mini-browser';
 import { MiniBrowserOpenHandler } from './mini-browser-open-handler';
+import { MiniBrowserService, MiniBrowserServicePath } from '../common/mini-browser-service';
+import { MiniBrowser, MiniBrowserProps, MiniBrowserMouseClickTracker } from './mini-browser';
 import { LocationMapperService, FileLocationMapper, HttpLocationMapper, HttpsLocationMapper, LocationMapper } from './location-mapper-service';
 
 import '../../src/browser/style/index.css';
@@ -40,4 +42,6 @@ export default new ContainerModule(bind => {
     bind(LocationMapper).to(HttpLocationMapper).inSingletonScope();
     bind(LocationMapper).to(HttpsLocationMapper).inSingletonScope();
     bind(LocationMapperService).toSelf().inSingletonScope();
+
+    bind(MiniBrowserService).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, MiniBrowserServicePath)).inSingletonScope();
 });

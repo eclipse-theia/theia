@@ -8,11 +8,15 @@
 import { ContainerModule } from 'inversify';
 import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
+import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common';
+import { MiniBrowserService, MiniBrowserServicePath } from '../common/mini-browser-service';
 import { MiniBrowserEndpoint, MiniBrowserEndpointHandler, HtmlHandler, ImageHandler, PdfHandler, SvgHandler } from './mini-browser-endpoint';
 
 export default new ContainerModule(bind => {
     bind(MiniBrowserEndpoint).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(MiniBrowserEndpoint);
+    bind(MiniBrowserService).toDynamicValue(context => context.container.get(MiniBrowserEndpoint));
+    bind(ConnectionHandler).toDynamicValue(context => new JsonRpcConnectionHandler(MiniBrowserServicePath, () => context.container.get(MiniBrowserService))).inSingletonScope();
     bindContributionProvider(bind, MiniBrowserEndpointHandler);
     bind(MiniBrowserEndpointHandler).to(HtmlHandler).inSingletonScope();
     bind(MiniBrowserEndpointHandler).to(ImageHandler).inSingletonScope();
