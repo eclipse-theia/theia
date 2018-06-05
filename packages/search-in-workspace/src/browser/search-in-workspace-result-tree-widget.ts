@@ -100,6 +100,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     @postConstruct()
     protected init() {
+        super.init();
         this.addClass("resultContainer");
 
         this.workspaceService.root.then(rootFileStat => {
