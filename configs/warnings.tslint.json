@@ -1,30 +1,52 @@
 {
-  "defaultSeverity": "warning",
   "rules": {
-    "arrow-parens": [
-      true,
-      "ban-single-arg-parens"
-    ],
-    "arrow-return-shorthand": [
-      true,
-      "multiline"
-    ],
-    "curly": [
-      true,
-      "ignore-same-line"
-    ],
-    "indent": [
-      true,
-      "spaces",
-      4
-    ],
-    "interface-over-type-literal": true,
-    "no-any": true,
+    "arrow-parens": {
+      "severity": "warning",
+      "options": [
+        true,
+        "ban-single-arg-parens"
+      ]
+    },
+    "arrow-return-shorthand": {
+      "severity": "warning",
+      "options": [
+        true,
+        "multiline"
+      ]
+    },
+    "indent": {
+      "severity": "warning",
+      "options": [
+        true,
+        "spaces",
+        4
+      ]
+    },
+    "interface-over-type-literal": {
+      "severity": "warning",
+      "options": true
+    },
+    "no-any": {
+      "severity": "warning",
+      "options": true
+    },
     "no-console": false,
-    "no-construct": true,
+    "no-construct": {
+      "severity": "warning",
+      "options": true
+    },
     "no-magic-numbers": false,
-    "no-null-keyword": true,
-    "no-unused-expression": true,
-    "one-variable-per-declaration": true
+    "no-null-keyword": {
+      "severity": "warning",
+      "options": true
+    },
+    "no-unused-expression": {
+      "severity": "warning",
+      "options": true
+    },
+    "one-variable-per-declaration": {
+      "severity": "warning",
+      "options": true
+    }
   }
 }
