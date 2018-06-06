@@ -125,22 +125,33 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.refresh();
     }
 
-    onAfterAttach(msg: Message) {
+    findInFolder(uri: string): void {
+        this.showSearchDetails = true;
+        const value = `${uri}/**`;
+        this.searchInWorkspaceOptions.include = [value];
+        const include = document.getElementById("include-glob-field");
+        if (include) {
+            (include as HTMLInputElement).value = value;
+        }
+        this.update();
+    }
+
+    protected onAfterAttach(msg: Message) {
         super.onAfterAttach(msg);
         VirtualRenderer.render(this.renderSearchHeader(), this.searchFormContainer);
         Widget.attach(this.resultTreeWidget, this.contentNode);
     }
 
-    onUpdateRequest(msg: Message) {
+    protected onUpdateRequest(msg: Message) {
         super.onUpdateRequest(msg);
         VirtualRenderer.render(this.renderSearchHeader(), this.searchFormContainer);
     }
 
-    onAfterShow(msg: Message) {
+    protected onAfterShow(msg: Message) {
         this.focusInputField();
     }
 
-    onActivateRequest(msg: Message) {
+    protected onActivateRequest(msg: Message) {
         super.onActivateRequest(msg);
         this.focusInputField();
     }
@@ -149,6 +160,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         const f = document.getElementById("search-input-field");
         if (f) {
             (f as HTMLInputElement).focus();
+            (f as HTMLInputElement).select();
         }
     }
 
@@ -353,9 +365,10 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected renderGlobField(kind: "include" | "exclude"): h.Child {
         const label = h.div({ className: "label" }, "files to " + kind);
         const currentValue = this.searchInWorkspaceOptions[kind];
+        const value = currentValue && currentValue.join(', ') || '';
         const input = h.input({
             type: "text",
-            value: currentValue && currentValue.join(', ') || '',
+            value,
             id: kind + "-glob-field",
             onkeyup: e => {
                 if (e.target) {
