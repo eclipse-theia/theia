@@ -26,6 +26,7 @@ import { FileResourceResolver } from './file-resource';
 import { FileSystemListener } from './filesystem-listener';
 import { bindFileSystemPreferences } from './filesystem-preferences';
 import { FileSystemWatcher } from './filesystem-watcher';
+import { FileDialogService } from './file-dialog-service';
 
 import '../../src/browser/style/index.css';
 
@@ -47,4 +48,6 @@ export default new ContainerModule(bind => {
 
     bind(FileResourceResolver).toSelf().inSingletonScope();
     bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(FileResourceResolver));
+
+    bind(FileDialogService).toSelf().inSingletonScope();
 });

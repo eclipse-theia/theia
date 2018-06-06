@@ -19,7 +19,7 @@ import {
     QuickOpenModel, QuickOpenItem, QuickOpenMode, QuickOpenService,
     OpenerService, KeybindingRegistry, Keybinding
 } from '@theia/core/lib/browser';
-import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
+import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileSearchService } from '../common/file-search-service';
@@ -37,19 +37,18 @@ export class QuickFileOpenService implements QuickOpenModel {
 
     @inject(KeybindingRegistry)
     protected readonly keybindingRegistry: KeybindingRegistry;
-
-    constructor(
-        @inject(FileSystem) protected readonly fileSystem: FileSystem,
-        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
-        @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService,
-        @inject(FileSearchService) protected readonly fileSearchService: FileSearchService,
-        @inject(LabelProvider) protected readonly labelProvider: LabelProvider
-    ) {
-        workspaceService.root.then(root => this.wsRoot = root);
-    }
-
-    protected wsRoot: FileStat | undefined;
+    @inject(FileSystem)
+    protected readonly fileSystem: FileSystem;
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
+    @inject(QuickOpenService)
+    protected readonly quickOpenService: QuickOpenService;
+    @inject(FileSearchService)
+    protected readonly fileSearchService: FileSearchService;
+    @inject(LabelProvider)
+    protected readonly labelProvider: LabelProvider;
 
     /**
      * Whether to hide .gitignored (and other ignored) files.
@@ -67,7 +66,7 @@ export class QuickFileOpenService implements QuickOpenModel {
     protected currentLookFor: string = '';
 
     isEnabled(): boolean {
-        return this.wsRoot !== undefined;
+        return this.workspaceService.opened;
     }
 
     open(): void {
@@ -117,7 +116,8 @@ export class QuickFileOpenService implements QuickOpenModel {
     private cancelIndicator = new CancellationTokenSource();
 
     public async onType(lookFor: string, acceptor: (items: QuickOpenItem[]) => void): Promise<void> {
-        if (!this.wsRoot) {
+        const workspaceFolder = this.workspaceService.tryGetRoots()[0];
+        if (!workspaceFolder) {
             return;
         }
 
@@ -127,7 +127,7 @@ export class QuickFileOpenService implements QuickOpenModel {
         this.cancelIndicator = new CancellationTokenSource();
         const token = this.cancelIndicator.token;
         const proposed = new Set<string>();
-        const rootUri = this.wsRoot.uri;
+        const rootUri = workspaceFolder.uri;
         const handler = async (result: string[]) => {
             if (!token.isCancellationRequested) {
                 const root = new URI(rootUri);

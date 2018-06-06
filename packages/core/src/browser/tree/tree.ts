@@ -50,7 +50,7 @@ export interface Tree extends Disposable {
      */
     refresh(parent: Readonly<CompositeTreeNode>): Promise<void>;
     /**
-     * Emit when the children of the give node are refreshed.
+     * Emit when the children of the given node are refreshed.
      */
     readonly onNodeRefreshed: Event<Readonly<CompositeTreeNode>>;
 }

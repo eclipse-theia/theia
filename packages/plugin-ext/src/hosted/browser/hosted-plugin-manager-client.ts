@@ -191,19 +191,14 @@ export class HostedPluginManagerClient {
      * Creates directory choose dialog and set selected folder into pluginLocation field.
      */
     async selectPluginPath(): Promise<void> {
-        let rootStat = await this.workspaceService.root;
-
-        if (!rootStat) {
-            rootStat = await this.fileSystem.getCurrentUserHome();
-        }
-
-        if (!rootStat) {
+        const workspaceFolder = (await this.workspaceService.roots)[0] || await this.fileSystem.getCurrentUserHome();
+        if (!workspaceFolder) {
             throw new Error('Unable to find the root');
         }
 
-        const name = this.labelProvider.getName(rootStat);
-        const label = await this.labelProvider.getIcon(rootStat);
-        const rootNode = DirNode.createRoot(rootStat, name, label);
+        const name = this.labelProvider.getName(workspaceFolder);
+        const label = await this.labelProvider.getIcon(workspaceFolder);
+        const rootNode = DirNode.createRoot(workspaceFolder, name, label);
 
         const dialog = this.fileDialogFactory({
             title: HostedPluginCommands.SELECT_PATH.label!,

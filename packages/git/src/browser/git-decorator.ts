@@ -27,6 +27,7 @@ import { WorkingDirectoryStatus } from '../common/git-model';
 import { GitFileChange, GitFileStatus } from '../common/git-model';
 import { GitPreferences, GitConfiguration } from './git-preferences';
 import { GitRepositoryTracker } from './git-repository-tracker';
+import { FileStatNode } from '@theia/filesystem/lib/browser';
 
 @injectable()
 export class GitDecorator implements TreeDecorator {
@@ -73,13 +74,16 @@ export class GitDecorator implements TreeDecorator {
             return result;
         }
         const markers = this.appendContainerChanges(tree, status.changes);
-        for (const { id } of new DepthFirstTreeIterator(tree.root)) {
-            const marker = markers.get(id);
-            if (marker) {
-                result.set(id, marker);
+        for (const treeNode of new DepthFirstTreeIterator(tree.root)) {
+            const uri = FileStatNode.getUri(treeNode);
+            if (uri) {
+                const marker = markers.get(uri);
+                if (marker) {
+                    result.set(treeNode.id, marker);
+                }
             }
         }
-        return new Map(Array.from(result.values()).map(m => [m.uri, this.toDecorator(m)] as [string, TreeDecoration.Data]));
+        return new Map(Array.from(result.entries()).map(m => [m[0], this.toDecorator(m[1])] as [string, TreeDecoration.Data]));
     }
 
     protected appendContainerChanges(tree: Tree, changes: GitFileChange[]): Map<string, GitFileChange> {

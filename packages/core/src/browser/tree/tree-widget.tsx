@@ -136,27 +136,29 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     protected updateRows = debounce(() => this.doUpdateRows(), 10);
     protected doUpdateRows(): void {
         const root = this.model.root;
+        const rowsToUpdate: Array<[string, TreeWidget.NodeRow]> = [];
         if (root) {
             const depths = new Map<CompositeTreeNode | undefined, number>();
-            const rows = Array.from(new TopDownTreeIterator(root, {
+            let index = 0;
+            for (const node of new TopDownTreeIterator(root, {
                 pruneCollapsed: true,
                 pruneSiblings: true
-            }), (node, index) => {
-                const parentDepth = depths.get(node.parent);
-                const depth = parentDepth === undefined ? 0 : TreeNode.isVisible(node.parent) ? parentDepth + 1 : parentDepth;
-                if (CompositeTreeNode.is(node)) {
-                    depths.set(node, depth);
+            })) {
+                if (TreeNode.isVisible(node)) {
+                    const parentDepth = depths.get(node.parent);
+                    const depth = parentDepth === undefined ? 0 : TreeNode.isVisible(node.parent) ? parentDepth + 1 : parentDepth;
+                    if (CompositeTreeNode.is(node)) {
+                        depths.set(node, depth);
+                    }
+                    rowsToUpdate.push([node.id, {
+                        index: index++,
+                        node,
+                        depth
+                    }]);
                 }
-                return [node.id, {
-                    index,
-                    node,
-                    depth
-                }] as [string, TreeWidget.NodeRow];
-            });
-            this.rows = new Map(rows);
-        } else {
-            this.rows = new Map();
+            }
         }
+        this.rows = new Map(rowsToUpdate);
         this.updateScrollToRow();
     }
 

@@ -15,8 +15,10 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { FileTree } from '@theia/filesystem/lib/browser';
-import { TreeNode, CompositeTreeNode } from '@theia/core/lib/browser/tree/tree';
+import { FileTree, DirNode } from '@theia/filesystem/lib/browser';
+import { FileStat } from '@theia/filesystem/lib/common';
+import URI from '@theia/core/lib/common/uri';
+import { TreeNode, CompositeTreeNode } from '@theia/core/lib/browser';
 import { FileNavigatorFilter } from './navigator-filter';
 
 @injectable()
@@ -30,7 +32,68 @@ export class FileNavigatorTree extends FileTree {
     }
 
     async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+        if (WorkspaceNode.is(parent)) {
+            return parent.children;
+        }
         return this.filter.filter(super.resolveChildren(parent));
     }
 
+    protected toNodeId(childFileStat: FileStat, parent: CompositeTreeNode): string {
+        if (WorkspaceNode.is(parent)) {
+            return WorkspaceRootNode.createId(childFileStat.uri, childFileStat.uri);
+        }
+        const workspaceRootNode = WorkspaceRootNode.find(parent);
+        if (workspaceRootNode) {
+            return WorkspaceRootNode.createId(workspaceRootNode.uri, childFileStat.uri);
+        }
+        return childFileStat.uri;
+    }
+
+    async createWorkspaceRoot(rootFolder: FileStat, workspaceNode: WorkspaceNode): Promise<WorkspaceRootNode> {
+        return (await this.toNode(rootFolder, workspaceNode)) as WorkspaceRootNode;
+    }
+}
+
+export interface WorkspaceNode extends CompositeTreeNode {
+    children: WorkspaceRootNode[];
+}
+export namespace WorkspaceNode {
+    export const id = 'WorkspaceNodeId';
+    export const name = 'WorkspaceNode';
+
+    export function is(node: TreeNode | undefined): node is WorkspaceNode {
+        return CompositeTreeNode.is(node) && node.name === WorkspaceNode.name;
+    }
+
+    export function createRoot(children: WorkspaceRootNode[]): WorkspaceNode {
+        return {
+            id: WorkspaceNode.id,
+            name: WorkspaceNode.name,
+            parent: undefined,
+            children: children.map(c => c as WorkspaceRootNode),
+            visible: false
+        };
+    }
+}
+
+export interface WorkspaceRootNode extends DirNode {
+    parent: WorkspaceNode;
+}
+export namespace WorkspaceRootNode {
+    export function is(node: TreeNode | undefined): node is WorkspaceRootNode {
+        return DirNode.is(node) && WorkspaceNode.is(node.parent);
+    }
+
+    export function find(node: TreeNode | undefined): WorkspaceRootNode | undefined {
+        if (node) {
+            if (is(node)) {
+                return node;
+            }
+            return find(node.parent);
+        }
+    }
+
+    export function createId(workspaceRootNodeUri: URI | string, nodeUri: string): string {
+        return `${new URI(workspaceRootNodeUri.toString()).withoutScheme().toString()}///${nodeUri}`;
+    }
 }

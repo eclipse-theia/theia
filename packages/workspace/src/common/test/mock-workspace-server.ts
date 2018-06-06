@@ -19,9 +19,9 @@ import { WorkspaceServer } from '../workspace-protocol';
 @injectable()
 export class MockWorkspaceServer implements WorkspaceServer {
 
-    getWorkspace(): Promise<string | undefined> { return Promise.resolve(''); }
-
-    setWorkspace(uri: string): Promise<void> { return Promise.resolve(); }
-
     getRecentWorkspaces(): Promise<string[]> { return Promise.resolve([]); }
+
+    getMostRecentlyUsedWorkspace(): Promise<string | undefined> { return Promise.resolve(''); }
+
+    setMostRecentlyUsedWorkspace(uri: string): Promise<void> { return Promise.resolve(); }
 }

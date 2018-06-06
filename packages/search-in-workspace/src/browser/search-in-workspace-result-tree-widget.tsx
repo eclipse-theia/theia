@@ -113,7 +113,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         super.init();
         this.addClass('resultContainer');
 
-        this.workspaceService.root.then(rootFileStat => {
+        this.workspaceService.roots.then(roots => {
+            const rootFileStat = roots[0];
             if (rootFileStat) {
                 const uri = new URI(rootFileStat.uri);
                 this.workspaceRoot = uri.withoutScheme().toString();

@@ -15,10 +15,9 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import URI from '@theia/core/lib/common/uri';
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core/lib/common';
 import { open, OpenerService, CommonMenus, StorageService, LabelProvider, ConfirmDialog } from '@theia/core/lib/browser';
-import { DirNode, FileDialogFactory, FileStatNode } from '@theia/filesystem/lib/browser';
+import { FileDialogFactory, FileStatNode, FileDialogService } from '@theia/filesystem/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceCommands } from './workspace-commands';
@@ -35,6 +34,7 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
         @inject(StorageService) protected readonly workspaceStorage: StorageService,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
         @inject(QuickOpenWorkspace) protected readonly quickOpenWorkspace: QuickOpenWorkspace,
+        @inject(FileDialogService) protected readonly fileDialogService: FileDialogService
     ) { }
 
     registerCommands(commands: CommandRegistry): void {
@@ -65,23 +65,9 @@ export class WorkspaceFrontendContribution implements CommandContribution, MenuC
     }
 
     protected showFileDialog(): void {
-        this.workspaceService.root.then(async resolvedRoot => {
-            const root = resolvedRoot || await this.fileSystem.getCurrentUserHome();
-            if (root) {
-                const parentUri = new URI(root.uri).parent;
-                const parentStat = await this.fileSystem.getFileStat(parentUri.toString());
-                if (parentStat) {
-                    const name = this.labelProvider.getName(parentUri);
-                    const label = await this.labelProvider.getIcon(root);
-                    const rootNode = DirNode.createRoot(parentStat, name, label);
-                    const dialog = this.fileDialogFactory({ title: WorkspaceCommands.OPEN.label! });
-                    dialog.model.navigateTo(rootNode);
-                    const result = await dialog.open();
-                    if (FileStatNode.is(result)) {
-                        this.openFile(result);
-                    }
-                }
-            }
+        this.workspaceService.roots.then(async roots => {
+            const node = await this.fileDialogService.show({ title: WorkspaceCommands.OPEN.label! }, roots[0]);
+            this.openFile(node);
         });
     }
 

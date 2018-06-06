@@ -128,7 +128,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
 
         // Try to use workspace service root if there is no preconfigured URI
         if (!rootStat) {
-            rootStat = await this.workspaceService.root;
+            rootStat = (await this.workspaceService.roots)[0];
         }
 
         // Try to use current user home if root folder is still not taken

@@ -111,17 +111,23 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> imp
 
     onStart(): void {
         this.repositoryTracker.onDidChangeRepository(repository => {
-            if (repository && this.hasMultipleRepositories()) {
-                const path = new URI(repository.localUri).path;
-                this.statusBar.setElement(GitViewContribution.GIT_SELECTED_REPOSITORY, {
-                    text: `$(database) ${path.base}`,
-                    alignment: StatusBarAlignment.LEFT,
-                    priority: 102,
-                    command: GIT_COMMANDS.CHANGE_REPOSITORY.id,
-                    tooltip: path.toString()
-                });
+            if (repository) {
+                if (this.hasMultipleRepositories()) {
+                    const path = new URI(repository.localUri).path;
+                    this.statusBar.setElement(GitViewContribution.GIT_SELECTED_REPOSITORY, {
+                        text: `$(database) ${path.base}`,
+                        alignment: StatusBarAlignment.LEFT,
+                        priority: 102,
+                        command: GIT_COMMANDS.CHANGE_REPOSITORY.id,
+                        tooltip: path.toString()
+                    });
+                } else {
+                    this.statusBar.removeElement(GitViewContribution.GIT_SELECTED_REPOSITORY);
+                }
             } else {
                 this.statusBar.removeElement(GitViewContribution.GIT_SELECTED_REPOSITORY);
+                this.statusBar.removeElement(GitViewContribution.GIT_REPOSITORY_STATUS);
+                this.statusBar.removeElement(GitViewContribution.GIT_SYNC_STATUS);
             }
         });
         this.repositoryTracker.onGitEvent(event => {

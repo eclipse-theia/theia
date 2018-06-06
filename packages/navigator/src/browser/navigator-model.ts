@@ -14,13 +14,14 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { FileNode, FileTreeModel } from '@theia/filesystem/lib/browser';
+import { DirNode, FileChange, FileChangeType, FileNode, FileTreeModel } from '@theia/filesystem/lib/browser';
 import { TreeIterator, Iterators } from '@theia/core/lib/browser/tree/tree-iterator';
-import { OpenerService, open, TreeNode, ExpandableTreeNode } from '@theia/core/lib/browser';
-import { FileNavigatorTree } from './navigator-tree';
+import { OpenerService, open, TreeNode, ExpandableTreeNode, CompositeTreeNode } from '@theia/core/lib/browser';
+import { FileNavigatorTree, WorkspaceRootNode, WorkspaceNode } from './navigator-tree';
 import { FileNavigatorSearch } from './navigator-search';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 
 @injectable()
 export class FileNavigatorModel extends FileTreeModel {
@@ -28,6 +29,17 @@ export class FileNavigatorModel extends FileTreeModel {
     @inject(OpenerService) protected readonly openerService: OpenerService;
     @inject(FileNavigatorTree) protected readonly tree: FileNavigatorTree;
     @inject(FileNavigatorSearch) protected readonly navigatorSearch: FileNavigatorSearch;
+    @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+
+    @postConstruct()
+    protected async init(): Promise<void> {
+        this.toDispose.push(
+            this.workspaceService.onWorkspaceChanged(event => {
+                this.updateRoot();
+            })
+        );
+        super.init();
+    }
 
     protected doOpenNode(node: TreeNode): void {
         if (FileNode.is(node)) {
@@ -35,6 +47,34 @@ export class FileNavigatorModel extends FileTreeModel {
         } else {
             super.doOpenNode(node);
         }
+    }
+
+    async updateRoot(): Promise<void> {
+        this.root = await this.createRoot();
+    }
+
+    protected async createRoot(): Promise<TreeNode | undefined> {
+        const roots = await this.workspaceService.roots;
+        if (roots.length > 0) {
+            const workspaceNode = WorkspaceNode.createRoot([]);
+            const children: WorkspaceRootNode[] = [];
+            for (const root of roots) {
+                children.push(await this.tree.createWorkspaceRoot(root, workspaceNode));
+            }
+            workspaceNode.children = children;
+            return workspaceNode;
+        }
+    }
+
+    /**
+     * Move the given source file or directory to the given target directory.
+     */
+    async move(source: TreeNode, target: TreeNode) {
+        if (source.parent && WorkspaceRootNode.is(source)) {
+            // do not support moving a root folder
+            return;
+        }
+        await super.move(source, target);
     }
 
     /**
@@ -49,11 +89,11 @@ export class FileNavigatorModel extends FileTreeModel {
         }
 
         const navigatorNodeId = targetFileUri.toString();
-        let node = this.getNode(navigatorNodeId);
+        let node = await this.getNodeClosestToRootByUri(navigatorNodeId);
 
         // success stop condition
         // we have to reach workspace root because expanded node could be inside collapsed one
-        if (this.root === node) {
+        if (WorkspaceRootNode.is(node)) {
             if (ExpandableTreeNode.is(node)) {
                 if (!node.expanded) {
                     await this.expandNode(node);
@@ -74,7 +114,7 @@ export class FileNavigatorModel extends FileTreeModel {
         if (await this.revealFile(targetFileUri.parent)) {
             if (node === undefined) {
                 // get node if it wasn't mounted into navigator tree before expansion
-                node = this.getNode(navigatorNodeId);
+                node = await this.getNodeClosestToRootByUri(navigatorNodeId);
             }
             if (ExpandableTreeNode.is(node) && !node.expanded) {
                 await this.expandNode(node);
@@ -82,6 +122,15 @@ export class FileNavigatorModel extends FileTreeModel {
             return node;
         }
         return undefined;
+    }
+
+    protected async getNodeClosestToRootByUri(uri: string): Promise<TreeNode | undefined> {
+        const nodes = await this.getNodesByUri(uri);
+        return nodes.length > 0
+            ? nodes.reduce((node1, node2) => // return the node closest to the workspace root
+                node1.id.length >= node2.id.length ? node1 : node2
+            )
+            : undefined;
     }
 
     protected createBackwardIterator(node: TreeNode | undefined): TreeIterator | undefined {
@@ -112,4 +161,36 @@ export class FileNavigatorModel extends FileTreeModel {
         return Iterators.cycle(filteredNodes, node);
     }
 
+    protected async collectAffectedNodes(change: FileChange, accept: (node: CompositeTreeNode) => void): Promise<void> {
+        if (this.isFileContentChanged(change)) {
+            return;
+        }
+        (await this.getNodesByUri(change.uri.parent.toString())).forEach(parentNode => {
+            if (DirNode.is(parentNode) && parentNode.expanded) {
+                accept(parentNode);
+            }
+        });
+    }
+
+    protected isFileContentChanged(change: FileChange): boolean {
+        const roots = this.workspaceService.tryGetRoots();
+        if (roots.length === 0) {
+            return false;
+        }
+        const nodeId = WorkspaceRootNode.createId(roots[0].uri, change.uri.toString());
+        const node = this.getNode(nodeId);
+        return change.type === FileChangeType.UPDATED && FileNode.is(node);
+    }
+
+    protected async getNodesByUri(nodeUri: string): Promise<TreeNode[]> {
+        const roots = await this.workspaceService.roots;
+        const nodes: TreeNode[] = [];
+        for (const node of roots.map(root => WorkspaceRootNode.createId(root.uri, nodeUri))
+            .map(parentNodeId => this.getNode(parentNodeId))) {
+            if (node) {
+                nodes.push(node);
+            }
+        }
+        return nodes;
+    }
 }

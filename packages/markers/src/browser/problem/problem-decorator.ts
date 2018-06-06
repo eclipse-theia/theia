@@ -22,6 +22,7 @@ import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Tree } from '@theia/core/lib/browser/tree/tree';
 import { DepthFirstTreeIterator } from '@theia/core/lib/browser/tree/tree-iterator';
 import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
+import { FileStatNode } from '@theia/filesystem/lib/browser';
 import { Marker } from '../../common/marker';
 import { ProblemManager } from './problem-manager';
 
@@ -55,13 +56,16 @@ export class ProblemDecorator implements TreeDecorator {
             return result;
         }
         const markers = this.appendContainerMarkers(tree, this.collectMarkers(tree));
-        for (const { id } of new DepthFirstTreeIterator(tree.root)) {
-            const marker = markers.get(id);
-            if (marker) {
-                result.set(id, marker);
+        for (const node of new DepthFirstTreeIterator(tree.root)) {
+            const nodeUri = FileStatNode.getUri(node);
+            if (nodeUri) {
+                const marker = markers.get(nodeUri);
+                if (marker) {
+                    result.set(node.id, marker);
+                }
             }
         }
-        return new Map(Array.from(result.values()).map(m => [m.uri, this.toDecorator(m)] as [string, TreeDecoration.Data]));
+        return new Map(Array.from(result.entries()).map(m => [m[0], this.toDecorator(m[1])] as [string, TreeDecoration.Data]));
     }
 
     protected appendContainerMarkers(tree: Tree, markers: Marker<Diagnostic>[]): Map<string, Marker<Diagnostic>> {

@@ -64,8 +64,8 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
         return this.selectedNodes.filter(FileStatNode.is);
     }
 
-    protected onFilesChanged(changes: FileChange[]): void {
-        const affectedNodes = this.getAffectedNodes(changes);
+    protected async onFilesChanged(changes: FileChange[]): Promise<void> {
+        const affectedNodes = await this.getAffectedNodes(changes);
         if (affectedNodes.length !== 0) {
             affectedNodes.forEach(node => this.refresh(node));
         } else if (this.isRootAffected(changes)) {
@@ -83,15 +83,15 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
         return false;
     }
 
-    protected getAffectedNodes(changes: FileChange[]): CompositeTreeNode[] {
+    protected async getAffectedNodes(changes: FileChange[]): Promise<CompositeTreeNode[]> {
         const nodes = new Map<string, CompositeTreeNode>();
         for (const change of changes) {
-            this.collectAffectedNodes(change, node => nodes.set(node.id, node));
+            await this.collectAffectedNodes(change, node => nodes.set(node.id, node));
         }
         return [...nodes.values()];
     }
 
-    protected collectAffectedNodes(change: FileChange, accept: (node: CompositeTreeNode) => void): void {
+    protected async collectAffectedNodes(change: FileChange, accept: (node: CompositeTreeNode) => void): Promise<void> {
         if (this.isFileContentChanged(change)) {
             return;
         }
@@ -133,6 +133,10 @@ export class FileTreeModel extends TreeModelImpl implements LocationService {
                     await this.fileSystem.move(sourceUri, targetUri, { overwrite: true });
                     // to workaround https://github.com/Axosoft/nsfw/issues/42
                     this.refresh(target);
+
+                    if (source.parent) {
+                        this.refresh(source.parent);
+                    }
                 }
             }
         }
