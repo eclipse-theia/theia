@@ -20,16 +20,16 @@ export class PluginApiFrontendContribution implements CommandContribution {
     protected readonly pluginExtDeployCommandService: PluginExtDeployCommandService;
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(HostedPluginCommands.RUN, {
+        commands.registerCommand(HostedPluginCommands.START, {
             execute: () => this.hostedPluginManagerClient.start()
         });
-        commands.registerCommand(HostedPluginCommands.TERMINATE, {
+        commands.registerCommand(HostedPluginCommands.STOP, {
             execute: () => this.hostedPluginManagerClient.stop()
         });
         commands.registerCommand(HostedPluginCommands.RESTART, {
             execute: () => this.hostedPluginManagerClient.restart()
         });
-        commands.registerCommand(HostedPluginCommands.SELECT_PLUGIN_PATH, {
+        commands.registerCommand(HostedPluginCommands.SELECT_PATH, {
             execute: () => this.hostedPluginManagerClient.selectPluginPath()
         });
 

@@ -4,6 +4,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
+
+import '../../../src/main/style/status-bar.css';
+
 import { ContainerModule } from "inversify";
 import { FrontendApplicationContribution, FrontendApplication, WidgetFactory, KeybindingContribution } from "@theia/core/lib/browser";
 import { MaybePromise, CommandContribution, MenuContribution } from "@theia/core/lib/common";
@@ -19,6 +22,9 @@ import { ModalNotification } from './dialogs/modal-notification';
 import { PluginWidget } from "./plugin-ext-widget";
 import { PluginFrontendViewContribution } from "./plugin-frontend-view-contribution";
 
+import { HostedPluginInformer } from "../../hosted/browser/hosted-plugin-informer";
+import { HostedPluginController } from "./hosted-plugin-controller";
+
 import '../../../src/main/browser/style/index.css';
 import { PluginExtDeployCommandService } from "./plugin-ext-deploy-command";
 
@@ -29,6 +35,9 @@ export default new ContainerModule(bind => {
     bind(HostedPluginSupport).toSelf().inSingletonScope();
     bind(HostedPluginWatcher).toSelf().inSingletonScope();
     bind(HostedPluginManagerClient).toSelf().inSingletonScope();
+
+    bind(FrontendApplicationContribution).to(HostedPluginInformer).inSingletonScope();
+    bind(FrontendApplicationContribution).to(HostedPluginController).inSingletonScope();
 
     bind(PluginApiFrontendContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(PluginApiFrontendContribution));
