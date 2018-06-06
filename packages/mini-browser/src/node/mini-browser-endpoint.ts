@@ -12,8 +12,8 @@ import { Application, Request, Response } from 'express';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { ILogger } from '@theia/core/lib/common/logger';
+import { MaybePromise } from '@theia/core/lib/common/types';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
-import { MaybePromise, Prioritizeable } from '@theia/core/lib/common/types';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
 import { MiniBrowserService } from '../common/mini-browser-service';
@@ -42,38 +42,21 @@ export const MiniBrowserEndpointHandler = Symbol('MiniBrowserEndpointHandler');
 export interface MiniBrowserEndpointHandler {
 
     /**
-     * Returns with the file extensions supported by the current `mini-browser` endpoint handler.
-     * The file extension must start with the leading `.` (dot). For instance; `'.html'` or `['.jpg', '.jpeg']`.
-     * Extensions are case insensitive.
+     * Returns with or resolves to the file extensions supported by the current `mini-browser` endpoint handler.
+     * The file extension must not start with the leading `.` (dot). For instance; `'html'` or `['jpg', 'jpeg']`.
+     * The file extensions are case insensitive.
      */
-    supportedExtensions(): string | string[];
+    supportedExtensions(): MaybePromise<string | string[]>;
+
+    /**
+     * Returns a number representing the priority between all the available handlers for the same file extension.
+     */
+    priority(): number;
 
     /**
      * Responds back to the sender.
      */
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response>;
-
-    /**
-     * Returns or resolves to a positive number if the current contribution can handle the resource with the given URI.
-     * The number indicates the priority of the endpoint contribution. If it is not a positive number, it means, the
-     * contribution cannot handle the URI.
-     */
-    priority(uri: string): MaybePromise<number>;
-
-}
-
-@injectable()
-export abstract class BaseMiniBrowserEndpointHandler implements MiniBrowserEndpointHandler {
-
-    abstract supportedExtensions(): string | string[];
-
-    abstract respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response>;
-
-    priority(uri: string): number {
-        const extensions = this.supportedExtensions();
-        // The handler for the extension should be case insensitive. For example; the handler accepts `'.jpg'` and the file extension is `.JPG`.
-        return (Array.isArray(extensions) ? extensions : [extensions]).some(extension => uri.toLocaleLowerCase().endsWith(extension.toLocaleLowerCase())) ? 1 : 0;
-    }
 
 }
 
@@ -95,12 +78,26 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
     @named(MiniBrowserEndpointHandler)
     protected readonly contributions: ContributionProvider<MiniBrowserEndpointHandler>;
 
+    protected readonly handlers: Map<string, MiniBrowserEndpointHandler> = new Map();
+
     configure(app: Application): void {
         app.get(`${MiniBrowserEndpoint.HANDLE_PATH}*`, async (request, response) => await this.response(await this.getUri(request), response));
     }
 
-    async supportedFileExtensions(): Promise<string[]> {
-        return Array.from(new Set(([] as string[]).concat(...this.getContributions().map(c => c.supportedExtensions()).map(e => Array.isArray(e) ? e : [e]))));
+    async onStart(): Promise<void> {
+        for (const handler of this.getContributions()) {
+            const extensions = await handler.supportedExtensions();
+            for (const extension of (Array.isArray(extensions) ? extensions : [extensions]).map(e => e.toLocaleLowerCase())) {
+                const existingHandler = this.handlers.get(extension);
+                if (!existingHandler || handler.priority > existingHandler.priority) {
+                    this.handlers.set(extension, handler);
+                }
+            }
+        }
+    }
+
+    async supportedFileExtensions(): Promise<Readonly<{ extension: string, priority: number }>[]> {
+        return Array.from(this.handlers.entries()).map(([extension, handler]) => ({ extension, priority: handler.priority() }));
     }
 
     protected async response(uri: string, response: Response): Promise<Response> {
@@ -111,21 +108,20 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
         const statWithContent = await this.readContent(uri);
         try {
             if (!statWithContent.stat.isDirectory) {
-                const handlers = await this.prioritize(uri);
-                if (handlers.length === 0) {
+                const extension = uri.split('.').pop();
+                if (!extension) {
                     return this.defaultHandler()(statWithContent, response);
                 }
-                return handlers[0].respond(statWithContent, response);
+                const handler = this.handlers.get(extension.toString().toLocaleLowerCase());
+                if (!handler) {
+                    return this.defaultHandler()(statWithContent, response);
+                }
+                return handler.respond(statWithContent, response);
             }
         } catch (e) {
             return this.errorHandler()(e, uri, response);
         }
         return this.defaultHandler()(statWithContent, response);
-    }
-
-    protected async prioritize(uri: string): Promise<MiniBrowserEndpointHandler[]> {
-        const prioritized = await Prioritizeable.prioritizeAll(this.getContributions(), contribution => contribution.priority(uri));
-        return prioritized.map(p => p.value);
     }
 
     protected getContributions(): MiniBrowserEndpointHandler[] {
@@ -184,14 +180,23 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution, Mini
 
 }
 
+// See `EditorManager#canHandle`.
+const CODE_EDITOR_PRIORITY = 100;
+
 /**
  * Endpoint handler contribution for HTML files.
  */
 @injectable()
-export class HtmlHandler extends BaseMiniBrowserEndpointHandler {
+export class HtmlHandler implements MiniBrowserEndpointHandler {
 
     supportedExtensions(): string {
-        return '.html';
+        return 'html';
+    }
+
+    priority(): number {
+        // Prefer Code Editor over Mini Browser
+        // https://github.com/theia-ide/theia/issues/2051
+        return 1;
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {
@@ -205,10 +210,14 @@ export class HtmlHandler extends BaseMiniBrowserEndpointHandler {
  * Handler for JPG resources.
  */
 @injectable()
-export class ImageHandler extends BaseMiniBrowserEndpointHandler {
+export class ImageHandler implements MiniBrowserEndpointHandler {
 
     supportedExtensions(): string[] {
-        return ['.jpg', '.jpeg', '.png', '.bmp', '.gif'];
+        return ['jpg', 'jpeg', 'png', 'bmp', 'gif'];
+    }
+
+    priority(): number {
+        return CODE_EDITOR_PRIORITY + 1;
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {
@@ -228,10 +237,14 @@ export class ImageHandler extends BaseMiniBrowserEndpointHandler {
  * PDF endpoint handler.
  */
 @injectable()
-export class PdfHandler extends BaseMiniBrowserEndpointHandler {
+export class PdfHandler implements MiniBrowserEndpointHandler {
 
     supportedExtensions(): string {
-        return '.pdf';
+        return 'pdf';
+    }
+
+    priority(): number {
+        return CODE_EDITOR_PRIORITY + 1;
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {
@@ -263,10 +276,14 @@ export class PdfHandler extends BaseMiniBrowserEndpointHandler {
  * Endpoint contribution for SVG resources.
  */
 @injectable()
-export class SvgHandler extends BaseMiniBrowserEndpointHandler {
+export class SvgHandler implements MiniBrowserEndpointHandler {
 
     supportedExtensions(): string {
-        return '.svg';
+        return 'svg';
+    }
+
+    priority(): number {
+        return CODE_EDITOR_PRIORITY + 1;
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {

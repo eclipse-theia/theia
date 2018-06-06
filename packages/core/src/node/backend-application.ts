@@ -10,7 +10,7 @@ import * as https from 'https';
 import * as express from 'express';
 import * as yargs from 'yargs';
 import { inject, named, injectable } from "inversify";
-import { ILogger, ContributionProvider } from '../common';
+import { ILogger, ContributionProvider, MaybePromise } from '../common';
 import { CliContribution } from './cli';
 import { Deferred } from '../common/promise-util';
 import { BackendProcess } from './backend-process';
@@ -20,7 +20,7 @@ export const BackendApplicationContribution = Symbol("BackendApplicationContribu
 export interface BackendApplicationContribution {
     initialize?(): void;
     configure?(app: express.Application): void;
-    onStart?(server: http.Server | https.Server): void;
+    onStart?(server: http.Server | https.Server): MaybePromise<void>;
 
     /**
      * Called when the backend application shuts down. Contributions must perform only synchronous operations.
@@ -170,7 +170,7 @@ export class BackendApplication {
         for (const contrib of this.contributionsProvider.getContributions()) {
             if (contrib.onStart) {
                 try {
-                    contrib.onStart(server);
+                    await contrib.onStart(server);
                 } catch (error) {
                     this.logger.error('Could not start contribution', error);
                 }
@@ -179,7 +179,7 @@ export class BackendApplication {
         return deferred.promise;
     }
 
-    private onStop(): void {
+    protected onStop(): void {
         for (const contrib of this.contributionsProvider.getContributions()) {
             if (contrib.onStop) {
                 try {

@@ -28,13 +28,13 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> imple
 
     /**
      * Instead of going to the backend with each file URI to ask whether it can handle the current file or not,
-     * we have this array of extensions that we populate at application startup. The real advantage of this
-     * approach is the following: [Phosphor cannot run async code when invoking `isEnabled`/`isVisible`
+     * we have this map of extension and priority pairs that we populate at application startup.
+     * The real advantage of this approach is the following: [Phosphor cannot run async code when invoking `isEnabled`/`isVisible`
      * for the command handlers](https://github.com/theia-ide/theia/issues/1958#issuecomment-392829371)
      * so the menu item would be always visible for the user even if the file type cannot be handled eventually.
      * Hopefully, we could get rid of this hack once we have migrated the existing Phosphor code to [React](https://github.com/theia-ide/theia/issues/1915).
      */
-    protected readonly supportedExtensions: string[] = [];
+    protected readonly supportedExtensions: Map<string, number> = new Map();
 
     readonly id = 'mini-browser-open-handler';
     readonly label = 'Mini Browser';
@@ -52,13 +52,20 @@ export class MiniBrowserOpenHandler extends WidgetOpenHandler<MiniBrowser> imple
     protected readonly miniBrowserService: MiniBrowserService;
 
     async onStart(): Promise<void> {
-        this.supportedExtensions.push(...(await this.miniBrowserService.supportedFileExtensions()));
+        (await this.miniBrowserService.supportedFileExtensions()).forEach(entry => {
+            const { extension, priority } = entry;
+            this.supportedExtensions.set(extension, priority);
+        });
     }
 
     canHandle(uri: URI): number {
-        // The priority is `101` instead of `1` to make sure if we handle, for instance, an SVG,
-        // then the Mini Browser with the image will show up instead of the Code Editor with the binary/text content. See `EditorManager#canHandle`.
-        return this.supportedExtensions.some(extension => uri.toString().toLocaleLowerCase().endsWith(extension.toLocaleLowerCase())) ? 101 : 0;
+        // It does not guard against directories. For instance, a folder with this name: `Hahahah.html`.
+        // We could check with the FS, but then, this method would become async again.
+        const extension = uri.toString().split('.').pop();
+        if (extension) {
+            return this.supportedExtensions.get(extension.toLocaleLowerCase()) || 0;
+        }
+        return 0;
     }
 
     async open(uri?: URI, options?: MiniBrowserOpenerOptions): Promise<MiniBrowser> {
