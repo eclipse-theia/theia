@@ -52,6 +52,9 @@ export class WorkspaceCliContribution implements CliContribution {
             const cwd = process.cwd();
             wsPath = path.join(cwd, wsPath);
         }
+        if (wsPath && wsPath.endsWith('/')) {
+            wsPath = wsPath.slice(0, -1);
+        }
         this.workspaceRoot.resolve(wsPath);
     }
 }
@@ -74,7 +77,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     protected async init() {
         let root = await this.getWorkspaceURIFromCli();
         if (!root) {
-            const data = await this.readFromUserHome();
+            const data = await this.readMostRecentWorkspaceRootFromUserHome();
             if (data && data.recentRoots) {
                 root = data.recentRoots[0];
             }
@@ -82,11 +85,11 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
         this.root.resolve(root);
     }
 
-    getWorkspace(): Promise<string | undefined> {
+    getMostRecentlyUsedWorkspace(): Promise<string | undefined> {
         return this.root.promise;
     }
 
-    async setWorkspace(uri: string): Promise<void> {
+    async setMostRecentlyUsedWorkspace(uri: string): Promise<void> {
         this.root = new Deferred();
         const listUri: string[] = [];
         const oldListUri = await this.getRecentWorkspaces();
@@ -106,7 +109,7 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
 
     async getRecentWorkspaces(): Promise<string[]> {
         const listUri: string[] = [];
-        const data = await this.readFromUserHome();
+        const data = await this.readMostRecentWorkspaceRootFromUserHome();
         if (data && data.recentRoots) {
             data.recentRoots.forEach(element => {
                 if (element.length > 0) {
@@ -138,19 +141,29 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
      */
     private async writeToUserHome(data: WorkspaceData): Promise<void> {
         const file = this.getUserStoragePath();
-        if (!await fs.pathExists(file)) {
-            await fs.mkdirs(path.resolve(file, '..'));
+        await this.writeToFile(file, data);
+    }
+
+    private async writeToFile(filePath: string, data: object): Promise<void> {
+        if (!await fs.pathExists(filePath)) {
+            await fs.mkdirs(path.resolve(filePath, '..'));
         }
-        await fs.writeJson(file, data);
+        await fs.writeJson(filePath, data);
     }
 
     /**
      * Reads the most recently used workspace root from the user's home directory.
      */
-    private async readFromUserHome(): Promise<WorkspaceData | undefined> {
-        const file = this.getUserStoragePath();
-        if (await fs.pathExists(file)) {
-            const rawContent = await fs.readFile(file, 'utf-8');
+    private async readMostRecentWorkspaceRootFromUserHome(): Promise<WorkspaceData | undefined> {
+        const data = await this.readJsonFromFile(this.getUserStoragePath());
+        if (data && WorkspaceData.is(data)) {
+            return data;
+        }
+    }
+
+    private async readJsonFromFile(filePath: string): Promise<object | undefined> {
+        if (await fs.pathExists(filePath)) {
+            const rawContent = await fs.readFile(filePath, 'utf-8');
             const content = rawContent.trim();
             if (!content) {
                 return undefined;
@@ -160,8 +173,8 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
             try {
                 config = JSON.parse(content);
             } catch (error) {
-                this.messageService.warn(`Parse error in '${file}':\nFile will be ignored...`);
-                error.message = `${file}:\n${error.message}`;
+                this.messageService.warn(`Parse error in '${filePath}':\nFile will be ignored...`);
+                error.message = `${filePath}:\n${error.message}`;
                 this.logger.warn('[CAUGHT]', error);
                 return undefined;
             }
@@ -177,7 +190,6 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     protected getUserStoragePath(): string {
         return path.resolve(os.homedir(), '.theia', 'recentworkspace.json');
     }
-
 }
 
 interface WorkspaceData {

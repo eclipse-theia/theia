@@ -19,8 +19,12 @@ import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { SelectionService, CommandService } from '@theia/core/lib/common';
 import { CommonCommands } from '@theia/core/lib/browser/common-frontend-contribution';
-import { ContextMenuRenderer, TreeProps, TreeModel, TreeNode, LabelProvider, Widget, SelectableTreeNode, ExpandableTreeNode } from '@theia/core/lib/browser';
-import { FileTreeWidget, DirNode, FileNode } from '@theia/filesystem/lib/browser';
+import {
+    ContextMenuRenderer, ExpandableTreeNode,
+    TreeProps, TreeModel, TreeNode,
+    LabelProvider, Widget, SelectableTreeNode
+} from '@theia/core/lib/browser';
+import { FileTreeWidget, FileNode } from '@theia/filesystem/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { FileNavigatorModel } from './navigator-model';
@@ -92,17 +96,8 @@ export class FileNavigatorWidget extends FileTreeWidget {
         ]);
     }
 
-    protected initialize(): void {
-        this.workspaceService.root.then(async resolvedRoot => {
-            if (resolvedRoot) {
-                const uri = new URI(resolvedRoot.uri);
-                const label = this.labelProvider.getName(uri);
-                const icon = await this.labelProvider.getIcon(resolvedRoot);
-                this.model.root = DirNode.createRoot(resolvedRoot, label, icon);
-            } else {
-                this.update();
-            }
-        });
+    protected async initialize(): Promise<void> {
+        await this.model.updateRoot();
     }
 
     protected enableDndOnMainPanel(): void {
@@ -180,7 +175,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
     }
 
     /**
-     * Instead of rendering the file resources form the workspace, we render a placeholder
+     * Instead of rendering the file resources from the workspace, we render a placeholder
      * button when the workspace root is not yet set.
      */
     protected renderOpenWorkspaceDiv(): React.ReactNode {
@@ -193,5 +188,4 @@ export class FileNavigatorWidget extends FileTreeWidget {
             </div>
         </div>;
     }
-
 }

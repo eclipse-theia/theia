@@ -23,18 +23,18 @@ export const WorkspaceServer = Symbol('WorkspaceServer');
 export interface WorkspaceServer {
 
     /**
-     * Returns with a promise that resolves to the workspace root URI as a string. Resolves to `undefined` if the workspace root is not yet set.
+     * Returns with a promise that resolves to the most recently used workspace folder URI as a string.
+     * Resolves to `undefined` if the workspace folder is not yet set.
      */
-    getWorkspace(): Promise<string | undefined>;
+    getMostRecentlyUsedWorkspace(): Promise<string | undefined>;
 
     /**
-     * Sets the desired string representation of the URI as the workspace root.
+     * Sets the desired string representation of the URI as the most recently used workspace folder.
      */
-    setWorkspace(uri: string): Promise<void>;
+    setMostRecentlyUsedWorkspace(uri: string): Promise<void>;
 
     /**
      * Returns list of recently opened workspaces as an array.
      */
     getRecentWorkspaces(): Promise<string[]>
-
 }

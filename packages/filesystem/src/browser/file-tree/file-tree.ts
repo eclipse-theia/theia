@@ -19,7 +19,7 @@ import URI from '@theia/core/lib/common/uri';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode, TreeImpl } from '@theia/core/lib/browser';
 import { FileSystem, FileStat } from '../../common';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { UriSelection } from '@theia/core/lib/common//selection';
+import { UriSelection } from '@theia/core/lib/common/selection';
 
 @injectable()
 export class FileTree extends TreeImpl {
@@ -33,7 +33,6 @@ export class FileTree extends TreeImpl {
             if (fileStat) {
                 return this.toNodes(fileStat, parent);
             }
-
             return [];
         }
         return super.resolveChildren(parent);
@@ -63,7 +62,7 @@ export class FileTree extends TreeImpl {
         const uri = new URI(fileStat.uri);
         const name = await this.labelProvider.getName(uri);
         const icon = await this.labelProvider.getIcon(fileStat);
-        const id = fileStat.uri;
+        const id = this.toNodeId(fileStat, parent);
         const node = this.getNode(id);
         if (fileStat.isDirectory) {
             if (DirNode.is(node)) {
@@ -87,6 +86,9 @@ export class FileTree extends TreeImpl {
         };
     }
 
+    protected toNodeId(fileStat: FileStat, parent: CompositeTreeNode): string {
+        return fileStat.uri;
+    }
 }
 
 export interface FileStatNode extends SelectableTreeNode, UriSelection {
@@ -95,6 +97,13 @@ export interface FileStatNode extends SelectableTreeNode, UriSelection {
 export namespace FileStatNode {
     export function is(node: object | undefined): node is FileStatNode {
         return !!node && 'fileStat' in node;
+    }
+
+    export function getUri(node: TreeNode | undefined): string | undefined {
+        if (is(node)) {
+            return node.fileStat.uri;
+        }
+        return undefined;
     }
 }
 

@@ -22,11 +22,13 @@ import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/c
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
 import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common/filesystem';
+import { FileStatNode, FileDialogService } from '@theia/filesystem/lib/browser';
 import { SingleTextInputDialog, ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 import { OpenerService, OpenHandler, open, FrontendApplication } from '@theia/core/lib/browser';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import { WorkspacePreferences } from './workspace-preferences';
 
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
@@ -68,6 +70,13 @@ export namespace WorkspaceCommands {
         id: 'file.compare',
         label: 'Compare with Each Other'
     };
+    export const ADD_FOLDER: Command = {
+        id: 'workspace:addFolder',
+        label: 'Add Folder to Workspace...'
+    };
+    export const REMOVE_FOLDER: Command = {
+        id: 'workspace:removeFolder'
+    };
 }
 
 @injectable()
@@ -93,8 +102,9 @@ export class WorkspaceCommandContribution implements CommandContribution {
         @inject(SelectionService) protected readonly selectionService: SelectionService,
         @inject(OpenerService) protected readonly openerService: OpenerService,
         @inject(FrontendApplication) protected readonly app: FrontendApplication,
-        @inject(MessageService) protected readonly messageService: MessageService
-
+        @inject(MessageService) protected readonly messageService: MessageService,
+        @inject(WorkspacePreferences) protected readonly preferences: WorkspacePreferences,
+        @inject(FileDialogService) protected readonly fileDialogService: FileDialogService
     ) { }
 
     registerCommands(registry: CommandRegistry): void {
@@ -164,7 +174,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
             })
         }));
         let rootUri: URI | undefined;
-        this.workspaceService.root.then(root => {
+        this.workspaceService.roots.then(roots => {
+            const root = roots[0];
             if (root) {
                 rootUri = new URI(root.uri);
             }
@@ -193,7 +204,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 })();
                 const dialog = new ConfirmDialog({
                     title: `Delete File${uris.length === 1 ? '' : 's'}`,
-                    msg,
+                    msg
                 });
 
                 if (await dialog.open()) {
@@ -239,6 +250,32 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 }
             }
         }));
+        this.preferences.ready.then(() => {
+            const isEnabled = () => this.workspaceService.isMultiRootWorkspaceOpened;
+            const isVisible = (uris: URI[]): boolean => {
+                const roots = this.workspaceService.tryGetRoots();
+                const selected = new Set(uris.map(u => u.toString()));
+                for (const root of roots) {
+                    if (selected.has(root.uri)) {
+                        return true;
+                    }
+                }
+                return false;
+            };
+            registry.registerCommand(WorkspaceCommands.ADD_FOLDER, this.newMultiUriAwareCommandHandler({
+                isEnabled,
+                isVisible,
+                execute: async uris => {
+                    const node = await this.fileDialogService.show({ title: WorkspaceCommands.ADD_FOLDER.label! });
+                    this.addFolderToWorkspace(node);
+                }
+            }));
+            registry.registerCommand(WorkspaceCommands.REMOVE_FOLDER, this.newMultiUriAwareCommandHandler({
+                execute: uris => this.removeFolderFromWorkspace(uris),
+                isEnabled,
+                isVisible
+            }));
+        });
     }
 
     protected newUriAwareCommandHandler(handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {
@@ -296,6 +333,43 @@ export class WorkspaceCommandContribution implements CommandContribution {
         }
         return parentUri.resolve(base);
     }
+
+    protected addFolderToWorkspace(node: Readonly<FileStatNode> | undefined): void {
+        if (!node) {
+            return;
+        }
+        if (node.fileStat.isDirectory) {
+            this.workspaceService.addRoot(node.uri);
+        } else {
+            throw new Error(`Invalid folder. URI: ${node.fileStat.uri}.`);
+        }
+    }
+
+    protected async removeFolderFromWorkspace(uris: URI[]): Promise<void> {
+        const roots = new Set(this.workspaceService.tryGetRoots().map(r => r.uri));
+        const toRemove = uris.filter(u => roots.has(u.toString()));
+        if (toRemove.length > 0) {
+            const messageContainer = document.createElement('div');
+            messageContainer.textContent = 'Remove the following folders from workspace? (note: nothing will be erased from disk)';
+            const list = document.createElement('ul');
+            list.style.listStyleType = 'none';
+            toRemove.forEach(u => {
+                const listItem = document.createElement('li');
+                listItem.textContent = u.displayName;
+                list.appendChild(listItem);
+            });
+            messageContainer.appendChild(list);
+            const dialog = new ConfirmDialog({
+                title: 'Remove Folder from Workspace',
+                msg: messageContainer
+            });
+            if (await dialog.open()) {
+                await this.workspaceService.removeRoots(toRemove);
+            }
+        } else {
+            throw new Error('Expected at least one root folder location.');
+        }
+    }
 }
 
 export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<URI> {
@@ -308,7 +382,8 @@ export class WorkspaceRootUriAwareCommandHandler extends UriAwareCommandHandler<
         protected readonly handler: UriCommandHandler<URI>
     ) {
         super(selectionService, handler);
-        workspaceService.root.then(root => {
+        workspaceService.roots.then(roots => {
+            const root = roots[0];
             if (root) {
                 this.rootUri = new URI(root.uri);
             }

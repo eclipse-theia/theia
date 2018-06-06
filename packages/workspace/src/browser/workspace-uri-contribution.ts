@@ -16,7 +16,7 @@
 
 import { DefaultUriLabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
-import { injectable, inject } from 'inversify';
+import { injectable, inject, postConstruct } from 'inversify';
 import { WorkspaceService } from './workspace-service';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
 import { MaybePromise } from '@theia/core';
@@ -24,15 +24,19 @@ import { MaybePromise } from '@theia/core';
 @injectable()
 export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProviderContribution {
 
+    @inject(WorkspaceService)
+    protected workspaceService: WorkspaceService;
+    @inject(FileSystem)
+    protected fileSystem: FileSystem;
+
     wsRoot: string;
-    constructor(@inject(WorkspaceService) wsService: WorkspaceService,
-        @inject(FileSystem) protected fileSystem: FileSystem) {
-        super();
-        wsService.root.then(root => {
-            if (root) {
-                this.wsRoot = new URI(root.uri).toString(true);
-            }
-        });
+
+    @postConstruct()
+    protected async init(): Promise<void> {
+        const root = (await this.workspaceService.roots)[0];
+        if (root) {
+            this.wsRoot = new URI(root.uri).toString(true);
+        }
     }
 
     canHandle(element: object): number {

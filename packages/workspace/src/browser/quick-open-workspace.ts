@@ -87,7 +87,8 @@ export class WorkspaceQuickOpenItem extends QuickOpenItem {
         if (mode !== QuickOpenMode.OPEN) {
             return false;
         }
-        this.workspaceService.root.then(current => {
+        this.workspaceService.roots.then(roots => {
+            const current = roots[0];
             if (current === undefined) {  // Available recent workspace(s) but closed
                 if (this.workspace && this.workspace.length > 0) {
                     this.workspaceService.open(new URI(this.workspace));

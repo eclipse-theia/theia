@@ -24,20 +24,28 @@ import {
 } from '@theia/core/lib/browser/preferences';
 
 export const workspacePreferenceSchema: PreferenceSchema = {
-    'type': 'object',
-    'properties': {
+    type: 'object',
+    properties: {
         'workspace.preserveWindow': {
-            'description': 'Enable opening workspaces in current window',
-            'additionalProperties': {
-                'type': 'boolean'
+            description: 'Enable opening workspaces in current window',
+            additionalProperties: {
+                type: 'boolean'
             },
-            'default': false
+            default: false
+        },
+        'workspace.supportMultiRootWorkspace': {
+            description: 'Enable the multi-root workspace support to test this feature internally',
+            additionalProperties: {
+                type: 'boolean'
+            },
+            default: false
         }
     }
 };
 
 export interface WorkspaceConfiguration {
-    'workspace.preserveWindow': boolean
+    'workspace.preserveWindow': boolean,
+    'workspace.supportMultiRootWorkspace': boolean
 }
 
 export const WorkspacePreferences = Symbol('WorkspacePreferences');

@@ -16,12 +16,14 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX } from '@theia/core/lib/common';
-import { Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands,
-         OpenerService, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
-import { SHELL_TABBAR_CONTEXT_MENU } from '@theia/core/lib/browser';
+import {
+    Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands,
+    OpenerService, FrontendApplicationContribution, FrontendApplication
+} from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
-import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
+import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX } from '@theia/core/lib/common';
+import { SHELL_TABBAR_CONTEXT_MENU } from '@theia/core/lib/browser';
+import { WorkspaceCommands, WorkspaceService, WorkspacePreferences } from '@theia/workspace/lib/browser';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
 import { FileNavigatorPreferences } from './navigator-preferences';
 import { NavigatorKeybindingContexts } from './navigator-keybinding-context';
@@ -47,6 +49,7 @@ export namespace NavigatorContextMenu {
     export const MOVE = [...NAVIGATOR_CONTEXT_MENU, '3_move'];
     export const NEW = [...NAVIGATOR_CONTEXT_MENU, '4_new'];
     export const DIFF = [...NAVIGATOR_CONTEXT_MENU, '5_diff'];
+    export const WORKSPACE = [...NAVIGATOR_CONTEXT_MENU, '6_workspace'];
 }
 
 @injectable()
@@ -55,7 +58,9 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     constructor(
         @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences,
         @inject(OpenerService) protected readonly openerService: OpenerService,
-        @inject(FileNavigatorFilter) protected readonly fileNavigatorFilter: FileNavigatorFilter
+        @inject(FileNavigatorFilter) protected readonly fileNavigatorFilter: FileNavigatorFilter,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService,
+        @inject(WorkspacePreferences) protected readonly workspacePreferences: WorkspacePreferences
     ) {
         super({
             widgetId: FILE_NAVIGATOR_ID,
@@ -147,6 +152,18 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerMenuAction(NavigatorContextMenu.DIFF, {
             commandId: WorkspaceCommands.FILE_COMPARE.id
+        });
+
+        this.workspacePreferences.ready.then(() => {
+            if (this.workspacePreferences['workspace.supportMultiRootWorkspace']) {
+                registry.registerMenuAction(NavigatorContextMenu.WORKSPACE, {
+                    commandId: WorkspaceCommands.ADD_FOLDER.id
+                });
+                registry.registerMenuAction(NavigatorContextMenu.WORKSPACE, {
+                    commandId: WorkspaceCommands.REMOVE_FOLDER.id,
+                    label: 'Remove Folder from Workspace'
+                });
+            }
         });
     }
 
