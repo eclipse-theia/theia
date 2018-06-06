@@ -8,7 +8,7 @@
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { MessageService, Command, Emitter, Event } from '@theia/core/lib/common';
-import { LabelProvider, isNative } from '@theia/core/lib/browser';
+import { LabelProvider, isNative, AbstractDialog } from '@theia/core/lib/browser';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileSystem } from '@theia/filesystem/lib/common';
@@ -53,20 +53,7 @@ export enum HostedPluginState {
  */
 @injectable()
 export class HostedPluginManagerClient {
-    @inject(HostedPluginServer)
-    protected readonly hostedPluginServer: HostedPluginServer;
-    @inject(MessageService)
-    protected readonly messageService: MessageService;
-    @inject(FileDialogFactory)
-    protected readonly fileDialogFactory: FileDialogFactory;
-    @inject(LabelProvider)
-    protected readonly labelProvider: LabelProvider;
-    @inject(WindowService)
-    protected readonly windowService: WindowService;
-    @inject(FileSystem)
-    protected readonly fileSystem: FileSystem;
-    @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
+    private readonly openNewTabAskDialog: OpenHostedInstanceLinkDialog;
 
     // path to the plugin on the file system
     protected pluginLocation: URI | undefined;
@@ -78,6 +65,18 @@ export class HostedPluginManagerClient {
 
     get onStateChanged(): Event<HostedPluginState> {
         return this.stateChanged.event;
+    }
+
+    constructor(
+        @inject(HostedPluginServer) protected readonly hostedPluginServer: HostedPluginServer,
+        @inject(MessageService) protected readonly messageService: MessageService,
+        @inject(FileDialogFactory) protected readonly fileDialogFactory: FileDialogFactory,
+        @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
+        @inject(WindowService) protected readonly windowService: WindowService,
+        @inject(FileSystem) protected readonly fileSystem: FileSystem,
+        @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService
+    ) {
+        this.openNewTabAskDialog = new OpenHostedInstanceLinkDialog(windowService);
     }
 
     async start(): Promise<void> {
@@ -188,12 +187,52 @@ export class HostedPluginManagerClient {
             try {
                 this.windowService.openNewWindow(this.pluginInstanceURL);
             } catch (err) {
-                this.messageService.warn('Your browser prevented opening of new tab. You can do it manually: ' + this.pluginInstanceURL);
+                // browser blocked opening of a new tab
+                this.openNewTabAskDialog.showOpenNewTabAskDialog(this.pluginInstanceURL);
             }
         }
     }
 
     protected getErrorMessage(error: Error): string {
         return error.message.substring(error.message.indexOf(':') + 1);
+    }
+}
+
+class OpenHostedInstanceLinkDialog extends AbstractDialog<string> {
+    protected readonly windowService: WindowService;
+    protected readonly openButton: HTMLButtonElement;
+    protected readonly messageNode: HTMLDivElement;
+    protected readonly linkNode: HTMLAnchorElement;
+    value: string;
+
+    constructor(windowService: WindowService) {
+        super({
+            title: 'Your browser prevented opening of a new tab'
+        });
+        this.windowService = windowService;
+
+        this.linkNode = document.createElement('a');
+        this.linkNode.target = "_blank";
+        this.linkNode.setAttribute('style', 'color: var(--theia-ui-dialog-font-color);');
+        this.contentNode.appendChild(this.linkNode);
+
+        const messageNode = document.createElement('div');
+        messageNode.innerText = 'Hosted instance is started at: ';
+        messageNode.appendChild(this.linkNode);
+        this.contentNode.appendChild(messageNode);
+
+        this.appendCloseButton();
+        this.openButton = this.appendAcceptButton('Open');
+    }
+
+    showOpenNewTabAskDialog(uri: string): void {
+        this.value = uri;
+
+        this.linkNode.innerHTML = uri;
+        this.linkNode.href = uri;
+        this.openButton.onclick = () => {
+            this.windowService.openNewWindow(uri);
+        };
+        this.open();
     }
 }
