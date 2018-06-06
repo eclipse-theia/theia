@@ -1,12 +1,12 @@
 {
   "name": "@theia/java",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "description": "Theia - Java Extension",
   "dependencies": {
-    "@theia/core": "^0.3.10",
-    "@theia/editor": "^0.3.10",
-    "@theia/languages": "^0.3.10",
-    "@theia/monaco": "^0.3.10",
+    "@theia/core": "^0.3.11",
+    "@theia/editor": "^0.3.11",
+    "@theia/languages": "^0.3.11",
+    "@theia/monaco": "^0.3.11",
     "@types/glob": "^5.0.30",
     "@types/tar": "4.0.0",
     "glob": "^7.1.2",
@@ -14,7 +14,7 @@
     "tar": "^4.0.0"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.10"
+    "@theia/ext-scripts": "^0.3.11"
   },
   "scripts": {
     "prepare": "yarn run clean && yarn run build",
