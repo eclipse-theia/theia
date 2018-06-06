@@ -54,7 +54,9 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
             "--colors=line:fg:green",
             "--colors=column:fg:yellow",
             "--colors=match:fg:blue",
-            "--sort-files"];
+            "--sort-files",
+            "--max-count=100",
+            "--max-columns=250"];
         args.push(options && options.matchCase ? "--case-sensitive" : "--ignore-case");
         if (options && options.matchWholeWord) {
             args.push("--word-regexp");
@@ -63,7 +65,6 @@ export class RipgrepSearchInWorkspaceServer implements SearchInWorkspaceServer {
             args.push("-uu");
         }
         args.push(options && options.useRegExp ? "--regexp" : "--fixed-strings");
-
         return args;
     }
 

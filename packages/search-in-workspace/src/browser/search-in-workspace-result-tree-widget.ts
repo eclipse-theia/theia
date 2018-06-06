@@ -162,6 +162,9 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 if (resultElement) {
                     const resultLine = this.createResultLineNode(result, resultElement);
                     resultElement.children.push(resultLine);
+                    if (resultElement.children.length >= 20) {
+                        resultElement.expanded = false;
+                    }
                 } else {
                     const children: SearchInWorkspaceResultLineNode[] = [];
                     const icon = await this.labelProvider.getIcon(new URI(result.file));
