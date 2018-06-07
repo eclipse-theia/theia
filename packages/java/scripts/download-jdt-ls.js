@@ -18,41 +18,22 @@
 // @ts-check
 
 const fs = require('fs');
-const mkdirp = require('mkdirp')
 const https = require('https');
 const http = require('http');
 const path = require('path');
-const tar = require('tar');
-const zlib = require('zlib');
 
 // @ts-ignore
 const packageJson = require('../package.json');
+const shared = require('./shared');
 const packagePath = path.join(__dirname, "..");
-const serverPath = packageJson['jdt.ls.download.path'] || '/jdtls/snapshots/jdt-language-server-latest.tar.gz';
-const archiveUri = `https://www.eclipse.org/downloads/download.php?file=${serverPath}&r=1`;
+const serverPath = packageJson['ls.download.path'] || '/che/che-ls-jdt/snapshots/che-jdt-language-server-latest.tar.gz';
+const downloadURI = packageJson['ls.download.base'] || 'https://www.eclipse.org/downloads/download.php?file=';
+const archiveUri = downloadURI + serverPath + '&r=1';
 const filename = path.basename(serverPath);
 const downloadDir = 'download';
 const downloadPath = path.join(packagePath, downloadDir);
 const archivePath = path.join(downloadPath, filename);
 const targetPath = path.join(packagePath, 'server');
-
-function decompressArchive() {
-    return new Promise((resolve, reject) => {
-        if (!fs.existsSync(archivePath)) {
-            reject("archive not found");
-            return;
-        }
-        if (!fs.existsSync(targetPath)) {
-            mkdirp.sync(targetPath);
-        }
-        const gunzip = zlib.createGunzip({ finishFlush: zlib.Z_SYNC_FLUSH, flush: zlib.Z_SYNC_FLUSH });
-        console.log(targetPath);
-        const untar = tar.x({ cwd: targetPath });
-        fs.createReadStream(archivePath).pipe(gunzip).pipe(untar)
-            .on("error", e => reject("failed to decompress archive: " + e))
-            .on("end", () => resolve());
-    });
-}
 
 function downloadJavaServer() {
     return new Promise((resolve, reject) => {
@@ -77,12 +58,12 @@ function downloadJavaServer() {
                     response.on("end", e => resolve());
                     response.on("error", e => {
                         file.destroy();
-                        reject("failed to download with code");
+                        reject(e);
                     });
                     response.pipe(file);
                 } else {
                     file.destroy();
-                    reject("failed to download with code: " + statusCode);
+                    reject(`failed to download with code: ${statusCode}`);
                 }
             })
 
@@ -92,7 +73,7 @@ function downloadJavaServer() {
 }
 
 downloadJavaServer().then(() => {
-    decompressArchive();
+    shared.decompressArchive(archivePath, targetPath);
 }).catch(error => {
     console.error(error);
     process.exit(1);
