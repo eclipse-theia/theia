@@ -64,6 +64,7 @@ delete PROCESS_OPTIONS.env.ELECTRON_RUN_AS_NODE;
 
 @injectable()
 export abstract class AbstractHostedPluginManager implements HostedPluginManager {
+
     protected hostedInstanceProcess: cp.ChildProcess;
     protected processOptions: cp.SpawnOptions;
     protected isPluginRunnig: boolean = false;
@@ -103,7 +104,8 @@ export abstract class AbstractHostedPluginManager implements HostedPluginManager
     terminate(): void {
         if (this.isPluginRunnig) {
             processTree(this.hostedInstanceProcess.pid, (err: Error, children: Array<any>) => {
-                cp.spawn('kill', ['SIGTERM'].concat(children.map((p: any) => p.PID)));
+                const args = ['-SIGTERM', this.hostedInstanceProcess.pid.toString()].concat(children.map((p: any) => p.PID));
+                cp.spawn('kill', args);
             });
         } else {
             throw new Error('Hosted plugin instance is not running.');
@@ -163,9 +165,10 @@ export abstract class AbstractHostedPluginManager implements HostedPluginManager
             this.hostedInstanceProcess.on('error', () => { this.isPluginRunnig = false; });
             this.hostedInstanceProcess.on('exit', () => { this.isPluginRunnig = false; });
             this.hostedInstanceProcess.stdout.addListener('data', outputListener);
+
             setTimeout(() => {
                 if (!started) {
-                    this.hostedInstanceProcess.kill();
+                    this.terminate();
                     this.isPluginRunnig = false;
                     reject('Timeout.');
                 }
