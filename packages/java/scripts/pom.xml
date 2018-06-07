@@ -1,0 +1,39 @@
+<!--
+
+ * Copyright (C) 2018 RedHat and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>theia</groupId>
+	<artifactId>java.package</artifactId>
+	<version>3.1.0</version>
+	<name>Helper pom for dev</name>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>3.1.0</version>
+				<configuration>
+					<artifactItems>
+						<artifactItem>
+							<groupId>org.eclipse.che.ls.jdt</groupId>
+							<artifactId>jdt.ls.extension.product</artifactId>
+							<version>0.0.1-SNAPSHOT</version>
+							<type>tar.gz</type>
+							<overWrite>true</overWrite>
+							<outputDirectory>../download</outputDirectory>
+						</artifactItem>
+					</artifactItems>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<packaging>pom</packaging>
+</project>
