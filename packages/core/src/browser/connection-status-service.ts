@@ -101,7 +101,7 @@ export class ConnectionStatusOptions {
 export class FrontendConnectionStatusService implements ConnectionStatusService, FrontendApplicationContribution {
 
     protected readonly statusChangeEmitter: Emitter<ConnectionStatus>;
-    protected readonly endpointUrl: string;
+    protected readonly aliveUrl: string;
 
     protected connectionState: ConnectionStatusImpl;
     protected timer: number | undefined;
@@ -114,7 +114,7 @@ export class FrontendConnectionStatusService implements ConnectionStatusService,
         this.statusChangeEmitter = new Emitter<ConnectionStatus>();
         this.retryInterval = this.options.retryInterval;
         this.connectionState = new ConnectionStatusImpl({ threshold: this.options.retry });
-        this.endpointUrl = new Endpoint().getRestUrl().toString();
+        this.aliveUrl = new Endpoint({ path: 'alive' }).getRestUrl().toString();
     }
 
     onStart() {
@@ -188,7 +188,7 @@ export class FrontendConnectionStatusService implements ConnectionStatusService,
             };
             xhr.onerror = () => handle(false);
             xhr.ontimeout = () => handle(false);
-            xhr.open('GET', `${this.endpointUrl}/alive`);
+            xhr.open('GET', this.aliveUrl);
             try {
                 xhr.send();
             } catch {
