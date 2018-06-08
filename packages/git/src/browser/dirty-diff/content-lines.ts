@@ -93,7 +93,7 @@ export namespace ContentLines {
                         return undefined;
                     }
                 }
-                throw new Error(`get ${p.toString()} not implemented`);
+                throw new Error(`get ${String(p)} not implemented`);
             }
         };
     }
