@@ -35,7 +35,7 @@ export namespace ContentLines {
             length: lineStarts.length,
             getLineContent: line => {
                 if (line >= lineStarts.length) {
-                    throw 'line index out of bounds';
+                    throw new Error('line index out of bounds');
                 }
                 const start = lineStarts[line];
                 const end = (line === lineStarts.length - 1) ? undefined : lineStarts[line + 1] - 1;
@@ -84,7 +84,7 @@ export namespace ContentLines {
                         return undefined;
                     }
                 }
-                throw `get ${p} not implemented`;
+                throw new Error(`get ${p} not implemented`);
             }
         };
     }
