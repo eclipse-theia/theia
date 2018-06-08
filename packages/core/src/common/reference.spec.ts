@@ -103,4 +103,13 @@ describe('reference', () => {
         assert.ok(expectation.disposed);
     });
 
+    it("the same object should be provided by an async factory for the same key", async () => {
+        const references = new ReferenceCollection<string, Disposable>(async key => ({
+            key, dispose: () => {
+            }
+        }));
+        const result = await Promise.all([...Array(10).keys()].map(() => references.acquire("a")));
+        result.forEach(v => assert.ok(result[0].object === v.object));
+    });
+
 });

@@ -79,7 +79,7 @@ export class ReferenceCollection<K, V extends Disposable> implements Disposable 
 
     protected readonly pendingValues = new Map<string, MaybePromise<V>>();
     protected async getOrCreateValue(key: string, args: K): Promise<V> {
-        const existing = this._values.get(key);
+        const existing = this._values.get(key) || this.pendingValues.get(key);
         if (existing) {
             return existing;
         }
