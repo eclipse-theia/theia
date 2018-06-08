@@ -30,7 +30,7 @@
     "sinon": "^3.3.0",
     "temp": "^0.8.3",
     "ts-node": "^3.2.0",
-    "tslint": "^5.7.0",
+    "tslint": "^5.10.0",
     "tslint-language-service": "^0.9.9",
     "typedoc": "^0.8",
     "typescript": "^2.7.2",
