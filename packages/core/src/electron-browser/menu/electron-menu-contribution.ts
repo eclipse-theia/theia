@@ -18,7 +18,7 @@ import * as electron from 'electron';
 import { inject, injectable } from 'inversify';
 import {
     Command, CommandContribution, CommandRegistry,
-    MenuModelRegistry, MenuContribution
+    isOSX, MenuModelRegistry, MenuContribution
 } from '../../common';
 import { KeybindingContribution, KeybindingRegistry } from '../../browser';
 import { FrontendApplication, FrontendApplicationContribution, CommonMenus } from '../../browser';
@@ -76,7 +76,13 @@ export class ElectronMenuContribution implements FrontendApplicationContribution
                 child = itr.next();
             }
         }
-        electron.remote.getCurrentWindow().setMenu(this.factory.createMenuBar());
+
+        const createdMenuBar = this.factory.createMenuBar();
+        if (isOSX) {
+            electron.remote.Menu.setApplicationMenu(createdMenuBar);
+        } else {
+            electron.remote.getCurrentWindow().setMenu(createdMenuBar);
+        }
     }
 
     registerCommands(registry: CommandRegistry): void {
