@@ -25,6 +25,13 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     @postConstruct()
     protected async init(): Promise<void> {
         const uri = await this.getUri();
+
+        // In case if no workspace is opened there are no workspace settings.
+        // There is nothing to contribute to preferences and we just skip it.
+        if (!uri) {
+            this._ready.resolve();
+            return;
+        }
         this.resource = this.resourceProvider(uri);
 
         // Try to read the initial content of the preferences.  The provider
@@ -41,7 +48,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         }
     }
 
-    abstract getUri(): MaybePromise<URI>;
+    abstract getUri(): MaybePromise<URI | undefined>;
 
     getPreferences(): { [key: string]: any } {
         return this.preferences;

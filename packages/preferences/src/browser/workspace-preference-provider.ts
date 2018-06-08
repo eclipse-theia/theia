@@ -16,13 +16,13 @@ export class WorkspacePreferenceProvider extends AbstractResourcePreferenceProvi
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    async getUri(): Promise<URI> {
+    async getUri(): Promise<URI | undefined> {
         const root = await this.workspaceService.root;
         if (root) {
             const rootUri = new URI(root.uri);
             return rootUri.resolve('.theia').resolve('settings.json');
         }
-        return new Promise<URI>(() => { });
+        return undefined;
     }
 
 }
