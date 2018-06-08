@@ -85,10 +85,10 @@ export class ThemeService {
         }
         newTheme.activate();
         this.activeTheme = newTheme;
+        window.localStorage.setItem('theme', themeId);
         this.themeChange.fire({
             newTheme, oldTheme
         });
-        window.localStorage.setItem('theme', themeId);
     }
 
     getCurrentTheme(): Theme {
