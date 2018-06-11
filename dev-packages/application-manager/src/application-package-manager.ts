@@ -14,10 +14,11 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import * as path from 'path';
 import * as fs from 'fs-extra';
 import * as cp from 'child_process';
-import { ApplicationPackage, ApplicationPackageOptions } from "@theia/application-package";
-import { WebpackGenerator, FrontendGenerator, BackendGenerator } from "./generator";
+import { ApplicationPackage, ApplicationPackageOptions } from '@theia/application-package';
+import { WebpackGenerator, FrontendGenerator, BackendGenerator } from './generator';
 import { ApplicationProcess } from './application-process';
 
 export class ApplicationPackageManager {
@@ -34,15 +35,15 @@ export class ApplicationPackageManager {
     constructor(options: ApplicationPackageOptions) {
         this.pck = new ApplicationPackage(options);
         this.process = new ApplicationProcess(this.pck, options.projectPath);
-        this.__process = new ApplicationProcess(this.pck, `${__dirname}/..`);
+        this.__process = new ApplicationProcess(this.pck, path.join(__dirname, '..'));
         this.webpack = new WebpackGenerator(this.pck);
         this.backend = new BackendGenerator(this.pck);
         this.frontend = new FrontendGenerator(this.pck);
     }
 
-    protected async remove(path: string): Promise<void> {
-        if (await fs.pathExists(path)) {
-            await fs.remove(path);
+    protected async remove(fsPath: string): Promise<void> {
+        if (await fs.pathExists(fsPath)) {
+            await fs.remove(fsPath);
         }
     }
 
@@ -77,16 +78,12 @@ export class ApplicationPackageManager {
     }
 
     async startElectron(args: string[]): Promise<void> {
-        return this.__process.bunyan(
-            this.__process.spawnBin('electron', [this.pck.frontend('electron-main.js'), ...args], {
-                stdio: [0, 'pipe', 'pipe']
-            })
-        );
+        this.__process.spawnBin('electron', [this.pck.frontend('electron-main.js'), ...args]);
     }
 
     async startBrowser(args: string[]): Promise<void> {
         const options: cp.ForkOptions = {
-            stdio: [0, 'pipe', 'pipe', 'ipc'],
+            stdio: [0, 1, 2, 'ipc'],
             env: {
                 ...process.env,
                 THEIA_PARENT_PID: String(process.pid)
@@ -98,9 +95,7 @@ export class ApplicationPackageManager {
             const inspectArg = mainArgs.splice(inspectIndex, 1)[0];
             options.execArgv = ['--nolazy', inspectArg];
         }
-        return this.__process.bunyan(
-            this.__process.fork(this.pck.backend('main.js'), mainArgs, options)
-        );
+        this.__process.fork(this.pck.backend('main.js'), mainArgs, options);
     }
 
 }

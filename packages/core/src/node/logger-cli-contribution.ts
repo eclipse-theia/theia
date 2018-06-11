@@ -18,7 +18,7 @@ import * as yargs from 'yargs';
 import { injectable } from 'inversify';
 import { LogLevel } from '../common/logger';
 import { CliContribution } from './cli';
-import * as fsextra from 'fs-extra';
+import * as fs from 'fs-extra';
 import * as nsfw from 'nsfw';
 import { Event, Emitter } from '../common/event';
 import * as path from 'path';
@@ -35,6 +35,7 @@ export interface LogLevels {
  */
 @injectable()
 export class LogLevelCliContribution implements CliContribution {
+
     protected _logLevels: LogLevels = {};
 
     /**
@@ -60,7 +61,7 @@ export class LogLevelCliContribution implements CliContribution {
         });
 
         conf.option('log-config', {
-            description: 'Path to a JSON file specyfing the configuration of various loggers',
+            description: 'Path to the JSON file specifying the configuration of various loggers',
             type: 'string',
             nargs: 1,
         });
@@ -110,7 +111,7 @@ export class LogLevelCliContribution implements CliContribution {
 
     protected async slurpLogConfigFile(filename: string): Promise<void> {
         try {
-            const content = await fsextra.readFile(filename, 'utf-8');
+            const content = await fs.readFile(filename, 'utf-8');
             const data = JSON.parse(content);
 
             let newDefaultLogLevel: LogLevel = LogLevel.INFO;
@@ -152,7 +153,9 @@ export class LogLevelCliContribution implements CliContribution {
         }
     }
 
-    /** Convert string to LogLevel, throw if invalid.  */
+    /**
+     * Converts the string to a `LogLevel`. Throws an error if invalid.
+     */
     protected readLogLevelString(levelStr: string, errMessagePrefix: string): LogLevel {
         const level = LogLevel.fromString(levelStr);
 

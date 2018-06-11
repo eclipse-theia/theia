@@ -21,11 +21,11 @@ export interface ResolvedConnectionErrorHandlerOptions {
     readonly serverName: string
     readonly logger: ILogger
     /**
-     * The maximum amout of errors allowed before stopping the server.
+     * The maximum amount of errors allowed before stopping the server.
      */
     readonly maxErrors: number
     /**
-     * The maimum amount of restarts allowed in the restart interval.
+     * The minimum amount of restarts allowed in the restart interval.
      */
     readonly maxRestarts: number
     /**
