@@ -17,6 +17,15 @@
 import { RequestType, NotificationType } from 'vscode-jsonrpc';
 import { TextDocumentIdentifier, Command, MessageType } from "@theia/languages/lib/common";
 
+export interface StatusReport {
+    message: string;
+    type: string;
+}
+
+export namespace StatusNotification {
+    export const type = new NotificationType<StatusReport, void>('language/status');
+}
+
 export interface ActionableMessage {
     severity: MessageType;
     message: string;
