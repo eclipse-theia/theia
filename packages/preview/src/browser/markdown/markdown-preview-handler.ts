@@ -27,7 +27,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
     protected readonly openerService: OpenerService;
 
     canHandle(uri: URI): number {
-        return uri.path.ext === '.md' ? 500 : 0;
+        return uri.scheme === 'file' && uri.path.ext === '.md' ? 500 : 0;
     }
 
     renderContent(params: RenderContentParams): HTMLElement {
