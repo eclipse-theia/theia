@@ -20,6 +20,8 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
     private acceptor: ((items: QuickOpenItem[]) => void) | undefined;
     private items: QuickOpenItem[] | undefined;
 
+    private activeElement: HTMLElement | undefined;
+
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT);
         this.delegate = container.get(QuickOpenService);
@@ -28,10 +30,12 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
     private cleanUp() {
         this.items = undefined;
         this.acceptor = undefined;
+        this.activeElement!.focus();
+        this.activeElement = undefined;
     }
 
     $show(options: PickOptions): PromiseLike<number | number[]> {
-
+        this.activeElement = window.document.activeElement as HTMLElement;
         this.delegate.open(this, {
             fuzzyMatchDescription: options.matchOnDescription,
             fuzzyMatchLabel: true,
@@ -47,6 +51,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
         });
 
     }
+    // tslint:disable-next-line:no-any
     $setItems(items: PickOpenItem[]): PromiseLike<any> {
         this.items = [];
         for (const i of items) {
@@ -70,6 +75,7 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
         }
         return Promise.resolve();
     }
+    // tslint:disable-next-line:no-any
     $setError(error: Error): PromiseLike<any> {
         throw new Error("Method not implemented.");
     }

@@ -9,8 +9,10 @@
     "@theia/filesystem": "^0.3.10",
     "@theia/workspace": "^0.3.10",
     "@theia/plugin": "^0.3.10",
+    "@theia/monaco": "^0.3.10",
     "decompress": "^4.2.0",
-    "ps-tree": "1.1.0"
+    "ps-tree": "1.1.0",
+    "vscode-uri": "^1.0.1"
   },
   "publishConfig": {
     "access": "public"

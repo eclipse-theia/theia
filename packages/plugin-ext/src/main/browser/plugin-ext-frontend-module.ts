@@ -27,6 +27,8 @@ import { HostedPluginController } from "./hosted-plugin-controller";
 
 import '../../../src/main/browser/style/index.css';
 import { PluginExtDeployCommandService } from "./plugin-ext-deploy-command";
+import { TextEditorService, TextEditorServiceImpl } from './text-editor-service';
+import { EditorModelService, EditorModelServiceImpl } from './text-editor-model-service';
 
 export default new ContainerModule(bind => {
     bind(ModalNotification).toSelf().inSingletonScope();
@@ -42,6 +44,9 @@ export default new ContainerModule(bind => {
     bind(PluginApiFrontendContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(PluginApiFrontendContribution));
     bind(CommandContribution).toDynamicValue(c => c.container.get(PluginApiFrontendContribution));
+
+    bind(TextEditorService).to(TextEditorServiceImpl).inSingletonScope();
+    bind(EditorModelService).to(EditorModelServiceImpl).inSingletonScope();
 
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ({
         onStart(app: FrontendApplication): MaybePromise<void> {
