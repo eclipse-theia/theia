@@ -1,0 +1,48 @@
+{
+  "name": "@theia/bunyan",
+  "version": "0.3.11",
+  "description": "Theia - bunyan Logger Extension",
+  "dependencies": {
+    "@theia/core": "^0.3.11",
+    "@types/bunyan": "^1.8.0",
+    "bunyan": "^1.8.10"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "backend": "lib/node/bunyan-backend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^0.3.11"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

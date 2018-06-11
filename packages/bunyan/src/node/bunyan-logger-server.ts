@@ -16,10 +16,10 @@
 
 import * as bunyan from 'bunyan';
 import { inject, injectable, postConstruct } from 'inversify';
-import { LogLevel, rootLoggerName } from '../common/logger';
-import { ILoggerServer, ILoggerClient, ILogLevelChangedEvent } from '../common/logger-protocol';
-import { LoggerWatcher } from '../common/logger-watcher';
-import { LogLevelCliContribution } from './logger-cli-contribution';
+import { LoggerWatcher } from '@theia/core/lib/common/logger-watcher';
+import { LogLevel, rootLoggerName } from '@theia/core/lib/common/logger';
+import { LogLevelCliContribution } from '@theia/core/lib/node/logger-cli-contribution';
+import { ILoggerServer, ILoggerClient, ILogLevelChangedEvent } from '@theia/core/lib/common/logger-protocol';
 
 @injectable()
 export class BunyanLoggerServer implements ILoggerServer {
@@ -48,19 +48,17 @@ export class BunyanLoggerServer implements ILoggerServer {
     }
 
     protected updateLogLevels() {
-        for (const [loggerName, _] of this.loggers) {
+        for (const loggerName of this.loggers.keys()) {
             const newLevel = this.cli.logLevelFor(loggerName);
             this.setLogLevel(loggerName, newLevel);
         }
     }
 
     protected makeLoggerOptions(name: string) {
-        const opts = {
+        return {
             logger: name,
             level: this.toBunyanLevel(this.cli.logLevelFor(name)),
         };
-
-        return opts;
     }
 
     dispose(): void {

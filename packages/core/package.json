@@ -19,7 +19,6 @@
     "@types/react-dom": "^16.0.6",
     "ajv": "^5.2.2",
     "body-parser": "^1.17.2",
-    "bunyan": "^1.8.10",
     "electron": "1.8.2-beta.5",
     "es6-promise": "^4.2.4",
     "express": "^4.16.3",

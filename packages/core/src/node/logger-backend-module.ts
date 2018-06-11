@@ -15,10 +15,10 @@
  ********************************************************************************/
 
 import { ContainerModule, Container, interfaces } from 'inversify';
-import { ConnectionHandler, JsonRpcConnectionHandler } from "../common/messaging";
+import { ConnectionHandler, JsonRpcConnectionHandler } from '../common/messaging';
 import { ILogger, LoggerFactory, Logger, setRootLogger, LoggerName, rootLoggerName } from '../common/logger';
 import { ILoggerServer, ILoggerClient, loggerPath } from '../common/logger-protocol';
-import { BunyanLoggerServer } from './bunyan-logger-server';
+import { ConsoleLoggerServer } from './console-logger-server';
 import { LoggerWatcher } from '../common/logger-watcher';
 import { BackendApplicationContribution } from './backend-application';
 import { CliContribution } from './cli';
@@ -28,7 +28,7 @@ export function bindLogger(bind: interfaces.Bind): void {
     bind(LoggerName).toConstantValue(rootLoggerName);
     bind(ILogger).to(Logger).inSingletonScope().whenTargetIsDefault();
     bind(LoggerWatcher).toSelf().inSingletonScope();
-    bind(ILoggerServer).to(BunyanLoggerServer).inSingletonScope();
+    bind(ILoggerServer).to(ConsoleLoggerServer).inSingletonScope();
     bind(LogLevelCliContribution).toSelf().inSingletonScope();
     bind(CliContribution).toDynamicValue(ctx => ctx.container.get(LogLevelCliContribution));
     bind(LoggerFactory).toFactory(ctx =>
