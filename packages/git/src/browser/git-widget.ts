@@ -37,11 +37,13 @@ export namespace GitFileChangeNode {
 @injectable()
 export class GitWidget extends VirtualWidget implements StatefulWidget {
 
+    private static MESSAGE_BOX_MIN_HEIGHT = 25;
+
     protected stagedChanges: GitFileChangeNode[] = [];
     protected unstagedChanges: GitFileChangeNode[] = [];
     protected mergeChanges: GitFileChangeNode[] = [];
     protected message: string = '';
-    protected messageBoxHeight: number = 25;
+    protected messageBoxHeight: number = GitWidget.MESSAGE_BOX_MIN_HEIGHT;
     protected status: WorkingDirectoryStatus | undefined;
     protected scrollContainer: string;
     protected commitMessageValidationResult: GitCommitMessageValidator.Result | undefined;
@@ -99,7 +101,7 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
 
     storeState(): object {
         const commitTextArea = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
-        const messageBoxHeight = commitTextArea ? commitTextArea.offsetHeight : 25;
+        const messageBoxHeight = commitTextArea ? commitTextArea.offsetHeight : GitWidget.MESSAGE_BOX_MIN_HEIGHT;
         return {
             message: this.message,
             commitMessageValidationResult: this.commitMessageValidationResult,
@@ -107,10 +109,11 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
         };
     }
 
+    // tslint:disable-next-line:no-any
     restoreState(oldState: any): void {
         this.message = oldState.message;
         this.commitMessageValidationResult = oldState.commitMessageValidationResult;
-        this.messageBoxHeight = oldState.messageBoxHeight;
+        this.messageBoxHeight = oldState.messageBoxHeight || GitWidget.MESSAGE_BOX_MIN_HEIGHT;
     }
 
     protected async undo(): Promise<void> {
@@ -130,7 +133,20 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
 
     async commit(repository?: Repository, options?: 'amend' | 'sign-off', message: string = this.message) {
         if (repository) {
-            if (message.trim().length > 0) {
+            this.commitMessageValidationResult = undefined;
+            if (message.trim().length === 0) {
+                this.commitMessageValidationResult = {
+                    status: 'error',
+                    message: 'Please provide a commit message'
+                };
+            }
+            if (this.commitMessageValidationResult === undefined && !(await this.git.status(repository)).changes.some(c => c.staged === true)) {
+                this.commitMessageValidationResult = {
+                    status: 'error',
+                    message: 'No changes added to commit'
+                };
+            }
+            if (this.commitMessageValidationResult === undefined) {
                 try {
                     // We can make sure, repository exists, otherwise we would not have this button.
                     const signOff = options === 'sign-off';
@@ -149,10 +165,6 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
                     this.update();
                     messageInput.focus();
                 }
-                this.commitMessageValidationResult = {
-                    status: 'error',
-                    message: 'Please provide a commit message'
-                };
             }
         }
     }
@@ -208,15 +220,15 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
         const id = GitWidget.Styles.COMMIT_MESSAGE;
         const commitMessageArea = h.textarea({
             className: `${GitWidget.Styles.COMMIT_MESSAGE} theia-git-commit-message-${validationStatus}`,
-            style: {height: `${this.messageBoxHeight}px`},
+            style: { height: `${this.messageBoxHeight}px` },
             autofocus,
             oninput,
             placeholder,
             id
         }, this.message);
         const validationMessageArea = h.div({
-            className: `${GitWidget.Styles.VALIDATION_MESSAGE} ${GitWidget.Styles.NO_SELECT}
-            theia-git-validation-message-${validationStatus} theia-git-commit-message-${validationStatus}`,
+            // tslint:disable-next-line:max-line-length
+            className: `${GitWidget.Styles.VALIDATION_MESSAGE} ${GitWidget.Styles.NO_SELECT} theia-git-validation-message-${validationStatus} theia-git-commit-message-${validationStatus}`,
             style: {
                 display: !!this.commitMessageValidationResult ? 'block' : 'none'
             },
@@ -354,6 +366,7 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
                             commitTextArea.value = `${content}${signOff}`;
                         }
                         this.resize(commitTextArea);
+                        this.message = commitTextArea.value;
                         commitTextArea.focus();
                     }
                 }
