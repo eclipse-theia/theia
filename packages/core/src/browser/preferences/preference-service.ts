@@ -29,6 +29,7 @@ export interface PreferenceChange {
 export const PreferenceService = Symbol('PreferenceService');
 export interface PreferenceService extends Disposable {
     readonly ready: Promise<void>;
+    getPreferences(): { [key: string]: any };
     get<T>(preferenceName: string): T | undefined;
     get<T>(preferenceName: string, defaultValue: T): T;
     get<T>(preferenceName: string, defaultValue?: T): T | undefined;
@@ -135,6 +136,10 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
 
     has(preferenceName: string): boolean {
         return this.preferences[preferenceName] !== undefined;
+    }
+
+    getPreferences(): { [key: string]: any } {
+        return this.preferences;
     }
 
     get<T>(preferenceName: string): T | undefined;
