@@ -346,10 +346,12 @@ export class DugiteGit implements Git {
         );
     }
 
-    async unstage(repository: Repository, uri: string | string[]): Promise<void> {
+    async unstage(repository: Repository, uri: string | string[], options?: Git.Options.Unstage): Promise<void> {
         const paths = (Array.isArray(uri) ? uri : [uri]).map(FileUri.fsPath);
+        const treeish = options && options.treeish ? options.treeish : undefined;
+        const where = options && options.reset ? options.reset : undefined;
         return this.manager.run(repository, () =>
-            unstage(this.getFsPath(repository), paths)
+            unstage(this.getFsPath(repository), paths, treeish, where)
         );
     }
 
