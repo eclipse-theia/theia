@@ -399,7 +399,7 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
                 title: 'Unstage Changes',
                 onclick: async event => {
                     try {
-                        await this.git.unstage(repository, change.uri);
+                        await this.git.unstage(repository, change.uri, { treeish: 'HEAD', reset: 'index' });
                     } catch (error) {
                         this.logError(error);
                     }
@@ -410,15 +410,15 @@ export class GitWidget extends VirtualWidget implements StatefulWidget {
                 className: 'toolbar-button',
                 title: 'Discard Changes',
                 onclick: async event => {
-                    const options: Git.Options.Checkout.WorkingTreeFile = { paths: change.uri };
-                    if (change.status === GitFileStatus.New) {
-                        this.commandService.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(change.uri));
-                    } else {
+                    // Allow deletion, only iff the same file is not yet in the Git index.
+                    if (await this.git.lsFiles(repository, change.uri, { errorUnmatch: true })) {
                         try {
-                            await this.git.checkout(repository, options);
+                            await this.git.unstage(repository, change.uri, { treeish: 'HEAD', reset: 'working-tree' });
                         } catch (error) {
                             this.logError(error);
                         }
+                    } else {
+                        this.commandService.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(change.uri));
                     }
                 }
             }, h.i({ className: 'fa fa-undo' })));

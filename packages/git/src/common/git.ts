@@ -145,6 +145,23 @@ export namespace Git {
         }
 
         /**
+         * Further refinements for unstaging files from either from the index or from the working-tree. Alternatively, resetting both.
+         */
+        export interface Unstage {
+
+            /**
+             * What to reset; the state of the index, the working-tree, or both. If not given, `all` will be used.
+             */
+            readonly reset?: 'index' | 'working-tree' | 'all';
+
+            /**
+             * The treeish to reset to. Defaults to `HEAD`.
+             */
+            readonly treeish?: string;
+
+        }
+
+        /**
          * Options for further `git checkout` refinements.
          */
         export namespace Checkout {
@@ -562,10 +579,11 @@ export interface Git extends Disposable {
      * Removes the given file or files among the staged files in the working clone. The invocation will be rejected if
      * any files (given with their file URIs) is not among the staged files.
      *
-     * @param repository the repository to where the staged files have to be removed from/
-     * @param uri one or multiple file URIs to unstage in the working clone.
+     * @param repository the repository to where the staged files have to be removed from.
+     * @param uri one or multiple file URIs to unstage in the working clone. If the array is empty, all the changed files will be staged.
+     * @param options optional refinements for the the unstaging operation.
      */
-    unstage(repository: Repository, uri: string | string[]): Promise<void>;
+    unstage(repository: Repository, uri: string | string[], options?: Git.Options.Unstage): Promise<void>;
 
     /**
      * Returns with the currently active branch, or `undefined` if the current branch is in detached mode.
