@@ -21,7 +21,7 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
         super();
         wsService.root.then(root => {
             if (root) {
-                this.wsRoot = root.uri;
+                this.wsRoot = new URI(root.uri).toString(true);
             }
         });
     }
@@ -81,12 +81,12 @@ export class WorkspaceUriLabelProviderContribution extends DefaultUriLabelProvid
      */
     getLongName(element: URI | FileStat): string {
         const uri = this.getUri(element);
-        const uriStr = uri.toString();
+        const uriStr = uri.toString(true);
         if (!this.wsRoot || !uriStr.startsWith(this.wsRoot)) {
             return super.getLongName(uri);
         }
 
-        const short = uri.toString().substr(this.wsRoot.length);
+        const short = uriStr.substr(this.wsRoot.length);
         if (short[0] === '/') {
             return short.substr(1);
         }
