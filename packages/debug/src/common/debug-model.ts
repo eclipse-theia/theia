@@ -192,7 +192,7 @@ export interface DebugSessionState {
 export namespace ExtDebugProtocol {
     export interface ExtVariable extends DebugProtocol.Variable {
         /** Parent variables reference. */
-        parentVariablesReference: number
+        parentVariablesReference: number;
     }
 
     /**
@@ -213,7 +213,7 @@ export namespace ExtDebugProtocol {
             /** The number of indexed child variables. The client can use this optional information to present the variables in a paged UI and fetch them in chunks. */
             indexedVariables?: number;
             /** Parent variables reference. */
-            parentVariablesReference: number
+            parentVariablesReference: number;
         }
     }
 }
