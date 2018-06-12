@@ -16,8 +16,9 @@ import {
 import { DebugSession } from "../debug-session";
 import { h } from '@phosphor/virtualdom';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { Emitter, Event } from "@theia/core";
 import { injectable, inject } from "inversify";
+import { DebugSelection } from "./debug-selection-service";
+import { hasSameId } from "../../common/debug-utils";
 
 /**
  * Is it used to display call stack.
@@ -25,41 +26,18 @@ import { injectable, inject } from "inversify";
 @injectable()
 export class DebugStackFramesWidget extends VirtualWidget {
     private _frames: DebugProtocol.StackFrame[] = [];
-    private _frameId?: number;
-    private _threadId?: number;
 
-    private readonly onDidSelectFrameEmitter = new Emitter<number | undefined>();
-
-    constructor(@inject(DebugSession) protected readonly debugSession: DebugSession) {
+    constructor(
+        @inject(DebugSession) protected readonly debugSession: DebugSession,
+        @inject(DebugSelection) protected readonly debugSelection: DebugSelection) {
         super();
+
         this.id = this.createId();
         this.addClass(Styles.FRAMES_CONTAINER);
         this.node.setAttribute("tabIndex", "0");
         this.debugSession.on('stopped', event => this.onStoppedEvent(event));
         this.debugSession.on('continued', event => this.onContinuedEvent(event));
-    }
-
-    get onDidSelectFrame(): Event<number | undefined> {
-        return this.onDidSelectFrameEmitter.event;
-    }
-
-    get threadId(): number | undefined {
-        return this._threadId;
-    }
-
-    set threadId(threadId: number | undefined) {
-        if (this._threadId === threadId) {
-            return;
-        }
-
-        this._threadId = threadId;
-        if (threadId) {
-            this.refreshFrames(threadId);
-        } else {
-            this.frames = [];
-            this.frameId = undefined;
-            this.onDidSelectFrameEmitter.fire(this.frameId);
-        }
+        this.debugSelection.onDidSelectThread(thread => this.onThreadSelected(thread));
     }
 
     get frames(): DebugProtocol.StackFrame[] {
@@ -71,43 +49,18 @@ export class DebugStackFramesWidget extends VirtualWidget {
         this.update();
     }
 
-    get frameId(): number | undefined {
-        return this._frameId;
-    }
-
-    set frameId(frameId: number | undefined) {
-        if (this.frameId) {
-            const element = document.getElementById(this.createId(this.frameId));
-            if (element) {
-                element.className = Styles.FRAME;
-            }
-        }
-
-        if (frameId) {
-            const element = document.getElementById(this.createId(frameId));
-            if (element) {
-                element.className = `${Styles.FRAME} ${SELECTED_CLASS}`;
-            }
-        }
-
-        this._frameId = frameId;
-    }
-
     protected render(): h.Child {
         const header = h.div({ className: "theia-header" }, "Call stack");
         const items: h.Child = [];
 
         for (const frame of this._frames) {
-            const className = Styles.FRAME + (frame.id === this.frameId ? ` ${SELECTED_CLASS}` : '');
+            const className = Styles.FRAME + (hasSameId(this.debugSelection.frame, frame) ? ` ${SELECTED_CLASS}` : '');
+            const id = this.createId(frame);
 
             const item =
                 h.div({
-                    id: this.createId(frame.id),
-                    className,
-                    onclick: event => {
-                        this.frameId = frame.id;
-                        this.onDidSelectFrameEmitter.fire(this.frameId);
-                    }
+                    id, className,
+                    onclick: () => this.selectFrame(frame)
                 }, this.toDisplayName(frame));
 
             items.push(item);
@@ -116,44 +69,73 @@ export class DebugStackFramesWidget extends VirtualWidget {
         return [header, h.div(items)];
     }
 
+    protected onThreadSelected(thread: DebugProtocol.Thread | undefined) {
+        this.updateFrames(thread ? thread.id : undefined);
+    }
+
+    protected selectFrame(newFrame: DebugProtocol.StackFrame | undefined) {
+        const currentFrame = this.debugSelection.frame;
+
+        if (hasSameId(currentFrame, newFrame)) {
+            return;
+        }
+
+        if (currentFrame) {
+            const element = document.getElementById(this.createId(currentFrame));
+            if (element) {
+                element.className = Styles.FRAME;
+            }
+        }
+
+        if (newFrame) {
+            const element = document.getElementById(this.createId(newFrame));
+            if (element) {
+                element.className = `${Styles.FRAME} ${SELECTED_CLASS}`;
+            }
+        }
+
+        this.debugSelection.frame = newFrame;
+    }
+
     private toDisplayName(frame: DebugProtocol.StackFrame): string {
         return frame.name;
     }
 
-    private createId(frameId?: number): string {
-        return `debug-stack-frames-${this.debugSession.sessionId}` + (frameId ? `-${frameId}` : '');
+    private createId(frame?: DebugProtocol.StackFrame): string {
+        return `debug-stack-frames-${this.debugSession.sessionId}` + (frame ? `-${frame.id}` : '');
     }
 
     private onContinuedEvent(event: DebugProtocol.ContinuedEvent): void {
-        if (this.threadId) {
-            if (this.threadId === event.body.threadId || event.body.allThreadsContinued) {
+        const currentThread = this.debugSelection.thread;
+        if (currentThread) {
+            if (hasSameId(currentThread, event.body.threadId) || event.body.allThreadsContinued) {
                 this.frames = [];
-                this.frameId = undefined;
-                this.onDidSelectFrameEmitter.fire(this.frameId);
+                this.selectFrame(undefined);
             }
         }
     }
 
     private onStoppedEvent(event: DebugProtocol.StoppedEvent): void {
-        if (this.threadId) {
-            if (this.threadId === event.body.threadId || event.body.allThreadsStopped) {
-                this.refreshFrames(this.threadId);
+        const currentThread = this.debugSelection.thread;
+        if (currentThread) {
+            if (hasSameId(currentThread, event.body.threadId) || event.body.allThreadsStopped) {
+                this.updateFrames(currentThread.id);
             }
         }
     }
 
-    private refreshFrames(threadId: number) {
+    private updateFrames(threadId: number | undefined) {
         this.frames = [];
-        this.frameId = undefined;
-        this.onDidSelectFrameEmitter.fire(this.frameId);
+        this.selectFrame(undefined);
 
-        this.debugSession.stacks(threadId).then(response => {
-            if (this.threadId === threadId) { // still the same thread remains selected
-                this.frames = response.body.stackFrames;
-                this.frameId = this.frames.length ? this.frames[0].id : undefined;
-                this.onDidSelectFrameEmitter.fire(this.frameId);
-            }
-        });
+        if (threadId) {
+            this.debugSession.stacks(threadId).then(response => {
+                if (hasSameId(this.debugSelection.thread, threadId)) { // still the same thread remains selected
+                    this.frames = response.body.stackFrames;
+                    this.selectFrame(this.frames[0]);
+                }
+            });
+        }
     }
 }
 

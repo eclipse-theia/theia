@@ -15,17 +15,25 @@ import { MAIN_MENU_BAR, MenuPath } from "@theia/core/lib/common/menu";
 import { DebugService } from "../common/debug-model";
 import { DebugSessionManager } from "./debug-session";
 import { DebugConfigurationManager } from "./debug-configuration";
+import { DebugSelectionService } from "./view/debug-selection-service";
+import { SingleTextInputDialog } from "@theia/core/lib/browser/dialogs";
+import { DebugProtocol } from "vscode-debugprotocol";
 
 export const DEBUG_SESSION_CONTEXT_MENU: MenuPath = ['debug-session-context-menu'];
 export const DEBUG_SESSION_THREAD_CONTEXT_MENU: MenuPath = ['debug-session-thread-context-menu'];
+export const DEBUG_VARIABLE_CONTEXT_MENU: MenuPath = ['debug-variable-context-menu'];
 
 export namespace DebugSessionContextMenu {
     export const STOP = [...DEBUG_SESSION_CONTEXT_MENU, '1_stop'];
 }
 
-export namespace ThreadContextMenu {
+export namespace DebugThreadContextMenu {
     export const RESUME_THREAD = [...DEBUG_SESSION_THREAD_CONTEXT_MENU, '2_resume'];
     export const SUSPEND_THREAD = [...RESUME_THREAD, '1_suspend'];
+}
+
+export namespace DebugVariableContextMenu {
+    export const MODIFY = [...DEBUG_VARIABLE_CONTEXT_MENU, '1_modify'];
 }
 
 export namespace DebugMenus {
@@ -68,7 +76,6 @@ export namespace DEBUG_COMMANDS {
         id: 'debug.thread.resume',
         label: 'Resume thread'
     };
-
     export const SUSPEND_ALL_THREADS = {
         id: 'debug.thread.suspend.all',
         label: 'Suspend'
@@ -78,16 +85,20 @@ export namespace DEBUG_COMMANDS {
         id: 'debug.thread.resume.all',
         label: 'Resume'
     };
+
+    export const MODIFY_VARIABLE = {
+        id: 'debug.variable.modify',
+        label: 'Modify'
+    };
 }
 
 @injectable()
 export class DebugCommandHandlers implements MenuContribution, CommandContribution {
-    @inject(DebugService)
-    protected readonly debug: DebugService;
-    @inject(DebugSessionManager)
-    protected readonly debugSessionManager: DebugSessionManager;
-    @inject(DebugConfigurationManager)
-    protected readonly debugConfigurationManager: DebugConfigurationManager;
+    constructor(
+        @inject(DebugService) protected readonly debug: DebugService,
+        @inject(DebugSessionManager) protected readonly debugSessionManager: DebugSessionManager,
+        @inject(DebugConfigurationManager) protected readonly debugConfigurationManager: DebugConfigurationManager,
+        @inject(DebugSelectionService) protected readonly debugSelectionHandler: DebugSelectionService) { }
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerSubmenu(DebugMenus.DEBUG, 'Debug');
@@ -112,11 +123,14 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
         menus.registerMenuAction(DebugMenus.RESUME_ALL_THREADS, {
             commandId: DEBUG_COMMANDS.RESUME_ALL_THREADS.id
         });
-        menus.registerMenuAction(ThreadContextMenu.SUSPEND_THREAD, {
+        menus.registerMenuAction(DebugThreadContextMenu.SUSPEND_THREAD, {
             commandId: DEBUG_COMMANDS.SUSPEND_THREAD.id
         });
-        menus.registerMenuAction(ThreadContextMenu.RESUME_THREAD, {
+        menus.registerMenuAction(DebugThreadContextMenu.RESUME_THREAD, {
             commandId: DEBUG_COMMANDS.RESUME_THREAD.id
+        });
+        menus.registerMenuAction(DebugVariableContextMenu.MODIFY, {
+            commandId: DEBUG_COMMANDS.MODIFY_VARIABLE.id
         });
     }
 
@@ -163,8 +177,120 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
         });
 
         registry.registerCommand(DEBUG_COMMANDS.SUSPEND_ALL_THREADS);
+        registry.registerHandler(DEBUG_COMMANDS.RESUME_ALL_THREADS.id, {
+            execute: () => {
+                const debugSession = this.debugSessionManager.getActiveDebugSession();
+                if (debugSession) {
+                    debugSession.resumeAll();
+                }
+            },
+            isEnabled: () => {
+                const debugSession = this.debugSessionManager.getActiveDebugSession();
+                if (debugSession) {
+                    const state = debugSession.state;
+                    return state.isConnected && !state.allThreadsContinued;
+                }
+                return false;
+            },
+            isVisible: () => true
+        });
+
         registry.registerCommand(DEBUG_COMMANDS.RESUME_ALL_THREADS);
+        registry.registerHandler(DEBUG_COMMANDS.SUSPEND_ALL_THREADS.id, {
+            execute: () => {
+                const debugSession = this.debugSessionManager.getActiveDebugSession();
+                if (debugSession) {
+                    debugSession.pauseAll();
+                }
+            },
+            isEnabled: () => {
+                const debugSession = this.debugSessionManager.getActiveDebugSession();
+                if (debugSession) {
+                    const state = debugSession.state;
+                    return state.isConnected && !state.allThreadsStopped;
+                }
+                return false;
+            },
+            isVisible: () => true
+        });
+
         registry.registerCommand(DEBUG_COMMANDS.SUSPEND_THREAD);
+        registry.registerHandler(DEBUG_COMMANDS.SUSPEND_THREAD.id, {
+            execute: () => {
+                const debugSession = this.debugSessionManager.getActiveDebugSession();
+                if (debugSession) {
+                    const selection = this.debugSelectionHandler.get(debugSession.sessionId);
+                    if (selection && selection.thread) {
+                        debugSession.pause(selection.thread.id);
+                    }
+                }
+            },
+            isEnabled: () => true,
+            isVisible: () => {
+                const debugSession = this.debugSessionManager.getActiveDebugSession();
+                if (debugSession) {
+                    const selection = this.debugSelectionHandler.get(debugSession.sessionId);
+                    return selection && !!selection.thread && !!debugSession.state.stoppedThreadIds.indexOf(selection.thread.id);
+                }
+                return false;
+            }
+        });
+
         registry.registerCommand(DEBUG_COMMANDS.RESUME_THREAD);
+        registry.registerHandler(DEBUG_COMMANDS.RESUME_THREAD.id, {
+            execute: () => {
+                const debugSession = this.debugSessionManager.getActiveDebugSession();
+                if (debugSession) {
+                    const selection = this.debugSelectionHandler.get(debugSession.sessionId);
+                    if (selection && selection.thread) {
+                        debugSession.resume(selection.thread.id);
+                    }
+                }
+            },
+            isEnabled: () => true,
+            isVisible: () => {
+                const debugSession = this.debugSessionManager.getActiveDebugSession();
+                if (debugSession) {
+                    const selection = this.debugSelectionHandler.get(debugSession.sessionId);
+                    return selection && !!selection.thread && !debugSession.state.stoppedThreadIds.indexOf(selection.thread.id);
+                }
+                return false;
+            }
+        });
+
+        registry.registerCommand(DEBUG_COMMANDS.MODIFY_VARIABLE);
+        registry.registerHandler(DEBUG_COMMANDS.MODIFY_VARIABLE.id, {
+            execute: () => {
+                const debugSession = this.debugSessionManager.getActiveDebugSession();
+                if (debugSession) {
+                    const selection = this.debugSelectionHandler.get(debugSession.sessionId);
+                    if (selection.variable) {
+                        const variable = selection.variable;
+                        const dialog = new SingleTextInputDialog({
+                            title: `Modify: ${variable.name}`,
+                            initialValue: variable.value
+                        });
+
+                        dialog.open().then(newValue => {
+                            const args: DebugProtocol.SetVariableArguments = {
+                                variablesReference: variable.parentVariablesReference,
+                                name: variable.name,
+                                value: newValue
+                            };
+                            debugSession.setVariable(args);
+                        });
+                    }
+                }
+            },
+            isEnabled: () => true,
+            isVisible: () => {
+                const debugSession = this.debugSessionManager.getActiveDebugSession();
+                if (debugSession) {
+                    const selection = this.debugSelectionHandler.get(debugSession.sessionId);
+                    return selection && !!selection.variable;
+                }
+                return false;
+            }
+        });
     }
 }
