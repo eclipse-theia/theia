@@ -11,7 +11,7 @@
 
 import { injectable, inject } from "inversify";
 import { Endpoint } from "@theia/core/lib/browser";
-import { DebugAdapterPath, DebugConfiguration, DebugSessionState } from "../common/debug-model";
+import { DebugAdapterPath, DebugConfiguration, DebugSessionState, ExtDebugProtocol } from "../common/debug-model";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { Disposable } from "vscode-jsonrpc";
 import { Deferred } from "@theia/core/lib/common/promise-util";
@@ -24,7 +24,7 @@ export const DebugSession = Symbol("DebugSession");
 export interface DebugSession extends Disposable, NodeJS.EventEmitter {
     readonly sessionId: string;
     readonly configuration: DebugConfiguration;
-    readonly debugSessionState: DebugSessionState;
+    readonly state: DebugSessionState;
 
     getServerCapabilities(): DebugProtocol.Capabilities | undefined;
     initialize(): Promise<DebugProtocol.InitializeResponse>;
@@ -33,8 +33,10 @@ export interface DebugSession extends Disposable, NodeJS.EventEmitter {
     launch(args: DebugProtocol.LaunchRequestArguments): Promise<DebugProtocol.LaunchResponse>;
     threads(): Promise<DebugProtocol.ThreadsResponse>;
     stacks(threadId: number): Promise<DebugProtocol.StackTraceResponse>;
-    pause(threadId?: number): Promise<DebugProtocol.PauseResponse> | Promise<DebugProtocol.PauseResponse[]>;
-    resume(threadId?: number): Promise<DebugProtocol.ContinueResponse | DebugProtocol.ContinueResponse[]>;
+    pause(threadId: number): Promise<DebugProtocol.PauseResponse>;
+    pauseAll(): Promise<DebugProtocol.PauseResponse[]>;
+    resume(threadId: number): Promise<DebugProtocol.ContinueResponse>;
+    resumeAll(): Promise<DebugProtocol.ContinueResponse[]>;
     disconnect(): Promise<DebugProtocol.InitializeResponse>;
     scopes(frameId: number): Promise<DebugProtocol.ScopesResponse>;
     variables(variablesReference: number, start?: number, count?: number): Promise<DebugProtocol.VariablesResponse>;
@@ -46,8 +48,6 @@ export interface DebugSession extends Disposable, NodeJS.EventEmitter {
  * DebugSession implementation.
  */
 export class DebugSessionImpl extends EventEmitter implements DebugSession {
-    readonly debugSessionState: DebugSessionState;
-
     protected readonly toDispose = new DisposableCollection();
     protected readonly callbacks = new Map<number, (response: DebugProtocol.Response) => void>();
 
@@ -58,10 +58,11 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
 
     constructor(
         public readonly sessionId: string,
-        public readonly configuration: DebugConfiguration) {
+        public readonly configuration: DebugConfiguration,
+        public readonly state: DebugSessionState) {
 
         super();
-        this.debugSessionState = new DebugSessionStateImpl(this);
+        this.state = new DebugSessionStateAccumulator(this, state);
         this.websocket = this.createWebSocket();
         this.sequence = 1;
     }
@@ -125,34 +126,26 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         return this.proceedRequest("threads");
     }
 
-    pause(threadId?: number): Promise<DebugProtocol.PauseResponse> | Promise<DebugProtocol.PauseResponse[]> {
-        if (threadId) {
-            return this.doPause(threadId);
-        } else {
-            return this.threads().then(response => Promise.all(response.body.threads.map((thread: DebugProtocol.Thread) => this.doPause(thread.id))));
-        }
+    pauseAll(): Promise<DebugProtocol.PauseResponse[]> {
+        return this.threads().then(response => Promise.all(response.body.threads.map((thread: DebugProtocol.Thread) => this.pause(thread.id))));
     }
 
-    doPause(threadId: number): Promise<DebugProtocol.PauseResponse> {
+    pause(threadId: number): Promise<DebugProtocol.PauseResponse> {
         return this.proceedRequest("pause", { threadId });
     }
 
-    resume(threadId?: number): Promise<DebugProtocol.ContinueResponse | DebugProtocol.ContinueResponse[]> {
-        if (threadId) {
-            return this.doResume(threadId);
-        } else {
-            return this.threads().then(response => Promise.all(response.body.threads.map((thread: DebugProtocol.Thread) => this.doResume(thread.id))));
-        }
+    resumeAll(): Promise<DebugProtocol.ContinueResponse[]> {
+        return this.threads().then(response => Promise.all(response.body.threads.map((thread: DebugProtocol.Thread) => this.resume(thread.id))));
     }
 
-    private doResume(threadId: number): Promise<DebugProtocol.ContinueResponse> {
-        return this.proceedRequest("continue", { threadId: threadId }).then(response => {
+    resume(threadId: number): Promise<DebugProtocol.ContinueResponse> {
+        return this.proceedRequest("continue", { threadId }).then(response => {
             const event: DebugProtocol.ContinuedEvent = {
                 type: 'event',
                 seq: -1,
                 event: 'continued',
                 body: {
-                    threadId: threadId,
+                    threadId,
                     allThreadsContinued: false
                 }
             };
@@ -204,7 +197,20 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
     }
 
     setVariable(args: DebugProtocol.SetVariableArguments): Promise<DebugProtocol.SetVariableResponse> {
-        return this.proceedRequest('setVariable', args);
+        return this.proceedRequest('setVariable', args).then(response => {
+            const event: ExtDebugProtocol.ExtVariableUpdatedEvent = {
+                type: 'event',
+                seq: -1,
+                event: 'variableUpdated',
+                body: {
+                    ...response.body,
+                    name: args.name,
+                    parentVariablesReference: args.variablesReference,
+                }
+            };
+            this.proceedEvent(event);
+            return response as DebugProtocol.SetVariableResponse;
+        });
     }
 
     evaluate(frameId: number, expression: string, context?: string): Promise<DebugProtocol.EvaluateResponse> {
@@ -249,7 +255,6 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
 
     protected proceedResponse(response: DebugProtocol.Response): void {
         console.log(response);
-
         const callback = this.callbacks.get(response.request_seq);
         if (callback) {
             this.callbacks.delete(response.request_seq);
@@ -258,7 +263,6 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
     }
 
     protected proceedEvent(event: DebugProtocol.Event): void {
-        console.log(event);
         this.emit(event.event, event);
     }
 
@@ -273,7 +277,14 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
 @injectable()
 export class DebugSessionFactory {
     get(sessionId: string, debugConfiguration: DebugConfiguration): DebugSession {
-        return new DebugSessionImpl(sessionId, debugConfiguration);
+        const state: DebugSessionState = {
+            isConnected: false,
+            breakpoints: [],
+            stoppedThreadIds: [],
+            allThreadsContinued: false,
+            allThreadsStopped: false
+        };
+        return new DebugSessionImpl(sessionId, debugConfiguration, state);
     }
 }
 
@@ -283,6 +294,7 @@ export class DebugSessionManager {
     private activeDebugSessionId: string | undefined;
 
     protected readonly sessions = new Map<string, DebugSession>();
+    protected readonly onDidPreCreateDebugSessionEmitter = new Emitter<string>();
     protected readonly onDidCreateDebugSessionEmitter = new Emitter<DebugSession>();
     protected readonly onDidChangeActiveDebugSessionEmitter = new Emitter<DebugSession | undefined>();
     protected readonly onDidDestroyDebugSessionEmitter = new Emitter<DebugSession>();
@@ -301,8 +313,11 @@ export class DebugSessionManager {
      * @returns The debug session
      */
     create(sessionId: string, debugConfiguration: DebugConfiguration): DebugSession {
+        this.onDidPreCreateDebugSessionEmitter.fire(sessionId);
+
         const session = this.debugSessionFactory.get(sessionId, debugConfiguration);
         this.sessions.set(sessionId, session);
+
         this.onDidCreateDebugSessionEmitter.fire(session);
 
         const channel = this.outputChannelManager.getChannel(debugConfiguration.name);
@@ -318,7 +333,7 @@ export class DebugSessionManager {
                 const request = debugConfiguration.request;
                 switch (request) {
                     case "attach": {
-                        const args: DebugProtocol.AttachRequestArguments = Object.assign({ __restart: false }, debugConfiguration);
+                        const args: DebugProtocol.AttachRequestArguments = Object.assign(debugConfiguration, { __restart: false });
                         return session.attach(args);
                     }
                     default: return Promise.reject(`Unsupported request '${request}' type.`);
@@ -409,6 +424,10 @@ export class DebugSessionManager {
         return this.onDidChangeActiveDebugSessionEmitter.event;
     }
 
+    get onDidPreCreateDebugSession(): Event<string> {
+        return this.onDidPreCreateDebugSessionEmitter.event;
+    }
+
     get onDidCreateDebugSession(): Event<DebugSession> {
         return this.onDidCreateDebugSessionEmitter.event;
     }
@@ -418,21 +437,40 @@ export class DebugSessionManager {
     }
 }
 
-class DebugSessionStateImpl implements DebugSessionState {
-    isConnected: boolean;
-    allThreadsContinued: boolean | undefined;
-    allThreadsStopped: boolean | undefined;
-
-    private _stoppedThreads = new Set<number>();
+class DebugSessionStateAccumulator implements DebugSessionState {
+    private _isConnected: boolean;
+    private _allThreadsContinued: boolean | undefined;
+    private _allThreadsStopped: boolean | undefined;
+    private _stoppedThreads: Set<number>;
     private _breakpoints = new Map<string, DebugProtocol.Breakpoint>();
 
-    constructor(protected readonly debugSession: DebugSession) {
+    constructor(
+        protected readonly debugSession: DebugSession,
+        protected readonly currentState: DebugSessionState) {
+        this._isConnected = currentState.isConnected;
+        this._allThreadsContinued = currentState.allThreadsContinued;
+        this._allThreadsStopped = currentState.allThreadsStopped;
+        this._stoppedThreads = new Set(currentState.stoppedThreadIds);
+        currentState.breakpoints.forEach(breakpoint => this._breakpoints.set(this.createId(breakpoint), breakpoint));
+
         this.debugSession.on("connected", () => this.onConnectedEvent());
         this.debugSession.on("terminated", () => this.onTerminatedEvent());
         this.debugSession.on('stopped', event => this.onStoppedEvent(event));
         this.debugSession.on('continued', event => this.onContinuedEvent(event));
         this.debugSession.on('thread', event => this.onThreadEvent(event));
         this.debugSession.on('breakpoint', event => this.onBreakpointEvent(event));
+    }
+
+    get allThreadsContinued(): boolean | undefined {
+        return this._allThreadsContinued;
+    }
+
+    get allThreadsStopped(): boolean | undefined {
+        return this._allThreadsStopped;
+    }
+
+    get isConnected(): boolean {
+        return this._isConnected;
     }
 
     get stoppedThreadIds(): number[] {
@@ -444,18 +482,18 @@ class DebugSessionStateImpl implements DebugSessionState {
     }
 
     private onConnectedEvent(): void {
-        this.isConnected = true;
+        this._isConnected = true;
     }
 
     private onTerminatedEvent(): void {
-        this.isConnected = false;
+        this._isConnected = false;
     }
 
     private onContinuedEvent(event: DebugProtocol.ContinuedEvent): void {
         const body = event.body;
 
-        this.allThreadsContinued = body.allThreadsContinued;
-        if (this.allThreadsContinued) {
+        this._allThreadsContinued = body.allThreadsContinued;
+        if (this._allThreadsContinued) {
             this._stoppedThreads.clear();
         } else {
             this._stoppedThreads.delete(body.threadId);
@@ -465,7 +503,7 @@ class DebugSessionStateImpl implements DebugSessionState {
     private onStoppedEvent(event: DebugProtocol.StoppedEvent): void {
         const body = event.body;
 
-        this.allThreadsStopped = body.allThreadsStopped;
+        this._allThreadsStopped = body.allThreadsStopped;
         if (body.threadId) {
             this._stoppedThreads.add(body.threadId);
         }
