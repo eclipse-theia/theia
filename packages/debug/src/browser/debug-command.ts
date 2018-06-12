@@ -142,9 +142,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                     .then(configuration => this.debug.resolveDebugConfiguration(configuration))
                     .then(configuration => this.debug.start(configuration).then(sessionId => ({ sessionId, configuration })))
                     .then(({ sessionId, configuration }) => this.debugSessionManager.create(sessionId, configuration))
-                    .catch(error => {
-                        console.log(error);
-                    });
+                    .catch(error => console.log(error));
             },
             isEnabled: () => true,
             isVisible: () => true
@@ -186,11 +184,12 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
             },
             isEnabled: () => {
                 const debugSession = this.debugSessionManager.getActiveDebugSession();
-                if (debugSession) {
-                    const state = debugSession.state;
-                    return state.isConnected && !state.allThreadsContinued;
+                if (!debugSession) {
+                    return false;
                 }
-                return false;
+
+                const state = debugSession.state;
+                return state.isConnected && !state.allThreadsContinued;
             },
             isVisible: () => true
         });
@@ -205,11 +204,12 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
             },
             isEnabled: () => {
                 const debugSession = this.debugSessionManager.getActiveDebugSession();
-                if (debugSession) {
-                    const state = debugSession.state;
-                    return state.isConnected && !state.allThreadsStopped;
+                if (!debugSession) {
+                    return false;
                 }
-                return false;
+
+                const state = debugSession.state;
+                return state.isConnected && !state.allThreadsStopped;
             },
             isVisible: () => true
         });
@@ -228,11 +228,12 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
             isEnabled: () => true,
             isVisible: () => {
                 const debugSession = this.debugSessionManager.getActiveDebugSession();
-                if (debugSession) {
-                    const selection = this.debugSelectionHandler.get(debugSession.sessionId);
-                    return selection && !!selection.thread && !!debugSession.state.stoppedThreadIds.indexOf(selection.thread.id);
+                if (!debugSession) {
+                    return false;
                 }
-                return false;
+
+                const selection = this.debugSelectionHandler.get(debugSession.sessionId);
+                return selection && !!selection.thread && !!debugSession.state.stoppedThreadIds.indexOf(selection.thread.id);
             }
         });
 
@@ -250,11 +251,12 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
             isEnabled: () => true,
             isVisible: () => {
                 const debugSession = this.debugSessionManager.getActiveDebugSession();
-                if (debugSession) {
-                    const selection = this.debugSelectionHandler.get(debugSession.sessionId);
-                    return selection && !!selection.thread && !debugSession.state.stoppedThreadIds.indexOf(selection.thread.id);
+                if (!debugSession) {
+                    return false;
                 }
-                return false;
+
+                const selection = this.debugSelectionHandler.get(debugSession.sessionId);
+                return selection && !!selection.thread && !debugSession.state.stoppedThreadIds.indexOf(selection.thread.id);
             }
         });
 
@@ -285,11 +287,12 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
             isEnabled: () => true,
             isVisible: () => {
                 const debugSession = this.debugSessionManager.getActiveDebugSession();
-                if (debugSession) {
-                    const selection = this.debugSelectionHandler.get(debugSession.sessionId);
-                    return selection && !!selection.variable;
+                if (!debugSession) {
+                    return false;
                 }
-                return false;
+
+                const selection = this.debugSelectionHandler.get(debugSession.sessionId);
+                return selection && !!selection.variable;
             }
         });
     }

@@ -121,7 +121,7 @@ export class DebugThreadsWidget extends VirtualWidget {
         this.debugSession.threads().then(response => {
             this.threads = response.body.threads;
 
-            const currentThreadExists = this.threads.filter(thread => hasSameId(thread, currentThread)).length !== 0;
+            const currentThreadExists = this.threads.some(thread => hasSameId(thread, currentThread));
             this.selectThread(currentThreadExists ? currentThread : this.threads[0]);
         });
     }
