@@ -90,8 +90,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
                 registry.registerCommand(openWithCommand, this.newUriAwareCommandHandler({
                     execute: uri => opener.open(uri),
-                    isEnabled: uri => opener.canHandle(uri) !== 0,
-                    isVisible: uri => opener.canHandle(uri) !== 0
+                    isEnabled: uri => opener.canHandle(uri) > 0,
+                    isVisible: uri => opener.canHandle(uri) > 0
                 }));
             }
         });
