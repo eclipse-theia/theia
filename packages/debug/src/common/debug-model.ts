@@ -19,7 +19,7 @@
 
 import { Disposable } from '@theia/core';
 import * as stream from 'stream';
-import { DebugProtocol } from 'vscode-debugprotocol/lib/debugProtocol';
+import { DebugProtocol } from 'vscode-debugprotocol';
 
 /**
  * The WS endpoint path to the Debug service.
@@ -163,7 +163,7 @@ export interface DebugSessionState {
     /**
      * Indicates if debug session is connected to the debug adapter.
      */
-    readonly isConnected: boolean | undefined;
+    readonly isConnected: boolean;
 
     /**
      * The debug session breakpoints.
@@ -184,4 +184,36 @@ export interface DebugSessionState {
      * Stopped threads Ids.
      */
     readonly stoppedThreadIds: number[];
+}
+
+/**
+ * Extension to the vscode debug protocol.
+ */
+export namespace ExtDebugProtocol {
+    export interface ExtVariable extends DebugProtocol.Variable {
+        /** Parent variables reference. */
+        parentVariablesReference: number
+    }
+
+    /**
+     * Event message for 'variableUpdated' event type.
+     */
+    export interface ExtVariableUpdatedEvent extends DebugProtocol.Event {
+        body: {
+            /** The variable's name. */
+            name: string;
+            /** The new value of the variable. */
+            value: string;
+            /** The type of the new value. Typically shown in the UI when hovering over the value. */
+            type?: string;
+            /** If variablesReference is > 0, the new value is structured and its children can be retrieved by passing variablesReference to the VariablesRequest. */
+            variablesReference?: number;
+            /** The number of named child variables. The client can use this optional information to present the variables in a paged UI and fetch them in chunks. */
+            namedVariables?: number;
+            /** The number of indexed child variables. The client can use this optional information to present the variables in a paged UI and fetch them in chunks. */
+            indexedVariables?: number;
+            /** Parent variables reference. */
+            parentVariablesReference: number
+        }
+    }
 }

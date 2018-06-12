@@ -19,44 +19,52 @@ import {
     ExpandableTreeNode,
     TreeNode,
     NodeProps,
-    TreeProps
+    TreeProps,
+    TreeModelImpl
 } from "@theia/core/lib/browser";
 import { h } from '@phosphor/virtualdom';
-import { injectable, inject } from "inversify";
+import { injectable, inject, postConstruct } from "inversify";
+import { DebugProtocol } from "vscode-debugprotocol";
+import { MenuModelRegistry } from "@theia/core/lib/common/menu";
+import { CommandRegistry } from "@theia/core";
 import { DebugSession } from "../debug-session";
-import { DebugProtocol } from "vscode-debugprotocol/lib/debugProtocol";
-import { Md5 } from "ts-md5";
+import { DebugSelection } from "./debug-selection-service";
+import { ExtDebugProtocol } from "../../common/debug-model";
 
 /**
  * Is it used to display variables.
  */
 @injectable()
 export class DebugVariablesWidget extends TreeWidget {
-    private _frameId: number | undefined;
-
     constructor(
         @inject(DebugSession) protected readonly debugSession: DebugSession,
+        @inject(DebugSelection) protected readonly debugSelection: DebugSelection,
         @inject(TreeModel) readonly model: TreeModel,
         @inject(TreeProps) readonly treeProps: TreeProps,
-        @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer) {
+        @inject(ContextMenuRenderer) readonly contextMenuRenderer: ContextMenuRenderer,
+        @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry,
+        @inject(MenuModelRegistry) protected readonly menuModelRegistry: MenuModelRegistry) {
         super(treeProps, model, contextMenuRenderer);
 
         this.id = `debug-variables-${debugSession.sessionId}`;
         this.title.label = 'Variables';
         this.addClass(Styles.VARIABLES_CONTAINER);
+        this.debugSession.on('variableUpdated', (event: ExtDebugProtocol.ExtVariableUpdatedEvent) => this.onVariableUpdated(event));
+        this.debugSelection.onDidSelectFrame(frame => this.onFrameSelected(frame));
     }
 
-    get frameId(): number | undefined {
-        return this._frameId;
-    }
-
-    set frameId(frameId: number | undefined) {
-        if (this._frameId === frameId) {
-            return;
+    protected onFrameSelected(frame: DebugProtocol.StackFrame | undefined) {
+        if (frame) {
+            this.debugSelection.variable = undefined;
+            this.model.root = FrameNode.create(this.debugSession.sessionId, frame.id);
         }
+    }
 
-        this._frameId = frameId;
-        this.model.root = FrameNode.create(this.debugSession.sessionId, frameId);
+    protected onVariableUpdated(event: ExtDebugProtocol.ExtVariableUpdatedEvent) {
+        const id = VariableNode.getId(this.debugSession.sessionId, event.body.name, event.body.parentVariablesReference);
+        const variableNode = this.model.getNode(id) as VariableNode;
+        Object.assign(variableNode.extVariable, event.body);
+        this.model.refresh(variableNode);
     }
 
     protected render(): h.Child {
@@ -66,7 +74,7 @@ export class DebugVariablesWidget extends TreeWidget {
 
     protected renderCaption(node: TreeNode, props: NodeProps): h.Child {
         if (VariableNode.is(node)) {
-            return this.decorateVariableCaption(node.variable);
+            return this.decorateVariableCaption(node.extVariable);
         } else if (ScopeNode.is(node)) {
             return this.decorateScopeCaption(node.scope);
         }
@@ -83,6 +91,27 @@ export class DebugVariablesWidget extends TreeWidget {
 }
 
 @injectable()
+export class DebugVariableModel extends TreeModelImpl {
+    constructor(@inject(DebugSelection) protected readonly debugSelection: DebugSelection) {
+        super();
+    }
+
+    @postConstruct()
+    protected init() {
+        super.init();
+
+        this.selectionService.onSelectionChanged((nodes: SelectableTreeNode[]) => {
+            const node = nodes[0];
+            if (VariableNode.is(node)) {
+                this.debugSelection.variable = node.extVariable;
+            } else {
+                this.debugSelection.variable = undefined;
+            }
+        });
+    }
+}
+
+@injectable()
 export class DebugVariablesTree extends TreeImpl {
     constructor(@inject(DebugSession) protected readonly debugSession: DebugSession) {
         super();
@@ -94,7 +123,7 @@ export class DebugVariablesTree extends TreeImpl {
             if (frameId) {
                 return this.debugSession.scopes(frameId).then(response => {
                     const scopes = response.body.scopes;
-                    return scopes.map(scope => ScopeNode.create(scope, parent));
+                    return scopes.map(scope => ScopeNode.create(this.debugSession.sessionId, scope, parent));
                 });
             } else {
                 return Promise.resolve([]);
@@ -102,18 +131,25 @@ export class DebugVariablesTree extends TreeImpl {
         }
 
         if (ScopeNode.is(parent)) {
-            return this.debugSession.variables(parent.scope.variablesReference).then(response => {
+            const parentVariablesReference = parent.scope.variablesReference;
+            return this.debugSession.variables(parentVariablesReference).then(response => {
                 const variables = response.body.variables;
-                return variables.map(variable => VariableNode.create(variable, parent));
+                return variables.map(variable => {
+                    const extVariable = { ...variable, parentVariablesReference };
+                    return VariableNode.create(this.debugSession.sessionId, extVariable, parent);
+                });
             });
         }
 
         if (VariableNode.is(parent)) {
-            const variablesReference = parent.variable.variablesReference;
-            if (variablesReference > 0) {
-                return this.debugSession.variables(parent.variable.variablesReference).then(response => {
+            const parentVariablesReference = parent.extVariable.variablesReference;
+            if (parentVariablesReference > 0) {
+                return this.debugSession.variables(parentVariablesReference).then(response => {
                     const variables = response.body.variables;
-                    return variables.map(variable => VariableNode.create(variable, parent));
+                    return variables.map(variable => {
+                        const extVariable = { ...variable, parentVariablesReference };
+                        return VariableNode.create(this.debugSession.sessionId, extVariable, parent);
+                    });
                 });
             } else {
                 return Promise.resolve([]);
@@ -125,7 +161,7 @@ export class DebugVariablesTree extends TreeImpl {
 }
 
 export interface VariableNode extends SelectableTreeNode, ExpandableTreeNode, CompositeTreeNode {
-    variable: DebugProtocol.Variable;
+    extVariable: ExtDebugProtocol.ExtVariable;
 }
 
 export interface ScopeNode extends SelectableTreeNode, ExpandableTreeNode, CompositeTreeNode {
@@ -138,19 +174,23 @@ export interface FrameNode extends ExpandableTreeNode, CompositeTreeNode {
 
 namespace VariableNode {
     export function is(node: TreeNode | undefined): node is VariableNode {
-        return !!node && 'variable' in node;
+        return !!node && 'extVariable' in node;
     }
 
-    export function create(variable: DebugProtocol.Variable, parent?: TreeNode): VariableNode {
-        const name = variable.name;
-        const id = createId(variable, parent);
+    export function create(sessionId: string, extVariable: ExtDebugProtocol.ExtVariable, parent?: TreeNode): VariableNode {
+        const name = extVariable.name;
+        const id = createId(sessionId, extVariable.name, extVariable.parentVariablesReference);
         return <VariableNode>{
-            id, variable, name, parent,
+            id, extVariable, name, parent,
             visible: true,
             expanded: false,
             selected: false,
             children: []
         };
+    }
+
+    export function getId(sessionId: string, name: string, parentVariablesReference: number): string {
+        return createId(sessionId, name, parentVariablesReference);
     }
 }
 
@@ -159,9 +199,9 @@ namespace ScopeNode {
         return !!node && 'scope' in node;
     }
 
-    export function create(scope: DebugProtocol.Scope, parent?: TreeNode): ScopeNode {
+    export function create(sessionId: string, scope: DebugProtocol.Scope, parent?: TreeNode): ScopeNode {
         const name = scope.name;
-        const id = createId(scope);
+        const id = getId(sessionId, scope.name);
         return <ScopeNode>{
             id, scope, name, parent,
             visible: true,
@@ -170,6 +210,10 @@ namespace ScopeNode {
             children: []
         };
     }
+
+    export function getId(sessionId: string, name: string): string {
+        return createId(sessionId, name);
+    }
 }
 
 namespace FrameNode {
@@ -177,10 +221,10 @@ namespace FrameNode {
         return !!node && 'frameId' in node;
     }
 
-    export function create(sessionId: string, frameId: number | undefined, parent?: TreeNode): FrameNode {
+    export function create(sessionId: string, frameId: number, parent?: TreeNode): FrameNode {
+        const id = createId(sessionId, `frame-${frameId}`);
         return <FrameNode>{
-            frameId, parent,
-            id: `debug-variables-root-${sessionId}`,
+            id, frameId, parent,
             name: 'Debug variable',
             visible: false,
             expanded: true,
@@ -188,12 +232,14 @@ namespace FrameNode {
             children: []
         };
     }
+
+    export function getId(sessionId: string, frameId: number): string {
+        return createId(sessionId, `frame-${frameId}`);
+    }
 }
 
-function createId(object: Object, parent?: TreeNode): string {
-    const idPrefix = parent ? parent.id + '-' : '';
-    const id = idPrefix + Md5.hashStr(JSON.stringify(object));
-    return id;
+function createId(sessionId: string, itemId: string | number, parentId?: string | number): string {
+    return `debug-variables-${sessionId}` + (parentId && `-${parentId}`) + `-${itemId}`;
 }
 
 namespace Styles {

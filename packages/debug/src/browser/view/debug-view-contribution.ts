@@ -148,6 +148,8 @@ export class DebugWidget extends Panel {
  */
 @injectable()
 export class DebugTargetWidget extends Widget {
+    readonly sessionId: string;
+
     constructor(
         @inject(DebugSession) protected readonly debugSession: DebugSession,
         @inject(DebugThreadsWidget) protected readonly threads: DebugThreadsWidget,
@@ -159,22 +161,12 @@ export class DebugTargetWidget extends Widget {
         this.title.label = debugSession.configuration.name;
         this.title.closable = true;
         this.addClass(Styles.DEBUG_TARGET);
-
-        this.threads.onDidSelectThread(threadId => this.frames.threadId = threadId);
-        this.frames.onDidSelectFrame(stackFrameId => this.variables.frameId = stackFrameId);
+        this.sessionId = debugSession.sessionId;
 
         this.node.appendChild(this.breakpoints.node);
         this.node.appendChild(this.threads.node);
         this.node.appendChild(this.frames.node);
         this.node.appendChild(this.variables.node);
-    }
-
-    get sessionId(): string {
-        return this.debugSession.sessionId;
-    }
-
-    set sessionId(sessionId: string) {
-        throw new Error('Read only variable');
     }
 
     protected onUpdateRequest(msg: Message): void {
