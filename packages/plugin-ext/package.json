@@ -1,15 +1,15 @@
 {
   "name": "@theia/plugin-ext",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "description": "Theia - Plugin Extension",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
   "dependencies": {
-    "@theia/core": "^0.3.10",
-    "@theia/filesystem": "^0.3.10",
-    "@theia/workspace": "^0.3.10",
-    "@theia/plugin": "^0.3.10",
-    "@theia/monaco": "^0.3.10",
+    "@theia/core": "^0.3.11",
+    "@theia/filesystem": "^0.3.11",
+    "@theia/workspace": "^0.3.11",
+    "@theia/plugin": "^0.3.11",
+    "@theia/monaco": "^0.3.11",
     "decompress": "^4.2.0",
     "ps-tree": "1.1.0",
     "vscode-uri": "^1.0.1"
@@ -49,7 +49,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.10",
+    "@theia/ext-scripts": "^0.3.11",
     "@types/decompress": "^4.2.2"
   },
   "nyc": {
