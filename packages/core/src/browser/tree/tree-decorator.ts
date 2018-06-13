@@ -12,7 +12,7 @@ import { Event, Emitter, Disposable, DisposableCollection } from '../../common';
 /**
  * Tree decorator that can change the look and the style of the tree items within a widget.
  */
-export interface TreeDecorator {
+export interface TreeDecorator extends Disposable {
 
     /**
      * The unique identifier of the decorator. Ought to be unique in the application.
@@ -75,12 +75,11 @@ export class NoopTreeDecoratorService implements TreeDecoratorService {
         return new Map();
     }
 
-    deflateDecorators(decorations: Map<string, TreeDecoration.Data[]>): object {
+    deflateDecorators(): object {
         return {};
     }
 
-    // tslint:disable-next-line:no-any
-    inflateDecorators(state: any): Map<string, TreeDecoration.Data[]> {
+    inflateDecorators(): Map<string, TreeDecoration.Data[]> {
         return new Map();
     }
 
@@ -108,6 +107,7 @@ export abstract class AbstractTreeDecoratorService implements TreeDecoratorServi
                 this.onDidChangeDecorationsEmitter.fire(this.getDecorations.bind(this));
             });
         }));
+        decorators.forEach(decorator => this.toDispose.push(decorator));
         this.toDispose.push(Disposable.create(() => this.decorations.clear()));
     }
 

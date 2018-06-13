@@ -12,6 +12,7 @@ import { notEmpty } from '@theia/core/lib/common/objects';
 import { Event, Emitter } from '@theia/core/lib/common/event';
 import { Tree } from '@theia/core/lib/browser/tree/tree';
 import { DepthFirstTreeIterator } from '@theia/core/lib/browser/tree/tree-iterator';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree-decorator';
 import { Marker } from '../../common/marker';
 import { ProblemManager } from './problem-manager';
@@ -21,11 +22,18 @@ export class ProblemDecorator implements TreeDecorator {
 
     readonly id = 'theia-problem-decorator';
 
+    protected readonly toDispose: DisposableCollection;
     protected readonly emitter: Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>;
 
     constructor(@inject(ProblemManager) protected readonly problemManager: ProblemManager) {
         this.emitter = new Emitter();
-        this.problemManager.onDidChangeMarkers(() => this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree)));
+        this.toDispose = new DisposableCollection();
+        this.toDispose.push(this.emitter);
+        this.toDispose.push(this.problemManager.onDidChangeMarkers(() => this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree))));
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
     get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, TreeDecoration.Data>> {

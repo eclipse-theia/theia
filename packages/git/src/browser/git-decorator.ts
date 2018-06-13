@@ -27,6 +27,7 @@ export class GitDecorator implements TreeDecorator {
     readonly id = 'theia-git-decorator';
 
     protected readonly toDispose: DisposableCollection;
+    protected readonly toDisposeOnRepositoryChange: DisposableCollection;
     protected readonly emitter: Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>;
 
     protected enabled: boolean;
@@ -38,20 +39,28 @@ export class GitDecorator implements TreeDecorator {
         @inject(GitWatcher) protected readonly watcher: GitWatcher,
         @inject(GitPreferences) protected readonly preferences: GitPreferences,
         @inject(ILogger) protected readonly logger: ILogger) {
+
         this.emitter = new Emitter();
         this.toDispose = new DisposableCollection();
+        this.toDispose.push(this.emitter);
+        this.toDisposeOnRepositoryChange = new DisposableCollection();
         repositoryProvider.onDidChangeRepository(async repository => {
-            this.toDispose.dispose();
+            this.toDisposeOnRepositoryChange.dispose();
             if (repository) {
-                this.toDispose.pushAll([
+                this.toDisposeOnRepositoryChange.pushAll([
                     await this.watcher.watchGitChanges(repository),
                     this.watcher.onGitEvent(event => this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree, event.status)))
                 ]);
             }
         });
-        this.preferences.onPreferenceChanged(event => this.handlePreferenceChange(event));
+        this.toDispose.push(this.preferences.onPreferenceChanged(event => this.handlePreferenceChange(event)));
         this.enabled = this.preferences['git.decorations.enabled'];
         this.showColors = this.preferences['git.decorations.colors'];
+    }
+
+    dispose(): void {
+        this.toDisposeOnRepositoryChange.dispose();
+        this.toDispose.dispose();
     }
 
     get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, TreeDecoration.Data>> {

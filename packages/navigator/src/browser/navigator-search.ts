@@ -23,29 +23,24 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
 
     protected readonly disposables = new DisposableCollection();
     protected readonly decorationEmitter = new Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>();
-    protected readonly filteredNodesEmitter = new Emitter<ReadonlyArray<Readonly<TreeNode>>>();
 
-    protected _filteredNodes: ReadonlyArray<Readonly<TreeNode>> = [];
+    protected _filteredNodeIds: ReadonlyArray<Readonly<string>> = [];
 
     @postConstruct()
     init() {
-        this.disposables.pushAll([
-            this.decorationEmitter,
-            this.filteredNodesEmitter
-        ]);
+        this.disposables.push(this.decorationEmitter);
     }
 
     /**
      * Returns with a function, that resolves to all the visible tree nodes that match the search pattern
      * for the given tree.
      */
-    filter(pattern: string | undefined): (tree: Tree) => Promise<ReadonlyArray<Readonly<TreeNode>>> {
+    filter(pattern: string | undefined): (tree: Tree) => Promise<ReadonlyArray<string>> {
         return (async (tree: Tree) => {
             const { root } = tree;
             if (!pattern || !root) {
                 this.fireDidChangeDecorations((t: Tree) => new Map());
-                this._filteredNodes = [];
-                this.fireFilteredNodesChanged(this._filteredNodes);
+                this._filteredNodeIds = [];
                 return [];
             }
             const items = [...new TopDownTreeIterator(root, { pruneCollapsed: true })];
@@ -56,9 +51,8 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
                 transform
             });
             this.fireDidChangeDecorations((t: Tree) => new Map(result.map(m => [m.item.id, this.toDecorator(m)] as [string, TreeDecoration.Data])));
-            this._filteredNodes = result.map(match => match.item);
-            this.fireFilteredNodesChanged(this._filteredNodes);
-            return this._filteredNodes!.slice();
+            this._filteredNodeIds = result.map(match => match.item.id);
+            return this._filteredNodeIds!.slice();
         }).bind(this);
     }
 
@@ -67,17 +61,10 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
     }
 
     /**
-     * Returns with the filtered nodes after invoking the `filter` method.
+     * Returns with the IDs of all the filtered tree nodes after invoking the `filter` method.
      */
-    get filteredNodes(): ReadonlyArray<Readonly<TreeNode>> {
-        return this._filteredNodes.slice();
-    }
-
-    /**
-     * Event that is fired when the filtered nodes have been changed.
-     */
-    get onFilteredNodesChanged(): Event<ReadonlyArray<Readonly<TreeNode>>> {
-        return this.filteredNodesEmitter.event;
+    get filteredNodes(): ReadonlyArray<string> {
+        return this._filteredNodeIds.slice();
     }
 
     dispose() {
@@ -86,10 +73,6 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
 
     protected fireDidChangeDecorations(event: (tree: Tree) => Map<string, TreeDecoration.Data>): void {
         this.decorationEmitter.fire(event);
-    }
-
-    protected fireFilteredNodesChanged(nodes: ReadonlyArray<Readonly<TreeNode>>): void {
-        this.filteredNodesEmitter.fire(nodes);
     }
 
     protected toDecorator(match: FuzzySearch.Match<TreeNode>): TreeDecoration.Data {

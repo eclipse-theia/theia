@@ -229,6 +229,33 @@ export namespace Iterators {
     }
 
     /**
+     * Maps the iterator to another iterator.
+     *
+     * @param elements the elements to transform.
+     * @param func the function to map one element to another.
+     * @param useCache if `true` caches the key-value pairs in a ES6 `Map`.
+     */
+    export function* map<F, T>(elements: IterableIterator<F>, func: (from: F) => T, useCache?: boolean): IterableIterator<T> {
+        let next = elements.next();
+        const cache = new Map<F, T>();
+        while (!next.done) {
+            const from = next.value;
+            let to: T | undefined = undefined;
+            if (useCache) {
+                to = cache.get(from);
+            }
+            if (to === undefined) {
+                to = func(from);
+            }
+            if (useCache) {
+                cache.set(from, to);
+            }
+            yield to;
+            next = elements.next();
+        }
+    }
+
+    /**
      * Returns an iterator that cycles indefinitely over the elements of iterable.
      *  - If `start` is given it starts the iteration from that element. Otherwise, it starts with the first element of the array.
      *  - If `start` is given, it must contain by the `elements` array. Otherwise, an error will be thrown.
