@@ -79,10 +79,10 @@ export class FileNavigatorModel extends FileTreeModel {
         if (filteredNodes.length === 0) {
             return super.createBackwardIterator(node);
         }
-        if (filteredNodes.indexOf(node) === -1) {
+        if (filteredNodes.indexOf(node.id) === -1) {
             return undefined;
         }
-        return Iterators.cycle(filteredNodes.slice().reverse(), node);
+        return Iterators.map(Iterators.cycle(filteredNodes.slice().reverse(), node.id), id => this.getNode(id)!, true);
     }
 
     protected createIterator(node: TreeNode | undefined): TreeIterator | undefined {
@@ -93,10 +93,10 @@ export class FileNavigatorModel extends FileTreeModel {
         if (filteredNodes.length === 0) {
             return super.createIterator(node);
         }
-        if (filteredNodes.indexOf(node) === -1) {
+        if (filteredNodes.indexOf(node.id) === -1) {
             return undefined;
         }
-        return Iterators.cycle(filteredNodes, node);
+        return Iterators.map(Iterators.cycle(filteredNodes, node.id), id => this.getNode(id)!, true);
     }
 
 }

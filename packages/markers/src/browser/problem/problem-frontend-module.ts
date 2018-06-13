@@ -36,6 +36,5 @@ export default new ContainerModule(bind => {
             ctx.container.get(ProblemContribution)
         ).inSingletonScope();
     }
-    bind(ProblemDecorator).toSelf().inSingletonScope();
     bind(NavigatorTreeDecorator).to(ProblemDecorator).inSingletonScope();
 });

@@ -55,17 +55,16 @@ export class FileNavigatorWidget extends FileTreeWidget {
         super.init();
         this.toDispose.pushAll([
             this.searchBox,
-            this.searchBox.onTextChange(data => this.navigatorSearch.filter(data)),
-            this.searchBox.onClose(data => this.navigatorSearch.filter(undefined)),
+            this.searchBox.onTextChange(data => this.navigatorSearch.filter(data)(this.model).then(nodeIds => {
+                const nodeId = nodeIds.find(id => SelectableTreeNode.is(this.model.getNode(id)));
+                if (nodeId) {
+                    this.model.selectNode(this.model.getNode(nodeId) as SelectableTreeNode);
+                }
+            })),
+            this.searchBox.onClose(() => this.navigatorSearch.filter(undefined)(this.model)),
             this.searchBox.onNext(() => this.model.selectNextNode()),
             this.searchBox.onPrevious(() => this.model.selectPrevNode()), this.navigatorSearch,
             this.navigatorSearch,
-            this.navigatorSearch.onFilteredNodesChanged(nodes => {
-                const node = nodes.find(SelectableTreeNode.is);
-                if (node) {
-                    this.model.selectNode(node);
-                }
-            }),
             this.model.onSelectionChanged(selection => {
                 if (this.shell.activeWidget === this) {
                     this.selectionService.selection = selection;
