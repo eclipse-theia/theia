@@ -28,6 +28,10 @@ export class ProblemDecorator implements TreeDecorator {
         this.problemManager.onDidChangeMarkers(() => this.fireDidChangeDecorations((tree: Tree) => this.collectDecorators(tree)));
     }
 
+    async decorations(tree: Tree): Promise<Map<string, TreeDecoration.Data>> {
+        return this.collectDecorators(tree);
+    }
+
     get onDidChangeDecorations(): Event<(tree: Tree) => Map<string, TreeDecoration.Data>> {
         return this.emitter.event;
     }

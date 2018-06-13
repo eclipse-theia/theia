@@ -20,6 +20,7 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
 
     @inject(Tree)
     protected readonly tree: Tree;
+
     @inject(FuzzySearch)
     protected readonly fuzzySearch: FuzzySearch;
 
@@ -27,6 +28,7 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
     protected readonly decorationEmitter = new Emitter<(tree: Tree) => Map<string, TreeDecoration.Data>>();
     protected readonly filteredNodesEmitter = new Emitter<ReadonlyArray<Readonly<TreeNode>>>();
 
+    protected _filterResult: FuzzySearch.Match<TreeNode>[] = [];
     protected _filteredNodes: ReadonlyArray<Readonly<TreeNode>> = [];
 
     @postConstruct()
@@ -38,26 +40,31 @@ export class FileNavigatorSearch implements Disposable, TreeDecorator {
         ]);
     }
 
+    async decorations(): Promise<Map<string, TreeDecoration.Data>> {
+        return new Map(this._filterResult.map(m => [m.item.id, this.toDecorator(m)] as [string, TreeDecoration.Data]));
+    }
+
     /**
      * Resolves to all the visible tree nodes that match the search pattern.
      */
     async filter(pattern: string | undefined): Promise<ReadonlyArray<Readonly<TreeNode>>> {
         const { root } = this.tree;
         if (!pattern || !root) {
-            this.fireDidChangeDecorations((tree: Tree) => new Map());
+            this._filterResult = [];
             this._filteredNodes = [];
+            this.fireDidChangeDecorations(() => new Map());
             this.fireFilteredNodesChanged(this._filteredNodes);
             return [];
         }
         const items = [...new TopDownTreeIterator(root, { pruneCollapsed: true })];
         const transform = (node: TreeNode) => node.name;
-        const result = await this.fuzzySearch.filter({
+        this._filterResult = await this.fuzzySearch.filter({
             items,
             pattern,
             transform
         });
-        this.fireDidChangeDecorations((tree: Tree) => new Map(result.map(m => [m.item.id, this.toDecorator(m)] as [string, TreeDecoration.Data])));
-        this._filteredNodes = result.map(match => match.item);
+        this._filteredNodes = this._filterResult.map(match => match.item);
+        this.fireDidChangeDecorations(() => new Map(this._filterResult.map(m => [m.item.id, this.toDecorator(m)] as [string, TreeDecoration.Data])));
         this.fireFilteredNodesChanged(this._filteredNodes);
         return this._filteredNodes!.slice();
     }
