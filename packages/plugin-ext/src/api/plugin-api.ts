@@ -4,9 +4,11 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
+
 import { createProxyIdentifier, ProxyIdentifier } from './rpc-protocol';
 import * as theia from '@theia/plugin';
 import { PluginLifecycle, PluginModel, PluginMetadata } from '../common/plugin-protocol';
+import { QueryParameters } from '../common/env';
 import { TextEditorCursorStyle } from '../common/editor-options';
 import { TextEditorLineNumbersStyle, EndOfLine, OverviewRulerLane } from '../plugin/types-impl';
 import { UriComponents } from '../common/uri-components';
@@ -369,6 +371,14 @@ export interface DocumentsMain {
     $trySaveDocument(uri: UriComponents): Promise<boolean>;
 }
 
+export interface EnvMain {
+    $getEnvVariable(envVarName: string): Promise<string | undefined>;
+}
+
+export interface EnvExt {
+    $setQueryParameters(queryParams: QueryParameters): void;
+}
+
 export const PLUGIN_RPC_CONTEXT = {
     COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
     QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain'),
@@ -376,14 +386,16 @@ export const PLUGIN_RPC_CONTEXT = {
     TEXT_EDITORS_MAIN: createProxyIdentifier<TextEditorsMain>('TextEditorsMain'),
     DOCUMENTS_MAIN: createProxyIdentifier<DocumentsMain>('DocumentsMain'),
     STATUS_BAR_MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<StatusBarMessageRegistryMain>>createProxyIdentifier<StatusBarMessageRegistryMain>('StatusBarMessageRegistryMain'),
+    ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
     HOSTED_PLUGIN_MANAGER_EXT: createProxyIdentifier<HostedPluginManagerExt>('HostedPluginManagerExt'),
     COMMAND_REGISTRY_EXT: createProxyIdentifier<CommandRegistryExt>('CommandRegistryExt'),
     QUICK_OPEN_EXT: createProxyIdentifier<QuickOpenExt>('QuickOpenExt'),
+    WINDOW_STATE_EXT: createProxyIdentifier<WindowStateExt>('WindowStateExt'),
     TEXT_EDITORS_EXT: createProxyIdentifier<TextEditorsExt>('TextEditorsExt'),
     EDITORS_AND_DOCUMENTS_EXT: createProxyIdentifier<EditorsAndDocumentsExt>('EditorsAndDocumentsExt'),
     DOCUMENTS_EXT: createProxyIdentifier<DocumentsExt>('DocumentsExt'),
-    WINDOW_STATE_EXT: createProxyIdentifier<WindowStateExt>('WindowStateExt'),
+    ENV_EXT: createProxyIdentifier<EnvExt>('EnvExt')
 };

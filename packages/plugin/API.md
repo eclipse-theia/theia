@@ -16,7 +16,7 @@ Any contributed command are available to any plugin, command can be invoked by [
 
 Simple example that register command:
 
-```javascript
+```typescript
 theia.commands.registerCommand({id:'say.hello.command'}, ()=>{
     console.log("Hello World!");
 });
@@ -24,7 +24,7 @@ theia.commands.registerCommand({id:'say.hello.command'}, ()=>{
 
 Simple example that invoke command:
 
-```javascript
+```typescript
 theia.commands.executeCommand('core.about');
 ```
 
@@ -38,7 +38,7 @@ Function to ask user select some value from the list.
 
 Example of using:
 
-```javascript
+```typescript
 //configure quick pick options
  const option: theia.QuickPickOptions = {
         machOnDescription: true,
@@ -63,13 +63,13 @@ theia.window.showQuickPick(["foo", "bar", "foobar"], option).then((val: string[]
 
 Simple example that show an information message:
 
-```javascript
+```typescript
 theia.window.showInformationMessage('Information message');
 ```
 
 Simple example that show an information message with buttons:
 
-```javascript
+```typescript
 theia.window.showInformationMessage('Information message', 'Btn1', 'Btn2').then(result => {
     console.log("Click button", result);
 });
@@ -79,7 +79,7 @@ theia.window.showInformationMessage('Information message', 'Btn1', 'Btn2').then(
 
 It is possible to track state of the IDE window inside a plugin. Window state is defined as:
 
-```javascript
+```typescript
 interface WindowState {
     readonly focused: boolean;
 }
@@ -87,19 +87,19 @@ interface WindowState {
 
 To read a state on demand one can use readonly variable:
 
-```javascript
+```typescript
 theia.window.state
 ```
 
 To track window activity subscribe on `onDidChangeWindowState` event:
 
-```javascript
+```typescript
 const disposable = theia.window.onDidChangeWindowState((windowState: theia.WindowState) => {
-            console.log('Window focus changed: ', windowState.focused);
+    console.log('Window focus changed: ', windowState.focused);
 });
 ```
 
-#### StatusBar API
+#### Status Bar API
 
  A status bar shows a message to users and supports icon substitution.
 
@@ -108,14 +108,44 @@ const disposable = theia.window.onDidChangeWindowState((windowState: theia.Windo
 
 Simple example that show a status bar message:
 
-```javascript
+```typescript
 theia.window.setStatusBarMessage('test status bar item');
 ```
 
 Simple example that show a status bar message with statusBarItem:
 
-```javascript
+```typescript
   const item = theia.window.createStatusBarItem(theia.StatusBarAlignment.Right, 99);
         item.text = 'test status bar item';
         item.show();
 ```
+
+#### Environment API
+
+Environment API allows reading of environment variables and query parameters of the IDE.
+
+To get an environment variable by name one can use:
+
+```typescript
+theia.env.getEnvVariable('NAME_OF_ENV_VARIABLE').then(value => {
+    // process the value here
+}
+```
+
+In case if environment variable doesn't exist `undefined` will be returned.
+
+Also this part of API exposes all query parameters (already URI decoded) with which IDE page is loaded. One can get a query parameter by name:
+
+```typescript
+theia.env.getQueryParameter('NAME_OF_QUERY_PARAMETER');
+```
+
+In case if query parameter doesn't exist `undefined` will be returned.
+
+Or it is possible to get a map of all query parameters:
+
+```typescript
+theia.env.getQueryParameters();
+```
+
+Note, that it is possible to have an array of values for single name, because it could be specified more than one time (for example `localhost:3000?foo=bar&foo=baz`).
