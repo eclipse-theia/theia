@@ -27,6 +27,8 @@
     "@theia/navigator": "^0.3.11",
     "@theia/outline-view": "^0.3.11",
     "@theia/output": "^0.3.11",
+    "@theia/plugin-ext": "^0.3.11",
+    "@theia/plugin-ext-vscode": "^0.3.11",
     "@theia/preferences": "^0.3.11",
     "@theia/preview": "^0.3.11",
     "@theia/process": "^0.3.11",
