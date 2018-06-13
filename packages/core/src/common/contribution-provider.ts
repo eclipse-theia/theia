@@ -10,30 +10,38 @@ import { interfaces } from "inversify";
 export const ContributionProvider = Symbol("ContributionProvider");
 
 export interface ContributionProvider<T extends object> {
-    getContributions(): T[]
+
+    /**
+     * @param recursive `true` if the contributions should be collected from the parent containers as well. Otherwise, `false`. It is `false` by default.
+     */
+    getContributions(recursive?: boolean): T[]
 }
 
 class ContainerBasedContributionProvider<T extends object> implements ContributionProvider<T> {
+
+    protected services: T[] | undefined;
 
     constructor(
         protected readonly serviceIdentifier: interfaces.ServiceIdentifier<T>,
         protected readonly container: interfaces.Container
     ) { }
 
-    protected services: T[] | undefined;
-
-    getContributions(): T[] {
+    getContributions(recursive?: boolean): T[] {
         if (this.services === undefined) {
-            if (this.container.isBound(this.serviceIdentifier)) {
-                try {
-                    this.services = this.container.getAll(this.serviceIdentifier);
-                } catch (error) {
-                    console.error(error);
-                    this.services = [];
+            const currentServices: T[] = [];
+            let currentContainer: interfaces.Container | null = this.container;
+            while (currentContainer !== null) {
+                if (currentContainer.isBound(this.serviceIdentifier)) {
+                    try {
+                        currentServices.push(...currentContainer.getAll(this.serviceIdentifier));
+                    } catch (error) {
+                        console.error(error);
+                    }
                 }
-            } else {
-                this.services = [];
+                // tslint:disable-next-line:no-null-keyword
+                currentContainer = recursive === true ? currentContainer.parent : null;
             }
+            this.services = currentServices;
         }
         return this.services;
     }
