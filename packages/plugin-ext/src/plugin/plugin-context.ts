@@ -15,6 +15,8 @@ import { getPluginId } from '../common/plugin-protocol';
 import { MessageRegistryExt } from './message-registry';
 import { StatusBarMessageRegistryExt } from './status-bar-message-registry';
 import { WindowStateExtImpl } from './window-state';
+import { EnvExtImpl } from './env';
+import { QueryParameters } from '../common/env';
 import {
     Disposable,
     Position,
@@ -47,6 +49,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
     const editors = rpc.set(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT, new TextEditorsExtImpl(rpc, editorsAndDocuments));
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocuments));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
+    const envExt = rpc.set(MAIN_RPC_CONTEXT.ENV_EXT, new EnvExtImpl(rpc));
 
     const commands: typeof theia.commands = {
         // tslint:disable-next-line:no-any
@@ -140,7 +143,6 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
     };
 
     const workspace: typeof theia.workspace = {
-
         get textDocuments() {
             return documents.getAllDocumentData().map(data => data.document);
         },
@@ -155,10 +157,23 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         },
     };
 
+    const env: typeof theia.env = {
+        getEnvVariable(envVarName: string): PromiseLike<string | undefined> {
+            return envExt.getEnvVariable(envVarName);
+        },
+        getQueryParameter(queryParamName: string): string | string[] | undefined {
+            return envExt.getQueryParameter(queryParamName);
+        },
+        getQueryParameters(): QueryParameters {
+            return envExt.getQueryParameters();
+        }
+    };
+
     return <typeof theia>{
         commands,
         window,
         workspace,
+        env,
         // Types
         StatusBarAlignment: StatusBarAlignment,
         Disposable: Disposable,

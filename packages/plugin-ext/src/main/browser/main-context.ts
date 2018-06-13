@@ -4,6 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
+
 import { interfaces } from 'inversify';
 import { CommandRegistryMainImpl } from './command-registry-main';
 import { QuickOpenMainImpl } from './quick-open-main';
@@ -12,6 +13,7 @@ import { PLUGIN_RPC_CONTEXT } from '../../api/plugin-api';
 import { MessageRegistryMainImpl } from './message-registry-main';
 import { WindowStateMain } from './window-state-main';
 import { StatusBarMessageRegistryMainImpl } from './status-bar-message-registry-main';
+import { EnvMainImpl } from './env-main';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
@@ -34,4 +36,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const statusBarMessageRegistryMain = new StatusBarMessageRegistryMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.STATUS_BAR_MESSAGE_REGISTRY_MAIN, statusBarMessageRegistryMain);
+
+    const envMain = new EnvMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.ENV_MAIN, envMain);
 }

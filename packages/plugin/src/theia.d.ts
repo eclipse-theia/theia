@@ -176,7 +176,7 @@ declare module '@theia/plugin' {
         /**
          * Create a new range from two positions.
          * If `start` is not before or equal to `end`, the values will be swapped.
-         * 
+         *
          * @param start a position
          * @param end a position
          */
@@ -184,7 +184,7 @@ declare module '@theia/plugin' {
 
         /**
          * Create a new position from coordinates.
-         * 
+         *
          * @param startLine a zero based line value
          * @param startChar a zero based character value
          * @param endLine a zero based line value
@@ -194,37 +194,37 @@ declare module '@theia/plugin' {
 
         /**
          * Check if a position or a range is in this range.
-         * 
+         *
          * @param positionOrRange a position or a range
          */
         contains(positionOrRange: Position | Range): boolean;
 
         /**
          * Check `other` equals this range.
-         * 
+         *
          * @param other a range
          */
         isEqual(other: Range): boolean;
 
         /**
          * Intersect `range` with this range and returns new range or `undefined`
-         * 
+         *
          * @param range a range
          */
         intersection(range: Range): Range | undefined;
 
         /**
          * Compute the union of `other` with this range.
-         * 
+         *
          * @param other a range
          */
         union(other: Range): Range;
 
         /**
          * Derived a new range from this range.
-         * 
-         * @param start 
-         * @param end 
+         *
+         * @param start
+         * @param end
          */
         with(start?: Position, end?: Position): Range;
 
@@ -256,15 +256,15 @@ declare module '@theia/plugin' {
 
         /**
          * Create a selection from two positions.
-         * 
-         * @param anchor a position 
+         *
+         * @param anchor a position
          * @param active a position
          */
         constructor(anchor: Position, active: Position);
 
         /**
          * Create a selection from coordinates.
-         * 
+         *
          * @param anchorLine a zero based line value
          * @param anchorChar a zero based character value
          * @param activeLine a zero based line value
@@ -1875,4 +1875,28 @@ declare module '@theia/plugin' {
 
         export const onDidChangeTextDocument: Event<TextDocumentChangeEvent>;
     }
+
+    export namespace env {
+        /**
+         * Gets environment variable value by name.
+         *
+         * @param envVarName name of environment variable to get
+         * @returns value of the given environment variable name or undefined if there is no such variable.
+         */
+        export function getEnvVariable(envVarName: string): PromiseLike<string | undefined>;
+
+        /**
+         * Gets query parameter value by name.
+         *
+         * @param queryParamName name of query parameter to get.
+         * @returns value of the given query parameter or undefined if there is no such variable.
+         */
+        export function getQueryParameter(queryParamName: string): string | string[] | undefined;
+
+        /**
+         * Returns all query parameters of current IDE.
+         */
+        export function getQueryParameters(): { [key: string]: string | string[] } | undefined;
+    }
+
 }
