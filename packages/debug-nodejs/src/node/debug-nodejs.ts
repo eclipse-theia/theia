@@ -14,24 +14,19 @@ const packageJson = require('../../package.json');
 const debugAdapterDir = packageJson['debugAdapter']['dir'];
 
 import { injectable } from "inversify";
-import {
-    DebugConfiguration,
-    DebugAdapterExecutable,
-    DebugAdapterContribution
-} from "@theia/debug/lib/common/debug-model";
+import { DebugConfiguration } from "@theia/debug/lib/common/debug-common";
+import { DebugAdapterContribution, DebugAdapterExecutable } from "@theia/debug/lib/node/debug-model";
 
 @injectable()
 export class NodeJsDebugAdapterContribution implements DebugAdapterContribution {
     readonly debugType = "node";
 
-    provideDebugConfigurations(): DebugConfiguration[] {
-        return [{
-            "type": this.debugType,
-            "request": "attach",
-            "name": "Attach by PID",
-            "processId": ""
-        }];
-    }
+    provideDebugConfigurations = [{
+        "type": this.debugType,
+        "request": "attach",
+        "name": "Attach by PID",
+        "processId": ""
+    }];
 
     resolveDebugConfiguration(config: DebugConfiguration): DebugConfiguration {
         if (!config.request) {

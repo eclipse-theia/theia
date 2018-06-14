@@ -13,13 +13,11 @@ import { injectable, inject, named } from "inversify";
 import { ContributionProvider, ILogger } from '@theia/core';
 import {
     DebugService,
-    DebugConfiguration,
-    DebugAdapterExecutable,
-    DebugAdapterContribution,
-} from "../common/debug-model";
+    DebugConfiguration
+} from "../common/debug-common";
 
 import { UUID } from "@phosphor/coreutils";
-import { DebugAdapterSession } from "./debug-adapter";
+import { DebugAdapterContribution, DebugAdapterExecutable, DebugAdapterSession, DebugAdapterSessionFactory } from "./debug-model";
 
 /**
  * Contributions registry.
@@ -53,7 +51,7 @@ export class DebugAdapterContributionRegistry {
     provideDebugConfigurations(debugType: string): DebugConfiguration[] {
         const contrib = this.contribs.get(debugType);
         if (contrib) {
-            return contrib.provideDebugConfigurations();
+            return contrib.provideDebugConfigurations;
         }
         throw new Error(`Debug adapter '${debugType}' isn't registered.`);
     }
@@ -85,6 +83,18 @@ export class DebugAdapterContributionRegistry {
         }
         throw new Error(`Debug adapter '${config.type}' isn't registered.`);
     }
+
+    /**
+     * Returns a [debug adapter session factory](#DebugAdapterSessionFactory).
+     * @param debugType The registered debug type
+     * @returns An [debug adapter session factory](#DebugAdapterSessionFactory)
+     */
+    debugAdapterSessionFactory(debugType: string): DebugAdapterSessionFactory | undefined {
+        const contrib = this.contribs.get(debugType);
+        if (contrib) {
+            return contrib.debugAdapterSessionFactory;
+        }
+    }
 }
 
 /**
@@ -95,18 +105,22 @@ export class DebugAdapterSessionManager {
     protected readonly sessions = new Map<string, DebugAdapterSession>();
 
     constructor(
-        @inject("Factory<DebugAdapterSession>")
-        protected readonly factory: (sessionId: string, executable: DebugAdapterExecutable) => DebugAdapterSession
+        @inject(DebugAdapterContributionRegistry)
+        protected readonly registry: DebugAdapterContributionRegistry,
+        @inject(DebugAdapterSessionFactory)
+        protected readonly defaultFactory: DebugAdapterSessionFactory
     ) { }
 
     /**
      * Creates a new [debug adapter session](#DebugAdapterSession).
-     * @param executable The [DebugAdapterExecutable](#DebugAdapterExecutable)
+     * @param config The [DebugConfiguration](#DebugConfiguration)
      * @returns The debug adapter session
      */
-    create(executable: DebugAdapterExecutable): DebugAdapterSession {
+    create(config: DebugConfiguration): DebugAdapterSession {
         const sessionId = UUID.uuid4();
-        const session = this.factory(sessionId, executable);
+        const factory = this.registry.debugAdapterSessionFactory(config.type) || this.defaultFactory;
+        const executable = this.registry.provideDebugAdapterExecutable(config);
+        const session = factory.get(sessionId, config, executable);
         this.sessions.set(sessionId, session);
         return session;
     }
@@ -165,8 +179,7 @@ export class DebugServiceImpl implements DebugService {
     }
 
     async start(config: DebugConfiguration): Promise<string> {
-        const executable = this.registry.provideDebugAdapterExecutable(config);
-        const session = this.sessionManager.create(executable);
+        const session = this.sessionManager.create(config);
         return session.start().then(() => session.id);
     }
 
