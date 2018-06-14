@@ -15,7 +15,7 @@ export const FileSystem = Symbol("FileSystem");
 export interface FileSystem extends JsonRpcServer<FileSystemClient> {
 
     /**
-     * Returns the filestat for the given uri.
+     * Returns the file stat for the given URI.
      *
      * If the uri points to a folder it will contain one level of unresolved children.
      *
@@ -102,7 +102,7 @@ export interface FileSystem extends JsonRpcServer<FileSystemClient> {
     getRoots(): Promise<FileStat[]>;
 
     /**
-     * Returns a promise the resolves to a file stat representing the current user's home directory.
+     * Returns a promise that resolves to a file stat representing the current user's home directory.
      */
     getCurrentUserHome(): Promise<FileStat | undefined>;
 
