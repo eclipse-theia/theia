@@ -10,6 +10,7 @@ import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-con
 import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX } from "@theia/core/lib/common";
 import { Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands, OpenerService } from "@theia/core/lib/browser";
 import { SHELL_TABBAR_CONTEXT_MENU } from "@theia/core/lib/browser";
+import { FileDownloadCommands } from "@theia/filesystem/lib/browser/download/file-download-command-contribution";
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
 import { FileNavigatorPreferences } from "./navigator-preferences";
@@ -117,6 +118,11 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerMenuAction(NavigatorContextMenu.MOVE, {
             commandId: WorkspaceCommands.FILE_DELETE.id
+        });
+        registry.registerMenuAction(NavigatorContextMenu.MOVE, {
+            commandId: FileDownloadCommands.DOWNLOAD.id,
+            label: 'Download',
+            order: 'z' // Should be the last item in the "move" menu group.
         });
 
         registry.registerMenuAction(NavigatorContextMenu.NEW, {

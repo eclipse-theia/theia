@@ -1,0 +1,96 @@
+/*
+ * Copyright (C) 2018 TypeFox and others.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ */
+
+import * as fs from 'fs-extra';
+import * as path from 'path';
+import * as temp from 'temp';
+import { extract } from 'tar-fs';
+import { expect } from 'chai';
+import URI from '@theia/core/lib/common/uri';
+import { MockDirectoryArchiver } from './test/mock-directory-archiver';
+
+// tslint:disable:no-unused-expression
+
+const track = temp.track();
+
+describe('directory-archiver', () => {
+
+    after(() => {
+        track.cleanupSync();
+    });
+
+    it('should archive a directory', async function () {
+        this.timeout(20_000);
+        const fromPath = track.mkdirSync('from');
+        fs.writeFileSync(path.join(fromPath, 'A.txt'), 'A');
+        fs.writeFileSync(path.join(fromPath, 'B.txt'), 'B');
+        expect(fs.readFileSync(path.join(fromPath, 'A.txt'), { encoding: 'utf8' })).to.be.equal('A');
+        expect(fs.readFileSync(path.join(fromPath, 'B.txt'), { encoding: 'utf8' })).to.be.equal('B');
+        const toPath = track.mkdirSync('to');
+        const archiver = new MockDirectoryArchiver();
+        await archiver.archive(fromPath, path.join(toPath, 'output.tar'));
+        expect(fs.existsSync(path.join(toPath, 'output.tar'))).to.be.true;
+        const assertPath = track.mkdirSync('assertPath');
+        return new Promise(resolve => {
+            fs.createReadStream(path.join(toPath, 'output.tar')).pipe(extract(assertPath)).on('finish', () => {
+                expect(fs.readdirSync(assertPath).sort()).to.be.deep.equal(['A.txt', 'B.txt']);
+                expect(fs.readFileSync(path.join(assertPath, 'A.txt'), { encoding: 'utf8' })).to.be.equal(fs.readFileSync(path.join(fromPath, 'A.txt'), { encoding: 'utf8' }));
+                expect(fs.readFileSync(path.join(assertPath, 'B.txt'), { encoding: 'utf8' })).to.be.equal(fs.readFileSync(path.join(fromPath, 'B.txt'), { encoding: 'utf8' }));
+                resolve();
+            });
+        });
+    });
+
+    describe('findCommonParents', () => {
+        ([
+            {
+                input: ['/A/B/C/D.txt', '/X/Y/Z.txt'],
+                expected: new Map([['/A/B/C', ['/A/B/C/D.txt']], ['/X/Y', ['/X/Y/Z.txt']]]),
+                folders: ['/A', '/A/B', '/A/B/C', '/X', '/X/Y']
+            },
+            {
+                input: ['/A/B/C/D.txt', '/A/B/C/E.txt'],
+                expected: new Map([['/A/B/C', ['/A/B/C/D.txt', '/A/B/C/E.txt']]]),
+                folders: ['/A', '/A/B', '/A/B/C']
+            },
+            {
+                input: ['/A', '/A/B/C/D.txt', '/A/B/C/E.txt'],
+                expected: new Map([['/A', ['/A', '/A/B/C/D.txt', '/A/B/C/E.txt']]]),
+                folders: ['/A', '/A/B', '/A/B/C']
+            },
+            {
+                input: ['/A/B/C/D.txt', '/A/B/C/E.txt', '/A'],
+                expected: new Map([['/A', ['/A', '/A/B/C/D.txt', '/A/B/C/E.txt']]]),
+                folders: ['/A', '/A/B', '/A/B/C']
+            },
+            {
+                input: ['/A/B/C/D.txt', '/A/B/X/E.txt'],
+                expected: new Map([['/A/B', ['/A/B/C/D.txt', '/A/B/X/E.txt']]]),
+                folders: ['/A', '/A/B', '/A/B/C', '/A/B/X']
+            }
+        ] as ({ input: string[], expected: Map<string, string[]>, folders?: string[] })[]).forEach(test => {
+            const { input, expected, folders } = test;
+            it(`should find the common parent URIs among [${input.join(', ')}] => [${Array.from(expected.keys()).join(', ')}]`, async () => {
+                const archiver = new MockDirectoryArchiver(!!folders ? folders.map(u => new URI(u)) : []);
+                const actual = await archiver.findCommonParents(input.map(u => new URI(u)));
+                expect(asString(actual)).to.be.equal(asString(expected));
+            });
+        });
+
+        function asString(map: Map<string, string[]>): string {
+            // tslint:disable-next-line:no-any
+            const obj: any = {};
+            for (const key of Array.from(map.keys()).sort()) {
+                const values = (map.get(key) || []).sort();
+                obj[key] = `[${values.join(', ')}]`;
+            }
+            return JSON.stringify(obj);
+        }
+
+    });
+
+});

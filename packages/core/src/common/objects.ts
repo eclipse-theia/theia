@@ -30,3 +30,10 @@ const _hasOwnProperty = Object.prototype.hasOwnProperty;
 export function notEmpty<T>(arg: T | undefined | null): arg is T {
     return arg !== undefined && arg !== null;
 }
+
+/**
+ * `true` if the argument is an empty object. Otherwise, `false`.
+ */
+export function isEmpty(arg: Object): boolean {
+    return Object.keys(arg).length === 0 && arg.constructor === Object;
+}
