@@ -9,40 +9,20 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 
-import { injectable, inject } from "inversify";
+import { injectable, inject, named } from "inversify";
 import { Endpoint } from "@theia/core/lib/browser";
-import { DebugAdapterPath, DebugConfiguration, DebugSessionState, ExtDebugProtocol } from "../common/debug-model";
+import {
+    DebugAdapterPath,
+    DebugConfiguration,
+    DebugSessionState,
+    DebugSessionStateAccumulator
+} from "../common/debug-common";
 import { DebugProtocol } from "vscode-debugprotocol";
-import { Disposable } from "vscode-jsonrpc";
 import { Deferred } from "@theia/core/lib/common/promise-util";
-import { Emitter, Event, DisposableCollection } from "@theia/core";
+import { Emitter, Event, DisposableCollection, ContributionProvider } from "@theia/core";
 import { EventEmitter } from "events";
 import { OutputChannelManager } from "@theia/output/lib/common/output-channel";
-
-export const DebugSession = Symbol("DebugSession");
-
-export interface DebugSession extends Disposable, NodeJS.EventEmitter {
-    readonly sessionId: string;
-    readonly configuration: DebugConfiguration;
-    readonly state: DebugSessionState;
-
-    getServerCapabilities(): DebugProtocol.Capabilities | undefined;
-    initialize(): Promise<DebugProtocol.InitializeResponse>;
-    configurationDone(): Promise<DebugProtocol.ConfigurationDoneResponse>;
-    attach(args: DebugProtocol.AttachRequestArguments): Promise<DebugProtocol.AttachResponse>;
-    launch(args: DebugProtocol.LaunchRequestArguments): Promise<DebugProtocol.LaunchResponse>;
-    threads(): Promise<DebugProtocol.ThreadsResponse>;
-    stacks(threadId: number): Promise<DebugProtocol.StackTraceResponse>;
-    pause(threadId: number): Promise<DebugProtocol.PauseResponse>;
-    pauseAll(): Promise<DebugProtocol.PauseResponse[]>;
-    resume(threadId: number): Promise<DebugProtocol.ContinueResponse>;
-    resumeAll(): Promise<DebugProtocol.ContinueResponse[]>;
-    disconnect(): Promise<DebugProtocol.InitializeResponse>;
-    scopes(frameId: number): Promise<DebugProtocol.ScopesResponse>;
-    variables(variablesReference: number, start?: number, count?: number): Promise<DebugProtocol.VariablesResponse>;
-    setVariable(args: DebugProtocol.SetVariableArguments): Promise<DebugProtocol.SetVariableResponse>;
-    evaluate(frameId: number, expression: string, context?: string): Promise<DebugProtocol.EvaluateResponse>;
-}
+import { DebugSession, DebugSessionFactory, DebugSessionContribution } from "./debug-model";
 
 /**
  * DebugSession implementation.
@@ -107,19 +87,11 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
     }
 
     attach(args: DebugProtocol.AttachRequestArguments): Promise<DebugProtocol.AttachResponse> {
-        return this.proceedRequest("attach", args)
-            .then(response => {
-                this.emit("connected");
-                return response;
-            });
+        return this.proceedRequest("attach", args);
     }
 
     launch(args: DebugProtocol.LaunchRequestArguments): Promise<DebugProtocol.LaunchResponse> {
-        return this.proceedRequest("launch", args)
-            .then(response => {
-                this.emit("connected");
-                return response;
-            });
+        return this.proceedRequest("launch", args);
     }
 
     threads(): Promise<DebugProtocol.ThreadsResponse> {
@@ -139,19 +111,7 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
     }
 
     resume(threadId: number): Promise<DebugProtocol.ContinueResponse> {
-        return this.proceedRequest("continue", { threadId }).then(response => {
-            const event: DebugProtocol.ContinuedEvent = {
-                type: 'event',
-                seq: -1,
-                event: 'continued',
-                body: {
-                    threadId,
-                    allThreadsContinued: false
-                }
-            };
-            this.proceedEvent(event);
-            return response as DebugProtocol.ContinueResponse;
-        });
+        return this.proceedRequest("continue", { threadId });
     }
 
     stacks(threadId: number): Promise<DebugProtocol.StackTraceResponse> {
@@ -197,20 +157,7 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
     }
 
     setVariable(args: DebugProtocol.SetVariableArguments): Promise<DebugProtocol.SetVariableResponse> {
-        return this.proceedRequest('setVariable', args).then(response => {
-            const event: ExtDebugProtocol.ExtVariableUpdatedEvent = {
-                type: 'event',
-                seq: -1,
-                event: 'variableUpdated',
-                body: {
-                    ...response.body,
-                    name: args.name,
-                    parentVariablesReference: args.variablesReference,
-                }
-            };
-            this.proceedEvent(event);
-            return response as DebugProtocol.SetVariableResponse;
-        });
+        return this.proceedRequest('setVariable', args);
     }
 
     evaluate(frameId: number, expression: string, context?: string): Promise<DebugProtocol.EvaluateResponse> {
@@ -254,7 +201,6 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
     }
 
     protected proceedResponse(response: DebugProtocol.Response): void {
-        console.log(response);
         const callback = this.callbacks.get(response.request_seq);
         if (callback) {
             this.callbacks.delete(response.request_seq);
@@ -275,7 +221,7 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
 }
 
 @injectable()
-export class DebugSessionFactory {
+export class DefaultDebugSessionFactory implements DebugSessionFactory {
     get(sessionId: string, debugConfiguration: DebugConfiguration): DebugSession {
         const state: DebugSessionState = {
             isConnected: false,
@@ -294,6 +240,7 @@ export class DebugSessionManager {
     private activeDebugSessionId: string | undefined;
 
     protected readonly sessions = new Map<string, DebugSession>();
+    protected readonly contribs = new Map<string, DebugSessionContribution>();
     protected readonly onDidPreCreateDebugSessionEmitter = new Emitter<string>();
     protected readonly onDidCreateDebugSessionEmitter = new Emitter<DebugSession>();
     protected readonly onDidChangeActiveDebugSessionEmitter = new Emitter<DebugSession | undefined>();
@@ -303,8 +250,14 @@ export class DebugSessionManager {
         @inject(DebugSessionFactory)
         protected readonly debugSessionFactory: DebugSessionFactory,
         @inject(OutputChannelManager)
-        protected readonly outputChannelManager: OutputChannelManager
-    ) { }
+        protected readonly outputChannelManager: OutputChannelManager,
+        @inject(ContributionProvider) @named(DebugSessionContribution)
+        protected readonly contributions: ContributionProvider<DebugSessionContribution>
+    ) {
+        for (const contrib of this.contributions.getContributions()) {
+            this.contribs.set(contrib.debugType, contrib);
+        }
+    }
 
     /**
      * Creates a new [debug session](#DebugSession).
@@ -315,7 +268,9 @@ export class DebugSessionManager {
     create(sessionId: string, debugConfiguration: DebugConfiguration): DebugSession {
         this.onDidPreCreateDebugSessionEmitter.fire(sessionId);
 
-        const session = this.debugSessionFactory.get(sessionId, debugConfiguration);
+        const contrib = this.contribs.get(debugConfiguration.type);
+        const sessionFactory = contrib ? contrib.debugSessionFactory() : this.debugSessionFactory;
+        const session = sessionFactory.get(sessionId, debugConfiguration);
         this.sessions.set(sessionId, session);
 
         this.onDidCreateDebugSessionEmitter.fire(session);
@@ -434,112 +389,5 @@ export class DebugSessionManager {
 
     get onDidDestroyDebugSession(): Event<DebugSession> {
         return this.onDidDestroyDebugSessionEmitter.event;
-    }
-}
-
-class DebugSessionStateAccumulator implements DebugSessionState {
-    private _isConnected: boolean;
-    private _allThreadsContinued: boolean | undefined;
-    private _allThreadsStopped: boolean | undefined;
-    private _stoppedThreads: Set<number>;
-    private _breakpoints = new Map<string, DebugProtocol.Breakpoint>();
-
-    constructor(
-        protected readonly debugSession: DebugSession,
-        protected readonly currentState: DebugSessionState) {
-        this._isConnected = currentState.isConnected;
-        this._allThreadsContinued = currentState.allThreadsContinued;
-        this._allThreadsStopped = currentState.allThreadsStopped;
-        this._stoppedThreads = new Set(currentState.stoppedThreadIds);
-        currentState.breakpoints.forEach(breakpoint => this._breakpoints.set(this.createId(breakpoint), breakpoint));
-
-        this.debugSession.on("connected", () => this.onConnectedEvent());
-        this.debugSession.on("terminated", () => this.onTerminatedEvent());
-        this.debugSession.on('stopped', event => this.onStoppedEvent(event));
-        this.debugSession.on('continued', event => this.onContinuedEvent(event));
-        this.debugSession.on('thread', event => this.onThreadEvent(event));
-        this.debugSession.on('breakpoint', event => this.onBreakpointEvent(event));
-    }
-
-    get allThreadsContinued(): boolean | undefined {
-        return this._allThreadsContinued;
-    }
-
-    get allThreadsStopped(): boolean | undefined {
-        return this._allThreadsStopped;
-    }
-
-    get isConnected(): boolean {
-        return this._isConnected;
-    }
-
-    get stoppedThreadIds(): number[] {
-        return Array.from(this._stoppedThreads);
-    }
-
-    get breakpoints(): DebugProtocol.Breakpoint[] {
-        return Array.from(this._breakpoints.values());
-    }
-
-    private onConnectedEvent(): void {
-        this._isConnected = true;
-    }
-
-    private onTerminatedEvent(): void {
-        this._isConnected = false;
-    }
-
-    private onContinuedEvent(event: DebugProtocol.ContinuedEvent): void {
-        const body = event.body;
-
-        this._allThreadsContinued = body.allThreadsContinued;
-        if (this._allThreadsContinued) {
-            this._stoppedThreads.clear();
-        } else {
-            this._stoppedThreads.delete(body.threadId);
-        }
-    }
-
-    private onStoppedEvent(event: DebugProtocol.StoppedEvent): void {
-        const body = event.body;
-
-        this._allThreadsStopped = body.allThreadsStopped;
-        if (body.threadId) {
-            this._stoppedThreads.add(body.threadId);
-        }
-    }
-
-    private onThreadEvent(event: DebugProtocol.ThreadEvent): void {
-        switch (event.body.reason) {
-            case 'exited': {
-                this._stoppedThreads.delete(event.body.threadId);
-                break;
-            }
-        }
-    }
-
-    private onBreakpointEvent(event: DebugProtocol.BreakpointEvent): void {
-        const breakpoint = event.body.breakpoint;
-        switch (event.body.reason) {
-            case 'new': {
-                this._breakpoints.set(this.createId(breakpoint), breakpoint);
-                break;
-            }
-            case 'removed': {
-                this._breakpoints.delete(this.createId(breakpoint));
-                break;
-            }
-            case 'changed': {
-                this._breakpoints.set(this.createId(breakpoint), breakpoint);
-                break;
-            }
-        }
-    }
-
-    private createId(breakpoint: DebugProtocol.Breakpoint): string {
-        return breakpoint.id
-            ? breakpoint.id.toString()
-            : (breakpoint.source ? `${breakpoint.source.path}-` : '')
-            + (`${breakpoint.line}: ${breakpoint.column} `);
     }
 }

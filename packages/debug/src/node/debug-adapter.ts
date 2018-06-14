@@ -18,35 +18,30 @@
 
 import * as WebSocket from 'ws';
 import { injectable, inject } from "inversify";
-import { ILogger, DisposableCollection } from "@theia/core";
+import { ILogger, DisposableCollection, Disposable } from "@theia/core";
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import {
-    DebugAdapterExecutable,
-    CommunicationProvider,
     DebugAdapterPath,
-} from "../common/debug-model";
+    DebugConfiguration,
+    DebugSessionState,
+    DebugSessionStateAccumulator,
+    ExtDebugProtocol
+} from "../common/debug-common";
 import {
     RawProcessFactory,
     ProcessManager,
     RawProcess
 } from "@theia/process/lib/node";
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
-
-/**
- * DebugAdapterSession symbol for DI.
- */
-export const DebugAdapterSession = Symbol('DebugAdapterSession');
-
-/**
- * The debug adapter session.
- */
-export interface DebugAdapterSession {
-    id: string;
-    executable: DebugAdapterExecutable;
-
-    start(): Promise<void>
-    stop(): Promise<void>
-}
+import {
+    DebugAdapterExecutable,
+    CommunicationProvider,
+    DebugAdapterSession,
+    DebugAdapterSessionFactory,
+    DebugAdapterFactory
+} from './debug-model';
+import { DebugProtocol } from 'vscode-debugprotocol';
+import { EventEmitter } from 'events';
 
 /**
  * The container for [Messaging Service](#MessagingService).
@@ -65,11 +60,11 @@ export class MessagingServiceContainer implements MessagingService.Contribution 
 }
 
 /**
- * DebugAdapterFactory implementation based on launching the debug adapter
- * as a separate process.
+ * [DebugAdapterFactory](#DebugAdapterFactory) implementation based on
+ * launching the debug adapter as separate process.
  */
 @injectable()
-export class DebugAdapterFactory {
+export class LaunchBasedDebugAdapterFactory implements DebugAdapterFactory {
     @inject(RawProcessFactory)
     protected readonly processFactory: RawProcessFactory;
     @inject(ProcessManager)
@@ -98,30 +93,34 @@ export class DebugAdapterFactory {
     }
 }
 
-@injectable()
-export class DebugAdapterSessionImpl implements DebugAdapterSession {
-    id: string;
-    executable: DebugAdapterExecutable;
-
-    protected readonly toDispose = new DisposableCollection();
+/**
+ * [DebugAdapterSession](#DebugAdapterSession) implementation.
+ */
+export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapterSession {
+    readonly state: DebugSessionState;
 
     private static TWO_CRLF = '\r\n\r\n';
 
+    private readonly toDispose = new DisposableCollection();
+    private pendingRequests = new Map<number, DebugProtocol.Request>();
     private communicationProvider: CommunicationProvider;
     private ws: WebSocket;
     private contentLength: number;
     private buffer: Buffer;
 
     constructor(
-        @inject(DebugAdapterFactory)
+        readonly id: string,
+        readonly executable: DebugAdapterExecutable,
+        readonly configuration: DebugConfiguration,
         protected readonly adapterFactory: DebugAdapterFactory,
-        @inject(ILogger)
         protected readonly logger: ILogger,
-        @inject(MessagingServiceContainer)
         protected readonly messagingServiceContainer: MessagingServiceContainer) {
+        super();
 
         this.contentLength = -1;
         this.buffer = new Buffer(0);
+        this.state = new DebugSessionStateAccumulator(this);
+        this.toDispose.push(Disposable.create(() => this.pendingRequests.clear()));
     }
 
     start(): Promise<void> {
@@ -132,33 +131,56 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
 
         this.messagingServiceContainer.getService().then(service => {
             service.ws(path, (params: MessagingService.PathParams, ws: WebSocket) => {
-                this.toDispose.push({
-                    dispose: () => ws.close()
-                });
-
                 this.ws = ws;
+                this.toDispose.push(Disposable.create(() => this.ws.close()));
+
                 this.communicationProvider.output.on('data', (data: Buffer) => this.handleData(data));
-                this.communicationProvider.output.on('close', () => this.proceedEvent("terminated"));
-                this.communicationProvider.input.on('error', error => this.logger.error(error));
-                ws.on('message', (message: string) => this.proceedRequest(message));
+                this.communicationProvider.output.on('close', () => this.onDebugAdapterClosed());
+                this.communicationProvider.input.on('error', (error: Error) => this.onDebugAdapterError(error));
+
+                this.ws.on('message', (data: string) => this.proceedRequest(data));
             });
         });
 
         return Promise.resolve();
     }
 
-    private handleData(data: Buffer): void {
+    protected onDebugAdapterClosed(): void {
+        const event: DebugProtocol.Event = {
+            type: 'event',
+            event: 'terminated',
+            seq: -1
+        };
+        this.proceedEvent(JSON.stringify(event), event);
+    }
+
+    protected onDebugAdapterError(error: Error): void {
+        const event: DebugProtocol.Event = {
+            type: 'event',
+            event: 'error',
+            seq: -1,
+            body: error
+        };
+        this.proceedEvent(JSON.stringify(event), event);
+    }
+
+    protected handleData(data: Buffer): void {
         this.buffer = Buffer.concat([this.buffer, data]);
 
         while (true) {
             if (this.contentLength >= 0) {
                 if (this.buffer.length >= this.contentLength) {
-                    const message = this.buffer.toString('utf8', 0, this.contentLength);
+                    const rawData = this.buffer.toString('utf8', 0, this.contentLength);
                     this.buffer = this.buffer.slice(this.contentLength);
                     this.contentLength = -1;
 
-                    if (message.length > 0) {
-                        this.proceedResponse(message);
+                    if (rawData.length > 0) {
+                        const message = JSON.parse(rawData) as DebugProtocol.ProtocolMessage;
+                        if (message.type === 'event') {
+                            this.proceedEvent(rawData, message as DebugProtocol.Event);
+                        } else if (message.type === 'response') {
+                            this.proceedResponse(rawData, message as DebugProtocol.Response);
+                        }
                     }
                     continue;	// there may be more complete messages to process
                 }
@@ -181,29 +203,105 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
         }
     }
 
-    protected proceedEvent(event: string, body?: any): void {
-        const message = JSON.stringify({
-            type: 'event',
-            event: event,
-            body: body
-        });
+    protected proceedEvent(rawData: string, event: DebugProtocol.Event): void {
+        this.logger.debug(`DAP event: ${rawData}`);
 
-        this.logger.debug(`DAP Event: ${message}`);
-        this.ws.send(message);
+        this.emit(event.event, event);
+        this.ws.send(rawData);
     }
 
-    protected proceedResponse(message: string): void {
-        this.logger.debug(`DAP Response: ${message}`);
-        this.ws.send(message);
+    protected proceedResponse(rawData: string, response: DebugProtocol.Response): void {
+        this.logger.debug(`DAP Response: ${rawData}`);
+
+        const request = this.pendingRequests.get(response.request_seq);
+
+        this.pendingRequests.delete(response.request_seq);
+        this.ws.send(rawData);
+
+        if (response.success) {
+            switch (response.command) {
+                case 'attach':
+                case 'launch': {
+                    const event: ExtDebugProtocol.ExtConnectedEvent = {
+                        type: 'event',
+                        seq: -1,
+                        event: 'connected'
+                    };
+                    this.proceedEvent(JSON.stringify(event), event);
+                    break;
+                }
+
+                case 'setVariable': {
+                    const setVariableRequest = request as DebugProtocol.SetVariableRequest;
+                    const event: ExtDebugProtocol.ExtVariableUpdatedEvent = {
+                        type: 'event',
+                        seq: -1,
+                        event: 'variableUpdated',
+                        body: {
+                            ...response.body,
+                            name: setVariableRequest.arguments.name,
+                            parentVariablesReference: setVariableRequest.arguments.variablesReference,
+                        }
+                    };
+                    this.proceedEvent(JSON.stringify(event), event);
+                    break;
+                }
+
+                case 'continue': {
+                    const continueRequest = request as DebugProtocol.ContinueRequest;
+                    const continueResponse = response as DebugProtocol.ContinueResponse;
+                    const event: DebugProtocol.ContinuedEvent = {
+                        type: 'event',
+                        seq: -1,
+                        event: 'continued',
+                        body: {
+                            threadId: continueRequest.arguments.threadId,
+                            allThreadsContinued: continueResponse.body.allThreadsContinued
+                        }
+                    };
+                    this.proceedEvent(JSON.stringify(event), event);
+                    break;
+                }
+            }
+        }
     }
 
-    protected proceedRequest(message: string): void {
-        this.logger.debug(`DAP Request: ${message}`);
-        this.communicationProvider.input.write(`Content-Length: ${Buffer.byteLength(message, 'utf8')}\r\n\r\n${message}`, 'utf8');
+    protected proceedRequest(data: string): void {
+        this.logger.debug(`DAP Request: ${data}`);
+
+        const request = JSON.parse(data) as DebugProtocol.Request;
+        this.pendingRequests.set(request.seq, request);
+
+        this.communicationProvider.input.write(`Content-Length: ${Buffer.byteLength(data, 'utf8')}\r\n\r\n${data}`, 'utf8');
     }
 
     stop(): Promise<void> {
         this.toDispose.dispose();
         return Promise.resolve();
+    }
+}
+
+/**
+ * [DebugAdapterSessionFactory](#DebugAdapterSessionFactory) implementation.
+ */
+@injectable()
+export class DebugAdapterSessionFactoryImpl implements DebugAdapterSessionFactory {
+
+    constructor(
+        @inject(DebugAdapterFactory)
+        protected readonly adapterFactory: DebugAdapterFactory,
+        @inject(ILogger)
+        protected readonly logger: ILogger,
+        @inject(MessagingServiceContainer)
+        protected readonly messagingServiceContainer: MessagingServiceContainer) { }
+
+    get(sessionId: string, debugConfiguration: DebugConfiguration, executable: DebugAdapterExecutable): DebugAdapterSession {
+        return new DebugAdapterSessionImpl(
+            sessionId,
+            executable,
+            debugConfiguration,
+            this.adapterFactory,
+            this.logger,
+            this.messagingServiceContainer);
     }
 }

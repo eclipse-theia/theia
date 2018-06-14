@@ -16,7 +16,7 @@ import { Deferred } from "@theia/core/lib/common/promise-util";
 import URI from "@theia/core/lib/common/uri";
 import { EditorManager, EditorWidget } from "@theia/editor/lib/browser";
 import { QuickOpenService, QuickOpenItem, QuickOpenMode } from "@theia/core/lib/browser";
-import { DebugService, DebugConfiguration } from "../common/debug-model";
+import { DebugService, DebugConfiguration } from "../common/debug-common";
 
 @injectable()
 export class DebugConfigurationManager {
