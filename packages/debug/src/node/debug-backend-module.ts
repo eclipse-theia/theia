@@ -10,7 +10,7 @@
  */
 
 import { ConnectionHandler, JsonRpcConnectionHandler, bindContributionProvider } from "@theia/core/lib/common";
-import { ContainerModule, interfaces } from 'inversify';
+import { ContainerModule } from 'inversify';
 import {
     DebugServiceImpl,
     DebugAdapterSessionManager,
@@ -18,34 +18,29 @@ import {
 } from "./debug-service";
 import {
     DebugPath,
-    DebugService,
-    DebugAdapterContribution,
-    DebugAdapterExecutable
-} from "../common/debug-model";
+    DebugService
+} from "../common/debug-common";
 import {
+    MessagingServiceContainer,
+    LaunchBasedDebugAdapterFactory,
     DebugAdapterSessionImpl,
-    DebugAdapterFactory,
-    DebugAdapterSession,
-    MessagingServiceContainer
+    DebugAdapterSessionFactoryImpl
 } from "./debug-adapter";
 import { MessagingService } from "@theia/core/lib/node/messaging/messaging-service";
+import {
+    DebugAdapterContribution,
+    DebugAdapterSessionFactory,
+    DebugAdapterSession,
+    DebugAdapterFactory
+} from './debug-model';
 
 export default new ContainerModule(bind => {
     bind(DebugService).to(DebugServiceImpl).inSingletonScope();
-
-    bind<interfaces.Factory<DebugAdapterSession>>("Factory<DebugAdapterSession>").toFactory<DebugAdapterSession>(context => {
-        return (sessionId: string, executable: DebugAdapterExecutable) => {
-            const session = context.container.get<DebugAdapterSession>(DebugAdapterSession);
-            session.id = sessionId;
-            session.executable = executable;
-            return session;
-        };
-    });
-
-    bind(DebugAdapterContributionRegistry).toSelf().inSingletonScope();
     bind(DebugAdapterSession).to(DebugAdapterSessionImpl);
+    bind(DebugAdapterSessionFactory).to(DebugAdapterSessionFactoryImpl).inSingletonScope();
+    bind(DebugAdapterFactory).to(LaunchBasedDebugAdapterFactory).inSingletonScope();
+    bind(DebugAdapterContributionRegistry).toSelf().inSingletonScope();
     bind(DebugAdapterSessionManager).toSelf().inSingletonScope();
-    bind(DebugAdapterFactory).toSelf().inSingletonScope();
     bind(MessagingServiceContainer).toSelf().inSingletonScope();
     bind(MessagingService.Contribution).toDynamicValue(c => c.container.get(MessagingServiceContainer));
     bindContributionProvider(bind, DebugAdapterContribution);

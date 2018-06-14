@@ -20,7 +20,8 @@ import {
     Widget,
     Message
 } from "@theia/core/lib/browser";
-import { DebugSessionManager, DebugSession } from "../debug-session";
+import { DebugSessionManager } from "../debug-session";
+import { DebugSession } from "../debug-model";
 import { DEBUG_SESSION_CONTEXT_MENU } from "../debug-command";
 import { inject, injectable, postConstruct } from "inversify";
 import { DebugThreadsWidget } from "./debug-threads-widget";
