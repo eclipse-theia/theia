@@ -18,7 +18,6 @@
 // Some entities copied and modified from https://github.com/Microsoft/vscode/blob/master/src/vs/workbench/parts/debug/common/debug.ts
 
 import { Disposable } from '@theia/core';
-import * as stream from 'stream';
 import { DebugProtocol } from 'vscode-debugprotocol';
 
 /**
@@ -69,66 +68,6 @@ export interface DebugService extends Disposable {
      * @returns The identifier of the created [debug adapter session](#DebugAdapterSession).
      */
     start(config: DebugConfiguration): Promise<string>;
-}
-
-/**
- * Debug adapter executable.
- */
-export interface DebugAdapterExecutable {
-    /**
-     * Parameters to instantiate the debug adapter. In case of launching adapter
-     * the parameters contain a command and arguments. For instance:
-     * {"program" : "COMMAND_TO_LAUNCH_DEBUG_ADAPTER", args : [ { "arg1", "arg2" } ] }
-     */
-    [key: string]: any;
-}
-
-/**
- * Provides some way we can communicate with the running debug adapter. In general there is
- * no obligation as of how to launch/initialize local or remote debug adapter
- * process/server, it can be done separately and it is not required that this interface covers the
- * procedure, however it is also not disallowed.
- */
-export interface CommunicationProvider extends Disposable {
-    output: stream.Readable;
-    input: stream.Writable;
-}
-
-/**
- * DebugAdapterContribution symbol for DI.
- */
-export const DebugAdapterContribution = Symbol('DebugAdapterContribution');
-
-/**
- * A contribution point for debug adapters.
- */
-export interface DebugAdapterContribution {
-    /**
-     * The debug type.
-     */
-    readonly debugType: string;
-
-    /**
-     * Provides initial [debug configuration](#DebugConfiguration).
-     * @returns An array of [debug configurations](#DebugConfiguration).
-     */
-    provideDebugConfigurations(): DebugConfiguration[];
-
-    /**
-     * Resolves a [debug configuration](#DebugConfiguration) by filling in missing values
-     * or by adding/changing/removing attributes.
-     * @param config The [debug configuration](#DebugConfiguration) to resolve.
-     * @returns The resolved debug configuration or undefined.
-     */
-    resolveDebugConfiguration(config: DebugConfiguration): DebugConfiguration;
-
-    /**
-     * Provides a [debug adapter executable](#DebugAdapterExecutable)
-     * based on [debug configuration](#DebugConfiguration) to launch a new debug adapter.
-     * @param config The resolved [debug configuration](#DebugConfiguration).
-     * @returns The [debug adapter executable](#DebugAdapterExecutable).
-     */
-    provideDebugAdapterExecutable(config: DebugConfiguration): DebugAdapterExecutable;
 }
 
 /**
@@ -190,10 +129,16 @@ export interface DebugSessionState {
  * Extension to the vscode debug protocol.
  */
 export namespace ExtDebugProtocol {
+
     export interface ExtVariable extends DebugProtocol.Variable {
         /** Parent variables reference. */
         parentVariablesReference: number;
     }
+
+    /**
+     * Event message for 'connected' event type.
+     */
+    export interface ExtConnectedEvent extends DebugProtocol.Event { }
 
     /**
      * Event message for 'variableUpdated' event type.
@@ -215,5 +160,116 @@ export namespace ExtDebugProtocol {
             /** Parent variables reference. */
             parentVariablesReference: number;
         }
+    }
+}
+
+/**
+ * Accumulates session states since some data are available only through events
+ * and are needed in different components.
+ */
+export class DebugSessionStateAccumulator implements DebugSessionState {
+    private _isConnected: boolean;
+    private _allThreadsContinued: boolean | undefined;
+    private _allThreadsStopped: boolean | undefined;
+    private _stoppedThreads = new Set<number>();
+    private _breakpoints = new Map<string, DebugProtocol.Breakpoint>();
+
+    constructor(eventEmitter: NodeJS.EventEmitter, currentState?: DebugSessionState) {
+        if (currentState) {
+            this._isConnected = currentState.isConnected;
+            this._allThreadsContinued = currentState.allThreadsContinued;
+            this._allThreadsStopped = currentState.allThreadsStopped;
+            currentState.stoppedThreadIds.forEach(threadId => this._stoppedThreads.add(threadId));
+            currentState.breakpoints.forEach(breakpoint => this._breakpoints.set(this.createId(breakpoint), breakpoint));
+        }
+
+        eventEmitter.on("connected", event => this.onConnectedEvent(event));
+        eventEmitter.on("terminated", event => this.onTerminatedEvent(event));
+        eventEmitter.on('stopped', event => this.onStoppedEvent(event));
+        eventEmitter.on('continued', event => this.onContinuedEvent(event));
+        eventEmitter.on('thread', event => this.onThreadEvent(event));
+        eventEmitter.on('breakpoint', event => this.onBreakpointEvent(event));
+    }
+
+    get allThreadsContinued(): boolean | undefined {
+        return this._allThreadsContinued;
+    }
+
+    get allThreadsStopped(): boolean | undefined {
+        return this._allThreadsStopped;
+    }
+
+    get isConnected(): boolean {
+        return this._isConnected;
+    }
+
+    get stoppedThreadIds(): number[] {
+        return Array.from(this._stoppedThreads);
+    }
+
+    get breakpoints(): DebugProtocol.Breakpoint[] {
+        return Array.from(this._breakpoints.values());
+    }
+
+    private onConnectedEvent(event: ExtDebugProtocol.ExtConnectedEvent): void {
+        this._isConnected = true;
+    }
+
+    private onTerminatedEvent(event: DebugProtocol.TerminatedEvent): void {
+        this._isConnected = false;
+    }
+
+    private onContinuedEvent(event: DebugProtocol.ContinuedEvent): void {
+        const body = event.body;
+
+        this._allThreadsContinued = body.allThreadsContinued;
+        if (this._allThreadsContinued) {
+            this._stoppedThreads.clear();
+        } else {
+            this._stoppedThreads.delete(body.threadId);
+        }
+    }
+
+    private onStoppedEvent(event: DebugProtocol.StoppedEvent): void {
+        const body = event.body;
+
+        this._allThreadsStopped = body.allThreadsStopped;
+        if (body.threadId) {
+            this._stoppedThreads.add(body.threadId);
+        }
+    }
+
+    private onThreadEvent(event: DebugProtocol.ThreadEvent): void {
+        switch (event.body.reason) {
+            case 'exited': {
+                this._stoppedThreads.delete(event.body.threadId);
+                break;
+            }
+        }
+    }
+
+    private onBreakpointEvent(event: DebugProtocol.BreakpointEvent): void {
+        const breakpoint = event.body.breakpoint;
+        switch (event.body.reason) {
+            case 'new': {
+                this._breakpoints.set(this.createId(breakpoint), breakpoint);
+                break;
+            }
+            case 'removed': {
+                this._breakpoints.delete(this.createId(breakpoint));
+                break;
+            }
+            case 'changed': {
+                this._breakpoints.set(this.createId(breakpoint), breakpoint);
+                break;
+            }
+        }
+    }
+
+    private createId(breakpoint: DebugProtocol.Breakpoint): string {
+        return breakpoint.id
+            ? breakpoint.id.toString()
+            : (breakpoint.source ? `${breakpoint.source.path}-` : '')
+            + (`${breakpoint.line}: ${breakpoint.column} `);
     }
 }

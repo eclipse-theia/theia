@@ -13,7 +13,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugSessionManager } from '../debug-session';
 import { Emitter, Event } from "@theia/core";
-import { ExtDebugProtocol } from '../../common/debug-model';
+import { ExtDebugProtocol } from '../../common/debug-common';
 
 /**
  * Contains debug panel selections.

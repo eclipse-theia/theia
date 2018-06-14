@@ -12,7 +12,7 @@
 import { injectable, inject } from "inversify";
 import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from "@theia/core/lib/common";
 import { MAIN_MENU_BAR, MenuPath } from "@theia/core/lib/common/menu";
-import { DebugService } from "../common/debug-model";
+import { DebugService } from "../common/debug-common";
 import { DebugSessionManager } from "./debug-session";
 import { DebugConfigurationManager } from "./debug-configuration";
 import { DebugSelectionService } from "./view/debug-selection-service";
