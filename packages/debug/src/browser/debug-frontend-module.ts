@@ -18,7 +18,7 @@ import {
     DEBUG_FACTORY_ID,
     DebugTargetWidget,
 } from './view/debug-view-contribution';
-import { DebugPath, DebugService } from "../common/debug-model";
+import { DebugPath, DebugService } from "../common/debug-common";
 import { MenuContribution } from "@theia/core/lib/common/menu";
 import { CommandContribution } from "@theia/core/lib/common/command";
 import {
@@ -34,7 +34,8 @@ import {
     TreeModelImpl,
     TreeModel
 } from '@theia/core/lib/browser';
-import { DebugSessionManager, DebugSessionFactory, DebugSession } from './debug-session';
+import { DebugSession, DebugSessionContribution, DebugSessionFactory } from './debug-model';
+import { DebugSessionManager, DefaultDebugSessionFactory } from './debug-session';
 import {
     DebugVariablesTree,
     DebugVariablesWidget,
@@ -45,6 +46,7 @@ import { DebugThreadsWidget } from './view/debug-threads-widget';
 import { DebugStackFramesWidget } from './view/debug-stack-frames-widget';
 import { DebugBreakpointsWidget } from './view/debug-breakpoints-widget';
 import { DebugSelectionService, DebugSelection } from './view/debug-selection-service';
+import { bindContributionProvider } from '@theia/core';
 
 export const DEBUG_VARIABLES_PROPS = <TreeProps>{
     ...defaultTreeProps,
@@ -62,7 +64,8 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bindViewContribution(bind, DebugViewContribution);
     bind(DebugSelectionService).toSelf().inSingletonScope();
 
-    bind(DebugSessionFactory).toSelf().inSingletonScope();
+    bindContributionProvider(bind, DebugSessionContribution);
+    bind(DebugSessionFactory).to(DefaultDebugSessionFactory).inSingletonScope();
     bind(DebugSessionManager).toSelf().inSingletonScope();
     bind(MenuContribution).to(DebugCommandHandlers);
     bind(CommandContribution).to(DebugCommandHandlers);

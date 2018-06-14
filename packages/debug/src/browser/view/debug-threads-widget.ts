@@ -10,7 +10,7 @@
  */
 
 import { VirtualWidget, SELECTED_CLASS, ContextMenuRenderer } from "@theia/core/lib/browser";
-import { DebugSession } from "../debug-session";
+import { DebugSession } from "../debug-model";
 import { h } from '@phosphor/virtualdom';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { injectable, inject, postConstruct } from "inversify";

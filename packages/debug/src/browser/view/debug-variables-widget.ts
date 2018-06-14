@@ -27,9 +27,9 @@ import { injectable, inject, postConstruct } from "inversify";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { MenuModelRegistry } from "@theia/core/lib/common/menu";
 import { CommandRegistry } from "@theia/core";
-import { DebugSession } from "../debug-session";
+import { DebugSession } from "../debug-model";
 import { DebugSelection } from "./debug-selection-service";
-import { ExtDebugProtocol } from "../../common/debug-model";
+import { ExtDebugProtocol } from "../../common/debug-common";
 
 /**
  * Is it used to display variables.
