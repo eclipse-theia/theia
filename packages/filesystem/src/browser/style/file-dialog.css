@@ -27,6 +27,10 @@
      margin-right: 4px;
 }
 
+.dialogContent .theia-NavigationPanel select {
+    background-color: var(--theia-ui-dialog-color);
+}
+
 .dialogContent .theia-ControlPanel {
     display: flex;
     flex-direction: row;
