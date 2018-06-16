@@ -13,7 +13,9 @@ import { OutputPreferences } from "./output-preferences";
 export class OutputChannelManager {
     protected readonly channels = new Map<string, OutputChannel>();
 
+    private readonly channelDeleteEmitter = new Emitter<{channelName: string}>();
     private readonly channelAddedEmitter = new Emitter<OutputChannel>();
+    readonly onChannelDelete = this.channelDeleteEmitter.event;
     readonly onChannelAdded = this.channelAddedEmitter.event;
 
     constructor(@inject(OutputPreferences) protected preferences: OutputPreferences) {
@@ -30,6 +32,11 @@ export class OutputChannelManager {
         return channel;
     }
 
+    deleteChannel(name: string): void {
+        this.channels.delete(name);
+        this.channelDeleteEmitter.fire({channelName: name});
+    }
+
     getChannels(): OutputChannel[] {
         return Array.from(this.channels.values());
     }
@@ -37,16 +44,23 @@ export class OutputChannelManager {
 
 export class OutputChannel {
 
+    private readonly visibilityChangeEmitter = new Emitter<{visible: boolean}>();
     private readonly contentChangeEmitter = new Emitter<OutputChannel>();
     private lines: string[] = [];
     private currentLine: string | undefined;
+    private visible: boolean = true;
 
+    readonly onVisibilityChange: Event<{visible: boolean}> = this.visibilityChangeEmitter.event;
     readonly onContentChange: Event<OutputChannel> = this.contentChangeEmitter.event;
 
     constructor(readonly name: string, readonly preferences: OutputPreferences) { }
 
     append(value: string): void {
-        this.currentLine += value;
+        if (this.currentLine === undefined) {
+            this.currentLine = value;
+        } else {
+            this.currentLine += value;
+        }
         this.contentChangeEmitter.fire(this);
     }
 
@@ -64,11 +78,26 @@ export class OutputChannel {
         this.contentChangeEmitter.fire(this);
     }
 
+    clear(): void {
+        this.lines.length = 0;
+        this.currentLine = undefined;
+        this.contentChangeEmitter.fire(this);
+    }
+
+    setVisibility(visible: boolean): void {
+        this.visible = visible;
+        this.visibilityChangeEmitter.fire({visible});
+    }
+
     getLines(): string[] {
         if (this.currentLine !== undefined) {
             return [...this.lines, this.currentLine];
         } else {
             return this.lines;
         }
+    }
+
+    get isVisible(): boolean {
+        return this.visible;
     }
 }
