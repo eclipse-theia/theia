@@ -26,22 +26,22 @@ export interface DebugSession extends Disposable, NodeJS.EventEmitter {
     readonly configuration: DebugConfiguration;
     readonly state: DebugSessionState;
 
-    getServerCapabilities(): DebugProtocol.Capabilities | undefined;
-    initialize(): Promise<DebugProtocol.InitializeResponse>;
+    initialize(args: DebugProtocol.InitializeRequestArguments): Promise<DebugProtocol.InitializeResponse>;
     configurationDone(): Promise<DebugProtocol.ConfigurationDoneResponse>;
     attach(args: DebugProtocol.AttachRequestArguments): Promise<DebugProtocol.AttachResponse>;
     launch(args: DebugProtocol.LaunchRequestArguments): Promise<DebugProtocol.LaunchResponse>;
     threads(): Promise<DebugProtocol.ThreadsResponse>;
-    stacks(threadId: number): Promise<DebugProtocol.StackTraceResponse>;
-    pause(threadId: number): Promise<DebugProtocol.PauseResponse>;
+    stacks(args: DebugProtocol.StackTraceArguments): Promise<DebugProtocol.StackTraceResponse>;
+    pause(args: DebugProtocol.PauseArguments): Promise<DebugProtocol.PauseResponse>;
     pauseAll(): Promise<DebugProtocol.PauseResponse[]>;
-    resume(threadId: number): Promise<DebugProtocol.ContinueResponse>;
+    resume(args: DebugProtocol.ContinueArguments): Promise<DebugProtocol.ContinueResponse>;
     resumeAll(): Promise<DebugProtocol.ContinueResponse[]>;
     disconnect(): Promise<DebugProtocol.InitializeResponse>;
-    scopes(frameId: number): Promise<DebugProtocol.ScopesResponse>;
-    variables(variablesReference: number, start?: number, count?: number): Promise<DebugProtocol.VariablesResponse>;
+    scopes(args: DebugProtocol.ScopesArguments): Promise<DebugProtocol.ScopesResponse>;
+    variables(args: DebugProtocol.VariablesArguments): Promise<DebugProtocol.VariablesResponse>;
     setVariable(args: DebugProtocol.SetVariableArguments): Promise<DebugProtocol.SetVariableResponse>;
-    evaluate(frameId: number, expression: string, context?: string): Promise<DebugProtocol.EvaluateResponse>;
+    evaluate(args: DebugProtocol.EvaluateArguments): Promise<DebugProtocol.EvaluateResponse>;
+    source(args: DebugProtocol.SourceArguments): Promise<DebugProtocol.SourceResponse>;
 }
 
 /**
@@ -75,4 +75,45 @@ export interface DebugSessionContribution {
      * The [debug session](#DebugSession) factory.
      */
     debugSessionFactory(): DebugSessionFactory;
+}
+
+/**
+ * BreakpointManager symbol for DI.
+ */
+export const BreakpointManager = Symbol("BreakpointManager");
+
+/**
+ * The breakpoint manager;
+ */
+export interface BreakpointManager { }
+
+export namespace Debug {
+    /**
+     * Stack frame format.
+     */
+    export const DEFAULT_STACK_FRAME_FORMAT: DebugProtocol.StackFrameFormat = {
+        parameters: true,
+        parameterTypes: true,
+        parameterNames: true,
+        parameterValues: true,
+        line: true,
+        module: true,
+        includeAll: true,
+        hex: false
+    };
+
+    /**
+     * Initialize requests arguments.
+     */
+    export const INITIALIZE_ARGUMENTS = {
+        clientID: "Theia",
+        clientName: "Theia",
+        locale: "",
+        linesStartAt1: true,
+        columnsStartAt1: true,
+        pathFormat: "path",
+        supportsVariableType: false,
+        supportsVariablePaging: false,
+        supportsRunInTerminalRequest: false
+    };
 }

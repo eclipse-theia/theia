@@ -221,7 +221,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                 if (debugSession) {
                     const selection = this.debugSelectionHandler.get(debugSession.sessionId);
                     if (selection && selection.thread) {
-                        debugSession.pause(selection.thread.id);
+                        debugSession.pause({ threadId: selection.thread.id });
                     }
                 }
             },
@@ -244,7 +244,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                 if (debugSession) {
                     const selection = this.debugSelectionHandler.get(debugSession.sessionId);
                     if (selection && selection.thread) {
-                        debugSession.resume(selection.thread.id);
+                        debugSession.resume({ threadId: selection.thread.id });
                     }
                 }
             },

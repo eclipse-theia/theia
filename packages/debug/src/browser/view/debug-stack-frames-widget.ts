@@ -19,6 +19,7 @@ import { DebugProtocol } from 'vscode-debugprotocol';
 import { injectable, inject } from "inversify";
 import { DebugSelection } from "./debug-selection-service";
 import { hasSameId } from "../../common/debug-utils";
+import { SourceOpener } from "../debug-browser-utils";
 
 /**
  * Is it used to display call stack.
@@ -29,7 +30,8 @@ export class DebugStackFramesWidget extends VirtualWidget {
 
     constructor(
         @inject(DebugSession) protected readonly debugSession: DebugSession,
-        @inject(DebugSelection) protected readonly debugSelection: DebugSelection) {
+        @inject(DebugSelection) protected readonly debugSelection: DebugSelection,
+        @inject(SourceOpener) protected readonly sourceOpener: SourceOpener) {
         super();
 
         this.id = this.createId();
@@ -60,7 +62,10 @@ export class DebugStackFramesWidget extends VirtualWidget {
             const item =
                 h.div({
                     id, className,
-                    onclick: () => this.selectFrame(frame)
+                    onclick: () => {
+                        this.selectFrame(frame);
+                        this.sourceOpener.open(this.debugSession, frame);
+                    }
                 }, this.toDisplayName(frame));
 
             items.push(item);
@@ -129,7 +134,8 @@ export class DebugStackFramesWidget extends VirtualWidget {
         this.selectFrame(undefined);
 
         if (threadId) {
-            this.debugSession.stacks(threadId).then(response => {
+            const args: DebugProtocol.StackTraceArguments = { threadId };
+            this.debugSession.stacks(args).then(response => {
                 if (hasSameId(this.debugSelection.thread, threadId)) { // still the same thread remains selected
                     this.frames = response.body.stackFrames;
                     this.selectFrame(this.frames[0]);
