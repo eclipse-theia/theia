@@ -11,6 +11,10 @@ import { DisposableCollection, Disposable } from "@theia/core";
 import { MonacoEditorModel } from "@theia/monaco/lib/browser/monaco-editor-model";
 import { RPCProtocol } from "../../api/rpc-protocol";
 import { EditorModelService } from "./text-editor-model-service";
+import { createUntitledResource } from "./editor/untitled-resource";
+import { EditorManager } from "@theia/editor/lib/browser";
+import URI from "@theia/core/lib/common/uri";
+import { Saveable } from "@theia/core/lib/browser";
 
 export class DocumentsMainImpl implements DocumentsMain {
     private proxy: DocumentsExt;
@@ -21,7 +25,8 @@ export class DocumentsMainImpl implements DocumentsMain {
     constructor(
         editorsAndDocuments: EditorsAndDocumentsMain,
         modelService: EditorModelService,
-        rpc: RPCProtocol
+        rpc: RPCProtocol,
+        private editorManger: EditorManager
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
 
@@ -82,13 +87,26 @@ export class DocumentsMainImpl implements DocumentsMain {
         this.modelToDispose.delete(modelUrl);
     }
 
-    $tryCreateDocument(options?: { language?: string | undefined; content?: string | undefined; } | undefined): Promise<UriComponents> {
-        throw new Error("Method not implemented.");
+    $tryCreateDocument(options?: { language?: string; content?: string; }): Promise<UriComponents> {
+        let language;
+        let content;
+        if (options) {
+            language = options.language;
+            content = options.content;
+        }
+        return Promise.resolve(createUntitledResource(content, language));
     }
+
     $tryOpenDocument(uri: UriComponents): Promise<void> {
-        throw new Error("Method not implemented.");
+        return this.editorManger.open(new URI(uri.external!)).then(() => void 0);
     }
+
     $trySaveDocument(uri: UriComponents): Promise<boolean> {
-        throw new Error("Method not implemented.");
+        return this.editorManger.getByUri(new URI(uri.external!)).then(e => {
+            if (e) {
+                return Saveable.save(e).then(() => true);
+            }
+            return Promise.resolve(false);
+        });
     }
 }

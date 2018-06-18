@@ -41,6 +41,7 @@ import { DocumentsExtImpl } from './documents';
 import Uri from 'vscode-uri';
 import { TextEditorCursorStyle } from '../common/editor-options';
 import { PreferenceRegistryExtImpl } from './preference-registry';
+import URI from 'vscode-uri';
 
 export function createAPI(rpc: RPCProtocol): typeof theia {
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
@@ -163,6 +164,26 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         },
         onDidChangeConfiguration(listener, thisArgs?, disposables?): theia.Disposable {
             return preferenceRegistryExt.onDidChangeConfiguration(listener, thisArgs, disposables);
+        },
+        openTextDocument(uriOrFileNameOrOptions?: theia.Uri | string | { language?: string; content?: string; }) {
+            let uriPromise: Promise<URI>;
+
+            const options = uriOrFileNameOrOptions as { language?: string; content?: string; };
+            if (typeof uriOrFileNameOrOptions === 'string') {
+                uriPromise = Promise.resolve(URI.file(uriOrFileNameOrOptions));
+            } else if (uriOrFileNameOrOptions instanceof URI) {
+                uriPromise = Promise.resolve(uriOrFileNameOrOptions);
+            } else if (!options || typeof options === 'object') {
+                uriPromise = documents.createDocumentData(options);
+            } else {
+                throw new Error('illegal argument - uriOrFileNameOrOptions');
+            }
+
+            return uriPromise.then(uri =>
+                documents.ensureDocumentData(uri).then(() => {
+                    const data = documents.getDocumentData(uri);
+                    return data && data.document;
+                }));
         }
     };
 

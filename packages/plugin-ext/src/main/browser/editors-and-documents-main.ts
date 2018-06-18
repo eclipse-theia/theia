@@ -18,6 +18,7 @@ import { Emitter, Event } from '@theia/core';
 import { DisposableCollection } from "@theia/core";
 import { DocumentsMainImpl } from './documents-main';
 import { TextEditorsMainImpl } from './text-editors-main';
+import { EditorManager } from '@theia/editor/lib/browser';
 
 export class EditorsAndDocumentsMain {
     private toDispose = new DisposableCollection();
@@ -40,8 +41,9 @@ export class EditorsAndDocumentsMain {
 
         const editorService = container.get<TextEditorService>(TextEditorService);
         const modelService = container.get<EditorModelService>(EditorModelService);
+        const editorManager = container.get<EditorManager>(EditorManager);
 
-        const documentsMain = new DocumentsMainImpl(this, modelService, rpc);
+        const documentsMain = new DocumentsMainImpl(this, modelService, rpc, editorManager);
         rpc.set(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, documentsMain);
 
         const editorsMain = new TextEditorsMainImpl(this, rpc);

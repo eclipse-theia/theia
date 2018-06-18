@@ -36,6 +36,11 @@ export class PluginApiFrontendContribution implements CommandContribution {
         commands.registerCommand(PluginExtDeployCommandService.COMMAND, {
             execute: () => this.pluginExtDeployCommandService.deploy()
         });
+
+        // this command only for compatibility reason
+        commands.registerCommand({ id: 'workbench.action.closeActiveEditor' }, {
+            execute: () => commands.executeCommand('core.close.tab')
+        });
     }
 
 }
