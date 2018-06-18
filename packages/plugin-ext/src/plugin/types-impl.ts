@@ -547,3 +547,8 @@ export enum OverviewRulerLane {
     Right = 4,
     Full = 7
 }
+
+export enum ConfigurationTarget {
+    User = 0,
+    Workspace = 1
+}

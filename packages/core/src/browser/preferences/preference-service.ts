@@ -133,6 +133,10 @@ export class PreferenceServiceImpl implements PreferenceService, FrontendApplica
         }
     }
 
+    getPreferences(): { [key: string]: any } {
+        return this.preferences;
+    }
+
     has(preferenceName: string): boolean {
         return this.preferences[preferenceName] !== undefined;
     }
