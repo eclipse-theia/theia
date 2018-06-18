@@ -136,6 +136,7 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
 
                 this.communicationProvider.output.on('data', (data: Buffer) => this.handleData(data));
                 this.communicationProvider.output.on('close', () => this.onDebugAdapterClosed());
+                this.communicationProvider.output.on('error', (error: Error) => this.onDebugAdapterError(error));
                 this.communicationProvider.input.on('error', (error: Error) => this.onDebugAdapterError(error));
 
                 this.ws.on('message', (data: string) => this.proceedRequest(data));
@@ -257,6 +258,20 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
                         body: {
                             threadId: continueRequest.arguments.threadId,
                             allThreadsContinued: continueResponse.body.allThreadsContinued
+                        }
+                    };
+                    this.proceedEvent(JSON.stringify(event), event);
+                    break;
+                }
+
+                case 'initialized': {
+                    const initializeResponse = response as DebugProtocol.InitializeResponse;
+                    const event: DebugProtocol.CapabilitiesEvent = {
+                        type: 'event',
+                        seq: -1,
+                        event: 'capabilities',
+                        body: {
+                            capabilities: initializeResponse.body || {}
                         }
                     };
                     this.proceedEvent(JSON.stringify(event), event);

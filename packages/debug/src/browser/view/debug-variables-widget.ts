@@ -121,7 +121,7 @@ export class DebugVariablesTree extends TreeImpl {
         if (FrameNode.is(parent)) {
             const frameId = parent.frameId;
             if (frameId) {
-                return this.debugSession.scopes(frameId).then(response => {
+                return this.debugSession.scopes({ frameId }).then(response => {
                     const scopes = response.body.scopes;
                     return scopes.map(scope => ScopeNode.create(this.debugSession.sessionId, scope, parent));
                 });
@@ -132,7 +132,8 @@ export class DebugVariablesTree extends TreeImpl {
 
         if (ScopeNode.is(parent)) {
             const parentVariablesReference = parent.scope.variablesReference;
-            return this.debugSession.variables(parentVariablesReference).then(response => {
+            const args: DebugProtocol.VariablesArguments = { variablesReference: parentVariablesReference };
+            return this.debugSession.variables(args).then(response => {
                 const variables = response.body.variables;
                 return variables.map(variable => {
                     const extVariable = { ...variable, parentVariablesReference };
@@ -144,7 +145,8 @@ export class DebugVariablesTree extends TreeImpl {
         if (VariableNode.is(parent)) {
             const parentVariablesReference = parent.extVariable.variablesReference;
             if (parentVariablesReference > 0) {
-                return this.debugSession.variables(parentVariablesReference).then(response => {
+                const args: DebugProtocol.VariablesArguments = { variablesReference: parentVariablesReference };
+                return this.debugSession.variables(args).then(response => {
                     const variables = response.body.variables;
                     return variables.map(variable => {
                         const extVariable = { ...variable, parentVariablesReference };
