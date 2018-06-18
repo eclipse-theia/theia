@@ -9,8 +9,14 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 
+import URI from "@theia/core/lib/common/uri";
+
 export function hasSameId(left: { id: number } | number | undefined, right: { id: number } | number | undefined): boolean {
     return getId(left) === getId(right);
+}
+
+export function pathToUri(path: string): URI {
+    return new URI(encodeURI('file://' + path));
 }
 
 function getId(entity: { id: number } | number | undefined): number | undefined {
