@@ -32,9 +32,15 @@ import {
     TreeProps,
     defaultTreeProps,
     TreeModelImpl,
-    TreeModel
+    TreeModel,
+    FrontendApplicationContribution
 } from '@theia/core/lib/browser';
-import { DebugSession, DebugSessionContribution, DebugSessionFactory } from './debug-model';
+import {
+    DebugSession,
+    DebugSessionContribution,
+    DebugSessionFactory,
+    BreakpointManager
+} from './debug-model';
 import { DebugSessionManager, DefaultDebugSessionFactory } from './debug-session';
 import {
     DebugVariablesTree,
@@ -47,6 +53,8 @@ import { DebugStackFramesWidget } from './view/debug-stack-frames-widget';
 import { DebugBreakpointsWidget } from './view/debug-breakpoints-widget';
 import { DebugSelectionService, DebugSelection } from './view/debug-selection-service';
 import { bindContributionProvider } from '@theia/core';
+import { BreakpointManagerImpl } from './breakpoint-manager';
+import { SourceOpener } from './debug-browser-utils';
 
 export const DEBUG_VARIABLES_PROPS = <TreeProps>{
     ...defaultTreeProps,
@@ -67,6 +75,9 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bindContributionProvider(bind, DebugSessionContribution);
     bind(DebugSessionFactory).to(DefaultDebugSessionFactory).inSingletonScope();
     bind(DebugSessionManager).toSelf().inSingletonScope();
+    bind(BreakpointManager).to(BreakpointManagerImpl).inSingletonScope();
+    bind(FrontendApplicationContribution).toDynamicValue(context => context.container.get<BreakpointManager>(BreakpointManager));
+    bind(SourceOpener).toSelf().inSingletonScope();
     bind(MenuContribution).to(DebugCommandHandlers);
     bind(CommandContribution).to(DebugCommandHandlers);
     bind(DebugConfigurationManager).toSelf().inSingletonScope();

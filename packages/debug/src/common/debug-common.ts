@@ -123,6 +123,11 @@ export interface DebugSessionState {
      * Stopped threads Ids.
      */
     readonly stoppedThreadIds: number[];
+
+    /**
+     * Debug adapter protocol capabilities.
+     */
+    readonly capabilities: DebugProtocol.Capabilities;
 }
 
 /**
@@ -173,6 +178,7 @@ export class DebugSessionStateAccumulator implements DebugSessionState {
     private _allThreadsStopped: boolean | undefined;
     private _stoppedThreads = new Set<number>();
     private _breakpoints = new Map<string, DebugProtocol.Breakpoint>();
+    private _capabilities: DebugProtocol.Capabilities = {};
 
     constructor(eventEmitter: NodeJS.EventEmitter, currentState?: DebugSessionState) {
         if (currentState) {
@@ -189,6 +195,11 @@ export class DebugSessionStateAccumulator implements DebugSessionState {
         eventEmitter.on('continued', event => this.onContinuedEvent(event));
         eventEmitter.on('thread', event => this.onThreadEvent(event));
         eventEmitter.on('breakpoint', event => this.onBreakpointEvent(event));
+        eventEmitter.on('capabilities', event => this.onCapabilitiesEvent(event));
+    }
+
+    get capabilities(): DebugProtocol.Capabilities {
+        return this._capabilities;
     }
 
     get allThreadsContinued(): boolean | undefined {
@@ -264,6 +275,10 @@ export class DebugSessionStateAccumulator implements DebugSessionState {
                 break;
             }
         }
+    }
+
+    private onCapabilitiesEvent(event: DebugProtocol.CapabilitiesEvent): void {
+        Object.assign(this._capabilities, event.body.capabilities);
     }
 
     private createId(breakpoint: DebugProtocol.Breakpoint): string {
