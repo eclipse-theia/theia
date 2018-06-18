@@ -15,7 +15,7 @@ import { CurrentEditorAccess } from './current-editor-access';
 import { CallHierarchyServiceProvider } from "./callhierarchy-service";
 
 export const CALL_HIERARCHY_TOGGLE_COMMAND_ID = 'callhierachy:toggle';
-export const CALL_HIERARCHY_LABEL = 'Call hierarchy';
+export const CALL_HIERARCHY_LABEL = 'Call Hierarchy';
 
 export namespace CallHierarchyCommands {
     export const OPEN: Command = {
