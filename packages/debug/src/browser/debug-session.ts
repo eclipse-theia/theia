@@ -22,7 +22,7 @@ import { Deferred } from "@theia/core/lib/common/promise-util";
 import { Emitter, Event, DisposableCollection, ContributionProvider } from "@theia/core";
 import { EventEmitter } from "events";
 import { OutputChannelManager } from "@theia/output/lib/common/output-channel";
-import { DebugSession, DebugSessionFactory, DebugSessionContribution } from "./debug-model";
+import { DebugSession, DebugSessionFactory, DebugSessionContribution, Debug } from "./debug-model";
 
 /**
  * DebugSession implementation.
@@ -32,7 +32,6 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
     protected readonly callbacks = new Map<number, (response: DebugProtocol.Response) => void>();
 
     protected websocket: Promise<WebSocket>;
-    protected capabilities: DebugProtocol.Capabilities = {};
 
     private sequence: number;
 
@@ -68,22 +67,8 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         return initialized.promise;
     }
 
-    initialize(): Promise<DebugProtocol.InitializeResponse> {
-        return this.proceedRequest("initialize", {
-            clientID: "Theia",
-            clientName: "Theia",
-            adapterID: this.configuration.type,
-            locale: "",
-            linesStartAt1: true,
-            columnsStartAt1: true,
-            pathFormat: "path",
-            supportsVariableType: false,
-            supportsVariablePaging: false,
-            supportsRunInTerminalRequest: false
-        }).then((response: DebugProtocol.InitializeResponse) => {
-            this.capabilities = response.body || {};
-            return response;
-        });
+    initialize(args: DebugProtocol.InitializeRequestArguments): Promise<DebugProtocol.InitializeResponse> {
+        return this.proceedRequest("initialize", args);
     }
 
     attach(args: DebugProtocol.AttachRequestArguments): Promise<DebugProtocol.AttachResponse> {
@@ -99,36 +84,25 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
     }
 
     pauseAll(): Promise<DebugProtocol.PauseResponse[]> {
-        return this.threads().then(response => Promise.all(response.body.threads.map((thread: DebugProtocol.Thread) => this.pause(thread.id))));
+        return this.threads().then(response => Promise.all(response.body.threads.map((thread: DebugProtocol.Thread) => this.pause({ threadId: thread.id }))));
     }
 
-    pause(threadId: number): Promise<DebugProtocol.PauseResponse> {
-        return this.proceedRequest("pause", { threadId });
+    pause(args: DebugProtocol.PauseArguments): Promise<DebugProtocol.PauseResponse> {
+        return this.proceedRequest("pause", args);
     }
 
     resumeAll(): Promise<DebugProtocol.ContinueResponse[]> {
-        return this.threads().then(response => Promise.all(response.body.threads.map((thread: DebugProtocol.Thread) => this.resume(thread.id))));
+        return this.threads().then(response => Promise.all(response.body.threads.map((thread: DebugProtocol.Thread) => this.resume({ threadId: thread.id }))));
     }
 
-    resume(threadId: number): Promise<DebugProtocol.ContinueResponse> {
-        return this.proceedRequest("continue", { threadId });
+    resume(args: DebugProtocol.ContinueArguments): Promise<DebugProtocol.ContinueResponse> {
+        return this.proceedRequest("continue", args);
     }
 
-    stacks(threadId: number): Promise<DebugProtocol.StackTraceResponse> {
-        const args: DebugProtocol.StackTraceArguments = {
-            threadId,
-            startFrame: 0,
-            format: {
-                parameters: true,
-                parameterTypes: true,
-                parameterNames: true,
-                parameterValues: true,
-                line: true,
-                module: true,
-                includeAll: true
-            }
-        };
-
+    stacks(args: DebugProtocol.StackTraceArguments): Promise<DebugProtocol.StackTraceResponse> {
+        if (!args.format) {
+            args.format = Debug.DEFAULT_STACK_FRAME_FORMAT;
+        }
         return this.proceedRequest("stackTrace", args);
     }
 
@@ -136,23 +110,15 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         return this.proceedRequest("configurationDone");
     }
 
-    getServerCapabilities(): DebugProtocol.Capabilities {
-        return this.capabilities;
-    }
-
     disconnect(): Promise<DebugProtocol.DisconnectResponse> {
         return this.proceedRequest("disconnect", { terminateDebuggee: true });
     }
 
-    scopes(frameId: number): Promise<DebugProtocol.ScopesResponse> {
-        return this.proceedRequest("scopes", { frameId });
+    scopes(args: DebugProtocol.ScopesArguments): Promise<DebugProtocol.ScopesResponse> {
+        return this.proceedRequest("scopes", args);
     }
 
-    variables(variablesReference: number, start?: number, count?: number): Promise<DebugProtocol.VariablesResponse> {
-        const args: DebugProtocol.VariablesArguments = {
-            variablesReference, start, count,
-            format: { hex: false }
-        };
+    variables(args: DebugProtocol.VariablesArguments): Promise<DebugProtocol.VariablesResponse> {
         return this.proceedRequest('variables', args);
     }
 
@@ -160,12 +126,12 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         return this.proceedRequest('setVariable', args);
     }
 
-    evaluate(frameId: number, expression: string, context?: string): Promise<DebugProtocol.EvaluateResponse> {
-        const args: DebugProtocol.EvaluateArguments = {
-            frameId, expression, context,
-            format: { hex: false }
-        };
+    evaluate(args: DebugProtocol.EvaluateArguments): Promise<DebugProtocol.EvaluateResponse> {
         return this.proceedRequest('evaluate', args);
+    }
+
+    source(args: DebugProtocol.SourceArguments): Promise<DebugProtocol.SourceResponse> {
+        return this.proceedRequest('source', args);
     }
 
     protected handleMessage(event: MessageEvent) {
@@ -228,7 +194,8 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
             breakpoints: [],
             stoppedThreadIds: [],
             allThreadsContinued: false,
-            allThreadsStopped: false
+            allThreadsStopped: false,
+            capabilities: {}
         };
         return new DebugSessionImpl(sessionId, debugConfiguration, state);
     }
@@ -283,13 +250,18 @@ export class DebugSessionManager {
         session.on("initialized", () => this.setActiveDebugSession(sessionId));
         session.on("terminated", () => this.destroy(sessionId));
 
-        session.initialize()
+        const initializeArgs: DebugProtocol.InitializeRequestArguments = {
+            ...Debug.INITIALIZE_ARGUMENTS,
+            adapterID: debugConfiguration.type
+        };
+
+        session.initialize(initializeArgs)
             .then(response => {
                 const request = debugConfiguration.request;
                 switch (request) {
                     case "attach": {
-                        const args: DebugProtocol.AttachRequestArguments = Object.assign(debugConfiguration, { __restart: false });
-                        return session.attach(args);
+                        const attachArgs: DebugProtocol.AttachRequestArguments = Object.assign(debugConfiguration, { __restart: false });
+                        return session.attach(attachArgs);
                     }
                     default: return Promise.reject(`Unsupported request '${request}' type.`);
                 }
