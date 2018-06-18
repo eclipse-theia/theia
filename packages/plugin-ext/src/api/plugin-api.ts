@@ -12,9 +12,11 @@ import { QueryParameters } from '../common/env';
 import { TextEditorCursorStyle } from '../common/editor-options';
 import { TextEditorLineNumbersStyle, EndOfLine, OverviewRulerLane } from '../plugin/types-impl';
 import { UriComponents } from '../common/uri-components';
+import { PreferenceChange } from '@theia/core/lib/browser';
+import { ConfigurationTarget } from '../plugin/types-impl';
 
 export interface HostedPluginManagerExt {
-    $initialize(contextPath: string, pluginMedata: PluginMetadata): void;
+    $initialize(contextPath: string, pluginMetadata: PluginMetadata): void;
     $loadPlugin(contextPath: string, plugin: Plugin): void;
     $stopPlugin(contextPath: string): PromiseLike<void>;
 }
@@ -379,6 +381,23 @@ export interface EnvExt {
     $setQueryParameters(queryParams: QueryParameters): void;
 }
 
+export interface PreferenceRegistryMain {
+    $updateConfigurationOption(
+        target: boolean | ConfigurationTarget | undefined,
+        key: string,
+        value: any,
+        resource: any | undefined
+    ): PromiseLike<void>;
+    $removeConfigurationOption(
+        target: boolean | ConfigurationTarget | undefined,
+        key: string,
+        resource: any | undefined
+    ): PromiseLike<void>;
+}
+export interface PreferenceRegistryExt {
+    $acceptConfigurationChanged(data: { [key: string]: any }, eventData: PreferenceChange): void;
+}
+
 export const PLUGIN_RPC_CONTEXT = {
     COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
     QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain'),
@@ -386,7 +405,8 @@ export const PLUGIN_RPC_CONTEXT = {
     TEXT_EDITORS_MAIN: createProxyIdentifier<TextEditorsMain>('TextEditorsMain'),
     DOCUMENTS_MAIN: createProxyIdentifier<DocumentsMain>('DocumentsMain'),
     STATUS_BAR_MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<StatusBarMessageRegistryMain>>createProxyIdentifier<StatusBarMessageRegistryMain>('StatusBarMessageRegistryMain'),
-    ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain')
+    ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain'),
+    PREFERENCE_REGISTRY_MAIN: createProxyIdentifier<PreferenceRegistryMain>('PreferenceRegistryMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -397,5 +417,6 @@ export const MAIN_RPC_CONTEXT = {
     TEXT_EDITORS_EXT: createProxyIdentifier<TextEditorsExt>('TextEditorsExt'),
     EDITORS_AND_DOCUMENTS_EXT: createProxyIdentifier<EditorsAndDocumentsExt>('EditorsAndDocumentsExt'),
     DOCUMENTS_EXT: createProxyIdentifier<DocumentsExt>('DocumentsExt'),
-    ENV_EXT: createProxyIdentifier<EnvExt>('EnvExt')
+    ENV_EXT: createProxyIdentifier<EnvExt>('EnvExt'),
+    PREFERENCE_REGISTRY_EXT: createProxyIdentifier<PreferenceRegistryExt>('PreferenceRegistryExt')
 };

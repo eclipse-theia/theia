@@ -7,6 +7,7 @@
 
 import { interfaces } from 'inversify';
 import { CommandRegistryMainImpl } from './command-registry-main';
+import { PreferenceRegistryMainImpl } from './preference-registry-main';
 import { QuickOpenMainImpl } from './quick-open-main';
 import { RPCProtocol } from '../../api/rpc-protocol';
 import { PLUGIN_RPC_CONTEXT } from '../../api/plugin-api';
@@ -25,6 +26,9 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const messageRegistryMain = new MessageRegistryMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.MESSAGE_REGISTRY_MAIN, messageRegistryMain);
+
+    const preferenceRegistryMain = new PreferenceRegistryMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.PREFERENCE_REGISTRY_MAIN, preferenceRegistryMain);
 
     // tslint:disable-next-line:no-unused-variable
     // @ts-ignore

@@ -18,6 +18,7 @@ import { WindowStateExtImpl } from './window-state';
 import { EnvExtImpl } from './env';
 import { QueryParameters } from '../common/env';
 import {
+    ConfigurationTarget,
     Disposable,
     Position,
     Range,
@@ -39,6 +40,7 @@ import { TextEditorsExtImpl } from './text-editors';
 import { DocumentsExtImpl } from './documents';
 import Uri from 'vscode-uri';
 import { TextEditorCursorStyle } from '../common/editor-options';
+import { PreferenceRegistryExtImpl } from './preference-registry';
 
 export function createAPI(rpc: RPCProtocol): typeof theia {
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
@@ -50,6 +52,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocuments));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const envExt = rpc.set(MAIN_RPC_CONTEXT.ENV_EXT, new EnvExtImpl(rpc));
+    const preferenceRegistryExt = rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, new PreferenceRegistryExtImpl(rpc));
 
     const commands: typeof theia.commands = {
         // tslint:disable-next-line:no-any
@@ -155,6 +158,12 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         onDidOpenTextDocument(listener, thisArg?, disposables?) {
             return documents.onDidAddDocument(listener, thisArg, disposables);
         },
+        getConfiguration(section?, resource?): theia.WorkspaceConfiguration {
+            return preferenceRegistryExt.getConfiguration(section, resource);
+        },
+        onDidChangeConfiguration(listener, thisArgs?, disposables?): theia.Disposable {
+            return preferenceRegistryExt.onDidChangeConfiguration(listener, thisArgs, disposables);
+        }
     };
 
     const env: typeof theia.env = {
@@ -194,6 +203,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         SnippetString,
         DecorationRangeBehavior,
         OverviewRulerLane,
+        ConfigurationTarget,
     };
 
 }
