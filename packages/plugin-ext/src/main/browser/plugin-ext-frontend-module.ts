@@ -9,7 +9,7 @@ import '../../../src/main/style/status-bar.css';
 
 import { ContainerModule } from "inversify";
 import { FrontendApplicationContribution, FrontendApplication, WidgetFactory, KeybindingContribution } from "@theia/core/lib/browser";
-import { MaybePromise, CommandContribution, MenuContribution } from "@theia/core/lib/common";
+import { MaybePromise, CommandContribution, MenuContribution, ResourceResolver } from "@theia/core/lib/common";
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { PluginWorker } from './plugin-worker';
 import { HostedPluginSupport } from "../../hosted/browser/hosted-plugin";
@@ -29,6 +29,7 @@ import '../../../src/main/browser/style/index.css';
 import { PluginExtDeployCommandService } from "./plugin-ext-deploy-command";
 import { TextEditorService, TextEditorServiceImpl } from './text-editor-service';
 import { EditorModelService, EditorModelServiceImpl } from './text-editor-model-service';
+import { UntitledResourceResolver } from './editor/untitled-resource';
 
 export default new ContainerModule(bind => {
     bind(ModalNotification).toSelf().inSingletonScope();
@@ -47,6 +48,9 @@ export default new ContainerModule(bind => {
 
     bind(TextEditorService).to(TextEditorServiceImpl).inSingletonScope();
     bind(EditorModelService).to(EditorModelServiceImpl).inSingletonScope();
+
+    bind(UntitledResourceResolver).toSelf().inSingletonScope();
+    bind(ResourceResolver).toService(UntitledResourceResolver);
 
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ({
         onStart(app: FrontendApplication): MaybePromise<void> {

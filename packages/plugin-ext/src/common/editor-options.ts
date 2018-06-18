@@ -5,6 +5,11 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+// enum copied from monaco.d.ts
 /**
  * The style in which the editor's cursor should be rendered.
  */
@@ -41,19 +46,20 @@ export enum TextEditorCursorStyle {
 }
 
 export function cursorStyleToString(cursorStyle: TextEditorCursorStyle): string {
-    if (cursorStyle === TextEditorCursorStyle.Line) {
-        return 'line';
-    } else if (cursorStyle === TextEditorCursorStyle.Block) {
-        return 'block';
-    } else if (cursorStyle === TextEditorCursorStyle.Underline) {
-        return 'underline';
-    } else if (cursorStyle === TextEditorCursorStyle.LineThin) {
-        return 'line-thin';
-    } else if (cursorStyle === TextEditorCursorStyle.BlockOutline) {
-        return 'block-outline';
-    } else if (cursorStyle === TextEditorCursorStyle.UnderlineThin) {
-        return 'underline-thin';
-    } else {
-        throw new Error('cursorStyleToString: Unknown cursorStyle');
+    switch (cursorStyle) {
+        case TextEditorCursorStyle.Line:
+            return 'line';
+        case TextEditorCursorStyle.Block:
+            return 'block';
+        case TextEditorCursorStyle.Underline:
+            return 'underline';
+        case TextEditorCursorStyle.LineThin:
+            return 'line-thin';
+        case TextEditorCursorStyle.BlockOutline:
+            return 'block-outline';
+        case TextEditorCursorStyle.UnderlineThin:
+            return 'underline-thin';
+        default:
+            throw new Error('cursorStyleToString: Unknown cursorStyle');
     }
 }

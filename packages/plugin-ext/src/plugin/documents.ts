@@ -4,7 +4,7 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-import { DocumentsExt, ModelChangedEvent } from "../api/plugin-api";
+import { DocumentsExt, ModelChangedEvent, PLUGIN_RPC_CONTEXT, DocumentsMain } from "../api/plugin-api";
 import URI from "vscode-uri";
 import { UriComponents } from '../common/uri-components';
 import { RPCProtocol } from "../api/rpc-protocol";
@@ -27,10 +27,11 @@ export class DocumentsExtImpl implements DocumentsExt {
     readonly onDidChangeDocument: Event<theia.TextDocumentChangeEvent> = this._onDidChangeDocument.event;
     readonly onDidSaveDocument: Event<theia.TextDocument> = this._onDidSaveDocument.event;
 
-    // private proxy: DocumentsMain;
+    private proxy: DocumentsMain;
+    private documentLoader = new Map<string, Promise<DocumentDataExt | undefined>>();
 
     constructor(rpc: RPCProtocol, private editorsAndDocuments: EditorsAndDocumentsExtImpl) {
-        // this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN);
+        this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN);
         this.toDispose.push(
             this.editorsAndDocuments.onDidAddDocuments(documents => {
                 for (const document of documents) {
@@ -101,4 +102,42 @@ export class DocumentsExtImpl implements DocumentsExt {
     getAllDocumentData(): DocumentDataExt[] {
         return this.editorsAndDocuments.allDocuments();
     }
+
+    getDocumentData(resource: theia.Uri): DocumentDataExt | undefined {
+        if (!resource) {
+            return undefined;
+        }
+        const data = this.editorsAndDocuments.getDocument(resource.toString());
+        if (data) {
+            return data;
+        }
+        return undefined;
+    }
+
+    ensureDocumentData(uri: URI): Promise<DocumentDataExt | undefined> {
+
+        const cached = this.editorsAndDocuments.getDocument(uri.toString());
+        if (cached) {
+            return Promise.resolve(cached);
+        }
+
+        let promise = this.documentLoader.get(uri.toString());
+        if (!promise) {
+            promise = this.proxy.$tryOpenDocument(uri).then(() => {
+                this.documentLoader.delete(uri.toString());
+                return this.editorsAndDocuments.getDocument(uri.toString());
+            }, err => {
+                this.documentLoader.delete(uri.toString());
+                return Promise.reject(err);
+            });
+            this.documentLoader.set(uri.toString(), promise);
+        }
+
+        return promise;
+    }
+
+    createDocumentData(options?: { language?: string; content?: string }): Promise<URI> {
+        return this.proxy.$tryCreateDocument(options).then(data => URI.revive(data));
+    }
+
 }
