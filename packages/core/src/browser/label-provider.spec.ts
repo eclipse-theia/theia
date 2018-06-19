@@ -29,7 +29,7 @@ describe("DefaultUriLabelProviderContribution", function () {
         const prov = new DefaultUriLabelProviderContribution();
         const icon = prov.getIcon(new URI('file:///tmp/hello/you.txt'));
 
-        expect(icon).eq('text-icon');
+        expect(icon).eq('text-icon medium-blue');
     });
 
     it("should return icon class for something that seems to be a directory", function () {

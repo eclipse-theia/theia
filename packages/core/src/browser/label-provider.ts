@@ -61,7 +61,7 @@ export class DefaultUriLabelProviderContribution implements LabelProviderContrib
     }
 
     protected getFileIcon(uri: URI): string | undefined {
-        return fileIcons.getClass(uri.displayName);
+        return fileIcons.getClassWithColor(uri.displayName);
     }
 
     getName(uri: URI): string {
