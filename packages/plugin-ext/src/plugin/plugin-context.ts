@@ -42,18 +42,20 @@ import Uri from 'vscode-uri';
 import { TextEditorCursorStyle } from '../common/editor-options';
 import { PreferenceRegistryExtImpl } from './preference-registry';
 import URI from 'vscode-uri';
+import { OutputChannelRegistryExt } from './output-channel-registry';
 
 export function createAPI(rpc: RPCProtocol): typeof theia {
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
     const quickOpenExt = rpc.set(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT, new QuickOpenExtImpl(rpc));
     const messageRegistryExt = new MessageRegistryExt(rpc);
-    const windowStateExt = rpc.set(MAIN_RPC_CONTEXT.WINDOW_STATE_EXT, new WindowStateExtImpl(rpc));
+    const windowStateExt = rpc.set(MAIN_RPC_CONTEXT.WINDOW_STATE_EXT, new WindowStateExtImpl());
     const editorsAndDocuments = rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, new EditorsAndDocumentsExtImpl(rpc));
     const editors = rpc.set(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT, new TextEditorsExtImpl(rpc, editorsAndDocuments));
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocuments));
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const envExt = rpc.set(MAIN_RPC_CONTEXT.ENV_EXT, new EnvExtImpl(rpc));
     const preferenceRegistryExt = rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, new PreferenceRegistryExtImpl(rpc));
+    const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
 
     const commands: typeof theia.commands = {
         // tslint:disable-next-line:no-any
@@ -133,6 +135,9 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         },
         createStatusBarItem(alignment?: theia.StatusBarAlignment, priority?: number): theia.StatusBarItem {
             return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority);
+        },
+        createOutputChannel(name: string): theia.OutputChannel {
+          return outputChannelRegistryExt.createOutputChannel(name);
         },
 
         get state(): theia.WindowState {
