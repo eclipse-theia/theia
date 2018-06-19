@@ -35,6 +35,10 @@ export class FileNavigatorModel extends FileTreeModel {
      * @returns file tree node if the file with given uri was revealed, undefined otherwise
      */
     async revealFile(targetFileUri: URI): Promise<TreeNode | undefined> {
+        if (targetFileUri.scheme !== 'file') {
+            return undefined;
+        }
+
         const navigatorNodeId = targetFileUri.toString();
         let node = this.getNode(navigatorNodeId);
 
