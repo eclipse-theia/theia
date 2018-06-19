@@ -21,7 +21,7 @@ function getExtScript() {
     if (!(script in extScriptsPck.scripts)) {
         throw new Error('The ext script does not exist: ' + script);
     }
-    return extScriptsPck.scripts[script];
+    return [extScriptsPck.scripts[script], ...args.slice(1, args.length)].join(' ');
 }
 
 function run(script) {
