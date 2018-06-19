@@ -1645,6 +1645,54 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * An output channel is a container for readonly textual information.
+     */
+    export interface OutputChannel {
+
+        /**
+         * The name of this output channel.
+         */
+        readonly name: string;
+
+        /**
+         * Append the given value to the channel.
+         *
+         * @param value
+         */
+        append(value: string): void;
+
+        /**
+         * Append the given value and a line feed character
+         * to the channel.
+         *
+         * @param value
+         */
+        appendLine(value: string): void;
+
+        /**
+         * Removes all output from the channel.
+         */
+        clear(): void;
+
+        /**
+         * Reveal this channel in the UI.
+         *
+         * @param preserveFocus When 'true' the channel will not take focus.
+         */
+        show(preserveFocus?: boolean): void;
+
+        /**
+         * Hide this channel from the UI.
+         */
+        hide(): void;
+
+        /**
+         * Dispose and free associated resources.
+         */
+        dispose(): void;
+    }
+
+    /**
      * Common namespace for dealing with window and editor, showing messages and user input.
      */
     export namespace window {
@@ -1890,6 +1938,12 @@ declare module '@theia/plugin' {
          */
         export function createStatusBarItem(alignment?: StatusBarAlignment, priority?: number): StatusBarItem;
 
+        /**
+         * Create a new [output channel](#OutputChannel) with the given name.
+         *
+         * @param name String which will be used to represent the channel in the UI.
+         */
+        export function createOutputChannel(name: string): OutputChannel;
     }
 
     /**

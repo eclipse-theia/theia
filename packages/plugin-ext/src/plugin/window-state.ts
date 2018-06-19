@@ -7,7 +7,6 @@
 
 import { WindowState } from "@theia/plugin";
 import { WindowStateExt } from "../api/plugin-api";
-import { RPCProtocol } from "../api/rpc-protocol";
 import { Event, Emitter } from "@theia/core/lib/common/event";
 
 export class WindowStateExtImpl implements WindowStateExt {
@@ -17,7 +16,7 @@ export class WindowStateExtImpl implements WindowStateExt {
     private windowStateChangedEmitter = new Emitter<WindowState>();
     public readonly onDidChangeWindowState: Event<WindowState> = this.windowStateChangedEmitter.event;
 
-    constructor(rpc: RPCProtocol) {
+    constructor() {
         this.windowStateCached = { focused: true }; // supposed tab is active on start
     }
 

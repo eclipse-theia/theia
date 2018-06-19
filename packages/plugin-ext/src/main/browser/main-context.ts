@@ -4,7 +4,6 @@
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
-
 import { interfaces } from 'inversify';
 import { CommandRegistryMainImpl } from './command-registry-main';
 import { PreferenceRegistryMainImpl } from './preference-registry-main';
@@ -16,6 +15,7 @@ import { WindowStateMain } from './window-state-main';
 import { StatusBarMessageRegistryMainImpl } from './status-bar-message-registry-main';
 import { EnvMainImpl } from './env-main';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
+import {OutputChannelRegistryMainImpl} from "./output-channel-registry-main";
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const commandRegistryMain = new CommandRegistryMainImpl(rpc, container);
@@ -43,4 +43,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const envMain = new EnvMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.ENV_MAIN, envMain);
+
+    const outputChannelRegistryMain = new OutputChannelRegistryMainImpl(container);
+    rpc.set(PLUGIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_MAIN, outputChannelRegistryMain);
 }

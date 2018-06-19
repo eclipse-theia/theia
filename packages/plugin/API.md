@@ -119,6 +119,15 @@ Simple example that show a status bar message with statusBarItem:
         item.text = 'test status bar item';
         item.show();
 ```
+#### Output channel API
+
+ It is possible to show a container for readonly textual information:
+ 
+```typescript
+   const channel = theia.window.createOutputChannel('test channel');
+         channel.appendLine('test output');
+      
+```
 
 #### Environment API
 

@@ -398,6 +398,14 @@ export interface PreferenceRegistryExt {
     $acceptConfigurationChanged(data: { [key: string]: any }, eventData: PreferenceChange): void;
 }
 
+export interface OutputChannelRegistryMain {
+    $append(channelName: string, value: string): PromiseLike<void>;
+    $clear(channelName: string): PromiseLike<void>;
+    $dispose(channelName: string): PromiseLike<void>;
+    $reveal(channelName: string, preserveFocus: boolean): PromiseLike<void>;
+    $close(channelName: string): PromiseLike<void>;
+}
+
 export const PLUGIN_RPC_CONTEXT = {
     COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
     QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain'),
@@ -406,7 +414,8 @@ export const PLUGIN_RPC_CONTEXT = {
     DOCUMENTS_MAIN: createProxyIdentifier<DocumentsMain>('DocumentsMain'),
     STATUS_BAR_MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<StatusBarMessageRegistryMain>>createProxyIdentifier<StatusBarMessageRegistryMain>('StatusBarMessageRegistryMain'),
     ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain'),
-    PREFERENCE_REGISTRY_MAIN: createProxyIdentifier<PreferenceRegistryMain>('PreferenceRegistryMain')
+    PREFERENCE_REGISTRY_MAIN: createProxyIdentifier<PreferenceRegistryMain>('PreferenceRegistryMain'),
+    OUTPUT_CHANNEL_REGISTRY_MAIN: <ProxyIdentifier<OutputChannelRegistryMain>>createProxyIdentifier<OutputChannelRegistryMain>('OutputChannelRegistryMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
