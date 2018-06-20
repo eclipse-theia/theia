@@ -93,9 +93,6 @@ export class UriAwareCommandHandler<T extends MaybeArray<URI>> implements Comman
         const uri = this.getUri(...args);
         if (uri) {
             if (this.handler.isVisible) {
-                if (this.isMulti() && Array.isArray(uri)) {
-                    return uri.every(u => this.handler.isVisible!(u, ...args));
-                }
                 return this.handler.isVisible(uri as T, ...args);
             }
             return true;
@@ -108,9 +105,6 @@ export class UriAwareCommandHandler<T extends MaybeArray<URI>> implements Comman
         const uri = this.getUri(...args);
         if (uri) {
             if (this.handler.isEnabled) {
-                if (this.isMulti() && Array.isArray(uri)) {
-                    return uri.every(u => this.handler.isEnabled!(u, ...args));
-                }
                 return this.handler.isEnabled(uri as T, ...args);
             }
             return true;
