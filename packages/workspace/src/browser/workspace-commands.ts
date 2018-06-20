@@ -144,7 +144,14 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 }
             })
         }));
+        let rootUri: URI | undefined;
+        this.workspaceService.root.then(root => {
+            if (root) {
+                rootUri = new URI(root.uri);
+            }
+        });
         registry.registerCommand(WorkspaceCommands.FILE_DELETE, this.newMultiUriAwareCommandHandler({
+            isVisible: uris => !(rootUri && uris.some( uri => uri.toString() === rootUri!.toString())),
             execute: async uris => {
                 const msg = (() => {
                     if (uris.length === 1) {
