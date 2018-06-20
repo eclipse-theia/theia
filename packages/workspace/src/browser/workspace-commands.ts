@@ -144,7 +144,14 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 }
             })
         }));
+        let rootUri: URI | undefined;
+        this.workspaceService.root.then(root => {
+            if (root) {
+                rootUri = new URI(root.uri);
+            }
+        });
         registry.registerCommand(WorkspaceCommands.FILE_DELETE, this.newMultiUriAwareCommandHandler({
+            isVisible: uris => !(rootUri && uris.some(uri => uri.toString() === rootUri!.toString())),
             execute: async uris => {
                 const msg = (() => {
                     if (uris.length === 1) {
@@ -177,6 +184,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
             }
         }));
         registry.registerCommand(WorkspaceCommands.FILE_COMPARE, this.newMultiUriAwareCommandHandler({
+            isVisible: uris => uris.length === 2,
             execute: async uris => {
                 const [left, right] = uris;
                 const [leftExists, rightExists] = await Promise.all([
@@ -210,16 +218,15 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     }
                 }
             }
-            // Ideally, we would have to check whether both the URIs represent an individual file, but we cannot make synchronous validation here :(
-        }, uris => uris.length === 2));
+        }));
     }
 
     protected newUriAwareCommandHandler(handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {
         return new UriAwareCommandHandler(this.selectionService, handler);
     }
 
-    protected newMultiUriAwareCommandHandler(handler: UriCommandHandler<URI[]>, isValid: (uris: URI[]) => boolean = uris => uris.length > 0): UriAwareCommandHandler<URI[]> {
-        return new UriAwareCommandHandler(this.selectionService, handler, { multi: true, isValid });
+    protected newMultiUriAwareCommandHandler(handler: UriCommandHandler<URI[]>): UriAwareCommandHandler<URI[]> {
+        return new UriAwareCommandHandler(this.selectionService, handler, { multi: true });
     }
 
     protected newWorkspaceRootUriAwareCommandHandler(handler: UriCommandHandler<URI>): WorkspaceRootUriAwareCommandHandler {
