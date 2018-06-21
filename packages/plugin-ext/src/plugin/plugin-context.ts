@@ -15,6 +15,7 @@ import { getPluginId } from '../common/plugin-protocol';
 import { MessageRegistryExt } from './message-registry';
 import { StatusBarMessageRegistryExt } from './status-bar-message-registry';
 import { WindowStateExtImpl } from './window-state';
+import { WorkspaceExtImpl } from './workspace';
 import { EnvExtImpl } from './env';
 import { QueryParameters } from '../common/env';
 import {
@@ -52,6 +53,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
     const editorsAndDocuments = rpc.set(MAIN_RPC_CONTEXT.EDITORS_AND_DOCUMENTS_EXT, new EditorsAndDocumentsExtImpl(rpc));
     const editors = rpc.set(MAIN_RPC_CONTEXT.TEXT_EDITORS_EXT, new TextEditorsExtImpl(rpc, editorsAndDocuments));
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocuments));
+    const workspaceExt = rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, new WorkspaceExtImpl());
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
     const envExt = rpc.set(MAIN_RPC_CONTEXT.ENV_EXT, new EnvExtImpl(rpc));
     const preferenceRegistryExt = rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, new PreferenceRegistryExtImpl(rpc));
@@ -137,7 +139,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
             return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority);
         },
         createOutputChannel(name: string): theia.OutputChannel {
-          return outputChannelRegistryExt.createOutputChannel(name);
+            return outputChannelRegistryExt.createOutputChannel(name);
         },
 
         get state(): theia.WindowState {
@@ -152,6 +154,15 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
     };
 
     const workspace: typeof theia.workspace = {
+        get workspaceFolders(): theia.WorkspaceFolder[] | undefined {
+            return workspaceExt.workspaceFolders;
+        },
+        get name(): string | undefined {
+            return workspaceExt.name;
+        },
+        onDidChangeWorkspaceFolders(listener, thisArg?, disposables?): theia.Disposable {
+            return workspaceExt.onDidChangeWorkspaceFolders(listener, thisArg, disposables);
+        },
         get textDocuments() {
             return documents.getAllDocumentData().map(data => data.document);
         },
@@ -231,7 +242,6 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         OverviewRulerLane,
         ConfigurationTarget,
     };
-
 }
 
 // tslint:disable-next-line:no-any
