@@ -2054,7 +2054,7 @@ declare module '@theia/plugin' {
          * `ConfigurationTarget.WorkspaceFolder` when configuration is resource specific
          * `ConfigurationTarget.Workspace` otherwise.
          */
-        update(section: string, value: any, configurationTarget?: ConfigurationTarget | boolean): Thenable<void>;
+        update(section: string, value: any, configurationTarget?: ConfigurationTarget | boolean): PromiseLike<void>;
 
         /**
          * Readable dictionary that backs this configuration.
@@ -2154,7 +2154,7 @@ declare module '@theia/plugin' {
          * @param uri Identifies the resource to open.
          * @return A promise that resolves to a [document](#TextDocument).
          */
-        export function openTextDocument(uri: Uri): Thenable<TextDocument | undefined>;
+        export function openTextDocument(uri: Uri): Promise<TextDocument | undefined>;
 
         /**
          * A short-hand for `openTextDocument(Uri.file(fileName))`.
@@ -2163,7 +2163,7 @@ declare module '@theia/plugin' {
          * @param fileName A name of a file on disk.
          * @return A promise that resolves to a [document](#TextDocument).
          */
-        export function openTextDocument(fileName: string): Thenable<TextDocument | undefined>;
+        export function openTextDocument(fileName: string): Promise<TextDocument | undefined>;
 
         /**
          * Opens an untitled text document. The editor will prompt the user for a file
@@ -2173,7 +2173,7 @@ declare module '@theia/plugin' {
          * @param options Options to control how the document will be created.
          * @return A promise that resolves to a [document](#TextDocument).
          */
-        export function openTextDocument(options?: { language?: string; content?: string; }): Thenable<TextDocument | undefined>;
+        export function openTextDocument(options?: { language?: string; content?: string; }): Promise<TextDocument | undefined>;
 
         /**
          * Get a workspace configuration object.
