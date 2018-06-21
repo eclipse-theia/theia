@@ -149,7 +149,15 @@ export abstract class WidgetOpenHandler<W extends BaseWidget> implements OpenHan
     }
 
     protected createWidgetOptions(uri: URI, options?: WidgetOpenerOptions): Object {
-        return uri.withoutFragment().toString();
+        const uriAsString = uri.withoutFragment().toString();
+        if (options) {
+            return {
+                uri: uriAsString,
+                mode: options.mode,
+                widgetOptions: options.widgetOptions
+            };
+        }
+        return uriAsString;
     }
 
 }

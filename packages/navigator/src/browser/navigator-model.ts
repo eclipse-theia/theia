@@ -20,11 +20,13 @@ export class FileNavigatorModel extends FileTreeModel {
     @inject(FileNavigatorTree) protected readonly tree: FileNavigatorTree;
     @inject(FileNavigatorSearch) protected readonly navigatorSearch: FileNavigatorSearch;
 
-    protected doOpenNode(node: TreeNode): void {
+    protected doOpenNode(node: TreeNode, event?: MouseEvent): void {
         if (FileNode.is(node)) {
-            open(this.openerService, node.uri);
+            open(this.openerService, node.uri, {
+                mode: event && event.type === 'click' ? 'reveal' : 'activate'
+            });
         } else {
-            super.doOpenNode(node);
+            super.doOpenNode(node, event);
         }
     }
 

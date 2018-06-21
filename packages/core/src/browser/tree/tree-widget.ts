@@ -572,6 +572,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
                         this.model.toggleNode(node);
                     } else {
                         this.model.selectNode(node);
+                        this.model.openNode(node, event);
                     }
                 }
                 if (this.isExpandable(node) && !shiftMask && !ctrlCmdMask) {
@@ -590,7 +591,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
     }
 
     protected handleDblClickEvent(node: TreeNode | undefined, event: MouseEvent): void {
-        this.model.openNode(node);
+        this.model.openNode(node, event);
         event.stopPropagation();
     }
 
