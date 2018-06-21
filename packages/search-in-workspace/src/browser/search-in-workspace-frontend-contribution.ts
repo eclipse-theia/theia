@@ -73,6 +73,7 @@ export class SearchInWorkspaceFrontendContribution extends AbstractViewContribut
     }
 
     registerMenus(menus: MenuModelRegistry): void {
+        super.registerMenus(menus);
         menus.registerMenuAction([...NAVIGATOR_CONTEXT_MENU, '6_find'], {
             commandId: SearchInWorkspaceCommands.FIND_IN_FOLDER.id
         });
