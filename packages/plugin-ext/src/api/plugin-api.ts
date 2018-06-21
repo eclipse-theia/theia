@@ -102,6 +102,10 @@ export interface WindowStateExt {
     $onWindowStateChanged(focus: boolean): void;
 }
 
+export interface WorkspaceExt {
+    $onWorkspaceFoldersChanged(event: theia.WorkspaceFoldersChangeEvent): void;
+}
+
 export enum EditorPosition {
     ONE = 0,
     TWO = 1,
@@ -423,6 +427,7 @@ export const MAIN_RPC_CONTEXT = {
     COMMAND_REGISTRY_EXT: createProxyIdentifier<CommandRegistryExt>('CommandRegistryExt'),
     QUICK_OPEN_EXT: createProxyIdentifier<QuickOpenExt>('QuickOpenExt'),
     WINDOW_STATE_EXT: createProxyIdentifier<WindowStateExt>('WindowStateExt'),
+    WORKSPACE_EXT: createProxyIdentifier<WorkspaceExt>('WorkspaceExt'),
     TEXT_EDITORS_EXT: createProxyIdentifier<TextEditorsExt>('TextEditorsExt'),
     EDITORS_AND_DOCUMENTS_EXT: createProxyIdentifier<EditorsAndDocumentsExt>('EditorsAndDocumentsExt'),
     DOCUMENTS_EXT: createProxyIdentifier<DocumentsExt>('DocumentsExt'),

@@ -2092,6 +2092,46 @@ declare module '@theia/plugin' {
     }
 
     /**
+     * An event describing a change to the set of [workspace folders](#workspace.workspaceFolders).
+     */
+    export interface WorkspaceFoldersChangeEvent {
+        /**
+         * Added workspace folders.
+         */
+        readonly added: WorkspaceFolder[];
+
+        /**
+         * Removed workspace folders.
+         */
+        readonly removed: WorkspaceFolder[];
+    }
+
+    /**
+     * A workspace folder is one of potentially many roots opened by the editor. All workspace folders
+     * are equal which means there is no notion of an active or master workspace folder.
+     */
+    export interface WorkspaceFolder {
+        /**
+         * The associated uri for this workspace folder.
+         *
+         * *Note:* The [Uri](#Uri)-type was intentionally chosen such that future releases of the editor can support
+         * workspace folders that are not stored on the local disk, e.g. `ftp://server/workspaces/foo`.
+         */
+        readonly uri: Uri;
+
+        /**
+         * The name of this workspace folder. Defaults to
+         * the basename of its [uri-path](#Uri.path)
+         */
+        readonly name: string;
+
+        /**
+         * The ordinal number of this workspace folder.
+         */
+        readonly index: number;
+    }
+
+    /**
      * Namespace for dealing with the current workspace. A workspace is the representation
      * of the folder that has been opened. There is no workspace when just a file but not a
      * folder has been opened.
@@ -2101,6 +2141,27 @@ declare module '@theia/plugin' {
      * the editor-process so that they should be always used instead of nodejs-equivalents.
      */
     export namespace workspace {
+        /**
+         * List of workspace folders or `undefined` when no folder is open.
+         * *Note* that the first entry corresponds to the value of `rootPath`.
+         *
+         * @readonly
+         */
+        export let workspaceFolders: WorkspaceFolder[] | undefined;
+
+        /**
+         * The name of the workspace. `undefined` when no folder
+         * has been opened.
+         *
+         * @readonly
+         */
+        export let name: string | undefined;
+
+        /**
+         * An event that is emitted when a workspace folder is added or removed.
+         */
+        export const onDidChangeWorkspaceFolders: Event<WorkspaceFoldersChangeEvent>;
+
         /**
          * All text documents currently known to the system.
          *
