@@ -117,7 +117,7 @@ export class PreferenceRegistryExtImpl implements PreferenceRegistryExt {
                     return cloneOnWriteProxy(result, key);
                 }
             },
-            update: (key: string, value: any, arg?: ConfigurationTarget | boolean): Thenable<void> => {
+            update: (key: string, value: any, arg?: ConfigurationTarget | boolean): PromiseLike<void> => {
                 key = section ? `${section}.${key}` : key;
                 if (typeof value !== 'undefined') {
                     return this.proxy.$updateConfigurationOption(arg, key, value, resource);
