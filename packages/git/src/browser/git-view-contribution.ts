@@ -7,7 +7,7 @@
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { DisposableCollection, CommandRegistry, MenuModelRegistry } from '@theia/core';
-import { AbstractViewContribution, StatusBar, StatusBarAlignment, DiffUris, StatusBarEntry } from '@theia/core/lib/browser';
+import { AbstractViewContribution, StatusBar, StatusBarAlignment, DiffUris, StatusBarEntry, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
 import { EditorManager, EditorWidget, EditorOpenerOptions, EditorContextMenu, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { GitFileChange, GitFileStatus } from '../common';
 import { GitWidget } from './git-widget';
@@ -69,7 +69,7 @@ export namespace GIT_COMMANDS {
 }
 
 @injectable()
-export class GitViewContribution extends AbstractViewContribution<GitWidget> {
+export class GitViewContribution extends AbstractViewContribution<GitWidget> implements FrontendApplicationContribution {
 
     static GIT_SELECTED_REPOSITORY = 'git-selected-repository';
     static GIT_REPOSITORY_STATUS = 'git-repository-status';
@@ -94,6 +94,10 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
             toggleCommandId: 'gitView:toggle',
             toggleKeybinding: 'ctrlcmd+shift+g'
         });
+    }
+
+    async initializeLayout(app: FrontendApplication): Promise<void> {
+        await this.openView();
     }
 
     onStart(): void {

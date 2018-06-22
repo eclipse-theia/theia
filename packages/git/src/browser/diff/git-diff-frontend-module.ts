@@ -7,8 +7,7 @@
 
 import { interfaces } from "inversify";
 import { GitDiffContribution } from './git-diff-contribution';
-import { WidgetFactory } from "@theia/core/lib/browser";
-import { CommandContribution, MenuContribution } from '@theia/core';
+import { WidgetFactory, bindViewContribution } from "@theia/core/lib/browser";
 import { GitDiffWidget, GIT_DIFF } from "./git-diff-widget";
 
 import '../../../src/browser/style/diff.css';
@@ -21,11 +20,6 @@ export function bindGitDiffModule(bind: interfaces.Bind) {
         createWidget: () => ctx.container.get<GitDiffWidget>(GitDiffWidget)
     }));
 
-    bind(GitDiffContribution).toSelf().inSingletonScope();
-    for (const identifier of [CommandContribution, MenuContribution]) {
-        bind(identifier).toDynamicValue(ctx =>
-            ctx.container.get(GitDiffContribution)
-        ).inSingletonScope();
-    }
+    bindViewContribution(bind, GitDiffContribution);
 
 }

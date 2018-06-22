@@ -8,7 +8,8 @@
 import { injectable, inject, postConstruct } from "inversify";
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX } from "@theia/core/lib/common";
-import { Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands, OpenerService } from "@theia/core/lib/browser";
+import { Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands,
+         OpenerService, FrontendApplicationContribution, FrontendApplication } from "@theia/core/lib/browser";
 import { SHELL_TABBAR_CONTEXT_MENU } from "@theia/core/lib/browser";
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
@@ -39,7 +40,7 @@ export namespace NavigatorContextMenu {
 }
 
 @injectable()
-export class FileNavigatorContribution extends AbstractViewContribution<FileNavigatorWidget>  {
+export class FileNavigatorContribution extends AbstractViewContribution<FileNavigatorWidget> implements FrontendApplicationContribution {
 
     constructor(
         @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences,
@@ -62,6 +63,10 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     protected async init() {
         await this.fileNavigatorPreferences.ready;
         this.shell.currentChanged.connect(() => this.onCurrentWidgetChangedHandler());
+    }
+
+    async initializeLayout(app: FrontendApplication): Promise<void> {
+        await this.openView();
     }
 
     registerCommands(registry: CommandRegistry): void {

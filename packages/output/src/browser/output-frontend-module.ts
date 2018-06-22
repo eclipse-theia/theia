@@ -7,9 +7,7 @@
 
 import { ContainerModule, interfaces } from "inversify";
 import { OutputWidget, OUTPUT_WIDGET_KIND } from "./output-widget";
-import { WidgetFactory } from "@theia/core/lib/browser";
-import { KeybindingContribution } from '@theia/core/lib/browser';
-import { MenuContribution, CommandContribution } from "@theia/core";
+import { WidgetFactory, bindViewContribution } from "@theia/core/lib/browser";
 import { OutputContribution } from "./output-contribution";
 import { OutputChannelManager } from "../common/output-channel";
 import { bindOutputPreferences } from "../common/output-preferences";
@@ -24,8 +22,5 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
         createWidget: () => context.container.get<OutputWidget>(OutputWidget)
     }));
 
-    bind(OutputContribution).toSelf().inSingletonScope();
-    bind(CommandContribution).toDynamicValue(context => context.container.get(OutputContribution));
-    bind(KeybindingContribution).toDynamicValue(c => c.container.get(OutputContribution));
-    bind(MenuContribution).toDynamicValue(context => context.container.get(OutputContribution));
+    bindViewContribution(bind, OutputContribution);
 });

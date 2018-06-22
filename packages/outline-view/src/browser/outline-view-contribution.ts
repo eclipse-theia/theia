@@ -8,11 +8,12 @@
 import { injectable } from "inversify";
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { OutlineViewWidget } from './outline-view-widget';
+import { FrontendApplicationContribution, FrontendApplication } from "@theia/core/lib/browser/frontend-application";
 
 export const OUTLINE_WIDGET_FACTORY_ID = 'outline-view';
 
 @injectable()
-export class OutlineViewContribution extends AbstractViewContribution<OutlineViewWidget> {
+export class OutlineViewContribution extends AbstractViewContribution<OutlineViewWidget> implements FrontendApplicationContribution {
 
     constructor() {
         super({
@@ -25,5 +26,9 @@ export class OutlineViewContribution extends AbstractViewContribution<OutlineVie
             toggleCommandId: 'outlineView:toggle',
             toggleKeybinding: 'ctrlcmd+shift+o'
         });
+    }
+
+    async initializeLayout(app: FrontendApplication): Promise<void> {
+        await this.openView();
     }
 }

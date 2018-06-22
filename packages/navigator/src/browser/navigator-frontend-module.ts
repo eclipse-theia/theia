@@ -6,7 +6,7 @@
  */
 
 import { ContainerModule } from 'inversify';
-import { KeybindingContext, bindViewContribution } from "@theia/core/lib/browser";
+import { KeybindingContext, bindViewContribution, FrontendApplicationContribution } from "@theia/core/lib/browser";
 import { FileNavigatorWidget, FILE_NAVIGATOR_ID } from "./navigator-widget";
 import { NavigatorActiveContext } from './navigator-keybinding-context';
 import { FileNavigatorContribution } from './navigator-contribution';
@@ -24,6 +24,7 @@ export default new ContainerModule(bind => {
     bind(FileNavigatorFilter).toSelf().inSingletonScope();
 
     bindViewContribution(bind, FileNavigatorContribution);
+    bind(FrontendApplicationContribution).toService(FileNavigatorContribution);
 
     bind(KeybindingContext).to(NavigatorActiveContext).inSingletonScope();
 
