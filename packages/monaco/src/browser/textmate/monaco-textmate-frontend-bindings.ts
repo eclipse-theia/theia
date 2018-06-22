@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import { interfaces } from 'inversify';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, isBasicWasmSupported } from '@theia/core/lib/browser';
 import { bindContributionProvider } from '@theia/core';
 import { ThemeService } from '@theia/core/lib/browser/theming';
 import { BuiltinTextmateThemeProvider } from './monaco-textmate-builtin-theme-provider';
@@ -26,7 +26,7 @@ import { MonacoTextmateService, OnigasmPromise } from './monaco-textmate-service
 import { loadWASM } from 'onigasm';
 
 export default (bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
-    const onigasmPromise = loadWASM(require('onigasm/lib/onigasm.wasm'));
+    const onigasmPromise = isBasicWasmSupported ? loadWASM(require('onigasm/lib/onigasm.wasm')) : Promise.reject(new Error('wasm not supported'));
     bind(OnigasmPromise).toConstantValue(onigasmPromise);
 
     bind(MonacoTextmateService).toSelf().inSingletonScope();
