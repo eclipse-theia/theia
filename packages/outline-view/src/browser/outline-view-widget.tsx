@@ -16,7 +16,6 @@
 
 import { injectable, inject } from 'inversify';
 import {
-    TreeWidget,
     TreeNode,
     NodeProps,
     SelectableTreeNode,
@@ -25,10 +24,11 @@ import {
     TreeModel,
     ExpandableTreeNode
 } from "@theia/core/lib/browser";
-import { h } from "@phosphor/virtualdom/lib";
 import { Message } from '@phosphor/messaging';
 import { Emitter } from '@theia/core';
 import { CompositeTreeNode } from '@theia/core/lib/browser';
+import { TreeReactWidget } from '@theia/core/lib/browser/tree/tree-react-widget';
+import * as React from "react";
 
 export interface OutlineSymbolInformationNode extends CompositeTreeNode, SelectableTreeNode, ExpandableTreeNode {
     iconClass: string;
@@ -44,7 +44,7 @@ export type OutlineViewWidgetFactory = () => OutlineViewWidget;
 export const OutlineViewWidgetFactory = Symbol('OutlineViewWidgetFactory');
 
 @injectable()
-export class OutlineViewWidget extends TreeWidget {
+export class OutlineViewWidget extends TreeReactWidget {
 
     readonly onDidChangeOpenStateEmitter = new Emitter<boolean>();
 
@@ -62,13 +62,13 @@ export class OutlineViewWidget extends TreeWidget {
 
     public setOutlineTree(roots: OutlineSymbolInformationNode[]) {
         const nodes = this.reconcileTreeState(roots);
-        this.model.root = <CompositeTreeNode>{
+        this.model.root = {
             id: 'outline-view-root',
             name: 'Outline Root',
             visible: false,
             children: nodes,
             parent: undefined
-        };
+        } as CompositeTreeNode;
     }
 
     protected reconcileTreeState(nodes: TreeNode[]): TreeNode[] {
@@ -102,9 +102,9 @@ export class OutlineViewWidget extends TreeWidget {
         super.onUpdateRequest(msg);
     }
 
-    renderIcon(node: TreeNode, props: NodeProps): h.Child {
+    renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         if (OutlineSymbolInformationNode.is(node)) {
-            return h.div({ className: "symbol-icon symbol-icon-center " + node.iconClass });
+            return <div className={"symbol-icon symbol-icon-center " + node.iconClass}></div>;
         }
         // tslint:disable-next-line:no-null-keyword
         return null;
