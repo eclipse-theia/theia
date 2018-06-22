@@ -30,12 +30,24 @@
     z-index: 0;
 }
 
+/*
+ * we need to disable the background image when using font awesome icons
+ */
 .monaco-quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon,
-.vs-dark .monaco-quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon {
-    background-image: none;
-    margin-bottom: 4px;
+.vs-dark .monaco-quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon.fa {
+    background-image: none;    
     margin-right: 0px;
 }
+
+/*
+ * we need to disable the background image when using file-icons
+ */
+.monaco-quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon,
+.vs-dark .monaco-quick-open-widget .quick-open-tree .quick-open-entry .quick-open-entry-icon.file-icon {
+    background-image: none;    
+    margin-right: 0px;
+}
+
 
 .monaco-tree-row  {
     padding-right: 11px;

@@ -68,6 +68,14 @@ export class CommandQuickOpenItem extends QuickOpenItem {
         return this.hidden;
     }
 
+    getIconClass() {
+        const toggleHandler = this.commands.getToggledHandler(this.command.id);
+        if (toggleHandler && toggleHandler.isToggled && toggleHandler.isToggled()) {
+            return `fa fa-check`;
+        }
+        return super.getIconClass();
+    }
+
     getKeybinding(): Keybinding | undefined {
         const bindings = this.keybindings.getKeybindingsForCommand(this.command.id);
         return bindings ? bindings[0] : undefined;
