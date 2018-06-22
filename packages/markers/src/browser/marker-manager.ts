@@ -85,12 +85,12 @@ export class MarkerCollection<T> {
 
 }
 
-interface Uri2MarkerEntry {
+export interface Uri2MarkerEntry {
     uri: string
     markers: Owner2MarkerEntry[]
 }
 
-interface Owner2MarkerEntry {
+export interface Owner2MarkerEntry {
     owner: string
     markerData: object[];
 }
@@ -148,13 +148,11 @@ export abstract class MarkerManager<D extends object> {
             for (const [uri, collection] of this.uri2MarkerCollection.entries()) {
                 const ownerEntries: Owner2MarkerEntry[] = [];
                 for (const owner of collection.getOwners()) {
-                    const marker = collection.getMarkers(owner);
-                    if (marker) {
-                        ownerEntries.push({
-                            owner,
-                            markerData: Array.from(marker.map(m => m.data))
-                        });
-                    }
+                    const markers = collection.getMarkers(owner);
+                    ownerEntries.push({
+                        owner,
+                        markerData: Array.from(markers.map(m => m.data))
+                    });
                 }
                 result.push({
                     uri,
@@ -183,9 +181,12 @@ export abstract class MarkerManager<D extends object> {
 
     protected internalSetMarkers(uri: URI, owner: string, data: D[]): Marker<D>[] {
         const collection = this.getCollection(uri);
-        const result = collection.setMarkers(owner, data);
+        const oldMarkers = collection.setMarkers(owner, data);
+        if (data.length < 1) {
+            this.uri2MarkerCollection.delete(uri.toString());
+        }
         this.fireOnDidChangeMarkers();
-        return result;
+        return oldMarkers;
     }
 
     protected getCollection(uri: URI): MarkerCollection<D> {
