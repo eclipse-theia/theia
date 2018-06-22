@@ -139,7 +139,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         }
     }
 
-    async commit(repository?: Repository, options?: 'amend' | 'sign-off', message: string = this.message) {
+    async doCommit(repository?: Repository, options?: 'amend' | 'sign-off', message: string = this.message) {
         if (repository) {
             this.commitMessageValidationResult = undefined;
             if (message.trim().length === 0) {
@@ -339,11 +339,13 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         </React.Fragment>;
     }
 
-    protected refreshHandler = async () => {
+    protected readonly refresh = () => this.doRefresh();
+    protected async doRefresh() {
         await this.repositoryProvider.refresh();
     }
 
-    protected toolbarMoreHandler = (event: React.MouseEvent<HTMLElement>) => {
+    protected readonly showMoreToolButtons = (event: React.MouseEvent<HTMLElement>) => this.doShowMoreToolButtons(event);
+    protected doShowMoreToolButtons(event: React.MouseEvent<HTMLElement>) {
         const el = (event.target as HTMLElement).parentElement;
         if (el) {
             this.contextMenuRenderer.render(GitWidget.ContextMenu.PATH, {
@@ -353,7 +355,8 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         }
     }
 
-    protected addSignedOffHandler = async () => {
+    protected readonly signOff = () => this.doSignOff();
+    protected async doSignOff() {
         const { selectedRepository } = this.repositoryProvider;
         if (selectedRepository) {
             const [username, email] = await this.getUserConfig(selectedRepository);
@@ -373,21 +376,21 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         }
     }
 
-    protected commitHandler = (repository: Repository | undefined) => this.commit.bind(this)(repository);
+    protected readonly commit = (repository: Repository | undefined) => this.doCommit.bind(this)(repository);
 
     protected renderCommandBar(repository: Repository | undefined): React.ReactNode {
         return <div id='commandBar' className='flexcontainer'>
             <div className='buttons'>
-                <a className='toolbar-button' title='Refresh' onClick={this.refreshHandler}>
+                <a className='toolbar-button' title='Refresh' onClick={this.refresh}>
                     <i className='fa fa-refresh' />
                 </a>
                 {
                     repository ?
                         <React.Fragment>
-                            <a className='toolbar-button' title='Add Signed-off-by' onClick={this.addSignedOffHandler}>
+                            <a className='toolbar-button' title='Add Signed-off-by' onClick={this.signOff}>
                                 <i className='fa fa-pencil-square-o ' />
                             </a >
-                            <a className='toolbar-button' title='More...' onClick={this.toolbarMoreHandler}>
+                            <a className='toolbar-button' title='More...' onClick={this.showMoreToolButtons}>
                                 <i className='fa fa-ellipsis-h' />
                             </a >
                         </React.Fragment>
@@ -396,7 +399,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
             </div >
             <div className='placeholder'></div >
             <div className='buttons'>
-                <button className='theia-button' title='Commit all the staged changes' onClick={() => this.commitHandler(repository)}>
+                <button className='theia-button' title='Commit all the staged changes' onClick={() => this.commit(repository)}>
                     Commit
             </button >
             </div>
@@ -411,7 +414,10 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         return [username, email];
     }
 
-    protected unstageHandler = async (repository: Repository, change: GitFileChange) => {
+    protected readonly unstage = (repository: Repository, change: GitFileChange) => {
+        this.doUnstage(repository, change);
+    }
+    protected async doUnstage(repository: Repository, change: GitFileChange) {
         try {
             await this.git.unstage(repository, change.uri);
         } catch (error) {
@@ -419,20 +425,26 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         }
     }
 
-    protected discardHandler = async (repository: Repository, change: GitFileChange) => {
-        const options: Git.Options.Checkout.WorkingTreeFile = { paths: change.uri };
-        if (change.status === GitFileStatus.New) {
-            this.commandService.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(change.uri));
-        } else {
+    protected readonly discard = (repository: Repository, change: GitFileChange) => {
+        this.doDiscard(repository, change);
+    }
+    protected async doDiscard(repository: Repository, change: GitFileChange) {
+        // Allow deletion, only iff the same file is not yet in the Git index.
+        if (await this.git.lsFiles(repository, change.uri, { errorUnmatch: true })) {
             try {
-                await this.git.checkout(repository, options);
+                await this.git.unstage(repository, change.uri, { treeish: 'HEAD', reset: 'working-tree' });
             } catch (error) {
                 this.logError(error);
             }
+        } else {
+            this.commandService.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(change.uri));
         }
     }
 
-    protected stageHandler = async (repository: Repository, change: GitFileChange) => {
+    protected readonly stage = (repository: Repository, change: GitFileChange) => {
+        this.doStage(repository, change);
+    }
+    protected async doStage(repository: Repository, change: GitFileChange) {
         try {
             await this.git.add(repository, change.uri);
         } catch (error) {
@@ -444,14 +456,14 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         return <div className='buttons'>
             {
                 change.staged ?
-                    <a className='toolbar-button' title='Unstage Changes' onClick={() => this.unstageHandler(repository, change)}>
+                    <a className='toolbar-button' title='Unstage Changes' onClick={() => this.unstage(repository, change)}>
                         <i className='fa fa-minus' />
                     </a> :
                     <React.Fragment>
-                        <a className='toolbar-button' title='Discard Changes' onClick={() => this.discardHandler(repository, change)}>
+                        <a className='toolbar-button' title='Discard Changes' onClick={() => this.discard(repository, change)}>
                             <i className='fa fa-undo' />
                         </a>
-                        <a className='toolbar-button' title='Stage Changes' onClick={() => this.stageHandler(repository, change)}>
+                        <a className='toolbar-button' title='Stage Changes' onClick={() => this.stage(repository, change)}>
                             <i className='fa fa-plus' />
                         </a>
                     </React.Fragment>
@@ -473,14 +485,14 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
                 <div className='buttons'>
                     {
                         change.staged ?
-                            <a className='toolbar-button' title='Unstage Changes' onClick={() => this.unstageHandler(repository, change)}>
+                            <a className='toolbar-button' title='Unstage Changes' onClick={() => this.unstage(repository, change)}>
                                 <i className='fa fa-minus' />
                             </a> :
                             <React.Fragment>
-                                <a className='toolbar-button' title='Discard Changes' onClick={() => this.discardHandler(repository, change)}>
+                                <a className='toolbar-button' title='Discard Changes' onClick={() => this.discard(repository, change)}>
                                     <i className='fa fa-undo' />
                                 </a>
-                                <a className='toolbar-button' title='Stage Changes' onClick={() => this.stageHandler(repository, change)}>
+                                <a className='toolbar-button' title='Stage Changes' onClick={() => this.stage(repository, change)}>
                                     <i className='fa fa-plus' />
                                 </a>
                             </React.Fragment>
