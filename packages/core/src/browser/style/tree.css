@@ -28,6 +28,10 @@
     box-shadow: none;
 }
 
+.theia-TreeContainer {
+    height: 100%;
+}
+
 .theia-TreeNode {
     line-height: var(--theia-private-horizontal-tab-height);
     display: flex;
