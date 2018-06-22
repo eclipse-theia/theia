@@ -15,16 +15,12 @@
  ********************************************************************************/
 
 import { injectable, inject } from "inversify";
-import { h } from "@phosphor/virtualdom";
-import { Message } from "@phosphor/messaging";
-import {
-    ContextMenuRenderer,
-    TreeWidget, NodeProps, TreeProps, TreeNode
-} from "@theia/core/lib/browser";
-import { ElementAttrs } from "@phosphor/virtualdom";
+import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode } from "@theia/core/lib/browser";
 import { DirNode, FileStatNode } from "./file-tree";
 import { FileTreeModel } from "./file-tree-model";
 import { DisposableCollection, Disposable } from '@theia/core/lib/common';
+import { TreeReactWidget } from "@theia/core/lib/browser/tree/tree-react-widget";
+import * as React from "react";
 
 export const FILE_TREE_CLASS = 'theia-FileTree';
 export const FILE_STAT_NODE_CLASS = 'theia-FileStatNode';
@@ -32,7 +28,7 @@ export const DIR_NODE_CLASS = 'theia-DirNode';
 export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 
 @injectable()
-export class FileTreeWidget extends TreeWidget {
+export class FileTreeWidget extends TreeReactWidget {
 
     protected readonly toCancelNodeExpansion = new DisposableCollection();
 
@@ -57,34 +53,35 @@ export class FileTreeWidget extends TreeWidget {
         return classNames;
     }
 
-    protected renderIcon(node: TreeNode, props: NodeProps): h.Child {
+    protected renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         if (FileStatNode.is(node)) {
-            return h.div({
-                className: (node.icon || '') + ' file-icon'
-            });
+            return <div className={(node.icon || '') + ' file-icon'}></div>;
         }
         // tslint:disable-next-line:no-null-keyword
         return null;
     }
 
-    protected onAfterAttach(msg: Message): void {
-        super.onAfterAttach(msg);
-        this.addEventListener(this.node, 'dragenter', event => this.handleDragEnterEvent(this.model.root, event));
-        this.addEventListener(this.node, 'dragover', event => this.handleDragOverEvent(this.model.root, event));
-        this.addEventListener(this.node, 'dragleave', event => this.handleDragLeaveEvent(this.model.root, event));
-        this.addEventListener(this.node, 'drop', event => this.handleDropEvent(this.model.root, event));
+    protected createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
+        const attrs = super.createContainerAttributes();
+        return {
+            ...attrs,
+            // onDragEnter: event => this.handleDragEnterEvent(this.model.root, event.nativeEvent),
+            onDragOver: event => this.handleDragOverEvent(this.model.root, event.nativeEvent),
+            onDragLeave: event => this.handleDragLeaveEvent(this.model.root, event.nativeEvent),
+            onDrop: event => this.handleDropEvent(this.model.root, event.nativeEvent)
+        };
     }
 
-    protected createNodeAttributes(node: TreeNode, props: NodeProps): ElementAttrs {
+    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const elementAttrs = super.createNodeAttributes(node, props);
         return {
             ...elementAttrs,
-            draggable: String(FileStatNode.is(node)),
-            ondragstart: event => this.handleDragStartEvent(node, event),
-            ondragenter: event => this.handleDragEnterEvent(node, event),
-            ondragover: event => this.handleDragOverEvent(node, event),
-            ondragleave: event => this.handleDragLeaveEvent(node, event),
-            ondrop: event => this.handleDropEvent(node, event)
+            draggable: FileStatNode.is(node),
+            onDragStart: event => this.handleDragStartEvent(node, event.nativeEvent),
+            onDragEnter: event => this.handleDragEnterEvent(node, event.nativeEvent),
+            onDragOver: event => this.handleDragOverEvent(node, event.nativeEvent),
+            onDragLeave: event => this.handleDragLeaveEvent(node, event.nativeEvent),
+            onDrop: event => this.handleDropEvent(node, event.nativeEvent)
         };
     }
 
