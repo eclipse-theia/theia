@@ -16,7 +16,6 @@
 
 import { injectable, inject } from 'inversify';
 import { CommandRegistry, CommandContribution, CommandHandler, Command } from '../common/command';
-import { ThemeProvider } from '../common/theming-protocol';
 import { Emitter, Event } from '../common/event';
 import { QuickOpenModel, QuickOpenItem, QuickOpenMode } from './quick-open/quick-open-model';
 import { QuickOpenService } from './quick-open/quick-open-service';
@@ -37,15 +36,13 @@ export interface ThemeChangeEvent {
     oldTheme?: Theme;
 }
 
-export class ThemeService implements ThemeProvider {
+export class ThemeService {
 
     private themes: { [id: string]: Theme } = {};
     private activeTheme: Theme | undefined;
     private readonly themeChange = new Emitter<ThemeChangeEvent>();
-    private readonly themeProviders: ThemeProvider[] = [];
 
     readonly onThemeChange: Event<ThemeChangeEvent> = this.themeChange.event;
-    readonly ready: Promise<void> = this.gatherThemes().then(() => undefined);
 
     static get() {
         const global = window as any; // tslint:disable-line
@@ -77,28 +74,6 @@ export class ThemeService implements ThemeProvider {
 
     getTheme(themeId: string) {
         return this.themes[themeId] || this.themes[this.defaultTheme];
-    }
-
-    async gatherThemes() {
-        const gathered: Theme[] = [];
-
-        // Concurrent gathering of the themes
-        await Promise.all(
-            this.themeProviders.map(
-                provider => provider.gatherThemes()
-                    .catch(error => {
-                        console.error(error);
-                        return [];
-                    })
-                    .then(themes => {
-                        gathered.push(...themes);
-                    })
-            )
-        );
-
-        // Update theme cache in one synchronous execution
-        this.register(...gathered);
-        return gathered;
     }
 
     startupTheme() {
@@ -186,7 +161,7 @@ export class ThemingCommandContribution implements CommandContribution, CommandH
     }
 }
 
-export class BuiltinThemeProvider implements ThemeProvider {
+export class BuiltinThemeProvider {
 
     // Webpack converts these `require` in some Javascript object that wraps the `.css` files
     static readonly darkCss = require('../../src/browser/style/variables-dark.useable.css');
@@ -222,8 +197,4 @@ export class BuiltinThemeProvider implements ThemeProvider {
         BuiltinThemeProvider.darkTheme,
         BuiltinThemeProvider.lightTheme,
     ];
-
-    async gatherThemes() {
-        return BuiltinThemeProvider.themes;
-    }
 }

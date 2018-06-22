@@ -25,7 +25,6 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     protected readonly themeService: ThemeService;
 
     async initialize() {
-        await this.themeService.ready;
         const currentTheme = this.themeService.getCurrentTheme();
         this.changeTheme(currentTheme.editorTheme);
         this.themeService.onThemeChange(event => this.changeTheme(event.newTheme.editorTheme));
