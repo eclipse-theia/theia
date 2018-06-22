@@ -111,6 +111,10 @@
     padding: 3px 3px;
 }
 
+#theia-gitContainer .itemButtonsContainer .buttons .toolbar-button {
+    padding: 0 3px;
+}
+
 #theia-gitContainer .buttons .toolbar-button:hover {
     background: var(--theia-content-font-color3);
 }

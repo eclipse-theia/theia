@@ -186,7 +186,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.COMMIT_SIGN_OFF, {
-            execute: () => this.tryGetWidget()!.commit(this.repositoryTracker.selectedRepository, 'sign-off'),
+            execute: () => this.tryGetWidget()!.doCommit(this.repositoryTracker.selectedRepository, 'sign-off'),
             isEnabled: () => !!this.tryGetWidget() && !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.COMMIT_AMEND, {
@@ -196,7 +196,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
                 if (!!widget && !!selectedRepository) {
                     try {
                         const message = await this.quickOpenService.commitMessageForAmend();
-                        widget.commit(selectedRepository, 'amend', message);
+                        widget.doCommit(selectedRepository, 'amend', message);
                     } catch (e) {
                         if (!(e instanceof Error) || e.message !== 'User abort.') {
                             throw e;
