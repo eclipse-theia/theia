@@ -9,11 +9,8 @@ import { ContainerModule, interfaces } from 'inversify';
 import { OutlineViewService } from './outline-view-service';
 import { OutlineViewContribution } from './outline-view-contribution';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
-import { FrontendApplicationContribution, createTreeContainer, TreeWidget } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, createTreeContainer, TreeWidget, bindViewContribution } from '@theia/core/lib/browser';
 import { OutlineViewWidgetFactory, OutlineViewWidget } from './outline-view-widget';
-import { CommandContribution } from '@theia/core/lib/common/command';
-import { KeybindingContribution } from '@theia/core/lib/browser/keybinding';
-import { MenuContribution } from '@theia/core/lib/common/menu';
 
 export default new ContainerModule(bind => {
     bind(OutlineViewWidgetFactory).toFactory(ctx =>
@@ -23,11 +20,8 @@ export default new ContainerModule(bind => {
     bind(OutlineViewService).toSelf().inSingletonScope();
     bind(WidgetFactory).toDynamicValue(context => context.container.get(OutlineViewService));
 
-    bind(OutlineViewContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(OutlineViewContribution));
-    bind(CommandContribution).toDynamicValue(c => c.container.get(OutlineViewContribution));
-    bind(KeybindingContribution).toDynamicValue(c => c.container.get(OutlineViewContribution));
-    bind(MenuContribution).toDynamicValue(c => c.container.get(OutlineViewContribution));
+    bindViewContribution(bind, OutlineViewContribution);
+    bind(FrontendApplicationContribution).toService(OutlineViewContribution);
 });
 
 function createOutlineViewWidget(parent: interfaces.Container): OutlineViewWidget {

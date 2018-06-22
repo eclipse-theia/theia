@@ -42,11 +42,6 @@ export class LeftPanel {
             && this.isPanelVisible();
     }
 
-    isExtensionTabVisible(): boolean {
-        return (this.driver.element('#extensions').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1)
-            && this.isPanelVisible();
-    }
-
     protected isPanelVisible(): boolean {
         return (this.driver.element('#theia-left-side-panel').getAttribute('class').split(' ').indexOf('p-mod-hidden') === -1);
     }

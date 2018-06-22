@@ -6,7 +6,7 @@
  */
 
 import { injectable, inject } from 'inversify';
-import { FrontendApplication } from '@theia/core/lib/browser';
+import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { PROBLEM_KIND } from '../../common/problem-marker';
@@ -14,7 +14,7 @@ import { ProblemManager, ProblemStat } from './problem-manager';
 import { ProblemWidget } from './problem-widget';
 
 @injectable()
-export class ProblemContribution extends AbstractViewContribution<ProblemWidget> {
+export class ProblemContribution extends AbstractViewContribution<ProblemWidget> implements FrontendApplicationContribution {
 
     @inject(ProblemManager) protected readonly problemManager: ProblemManager;
     @inject(StatusBar) protected readonly statusBar: StatusBar;
@@ -36,6 +36,10 @@ export class ProblemContribution extends AbstractViewContribution<ProblemWidget>
         this.problemManager.onDidChangeMarkers(() => {
             this.setStatusBarElement(this.problemManager.getProblemStat());
         });
+    }
+
+    async initializeLayout(app: FrontendApplication): Promise<void> {
+        await this.openView();
     }
 
     protected setStatusBarElement(problemStat: ProblemStat) {

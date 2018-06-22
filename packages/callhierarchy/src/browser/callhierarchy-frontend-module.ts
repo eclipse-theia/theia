@@ -6,9 +6,9 @@
  */
 
 import { CallHierarchyContribution } from './callhierarchy-contribution';
-import { CommandContribution, MenuContribution, bindContributionProvider } from "@theia/core/lib/common";
+import { bindContributionProvider } from "@theia/core/lib/common";
 import { CallHierarchyService, CallHierarchyServiceProvider } from "./callhierarchy-service";
-import { WidgetFactory, KeybindingContribution } from '@theia/core/lib/browser';
+import { WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
 import { CALLHIERARCHY_ID } from './callhierarchy';
 import { createHierarchyTreeWidget } from './callhierarchy-tree';
 import { CurrentEditorAccess } from './current-editor-access';
@@ -23,10 +23,7 @@ export default new ContainerModule(bind => {
     bindContributionProvider(bind, CallHierarchyService);
     bind(CallHierarchyServiceProvider).to(CallHierarchyServiceProvider).inSingletonScope();
 
-    bind(CallHierarchyContribution).toSelf().inSingletonScope();
-    bind(CommandContribution).toDynamicValue(ctx => ctx.container.get(CallHierarchyContribution));
-    bind(MenuContribution).toDynamicValue(ctx => ctx.container.get(CallHierarchyContribution));
-    bind(KeybindingContribution).toDynamicValue(ctx => ctx.container.get(CallHierarchyContribution));
+    bindViewContribution(bind, CallHierarchyContribution);
 
     bind(WidgetFactory).toDynamicValue(context => ({
         id: CALLHIERARCHY_ID,

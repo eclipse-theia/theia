@@ -62,7 +62,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
                         }
                     });
 
-                    this.hostedPluginServer.isHostedTheiaRunning().then((running) => {
+                    this.hostedPluginServer.isHostedTheiaRunning().then(running => {
                         if (running) {
                             this.onHostedPluginRunning();
                         }
@@ -166,7 +166,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
         } else {
             // ask state of hosted plugin when switching to Online
             if (this.entry) {
-                this.hostedPluginServer.isHostedTheiaRunning().then((running) => {
+                this.hostedPluginServer.isHostedTheiaRunning().then(running => {
                     if (running) {
                         this.onHostedPluginRunning();
                     } else {

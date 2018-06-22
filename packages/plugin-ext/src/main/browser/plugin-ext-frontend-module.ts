@@ -8,8 +8,8 @@
 import '../../../src/main/style/status-bar.css';
 
 import { ContainerModule } from "inversify";
-import { FrontendApplicationContribution, FrontendApplication, WidgetFactory, KeybindingContribution } from "@theia/core/lib/browser";
-import { MaybePromise, CommandContribution, MenuContribution, ResourceResolver } from "@theia/core/lib/common";
+import { FrontendApplicationContribution, FrontendApplication, WidgetFactory, bindViewContribution } from "@theia/core/lib/browser";
+import { MaybePromise, CommandContribution, ResourceResolver } from "@theia/core/lib/common";
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { PluginWorker } from './plugin-worker';
 import { HostedPluginSupport } from "../../hosted/browser/hosted-plugin";
@@ -43,7 +43,6 @@ export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).to(HostedPluginController).inSingletonScope();
 
     bind(PluginApiFrontendContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(PluginApiFrontendContribution));
     bind(CommandContribution).toDynamicValue(c => c.container.get(PluginApiFrontendContribution));
 
     bind(TextEditorService).to(TextEditorServiceImpl).inSingletonScope();
@@ -66,11 +65,7 @@ export default new ContainerModule(bind => {
         return connection.createProxy<HostedPluginServer>(hostedServicePath, hostedWatcher.getHostedPluginClient());
     }).inSingletonScope();
 
-    bind(PluginFrontendViewContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toDynamicValue(c => c.container.get(PluginFrontendViewContribution));
-    bind(CommandContribution).toDynamicValue(c => c.container.get(PluginFrontendViewContribution));
-    bind(KeybindingContribution).toDynamicValue(c => c.container.get(PluginFrontendViewContribution));
-    bind(MenuContribution).toDynamicValue(c => c.container.get(PluginFrontendViewContribution));
+    bindViewContribution(bind, PluginFrontendViewContribution);
 
     bind(PluginWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({

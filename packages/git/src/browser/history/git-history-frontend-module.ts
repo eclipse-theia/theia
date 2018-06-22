@@ -7,9 +7,7 @@
 
 import { GitHistoryContribution, GIT_HISTORY } from "./git-history-contribution";
 import { interfaces, Container } from "inversify";
-import { CommandContribution, MenuContribution } from "@theia/core";
-import { KeybindingContribution } from "@theia/core/lib/browser/keybinding";
-import { WidgetFactory, OpenHandler } from "@theia/core/lib/browser";
+import { WidgetFactory, OpenHandler, bindViewContribution } from "@theia/core/lib/browser";
 import { GitHistoryWidget } from "./git-history-widget";
 import { GIT_COMMIT_DETAIL, GitCommitDetailWidget, GitCommitDetails, GitCommitDetailWidgetOptions } from "./git-commit-detail-widget";
 import { GitAvatarService } from "./git-avatar-service";
@@ -41,11 +39,6 @@ export function bindGitHistoryModule(bind: interfaces.Bind) {
     bind(GitCommitDetailOpenHandler).toSelf();
     bind(OpenHandler).toDynamicValue(ctx => ctx.container.get(GitCommitDetailOpenHandler));
 
-    bind(GitHistoryContribution).toSelf().inSingletonScope();
-    for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution]) {
-        bind(identifier).toDynamicValue(ctx =>
-            ctx.container.get(GitHistoryContribution)
-        ).inSingletonScope();
-    }
+    bindViewContribution(bind, GitHistoryContribution);
 
 }
