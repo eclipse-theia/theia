@@ -21,12 +21,3 @@ export import MonacoBuiltinTheme = monaco.editor.BuiltinTheme;
 export interface MonacoTheme extends monaco.editor.IStandaloneThemeData {
     name: string;
 }
-
-export const MonacoThemeProvider = Symbol('MonacoThemeProvider');
-export interface MonacoThemeProvider {
-
-    /**
-     * Asynchronous call, this fetches all the available themes for the monaco editor.
-     */
-    gatherMonacoThemes(): Promise<MonacoTheme[]>;
-}
