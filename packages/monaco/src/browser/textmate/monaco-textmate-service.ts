@@ -17,7 +17,7 @@
 import { injectable, inject, named } from "inversify";
 import { Registry } from 'monaco-textmate';
 import { ILogger, DisposableCollection, ContributionProvider } from "@theia/core";
-import { FrontendApplicationContribution } from "@theia/core/lib/browser";
+import { FrontendApplicationContribution, isBasicWasmSupported } from "@theia/core/lib/browser";
 import { MonacoTextModelService } from "../monaco-text-model-service";
 import { LanguageGrammarDefinitionContribution } from "./textmate-contribution";
 import { createTextmateTokenizer } from "./textmate-tokenizer";
@@ -50,6 +50,11 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
     protected readonly onigasmPromise: OnigasmPromise;
 
     initialize() {
+        if (!isBasicWasmSupported) {
+            console.log('Textmate support deactivated because WebAssembly is not detected.');
+            return;
+        }
+
         for (const grammarProvider of this.grammarProviders.getContributions()) {
             grammarProvider.registerTextmateLanguage(this.textmateRegistry);
         }
