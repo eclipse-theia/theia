@@ -29,8 +29,10 @@ import {
 } from '@theia/core/lib/browser';
 import { WidgetManager } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidget } from './terminal-widget';
+import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from './terminal-widget-impl';
 import { TerminalKeybindingContexts } from "./terminal-keybinding-contexts";
+import { TerminalService } from './base/terminal-service';
+import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
 
 export namespace TerminalCommands {
     export const NEW: Command = {
@@ -40,7 +42,7 @@ export namespace TerminalCommands {
 }
 
 @injectable()
-export class TerminalFrontendContribution implements CommandContribution, MenuContribution, KeybindingContribution {
+export class TerminalFrontendContribution implements TerminalService, CommandContribution, MenuContribution, KeybindingContribution {
 
     constructor(
         @inject(ApplicationShell) protected readonly shell: ApplicationShell,
@@ -52,7 +54,11 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
         commands.registerCommand(TerminalCommands.NEW);
         commands.registerHandler(TerminalCommands.NEW.id, {
             isEnabled: () => true,
-            execute: () => this.newTerminal()
+            execute: async () => {
+                const termWidget = await this.newTerminal({});
+                termWidget.start();
+                this.activateTerminal(termWidget);
+            }
         });
     }
 
@@ -153,13 +159,19 @@ export class TerminalFrontendContribution implements CommandContribution, MenuCo
         }
     }
 
-    protected async newTerminal(): Promise<void> {
+    async newTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget> {
         const widget = <TerminalWidget>await this.widgetManager.getOrCreateWidget(TERMINAL_WIDGET_FACTORY_ID, <TerminalWidgetFactoryOptions>{
-            created: new Date().toString()
+            created: new Date().toString(),
+            ...options
         });
-        this.shell.addWidget(widget, { area: 'bottom' });
-        this.shell.activateWidget(widget.id);
-        widget.start();
+        return widget;
     }
 
+    activateTerminal(widget: TerminalWidget): void {
+        const tabBar = this.shell.getTabBarFor(widget);
+        if (!tabBar) {
+            this.shell.addWidget(widget, { area: 'bottom' });
+        }
+        this.shell.activateWidget(widget.id);
+    }
 }

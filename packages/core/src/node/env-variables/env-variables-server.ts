@@ -17,19 +17,15 @@
 import { injectable } from 'inversify';
 import { EnvVariable, EnvVariablesServer } from '../../common/env-variables';
 
-interface ProcessEnv {
-    [key: string]: string | undefined;
-}
-
 @injectable()
 export class EnvVariablesServerImpl implements EnvVariablesServer {
 
     protected readonly envs: { [key: string]: EnvVariable } = {};
 
     constructor() {
-        const prEnv: ProcessEnv = process.env;
+        const prEnv = process.env;
         Object.keys(prEnv).forEach((key: string) => {
-            this.envs[key] = {"name" : key, "value" : prEnv[key]};
+            this.envs[key] = {'name' : key, 'value' : prEnv[key]};
         });
     }
 

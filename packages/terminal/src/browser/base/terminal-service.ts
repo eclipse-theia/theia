@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 Ericsson and others.
+ * Copyright (C) 2018 Red Hat, Inc. and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,25 +13,22 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
+import { TerminalWidgetOptions, TerminalWidget } from './terminal-widget';
 
-import { JsonRpcProxy } from '@theia/core';
-import { IBaseTerminalServer, IBaseTerminalServerOptions } from './base-terminal-protocol';
+/**
+ * Service manipulating terminal widgets.
+ */
+export const TerminalService = Symbol("TerminalService");
+export interface TerminalService {
+    /**
+     * Create new terminal with predefined options.
+     * @param options - terminal options.
+     */
+    newTerminal(options: TerminalWidgetOptions): Promise<TerminalWidget>;
 
-export const IShellTerminalServer = Symbol('IShellTerminalServer');
-
-export interface IShellTerminalServer extends IBaseTerminalServer {
+    /**
+     * Display new terminal widget.
+     * @param termWidget - widget to attach.
+     */
+    activateTerminal(termWidget: TerminalWidget): void;
 }
-
-export const shellTerminalPath = '/services/shell-terminal';
-
-export interface IShellTerminalServerOptions extends IBaseTerminalServerOptions {
-    shell?: string,
-    args?: string[],
-    rootURI?: string,
-    cols?: number,
-    rows?: number,
-    env?: { [key: string]: string | null };
-}
-
-export const ShellTerminalServerProxy = Symbol('ShellTerminalServerProxy');
-export type ShellTerminalServerProxy = JsonRpcProxy<IShellTerminalServer>;

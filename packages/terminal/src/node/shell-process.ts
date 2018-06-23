@@ -22,6 +22,7 @@ import { isWindows, isOSX } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
 import { FileUri } from "@theia/core/lib/node/file-uri";
 import { parseArgs } from '@theia/process/lib/node/utils';
+import { ProcessEnv } from 'node-pty/lib/interfaces';
 
 export const ShellProcessFactory = Symbol("ShellProcessFactory");
 export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess;
@@ -29,9 +30,28 @@ export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess
 export const ShellProcessOptions = Symbol("ShellProcessOptions");
 export interface ShellProcessOptions {
     shell?: string,
+    args?: string[],
     rootURI?: string,
     cols?: number,
-    rows?: number
+    rows?: number,
+    env?: { [key: string]: string | null },
+}
+
+function setUpEnvVariables(customEnv?:  { [key: string]: string | null }): ProcessEnv {
+    const processEnv: ProcessEnv = {};
+
+    const prEnv: NodeJS.ProcessEnv = process.env;
+    Object.keys(prEnv).forEach((key: string) => {
+        processEnv[key] = prEnv[key] || "";
+    });
+
+    if (customEnv) {
+        for (const envName of Object.keys(customEnv)) {
+            processEnv[envName] = customEnv[envName] || "";
+        }
+    }
+
+    return processEnv;
 }
 
 function getRootPath(rootURI?: string): string {
@@ -57,13 +77,13 @@ export class ShellProcess extends TerminalProcess {
     ) {
         super(<TerminalProcessOptions>{
             command: options.shell || ShellProcess.getShellExecutablePath(),
-            args: ShellProcess.getShellExecutableArgs(),
+            args: options.args || ShellProcess.getShellExecutableArgs(),
             options: {
                 name: 'xterm-color',
                 cols: options.cols || ShellProcess.defaultCols,
                 rows: options.rows || ShellProcess.defaultRows,
                 cwd: getRootPath(options.rootURI),
-                env: process.env as any
+                env: setUpEnvVariables(options.env),
             }
         }, processManager, ringBuffer, logger);
     }
