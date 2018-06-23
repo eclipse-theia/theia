@@ -18,13 +18,13 @@ import { inject, injectable, named } from "inversify";
 import { ILogger } from '@theia/core/lib/common';
 import { FrontendApplication, ApplicationShell } from '@theia/core/lib/browser';
 import { TaskServer, TaskExitedEvent, TaskOptions, TaskInfo } from '../common/task-protocol';
-import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget';
+import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions } from '@theia/terminal/lib/browser/terminal-widget-impl';
+import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { TaskWatcher } from '../common/task-watcher';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { TaskConfigurations, TaskConfigurationClient } from './task-configurations';
-import { TerminalWidget } from '@theia/terminal/lib/browser/terminal-widget';
 import { VariableResolverService } from "@theia/variable-resolver/lib/browser";
 import { ProcessOptions } from "@theia/process/lib/node";
 

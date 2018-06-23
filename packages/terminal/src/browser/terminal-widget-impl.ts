@@ -17,24 +17,19 @@
 import * as Xterm from 'xterm';
 import { proposeGeometry } from 'xterm/lib/addons/fit/fit';
 import { inject, injectable, named, postConstruct } from "inversify";
-import { Disposable, DisposableCollection, ILogger } from '@theia/core/lib/common';
-import { Widget, BaseWidget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop } from '@theia/core/lib/browser';
+import { Disposable, Event, Emitter, ILogger, DisposableCollection } from '@theia/core';
+import { Widget, Message, WebSocketConnectionProvider, StatefulWidget, isFirefox, MessageLoop } from '@theia/core/lib/browser';
 import { WorkspaceService } from "@theia/workspace/lib/browser";
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import { terminalsPath } from '../common/terminal-protocol';
 import { IBaseTerminalServer } from '../common/base-terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { ThemeService } from "@theia/core/lib/browser/theming";
+import { TerminalWidgetOptions, TerminalWidget } from './base/terminal-widget';
+import { MessageConnection } from 'vscode-jsonrpc';
+import { Deferred } from "@theia/core/lib/common/promise-util";
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
-
-export const TerminalWidgetOptions = Symbol("TerminalWidgetOptions");
-export interface TerminalWidgetOptions {
-    id: string,
-    caption: string,
-    label: string
-    destroyTermOnClose: boolean
-}
 
 export interface TerminalWidgetFactoryOptions extends Partial<TerminalWidgetOptions> {
     /* a unique string per terminal */
@@ -59,12 +54,15 @@ interface TerminalCSSProperties {
 }
 
 @injectable()
-export class TerminalWidget extends BaseWidget implements StatefulWidget {
+export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
 
-    private terminalId: number | undefined;
+    private terminalId: number;
     private term: Xterm.Terminal;
+    private readonly TERMINAL = "Terminal";
+    private readonly onTermDidClose = new Emitter<TerminalWidget>();
     protected restored = false;
     protected closeOnDispose = true;
+    protected waitForConnection: Deferred<MessageConnection | undefined>;
 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(WebSocketConnectionProvider) protected readonly webSocketConnectionProvider: WebSocketConnectionProvider;
@@ -73,14 +71,14 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
     @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher;
     @inject(ThemeService) protected readonly themeService: ThemeService;
     @inject(ILogger) @named('terminal') protected readonly logger: ILogger;
+    @inject("terminal-dom-id") public readonly id: string;
 
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
     @postConstruct()
     protected init(): void {
-        this.id = this.options.id;
-        this.title.caption = this.options.caption;
-        this.title.label = this.options.label;
+        this.title.caption = this.options.title || this.TERMINAL;
+        this.title.label = this.options.title || this.TERMINAL;
         this.title.iconClass = "fa fa-terminal";
 
         if (this.options.destroyTermOnClose === true) {
@@ -118,7 +116,9 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         }));
 
         this.term.on('title', (title: string) => {
-            this.title.label = title;
+            if (this.options.useServerTitle) {
+                this.title.label = title;
+            }
         });
 
         this.toDispose.push(this.terminalWatcher.onTerminalError(({ terminalId }) => {
@@ -129,6 +129,8 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         this.toDispose.push(this.terminalWatcher.onTerminalExit(({ terminalId }) => {
             if (terminalId === this.terminalId) {
                 this.title.label = "<terminated>";
+                this.onTermDidClose.fire(this);
+                this.onTermDidClose.dispose();
             }
         }));
         this.toDispose.push(this.toDisposeOnConnect);
@@ -139,6 +141,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
             });
             this.toDispose.push(disposable);
         }));
+        this.toDispose.push(this.onTermDidClose);
     }
 
     storeState(): object {
@@ -214,12 +217,17 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
      * new terminal widget.
      * If id is provided attach to the terminal for this id.
      */
-    async start(id?: number): Promise<void> {
+    async start(id?: number): Promise<number> {
         this.terminalId = typeof id !== 'number' ? await this.createTerminal() : await this.attachTerminal(id);
         this.resizeTerminalProcess();
         this.connectTerminalProcess();
+        if (IBaseTerminalServer.validateId(this.terminalId)) {
+            return this.terminalId;
+        }
+        throw new Error('Failed to start terminal' + (id ? ` for id: ${id}.` : `.`));
     }
-    protected async attachTerminal(id: number): Promise<number | undefined> {
+
+    protected async attachTerminal(id: number): Promise<number> {
         const terminalId = await this.shellTerminalServer.attach(id);
         if (IBaseTerminalServer.validateId(terminalId)) {
             return terminalId;
@@ -227,16 +235,27 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         this.logger.error(`Error attaching to terminal id ${id}, the terminal is most likely gone. Starting up a new terminal instead.`);
         return this.createTerminal();
     }
-    protected async createTerminal(): Promise<number | undefined> {
-        const root = await this.workspaceService.root;
-        const rootURI = root && root.uri;
+
+    protected async createTerminal(): Promise<number> {
+        let rootURI = this.options.cwd;
+        if (!rootURI) {
+            const root = await this.workspaceService.root;
+            rootURI = root && root.uri;
+        }
         const { cols, rows } = this.term;
-        const terminalId = await this.shellTerminalServer.create({ rootURI, cols, rows });
+
+        const terminalId = await this.shellTerminalServer.create({
+            shell: this.options.shellPath,
+            args: this.options.shellArgs,
+            env: this.options.env,
+            rootURI,
+            cols,
+            rows
+        });
         if (IBaseTerminalServer.validateId(terminalId)) {
             return terminalId;
         }
-        this.logger.error("Error creating terminal widget, see the backend error log for more information.");
-        return undefined;
+        throw new Error("Error creating terminal widget, see the backend error log for more information.");
     }
 
     processMessage(msg: Message): void {
@@ -298,6 +317,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         }
         this.toDisposeOnConnect.dispose();
         this.toDispose.push(this.toDisposeOnConnect);
+        this.waitForConnection = new Deferred<MessageConnection | undefined>();
         this.webSocketConnectionProvider.listen({
             path: `${terminalsPath}/${this.terminalId}`,
             onConnection: connection => {
@@ -309,6 +329,7 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
 
                 this.toDisposeOnConnect.push(connection);
                 connection.listen();
+                this.waitForConnection.resolve(connection);
             }
         }, { reconnecting: false });
     }
@@ -318,11 +339,27 @@ export class TerminalWidget extends BaseWidget implements StatefulWidget {
         }
     }
 
+    sendText(text: string): void {
+        if (this.waitForConnection) {
+            this.waitForConnection.promise.then(connection => {
+                if (connection) {
+                    connection.sendRequest('write', text);
+                }
+            });
+        }
+    }
+
+    get onTerminalDidClose(): Event<TerminalWidget> {
+        return this.onTermDidClose.event;
+    }
+
     dispose(): void {
         /* Close the backend terminal only when explicitly closing the terminal
          * a refresh for example won't close it.  */
         if (this.closeOnDispose === true && typeof this.terminalId === "number") {
             this.shellTerminalServer.close(this.terminalId);
+            this.onTermDidClose.fire(this);
+            this.onTermDidClose.dispose();
         }
         super.dispose();
     }
