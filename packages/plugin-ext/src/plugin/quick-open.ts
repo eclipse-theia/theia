@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { QuickOpenExt, PLUGIN_RPC_CONTEXT as Ext, QuickOpenMain, PickOpenItem } from '../api/plugin-api';
-import { QuickPickOptions, QuickPickItem } from '@theia/plugin';
+import { QuickPickOptions, QuickPickItem, InputBoxOptions } from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { ExtendedPromise } from '../api/extended-promise';
@@ -25,7 +25,7 @@ export type Item = string | QuickPickItem;
 export class QuickOpenExtImpl implements QuickOpenExt {
     private proxy: QuickOpenMain;
     private selectItemHandler: undefined | ((handle: number) => void);
-    private validateInputHandler: undefined | ((input: string) => string | PromiseLike<string>);
+    private validateInputHandler: undefined | ((input: string) => string | PromiseLike<string | undefined> | undefined);
 
     constructor(rpc: RPCProtocol) {
         this.proxy = rpc.getProxy(Ext.QUICK_OPEN_MAIN);
@@ -35,7 +35,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
             this.selectItemHandler(handle);
         }
     }
-    $validateInput(input: string): PromiseLike<string> | undefined {
+    $validateInput(input: string): PromiseLike<string | undefined> | undefined {
         if (this.validateInputHandler) {
             return Promise.resolve(this.validateInputHandler(input));
         }
@@ -107,5 +107,12 @@ export class QuickOpenExtImpl implements QuickOpenExt {
             });
         });
         return hookCancellationToken<Item | Item[] | undefined>(token, promise);
+    }
+
+    showInput(options?: InputBoxOptions, token: CancellationToken = CancellationToken.None): PromiseLike<string | undefined> {
+        this.validateInputHandler = options && options.validateInput;
+
+        const promise = this.proxy.$input(options!, typeof this.validateInputHandler === 'function');
+        return hookCancellationToken(token, promise);
     }
 }

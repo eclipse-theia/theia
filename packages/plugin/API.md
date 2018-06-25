@@ -53,6 +53,25 @@ theia.window.showQuickPick(["foo", "bar", "foobar"], option).then((val: string[]
     });
 ```
 
+#### Input Box
+
+Function to ask user for input.
+
+Example of using:
+
+```typescript
+const option: theia.InputBoxOptions = {
+    prompt:"Hello from Plugin",
+    placeHolder:"Type text there",
+    ignoreFocusOut: false,
+    password: false,
+    value:"Default value"
+};
+theia.window.showInputBox(option).then((s: string | undefined) => {
+    console.log(typeof s !== 'undefined'? s : "Input was canceled");
+});
+```
+
 #### Notification API
 
  A notification shows an information message to users.

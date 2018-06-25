@@ -24,6 +24,8 @@ import { ILogger } from '@theia/core';
 
 export interface MonacoQuickOpenControllerOpts extends monaco.quickOpen.IQuickOpenControllerOpts {
     readonly prefix?: string;
+    readonly password?: boolean;
+    readonly ignoreFocusOut?: boolean;
     onType?(lookFor: string, acceptor: (model: monaco.quickOpen.QuickOpenModel) => void): void;
     onClose?(canceled: boolean): void;
 }
@@ -59,6 +61,19 @@ export class MonacoQuickOpenService extends QuickOpenService {
         const widget = this.widget;
         widget.show(this.opts.prefix || '');
         widget.setPlaceHolder(opts.inputAriaLabel);
+        if (opts.password) {
+            widget.setPassword(opts.password);
+        } else {
+            widget.setPassword(false);
+        }
+    }
+
+    clearInputDecoration(): void {
+        this.widget.clearInputDecoration();
+    }
+
+    showInputDecoration(severity: monaco.Severity): void {
+        this.widget.showInputDecoration(severity);
     }
 
     protected get widget(): monaco.quickOpen.QuickOpenWidget {
@@ -78,7 +93,7 @@ export class MonacoQuickOpenService extends QuickOpenService {
                 this.onClose(true);
             },
             onType: lookFor => this.onType(lookFor || ''),
-            onFocusLost: () => false
+            onFocusLost: () => (this.opts && this.opts.ignoreFocusOut !== undefined) ? this.opts.ignoreFocusOut : false
         }, {});
         this.attachQuickOpenStyler();
         this._widget.create();

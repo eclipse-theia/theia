@@ -97,14 +97,14 @@ export interface StatusBarMessageRegistryMain {
 
 export interface QuickOpenExt {
     $onItemSelected(handle: number): void;
-    $validateInput(input: string): PromiseLike<string> | undefined;
+    $validateInput(input: string): PromiseLike<string | undefined> | undefined;
 }
 
 export interface QuickOpenMain {
-    $show(options: PickOptions): PromiseLike<number | number[]>;
-    $setItems(items: PickOpenItem[]): PromiseLike<any>;
-    $setError(error: Error): PromiseLike<any>;
-    $input(options: theia.InputBoxOptions, validateInput: boolean): PromiseLike<string>;
+    $show(options: PickOptions): Promise<number | number[]>;
+    $setItems(items: PickOpenItem[]): Promise<any>;
+    $setError(error: Error): Promise<any>;
+    $input(options: theia.InputBoxOptions, validateInput: boolean): Promise<string | undefined>;
 }
 
 export interface WindowStateExt {
