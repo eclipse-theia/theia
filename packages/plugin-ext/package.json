@@ -10,6 +10,7 @@
     "@theia/monaco": "^0.3.12",
     "@theia/plugin": "^0.3.12",
     "@theia/workspace": "^0.3.12",
+    "@theia/terminal": "^0.3.12",
     "decompress": "^4.2.0",
     "lodash.clonedeep": "^4.5.0",
     "ps-tree": "1.1.0",

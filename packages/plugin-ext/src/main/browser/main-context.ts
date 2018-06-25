@@ -27,6 +27,7 @@ import { EnvMainImpl } from './env-main';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
 import { OutputChannelRegistryMainImpl } from "./output-channel-registry-main";
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { TerminalServiceMainImpl } from './terminal-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const commandRegistryMain = new CommandRegistryMainImpl(rpc, container);
@@ -52,6 +53,9 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const envMain = new EnvMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.ENV_MAIN, envMain);
+
+    const terminalMain = new TerminalServiceMainImpl(container, rpc);
+    rpc.set(PLUGIN_RPC_CONTEXT.TERMINAL_MAIN, terminalMain);
 
     const outputChannelRegistryMain = new OutputChannelRegistryMainImpl(container);
     rpc.set(PLUGIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_MAIN, outputChannelRegistryMain);

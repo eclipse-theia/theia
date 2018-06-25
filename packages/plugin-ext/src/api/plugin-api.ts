@@ -48,6 +48,45 @@ export interface CommandRegistryExt {
     $executeCommand<T>(id: string, ...ars: any[]): PromiseLike<T>;
 }
 
+export interface TerminalServiceExt {
+    $terminalClosed(id: number): void;
+}
+
+export interface TerminalServiceMain {
+    /**
+     * Create new Terminal with Terminal options.
+     * @param options - object with parameters to create new terminal.
+     */
+    $createTerminal(options: theia.TerminalOptions): PromiseLike<number>;
+
+    /**
+     * Send text to the terminal by id.
+     * @param id - terminal id.
+     * @param text - text content.
+     * @param addNewLine - in case true - add new line after the text, otherwise - don't apply new line.
+     */
+    $sendText(id: number, text: string, addNewLine?: boolean): void;
+
+    /**
+     * Show terminal on the UI panel.
+     * @param id - terminal id.
+     * @param preserveFocus - set terminal focus in case true value, and don't set focus otherwise.
+     */
+    $show(id: number, preserveFocus?: boolean): void;
+
+    /**
+     * Hide UI panel where is located terminal widget.
+     * @param id - terminal id.
+     */
+    $hide(id: number): void;
+
+    /**
+     * Distroy terminal.
+     * @param id - terminal id.
+     */
+    $dispose(id: number): void;
+}
+
 export interface AutoFocus {
     autoFocusFirstEntry?: boolean;
     // TODO
@@ -427,6 +466,7 @@ export const PLUGIN_RPC_CONTEXT = {
     DOCUMENTS_MAIN: createProxyIdentifier<DocumentsMain>('DocumentsMain'),
     STATUS_BAR_MESSAGE_REGISTRY_MAIN: <ProxyIdentifier<StatusBarMessageRegistryMain>>createProxyIdentifier<StatusBarMessageRegistryMain>('StatusBarMessageRegistryMain'),
     ENV_MAIN: createProxyIdentifier<EnvMain>('EnvMain'),
+    TERMINAL_MAIN: createProxyIdentifier<TerminalServiceMain>('TerminalServiceMain'),
     PREFERENCE_REGISTRY_MAIN: createProxyIdentifier<PreferenceRegistryMain>('PreferenceRegistryMain'),
     OUTPUT_CHANNEL_REGISTRY_MAIN: <ProxyIdentifier<OutputChannelRegistryMain>>createProxyIdentifier<OutputChannelRegistryMain>('OutputChannelRegistryMain')
 };
@@ -441,5 +481,6 @@ export const MAIN_RPC_CONTEXT = {
     EDITORS_AND_DOCUMENTS_EXT: createProxyIdentifier<EditorsAndDocumentsExt>('EditorsAndDocumentsExt'),
     DOCUMENTS_EXT: createProxyIdentifier<DocumentsExt>('DocumentsExt'),
     ENV_EXT: createProxyIdentifier<EnvExt>('EnvExt'),
+    TERMINAL_EXT: createProxyIdentifier<TerminalServiceExt>('TerminalServiceExt'),
     PREFERENCE_REGISTRY_EXT: createProxyIdentifier<PreferenceRegistryExt>('PreferenceRegistryExt')
 };
