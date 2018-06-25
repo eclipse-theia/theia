@@ -16,8 +16,8 @@
 
 import { createTaskTestContainer } from './test/task-test-container';
 import { BackendApplication } from '@theia/core/lib/node/backend-application';
-import { TaskExitedEvent, TaskInfo, TaskServer, TaskOptions, ProcessType } from '../common/task-protocol';
-import { TaskWatcher } from '../common/task-watcher';
+import { TaskExitedEvent, TaskInfo, TaskServer, TaskWatcher, TaskConfiguration } from '../common';
+import { ProcessType, ProcessTaskConfiguration } from '../common/process/task-protocol';
 import * as http from 'http';
 import * as https from 'https';
 import { isWindows } from '@theia/core/lib/common/os';
@@ -76,14 +76,14 @@ describe('Task server / back-end', function () {
     it("task running in terminal - expected data is received from the terminal ws server", async function () {
         const someString = 'someSingleWordString';
 
-        // This test is flaky on Windows and fails intermitently. Disable it for now
+        // This test is flaky on Windows and fails intermittently. Disable it for now
         if (isWindows) {
             this.skip();
         }
 
         // create task using terminal process
         const command = isWindows ? commandShortrunningindows : commandShortRunning;
-        const taskInfo: TaskInfo = await taskServer.run(createTaskOptions('terminal', FileUri.fsPath(command), [someString]), wsRoot);
+        const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('shell', FileUri.fsPath(command), [someString]), wsRoot);
         const terminalId = taskInfo.terminalId;
 
         // hook-up to terminal's ws and confirm that it outputs expected tasks' output
@@ -109,7 +109,7 @@ describe('Task server / back-end', function () {
         const command = isWindows ? commandShortrunningindows : commandShortRunning;
 
         // create task using raw process
-        const taskInfo: TaskInfo = await taskServer.run(createTaskOptions('raw', FileUri.fsPath(command), [someString]), wsRoot);
+        const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('process', FileUri.fsPath(command), [someString]), wsRoot);
 
         const p = new Promise((resolve, reject) => {
             const toDispose = taskWatcher.onTaskExit((event: TaskExitedEvent) => {
@@ -129,7 +129,7 @@ describe('Task server / back-end', function () {
 
     it("task is executed successfully using terminal process", async function () {
         const command = isWindows ? commandShortrunningindows : commandShortRunning;
-        const taskInfo: TaskInfo = await taskServer.run(createTaskOptions('terminal', FileUri.fsPath(command), []), wsRoot);
+        const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('shell', FileUri.fsPath(command), []), wsRoot);
 
         const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
 
@@ -138,7 +138,19 @@ describe('Task server / back-end', function () {
 
     it("task is executed successfully using raw process", async function () {
         const command = isWindows ? commandShortrunningindows : commandShortRunning;
-        const taskInfo: TaskInfo = await taskServer.run(createTaskOptions('raw', FileUri.fsPath(command), []));
+        const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('process', FileUri.fsPath(command), []));
+
+        const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
+
+        await p;
+    });
+
+    it("task without a specific runner is executed successfully using as a process", async function () {
+        const command = isWindows ? commandToFindInPathWindows : commandToFindInPathUnix;
+
+        // there's no runner registered for the 'npm' task type
+        const taskConfig: TaskConfiguration = createTaskConfig('npm', command, []);
+        const taskInfo: TaskInfo = await taskServer.run(taskConfig, wsRoot);
 
         const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
 
@@ -148,7 +160,7 @@ describe('Task server / back-end', function () {
     it("task can successfully execute command found in system path using a terminal process", async function () {
         const command = isWindows ? commandToFindInPathWindows : commandToFindInPathUnix;
 
-        const opts: TaskOptions = createTaskOptions('terminal', command, []);
+        const opts: TaskConfiguration = createProcessTaskConfig('shell', command, []);
         const taskInfo: TaskInfo = await taskServer.run(opts, wsRoot);
 
         const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
@@ -158,7 +170,7 @@ describe('Task server / back-end', function () {
 
     it("task can successfully execute command found in system path using a raw process", async function () {
         const command = isWindows ? commandToFindInPathWindows : commandToFindInPathUnix;
-        const taskInfo: TaskInfo = await taskServer.run(createTaskOptions('raw', command, []), wsRoot);
+        const taskInfo: TaskInfo = await taskServer.run(createProcessTaskConfig('process', command, []), wsRoot);
 
         const p = checkSuccessfullProcessExit(taskInfo, taskWatcher);
 
@@ -167,7 +179,7 @@ describe('Task server / back-end', function () {
 
     it("task using terminal process can be killed", async function () {
         // const command = isWindows ? command_absolute_path_long_running_windows : command_absolute_path_long_running;
-        const taskInfo: TaskInfo = await taskServer.run(createTaskOptionsTaskLongRunning('terminal'), wsRoot);
+        const taskInfo: TaskInfo = await taskServer.run(createTaskConfigTaskLongRunning('shell'), wsRoot);
 
         const p = new Promise((resolve, reject) => {
             const toDispose = taskWatcher.onTaskExit((event: TaskExitedEvent) => {
@@ -185,7 +197,7 @@ describe('Task server / back-end', function () {
 
     it("task using raw process can be killed", async function () {
         // const command = isWindows ? command_absolute_path_long_running_windows : command_absolute_path_long_running;
-        const taskInfo: TaskInfo = await taskServer.run(createTaskOptionsTaskLongRunning('raw'), wsRoot);
+        const taskInfo: TaskInfo = await taskServer.run(createTaskConfigTaskLongRunning('process'), wsRoot);
 
         const p = new Promise((resolve, reject) => {
             const toDispose = taskWatcher.onTaskExit((event: TaskExitedEvent) => {
@@ -202,12 +214,12 @@ describe('Task server / back-end', function () {
     });
 
     it("task using terminal process can handle command that does not exist", async function () {
-        const p = taskServer.run(createTaskOptions2('terminal', bogusCommand, []), wsRoot);
+        const p = taskServer.run(createProcessTaskConfig2('shell', bogusCommand, []), wsRoot);
         await expectThrowsAsync(p, `Command not found: ${bogusCommand}`);
     });
 
     it("task using raw process can handle command that does not exist", async function () {
-        const p = taskServer.run(createTaskOptions2('raw', bogusCommand, []), wsRoot);
+        const p = taskServer.run(createProcessTaskConfig2('process', bogusCommand, []), wsRoot);
         await expectThrowsAsync(p, `Command not found: ${bogusCommand}`);
     });
 
@@ -216,12 +228,12 @@ describe('Task server / back-end', function () {
         const context2 = "anotherContext";
 
         // create some tasks: 4 for context1, 2 for context2
-        const task1 = await taskServer.run(createTaskOptionsTaskLongRunning('terminal'), context1);
-        const task2 = await taskServer.run(createTaskOptionsTaskLongRunning('raw'), context2);
-        const task3 = await taskServer.run(createTaskOptionsTaskLongRunning('terminal'), context1);
-        const task4 = await taskServer.run(createTaskOptionsTaskLongRunning('raw'), context2);
-        const task5 = await taskServer.run(createTaskOptionsTaskLongRunning('terminal'), context1);
-        const task6 = await taskServer.run(createTaskOptionsTaskLongRunning('raw'), context1);
+        const task1 = await taskServer.run(createTaskConfigTaskLongRunning('shell'), context1);
+        const task2 = await taskServer.run(createTaskConfigTaskLongRunning('process'), context2);
+        const task3 = await taskServer.run(createTaskConfigTaskLongRunning('shell'), context1);
+        const task4 = await taskServer.run(createTaskConfigTaskLongRunning('process'), context2);
+        const task5 = await taskServer.run(createTaskConfigTaskLongRunning('shell'), context1);
+        const task6 = await taskServer.run(createTaskConfigTaskLongRunning('process'), context1);
 
         const runningTasksCtx1 = await taskServer.getTasks(context1); // should return 4 tasks
         const runningTasksCtx2 = await taskServer.getTasks(context2); // should return 2 tasks
@@ -263,9 +275,9 @@ describe('Task server / back-end', function () {
         // create a mix of terminal and raw processes
         for (let i = 0; i < numTasks; i++) {
             if (i % 2 === 0) {
-                taskinfo.push(await taskServer.run(createTaskOptionsTaskLongRunning('terminal')));
+                taskinfo.push(await taskServer.run(createTaskConfigTaskLongRunning('shell')));
             } else {
-                taskinfo.push(await taskServer.run(createTaskOptionsTaskLongRunning('raw')));
+                taskinfo.push(await taskServer.run(createTaskConfigTaskLongRunning('process')));
             }
         }
 
@@ -294,52 +306,66 @@ describe('Task server / back-end', function () {
 
 });
 
-function createTaskOptions(processType: ProcessType, command: string, args: string[]): TaskOptions {
-    const options: TaskOptions = {
+function createTaskConfig(taskType: string, command: string, args: string[]): TaskConfiguration {
+    const options: TaskConfiguration = {
         label: "test task",
-        processType: processType,
-        'processOptions': {
-            'command': command,
-            'args': args
-        },
-        "windowsProcessOptions": {
-            "command": "cmd.exe",
-            "args": [
+        type: taskType,
+        command: command,
+        args: args,
+        windows: {
+            command: "cmd.exe",
+            args: [
                 "/c",
                 command
                 ,
                 (args[0] !== undefined) ? args[0] : ''
             ]
         },
-        'cwd': wsRoot
+        cwd: wsRoot
     };
     return options;
 }
 
-function createTaskOptions2(processType: ProcessType, command: string, args: string[]): TaskOptions {
-    return {
+function createProcessTaskConfig(processType: ProcessType, command: string, args: string[]): TaskConfiguration {
+    const options: ProcessTaskConfiguration = {
         label: "test task",
-        processType: processType,
-        'processOptions': {
-            'command': command,
-            'args': args
+        type: processType,
+        command: command,
+        args: args,
+        windows: {
+            command: "cmd.exe",
+            args: [
+                "/c",
+                command
+                ,
+                (args[0] !== undefined) ? args[0] : ''
+            ]
         },
-        'cwd': wsRoot
+        cwd: wsRoot
+    };
+    return options;
+}
+
+function createProcessTaskConfig2(processType: ProcessType, command: string, args: string[]): TaskConfiguration {
+    return <ProcessTaskConfiguration>{
+        label: "test task",
+        type: processType,
+        command: command,
+        args: args,
+        cwd: wsRoot
     };
 }
 
-function createTaskOptionsTaskLongRunning(processType: ProcessType): TaskOptions {
-    return {
-        "label": "[Task] long runnning test task (~300s)",
-        "processType": processType,
-        "cwd": wsRoot,
-        "processOptions": {
-            "command": commandLongRunning,
-            "args": []
-        },
-        "windowsProcessOptions": {
-            "command": "cmd.exe",
-            "args": [
+function createTaskConfigTaskLongRunning(processType: ProcessType): TaskConfiguration {
+    return <ProcessTaskConfiguration>{
+        label: "[Task] long running test task (~300s)",
+        type: processType,
+        cwd: wsRoot,
+        command: commandLongRunning,
+        args: [],
+        windows: {
+            command: "cmd.exe",
+            args: [
                 "/c",
                 commandLongRunningWindows
             ]

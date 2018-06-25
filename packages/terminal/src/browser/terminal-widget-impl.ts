@@ -56,10 +56,10 @@ interface TerminalCSSProperties {
 @injectable()
 export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget {
 
-    private terminalId: number;
-    private term: Xterm.Terminal;
     private readonly TERMINAL = "Terminal";
     private readonly onTermDidClose = new Emitter<TerminalWidget>();
+    protected terminalId: number;
+    protected term: Xterm.Terminal;
     protected restored = false;
     protected closeOnDispose = true;
     protected waitForConnection: Deferred<MessageConnection | undefined>;
