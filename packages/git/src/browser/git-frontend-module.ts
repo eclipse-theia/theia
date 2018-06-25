@@ -34,6 +34,7 @@ import { bindBlame } from './blame/blame-module';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import { GitCommitMessageValidator } from './git-commit-message-validator';
 import { GitSyncService } from './git-sync-service';
+import { GitErrorHandler } from './git-error-handler';
 
 import '../../src/browser/style/index.css';
 
@@ -70,4 +71,5 @@ export default new ContainerModule(bind => {
     bind(GitCommitMessageValidator).toSelf().inSingletonScope();
 
     bind(GitSyncService).toSelf().inSingletonScope();
+    bind(GitErrorHandler).toSelf().inSingletonScope();
 });

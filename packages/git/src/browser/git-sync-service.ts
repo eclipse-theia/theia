@@ -19,6 +19,7 @@ import { MessageService, Emitter, Event } from "@theia/core";
 import { QuickOpenService, QuickOpenItem, QuickOpenMode, ConfirmDialog } from "@theia/core/lib/browser";
 import { GitRepositoryTracker } from "./git-repository-tracker";
 import { Git, Repository, WorkingDirectoryStatus } from "../common";
+import { GitErrorHandler } from "./git-error-handler";
 
 @injectable()
 export class GitSyncService {
@@ -31,6 +32,9 @@ export class GitSyncService {
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(GitErrorHandler)
+    protected readonly gitErrorHandler: GitErrorHandler;
 
     @inject(QuickOpenService)
     protected readonly quickOpenService: QuickOpenService;
@@ -85,8 +89,8 @@ export class GitSyncService {
                     force: method === 'force-push'
                 });
             }
-        } catch (e) {
-            this.error(e);
+        } catch (error) {
+            this.gitErrorHandler.handleError(error);
         } finally {
             this.setSyncing(false);
         }
@@ -146,8 +150,8 @@ export class GitSyncService {
                 await this.git.push(repository, {
                     remote, localBranch, setUpstream: true
                 });
-            } catch (e) {
-                this.error(e);
+            } catch (error) {
+                this.gitErrorHandler.handleError(error);
             }
         }
     }
@@ -198,18 +202,6 @@ export class GitSyncService {
 
     protected confirm(title: string, msg: string): Promise<boolean> {
         return new ConfirmDialog({ title, msg, }).open();
-    }
-
-    // tslint:disable-next-line:no-any
-    protected error(e: any): void {
-        if ('message' in e) {
-            const message = e['message'];
-            if (typeof message === "string" && message.startsWith('GitError')) {
-                this.messageService.error(message, { timeout: 0 });
-                return;
-            }
-        }
-        throw e;
     }
 
 }

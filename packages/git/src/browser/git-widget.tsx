@@ -16,7 +16,7 @@
 
 import { injectable, inject, postConstruct } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
-import { MessageService, ResourceProvider, CommandService, MenuPath } from '@theia/core';
+import { ResourceProvider, CommandService, MenuPath } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, DiffUris, StatefulWidget, Message } from '@theia/core/lib/browser';
 import { EditorManager, EditorWidget, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { WorkspaceService, WorkspaceCommands } from '@theia/workspace/lib/browser';
@@ -28,6 +28,7 @@ import { GitCommitMessageValidator } from './git-commit-message-validator';
 import { GitAvatarService } from './history/git-avatar-service';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import * as React from "react";
+import { GitErrorHandler } from './git-error-handler';
 
 export interface GitFileChangeNode extends GitFileChange {
     readonly icon: string;
@@ -63,12 +64,14 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
+    @inject(GitErrorHandler)
+    protected readonly gitErrorHandler: GitErrorHandler;
+
     constructor(
         @inject(Git) protected readonly git: Git,
         @inject(GitWatcher) protected readonly gitWatcher: GitWatcher,
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
         @inject(ResourceProvider) protected readonly resourceProvider: ResourceProvider,
-        @inject(MessageService) protected readonly messageService: MessageService,
         @inject(CommandService) protected readonly commandService: CommandService,
         @inject(GitRepositoryProvider) protected readonly repositoryProvider: GitRepositoryProvider,
         @inject(LabelProvider) protected readonly labelProvider: LabelProvider,
@@ -173,7 +176,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
                     this.resetCommitMessages();
                     this.updateView(status);
                 } catch (error) {
-                    this.logError(error);
+                    this.gitErrorHandler.handleError(error);
                 }
             } else {
                 const messageInput = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLInputElement;
@@ -430,7 +433,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         try {
             await this.git.unstage(repository, change.uri);
         } catch (error) {
-            this.logError(error);
+            this.gitErrorHandler.handleError(error);
         }
     }
 
@@ -443,7 +446,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
             try {
                 await this.git.unstage(repository, change.uri, { treeish: 'HEAD', reset: 'working-tree' });
             } catch (error) {
-                this.logError(error);
+                this.gitErrorHandler.handleError(error);
             }
         } else {
             this.commandService.executeCommand(WorkspaceCommands.FILE_DELETE.id, new URI(change.uri));
@@ -457,7 +460,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         try {
             await this.git.add(repository, change.uri);
         } catch (error) {
-            this.logError(error);
+            this.gitErrorHandler.handleError(error);
         }
     }
 
@@ -548,12 +551,6 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         }
 
         return undefined;
-    }
-
-    // tslint:disable-next-line:no-any
-    protected logError(error: any): void {
-        const message = error instanceof Error ? error.message : error;
-        this.messageService.error(message, { timeout: 0 });
     }
 
     findChange(uri: URI): GitFileChange | undefined {
