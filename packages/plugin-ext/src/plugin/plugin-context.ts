@@ -144,6 +144,15 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         setStatusBarMessage(text: string, arg?: number | PromiseLike<any>): Disposable {
             return statusBarMessageRegistryExt.setStatusBarMessage(text, arg);
         },
+        showInputBox(options?: theia.InputBoxOptions, token?: theia.CancellationToken) {
+            if (token) {
+                const coreEvent = Object.assign(token.onCancellationRequested, { maxListeners: 0 });
+                const coreCancellationToken = { isCancellationRequested: token.isCancellationRequested, onCancellationRequested: coreEvent };
+                return quickOpenExt.showInput(options, coreCancellationToken);
+            } else {
+                return quickOpenExt.showInput(options);
+            }
+        },
         createStatusBarItem(alignment?: theia.StatusBarAlignment, priority?: number): theia.StatusBarItem {
             return statusBarMessageRegistryExt.createStatusBarItem(alignment, priority);
         },

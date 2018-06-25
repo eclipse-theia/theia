@@ -386,6 +386,10 @@ declare module monaco.quickOpen {
         layout(dimension: monaco.editor.IDimension): void;
         show(prefix: string, options?: IShowOptions): void;
         hide(reason?: HideReason): void;
+        refresh(input?: IModel<any>, autoFocus?: IAutoFocus): void;
+        setPassword(isPassword: boolean): void;
+        showInputDecoration(decoration: Severity): void;
+        clearInputDecoration(): void;
     }
 
     export enum HideReason {

@@ -1464,15 +1464,53 @@ declare module '@theia/plugin' {
         onDidSelectItem?(item: QuickPickItem | string): any;
     }
 
+    /**
+     * Options to configure the behavior of the input box UI.
+     */
     export interface InputBoxOptions {
+
+        /**
+         * The value to prefill in the input box.
+         */
         value?: string;
 
+        /**
+         * Selection of the prefilled [`value`](#InputBoxOptions.value). Defined as tuple of two number where the
+         * first is the inclusive start index and the second the exclusive end index. When `undefined` the whole
+         * word will be selected, when empty (start equals end) only the cursor will be set,
+         * otherwise the defined range will be selected.
+         */
         valueSelection?: [number, number];
+
+        /**
+         * The text to display underneath the input box.
+         */
         prompt?: string;
+
+        /**
+         * An optional string to show as place holder in the input box to guide the user what to type.
+         */
         placeHolder?: string;
+
+        /**
+         * Set to `true` to show a password prompt that will not show the typed value.
+         */
         password?: boolean;
+
+        /**
+         * Set to `true` to keep the input box open when focus moves to another part of the editor or to another window.
+         */
         ignoreFocusOut?: boolean;
-        validateInput?(value: string): string | undefined | null | PromiseLike<string | undefined | null>;
+
+        /**
+         * An optional function that will be called to validate input and to give a hint
+         * to the user.
+         *
+         * @param value The current value of the input box.
+         * @return A human readable string which is presented as diagnostic message.
+         * Return `undefined`, `null`, or the empty string when 'value' is valid.
+         */
+        validateInput?(value: string): string | undefined | PromiseLike<string | undefined>;
     }
 
     /**
@@ -1890,7 +1928,18 @@ declare module '@theia/plugin' {
          * @return A promise that resolves to the selected item or `undefined` when being dismissed.
          */
         export function showErrorMessage<T extends MessageItem>(message: string, options: MessageOptions, ...items: T[]): PromiseLike<T | undefined>;
-
+        /**
+         * Opens an input box to ask the user for input.
+         *
+         * The returned value will be `undefined` if the input box was canceled (e.g. pressing ESC). Otherwise the
+         * returned value will be the string typed by the user or an empty string if the user did not type
+         * anything but dismissed the input box with OK.
+         *
+         * @param options Configures the behavior of the input box.
+         * @param token A token that can be used to signal cancellation.
+         * @return A promise that resolves to a string the user provided or to `undefined` in case of dismissal.
+         */
+        export function showInputBox(options?: InputBoxOptions, token?: CancellationToken): PromiseLike<string | undefined>;
         /**
          * Represents the current window's state.
          *
