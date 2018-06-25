@@ -3,16 +3,14 @@
     "tasks": [
         {
             "label": "test task",
-            "processType": "terminal",
+            "type": "shell",
             "cwd": "${workspaceFolder}",
-            "processOptions": {
-                "command": "./task",
-                "args": [
-                    "test"
-                ],
-                "options": {}
-            },
-            "windowsProcessOptions": {
+            "command": "./task",
+            "args": [
+                "test"
+            ],
+            "options": {},
+            "windows": {
                 "command": "cmd.exe",
                 "args": [
                     "/c",
@@ -23,14 +21,12 @@
         },
         {
             "label": "long running test task",
-            "processType": "terminal",
+            "type": "shell",
             "cwd": "${workspaceFolder}",
-            "processOptions": {
-                "command": "./task-long-running",
-                "args": [],
-                "options": {}
-            },
-            "windowsProcessOptions": {
+            "command": "./task-long-running",
+            "args": [],
+            "options": {},
+            "windows": {
                 "command": "cmd.exe",
                 "args": [
                     "/c",
@@ -41,16 +37,14 @@
         },
         {
             "label": "list all files",
-            "processType": "terminal",
+            "type": "shell",
             "cwd": "${workspaceFolder}",
-            "processOptions": {
-                "command": "ls",
-                "args": [
-                    "-alR",
-                    "/"
-                ]
-            },
-            "windowsProcessOptions": {
+            "command": "ls",
+            "args": [
+                "-alR",
+                "/"
+            ],
+            "windows": {
                 "command": "cmd.exe",
                 "args": [
                     "/c",

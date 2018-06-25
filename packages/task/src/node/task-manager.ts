@@ -14,10 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { inject, injectable, named } from 'inversify';
-import { ILogger } from '@theia/core/lib/common/';
-import { Task } from './task';
-import { Emitter, Event } from '@theia/core/lib/common';
+import { Emitter, Event, ILogger } from '@theia/core/lib/common';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
+import { Task } from './task';
 
 // inspired by process-manager.ts
 

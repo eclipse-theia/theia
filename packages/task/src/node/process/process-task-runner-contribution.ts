@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2018 Ericsson and others.
+ * Copyright (C) 2018 Red Hat, Inc. and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,21 +14,18 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { interfaces } from "inversify";
-import { ILogger } from "@theia/core";
-import { TaskWatcher } from "./task-watcher";
+import { injectable, inject } from 'inversify';
+import { ProcessTaskRunner } from './process-task-runner';
+import { TaskRunnerContribution, TaskRunnerRegistry } from '../task-runner';
 
-/**
- * Create the bindings common to node and browser.
- *
- * @param bind The bind function from inversify.
- */
-export function createCommonBindings(bind: interfaces.Bind) {
+@injectable()
+export class ProcessTaskRunnerContribution implements TaskRunnerContribution {
 
-    bind(ILogger).toDynamicValue(ctx => {
-        const logger = ctx.container.get<ILogger>(ILogger);
-        return logger.child('task');
-    }).inSingletonScope().whenTargetNamed('task');
+    @inject(ProcessTaskRunner)
+    protected readonly processTaskRunner: ProcessTaskRunner;
 
-    bind(TaskWatcher).toSelf().inSingletonScope();
+    registerRunner(runners: TaskRunnerRegistry): void {
+        runners.registerRunner('process', this.processTaskRunner);
+        runners.registerRunner('shell', this.processTaskRunner);
+    }
 }
