@@ -53,6 +53,7 @@ import { TextEditorCursorStyle } from '../common/editor-options';
 import { PreferenceRegistryExtImpl } from './preference-registry';
 import URI from 'vscode-uri';
 import { OutputChannelRegistryExt } from './output-channel-registry';
+import { TerminalServiceExtImpl } from './terminal-ext';
 
 export function createAPI(rpc: RPCProtocol): typeof theia {
     const commandRegistryExt = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
@@ -64,6 +65,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
     const documents = rpc.set(MAIN_RPC_CONTEXT.DOCUMENTS_EXT, new DocumentsExtImpl(rpc, editorsAndDocuments));
     const workspaceExt = rpc.set(MAIN_RPC_CONTEXT.WORKSPACE_EXT, new WorkspaceExtImpl());
     const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
+    const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const envExt = rpc.set(MAIN_RPC_CONTEXT.ENV_EXT, new EnvExtImpl(rpc));
     const preferenceRegistryExt = rpc.set(MAIN_RPC_CONTEXT.PREFERENCE_REGISTRY_EXT, new PreferenceRegistryExtImpl(rpc));
     const outputChannelRegistryExt = new OutputChannelRegistryExt(rpc);
@@ -166,6 +168,17 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
         onDidChangeWindowState(listener, thisArg?, disposables?): theia.Disposable {
             return windowStateExt.onDidChangeWindowState(listener, thisArg, disposables);
         },
+
+        createTerminal(nameOrOptions: theia.TerminalOptions | (string | undefined), shellPath?: string, shellArgs?: string[]): theia.Terminal {
+            return terminalExt.createTerminal(nameOrOptions, shellPath, shellArgs);
+        },
+        get onDidCloseTerminal(): theia.Event<theia.Terminal> {
+            return terminalExt.onDidCloseTerminal;
+        },
+        set onDidCloseTerminal(event: theia.Event<theia.Terminal>) {
+            terminalExt.onDidCloseTerminal = event;
+        },
+
         createTextEditorDecorationType(options: theia.DecorationRenderOptions): theia.TextEditorDecorationType {
             return editors.createTextEditorDecorationType(options);
         }
