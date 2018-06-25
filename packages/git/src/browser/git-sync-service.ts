@@ -205,7 +205,7 @@ export class GitSyncService {
         if ('message' in e) {
             const message = e['message'];
             if (typeof message === "string" && message.startsWith('GitError')) {
-                this.messageService.error(message);
+                this.messageService.error(message, { timeout: 0 });
                 return;
             }
         }

@@ -553,7 +553,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
     // tslint:disable-next-line:no-any
     protected logError(error: any): void {
         const message = error instanceof Error ? error.message : error;
-        this.messageService.error(message);
+        this.messageService.error(message, { timeout: 0 });
     }
 
     findChange(uri: URI): GitFileChange | undefined {
