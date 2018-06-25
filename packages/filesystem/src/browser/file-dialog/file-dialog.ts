@@ -49,12 +49,9 @@ export class FileDialog extends AbstractDialog<Readonly<FileStatNode> | undefine
     ) {
         super(props);
         this.toDispose.push(widget);
-        this.toDispose.push(this.model.onChanged(() =>
-            this.update()
-        ));
-        this.toDispose.push(this.model.onDidOpenFile(() =>
-            this.accept()
-        ));
+        this.toDispose.push(this.model.onChanged(() => this.update()));
+        this.toDispose.push(this.model.onDidOpenFile(() => this.accept()));
+        this.toDispose.push(this.model.onSelectionChanged(() => this.update()));
 
         const navigationPanel = document.createElement('div');
         navigationPanel.classList.add(NAVIGATION_PANEL_CLASS);
@@ -80,6 +77,7 @@ export class FileDialog extends AbstractDialog<Readonly<FileStatNode> | undefine
         setEnabled(this.back, this.model.canNavigateBackward());
         setEnabled(this.forward, this.model.canNavigateForward());
         this.locationListRenderer.render();
+        this.widget.update();
     }
 
     protected onAfterAttach(msg: Message): void {
