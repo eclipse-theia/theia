@@ -1508,7 +1508,7 @@ declare module '@theia/plugin' {
          *
          * @param value The current value of the input box.
          * @return A human readable string which is presented as diagnostic message.
-         * Return `undefined`, `null`, or the empty string when 'value' is valid.
+         * Return `undefined`, or the empty string when 'value' is valid.
          */
         validateInput?(value: string): string | undefined | PromiseLike<string | undefined>;
     }

@@ -35,8 +35,11 @@ const rpc = new RPCProtocolImpl({
     }
 });
 process.on('message', (message: any) => {
-    console.log("PLUGIN_HOST(" + process.pid + "): " + message);
-    emmitter.fire(JSON.parse(message));
+    try {
+        emmitter.fire(JSON.parse(message));
+    } catch (e) {
+        console.error(e);
+    }
 });
 
 rpc.set(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT, new HostedPluginManagerExtImpl({

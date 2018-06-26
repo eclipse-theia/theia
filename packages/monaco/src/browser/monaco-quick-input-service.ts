@@ -118,7 +118,6 @@ export class QuickInputService {
         this.quickOpenService.clearInputDecoration();
         inputItem.isValid = isValid;
         inputItem.label = label;
-        // this.widget.refresh();
         if (isValid) {
             this.quickOpenService.clearInputDecoration();
         } else {
