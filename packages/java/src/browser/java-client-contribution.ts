@@ -17,7 +17,7 @@
 import { injectable, inject } from "inversify";
 import { CommandService } from "@theia/core/lib/common";
 import {
-    Window, ILanguageClient, BaseLanguageClientContribution, Workspace, Languages, LanguageClientFactory
+    Window, ILanguageClient, BaseLanguageClientContribution, Workspace, Languages, LanguageClientFactory, LanguageClientOptions
 } from '@theia/languages/lib/browser';
 import { JAVA_LANGUAGE_ID, JAVA_LANGUAGE_NAME } from '../common';
 import { ActionableNotification, ActionableMessage } from "./java-protocol";
@@ -55,6 +55,16 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
                 this.commandService.executeCommand(command.command, ...args);
             }
         });
+    }
+
+    protected createOptions(): LanguageClientOptions {
+        const options = super.createOptions();
+        options.initializationOptions = {
+            extendedClientCapabilities: {
+                classFileContentsSupport: true
+            }
+        };
+        return options;
     }
 
 }
