@@ -14,9 +14,9 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import * as theia from '@theia/plugin';
-import {ThemeColor, StatusBarAlignment} from '../types-impl';
-import {StatusBarMessageRegistryMain} from '../../api/plugin-api';
-import {VS_COLORS} from './vscolor-const';
+import { ThemeColor, StatusBarAlignment } from '../types-impl';
+import { StatusBarMessageRegistryMain } from '../../api/plugin-api';
+import { VS_COLORS } from './vscolor-const';
 
 export class StatusBarItemImpl implements theia.StatusBarItem {
     private _messageId: string;
@@ -34,8 +34,8 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
     _proxy: StatusBarMessageRegistryMain;
 
     constructor(_proxy: StatusBarMessageRegistryMain,
-                alignment: StatusBarAlignment = StatusBarAlignment.Left,
-                priority: number = 0) {
+        alignment: StatusBarAlignment = StatusBarAlignment.Left,
+        priority: number = 0) {
         this._proxy = _proxy;
         this._alignment = alignment;
         this._priority = priority;
@@ -124,13 +124,13 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
                 this.getColor(),
                 this.tooltip,
                 this.command).then((id: string) => {
-                this._messageId = id;
-            });
+                    this._messageId = id;
+                });
         }, 0);
     }
 
     private getColor(): string | undefined {
-        if (typeof this.color !== 'string') {
+        if (typeof this.color !== 'string' && typeof this.color !== 'undefined') {
             const colorId = (<ThemeColor>this.color).id;
             return `var(${VS_COLORS[colorId] ? VS_COLORS[colorId] : colorId})`;
         }
