@@ -110,7 +110,7 @@ export abstract class MarkerManager<D extends object> {
     public abstract getKind(): string;
 
     protected readonly uri2MarkerCollection = new Map<string, MarkerCollection<D>>();
-    protected readonly onDidChangeMarkersEmitter = new Emitter<void>();
+    protected readonly onDidChangeMarkersEmitter = new Emitter<URI>();
     readonly initialized: Promise<void>;
 
     constructor(
@@ -125,7 +125,7 @@ export abstract class MarkerManager<D extends object> {
                         const collection = this.uri2MarkerCollection.get(uriString);
                         if (collection !== undefined) {
                             this.uri2MarkerCollection.delete(uriString);
-                            this.fireOnDidChangeMarkers();
+                            this.fireOnDidChangeMarkers(change.uri);
                         }
                     }
                 }
@@ -172,12 +172,12 @@ export abstract class MarkerManager<D extends object> {
         }
     }
 
-    get onDidChangeMarkers(): Event<void> {
+    get onDidChangeMarkers(): Event<URI> {
         return this.onDidChangeMarkersEmitter.event;
     }
 
-    protected fireOnDidChangeMarkers(): void {
-        this.onDidChangeMarkersEmitter.fire(undefined);
+    protected fireOnDidChangeMarkers(uri: URI): void {
+        this.onDidChangeMarkersEmitter.fire(uri);
     }
 
     /*
@@ -189,25 +189,16 @@ export abstract class MarkerManager<D extends object> {
     }
 
     protected internalSetMarkers(uri: URI, owner: string, data: D[]): Marker<D>[] {
-        const collection = this.getCollection(uri);
+        const uriString = uri.toString();
+        const collection = this.uri2MarkerCollection.get(uriString) || new MarkerCollection<D>(uri, this.getKind());
         const oldMarkers = collection.setMarkers(owner, data);
-        if (data.length < 1) {
+        if (data.length > 0) {
+            this.uri2MarkerCollection.set(uriString, collection);
+        } else {
             this.uri2MarkerCollection.delete(uri.toString());
         }
-        this.fireOnDidChangeMarkers();
+        this.fireOnDidChangeMarkers(uri);
         return oldMarkers;
-    }
-
-    protected getCollection(uri: URI): MarkerCollection<D> {
-        let collection: MarkerCollection<D>;
-        const uriString = uri.toString();
-        if (this.uri2MarkerCollection.has(uriString)) {
-            collection = this.uri2MarkerCollection.get(uriString)!;
-        } else {
-            collection = new MarkerCollection<D>(uri, this.getKind());
-            this.uri2MarkerCollection.set(uriString, collection);
-        }
-        return collection;
     }
 
     /*
@@ -215,14 +206,14 @@ export abstract class MarkerManager<D extends object> {
      */
     findMarkers(filter: SearchFilter<D> = {}): Marker<D>[] {
         if (filter.uri) {
-            return this.getCollection(filter.uri)!.findMarkers(filter);
-        } else {
-            const result: Marker<D>[] = [];
-            for (const uri of this.getUris()) {
-                result.push(...this.getCollection(new URI(uri))!.findMarkers(filter));
-            }
-            return result;
+            const collection = this.uri2MarkerCollection.get(filter.uri.toString());
+            return collection ? collection.findMarkers(filter) : [];
         }
+        const result: Marker<D>[] = [];
+        for (const uri of this.getUris()) {
+            result.push(...this.uri2MarkerCollection.get(uri)!.findMarkers(filter));
+        }
+        return result;
     }
 
     getUris(): Iterable<string> {
