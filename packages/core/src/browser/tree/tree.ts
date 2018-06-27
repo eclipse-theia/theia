@@ -236,6 +236,7 @@ export class TreeImpl implements Tree {
     protected setChildren(parent: CompositeTreeNode, children: TreeNode[]): void {
         this.removeNode(parent);
         parent.children = children;
+        children.forEach(child => Object.assign(child, { parent }));
         this.addNode(parent);
         this.fireNodeRefreshed(parent);
     }
