@@ -1,9 +1,18 @@
-/*
+/********************************************************************************
  * Copyright (C) 2017 TypeFox and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { injectable, inject } from "inversify";
 import { QuickOpenItem, QuickOpenMode, QuickOpenModel } from '@theia/core/lib/browser/quick-open/quick-open-model';
@@ -13,6 +22,7 @@ import { GitRepositoryProvider } from './git-repository-provider';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
+import { GitErrorHandler } from "./git-error-handler";
 
 /**
  * Service delegating into the `Quick Open Service`, so that the Git commands can be further refined.
@@ -21,6 +31,8 @@ import { FileUri } from '@theia/core/lib/node/file-uri';
  */
 @injectable()
 export class GitQuickOpenService {
+
+    @inject(GitErrorHandler) protected readonly gitErrorHandler: GitErrorHandler;
 
     constructor(
         @inject(Git) protected readonly git: Git,
@@ -37,7 +49,7 @@ export class GitQuickOpenService {
                 try {
                     await this.git.fetch(repository, { remote: item.getLabel() });
                 } catch (error) {
-                    this.logError(error);
+                    this.gitErrorHandler.handleError(error);
                 }
             };
             const items = remotes.map(remote => new GitQuickOpenItem(remote, execute));
@@ -53,7 +65,7 @@ export class GitQuickOpenService {
                 try {
                     await this.git.push(repository, { remote: item.getLabel() });
                 } catch (error) {
-                    this.logError(error);
+                    this.gitErrorHandler.handleError(error);
                 }
             };
             const items = remotes.map(remote => new GitQuickOpenItem(remote, execute));
@@ -73,7 +85,7 @@ export class GitQuickOpenService {
                     try {
                         await this.git.pull(repository, { remote: remoteItem.getLabel() });
                     } catch (error) {
-                        this.logError(error);
+                        this.gitErrorHandler.handleError(error);
                     }
                 } else {
                     // Otherwise we need to propose the branches from
@@ -82,7 +94,7 @@ export class GitQuickOpenService {
                         try {
                             await this.git.pull(repository, { remote: remoteItem.ref, branch: branchItem.ref.nameWithoutRemote });
                         } catch (error) {
-                            this.logError(error);
+                            this.gitErrorHandler.handleError(error);
                         }
                     };
                     const toLabel = (branchItem: GitQuickOpenItem<Branch>) => branchItem.ref.name;
@@ -106,7 +118,7 @@ export class GitQuickOpenService {
                 try {
                     await this.git.merge(repository, { branch: item.getLabel()! });
                 } catch (error) {
-                    this.logError(error);
+                    this.gitErrorHandler.handleError(error);
                 }
             };
             const toLabel = (item: GitQuickOpenItem<Branch>) => item.ref.name;
@@ -129,7 +141,7 @@ export class GitQuickOpenService {
                 try {
                     await this.git.checkout(repository, { branch: item.ref.nameWithoutRemote });
                 } catch (error) {
-                    this.logError(error);
+                    this.gitErrorHandler.handleError(error);
                 }
             };
             const toLabel = (item: GitQuickOpenItem<Branch>) => {
@@ -159,7 +171,7 @@ export class GitQuickOpenService {
                                         await __this.git.branch(repository, { toCreate: lookFor });
                                         await __this.git.checkout(repository, { branch: lookFor });
                                     } catch (error) {
-                                        __this.logError(error);
+                                        __this.gitErrorHandler.handleError(error);
                                     }
                                 }
                             ));
@@ -266,7 +278,7 @@ export class GitQuickOpenService {
         try {
             return repository ? await this.git.remote(repository) : [];
         } catch (error) {
-            this.logError(error);
+            this.gitErrorHandler.handleError(error);
             return [];
         }
     }
@@ -292,7 +304,7 @@ export class GitQuickOpenService {
             ]);
             return [...local, ...remote];
         } catch (error) {
-            this.logError(error);
+            this.gitErrorHandler.handleError(error);
             return [];
         }
     }
@@ -305,15 +317,9 @@ export class GitQuickOpenService {
         try {
             return await this.git.branch(repository, { type: 'current' });
         } catch (error) {
-            this.logError(error);
+            this.gitErrorHandler.handleError(error);
             return undefined;
         }
-    }
-
-    // tslint:disable-next-line:no-any
-    private logError(error: any): void {
-        const message = error instanceof Error ? error.message : error;
-        this.messageService.error(message);
     }
 
 }

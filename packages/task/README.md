@@ -1,64 +1,58 @@
 # Theia - Task Extension
 
-This extension permits executing scripts or binaries in Theia's backend. 
+This extension permits executing scripts or binaries in Theia's backend.
 
-Tasks launch configurations can be defined independently for each workspace, under `.theia/tasks.json`. When present, they are automatically picked-up when a client opens a workspace, and watches for changes. A task can be executed by triggering the "Run Task" command (shortcut F1). A list of known tasks will then be available, one of which can be selected to trigger execution. 
+Tasks launch configurations can be defined independently for each workspace, under `.theia/tasks.json`. When present, they are automatically picked-up when a client opens a workspace, and watches for changes. A task can be executed by triggering the "Run Task" command (shortcut F1). A list of known tasks will then be available, one of which can be selected to trigger execution.
 
 Each task configuration looks like this:
 ``` json
-     {
-        "label": "Test task - list workspace files recursively",
-        "processType": "terminal",
-        "cwd": "${workspaceFolder}",
-        "processOptions": {
-            "command": "ls",
-            "args": [
-                "-alR"
-            ]
-        },
-        "windowsProcessOptions": {
-            "command": "cmd.exe",
-            "args": [
-                "/c",
-                "dir",
-                "/s"
-            ]
-       }
+{
+    "label": "Test task - list workspace files recursively",
+    "type": "shell",
+    "cwd": "${workspaceFolder}",
+    "command": "ls",
+    "args": [
+        "-alR"
+    ],
+    "windows": {
+        "command": "cmd.exe",
+        "args": [
+            "/c",
+            "dir",
+            "/s"
+        ]
     }
+}
 ```
 
-*label*: A unique string that identifies the task. That's what's shown to the user, when it's time to chose one task configuration to run.
+*label*: a unique string that identifies the task. That's what's shown to the user, when it's time to chose one task configuration to run.
 
-*processType*: Determines what type of process will be used to execute the task. Can be "raw" or "terminal". Terminal processes can be shown in Theia's frontend, in a terminal widget. Raw processes are run without their output being shown. 
+*type*: determines what type of process will be used to execute the task. Can be "process" or "shell". "Shell" processes' output can be shown in Theia's frontend, in a terminal widget. If type set as "process" then task will be run without their output being shown.
 
-*cwd*: The current working directory, in which the task's command will execute. This is the equivalent of doing a "cd" to that directory, on the command-line, before running the command. This can contain the variable *${workspaceFolder}*, which will be replaced at execution time by the path of the current workspace. If left undefined, will by default be set to workspace root. 
+*cwd*: the current working directory, in which the task's command will execute. This is the equivalent of doing a "cd" to that directory, on the command-line, before running the command. This can contain the variable *${workspaceFolder}*, which will be replaced at execution time by the path of the current workspace. If left undefined, will by default be set to workspace root.
 
-*processOptions.command*: the actual command or script to execute. The command can have no path (e.g. "ls") if it can be found in the system path. Else it can have an absolute path, in which case there is no confusion. Or it can have a relative path, in which case it will be interpreted to be relative to cwd. e.g. "./task" would be interpreted to mean a script or binary called "task", right under the workspace root directory.
+*command*: the actual command or script to execute. The command can have no path (e.g. "ls") if it can be found in the system path. Else it can have an absolute path, in which case there is no confusion. Or it can have a relative path, in which case it will be interpreted to be relative to cwd. e.g. "./task" would be interpreted to mean a script or binary called "task", right under the workspace root directory.
 
-*processOptions.args*: a list of strings, each one being one argument to pass to the command. 
+*args*: a list of strings, each one being one argument to pass to the command.
 
-*windowsProcessOptions*: By default, *processOptions* above is used on all platforms. However it's not always possible to express a task in the same way, both on Unix and Windows. The command and/or arguments may be different, for example. If a task needs to work on both Linux/MacOS and Windows, it can be better to have two separate process options. If *windowsProcessOptions* is defined, it will be used instead of *processOptions*, when a task is executed on a Windows backend.
+*windows*: by default, *command* and *ars* above is used on all platforms. However it's not always possible to express a task in the same way, both on Unix and Windows. The command and/or arguments may be different, for example. If a task needs to work on both Linux/MacOS and Windows, it can be better to have two separate process options. If *windows* is defined, it will be used instead of *command* and *ars*, when a task is executed on a Windows backend.
 
-
-
-Here is a sample tasks.json that can be used to test tasks. Just add this content under the theia source directory, in directory `.theia`: 
+Here is a sample tasks.json that can be used to test tasks. Just add this content under the theia source directory, in directory `.theia`:
 ``` json
 {
     // Some sample Theia tasks
     "tasks": [
         {
             "label": "[Task] short running test task (~3s)",
-            "processType": "terminal",
+            "type": "shell",
             "cwd": "${workspaceFolder}/packages/task/src/node/test-resources/",
-            "processOptions": {
-                "command": "./task",
-                "args": [
-                    "1",
-                    "2",
-                    "3"
-                ]
-            },
-            "windowsProcessOptions": {
+            "command": "./task",
+            "args": [
+                "1",
+                "2",
+                "3"
+            ],
+            "windows": {
                 "command": "cmd.exe",
                 "args": [
                     "/c",
@@ -69,13 +63,11 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
         },
         {
             "label": "[Task] long running test task (~300s)",
-            "processType": "terminal",
+            "type": "shell",
             "cwd": "${workspaceFolder}/packages/task/src/node/test-resources/",
-            "processOptions": {
-                "command": "./task-long-running",
-                "args": []
-            },
-            "windowsProcessOptions": {
+            "command": "./task-long-running",
+            "args": [],
+            "windows": {
                 "command": "cmd.exe",
                 "args": [
                     "/c",
@@ -85,15 +77,13 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
         },
         {
             "label": "[Task] recursively list files from workspace root",
-            "processType": "terminal",
+            "type": "shell",
             "cwd": "${workspaceFolder}",
-            "processOptions": {
-                "command": "ls",
-                "args": [
-                    "-alR"
-                ]
-            },
-            "windowsProcessOptions": {
+            "command": "ls",
+            "args": [
+                "-alR"
+            ],
+            "windows": {
                 "command": "cmd.exe",
                 "args": [
                     "/c",
@@ -104,29 +94,44 @@ Here is a sample tasks.json that can be used to test tasks. Just add this conten
         },
         {
             "label": "[Task] Echo a string",
-            "processType": "terminal",
+            "type": "shell",
             "cwd": "${workspaceFolder}",
-            "processOptions": {
-                "command": "bash",
-                "args": [
-                    "-c",
-                    "echo 1 2 3"
-                ]
-            }
+            "command": "bash",
+            "args": [
+                "-c",
+                "echo 1 2 3"
+            ]
         }
     ]
 }
 ```
 
-### Variables
+## Variables substitution
 The variables are supported in the following properties, using `${variableName}` syntax:
 - `cwd`
-- `processOptions.command`
-- `processOptions.args`
-- `windowsProcessOptions.command`
-- `windowsProcessOptions.args`
+- `command`
+- `args`
+- `windows.command`
+- `windows.args`
 
 See [here](https://github.com/theia-ide/theia) for other Theia documentation.
 
+## Contribution points
+The extension provides contribution points:
+- `browser/TaskContribution` - allows an extension to provide its own Task format and/or to provide the Tasks programmatically to the system
+```typescript
+export interface TaskContribution {
+    registerResolvers?(resolvers: TaskResolverRegistry): void;
+    registerProviders?(providers: TaskProviderRegistry): void;
+}
+```
+- `node/TaskRunnerContribution` - allows an extension to provide its own way of running/killing a Task
+```typescript
+export interface TaskRunnerContribution {
+    registerRunner(runners: TaskRunnerRegistry): void;
+}
+```
+
 ## License
-[Apache-2.0](https://github.com/theia-ide/theia/blob/master/LICENSE)
+- [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
+- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)

@@ -12,7 +12,7 @@
     "@types/diff": "^3.2.2",
     "@types/fs-extra": "^4.0.2",
     "diff": "^3.4.0",
-    "dugite-extra": "0.0.1-alpha.22",
+    "dugite-extra": "0.0.1-alpha.23",
     "find-git-repositories": "^0.1.0",
     "fs-extra": "^4.0.2",
     "moment": "^2.21.0",
@@ -31,7 +31,7 @@
   "keywords": [
     "theia-extension"
   ],
-  "license": "Apache-2.0",
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/theia-ide/theia.git"

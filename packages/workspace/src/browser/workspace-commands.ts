@@ -1,9 +1,18 @@
-/*
+/********************************************************************************
  * Copyright (C) 2017 TypeFox and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
@@ -90,8 +99,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 const openWithCommand = WorkspaceCommands.FILE_OPEN_WITH(opener);
                 registry.registerCommand(openWithCommand, this.newUriAwareCommandHandler({
                     execute: uri => opener.open(uri),
-                    isEnabled: uri => opener.canHandle(uri) !== 0,
-                    isVisible: uri => opener.canHandle(uri) !== 0
+                    isEnabled: uri => opener.canHandle(uri) > 0,
+                    isVisible: uri => opener.canHandle(uri) > 0
                 }));
             }
         });
@@ -144,7 +153,14 @@ export class WorkspaceCommandContribution implements CommandContribution {
                 }
             })
         }));
+        let rootUri: URI | undefined;
+        this.workspaceService.root.then(root => {
+            if (root) {
+                rootUri = new URI(root.uri);
+            }
+        });
         registry.registerCommand(WorkspaceCommands.FILE_DELETE, this.newMultiUriAwareCommandHandler({
+            isVisible: uris => !(rootUri && uris.some(uri => uri.toString() === rootUri!.toString())),
             execute: async uris => {
                 const msg = (() => {
                     if (uris.length === 1) {
@@ -177,6 +193,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
             }
         }));
         registry.registerCommand(WorkspaceCommands.FILE_COMPARE, this.newMultiUriAwareCommandHandler({
+            isVisible: uris => uris.length === 2,
             execute: async uris => {
                 const [left, right] = uris;
                 const [leftExists, rightExists] = await Promise.all([
@@ -210,16 +227,15 @@ export class WorkspaceCommandContribution implements CommandContribution {
                     }
                 }
             }
-            // Ideally, we would have to check whether both the URIs represent an individual file, but we cannot make synchronous validation here :(
-        }, uris => uris.length === 2));
+        }));
     }
 
     protected newUriAwareCommandHandler(handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {
         return new UriAwareCommandHandler(this.selectionService, handler);
     }
 
-    protected newMultiUriAwareCommandHandler(handler: UriCommandHandler<URI[]>, isValid: (uris: URI[]) => boolean = uris => uris.length > 0): UriAwareCommandHandler<URI[]> {
-        return new UriAwareCommandHandler(this.selectionService, handler, { multi: true, isValid });
+    protected newMultiUriAwareCommandHandler(handler: UriCommandHandler<URI[]>): UriAwareCommandHandler<URI[]> {
+        return new UriAwareCommandHandler(this.selectionService, handler, { multi: true });
     }
 
     protected newWorkspaceRootUriAwareCommandHandler(handler: UriCommandHandler<URI>): WorkspaceRootUriAwareCommandHandler {

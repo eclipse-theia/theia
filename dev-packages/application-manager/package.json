@@ -5,7 +5,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "license": "Apache-2.0",
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/theia-ide/theia.git"
@@ -45,7 +45,8 @@
     "umd-compat-loader": "^2.1.1",
     "url-loader": "^1.0.1",
     "webpack": "^4.0.0",
-    "webpack-cli": "2.0.12"
+    "webpack-cli": "2.0.12",
+    "worker-loader": "^1.1.1"
   },
   "devDependencies": {
     "@theia/ext-scripts": "^0.3.11"

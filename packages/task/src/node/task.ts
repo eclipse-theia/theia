@@ -1,82 +1,59 @@
-/*
+/********************************************************************************
  * Copyright (C) 2017 Ericsson and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
-import { injectable, inject, named } from 'inversify';
-import { ILogger } from '@theia/core/lib/common/';
-import { ProcessType, TaskInfo } from '../common/task-protocol';
+import { injectable } from 'inversify';
+import { ILogger, Emitter, Event } from '@theia/core/lib/common/';
 import { TaskManager } from './task-manager';
-import { Process, ProcessManager } from "@theia/process/lib/node";
+import { TaskInfo, TaskExitedEvent, TaskConfiguration } from '../common/task-protocol';
 
-export const TaskProcessOptions = Symbol("TaskProcessOptions");
-export interface TaskProcessOptions {
+export interface TaskOptions {
     label: string,
-    command: string,
-    process: Process,
-    processType: ProcessType,
+    config: TaskConfiguration
     context?: string
 }
 
-export const TaskFactory = Symbol("TaskFactory");
-export type TaskFactory = (options: TaskProcessOptions) => Task;
-
 @injectable()
-export class Task {
+export abstract class Task {
+
     protected taskId: number;
+    readonly exitEmitter: Emitter<TaskExitedEvent>;
 
     constructor(
-        @inject(TaskManager) protected readonly taskManager: TaskManager,
-        @inject(ILogger) @named('task') protected readonly logger: ILogger,
-        @inject(TaskProcessOptions) protected readonly options: TaskProcessOptions,
-        @inject(ProcessManager) protected readonly processManager: ProcessManager
+        protected readonly taskManager: TaskManager,
+        protected readonly logger: ILogger,
+        protected readonly options: TaskOptions
     ) {
         this.taskId = this.taskManager.register(this, this.options.context);
-
-        const toDispose =
-            this.process.onExit(event => {
-                this.taskManager.delete(this);
-                toDispose.dispose();
-            });
-        this.logger.info(`Created new task, id: ${this.id}, process id: ${this.options.process.id}, OS PID: ${this.process.pid}, context: ${this.context}`);
+        this.exitEmitter = new Emitter<TaskExitedEvent>();
     }
 
-    /** terminates the task */
-    kill(): Promise<void> {
-        return new Promise<void>(resolve => {
-            if (this.process.killed) {
-                resolve();
-            } else {
-                const toDispose = this.process.onExit(event => {
-                    toDispose.dispose();
-                    resolve();
-                });
-                this.process.kill();
-            }
-        });
+    /** Terminates the task. */
+    abstract kill(): Promise<void>;
+
+    get onExit(): Event<TaskExitedEvent> {
+        return this.exitEmitter.event;
     }
 
-    /** Returns runtime information about task */
-    getRuntimeInfo(): TaskInfo {
-        return {
-            taskId: this.id,
-            osProcessId: this.process.pid,
-            terminalId: (this.processType === 'terminal') ? this.process.id : undefined,
-            processId: (this.processType === 'raw') ? this.process.id : undefined,
-            command: this.command,
-            label: this.label,
-            ctx: this.context
-        };
+    /** Has to be called when a task has concluded its execution. */
+    protected fireTaskExited(event: TaskExitedEvent): void {
+        this.exitEmitter.fire(event);
     }
 
-    get command() {
-        return this.options.command;
-    }
-    get process() {
-        return this.options.process;
-    }
+    /** Returns runtime information about task. */
+    abstract getRuntimeInfo(): TaskInfo;
 
     get id() {
         return this.taskId;
@@ -84,10 +61,6 @@ export class Task {
 
     get context() {
         return this.options.context;
-    }
-
-    get processType() {
-        return this.options.processType;
     }
 
     get label() {

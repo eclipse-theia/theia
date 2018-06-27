@@ -1,9 +1,18 @@
-/*
+/********************************************************************************
  * Copyright (C) 2018 TypeFox and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { MenuModelRegistry, CommandRegistry, Command, SelectionService } from '@theia/core';
 import { AbstractViewContribution } from '@theia/core/lib/browser';
@@ -85,23 +94,24 @@ export class GitHistoryContribution extends AbstractViewContribution<GitHistoryW
     }
 
     async showWidget(uri: string | undefined) {
-        this.refreshWidget(uri);
-        this.openView({
+        await this.openView({
             activate: true
         });
+        this.refreshWidget(uri);
     }
 
     protected async refreshWidget(uri: string | undefined) {
+        const widget = this.tryGetWidget();
+        if (!widget) {
+            // the widget doesn't exist, so don't wake it up
+            return;
+        }
         const options: Git.Options.Log = {
             uri,
             maxCount: GIT_HISTORY_MAX_COUNT,
             shortSha: true
         };
-        const widget = await this.widget;
         await widget.setContent(options);
-        this.openView({
-            activate: false
-        });
     }
 
     protected newUriAwareCommandHandler(handler: UriCommandHandler<URI>): UriAwareCommandHandler<URI> {

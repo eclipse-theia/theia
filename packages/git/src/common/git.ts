@@ -1,9 +1,18 @@
-/*
+/********************************************************************************
  * Copyright (C) 2017 TypeFox and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { ChildProcess } from 'child_process';
 import { Disposable } from '@theia/core';
@@ -141,6 +150,23 @@ export namespace Git {
              * Undefined to look up all repositories.
              */
             readonly maxCount?: number;
+
+        }
+
+        /**
+         * Further refinements for unstaging files from either from the index or from the working-tree. Alternatively, resetting both.
+         */
+        export interface Unstage {
+
+            /**
+             * What to reset; the state of the index, the working-tree, or both. If not given, `all` will be used.
+             */
+            readonly reset?: 'index' | 'working-tree' | 'all';
+
+            /**
+             * The treeish to reset to. Defaults to `HEAD`.
+             */
+            readonly treeish?: string;
 
         }
 
@@ -562,10 +588,11 @@ export interface Git extends Disposable {
      * Removes the given file or files among the staged files in the working clone. The invocation will be rejected if
      * any files (given with their file URIs) is not among the staged files.
      *
-     * @param repository the repository to where the staged files have to be removed from/
-     * @param uri one or multiple file URIs to unstage in the working clone.
+     * @param repository the repository to where the staged files have to be removed from.
+     * @param uri one or multiple file URIs to unstage in the working clone. If the array is empty, all the changed files will be staged.
+     * @param options optional refinements for the the unstaging operation.
      */
-    unstage(repository: Repository, uri: string | string[]): Promise<void>;
+    unstage(repository: Repository, uri: string | string[], options?: Git.Options.Unstage): Promise<void>;
 
     /**
      * Returns with the currently active branch, or `undefined` if the current branch is in detached mode.

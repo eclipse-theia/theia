@@ -1,12 +1,21 @@
-/*
+/********************************************************************************
  * Copyright (C) 2017-2018 Ericsson and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { inject, injectable, named } from 'inversify';
-import { TaskOptions } from '../common/task-protocol';
+import { TaskConfiguration } from '../common/task-protocol';
 import { ILogger, Disposable, DisposableCollection } from '@theia/core/lib/common/';
 import URI from "@theia/core/lib/common/uri";
 import { FileSystemWatcherServer, FileChange, FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
@@ -29,7 +38,7 @@ export interface TaskConfigurationClient {
 export class TaskConfigurations implements Disposable {
 
     protected readonly toDispose = new DisposableCollection();
-    protected tasksMap = new Map<string, TaskOptions>();
+    protected tasksMap = new Map<string, TaskConfiguration>();
     protected watchedConfigFileUri: string;
 
     /** last directory element under which we look for task config */
@@ -103,8 +112,13 @@ export class TaskConfigurations implements Disposable {
         return [...this.tasksMap.keys()];
     }
 
-    /** returns the task configuration for a given label */
-    getTask(taskLabel: string): TaskOptions | undefined {
+    /** returns the list of known tasks */
+    getTasks(): TaskConfiguration[] {
+        return [...this.tasksMap.values()];
+    }
+
+    /** returns the task configuration for a given label or undefined if none */
+    getTask(taskLabel: string): TaskConfiguration | undefined {
         return this.tasksMap.get(taskLabel);
     }
 
@@ -131,22 +145,22 @@ export class TaskConfigurations implements Disposable {
      * If reading a config file wasn't success then does nothing.
      */
     protected async refreshTasks() {
-        const tasksOptionsArray = await this.readTasks(this.watchedConfigFileUri);
-        if (tasksOptionsArray) {
+        const tasksConfigsArray = await this.readTasks(this.watchedConfigFileUri);
+        if (tasksConfigsArray) {
             // only clear tasks map when successful at parsing the config file
             // this way we avoid clearing and re-filling it multiple times if the
             // user is editing the file in the auto-save mode, having momentarily
             // non-parsing JSON.
             this.tasksMap.clear();
 
-            for (const task of tasksOptionsArray) {
+            for (const task of tasksConfigsArray) {
                 this.tasksMap.set(task.label, task);
             }
         }
     }
 
     /** parses a config file and extracts the tasks launch configurations */
-    protected async readTasks(uri: string): Promise<TaskOptions[] | undefined> {
+    protected async readTasks(uri: string): Promise<TaskConfiguration[] | undefined> {
         if (!await this.fileSystem.exists(uri)) {
             return undefined;
         } else {
@@ -170,8 +184,8 @@ export class TaskConfigurations implements Disposable {
         }
     }
 
-    protected filterDuplicates(tasks: TaskOptions[]): TaskOptions[] {
-        const filteredTasks: TaskOptions[] = [];
+    protected filterDuplicates(tasks: TaskConfiguration[]): TaskConfiguration[] {
+        const filteredTasks: TaskConfiguration[] = [];
         for (const task of tasks) {
             if (filteredTasks.some(t => t.label === task.label)) {
                 // TODO: create a problem marker so that this issue will be visible in the editor?

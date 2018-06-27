@@ -1,9 +1,18 @@
-/*
+/********************************************************************************
  * Copyright (C) 2018 TypeFox and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { injectable, inject, interfaces } from "inversify";
 import { Widget } from '@phosphor/widgets';
@@ -13,7 +22,6 @@ import {
 } from '../../common';
 import { KeybindingContribution, KeybindingRegistry } from "../keybinding";
 import { WidgetManager } from '../widget-manager';
-import { FrontendApplicationContribution, FrontendApplication } from '../frontend-application';
 import { CommonMenus } from '../common-frontend-contribution';
 import { ApplicationShell } from './application-shell';
 
@@ -34,7 +42,6 @@ export interface ViewContributionOptions {
 // tslint:disable-next-line:no-any
 export function bindViewContribution<T extends AbstractViewContribution<any>>(bind: interfaces.Bind, identifier: interfaces.Newable<T>): interfaces.BindingWhenOnSyntax<T> {
     const syntax = bind<T>(identifier).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(identifier);
     bind(CommandContribution).toService(identifier);
     bind(KeybindingContribution).toService(identifier);
     bind(MenuContribution).toService(identifier);
@@ -45,7 +52,7 @@ export function bindViewContribution<T extends AbstractViewContribution<any>>(bi
  * An abstract superclass for frontend contributions that add a view to the application shell.
  */
 @injectable()
-export abstract class AbstractViewContribution<T extends Widget> implements CommandContribution, MenuContribution, KeybindingContribution, FrontendApplicationContribution {
+export abstract class AbstractViewContribution<T extends Widget> implements CommandContribution, MenuContribution, KeybindingContribution {
 
     @inject(WidgetManager) protected widgetManager: WidgetManager;
     @inject(ApplicationShell) protected shell: ApplicationShell;
@@ -93,10 +100,6 @@ export abstract class AbstractViewContribution<T extends Widget> implements Comm
             shell.revealWidget(widget.id);
         }
         return widget;
-    }
-
-    async initializeLayout(app: FrontendApplication): Promise<void> {
-        await this.openView();
     }
 
     registerCommands(commands: CommandRegistry): void {

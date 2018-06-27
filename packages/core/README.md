@@ -30,10 +30,11 @@ existing loggers.  However, each log message specifies from which logger it
 comes from, which can give an idea, without having to read the code:
 
 ```
-[2018-05-10T20:01:45.608Z]  INFO: Theia/7045 on elxacz23q12: (logger=root)
-                            ^^^^                                     ^^^^
-			 log level                                logger name
+root INFO [nsfw-watcher: 10734] Started watching: /Users/captain.future/git/theia/CONTRIBUTING.md
+^^^^ ^^^^  ^^^^^^^^^^^^^^^^^^^
 ```
+Where `root` is the name of the logger and `INFO` is the log level. These are optionally followed by the name of a child process and the process ID.
 
 ## License
-[Apache-2.0](https://github.com/theia-ide/theia/blob/master/LICENSE)
+- [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
+- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)

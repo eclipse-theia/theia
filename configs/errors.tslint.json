@@ -3,7 +3,7 @@
   "rules": {
     "file-header": [
       true,
-      "[\n\r]+ \\* Copyright \\(C\\) \\d{4}(-\\d{4})? .*[\n\r]+"
+      "SPDX-License-Identifier: EPL-2\\.0 OR GPL-2\\.0 WITH Classpath-exception-2\\.0"
     ],
     "class-name": true,
     "comment-format": [
@@ -17,7 +17,10 @@
       true,
       "spaces"
     ],
-    "jsdoc-format": [true, "check-multiline-start"],
+    "jsdoc-format": [
+      true,
+      "check-multiline-start"
+    ],
     "max-line-length": [
       true,
       180

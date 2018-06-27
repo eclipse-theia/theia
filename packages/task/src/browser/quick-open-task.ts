@@ -1,14 +1,24 @@
-/*
+/********************************************************************************
  * Copyright (C) 2017 Ericsson and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
-import { inject, injectable } from "inversify";
-import { TaskService } from './task-service';
-import { TaskInfo } from '../common/task-protocol';
+import { inject, injectable } from 'inversify';
 import { QuickOpenService, QuickOpenModel, QuickOpenItem, QuickOpenMode } from '@theia/core/lib/browser/quick-open/';
+import { TaskService } from './task-service';
+import { TaskConfigurations } from "./task-configurations";
+import { TaskInfo, TaskConfiguration } from '../common/task-protocol';
 
 @injectable()
 export class QuickOpenTask implements QuickOpenModel {
@@ -17,16 +27,23 @@ export class QuickOpenTask implements QuickOpenModel {
 
     constructor(
         @inject(TaskService) protected readonly taskService: TaskService,
+        @inject(TaskConfigurations) protected readonly taskConfigurations: TaskConfigurations,
         @inject(QuickOpenService) protected readonly quickOpenService: QuickOpenService
     ) { }
 
-    open(): void {
+    async open(): Promise<void> {
         this.items = [];
 
-        const tasks: string[] = this.taskService.getTasks();
-        for (const task of tasks) {
-            this.items.push(new TaskRunQuickOpenItem(task, this.taskService));
+        const configuredTasks = await this.taskConfigurations.getTasks();
+        for (const task of configuredTasks) {
+            this.items.push(new TaskRunQuickOpenItem(task, this.taskService, false));
         }
+
+        const providedTasks = await this.taskService.getProvidedTasks();
+        for (const task of providedTasks) {
+            this.items.push(new TaskRunQuickOpenItem(task, this.taskService, true));
+        }
+
         this.quickOpenService.open(this, {
             placeholder: 'Type the name of a task you want to execute',
             fuzzyMatchLabel: true,
@@ -67,7 +84,7 @@ export class QuickOpenTask implements QuickOpenModel {
     }
 
     protected getRunningTaskLabel(task: TaskInfo): string {
-        return `Task id: ${task.taskId}, label: ${task.label}`;
+        return `Task id: ${task.taskId}, label: ${task.config.label}`;
     }
 
 }
@@ -75,21 +92,26 @@ export class QuickOpenTask implements QuickOpenModel {
 export class TaskRunQuickOpenItem extends QuickOpenItem {
 
     constructor(
-        protected readonly taskLabel: string,
-        protected taskService: TaskService
+        protected readonly task: TaskConfiguration,
+        protected taskService: TaskService,
+        protected readonly provided: boolean
     ) {
         super();
     }
 
     getLabel(): string {
-        return this.taskLabel!;
+        return `${this.task.type}: ${this.task.label}`;
+    }
+
+    getDescription(): string {
+        return this.provided ? 'provided' : '';
     }
 
     run(mode: QuickOpenMode): boolean {
         if (mode !== QuickOpenMode.OPEN) {
             return false;
         }
-        this.taskService.run(this.taskLabel);
+        this.taskService.run(this.task.type, this.task.label);
 
         return true;
     }

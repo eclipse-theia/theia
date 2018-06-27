@@ -1,9 +1,18 @@
-/*
+/********************************************************************************
  * Copyright (C) 2017 TypeFox and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import * as paths from 'path';
 import { AbstractGenerator } from './abstract-generator';
@@ -38,7 +47,7 @@ const { mode }  = yargs.option('mode', {
 }).argv;
 const development = mode === 'development';${this.ifMonaco(() => `
 
-const monacoEditorPath = development ? '${this.resolve('monaco-editor-core', 'dev/vs')}' : '${this.resolve('monaco-editor-core', 'min/vs')}';
+const monacoEditorCorePath = development ? '${this.resolve('monaco-editor-core', 'dev/vs')}' : '${this.resolve('monaco-editor-core', 'min/vs')}';
 const monacoLanguagesPath = '${this.resolve('monaco-languages', 'release/min')}';
 const monacoCssLanguagePath = '${this.resolve('monaco-css', 'release/min')}';
 const monacoJsonLanguagePath = '${this.resolve('monaco-json', 'release/min')}';
@@ -62,6 +71,13 @@ module.exports = {
     },
     module: {
         rules: [
+            {
+                test: /worker-main\\.js$/,
+                loader: 'worker-loader',
+                options: {
+                    name: 'worker-ext.[hash].js'
+                }
+            },
             {
                 test: /\\.css$/,
                 exclude: /\\.useable\\.css$/,
@@ -91,7 +107,7 @@ module.exports = {
                 test: /\\.js$/,
                 enforce: 'pre',
                 loader: 'source-map-loader',
-                exclude: /jsonc-parser/
+                exclude: /jsonc-parser|fast-plist|onigasm|(monaco-editor.*)/
             },
             {
                 test: /\\.woff(2)?(\\?v=[0-9]\\.[0-9]\\.[0-9])?$/,
@@ -100,20 +116,25 @@ module.exports = {
             {
                 test: /node_modules[\\\\|\/](vscode-languageserver-types|vscode-uri|jsonc-parser)/,
                 use: { loader: 'umd-compat-loader' }
+            },
+            {
+                test: /\.wasm$/,
+                loader: "file-loader",
+                type: "javascript/auto",
             }
         ]
     },
     resolve: {
         extensions: ['.js']${this.ifMonaco(() => `,
         alias: {
-            'vs': path.resolve(outputPath, monacoEditorPath)
+            'vs': path.resolve(outputPath, monacoEditorCorePath)
         }`)}
     },
     devtool: 'source-map',
     plugins: [
         new CopyWebpackPlugin([${this.ifMonaco(() => `
             {
-                from: monacoEditorPath,
+                from: monacoEditorCorePath,
                 to: 'vs'
             },
             {
@@ -136,7 +157,7 @@ module.exports = {
         new CircularDependencyPlugin({
             exclude: /(node_modules|examples)\\/./,
             failOnError: false // https://github.com/nodejs/readable-stream/issues/280#issuecomment-297076462
-        })
+        }),
     ],
     stats: {
         warnings: true

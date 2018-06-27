@@ -37,7 +37,7 @@
   "keywords": [
     "theia-extension"
   ],
-  "license": "Apache-2.0",
+  "license": "EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/theia-ide/theia.git"
@@ -53,5 +53,6 @@
   ],
   "nyc": {
     "extends": "../../configs/nyc.json"
-  }
+  },
+  "jdt.ls.download.path": "/jdtls/milestones/0.18.0/jdt-language-server-0.18.0-201805010001.tar.gz"
 }

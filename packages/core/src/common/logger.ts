@@ -1,9 +1,18 @@
-/*
+/********************************************************************************
  * Copyright (C) 2017 Ericsson and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { inject, injectable } from 'inversify';
 import { LoggerWatcher } from './logger-watcher';
@@ -27,8 +36,7 @@ export namespace LogLevel {
         [LogLevel.WARN, 'warn'],
         [LogLevel.INFO, 'info'],
         [LogLevel.DEBUG, 'debug'],
-        [LogLevel.TRACE, 'trace'],
-
+        [LogLevel.TRACE, 'trace']
     ]);
 
     export function toString(level: LogLevel): string | undefined {
@@ -46,15 +54,19 @@ export namespace LogLevel {
     }
 }
 
-type ConsoleLog = typeof console.log;
-type ConsoleInfo = typeof console.info;
-type ConsoleWarn = typeof console.warn;
 type ConsoleError = typeof console.error;
+type ConsoleWarn = typeof console.warn;
+type ConsoleInfo = typeof console.info;
+type ConsoleDebug = typeof console.debug;
+type ConsoleTrace = typeof console.trace;
+type ConsoleLog = typeof console.log;
 
-let originalConsoleLog: ConsoleLog;
-let originalConsoleInfo: ConsoleInfo;
-let originalConsoleWarn: ConsoleWarn;
 let originalConsoleError: ConsoleError;
+let originalConsoleWarn: ConsoleWarn;
+let originalConsoleInfo: ConsoleInfo;
+let originalConsoleDebug: ConsoleDebug;
+let originalConsoleTrace: ConsoleTrace;
+let originalConsoleLog: ConsoleLog;
 
 /* This is to be initialized from container composition root. It can be used outside of the inversify context.  */
 export let logger: ILogger;
@@ -68,20 +80,24 @@ export const rootLoggerName: string = 'root';
  */
 export function unsetRootLogger() {
     if (logger !== undefined) {
-        console.log = originalConsoleLog;
-        console.info = originalConsoleInfo;
-        console.warn = originalConsoleWarn;
         console.error = originalConsoleError;
+        console.warn = originalConsoleWarn;
+        console.info = originalConsoleInfo;
+        console.debug = originalConsoleDebug;
+        console.trace = originalConsoleTrace;
+        console.log = originalConsoleLog;
         (<any>logger) = undefined;
     }
 }
 
 export function setRootLogger(aLogger: ILogger) {
     if (logger === undefined) {
-        originalConsoleLog = console.log;
-        originalConsoleInfo = console.info;
-        originalConsoleWarn = console.warn;
         originalConsoleError = console.error;
+        originalConsoleWarn = console.warn;
+        originalConsoleInfo = console.info;
+        originalConsoleDebug = console.debug;
+        originalConsoleTrace = console.trace;
+        originalConsoleLog = console.log;
     }
     logger = aLogger;
     const frontend = typeof window !== 'undefined' && typeof (window as any).process === 'undefined';
@@ -92,10 +108,12 @@ export function setRootLogger(aLogger: ILogger) {
         }
     };
 
-    console.log = log.bind(undefined, LogLevel.INFO, console.log);
-    console.info = log.bind(undefined, LogLevel.INFO, console.info);
-    console.warn = log.bind(undefined, LogLevel.WARN, console.warn);
     console.error = log.bind(undefined, LogLevel.ERROR, console.error);
+    console.warn = log.bind(undefined, LogLevel.WARN, console.warn);
+    console.info = log.bind(undefined, LogLevel.INFO, console.info);
+    console.debug = log.bind(undefined, LogLevel.DEBUG, console.debug);
+    console.trace = log.bind(undefined, LogLevel.TRACE, console.trace);
+    console.log = log.bind(undefined, LogLevel.INFO, console.log);
 }
 
 export type Log = (message: any, ...params: any[]) => void;
@@ -283,9 +301,6 @@ export class Logger implements ILogger {
 
     /**
      * Build a new Logger.
-     *
-     * @param options - The options to build the logger with, see the
-     * bunyan child method documentation for more information.
      */
     constructor(
         @inject(ILoggerServer) protected readonly server: ILoggerServer,

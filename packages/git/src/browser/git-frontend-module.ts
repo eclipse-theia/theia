@@ -1,13 +1,22 @@
-/*
+/********************************************************************************
  * Copyright (C) 2018 TypeFox and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { ContainerModule } from 'inversify';
 import { ResourceResolver } from "@theia/core/lib/common";
-import { WebSocketConnectionProvider, WidgetFactory, bindViewContribution, LabelProviderContribution } from '@theia/core/lib/browser';
+import { WebSocketConnectionProvider, WidgetFactory, bindViewContribution, LabelProviderContribution, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { NavigatorTreeDecorator } from '@theia/navigator/lib/browser';
 import { Git, GitPath, GitWatcher, GitWatcherPath, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common';
 import { GitViewContribution, GIT_WIDGET_FACTORY_ID } from './git-view-contribution';
@@ -25,6 +34,7 @@ import { bindBlame } from './blame/blame-module';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import { GitCommitMessageValidator } from './git-commit-message-validator';
 import { GitSyncService } from './git-sync-service';
+import { GitErrorHandler } from './git-error-handler';
 
 import '../../src/browser/style/index.css';
 
@@ -41,6 +51,8 @@ export default new ContainerModule(bind => {
     bind(Git).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, GitPath)).inSingletonScope();
 
     bindViewContribution(bind, GitViewContribution);
+    bind(FrontendApplicationContribution).toService(GitViewContribution);
+
     bind(GitWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
         id: GIT_WIDGET_FACTORY_ID,
@@ -59,4 +71,5 @@ export default new ContainerModule(bind => {
     bind(GitCommitMessageValidator).toSelf().inSingletonScope();
 
     bind(GitSyncService).toSelf().inSingletonScope();
+    bind(GitErrorHandler).toSelf().inSingletonScope();
 });

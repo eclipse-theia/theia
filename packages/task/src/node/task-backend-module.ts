@@ -1,28 +1,36 @@
-/*
+/********************************************************************************
  * Copyright (C) 2017 Ericsson and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
-import { ContainerModule, Container } from 'inversify';
-import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common/messaging";
-import { Task, TaskFactory, TaskProcessOptions } from './task';
-import { TaskClient, TaskServer, taskPath } from '../common/task-protocol';
-import { TaskServerImpl } from './task-server';
-import { TaskManager } from './task-manager';
-import { TaskWatcher } from '../common/task-watcher';
+import { ContainerModule } from 'inversify';
+import { bindContributionProvider } from '@theia/core';
+import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
+import { bindProcessTaskRunnerModule } from './process/process-task-runner-backend-module';
+import { TaskBackendApplicationContribution } from './task-backend-application-contribution';
+import { TaskManager } from './task-manager';
+import { TaskRunnerContribution, TaskRunnerRegistry } from './task-runner';
+import { TaskServerImpl } from './task-server';
 import { createCommonBindings } from '../common/task-common-module';
+import { TaskClient, TaskServer, taskPath } from '../common/task-protocol';
 
 export default new ContainerModule(bind => {
 
     bind(TaskManager).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(TaskManager)).inSingletonScope();
     bind(TaskServer).to(TaskServerImpl).inSingletonScope();
-    bind(Task).toSelf().inTransientScope();
-    bind(TaskWatcher).toSelf().inSingletonScope();
-
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new JsonRpcConnectionHandler<TaskClient>(taskPath, client => {
             const taskServer = ctx.container.get<TaskServer>(TaskServer);
@@ -35,14 +43,12 @@ export default new ContainerModule(bind => {
         })
     ).inSingletonScope();
 
-    bind(TaskFactory).toFactory(ctx =>
-        (options: TaskProcessOptions) => {
-            const child = new Container({ defaultScope: 'Singleton' });
-            child.parent = ctx.container;
-            child.bind(TaskProcessOptions).toConstantValue(options);
-            return child.get(Task);
-        }
-    );
-
     createCommonBindings(bind);
+
+    bind(TaskRunnerRegistry).toSelf().inSingletonScope();
+    bindContributionProvider(bind, TaskRunnerContribution);
+    bind(TaskBackendApplicationContribution).toSelf().inSingletonScope();
+    bind(BackendApplicationContribution).toService(TaskBackendApplicationContribution);
+
+    bindProcessTaskRunnerModule(bind);
 });

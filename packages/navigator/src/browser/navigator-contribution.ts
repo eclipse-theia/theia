@@ -1,15 +1,26 @@
-/*
+/********************************************************************************
  * Copyright (C) 2017-2018 TypeFox and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { injectable, inject, postConstruct } from "inversify";
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { CommandRegistry, MenuModelRegistry, MenuPath, isOSX } from "@theia/core/lib/common";
-import { Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands, OpenerService } from "@theia/core/lib/browser";
+import { Navigatable, SelectableTreeNode, Widget, KeybindingRegistry, CommonCommands,
+         OpenerService, FrontendApplicationContribution, FrontendApplication } from "@theia/core/lib/browser";
 import { SHELL_TABBAR_CONTEXT_MENU } from "@theia/core/lib/browser";
+import { FileDownloadCommands } from "@theia/filesystem/lib/browser/download/file-download-command-contribution";
 import { WorkspaceCommands } from '@theia/workspace/lib/browser/workspace-commands';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
 import { FileNavigatorPreferences } from "./navigator-preferences";
@@ -39,7 +50,7 @@ export namespace NavigatorContextMenu {
 }
 
 @injectable()
-export class FileNavigatorContribution extends AbstractViewContribution<FileNavigatorWidget>  {
+export class FileNavigatorContribution extends AbstractViewContribution<FileNavigatorWidget> implements FrontendApplicationContribution {
 
     constructor(
         @inject(FileNavigatorPreferences) protected readonly fileNavigatorPreferences: FileNavigatorPreferences,
@@ -62,6 +73,10 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     protected async init() {
         await this.fileNavigatorPreferences.ready;
         this.shell.currentChanged.connect(() => this.onCurrentWidgetChangedHandler());
+    }
+
+    async initializeLayout(app: FrontendApplication): Promise<void> {
+        await this.openView();
     }
 
     registerCommands(registry: CommandRegistry): void {
@@ -117,6 +132,11 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
         });
         registry.registerMenuAction(NavigatorContextMenu.MOVE, {
             commandId: WorkspaceCommands.FILE_DELETE.id
+        });
+        registry.registerMenuAction(NavigatorContextMenu.MOVE, {
+            commandId: FileDownloadCommands.DOWNLOAD.id,
+            label: 'Download',
+            order: 'z' // Should be the last item in the "move" menu group.
         });
 
         registry.registerMenuAction(NavigatorContextMenu.NEW, {

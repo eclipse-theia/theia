@@ -1,9 +1,18 @@
-/*
+/********************************************************************************
  * Copyright (C) 2018 TypeFox and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { inject, injectable, postConstruct } from "inversify";
 import { VirtualWidget, VirtualRenderer, Message } from "@theia/core/lib/browser";
@@ -17,7 +26,7 @@ export const OUTPUT_WIDGET_KIND = 'outputView';
 @injectable()
 export class OutputWidget extends VirtualWidget {
 
-    protected selectedChannel: OutputChannel;
+    protected selectedChannel: OutputChannel | undefined;
 
     @inject(OutputChannelManager)
     protected readonly outputChannelManager: OutputChannelManager;
@@ -36,6 +45,12 @@ export class OutputWidget extends VirtualWidget {
         this.outputChannelManager.getChannels().forEach(this.registerListener.bind(this));
         this.toDispose.push(this.outputChannelManager.onChannelAdded(channel => {
             this.registerListener(channel);
+            this.update();
+        }));
+        this.toDispose.push(this.outputChannelManager.onChannelDelete(event => {
+            if (this.selectedChannel && this.selectedChannel.name === event.channelName) {
+                this.selectedChannel = this.getVisibleChannels()[0];
+            }
             this.update();
         }));
         this.update();
@@ -59,6 +74,14 @@ export class OutputWidget extends VirtualWidget {
             if (outputChannel === this.selectedChannel) {
                 this.update();
             }
+        }));
+        this.toDispose.push(outputChannel.onVisibilityChange(event => {
+            if (event.visible) {
+                this.selectedChannel = outputChannel;
+            } else if (outputChannel === this.selectedChannel) {
+                this.selectedChannel = this.getVisibleChannels()[0];
+            }
+            this.update();
         }));
     }
 
@@ -95,8 +118,12 @@ export class OutputWidget extends VirtualWidget {
 
     protected renderChannelSelector(): VirtualElement {
         const channelOptionElements: h.Child[] = [];
-        this.outputChannelManager.getChannels().forEach(channel => {
-            channelOptionElements.push(h.option({ value: channel.name }, channel.name));
+        this.getVisibleChannels().forEach(channel => {
+            const attrs: {value: string; selected?: string} = {value: channel.name};
+            if (channel === this.selectedChannel) {
+                attrs.selected = 'selected';
+            }
+            channelOptionElements.push(h.option(attrs, channel.name));
         });
         if (channelOptionElements.length === 0) {
             channelOptionElements.push(h.option({ value: this.NONE }, this.NONE));
@@ -121,5 +148,9 @@ export class OutputWidget extends VirtualWidget {
                 div.children[div.children.length - 1].scrollIntoView(false);
             }
         });
+    }
+
+    protected getVisibleChannels(): OutputChannel[] {
+        return this.outputChannelManager.getChannels().filter(channel => channel.isVisible);
     }
 }

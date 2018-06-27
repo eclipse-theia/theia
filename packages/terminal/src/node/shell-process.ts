@@ -1,9 +1,18 @@
-/*
+/********************************************************************************
  * Copyright (C) 2017 Ericsson and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { injectable, inject, named } from 'inversify';
 import * as os from 'os';
@@ -13,6 +22,7 @@ import { isWindows, isOSX } from "@theia/core/lib/common";
 import URI from "@theia/core/lib/common/uri";
 import { FileUri } from "@theia/core/lib/node/file-uri";
 import { parseArgs } from '@theia/process/lib/node/utils';
+import { ProcessEnv } from 'node-pty/lib/interfaces';
 
 export const ShellProcessFactory = Symbol("ShellProcessFactory");
 export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess;
@@ -20,9 +30,28 @@ export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess
 export const ShellProcessOptions = Symbol("ShellProcessOptions");
 export interface ShellProcessOptions {
     shell?: string,
+    args?: string[],
     rootURI?: string,
     cols?: number,
-    rows?: number
+    rows?: number,
+    env?: { [key: string]: string | null },
+}
+
+function setUpEnvVariables(customEnv?:  { [key: string]: string | null }): ProcessEnv {
+    const processEnv: ProcessEnv = {};
+
+    const prEnv: NodeJS.ProcessEnv = process.env;
+    Object.keys(prEnv).forEach((key: string) => {
+        processEnv[key] = prEnv[key] || "";
+    });
+
+    if (customEnv) {
+        for (const envName of Object.keys(customEnv)) {
+            processEnv[envName] = customEnv[envName] || "";
+        }
+    }
+
+    return processEnv;
 }
 
 function getRootPath(rootURI?: string): string {
@@ -48,13 +77,13 @@ export class ShellProcess extends TerminalProcess {
     ) {
         super(<TerminalProcessOptions>{
             command: options.shell || ShellProcess.getShellExecutablePath(),
-            args: ShellProcess.getShellExecutableArgs(),
+            args: options.args || ShellProcess.getShellExecutableArgs(),
             options: {
                 name: 'xterm-color',
                 cols: options.cols || ShellProcess.defaultCols,
                 rows: options.rows || ShellProcess.defaultRows,
                 cwd: getRootPath(options.rootURI),
-                env: process.env as any
+                env: setUpEnvVariables(options.env),
             }
         }, processManager, ringBuffer, logger);
     }

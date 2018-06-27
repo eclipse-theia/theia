@@ -13,6 +13,7 @@ cache:
   - examples/browser/node_modules
   - examples/electron/node_modules
   - node_modules
+  - packages/bunyan/node_modules
   - packages/callhierarchy/node_modules
   - packages/core/node_modules
   - packages/cpp/node_modules
@@ -34,6 +35,8 @@ cache:
   - packages/navigator/node_modules
   - packages/outline-view/node_modules
   - packages/output/node_modules
+  - packages/plugin/node_modules
+  - packages/plugin-ext/node_modules
   - packages/preferences/node_modules
   - packages/preview/node_modules
   - packages/process/node_modules

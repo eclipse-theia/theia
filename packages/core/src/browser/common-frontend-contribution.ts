@@ -1,9 +1,18 @@
-/*
+/********************************************************************************
  * Copyright (C) 2017 TypeFox and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { injectable, inject } from "inversify";
 import { MAIN_MENU_BAR, MenuContribution, MenuModelRegistry } from '../common/menu';
@@ -25,7 +34,8 @@ export namespace CommonMenus {
     export const FILE_NEW = [...FILE, '1_new'];
     export const FILE_OPEN = [...FILE, '2_open'];
     export const FILE_SAVE = [...FILE, '3_save'];
-    export const FILE_CLOSE = [...FILE, '4_close'];
+    export const FILE_AUTOSAVE = [...FILE, '4_autosave'];
+    export const FILE_CLOSE = [...FILE, '5_close'];
 
     export const EDIT = [...MAIN_MENU_BAR, '2_edit'];
     export const EDIT_UNDO = [...EDIT, '1_undo'];
@@ -124,6 +134,11 @@ export namespace CommonCommands {
         label: 'Save All'
     };
 
+    export const AUTO_SAVE: Command = {
+        id: 'textEditor.commands.autosave',
+        label: 'Auto Save'
+    };
+
     export const QUIT: Command = {
         id: 'core.quit',
         label: 'Quit'
@@ -165,6 +180,10 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         });
         registry.registerMenuAction(CommonMenus.FILE_SAVE, {
             commandId: CommonCommands.SAVE_ALL.id
+        });
+
+        registry.registerMenuAction(CommonMenus.FILE_AUTOSAVE, {
+            commandId: CommonCommands.AUTO_SAVE.id
         });
 
         registry.registerMenuAction(CommonMenus.EDIT_UNDO, {

@@ -1,13 +1,22 @@
-/*
+/********************************************************************************
  * Copyright (C) 2018 TypeFox and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 import { injectable, inject } from 'inversify';
 import URI from '@theia/core/lib/common/uri';
 import { DisposableCollection, CommandRegistry, MenuModelRegistry } from '@theia/core';
-import { AbstractViewContribution, StatusBar, StatusBarAlignment, DiffUris, StatusBarEntry } from '@theia/core/lib/browser';
+import { AbstractViewContribution, StatusBar, StatusBarAlignment, DiffUris, StatusBarEntry, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
 import { EditorManager, EditorWidget, EditorOpenerOptions, EditorContextMenu, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
 import { GitFileChange, GitFileStatus } from '../common';
 import { GitWidget } from './git-widget';
@@ -69,7 +78,7 @@ export namespace GIT_COMMANDS {
 }
 
 @injectable()
-export class GitViewContribution extends AbstractViewContribution<GitWidget> {
+export class GitViewContribution extends AbstractViewContribution<GitWidget> implements FrontendApplicationContribution {
 
     static GIT_SELECTED_REPOSITORY = 'git-selected-repository';
     static GIT_REPOSITORY_STATUS = 'git-repository-status';
@@ -94,6 +103,10 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
             toggleCommandId: 'gitView:toggle',
             toggleKeybinding: 'ctrlcmd+shift+g'
         });
+    }
+
+    async initializeLayout(app: FrontendApplication): Promise<void> {
+        await this.openView();
     }
 
     onStart(): void {
@@ -186,7 +199,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
             isEnabled: () => !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.COMMIT_SIGN_OFF, {
-            execute: () => this.tryGetWidget()!.commit(this.repositoryTracker.selectedRepository, 'sign-off'),
+            execute: () => this.tryGetWidget()!.doCommit(this.repositoryTracker.selectedRepository, 'sign-off'),
             isEnabled: () => !!this.tryGetWidget() && !!this.repositoryTracker.selectedRepository
         });
         registry.registerCommand(GIT_COMMANDS.COMMIT_AMEND, {
@@ -196,7 +209,7 @@ export class GitViewContribution extends AbstractViewContribution<GitWidget> {
                 if (!!widget && !!selectedRepository) {
                     try {
                         const message = await this.quickOpenService.commitMessageForAmend();
-                        widget.commit(selectedRepository, 'amend', message);
+                        widget.doCommit(selectedRepository, 'amend', message);
                     } catch (e) {
                         if (!(e instanceof Error) || e.message !== 'User abort.') {
                             throw e;

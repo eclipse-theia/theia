@@ -1,9 +1,18 @@
-/*
+/********************************************************************************
  * Copyright (C) 2017 TypeFox and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
 import { Event, Emitter } from "@theia/core/lib/common";
@@ -85,12 +94,12 @@ export class MarkerCollection<T> {
 
 }
 
-interface Uri2MarkerEntry {
+export interface Uri2MarkerEntry {
     uri: string
     markers: Owner2MarkerEntry[]
 }
 
-interface Owner2MarkerEntry {
+export interface Owner2MarkerEntry {
     owner: string
     markerData: object[];
 }
@@ -101,7 +110,7 @@ export abstract class MarkerManager<D extends object> {
     public abstract getKind(): string;
 
     protected readonly uri2MarkerCollection = new Map<string, MarkerCollection<D>>();
-    protected readonly onDidChangeMarkersEmitter = new Emitter<void>();
+    protected readonly onDidChangeMarkersEmitter = new Emitter<URI>();
     readonly initialized: Promise<void>;
 
     constructor(
@@ -116,7 +125,7 @@ export abstract class MarkerManager<D extends object> {
                         const collection = this.uri2MarkerCollection.get(uriString);
                         if (collection !== undefined) {
                             this.uri2MarkerCollection.delete(uriString);
-                            this.fireOnDidChangeMarkers();
+                            this.fireOnDidChangeMarkers(change.uri);
                         }
                     }
                 }
@@ -148,13 +157,11 @@ export abstract class MarkerManager<D extends object> {
             for (const [uri, collection] of this.uri2MarkerCollection.entries()) {
                 const ownerEntries: Owner2MarkerEntry[] = [];
                 for (const owner of collection.getOwners()) {
-                    const marker = collection.getMarkers(owner);
-                    if (marker) {
-                        ownerEntries.push({
-                            owner,
-                            markerData: Array.from(marker.map(m => m.data))
-                        });
-                    }
+                    const markers = collection.getMarkers(owner);
+                    ownerEntries.push({
+                        owner,
+                        markerData: Array.from(markers.map(m => m.data))
+                    });
                 }
                 result.push({
                     uri,
@@ -165,12 +172,12 @@ export abstract class MarkerManager<D extends object> {
         }
     }
 
-    get onDidChangeMarkers(): Event<void> {
+    get onDidChangeMarkers(): Event<URI> {
         return this.onDidChangeMarkersEmitter.event;
     }
 
-    protected fireOnDidChangeMarkers(): void {
-        this.onDidChangeMarkersEmitter.fire(undefined);
+    protected fireOnDidChangeMarkers(uri: URI): void {
+        this.onDidChangeMarkersEmitter.fire(uri);
     }
 
     /*
@@ -182,22 +189,16 @@ export abstract class MarkerManager<D extends object> {
     }
 
     protected internalSetMarkers(uri: URI, owner: string, data: D[]): Marker<D>[] {
-        const collection = this.getCollection(uri);
-        const result = collection.setMarkers(owner, data);
-        this.fireOnDidChangeMarkers();
-        return result;
-    }
-
-    protected getCollection(uri: URI): MarkerCollection<D> {
-        let collection: MarkerCollection<D>;
         const uriString = uri.toString();
-        if (this.uri2MarkerCollection.has(uriString)) {
-            collection = this.uri2MarkerCollection.get(uriString)!;
-        } else {
-            collection = new MarkerCollection<D>(uri, this.getKind());
+        const collection = this.uri2MarkerCollection.get(uriString) || new MarkerCollection<D>(uri, this.getKind());
+        const oldMarkers = collection.setMarkers(owner, data);
+        if (data.length > 0) {
             this.uri2MarkerCollection.set(uriString, collection);
+        } else {
+            this.uri2MarkerCollection.delete(uri.toString());
         }
-        return collection;
+        this.fireOnDidChangeMarkers(uri);
+        return oldMarkers;
     }
 
     /*
@@ -205,14 +206,14 @@ export abstract class MarkerManager<D extends object> {
      */
     findMarkers(filter: SearchFilter<D> = {}): Marker<D>[] {
         if (filter.uri) {
-            return this.getCollection(filter.uri)!.findMarkers(filter);
-        } else {
-            const result: Marker<D>[] = [];
-            for (const uri of this.getUris()) {
-                result.push(...this.getCollection(new URI(uri))!.findMarkers(filter));
-            }
-            return result;
+            const collection = this.uri2MarkerCollection.get(filter.uri.toString());
+            return collection ? collection.findMarkers(filter) : [];
         }
+        const result: Marker<D>[] = [];
+        for (const uri of this.getUris()) {
+            result.push(...this.uri2MarkerCollection.get(uri)!.findMarkers(filter));
+        }
+        return result;
     }
 
     getUris(): Iterable<string> {

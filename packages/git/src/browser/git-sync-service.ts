@@ -1,15 +1,25 @@
-/*
+/********************************************************************************
  * Copyright (C) 2018 TypeFox and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { injectable, inject } from "inversify";
 import { MessageService, Emitter, Event } from "@theia/core";
 import { QuickOpenService, QuickOpenItem, QuickOpenMode, ConfirmDialog } from "@theia/core/lib/browser";
 import { GitRepositoryTracker } from "./git-repository-tracker";
 import { Git, Repository, WorkingDirectoryStatus } from "../common";
+import { GitErrorHandler } from "./git-error-handler";
 
 @injectable()
 export class GitSyncService {
@@ -22,6 +32,9 @@ export class GitSyncService {
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(GitErrorHandler)
+    protected readonly gitErrorHandler: GitErrorHandler;
 
     @inject(QuickOpenService)
     protected readonly quickOpenService: QuickOpenService;
@@ -76,8 +89,8 @@ export class GitSyncService {
                     force: method === 'force-push'
                 });
             }
-        } catch (e) {
-            this.error(e);
+        } catch (error) {
+            this.gitErrorHandler.handleError(error);
         } finally {
             this.setSyncing(false);
         }
@@ -137,8 +150,8 @@ export class GitSyncService {
                 await this.git.push(repository, {
                     remote, localBranch, setUpstream: true
                 });
-            } catch (e) {
-                this.error(e);
+            } catch (error) {
+                this.gitErrorHandler.handleError(error);
             }
         }
     }
@@ -189,18 +202,6 @@ export class GitSyncService {
 
     protected confirm(title: string, msg: string): Promise<boolean> {
         return new ConfirmDialog({ title, msg, }).open();
-    }
-
-    // tslint:disable-next-line:no-any
-    protected error(e: any): void {
-        if ('message' in e) {
-            const message = e['message'];
-            if (typeof message === "string" && message.startsWith('GitError')) {
-                this.messageService.error(message);
-                return;
-            }
-        }
-        throw e;
     }
 
 }

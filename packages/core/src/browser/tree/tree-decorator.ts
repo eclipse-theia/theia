@@ -1,13 +1,22 @@
-/*
+/********************************************************************************
  * Copyright (C) 2018 TypeFox and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { injectable } from 'inversify';
 import { Tree } from './tree';
-import { Event, Emitter, Disposable, DisposableCollection } from '../../common';
+import { Event, Emitter, Disposable, DisposableCollection, MaybePromise } from '../../common';
 
 /**
  * Tree decorator that can change the look and the style of the tree items within a widget.
@@ -23,6 +32,13 @@ export interface TreeDecorator {
      * Fired when this decorator has calculated all the decoration data for the tree nodes. Keys are the unique identifier of the tree nodes.
      */
     readonly onDidChangeDecorations: Event<(tree: Tree) => Map<string, TreeDecoration.Data>>;
+
+    /**
+     * Returns with the current decoration data for the tree argument.
+     *
+     * @param tree the tree to decorate.
+     */
+    decorations(tree: Tree): MaybePromise<Map<string, TreeDecoration.Data>>;
 
 }
 
@@ -41,7 +57,7 @@ export interface TreeDecoratorService extends Disposable {
     /**
      * Returns with the decorators for the tree based on the actual state of this decorator service.
      */
-    getDecorations(tree: Tree): Map<string, TreeDecoration.Data[]>;
+    getDecorations(tree: Tree): MaybePromise<Map<string, TreeDecoration.Data[]>>;
 
     /**
      * Transforms the decorators argument into an object, so that it can be safely serialized into JSON.
@@ -75,12 +91,11 @@ export class NoopTreeDecoratorService implements TreeDecoratorService {
         return new Map();
     }
 
-    deflateDecorators(decorations: Map<string, TreeDecoration.Data[]>): object {
+    deflateDecorators(): object {
         return {};
     }
 
-    // tslint:disable-next-line:no-any
-    inflateDecorators(state: any): Map<string, TreeDecoration.Data[]> {
+    inflateDecorators(): Map<string, TreeDecoration.Data[]> {
         return new Map();
     }
 
@@ -115,10 +130,10 @@ export abstract class AbstractTreeDecoratorService implements TreeDecoratorServi
         this.toDispose.dispose();
     }
 
-    getDecorations(tree: Tree): Map<string, TreeDecoration.Data[]> {
+    async getDecorations(tree: Tree): Promise<Map<string, TreeDecoration.Data[]>> {
         const changes = new Map();
-        for (const fn of this.decorations.values()) {
-            for (const [id, data] of fn(tree).entries()) {
+        for (const decorator of this.decorators) {
+            for (const [id, data] of (await decorator.decorations(tree)).entries()) {
                 if (changes.has(id)) {
                     changes.get(id)!.push(data);
                 } else {

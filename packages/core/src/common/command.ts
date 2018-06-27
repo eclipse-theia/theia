@@ -1,9 +1,18 @@
-/*
+/********************************************************************************
  * Copyright (C) 2017 TypeFox and others.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import { injectable, inject, named } from "inversify";
 import { Disposable, DisposableCollection } from "./disposable";
@@ -48,6 +57,10 @@ export interface CommandHandler {
      * Test whether menu items for this handler should be visible.
      */
     isVisible?(...args: any[]): boolean;
+    /**
+     * Test whether menu items for this handler should be toggled.
+     */
+    isToggled?(...args: any[]): boolean;
 }
 
 export const CommandContribution = Symbol("CommandContribution");
@@ -157,6 +170,14 @@ export class CommandRegistry implements CommandService {
     }
 
     /**
+     * Test whether there is a toggled handler for the given command.
+     */
+    isToggled(command: string): boolean {
+        const handler = this.getToggledHandler(command);
+        return handler && handler.isToggled ? handler.isToggled() : false;
+    }
+
+    /**
      * Execute the active handler for the given command and arguments.
      *
      * Reject if a command cannot be executed.
@@ -193,6 +214,21 @@ export class CommandRegistry implements CommandService {
         if (handlers) {
             for (const handler of handlers) {
                 if (!handler.isEnabled || handler.isEnabled(...args)) {
+                    return handler;
+                }
+            }
+        }
+        return undefined;
+    }
+
+    /**
+     * Get a toggled handler for the given command or `undefined`.
+     */
+    getToggledHandler(commandId: string): CommandHandler | undefined {
+        const handlers = this._handlers[commandId];
+        if (handlers) {
+            for (const handler of handlers) {
+                if (handler.isToggled) {
                     return handler;
                 }
             }
