@@ -73,8 +73,9 @@ export class JavaContribution extends BaseLanguageServerContribution {
 
             this.logInfo('logs at ' + path.resolve(workspacePath, '.metadata', '.log'));
             const env = Object.create(process.env);
-            env.CLIENT_HOST = server.address().address;
-            env.CLIENT_PORT = server.address().port;
+            const address = server.address();
+            env.CLIENT_HOST = address.address;
+            env.CLIENT_PORT = address.port;
             this.createProcessSocketConnection(socket, socket, command, args, { env })
                 .then(serverConnection => this.forward(clientConnection, serverConnection));
         });
