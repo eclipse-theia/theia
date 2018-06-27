@@ -7,7 +7,7 @@
     "@theia/filesystem": "^0.3.12",
     "@theia/process": "^0.3.12",
     "@theia/workspace": "^0.3.12",
-    "xterm": "^3.0.1"
+    "xterm": "<3.4.0"
   },
   "publishConfig": {
     "access": "public"
