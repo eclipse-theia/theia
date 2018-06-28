@@ -1,0 +1,59 @@
+{
+  "private": true,
+  "name": "@theia/example-hybrid",
+  "version": "0.3.11",
+  "theia": {
+    "target": "hybrid"
+  },
+  "dependencies": {
+    "@theia/callhierarchy": "^0.3.11",
+    "@theia/core": "^0.3.11",
+    "@theia/cpp": "^0.3.11",
+    "@theia/editor": "^0.3.11",
+    "@theia/editorconfig": "^0.3.11",
+    "@theia/extension-manager": "^0.3.11",
+    "@theia/file-search": "^0.3.11",
+    "@theia/filesystem": "^0.3.11",
+    "@theia/git": "^0.3.11",
+    "@theia/java": "^0.3.11",
+    "@theia/keymaps": "^0.3.11",
+    "@theia/languages": "^0.3.11",
+    "@theia/markers": "^0.3.11",
+    "@theia/merge-conflicts": "^0.3.11",
+    "@theia/messages": "^0.3.11",
+    "@theia/metrics": "^0.3.11",
+    "@theia/mini-browser": "^0.3.11",
+    "@theia/monaco": "^0.3.11",
+    "@theia/navigator": "^0.3.11",
+    "@theia/outline-view": "^0.3.11",
+    "@theia/output": "^0.3.11",
+    "@theia/plugin-ext": "^0.3.11",
+    "@theia/plugin-ext-vscode": "^0.3.11",
+    "@theia/preferences": "^0.3.11",
+    "@theia/preview": "^0.3.11",
+    "@theia/process": "^0.3.11",
+    "@theia/python": "^0.3.11",
+    "@theia/search-in-workspace": "^0.3.11",
+    "@theia/task": "^0.3.11",
+    "@theia/terminal": "^0.3.11",
+    "@theia/typescript": "^0.3.11",
+    "@theia/userstorage": "^0.3.11",
+    "@theia/variable-resolver": "^0.3.11",
+    "@theia/workspace": "^0.3.11"
+  },
+  "scripts": {
+    "prepare": "yarn run clean && yarn build",
+    "clean": "theia clean",
+    "build": "theia build --mode development",
+    "watch": "yarn build --watch --mode development",
+    "start": "theia start",
+    "start:debug": "yarn start --log-level=debug",
+    "test": "electron-mocha --timeout 60000 --require ts-node/register \"./test/**/*.espec.ts\"",
+    "test:ui": "wdio wdio.conf.js"
+  },
+  "devDependencies": {
+    "@theia/cli": "^0.3.11",
+    "webpack": "^4.13.0",
+    "webpack-cli": "^3.0.8"
+  }
+}

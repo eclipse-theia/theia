@@ -20,9 +20,10 @@ import {
     Command, CommandContribution, CommandRegistry,
     isOSX, MenuModelRegistry, MenuContribution
 } from '../../common';
-import { KeybindingContribution, KeybindingRegistry } from '../../browser';
+import { KeybindingContribution, KeybindingRegistry, QuickOpenService } from '../../browser';
 import { FrontendApplication, FrontendApplicationContribution, CommonMenus } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
+import { WindowService } from '../../browser/window/window-service';
 
 export namespace ElectronCommands {
     export const TOGGLE_DEVELOPER_TOOLS: Command = {
@@ -58,6 +59,12 @@ export namespace ElectronMenus {
 
 @injectable()
 export class ElectronMenuContribution implements FrontendApplicationContribution, CommandContribution, MenuContribution, KeybindingContribution {
+
+    @inject(QuickOpenService)
+    protected readonly quickOpenService: QuickOpenService;
+
+    @inject(WindowService)
+    protected readonly windowService: WindowService;
 
     constructor(
         @inject(ElectronMainMenuFactory) protected readonly factory: ElectronMainMenuFactory

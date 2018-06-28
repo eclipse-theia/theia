@@ -14,11 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
+import { ApplicationProps } from '@theia/application-package/lib/';
 import fs = require('fs-extra');
 import path = require('path');
 import cp = require('child_process');
 
-export function rebuild(target: 'electron' | 'browser', modules: string[]) {
+export function rebuild(target: ApplicationProps.Target, modules: string[]) {
     const nodeModulesPath = path.join(process.cwd(), 'node_modules');
     const browserModulesPath = path.join(process.cwd(), '.browser_modules');
     const modulesToProcess = modules || ['node-pty', 'vscode-nsfw', 'find-git-repositories'];
@@ -54,7 +55,8 @@ export function rebuild(target: 'electron' | 'browser', modules: string[]) {
                 fs.writeFile(packFile, packageText);
             }, 100);
         }
-    } else if (target === 'browser' && fs.existsSync(browserModulesPath)) {
+
+    } else if (/^(browser|hybrid)$/.test(target) && fs.existsSync(browserModulesPath)) {
         for (const moduleName of fs.readdirSync(browserModulesPath)) {
             console.log('Reverting ' + moduleName);
             const src = path.join(browserModulesPath, moduleName);
@@ -63,6 +65,7 @@ export function rebuild(target: 'electron' | 'browser', modules: string[]) {
             fs.copySync(src, dest);
         }
         fs.removeSync(browserModulesPath);
+
     } else {
         console.log('native node modules are already rebuilt for ' + target);
     }

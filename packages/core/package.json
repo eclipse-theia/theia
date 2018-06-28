@@ -19,6 +19,7 @@
     "@types/ws": "^3.0.2",
     "@types/yargs": "^8.0.2",
     "ajv": "^5.2.2",
+    "axios": "^0.18.0",
     "body-parser": "^1.17.2",
     "electron": "1.8.2-beta.5",
     "es6-promise": "^4.2.4",
@@ -45,14 +46,17 @@
   "publishConfig": {
     "access": "public"
   },
-  "theiaExtensions": [
-    {
+  "theiaExtensions": [{
       "frontend": "lib/browser/menu/browser-menu-module",
       "frontendElectron": "lib/electron-browser/menu/electron-menu-module"
     },
     {
       "frontend": "lib/browser/window/browser-window-module",
       "frontendElectron": "lib/electron-browser/window/electron-window-module"
+    },
+    {
+      "frontendElectron": "lib/electron-browser/remote/electron-remote-module",
+      "backendElectron": "lib/electron-node/remote/electron-remote-module"
     }
   ],
   "keywords": [

@@ -59,12 +59,24 @@ export abstract class AbstractGenerator {
         return os.EOL + lines.join(os.EOL);
     }
 
+    get package(): ApplicationPackage {
+        return this.pck;
+    }
+
+    normalized(string: string): string {
+        return string.replace(/\W/, '');
+    }
+
     protected ifBrowser(value: string, defaultValue: string = '') {
         return this.pck.ifBrowser(value, defaultValue);
     }
 
     protected ifElectron(value: string, defaultValue: string = '') {
         return this.pck.ifElectron(value, defaultValue);
+    }
+
+    protected ifHybrid(value: string, defaultValue: string = '') {
+        return this.pck.ifHybrid(value, defaultValue);
     }
 
     protected async write(path: string, content: string): Promise<void> {

@@ -35,6 +35,11 @@ export const isNative = typeof (window as any).process !== 'undefined';
 // tslint:disable-next-line:no-any
 export const isBasicWasmSupported = typeof (window as any).WebAssembly !== 'undefined';
 
+// Current protocol in use to display the application
+export const isHttps = /^https:/.test(self.location.href);
+export const isHttp = /^http:/.test(self.location.href);
+export const isFile = /^file:/.test(self.location.href);
+
 /**
  * Parse a magnitude value (e.g. width, height, left, top) from a CSS attribute value.
  * Returns the given default value (or undefined) if the value cannot be determined,

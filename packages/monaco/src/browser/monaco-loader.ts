@@ -34,7 +34,7 @@ export function loadVsRequire(context: any): Promise<any> {
                     context.require = originalRequire;
                 }
                 resolve(amdRequire);
-            });
+            }, { once: true });
             document.body.appendChild(vsLoader);
         }, { once: true })
     );

@@ -17,11 +17,14 @@
 import * as fs from 'fs-extra';
 import * as paths from 'path';
 import { readJsonFile, writeJsonFile } from './json-file';
-import { NpmRegistry, NodePackage, PublishedNodePackage, sortByKey } from './npm-registry';
+import { NpmRegistry, NpmRegistryOptions, NodePackage, PublishedNodePackage, sortByKey } from './npm-registry';
 import { Extension, ExtensionPackage, RawExtensionPackage } from './extension-package';
 import { ExtensionPackageCollector } from './extension-package-collector';
 import { ApplicationProps } from './application-props';
 
+export class ApplicationPackageConfig extends NpmRegistryOptions {
+    readonly target: ApplicationProps.Target;
+}
 // tslint:disable-next-line:no-any
 export type ApplicationLog = (message?: any, ...optionalParams: any[]) => void;
 export class ApplicationPackageOptions {
@@ -198,6 +201,10 @@ export class ApplicationPackage {
         return this.target === 'electron';
     }
 
+    isHybrid(): boolean {
+        return this.target === 'hybrid';
+    }
+
     ifBrowser<T>(value: T): T | undefined;
     ifBrowser<T>(value: T, defaultValue: T): T;
     ifBrowser<T>(value: T, defaultValue?: T): T | undefined {
@@ -208,6 +215,12 @@ export class ApplicationPackage {
     ifElectron<T>(value: T, defaultValue: T): T;
     ifElectron<T>(value: T, defaultValue?: T): T | undefined {
         return this.isElectron() ? value : defaultValue;
+    }
+
+    ifHybrid<T>(value: T): T | undefined;
+    ifHybrid<T>(value: T, defaultValue: T): T;
+    ifHybrid<T>(value: T, defaultValue?: T): T | undefined {
+        return this.isHybrid() ? value : defaultValue;
     }
 
     get targetBackendModules(): Map<string, string> {

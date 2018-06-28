@@ -75,7 +75,7 @@ export class QuickOpenItem<T extends QuickOpenItemOptions = QuickOpenItemOptions
         return this.options.detailHighlights;
     }
     isHidden(): boolean {
-        return this.options.hidden || false;
+        return !!this.options.hidden;
     }
     getUri(): URI | undefined {
         return this.options.uri;

@@ -16,11 +16,12 @@
 
 import * as paths from 'path';
 import { AbstractGenerator } from './abstract-generator';
+import { ApplicationProps } from '@theia/application-package';
 
 export class WebpackGenerator extends AbstractGenerator {
 
     async generate(): Promise<void> {
-        await this.write(this.configPath, this.compileWebpackConfig());
+        await this.write(this.configPath, this.compileWebpackConfigFile());
     }
 
     get configPath(): string {
@@ -31,7 +32,18 @@ export class WebpackGenerator extends AbstractGenerator {
         return this.pck.resolveModulePath(moduleName, path).split(paths.sep).join('/');
     }
 
-    protected compileWebpackConfig(): string {
+    protected compileExports(): string {
+        const exports = [];
+        if (this.package.isHybrid() || this.package.isBrowser()) {
+            exports.push(this.normalized('browser'));
+        }
+        if (this.package.isHybrid() || this.package.isElectron()) {
+            exports.push(this.normalized('electron'));
+        }
+        return `[${exports.join(', ')}]`;
+    }
+
+    protected compileWebpackConfigFile(): string {
         return `// @ts-check
 const path = require('path');
 const webpack = require('webpack');
@@ -45,27 +57,38 @@ const { mode }  = yargs.option('mode', {
     choices: ["development", "production"],
     default: "production"
 }).argv;
-const development = mode === 'development';${this.ifMonaco(() => `
-
+const development = mode === 'development';
+${this.ifMonaco(() => `
 const monacoEditorCorePath = development ? '${this.resolve('@typefox/monaco-editor-core', 'dev/vs')}' : '${this.resolve('@typefox/monaco-editor-core', 'min/vs')}';
 const monacoCssLanguagePath = '${this.resolve('monaco-css', 'release/min')}';
-const monacoHtmlLanguagePath = '${this.resolve('monaco-html', 'release/min')}';`)}
+const monacoHtmlLanguagePath = '${this.resolve('monaco-html', 'release/min')}';
+`)}
+${this.package.isHybrid() || this.package.isBrowser() ? this.compileWebpackConfigObjectFor('browser') : ''}\
+${this.package.isHybrid() || this.package.isElectron() ? this.compileWebpackConfigObjectFor('electron') : ''}\
 
-module.exports = {
-    entry: path.resolve(__dirname, 'src-gen/frontend/index.js'),
+module.exports = ${this.compileExports()};
+`;
+    }
+
+    protected compileWebpackConfigObjectFor(target: ApplicationProps.Target): string {
+        const normalizedTarget = this.normalized(target);
+        return `\
+const ${normalizedTarget} = {
+    entry: path.resolve(__dirname, 'src-gen/frontend/${this.ifHybrid(normalizedTarget + '/')}index.js'),
     output: {
         filename: 'bundle.js',
-        path: outputPath
+        path: path.resolve(outputPath, '${this.ifHybrid(normalizedTarget)}')
     },
-    target: '${this.ifBrowser('web', 'electron-renderer')}',
+    target: '${target === 'browser' ? 'web' : 'electron-renderer'}',
     mode,
-    node: {${this.ifElectron(`
+    node: {${target === 'electron' ? `
         __dirname: false,
-        __filename: false`, `
+        __filename: false`
+                : /* else */ `
         fs: 'empty',
         child_process: 'empty',
         net: 'empty',
-        crypto: 'empty'`)}
+        crypto: 'empty'` }
     },
     module: {
         rules: [
@@ -153,7 +176,7 @@ module.exports = {
     stats: {
         warnings: true
     }
-};`;
+};
+`;
     }
-
 }

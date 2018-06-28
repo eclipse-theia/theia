@@ -61,7 +61,12 @@ export class ApplicationPackageManager {
 
     async copy(): Promise<void> {
         await fs.ensureDir(this.pck.lib());
-        await fs.copy(this.pck.frontend('index.html'), this.pck.lib('index.html'));
+        if (this.pck.isHybrid()) {
+            await fs.copy(this.pck.frontend('electron', 'index.html'), this.pck.lib('electron', 'index.html'));
+            await fs.copy(this.pck.frontend('browser', 'index.html'), this.pck.lib('browser', 'index.html'));
+        } else {
+            await fs.copy(this.pck.frontend('index.html'), this.pck.lib('index.html'));
+        }
     }
 
     async build(args: string[] = []): Promise<void> {
@@ -73,8 +78,14 @@ export class ApplicationPackageManager {
     async start(args: string[] = []): Promise<void> {
         if (this.pck.isElectron()) {
             return this.startElectron(args);
+
+        } else if (this.pck.isBrowser()) {
+            return this.startBrowser(args);
+
+        } else if (this.pck.isHybrid()) {
+            return this.startHybrid(args);
         }
-        return this.startBrowser(args);
+        throw new Error(`Unknown target: '${this.pck.target}'`);
     }
 
     async startElectron(args: string[]): Promise<void> {
@@ -97,6 +108,10 @@ export class ApplicationPackageManager {
             options.execArgv = ['--nolazy', inspectArg];
         }
         this.__process.fork(this.pck.backend('main.js'), mainArgs, options);
+    }
+
+    async startHybrid(args: string[]): Promise<void> {
+        return this.startBrowser(args);
     }
 
 }

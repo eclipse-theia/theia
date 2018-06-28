@@ -60,7 +60,7 @@ export interface ApplicationProps extends NpmRegistryProps {
 }
 export namespace ApplicationProps {
 
-    export type Target = 'browser' | 'electron';
+    export type Target = 'browser' | 'electron' | 'hybrid';
 
     export const DEFAULT: ApplicationProps = {
         ...NpmRegistryProps.DEFAULT,

@@ -20,7 +20,8 @@ import { loadVsRequire, loadMonaco } from '../browser/monaco-loader';
 
 export { ContainerModule };
 
-const s = <any>self;
+// tslint:disable-next-line:no-any
+const globals = <any>self;
 
 /**
  * We cannot use `FileUri#create` because URIs with file scheme cannot be properly decoded via the AMD loader.
@@ -37,13 +38,22 @@ const uriFromPath = (filePath: string) => {
 
 export default loadVsRequire(global)
     .then(vsRequire => {
-        const baseUrl = uriFromPath(__dirname);
+        const isRemote = !/^file:/.test(self.location.href);
+        const baseUrl = isRemote ? self.location.href : uriFromPath(__dirname);
         vsRequire.config({ baseUrl });
 
         // workaround monaco-css not understanding the environment
-        s.module = undefined;
+        globals.module = undefined;
         // workaround monaco-typescript not understanding the environment
-        s.process.browser = true;
+        globals.process.browser = true;
+
+        // vscode-loader patching: https://github.com/Microsoft/vscode-loader/issues/12
+        if (isRemote) {
+            Object.defineProperty(globals.AMDLoader.Environment.prototype, 'isNode', {
+                get: () => false
+            });
+        }
+
         return loadMonaco(vsRequire);
     })
     .then(() => import('../browser/monaco-frontend-module'))

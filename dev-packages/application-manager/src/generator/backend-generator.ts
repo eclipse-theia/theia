@@ -24,8 +24,32 @@ export class BackendGenerator extends AbstractGenerator {
         await this.write(this.pck.backend('main.js'), this.compileMain(backendModules));
     }
 
+    protected compileExpressStatic(segment: string = ''): string {
+        return `express.static(path.join(__dirname, '../../lib${segment}'), {
+            index: 'index.html'
+        })`;
+    }
+
+    protected compileMiddleware(backendModules: Map<string, string>): string {
+        return this.pck.isHybrid() ? `
+        const electron = ${this.compileExpressStatic('/electron')};
+        const browser = ${this.compileExpressStatic('/browser')};
+
+        application.use('*', (request, ...args) => {
+            const userAgent = request.headers['user-agent'] || 'unknown';
+            const isElectron = /electron/ig.test(userAgent);
+            request.url = request.baseUrl || request.url;
+            return (isElectron ?
+                electron : browser)(request, ...args);
+        });
+` : `
+        application.use(${this.compileExpressStatic()});
+`;
+    }
+
     protected compileServer(backendModules: Map<string, string>): string {
-        return `// @ts-check
+        return `\
+// @ts-check
 require('reflect-metadata');
 const path = require('path');
 const express = require('express');
@@ -54,9 +78,7 @@ function start(port, host) {
     const cliManager = container.get(CliManager);
     return cliManager.initializeCli().then(function () {
         const application = container.get(BackendApplication);
-        application.use(express.static(path.join(__dirname, '../../lib'), {
-            index: 'index.html'
-        }));
+${this.compileMiddleware(backendModules)}
         return application.start(port, host);
     });
 }
@@ -72,7 +94,8 @@ module.exports = (port, host) => Promise.resolve()${this.compileBackendModuleImp
     }
 
     protected compileMain(backendModules: Map<string, string>): string {
-        return `// @ts-check
+        return `\
+// @ts-check
 const serverPath = require('path').resolve(__dirname, 'server');
 const address = require('@theia/core/lib/node/cluster/main').default(serverPath);
 address.then(function (address) {

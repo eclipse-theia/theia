@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 Ericsson and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,26 +14,22 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-/**
- * Simple implementation of the deferred pattern.
- * An object that exposes a promise and functions to resolve and reject it.
- */
-export class Deferred<T> {
-    resolve: (value?: T) => void;
-    reject: (err?: any) => void; // tslint:disable-line
+import { isFile } from '../../browser';
 
-    promise = new Promise<T>((resolve, reject) => {
-        this.resolve = resolve;
-        this.reject = reject;
-    });
-}
+export type ElectronBackendLocation = 'local' | 'remote';
+export namespace ElectronBackendLocation {
 
-/**
- * Simple timeout-as-promise implementation.
- *
- * @param time delay to wait for
- * @param value value to resolve to after the timeout
- */
-export function timeout<T = void>(time: Number, value?: T): Promise<T> {
-    return new Promise(resolve => setTimeout(resolve, time, value));
+    export const location: ElectronBackendLocation = isFile ? 'local' : 'remote';
+
+    export function getLocation(): ElectronBackendLocation {
+        return location;
+    }
+
+    export function isLocal(): boolean {
+        return location === 'local';
+    }
+
+    export function isRemote(): boolean {
+        return location === 'remote';
+    }
 }
