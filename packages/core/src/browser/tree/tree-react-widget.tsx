@@ -388,9 +388,9 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
                     ['a', 'fa', `fa-${iconName}`, TreeDecoration.Styles.DECORATOR_SIZE_CLASS, TreeDecoration.IconOverlayPosition.getStyle(position)].join(' ');
                 const style = (color?: string) => color === undefined ? {} : { color };
                 if (overlay.background) {
-                    overlayIcons.push(<span className={overlayClass(overlay.background.shape)} style={style(overlay.background.color)}></span>);
+                    overlayIcons.push(<span key={node.id + 'bg'} className={overlayClass(overlay.background.shape)} style={style(overlay.background.color)}></span>);
                 }
-                overlayIcons.push(<span className={overlayClass(overlay.icon)} style={style(overlay.color)}></span>);
+                overlayIcons.push(<span key={node.id} className={overlayClass(overlay.icon)} style={style(overlay.color)}></span>);
             });
 
         if (overlayIcons.length > 0) {

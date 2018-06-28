@@ -19,15 +19,16 @@ import { ProblemManager } from './problem-manager';
 import { ProblemMarker } from '../../common/problem-marker';
 import { ProblemTreeModel } from './problem-tree-model';
 import { MarkerInfoNode, MarkerNode } from '../marker-tree';
-import { TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel, SelectableTreeNode } from "@theia/core/lib/browser";
-import { h } from "@phosphor/virtualdom/lib";
+import { TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel, SelectableTreeNode } from "@theia/core/lib/browser";
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { UriSelection } from '@theia/core/lib/common/selection';
+import { TreeReactWidget } from '@theia/core/lib/browser/tree/tree-react-widget';
+import * as React from "react";
 
 @injectable()
-export class ProblemWidget extends TreeWidget {
+export class ProblemWidget extends TreeReactWidget {
 
     constructor(
         @inject(ProblemManager) protected readonly problemManager: ProblemManager,
@@ -79,11 +80,11 @@ export class ProblemWidget extends TreeWidget {
         super.onUpdateRequest(msg);
     }
 
-    protected renderTree(model: TreeModel): h.Child {
-        return super.renderTree(model) || h.div({ className: 'noMarkers' }, 'No problems have been detected in the workspace so far.');
+    protected renderTree(model: TreeModel): React.ReactNode {
+        return super.renderTree(model) || <div className='noMarkers'>No problems have been detected in the workspace so far.</div>;
     }
 
-    protected renderCaption(node: TreeNode, props: NodeProps): h.Child {
+    protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         if (MarkerInfoNode.is(node)) {
             return this.decorateMarkerFileNode(node);
         } else if (MarkerNode.is(node)) {
@@ -92,19 +93,26 @@ export class ProblemWidget extends TreeWidget {
         return 'caption';
     }
 
-    protected decorateMarkerNode(node: MarkerNode): h.Child {
+    protected decorateMarkerNode(node: MarkerNode): React.ReactNode {
         if (ProblemMarker.is(node.marker)) {
             let severityClass: string = '';
             const problemMarker = node.marker;
             if (problemMarker.data.severity) {
                 severityClass = this.getSeverityClass(problemMarker.data.severity);
             }
-            const severityDiv = h.div({}, h.i({ className: severityClass }));
-            const ownerDiv = h.div({ className: 'owner' }, '[' + problemMarker.owner + ']');
-            const startingPointDiv = h.span({ className: 'position' },
-                '(' + (problemMarker.data.range.start.line + 1) + ', ' + (problemMarker.data.range.start.character + 1) + ')');
-            const messageDiv = h.div({ className: 'message' }, problemMarker.data.message, startingPointDiv);
-            return h.div({ className: 'markerNode' }, severityDiv, ownerDiv, messageDiv);
+            return <div className='markerNode'>
+                <div>
+                    <i className={severityClass}></i>
+                </div>
+                <div className='owner'>
+                    {'[' + problemMarker.owner + ']'}
+                </div>
+                <div className='message'>{problemMarker.data.message}
+                    <span className='position'>
+                        {'(' + (problemMarker.data.range.start.line + 1) + ', ' + (problemMarker.data.range.start.character + 1) + ')'}
+                    </span>
+                </div>
+            </div>;
         }
         return '';
     }
@@ -118,12 +126,13 @@ export class ProblemWidget extends TreeWidget {
         }
     }
 
-    protected decorateMarkerFileNode(node: MarkerInfoNode): h.Child {
-        const iconDiv = h.div({ className: (node.icon || '') + ' file-icon' });
-        const fileNameDiv = h.div({}, node.name);
-        const pathDiv = h.div({ className: 'path' }, node.description || '');
-        const counterDiv = h.div({ className: 'counter' }, node.numberOfMarkers.toString());
-        return h.div({ className: 'markerFileNode' }, iconDiv, fileNameDiv, pathDiv, counterDiv);
+    protected decorateMarkerFileNode(node: MarkerInfoNode): React.ReactNode {
+        return <div className='markerFileNode'>
+            <div className={(node.icon || '') + ' file-icon'}></div>
+            <div>{node.name}</div>
+            <div className='path'>{node.description || ''}</div>
+            <div className='counter'>{node.numberOfMarkers.toString()}</div>
+        </div>;
     }
 
 }
