@@ -77,6 +77,7 @@ export class HostedPluginSupport {
         });
         const hostedPluginManager = rpc.getProxy(MAIN_RPC_CONTEXT.HOSTED_PLUGIN_MANAGER_EXT);
         hostedPluginManager.$stopPlugin('').then(() => {
+            emitter.dispose();
             childProcess.kill();
         });
     }
