@@ -19,7 +19,7 @@ import { StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
 import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { HostedPluginServer } from '../../common/plugin-protocol';
-import { ConnectionStatusService, ConnectionState } from '@theia/core/lib/browser/connection-status-service';
+import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileStat } from '@theia/filesystem/lib/common';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
@@ -78,7 +78,7 @@ export class HostedPluginInformer implements FrontendApplicationContribution {
     }
 
     private updateStatusBarElement(): void {
-        if (this.connectionStatusService.currentState.state === ConnectionState.OFFLINE) {
+        if (this.connectionStatusService.currentStatus === ConnectionStatus.OFFLINE) {
             this.entry.className = HostedPluginInformer.DEVELOPMENT_HOST_OFFLINE;
         } else {
             this.entry.className = HostedPluginInformer.DEVELOPMENT_HOST;

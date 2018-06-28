@@ -16,10 +16,11 @@
 
 import { inject, injectable, optional } from 'inversify';
 import { ILogger } from '../common/logger';
-import { Endpoint } from './endpoint';
 import { Event, Emitter } from '../common/event';
-import { FrontendApplicationContribution, DefaultFrontendApplicationContribution } from './frontend-application';
+import { DefaultFrontendApplicationContribution } from './frontend-application';
 import { StatusBar, StatusBarAlignment } from './status-bar/status-bar';
+import { WebSocketConnectionProvider } from './messaging/ws-connection-provider';
+import { Disposable } from '../common';
 
 /**
  * Service for listening on backend connection changes.
@@ -28,9 +29,9 @@ export const ConnectionStatusService = Symbol('ConnectionStatusService');
 export interface ConnectionStatusService {
 
     /**
-     * The actual connection state.
+     * The actual connection status.
      */
-    readonly currentState: ConnectionStatus;
+    readonly currentStatus: ConnectionStatus;
 
     /**
      * Clients can listen on connection status change events.
@@ -40,21 +41,9 @@ export interface ConnectionStatusService {
 }
 
 /**
- * Connection status change event.
+ * The connection status.
  */
-export interface ConnectionStatus {
-
-    /**
-     * The current state of the connection.
-     */
-    readonly state: ConnectionState;
-
-}
-
-/**
- * The connection-status states.
- */
-export enum ConnectionState {
+export enum ConnectionStatus {
 
     /**
      * Connected to the backend.
@@ -62,148 +51,80 @@ export enum ConnectionState {
     ONLINE,
 
     /**
-     * The connection is lost between the client and the endpoint.
+     * The connection is lost between frontend and backend.
      */
-    OFFLINE,
-
-    /**
-     * Initially we don't know whether we are online or offline.
-     */
-    INITIAL
+    OFFLINE
 }
 
 @injectable()
 export class ConnectionStatusOptions {
 
     static DEFAULT: ConnectionStatusOptions = {
-        retry: 5,
-        retryInterval: 1000,
-        requestTimeout: 1000,
-        maxRetryInterval: 10000
+        offlineTimeout: 5000,
     };
 
     /**
-     * Number of accepted timeouts. Must be a positive integer.
+     * Timeout in milliseconds before the application is considered offline. Must be a positive integer.
      */
-    readonly retry: number;
-
-    /**
-     * Retry interval in milliseconds. Must be a positive integer.
-     */
-    readonly retryInterval: number;
-
-    /**
-     * The maximum retry interval in milliseconds. Should be a positive integer.
-     *
-     * If the request is timing out because of the slow Internet connection or the server is overloaded, we increase the `retryInterval` until it reaches this `maxRetryInterval`.
-     */
-    readonly maxRetryInterval: number;
-
-    /**
-     * Timeout for the HTTP GET request in milliseconds. Must be a positive integer.
-     */
-    readonly requestTimeout: number;
+    readonly offlineTimeout: number;
 
 }
 
+export const PingService = Symbol('PingService');
+export interface PingService {
+    ping(): Promise<void>;
+}
+
 @injectable()
-export class FrontendConnectionStatusService implements ConnectionStatusService, FrontendApplicationContribution {
+export abstract class AbstractConnectionStatusService implements ConnectionStatusService, Disposable {
 
-    protected readonly statusChangeEmitter: Emitter<ConnectionStatus>;
-    protected readonly aliveUrl: string;
+    protected readonly statusChangeEmitter = new Emitter<ConnectionStatus>();
 
-    protected connectionState: ConnectionStatusImpl;
+    protected connectionStatus: ConnectionStatus = ConnectionStatus.ONLINE;
     protected timer: number | undefined;
-    protected retryInterval: number;
 
     constructor(
         @inject(ConnectionStatusOptions) @optional() protected readonly options: ConnectionStatusOptions = ConnectionStatusOptions.DEFAULT,
         @inject(ILogger) protected readonly logger: ILogger
     ) {
-        this.statusChangeEmitter = new Emitter<ConnectionStatus>();
-        this.retryInterval = this.options.retryInterval;
-        this.connectionState = new ConnectionStatusImpl({ threshold: this.options.retry });
-        this.aliveUrl = new Endpoint({ path: 'alive' }).getRestUrl().toString();
-    }
-
-    onStart() {
-        this.start();
-    }
-
-    onStop() {
-        this.stop();
-    }
-
-    start() {
-        if (this.timer === undefined) {
-            this.schedule(this.checkAlive.bind(this));
-            this.logger.debug('Started checking the backend connection status.');
-            this.fireStatusChange(this.connectionState);
-        }
-    }
-
-    stop() {
-        if (this.timer !== undefined) {
-            this.clearTimeout(this.timer);
-            this.timer = undefined;
-            this.logger.debug('Stopped checking the backend connection status.');
-        }
     }
 
     get onStatusChange() {
         return this.statusChangeEmitter.event;
     }
 
-    get currentState() {
-        return this.connectionState;
+    get currentStatus() {
+        return this.connectionStatus;
     }
 
-    protected schedule(checkAlive: () => Promise<boolean>) {
-        const tick = async () => {
-            this.logger.trace(`Checking backend connection status. Scheduled an alive request with ${this.retryInterval} ms timeout.`);
-            const success = await checkAlive();
-            this.logger.trace(success ? `Connected to the backend.` : `Cannot reach the backend.`);
-            const previousState = this.connectionState;
-            const newState = this.updateStatus(success);
-            if (previousState.state !== newState.state) {
-                this.fireStatusChange(newState);
-            }
-            // Increase the retry interval in a linear scale.
-            this.retryInterval = success ? this.options.retryInterval : Math.min(this.retryInterval + this.options.retryInterval, this.options.maxRetryInterval);
-            this.timer = this.setTimeout(tick, this.retryInterval);
-        };
-        this.timer = this.setTimeout(tick, this.retryInterval);
+    dispose() {
+        this.statusChangeEmitter.dispose();
+        if (this.timer) {
+            this.clearTimeout(this.timer);
+        }
     }
 
-    protected updateStatus(success: boolean): ConnectionStatusImpl {
-        this.connectionState = this.connectionState.next(success);
-        return this.connectionState;
+    protected updateStatus(success: boolean): void {
+        // clear existing timer
+        if (this.timer) {
+            this.clearTimeout(this.timer);
+        }
+        this.logger.trace(success ? `Connected to the backend.` : `Cannot reach the backend.`);
+        const previousStatus = this.connectionStatus;
+        const newStatus = success ? ConnectionStatus.ONLINE : ConnectionStatus.OFFLINE;
+        if (previousStatus !== newStatus) {
+            this.connectionStatus = newStatus;
+            this.fireStatusChange(newStatus);
+        }
+        // schedule offline
+        this.timer = this.setTimeout(() => {
+            this.logger.trace(`No activity for ${this.options.offlineTimeout} ms. We are offline.`);
+            this.updateStatus(false);
+        }, this.options.offlineTimeout);
     }
 
-    protected fireStatusChange(event: ConnectionStatus) {
-        this.statusChangeEmitter.fire(event);
-    }
-
-    protected checkAlive(): Promise<boolean> {
-        return new Promise<boolean>(resolve => {
-            const handle = (success: boolean) => resolve(success);
-            const xhr = new XMLHttpRequest();
-            xhr.timeout = this.options.requestTimeout;
-            xhr.onreadystatechange = () => {
-                const { readyState, status } = xhr;
-                if (readyState === XMLHttpRequest.DONE) {
-                    handle(status === 200);
-                }
-            };
-            xhr.onerror = () => handle(false);
-            xhr.ontimeout = () => handle(false);
-            xhr.open('GET', this.aliveUrl);
-            try {
-                xhr.send();
-            } catch {
-                handle(false);
-            }
-        });
+    protected fireStatusChange(status: ConnectionStatus) {
+        this.statusChangeEmitter.fire(status);
     }
 
     // tslint:disable-next-line:no-any
@@ -218,6 +139,42 @@ export class FrontendConnectionStatusService implements ConnectionStatusService,
 }
 
 @injectable()
+export class FrontendConnectionStatusService extends AbstractConnectionStatusService {
+
+    private scheduledPing: number | undefined;
+
+    constructor(
+        @inject(WebSocketConnectionProvider) protected readonly wsConnectionProvider: WebSocketConnectionProvider,
+        @inject(PingService) protected readonly pingService: PingService,
+        @inject(ConnectionStatusOptions) @optional() protected readonly options: ConnectionStatusOptions = ConnectionStatusOptions.DEFAULT,
+        @inject(ILogger) protected readonly logger: ILogger
+    ) {
+        super(options, logger);
+        this.schedulePing();
+        this.wsConnectionProvider.onIncomingMessageActivity(() => {
+            // natural activity
+            this.updateStatus(true);
+            this.schedulePing();
+        });
+    }
+
+    protected schedulePing() {
+        if (this.scheduledPing) {
+            this.clearTimeout(this.scheduledPing);
+        }
+        this.scheduledPing = this.setTimeout(async () => {
+            try {
+                await this.pingService.ping();
+                this.updateStatus(true);
+            } catch (e) {
+                this.logger.trace(e);
+            }
+            this.schedulePing();
+        }, this.options.offlineTimeout * 0.8);
+    }
+}
+
+@injectable()
 export class ApplicationConnectionStatusContribution extends DefaultFrontendApplicationContribution {
 
     constructor(
@@ -226,16 +183,16 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
         @inject(ILogger) protected readonly logger: ILogger
     ) {
         super();
-        this.connectionStatusService.onStatusChange(status => this.onStatusChange(status));
+        this.connectionStatusService.onStatusChange(state => this.onStateChange(state));
     }
 
-    protected onStatusChange(status: ConnectionStatus): void {
-        switch (status.state) {
-            case ConnectionState.OFFLINE: {
+    protected onStateChange(state: ConnectionStatus): void {
+        switch (state) {
+            case ConnectionStatus.OFFLINE: {
                 this.handleOffline();
                 break;
             }
-            case ConnectionState.ONLINE: {
+            case ConnectionStatus.ONLINE: {
                 this.handleOnline();
                 break;
             }
@@ -258,31 +215,4 @@ export class ApplicationConnectionStatusContribution extends DefaultFrontendAppl
             priority: 5000
         });
     }
-}
-
-export class ConnectionStatusImpl implements ConnectionStatus {
-
-    private static readonly MAX_HISTORY = 100;
-
-    constructor(
-        protected readonly props: { readonly threshold: number },
-        public readonly state: ConnectionState = ConnectionState.INITIAL,
-        protected readonly history: boolean[] = []) {
-    }
-
-    next(success: boolean): ConnectionStatusImpl {
-        const newHistory = this.updateHistory(success);
-        const online = newHistory.slice(-this.props.threshold).some(s => s);
-        // Ideally, we do not switch back to online if we see any `true` items but, let's say, after three consecutive `true`s.
-        return new ConnectionStatusImpl(this.props, online ? ConnectionState.ONLINE : ConnectionState.OFFLINE, newHistory);
-    }
-
-    protected updateHistory(success: boolean) {
-        const updated = [...this.history, success];
-        if (updated.length > ConnectionStatusImpl.MAX_HISTORY) {
-            updated.shift();
-        }
-        return updated;
-    }
-
 }
