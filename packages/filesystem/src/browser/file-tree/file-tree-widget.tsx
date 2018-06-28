@@ -65,7 +65,6 @@ export class FileTreeWidget extends TreeReactWidget {
         const attrs = super.createContainerAttributes();
         return {
             ...attrs,
-            // onDragEnter: event => this.handleDragEnterEvent(this.model.root, event.nativeEvent),
             onDragOver: event => this.handleDragOverEvent(this.model.root, event.nativeEvent),
             onDragLeave: event => this.handleDragLeaveEvent(this.model.root, event.nativeEvent),
             onDrop: event => this.handleDropEvent(this.model.root, event.nativeEvent)

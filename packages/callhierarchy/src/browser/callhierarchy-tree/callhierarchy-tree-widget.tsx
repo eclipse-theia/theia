@@ -17,10 +17,9 @@
 import { injectable, inject } from "inversify";
 import { Message } from "@phosphor/messaging";
 import {
-    ContextMenuRenderer, TreeWidget, NodeProps, TreeProps, TreeNode,
+    ContextMenuRenderer, NodeProps, TreeProps, TreeNode,
     SelectableTreeNode, TreeModel, DockPanel
 } from "@theia/core/lib/browser";
-import { ElementAttrs, h } from "@phosphor/virtualdom";
 import { LabelProvider } from "@theia/core/lib/browser/label-provider";
 import { DefinitionNode, CallerNode } from "./callhierarchy-tree";
 import { CallHierarchyTreeModel } from "./callhierarchy-tree-model";
@@ -28,13 +27,15 @@ import { CALLHIERARCHY_ID, Definition, Caller } from "../callhierarchy";
 import URI from "@theia/core/lib/common/uri";
 import { Location, Range, SymbolKind } from 'vscode-languageserver-types';
 import { EditorManager } from "@theia/editor/lib/browser";
+import { TreeReactWidget } from "@theia/core/lib/browser/tree/tree-react-widget";
+import * as React from "react";
 
 export const HIERARCHY_TREE_CLASS = 'theia-CallHierarchyTree';
 export const DEFINITION_NODE_CLASS = 'theia-CallHierarchyTreeNode';
 export const DEFINITION_ICON_CLASS = 'theia-CallHierarchyTreeNodeIcon';
 
 @injectable()
-export class CallHierarchyTreeWidget extends TreeWidget {
+export class CallHierarchyTreeWidget extends TreeReactWidget {
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,
@@ -80,19 +81,19 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         super.onUpdateRequest(msg);
     }
 
-    protected createNodeAttributes(node: TreeNode, props: NodeProps): ElementAttrs {
+    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const elementAttrs = super.createNodeAttributes(node, props);
         return {
             ...elementAttrs,
         };
     }
 
-    protected renderTree(model: TreeModel): h.Child {
+    protected renderTree(model: TreeModel): React.ReactNode {
         return super.renderTree(model)
-            || h.div({ className: 'noCallers' }, 'No callers have been detected.');
+            || <div className='noCallers'>No callers have been detected.</div>;
     }
 
-    protected renderCaption(node: TreeNode, props: NodeProps): h.Child {
+    protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         if (DefinitionNode.is(node)) {
             return this.decorateDefinitionCaption(node.definition);
         }
@@ -102,29 +103,41 @@ export class CallHierarchyTreeWidget extends TreeWidget {
         return 'caption';
     }
 
-    protected decorateDefinitionCaption(definition: Definition): h.Child {
+    protected decorateDefinitionCaption(definition: Definition): React.ReactNode {
         const containerName = definition.containerName;
-        const icon = h.div({ className: "symbol-icon " + this.toIconClass(definition.symbolKind) });
         const symbol = definition.symbolName;
-        const symbolElement = h.div({ className: 'symbol' }, symbol);
         const location = this.labelProvider.getName(new URI(definition.location.uri));
         const container = (containerName) ? containerName + ' — ' + location : location;
-        const containerElement = h.div({ className: 'container' }, container);
-        return h.div({ className: 'definitionNode' }, icon, symbolElement, containerElement);
+        return <div className='definitionNode'>
+            <div className={"symbol-icon " + this.toIconClass(definition.symbolKind)}></div>
+            <div className='symbol'>
+                {symbol}
+            </div>
+            <div className='container'>
+                {container}
+            </div>
+        </div>;
     }
 
-    protected decorateCallerCaption(caller: Caller): h.Child {
+    protected decorateCallerCaption(caller: Caller): React.ReactNode {
         const definition = caller.callerDefinition;
-        const icon = h.div({ className: "symbol-icon " + this.toIconClass(definition.symbolKind) });
         const containerName = definition.containerName;
         const symbol = definition.symbolName;
-        const symbolElement = h.div({ className: 'symbol' }, symbol);
         const referenceCount = caller.references.length;
-        const referenceCountElement = h.div({ className: 'referenceCount' }, (referenceCount > 1) ? `[${referenceCount}]` : '');
         const location = this.labelProvider.getName(new URI(definition.location.uri));
         const container = (containerName) ? containerName + ' — ' + location : location;
-        const containerElement = h.div({ className: 'container' }, container);
-        return h.div({ className: 'definitionNode' }, icon, symbolElement, referenceCountElement, containerElement);
+        return <div className='definitionNode'>
+            <div className={"symbol-icon " + this.toIconClass(definition.symbolKind)}></div>
+            <div className='symbol'>
+                {symbol}
+            </div>
+            <div className='referenceCount'>
+                {(referenceCount > 1) ? `[${referenceCount}]` : ''}
+            </div>
+            <div className='container'>
+                {container}
+            </div>
+        </div>;
     }
 
     protected toIconClass(symbolKind: number) {

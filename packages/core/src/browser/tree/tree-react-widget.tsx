@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -46,7 +46,7 @@ export const COMPOSITE_TREE_NODE_CLASS = 'theia-CompositeTreeNode';
 export const TREE_NODE_CAPTION_CLASS = 'theia-TreeNodeCaption';
 export const EXPANSION_TOGGLE_CLASS = 'theia-ExpansionToggle';
 
-export const TreeProps = Symbol('TreeProps');
+export const TreeReactProps = Symbol('TreeReactProps');
 export interface TreeReactProps {
 
     /**
@@ -82,7 +82,7 @@ export interface NodeReactProps {
 
 }
 
-export const defaultTreeProps: TreeReactProps = {
+export const defaultTreeReactProps: TreeReactProps = {
     leftPadding: 16
 };
 
@@ -108,7 +108,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
     protected decorations: Map<string, TreeDecoration.Data[]> = new Map();
 
     constructor(
-        @inject(TreeProps) readonly props: TreeReactProps,
+        @inject(TreeReactProps) readonly props: TreeReactProps,
         @inject(TreeModel) readonly model: TreeModel,
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
     ) {
@@ -169,31 +169,14 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected render(): React.ReactNode {
-        return React.createElement("div", this.createContainerAttributes(), this.renderTree(this.model));
+        return React.createElement('div', this.createContainerAttributes(), this.renderTree(this.model));
     }
 
     protected createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
         return {
             className: TREE_CONTAINER_CLASS,
-            onContextMenu: e => this.handleContextMenuEvent(this.model.root, e)
+            onContextMenu: e => this.handleContextMenuEvent(this.model.root, e.nativeEvent)
         };
-    }
-
-    protected onAfterAttach(msg: Message): void {
-        const up = [
-            Key.ARROW_UP,
-            KeyCode.createKeyCode({ first: Key.ARROW_UP, modifiers: [KeyModifier.Shift] })
-        ];
-        const down = [
-            Key.ARROW_DOWN,
-            KeyCode.createKeyCode({ first: Key.ARROW_DOWN, modifiers: [KeyModifier.Shift] })
-        ];
-        super.onAfterAttach(msg);
-        this.addKeyListener(this.node, Key.ARROW_LEFT, event => this.handleLeft(event));
-        this.addKeyListener(this.node, Key.ARROW_RIGHT, event => this.handleRight(event));
-        this.addKeyListener(this.node, up, event => this.handleUp(event));
-        this.addKeyListener(this.node, down, event => this.handleDown(event));
-        this.addKeyListener(this.node, Key.ENTER, event => this.handleEnter(event));
     }
 
     protected renderTree(model: TreeModel): React.ReactNode {
@@ -229,8 +212,10 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
     protected readonly toggle = (event: React.MouseEvent<HTMLElement>) => this.doToggle(event);
     protected doToggle(event: React.MouseEvent<HTMLElement>) {
         const nodeId = event.currentTarget.getAttribute('data-node-id');
-        const node = this.model.getNode(nodeId || undefined);
-        this.handleClickEvent(node, event.nativeEvent);
+        if (nodeId) {
+            const node = this.model.getNode(nodeId || undefined);
+            this.handleClickEvent(node, event.nativeEvent);
+        }
         event.stopPropagation();
     }
 
@@ -255,7 +240,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
                 }
             }
             onClick={this.toggle}>
-        </div >;
+        </div>;
     }
 
     protected renderCaption(node: TreeNode, props: NodeReactProps): React.ReactNode {
@@ -449,7 +434,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
             style,
             onClick: (event: React.MouseEvent<HTMLElement>) => this.handleClickEvent(node, event.nativeEvent),
             onDoubleClick: (event: React.MouseEvent<HTMLElement>) => this.handleDblClickEvent(node, event.nativeEvent),
-            onContextMenu: e => this.handleContextMenuEvent(node, e)
+            onContextMenu: e => this.handleContextMenuEvent(node, e.nativeEvent)
         };
     }
 
@@ -549,6 +534,23 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         return this.getDecorations(node).filter(data => data[key] !== undefined).map(data => data[key]).filter(notEmpty);
     }
 
+    protected onAfterAttach(msg: Message): void {
+        const up = [
+            Key.ARROW_UP,
+            KeyCode.createKeyCode({ first: Key.ARROW_UP, modifiers: [KeyModifier.Shift] })
+        ];
+        const down = [
+            Key.ARROW_DOWN,
+            KeyCode.createKeyCode({ first: Key.ARROW_DOWN, modifiers: [KeyModifier.Shift] })
+        ];
+        super.onAfterAttach(msg);
+        this.addKeyListener(this.node, Key.ARROW_LEFT, event => this.handleLeft(event));
+        this.addKeyListener(this.node, Key.ARROW_RIGHT, event => this.handleRight(event));
+        this.addKeyListener(this.node, up, event => this.handleUp(event));
+        this.addKeyListener(this.node, down, event => this.handleDown(event));
+        this.addKeyListener(this.node, Key.ENTER, event => this.handleEnter(event));
+    }
+
     protected async handleLeft(event: KeyboardEvent): Promise<void> {
         if (!!this.props.multiSelect && (this.hasCtrlCmdMask(event) || this.hasShiftMask(event))) {
             return;
@@ -621,7 +623,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         event.stopPropagation();
     }
 
-    protected handleContextMenuEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+    protected handleContextMenuEvent(node: TreeNode | undefined, event: MouseEvent): void {
         if (SelectableTreeNode.is(node)) {
             // Keep the selection for the context menu, if the widget support multi-selection and the right click happens on an already selected node.
             if (!this.props.multiSelect || !node.selected) {
@@ -630,7 +632,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
             }
             const contextMenuPath = this.props.contextMenuPath;
             if (contextMenuPath) {
-                const { x, y } = event.nativeEvent;
+                const { x, y } = event;
                 this.onRender.push(Disposable.create(() =>
                     setTimeout(() =>
                         this.contextMenuRenderer.render(contextMenuPath, { x, y })
