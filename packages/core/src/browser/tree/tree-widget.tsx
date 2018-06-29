@@ -46,8 +46,8 @@ export const COMPOSITE_TREE_NODE_CLASS = 'theia-CompositeTreeNode';
 export const TREE_NODE_CAPTION_CLASS = 'theia-TreeNodeCaption';
 export const EXPANSION_TOGGLE_CLASS = 'theia-ExpansionToggle';
 
-export const TreeReactProps = Symbol('TreeReactProps');
-export interface TreeReactProps {
+export const TreeProps = Symbol('TreeProps');
+export interface TreeProps {
 
     /**
      * The path of the context menu that one can use to contribute context menu items to the tree widget.
@@ -66,7 +66,7 @@ export interface TreeReactProps {
     readonly multiSelect?: boolean;
 }
 
-export interface NodeReactProps {
+export interface NodeProps {
 
     /**
      * A root relative number representing the hierarchical depth of the actual node. Root is `0`, its children have `1` and so on.
@@ -82,11 +82,11 @@ export interface NodeReactProps {
 
 }
 
-export const defaultTreeReactProps: TreeReactProps = {
+export const defaultTreeProps: TreeProps = {
     leftPadding: 16
 };
 
-export namespace TreeReactWidget {
+export namespace TreeWidget {
 
     /**
      * Bare minimum common interface of the keyboard and the mouse event with respect to the key maskings.
@@ -100,7 +100,7 @@ export namespace TreeReactWidget {
 }
 
 @injectable()
-export class TreeReactWidget extends ReactWidget implements StatefulWidget {
+export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     @inject(TreeDecoratorService)
     protected readonly decoratorService: TreeDecoratorService;
@@ -108,7 +108,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
     protected decorations: Map<string, TreeDecoration.Data[]> = new Map();
 
     constructor(
-        @inject(TreeReactProps) readonly props: TreeReactProps,
+        @inject(TreeProps) readonly props: TreeProps,
         @inject(TreeModel) readonly model: TreeModel,
         @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer,
     ) {
@@ -175,7 +175,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
     protected createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
         return {
             className: TREE_CONTAINER_CLASS,
-            onContextMenu: e => this.handleContextMenuEvent(this.model.root, e.nativeEvent)
+            onContextMenu: event => this.handleContextMenuEvent(this.model.root, event)
         };
     }
 
@@ -188,14 +188,14 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         return null;
     }
 
-    protected createRootProps(node: TreeNode): NodeReactProps {
+    protected createRootProps(node: TreeNode): NodeProps {
         return {
             depth: 0,
             visible: true
         };
     }
 
-    protected renderSubTree(node: TreeNode, props: NodeReactProps): React.ReactNode {
+    protected renderSubTree(node: TreeNode, props: NodeProps): React.ReactNode {
         const children = this.renderNodeChildren(node, props);
         if (!TreeNode.isVisible(node)) {
             return children;
@@ -204,7 +204,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         return <React.Fragment key={node.id}>{parent}{children}</React.Fragment>;
     }
 
-    protected renderIcon(node: TreeNode, props: NodeReactProps): React.ReactNode {
+    protected renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         // tslint:disable-next-line:no-null-keyword
         return null;
     }
@@ -213,13 +213,13 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
     protected doToggle(event: React.MouseEvent<HTMLElement>) {
         const nodeId = event.currentTarget.getAttribute('data-node-id');
         if (nodeId) {
-            const node = this.model.getNode(nodeId || undefined);
-            this.handleClickEvent(node, event.nativeEvent);
+            const node = this.model.getNode(nodeId);
+            this.handleClickEvent(node, event);
         }
         event.stopPropagation();
     }
 
-    protected renderExpansionToggle(node: TreeNode, props: NodeReactProps): React.ReactNode {
+    protected renderExpansionToggle(node: TreeNode, props: NodeProps): React.ReactNode {
         if (!this.isExpandable(node)) {
             // tslint:disable-next-line:no-null-keyword
             return null;
@@ -243,7 +243,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         </div>;
     }
 
-    protected renderCaption(node: TreeNode, props: NodeReactProps): React.ReactNode {
+    protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         const tooltip = this.getDecorationData(node, 'tooltip').filter(notEmpty).join(' • ');
         const classes = [TREE_NODE_SEGMENT_CLASS];
         if (!this.hasTrailingSuffixes(node)) {
@@ -352,7 +352,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         return modified;
     }
 
-    protected renderCaptionAffixes(node: TreeNode, props: NodeReactProps, affixKey: 'captionPrefixes' | 'captionSuffixes'): React.ReactNode {
+    protected renderCaptionAffixes(node: TreeNode, props: NodeProps, affixKey: 'captionPrefixes' | 'captionSuffixes'): React.ReactNode {
         const suffix = affixKey === 'captionSuffixes';
         const affixClass = suffix ? TreeDecoration.Styles.CAPTION_SUFFIX_CLASS : TreeDecoration.Styles.CAPTION_PREFIX_CLASS;
         const classes = [TREE_NODE_SEGMENT_CLASS, affixClass];
@@ -400,7 +400,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         return icon;
     }
 
-    protected renderTailDecorations(node: TreeNode, props: NodeReactProps): React.ReactNode {
+    protected renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
         const style = (fontData: TreeDecoration.FontData | undefined) => this.applyFontStyles({}, fontData);
         return <React.Fragment>
             {this.getDecorationData(node, 'tailDecorations').filter(notEmpty).reduce((acc, current) => acc.concat(current), []).map(decoration => {
@@ -413,7 +413,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         </React.Fragment>;
     }
 
-    protected renderNode(node: TreeNode, props: NodeReactProps): React.ReactNode {
+    protected renderNode(node: TreeNode, props: NodeProps): React.ReactNode {
         const attributes = this.createNodeAttributes(node, props);
         const content = <div className={TREE_NODE_CONTENT_CLASS}>
             {this.renderExpansionToggle(node, props)}
@@ -426,19 +426,19 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         return React.createElement('div', attributes, content);
     }
 
-    protected createNodeAttributes(node: TreeNode, props: NodeReactProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
+    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const className = this.createNodeClassNames(node, props).join(' ');
         const style = this.createNodeStyle(node, props);
         return {
             className,
             style,
-            onClick: (event: React.MouseEvent<HTMLElement>) => this.handleClickEvent(node, event.nativeEvent),
-            onDoubleClick: (event: React.MouseEvent<HTMLElement>) => this.handleDblClickEvent(node, event.nativeEvent),
-            onContextMenu: e => this.handleContextMenuEvent(node, e.nativeEvent)
+            onClick: event => this.handleClickEvent(node, event),
+            onDoubleClick: event => this.handleDblClickEvent(node, event),
+            onContextMenu: event => this.handleContextMenuEvent(node, event)
         };
     }
 
-    protected createNodeClassNames(node: TreeNode, props: NodeReactProps): string[] {
+    protected createNodeClassNames(node: TreeNode, props: NodeProps): string[] {
         const classNames = [TREE_NODE_CLASS];
         if (CompositeTreeNode.is(node)) {
             classNames.push(COMPOSITE_TREE_NODE_CLASS);
@@ -455,7 +455,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         return classNames;
     }
 
-    protected getDefaultNodeStyle(node: TreeNode, props: NodeReactProps): React.CSSProperties | undefined {
+    protected getDefaultNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
         // If the node is a composite, a toggle will be rendered. Otherwise we need to add the width and the left, right padding => 18px
         const paddingLeft = `${props.depth * this.props.leftPadding + (this.isExpandable(node) ? 0 : 18)}px`;
         let style: React.CSSProperties = {
@@ -470,7 +470,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         return style;
     }
 
-    protected createNodeStyle(node: TreeNode, props: NodeReactProps): React.CSSProperties | undefined {
+    protected createNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
         return this.decorateNodeStyle(node, this.getDefaultNodeStyle(node, props));
     }
 
@@ -489,7 +489,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         return ExpandableTreeNode.is(node);
     }
 
-    protected renderNodeChildren(node: TreeNode, props: NodeReactProps): React.ReactNode {
+    protected renderNodeChildren(node: TreeNode, props: NodeProps): React.ReactNode {
         if (CompositeTreeNode.is(node)) {
             return this.renderCompositeChildren(node, props);
         }
@@ -497,23 +497,23 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         return null;
     }
 
-    protected renderCompositeChildren(parent: CompositeTreeNode, props: NodeReactProps): React.ReactNode {
+    protected renderCompositeChildren(parent: CompositeTreeNode, props: NodeProps): React.ReactNode {
         return <React.Fragment>{parent.children.map(child => this.renderChild(child, parent, props))}</React.Fragment>;
     }
 
-    protected renderChild(child: TreeNode, parent: CompositeTreeNode, props: NodeReactProps): React.ReactNode {
+    protected renderChild(child: TreeNode, parent: CompositeTreeNode, props: NodeProps): React.ReactNode {
         const childProps = this.createChildProps(child, parent, props);
         return this.renderSubTree(child, childProps);
     }
 
-    protected createChildProps(child: TreeNode, parent: CompositeTreeNode, props: NodeReactProps): NodeReactProps {
+    protected createChildProps(child: TreeNode, parent: CompositeTreeNode, props: NodeProps): NodeProps {
         if (this.isExpandable(parent)) {
             return this.createExpandableChildProps(child, parent, props);
         }
         return props;
     }
 
-    protected createExpandableChildProps(child: TreeNode, parent: ExpandableTreeNode, props: NodeReactProps): NodeReactProps {
+    protected createExpandableChildProps(child: TreeNode, parent: ExpandableTreeNode, props: NodeProps): NodeProps {
         if (!props.visible) {
             return props;
         }
@@ -589,7 +589,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         this.model.openNode();
     }
 
-    protected handleClickEvent(node: TreeNode | undefined, event: MouseEvent): void {
+    protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         if (node) {
             if (!!this.props.multiSelect) {
                 const shiftMask = this.hasShiftMask(event);
@@ -618,12 +618,12 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         }
     }
 
-    protected handleDblClickEvent(node: TreeNode | undefined, event: MouseEvent): void {
+    protected handleDblClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         this.model.openNode(node);
         event.stopPropagation();
     }
 
-    protected handleContextMenuEvent(node: TreeNode | undefined, event: MouseEvent): void {
+    protected handleContextMenuEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         if (SelectableTreeNode.is(node)) {
             // Keep the selection for the context menu, if the widget support multi-selection and the right click happens on an already selected node.
             if (!this.props.multiSelect || !node.selected) {
@@ -632,7 +632,7 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
             }
             const contextMenuPath = this.props.contextMenuPath;
             if (contextMenuPath) {
-                const { x, y } = event;
+                const { x, y } = event.nativeEvent;
                 this.onRender.push(Disposable.create(() =>
                     setTimeout(() =>
                         this.contextMenuRenderer.render(contextMenuPath, { x, y })
@@ -645,12 +645,12 @@ export class TreeReactWidget extends ReactWidget implements StatefulWidget {
         event.preventDefault();
     }
 
-    protected hasCtrlCmdMask(event: TreeReactWidget.ModifierAwareEvent): boolean {
+    protected hasCtrlCmdMask(event: TreeWidget.ModifierAwareEvent): boolean {
         const { metaKey, ctrlKey } = event;
         return (isOSX && metaKey) || ctrlKey;
     }
 
-    protected hasShiftMask(event: TreeReactWidget.ModifierAwareEvent): boolean {
+    protected hasShiftMask(event: TreeWidget.ModifierAwareEvent): boolean {
         // Ctrl/Cmd mask overrules the Shift mask.
         if (this.hasCtrlCmdMask(event)) {
             return false;

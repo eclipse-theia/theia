@@ -19,16 +19,15 @@ import { ProblemManager } from './problem-manager';
 import { ProblemMarker } from '../../common/problem-marker';
 import { ProblemTreeModel } from './problem-tree-model';
 import { MarkerInfoNode, MarkerNode } from '../marker-tree';
-import { TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel, SelectableTreeNode } from "@theia/core/lib/browser";
+import { TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel, SelectableTreeNode } from "@theia/core/lib/browser";
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { UriSelection } from '@theia/core/lib/common/selection';
-import { TreeReactWidget } from '@theia/core/lib/browser/tree/tree-react-widget';
 import * as React from "react";
 
 @injectable()
-export class ProblemWidget extends TreeReactWidget {
+export class ProblemWidget extends TreeWidget {
 
     constructor(
         @inject(ProblemManager) protected readonly problemManager: ProblemManager,

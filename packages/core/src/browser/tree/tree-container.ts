@@ -23,7 +23,6 @@ import { TreeSelectionServiceImpl } from './tree-selection-impl';
 import { TreeExpansionService, TreeExpansionServiceImpl } from "./tree-expansion";
 import { TreeNavigationService } from './tree-navigation';
 import { TreeDecoratorService, NoopTreeDecoratorService } from './tree-decorator';
-import { TreeReactWidget, TreeReactProps, defaultTreeReactProps } from './tree-react-widget';
 
 export function createTreeContainer(parent: interfaces.Container): Container {
     const child = new Container({ defaultScope: 'Singleton' });
@@ -43,10 +42,8 @@ export function createTreeContainer(parent: interfaces.Container): Container {
     child.bind(TreeModelImpl).toSelf();
     child.bind(TreeModel).toDynamicValue(ctx => ctx.container.get(TreeModelImpl));
 
-    child.bind(TreeReactWidget).toSelf();
     child.bind(TreeWidget).toSelf();
     child.bind(TreeProps).toConstantValue(defaultTreeProps);
-    child.bind(TreeReactProps).toConstantValue(defaultTreeReactProps);
 
     child.bind(TreeDecoratorService).to(NoopTreeDecoratorService).inSingletonScope();
     return child;
