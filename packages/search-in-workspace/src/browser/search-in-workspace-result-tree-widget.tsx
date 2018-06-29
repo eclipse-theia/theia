@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import {
-    TreeWidget,
     ContextMenuRenderer,
     CompositeTreeNode,
     ExpandableTreeNode,
@@ -36,9 +35,10 @@ import { inject, injectable, postConstruct } from "inversify";
 import URI from "@theia/core/lib/common/uri";
 import { Path, CancellationTokenSource, Emitter, Event } from "@theia/core";
 import { WorkspaceService } from "@theia/workspace/lib/browser";
-import { h } from "@phosphor/virtualdom";
 import { MEMORY_TEXT } from "./in-memory-text-resource";
 import { FileResourceResolver } from "@theia/filesystem/lib/browser";
+import { TreeReactWidget } from "@theia/core/lib/browser/tree/tree-react-widget";
+import * as React from "react";
 
 export interface SearchInWorkspaceResultNode extends ExpandableTreeNode, SelectableTreeNode {
     children: SearchInWorkspaceResultLineNode[];
@@ -59,7 +59,7 @@ export namespace SearchInWorkspaceResultLineNode {
 }
 
 @injectable()
-export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
+export class SearchInWorkspaceResultTreeWidget extends TreeReactWidget {
 
     protected resultTree: Map<string, SearchInWorkspaceResultNode>;
     protected workspaceRoot: string = "";
@@ -90,13 +90,13 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     ) {
         super(props, model, contextMenuRenderer);
 
-        model.root = <CompositeTreeNode>{
+        model.root = {
             id: "ResultTree",
             name: "ResultTree",
             parent: undefined,
             visible: false,
             children: []
-        };
+        } as CompositeTreeNode;
 
         this.toDispose.push(model.onSelectionChanged(nodes => {
             const node = nodes[0];
@@ -266,7 +266,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return { name, path };
     }
 
-    protected renderCaption(node: TreeNode, props: NodeProps): h.Child {
+    protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         if (SearchInWorkspaceResultNode.is(node)) {
             return this.renderResultNode(node);
         } else if (SearchInWorkspaceResultLineNode.is(node)) {
@@ -275,24 +275,22 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         return "";
     }
 
-    protected renderTailDecorations(node: TreeNode, props: NodeProps): h.Child[] {
-        const btns: h.Child[] = [];
-        if (this._showReplaceButtons) {
-            btns.push(this.renderReplaceButton(node));
-        }
-        btns.push(this.renderRemoveButton(node));
-        return [h.div({ className: "result-node-buttons" }, ...btns)];
+    protected renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
+        return <div className="result-node-buttons">
+            {this._showReplaceButtons && this.renderReplaceButton(node)}
+            {this.renderRemoveButton(node)}
+        </div>;
     }
 
-    protected renderReplaceButton(node: TreeNode): h.Child {
-        return h.span({
-            className: "replace-result",
-            onclick: async e => {
-                this.replaceResult(node);
-                this.removeNode(node);
-                e.stopPropagation();
-            }
-        });
+    protected readonly replace = (node: TreeNode, e: React.MouseEvent<HTMLElement>) => this.doReplace(node, e);
+    protected async doReplace(node: TreeNode, e: React.MouseEvent<HTMLElement>) {
+        this.replaceResult(node);
+        this.removeNode(node);
+        e.stopPropagation();
+    }
+
+    protected renderReplaceButton(node: TreeNode): React.ReactNode {
+        return <span className="replace-result" onClick={e => this.replace(node, e)}></span>;
     }
 
     replaceAll(): void {
@@ -324,7 +322,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         if (toReplace.length > 0) {
             const widget = await this.doOpen(toReplace[0]);
             const source = widget.editor.document.getText();
-            const replaceOperations = toReplace.map(resultLineNode => <ReplaceOperation>{
+            const replaceOperations = toReplace.map(resultLineNode => ({
                 text: this._replaceTerm,
                 range: {
                     start: {
@@ -336,7 +334,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                         character: resultLineNode.character + resultLineNode.length
                     }
                 }
-            });
+            } as ReplaceOperation));
             await widget.editor.replaceText({
                 source,
                 replaceOperations
@@ -344,13 +342,14 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         }
     }
 
-    protected renderRemoveButton(node: TreeNode): h.Child {
-        return h.span({
-            className: "remove-node", onclick: e => {
-                this.removeNode(node);
-                e.stopPropagation();
-            }
-        });
+    protected readonly remove = (node: TreeNode, e: React.MouseEvent<HTMLElement>) => this.doRemove(node, e);
+    protected doRemove(node: TreeNode, e: React.MouseEvent<HTMLElement>) {
+        this.removeNode(node);
+        e.stopPropagation();
+    }
+
+    protected renderRemoveButton(node: TreeNode): React.ReactNode {
+        return <span className="remove-node" onClick={e => this.remove(node, e)} ></span >;
     }
 
     protected removeNode(node: TreeNode) {
@@ -371,35 +370,48 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         this.refreshModelChildren();
     }
 
-    protected renderResultNode(node: SearchInWorkspaceResultNode): h.Child {
+    protected renderResultNode(node: SearchInWorkspaceResultNode): React.ReactNode {
         const icon = node.icon;
-        const fileIcon = h.span({ className: `file-icon ${icon || ""}` });
-        const fileName = h.span({ className: "file-name" }, node.name);
-        const filePath = h.span({ className: "file-path" }, node.path);
-        const resultNumber = h.span({ className: "result-number" }, node.children.length.toString());
-        const resultHeadInfo = h.div(
-            { className: `result-head-info noWrapInfo noselect ${node.selected ? 'selected' : ''}` },
-            fileIcon, fileName, filePath);
-        const resultHead = h.div({ className: "result-head" }, resultHeadInfo, resultNumber);
-        return h.div({ className: "result" }, resultHead);
+        return <div className="result">
+            <div className="result-head">
+                <div className={`result-head-info noWrapInfo noselect ${node.selected ? 'selected' : ''}`}>
+                    <span className={`file-icon ${icon || ""}`}></span>
+                    <span className={"file-name"}>
+                        {node.name}
+                    </span>
+                    <span className={"file-path"}>
+                        {node.path}
+                    </span>
+                </div>
+                <span className={"result-number"}>
+                    {node.children.length.toString()}
+                </span>
+            </div>
+        </div>;
     }
 
-    protected renderResultLineNode(node: SearchInWorkspaceResultLineNode): h.Child {
+    protected renderResultLineNode(node: SearchInWorkspaceResultLineNode): React.ReactNode {
         const prefix = node.character > 26 ? '... ' : '';
-        const start = h.span(prefix + node.lineText.substr(0, node.character - 1).substr(-25));
-        const match = this.renderMatchLinePart(node);
-        const end = h.span(node.lineText.substr(node.character - 1 + node.length, 75));
-        return h.div(
-            {
-                className: `resultLine noWrapInfo ${node.selected ? 'selected' : ''}`,
-                onclick: () => this.model.selectNode(node)
-            }, start, ...match, end);
+        return <div
+            className={`resultLine noWrapInfo ${node.selected ? 'selected' : ''}`}
+            onClick={() => this.model.selectNode(node)}>
+            <span>
+                {prefix + node.lineText.substr(0, node.character - 1).substr(-25)}
+            </span>
+            {this.renderMatchLinePart(node)}
+            <span>
+                {node.lineText.substr(node.character - 1 + node.length, 75)}
+            </span>
+        </div>;
     }
 
-    protected renderMatchLinePart(node: SearchInWorkspaceResultLineNode): h.Child[] {
-        const replaceTerm = this._replaceTerm !== "" && this._showReplaceButtons ? h.span({ className: "replace-term" }, this._replaceTerm) : "";
+    protected renderMatchLinePart(node: SearchInWorkspaceResultLineNode): React.ReactNode {
+        const replaceTerm = this._replaceTerm !== "" && this._showReplaceButtons ? <span className="replace-term">{this._replaceTerm}</span> : "";
         const className = `match${this._showReplaceButtons ? " strike-through" : ""}`;
-        return [h.span({ className }, node.lineText.substr(node.character - 1, node.length)), replaceTerm];
+        return <React.Fragment>
+            <span className={className}> {node.lineText.substr(node.character - 1, node.length)}</span>
+            {replaceTerm}
+        </React.Fragment>;
     }
 
     protected async doOpen(node: SearchInWorkspaceResultLineNode, preview: boolean = false): Promise<EditorWidget> {
