@@ -23,7 +23,7 @@ import { SearchInWorkspaceWidget } from "./search-in-workspace-widget";
 import { SearchInWorkspaceResultTreeWidget } from "./search-in-workspace-result-tree-widget";
 import { SearchInWorkspaceFrontendContribution } from "./search-in-workspace-frontend-contribution";
 import { InMemoryTextResourceResolver } from "./in-memory-text-resource";
-import { TreeReactWidget } from "@theia/core/lib/browser/tree/tree-react-widget";
+import { TreeWidget } from "@theia/core/lib/browser/tree/tree-widget";
 
 import "../../src/browser/styles/index.css";
 
@@ -55,7 +55,7 @@ export default new ContainerModule(bind => {
 export function createSearchTreeWidget(parent: interfaces.Container): SearchInWorkspaceResultTreeWidget {
     const child = createTreeContainer(parent);
 
-    child.unbind(TreeReactWidget);
+    child.unbind(TreeWidget);
     child.bind(SearchInWorkspaceResultTreeWidget).toSelf();
 
     return child.get(SearchInWorkspaceResultTreeWidget);

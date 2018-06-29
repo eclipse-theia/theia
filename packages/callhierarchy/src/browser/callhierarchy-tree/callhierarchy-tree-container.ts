@@ -19,7 +19,7 @@ import { createTreeContainer, Tree, TreeImpl, TreeModel, TreeModelImpl } from "@
 import { CallHierarchyTree } from "./callhierarchy-tree";
 import { CallHierarchyTreeModel } from './callhierarchy-tree-model';
 import { CallHierarchyTreeWidget } from "./callhierarchy-tree-widget";
-import { TreeReactWidget } from '@theia/core/lib/browser/tree/tree-react-widget';
+import { TreeWidget } from '@theia/core/lib/browser/tree/tree-widget';
 
 function createHierarchyTreeContainer(parent: interfaces.Container): Container {
     const child = createTreeContainer(parent);
@@ -33,7 +33,7 @@ function createHierarchyTreeContainer(parent: interfaces.Container): Container {
     child.rebind(TreeModel).toDynamicValue(ctx => ctx.container.get(CallHierarchyTreeModel));
 
     child.bind(CallHierarchyTreeWidget).toSelf();
-    child.rebind(TreeReactWidget).toDynamicValue(ctx => ctx.container.get(CallHierarchyTreeWidget));
+    child.rebind(TreeWidget).toDynamicValue(ctx => ctx.container.get(CallHierarchyTreeWidget));
 
     return child;
 }

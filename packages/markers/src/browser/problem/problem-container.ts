@@ -20,7 +20,7 @@ import { ProblemWidget } from './problem-widget';
 import { ProblemTreeModel, ProblemTree } from './problem-tree-model';
 import { TreeProps, defaultTreeProps, TreeModel, createTreeContainer, TreeModelImpl, TreeImpl, Tree } from "@theia/core/lib/browser";
 import { PROBLEM_KIND } from '../../common/problem-marker';
-import { TreeReactWidget } from "@theia/core/lib/browser/tree/tree-react-widget";
+import { TreeWidget } from "@theia/core/lib/browser/tree/tree-widget";
 
 export const PROBLEM_TREE_PROPS = <TreeProps>{
     ...defaultTreeProps,
@@ -38,7 +38,7 @@ export function createProblemTreeContainer(parent: interfaces.Container): Contai
     child.bind(ProblemTree).toSelf();
     child.rebind(Tree).toDynamicValue(ctx => ctx.container.get(ProblemTree));
 
-    child.unbind(TreeReactWidget);
+    child.unbind(TreeWidget);
     child.bind(ProblemWidget).toSelf();
 
     child.unbind(TreeModelImpl);

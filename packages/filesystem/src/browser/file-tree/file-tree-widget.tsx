@@ -15,11 +15,10 @@
  ********************************************************************************/
 
 import { injectable, inject } from "inversify";
-import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode } from "@theia/core/lib/browser";
+import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, TreeWidget } from "@theia/core/lib/browser";
 import { DirNode, FileStatNode } from "./file-tree";
 import { FileTreeModel } from "./file-tree-model";
 import { DisposableCollection, Disposable } from '@theia/core/lib/common';
-import { TreeReactWidget } from "@theia/core/lib/browser/tree/tree-react-widget";
 import * as React from "react";
 
 export const FILE_TREE_CLASS = 'theia-FileTree';
@@ -28,7 +27,7 @@ export const DIR_NODE_CLASS = 'theia-DirNode';
 export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 
 @injectable()
-export class FileTreeWidget extends TreeReactWidget {
+export class FileTreeWidget extends TreeWidget {
 
     protected readonly toCancelNodeExpansion = new DisposableCollection();
 

@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -17,12 +17,11 @@
 import { injectable, inject, postConstruct } from "inversify";
 import { Message } from "@phosphor/messaging";
 import { ElementExt } from "@phosphor/domutils";
-import { h, ElementAttrs, ElementInlineStyle } from "@phosphor/virtualdom";
 import { Disposable, MenuPath } from "../../common";
 import { Key, KeyCode, KeyModifier } from "../keys";
 import { ContextMenuRenderer } from "../context-menu-renderer";
 import { StatefulWidget } from '../shell';
-import { VirtualWidget, VirtualRenderer, SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS } from "../widgets";
+import { SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS } from "../widgets";
 import { TreeNode, CompositeTreeNode } from "./tree";
 import { TreeModel } from "./tree-model";
 import { ExpandableTreeNode } from "./tree-expansion";
@@ -31,8 +30,11 @@ import { TreeDecoration, TreeDecoratorService } from "./tree-decorator";
 import { notEmpty } from '../../common/objects';
 import { MaybePromise } from '../../common/types';
 import { isOSX } from '../../common/os';
+import { ReactWidget } from "../widgets/react-widget";
+import * as React from 'react';
 
 export const TREE_CLASS = 'theia-Tree';
+export const TREE_CONTAINER_CLASS = 'theia-TreeContainer';
 export const TREE_NODE_CLASS = 'theia-TreeNode';
 export const TREE_NODE_CONTENT_CLASS = 'theia-TreeNodeContent';
 export const TREE_NODE_TAIL_CLASS = 'theia-TreeNodeTail';
@@ -98,7 +100,7 @@ export namespace TreeWidget {
 }
 
 @injectable()
-export class TreeWidget extends VirtualWidget implements StatefulWidget {
+export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     @inject(TreeDecoratorService)
     protected readonly decoratorService: TreeDecoratorService;
@@ -166,11 +168,18 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         }
     }
 
-    protected render(): h.Child {
-        return this.renderTree(this.model);
+    protected render(): React.ReactNode {
+        return React.createElement('div', this.createContainerAttributes(), this.renderTree(this.model));
     }
 
-    protected renderTree(model: TreeModel): h.Child {
+    protected createContainerAttributes(): React.HTMLAttributes<HTMLElement> {
+        return {
+            className: TREE_CONTAINER_CLASS,
+            onContextMenu: event => this.handleContextMenuEvent(this.model.root, event)
+        };
+    }
+
+    protected renderTree(model: TreeModel): React.ReactNode {
         if (model.root) {
             const props = this.createRootProps(model.root);
             return this.renderSubTree(model.root, props);
@@ -186,21 +195,31 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         };
     }
 
-    protected renderSubTree(node: TreeNode, props: NodeProps): h.Child {
+    protected renderSubTree(node: TreeNode, props: NodeProps): React.ReactNode {
         const children = this.renderNodeChildren(node, props);
         if (!TreeNode.isVisible(node)) {
             return children;
         }
         const parent = this.renderNode(node, props);
-        return VirtualRenderer.merge(parent, children);
+        return <React.Fragment key={node.id}>{parent}{children}</React.Fragment>;
     }
 
-    protected renderIcon(node: TreeNode, props: NodeProps): h.Child {
+    protected renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         // tslint:disable-next-line:no-null-keyword
         return null;
     }
 
-    protected renderExpansionToggle(node: TreeNode, props: NodeProps): h.Child {
+    protected readonly toggle = (event: React.MouseEvent<HTMLElement>) => this.doToggle(event);
+    protected doToggle(event: React.MouseEvent<HTMLElement>) {
+        const nodeId = event.currentTarget.getAttribute('data-node-id');
+        if (nodeId) {
+            const node = this.model.getNode(nodeId || undefined);
+            this.handleClickEvent(node, event);
+        }
+        event.stopPropagation();
+    }
+
+    protected renderExpansionToggle(node: TreeNode, props: NodeProps): React.ReactNode {
         if (!this.isExpandable(node)) {
             // tslint:disable-next-line:no-null-keyword
             return null;
@@ -210,21 +229,21 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
             classes.push(COLLAPSED_CLASS);
         }
         const className = classes.join(' ');
-        return h.div({
-            className,
-            style: {
-                paddingLeft: '4px',
-                paddingRight: '6px',
-                minWidth: '8px'
-            },
-            onclick: event => {
-                this.handleClickEvent(node, event);
-                event.stopPropagation();
+        return <div
+            data-node-id={node.id}
+            className={className}
+            style={
+                {
+                    paddingLeft: '4px',
+                    paddingRight: '6px',
+                    minWidth: '8px'
+                }
             }
-        });
+            onClick={this.toggle}>
+        </div>;
     }
 
-    protected renderCaption(node: TreeNode, props: NodeProps): h.Child {
+    protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         const tooltip = this.getDecorationData(node, 'tooltip').filter(notEmpty).join(' • ');
         const classes = [TREE_NODE_SEGMENT_CLASS];
         if (!this.hasTrailingSuffixes(node)) {
@@ -241,10 +260,10 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
             };
         }
         const highlight = this.getDecorationData(node, 'highlight')[0];
-        const children: h.Child[] = [];
+        const children: React.ReactNode[] = [];
         const caption = node.name;
         if (highlight) {
-            let style: ElementInlineStyle = {};
+            let style: React.CSSProperties = {};
             if (highlight.color) {
                 style = {
                     ...style,
@@ -260,7 +279,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
             const createChildren = (fragment: TreeDecoration.CaptionHighlight.Fragment) => {
                 const { data } = fragment;
                 if (fragment.highligh) {
-                    return h.mark({ className: TreeDecoration.Styles.CAPTION_HIGHLIGHT_CLASS, style }, data);
+                    return <mark className={TreeDecoration.Styles.CAPTION_HIGHLIGHT_CLASS} style={style}>{data}</mark>;
                 } else {
                     return data;
                 }
@@ -269,10 +288,10 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         } else {
             children.push(caption);
         }
-        return h.div(attrs, ...children);
+        return React.createElement('div', attrs, ...children);
     }
 
-    protected decorateCaption(node: TreeNode, attrs: ElementAttrs): ElementAttrs {
+    protected decorateCaption(node: TreeNode, attrs: React.HTMLAttributes<HTMLElement>): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const style = this.getDecorationData(node, 'fontData').filter(notEmpty).reverse().map(fontData => this.applyFontStyles({}, fontData)).reduce((acc, current) =>
             ({
                 ...acc,
@@ -289,7 +308,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         return this.getDecorationData(node, 'captionSuffixes').filter(notEmpty).reduce((acc, current) => acc.concat(current), []).length > 0;
     }
 
-    protected applyFontStyles(original: ElementInlineStyle, fontData: TreeDecoration.FontData | undefined) {
+    protected applyFontStyles(original: React.CSSProperties, fontData: TreeDecoration.FontData | undefined) {
         if (fontData === undefined) {
             return original;
         }
@@ -333,12 +352,12 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         return modified;
     }
 
-    protected renderCaptionAffixes(node: TreeNode, props: NodeProps, affixKey: 'captionPrefixes' | 'captionSuffixes'): h.Child[] {
+    protected renderCaptionAffixes(node: TreeNode, props: NodeProps, affixKey: 'captionPrefixes' | 'captionSuffixes'): React.ReactNode {
         const suffix = affixKey === 'captionSuffixes';
         const affixClass = suffix ? TreeDecoration.Styles.CAPTION_SUFFIX_CLASS : TreeDecoration.Styles.CAPTION_PREFIX_CLASS;
         const classes = [TREE_NODE_SEGMENT_CLASS, affixClass];
         const affixes = this.getDecorationData(node, affixKey).filter(notEmpty).reduce((acc, current) => acc.concat(current), []);
-        const children: h.Child[] = [];
+        const children: React.ReactNode[] = [];
         for (let i = 0; i < affixes.length; i++) {
             const affix = affixes[i];
             if (suffix && i === affixes.length - 1) {
@@ -350,18 +369,18 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
                 className,
                 style
             };
-            children.push(h.div(attrs, affix.data));
+            children.push(React.createElement('div', attrs, affix.data));
         }
-        return children;
+        return <React.Fragment>{children}</React.Fragment>;
     }
 
-    protected decorateIcon(node: TreeNode, icon: h.Child | null): h.Child {
+    protected decorateIcon(node: TreeNode, icon: React.ReactNode | null): React.ReactNode {
         if (icon === null) {
             // tslint:disable-next-line:no-null-keyword
             return null;
         }
 
-        const overlayIcons: h.Child = [];
+        const overlayIcons: React.ReactNode[] = [];
         new Map(this.getDecorationData(node, 'iconOverlay').reverse().filter(notEmpty)
             .map(overlay => [overlay.position, overlay] as [TreeDecoration.IconOverlayPosition, TreeDecoration.IconOverlay]))
             .forEach((overlay, position) => {
@@ -369,51 +388,53 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
                     ['a', 'fa', `fa-${iconName}`, TreeDecoration.Styles.DECORATOR_SIZE_CLASS, TreeDecoration.IconOverlayPosition.getStyle(position)].join(' ');
                 const style = (color?: string) => color === undefined ? {} : { color };
                 if (overlay.background) {
-                    overlayIcons.push(h.span({ className: overlayClass(overlay.background.shape), style: style(overlay.background.color) }));
+                    overlayIcons.push(<span key={node.id + 'bg'} className={overlayClass(overlay.background.shape)} style={style(overlay.background.color)}></span>);
                 }
-                overlayIcons.push(h.span({ className: overlayClass(overlay.icon), style: style(overlay.color) }));
+                overlayIcons.push(<span key={node.id} className={overlayClass(overlay.icon)} style={style(overlay.color)}></span>);
             });
 
         if (overlayIcons.length > 0) {
-            return h.div({ className: TreeDecoration.Styles.ICON_WRAPPER_CLASS }, VirtualRenderer.merge(icon, overlayIcons));
+            return <div className={TreeDecoration.Styles.ICON_WRAPPER_CLASS}>{icon}{overlayIcons}</div>;
         }
 
         return icon;
     }
 
-    protected renderTailDecorations(node: TreeNode, props: NodeProps): h.Child[] {
+    protected renderTailDecorations(node: TreeNode, props: NodeProps): React.ReactNode {
         const style = (fontData: TreeDecoration.FontData | undefined) => this.applyFontStyles({}, fontData);
-        return this.getDecorationData(node, 'tailDecorations').filter(notEmpty).reduce((acc, current) => acc.concat(current), []).map(decoration => {
-            const { fontData, data, tooltip } = decoration;
-            return h.div({
-                className: [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS].join(' '),
-                style: style(fontData),
-                title: tooltip
-            }, data);
-        });
+        return <React.Fragment>
+            {this.getDecorationData(node, 'tailDecorations').filter(notEmpty).reduce((acc, current) => acc.concat(current), []).map(decoration => {
+                const { fontData, data, tooltip } = decoration;
+                const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS].join(' ');
+                return <div key={node.id + className} className={className} style={style(fontData)} title={tooltip}>
+                    {data}
+                </div>;
+            })}
+        </React.Fragment>;
     }
 
-    protected renderNode(node: TreeNode, props: NodeProps): h.Child {
+    protected renderNode(node: TreeNode, props: NodeProps): React.ReactNode {
         const attributes = this.createNodeAttributes(node, props);
-        const content = h.div({ className: TREE_NODE_CONTENT_CLASS },
-            this.renderExpansionToggle(node, props),
-            this.decorateIcon(node, this.renderIcon(node, props)),
-            ...this.renderCaptionAffixes(node, props, 'captionPrefixes'),
-            this.renderCaption(node, props),
-            ...this.renderCaptionAffixes(node, props, 'captionSuffixes'),
-            ...this.renderTailDecorations(node, props));
-        return h.div(attributes, content);
+        const content = <div className={TREE_NODE_CONTENT_CLASS}>
+            {this.renderExpansionToggle(node, props)}
+            {this.decorateIcon(node, this.renderIcon(node, props))}
+            {this.renderCaptionAffixes(node, props, 'captionPrefixes')}
+            {this.renderCaption(node, props)}
+            {this.renderCaptionAffixes(node, props, 'captionSuffixes')}
+            {this.renderTailDecorations(node, props)}
+        </div>;
+        return React.createElement('div', attributes, content);
     }
 
-    protected createNodeAttributes(node: TreeNode, props: NodeProps): ElementAttrs {
+    protected createNodeAttributes(node: TreeNode, props: NodeProps): React.Attributes & React.HTMLAttributes<HTMLElement> {
         const className = this.createNodeClassNames(node, props).join(' ');
         const style = this.createNodeStyle(node, props);
         return {
             className,
             style,
-            onclick: event => this.handleClickEvent(node, event),
-            ondblclick: event => this.handleDblClickEvent(node, event),
-            oncontextmenu: event => this.handleContextMenuEvent(node, event),
+            onClick: event => this.handleClickEvent(node, event),
+            onDoubleClick: event => this.handleDblClickEvent(node, event),
+            onContextMenu: event => this.handleContextMenuEvent(node, event)
         };
     }
 
@@ -434,10 +455,10 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         return classNames;
     }
 
-    protected getDefaultNodeStyle(node: TreeNode, props: NodeProps): ElementInlineStyle | undefined {
+    protected getDefaultNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
         // If the node is a composite, a toggle will be rendered. Otherwise we need to add the width and the left, right padding => 18px
         const paddingLeft = `${props.depth * this.props.leftPadding + (this.isExpandable(node) ? 0 : 18)}px`;
-        let style: ElementInlineStyle = {
+        let style: React.CSSProperties = {
             paddingLeft
         };
         if (!props.visible) {
@@ -449,11 +470,11 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         return style;
     }
 
-    protected createNodeStyle(node: TreeNode, props: NodeProps): ElementInlineStyle | undefined {
+    protected createNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
         return this.decorateNodeStyle(node, this.getDefaultNodeStyle(node, props));
     }
 
-    protected decorateNodeStyle(node: TreeNode, style: ElementInlineStyle | undefined): ElementInlineStyle | undefined {
+    protected decorateNodeStyle(node: TreeNode, style: React.CSSProperties | undefined): React.CSSProperties | undefined {
         const backgroundColor = this.getDecorationData(node, 'backgroundColor').filter(notEmpty).shift();
         if (backgroundColor) {
             style = {
@@ -468,7 +489,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         return ExpandableTreeNode.is(node);
     }
 
-    protected renderNodeChildren(node: TreeNode, props: NodeProps): h.Child {
+    protected renderNodeChildren(node: TreeNode, props: NodeProps): React.ReactNode {
         if (CompositeTreeNode.is(node)) {
             return this.renderCompositeChildren(node, props);
         }
@@ -476,11 +497,11 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         return null;
     }
 
-    protected renderCompositeChildren(parent: CompositeTreeNode, props: NodeProps): h.Child {
-        return VirtualRenderer.flatten(parent.children.map(child => this.renderChild(child, parent, props)));
+    protected renderCompositeChildren(parent: CompositeTreeNode, props: NodeProps): React.ReactNode {
+        return <React.Fragment>{parent.children.map(child => this.renderChild(child, parent, props))}</React.Fragment>;
     }
 
-    protected renderChild(child: TreeNode, parent: CompositeTreeNode, props: NodeProps): h.Child {
+    protected renderChild(child: TreeNode, parent: CompositeTreeNode, props: NodeProps): React.ReactNode {
         const childProps = this.createChildProps(child, parent, props);
         return this.renderSubTree(child, childProps);
     }
@@ -528,7 +549,6 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         this.addKeyListener(this.node, up, event => this.handleUp(event));
         this.addKeyListener(this.node, down, event => this.handleDown(event));
         this.addKeyListener(this.node, Key.ENTER, event => this.handleEnter(event));
-        this.addEventListener(this.node, 'contextmenu', e => this.handleContextMenuEvent(this.model.root, e));
     }
 
     protected async handleLeft(event: KeyboardEvent): Promise<void> {
@@ -569,7 +589,7 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         this.model.openNode();
     }
 
-    protected handleClickEvent(node: TreeNode | undefined, event: MouseEvent): void {
+    protected handleClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         if (node) {
             if (!!this.props.multiSelect) {
                 const shiftMask = this.hasShiftMask(event);
@@ -598,12 +618,12 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
         }
     }
 
-    protected handleDblClickEvent(node: TreeNode | undefined, event: MouseEvent): void {
+    protected handleDblClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         this.model.openNode(node);
         event.stopPropagation();
     }
 
-    protected handleContextMenuEvent(node: TreeNode | undefined, event: MouseEvent): void {
+    protected handleContextMenuEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
         if (SelectableTreeNode.is(node)) {
             // Keep the selection for the context menu, if the widget support multi-selection and the right click happens on an already selected node.
             if (!this.props.multiSelect || !node.selected) {
@@ -612,9 +632,10 @@ export class TreeWidget extends VirtualWidget implements StatefulWidget {
             }
             const contextMenuPath = this.props.contextMenuPath;
             if (contextMenuPath) {
+                const { x, y } = event.nativeEvent;
                 this.onRender.push(Disposable.create(() =>
                     setTimeout(() =>
-                        this.contextMenuRenderer.render(contextMenuPath, event)
+                        this.contextMenuRenderer.render(contextMenuPath, { x, y })
                     )
                 ));
             }

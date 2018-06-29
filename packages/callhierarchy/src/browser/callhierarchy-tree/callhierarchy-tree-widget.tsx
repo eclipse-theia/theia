@@ -27,7 +27,7 @@ import { CALLHIERARCHY_ID, Definition, Caller } from "../callhierarchy";
 import URI from "@theia/core/lib/common/uri";
 import { Location, Range, SymbolKind } from 'vscode-languageserver-types';
 import { EditorManager } from "@theia/editor/lib/browser";
-import { TreeReactWidget } from "@theia/core/lib/browser/tree/tree-react-widget";
+import { TreeWidget } from "@theia/core/lib/browser/tree/tree-widget";
 import * as React from "react";
 
 export const HIERARCHY_TREE_CLASS = 'theia-CallHierarchyTree';
@@ -35,7 +35,7 @@ export const DEFINITION_NODE_CLASS = 'theia-CallHierarchyTreeNode';
 export const DEFINITION_ICON_CLASS = 'theia-CallHierarchyTreeNodeIcon';
 
 @injectable()
-export class CallHierarchyTreeWidget extends TreeReactWidget {
+export class CallHierarchyTreeWidget extends TreeWidget {
 
     constructor(
         @inject(TreeProps) readonly props: TreeProps,

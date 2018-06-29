@@ -19,7 +19,7 @@ import { createTreeContainer, Tree, TreeImpl, TreeModel, TreeModelImpl } from "@
 import { FileTree } from "./file-tree";
 import { FileTreeModel } from './file-tree-model';
 import { FileTreeWidget } from "./file-tree-widget";
-import { TreeReactWidget } from '@theia/core/lib/browser/tree/tree-react-widget';
+import { TreeWidget } from '@theia/core/lib/browser/tree/tree-widget';
 
 export function createFileTreeContainer(parent: interfaces.Container): Container {
     const child = createTreeContainer(parent);
@@ -32,7 +32,7 @@ export function createFileTreeContainer(parent: interfaces.Container): Container
     child.bind(FileTreeModel).toSelf();
     child.rebind(TreeModel).toDynamicValue(ctx => ctx.container.get(FileTreeModel));
 
-    child.unbind(TreeReactWidget);
+    child.unbind(TreeWidget);
     child.bind(FileTreeWidget).toSelf();
 
     return child;

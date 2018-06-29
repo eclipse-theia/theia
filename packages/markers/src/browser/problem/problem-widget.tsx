@@ -24,11 +24,11 @@ import { DiagnosticSeverity } from 'vscode-languageserver-types';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { UriSelection } from '@theia/core/lib/common/selection';
-import { TreeReactWidget } from '@theia/core/lib/browser/tree/tree-react-widget';
+import { TreeWidget } from '@theia/core/lib/browser/tree/tree-widget';
 import * as React from "react";
 
 @injectable()
-export class ProblemWidget extends TreeReactWidget {
+export class ProblemWidget extends TreeWidget {
 
     constructor(
         @inject(ProblemManager) protected readonly problemManager: ProblemManager,

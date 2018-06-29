@@ -37,7 +37,7 @@ import { Path, CancellationTokenSource, Emitter, Event } from "@theia/core";
 import { WorkspaceService } from "@theia/workspace/lib/browser";
 import { MEMORY_TEXT } from "./in-memory-text-resource";
 import { FileResourceResolver } from "@theia/filesystem/lib/browser";
-import { TreeReactWidget } from "@theia/core/lib/browser/tree/tree-react-widget";
+import { TreeWidget } from "@theia/core/lib/browser/tree/tree-widget";
 import * as React from "react";
 
 export interface SearchInWorkspaceResultNode extends ExpandableTreeNode, SelectableTreeNode {
@@ -59,7 +59,7 @@ export namespace SearchInWorkspaceResultLineNode {
 }
 
 @injectable()
-export class SearchInWorkspaceResultTreeWidget extends TreeReactWidget {
+export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     protected resultTree: Map<string, SearchInWorkspaceResultNode>;
     protected workspaceRoot: string = "";
