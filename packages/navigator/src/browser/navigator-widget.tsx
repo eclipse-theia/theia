@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import { injectable, inject, postConstruct } from 'inversify';
-import { h } from '@phosphor/virtualdom/lib';
 import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { SelectionService, CommandService } from '@theia/core/lib/common';
@@ -28,6 +27,7 @@ import { FileNavigatorModel } from './navigator-model';
 import { FileNavigatorSearch } from './navigator-search';
 import { SearchBox, SearchBoxProps, SearchBoxFactory } from './search-box';
 import { FileSystem } from '@theia/filesystem/lib/common/filesystem';
+import * as React from "react";
 
 export const FILE_NAVIGATOR_ID = 'files';
 export const LABEL = 'Files';
@@ -139,7 +139,7 @@ export class FileNavigatorWidget extends FileTreeWidget {
         return super.inflateFromStorage(node, parent);
     }
 
-    protected renderTree(model: TreeModel): h.Child {
+    protected renderTree(model: TreeModel): React.ReactNode {
         return super.renderTree(model) || this.renderOpenWorkspaceDiv();
     }
 
@@ -174,18 +174,24 @@ export class FileNavigatorWidget extends FileTreeWidget {
         }
     }
 
+    protected readonly openWorkspace = () => this.doOpenWorkspace();
+    protected doOpenWorkspace() {
+        this.commandService.executeCommand(WorkspaceCommands.OPEN.id);
+    }
+
     /**
      * Instead of rendering the file resources form the workspace, we render a placeholder
      * button when the workspace root is not yet set.
      */
-    protected renderOpenWorkspaceDiv(): h.Child {
-        const button = h.button({
-            className: 'open-workspace-button',
-            title: 'Select a directory as your workspace root',
-            onclick: e => this.commandService.executeCommand(WorkspaceCommands.OPEN.id)
-        }, 'Open Workspace');
-        const buttonContainer = h.div({ className: 'open-workspace-button-container' }, button);
-        return h.div({ className: 'theia-navigator-container' }, 'You have not yet opened a workspace.', buttonContainer);
+    protected renderOpenWorkspaceDiv(): React.ReactNode {
+        return <div className='theia-navigator-container'>
+            You have not yet opened a workspace.
+            <div className='open-workspace-button-container'>
+                <button className='open-workspace-button' title='Select a directory as your workspace root' onClick={this.openWorkspace}>
+                    Open Workspace
+                </button>
+            </div>
+        </div>;
     }
 
 }
