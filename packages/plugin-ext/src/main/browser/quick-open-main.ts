@@ -42,7 +42,9 @@ export class QuickOpenMainImpl implements QuickOpenMain, QuickOpenModel {
     private cleanUp() {
         this.items = undefined;
         this.acceptor = undefined;
-        this.activeElement!.focus();
+        if (this.activeElement) {
+            this.activeElement.focus();
+        }
         this.activeElement = undefined;
     }
 

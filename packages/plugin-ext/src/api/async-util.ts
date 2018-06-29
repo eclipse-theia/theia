@@ -14,6 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export function hookCancellationToken<T>(token: CancellationToken, promise: Promise<T>): PromiseLike<T> {
     return new Promise<T>((resolve, reject) => {
@@ -26,4 +27,20 @@ export function hookCancellationToken<T>(token: CancellationToken, promise: Prom
             reject(err);
         });
     });
+}
+
+export function anyPromise<T>(promises: PromiseLike<T>[]): Promise<{ key: number; value: PromiseLike<T>; }> {
+    const result = new Deferred<{ key: number; value: PromiseLike<T>; }>();
+    if (promises.length === 0) {
+        result.resolve();
+    }
+
+    promises.forEach((val, key) => {
+        Promise.resolve(promises[key]).then(() => {
+            result.resolve({ key: key, value: promises[key] });
+        }, err => {
+            result.resolve({ key: key, value: promises[key] });
+        });
+    });
+    return result.promise;
 }

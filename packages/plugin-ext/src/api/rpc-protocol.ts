@@ -20,7 +20,7 @@
 // copied from https://github.com/Microsoft/vscode/blob/master/src/vs/workbench/services/extensions/node/rpcProtocol.ts
 // with small modifications
 import { Event } from '@theia/core/lib/common/event';
-import { ExtendedPromise } from './extended-promise';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export interface MessageConnection {
     send(msg: {}): void;
@@ -59,7 +59,7 @@ export class RPCProtocolImpl implements RPCProtocol {
     private readonly proxies: { [id: string]: any; };
     private lastMessageId: number;
     private readonly invokedHandlers: { [req: string]: Promise<any>; };
-    private readonly pendingRPCReplies: { [msgId: string]: ExtendedPromise<any>; };
+    private readonly pendingRPCReplies: { [msgId: string]: Deferred<any>; };
     private readonly multiplexor: RPCMultiplexer;
 
     constructor(connection: MessageConnection) {
@@ -102,11 +102,11 @@ export class RPCProtocolImpl implements RPCProtocol {
         }
 
         const callId = String(++this.lastMessageId);
-        const result = new ExtendedPromise();
+        const result = new Deferred();
 
         this.pendingRPCReplies[callId] = result;
         this.multiplexor.send(MessageFactory.request(callId, proxyId, methodName, args));
-        return result;
+        return result.promise;
     }
 
     private receiveOneMessage(rawmsg: string): void {
