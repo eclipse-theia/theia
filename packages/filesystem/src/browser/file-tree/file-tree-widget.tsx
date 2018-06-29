@@ -15,11 +15,10 @@
  ********************************************************************************/
 
 import { injectable, inject } from "inversify";
-import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode } from "@theia/core/lib/browser";
+import { ContextMenuRenderer, NodeProps, TreeProps, TreeNode, TreeWidget } from "@theia/core/lib/browser";
 import { DirNode, FileStatNode } from "./file-tree";
 import { FileTreeModel } from "./file-tree-model";
 import { DisposableCollection, Disposable } from '@theia/core/lib/common';
-import { TreeReactWidget } from "@theia/core/lib/browser/tree/tree-react-widget";
 import * as React from "react";
 
 export const FILE_TREE_CLASS = 'theia-FileTree';
@@ -28,7 +27,7 @@ export const DIR_NODE_CLASS = 'theia-DirNode';
 export const FILE_STAT_ICON_CLASS = 'theia-FileStatIcon';
 
 @injectable()
-export class FileTreeWidget extends TreeReactWidget {
+export class FileTreeWidget extends TreeWidget {
 
     protected readonly toCancelNodeExpansion = new DisposableCollection();
 
@@ -65,9 +64,10 @@ export class FileTreeWidget extends TreeReactWidget {
         const attrs = super.createContainerAttributes();
         return {
             ...attrs,
-            onDragOver: event => this.handleDragOverEvent(this.model.root, event.nativeEvent),
-            onDragLeave: event => this.handleDragLeaveEvent(this.model.root, event.nativeEvent),
-            onDrop: event => this.handleDropEvent(this.model.root, event.nativeEvent)
+            onDragEnter: event => this.handleDragEnterEvent(this.model.root, event),
+            onDragOver: event => this.handleDragOverEvent(this.model.root, event),
+            onDragLeave: event => this.handleDragLeaveEvent(this.model.root, event),
+            onDrop: event => this.handleDropEvent(this.model.root, event)
         };
     }
 
@@ -76,20 +76,20 @@ export class FileTreeWidget extends TreeReactWidget {
         return {
             ...elementAttrs,
             draggable: FileStatNode.is(node),
-            onDragStart: event => this.handleDragStartEvent(node, event.nativeEvent),
-            onDragEnter: event => this.handleDragEnterEvent(node, event.nativeEvent),
-            onDragOver: event => this.handleDragOverEvent(node, event.nativeEvent),
-            onDragLeave: event => this.handleDragLeaveEvent(node, event.nativeEvent),
-            onDrop: event => this.handleDropEvent(node, event.nativeEvent)
+            onDragStart: event => this.handleDragStartEvent(node, event),
+            onDragEnter: event => this.handleDragEnterEvent(node, event),
+            onDragOver: event => this.handleDragOverEvent(node, event),
+            onDragLeave: event => this.handleDragLeaveEvent(node, event),
+            onDrop: event => this.handleDropEvent(node, event)
         };
     }
 
-    protected handleDragStartEvent(node: TreeNode, event: DragEvent): void {
+    protected handleDragStartEvent(node: TreeNode, event: React.DragEvent): void {
         event.stopPropagation();
         this.setTreeNodeAsData(event.dataTransfer, node);
     }
 
-    protected handleDragEnterEvent(node: TreeNode | undefined, event: DragEvent): void {
+    protected handleDragEnterEvent(node: TreeNode | undefined, event: React.DragEvent): void {
         event.preventDefault();
         event.stopPropagation();
         this.toCancelNodeExpansion.dispose();
@@ -99,7 +99,7 @@ export class FileTreeWidget extends TreeReactWidget {
         }
     }
 
-    protected handleDragOverEvent(node: TreeNode | undefined, event: DragEvent): void {
+    protected handleDragOverEvent(node: TreeNode | undefined, event: React.DragEvent): void {
         event.preventDefault();
         event.stopPropagation();
         if (!this.toCancelNodeExpansion.disposed) {
@@ -114,13 +114,13 @@ export class FileTreeWidget extends TreeReactWidget {
         this.toCancelNodeExpansion.push(Disposable.create(() => clearTimeout(timer)));
     }
 
-    protected handleDragLeaveEvent(node: TreeNode | undefined, event: DragEvent): void {
+    protected handleDragLeaveEvent(node: TreeNode | undefined, event: React.DragEvent): void {
         event.preventDefault();
         event.stopPropagation();
         this.toCancelNodeExpansion.dispose();
     }
 
-    protected handleDropEvent(node: TreeNode | undefined, event: DragEvent): void {
+    protected handleDropEvent(node: TreeNode | undefined, event: React.DragEvent): void {
         event.preventDefault();
         event.stopPropagation();
         event.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
