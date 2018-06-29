@@ -17,7 +17,7 @@ import { QuickOpenExt, PLUGIN_RPC_CONTEXT as Ext, QuickOpenMain, PickOpenItem } 
 import { QuickPickOptions, QuickPickItem, InputBoxOptions } from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { RPCProtocol } from '../api/rpc-protocol';
-import { ExtendedPromise } from '../api/extended-promise';
+import { anyPromise } from '../api/async-util';
 import { hookCancellationToken } from '../api/async-util';
 
 export type Item = string | QuickPickItem;
@@ -59,7 +59,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
             ignoreFocusLost: options && options.ignoreFocusOut
         });
 
-        const promise = ExtendedPromise.any(<PromiseLike<number | Item[]>[]>[widgetPromise, itemPromise]).then(values => {
+        const promise = anyPromise(<PromiseLike<number | Item[]>[]>[widgetPromise, itemPromise]).then(values => {
             if (values.key === 0) {
                 return undefined;
             }
