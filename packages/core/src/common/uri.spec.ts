@@ -40,7 +40,7 @@ describe("uri", () => {
         });
 
         it("of file://", () => {
-            expect(new URI("file://").parent.toString()).equals("file://");
+            expect(new URI("file://").parent.toString()).equals("file:///");
         });
 
     });
@@ -142,7 +142,7 @@ describe("uri", () => {
 
             expect(uri.withoutFragment().toString(true)).equals(uri.withFragment('').toString(true));
 
-            expect(uri.withPath("hubba-bubba").toString(true)).equals("file://hubba-bubba?x=12#baz");
+            expect(uri.withPath("hubba-bubba").toString(true)).equals("file:///hubba-bubba?x=12#baz");
         });
     });
 });
