@@ -37,6 +37,7 @@ export abstract class ReactWidget extends BaseWidget {
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
+
         ReactDOM.render(<React.Fragment>{this.render()}</React.Fragment>, this.node, () => this.onRender.dispose());
     }
 
