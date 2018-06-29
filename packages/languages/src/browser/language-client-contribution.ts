@@ -70,6 +70,9 @@ export abstract class BaseLanguageClientContribution implements LanguageClientCo
     }
 
     activate(): Disposable {
+        if (this._languageClient) {
+            return Disposable.create(() => { });
+        }
         const languageClient = this.createLanguageClient();
         this.onWillStart(languageClient);
         return languageClient.start();
