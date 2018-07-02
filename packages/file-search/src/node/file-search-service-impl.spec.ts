@@ -20,14 +20,14 @@ import { FileSearchServiceImpl } from './file-search-service-impl';
 import { FileUri } from '@theia/core/lib/node';
 import { Container, ContainerModule } from 'inversify';
 import { CancellationTokenSource } from '@theia/core';
-import { loggerBackendModule } from '@theia/core/lib/node/logger-backend-module';
+import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
 import processBackendModule from '@theia/process/lib/node/process-backend-module';
 
 // tslint:disable:no-unused-expression
 
 const testContainer = new Container();
 
-testContainer.load(loggerBackendModule);
+bindLogger(testContainer.bind.bind(testContainer));
 testContainer.load(processBackendModule);
 testContainer.load(new ContainerModule(bind => {
     bind(FileSearchServiceImpl).toSelf().inSingletonScope();
