@@ -43,10 +43,6 @@
     margin: 9px 0px 5px 5px;
 }
 
-.theia-git .listContainer {
-    overflow-y: auto;
-}
-
 .theia-git .gitItem.diff-file {
     margin: 1px 0 !important;
     padding: 0 !important;

@@ -15,16 +15,17 @@
  ********************************************************************************/
 
 import { inject, injectable, postConstruct } from "inversify";
-import { VirtualWidget, VirtualRenderer, Message } from "@theia/core/lib/browser";
-import { VirtualElement, h } from "@phosphor/virtualdom";
+import { Message } from "@theia/core/lib/browser";
 import { OutputChannelManager, OutputChannel } from "../common/output-channel";
+import { ReactWidget } from "@theia/core/lib/browser/widgets/react-widget";
+import * as React from "react";
 
 import "../../src/browser/style/output.css";
 
 export const OUTPUT_WIDGET_KIND = 'outputView';
 
 @injectable()
-export class OutputWidget extends VirtualWidget {
+export class OutputWidget extends ReactWidget {
 
     protected selectedChannel: OutputChannel | undefined;
 
@@ -85,59 +86,59 @@ export class OutputWidget extends VirtualWidget {
         }));
     }
 
-    render(): VirtualElement[] {
-        return [this.renderChannelSelector(), this.renderChannelContents()];
+    protected render(): React.ReactNode {
+        return <React.Fragment>{this.renderChannelSelector()}{this.renderChannelContents()}</React.Fragment>;
     }
 
     private readonly OUTPUT_CONTENTS_ID = 'outputContents';
 
-    protected renderChannelContents(): VirtualElement {
+    protected renderChannelContents(): React.ReactNode {
         if (this.selectedChannel) {
-            return h.div(
-                { id: this.OUTPUT_CONTENTS_ID },
-                VirtualRenderer.flatten(this.selectedChannel.getLines().map(line => this.toHtmlText(line))));
+            return <div id={this.OUTPUT_CONTENTS_ID}>
+                {this.selectedChannel.getLines().map(line => this.toHtmlText(line))}
+            </div>;
         } else {
-            return h.div({ id: this.OUTPUT_CONTENTS_ID });
+            return <div id={this.OUTPUT_CONTENTS_ID}></div>;
         }
     }
 
-    protected toHtmlText(text: string): VirtualElement[] {
-        const result: VirtualElement[] = [];
+    protected toHtmlText(text: string): React.ReactNode[] {
+        const result: React.ReactNode[] = [];
         if (text) {
             const lines = text.split(/([\n\r]+)/);
             for (const line of lines) {
-                result.push(h.div(line));
+                result.push(<div>{line}</div>);
             }
         } else {
-            result.push(h.div('<no output yet>'));
+            result.push(<div>{'<no output yet>'}</div>);
         }
         return result;
     }
 
     private readonly NONE = '<no channels>';
 
-    protected renderChannelSelector(): VirtualElement {
-        const channelOptionElements: h.Child[] = [];
+    protected renderChannelSelector(): React.ReactNode {
+        const channelOptionElements: React.ReactNode[] = [];
         this.getVisibleChannels().forEach(channel => {
-            const attrs: {value: string; selected?: string} = {value: channel.name};
-            if (channel === this.selectedChannel) {
-                attrs.selected = 'selected';
-            }
-            channelOptionElements.push(h.option(attrs, channel.name));
+            channelOptionElements.push(<option value={channel.name} key={channel.name}>{channel.name}</option>);
         });
         if (channelOptionElements.length === 0) {
-            channelOptionElements.push(h.option({ value: this.NONE }, this.NONE));
+            channelOptionElements.push(<option key={this.NONE} value={this.NONE}>{this.NONE}</option>);
         }
-        return h.select({
-            id: 'outputChannelList',
-            onchange: async event => {
-                const channelName = (event.target as HTMLSelectElement).value;
-                if (channelName !== this.NONE) {
-                    this.selectedChannel = this.outputChannelManager.getChannel(channelName);
-                    this.update();
+        return <select
+            id='outputChannelList'
+            value={this.selectedChannel ? this.selectedChannel.name : this.NONE}
+            onChange={
+                async event => {
+                    const channelName = (event.target as HTMLSelectElement).value;
+                    if (channelName !== this.NONE) {
+                        this.selectedChannel = this.outputChannelManager.getChannel(channelName);
+                        this.update();
+                    }
                 }
-            }
-        }, VirtualRenderer.flatten(channelOptionElements));
+            }>
+            {channelOptionElements}
+        </select>;
     }
 
     protected onUpdateRequest(msg: Message): void {

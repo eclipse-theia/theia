@@ -16,13 +16,14 @@
 
 import { injectable, inject } from 'inversify';
 import { Message } from '@phosphor/messaging';
-import { h, VirtualNode } from '@phosphor/virtualdom';
 import { DisposableCollection } from '@theia/core';
-import { VirtualWidget, VirtualRenderer, OpenerService } from '@theia/core/lib/browser';
+import { OpenerService } from '@theia/core/lib/browser';
 import { HostedPluginServer, PluginMetadata } from '../../common/plugin-protocol';
+import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
+import * as React from 'react';
 
 @injectable()
-export class PluginWidget extends VirtualWidget {
+export class PluginWidget extends ReactWidget {
 
     protected plugins: PluginMetadata[] = [];
     protected readonly toDisposeOnFetch = new DisposableCollection();
@@ -63,75 +64,50 @@ export class PluginWidget extends VirtualWidget {
         return promise;
     }
 
-    protected render(): h.Child {
+    protected render(): React.ReactNode {
         if (this.ready) {
-            return [this.renderPluginList()];
+            return <React.Fragment>{this.renderPluginList()}</React.Fragment>;
         } else {
-            const spinner = h.div({ className: 'fa fa-spinner fa-pulse fa-3x fa-fw' }, '');
-            return h.div({ className: 'spinnerContainer' }, spinner);
+            return <div className='spinnerContainer'>
+                <div className='fa fa-spinner fa-pulse fa-3x fa-fw'></div>
+            </div>;
         }
     }
 
-    protected renderPluginList(): VirtualNode {
-        const theList: h.Child[] = [];
+    protected renderPluginList(): React.ReactNode {
+        const theList: React.ReactNode[] = [];
         this.plugins.forEach(plugin => {
             const container = this.renderPlugin(plugin);
             theList.push(container);
         });
 
-        return h.div({
-            id: 'pluginListContainer'
-        },
-            VirtualRenderer.flatten(theList));
+        return <div id='pluginListContainer'>
+            {theList}
+        </div>;
     }
 
     private renderPlugin(plugin: PluginMetadata) {
-        const icon = h.div({ className: 'fa fa-puzzle-piece fa-2x fa-fw' }, '');
-        const name = h.div({
-            title: plugin.model.name,
-            className: 'pluginName noWrapInfo'
-        }, plugin.model.name);
-
-        const version = h.div({
-            className: 'pluginVersion'
-        }, plugin.model.version);
-
-        const publisher = h.div({
-            className: 'pluginPublisher noWrapInfo flexcontainer'
-        }, plugin.model.publisher);
-
-        const description = h.div({
-            className: 'pluginDescription noWrapInfo'
-        }, plugin.model.description);
-
-        const leftColumn = this.renderColumn(
-            'pluginInformationContainer',
-            this.renderRow(icon, name),
-            this.renderRow(version),
-            this.renderRow(description),
-            this.renderRow(publisher));
-
-        return h.div({
-            className: this.createPluginClassName(plugin),
-            onclick: () => { }
-        }, leftColumn);
+        return <div key={plugin.model.name} className={this.createPluginClassName(plugin)}>
+            <div className='column flexcontainer pluginInformationContainer'>
+                <div className='row flexcontainer'>
+                    <div className='fa fa-puzzle-piece fa-2x fa-fw'></div>
+                    <div title={plugin.model.name} className='pluginName noWrapInfo'>{plugin.model.name}</div>
+                </div>
+                <div className='row flexcontainer'>
+                    <div className='pluginVersion'>{plugin.model.version}</div>
+                </div>
+                <div className='row flexcontainer'>
+                    <div className='pluginDescription noWrapInfo'>{plugin.model.description}</div>
+                </div>
+                <div className='row flexcontainer'>
+                    <div className='pluginPublisher noWrapInfo flexcontainer'>{plugin.model.publisher}</div>
+                </div>
+            </div>
+        </div>;
     }
 
     protected createPluginClassName(plugin: PluginMetadata): string {
         const classNames = ['pluginHeaderContainer'];
         return classNames.join(' ');
     }
-
-    protected renderRow(...children: h.Child[]): h.Child {
-        return h.div({
-            className: 'row flexcontainer'
-        }, VirtualRenderer.flatten(children));
-    }
-
-    protected renderColumn(additionalClass?: string, ...children: h.Child[]): h.Child {
-        return h.div({
-            className: 'column flexcontainer ' + additionalClass
-        }, VirtualRenderer.flatten(children));
-    }
-
 }
