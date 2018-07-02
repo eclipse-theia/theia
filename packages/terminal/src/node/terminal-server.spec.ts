@@ -46,7 +46,6 @@ describe('TermninalServer', function () {
     });
 
     it('test terminal create from non-existant path', async function () {
-        terminalServer.setClient(terminalWatcher.getTerminalClient());
         const createResult = terminalServer.create({ command: '/non-existant' });
         if (isWindows) {
             expect(await createResult).to.be.equal(-1);

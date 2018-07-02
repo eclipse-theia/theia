@@ -14,12 +14,12 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule, Container } from 'inversify';
+import { ContainerModule, Container, interfaces } from 'inversify';
 import { TerminalBackendContribution } from "./terminal-backend-contribution";
 import { ConnectionHandler, JsonRpcConnectionHandler } from "@theia/core/lib/common/messaging";
 import { ShellProcess, ShellProcessFactory, ShellProcessOptions } from './shell-process';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
-import { IBaseTerminalClient } from '../common/base-terminal-protocol';
+import { IBaseTerminalClient, DispatchingBaseTerminalClient, IBaseTerminalServer } from '../common/base-terminal-protocol';
 import { TerminalServer } from './terminal-server';
 import { IShellTerminalServer, shellTerminalPath } from '../common/shell-terminal-protocol';
 import { ShellTerminalServer } from '../node/shell-terminal-server';
@@ -27,13 +27,35 @@ import { TerminalWatcher } from '../common/terminal-watcher';
 import { createCommonBindings } from '../common/terminal-common-module';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 
+export function bindTerminalServer(bind: interfaces.Bind, { path, identifier, constructor }: {
+    path: string,
+    identifier: interfaces.ServiceIdentifier<IBaseTerminalServer>,
+    constructor: {
+        new(...args: any[]): IBaseTerminalServer;
+    }
+}): void {
+    const dispatchingClient = new DispatchingBaseTerminalClient();
+    bind<IBaseTerminalServer>(identifier).to(constructor).inSingletonScope().onActivation((context, terminalServer) => {
+        terminalServer.setClient(dispatchingClient);
+        dispatchingClient.push(context.container.get(TerminalWatcher).getTerminalClient());
+        terminalServer.setClient = () => {
+            throw new Error('use TerminalWatcher');
+        };
+        return terminalServer;
+    });
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler<IBaseTerminalClient>(path, client => {
+            const disposable = dispatchingClient.push(client);
+            client.onDidCloseConnection(() => disposable.dispose());
+            return ctx.container.get(identifier);
+        })
+    ).inSingletonScope();
+}
+
 export default new ContainerModule(bind => {
     bind(MessagingService.Contribution).to(TerminalBackendContribution).inSingletonScope();
-    bind(ITerminalServer).to(TerminalServer).inSingletonScope();
-    bind(IShellTerminalServer).to(ShellTerminalServer).inSingletonScope();
-    bind(ShellProcess).toSelf().inTransientScope();
-    bind(TerminalWatcher).toSelf().inSingletonScope();
 
+    bind(ShellProcess).toSelf().inTransientScope();
     bind(ShellProcessFactory).toFactory(ctx =>
         (options: ShellProcessOptions) => {
             const child = new Container({ defaultScope: 'Singleton' });
@@ -43,21 +65,17 @@ export default new ContainerModule(bind => {
         }
     );
 
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<IBaseTerminalClient>(terminalPath, client => {
-            const terminalServer = ctx.container.get<ITerminalServer>(ITerminalServer);
-            terminalServer.setClient(client);
-            return terminalServer;
-        })
-    ).inSingletonScope();
-
-    bind(ConnectionHandler).toDynamicValue(ctx =>
-        new JsonRpcConnectionHandler<IBaseTerminalClient>(shellTerminalPath, client => {
-            const shellTerminalServer = ctx.container.get<IShellTerminalServer>(IShellTerminalServer);
-            shellTerminalServer.setClient(client);
-            return shellTerminalServer;
-        })
-    ).inSingletonScope();
+    bind(TerminalWatcher).toSelf().inSingletonScope();
+    bindTerminalServer(bind, {
+        path: terminalPath,
+        identifier: ITerminalServer,
+        constructor: TerminalServer
+    });
+    bindTerminalServer(bind, {
+        path: shellTerminalPath,
+        identifier: IShellTerminalServer,
+        constructor: ShellTerminalServer
+    });
 
     createCommonBindings(bind);
 });

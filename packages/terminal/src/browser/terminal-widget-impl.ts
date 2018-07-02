@@ -321,7 +321,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.webSocketConnectionProvider.listen({
             path: `${terminalsPath}/${this.terminalId}`,
             onConnection: connection => {
-                connection.onNotification('onData', (data: string) => this.term.write(data));
+                connection.onNotification('onData', (data: string) => this.termOpened && this.term.write(data));
 
                 const sendData = (data?: string) => data && connection.sendRequest('write', data);
                 this.term.on('data', sendData);

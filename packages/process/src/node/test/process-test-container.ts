@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 import { Container } from 'inversify';
-import { loggerBackendModule } from '@theia/core/lib/node/logger-backend-module';
+import { bindLogger } from '@theia/core/lib/node/logger-backend-module';
 import processBackendModule from '../process-backend-module';
 
 export function createProcessTestContainer() {
     const testContainer = new Container();
 
-    testContainer.load(loggerBackendModule);
+    bindLogger(testContainer.bind.bind(testContainer));
     testContainer.load(processBackendModule);
 
     return testContainer;

@@ -15,6 +15,7 @@
  ********************************************************************************/
 
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
+import { Disposable } from '@theia/core';
 
 export interface IBaseTerminalServerOptions { }
 
@@ -44,4 +45,35 @@ export interface IBaseTerminalErrorEvent {
 export interface IBaseTerminalClient {
     onTerminalExitChanged(event: IBaseTerminalExitEvent): void;
     onTerminalError(event: IBaseTerminalErrorEvent): void;
+}
+
+export class DispatchingBaseTerminalClient {
+
+    protected readonly clients = new Set<IBaseTerminalClient>();
+
+    push(client: IBaseTerminalClient): Disposable {
+        this.clients.add(client);
+        return Disposable.create(() => this.clients.delete(client));
+    }
+
+    onTerminalExitChanged(event: IBaseTerminalExitEvent): void {
+        this.clients.forEach(c => {
+            try {
+                c.onTerminalExitChanged(event);
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
+
+    onTerminalError(event: IBaseTerminalErrorEvent): void {
+
+        this.clients.forEach(c => {
+            try {
+                c.onTerminalError(event);
+            } catch (e) {
+                console.error(e);
+            }
+        });
+    }
 }
