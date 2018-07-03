@@ -4,7 +4,8 @@
   "description": "Theia - Python Extension",
   "dependencies": {
     "@theia/core": "^0.3.12",
-    "@theia/languages": "^0.3.12"
+    "@theia/languages": "^0.3.12",
+    "@theia/monaco": "^0.3.12"
   },
   "publishConfig": {
     "access": "public"
@@ -28,6 +29,7 @@
   },
   "homepage": "https://github.com/theia-ide/theia",
   "files": [
+    "data",
     "lib",
     "src"
   ],
