@@ -15,7 +15,6 @@
  ********************************************************************************/
 
 import { injectable, inject } from "inversify";
-import { h } from "@phosphor/virtualdom";
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { OpenerService, open, StatefulWidget, SELECTED_CLASS, WidgetManager, ApplicationShell, Message } from "@theia/core/lib/browser";
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
@@ -30,6 +29,7 @@ import { GitCommitDetails } from "./git-commit-detail-widget";
 import { GitNavigableListWidget } from "../git-navigable-list-widget";
 import { GitFileChangeNode } from "../git-widget";
 import { Disposable } from "vscode-jsonrpc";
+import * as React from "react";
 
 export interface GitCommitNode extends GitCommitDetails {
     fileChanges?: GitFileChange[];
@@ -73,21 +73,18 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         (async () => {
             const sc = await this.getScrollContainer();
             const listener = (e: UIEvent) => {
-                const el = (e.srcElement || e.target) as HTMLElement;
-                if (el.scrollTop + el.clientHeight > el.scrollHeight - 83) {
-                    const ll = this.node.getElementsByClassName('history-lazy-loading')[0];
-                    ll.className = "history-lazy-loading show";
-                    this.addCommits({
-                        range: {
-                            toRevision: this.commits[this.commits.length - 1].commitSha
-                        },
-                        maxCount: GIT_HISTORY_MAX_COUNT
-                    });
-                }
+                const ll = this.node.getElementsByClassName('history-lazy-loading')[0];
+                ll.className = "history-lazy-loading show";
+                this.addCommits({
+                    range: {
+                        toRevision: this.commits[this.commits.length - 1].commitSha
+                    },
+                    maxCount: GIT_HISTORY_MAX_COUNT
+                });
             };
-            sc.addEventListener("scroll", listener);
+            sc.addEventListener("ps-y-reach-end", listener);
             this.toDispose.push(Disposable.create(() => {
-                sc.removeEventListener("scroll", listener);
+                sc.removeEventListener("ps-y-reach-end", listener);
             }));
         })();
     }
@@ -186,158 +183,162 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         }
     }
 
-    protected render(): h.Child {
+    protected render(): React.ReactNode {
         this.gitNodes = [];
-        const containers = [];
-        if (this.ready) {
-            containers.push(this.renderHistoryHeader());
-            containers.push(this.renderCommitList());
-            containers.push(h.div({ className: 'history-lazy-loading' }, h.span({ className: "fa fa-spinner fa-pulse fa-2x fa-fw" })));
-        } else {
-            containers.push(h.div({ className: 'spinnerContainer' }, h.span({ className: 'fa fa-spinner fa-pulse fa-3x fa-fw' })));
-        }
-        return h.div({ className: "git-diff-container" }, ...containers);
+        return <div className="git-diff-container">
+            {
+                this.ready ?
+                    < React.Fragment >
+                        {this.renderHistoryHeader()}
+                        {this.renderCommitList()}
+                        <div className='history-lazy-loading'>
+                            <span className="fa fa-spinner fa-pulse fa-2x fa-fw"></span>
+                        </div>
+                    </React.Fragment>
+                    :
+                    <div className='spinnerContainer'>
+                        <span className='fa fa-spinner fa-pulse fa-3x fa-fw'></span>
+                    </div>
+            }
+        </div>;
     }
 
-    protected renderHistoryHeader(): h.Child {
-        const elements = [];
+    protected renderHistoryHeader(): React.ReactNode {
         if (this.options.uri) {
             const path = this.relativePath(this.options.uri);
-            if (path.length > 0) {
-                elements.push(h.div({ className: 'header-row' },
-                    h.div({ className: 'theia-header' }, 'path:'),
-                    h.div({ className: 'header-value' }, '/' + path)));
-            }
+            return <div className="diff-header">
+                {
+                    path.length > 0 ?
+                        <div className='header-row'>
+                            <div className='theia-header'>
+                                path:
+                                </div>
+                            <div className='header-value'>
+                                {'/' + path}
+                            </div>
+                        </div>
+                        : ''
+                }
+                <div className='theia-header'>
+                    Commits
+                </div>
+            </div>;
         }
-        const header = h.div({ className: 'theia-header' }, `Commits`);
-
-        return h.div({ className: "diff-header" }, ...elements, header);
     }
 
-    protected renderCommitList(): h.Child {
-        const theList: h.Child[] = [];
+    protected renderCommitList(): React.ReactNode {
+        const theList: React.ReactNode[] = [];
 
         for (const commit of this.commits) {
             const head = this.renderCommit(commit);
             const body = commit.expanded ? this.renderFileChangeList(commit) : "";
-            theList.push(h.div({ className: "commitListElement" }, head, body));
+            theList.push(<div key={commit.commitSha} className="commitListElement">{head}{body}</div>);
         }
-        const commitList = h.div({ className: "commitList" }, ...theList);
-        return h.div({
-            className: "listContainer",
-            id: this.scrollContainer
-        }, commitList);
+        const commitList = <div className="commitList">{...theList}</div>;
+        return <div className="listContainer" id={this.scrollContainer}>{commitList}</div>;
     }
 
-    protected renderCommit(commit: GitCommitNode): h.Child {
+    protected renderCommit(commit: GitCommitNode): React.ReactNode {
         this.gitNodes.push(commit);
         let expansionToggleIcon = "caret-right";
         if (commit && commit.expanded) {
             expansionToggleIcon = "caret-down";
         }
-        const headEl = [];
-        const gravatar = h.div({ className: "image-container" },
-            h.img({ className: "gravatar", src: commit.authorAvatar }));
-        headEl.push(gravatar);
-        const expansionToggle = h.div(
-            {
-                className: "expansionToggle noselect"
-            },
-            h.div({ className: "toggle" },
-                h.div({ className: "number" }, (commit.fileChanges && commit.fileChanges.length || commit.fileChangeNodes.length).toString()),
-                h.div({ className: "icon fa fa-" + expansionToggleIcon }))
-        );
-        const label = h.div({ className: `headLabelContainer${this.singleFileMode ? ' singleFileMode' : ''}` },
-            h.div(
-                {
-                    className: "headLabel noWrapInfo noselect"
-                },
-                commit.commitMessage),
-            h.div(
-                {
-                    className: "commitTime noWrapInfo noselect"
-                },
-                commit.authorDateRelative + ' by ' + commit.authorName
-            )
-        );
-        const detailBtn = h.div({
-            className: "fa fa-eye detailButton",
-            onclick: () => this.openDetailWidget(commit)
-        });
-        headEl.push(label, detailBtn);
-        if (!this.singleFileMode) {
-            headEl.push(expansionToggle);
-        }
-        const content = h.div({ className: "headContent" }, ...headEl);
-        return h.div({
-            className: `containerHead${commit.selected ? ' ' + SELECTED_CLASS : ''}`,
-            onclick: () => {
-                if (commit.selected && !this.singleFileMode) {
-                    commit.expanded = !commit.expanded;
-                    if (commit.expanded) {
-                        this.addFileChangeNodesToCommit(commit);
+        return <div
+            className={`containerHead${commit.selected ? ' ' + SELECTED_CLASS : ''}`}
+            onClick={
+                () => {
+                    if (commit.selected && !this.singleFileMode) {
+                        commit.expanded = !commit.expanded;
+                        if (commit.expanded) {
+                            this.addFileChangeNodesToCommit(commit);
+                        }
+                        this.update();
+                    } else {
+                        this.selectNode(commit);
                     }
-                    this.update();
-                } else {
-                    this.selectNode(commit);
-                }
-            },
-            ondblclick: () => {
-                if (this.singleFileMode) {
-                    this.openFile(commit.fileChangeNodes[0], commit.commitSha);
                 }
             }
-        }, content);
+            onDoubleClick={
+                () => {
+                    if (this.singleFileMode) {
+                        this.openFile(commit.fileChangeNodes[0], commit.commitSha);
+                    }
+                }
+            }>
+            <div className="headContent"><div className="image-container">
+                <img className="gravatar" src={commit.authorAvatar}></img>
+            </div>
+                <div className={`headLabelContainer${this.singleFileMode ? ' singleFileMode' : ''}`}>
+                    <div className="headLabel noWrapInfo noselect">
+                        {commit.commitMessage}
+                    </div>
+                    <div className="commitTime noWrapInfo noselect">
+                        {commit.authorDateRelative + ' by ' + commit.authorName}
+                    </div>
+                </div>
+                <div className="fa fa-eye detailButton" onClick={() => this.openDetailWidget(commit)}></div>
+                {
+                    !this.singleFileMode ? <div className="expansionToggle noselect">
+                        <div className="toggle">
+                            <div className="number">{(commit.fileChanges && commit.fileChanges.length || commit.fileChangeNodes.length).toString()}</div>
+                            <div className={"icon fa fa-" + expansionToggleIcon}></div>
+                        </div>
+                    </div>
+                        : ''
+                }
+            </div>
+        </div >;
     }
 
     protected async openDetailWidget(commit: GitCommitNode) {
         const commitDetails = this.detailOpenHandler.getCommitDetailWidgetOptions(commit);
-        this.detailOpenHandler.open(GitCommitDetailUri.toUri(commit.commitSha), <GitCommitDetailOpenerOptions>{
+        this.detailOpenHandler.open(GitCommitDetailUri.toUri(commit.commitSha), {
             ...commitDetails
-        });
+        } as GitCommitDetailOpenerOptions);
     }
 
-    protected renderFileChangeList(commit: GitCommitNode): h.Child {
+    protected renderFileChangeList(commit: GitCommitNode): React.ReactNode {
         const fileChanges = commit.fileChangeNodes;
 
         this.gitNodes.push(...fileChanges);
 
-        const files: h.Child[] = [];
+        const files: React.ReactNode[] = [];
 
         for (const fileChange of fileChanges) {
-            const fileChangeElement: h.Child = this.renderGitItem(fileChange, commit.commitSha);
+            const fileChangeElement: React.ReactNode = this.renderGitItem(fileChange, commit.commitSha);
             files.push(fileChangeElement);
         }
-        const commitFiles = h.div({ className: "commitFileList" }, ...files);
-        return h.div({ className: "commitBody" }, commitFiles);
+        return <div className="commitBody"><div className="commitFileList">{...files}</div></div>;
     }
 
-    protected renderGitItem(change: GitFileChangeNode, commitSha: string): h.Child {
-        const iconSpan = h.span({ className: change.icon + ' file-icon' });
-        const nameSpan = h.span({ className: 'name' }, change.label + ' ');
-        const pathSpan = h.span({ className: 'path' }, change.description);
-        const elements = [];
-        elements.push(h.div({
-            title: change.caption,
-            className: 'noWrapInfo',
-            ondblclick: () => {
-                this.openFile(change, commitSha);
-            },
-            onclick: () => {
-                this.selectNode(change);
+    protected renderGitItem(change: GitFileChangeNode, commitSha: string): React.ReactNode {
+        return <div className={`gitItem noselect${change.selected ? ' ' + SELECTED_CLASS : ''}`}>
+            <div
+                title={change.caption}
+                className='noWrapInfo'
+                onDoubleClick={() => {
+                    this.openFile(change, commitSha);
+                }}
+                onClick={() => {
+                    this.selectNode(change);
+                }}>
+                <span className={change.icon + ' file-icon'}></span>
+                <span className='name'>{change.label + ' '}</span>
+                <span className='path'>{change.description}</span>
+            </div>
+            {
+                change.extraIconClassName ? <div
+                    title={change.caption}
+                    className={change.extraIconClassName}></div>
+                    : ''
             }
-        }, iconSpan, nameSpan, pathSpan));
-        if (change.extraIconClassName) {
-            elements.push(h.div({
-                title: change.caption,
-                className: change.extraIconClassName
-            }));
-        }
-        elements.push(h.div({
-            title: change.caption,
-            className: 'status staged ' + GitFileStatus[change.status].toLowerCase()
-        }, this.getStatusCaption(change.status, true).charAt(0)));
-        return h.div({ className: `gitItem noselect${change.selected ? ' ' + SELECTED_CLASS : ''}` }, ...elements);
+            <div
+                title={change.caption}
+                className={'status staged ' + GitFileStatus[change.status].toLowerCase()}>
+                {this.getStatusCaption(change.status, true).charAt(0)}
+            </div>
+        </div>;
     }
 
     protected navigateLeft(): void {
@@ -403,5 +404,4 @@ export class GitHistoryWidget extends GitNavigableListWidget<GitHistoryListNode>
         }
         open(this.openerService, uriToOpen, { mode: 'reveal' });
     }
-
 }
