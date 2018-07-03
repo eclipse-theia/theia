@@ -25,6 +25,8 @@ import { JavaCommandContribution } from './java-commands';
 import { JavaLabelProviderContribution } from './java-label-provider';
 import { JavaResourceResolver } from './java-resource';
 import { JavaEditorTextFocusContext } from "./java-keybinding-contexts";
+import { JavaTextmateContribution } from "./monaco-contribution/java-textmate-contribution";
+import { LanguageGrammarDefinitionContribution } from "@theia/monaco/lib/browser/textmate/textmate-contribution";
 
 import "./monaco-contribution";
 
@@ -43,4 +45,6 @@ export default new ContainerModule(bind => {
     bind(ResourceResolver).toDynamicValue(ctx => ctx.container.get(JavaResourceResolver));
 
     bind(LabelProviderContribution).to(JavaLabelProviderContribution).inSingletonScope();
+
+    bind(LanguageGrammarDefinitionContribution).to(JavaTextmateContribution).inSingletonScope();
 });
