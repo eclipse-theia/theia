@@ -64,7 +64,7 @@ export interface HostedPluginManager {
 }
 
 const HOSTED_INSTANCE_START_TIMEOUT_MS = 30000;
-const THEIA_INSTANCE_REGEX = /.*Theia app listening on (.*)\. \[\].*/;
+const THEIA_INSTANCE_REGEX = /.*Theia app listening on (.*).*\./;
 const PROCESS_OPTIONS = {
     cwd: process.cwd(),
     env: { ...process.env }
