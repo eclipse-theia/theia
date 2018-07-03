@@ -49,7 +49,6 @@ const development = mode === 'development';${this.ifMonaco(() => `
 
 const monacoEditorCorePath = development ? '${this.resolve('monaco-editor-core', 'dev/vs')}' : '${this.resolve('monaco-editor-core', 'min/vs')}';
 const monacoCssLanguagePath = '${this.resolve('monaco-css', 'release/min')}';
-const monacoJsonLanguagePath = '${this.resolve('monaco-json', 'release/min')}';
 const monacoHtmlLanguagePath = '${this.resolve('monaco-html', 'release/min')}';`)}
 
 module.exports = {
@@ -139,10 +138,6 @@ module.exports = {
             {
                 from: monacoCssLanguagePath,
                 to: 'vs/language/css'
-            },
-            {
-                from: monacoJsonLanguagePath,
-                to: 'vs/language/json'
             },
             {
                 from: monacoHtmlLanguagePath,
