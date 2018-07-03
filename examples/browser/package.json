@@ -33,6 +33,7 @@
     "@theia/search-in-workspace": "^0.3.12",
     "@theia/task": "^0.3.12",
     "@theia/terminal": "^0.3.12",
+    "@theia/textmate-grammars": "^0.3.12",
     "@theia/typescript": "^0.3.12",
     "@theia/userstorage": "^0.3.12",
     "@theia/variable-resolver": "^0.3.12",
