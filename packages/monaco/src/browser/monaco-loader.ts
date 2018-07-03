@@ -44,7 +44,6 @@ export function loadMonaco(vsRequire: any): Promise<void> {
     return new Promise<void>(resolve => {
         vsRequire(["vs/editor/editor.main"], () => {
             vsRequire([
-                'vs/basic-languages/monaco.contribution',
                 'vs/language/css/monaco.contribution',
                 'vs/language/html/monaco.contribution',
                 'vs/language/json/monaco.contribution',
@@ -68,7 +67,7 @@ export function loadMonaco(vsRequire: any): Promise<void> {
                 'vs/editor/contrib/suggest/suggestController',
                 'vs/editor/contrib/find/findController',
                 'vs/editor/contrib/rename/rename',
-            ], (basic: any, css: any, html: any, json: any, commands: any, actions: any, registry: any, resolver: any, resolvedKeybinding: any,
+            ], (css: any, html: any, json: any, commands: any, actions: any, registry: any, resolver: any, resolvedKeybinding: any,
                 keyCodes: any, editorExtensions: any, simpleServices: any, standaloneServices: any, quickOpen: any, quickOpenWidget: any, quickOpenModel: any,
                 filters: any, styler: any, platform: any, modes: any, cancellation: any, suggestController: any, findController: any, rename: any) => {
                     const global: any = self;

@@ -67,7 +67,7 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
                 }
                 return {
                     format: 'json',
-                    content: ''
+                    content: '{}'
                 };
             }
         });

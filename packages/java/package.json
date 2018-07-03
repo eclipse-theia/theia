@@ -50,7 +50,8 @@
   "files": [
     "lib",
     "scripts",
-    "src"
+    "src",
+    "data"
   ],
   "nyc": {
     "extends": "../../configs/nyc.json"
