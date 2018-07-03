@@ -6481,10 +6481,6 @@ monaco-html@^2.0.2:
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/monaco-html/-/monaco-html-2.1.1.tgz#464572924e3e0ab05a0e8e6abbbda166f400b25c"
 
-monaco-json@^2.0.1:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/monaco-json/-/monaco-json-2.1.1.tgz#7fde6c5e7dc577180e9063658c21dfdac9d2f72c"
-
 monaco-languageclient@0.6.3:
   version "0.6.3"
   resolved "https://registry.yarnpkg.com/monaco-languageclient/-/monaco-languageclient-0.6.3.tgz#ab652a9ac6803dc93414f601e32421b1bef20aac"
