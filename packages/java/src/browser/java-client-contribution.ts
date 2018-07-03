@@ -42,6 +42,10 @@ export class JavaClientContribution extends BaseLanguageClientContribution {
         return ['**/*.java', '**/pom.xml', '**/*.gradle'];
     }
 
+    protected get workspaceContains() {
+        return ['pom.xml', 'build.gradle'];
+    }
+
     protected onReady(languageClient: ILanguageClient): void {
         languageClient.onNotification(ActionableNotification.type, this.showActionableMessage.bind(this));
         super.onReady(languageClient);
