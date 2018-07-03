@@ -24,6 +24,8 @@ import { CppLanguageClientContribution } from "./cpp-language-client-contributio
 import { CppKeybindingContribution, CppKeybindingContext } from "./cpp-keybinding";
 import { bindCppPreferences } from "./cpp-preferences";
 import { CppBuildConfigurationsContributions, CppBuildConfigurationChanger, CppBuildConfigurationManager } from "./cpp-build-configurations";
+import { LanguageGrammarDefinitionContribution } from "@theia/monaco/lib/browser/textmate";
+import { CppGrammarContribution } from "./cpp-grammar-contribution";
 
 export default new ContainerModule(bind => {
     bind(CommandContribution).to(CppCommandContribution).inSingletonScope();
@@ -38,6 +40,8 @@ export default new ContainerModule(bind => {
     bind(CppBuildConfigurationChanger).toSelf().inSingletonScope();
     bind(CppBuildConfigurationsContributions).toSelf().inSingletonScope();
     bind(CommandContribution).to(CppBuildConfigurationsContributions).inSingletonScope();
+
+    bind(LanguageGrammarDefinitionContribution).to(CppGrammarContribution).inSingletonScope();
 
     bindCppPreferences(bind);
 });
