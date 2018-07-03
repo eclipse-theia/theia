@@ -16,9 +16,13 @@
 
 import { ContainerModule } from "inversify";
 import { BatContribution } from "./bat";
+import { CssContribution } from "./css";
 import { LanguageGrammarDefinitionContribution } from "@theia/monaco/lib/browser/textmate/textmate-contribution";
 
 export default new ContainerModule(bind => {
     bind(BatContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(BatContribution);
+
+    bind(CssContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(CssContribution);
 });
