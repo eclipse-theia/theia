@@ -17,6 +17,13 @@
 import { ContainerModule } from "inversify";
 import { BatContribution } from "./bat";
 import { CssContribution } from "./css";
+import { HtmlContribution } from "./html";
+import { LessContribution } from "./less";
+import { MarkdownContribution } from "./markdown";
+import { ShellContribution } from "./shell";
+import { XmlContribution } from "./xml";
+import { XslContribution } from "./xsl";
+import { YamlContribution } from "./yaml";
 import { LanguageGrammarDefinitionContribution } from "@theia/monaco/lib/browser/textmate/textmate-contribution";
 
 export default new ContainerModule(bind => {
@@ -25,4 +32,25 @@ export default new ContainerModule(bind => {
 
     bind(CssContribution).toSelf().inSingletonScope();
     bind(LanguageGrammarDefinitionContribution).toService(CssContribution);
+
+    bind(HtmlContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(HtmlContribution);
+
+    bind(LessContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(LessContribution);
+
+    bind(MarkdownContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(MarkdownContribution);
+
+    bind(ShellContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(ShellContribution);
+
+    bind(XmlContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(XmlContribution);
+
+    bind(XslContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(XslContribution);
+
+    bind(YamlContribution).toSelf().inSingletonScope();
+    bind(LanguageGrammarDefinitionContribution).toService(YamlContribution);
 });
