@@ -15,8 +15,8 @@ import { h } from '@phosphor/virtualdom';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { injectable, inject, postConstruct } from "inversify";
 import { DEBUG_SESSION_THREAD_CONTEXT_MENU } from "../debug-command";
-import { hasSameId } from "../../common/debug-utils";
 import { DebugSelection } from "./debug-selection-service";
+import { DebugUtils } from "../debug-utils";
 
 /**
  * Is it used to display list of threads.
@@ -60,7 +60,7 @@ export class DebugThreadsWidget extends VirtualWidget {
         const items: h.Child = [];
 
         for (const thread of this.threads) {
-            const className = Styles.THREAD + (hasSameId(this.debugSelection.thread, thread) ? ` ${SELECTED_CLASS}` : '');
+            const className = Styles.THREAD + (DebugUtils.isEqual(this.debugSelection.thread, thread) ? ` ${SELECTED_CLASS}` : '');
             const id = this.createId(thread);
 
             const item =
@@ -83,7 +83,7 @@ export class DebugThreadsWidget extends VirtualWidget {
     protected selectThread(newThread: DebugProtocol.Thread | undefined) {
         const currentThread = this.debugSelection.thread;
 
-        if (hasSameId(currentThread, newThread)) {
+        if (DebugUtils.isEqual(currentThread, newThread)) {
             return;
         }
 
@@ -121,7 +121,7 @@ export class DebugThreadsWidget extends VirtualWidget {
         this.debugSession.threads().then(response => {
             this.threads = response.body.threads;
 
-            const currentThreadExists = this.threads.some(thread => hasSameId(thread, currentThread));
+            const currentThreadExists = this.threads.some(thread => DebugUtils.isEqual(thread, currentThread));
             this.selectThread(currentThreadExists ? currentThread : this.threads[0]);
         });
     }

@@ -189,7 +189,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                 }
 
                 const state = debugSession.state;
-                return state.isConnected && !state.allThreadsContinued;
+                return !!state.isConnected && !state.allThreadsContinued;
             },
             isVisible: () => true
         });
@@ -209,7 +209,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                 }
 
                 const state = debugSession.state;
-                return state.isConnected && !state.allThreadsStopped;
+                return !!state.isConnected && !state.allThreadsStopped;
             },
             isVisible: () => true
         });
@@ -220,7 +220,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                 const debugSession = this.debugSessionManager.getActiveDebugSession();
                 if (debugSession) {
                     const selection = this.debugSelectionHandler.get(debugSession.sessionId);
-                    if (selection && selection.thread) {
+                    if (!!selection && !!selection.thread) {
                         debugSession.pause({ threadId: selection.thread.id });
                     }
                 }
@@ -233,7 +233,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                 }
 
                 const selection = this.debugSelectionHandler.get(debugSession.sessionId);
-                return selection && !!selection.thread && !!debugSession.state.stoppedThreadIds.indexOf(selection.thread.id);
+                return !!selection && !!selection.thread && !!debugSession.state.stoppedThreadIds.has(selection.thread.id);
             }
         });
 
@@ -243,7 +243,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                 const debugSession = this.debugSessionManager.getActiveDebugSession();
                 if (debugSession) {
                     const selection = this.debugSelectionHandler.get(debugSession.sessionId);
-                    if (selection && selection.thread) {
+                    if (!!selection && !!selection.thread) {
                         debugSession.resume({ threadId: selection.thread.id });
                     }
                 }
@@ -256,7 +256,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                 }
 
                 const selection = this.debugSelectionHandler.get(debugSession.sessionId);
-                return selection && !!selection.thread && !debugSession.state.stoppedThreadIds.indexOf(selection.thread.id);
+                return !!selection && !!selection.thread && !debugSession.state.stoppedThreadIds.has(selection.thread.id);
             }
         });
 
@@ -292,7 +292,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                 }
 
                 const selection = this.debugSelectionHandler.get(debugSession.sessionId);
-                return selection && !!selection.variable;
+                return !!selection && !!selection.variable;
             }
         });
     }
