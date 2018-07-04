@@ -22,6 +22,9 @@ import { Emitter, Event } from '../../../common';
 export class MockPreferenceService implements PreferenceService {
     constructor() { }
     dispose() { }
+    getPreferences(): { [key: string]: any; } {
+        return {};
+    }
     get<T>(preferenceName: string): T | undefined;
     get<T>(preferenceName: string, defaultValue: T): T;
     get<T>(preferenceName: string, defaultValue?: T): T | undefined {
