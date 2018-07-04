@@ -43,10 +43,13 @@ import {
 import {
     DebugSession,
     DebugSessionContribution,
-    DebugSessionFactory,
-    BreakpointManager
+    DebugSessionFactory
 } from './debug-model';
-import { DebugSessionManager, DefaultDebugSessionFactory } from './debug-session';
+import {
+    DebugSessionManager,
+    DefaultDebugSessionFactory,
+    DebugResourceResolver
+} from './debug-session';
 import {
     DebugVariablesTree,
     DebugVariablesWidget,
@@ -57,9 +60,12 @@ import { DebugThreadsWidget } from './view/debug-threads-widget';
 import { DebugStackFramesWidget } from './view/debug-stack-frames-widget';
 import { DebugBreakpointsWidget } from './view/debug-breakpoints-widget';
 import { DebugSelectionService, DebugSelection } from './view/debug-selection-service';
-import { bindContributionProvider } from '@theia/core';
-import { BreakpointManagerImpl } from './breakpoint-manager';
-import { SourceOpener } from './debug-browser-utils';
+import { bindContributionProvider, ResourceResolver } from '@theia/core';
+import { ActiveLineDecoratorProvider, BreakpointDecoratorProvider } from './breakpoint/breakpoint-decorators';
+import { BreakpointsManager } from './breakpoint/breakpoint-manager';
+import { BreakpointStorage } from './breakpoint/breakpoint-storage';
+import { SourceOpener } from './debug-utils';
+import { BreakpointsApplier } from './breakpoint/breakpoint-applier';
 
 export const DEBUG_VARIABLES_PROPS = <TreeProps>{
     ...defaultTreeProps,
@@ -68,25 +74,29 @@ export const DEBUG_VARIABLES_PROPS = <TreeProps>{
 };
 
 export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Unbind, isBound: interfaces.IsBound, rebind: interfaces.Rebind) => {
+    bindDebugSession(bind);
+    bindBreakpointsManager(bind);
+    bindDebugView(bind);
+
+    bind(MenuContribution).to(DebugCommandHandlers);
+    bind(CommandContribution).to(DebugCommandHandlers);
+    bind(DebugConfigurationManager).toSelf().inSingletonScope();
+
+    bind(DebugService).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, DebugPath)).inSingletonScope();
+    bind(DebugResourceResolver).toSelf().inSingletonScope();
+    bind(ResourceResolver).toService(DebugResourceResolver);
+});
+
+function bindDebugView(bind: interfaces.Bind): void {
     bind(DebugWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(context => ({
         id: DEBUG_FACTORY_ID,
         createWidget: () => context.container.get<DebugWidget>(DebugWidget)
     })).inSingletonScope();
-    bind(DebugTargetWidget).toSelf();
-    bindViewContribution(bind, DebugViewContribution);
-    bind(DebugSelectionService).toSelf().inSingletonScope();
 
-    bindContributionProvider(bind, DebugSessionContribution);
-    bind(DebugSessionFactory).to(DefaultDebugSessionFactory).inSingletonScope();
-    bind(DebugSessionManager).toSelf().inSingletonScope();
-    bind(BreakpointManager).to(BreakpointManagerImpl).inSingletonScope();
-    bind(FrontendApplicationContribution).toDynamicValue(context => context.container.get<BreakpointManager>(BreakpointManager));
-    bind(SourceOpener).toSelf().inSingletonScope();
-    bind(MenuContribution).to(DebugCommandHandlers);
-    bind(CommandContribution).to(DebugCommandHandlers);
-    bind(DebugConfigurationManager).toSelf().inSingletonScope();
-    bind(DebugService).toDynamicValue(context => WebSocketConnectionProvider.createProxy(context.container, DebugPath)).inSingletonScope();
+    bindViewContribution(bind, DebugViewContribution);
+    bind(DebugTargetWidget).toSelf();
+    bind(DebugSelectionService).toSelf().inSingletonScope();
 
     bind<interfaces.Factory<DebugTargetWidget>>("Factory<DebugTargetWidget>").toFactory<DebugTargetWidget>(context =>
         (debugSession: DebugSession) => {
@@ -94,7 +104,22 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
             return container.get<DebugTargetWidget>(DebugTargetWidget);
         }
     );
-});
+}
+
+function bindBreakpointsManager(bind: interfaces.Bind): void {
+    bind(ActiveLineDecoratorProvider).toSelf().inSingletonScope();
+    bind(BreakpointDecoratorProvider).toSelf().inSingletonScope();
+    bind(BreakpointStorage).toSelf().inSingletonScope();
+    bind(BreakpointsApplier).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).to(BreakpointsManager);
+    bind(SourceOpener).toSelf().inSingletonScope();
+}
+
+function bindDebugSession(bind: interfaces.Bind): void {
+    bindContributionProvider(bind, DebugSessionContribution);
+    bind(DebugSessionFactory).to(DefaultDebugSessionFactory).inSingletonScope();
+    bind(DebugSessionManager).toSelf().inSingletonScope();
+}
 
 function createDebugTargetContainer(context: interfaces.Context, debugSession: DebugSession): Container {
     const child = createTreeContainer(context.container);

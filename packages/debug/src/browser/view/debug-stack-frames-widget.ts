@@ -23,8 +23,7 @@ import { h } from '@phosphor/virtualdom';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { injectable, inject } from "inversify";
 import { DebugSelection } from "./debug-selection-service";
-import { hasSameId } from "../../common/debug-utils";
-import { SourceOpener } from "../debug-browser-utils";
+import { SourceOpener, DebugUtils } from "../debug-utils";
 
 /**
  * Is it used to display call stack.
@@ -61,7 +60,7 @@ export class DebugStackFramesWidget extends VirtualWidget {
         const items: h.Child = [];
 
         for (const frame of this._frames) {
-            const className = Styles.FRAME + (hasSameId(this.debugSelection.frame, frame) ? ` ${SELECTED_CLASS}` : '');
+            const className = Styles.FRAME + (DebugUtils.isEqual(this.debugSelection.frame, frame) ? ` ${SELECTED_CLASS}` : '');
             const id = this.createId(frame);
 
             const item =
@@ -69,7 +68,7 @@ export class DebugStackFramesWidget extends VirtualWidget {
                     id, className,
                     onclick: () => {
                         this.selectFrame(frame);
-                        this.sourceOpener.open(this.debugSession, frame);
+                        this.sourceOpener.open(frame);
                     }
                 }, this.toDisplayName(frame));
 
@@ -86,7 +85,7 @@ export class DebugStackFramesWidget extends VirtualWidget {
     protected selectFrame(newFrame: DebugProtocol.StackFrame | undefined) {
         const currentFrame = this.debugSelection.frame;
 
-        if (hasSameId(currentFrame, newFrame)) {
+        if (DebugUtils.isEqual(currentFrame, newFrame)) {
             return;
         }
 
@@ -118,7 +117,7 @@ export class DebugStackFramesWidget extends VirtualWidget {
     private onContinuedEvent(event: DebugProtocol.ContinuedEvent): void {
         const currentThread = this.debugSelection.thread;
         if (currentThread) {
-            if (hasSameId(currentThread, event.body.threadId) || event.body.allThreadsContinued) {
+            if (DebugUtils.isEqual(currentThread, event.body.threadId) || event.body.allThreadsContinued) {
                 this.frames = [];
                 this.selectFrame(undefined);
             }
@@ -128,7 +127,7 @@ export class DebugStackFramesWidget extends VirtualWidget {
     private onStoppedEvent(event: DebugProtocol.StoppedEvent): void {
         const currentThread = this.debugSelection.thread;
         if (currentThread) {
-            if (hasSameId(currentThread, event.body.threadId) || event.body.allThreadsStopped) {
+            if (DebugUtils.isEqual(currentThread, event.body.threadId) || event.body.allThreadsStopped) {
                 this.updateFrames(currentThread.id);
             }
         }
@@ -141,7 +140,7 @@ export class DebugStackFramesWidget extends VirtualWidget {
         if (threadId) {
             const args: DebugProtocol.StackTraceArguments = { threadId };
             this.debugSession.stacks(args).then(response => {
-                if (hasSameId(this.debugSelection.thread, threadId)) { // still the same thread remains selected
+                if (DebugUtils.isEqual(this.debugSelection.thread, threadId)) { // still the same thread remains selected
                     this.frames = response.body.stackFrames;
                     this.selectFrame(this.frames[0]);
                 }

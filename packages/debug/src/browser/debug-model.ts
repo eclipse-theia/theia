@@ -47,6 +47,7 @@ export interface DebugSession extends Disposable, NodeJS.EventEmitter {
     setVariable(args: DebugProtocol.SetVariableArguments): Promise<DebugProtocol.SetVariableResponse>;
     evaluate(args: DebugProtocol.EvaluateArguments): Promise<DebugProtocol.EvaluateResponse>;
     source(args: DebugProtocol.SourceArguments): Promise<DebugProtocol.SourceResponse>;
+    setBreakpoints(args: DebugProtocol.SetBreakpointsArguments): Promise<DebugProtocol.SetBreakpointsResponse>;
 }
 
 /**
@@ -80,45 +81,4 @@ export interface DebugSessionContribution {
      * The [debug session](#DebugSession) factory.
      */
     debugSessionFactory(): DebugSessionFactory;
-}
-
-/**
- * BreakpointManager symbol for DI.
- */
-export const BreakpointManager = Symbol("BreakpointManager");
-
-/**
- * The breakpoint manager;
- */
-export interface BreakpointManager { }
-
-export namespace Debug {
-    /**
-     * Stack frame format.
-     */
-    export const DEFAULT_STACK_FRAME_FORMAT: DebugProtocol.StackFrameFormat = {
-        parameters: true,
-        parameterTypes: true,
-        parameterNames: true,
-        parameterValues: true,
-        line: true,
-        module: true,
-        includeAll: true,
-        hex: false
-    };
-
-    /**
-     * Initialize requests arguments.
-     */
-    export const INITIALIZE_ARGUMENTS = {
-        clientID: "Theia",
-        clientName: "Theia",
-        locale: "",
-        linesStartAt1: true,
-        columnsStartAt1: true,
-        pathFormat: "path",
-        supportsVariableType: false,
-        supportsVariablePaging: false,
-        supportsRunInTerminalRequest: false
-    };
 }
