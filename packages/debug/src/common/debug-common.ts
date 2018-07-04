@@ -107,32 +107,32 @@ export interface DebugSessionState {
     /**
      * Indicates if debug session is connected to the debug adapter.
      */
-    readonly isConnected: boolean;
-
-    /**
-     * The debug session breakpoints.
-     */
-    readonly breakpoints: DebugProtocol.Breakpoint[];
+    isConnected: boolean;
 
     /**
      * Indicates if all threads are continued.
      */
-    readonly allThreadsContinued: boolean | undefined;
+    allThreadsContinued: boolean | undefined;
 
     /**
      * Indicates if all threads are stopped.
      */
-    readonly allThreadsStopped: boolean | undefined;
+    allThreadsStopped: boolean | undefined;
 
     /**
      * Stopped threads Ids.
      */
-    readonly stoppedThreadIds: number[];
+    stoppedThreadIds: Set<number>;
 
     /**
      * Debug adapter protocol capabilities.
      */
-    readonly capabilities: DebugProtocol.Capabilities;
+    capabilities: DebugProtocol.Capabilities;
+
+    /**
+     * Loaded sources.
+     */
+    sources: Map<string, DebugProtocol.Source>;
 }
 
 /**
@@ -140,7 +140,7 @@ export interface DebugSessionState {
  */
 export namespace ExtDebugProtocol {
 
-    export interface ExtVariable extends DebugProtocol.Variable {
+    export interface Variable extends DebugProtocol.Variable {
         /** Parent variables reference. */
         parentVariablesReference: number;
     }
@@ -148,12 +148,12 @@ export namespace ExtDebugProtocol {
     /**
      * Event message for 'connected' event type.
      */
-    export interface ExtConnectedEvent extends DebugProtocol.Event { }
+    export interface ConnectedEvent extends DebugProtocol.Event { }
 
     /**
      * Event message for 'variableUpdated' event type.
      */
-    export interface ExtVariableUpdatedEvent extends DebugProtocol.Event {
+    export interface VariableUpdatedEvent extends DebugProtocol.Event {
         body: {
             /** The variable's name. */
             name: string;
@@ -171,6 +171,39 @@ export namespace ExtDebugProtocol {
             parentVariablesReference: number;
         }
     }
+
+    /**
+     * Exceptional breakpoint.
+     */
+    export interface ExceptionBreakpoint {
+        /** ID of checked exception options returned via the 'exceptionBreakpointFilters' capability. */
+        filter: string;
+        /** Configuration options for exception. */
+        exceptionOptions?: DebugProtocol.ExceptionOptions;
+    }
+
+    /**
+     * The aggregated breakpoint.
+     */
+    export interface AggregatedBreakpoint {
+        /**
+         * Indicates that breakpoint is attached to the specific debug session.
+         */
+        sessionId?: string
+        /**
+         * Breakpoint created in setBreakpoints or setFunctionBreakpoints.
+         */
+        created?: DebugProtocol.Breakpoint;
+        /**
+         * A Source is a descriptor for source code.
+         * If source is defined then breakpoint is a [SourceBreakpoint](#DebugProtocol.SourceBreakpoint)
+         */
+        source?: DebugProtocol.Source;
+        /**
+         * One of possible breakpoints.
+         */
+        origin: DebugProtocol.SourceBreakpoint | DebugProtocol.FunctionBreakpoint | ExtDebugProtocol.ExceptionBreakpoint;
+    }
 }
 
 /**
@@ -178,118 +211,88 @@ export namespace ExtDebugProtocol {
  * and are needed in different components.
  */
 export class DebugSessionStateAccumulator implements DebugSessionState {
-    private _isConnected: boolean;
-    private _allThreadsContinued: boolean | undefined;
-    private _allThreadsStopped: boolean | undefined;
-    private _stoppedThreads = new Set<number>();
-    private _breakpoints = new Map<string, DebugProtocol.Breakpoint>();
-    private _capabilities: DebugProtocol.Capabilities = {};
+    isConnected: boolean;
+    allThreadsContinued: boolean | undefined;
+    allThreadsStopped: boolean | undefined;
+    stoppedThreadIds = new Set<number>();
+    capabilities: DebugProtocol.Capabilities = {};
+    sources = new Map<string, DebugProtocol.Source>();
 
     constructor(eventEmitter: NodeJS.EventEmitter, currentState?: DebugSessionState) {
         if (currentState) {
-            this._isConnected = currentState.isConnected;
-            this._allThreadsContinued = currentState.allThreadsContinued;
-            this._allThreadsStopped = currentState.allThreadsStopped;
-            currentState.stoppedThreadIds.forEach(threadId => this._stoppedThreads.add(threadId));
-            currentState.breakpoints.forEach(breakpoint => this._breakpoints.set(this.createId(breakpoint), breakpoint));
+            this.stoppedThreadIds = new Set(currentState.stoppedThreadIds);
+            this.sources = new Map(currentState.sources);
+            this.isConnected = currentState.isConnected;
+            this.allThreadsContinued = currentState.allThreadsContinued;
+            this.allThreadsStopped = currentState.allThreadsStopped;
         }
 
-        eventEmitter.on("connected", event => this.onConnectedEvent(event));
-        eventEmitter.on("terminated", event => this.onTerminatedEvent(event));
-        eventEmitter.on('stopped', event => this.onStoppedEvent(event));
-        eventEmitter.on('continued', event => this.onContinuedEvent(event));
-        eventEmitter.on('thread', event => this.onThreadEvent(event));
-        eventEmitter.on('breakpoint', event => this.onBreakpointEvent(event));
+        eventEmitter.on("connected", event => this.onConnected(event));
+        eventEmitter.on("terminated", event => this.onTerminated(event));
+        eventEmitter.on('stopped', event => this.onStopped(event));
+        eventEmitter.on('continued', event => this.onContinued(event));
+        eventEmitter.on('thread', event => this.onThread(event));
         eventEmitter.on('capabilities', event => this.onCapabilitiesEvent(event));
+        eventEmitter.on('loadedSource', event => this.onLoadedSource(event));
     }
 
-    get capabilities(): DebugProtocol.Capabilities {
-        return this._capabilities;
+    private onConnected(event: ExtDebugProtocol.ConnectedEvent): void {
+        this.isConnected = true;
     }
 
-    get allThreadsContinued(): boolean | undefined {
-        return this._allThreadsContinued;
+    private onTerminated(event: DebugProtocol.TerminatedEvent): void {
+        this.isConnected = false;
     }
 
-    get allThreadsStopped(): boolean | undefined {
-        return this._allThreadsStopped;
-    }
-
-    get isConnected(): boolean {
-        return this._isConnected;
-    }
-
-    get stoppedThreadIds(): number[] {
-        return Array.from(this._stoppedThreads);
-    }
-
-    get breakpoints(): DebugProtocol.Breakpoint[] {
-        return Array.from(this._breakpoints.values());
-    }
-
-    private onConnectedEvent(event: ExtDebugProtocol.ExtConnectedEvent): void {
-        this._isConnected = true;
-    }
-
-    private onTerminatedEvent(event: DebugProtocol.TerminatedEvent): void {
-        this._isConnected = false;
-    }
-
-    private onContinuedEvent(event: DebugProtocol.ContinuedEvent): void {
+    private onContinued(event: DebugProtocol.ContinuedEvent): void {
         const body = event.body;
 
-        this._allThreadsContinued = body.allThreadsContinued;
-        if (this._allThreadsContinued) {
-            this._stoppedThreads.clear();
+        this.allThreadsContinued = body.allThreadsContinued;
+        if (this.allThreadsContinued) {
+            this.stoppedThreadIds.clear();
         } else {
-            this._stoppedThreads.delete(body.threadId);
+            this.stoppedThreadIds.delete(body.threadId);
         }
     }
 
-    private onStoppedEvent(event: DebugProtocol.StoppedEvent): void {
+    private onStopped(event: DebugProtocol.StoppedEvent): void {
         const body = event.body;
 
-        this._allThreadsStopped = body.allThreadsStopped;
+        this.allThreadsStopped = body.allThreadsStopped;
         if (body.threadId) {
-            this._stoppedThreads.add(body.threadId);
+            this.stoppedThreadIds.add(body.threadId);
         }
     }
 
-    private onThreadEvent(event: DebugProtocol.ThreadEvent): void {
+    private onThread(event: DebugProtocol.ThreadEvent): void {
         switch (event.body.reason) {
             case 'exited': {
-                this._stoppedThreads.delete(event.body.threadId);
+                this.stoppedThreadIds.delete(event.body.threadId);
                 break;
             }
         }
     }
 
-    private onBreakpointEvent(event: DebugProtocol.BreakpointEvent): void {
-        const breakpoint = event.body.breakpoint;
+    private onLoadedSource(event: DebugProtocol.LoadedSourceEvent): void {
+        const source = event.body.source;
+        if (!source.path) {
+            return;
+        }
+
         switch (event.body.reason) {
-            case 'new': {
-                this._breakpoints.set(this.createId(breakpoint), breakpoint);
-                break;
-            }
             case 'removed': {
-                this._breakpoints.delete(this.createId(breakpoint));
+                this.sources.delete(source.path);
                 break;
             }
+            case 'new':
             case 'changed': {
-                this._breakpoints.set(this.createId(breakpoint), breakpoint);
+                this.sources.set(source.path, source);
                 break;
             }
         }
     }
 
     private onCapabilitiesEvent(event: DebugProtocol.CapabilitiesEvent): void {
-        Object.assign(this._capabilities, event.body.capabilities);
-    }
-
-    private createId(breakpoint: DebugProtocol.Breakpoint): string {
-        return breakpoint.id
-            ? breakpoint.id.toString()
-            : (breakpoint.source ? `${breakpoint.source.path}-` : '')
-            + (`${breakpoint.line}: ${breakpoint.column} `);
+        Object.assign(this.capabilities, event.body.capabilities);
     }
 }

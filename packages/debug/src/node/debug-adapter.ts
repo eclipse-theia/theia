@@ -228,7 +228,7 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
             switch (response.command) {
                 case 'attach':
                 case 'launch': {
-                    const event: ExtDebugProtocol.ExtConnectedEvent = {
+                    const event: ExtDebugProtocol.ConnectedEvent = {
                         type: 'event',
                         seq: -1,
                         event: 'connected'
@@ -239,7 +239,7 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
 
                 case 'setVariable': {
                     const setVariableRequest = request as DebugProtocol.SetVariableRequest;
-                    const event: ExtDebugProtocol.ExtVariableUpdatedEvent = {
+                    const event: ExtDebugProtocol.VariableUpdatedEvent = {
                         type: 'event',
                         seq: -1,
                         event: 'variableUpdated',
@@ -262,7 +262,7 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
                         event: 'continued',
                         body: {
                             threadId: continueRequest.arguments.threadId,
-                            allThreadsContinued: continueResponse.body.allThreadsContinued
+                            allThreadsContinued: continueResponse.body && continueResponse.body.allThreadsContinued
                         }
                     };
                     this.proceedEvent(JSON.stringify(event), event);

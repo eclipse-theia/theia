@@ -55,7 +55,7 @@ export class DebugVariablesWidget extends TreeWidget {
         this.id = `debug-variables-${debugSession.sessionId}`;
         this.title.label = 'Variables';
         this.addClass(Styles.VARIABLES_CONTAINER);
-        this.debugSession.on('variableUpdated', (event: ExtDebugProtocol.ExtVariableUpdatedEvent) => this.onVariableUpdated(event));
+        this.debugSession.on('variableUpdated', (event: ExtDebugProtocol.VariableUpdatedEvent) => this.onVariableUpdated(event));
         this.debugSelection.onDidSelectFrame(frame => this.onFrameSelected(frame));
     }
 
@@ -66,7 +66,7 @@ export class DebugVariablesWidget extends TreeWidget {
         }
     }
 
-    protected onVariableUpdated(event: ExtDebugProtocol.ExtVariableUpdatedEvent) {
+    protected onVariableUpdated(event: ExtDebugProtocol.VariableUpdatedEvent) {
         const id = VariableNode.getId(this.debugSession.sessionId, event.body.name, event.body.parentVariablesReference);
         const variableNode = this.model.getNode(id) as VariableNode;
         Object.assign(variableNode.extVariable, event.body);
@@ -169,7 +169,7 @@ export class DebugVariablesTree extends TreeImpl {
 }
 
 export interface VariableNode extends SelectableTreeNode, ExpandableTreeNode, CompositeTreeNode {
-    extVariable: ExtDebugProtocol.ExtVariable;
+    extVariable: ExtDebugProtocol.Variable;
 }
 
 export interface ScopeNode extends SelectableTreeNode, ExpandableTreeNode, CompositeTreeNode {
@@ -185,7 +185,7 @@ namespace VariableNode {
         return !!node && 'extVariable' in node;
     }
 
-    export function create(sessionId: string, extVariable: ExtDebugProtocol.ExtVariable, parent?: TreeNode): VariableNode {
+    export function create(sessionId: string, extVariable: ExtDebugProtocol.Variable, parent?: TreeNode): VariableNode {
         const name = extVariable.name;
         const id = createId(sessionId, extVariable.name, extVariable.parentVariablesReference);
         return <VariableNode>{
