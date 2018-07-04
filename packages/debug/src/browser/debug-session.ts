@@ -24,10 +24,40 @@ import {
 } from "../common/debug-common";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { Deferred } from "@theia/core/lib/common/promise-util";
-import { Emitter, Event, DisposableCollection, ContributionProvider } from "@theia/core";
+import { Emitter, Event, DisposableCollection, ContributionProvider, Resource, ResourceResolver } from "@theia/core";
 import { EventEmitter } from "events";
 import { OutputChannelManager } from "@theia/output/lib/common/output-channel";
-import { DebugSession, DebugSessionFactory, DebugSessionContribution, Debug } from "./debug-model";
+import { DebugSession, DebugSessionFactory, DebugSessionContribution } from "./debug-model";
+import URI from "@theia/core/lib/common/uri";
+import { BreakpointsApplier } from "./breakpoint/breakpoint-applier";
+
+/**
+ * Stack frame format.
+ */
+const DEFAULT_STACK_FRAME_FORMAT: DebugProtocol.StackFrameFormat = {
+    parameters: true,
+    parameterTypes: true,
+    parameterNames: true,
+    parameterValues: true,
+    line: true,
+    module: true,
+    includeAll: true,
+    hex: false
+};
+
+/**
+ * Initialize requests arguments.
+ */
+const INITIALIZE_ARGUMENTS = {
+    clientID: "Theia",
+    locale: "",
+    linesStartAt1: true,
+    columnsStartAt1: true,
+    pathFormat: "path",
+    supportsVariableType: false,
+    supportsVariablePaging: false,
+    supportsRunInTerminalRequest: false
+};
 
 /**
  * DebugSession implementation.
@@ -58,16 +88,10 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
 
         const initialized = new Deferred<WebSocket>();
 
-        websocket.onopen = () => {
-            initialized.resolve(websocket);
-        };
+        websocket.onopen = () => initialized.resolve(websocket);
         websocket.onclose = () => { };
-        websocket.onerror = () => {
-            initialized.reject(`Failed to establish connection with debug adapter by url: '${url}'`);
-        };
-        websocket.onmessage = (event: MessageEvent): void => {
-            this.handleMessage(event);
-        };
+        websocket.onerror = () => initialized.reject(`Failed to establish connection with debug adapter by url: '${url}'`);
+        websocket.onmessage = (event: MessageEvent): void => this.handleMessage(event);
 
         return initialized.promise;
     }
@@ -106,7 +130,7 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
 
     stacks(args: DebugProtocol.StackTraceArguments): Promise<DebugProtocol.StackTraceResponse> {
         if (!args.format) {
-            args.format = Debug.DEFAULT_STACK_FRAME_FORMAT;
+            args.format = DEFAULT_STACK_FRAME_FORMAT;
         }
         return this.proceedRequest("stackTrace", args);
     }
@@ -137,6 +161,10 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
 
     source(args: DebugProtocol.SourceArguments): Promise<DebugProtocol.SourceResponse> {
         return this.proceedRequest('source', args);
+    }
+
+    setBreakpoints(args: DebugProtocol.SetBreakpointsArguments): Promise<DebugProtocol.SetBreakpointsResponse> {
+        return this.proceedRequest('setBreakpoints', args);
     }
 
     protected handleMessage(event: MessageEvent) {
@@ -196,8 +224,8 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
     get(sessionId: string, debugConfiguration: DebugConfiguration): DebugSession {
         const state: DebugSessionState = {
             isConnected: false,
-            breakpoints: [],
-            stoppedThreadIds: [],
+            sources: new Map<string, DebugProtocol.Source>(),
+            stoppedThreadIds: new Set<number>(),
             allThreadsContinued: false,
             allThreadsStopped: false,
             capabilities: {}
@@ -215,17 +243,15 @@ export class DebugSessionManager {
     protected readonly contribs = new Map<string, DebugSessionContribution>();
     protected readonly onDidPreCreateDebugSessionEmitter = new Emitter<string>();
     protected readonly onDidCreateDebugSessionEmitter = new Emitter<DebugSession>();
-    protected readonly onDidChangeActiveDebugSessionEmitter = new Emitter<DebugSession | undefined>();
+    protected readonly onDidChangeActiveDebugSessionEmitter = new Emitter<[DebugSession | undefined, DebugSession | undefined]>();
     protected readonly onDidDestroyDebugSessionEmitter = new Emitter<DebugSession>();
 
     constructor(
-        @inject(DebugSessionFactory)
-        protected readonly debugSessionFactory: DebugSessionFactory,
-        @inject(OutputChannelManager)
-        protected readonly outputChannelManager: OutputChannelManager,
-        @inject(ContributionProvider) @named(DebugSessionContribution)
-        protected readonly contributions: ContributionProvider<DebugSessionContribution>
-    ) {
+        @inject(DebugSessionFactory) protected readonly debugSessionFactory: DebugSessionFactory,
+        @inject(OutputChannelManager) protected readonly outputChannelManager: OutputChannelManager,
+        @inject(ContributionProvider) @named(DebugSessionContribution) protected readonly contributions: ContributionProvider<DebugSessionContribution>,
+        @inject(BreakpointsApplier) protected readonly breakpointApplier: BreakpointsApplier) {
+
         for (const contrib of this.contributions.getContributions()) {
             this.contribs.set(contrib.debugType, contrib);
         }
@@ -256,12 +282,12 @@ export class DebugSessionManager {
         session.on("terminated", () => this.destroy(sessionId));
 
         const initializeArgs: DebugProtocol.InitializeRequestArguments = {
-            ...Debug.INITIALIZE_ARGUMENTS,
+            ...INITIALIZE_ARGUMENTS,
             adapterID: debugConfiguration.type
         };
 
         session.initialize(initializeArgs)
-            .then(response => {
+            .then(() => {
                 const request = debugConfiguration.request;
                 switch (request) {
                     case "attach": {
@@ -271,7 +297,8 @@ export class DebugSessionManager {
                     default: return Promise.reject(`Unsupported request '${request}' type.`);
                 }
             })
-            .then(response => session.configurationDone());
+            .then(() => this.breakpointApplier.applySessionBreakpoints(session))
+            .then(() => session.configurationDone());
 
         return session;
     }
@@ -314,9 +341,11 @@ export class DebugSessionManager {
      * @param sessionId The session identifier
      */
     setActiveDebugSession(sessionId: string | undefined) {
+        const oldActiveSessionSession = this.activeDebugSessionId ? this.find(this.activeDebugSessionId) : undefined;
+
         if (this.activeDebugSessionId !== sessionId) {
             this.activeDebugSessionId = sessionId;
-            this.onDidChangeActiveDebugSessionEmitter.fire(this.getActiveDebugSession());
+            this.onDidChangeActiveDebugSessionEmitter.fire([oldActiveSessionSession, this.getActiveDebugSession()]);
         }
     }
 
@@ -352,7 +381,7 @@ export class DebugSessionManager {
         this.onDidDestroyDebugSessionEmitter.fire(session);
     }
 
-    get onDidChangeActiveDebugSession(): Event<DebugSession | undefined> {
+    get onDidChangeActiveDebugSession(): Event<[DebugSession | undefined, DebugSession | undefined]> {
         return this.onDidChangeActiveDebugSessionEmitter.event;
     }
 
@@ -366,5 +395,61 @@ export class DebugSessionManager {
 
     get onDidDestroyDebugSession(): Event<DebugSession> {
         return this.onDidDestroyDebugSessionEmitter.event;
+    }
+}
+
+/**
+ * DAP resource.
+ */
+export const DAP_SCHEME = 'dap';
+
+export class DebugResource implements Resource {
+
+    constructor(
+        public uri: URI,
+        protected readonly debugSessionManager: DebugSessionManager,
+    ) { }
+
+    dispose(): void { }
+
+    readContents(options: { encoding?: string }): Promise<string> {
+        const debugSession = this.debugSessionManager.getActiveDebugSession();
+        if (!debugSession) {
+            throw new Error(`There is no active debug session to load content '${this.uri}'`);
+        }
+
+        const sourceReference = this.uri.query;
+        if (sourceReference) {
+            return debugSession.source({ sourceReference: Number.parseInt(sourceReference) }).then(response => response.body.content);
+        }
+
+        const path = this.uri.path.toString();
+        const source = debugSession.state.sources.get(path);
+        if (!source) {
+            throw new Error(`There is no loaded source for '${this.uri}'`);
+        }
+
+        if (!source.sourceReference) {
+            throw new Error(`sourceReference isn't specified '${this.uri}'`);
+        }
+
+        return debugSession.source({ sourceReference: source.sourceReference }).then(response => response.body.content);
+    }
+}
+
+@injectable()
+export class DebugResourceResolver implements ResourceResolver {
+
+    constructor(
+        @inject(DebugSessionManager)
+        protected readonly debugSessionManager: DebugSessionManager
+    ) { }
+
+    resolve(uri: URI): DebugResource {
+        if (uri.scheme !== DAP_SCHEME) {
+            throw new Error('The given URI is not a valid dap uri: ' + uri);
+        }
+
+        return new DebugResource(uri, this.debugSessionManager);
     }
 }

@@ -27,11 +27,11 @@ import { ExtDebugProtocol } from '../../common/debug-common';
 export class DebugSelection {
     private _thread: DebugProtocol.Thread | undefined;
     private _frame: DebugProtocol.StackFrame | undefined;
-    private _variable: ExtDebugProtocol.ExtVariable | undefined;
+    private _variable: ExtDebugProtocol.Variable | undefined;
 
     private readonly onDidSelectThreadEmitter = new Emitter<DebugProtocol.Thread | undefined>();
     private readonly onDidSelectFrameEmitter = new Emitter<DebugProtocol.StackFrame | undefined>();
-    private readonly onDidSelectVariableEmitter = new Emitter<ExtDebugProtocol.ExtVariable | undefined>();
+    private readonly onDidSelectVariableEmitter = new Emitter<ExtDebugProtocol.Variable | undefined>();
 
     get thread(): DebugProtocol.Thread | undefined {
         return this._thread;
@@ -51,11 +51,11 @@ export class DebugSelection {
         this.onDidSelectFrameEmitter.fire(frame);
     }
 
-    get variable(): ExtDebugProtocol.ExtVariable | undefined {
+    get variable(): ExtDebugProtocol.Variable | undefined {
         return this._variable;
     }
 
-    set variable(variable: ExtDebugProtocol.ExtVariable | undefined) {
+    set variable(variable: ExtDebugProtocol.Variable | undefined) {
         this._variable = variable;
         this.onDidSelectVariableEmitter.fire(variable);
     }
@@ -68,7 +68,7 @@ export class DebugSelection {
         return this.onDidSelectFrameEmitter.event;
     }
 
-    get onDidSelectVariable(): Event<ExtDebugProtocol.ExtVariable | undefined> {
+    get onDidSelectVariable(): Event<ExtDebugProtocol.Variable | undefined> {
         return this.onDidSelectVariableEmitter.event;
     }
 }
