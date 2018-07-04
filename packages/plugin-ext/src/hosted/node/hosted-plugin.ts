@@ -100,9 +100,14 @@ export class HostedPluginSupport {
     }
 
     private fork(options: IPCConnectionOptions): cp.ChildProcess {
+
+        // create env and add PATH to it so any executable from root process is available
+        const env = createIpcEnv();
+        env.PATH = process.env.PATH;
+
         const forkOptions: cp.ForkOptions = {
             silent: true,
-            env: createIpcEnv(),
+            env: env,
             execArgv: [],
             stdio: ['pipe', 'pipe', 'pipe', 'ipc']
         };
