@@ -42,6 +42,7 @@ export interface PluginPackage {
     displayName: string;
     description: string;
     contributes: {};
+    packagePath: string;
 }
 
 export const PluginScanner = Symbol('PluginScanner');

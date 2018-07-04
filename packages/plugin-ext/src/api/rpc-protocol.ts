@@ -236,7 +236,11 @@ class RPCMultiplexer {
 
     public send(msg: string): void {
         if (this.messagesToSend.length === 0) {
-            setImmediate(this.sendAccumulatedBound);
+            if (typeof setImmediate !== 'undefined') {
+                setImmediate(this.sendAccumulatedBound);
+            } else {
+                setTimeout(this.sendAccumulatedBound, 0);
+            }
         }
         this.messagesToSend.push(msg);
     }

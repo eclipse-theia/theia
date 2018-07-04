@@ -278,7 +278,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
 // tslint:disable-next-line:no-any
 export function startPlugin(plugin: Plugin, pluginMain: any, plugins: Map<string, () => void>): void {
     if (typeof pluginMain[plugin.lifecycle.startMethod] === 'function') {
-        pluginMain[plugin.lifecycle.startMethod].apply(global, []);
+        pluginMain[plugin.lifecycle.startMethod].apply(getGlobal(), []);
     } else {
         console.log('there is no doStart method on plugin');
     }
@@ -287,4 +287,10 @@ export function startPlugin(plugin: Plugin, pluginMain: any, plugins: Map<string
         const pluginId = getPluginId(plugin.model);
         plugins.set(pluginId, pluginMain[plugin.lifecycle.stopMethod]);
     }
+}
+
+// for electron
+function getGlobal() {
+    // tslint:disable-next-line:no-null-keyword
+    return typeof self === "undefined" ? typeof global === "undefined" ? null : global : self;
 }
