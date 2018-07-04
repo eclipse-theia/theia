@@ -16,7 +16,20 @@
 
 import * as os from 'os';
 import * as fs from 'fs-extra';
+import * as yargs from 'yargs';
 import { ApplicationPackage } from '@theia/application-package';
+
+const argv = yargs.option('mode', {
+    description: 'Mode to use',
+    choices: ['development', 'production'],
+    default: 'production'
+}).option('split-frontend', {
+    description: 'Split frontend modules into separate chunks. By default enabled in the dev mode and disabled in the prod mode.',
+    type: 'boolean',
+    default: undefined
+}).argv;
+const mode: 'development' | 'production' = argv.mode;
+const splitFrontend: boolean = argv['split-frontend'] === undefined ? mode === 'development' : argv['split-frontend'];
 
 export abstract class AbstractGenerator {
 
@@ -25,7 +38,7 @@ export abstract class AbstractGenerator {
     ) { }
 
     protected compileFrontendModuleImports(modules: Map<string, string>): string {
-        return this.compileModuleImports(modules, 'require');
+        return this.compileModuleImports(modules, splitFrontend ? 'import' : 'require');
     }
 
     protected compileBackendModuleImports(modules: Map<string, string>): string {
