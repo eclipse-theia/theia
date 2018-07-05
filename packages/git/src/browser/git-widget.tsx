@@ -120,8 +120,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
     }
 
     storeState(): object {
-        const commitTextArea = document.getElementById(GitWidget.Styles.COMMIT_MESSAGE) as HTMLTextAreaElement;
-        const messageBoxHeight = commitTextArea ? commitTextArea.offsetHeight : GitWidget.MESSAGE_BOX_MIN_HEIGHT;
+        const messageBoxHeight = this.messageBoxHeight ? this.messageBoxHeight : GitWidget.MESSAGE_BOX_MIN_HEIGHT;
         return {
             message: this.message,
             commitMessageValidationResult: this.commitMessageValidationResult,
@@ -132,7 +131,8 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
     // tslint:disable-next-line:no-any
     restoreState(oldState: any): void {
         this.message = oldState.message;
-        this.commitMessageValidationResult = oldState.commitMessageValidationResult;
+        // Do not restore the validation message if the commit message is undefined or empty.
+        this.commitMessageValidationResult = this.message ? oldState.commitMessageValidationResult : undefined;
         this.messageBoxHeight = oldState.messageBoxHeight || GitWidget.MESSAGE_BOX_MIN_HEIGHT;
     }
 
@@ -236,7 +236,7 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
         return <div className={GitWidget.Styles.COMMIT_MESSAGE_CONTAINER}>
             <textarea
                 className={`${GitWidget.Styles.COMMIT_MESSAGE} theia-git-commit-message-${validationStatus}`}
-                style={{ height: this.messageBoxHeight }}
+                style={{ height: this.messageBoxHeight, overflow: this.messageBoxHeight > GitWidget.MESSAGE_BOX_MIN_HEIGHT ? 'auto' : 'hidden' }}
                 autoFocus={true}
                 onInput={this.onCommitMessageChange.bind(this)}
                 placeholder='Commit message'
@@ -285,6 +285,16 @@ export class GitWidget extends ReactWidget implements StatefulWidget {
             textArea.style.height = `${textArea.scrollHeight}px`;
             if (textArea.clientHeight < textArea.scrollHeight) {
                 textArea.style.height = `${(textArea.scrollHeight * 2 - textArea.clientHeight)}px`;
+            }
+        }
+        const updatedHeight = textArea.style.height;
+        if (updatedHeight) {
+            this.messageBoxHeight = parseInt(updatedHeight, 10) || GitWidget.MESSAGE_BOX_MIN_HEIGHT;
+            if (this.messageBoxHeight > GitWidget.MESSAGE_BOX_MIN_HEIGHT) {
+                textArea.style.overflow = 'auto';
+            } else {
+                // Hide the scroll-bar if we shrink down the size.
+                textArea.style.overflow = 'hidden';
             }
         }
     }
