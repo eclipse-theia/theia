@@ -490,7 +490,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected renderNodeChildren(node: TreeNode, props: NodeProps): React.ReactNode {
-        if (CompositeTreeNode.is(node)) {
+        if (CompositeTreeNode.is(node) && !ExpandableTreeNode.isCollapsed(node)) {
             return this.renderCompositeChildren(node, props);
         }
         // tslint:disable-next-line:no-null-keyword
