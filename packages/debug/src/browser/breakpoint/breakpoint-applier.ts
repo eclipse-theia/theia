@@ -25,7 +25,7 @@ export class BreakpointsApplier {
     applySessionBreakpoints(debugSession: DebugSession, source?: DebugProtocol.Source): Promise<void> {
         return this.storage.get(DebugUtils.isSourceBreakpoint)
             .then(breakpoints => breakpoints.filter(b => b.sessionId === debugSession.sessionId))
-            // .then(breakpoints => breakpoints.filter(b => this.checkUri(b, editor.uri)) : breakpoints)
+            .then(breakpoints => breakpoints.filter(b => source ? DebugUtils.checkUri(b, DebugUtils.toUri(source)) : true))
             .then(breakpoints => {
                 const promises: Promise<void>[] = [];
 
