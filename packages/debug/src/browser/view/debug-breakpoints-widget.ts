@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 import {
-    VirtualWidget,
+    VirtualWidget, SELECTED_CLASS,
 } from "@theia/core/lib/browser";
 import { DebugSession } from "../debug-model";
 import { h } from '@phosphor/virtualdom';
@@ -23,71 +23,89 @@ import { DebugProtocol } from 'vscode-debugprotocol';
 import { Emitter, Event } from "@theia/core";
 import { injectable, inject } from "inversify";
 import { BreakpointsManager } from "../breakpoint/breakpoint-manager";
+import { ExtDebugProtocol } from "../../common/debug-common";
+import { DebugUtils } from "../debug-utils";
 
 /**
  * Is it used to display breakpoints.
  */
 @injectable()
 export class DebugBreakpointsWidget extends VirtualWidget {
-    private readonly onDidClickBreakpointEmitter = new Emitter<DebugProtocol.Breakpoint>();
-    private readonly onDidDblClickBreakpointEmitter = new Emitter<DebugProtocol.Breakpoint>();
+    private readonly onDidClickBreakpointEmitter = new Emitter<ExtDebugProtocol.AggregatedBreakpoint>();
+    private readonly onDidDblClickBreakpointEmitter = new Emitter<ExtDebugProtocol.AggregatedBreakpoint>();
+    private breakpoints: ExtDebugProtocol.AggregatedBreakpoint[] = [];
 
     constructor(
         @inject(DebugSession) protected readonly debugSession: DebugSession,
         @inject(BreakpointsManager) protected readonly breakpointManager: BreakpointsManager) {
         super();
 
-        this.id = `debug-breakpoints-${this.debugSession.sessionId}`;
+        this.id = `debug-breakpoints-${debugSession.sessionId}`;
         this.addClass(Styles.BREAKPOINTS_CONTAINER);
         this.node.setAttribute("tabIndex", "0");
-        debugSession.on('breakpoint', event => this.onBreakpointEvent(event));
+        this.breakpointManager.onDidChangeBreakpoints(() => this.onBreakpointsChanged());
     }
 
-    get onDidClickBreakpoint(): Event<DebugProtocol.Breakpoint> {
+    get onDidClickBreakpoint(): Event<ExtDebugProtocol.AggregatedBreakpoint> {
         return this.onDidClickBreakpointEmitter.event;
     }
 
-    get onDidDblClickBreakpoint(): Event<DebugProtocol.Breakpoint> {
+    get onDidDblClickBreakpoint(): Event<ExtDebugProtocol.AggregatedBreakpoint> {
         return this.onDidDblClickBreakpointEmitter.event;
     }
 
-    private onBreakpointEvent(event: DebugProtocol.BreakpointEvent): void {
-        super.update();
+    private onBreakpointsChanged(): void {
+        this.breakpointManager.get(this.debugSession.sessionId).then(breakpoints => {
+            this.breakpoints = breakpoints;
+            super.update();
+        });
     }
 
     protected render(): h.Child {
         const header = h.div({ className: "theia-header" }, "Breakpoints");
         const items: h.Child = [];
 
-        // this.breakpointManager.getAll(this.debugSession.sessionId);
+        for (const breakpoint of this.breakpoints) {
+            const item =
+                h.div({
+                    id: DebugUtils.makeBreakpointId(breakpoint),
+                    className: Styles.BREAKPOINT,
+                    onclick: event => {
+                        const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
+                        if (selected) {
+                            selected.className = Styles.BREAKPOINT;
+                        }
+                        (event.target as HTMLDivElement).className = `${Styles.BREAKPOINT} ${SELECTED_CLASS}`;
 
-        // for (const breakpoint of this._breakpoints.values()) {
-        //     const item =
-        //         h.div({
-        //             id: this.createId(breakpoint),
-        //             className: Styles.BREAKPOINT,
-        //             onclick: event => {
-        //                 const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
-        //                 if (selected) {
-        //                     selected.className = Styles.BREAKPOINT;
-        //                 }
-        //                 (event.target as HTMLDivElement).className = `${Styles.BREAKPOINT} ${SELECTED_CLASS}`;
-
-        //                 this.onDidClickBreakpointEmitter.fire(breakpoint);
-        //             },
-        //             ondblclick: event => this.onDidDblClickBreakpointEmitter.fire(breakpoint),
-        //         }, this.toDisplayName(breakpoint));
-        //     items.push(item);
-        // }
+                        this.onDidClickBreakpointEmitter.fire(breakpoint);
+                    },
+                    ondblclick: () => this.onDidDblClickBreakpointEmitter.fire(breakpoint),
+                }, this.toDisplayName(breakpoint));
+            items.push(item);
+        }
 
         return [header, h.div(items)];
     }
 
-    // private toDisplayName(breakpoint: DebugProtocol.Breakpoint): string {
-    //     return (breakpoint.source && breakpoint.source.name ? breakpoint.source.name : '')
-    //         + (breakpoint.line ? `:${breakpoint.line}` : '')
-    //         + (breakpoint.column ? `:${breakpoint.column}` : '');
-    // }
+    private toDisplayName(breakpoint: ExtDebugProtocol.AggregatedBreakpoint): string {
+        if ('origin' in breakpoint) {
+            if (DebugUtils.isSourceBreakpoint(breakpoint)) {
+                return this.toDisplayNameSourceBrk(breakpoint.source!, breakpoint.origin as DebugProtocol.SourceBreakpoint);
+
+            } else if (DebugUtils.isFunctionBreakpoint(breakpoint)) {
+                return (breakpoint.origin as DebugProtocol.FunctionBreakpoint).name;
+
+            } else if (DebugUtils.isExceptionBreakpoint(breakpoint)) {
+                return (breakpoint.origin as ExtDebugProtocol.ExceptionBreakpoint).filter;
+            }
+        }
+
+        throw new Error('Unrecognized breakpoint type: ' + JSON.stringify(breakpoint));
+    }
+
+    private toDisplayNameSourceBrk(source: DebugProtocol.Source, breakpoint: DebugProtocol.SourceBreakpoint): string {
+        return source.name! + `:${breakpoint.line}` + (breakpoint.column ? `:${breakpoint.column}` : '');
+    }
 }
 
 namespace Styles {

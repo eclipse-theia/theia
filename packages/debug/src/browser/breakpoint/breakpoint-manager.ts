@@ -82,6 +82,14 @@ export class BreakpointsManager implements FrontendApplicationContribution {
     }
 
     /**
+     * Returns all breakpoints for the given debug session.
+     * @param sessionId the debug session identifier
+     */
+    async get(sessionId: string | undefined): Promise<ExtDebugProtocol.AggregatedBreakpoint[]> {
+        return this.storage.get().then(breakpoints => breakpoints.filter(b => b.sessionId === sessionId));
+    }
+
+    /**
      * Creates a source breakpoint for the given editor and active session.
      * @param session the current active session
      * @param editor the text editor
@@ -186,6 +194,15 @@ export class BreakpointsManager implements FrontendApplicationContribution {
     private reassignBreakpoints(oldSessionId: string | undefined, newSessionId: string | undefined): Promise<void> {
         return this.storage.get(DebugUtils.isSourceBreakpoint)
             .then(breakpoints => breakpoints.filter(b => b.sessionId === oldSessionId))
+            .then(breakpoints => {
+                if (newSessionId) {
+                    const debugSession = this.debugSessionManager.find(newSessionId);
+                    if (debugSession) {
+                        return breakpoints.filter(b => DebugUtils.checkPattern(b, debugSession.configuration.breakpoints.filePatterns));
+                    }
+                }
+                return breakpoints;
+            })
             .then(breakpoints => breakpoints.map(b => {
                 b.sessionId = newSessionId;
                 b.created = undefined;

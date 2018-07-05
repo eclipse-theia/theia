@@ -90,6 +90,13 @@ export interface DebugConfiguration {
     name: string;
 
     /**
+     * Supported file patterns for breakpoints.
+     */
+    breakpoints: {
+        filePatterns: string[];
+    }
+
+    /**
      * Additional debug type specific properties.
      */
     [key: string]: any;

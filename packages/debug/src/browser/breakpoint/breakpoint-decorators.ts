@@ -142,6 +142,11 @@ const InactiveBreakpointDecoration = <EditorDecorationOptions>{
     glyphMarginClassName: 'theia-debug-inactive-breakpoint',
 };
 
+const ActiveBreakpointDecoration = <EditorDecorationOptions>{
+    isWholeLine: false,
+    glyphMarginClassName: 'theia-debug-active-breakpoint',
+};
+
 /**
  * Per session [breakpoint decorator](#BreakpointDecorator) provider.
  */
@@ -209,7 +214,7 @@ export class BreakpointDecorator extends EditorDecorator {
                 .then(breakpoints => breakpoints.filter(b => DebugUtils.checkUri(b, e.uri)))
                 .then(breakpoints => breakpoints.map(b => ({
                     range: this.toRange(b.origin as DebugProtocol.SourceBreakpoint),
-                    options: InactiveBreakpointDecoration
+                    options: !!b.created && !!b.created.verified ? InactiveBreakpointDecoration : ActiveBreakpointDecoration
                 })))
                 .then(decorations => this.setDecorations(e, decorations));
         });
