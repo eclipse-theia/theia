@@ -382,6 +382,9 @@ export class CommonFrontendContribution implements MenuContribution, CommandCont
         commandRegistry.registerCommand(CommonCommands.SAVE_ALL, {
             execute: () => this.shell.saveAll()
         });
+        commandRegistry.registerCommand(CommonCommands.AUTO_SAVE, {
+            execute: () => this.shell.saveAll()
+        });
 
         commandRegistry.registerCommand(CommonCommands.QUIT, {
             execute: () => {
