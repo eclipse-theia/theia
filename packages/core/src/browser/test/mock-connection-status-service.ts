@@ -15,23 +15,18 @@
  ********************************************************************************/
 
 import { MockLogger } from '../../common/test/mock-logger';
-import { FrontendConnectionStatusService } from '../connection-status-service';
+import { AbstractConnectionStatusService } from '../connection-status-service';
 
-export class MockConnectionStatusService extends FrontendConnectionStatusService {
+export class MockConnectionStatusService extends AbstractConnectionStatusService {
 
     constructor() {
         super({
-            retry: 3,
-            maxRetryInterval: 10,
-            retryInterval: 10,
-            requestTimeout: 10
+            offlineTimeout: 10
         }, new MockLogger());
     }
 
-    public alive: boolean = true;
-
-    protected async checkAlive(): Promise<boolean> {
-        return this.alive;
+    public set alive(alive: boolean) {
+        this.updateStatus(alive);
     }
 
 }

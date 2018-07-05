@@ -20,7 +20,6 @@ import { BackendApplication, BackendApplicationContribution, BackendApplicationC
 import { CliManager, CliContribution } from './cli';
 import { ServerProcess, RemoteMasterProcessFactory, clusterRemoteMasterProcessFactory } from './cluster';
 import { IPCConnectionProvider } from "./messaging";
-import { BackendConnectionStatusEndpoint } from './backend-connection-status';
 import { ApplicationServerImpl } from "./application-server";
 import { ApplicationServer, applicationPath } from "../common/application-protocol";
 import { EnvVariablesServer, envVariablesPath } from './../common/env-variables';
@@ -48,9 +47,6 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bind(MessageService).toSelf().inSingletonScope();
 
     bind(IPCConnectionProvider).toSelf().inSingletonScope();
-
-    bind(BackendConnectionStatusEndpoint).toSelf().inSingletonScope();
-    bind(BackendApplicationContribution).toDynamicValue(ctx => ctx.container.get(BackendConnectionStatusEndpoint)).inSingletonScope();
 
     bind(ApplicationServerImpl).toSelf().inSingletonScope();
     bind(ApplicationServer).toService(ApplicationServerImpl);

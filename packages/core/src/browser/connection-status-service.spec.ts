@@ -19,7 +19,7 @@ import { enableJSDOM } from '../browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 
 import { expect } from 'chai';
-import { ConnectionState } from './connection-status-service';
+import { ConnectionStatus } from './connection-status-service';
 import { MockConnectionStatusService } from './test/mock-connection-status-service';
 
 disableJSDOM();
@@ -38,35 +38,35 @@ describe('connection-status', function () {
 
     beforeEach(() => {
         connectionStatusService = new MockConnectionStatusService();
-        connectionStatusService.start();
     });
 
     afterEach(() => {
         if (connectionStatusService !== undefined) {
-            connectionStatusService.stop();
+            connectionStatusService.dispose();
         }
     });
 
     it('should go from online to offline if the connection is down', async () => {
-        expect(connectionStatusService.currentState.state).to.be.equal(ConnectionState.INITIAL);
+        expect(connectionStatusService.currentStatus).to.be.equal(ConnectionStatus.ONLINE);
         connectionStatusService.alive = false;
         await pause();
 
-        expect(connectionStatusService.currentState.state).to.be.equal(ConnectionState.OFFLINE);
+        expect(connectionStatusService.currentStatus).to.be.equal(ConnectionStatus.OFFLINE);
     });
 
     it('should go from offline to online if the connection is re-established', async () => {
+        expect(connectionStatusService.currentStatus).to.be.equal(ConnectionStatus.ONLINE);
         connectionStatusService.alive = false;
         await pause();
-        expect(connectionStatusService.currentState.state).to.be.equal(ConnectionState.OFFLINE);
+        expect(connectionStatusService.currentStatus).to.be.equal(ConnectionStatus.OFFLINE);
 
         connectionStatusService.alive = true;
         await pause();
-        expect(connectionStatusService.currentState.state).to.be.equal(ConnectionState.ONLINE);
+        expect(connectionStatusService.currentStatus).to.be.equal(ConnectionStatus.ONLINE);
     });
 
 });
 
-function pause(time: number = 100) {
+function pause(time: number = 1) {
     return new Promise(resolve => setTimeout(resolve, time));
 }

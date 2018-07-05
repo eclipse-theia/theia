@@ -49,7 +49,7 @@ import {
 } from './preferences';
 import { ContextMenuRenderer } from './context-menu-renderer';
 import { ThemingCommandContribution, ThemeService, BuiltinThemeProvider } from './theming';
-import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution } from './connection-status-service';
+import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution, PingService } from './connection-status-service';
 import { DiffUriLabelProviderContribution } from './diff-uris';
 import { ApplicationServer, applicationPath } from "../common/application-protocol";
 import { WebSocketConnectionProvider } from "./messaging";
@@ -143,6 +143,15 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
         bind(serviceIdentifier).toDynamicValue(ctx => ctx.container.get(PreferenceServiceImpl)).inSingletonScope();
     }
 
+    bind(PingService).toDynamicValue(ctx => {
+        // let's reuse a simple and cheap service from this package
+        const envServer: EnvVariablesServer = ctx.container.get(EnvVariablesServer);
+        return {
+            ping() {
+                return envServer.getValue('does_not_matter');
+            }
+        };
+    });
     bind(FrontendConnectionStatusService).toSelf().inSingletonScope();
     bind(ConnectionStatusService).toDynamicValue(ctx => ctx.container.get(FrontendConnectionStatusService)).inSingletonScope();
     bind(FrontendApplicationContribution).toDynamicValue(ctx => ctx.container.get(FrontendConnectionStatusService)).inSingletonScope();

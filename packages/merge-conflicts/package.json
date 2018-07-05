@@ -1,11 +1,11 @@
 {
   "name": "@theia/merge-conflicts",
-  "version": "0.3.11",
+  "version": "0.3.12",
   "description": "Theia - Merge Conflicts Extension",
   "dependencies": {
-    "@theia/core": "^0.3.11",
-    "@theia/editor": "^0.3.11",
-    "@theia/languages": "^0.3.11"
+    "@theia/core": "^0.3.12",
+    "@theia/editor": "^0.3.12",
+    "@theia/languages": "^0.3.12"
   },
   "publishConfig": {
     "access": "public"
@@ -40,7 +40,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.11"
+    "@theia/ext-scripts": "^0.3.12"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

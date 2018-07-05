@@ -6651,16 +6651,6 @@ npm-run-path@^2.0.0:
     gauge "~2.7.3"
     set-blocking "~2.0.0"
 
-nsfw@^1.0.16:
-  version "1.0.16"
-  resolved "https://registry.yarnpkg.com/nsfw/-/nsfw-1.0.16.tgz#78ba3e7f513b53d160c221b9018e0baf108614cc"
-  dependencies:
-    fs-extra "^0.26.5"
-    lodash.isinteger "^4.0.4"
-    lodash.isundefined "^3.0.1"
-    nan "^2.0.0"
-    promisify-node "^0.3.0"
-
 nugget@^2.0.0:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/nugget/-/nugget-2.0.1.tgz#201095a487e1ad36081b3432fa3cada4f8d071b0"
@@ -9854,6 +9844,16 @@ vscode-languageserver@^3.4.3:
   dependencies:
     vscode-languageserver-protocol "3.5.1"
     vscode-uri "^1.0.1"
+
+vscode-nsfw@^1.0.17:
+  version "1.0.17"
+  resolved "https://registry.yarnpkg.com/vscode-nsfw/-/vscode-nsfw-1.0.17.tgz#da3820f26aea3a7e95cadc54bd9e5dae3d47e474"
+  dependencies:
+    fs-extra "^0.26.5"
+    lodash.isinteger "^4.0.4"
+    lodash.isundefined "^3.0.1"
+    nan "^2.0.0"
+    promisify-node "^0.3.0"
 
 vscode-ripgrep@^1.0.1:
   version "1.0.1"

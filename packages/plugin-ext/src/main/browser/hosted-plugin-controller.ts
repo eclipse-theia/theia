@@ -23,7 +23,7 @@ import { CommandRegistry } from '@phosphor/commands';
 import { Menu } from '@phosphor/widgets';
 import { setTimeout } from 'timers';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
-import { ConnectionStatusService, ConnectionState } from '@theia/core/lib/browser/connection-status-service';
+import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/browser/connection-status-service';
 
 /**
  * Adds a status bar element displaying the state of secondary Theia instance with hosted plugin and
@@ -160,7 +160,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
      * Updaing status bar element when changing connection status.
      */
     private onConnectionStatusChanged(): void {
-        if (this.connectionStatusService.currentState.state === ConnectionState.OFFLINE) {
+        if (this.connectionStatusService.currentStatus === ConnectionStatus.OFFLINE) {
             // Re-set the element only if it's visible on status bar
             if (this.entry) {
                 const offlineElement = {

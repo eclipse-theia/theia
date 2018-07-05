@@ -16,7 +16,7 @@
 
 import { injectable, interfaces } from "inversify";
 import { createWebSocketConnection, Logger, ConsoleLogger } from "vscode-ws-jsonrpc/lib";
-import { ConnectionHandler, JsonRpcProxyFactory, JsonRpcProxy } from "../../common";
+import { ConnectionHandler, JsonRpcProxyFactory, JsonRpcProxy, Emitter, Event } from "../../common";
 import { WebSocketChannel } from "../../common/messaging/web-socket-channel";
 import { Endpoint } from "../endpoint";
 const ReconnectingWebSocket = require('reconnecting-websocket');
@@ -39,6 +39,9 @@ export class WebSocketConnectionProvider {
     protected readonly socket: WebSocket;
     protected readonly channels = new Map<number, WebSocketChannel>();
 
+    protected readonly onIncomingMessageActivityEmitter: Emitter<void> = new Emitter();
+    public onIncomingMessageActivity: Event<void> = this.onIncomingMessageActivityEmitter.event;
+
     constructor() {
         const url = this.createWebSocketUrl(WebSocketChannel.wsPath);
         const socket = this.createWebSocket(url);
@@ -57,6 +60,7 @@ export class WebSocketConnectionProvider {
             } else {
                 console.error('The ws channel does not exist', message.id);
             }
+            this.onIncomingMessageActivityEmitter.fire(undefined);
         };
         this.socket = socket;
     }
