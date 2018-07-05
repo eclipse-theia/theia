@@ -23,6 +23,7 @@ import { injectable, inject, postConstruct } from "inversify";
 import { FileUri } from '@theia/core/lib/node';
 import { CliContribution } from '@theia/core/lib/node/cli';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { MessageService, ILogger } from '@theia/core';
 import { WorkspaceServer } from "../common";
 
 @injectable()
@@ -61,6 +62,12 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
 
     @inject(WorkspaceCliContribution)
     protected readonly cliParams: WorkspaceCliContribution;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
+    @inject(ILogger)
+    protected readonly logger: ILogger;
 
     @postConstruct()
     protected async init() {
@@ -109,11 +116,27 @@ export class DefaultWorkspaceServer implements WorkspaceServer {
     private async readFromUserHome(): Promise<WorkspaceData | undefined> {
         const file = this.getUserStoragePath();
         if (await fs.pathExists(file)) {
-            const config = await fs.readJson(file);
+            const rawContent = await fs.readFile(file, 'utf-8');
+            const content = rawContent.trim();
+            if (!content) {
+                return undefined;
+            }
+
+            let config;
+            try {
+                config = JSON.parse(content);
+            } catch (error) {
+                this.messageService.warn(`Parse error in '${file}':\nFile will be ignored...`);
+                error.message = `${file}:\n${error.message}`;
+                this.logger.warn('[CAUGHT]', error);
+                return undefined;
+            }
+
             if (WorkspaceData.is(config)) {
                 return config;
             }
         }
+
         return undefined;
     }
 
