@@ -180,4 +180,18 @@ export namespace DebugUtils {
     export function checkUri(breakpoint: ExtDebugProtocol.AggregatedBreakpoint, uri: URI): boolean {
         return toUri(breakpoint.source!).toString() === uri.toString();
     }
+
+    export function checkPattern(breakpoint: ExtDebugProtocol.AggregatedBreakpoint, filePatterns: string[]): boolean {
+        if (breakpoint.source) {
+            for (const pattern of filePatterns) {
+                // Every source returned from the debug adapter has a name
+                const name = breakpoint.source.name!;
+                if (new RegExp(pattern).test(name)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 }
