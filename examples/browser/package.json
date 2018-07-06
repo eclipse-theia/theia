@@ -32,6 +32,7 @@
     "@theia/preferences": "^0.3.15",
     "@theia/preview": "^0.3.15",
     "@theia/process": "^0.3.15",
+    "@theia/progress-monitor": "^0.3.15",
     "@theia/python": "^0.3.15",
     "@theia/search-in-workspace": "^0.3.15",
     "@theia/task": "^0.3.15",

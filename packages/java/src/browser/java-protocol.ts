@@ -16,6 +16,7 @@
 
 import { RequestType, NotificationType } from 'vscode-jsonrpc';
 import { VersionedTextDocumentIdentifier, TextDocumentIdentifier, Command, MessageType } from '@theia/languages/lib/browser';
+import { ProgressReport } from '@theia/progress-monitor/lib/browser';
 
 export interface StatusReport {
     message: string;
@@ -53,4 +54,8 @@ export namespace ActionableNotification {
 
 export namespace SemanticHighlight {
     export const type = new NotificationType<SemanticHighlightingParams, void>('textDocument/semanticHighlighting');
+}
+
+export namespace ProgressReportNotification {
+    export const type = new NotificationType<ProgressReport, void>('language/progressReport');
 }

@@ -99,6 +99,9 @@
       ],
       "@theia/bunyan/lib/*": [
         "packages/bunyan/src/*"
+      ],
+      "@theia/progress-monitor/lib/*": [
+        "packages/progress-monitor/src/*"
       ]
     },
     "plugins": [

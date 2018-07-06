@@ -7,6 +7,7 @@
     "@theia/editor": "^0.3.15",
     "@theia/languages": "^0.3.15",
     "@theia/monaco": "^0.3.15",
+    "@theia/progress-monitor": "^0.3.15",
     "@types/glob": "^5.0.30",
     "@types/tar": "4.0.0",
     "glob": "^7.1.2",
