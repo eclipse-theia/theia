@@ -81,9 +81,10 @@ export class FileDialog extends AbstractDialog<Readonly<FileStatNode> | undefine
 
     protected onAfterAttach(msg: Message): void {
         Widget.attach(this.widget, this.contentNode);
-        this.toDisposeOnDetach.push(Disposable.create(() =>
-            Widget.detach(this.widget)
-        ));
+        this.toDisposeOnDetach.push(Disposable.create(() => {
+            Widget.detach(this.widget);
+            this.locationListRenderer.dispose();
+        }));
 
         this.appendCloseButton('Cancel');
         this.appendAcceptButton('Open');
