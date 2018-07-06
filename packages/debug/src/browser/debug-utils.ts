@@ -134,14 +134,17 @@ export namespace DebugUtils {
      * @returns an [debug source](#DebugProtocol.Source) referred by the uri
      */
     export function toSource(uri: URI, debugSession: DebugSession | undefined): DebugProtocol.Source {
+        const sourceReference = uri.query;
+
         if (debugSession) {
-            const source = debugSession.state.sources.get(uri.toString());
+            const source = sourceReference
+                ? debugSession.state.sources.get(sourceReference)
+                : debugSession.state.sources.get(uri.path.toString());
             if (source) {
                 return source;
             }
         }
 
-        const sourceReference = uri.query;
         if (sourceReference) {
             return {
                 sourceReference: Number.parseInt(sourceReference),
@@ -149,7 +152,10 @@ export namespace DebugUtils {
             };
         }
 
-        return { path: uri.path.toString() };
+        return {
+            name: uri.displayName,
+            path: uri.path.toString()
+        };
     }
 
     /**
@@ -181,14 +187,16 @@ export namespace DebugUtils {
         return toUri(breakpoint.source!).toString() === uri.toString();
     }
 
-    export function checkPattern(breakpoint: ExtDebugProtocol.AggregatedBreakpoint, filePatterns: string[]): boolean {
-        if (breakpoint.source) {
-            for (const pattern of filePatterns) {
-                // Every source returned from the debug adapter has a name
-                const name = breakpoint.source.name!;
-                if (new RegExp(pattern).test(name)) {
-                    return true;
-                }
+    /**
+     * Indicates if given source fits any of patterns.
+     */
+    export function checkPattern(source: DebugProtocol.Source, filePatterns: string[]): boolean {
+        for (const pattern of filePatterns) {
+            // Every source returned from the debug adapter has a name
+            const name = source.name!;
+
+            if (new RegExp(pattern).test(name)) {
+                return true;
             }
         }
 
