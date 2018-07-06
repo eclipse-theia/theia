@@ -16,6 +16,9 @@
 
 import { h, VirtualNode, VirtualText, VirtualDOM } from "@phosphor/virtualdom";
 
+/*
+ * @deprecated use ReactRenderer instead. VirtualRenderer will be removed with the next major release.
+ */
 export class VirtualRenderer {
     readonly host: HTMLElement;
     constructor(
@@ -34,6 +37,9 @@ export class VirtualRenderer {
 }
 
 export namespace VirtualRenderer {
+    /*
+     * @deprecated use ReactDOM.render instead. VirtualRenderer will be removed with the next major release.
+     */
     export function render(child: h.Child, host: HTMLElement) {
         const content = toContent(child);
         VirtualDOM.render(content, host);
