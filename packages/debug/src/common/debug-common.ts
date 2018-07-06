@@ -282,18 +282,15 @@ export class DebugSessionStateAccumulator implements DebugSessionState {
 
     private onLoadedSource(event: DebugProtocol.LoadedSourceEvent): void {
         const source = event.body.source;
-        if (!source.path) {
-            return;
-        }
-
         switch (event.body.reason) {
-            case 'removed': {
-                this.sources.delete(source.path);
-                break;
-            }
             case 'new':
             case 'changed': {
-                this.sources.set(source.path, source);
+                if (source.path) {
+                    this.sources.set(source.path, source);
+                } if (source.sourceReference) {
+                    this.sources.set(source.sourceReference.toString(), source);
+                }
+
                 break;
             }
         }

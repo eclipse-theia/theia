@@ -23,6 +23,7 @@ import { DebugConfigurationManager } from "./debug-configuration";
 import { DebugSelectionService } from "./view/debug-selection-service";
 import { SingleTextInputDialog } from "@theia/core/lib/browser/dialogs";
 import { DebugProtocol } from "vscode-debugprotocol";
+import { BreakpointsDialog } from "./view/debug-breakpoints-widget";
 
 export const DEBUG_SESSION_CONTEXT_MENU: MenuPath = ['debug-session-context-menu'];
 export const DEBUG_SESSION_THREAD_CONTEXT_MENU: MenuPath = ['debug-session-thread-context-menu'];
@@ -47,6 +48,7 @@ export namespace DebugMenus {
     export const DEBUG_START = [...DEBUG_STOP, '1_start'];
     export const SUSPEND_ALL_THREADS = [...DEBUG, '6_suspend_all_threads'];
     export const RESUME_ALL_THREADS = [...SUSPEND_ALL_THREADS, '5_resume_all_threads'];
+    export const SHOW_BREAKPOINTS = [...DEBUG, '7_breakpoinst'];
     export const ADD_CONFIGURATION = [...DEBUG, '4_add_configuration'];
     export const OPEN_CONFIGURATION = [...ADD_CONFIGURATION, '3_open_configuration'];
 }
@@ -95,6 +97,11 @@ export namespace DEBUG_COMMANDS {
         id: 'debug.variable.modify',
         label: 'Modify'
     };
+
+    export const SHOW_BREAKPOINTS = {
+        id: 'debug.breakpoints.show',
+        label: 'Breakpoints'
+    };
 }
 
 @injectable()
@@ -103,7 +110,8 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
         @inject(DebugService) protected readonly debug: DebugService,
         @inject(DebugSessionManager) protected readonly debugSessionManager: DebugSessionManager,
         @inject(DebugConfigurationManager) protected readonly debugConfigurationManager: DebugConfigurationManager,
-        @inject(DebugSelectionService) protected readonly debugSelectionHandler: DebugSelectionService) { }
+        @inject(DebugSelectionService) protected readonly debugSelectionHandler: DebugSelectionService,
+        @inject(BreakpointsDialog) protected readonly breakpointsDialog: BreakpointsDialog) { }
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerSubmenu(DebugMenus.DEBUG, 'Debug');
@@ -127,6 +135,9 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
         });
         menus.registerMenuAction(DebugMenus.RESUME_ALL_THREADS, {
             commandId: DEBUG_COMMANDS.RESUME_ALL_THREADS.id
+        });
+        menus.registerMenuAction(DebugMenus.SHOW_BREAKPOINTS, {
+            commandId: DEBUG_COMMANDS.SHOW_BREAKPOINTS.id
         });
         menus.registerMenuAction(DebugThreadContextMenu.SUSPEND_THREAD, {
             commandId: DEBUG_COMMANDS.SUSPEND_THREAD.id
@@ -175,6 +186,13 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
         registry.registerCommand(DEBUG_COMMANDS.ADD_CONFIGURATION);
         registry.registerHandler(DEBUG_COMMANDS.ADD_CONFIGURATION.id, {
             execute: () => this.debugConfigurationManager.addConfiguration(),
+            isEnabled: () => true,
+            isVisible: () => true
+        });
+
+        registry.registerCommand(DEBUG_COMMANDS.SHOW_BREAKPOINTS);
+        registry.registerHandler(DEBUG_COMMANDS.SHOW_BREAKPOINTS.id, {
+            execute: () => this.breakpointsDialog.open(),
             isEnabled: () => true,
             isVisible: () => true
         });

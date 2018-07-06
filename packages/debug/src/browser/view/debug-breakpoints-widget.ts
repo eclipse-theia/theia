@@ -15,13 +15,13 @@
  ********************************************************************************/
 
 import {
-    VirtualWidget, SELECTED_CLASS,
+    VirtualWidget, SELECTED_CLASS, AbstractDialog, Widget, Message,
 } from "@theia/core/lib/browser";
 import { DebugSession } from "../debug-model";
 import { h } from '@phosphor/virtualdom';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { Emitter, Event } from "@theia/core";
-import { injectable, inject } from "inversify";
+import { Emitter, Event, Disposable } from "@theia/core";
+import { injectable, inject, postConstruct } from "inversify";
 import { BreakpointsManager } from "../breakpoint/breakpoint-manager";
 import { ExtDebugProtocol } from "../../common/debug-common";
 import { DebugUtils } from "../debug-utils";
@@ -36,14 +36,14 @@ export class DebugBreakpointsWidget extends VirtualWidget {
     private breakpoints: ExtDebugProtocol.AggregatedBreakpoint[] = [];
 
     constructor(
-        @inject(DebugSession) protected readonly debugSession: DebugSession,
-        @inject(BreakpointsManager) protected readonly breakpointManager: BreakpointsManager) {
+        @inject(BreakpointsManager) protected readonly breakpointManager: BreakpointsManager,
+        @inject(DebugSession) protected readonly debugSession: DebugSession | undefined) {
         super();
 
-        this.id = `debug-breakpoints-${debugSession.sessionId}`;
+        this.id = 'debug-breakpoints' + (debugSession ? `-${debugSession.sessionId}` : '');
         this.addClass(Styles.BREAKPOINTS_CONTAINER);
         this.node.setAttribute("tabIndex", "0");
-        this.breakpointManager.onDidChangeBreakpoints(() => this.onBreakpointsChanged());
+        this.breakpointManager.onDidChangeBreakpoints(() => this.refreshBreakpoints());
     }
 
     get onDidClickBreakpoint(): Event<ExtDebugProtocol.AggregatedBreakpoint> {
@@ -54,11 +54,18 @@ export class DebugBreakpointsWidget extends VirtualWidget {
         return this.onDidDblClickBreakpointEmitter.event;
     }
 
-    private onBreakpointsChanged(): void {
-        this.breakpointManager.get(this.debugSession.sessionId).then(breakpoints => {
-            this.breakpoints = breakpoints;
-            super.update();
-        });
+    public refreshBreakpoints(): void {
+        if (this.debugSession) {
+            this.breakpointManager.get(this.debugSession.sessionId).then(breakpoints => {
+                this.breakpoints = breakpoints;
+                super.update();
+            });
+        } else {
+            this.breakpointManager.getAll().then(breakpoints => {
+                this.breakpoints = breakpoints;
+                super.update();
+            });
+        }
     }
 
     protected render(): h.Child {
@@ -106,6 +113,50 @@ export class DebugBreakpointsWidget extends VirtualWidget {
     private toDisplayNameSourceBrk(source: DebugProtocol.Source, breakpoint: DebugProtocol.SourceBreakpoint): string {
         return source.name! + `:${breakpoint.line}` + (breakpoint.column ? `:${breakpoint.column}` : '');
     }
+}
+
+@injectable()
+export class BreakpointsDialog extends AbstractDialog<void> {
+    private readonly breakpointsWidget: DebugBreakpointsWidget;
+
+    constructor(@inject(BreakpointsManager) protected readonly breakpointManager: BreakpointsManager) {
+        super({
+            title: 'Breakpoints'
+        });
+
+        this.breakpointsWidget = new DebugBreakpointsWidget(breakpointManager, undefined);
+        this.toDispose.push(this.breakpointsWidget);
+    }
+
+    @postConstruct()
+    protected init() {
+        this.appendCloseButton('Close');
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        Widget.attach(this.breakpointsWidget, this.contentNode);
+        this.toDisposeOnDetach.push(Disposable.create(() => {
+            Widget.detach(this.breakpointsWidget);
+        }));
+
+        super.onAfterAttach(msg);
+    }
+
+    protected onUpdateRequest(msg: Message): void {
+        super.onUpdateRequest(msg);
+        this.breakpointsWidget.update();
+    }
+
+    protected onActivateRequest(msg: Message): void {
+        this.breakpointsWidget.activate();
+    }
+
+    open(): Promise<void> {
+        this.breakpointsWidget.refreshBreakpoints();
+        return super.open();
+    }
+
+    get value(): void { return undefined; }
 }
 
 namespace Styles {

@@ -214,7 +214,7 @@ export class BreakpointDecorator extends EditorDecorator {
                 .then(breakpoints => breakpoints.filter(b => DebugUtils.checkUri(b, e.uri)))
                 .then(breakpoints => breakpoints.map(b => ({
                     range: this.toRange(b.origin as DebugProtocol.SourceBreakpoint),
-                    options: !!b.created && !!b.created.verified ? InactiveBreakpointDecoration : ActiveBreakpointDecoration
+                    options: !!b.created && !!b.created.verified ? ActiveBreakpointDecoration : InactiveBreakpointDecoration
                 })))
                 .then(decorations => this.setDecorations(e, decorations));
         });
