@@ -90,6 +90,13 @@ export class BreakpointsManager implements FrontendApplicationContribution {
     }
 
     /**
+     * Returns all breakpoints.
+     */
+    async getAll(): Promise<ExtDebugProtocol.AggregatedBreakpoint[]> {
+        return this.storage.get();
+    }
+
+    /**
      * Creates a source breakpoint for the given editor and active session.
      * @param session the current active session
      * @param editor the text editor
@@ -97,9 +104,15 @@ export class BreakpointsManager implements FrontendApplicationContribution {
      * @returns breakpoint
      */
     private createSourceBreakpoint(debugSession: DebugSession | undefined, editor: TextEditor, position: Position): ExtDebugProtocol.AggregatedBreakpoint {
+        const source = DebugUtils.toSource(editor.uri, debugSession);
+        const sessionId = debugSession
+            ? (DebugUtils.checkPattern(source, debugSession.configuration.breakpoints.filePatterns)
+                ? debugSession.sessionId
+                : undefined)
+            : undefined;
+
         return {
-            source: DebugUtils.toSource(editor.uri, debugSession),
-            sessionId: debugSession && debugSession.sessionId,
+            source, sessionId,
             origin: { line: position.line }
         };
     }
@@ -198,7 +211,7 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                 if (newSessionId) {
                     const debugSession = this.debugSessionManager.find(newSessionId);
                     if (debugSession) {
-                        return breakpoints.filter(b => DebugUtils.checkPattern(b, debugSession.configuration.breakpoints.filePatterns));
+                        return breakpoints.filter(b => DebugUtils.checkPattern(b.source!, debugSession.configuration.breakpoints.filePatterns));
                     }
                 }
                 return breakpoints;
