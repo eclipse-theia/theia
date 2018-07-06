@@ -55,6 +55,7 @@ export class PreferenceSchemaProvider {
         protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>
     ) {
         this.preferenceContributions.getContributions().forEach(contrib => {
+            console.log("log info contribution");
             for (const property in contrib.schema) {
                 if (this.combinedSchema.properties[property]) {
                     this.logger.error("Preference name collision detected in the schema for property: " + property);
@@ -66,6 +67,7 @@ export class PreferenceSchemaProvider {
     }
 
     getSchema(): PreferenceSchema {
+        console.log("Get preferences chema.", this.combinedSchema);
         return this.combinedSchema;
     }
 }

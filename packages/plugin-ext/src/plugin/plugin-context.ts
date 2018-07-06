@@ -207,6 +207,7 @@ export function createAPI(rpc: RPCProtocol): typeof theia {
             return documents.onDidAddDocument(listener, thisArg, disposables);
         },
         getConfiguration(section?, resource?): theia.WorkspaceConfiguration {
+            // 1
             return preferenceRegistryExt.getConfiguration(section, resource);
         },
         onDidChangeConfiguration(listener, thisArgs?, disposables?): theia.Disposable {

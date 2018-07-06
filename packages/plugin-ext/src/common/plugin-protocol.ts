@@ -16,6 +16,7 @@
 import { JsonRpcServer } from '@theia/core/lib/common/messaging/proxy-factory';
 import { RPCProtocol } from '../api/rpc-protocol';
 import { Disposable } from '@theia/core/lib/common/disposable';
+import { IExtensionContributions } from '../hosted/node/cotributions/contributions';
 
 export const hostedServicePath = '/services/hostedPlugin';
 
@@ -38,10 +39,10 @@ export interface PluginPackage {
         frontend?: string;
         backend?: string;
     };
+    contributes?: IExtensionContributions;
     main?: string;
     displayName: string;
     description: string;
-    contributes: {};
     packagePath: string;
 }
 

@@ -13,15 +13,16 @@
  *
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
-import { injectable, inject, interfaces } from 'inversify';
+import { injectable, inject, interfaces, named } from 'inversify';
 import { PluginWorker } from '../../main/browser/plugin-worker';
-import { HostedPluginServer, PluginMetadata } from '../../common/plugin-protocol';
+import { HostedPluginServer, PluginMetadata, PluginPackage } from '../../common/plugin-protocol';
 import { HostedPluginWatcher } from './hosted-plugin-watcher';
 import { MAIN_RPC_CONTEXT, Plugin } from '../../api/plugin-api';
 import { setUpPluginApi } from '../../main/browser/main-context';
 import { RPCProtocol, RPCProtocolImpl } from '../../api/rpc-protocol';
-import { ILogger } from '@theia/core';
-import { PreferenceServiceImpl } from '@theia/core/lib/browser';
+import { ILogger, ContributionProvider } from '@theia/core';
+import { PreferenceServiceImpl, PreferenceContribution, PreferenceSchema, PreferenceScope } from '@theia/core/lib/browser';
+
 @injectable()
 export class HostedPluginSupport {
     container: interfaces.Container;
@@ -36,15 +37,35 @@ export class HostedPluginSupport {
     @inject(HostedPluginWatcher)
     private readonly watcher: HostedPluginWatcher;
 
+    // @inject(PreferenceSchemaProvider)
+    // private readonly prefChemaProvider: PreferenceSchemaProvider;
+
     private theiaReadyPromise: Promise<any>;
 
     private backendApiInitialized = false;
     private frontendApiInitialized = false;
 
+    protected readonly combinedSchema: PreferenceSchema = {properties: {}};
+
     constructor(
-        @inject(PreferenceServiceImpl) private readonly preferenceServiceImpl: PreferenceServiceImpl
+        @inject(PreferenceServiceImpl) private readonly prefService: PreferenceServiceImpl,
+        @inject(ContributionProvider) @named(PreferenceContribution)
+        protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>
     ) {
-        this.theiaReadyPromise = Promise.all([this.preferenceServiceImpl.ready]);
+        this.theiaReadyPromise = Promise.all([this.prefService.ready]);
+
+        setTimeout(() => {
+            this.preferenceContributions.getContributions().forEach(contrib => {
+                for (const property in contrib.schema.properties) {
+                    if (this.combinedSchema.properties[property]) {
+                        this.logger.error("Preference name collision detected in the schema for property: " + property);
+                    } else {
+                        this.combinedSchema.properties[property] = contrib.schema.properties[property];
+                    }
+                }
+            });
+            console.log(this.combinedSchema);
+        }, 0);
     }
 
     checkAndLoadPlugin(container: interfaces.Container): void {
@@ -53,15 +74,14 @@ export class HostedPluginSupport {
     }
 
     public initPlugins(): void {
+        console.log("init plugins....!");
         this.server.getHostedPlugin().then((pluginMetadata: any) => {
             if (pluginMetadata) {
                 this.loadPlugin(pluginMetadata, this.container);
             }
         });
 
-        const backendMetadata = this.server.getDeployedBackendMetadata();
-
-        backendMetadata.then((pluginMetadata: PluginMetadata[]) => {
+        this.server.getDeployedBackendMetadata().then((pluginMetadata: PluginMetadata[]) => {
             pluginMetadata.forEach(metadata => this.loadPlugin(metadata, this.container));
         });
 
@@ -98,6 +118,7 @@ export class HostedPluginSupport {
                     this.frontendApiInitialized = true;
                 }
                 hostedExtManager.$loadPlugin(frontendInitPath, plugin);
+                this.applyPluginContributions(pluginMetadata.source);
             });
         }
         if (pluginModel.entryPoint!.backend) {
@@ -124,6 +145,40 @@ export class HostedPluginSupport {
                 }
                 hostedExtManager.$loadPlugin(backendInitPath, plugin);
             });
+        }
+    }
+
+    private applyPluginContributions(pluginPackage: PluginPackage) {
+        const contributes = pluginPackage.contributes;
+
+        console.log("All preferences: ", this.prefService.getPreferences());
+
+        if (contributes) {
+            Object.keys(contributes).filter(key => {
+                const contribution = (contributes as any)[key];
+                console.log("key: ", key, "value: ", contribution);
+                this.prefService.set(key, contribution, PreferenceScope.Workspace);
+            });
+
+            setTimeout(() => {
+                this.preferenceContributions.getContributions().forEach(contrib => {
+                    for (const property in contrib.schema.properties) {
+                        if (this.combinedSchema.properties[property]) {
+                            this.logger.error("Preference name collision detected in the schema for property: " + property);
+                        } else {
+                            this.combinedSchema.properties[property] = contrib.schema.properties[property];
+                        }
+                    }
+                });
+                console.log(this.combinedSchema);
+                console.log("combined chema is the same :)");
+            }, 0);
+            // console.log(" pref chema  ", this.prefChemaProvider.getSchema());
+
+            // .forEach(key => {
+            //     const contribution = contributes[key];
+            //
+            // });
         }
     }
 

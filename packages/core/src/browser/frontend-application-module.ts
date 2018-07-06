@@ -45,7 +45,7 @@ import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from "./label-provider";
 import {
     PreferenceProviders, PreferenceProvider,
-    PreferenceScope, PreferenceService, PreferenceServiceImpl
+    PreferenceScope, PreferenceService, PreferenceServiceImpl, PreferenceSchemaProvider, PreferenceContribution
 } from './preferences';
 import { ContextMenuRenderer } from './context-menu-renderer';
 import { ThemingCommandContribution, ThemeService, BuiltinThemeProvider } from './theming';
@@ -173,4 +173,7 @@ export const frontendApplicationModule = new ContainerModule((bind, unbind, isBo
 
     bind(ThemeService).toDynamicValue(() => ThemeService.get());
     bind(CommandContribution).to(ThemingCommandContribution).inSingletonScope();
+
+    bind(PreferenceSchemaProvider).toSelf().inSingletonScope();
+    bindContributionProvider(bind, PreferenceContribution);
 });

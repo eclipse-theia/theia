@@ -75,6 +75,7 @@ export class HostedPluginReader implements BackendApplicationContribution {
         const plugin: PluginPackage = require(packageJsonPath);
         plugin.packagePath = path;
         const pluginMetadata = this.scanner.getPluginMetadata(plugin);
+        console.log(">> plugin contributes : ", plugin.contributes);
         if (pluginMetadata.model.entryPoint.backend) {
             pluginMetadata.model.entryPoint.backend = resolve(path, pluginMetadata.model.entryPoint.backend);
         }
