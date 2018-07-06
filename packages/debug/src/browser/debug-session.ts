@@ -89,7 +89,7 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
         const initialized = new Deferred<WebSocket>();
 
         websocket.onopen = () => initialized.resolve(websocket);
-        websocket.onclose = () => { };
+        websocket.onclose = () => this.onClose();
         websocket.onerror = () => initialized.reject(`Failed to establish connection with debug adapter by url: '${url}'`);
         websocket.onmessage = (event: MessageEvent): void => this.handleMessage(event);
 
@@ -209,6 +209,17 @@ export class DebugSessionImpl extends EventEmitter implements DebugSession {
 
     protected proceedEvent(event: DebugProtocol.Event): void {
         this.emit(event.event, event);
+    }
+
+    protected onClose(): void {
+        if (this.state.isConnected) {
+            const event: DebugProtocol.TerminatedEvent = {
+                event: 'terminated',
+                type: 'event',
+                seq: -1,
+            };
+            this.proceedEvent(event);
+        }
     }
 
     dispose() {
