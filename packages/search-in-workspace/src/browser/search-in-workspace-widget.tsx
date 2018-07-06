@@ -40,6 +40,9 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected showSearchDetails = false;
     protected hasResults = false;
+    protected resultNumber = 0;
+
+    protected searchFieldContainerIsFocused = false;
 
     protected searchInWorkspaceOptions: SearchInWorkspaceOptions;
 
@@ -93,10 +96,13 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             includeIgnored: false,
             include: [],
             exclude: [],
-            maxResults: 500
+            maxResults: 2000
         };
         this.toDispose.push(this.resultTreeWidget.onChange(r => {
             this.hasResults = r.size > 0;
+            this.resultNumber = 0;
+            const results = Array.from(r.values());
+            results.forEach(result => this.resultNumber += result.children.length);
             this.update();
         }));
 
@@ -261,42 +267,57 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         </div>;
     }
 
+    protected renderNotification(): React.ReactNode {
+        return <div
+            className={`search-notification ${this.searchInWorkspaceOptions.maxResults && this.resultNumber >= this.searchInWorkspaceOptions.maxResults ? "show" : ""}`}>
+            <div>
+                This is only a subset of all results. Use a more specific search term to narrow down the result list.
+            </div>
+        </div>;
+    }
+
+    protected readonly focusSearchFieldContainer = () => this.doFocusSearchFieldContainer();
+    protected doFocusSearchFieldContainer() {
+        this.searchFieldContainerIsFocused = true;
+        this.update();
+    }
+    protected readonly unfocusSearchFieldContainer = () => this.doUnfocusSearchFieldContainer();
+    protected doUnfocusSearchFieldContainer() {
+        this.searchFieldContainerIsFocused = false;
+        this.update();
+    }
+
+    protected readonly handleKeyUp = (e: React.KeyboardEvent) => this.doHandleKeyUp(e);
+    protected doHandleKeyUp(e: React.KeyboardEvent) {
+        if (e.target) {
+            if (Key.ARROW_DOWN.keyCode === e.keyCode) {
+                this.resultTreeWidget.focusFirstResult();
+            } else {
+                this.searchTerm = (e.target as HTMLInputElement).value;
+                this.resultTreeWidget.search(this.searchTerm, (this.searchInWorkspaceOptions || {}));
+                this.update();
+            }
+        }
+    }
+
     protected renderSearchField(): React.ReactNode {
         const input = <input
             id="search-input-field"
             type="text"
             placeholder="Search"
             defaultValue={this.searchTerm}
-            onFocus={e => {
-                const elArr = document.getElementsByClassName("search-field-container");
-                if (elArr && elArr.length > 0) {
-                    (elArr[0] as HTMLElement).className = "search-field-container focussed";
-                }
-            }}
-            onBlur={e => {
-                const elArr = document.getElementsByClassName("search-field-container");
-                if (elArr && elArr.length > 0) {
-                    (elArr[0] as HTMLElement).className = "search-field-container";
-                }
-            }}
-            onKeyUp={e => {
-                if (e.target) {
-                    if (Key.ARROW_DOWN.keyCode === e.keyCode) {
-                        this.resultTreeWidget.focusFirstResult();
-                    } else {
-                        this.searchTerm = (e.target as HTMLInputElement).value;
-                        this.resultTreeWidget.search(this.searchTerm, (this.searchInWorkspaceOptions || {}));
-                        this.update();
-                    }
-                }
-            }}
+            onKeyUp={this.handleKeyUp}
         ></input>;
+        const notification = this.renderNotification();
         const optionContainer = this.renderOptionContainer();
-        return <div className="search-field-container">
-            <div className="search-field">
+        const tooMany = this.searchInWorkspaceOptions.maxResults && this.resultNumber >= this.searchInWorkspaceOptions.maxResults ? "tooManyResults" : "";
+        const className = `search-field-container ${tooMany} ${this.searchFieldContainerIsFocused ? 'focused' : ''}`;
+        return <div className={className}>
+            <div className="search-field" tabIndex={-1} onFocus={this.focusSearchFieldContainer} onBlur={this.unfocusSearchFieldContainer}>
                 {input}
                 {optionContainer}
             </div>
+            {notification}
         </div>;
     }
 
@@ -353,6 +374,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected handleOptionClick(option: SearchFieldState): void {
         option.enabled = !option.enabled;
         this.updateSearchOptions();
+        this.searchFieldContainerIsFocused = true;
         this.resultTreeWidget.search(this.searchTerm, this.searchInWorkspaceOptions);
         this.update();
     }
