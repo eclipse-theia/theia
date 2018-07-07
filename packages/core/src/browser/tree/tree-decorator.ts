@@ -44,15 +44,16 @@ export interface TreeDecorator {
 
 /**
  * Decorator service which emits events from all known tree decorators.
+ * Keys are the unique tree node IDs and the values
+ * are the decoration data collected from all the decorators known by this service.
  */
 export const TreeDecoratorService = Symbol('TreeDecoratorService');
 export interface TreeDecoratorService extends Disposable {
 
     /**
-     * Fired when any of the available tree decorators has changes. Keys are the unique tree node IDs and the values
-     * are the decoration data collected from all the decorators known by this service.
+     * Fired when any of the available tree decorators has changes.
      */
-    readonly onDidChangeDecorations: Event<(tree: Tree) => Map<string, TreeDecoration.Data[]>>;
+    readonly onDidChangeDecorations: Event<void>;
 
     /**
      * Returns with the decorators for the tree based on the actual state of this decorator service.
@@ -80,7 +81,7 @@ export interface TreeDecoratorService extends Disposable {
 @injectable()
 export class NoopTreeDecoratorService implements TreeDecoratorService {
 
-    protected readonly emitter = new Emitter<(tree: Tree) => Map<string, TreeDecoration.Data[]>>();
+    protected readonly emitter = new Emitter<void>();
     readonly onDidChangeDecorations = this.emitter.event;
 
     dispose(): void {
@@ -107,23 +108,18 @@ export class NoopTreeDecoratorService implements TreeDecoratorService {
 @injectable()
 export abstract class AbstractTreeDecoratorService implements TreeDecoratorService {
 
-    protected readonly decorations = new Map<string, (tree: Tree) => Map<string, TreeDecoration.Data>>();
-
-    protected readonly onDidChangeDecorationsEmitter = new Emitter<(tree: Tree) => Map<string, TreeDecoration.Data[]>>();
+    protected readonly onDidChangeDecorationsEmitter = new Emitter<void>();
     readonly onDidChangeDecorations = this.onDidChangeDecorationsEmitter.event;
 
     protected readonly toDispose = new DisposableCollection();
 
     constructor(protected readonly decorators: ReadonlyArray<TreeDecorator>) {
         this.toDispose.push(this.onDidChangeDecorationsEmitter);
-        this.toDispose.pushAll(this.decorators.map(decorator => {
-            const { id } = decorator;
-            return decorator.onDidChangeDecorations(data => {
-                this.decorations.set(id, data);
-                this.onDidChangeDecorationsEmitter.fire(this.getDecorations.bind(this));
-            });
-        }));
-        this.toDispose.push(Disposable.create(() => this.decorations.clear()));
+        this.toDispose.pushAll(this.decorators.map(decorator =>
+            decorator.onDidChangeDecorations(data =>
+                this.onDidChangeDecorationsEmitter.fire(undefined)
+            ))
+        );
     }
 
     dispose(): void {
