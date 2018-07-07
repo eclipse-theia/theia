@@ -19,9 +19,8 @@ import { ProblemManager } from './problem-manager';
 import { ProblemMarker } from '../../common/problem-marker';
 import { ProblemTreeModel } from './problem-tree-model';
 import { MarkerInfoNode, MarkerNode } from '../marker-tree';
-import { TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel, SelectableTreeNode } from "@theia/core/lib/browser";
+import { TreeWidget, TreeProps, ContextMenuRenderer, TreeNode, NodeProps, TreeModel } from "@theia/core/lib/browser";
 import { DiagnosticSeverity } from 'vscode-languageserver-types';
-import { Message } from '@phosphor/messaging';
 import URI from '@theia/core/lib/common/uri';
 import { UriSelection } from '@theia/core/lib/common/selection';
 import * as React from "react";
@@ -70,13 +69,6 @@ export class ProblemWidget extends TreeWidget {
             event.clipboardData.setData('text/plain', uris.join('\n'));
             event.preventDefault();
         }
-    }
-
-    protected onUpdateRequest(msg: Message) {
-        if (!this.model.selectedNodes && SelectableTreeNode.is(this.model.root)) {
-            this.model.selectNode(this.model.root);
-        }
-        super.onUpdateRequest(msg);
     }
 
     protected renderTree(model: TreeModel): React.ReactNode {
