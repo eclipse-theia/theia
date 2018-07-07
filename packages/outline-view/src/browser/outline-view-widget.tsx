@@ -95,13 +95,6 @@ export class OutlineViewWidget extends TreeWidget {
         this.onDidChangeOpenStateEmitter.fire(true);
     }
 
-    protected onUpdateRequest(msg: Message): void {
-        if (!this.model.selectedNodes && SelectableTreeNode.is(this.model.root)) {
-            this.model.selectNode(this.model.root);
-        }
-        super.onUpdateRequest(msg);
-    }
-
     renderIcon(node: TreeNode, props: NodeProps): React.ReactNode {
         if (OutlineSymbolInformationNode.is(node)) {
             return <div className={"symbol-icon symbol-icon-center " + node.iconClass}></div>;

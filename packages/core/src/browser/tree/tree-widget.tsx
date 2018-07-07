@@ -156,16 +156,21 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     protected onUpdateRequest(msg: Message): void {
-        super.onUpdateRequest(msg);
-        const focus = this.node.getElementsByClassName(FOCUS_CLASS)[0];
-        if (focus) {
-            ElementExt.scrollIntoViewIfNeeded(this.node, focus);
-        } else {
-            const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
-            if (selected) {
-                ElementExt.scrollIntoViewIfNeeded(this.node, selected);
-            }
+        if (!this.isAttached || !this.isVisible) {
+            return;
         }
+        super.onUpdateRequest(msg);
+        this.onRender.push(Disposable.create(() => {
+            const focus = this.node.getElementsByClassName(FOCUS_CLASS)[0];
+            if (focus) {
+                ElementExt.scrollIntoViewIfNeeded(this.node, focus);
+            } else {
+                const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
+                if (selected) {
+                    ElementExt.scrollIntoViewIfNeeded(this.node, selected);
+                }
+            }
+        }));
     }
 
     protected render(): React.ReactNode {
