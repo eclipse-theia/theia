@@ -125,18 +125,24 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.decoratorService,
             this.decoratorService.onDidChangeDecorations(() => this.updateDecorations())
         ]);
-        setTimeout(() => this.updateDecorations());
+        setTimeout(() => {
+            this.updateRows();
+            this.updateScrollToRow();
+            this.updateDecorations();
+        });
     }
 
     protected rows = new Map<string, TreeWidget.NodeRow>();
     protected updateRows(): void {
         const root = this.model.root;
-        const depths = new Map<CompositeTreeNode | undefined, number>();
-        depths.set(undefined, 0);
         if (root) {
-            const rows = Array.from(new TopDownTreeIterator(root, { pruneCollapsed: true }), (node, index) => {
-                const parentDepth = depths.get(node.parent)!;
-                const depth = TreeNode.isVisible(node.parent) ? parentDepth + 1 : parentDepth;
+            const depths = new Map<CompositeTreeNode | undefined, number>();
+            const rows = Array.from(new TopDownTreeIterator(root, {
+                pruneCollapsed: true,
+                pruneSiblings: true
+            }), (node, index) => {
+                const parentDepth = depths.get(node.parent);
+                const depth = parentDepth === undefined ? 0 : TreeNode.isVisible(node.parent) ? parentDepth + 1 : parentDepth;
                 if (CompositeTreeNode.is(node)) {
                     depths.set(node, depth);
                 }

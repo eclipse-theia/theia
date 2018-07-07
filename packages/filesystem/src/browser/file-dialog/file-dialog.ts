@@ -51,7 +51,6 @@ export class FileDialog extends AbstractDialog<Readonly<FileStatNode> | undefine
         this.toDispose.push(widget);
         this.toDispose.push(this.model.onChanged(() => this.update()));
         this.toDispose.push(this.model.onDidOpenFile(() => this.accept()));
-        this.toDispose.push(this.model.onSelectionChanged(() => this.update()));
 
         const navigationPanel = document.createElement('div');
         navigationPanel.classList.add(NAVIGATION_PANEL_CLASS);
