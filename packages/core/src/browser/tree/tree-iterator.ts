@@ -24,10 +24,12 @@ export namespace TreeIterator {
 
     export interface Options {
         readonly pruneCollapsed: boolean
+        readonly pruneSiblings: boolean
     }
 
     export const DEFAULT_OPTIONS: Options = {
-        pruneCollapsed: false
+        pruneCollapsed: false,
+        pruneSiblings: false
     };
 
 }
@@ -35,8 +37,13 @@ export namespace TreeIterator {
 export abstract class AbstractTreeIterator implements TreeIterator, Iterable<TreeNode> {
 
     protected readonly delegate: IterableIterator<TreeNode>;
+    protected readonly options: TreeIterator.Options;
 
-    constructor(protected readonly root: TreeNode, protected readonly options: TreeIterator.Options = TreeIterator.DEFAULT_OPTIONS) {
+    constructor(protected readonly root: TreeNode, options?: Partial<TreeIterator.Options>) {
+        this.options = {
+            ...TreeIterator.DEFAULT_OPTIONS,
+            ...options
+        };
         this.delegate = this.iterator(this.root);
     }
 
@@ -72,10 +79,6 @@ export abstract class AbstractTreeIterator implements TreeIterator, Iterable<Tre
 
 export class DepthFirstTreeIterator extends AbstractTreeIterator {
 
-    constructor(protected readonly root: TreeNode, protected readonly options: TreeIterator.Options = TreeIterator.DEFAULT_OPTIONS) {
-        super(root, options);
-    }
-
     protected iterator(root: TreeNode): IterableIterator<TreeNode> {
         return Iterators.depthFirst(root, this.children.bind(this));
     }
@@ -83,10 +86,6 @@ export class DepthFirstTreeIterator extends AbstractTreeIterator {
 }
 
 export class BreadthFirstTreeIterator extends AbstractTreeIterator {
-
-    constructor(protected readonly root: TreeNode, protected readonly options: TreeIterator.Options = TreeIterator.DEFAULT_OPTIONS) {
-        super(root, options);
-    }
 
     protected iterator(root: TreeNode): IterableIterator<TreeNode> {
         return Iterators.breadthFirst(root, this.children.bind(this));
@@ -125,10 +124,6 @@ export class BreadthFirstTreeIterator extends AbstractTreeIterator {
  */
 export class TopDownTreeIterator extends AbstractTreeIterator {
 
-    constructor(protected readonly root: TreeNode, protected readonly options: TreeIterator.Options = TreeIterator.DEFAULT_OPTIONS) {
-        super(root, options);
-    }
-
     protected iterator(root: TreeNode): IterableIterator<TreeNode> {
         const doNext = this.doNext.bind(this);
         return (function* (): IterableIterator<TreeNode> {
@@ -152,6 +147,9 @@ export class TopDownTreeIterator extends AbstractTreeIterator {
         if (!node) {
             return undefined;
         }
+        if (this.options.pruneSiblings && node === this.root) {
+            return undefined;
+        }
         const nextSibling = TreeNode.getNextSibling(node);
         if (nextSibling) {
             return nextSibling;
@@ -166,10 +164,6 @@ export class TopDownTreeIterator extends AbstractTreeIterator {
  * while traversing up the tree hierarchy in an inverse pre-order fashion. This is the counterpart of the `TopDownTreeIterator`.
  */
 export class BottomUpTreeIterator extends AbstractTreeIterator {
-
-    constructor(protected readonly root: TreeNode, protected readonly options: TreeIterator.Options = TreeIterator.DEFAULT_OPTIONS) {
-        super(root, options);
-    }
 
     protected iterator(root: TreeNode): IterableIterator<TreeNode> {
         const doNext = this.doNext.bind(this);
