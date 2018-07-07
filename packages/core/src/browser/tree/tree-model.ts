@@ -143,7 +143,6 @@ export class TreeModelImpl implements TreeModel, SelectionProvider<ReadonlyArray
         this.toDispose.push(this.tree.onChanged(() => this.fireChanged()));
 
         this.toDispose.push(this.selectionService);
-        this.toDispose.push(this.selectionService.onSelectionChanged(() => this.fireChanged()));
 
         this.toDispose.push(this.expansionService);
         this.toDispose.push(this.expansionService.onExpansionChanged(node => {
