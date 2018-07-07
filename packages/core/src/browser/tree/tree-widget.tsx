@@ -28,10 +28,10 @@ import { ExpandableTreeNode } from "./tree-expansion";
 import { SelectableTreeNode, TreeSelection } from "./tree-selection";
 import { TreeDecoration, TreeDecoratorService } from "./tree-decorator";
 import { notEmpty } from '../../common/objects';
-import { MaybePromise } from '../../common/types';
 import { isOSX } from '../../common/os';
 import { ReactWidget } from "../widgets/react-widget";
 import * as React from 'react';
+import { debounce } from "lodash";
 
 export const TREE_CLASS = 'theia-Tree';
 export const TREE_CONTAINER_CLASS = 'theia-TreeContainer';
@@ -121,20 +121,21 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
     }
 
     @postConstruct()
-    protected init() {
+    protected init(): void {
         this.toDispose.pushAll([
             this.model,
             this.model.onChanged(() => this.update()),
-            this.model.onNodeRefreshed(() => this.updateDecorations(this.decoratorService.getDecorations(this.model))),
-            this.model.onExpansionChanged(() => this.updateDecorations(this.decoratorService.getDecorations(this.model))),
+            this.model.onNodeRefreshed(() => this.updateDecorations()),
+            this.model.onExpansionChanged(() => this.updateDecorations()),
             this.decoratorService,
-            this.decoratorService.onDidChangeDecorations(op => this.updateDecorations(op(this.model)))
+            this.decoratorService.onDidChangeDecorations(() => this.updateDecorations())
         ]);
-        setTimeout(() => this.updateDecorations(this.decoratorService.getDecorations(this.model)), 0);
+        setTimeout(() => this.updateDecorations());
     }
 
-    protected async updateDecorations(decorations: MaybePromise<Map<string, TreeDecoration.Data[]>>): Promise<void> {
-        this.decorations = await decorations;
+    protected readonly updateDecorations = debounce(() => this.doUpdateDecorations(), 150);
+    protected async doUpdateDecorations(): Promise<void> {
+        this.decorations = await this.decoratorService.getDecorations(this.model);
         this.update();
     }
 
@@ -156,7 +157,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
 
     protected onUpdateRequest(msg: Message): void {
         super.onUpdateRequest(msg);
-
         const focus = this.node.getElementsByClassName(FOCUS_CLASS)[0];
         if (focus) {
             ElementExt.scrollIntoViewIfNeeded(this.node, focus);
@@ -710,7 +710,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.model.root = this.inflateFromStorage(root);
         }
         if (decorations) {
-            this.updateDecorations(this.decoratorService.inflateDecorators(decorations));
+            this.decorations = this.decoratorService.inflateDecorators(decorations);
         }
     }
 
