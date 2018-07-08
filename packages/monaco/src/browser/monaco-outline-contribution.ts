@@ -18,7 +18,7 @@ import { injectable, inject } from "inversify";
 import SymbolInformation = monaco.modes.SymbolInformation;
 import SymbolKind = monaco.modes.SymbolKind;
 import { FrontendApplicationContribution, FrontendApplication, TreeNode } from "@theia/core/lib/browser";
-import { Range, EditorManager, EditorWidget } from '@theia/editor/lib/browser';
+import { Range, EditorManager } from '@theia/editor/lib/browser';
 import DocumentSymbolProviderRegistry = monaco.modes.DocumentSymbolProviderRegistry;
 import CancellationTokenSource = monaco.cancellation.CancellationTokenSource;
 import { DisposableCollection } from "@theia/core";
@@ -33,22 +33,27 @@ import debounce = require('lodash.debounce');
 export class MonacoOutlineContribution implements FrontendApplicationContribution {
 
     protected cancellationSource: CancellationTokenSource;
+    protected readonly toDisposeOnClose = new DisposableCollection();
+    protected readonly toDisposeOnEditor = new DisposableCollection();
 
     @inject(OutlineViewService) protected readonly outlineViewService: OutlineViewService;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
 
     onStart(app: FrontendApplication): void {
-        this.outlineViewService.onDidChangeOpenState(async isOpen => {
-            this.updateOutline();
+        this.outlineViewService.onDidChangeOpenState(async open => {
+            if (open) {
+                this.toDisposeOnClose.push(this.toDisposeOnEditor);
+                this.toDisposeOnClose.push(DocumentSymbolProviderRegistry.onDidChange(
+                    debounce(() => this.updateOutline())
+                ));
+                this.toDisposeOnClose.push(this.editorManager.onCurrentEditorChanged(
+                    debounce(() => this.handleCurrentEditorChanged(), 50)
+                ));
+                this.handleCurrentEditorChanged();
+            } else {
+                this.toDisposeOnClose.dispose();
+            }
         });
-        // let's skip the initial current Editor change event, as on reload it comes before the language server have started,
-        // resulting in an empty outline.
-        setTimeout(() => {
-            this.editorManager.onCurrentEditorChanged(debounce(widget => this.updateOutlineForEditor(widget), 50));
-        }, 3000);
-
-        DocumentSymbolProviderRegistry.onDidChange(debounce(event => this.updateOutline()));
-
         this.outlineViewService.onDidSelect(async node => {
             if (MonacoOutlineSymbolInformationNode.is(node) && node.parent) {
                 const uri = new URI(node.uri);
@@ -58,7 +63,6 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
                 });
             }
         });
-
         this.outlineViewService.onDidOpen(node => {
             if (MonacoOutlineSymbolInformationNode.is(node)) {
                 this.editorManager.open(new URI(node.uri), {
@@ -70,22 +74,24 @@ export class MonacoOutlineContribution implements FrontendApplicationContributio
         });
     }
 
-    protected updateOutline(): void {
+    protected handleCurrentEditorChanged(): void {
+        this.toDisposeOnEditor.dispose();
+        if (this.toDisposeOnClose.disposed) {
+            return;
+        }
+        this.toDisposeOnClose.push(this.toDisposeOnEditor);
         const editor = this.editorManager.currentEditor;
         if (editor) {
-            this.updateOutlineForEditor(editor);
+            const model = MonacoEditor.get(editor)!.getControl().getModel();
+            this.toDisposeOnEditor.push(model.onDidChangeContent(() => this.updateOutline()));
         }
+        this.updateOutline();
     }
 
-    protected readonly toDisposeOnEditor = new DisposableCollection();
-    protected async updateOutlineForEditor(editor: EditorWidget | undefined) {
-        this.toDisposeOnEditor.dispose();
+    protected async updateOutline(): Promise<void> {
+        const editor = this.editorManager.currentEditor;
         if (editor) {
-            const monacoEditor = MonacoEditor.get(editor);
-            const model = monacoEditor!.getControl().getModel();
-            this.toDisposeOnEditor.push(model.onDidChangeContent(async ev => {
-                this.publish(await this.computeSymbolInformations(model));
-            }));
+            const model = MonacoEditor.get(editor)!.getControl().getModel();
             this.publish(await this.computeSymbolInformations(model));
         } else {
             this.publish([]);
