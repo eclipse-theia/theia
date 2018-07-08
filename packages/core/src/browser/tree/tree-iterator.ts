@@ -150,9 +150,8 @@ export class TopDownTreeIterator extends AbstractTreeIterator {
         if (this.options.pruneSiblings && node === this.root) {
             return undefined;
         }
-        const nextSibling = TreeNode.getNextSibling(node);
-        if (nextSibling) {
-            return nextSibling;
+        if (node.nextSibling) {
+            return node.nextSibling;
         }
         return this.findNextSibling(node.parent);
     }
@@ -177,7 +176,7 @@ export class BottomUpTreeIterator extends AbstractTreeIterator {
     }
 
     protected doNext(node: TreeNode): TreeNode | undefined {
-        const previousSibling = TreeNode.getPrevSibling(node);
+        const previousSibling = node.previousSibling;
         const lastChild = this.lastChild(previousSibling);
         return lastChild || node.parent;
     }

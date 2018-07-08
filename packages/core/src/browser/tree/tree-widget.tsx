@@ -674,6 +674,12 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (copy.parent) {
             delete copy.parent;
         }
+        if ('previousSibling' in copy) {
+            delete copy.previousSibling;
+        }
+        if ('nextSibling' in copy) {
+            delete copy.nextSibling;
+        }
         if (CompositeTreeNode.is(node)) {
             copy.children = [];
             for (const child of node.children) {
