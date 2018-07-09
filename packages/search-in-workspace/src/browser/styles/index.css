@@ -179,6 +179,10 @@
     font-size: var(--theia-ui-font-size0);
 }
 
+.t-siw-search-container .resultContainer {
+    height: 100%;
+} 
+
 .t-siw-search-container .result {
     overflow: hidden;
     width: 100%;
