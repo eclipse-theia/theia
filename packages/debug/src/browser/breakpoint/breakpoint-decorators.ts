@@ -9,7 +9,7 @@
  *   Red Hat, Inc. - initial API and implementation
  */
 
-import { injectable, inject, postConstruct } from "inversify";
+import { injectable, inject } from "inversify";
 import {
     Range,
     EditorDecorator,
@@ -20,7 +20,6 @@ import {
 } from "@theia/editor/lib/browser";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { DebugSessionManager } from "../debug-session";
-import { DebugSession } from "../debug-model";
 import { DebugUtils } from "../debug-utils";
 import { BreakpointStorage } from "./breakpoint-storage";
 
@@ -30,58 +29,21 @@ const ActiveLineDecoration = <EditorDecorationOptions>{
 };
 
 /**
- * Per session [Active line decorator](#ActiveLineDecorator) provider.
- */
-@injectable()
-export class ActiveLineDecoratorProvider {
-    private readonly decorators = new Map<string, ActiveLineDecorator>();
-
-    constructor(
-        @inject(DebugSessionManager) protected readonly debugSessionManager: DebugSessionManager,
-        @inject(EditorManager) protected readonly editorManager: EditorManager) { }
-
-    @postConstruct()
-    protected init() {
-        this.debugSessionManager.onDidPreCreateDebugSession(sessionId => this.onDebugSessionPreCreated(sessionId));
-        this.debugSessionManager.onDidDestroyDebugSession(debugSession => this.onDebugSessionDestroyed(debugSession));
-    }
-
-    get(sessionId: string): ActiveLineDecorator {
-        const decorator = this.decorators.get(sessionId);
-        if (!decorator) {
-            throw new Error(`Decorator is not initialized for the debug session: '${sessionId}'`);
-        }
-
-        return decorator;
-    }
-
-    private onDebugSessionPreCreated(sessionId: string) {
-        const decorator = new ActiveLineDecorator(sessionId, this.debugSessionManager, this.editorManager);
-        this.decorators.set(sessionId, decorator);
-    }
-
-    private onDebugSessionDestroyed(debugSession: DebugSession) {
-        const decorator = this.decorators.get(debugSession.sessionId);
-        if (decorator) {
-            decorator.clearDecorations();
-            this.decorators.delete(debugSession.sessionId);
-        }
-    }
-}
-
-/**
  * Highlight active debug line in the editors.
  */
+@injectable()
 export class ActiveLineDecorator extends EditorDecorator {
     constructor(
-        protected readonly sessionId: string,
-        protected readonly debugSessionManager: DebugSessionManager,
-        protected readonly editorManager: EditorManager) {
+        @inject(DebugSessionManager) protected readonly debugSessionManager: DebugSessionManager,
+        @inject(EditorManager) protected readonly editorManager: EditorManager) {
         super();
     }
 
-    showDecorations(editor?: TextEditor): void {
-        const session = this.debugSessionManager.find(this.sessionId);
+    applyDecorations(editor?: TextEditor): void {
+        const editors = editor ? [editor] : this.editorManager.all.map(widget => widget.editor);
+        editors.forEach(e => this.setDecorations(e, []));
+
+        const session = this.debugSessionManager.getActiveDebugSession();
         if (!session) {
             return;
         }
@@ -107,14 +69,6 @@ export class ActiveLineDecorator extends EditorDecorator {
                     });
                 }
             });
-        }
-    }
-
-    clearDecorations(editor?: TextEditor) {
-        if (editor) {
-            this.setDecorations(editor, []);
-        } else {
-            this.editorManager.all.forEach(widget => this.setDecorations(widget.editor, []));
         }
     }
 
@@ -148,65 +102,17 @@ const ActiveBreakpointDecoration = <EditorDecorationOptions>{
 };
 
 /**
- * Per session [breakpoint decorator](#BreakpointDecorator) provider.
- */
-@injectable()
-export class BreakpointDecoratorProvider {
-    private readonly defaultDecorator: BreakpointDecorator;
-    private readonly decorators = new Map<string, BreakpointDecorator>();
-
-    constructor(
-        @inject(DebugSessionManager) protected readonly debugSessionManager: DebugSessionManager,
-        @inject(EditorManager) protected readonly editorManager: EditorManager,
-        @inject(BreakpointStorage) protected readonly breakpointStorage: BreakpointStorage) {
-        this.defaultDecorator = new BreakpointDecorator(this.breakpointStorage, this.editorManager);
-    }
-
-    @postConstruct()
-    protected init() {
-        this.debugSessionManager.onDidPreCreateDebugSession(sessionId => this.onDebugSessionPreCreated(sessionId));
-        this.debugSessionManager.onDidDestroyDebugSession(debugSession => this.onDebugSessionDestroyed(debugSession));
-    }
-
-    get(sessionId: string | undefined): BreakpointDecorator {
-        if (!sessionId) {
-            return this.defaultDecorator;
-        }
-
-        const decorator = this.decorators.get(sessionId);
-        if (!decorator) {
-            throw new Error(`Decorator is not initialized for the debug session: '${sessionId}'`);
-        }
-
-        return decorator;
-    }
-
-    private onDebugSessionPreCreated(sessionId: string) {
-        const decorator = new BreakpointDecorator(this.breakpointStorage, this.editorManager, sessionId);
-        this.decorators.set(sessionId, decorator);
-    }
-
-    private onDebugSessionDestroyed(debugSession: DebugSession) {
-        const decorator = this.decorators.get(debugSession.sessionId);
-        if (decorator) {
-            decorator.clearDecorations();
-            this.decorators.delete(debugSession.sessionId);
-        }
-    }
-}
-
-/**
  * Shows breakpoints.
  */
+@injectable()
 export class BreakpointDecorator extends EditorDecorator {
     constructor(
-        protected readonly breakpointStorage: BreakpointStorage,
-        protected readonly editorManager: EditorManager,
-        protected readonly sessionId?: string) {
+        @inject(BreakpointStorage) protected readonly breakpointStorage: BreakpointStorage,
+        @inject(EditorManager) protected readonly editorManager: EditorManager) {
         super();
     }
 
-    showDecorations(editor?: TextEditor): void {
+    applyDecorations(editor?: TextEditor): void {
         const editors = editor ? [editor] : this.editorManager.all.map(widget => widget.editor);
 
         editors.forEach(e => {
@@ -220,15 +126,7 @@ export class BreakpointDecorator extends EditorDecorator {
         });
     }
 
-    clearDecorations(editor?: TextEditor) {
-        if (editor) {
-            this.setDecorations(editor, []);
-        } else {
-            this.editorManager.all.forEach(widget => this.setDecorations(widget.editor, []));
-        }
-    }
-
     private toRange(breakpoint: DebugProtocol.SourceBreakpoint): Range {
-        return Range.create(Position.create(breakpoint.line, 0), Position.create(breakpoint.line, 0));
+        return Range.create(Position.create(breakpoint.line - 1, 0), Position.create(breakpoint.line - 1, 0));
     }
 }

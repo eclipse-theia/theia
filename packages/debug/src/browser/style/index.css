@@ -117,6 +117,10 @@
     cursor: pointer;
 }
 
+.theia-debug-breakpoint-dialog {
+    height: 400px;
+}
+
 .theia-debug-variables-container {
     overflow: auto;
     color: var(--theia-ui-font-color1);

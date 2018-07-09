@@ -158,6 +158,11 @@ export namespace ExtDebugProtocol {
     export interface ConnectedEvent extends DebugProtocol.Event { }
 
     /**
+     * Event message for 'configurationDone' event type.
+     */
+    export interface ConfigurationDoneEvent extends DebugProtocol.Event { }
+
+    /**
      * Event message for 'variableUpdated' event type.
      */
     export interface VariableUpdatedEvent extends DebugProtocol.Event {
