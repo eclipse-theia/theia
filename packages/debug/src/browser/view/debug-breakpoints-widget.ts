@@ -120,6 +120,7 @@ export class BreakpointsDialog extends AbstractDialog<void> {
         });
 
         this.breakpointsWidget = new DebugBreakpointsWidget(breakpointManager, undefined);
+        this.breakpointsWidget.addClass(Styles.BREAKPOINT_DIALOG);
         this.toDispose.push(this.breakpointsWidget);
     }
 
@@ -157,4 +158,5 @@ export class BreakpointsDialog extends AbstractDialog<void> {
 namespace Styles {
     export const BREAKPOINTS_CONTAINER = 'theia-debug-breakpoints-container';
     export const BREAKPOINT = 'theia-debug-breakpoint';
+    export const BREAKPOINT_DIALOG = 'theia-debug-breakpoint-dialog';
 }

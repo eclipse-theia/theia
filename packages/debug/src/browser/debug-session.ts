@@ -269,7 +269,7 @@ export class DebugSessionManager {
      * @param configuration The debug configuration
      * @returns The debug session
      */
-    create(sessionId: string, debugConfiguration: DebugConfiguration): DebugSession {
+    create(sessionId: string, debugConfiguration: DebugConfiguration): Promise<DebugSession> {
         this.onDidPreCreateDebugSessionEmitter.fire(sessionId);
 
         const contrib = this.contribs.get(debugConfiguration.type);
@@ -284,7 +284,6 @@ export class DebugSessionManager {
             const outputEvent = (event as DebugProtocol.OutputEvent);
             channel.appendLine(outputEvent.body.output);
         });
-        session.on("initialized", () => this.setActiveDebugSession(sessionId));
         session.on("terminated", () => this.destroy(sessionId));
 
         const initializeArgs: DebugProtocol.InitializeRequestArguments = {
@@ -292,7 +291,7 @@ export class DebugSessionManager {
             adapterID: debugConfiguration.type
         };
 
-        session.initialize(initializeArgs)
+        return session.initialize(initializeArgs)
             .then(() => {
                 const request = debugConfiguration.request;
                 switch (request) {
@@ -304,9 +303,9 @@ export class DebugSessionManager {
                 }
             })
             .then(() => this.breakpointApplier.applySessionBreakpoints(session))
-            .then(() => session.configurationDone());
-
-        return session;
+            .then(() => session.configurationDone())
+            .then(() => this.setActiveDebugSession(sessionId))
+            .then(() => session);
     }
 
     /**
