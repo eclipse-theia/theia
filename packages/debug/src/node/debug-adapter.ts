@@ -237,6 +237,16 @@ export class DebugAdapterSessionImpl extends EventEmitter implements DebugAdapte
                     break;
                 }
 
+                case 'configurationDone': {
+                    const event: ExtDebugProtocol.ConfigurationDoneEvent = {
+                        type: 'event',
+                        seq: -1,
+                        event: 'configurationDone'
+                    };
+                    this.proceedEvent(JSON.stringify(event), event);
+                    break;
+                }
+
                 case 'setVariable': {
                     const setVariableRequest = request as DebugProtocol.SetVariableRequest;
                     const event: ExtDebugProtocol.VariableUpdatedEvent = {

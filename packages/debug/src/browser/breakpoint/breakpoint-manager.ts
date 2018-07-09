@@ -15,7 +15,7 @@ import { injectable, inject } from "inversify";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { SourceOpener, DebugUtils } from "../debug-utils";
 import { FrontendApplicationContribution } from "@theia/core/lib/browser";
-import { ActiveLineDecoratorProvider, BreakpointDecoratorProvider } from "./breakpoint-decorators";
+import { ActiveLineDecorator, BreakpointDecorator } from "./breakpoint-decorators";
 import { BreakpointStorage } from "./breakpoint-storage";
 import {
     EditorManager,
@@ -38,8 +38,8 @@ export class BreakpointsManager implements FrontendApplicationContribution {
     constructor(
         @inject(DebugSessionManager) protected readonly debugSessionManager: DebugSessionManager,
         @inject(SourceOpener) protected readonly sourceOpener: SourceOpener,
-        @inject(ActiveLineDecoratorProvider) protected readonly lineDecorator: ActiveLineDecoratorProvider,
-        @inject(BreakpointDecoratorProvider) protected readonly breakpointDecorator: BreakpointDecoratorProvider,
+        @inject(ActiveLineDecorator) protected readonly lineDecorator: ActiveLineDecorator,
+        @inject(BreakpointDecorator) protected readonly breakpointDecorator: BreakpointDecorator,
         @inject(BreakpointStorage) protected readonly storage: BreakpointStorage,
         @inject(BreakpointsApplier) protected readonly breakpointApplier: BreakpointsApplier,
         @inject(EditorManager) protected readonly editorManager: EditorManager
@@ -49,7 +49,6 @@ export class BreakpointsManager implements FrontendApplicationContribution {
         this.debugSessionManager.onDidCreateDebugSession(debugSession => this.onDebugSessionCreated(debugSession));
         this.debugSessionManager.onDidChangeActiveDebugSession(
             ([oldDebugSession, newDebugSession]) => this.onActiveDebugSessionChanged(oldDebugSession, newDebugSession));
-        this.debugSessionManager.onDidDestroyDebugSession(debugSession => this.onDebugSessionDestroyed(debugSession));
         this.editorManager.onCreated(widget => this.onEditorCreated(widget.editor));
         this.editorManager.onActiveEditorChanged(widget => this.onActiveEditorChanged(widget));
         this.editorManager.onCurrentEditorChanged(widget => this.onCurrentEditorChanged(widget));
@@ -78,7 +77,8 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                     return this.breakpointApplier.applySessionBreakpoints(debugSession, source);
                 }
             })
-            .then(() => this.breakpointDecorator.get(debugSession && debugSession.sessionId).showDecorations(editor));
+            .then(() => this.breakpointDecorator.applyDecorations(editor))
+            .then(() => this.onDidChangeBreakpointsEmitter.fire(undefined));
     }
 
     /**
@@ -113,36 +113,108 @@ export class BreakpointsManager implements FrontendApplicationContribution {
 
         return {
             source, sessionId,
-            origin: { line: position.line }
+            origin: { line: position.line + 1 }
         };
     }
 
     private onDebugSessionCreated(debugSession: DebugSession) {
         debugSession.on('stopped', event => this.onThreadStopped(debugSession, event));
         debugSession.on('continued', event => this.onThreadContinued(debugSession, event));
+        debugSession.on('terminated', event => this.onTerminated(debugSession, event));
+        debugSession.on('configurationDone', event => this.onConfigurationDone(debugSession, event));
+        debugSession.on('breakpoint', event => this.onBreakpoint(debugSession, event));
 
-        this.assignBreakpointsTo(debugSession.sessionId);
+        this.storage.get(DebugUtils.isSourceBreakpoint)
+            .then(breakpoints => breakpoints.filter(b => b.sessionId === undefined))
+            .then(breakpoints => breakpoints.filter(b => DebugUtils.checkPattern(b.source!, debugSession.configuration.breakpoints.filePatterns)))
+            .then(breakpoints => breakpoints.map(b => {
+                b.sessionId = debugSession.sessionId;
+                b.created = undefined;
+                return b;
+            }))
+            .then(breakpoints => this.storage.updateAll(breakpoints))
+            .then(() => this.onDidChangeBreakpointsEmitter.fire(undefined));
     }
 
-    private onDebugSessionDestroyed(debugSession: DebugSession) {
-        this.unassignBreakpointsFrom(debugSession.sessionId);
+    private onConfigurationDone(debugSession: DebugSession, event: ExtDebugProtocol.ConfigurationDoneEvent): void {
+        this.breakpointDecorator.applyDecorations();
+        this.lineDecorator.applyDecorations();
+    }
+
+    private onTerminated(debugSession: DebugSession, event: DebugProtocol.TerminatedEvent): void {
+        this.lineDecorator.applyDecorations();
+
+        this.storage.get(DebugUtils.isSourceBreakpoint)
+            .then(breakpoints => breakpoints.filter(b => b.sessionId === debugSession.sessionId))
+            .then(breakpoints => breakpoints.map(b => {
+                b.created = undefined;
+                b.sessionId = undefined;
+                return b;
+            }))
+            .then(breakpoints => this.storage.updateAll(breakpoints))
+            .then(() => {
+                this.breakpointDecorator.applyDecorations();
+                this.onDidChangeBreakpointsEmitter.fire(undefined);
+            });
     }
 
     private onActiveDebugSessionChanged(oldDebugSession: DebugSession | undefined, newDebugSession: DebugSession | undefined) {
-        if (oldDebugSession) {
-            this.lineDecorator.get(oldDebugSession.sessionId).clearDecorations();
-        }
+        this.lineDecorator.applyDecorations();
+        this.breakpointDecorator.applyDecorations();
+    }
 
-        if (newDebugSession) {
-            this.lineDecorator.get(newDebugSession.sessionId).showDecorations();
-        }
+    private onBreakpoint(debugSession: DebugSession, event: DebugProtocol.BreakpointEvent): void {
+        const breakpoint = event.body.breakpoint;
 
-        this.breakpointDecorator.get(oldDebugSession && oldDebugSession.sessionId).clearDecorations();
-        this.breakpointDecorator.get(newDebugSession && newDebugSession.sessionId).showDecorations();
+        this.storage.get(DebugUtils.isSourceBreakpoint)
+            .then(breakpoints => breakpoints.filter(b => b.sessionId === debugSession.sessionId))
+            .then(breakpoints => breakpoints.filter(b => {
+                if (breakpoint.id && b.created && b.created.id === breakpoint.id) {
+                    return true;
+                }
+
+                if (!breakpoint.source) {
+                    return false;
+                }
+
+                const sourceBreakpoint = b.origin as DebugProtocol.SourceBreakpoint;
+                return DebugUtils.checkUri(b, DebugUtils.toUri(breakpoint.source))
+                    && sourceBreakpoint.line === breakpoint.line
+                    && sourceBreakpoint.column === breakpoint.column;
+            }))
+            .then(breakpoints => {
+                const sourceBreakpoint = breakpoints[0];
+                switch (event.body.reason) {
+                    case 'new':
+                    case 'changed': {
+                        if (sourceBreakpoint) {
+                            sourceBreakpoint.created = breakpoint;
+                            return this.storage.update(sourceBreakpoint);
+                        } else {
+                            return this.storage.add({
+                                sessionId: debugSession.sessionId,
+                                source: breakpoint.source,
+                                created: breakpoint,
+                                origin: {
+                                    line: breakpoint.line!,
+                                    column: breakpoint.column
+                                }
+                            });
+                        }
+                    }
+                    case 'removed': {
+                        if (sourceBreakpoint) {
+                            return this.storage.delete(sourceBreakpoint);
+                        }
+                    }
+                }
+            })
+            .then(() => this.breakpointDecorator.applyDecorations())
+            .then(() => this.onDidChangeBreakpointsEmitter.fire(undefined));
     }
 
     private onThreadContinued(debugSession: DebugSession, event: DebugProtocol.ContinuedEvent): void {
-        this.lineDecorator.get(debugSession.sessionId).showDecorations();
+        this.lineDecorator.applyDecorations();
     }
 
     private onThreadStopped(debugSession: DebugSession, event: DebugProtocol.StoppedEvent): void {
@@ -164,7 +236,7 @@ export class BreakpointsManager implements FrontendApplicationContribution {
                         debugSession.stacks(args).then(response => {
                             const frame = response.body.stackFrames[0];
                             if (frame) {
-                                this.sourceOpener.open(frame);
+                                this.sourceOpener.open(frame).then(widget => this.lineDecorator.applyDecorations(widget.editor));
                             }
                         });
                     }
@@ -175,11 +247,8 @@ export class BreakpointsManager implements FrontendApplicationContribution {
     }
 
     private async onEditorCreated(editor: TextEditor): Promise<void> {
-        const debugSession = this.debugSessionManager.getActiveDebugSession();
-        if (debugSession) {
-            this.lineDecorator.get(debugSession.sessionId).showDecorations(editor);
-        }
-        this.breakpointDecorator.get(debugSession && debugSession.sessionId).showDecorations(editor);
+        this.lineDecorator.applyDecorations(editor);
+        this.breakpointDecorator.applyDecorations(editor);
 
         editor.onMouseDown(event => {
             switch (event.target.type) {
@@ -195,32 +264,4 @@ export class BreakpointsManager implements FrontendApplicationContribution {
     private onActiveEditorChanged(widget: EditorWidget | undefined): void { }
 
     private onCurrentEditorChanged(widget: EditorWidget | undefined): void { }
-
-    private assignBreakpointsTo(sessionId: string): Promise<void> {
-        return this.reassignBreakpoints(undefined, sessionId);
-    }
-
-    private unassignBreakpointsFrom(sessionId: string): Promise<void> {
-        return this.reassignBreakpoints(sessionId, undefined);
-    }
-
-    private reassignBreakpoints(oldSessionId: string | undefined, newSessionId: string | undefined): Promise<void> {
-        return this.storage.get(DebugUtils.isSourceBreakpoint)
-            .then(breakpoints => breakpoints.filter(b => b.sessionId === oldSessionId))
-            .then(breakpoints => {
-                if (newSessionId) {
-                    const debugSession = this.debugSessionManager.find(newSessionId);
-                    if (debugSession) {
-                        return breakpoints.filter(b => DebugUtils.checkPattern(b.source!, debugSession.configuration.breakpoints.filePatterns));
-                    }
-                }
-                return breakpoints;
-            })
-            .then(breakpoints => breakpoints.map(b => {
-                b.sessionId = newSessionId;
-                b.created = undefined;
-                return b;
-            }))
-            .then(breakpoints => this.storage.updateAll(breakpoints));
-    }
 }

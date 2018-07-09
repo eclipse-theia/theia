@@ -61,7 +61,7 @@ import { DebugStackFramesWidget } from './view/debug-stack-frames-widget';
 import { DebugBreakpointsWidget, BreakpointsDialog } from './view/debug-breakpoints-widget';
 import { DebugSelectionService, DebugSelection } from './view/debug-selection-service';
 import { bindContributionProvider, ResourceResolver } from '@theia/core';
-import { ActiveLineDecoratorProvider, BreakpointDecoratorProvider } from './breakpoint/breakpoint-decorators';
+import { ActiveLineDecorator, BreakpointDecorator } from './breakpoint/breakpoint-decorators';
 import { BreakpointsManager } from './breakpoint/breakpoint-manager';
 import { BreakpointStorage } from './breakpoint/breakpoint-storage';
 import { SourceOpener } from './debug-utils';
@@ -108,8 +108,8 @@ function bindDebugView(bind: interfaces.Bind): void {
 
 function bindBreakpointsManager(bind: interfaces.Bind): void {
     bind(BreakpointsDialog).toSelf().inSingletonScope();
-    bind(ActiveLineDecoratorProvider).toSelf().inSingletonScope();
-    bind(BreakpointDecoratorProvider).toSelf().inSingletonScope();
+    bind(ActiveLineDecorator).toSelf().inSingletonScope();
+    bind(BreakpointDecorator).toSelf().inSingletonScope();
     bind(BreakpointStorage).toSelf().inSingletonScope();
     bind(BreakpointsApplier).toSelf().inSingletonScope();
     bind(BreakpointsManager).toSelf().inSingletonScope();

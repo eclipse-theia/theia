@@ -256,7 +256,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                 }
 
                 const selection = this.debugSelectionHandler.get(debugSession.sessionId);
-                return !!selection && !!selection.thread && !!debugSession.state.stoppedThreadIds.has(selection.thread.id);
+                return !!selection && !!selection.thread && !debugSession.state.stoppedThreadIds.has(selection.thread.id);
             }
         });
 
@@ -279,7 +279,7 @@ export class DebugCommandHandlers implements MenuContribution, CommandContributi
                 }
 
                 const selection = this.debugSelectionHandler.get(debugSession.sessionId);
-                return !!selection && !!selection.thread && !debugSession.state.stoppedThreadIds.has(selection.thread.id);
+                return !!selection && !!selection.thread && !!debugSession.state.stoppedThreadIds.has(selection.thread.id);
             }
         });
 
