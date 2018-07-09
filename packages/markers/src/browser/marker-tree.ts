@@ -37,7 +37,7 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
     ) {
         super();
 
-        this.toDispose.push(markerManager.onDidChangeMarkers(() => this.refresh()));
+        this.toDispose.push(markerManager.onDidChangeMarkers(uri => this.refreshMarkerInfo(uri)));
 
         this.root = <MarkerRootNode>{
             visible: false,
@@ -49,73 +49,80 @@ export abstract class MarkerTree<T extends object> extends TreeImpl {
         };
     }
 
-    resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
+    protected async refreshMarkerInfo(uri: URI): Promise<void> {
+        const id = uri.toString();
+        const existing = this.getNode(id);
+        const markers = this.markerManager.findMarkers({ uri });
+        if (markers.length <= 0) {
+            if (MarkerInfoNode.is(existing)) {
+                this.removeChild(existing.parent, existing);
+                this.removeNode(existing);
+                this.fireChanged();
+            }
+            return;
+        }
+        const node = MarkerInfoNode.is(existing) ? existing : await this.createMarkerInfo(id, uri);
+        this.addChild(node.parent, node);
+        const children = this.getMarkerNodes(node, markers);
+        node.numberOfMarkers = markers.length;
+        this.setChildren(node, children);
+    }
+
+    protected async resolveChildren(parent: CompositeTreeNode): Promise<TreeNode[]> {
         if (MarkerRootNode.is(parent)) {
-            return this.getMarkerInfoNodes((parent as MarkerRootNode));
-        } else if (MarkerInfoNode.is(parent)) {
-            return this.getMarkerNodes(parent);
+            const nodes: MarkerInfoNode[] = [];
+            for (const id of this.markerManager.getUris()) {
+                const uri = new URI(id);
+                const existing = this.getNode(id);
+                const markers = this.markerManager.findMarkers({ uri });
+                const node = MarkerInfoNode.is(existing) ? existing : await this.createMarkerInfo(id, uri);
+                node.children = this.getMarkerNodes(node, markers);
+                node.numberOfMarkers = node.children.length;
+                nodes.push(node);
+            }
+            return nodes;
         }
         return super.resolveChildren(parent);
     }
 
-    async getMarkerInfoNodes(parent: MarkerRootNode): Promise<MarkerInfoNode[]> {
-        const uriNodes: MarkerInfoNode[] = [];
-        if (this.root && MarkerRootNode.is(this.root)) {
-            for (const uriString of this.markerManager.getUris()) {
-                const id = 'markerInfo-' + uriString;
-                const uri = new URI(uriString);
-                const label = await this.labelProvider.getName(uri);
-                const icon = await this.labelProvider.getIcon(uri);
-                const description = await this.labelProvider.getLongName(uri.parent);
-                const numberOfMarkers = this.markerManager.findMarkers({ uri }).length;
-                if (numberOfMarkers > 0) {
-                    const cachedMarkerInfo = this.getNode(id);
-                    if (cachedMarkerInfo && MarkerInfoNode.is(cachedMarkerInfo)) {
-                        cachedMarkerInfo.numberOfMarkers = numberOfMarkers;
-                        uriNodes.push(cachedMarkerInfo);
-                    } else {
-                        uriNodes.push({
-                            children: [],
-                            expanded: true,
-                            uri,
-                            id,
-                            name: label,
-                            icon,
-                            description,
-                            parent,
-                            selected: false,
-                            numberOfMarkers
-                        });
-                    }
-                }
-            }
-        }
-        return Promise.resolve(uriNodes);
+    protected async createMarkerInfo(id: string, uri: URI): Promise<MarkerInfoNode> {
+        const label = await this.labelProvider.getName(uri);
+        const icon = await this.labelProvider.getIcon(uri);
+        const description = await this.labelProvider.getLongName(uri.parent);
+        return {
+            children: [],
+            expanded: true,
+            uri,
+            id,
+            name: label,
+            icon,
+            description,
+            parent: this.root as MarkerRootNode,
+            selected: false,
+            numberOfMarkers: 0
+        };
     }
 
-    getMarkerNodes(parent: MarkerInfoNode): Promise<MarkerNode[]> {
-        const markerNodes: MarkerNode[] = [];
-        const markers = this.markerManager.findMarkers({ uri: parent.uri });
-        for (let i = 0; i < markers.length; i++) {
-            const marker = markers[i];
-            const uri = new URI(marker.uri);
-            const id = uri.toString() + "_" + i;
-            const cachedMarkerNode = this.getNode(id);
-            if (MarkerNode.is(cachedMarkerNode)) {
-                cachedMarkerNode.marker = marker;
-                markerNodes.push(cachedMarkerNode);
-            } else {
-                markerNodes.push({
-                    id,
-                    name: 'marker',
-                    parent,
-                    selected: false,
-                    uri,
-                    marker
-                });
-            }
+    protected getMarkerNodes(parent: MarkerInfoNode, markers: Marker<T>[]): MarkerNode[] {
+        return markers.map((marker, index) =>
+            this.createMarkerNode(marker, index, parent)
+        );
+    }
+    protected createMarkerNode(marker: Marker<T>, index: number, parent: MarkerInfoNode): MarkerNode {
+        const id = parent.id + "_" + index;
+        const existing = this.getNode(id);
+        if (MarkerNode.is(existing)) {
+            existing.marker = marker;
+            return existing;
         }
-        return Promise.resolve(markerNodes);
+        return {
+            id,
+            name: 'marker',
+            parent,
+            selected: false,
+            uri: parent.uri,
+            marker
+        };
     }
 }
 
