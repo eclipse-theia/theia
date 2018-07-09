@@ -30,9 +30,10 @@ import { notEmpty } from '../../common/objects';
 import { isOSX } from '../../common/os';
 import { ReactWidget } from "../widgets/react-widget";
 import * as React from 'react';
-import { debounce } from "lodash";
 import { List, ListRowRenderer } from 'react-virtualized';
 import { TopDownTreeIterator } from "./tree-iterator";
+
+const debounce = require("lodash.debounce");
 
 export const TREE_CLASS = 'theia-Tree';
 export const TREE_CONTAINER_CLASS = 'theia-TreeContainer';
