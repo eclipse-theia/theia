@@ -128,7 +128,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         ]);
         setTimeout(() => {
             this.updateRows();
-            this.updateScrollToRow();
             this.updateDecorations();
         });
     }
@@ -157,7 +156,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         } else {
             this.rows = new Map();
         }
-        this.update();
+        this.updateScrollToRow();
     }
 
     protected scrollToRow: number | undefined;

@@ -21,6 +21,8 @@ import { StorageService } from '@theia/core/lib/browser/storage-service';
 import { FileSystemWatcher, FileChangeType } from '@theia/filesystem/lib/browser/filesystem-watcher';
 import { Marker } from '../common/marker';
 
+const debounce = require("lodash.debounce");
+
 /*
  * argument to the `findMarkers` method.
  */
@@ -150,7 +152,8 @@ export abstract class MarkerManager<D extends object> {
         }
     }
 
-    protected saveMarkersToStorage() {
+    protected readonly saveMarkersToStorage = debounce(() => this.doSaveMarkersToStorage(), 500);
+    protected doSaveMarkersToStorage(): void {
         const key = this.getStorageKey();
         if (key) {
             const result: Uri2MarkerEntry[] = [];

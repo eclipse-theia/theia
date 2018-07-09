@@ -246,12 +246,33 @@ export class TreeImpl implements Tree {
         if (CompositeTreeNode.is(node)) {
             const { children } = node;
             children.forEach((child, index) => {
-                const parent = node;
-                const previousSibling = children[index - 1];
-                const nextSibling = children[index + 1];
-                Object.assign(child, { parent, previousSibling, nextSibling });
+                this.setParent(child, index, node);
                 this.addNode(child);
             });
+        }
+    }
+
+    protected setParent(child: TreeNode, index: number, parent: CompositeTreeNode): void {
+        const previousSibling = parent.children[index - 1];
+        const nextSibling = parent.children[index + 1];
+        Object.assign(child, { parent, previousSibling, nextSibling });
+    }
+
+    protected addChild(parent: CompositeTreeNode, child: TreeNode): void {
+        const index = parent.children.findIndex(value => value.id === child.id);
+        if (index !== -1) {
+            (parent.children as TreeNode[]).splice(index, 1, child);
+            this.setParent(child, index, parent);
+        } else {
+            (parent.children as TreeNode[]).push(child);
+            this.setParent(child, parent.children.length - 1, parent);
+        }
+    }
+
+    protected removeChild(parent: CompositeTreeNode, child: TreeNode): void {
+        const index = parent.children.findIndex(value => value.id === child.id);
+        if (index !== -1) {
+            (parent.children as TreeNode[]).splice(index, 1);
         }
     }
 
