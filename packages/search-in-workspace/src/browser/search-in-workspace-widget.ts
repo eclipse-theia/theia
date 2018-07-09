@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { Widget, Message, BaseWidget, VirtualRenderer, Key, StatefulWidget } from "@theia/core/lib/browser";
+import { Widget, Message, BaseWidget, VirtualRenderer, Key, StatefulWidget, MessageLoop } from "@theia/core/lib/browser";
 import { inject, injectable, postConstruct } from "inversify";
 import { SearchInWorkspaceResultTreeWidget } from "./search-in-workspace-result-tree-widget";
 import { h } from "@phosphor/virtualdom";
@@ -154,6 +154,11 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected onUpdateRequest(msg: Message) {
         super.onUpdateRequest(msg);
         VirtualRenderer.render(this.renderSearchHeader(), this.searchFormContainer);
+    }
+
+    protected onResize(msg: Widget.ResizeMessage): void {
+        super.onResize(msg);
+        MessageLoop.sendMessage(this.resultTreeWidget, Widget.ResizeMessage.UnknownSize);
     }
 
     protected onAfterShow(msg: Message) {
