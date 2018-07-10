@@ -90,10 +90,13 @@ export class MonacoTextmateService implements FrontendApplicationContribution {
             return;
         }
 
+        const numericLanguageId = monaco.languages.getLanguages().findIndex(l => l.id === languageId);
+        const configuration = this.textmateRegistry.getGrammarConfiguration(languageId);
+
         await this.onigasmPromise;
         try {
             monaco.languages.setTokensProvider(languageId, createTextmateTokenizer(
-                await this.grammarRegistry.loadGrammar(scopeName)
+                await this.grammarRegistry.loadGrammarWithConfiguration(scopeName, numericLanguageId, configuration)
             ));
         } catch (err) {
             this.logger.warn('No grammar for this language id', languageId);
