@@ -40,20 +40,30 @@ export function createTextmateTokenizer(grammar: IGrammar): monaco.languages.Tok
         getInitialState: () => new State(INITIAL),
         tokenize(line: string, state: State) {
             const result = grammar.tokenizeLine(line, state.ruleStack);
+            const tokenTheme = monaco.services.StaticServices.standaloneThemeService.get().getTheme().tokenTheme;
+            const defaultResult = tokenTheme.match(undefined, 'should.return.default');
+            const defaultForeground = monaco.modes.TokenMetadata.getForeground(defaultResult);
             return {
                 endState: new State(result.ruleStack),
                 tokens: result.tokens.map(token => {
                     const scopes = token.scopes.slice(0);
-                    let scope = scopes.pop();
 
-                    // TODO: update this temporary fix once `monaco-editor` supports full scopes arrays
-                    while (scope && scope.startsWith('punctuation.')) {
-                        scope = scopes.pop();
+                    // TODO monaco doesn't allow to pass multiple scopes and have their styles merged yet. See https://github.com/Microsoft/monaco-editor/issues/929
+                    // As a workaround we go through the scopes backwards and pick the first for which the tokenTheme has a special foreground color.
+                    for (let i = scopes.length - 1; i >= 0; i--) {
+                        const scope = scopes[i];
+                        const match = tokenTheme.match(undefined, scope);
+                        const foregroundColor = monaco.modes.TokenMetadata.getForeground(match);
+                        if (defaultForeground !== foregroundColor) {
+                            return {
+                                ...token,
+                                scopes: scope!
+                            };
+                        }
                     }
-
                     return {
                         ...token,
-                        scopes: scope!,
+                        scopes: scopes[0]!,
                     };
                 }),
             };
