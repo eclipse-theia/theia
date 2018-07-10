@@ -31,6 +31,7 @@ import {
     RevealPositionOptions,
     DeltaDecorationParams,
     ReplaceTextParams,
+    EditorDecoration
 } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
 
@@ -345,6 +346,26 @@ export class MonacoEditor implements TextEditor, IEditorReference {
             ...decoration,
             range: this.p2m.asRange(decoration.range),
         });
+    }
+
+    getLinesDecorations(startLineNumber: number, endLineNumber: number): (EditorDecoration & Readonly<{ id: string }>)[] {
+        const toPosition = (line: number): monaco.Position => this.p2m.asPosition({ line, character: 0 });
+        const start = toPosition(startLineNumber).lineNumber;
+        const end = toPosition(endLineNumber).lineNumber;
+        return this.editor
+            .getModel()
+            .getLinesDecorations(start, end)
+            .map(this.toEditorDecoration.bind(this));
+    }
+
+    protected toEditorDecoration(decoration: monaco.editor.IModelDecoration): EditorDecoration & Readonly<{ id: string }> {
+        const range = this.m2p.asRange(decoration.range);
+        const { id, options } = decoration;
+        return {
+            options,
+            range,
+            id
+        } as EditorDecoration & Readonly<{ id: string }>;
     }
 
     getVisibleColumn(position: Position): number {

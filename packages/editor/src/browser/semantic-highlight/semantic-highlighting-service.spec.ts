@@ -1,5 +1,5 @@
 /********************************************************************************
- * Copyright (C) 2017 TypeFox and others.
+ * Copyright (C) 2018 TypeFox and others.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,14 +14,17 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { ContainerModule } from 'inversify';
-import { CliContribution } from '@theia/core/lib/node/cli';
-import { LanguageServerContribution } from '@theia/languages/lib/node';
-import { JavaContribution } from './java-contribution';
-import { JavaCliContribution } from './java-cli-contribution';
+import { expect } from 'chai';
+import { SemanticHighlightingService } from './semantic-highlighting-service';
 
-export default new ContainerModule(bind => {
-    bind(LanguageServerContribution).to(JavaContribution).inSingletonScope();
-    bind(JavaCliContribution).toSelf().inSingletonScope();
-    bind(CliContribution).toService(JavaCliContribution);
+describe('semantic-highlighting-service', () => {
+
+    it('encode-decode', () => {
+        const input = [2, 5, 0, 12, 15, 1, 7, 1000, 1];
+        const expected = SemanticHighlightingService.Token.fromArray(input);
+        const encoded = SemanticHighlightingService.encode(expected);
+        const actual = SemanticHighlightingService.decode(encoded);
+        expect(actual).to.be.deep.equal(expected);
+    });
+
 });

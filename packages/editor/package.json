@@ -5,7 +5,9 @@
   "dependencies": {
     "@theia/core": "^0.3.13",
     "@theia/languages": "^0.3.13",
-    "@theia/variable-resolver": "^0.3.13"
+    "@theia/variable-resolver": "^0.3.13",
+    "@types/base64-arraybuffer": "0.1.0",
+    "base64-arraybuffer": "^0.1.5"
   },
   "publishConfig": {
     "access": "public"

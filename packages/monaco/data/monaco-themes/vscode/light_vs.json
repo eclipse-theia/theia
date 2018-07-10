@@ -4,7 +4,10 @@
 	"include": "./light_defaults.json",
 	"tokenColors": [
 		{
-			"scope": ["meta.embedded", "source.groovy.embedded"],
+			"scope": [
+				"meta.embedded",
+				"source.groovy.embedded"
+			],
 			"settings": {
 				"foreground": "#000000ff"
 			}
@@ -369,6 +372,36 @@
 			"scope": "variable.language",
 			"settings": {
 				"foreground": "#0000ff"
+			}
+		},
+		{
+			"scope": "storage.modifier.static",
+			"settings": {
+				"fontStyle": "italic"
+			}
+		},
+		{
+			"scope": "storage.modifier.abstract",
+			"settings": {
+				"foreground": "#000000"
+			}
+		},
+		{
+			"scope": "invalid.deprecated",
+			"settings": {
+				"fontStyle": "italic underline"
+			}
+		},
+		{
+			"scope": "keyword.other.var",
+			"settings": {
+				"foreground": "#0000ff"
+			}
+		},
+		{
+			"scope": "variable.other.autoboxing.java",
+			"settings": {
+				"foreground": "#9f3918"
 			}
 		}
 	]

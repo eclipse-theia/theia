@@ -351,6 +351,36 @@
 			"settings": {
 				"foreground": "#569cd6"
 			}
+		},
+		{
+			"scope": "storage.modifier.static",
+			"settings": {
+				"fontStyle": "italic"
+			}
+		},
+		{
+			"scope": "storage.modifier.abstract",
+			"settings": {
+				"foreground": "#d4d4d4"
+			}
+		},
+		{
+			"scope": "invalid.deprecated",
+			"settings": {
+				"fontStyle": "italic underline"
+			}
+		},
+		{
+			"scope": "keyword.other.var",
+			"settings": {
+				"foreground": "#569cd6"
+			}
+		},
+		{
+			"scope": "variable.other.autoboxing.java",
+			"settings": {
+				"foreground": "#9f3918"
+			}
 		}
 	]
 }

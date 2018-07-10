@@ -38,7 +38,7 @@ describe('git-watcher-slow', () => {
     let watcher: GitWatcherServer | undefined;
 
     beforeEach(async function () {
-        this.timeout(20000);
+        this.timeout(40000);
 
         const root = track.mkdirSync('git-watcher-slow');
         const localUri = FileUri.create(root).toString();
@@ -54,12 +54,12 @@ describe('git-watcher-slow', () => {
     });
 
     after(function () {
-        this.timeout(20000);
+        this.timeout(40000);
         track.cleanupSync();
     });
 
     it('watching the same repository multiple times should not duplicate the events', async function () {
-        this.timeout(20000);
+        this.timeout(40000);
 
         let ignoredEvents = 1;
         const events: GitStatusChangeEvent[] = [];
