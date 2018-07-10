@@ -30,7 +30,7 @@ export class MergeConflictsCodeLensProvider implements CodeLensProvider {
         const mergeConflicts = await this.mergeConflictsProvider.get(uri);
         const result: CodeLens[] = [];
         if (mergeConflicts) {
-            mergeConflicts.mergeConflicts.forEach(mergeConflict => result.push(...this.toCodeLense(uri, mergeConflict)));
+            mergeConflicts.forEach(mergeConflict => result.push(...this.toCodeLense(uri, mergeConflict)));
         }
         return Promise.resolve(result);
     }
