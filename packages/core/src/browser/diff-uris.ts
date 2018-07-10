@@ -26,7 +26,7 @@ export namespace DiffUris {
 
     export function decode(uri: URI): URI[] {
         if (uri.scheme !== DIFF_SCHEME) {
-            throw (`The URI must have scheme "diff". The URI was: ${uri}.`);
+            throw new Error((`The URI must have scheme "diff". The URI was: ${uri}.`));
         }
         const diffUris: string[] = JSON.parse(uri.query);
         return diffUris.map(s => new URI(s));

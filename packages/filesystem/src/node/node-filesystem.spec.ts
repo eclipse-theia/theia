@@ -11,6 +11,7 @@ import * as chai from 'chai';
 import * as fs from 'fs-extra';
 import URI from "@theia/core/lib/common/uri";
 import { FileUri } from "@theia/core/lib/node";
+import { isWindows } from '@theia/core/lib/common/os';
 import { FileSystem } from "../common/filesystem";
 import { FileSystemNode } from "./node-filesystem";
 import { expectThrowsAsync } from '@theia/core/lib/common/test/expect';
@@ -356,7 +357,12 @@ describe("NodeFileSystem", function () {
             await expectThrowsAsync(fileSystem.move(sourceUri.toString(), targetUri.toString(), { overwrite: true }), Error);
         });
 
-        it("Moving a non-empty directory to an empty directory. Source folder and its content should be moved to the target location.", async () => {
+        it("Moving a non-empty directory to an empty directory. Source folder and its content should be moved to the target location.", async function () {
+            if (isWindows) {
+                // https://github.com/theia-ide/theia/issues/2088
+                this.skip();
+                return;
+            }
             const sourceUri = root.resolve("foo");
             const targetUri = root.resolve("bar");
             const sourceFileUri_01 = sourceUri.resolve("foo_01.txt");

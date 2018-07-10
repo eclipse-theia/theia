@@ -64,6 +64,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     private cancelIndicator = new CancellationTokenSource();
 
     protected changeEmitter: Emitter<Map<string, SearchInWorkspaceResultNode>>;
+    protected focusInputEmitter: Emitter<any>;
 
     @inject(SearchInWorkspaceService) protected readonly searchService: SearchInWorkspaceService;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
@@ -100,6 +101,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     @postConstruct()
     protected init() {
+        super.init();
         this.addClass("resultContainer");
 
         this.workspaceService.root.then(rootFileStat => {
@@ -110,6 +112,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         });
 
         this.changeEmitter = new Emitter();
+        this.focusInputEmitter = new Emitter();
 
         this.toDispose.push(this.editorManager.onActiveEditorChanged(() => {
             this.updateCurrentEditorDecorations();
@@ -128,6 +131,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
     get onChange(): Event<Map<string, SearchInWorkspaceResultNode>> {
         return this.changeEmitter.event;
+    }
+
+    get onFocusInput(): Event<void> {
+        return this.focusInputEmitter.event;
     }
 
     collapseAll() {
@@ -155,6 +162,9 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 if (resultElement) {
                     const resultLine = this.createResultLineNode(result, resultElement);
                     resultElement.children.push(resultLine);
+                    if (resultElement.children.length >= 20) {
+                        resultElement.expanded = false;
+                    }
                 } else {
                     const children: SearchInWorkspaceResultLineNode[] = [];
                     const icon = await this.labelProvider.getIcon(new URI(result.file));
@@ -185,6 +195,24 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         token.onCancellationRequested(() => {
             this.searchService.cancel(searchId);
         });
+    }
+
+    focusFirstResult() {
+        if (CompositeTreeNode.is(this.model.root) && this.model.root.children.length > 0) {
+            const node = this.model.root.children[0];
+            if (SelectableTreeNode.is(node)) {
+                this.node.focus();
+                this.model.selectNode(node);
+            }
+        }
+    }
+
+    protected handleUp(event: KeyboardEvent): void {
+        if (!this.model.getPrevSelectableNode(this.model.selectedNodes[0])) {
+            this.focusInputEmitter.fire(true);
+        } else {
+            super.handleUp(event);
+        }
     }
 
     protected refreshModelChildren() {
@@ -419,7 +447,6 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const appliedDecorations = editorWidget.editor.deltaDecorations({
             newDecorations,
             oldDecorations,
-            uri: editorWidget.editor.uri.toString()
         });
         this.appliedDecorations.set(key, appliedDecorations);
     }

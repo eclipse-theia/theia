@@ -66,6 +66,9 @@ export class PreferenceFrontendContribution implements CommandContribution, Menu
 
     protected async openWorkspacePreferences(): Promise<void> {
         const wsUri = await this.workspacePreferenceProvider.getUri();
+        if (!wsUri) {
+            return;
+        }
         if (!(await this.filesystem.exists(wsUri.toString()))) {
             await this.filesystem.createFile(wsUri.toString(), { content: this.getPreferenceTemplateForScope('workspace') });
         }

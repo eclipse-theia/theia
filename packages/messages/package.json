@@ -1,9 +1,9 @@
 {
   "name": "@theia/messages",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "description": "Theia - Messages Extension",
   "dependencies": {
-    "@theia/core": "^0.3.10"
+    "@theia/core": "^0.3.11"
   },
   "publishConfig": {
     "access": "public"
@@ -39,7 +39,7 @@
     "docs": "theiaext docs"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "^0.3.10"
+    "@theia/ext-scripts": "^0.3.11"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

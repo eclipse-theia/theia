@@ -1,0 +1,60 @@
+{
+  "name": "@theia/plugin-ext",
+  "version": "0.3.11",
+  "description": "Theia - Plugin Extension",
+  "main": "lib/common/index.js",
+  "typings": "lib/common/index.d.ts",
+  "dependencies": {
+    "@theia/core": "^0.3.11",
+    "@theia/filesystem": "^0.3.11",
+    "@theia/monaco": "^0.3.11",
+    "@theia/plugin": "^0.3.11",
+    "@theia/workspace": "^0.3.11",
+    "decompress": "^4.2.0",
+    "lodash.clonedeep": "^4.5.0",
+    "ps-tree": "1.1.0",
+    "vscode-uri": "^1.0.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "backend": "lib/plugin-ext-backend-module",
+      "backendElectron": "lib/plugin-ext-backend-electron-module",
+      "frontend": "lib/plugin-ext-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^0.3.11",
+    "@types/decompress": "^4.2.2",
+    "@types/lodash.clonedeep": "^4.5.3"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

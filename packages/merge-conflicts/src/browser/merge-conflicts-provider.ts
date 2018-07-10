@@ -23,10 +23,10 @@ export class MergeConflictsProvider {
     @inject(MergeConflictsParser)
     protected readonly mergeConflictParser: MergeConflictsParser;
 
-    protected readonly onDidUpdateEmitter = new Emitter<MergeConflicts>();
-    readonly onDidUpdate: Event<MergeConflicts> = this.onDidUpdateEmitter.event;
+    protected readonly onDidUpdateEmitter = new Emitter<MergeConflictsUpdate>();
+    readonly onDidUpdate: Event<MergeConflictsUpdate> = this.onDidUpdateEmitter.event;
 
-    deferredValues = new Map<string, Deferred<MergeConflicts>>();
+    deferredValues = new Map<string, Deferred<MergeConflictsUpdate>>();
     timeouts = new Map<string, number>();
 
     @postConstruct()
@@ -34,7 +34,7 @@ export class MergeConflictsProvider {
         this.editorManager.onCreated(w => this.handleNewEditor(w));
     }
 
-    get(uri: string): Promise<MergeConflicts | undefined> {
+    get(uri: string): Promise<MergeConflictsUpdate | undefined> {
         const deferred = this.deferredValues.get(uri);
         return deferred ? deferred.promise : Promise.resolve(undefined);
     }
@@ -55,7 +55,7 @@ export class MergeConflictsProvider {
 
     protected contentChanged(editor: TextEditor): void {
         const uri = editor.uri.toString();
-        const deferred = new Deferred<MergeConflicts>();
+        const deferred = new Deferred<MergeConflictsUpdate>();
         this.deferredValues.set(uri, deferred);
         window.setTimeout(() => {
             const mergeConflicts = this.computeMergeConflicts(editor);
@@ -64,29 +64,19 @@ export class MergeConflictsProvider {
         }, 100);
     }
 
-    protected remove(editor: TextEditor): void {
-        const uri = editor.uri.toString();
-        const deferred = this.deferredValues.get(uri);
-        if (deferred) {
-            this.deferredValues.delete(uri);
-            deferred.reject();
-        }
-    }
-
-    protected computeMergeConflicts(editor: TextEditor): MergeConflicts {
-        const uri = editor.uri.toString();
+    protected computeMergeConflicts(editor: TextEditor): MergeConflictsUpdate {
         const document = editor.document;
         const input = <MergeConflictsParser.Input>{
             lineCount: document.lineCount,
             getLine: number => document.getLineContent(number + 1),
         };
         const mergeConflicts: MergeConflict[] = this.mergeConflictParser.parse(input);
-        return { uri, mergeConflicts };
+        return { editor, mergeConflicts };
     }
 
 }
 
-export interface MergeConflicts {
-    uri: string;
-    mergeConflicts: MergeConflict[];
+export interface MergeConflictsUpdate {
+    readonly editor: TextEditor;
+    readonly mergeConflicts: MergeConflict[];
 }

@@ -1,0 +1,46 @@
+{
+  "name": "@theia/plugin-ext-vscode",
+  "version": "0.3.11",
+  "description": "Theia - Plugin Extension for VsCode",
+  "dependencies": {
+    "@theia/plugin-ext": "^0.3.11"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "backend": "lib/node/plugin-vscode-backend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/theia-ide/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/theia-ide/theia/issues"
+  },
+  "homepage": "https://github.com/theia-ide/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "prepare": "yarn run clean && yarn run build",
+    "clean": "theiaext clean",
+    "build": "theiaext build",
+    "watch": "theiaext watch",
+    "test": "theiaext test",
+    "docs": "theiaext docs"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "^0.3.11"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}

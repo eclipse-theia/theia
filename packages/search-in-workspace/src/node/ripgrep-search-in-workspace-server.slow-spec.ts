@@ -317,7 +317,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [];
 
-            for (let i = 1; i <= 100000; i++) {
+            for (let i = 1; i <= 100; i++) {
                 expected.push({
                     file: 'lots-of-matches',
                     line: i,
@@ -342,7 +342,7 @@ describe('ripgrep-search-in-workspace-server', function () {
         const client = new ResultAccumulator(() => {
             const expected: SearchInWorkspaceResult[] = [];
 
-            for (let i = 1; i <= 1000; i++) {
+            for (let i = 1; i <= 100; i++) {
                 expected.push({
                     file: 'lots-of-matches',
                     line: i,

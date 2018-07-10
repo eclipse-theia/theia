@@ -247,7 +247,7 @@ export class FrontendApplication {
     }
 
     /**
-     * Stop the frontent application contributions. This is called when the window is unloaded.
+     * Stop the frontend application contributions. This is called when the window is unloaded.
      */
     protected stopContributions(): void {
         for (const contribution of this.contributions.getContributions()) {

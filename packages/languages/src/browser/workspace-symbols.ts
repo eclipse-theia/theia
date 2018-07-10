@@ -22,7 +22,7 @@ export class WorkspaceSymbolCommand implements QuickOpenModel, CommandContributi
 
     private command: Command = {
         id: 'languages.workspace.symbol',
-        label: 'Open Workspace Symbol ...'
+        label: 'Open Workspace Symbol...'
     };
 
     constructor(@inject(Languages) protected languages: Languages,

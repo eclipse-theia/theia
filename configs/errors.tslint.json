@@ -24,6 +24,7 @@
     ],
     "no-consecutive-blank-lines": true,
     "no-shadowed-variable": true,
+    "no-string-throw": true,
     "no-trailing-whitespace": true,
     "no-var-keyword": true,
     "one-line": [

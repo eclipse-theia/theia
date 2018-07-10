@@ -10,87 +10,67 @@
  */
 
 import {
-    VirtualWidget,
-    SELECTED_CLASS,
+    VirtualWidget, SELECTED_CLASS, AbstractDialog, Widget, Message,
 } from "@theia/core/lib/browser";
 import { DebugSession } from "../debug-model";
 import { h } from '@phosphor/virtualdom';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { Emitter, Event } from "@theia/core";
-import { injectable, inject } from "inversify";
+import { Emitter, Event, Disposable } from "@theia/core";
+import { injectable, inject, postConstruct } from "inversify";
+import { BreakpointsManager } from "../breakpoint/breakpoint-manager";
+import { ExtDebugProtocol } from "../../common/debug-common";
+import { DebugUtils } from "../debug-utils";
 
 /**
  * Is it used to display breakpoints.
  */
 @injectable()
 export class DebugBreakpointsWidget extends VirtualWidget {
-    private _breakpoints = new Map<string, DebugProtocol.Breakpoint>();
+    private readonly onDidClickBreakpointEmitter = new Emitter<ExtDebugProtocol.AggregatedBreakpoint>();
+    private readonly onDidDblClickBreakpointEmitter = new Emitter<ExtDebugProtocol.AggregatedBreakpoint>();
+    private breakpoints: ExtDebugProtocol.AggregatedBreakpoint[] = [];
 
-    private readonly onDidClickBreakpointEmitter = new Emitter<DebugProtocol.Breakpoint>();
-    private readonly onDidDblClickBreakpointEmitter = new Emitter<DebugProtocol.Breakpoint>();
-
-    constructor(@inject(DebugSession) protected readonly debugSession: DebugSession) {
+    constructor(
+        @inject(BreakpointsManager) protected readonly breakpointManager: BreakpointsManager,
+        @inject(DebugSession) protected readonly debugSession: DebugSession | undefined) {
         super();
-        this.id = this.createId();
+
+        this.id = 'debug-breakpoints' + (debugSession ? `-${debugSession.sessionId}` : '');
         this.addClass(Styles.BREAKPOINTS_CONTAINER);
         this.node.setAttribute("tabIndex", "0");
-        debugSession.on('breakpoint', event => this.onBreakpointEvent(event));
-
-        // TODO remove
-        const breakpoint1 = { id: 1, verified: true, line: 1, source: { name: 'module.js' } };
-        const breakpoint2 = { id: 2, verified: true, line: 2, source: { name: 'module.js' } };
-        this._breakpoints.set(this.createId(breakpoint1), breakpoint1);
-        this._breakpoints.set(this.createId(breakpoint2), breakpoint2);
+        this.breakpointManager.onDidChangeBreakpoints(() => this.refreshBreakpoints());
     }
 
-    get onDidClickBreakpoint(): Event<DebugProtocol.Breakpoint> {
+    get onDidClickBreakpoint(): Event<ExtDebugProtocol.AggregatedBreakpoint> {
         return this.onDidClickBreakpointEmitter.event;
     }
 
-    get onDidDblClickBreakpoint(): Event<DebugProtocol.Breakpoint> {
+    get onDidDblClickBreakpoint(): Event<ExtDebugProtocol.AggregatedBreakpoint> {
         return this.onDidDblClickBreakpointEmitter.event;
     }
 
-    private onBreakpointEvent(event: DebugProtocol.BreakpointEvent): void {
-        switch (event.body.reason) {
-            case 'new': {
-                this.onNewBreakpoint(event.body.breakpoint);
-                break;
-            }
-            case 'removed': {
-                this.onBreakpointRemoved(event.body.breakpoint);
-                break;
-            }
-            case 'changed': {
-                this.onBreakpointChanged(event.body.breakpoint);
-                break;
-            }
+    public refreshBreakpoints(): void {
+        if (this.debugSession) {
+            this.breakpointManager.get(this.debugSession.sessionId).then(breakpoints => {
+                this.breakpoints = breakpoints;
+                super.update();
+            });
+        } else {
+            this.breakpointManager.getAll().then(breakpoints => {
+                this.breakpoints = breakpoints;
+                super.update();
+            });
         }
-    }
-
-    private onNewBreakpoint(breakpoint: DebugProtocol.Breakpoint): void {
-        this._breakpoints.set(this.createId(breakpoint), breakpoint);
-        this.update();
-    }
-
-    private onBreakpointRemoved(breakpoint: DebugProtocol.Breakpoint): void {
-        this._breakpoints.delete(this.createId(breakpoint));
-        this.update();
-    }
-
-    private onBreakpointChanged(breakpoint: DebugProtocol.Breakpoint): void {
-        this._breakpoints.set(this.createId(breakpoint), breakpoint);
-        this.update();
     }
 
     protected render(): h.Child {
         const header = h.div({ className: "theia-header" }, "Breakpoints");
         const items: h.Child = [];
 
-        for (const breakpoint of this._breakpoints.values()) {
+        for (const breakpoint of this.breakpoints) {
             const item =
                 h.div({
-                    id: this.createId(breakpoint),
+                    id: DebugUtils.makeBreakpointId(breakpoint),
                     className: Styles.BREAKPOINT,
                     onclick: event => {
                         const selected = this.node.getElementsByClassName(SELECTED_CLASS)[0];
@@ -101,7 +81,7 @@ export class DebugBreakpointsWidget extends VirtualWidget {
 
                         this.onDidClickBreakpointEmitter.fire(breakpoint);
                     },
-                    ondblclick: event => this.onDidDblClickBreakpointEmitter.fire(breakpoint),
+                    ondblclick: () => this.onDidDblClickBreakpointEmitter.fire(breakpoint),
                 }, this.toDisplayName(breakpoint));
             items.push(item);
         }
@@ -109,23 +89,74 @@ export class DebugBreakpointsWidget extends VirtualWidget {
         return [header, h.div(items)];
     }
 
-    private toDisplayName(breakpoint: DebugProtocol.Breakpoint): string {
-        return (breakpoint.source && breakpoint.source.name ? breakpoint.source.name : '')
-            + (breakpoint.line ? `:${breakpoint.line}` : '')
-            + (breakpoint.column ? `:${breakpoint.column}` : '');
+    private toDisplayName(breakpoint: ExtDebugProtocol.AggregatedBreakpoint): string {
+        if ('origin' in breakpoint) {
+            if (DebugUtils.isSourceBreakpoint(breakpoint)) {
+                return this.toDisplayNameSourceBrk(breakpoint.source!, breakpoint.origin as DebugProtocol.SourceBreakpoint);
+
+            } else if (DebugUtils.isFunctionBreakpoint(breakpoint)) {
+                return (breakpoint.origin as DebugProtocol.FunctionBreakpoint).name;
+
+            } else if (DebugUtils.isExceptionBreakpoint(breakpoint)) {
+                return (breakpoint.origin as ExtDebugProtocol.ExceptionBreakpoint).filter;
+            }
+        }
+
+        throw new Error('Unrecognized breakpoint type: ' + JSON.stringify(breakpoint));
     }
 
-    private createId(breakpoint?: DebugProtocol.Breakpoint): string {
-        return `debug-breakpoints-${this.debugSession.sessionId}`
-            + (breakpoint
-                ? (breakpoint.id
-                    ? `-${breakpoint.id}`
-                    : ``)
-                : '');
+    private toDisplayNameSourceBrk(source: DebugProtocol.Source, breakpoint: DebugProtocol.SourceBreakpoint): string {
+        return source.name! + `:${breakpoint.line}` + (breakpoint.column ? `:${breakpoint.column}` : '');
     }
+}
+
+@injectable()
+export class BreakpointsDialog extends AbstractDialog<void> {
+    private readonly breakpointsWidget: DebugBreakpointsWidget;
+
+    constructor(@inject(BreakpointsManager) protected readonly breakpointManager: BreakpointsManager) {
+        super({
+            title: 'Breakpoints'
+        });
+
+        this.breakpointsWidget = new DebugBreakpointsWidget(breakpointManager, undefined);
+        this.breakpointsWidget.addClass(Styles.BREAKPOINT_DIALOG);
+        this.toDispose.push(this.breakpointsWidget);
+    }
+
+    @postConstruct()
+    protected init() {
+        this.appendCloseButton('Close');
+    }
+
+    protected onAfterAttach(msg: Message): void {
+        Widget.attach(this.breakpointsWidget, this.contentNode);
+        this.toDisposeOnDetach.push(Disposable.create(() => {
+            Widget.detach(this.breakpointsWidget);
+        }));
+
+        super.onAfterAttach(msg);
+    }
+
+    protected onUpdateRequest(msg: Message): void {
+        super.onUpdateRequest(msg);
+        this.breakpointsWidget.update();
+    }
+
+    protected onActivateRequest(msg: Message): void {
+        this.breakpointsWidget.activate();
+    }
+
+    open(): Promise<void> {
+        this.breakpointsWidget.refreshBreakpoints();
+        return super.open();
+    }
+
+    get value(): void { return undefined; }
 }
 
 namespace Styles {
     export const BREAKPOINTS_CONTAINER = 'theia-debug-breakpoints-container';
     export const BREAKPOINT = 'theia-debug-breakpoint';
+    export const BREAKPOINT_DIALOG = 'theia-debug-breakpoint-dialog';
 }

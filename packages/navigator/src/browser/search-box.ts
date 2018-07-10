@@ -5,22 +5,15 @@
  * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  */
 
-import { inject, injectable } from 'inversify';
 import { KeyCode, Key } from '@theia/core/lib/browser';
 import { BaseWidget } from '@theia/core/lib/browser/widgets/widget';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { SearchBoxDebounce } from './search-box-debounce';
+import { SearchBoxDebounce, SearchBoxDebounceOptions } from './search-box-debounce';
 
 /**
  * Initializer properties for the search box widget.
  */
-@injectable()
-export class SearchBoxProps {
-
-    /**
-     * Debounce delay (in milliseconds) that is used before notifying clients about search data updates.
-     */
-    readonly delay: number;
+export interface SearchBoxProps extends SearchBoxDebounceOptions {
 
     /**
      * If `true`, the `Previous`, `Next`, and `Clone` buttons will be visible. Otherwise, `false`. Defaults to `false`.
@@ -34,16 +27,13 @@ export namespace SearchBoxProps {
     /**
      * The default search box widget option.
      */
-    export const DEFAULT: SearchBoxProps = {
-        delay: 50
-    };
+    export const DEFAULT: SearchBoxProps = SearchBoxDebounceOptions.DEFAULT;
 
 }
 
 /**
  * The search box widget.
  */
-@injectable()
 export class SearchBox extends BaseWidget {
 
     private static SPECIAL_KEYS = [
@@ -57,9 +47,8 @@ export class SearchBox extends BaseWidget {
     protected readonly textChangeEmitter = new Emitter<string | undefined>();
     protected readonly input: HTMLInputElement;
 
-    constructor(
-        @inject(SearchBoxProps) protected readonly props: SearchBoxProps,
-        @inject(SearchBoxDebounce) protected readonly debounce: SearchBoxDebounce) {
+    constructor(protected readonly props: SearchBoxProps,
+        protected readonly debounce: SearchBoxDebounce) {
 
         super();
         this.toDispose.pushAll([

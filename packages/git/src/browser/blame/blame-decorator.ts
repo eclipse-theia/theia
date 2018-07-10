@@ -6,9 +6,7 @@
  */
 
 import { inject, injectable } from 'inversify';
-import {
-    EditorManager, EditorDecorationsService, TextEditor, EditorDecoration, EditorDecorationOptions, Range, Position, EditorDecorationStyle
-} from '@theia/editor/lib/browser';
+import { EditorManager, TextEditor, EditorDecoration, EditorDecorationOptions, Range, Position, EditorDecorationStyle } from '@theia/editor/lib/browser';
 import { GitFileBlame, Commit } from '../../common';
 import { Disposable, DisposableCollection } from '@theia/core';
 import * as moment from 'moment';
@@ -17,9 +15,6 @@ import URI from '@theia/core/lib/common/uri';
 
 @injectable()
 export class BlameDecorator implements HoverProvider {
-
-    @inject(EditorDecorationsService)
-    protected readonly editorDecorationsService: EditorDecorationsService;
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
@@ -81,7 +76,7 @@ export class BlameDecorator implements HoverProvider {
                 this.appliedDecorations.delete(uri);
             }));
             applications.toDispose.push(Disposable.create(() => {
-                editor.deltaDecorations({ uri, oldDecorations: that.previousDecorations, newDecorations: [] });
+                editor.deltaDecorations({ oldDecorations: that.previousDecorations, newDecorations: [] });
             }));
         }
         if (applications.highlightedSha) {
@@ -96,7 +91,7 @@ export class BlameDecorator implements HoverProvider {
         applications.previousStyles.pushAll(blameDecorations.styles);
         const newDecorations = blameDecorations.editorDecorations;
         const oldDecorations = applications.previousDecorations;
-        const appliedDecorations = editor.deltaDecorations({ uri, oldDecorations, newDecorations });
+        const appliedDecorations = editor.deltaDecorations({ oldDecorations, newDecorations });
         applications.previousDecorations.length = 0;
         applications.previousDecorations.push(...appliedDecorations);
         applications.blame = blame;

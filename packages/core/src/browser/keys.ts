@@ -270,7 +270,7 @@ export class KeyCode {
     }
 
     public static createKeyCode(event: KeyboardEvent | Keystroke): KeyCode {
-        if (event instanceof KeyboardEvent) {
+        if (KeyCode.isKeyboardEvent(event)) {
             const code = KeyCode.toCode(event);
 
             const sequence: string[] = [];
@@ -432,6 +432,26 @@ export namespace KeyCode {
      * Determines a `true` of `false` value for the key code argument.
      */
     export type Predicate = (keyCode: KeyCode) => boolean;
+
+    /**
+     * Different scopes have different execution environments. This means that they have different built-ins
+     * (different global object, different constructors, etc.). This may result in unexpected results. For instance,
+     * `[] instanceof window.frames[0].Array` will return `false`, because `Array.prototype !== window.frames[0].Array`
+     * and arrays inherit from the former.
+     * See: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/instanceof
+     *
+     * Note: just add another check if the current `event.type` checking is insufficient.
+     */
+    export function isKeyboardEvent(event: object & Readonly<{ type?: string }>): event is KeyboardEvent {
+        if (event instanceof KeyboardEvent) {
+            return true;
+        }
+        const { type } = event;
+        if (type) {
+            return type === 'keypress' || type === 'keydown' || type === 'keyup';
+        }
+        return false;
+    }
 
 }
 

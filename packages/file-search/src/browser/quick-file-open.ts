@@ -20,7 +20,7 @@ import { Command } from '@theia/core/lib/common';
 
 export const quickFileOpen: Command = {
     id: 'file-search.openFile',
-    label: 'Open File ...'
+    label: 'Open File...'
 };
 
 @injectable()

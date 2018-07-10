@@ -89,6 +89,10 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             this.hasResults = r.size > 0;
             this.update();
         }));
+
+        this.toDispose.push(this.resultTreeWidget.onFocusInput(b => {
+            this.focusInputField();
+        }));
     }
 
     storeState(): object {
@@ -121,21 +125,42 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         this.refresh();
     }
 
-    onAfterAttach(msg: Message) {
+    findInFolder(uri: string): void {
+        this.showSearchDetails = true;
+        const value = `${uri}/**`;
+        this.searchInWorkspaceOptions.include = [value];
+        const include = document.getElementById("include-glob-field");
+        if (include) {
+            (include as HTMLInputElement).value = value;
+        }
+        this.update();
+    }
+
+    protected onAfterAttach(msg: Message) {
         super.onAfterAttach(msg);
         VirtualRenderer.render(this.renderSearchHeader(), this.searchFormContainer);
         Widget.attach(this.resultTreeWidget, this.contentNode);
     }
 
-    onUpdateRequest(msg: Message) {
+    protected onUpdateRequest(msg: Message) {
         super.onUpdateRequest(msg);
         VirtualRenderer.render(this.renderSearchHeader(), this.searchFormContainer);
     }
 
-    onAfterShow(msg: Message) {
+    protected onAfterShow(msg: Message) {
+        this.focusInputField();
+    }
+
+    protected onActivateRequest(msg: Message) {
+        super.onActivateRequest(msg);
+        this.focusInputField();
+    }
+
+    protected focusInputField() {
         const f = document.getElementById("search-input-field");
         if (f) {
             (f as HTMLInputElement).focus();
+            (f as HTMLInputElement).select();
         }
     }
 
@@ -182,7 +207,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected renderControlButtons(): h.Child {
         const refreshButton = this.renderControlButton(`refresh${this.hasResults || this.searchTerm !== "" ? " enabled" : ""}`, 'Refresh', this.refresh);
         const collapseAllButton = this.renderControlButton(`collapse-all${this.hasResults ? " enabled" : ""}`, 'Collapse All', this.collapseAll);
-        const clearButton = this.renderControlButton(`clear${this.hasResults ? " enabled" : ""}`, 'Clear', this.clear);
+        const clearButton = this.renderControlButton(`clear-all${this.hasResults ? " enabled" : ""}`, 'Clear', this.clear);
         return h.div({ className: "controls button-container" }, refreshButton, collapseAllButton, clearButton);
     }
 
@@ -235,9 +260,13 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             },
             onkeyup: e => {
                 if (e.target) {
-                    this.searchTerm = (e.target as HTMLInputElement).value;
-                    this.resultTreeWidget.search(this.searchTerm, (this.searchInWorkspaceOptions || {}));
-                    this.update();
+                    if (Key.ARROW_DOWN.keyCode === e.keyCode) {
+                        this.resultTreeWidget.focusFirstResult();
+                    } else {
+                        this.searchTerm = (e.target as HTMLInputElement).value;
+                        this.resultTreeWidget.search(this.searchTerm, (this.searchInWorkspaceOptions || {}));
+                        this.update();
+                    }
                 }
             }
         });
@@ -322,21 +351,24 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     }
 
     protected renderExpandGlobFieldsButton(): h.Child {
-        const button = h.span({ className: "fa fa-ellipsis-h btn" });
-        return h.div({
-            className: "button-container", onclick: () => {
+        const button = h.span({
+            className: "fa fa-ellipsis-h btn", onclick: () => {
                 this.showSearchDetails = !this.showSearchDetails;
                 this.update();
             }
+        });
+        return h.div({
+            className: "button-container"
         }, button);
     }
 
     protected renderGlobField(kind: "include" | "exclude"): h.Child {
         const label = h.div({ className: "label" }, "files to " + kind);
         const currentValue = this.searchInWorkspaceOptions[kind];
+        const value = currentValue && currentValue.join(', ') || '';
         const input = h.input({
             type: "text",
-            value: currentValue && currentValue.join(', ') || '',
+            value,
             id: kind + "-glob-field",
             onkeyup: e => {
                 if (e.target) {

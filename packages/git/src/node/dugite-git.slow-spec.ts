@@ -31,7 +31,7 @@ describe('git-slow', async function () {
             const repository = { localUri };
 
             const git = await createGit();
-            await git.clone('https://github.com/eclipse/eclipse.jdt.ls.git', { localUri });
+            await git.clone('https://github.com/kittaakos/eclipse.jdt.ls.git', { localUri });
             await git.checkout(repository, { branch: 'Java9' });
             await git.checkout(repository, { branch: 'docker' });
 

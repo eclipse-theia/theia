@@ -6,15 +6,17 @@
  */
 
 import * as fs from 'fs-extra';
+import { lookup } from 'mime-types';
 import { injectable, inject, named } from 'inversify';
 import { Application, Request, Response } from 'express';
 import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/node/file-uri';
 import { ILogger } from '@theia/core/lib/common/logger';
+import { MaybePromise } from '@theia/core/lib/common/types';
 import { FileSystem, FileStat } from '@theia/filesystem/lib/common';
-import { MaybePromise, Prioritizeable } from '@theia/core/lib/common/types';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
+import { MiniBrowserService } from '../common/mini-browser-service';
 
 /**
  * The return type of the `FileSystem#resolveContent` method.
@@ -40,11 +42,16 @@ export const MiniBrowserEndpointHandler = Symbol('MiniBrowserEndpointHandler');
 export interface MiniBrowserEndpointHandler {
 
     /**
-     * Returns or resolves to a positive number if the current contribution can handle the resource with the given URI.
-     * The number indicates the priority of the endpoint contribution. If it is not a positive number, it means, the
-     * contribution cannot handle the URI.
+     * Returns with or resolves to the file extensions supported by the current `mini-browser` endpoint handler.
+     * The file extension must not start with the leading `.` (dot). For instance; `'html'` or `['jpg', 'jpeg']`.
+     * The file extensions are case insensitive.
      */
-    canHandle(uri: string): MaybePromise<number>;
+    supportedExtensions(): MaybePromise<string | string[]>;
+
+    /**
+     * Returns a number representing the priority between all the available handlers for the same file extension.
+     */
+    priority(): number;
 
     /**
      * Responds back to the sender.
@@ -54,17 +61,12 @@ export interface MiniBrowserEndpointHandler {
 }
 
 @injectable()
-export class MiniBrowserEndpoint implements BackendApplicationContribution {
+export class MiniBrowserEndpoint implements BackendApplicationContribution, MiniBrowserService {
 
     /**
      * Endpoint path to handle the request for the given resource.
      */
     static HANDLE_PATH = '/mini-browser/';
-
-    /**
-     * Path for checking whether a resource can be handled at all.
-     */
-    static CAN_HANDLE_PATH = '/mini-browser-check/';
 
     @inject(ILogger)
     protected readonly logger: ILogger;
@@ -76,9 +78,26 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution {
     @named(MiniBrowserEndpointHandler)
     protected readonly contributions: ContributionProvider<MiniBrowserEndpointHandler>;
 
+    protected readonly handlers: Map<string, MiniBrowserEndpointHandler> = new Map();
+
     configure(app: Application): void {
         app.get(`${MiniBrowserEndpoint.HANDLE_PATH}*`, async (request, response) => await this.response(await this.getUri(request), response));
-        app.get(`${MiniBrowserEndpoint.CAN_HANDLE_PATH}*`, async (request, response) => await this.canHandle(await this.getUri(request), response));
+    }
+
+    async onStart(): Promise<void> {
+        for (const handler of this.getContributions()) {
+            const extensions = await handler.supportedExtensions();
+            for (const extension of (Array.isArray(extensions) ? extensions : [extensions]).map(e => e.toLocaleLowerCase())) {
+                const existingHandler = this.handlers.get(extension);
+                if (!existingHandler || handler.priority > existingHandler.priority) {
+                    this.handlers.set(extension, handler);
+                }
+            }
+        }
+    }
+
+    async supportedFileExtensions(): Promise<Readonly<{ extension: string, priority: number }>[]> {
+        return Array.from(this.handlers.entries()).map(([extension, handler]) => ({ extension, priority: handler.priority() }));
     }
 
     protected async response(uri: string, response: Response): Promise<Response> {
@@ -89,30 +108,20 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution {
         const statWithContent = await this.readContent(uri);
         try {
             if (!statWithContent.stat.isDirectory) {
-                const handlers = await this.prioritize(uri);
-                if (handlers.length === 0) {
+                const extension = uri.split('.').pop();
+                if (!extension) {
                     return this.defaultHandler()(statWithContent, response);
                 }
-                return handlers[0].respond(statWithContent, response);
+                const handler = this.handlers.get(extension.toString().toLocaleLowerCase());
+                if (!handler) {
+                    return this.defaultHandler()(statWithContent, response);
+                }
+                return handler.respond(statWithContent, response);
             }
         } catch (e) {
             return this.errorHandler()(e, uri, response);
         }
         return this.defaultHandler()(statWithContent, response);
-    }
-
-    protected async canHandle(uri: string, response: Response): Promise<Response> {
-        try {
-            response.status((await this.prioritize(uri)).length > 0 ? 200 : 501);
-        } catch {
-            response.status(501);
-        }
-        return response.send();
-    }
-
-    protected async prioritize(uri: string): Promise<MiniBrowserEndpointHandler[]> {
-        const prioritized = await Prioritizeable.prioritizeAll(this.getContributions(), contribution => contribution.canHandle(uri));
-        return prioritized.map(p => p.value);
     }
 
     protected getContributions(): MiniBrowserEndpointHandler[] {
@@ -158,12 +167,21 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution {
 
     protected defaultHandler(): (statWithContent: FileStatWithContent, response: Response) => MaybePromise<Response> {
         return async (statWithContent: FileStatWithContent, response: Response) => {
-            this.logger.warn(`Cannot handle unexpected resource. URI: ${statWithContent.stat.uri}.`);
-            return response.send();
+            const { stat, content } = statWithContent;
+            const mimeType = lookup(FileUri.fsPath(stat.uri));
+            if (!mimeType) {
+                this.logger.warn(`Cannot handle unexpected resource. URI: ${statWithContent.stat.uri}.`);
+                return response.send();
+            }
+            response.contentType(mimeType);
+            return response.send(content);
         };
     }
 
 }
+
+// See `EditorManager#canHandle`.
+const CODE_EDITOR_PRIORITY = 100;
 
 /**
  * Endpoint handler contribution for HTML files.
@@ -171,8 +189,14 @@ export class MiniBrowserEndpoint implements BackendApplicationContribution {
 @injectable()
 export class HtmlHandler implements MiniBrowserEndpointHandler {
 
-    canHandle(uri: string): MaybePromise<number> {
-        return uri.endsWith('.html') ? 1 : 0;
+    supportedExtensions(): string {
+        return 'html';
+    }
+
+    priority(): number {
+        // Prefer Code Editor over Mini Browser
+        // https://github.com/theia-ide/theia/issues/2051
+        return 1;
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {
@@ -186,10 +210,14 @@ export class HtmlHandler implements MiniBrowserEndpointHandler {
  * Handler for JPG resources.
  */
 @injectable()
-export class JpgHandler implements MiniBrowserEndpointHandler {
+export class ImageHandler implements MiniBrowserEndpointHandler {
 
-    canHandle(uri: string): MaybePromise<number> {
-        return uri.endsWith('.jpg') ? 1 : 0;
+    supportedExtensions(): string[] {
+        return ['jpg', 'jpeg', 'png', 'bmp', 'gif'];
+    }
+
+    priority(): number {
+        return CODE_EDITOR_PRIORITY + 1;
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {
@@ -211,8 +239,12 @@ export class JpgHandler implements MiniBrowserEndpointHandler {
 @injectable()
 export class PdfHandler implements MiniBrowserEndpointHandler {
 
-    canHandle(uri: string): MaybePromise<number> {
-        return uri.endsWith('.pdf') ? 1 : 0;
+    supportedExtensions(): string {
+        return 'pdf';
+    }
+
+    priority(): number {
+        return CODE_EDITOR_PRIORITY + 1;
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {
@@ -246,8 +278,12 @@ export class PdfHandler implements MiniBrowserEndpointHandler {
 @injectable()
 export class SvgHandler implements MiniBrowserEndpointHandler {
 
-    canHandle(uri: string): MaybePromise<number> {
-        return uri.endsWith('.svg') ? 1 : 0;
+    supportedExtensions(): string {
+        return 'svg';
+    }
+
+    priority(): number {
+        return CODE_EDITOR_PRIORITY + 1;
     }
 
     respond(statWithContent: FileStatWithContent, response: Response): MaybePromise<Response> {

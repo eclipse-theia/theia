@@ -56,6 +56,11 @@ export class MiniBrowserProps {
      */
     readonly name?: string;
 
+    /**
+     * `true` if the `iFrame`'s background has to be reset to the default white color. Otherwise, `false`. `false` is the default.
+     */
+    readonly resetBackground?: boolean;
+
 }
 
 export namespace MiniBrowserProps {
@@ -253,6 +258,7 @@ export class MiniBrowser extends BaseWidget {
     protected readonly submitInputEmitter = new Emitter<string>();
     protected readonly navigateBackEmitter = new Emitter<void>();
     protected readonly navigateForwardEmitter = new Emitter<void>();
+    protected readonly refreshEmitter = new Emitter<void>();
     protected readonly openEmitter = new Emitter<void>();
 
     protected readonly input: HTMLInputElement;
@@ -265,6 +271,7 @@ export class MiniBrowser extends BaseWidget {
     protected readonly pdfContainer: HTMLElement;
 
     protected readonly initialHistoryLength: number;
+    protected readonly toDisposeOnGo = new DisposableCollection();
 
     constructor(@inject(MiniBrowserProps) protected readonly props: MiniBrowserProps) {
         super();
@@ -284,6 +291,7 @@ export class MiniBrowser extends BaseWidget {
             this.submitInputEmitter,
             this.navigateBackEmitter,
             this.navigateForwardEmitter,
+            this.refreshEmitter,
             this.openEmitter
         ]);
     }
@@ -335,6 +343,7 @@ export class MiniBrowser extends BaseWidget {
         parent.appendChild(toolbar);
         this.createPrevious(toolbar);
         this.createNext(toolbar);
+        this.createRefresh(toolbar);
         const input = this.createInput(toolbar);
         input.readOnly = this.getToolbarProps() === 'read-only';
         this.createOpen(toolbar);
@@ -361,6 +370,7 @@ export class MiniBrowser extends BaseWidget {
         this.submitInputEmitter.event(input => this.go(input, true));
         this.navigateBackEmitter.event(this.handleBack.bind(this));
         this.navigateForwardEmitter.event(this.handleForward.bind(this));
+        this.refreshEmitter.event(this.handleRefresh.bind(this));
         this.openEmitter.event(this.handleOpen.bind(this));
 
         const transparentOverlay = document.createElement('div');
@@ -396,10 +406,14 @@ export class MiniBrowser extends BaseWidget {
 
     protected focus(): void {
         const contentDocument = this.contentDocument();
-        if (contentDocument !== null) {
+        if (contentDocument !== null && contentDocument.body) {
             contentDocument.body.focus();
-        } else {
+        } else if (this.pdfContainer.style.display !== 'none') {
+            this.pdfContainer.focus();
+        } else if (this.getToolbarProps() !== 'hide') {
             this.input.focus();
+        } else if (this.frame.parentElement) {
+            this.frame.parentElement.focus();
         }
     }
 
@@ -420,6 +434,26 @@ export class MiniBrowser extends BaseWidget {
     protected handleForward(): void {
         if (history.length > this.initialHistoryLength) {
             history.forward();
+        }
+    }
+
+    protected handleRefresh(): void {
+        // Initial pessimism; use the location of the input.
+        let location: string | undefined = this.props.startPage;
+        // Use the the location from the `input`.
+        if (this.input && this.input.value) {
+            location = this.input.value;
+        }
+        try {
+            const { contentDocument } = this.frame;
+            if (contentDocument) {
+                location = contentDocument.location.href;
+            }
+        } catch {
+            // Security exception due to CORS when trying to access the `location.href` of the content document.
+        }
+        if (location) {
+            this.go(location, false, true);
         }
     }
 
@@ -460,13 +494,15 @@ export class MiniBrowser extends BaseWidget {
     }
 
     protected createPrevious(parent: HTMLElement): HTMLElement {
-        const button = this.onClick(this.createButton(parent, 'Show The Previous Page', MiniBrowser.Styles.PREVIOUS), this.navigateBackEmitter);
-        return button;
+        return this.onClick(this.createButton(parent, 'Show The Previous Page', MiniBrowser.Styles.PREVIOUS), this.navigateBackEmitter);
     }
 
     protected createNext(parent: HTMLElement): HTMLElement {
-        const button = this.onClick(this.createButton(parent, 'Show The Next Page', MiniBrowser.Styles.NEXT), this.navigateForwardEmitter);
-        return button;
+        return this.onClick(this.createButton(parent, 'Show The Next Page', MiniBrowser.Styles.NEXT), this.navigateForwardEmitter);
+    }
+
+    protected createRefresh(parent: HTMLElement): HTMLElement {
+        return this.onClick(this.createButton(parent, 'Reload This Page', MiniBrowser.Styles.REFRESH), this.refreshEmitter);
     }
 
     protected createOpen(parent: HTMLElement): HTMLElement {
@@ -537,6 +573,7 @@ export class MiniBrowser extends BaseWidget {
     protected async go(location: string, register: boolean = false, showLoadIndicator: boolean = true): Promise<void> {
         if (location) {
             try {
+                this.toDisposeOnGo.dispose();
                 const url = await this.mapLocation(location);
                 this.setInput(url);
                 if (this.getToolbarProps() === 'read-only') {
@@ -554,12 +591,27 @@ export class MiniBrowser extends BaseWidget {
                     });
                     this.hideLoadIndicator();
                 } else {
-                    this.frame.addEventListener('load', () => this.frame.style.backgroundColor = 'white', { once: true });
+                    if (this.props.resetBackground === true) {
+                        this.frame.addEventListener('load', () => this.frame.style.backgroundColor = 'white', { once: true });
+                    }
                     this.pdfContainer.style.display = 'none';
                     this.frame.style.display = 'block';
                     this.frame.src = url;
                     // The load indicator will hide itself if the content of the iframe was loaded.
                 }
+                // Delegate all the `keypress` events from the `iframe` to the application.
+                this.toDisposeOnGo.push(addEventListener(this.frame, 'load', () => {
+                    try {
+                        const { contentDocument } = this.frame;
+                        if (contentDocument) {
+                            const keypressHandler = (e: KeyboardEvent) => this.keybindings.run(e);
+                            contentDocument.addEventListener('keypress', keypressHandler, true);
+                            this.toDisposeOnDetach.push(Disposable.create(() => contentDocument.removeEventListener('keypress', keypressHandler)));
+                        }
+                    } catch {
+                        // There is not much we could do with the security exceptions due to CORS.
+                    }
+                }));
             } catch (e) {
                 this.hideLoadIndicator();
                 console.log(e);

@@ -16,7 +16,6 @@ import { EditorCommandContribution } from './editor-command';
 import { EditorTextFocusContext, StrictEditorTextFocusContext } from "./editor-keybinding-contexts";
 import { EditorKeybindingContribution } from "./editor-keybinding";
 import { bindEditorPreferences } from './editor-preferences';
-import { EditorDecorationsService } from './editor-decorations-service';
 import { EditorWidgetFactory } from './editor-widget-factory';
 import { EditorNavigationContribution } from './editor-navigation-contribution';
 import { NavigationLocationUpdater } from './navigation/navigation-location-updater';
@@ -42,8 +41,6 @@ export default new ContainerModule(bind => {
 
     bind(EditorContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(EditorContribution);
-
-    bind(EditorDecorationsService).toSelf().inSingletonScope();
 
     bind(EditorNavigationContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(EditorNavigationContribution);

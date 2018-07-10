@@ -147,14 +147,14 @@ is not optimized for dense, information rich UIs.
   --theia-added-color0: rgba(0, 255, 0, 0.8);
   --theia-removed-color0: rgba(230, 0, 0, 0.8);
   --theia-modified-color0: rgba(0, 100, 150, 0.8);
-
-  --theia-highlight-background-color: var(--md-purple-A100);
-  --theia-highlight-color: var(--theia-content-font-color0);
-
+  
   /* Colors to highlight words in widgets like tree or editors */
 
   --theia-word-highlight-color0: rgba(168, 172, 148, 0.7);
   --theia-word-highlight-color1: rgba(253, 255, 0, 0.2);
+  --theia-word-highlight-match-color0: rgba(234, 92, 0, 0.33);
+  --theia-word-highlight-match-color1: rgba(234, 92, 0, 0.5);
+  --theia-word-highlight-replace-color0: rgba(155, 185, 85, 0.2);
 
   /* Icons */
   --theia-icon-close: url(../icons/close-bright.svg);

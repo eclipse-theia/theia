@@ -20,9 +20,9 @@ import {
     TextEditor,
     RevealRangeOptions,
     RevealPositionOptions,
-    EditorDecorationsService,
     DeltaDecorationParams,
     ReplaceTextParams,
+    EditorMouseEvent,
 } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from "./monaco-editor-model";
 
@@ -49,6 +49,7 @@ export class MonacoEditor implements TextEditor, IEditorReference {
     protected readonly onSelectionChangedEmitter = new Emitter<Range>();
     protected readonly onFocusChangedEmitter = new Emitter<boolean>();
     protected readonly onDocumentContentChangedEmitter = new Emitter<TextDocumentChangeEvent>();
+    protected readonly onMouseDownEmitter = new Emitter<EditorMouseEvent>();
 
     readonly documents = new Set<MonacoEditorModel>();
 
@@ -58,7 +59,6 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         readonly node: HTMLElement,
         protected readonly m2p: MonacoToProtocolConverter,
         protected readonly p2m: ProtocolToMonacoConverter,
-        protected readonly decorationsService: EditorDecorationsService,
         options?: MonacoEditor.IOptions,
         override?: IEditorOverrideServices,
     ) {
@@ -109,6 +109,17 @@ export class MonacoEditor implements TextEditor, IEditorReference {
         this.toDispose.push(codeEditor.onDidBlurEditor(() =>
             this.onFocusChangedEmitter.fire(this.isFocused())
         ));
+        this.toDispose.push(codeEditor.onMouseDown(e => {
+            const { lineNumber, column } = e.target.position;
+            const event = {
+                target: {
+                    ...e.target,
+                    position: this.m2p.asPosition(lineNumber, column),
+                },
+                event: e.event.browserEvent
+            };
+            this.onMouseDownEmitter.fire(event);
+        }));
     }
 
     protected mapModelContentChange(change: monaco.editor.IModelContentChange): TextDocumentContentChangeDelta {
@@ -207,6 +218,10 @@ export class MonacoEditor implements TextEditor, IEditorReference {
 
     get onFocusChanged(): Event<boolean> {
         return this.onFocusChangedEmitter.event;
+    }
+
+    get onMouseDown(): Event<EditorMouseEvent> {
+        return this.onMouseDownEmitter.event;
     }
 
     /**

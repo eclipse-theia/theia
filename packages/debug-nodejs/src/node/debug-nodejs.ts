@@ -22,13 +22,16 @@ export class NodeJsDebugAdapterContribution implements DebugAdapterContribution 
     readonly debugType = "node";
 
     provideDebugConfigurations = [{
-        "type": this.debugType,
-        "request": "attach",
-        "name": "Attach by PID",
-        "processId": ""
+        type: this.debugType,
+        breakpoints: { filePatterns: ['.*[.]js', '.*[.]js'] },
+        request: 'attach',
+        name: 'Attach by PID',
+        processId: ''
     }];
 
     resolveDebugConfiguration(config: DebugConfiguration): DebugConfiguration {
+        config.breakpoints = { filePatterns: ['.*[.]js', '.*[.]js'] };
+
         if (!config.request) {
             throw new Error("Debug request type isn't provided.");
         }

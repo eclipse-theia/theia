@@ -6,7 +6,7 @@
  */
 
 import { injectable } from 'inversify';
-import { Range, Position, EditorDecoration, EditorDecorationOptions, OverviewRulerLane, TextEditor } from '@theia/editor/lib/browser';
+import { Range, Position, EditorDecoration, EditorDecorationOptions, OverviewRulerLane, EditorDecorator } from '@theia/editor/lib/browser';
 import { DirtyDiffUpdate } from './dirty-diff-manager';
 import { LineRange } from './diff-computer';
 
@@ -41,7 +41,7 @@ const ModifiedLineDecoration = <EditorDecorationOptions>{
 };
 
 @injectable()
-export class DirtyDiffDecorator {
+export class DirtyDiffDecorator extends EditorDecorator {
 
     applyDecorations(update: DirtyDiffUpdate): void {
         const modifications = update.modified.map(range => this.toDeltaDecoration(range, ModifiedLineDecoration));
@@ -49,18 +49,6 @@ export class DirtyDiffDecorator {
         const removals = update.removed.map(line => this.toDeltaDecoration(line, RemovedLineDecoration));
         const decorations = [...modifications, ...additions, ...removals];
         this.setDecorations(update.editor, decorations);
-    }
-
-    protected appliedDecorations = new Map<string, string[]>();
-
-    protected async setDecorations(editor: TextEditor, newDecorations: EditorDecoration[]) {
-        const uri = editor.uri.toString();
-        const oldDecorations = this.appliedDecorations.get(uri) || [];
-        if (oldDecorations.length === 0 && newDecorations.length === 0) {
-            return;
-        }
-        const decorationIds = await editor.deltaDecorations({ uri, oldDecorations, newDecorations });
-        this.appliedDecorations.set(uri, decorationIds);
     }
 
     protected toDeltaDecoration(from: LineRange | number, options: EditorDecorationOptions): EditorDecoration {
