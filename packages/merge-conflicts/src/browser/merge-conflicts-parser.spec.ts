@@ -285,6 +285,40 @@ bar on branch
         });
     });
 
+    it("merge conflict with empty incoming change", () => {
+        const conflicts = parse(
+            `<<<<<<<
+a
+|||||||
+b
+=======
+>>>>>>>
+`
+        );
+        expect(conflicts).to.have.lengthOf(1);
+        const conflict = conflicts[0];
+
+        expect(conflict.incoming).to.not.be.undefined;
+        expect(conflict.incoming.content).to.be.undefined;
+    });
+
+    it("merge conflict with empty current change", () => {
+        const conflicts = parse(
+            `<<<<<<<
+|||||||
+b
+=======
+a
+>>>>>>>
+`
+        );
+        expect(conflicts).to.have.lengthOf(1);
+        const conflict = conflicts[0];
+
+        expect(conflict.current).to.not.be.undefined;
+        expect(conflict.current.content).to.be.undefined;
+    });
+
 });
 
 function substring(text: string, range: Range): string {
