@@ -96,6 +96,12 @@ export interface TextEditor extends Disposable, TextEditorSelection, Navigatable
      * @param params: ReplaceTextParams
      */
     replaceText(params: ReplaceTextParams): Promise<boolean>;
+
+    /**
+     * Execute edits on the editor.
+     * @param edits: edits created with `lsp.TextEdit.replace`, `lsp.TextEdit.instert`, `lsp.TextEdit.del`
+     */
+    executeEdits(edits: lsp.TextEdit[]): boolean;
 }
 
 export interface Dimension {

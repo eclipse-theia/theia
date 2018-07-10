@@ -14,7 +14,7 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { MonacoToProtocolConverter, ProtocolToMonacoConverter } from "monaco-languageclient";
+import { MonacoToProtocolConverter, ProtocolToMonacoConverter, TextEdit } from "monaco-languageclient";
 import { ElementExt } from "@phosphor/domutils";
 import URI from "@theia/core/lib/common/uri";
 import { DisposableCollection, Disposable, Emitter, Event } from "@theia/core/lib/common";
@@ -379,6 +379,10 @@ export class MonacoEditor implements TextEditor, IEditorReference {
             };
         });
         return this.editor.executeEdits(params.source, edits);
+    }
+
+    executeEdits(edits: TextEdit[]): boolean {
+        return this.editor.executeEdits("MonacoEditor", this.p2m.asTextEdits(edits) as IIdentifiedSingleEditOperation[]);
     }
 
 }
