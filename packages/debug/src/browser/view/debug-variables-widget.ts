@@ -1,13 +1,18 @@
-/*
- * Copyright (C) 2018 Red Hat, Inc.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
+/********************************************************************************
+ * Copyright (C) 2018 Red Hat, Inc. and others.
  *
- * Contributors:
- *   Red Hat, Inc. - initial API and implementation
- */
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+ ********************************************************************************/
 
 import {
     TreeWidget,
@@ -30,6 +35,7 @@ import { CommandRegistry } from "@theia/core";
 import { DebugSession } from "../debug-model";
 import { DebugSelection } from "./debug-selection-service";
 import { ExtDebugProtocol } from "../../common/debug-common";
+import React = require("react");
 
 /**
  * Is it used to display variables.
@@ -67,12 +73,12 @@ export class DebugVariablesWidget extends TreeWidget {
         this.model.refresh(variableNode);
     }
 
-    protected render(): h.Child {
+    protected render(): React.ReactNode {
         const header = h.div({ className: "theia-header" }, "Variables");
-        return h.div(header, super.render());
+        return React.createElement('div', [header, super.render()]);
     }
 
-    protected renderCaption(node: TreeNode, props: NodeProps): h.Child {
+    protected renderCaption(node: TreeNode, props: NodeProps): React.ReactNode {
         if (VariableNode.is(node)) {
             return this.decorateVariableCaption(node.extVariable);
         } else if (ScopeNode.is(node)) {
